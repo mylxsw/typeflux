@@ -60,12 +60,15 @@ struct AskAPIClient: AskAPI {
         try await execute(path: "/\(conversationId)/inference-results", method: "POST", body: AskCoding.encoder().encode(request), token: token)
     }
     let executor: CloudRequestExecutor
+    let recoveryMetadataEnabled: Bool
     let streamSession: URLSession
     private let trustedPeer: AskHarnessContract?
     private let enabledCapabilities: Set<AskHarnessCapability>
 
     init(executor: CloudRequestExecutor = CloudRequestExecutor(), streamSession: URLSession = .shared,
-         trustedPeer: AskHarnessContract? = nil, enabledCapabilities: Set<AskHarnessCapability> = []) {
+         trustedPeer: AskHarnessContract? = nil, enabledCapabilities: Set<AskHarnessCapability> = [],
+         recoveryMetadataEnabled: Bool = false) {
+        self.recoveryMetadataEnabled = recoveryMetadataEnabled
         self.trustedPeer = trustedPeer; self.enabledCapabilities = enabledCapabilities
         self.executor = executor; self.streamSession = streamSession
     }
@@ -128,6 +131,9 @@ struct AskAPIClient: AskAPI {
             request.timeoutInterval = 200
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.setValue("1", forHTTPHeaderField: "X-Typeflux-Model-Catalog")
+            if recoveryMetadataEnabled {
+                request.setValue("run_recovery_v1", forHTTPHeaderField: "X-Typeflux-Capabilities")
+            }
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue("ask-anything", forHTTPHeaderField: "X-Scenario")
             return request

@@ -2244,6 +2244,29 @@
 
 "ask.skills.install.nameConflict" = "This skill name conflicts with local folders. Rename the conflicting folders before installing.";
 
+/* Execution recovery */
+"ask.recovery.unknown" = "Result unknown";
+"ask.recovery.unknownBody" = "An operation may already have taken effect. Check its destination before taking further action. Ending this run does not undo effects or confirm success. A new request requires fresh instructions and approval.";
+"ask.recovery.binding" = "Only the original account and device can resend a bound receipt. Missing identity cannot be reconstructed from history.";
+"ask.recovery.saved" = "Receipt saved on this Mac";
+"ask.recovery.savedBody" = "The result is saved, but delivery is unconfirmed. Resend the saved receipt without executing the tool or model again.";
+"ask.recovery.history" = "Conversation history restored";
+"ask.recovery.historyBody" = "Saved messages are available. No execution has been resumed.";
+"ask.recovery.activeBody" = "The latest run status is available. This Mac has not resumed tools or model calls.";
+"ask.recovery.localBody" = "Only saved steps and receipts can be recovered. Local execution after Typeflux exits is not guaranteed. Check any development service before restarting it.";
+"ask.recovery.steering" = "New steering takes effect at the next step boundary. It cannot change a dispatched operation.";
+"ask.recovery.inspect" = "Inspect recovery";
+"ask.recovery.retransmit" = "Resend saved receipt";
+"ask.recovery.continue" = "Continue from saved step";
+"ask.recovery.recorded" = "Result recorded locally";
+"ask.recovery.noApproval" = "No saved approval record";
+"ask.recovery.approvalRecorded" = "Approval recorded; a saved record cannot authorize another execution.";
+"ask.recovery.remoteEvidence" = "The server exposes run status only. No remote operation evidence is available here.";
+"ask.recovery.close" = "Close";
+"ask.recovery.end" = "End this run";
+"ask.recovery.newRequest" = "Write a new request";
+"ask.recovery.newRequestBody" = "After checking the effects, type and send new instructions. The unknown operation remains in the journal.";
+
 /* GUL-193 Reasoning effort levels */
 "ask.reasoning.xhigh" = "Extra high";
 "ask.reasoning.max" = "Ultra";

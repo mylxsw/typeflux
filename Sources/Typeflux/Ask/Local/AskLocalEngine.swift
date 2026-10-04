@@ -72,7 +72,12 @@ actor AskLocalEngine: AskAPI {
         let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
         let decoder = AskCoding.decoder()
         for file in files where file.pathExtension == "json" {
-            if let data = try? Data(contentsOf: file), let record = try? decoder.decode(AskLocalRecord.self, from: data) {
+            if let data = try? Data(contentsOf: file), var record = try? decoder.decode(AskLocalRecord.self, from: data) {
+                // A persisted engine step may have dispatched a built-in request before exit.
+                // Inspect/cancel it; never infer that a fresh process can safely repeat it.
+                if record.conversation.run?.status == "running" {
+                    record.conversation.run?.recovery = .init(state: "unknown_outcome", sequence: record.conversation.revision)
+                }
                 records[record.conversation.id] = record
             }
         }
@@ -104,7 +109,7 @@ actor AskLocalEngine: AskAPI {
             record.conversation.run?.inference?.payload = AskMemory.removingInjection(from: payload)
         }
         // An interrupted inference or engine step must not strand the conversation.
-        if let run = record.conversation.run, run.isActive, run.status != "waiting_tool",
+        if let run = record.conversation.run, run.isActive, run.status == "running", run.recovery?.blocksExecution != true,
            now().timeIntervalSince(run.updatedAt) > Self.staleAfter {
             keepPartial(&record)
             closePending(&record, reason: "The previous execution expired. It was not replayed.")
@@ -197,6 +202,12 @@ actor AskLocalEngine: AskAPI {
         try settleBudgetTool(record, callId: request.toolCallId)
         record.conversation.messages.append(request.message(step: run.steps, now: now()))
         record.conversation.run?.pending.removeFirst()
+        if ["unknown", "timeout", "cancelled"].contains(AskExecutionReceipt.tool(request).status) {
+            record.conversation.run?.status = "running"
+            record.conversation.run?.recovery = .init(state: "unknown_outcome", sequence: record.conversation.revision + 1)
+            try save(&record)
+            return record.conversation
+        }
         return try await continueTools(&record)
     }
 

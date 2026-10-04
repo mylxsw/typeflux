@@ -2234,6 +2234,29 @@
 
 "ask.skills.install.nameConflict" = "스킬 이름이 로컬 폴더와 충돌합니다. 충돌하는 폴더 이름을 변경한 후 설치하세요.";
 
+/* Execution recovery */
+"ask.recovery.unknown" = "결과를 알 수 없음";
+"ask.recovery.unknownBody" = "작업이 이미 반영되었을 수 있습니다. 다음 작업 전에 대상 위치를 확인하세요. 실행을 종료해도 작업이 취소되거나 성공이 확인되는 것은 아닙니다. 새 요청에는 새 지시와 승인이 필요합니다.";
+"ask.recovery.binding" = "원래 계정과 기기에서만 저장된 결과를 다시 보낼 수 있습니다. 누락된 식별 정보는 기록에서 복원할 수 없습니다.";
+"ask.recovery.saved" = "결과가 이 Mac에 저장됨";
+"ask.recovery.savedBody" = "결과는 저장되었지만 전달은 확인되지 않았습니다. 도구나 모델을 다시 실행하지 않고 저장된 결과만 다시 보낼 수 있습니다.";
+"ask.recovery.history" = "대화 기록 복원됨";
+"ask.recovery.historyBody" = "저장된 메시지를 불러왔습니다. 실행은 재개하지 않았습니다.";
+"ask.recovery.activeBody" = "실행의 최신 상태를 가져왔습니다. 이 Mac에서는 도구 실행이나 모델 호출을 재개하지 않았습니다.";
+"ask.recovery.localBody" = "저장된 단계와 결과만 복구할 수 있습니다. Typeflux 종료 후 로컬 실행은 보장되지 않습니다. 개발 서비스를 다시 시작하기 전에 상태를 확인하세요.";
+"ask.recovery.steering" = "새 지시는 다음 단계부터 적용됩니다. 이미 전달된 작업은 변경할 수 없습니다.";
+"ask.recovery.inspect" = "복구 기록 확인";
+"ask.recovery.retransmit" = "저장된 결과 다시 보내기";
+"ask.recovery.continue" = "저장된 단계부터 계속";
+"ask.recovery.recorded" = "결과가 로컬에 기록됨";
+"ask.recovery.noApproval" = "저장된 승인 기록 없음";
+"ask.recovery.approvalRecorded" = "승인이 기록되었습니다. 이 기록으로 다시 실행을 승인할 수 없습니다.";
+"ask.recovery.remoteEvidence" = "서버는 실행 상태만 제공합니다. 여기에는 원격 작업의 증거가 없습니다.";
+"ask.recovery.close" = "닫기";
+"ask.recovery.end" = "이 실행 종료";
+"ask.recovery.newRequest" = "새 요청 작성";
+"ask.recovery.newRequestBody" = "영향을 확인한 후 새 지시를 입력하고 보내세요. 결과를 알 수 없는 이전 작업은 로그에 남습니다.";
+
 /* GUL-193 Reasoning effort levels */
 "ask.reasoning.xhigh" = "매우 높음";
 "ask.reasoning.max" = "최대";

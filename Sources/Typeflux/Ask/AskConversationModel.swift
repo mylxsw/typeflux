@@ -27,7 +27,6 @@ final class AskConversationModel: ObservableObject {
     @Published var reasoningEffort: AskReasoningEffort = .providerDefault
     let modelLibrary: AskModelLibrary
     private var inferenceUsage: [String: AskTokenUsage] = [:]
-    private var inferenceReceipts: [String: AskInferenceResult] = [:]
     var customInference = AskCustomInference()
     @Published private(set) var inferenceProgress: [String: AskStreamProgress] = [:]
     private var progressInferenceIDs: [String: String] = [:]
@@ -160,6 +159,11 @@ final class AskConversationModel: ObservableObject {
     var capturedContentFeedbackTasks: [Bool: Task<Void, Never>] = [:]
     var capturedContentFeedbackDuration: Duration = .seconds(5)
     var capturedContentAccount: String? { session()?.owner }
+    @Published var recoveryEntries: [String: [AskExecutionEntry]] = [:]
+    @Published var restoredHistory: Set<String> = []
+    @Published var inspectingRecovery = false
+    @Published var recoveryWorking = false
+    var recoveryGeneration = UUID()
     @Published var error: String?
     @Published var captureWarning: String?
     @Published private(set) var isRefreshingHistory = false
@@ -174,13 +178,13 @@ final class AskConversationModel: ObservableObject {
     var onControlChanged: ((Bool) -> Void)?
     var recordingIsActive: () -> Bool = { false }
 
-    private let api: any AskAPI
-    private let cache: any AskCaching
+    let api: any AskAPI
+    let cache: any AskCaching
     private let tools: any AskToolExecuting
     private let capture: any AskContextCapturing
-    private let session: () -> (owner: String, token: String)?
+    let session: () -> (owner: String, token: String)?
     let deviceId: String
-    private var owner = ""
+    var owner = ""
     private var operations: [String: Task<Void, Never>] = [:]
     private var operationIds: [String: UUID] = [:]
     private var approvals: [String: CheckedContinuation<String?, Never>] = [:]
@@ -307,7 +311,7 @@ final class AskConversationModel: ObservableObject {
     var canSendLauncher: Bool { launcherDraft.canSend && !isLoadingAttachments(launcher: true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
 
     /// The account session; switching accounts resets the model first.
-    private func credentials() -> AskRoute? {
+    func credentials() -> AskRoute? {
         guard let current = session() else { error = L("ask.loginRequired"); return nil }
         if owner != current.owner { resetSession(); owner = current.owner }
         return AskRoute(account: current.owner, owner: current.owner, token: current.token)
@@ -315,13 +319,15 @@ final class AskConversationModel: ObservableObject {
 
     /// The session for one conversation: the local engine for a conversation kept on
     /// this Mac, otherwise the Cloud account. A new conversation (nil) follows the draft.
-    private func credentials(for id: String?) -> AskRoute? {
+    func credentials(for id: String?) -> AskRoute? {
         guard let account = credentials() else { return nil }
         let local = id.map(isLocal) ?? storesLocally(launcher: false)
         return local ? account.local : account
     }
 
     func resetSession() {
+        recoveryGeneration = UUID(); recoveryWorking = false; inspectingRecovery = false
+        recoveryEntries = [:]; restoredHistory = []
         capturedContentFeedbackTasks.values.forEach { $0.cancel() }
         capturedContentFeedbackTasks = [:]
         capturedContentChanges = [:]
@@ -331,7 +337,7 @@ final class AskConversationModel: ObservableObject {
         pullRefreshID = nil; isRefreshingHistory = false
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]
         approvals.values.forEach { $0.resume(returning: nil) }; approvals = [:]; approvalRequests = [:]; approvalStore.reset()
-        inferenceReceipts = [:]; inferenceUsage = [:]
+        inferenceUsage = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
         sendQueue = AskSendQueue(); steeringIds = []
         screenshotConsent = [:]
@@ -597,6 +603,8 @@ final class AskConversationModel: ObservableObject {
             let merged = sanitizedMemory(snapshots[id]?.reconciling(cached) ?? cached,
                                          account: current.account, local: current.token.isEmpty)
             selected = merged; snapshots[id] = merged
+            restoredHistory.insert(id)
+            await refreshRecovery(merged, route: current)
         }
         draft = drafts[id] ?? savedDraft ?? .followUp
         do {
@@ -610,6 +618,9 @@ final class AskConversationModel: ObservableObject {
                                             account: current.account, local: current.token.isEmpty)
             guard generation == selectionGeneration else { return }
             selected = snapshots[id] ?? latest; isLoadingSelection = false
+            restoredHistory.insert(id)
+            await refreshRecovery(selected ?? latest, route: current)
+            guard generation == selectionGeneration, owner == current.account else { return }
             switchToVisionModelIfNeeded(launcher: false); normalizeScreenshotChoices(); error = operationErrors[id]
             queueDidSettle(id)
             // Observe active runs without resuming desktop tools or inference.
@@ -802,6 +813,11 @@ final class AskConversationModel: ObservableObject {
         selectionObservation?.cancel(); selectionObservation = nil
         guard let value = selected, !busyIds.contains(value.id),
               let current = credentials(for: value.id) else { return }
+        if canRetransmitReceipts {
+            Task { await retransmitSavedReceipts() }
+            return
+        }
+        guard !recoveryBlocksResume(value) else { inspectingRecovery = true; return }
         let id = value.id
         let retryModelRef = modelReference(launcher: false)
         if pendingSends[id] == nil, let run = value.run, ["failed", "cancelled"].contains(run.status),
@@ -857,7 +873,7 @@ final class AskConversationModel: ObservableObject {
     /// turn that produced it, so an older answer could not be replaced without
     /// silently discarding the turns that follow it.
     var regenerableAnswerId: String? {
-        guard let value = selected, !isLoadingSelection, !isBusy else { return nil }
+        guard let value = selected, !isLoadingSelection, !isBusy, !recoveryBlocksResume(value) else { return nil }
         guard pendingSends[value.id] == nil, value.run?.isActive != true else { return nil }
         guard value.messages.last?.role != "user" else { return nil }
         guard let answer = value.messages.last(where: { $0.role == "assistant" }), !answer.text.isEmpty else { return nil }
@@ -874,6 +890,7 @@ final class AskConversationModel: ObservableObject {
         selectionObservation?.cancel(); selectionObservation = nil
         guard let value = selected, !busyIds.contains(value.id),
               let current = credentials(for: value.id) else { return }
+        guard !recoveryBlocksResume(value) else { inspectingRecovery = true; return }
         let id = value.id
         let modelRef = modelReference(launcher: false)
         busyIds.insert(id); error = nil; operationErrors[id] = nil
@@ -909,9 +926,10 @@ final class AskConversationModel: ObservableObject {
         return value
     }
 
-    private func accept(_ value: AskConversation, route: AskRoute) async throws {
+    func accept(_ value: AskConversation, route: AskRoute) async throws {
         try Task.checkCancellation()
-        guard owner == route.account else { throw CancellationError() }
+        guard owner == route.account, session()?.owner == route.account,
+              !deletedConversationIDs.contains(value.id) else { throw CancellationError() }
         if let previous = snapshots[value.id], !value.isNewer(than: previous) { return }
         var value = snapshots[value.id]?.reconciling(value, preservingEqualRevisionContent: true) ?? value
         value = sanitizedMemory(value, account: route.account, local: route.token.isEmpty)
@@ -931,6 +949,7 @@ final class AskConversationModel: ObservableObject {
             inferenceProgress[value.id] = nil; progressInferenceIDs[value.id] = nil
         }
         updateSummary(value)
+        await refreshRecovery(value, route: route)
         if value.run?.isActive == false, sendQueue.messages(value.id).isEmpty == false || sendQueue.steeredMessages(value.id).isEmpty == false {
             queueDidSettle(value.id)
         } else {
@@ -959,7 +978,10 @@ final class AskConversationModel: ObservableObject {
             value = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
             try await accept(value, route: current)
             value = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
+            // A monitor can have advanced while this response was in flight.
+            if let latest = snapshots[value.id] { value = latest }
             guard let run = value.run, run.isActive else { return }
+            guard !run.needsRecoveryInspection else { throw AskRecoveryError.unknown }
             if run.status == "running" {
                 try await Task.sleep(for: .seconds(1))
                 value = try await api.conversation(id: value.id, token: current.token)
@@ -973,14 +995,29 @@ final class AskConversationModel: ObservableObject {
             }
             tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id)
             if run.status == "waiting_inference", let inference = run.inference {
-                guard let reference = run.modelRef,
-                      let (provider, model) = modelLibrary.registry.resolve(reference) else {
-                    value = try await api.inferenceResult(conversationId: value.id, request: AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: "", failed: true), token: current.token)
-                    try await accept(value, route: current)
-                    throw AskLocalError.message(L("ask.models.unavailable"))
+                let identity = AskExecutionIdentity(owner: current.account, conversation: value, run: run,
+                                                    callId: inference.id, kind: "model")
+                let saved = try await cache.execution(id: identity.key, owner: current.owner)
+                var receipt: AskInferenceResult?
+                if let saved {
+                    guard saved.permits(identity), case .inference(let persisted) = saved.receipt else {
+                        throw AskRecoveryError.unknown
+                    }
+                    receipt = persisted
                 }
-                var receipt = inferenceReceipts[inference.id]
                 if receipt == nil {
+                    guard let reference = run.modelRef,
+                          let (provider, model) = modelLibrary.registry.resolve(reference) else {
+                        throw AskLocalError.message(L("ask.models.unavailable"))
+                    }
+                    let audit = AskExecutionAudit(identity: identity, toolVersion: run.modelRef ?? "model", toolName: "model",
+                                                  argumentsHash: AskToolPolicy.digest(inference.payload))
+                    guard try await cache.claimExecution(audit, owner: current.owner) else { throw AskRecoveryError.unknown }
+                    try Task.checkCancellation()
+                    guard session()?.owner == current.account else { throw CancellationError() }
+                    guard snapshots[value.id]?.run?.id == run.id,
+                          snapshots[value.id]?.run?.status == "waiting_inference",
+                          snapshots[value.id]?.run?.inference?.id == inference.id else { return }
                     do {
                         let hasImage = inference.payload.contains("image_url")
                         if let reason = modelLibrary.selectionReason(
@@ -991,7 +1028,9 @@ final class AskConversationModel: ObservableObject {
                         progressInferenceIDs[value.id] = inference.id
                         inferenceProgress[value.id] = AskStreamProgress()
                         let conversationID = value.id
-                        let payload = try AskContextPlanner.devicePayload(inference.payload, model: model, budgeted: run.budgetEnabled == true)
+                        let currentPayload = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
+                            .run?.inference?.payload ?? inference.payload
+                        let payload = try AskContextPlanner.devicePayload(currentPayload, model: model, budgeted: run.budgetEnabled == true)
                         let (text, calls) = try await customInference.complete(provider: provider,
                             connection: modelLibrary.connection(provider, model: model), payload: payload,
                             onUsage: { [weak self] usage in await self?.recordInferenceUsage(usage, id: inference.id, owner: current.account) },
@@ -1006,18 +1045,26 @@ final class AskConversationModel: ObservableObject {
                         let progress = inferenceProgress[value.id]
                         receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: progress?.text ?? "", usage: inferenceUsage[inference.id], failed: true, reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
                     }
-                    try Task.checkCancellation()
-                    guard owner == current.account else { throw CancellationError() }
-                    inferenceReceipts[inference.id] = receipt
+                    // Persist under the original binding even if logout/cancel raced completion.
+                    try await cache.saveReceipt(.inference(receipt!), identity: identity, owner: current.owner)
                 }
+                try Task.checkCancellation()
+                guard session()?.owner == current.account else { throw CancellationError() }
                 value = try await api.inferenceResult(conversationId: value.id, request: receipt!, token: current.token)
-                inferenceReceipts[inference.id] = nil; inferenceUsage[inference.id] = nil
+                try await cache.recordExecution(id: identity.key, event: .acknowledged, owner: current.owner)
+                inferenceUsage[inference.id] = nil
                 continue
             }
             guard let call = run.pending.first else { return }
-            let journalKey = run.id + "/" + call.id
-            try await cache.associateTool(id: journalKey, conversationId: value.id, owner: current.owner)
-            var result = try await cache.toolResult(id: journalKey, owner: current.owner)
+            let identity = AskExecutionIdentity(owner: current.account, conversation: value, run: run,
+                                                callId: call.id, kind: "tool")
+            let journalKey = identity.key
+            let saved = try await cache.execution(id: journalKey, owner: current.owner)
+            var result: AskToolResultRequest?
+            if let saved {
+                guard saved.permits(identity), case .tool(let persisted) = saved.receipt else { throw AskRecoveryError.unknown }
+                result = persisted
+            }
             if result == nil {
                 // Project and artifact scopes belong to the account, as `artifactAccess` reads them,
                 // not to the cache partition a private conversation uses.
@@ -1059,21 +1106,19 @@ final class AskConversationModel: ObservableObject {
                                                              outcome: .init(status: "denied")))
                 let latest = try await api.conversation(id: value.id, token: current.token)
                 try await accept(latest, route: current)
-                guard latest.run?.id == run.id, latest.run?.status == "waiting_tool",
-                      latest.run?.pending.first == call else {
+                guard snapshots[value.id]?.run?.id == run.id, snapshots[value.id]?.run?.status == "waiting_tool",
+                      snapshots[value.id]?.run?.pending.first == call else {
                     approvalStore.revoke(conversation: value.id)
                     return
                 }
                 try Task.checkCancellation()
                 guard session()?.owner == current.account else { throw CancellationError() }
+                let audit = AskExecutionAudit(identity: identity, toolVersion: binding.toolVersion, toolName: call.function.name,
+                                              argumentsHash: request.context.argumentsHash,
+                                              approvalId: grantID, approvedAt: grantID == nil ? nil : approvalStore.now())
+                guard try await cache.claimExecution(audit, owner: current.owner) else { throw AskRecoveryError.unknown }
                 if let grantID {
                     result?.harness?.outcome?.status = "unknown"
-                    guard try await cache.claimTool(id: journalKey, owner: current.owner) else {
-                        result?.content = "A previous execution was interrupted; its outcome is unknown. Do not replay it. Ask the user to inspect the result."
-                        try await cache.saveToolResult(result!, owner: current.owner)
-                        value = try await api.result(conversationId: value.id, request: result!, token: current.token)
-                        continue
-                    }
                     do {
                         if call.function.name == "computer" || call.function.name == "browser" {
                             guard controllingConversationId == nil else { throw AskLocalError.message(L("ask.tool.busy")) }
@@ -1093,11 +1138,13 @@ final class AskConversationModel: ObservableObject {
                                 throw AskLocalError.message(L("ask.budget.stopped", L("ask.budget.reason.duration")))
                             }
                             guard self.session()?.owner == current.account,
+                                  self.snapshots[identity.conversationId]?.run?.id == run.id,
+                                  self.snapshots[identity.conversationId]?.run?.status == "waiting_tool",
+                                  self.snapshots[identity.conversationId]?.run?.pending.first == call,
                                   self.approvalStore.validateDispatch(grantID, for: request) else {
                                 throw AskLocalError.message(L("ask.approval.changed"))
                             }
                         }
-                        try Task.checkCancellation()
                         result?.record(output)
                     } catch is CancellationError { throw CancellationError() }
                     catch {
@@ -1115,10 +1162,12 @@ final class AskConversationModel: ObservableObject {
                     }
                     if controllingConversationId == value.id { controllingConversationId = nil; onControlChanged?(false) }
                 }
-                try await cache.saveToolResult(result!, owner: current.owner)
+                try await cache.saveReceipt(.tool(result!), identity: identity, owner: current.owner)
             }
             try Task.checkCancellation()
+            guard session()?.owner == current.account else { throw CancellationError() }
             value = try await api.result(conversationId: value.id, request: result!, token: current.token)
+            try await cache.recordExecution(id: journalKey, event: .acknowledged, owner: current.owner)
         }
     }
 
@@ -1254,10 +1303,13 @@ final class AskConversationModel: ObservableObject {
         } catch { self.error = error.localizedDescription }
     }
 
-    private func reportOperationError(_ error: Error, id: String, owner expectedOwner: String) {
+    func reportOperationError(_ error: Error, id: String, owner expectedOwner: String) {
         guard owner == expectedOwner else { return }
         operationErrors[id] = error.localizedDescription
         if selectedId == id { self.error = error.localizedDescription }
+        if let value = snapshots[id], let route = credentials(for: id) {
+            Task { await refreshRecovery(value, route: route) }
+        }
     }
 
     private func finishOperation(_ id: String, operationId: UUID) {
@@ -1340,7 +1392,9 @@ extension AskConversationModel {
     var isQueuePaused: Bool { selectedId.map { sendQueue.isPaused($0) } ?? false }
 
     /// "Jump the queue" needs a run that is still working.
-    var canSteer: Bool { selected?.run?.isActive == true && !isLoadingSelection }
+    var canSteer: Bool {
+        selected.map { $0.run?.isActive == true && !recoveryBlocksResume($0) } == true && !isLoadingSelection
+    }
 
     func removeQueued(_ itemId: String) {
         guard let id = selectedId else { return }
@@ -1392,7 +1446,7 @@ extension AskConversationModel {
     /// A run that already ended gets it as the next turn instead.
     func steerQueued(_ itemId: String) {
         guard let value = selected, let current = credentials(for: value.id), let run = value.run, run.isActive,
-              !steeringIds.contains(itemId), sendQueue.messages(value.id).contains(where: { $0.id == itemId }) else { return }
+              !recoveryBlocksResume(value), !steeringIds.contains(itemId), sendQueue.messages(value.id).contains(where: { $0.id == itemId }) else { return }
         if sendQueue.isEditing(value.id, itemId: itemId) { saveQueuedEdit(advancing: false) }
         guard let latest = sendQueue.messages(value.id).first(where: { $0.id == itemId }) else { return }
         let id = value.id
@@ -1433,6 +1487,7 @@ extension AskConversationModel {
     func queueDidSettle(_ id: String) {
         guard let value = snapshots[id] ?? (selected?.id == id ? selected : nil) else { return }
         sendQueue.reconcile(id, transcript: value.messages, run: value.run)
+        if recoveryBlocksResume(value) { sendQueue.pause(id); return }
         guard selectedId == id, selected != nil, !isLoadingSelection, !busyIds.contains(id), pendingSends[id] == nil,
               value.run?.isActive != true, let next = sendQueue.next(for: id), !steeringIds.contains(next.id),
               let item = sendQueue.take(next.id, from: id) else { return }

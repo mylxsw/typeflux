@@ -21,13 +21,13 @@ private struct AskHTTPProber: CloudEndpointProbing {
 
 @Suite("Ask HTTP contract")
 struct AskAPIClientTests {
-    @Test func streamingTransportDecodesSnapshotsAndCompactUpdates() async throws {
+    @Test(arguments: [false, true]) func streamingTransportDecodesSnapshotsAndCompactUpdates(recovery: Bool) async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [AskEventsURLProtocol.self]
         let selector = CloudEndpointSelector(baseURLs: [URL(string: "https://ask.example")!], prober: AskHTTPProber())
-        let api = AskAPIClient(executor: CloudRequestExecutor(selector: selector), streamSession: URLSession(configuration: configuration))
+        let api = AskAPIClient(executor: CloudRequestExecutor(selector: selector), streamSession: URLSession(configuration: configuration), recoveryMetadataEnabled: recovery)
         let collector = AskEventsCollector()
-        try await api.observe(id: "fixture", token: "fixture-token") { value in await collector.append(value) }
+        try await api.observe(id: "fixture", token: recovery ? "fixture-token-cap" : "fixture-token") { value in await collector.append(value) }
         let values = await collector.values
         #expect(values.map(\.revision) == [1, 2, 3])
         #expect(values[1].messages.first?.text == "Question")
@@ -39,6 +39,17 @@ struct AskAPIClientTests {
     private func client(_ stub: AskHTTPStub) -> AskAPIClient {
         let selector = CloudEndpointSelector(baseURLs: [URL(string: "https://ask.example")!], prober: AskHTTPProber())
         return AskAPIClient(executor: CloudRequestExecutor(selector: selector, session: stub))
+    }
+
+    @Test(arguments: [false, true]) func recoveryMetadataHeaderIsAnExplicitDisplayOptIn(enabled: Bool) async throws {
+        let stub = AskHTTPStub()
+        await stub.configure(payload: Data(#"{"code":"OK","data":[]}"#.utf8))
+        let selector = CloudEndpointSelector(baseURLs: [URL(string: "https://ask.example")!], prober: AskHTTPProber())
+        let api = AskAPIClient(executor: CloudRequestExecutor(selector: selector, session: stub), recoveryMetadataEnabled: enabled)
+        _ = try await api.list(token: "token")
+        let request = try #require(await stub.requests.first)
+        #expect(request.value(forHTTPHeaderField: "X-Typeflux-Capabilities") == (enabled ? "run_recovery_v1" : nil))
+        #expect(!AskAPIClient().recoveryMetadataEnabled)
     }
 
     @Test func historyPaginationIsAQueryAndAuthenticationIsAttached() async throws {
@@ -77,6 +88,58 @@ struct AskAPIClientTests {
         #expect(try AskCoding.decoder().decode(AskToolResultRequest.self, from: requests[2].httpBody!) == result)
     }
 
+    @Test func persistedInferenceAndCancelPreserveOriginalBindingOverHTTP() async throws {
+        let stub = AskHTTPStub(), api = client(stub)
+        let value = AskRecoveryFixture.conversation(model: true)
+        try await stub.configure(payload: Data("{\"code\":\"OK\",\"data\":".utf8)
+            + (AskCoding.encoder().encode(value)) + Data("}".utf8))
+        let receipt = AskInferenceResult(
+            runId: "original-run",
+            deviceId: "original-device",
+            inferenceId: "original-operation",
+            content: "Saved answer",
+            usage: .init(promptTokens: 5, completionTokens: 7, totalTokens: 12)
+        )
+        _ = try await api.inferenceResult(conversationId: value.id, request: receipt, token: "token")
+        _ = try await api.cancel(conversationId: value.id, runId: receipt.runId, partial: receipt, token: "token")
+        _ = try await api.regenerate(
+            conversationId: value.id,
+            request: .init(messageId: "answer", deviceId: "device"),
+            token: "token"
+        )
+        let steering = AskSteerRequest(
+            runId: "run",
+            message: .init(id: "new", deviceId: "device", text: "Next step", tools: [])
+        )
+        _ = try await api.steer(conversationId: value.id, request: steering, token: "token")
+        let requests = await stub.requests
+        #expect(requests.map { $0.url!.lastPathComponent } == ["inference-results", "cancel", "regenerate", "steer"])
+        #expect(try AskCoding.decoder()
+            .decode(AskInferenceResult.self, from: #require(requests[0].httpBody)) == receipt)
+        struct Cancellation: Decodable { var runId: String; var partial: AskInferenceResult }
+        let cancellation = try AskCoding.decoder().decode(Cancellation.self, from: #require(requests[1].httpBody))
+        #expect(cancellation.runId == receipt.runId && cancellation.partial == receipt)
+        #expect(try AskCoding.decoder().decode(AskSteerRequest.self, from: #require(requests[3].httpBody)) == steering)
+    }
+
+    @Test func recoveryUsageInspectionScopesOldRunAndKeepsCatalogQueriesCompatible() async throws {
+        let stub = AskHTTPStub(), api = client(stub)
+        await stub.configure(payload: Data(#"{"code":"OK","data":{"items":[]}}"#.utf8))
+        _ = try await api.usage(id: "conversation", runId: "original /?&", cursor: 42, token: "token")
+        _ = try await api.usage(id: "conversation", runId: nil, cursor: nil, token: "token")
+        let usage = await stub.requests
+        let usageURL = try #require(usage[0].url)
+        let query = try #require(URLComponents(url: usageURL, resolvingAgainstBaseURL: false)?.queryItems)
+        #expect(query.first { $0.name == "run_id" }?.value == "original /?&")
+        #expect(query.first { $0.name == "cursor" }?.value == "42")
+        #expect(usage[1].url?.query == "cursor=0")
+        await stub.configure(payload: Data(#"{"code":"OK","data":[]}"#.utf8))
+        _ = try await api.models(token: "token")
+        _ = try await api.models(token: "token", scenario: "rewrite")
+        _ = try await api.models(token: "token", scenario: "ask")
+        let requests = await stub.requests
+        #expect(requests.suffix(3).map { $0.url?.query } == [nil, "scenario=rewrite", "scenario=ask"])
+    }
     @Test func typedResultUsesTrustedOptInAndRetainsLegacyReceipt() async throws {
         for enabled in [false, true] {
             let stub = AskHTTPStub()
@@ -141,7 +204,10 @@ private final class AskEventsURLProtocol: URLProtocol, @unchecked Sendable {
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
-        let authorized = request.value(forHTTPHeaderField: "Authorization") == "Bearer fixture-token" &&
+        let token = request.value(forHTTPHeaderField: "Authorization")
+        let capability = request.value(forHTTPHeaderField: "X-Typeflux-Capabilities")
+        let authorized = ((token == "Bearer fixture-token" && capability == nil)
+            || (token == "Bearer fixture-token-cap" && capability == "run_recovery_v1")) &&
             request.url?.path == "/api/v1/ask/conversations/fixture/events" &&
             request.value(forHTTPHeaderField: "Accept") == "text/event-stream"
         let response = HTTPURLResponse(url: request.url!, statusCode: authorized ? 200 : 401, httpVersion: nil,
