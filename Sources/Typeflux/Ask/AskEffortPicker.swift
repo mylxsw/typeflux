@@ -7,13 +7,12 @@ extension AskTheme {
         dark: NSColor(calibratedRed: 0.71, green: 0.55, blue: 1.0, alpha: 1)
     )
 
-    /// The colour a reasoning level's name takes in the chip and the card title.
-    static func reasoningText(_ effort: AskReasoningEffort, defaultColor: Color) -> Color {
-        switch effort {
-        case .providerDefault: defaultColor
-        case .max: reasoningTopText
-        default: accentText
-        }
+    /// The colour a reasoning level's name takes in the card title: violet at the model's
+    /// highest level, the accent below it, `defaultColor` for "Auto".
+    static func reasoningText(_ effort: AskReasoningEffort, in levels: [AskReasoningEffort],
+                              defaultColor: Color) -> Color {
+        if effort == .providerDefault { return defaultColor }
+        return effort.isTop(in: levels) ? reasoningTopText : accentText
     }
 }
 
@@ -95,7 +94,7 @@ struct AskModelEffortCard: View {
                     Text(levels.isEmpty ? library.name(for: liveReference) : shown.label)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(levels.isEmpty ? StudioTheme.textPrimary
-                            : AskTheme.reasoningText(shown, defaultColor: StudioTheme.textPrimary))
+                            : AskTheme.reasoningText(shown, in: levels, defaultColor: StudioTheme.textPrimary))
                         .lineLimit(1)
                         .animation(.easeOut(duration: 0.2), value: shown)
                     Button { page = .models } label: {
@@ -220,7 +219,7 @@ struct AskEffortSlider: View {
                         .position(x: Self.knobCenter(index: stop, count: levels.count, width: width), y: Self.height / 2)
                         .opacity(!auto && stop <= index ? 0 : 1)
                 }
-                AskLiquidFill(top: effort == .max)
+                AskLiquidFill(top: effort.nearest(in: levels).isTop(in: levels))
                     .frame(width: auto ? 0 : Self.fillWidth(knobCenter: center, width: width), height: Self.height)
                     .clipShape(Capsule())
                     .opacity(auto ? 0 : 1)

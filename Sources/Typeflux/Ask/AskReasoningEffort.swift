@@ -50,6 +50,12 @@ enum AskReasoningEffort: String, CaseIterable {
         } ?? self
     }
 
+    /// Whether this is the highest level `levels` offers. Whatever the model's top is, it
+    /// takes the violet "Ultra" look.
+    func isTop(in levels: [AskReasoningEffort]) -> Bool {
+        self != .providerDefault && self == levels.last
+    }
+
     /// The value sent with the request: the nearest level the model accepts, or nothing.
     func requestValue(for model: RegisteredModel?) -> String? {
         let offered = Self.levels(for: model)

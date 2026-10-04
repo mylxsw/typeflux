@@ -25,10 +25,14 @@ struct AskModelMenu: View {
 
     private var loggedIn: Bool { cloudAvailable ?? auth.isLoggedIn }
 
+    private var effortLevels: [AskReasoningEffort] {
+        AskReasoningEffort.levels(for: library.registry.resolve(reference)?.1)
+    }
+
     /// The level shown after the model name: nothing for "Auto" or a model without levels.
     private var shownEffort: AskReasoningEffort? {
         guard let effort else { return nil }
-        let shown = effort.wrappedValue.nearest(in: AskReasoningEffort.levels(for: library.registry.resolve(reference)?.1))
+        let shown = effort.wrappedValue.nearest(in: effortLevels)
         return shown == .providerDefault ? nil : shown
     }
 
@@ -61,8 +65,8 @@ struct AskModelMenu: View {
                 if let shownEffort {
                     Text(shownEffort.label)
                         .font(.system(size: 13.5, weight: .regular))
-                        .foregroundStyle(AskTheme.reasoningText(shownEffort == .max ? .max : .providerDefault,
-                                                                defaultColor: StudioTheme.textSecondary))
+                        .foregroundStyle(shownEffort.isTop(in: effortLevels)
+                                         ? AskTheme.reasoningTopText : StudioTheme.textSecondary)
                         .lineLimit(1).fixedSize()
                 }
                 if fieldStyle {
