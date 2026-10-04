@@ -71,15 +71,15 @@ h2 { font-size: 14px; margin: 26px 0 10px; }
 .send { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--hover); color: var(--text-3); }
 
 /* card */
-.card { width: 340px; background: var(--menu); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: 14px 14px 16px; }
+.card { width: 272px; background: var(--menu); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: 14px 14px 16px; }
 .card.float { position: absolute; z-index: 10; animation: pop .18s var(--ease); }
 @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
-.head { display: grid; grid-template-columns: 30px 1fr 30px; align-items: center; }
+.head { display: grid; grid-template-columns: 24px 1fr 24px; align-items: center; }
 .head .mid { text-align: center; }
-.head .lvl { font-size: 18px; font-weight: 650; color: var(--accent-text); letter-spacing: .01em; transition: color .25s; }
+.head .lvl { font-size: 14px; font-weight: 650; color: var(--accent-text); letter-spacing: .01em; transition: color .25s; }
 .head .lvl.auto { color: var(--text); }
 .head .lvl.ultra { color: var(--ultra-text); }
-.head .model { margin-top: 2px; font-size: 12.5px; color: var(--text-2); display: inline-flex; align-items: center; gap: 2px; border-radius: 6px; padding: 1px 6px; }
+.head .model { margin-top: 1px; font-size: 11.5px; color: var(--text-2); display: inline-flex; align-items: center; gap: 2px; border-radius: 6px; padding: 1px 6px; }
 .head .model:hover { background: var(--hover); color: var(--text); }
 .head .reset { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: var(--text-2); }
 .head .reset:hover:not(:disabled) { background: var(--hover); color: var(--text); }
@@ -87,16 +87,16 @@ h2 { font-size: 14px; margin: 26px 0 10px; }
 .head .reset svg { width: 16px; height: 16px; }
 
 /* slider: a recessed track, a liquid fill drawn on canvas, a raised knob */
-.slider { position: relative; height: 38px; margin: 14px 0 0; border-radius: 999px; background: var(--track);
+.slider { position: relative; height: 26px; margin: 10px 0 0; border-radius: 999px; background: var(--track);
   box-shadow: inset 0 1px 2px var(--track-edge), inset 0 -1px 0 rgba(255,255,255,.04); cursor: pointer; user-select: none; touch-action: none; }
 .slider.static { cursor: default; }
 .slider canvas { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 999px; }
 .slider .dotm { position: absolute; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%; background: var(--dot); transition: opacity .2s; }
-.slider .knob { position: absolute; top: 3px; width: 32px; height: 32px; margin-left: -16px; border-radius: 50%;
+.slider .knob { position: absolute; top: 3px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%;
   background: radial-gradient(circle at 50% 30%, #ffffff, #f1f1f4 70%, #e2e2e8);
   box-shadow: 0 3px 10px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.3), inset 0 -1px 1px rgba(0,0,0,.08); }
 .slider.auto .knob { background: transparent; box-shadow: none; border: 2px dashed var(--text-3); }
-.caption { margin-top: 12px; font-size: 11.5px; color: var(--text-2); text-align: center; line-height: 1.5; min-height: 18px; }
+.caption { margin-top: 8px; font-size: 11px; color: var(--text-2); text-align: center; line-height: 1.5; min-height: 18px; }
 .unsupported { margin: 14px 0 2px; padding: 10px 12px; border-radius: 10px; background: var(--hover); color: var(--text-2); font-size: 12px; line-height: 1.5; text-align: center; }
 .kbd { font: 11px var(--font); color: var(--text-3); text-align: center; margin-top: 8px; }
 .kbd kbd { font: inherit; padding: 0 5px; border-radius: 4px; background: var(--hover); color: var(--text-2); }
@@ -111,7 +111,7 @@ h2 { font-size: 14px; margin: 26px 0 10px; }
 .ck { color: var(--accent); }
 .hint { position: absolute; left: 50%; bottom: calc(100% + 12px); transform: translateX(-50%); font-size: 12px; color: var(--text-2); background: var(--menu); border: 1px solid var(--border); padding: 5px 12px; border-radius: 999px; box-shadow: var(--shadow); opacity: 0; transition: opacity .25s; white-space: nowrap; pointer-events: none; }
 .hint.show { opacity: 1; }
-.gallery { display: grid; grid-template-columns: repeat(3, 340px); gap: 18px; }
+.gallery { display: grid; grid-template-columns: repeat(3, 272px); gap: 18px; }
 .gallery .lab { font-size: 11.5px; color: var(--text-3); margin: 0 0 6px 4px; }
 </style>
 </head>
@@ -228,7 +228,7 @@ function makeSlider(host, { levels, value, interactive, onChange }) {
   const knob = document.createElement('div'); knob.className = 'knob'; el.appendChild(knob);
   host.appendChild(el);
   const st = { levels, value, fill: null, knobX: null, particles: [], t0: performance.now(), el, canvas, dots, knob, alive: true };
-  const W = () => el.clientWidth, R = 16, PAD = 3;
+  const W = () => el.clientWidth, R = 10, PAD = 3;
   const xOf = i => levels.length === 1 ? W() / 2 : PAD + R + i * (W() - 2 * (PAD + R)) / (levels.length - 1);
   const targetIndex = () => st.value === 'auto' ? Math.floor((levels.length - 1) / 2) : levels.indexOf(st.value);
   st.layout = () => {
@@ -237,7 +237,7 @@ function makeSlider(host, { levels, value, interactive, onChange }) {
   };
   st.set = v => { st.value = v; st.layout(); };
   // Particles drift through the fill like light in water.
-  for (let i = 0; i < 34; i++) st.particles.push({ x: Math.random() * 340, y: 7 + Math.random() * 24, r: .6 + Math.random() * 1.1,
+  for (let i = 0; i < 34; i++) st.particles.push({ x: Math.random() * 340, y: 5 + Math.random() * 16, r: .6 + Math.random() * 1.1,
     v: 8 + Math.random() * 16, ph: Math.random() * 6.28, tw: .6 + Math.random() * 1.6 });
   st.draw = now => {
     const w = W(), h = el.clientHeight, dpr = window.devicePixelRatio || 1;

@@ -18,6 +18,7 @@ extension AskCloudModel {
         RegisteredModel(id: id, name: name, reference: reference,
                         vision: vision ?? (modelVersion == nil && id == "default" ? true : nil),
                         scenarios: scenarios, pricing: pricing,
-                        contextWindowTokens: contextWindowTokens, maxOutputTokens: maxOutputTokens, reasoning: capabilities?["reasoning"])
+                        contextWindowTokens: contextWindowTokens, maxOutputTokens: maxOutputTokens, reasoning: capabilities?["reasoning"],
+                        reasoningEfforts: reasoningEfforts)
     }
 }

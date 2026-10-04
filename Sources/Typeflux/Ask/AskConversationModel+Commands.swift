@@ -51,8 +51,9 @@ extension AskConversationModel {
                   vision: modelLibrary.imageCapability(reference) == .supported)
         }
         context.currentModel = reference
-        context.reasoningAvailable = AskReasoningEffort.isAvailable(for: modelLibrary.registry.resolve(reference)?.1)
-        context.reasoning = reasoningEffort
+        context.reasoningLevels = reasoningLevels(launcher: launcher)
+        context.reasoningAvailable = !context.reasoningLevels.isEmpty
+        context.reasoning = displayedReasoningEffort(launcher: launcher)
         context.localMode = storesLocally(launcher: launcher)
         context.storageLocked = canChangeStorage(launcher: launcher) ? nil
             : L(isSignedIn ? "ask.storage.locked" : "ask.storage.signedOut")
@@ -189,6 +190,27 @@ extension AskConversationModel {
 
     /// Shows a short confirmation in the composer's footer, then clears it unless
     /// a newer one replaced it. VoiceOver hears it, since the note is visual only.
+    /// The reasoning levels this composer's model offers, lightest first.
+    func reasoningLevels(launcher: Bool) -> [AskReasoningEffort] {
+        AskReasoningEffort.levels(for: modelLibrary.registry.resolve(modelReference(launcher: launcher))?.1)
+    }
+
+    /// The effort the next message uses with this composer's model: the chosen one,
+    /// or the closest level the model offers.
+    func displayedReasoningEffort(launcher: Bool) -> AskReasoningEffort {
+        reasoningEffort.nearest(in: reasoningLevels(launcher: launcher))
+    }
+
+    /// A model with fewer levels moves the choice to its closest level, and says so once.
+    func snapReasoningEffort(launcher: Bool) {
+        let levels = reasoningLevels(launcher: launcher)
+        let snapped = reasoningEffort.nearest(in: levels)
+        guard !levels.isEmpty, snapped != reasoningEffort else { return }
+        let from = reasoningEffort
+        reasoningEffort = snapped
+        confirm(L("ask.reasoning.snapped", from.label, snapped.label))
+    }
+
     func confirm(_ text: String, for duration: Duration = .milliseconds(1600)) {
         commandFeedback = text
         AskAnnouncer.announce(text)

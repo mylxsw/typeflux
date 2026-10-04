@@ -52,10 +52,11 @@ struct AskGlassTests {
         #expect(AskVoiceButton.Appearance.fill(phase: .listening, hovered: false) == AskTheme.accent.opacity(0.22))
     }
 
-    @Test func onlyHighReasoningIsTinted() {
-        #expect(AskReasoningMenu.labelColor(.high) == AskTheme.accentText)
-        for effort in [AskReasoningEffort.providerDefault, .low, .medium] {
-            #expect(AskReasoningMenu.labelColor(effort) == StudioTheme.textSecondary)
+    @Test func onlyTheTopReasoningLevelIsViolet() {
+        #expect(AskTheme.reasoningText(.max, defaultColor: StudioTheme.textSecondary) == AskTheme.reasoningTopText)
+        #expect(AskTheme.reasoningText(.providerDefault, defaultColor: StudioTheme.textSecondary) == StudioTheme.textSecondary)
+        for effort in [AskReasoningEffort.low, .medium, .high, .xhigh] {
+            #expect(AskTheme.reasoningText(effort, defaultColor: StudioTheme.textSecondary) == AskTheme.accentText)
         }
     }
 

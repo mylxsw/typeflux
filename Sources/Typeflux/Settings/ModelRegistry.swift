@@ -12,6 +12,9 @@ struct RegisteredModel: Codable, Equatable, Identifiable, Sendable {
     var contextWindowTokens: Int?
     var maxOutputTokens: Int?
     var reasoning: Bool?
+    /// Reasoning efforts a Cloud model offers (`AskReasoningEffort` raw values); nil for
+    /// catalogs that predate levels and for the user's own models.
+    var reasoningEfforts: [String]? = nil
 
     var displayName: String {
         if let label = pricing?.label { return name + " · " + label }
