@@ -38,11 +38,18 @@ struct AskRecoveryRenderTests {
         #expect(!text.contains("approval"))
         #expect(!text.contains(String(audit.argumentsHash.prefix(12))))
 
+        if ProcessInfo.processInfo.environment["TYPEFLUX_RECOVERY_SCREENSHOTS"] != nil {
+            try renderInspectorChinese(fixture.model, name: "inspect-unknown")
+        }
+
         await fixture.model.endRecoveryRun()
         #expect(fixture.model.selected?.run?.status == "cancelled")
         let ended = try render(AskRecoveryInspector(model: fixture.model), name: "inspect-ended")
         #expect(ended.contains(localized("ask.recovery.newRequest")))
         #expect(!ended.contains(localized("ask.recovery.end")))
+        if ProcessInfo.processInfo.environment["TYPEFLUX_RECOVERY_SCREENSHOTS"] != nil {
+            try renderInspectorChinese(fixture.model, name: "inspect-ended")
+        }
         let feedback = L("ask.recovery.newRequestBody")
         fixture.model.prepareRecoveryRequest()
         #expect(fixture.model.commandFeedback == feedback)
@@ -191,15 +198,23 @@ struct AskRecoveryRenderTests {
             await fixture.model.refreshHistory()
             await fixture.model.select(value.id, reload: true)
             fixture.model.error = localized("ask.recovery.unknownBody", language: .simplifiedChinese)
-            try await renderConversation(
-                fixture.model,
-                name: "unknown-stopped-chat-zh",
-                language: .simplifiedChinese,
-                size: .init(
-                    width: 1100,
-                    height: 740
+            for (name, dark, width) in [
+                ("unknown-stopped-chat-zh", false, 1100.0),
+                ("unknown-stopped-chat-dark-zh", true, 1100.0),
+                ("unknown-stopped-chat-narrow-zh", false, 360.0)
+            ] {
+                let chinese = try await renderConversation(
+                    fixture.model,
+                    name: name,
+                    dark: dark,
+                    language: .simplifiedChinese,
+                    size: .init(width: width, height: width == 360 ? 640 : 740)
                 )
-            )
+                #expect(readable(chinese).contains(readable(localized("ask.recovery.unknown",
+                                                                      language: .simplifiedChinese))))
+                #expect(readable(chinese).contains(readable(localized("ask.recovery.inspect",
+                                                                      language: .simplifiedChinese))))
+            }
         }
     }
 
@@ -224,6 +239,104 @@ struct AskRecoveryRenderTests {
 }
 
 extension AskRecoveryRenderTests {
+    @Test func `narrow recovery cards keep guidance and actions readable`() throws {
+        let value = AskRecoveryFixture.conversation()
+        let audit = AskRecoveryFixture.audit(value)
+        let savedEntry = AskExecutionEntry(id: "run/call", audit: audit, receipt: AskRecoveryFixture.receipt(value))
+        let unknownEntry = AskExecutionEntry(id: "run/call", audit: audit, receipt: nil)
+        let unknown = AskRecoveryPresentation(run: value.run, entries: [unknownEntry], deviceId: "device", local: true)
+        let saved = AskRecoveryPresentation(run: value.run, entries: [savedEntry], deviceId: "device", local: true)
+        let paused = AskRecoveryPresentation(run: value.run, entries: [], deviceId: "device", local: true)
+        let cases = [
+            NarrowCase(
+                name: "unknown",
+                card: AskRecoveryCard(presentation: unknown),
+                actionKey: "ask.recovery.inspect"
+            ),
+            NarrowCase(name: "saved", card: AskRecoveryCard(presentation: saved, canRetransmit: true),
+                       actionKey: "ask.recovery.retransmit"),
+            NarrowCase(
+                name: "saved-working",
+                card: AskRecoveryCard(presentation: saved, canRetransmit: true, working: true),
+                actionKey: "ask.recovery.retransmit"
+            ),
+            NarrowCase(name: "paused", card: AskRecoveryCard(presentation: paused, canContinue: true),
+                       actionKey: "ask.recovery.continue")
+        ]
+        for language in [AppLanguage.english, .simplifiedChinese] {
+            for item in cases {
+                let text = try render(
+                    item.card.padding(12),
+                    name: "\(item.name)-narrow-\(language == .english ? "en" : "zh")",
+                    language: language,
+                    size: .init(width: 340, height: 360)
+                )
+                for key in [item.card.presentation.titleKey, item.card.presentation.bodyKey, item.actionKey] {
+                    #expect(readable(text).contains(readable(localized(key, language: language))),
+                            "Missing or clipped \(key) in \(item.name), \(language.rawValue): \(text)")
+                }
+            }
+        }
+    }
+
+    @Test func `narrow inspector keeps complete guidance and footer actions readable`() async throws {
+        let fixture = try AskTestFixture(), value = AskRecoveryFixture.conversation()
+        _ = try await fixture.cache.claimExecution(AskRecoveryFixture.audit(value), owner: "owner")
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        defer { fixture.model.resetSession() }
+
+        for active in [true, false] {
+            if !active {
+                await fixture.model.endRecoveryRun()
+            }
+            for language in [AppLanguage.english, .simplifiedChinese] {
+                let text = try render(
+                    AskRecoveryInspector(model: fixture.model).frame(width: 360),
+                    name: "inspect-\(active ? "active" : "ended")-narrow-\(language == .english ? "en" : "zh")",
+                    language: language,
+                    size: .init(width: 360, height: 560)
+                )
+                let keys = ["ask.recovery.unknown", "ask.recovery.unknownBody", "ask.recovery.checkBody",
+                            active ? "ask.recovery.endBody" : "ask.recovery.newRequestBody",
+                            active ? "ask.recovery.end" : "ask.recovery.newRequest", "ask.recovery.close"]
+                for key in keys {
+                    #expect(readable(text).contains(readable(localized(key, language: language))),
+                            "Missing or clipped \(key) in inspector, \(language.rawValue): \(text)")
+                }
+            }
+        }
+    }
+
+    private struct NarrowCase {
+        let name: String
+        let card: AskRecoveryCard
+        let actionKey: String
+    }
+
+    private func renderInspectorChinese(_ model: AskConversationModel, name: String) throws {
+        for dark in [false, true] {
+            let text = try render(
+                AskRecoveryInspector(model: model),
+                name: "\(name)-\(dark ? "dark-" : "")zh",
+                dark: dark,
+                language: .simplifiedChinese,
+                size: .init(width: 560, height: 560)
+            )
+            let actionKey = model.recoveryPresentation.active ? "ask.recovery.end" : "ask.recovery.newRequest"
+            for key in [model.recoveryPresentation.titleKey, "ask.recovery.checkBody", actionKey] {
+                #expect(readable(text).contains(readable(localized(key, language: .simplifiedChinese))))
+            }
+        }
+    }
+
+    private func readable(_ text: String) -> String {
+        // OCR inserts spaces between wrapped lines and Chinese words. Ignore those
+        // differences while still requiring every word of the guidance and action.
+        text.unicodeScalars.filter { !CharacterSet.whitespacesAndNewlines.contains($0) }
+            .map(String.init).joined()
+    }
+
     private func localized(_ key: String, language: AppLanguage = .english) -> String {
         let bundle = language.bundleLocalizationCandidates.compactMap {
             Bundle.module.path(forResource: $0, ofType: "lproj").flatMap(Bundle.init(path:))
@@ -232,19 +345,19 @@ extension AskRecoveryRenderTests {
     }
 
     @discardableResult
-    private func renderConversation(_ model: AskConversationModel, name: String,
+    private func renderConversation(_ model: AskConversationModel, name: String, dark: Bool = false,
                                     language: AppLanguage = .english, size: NSSize) async throws -> String {
         func content() -> some View {
             AskConversationView(model: model)
                 .environment(\.askGlassMaterialOverride, .opaque)
                 .transaction { $0.animation = nil; $0.disablesAnimations = true }
-                .environment(\.colorScheme, .light)
+                .environment(\.colorScheme, dark ? .dark : .light)
                 .frame(width: size.width, height: size.height)
-                .background(Color.white)
+                .background(AskTheme.surface)
         }
         _ = NSApplication.shared
         let hosting = NSHostingView(rootView: content())
-        hosting.appearance = NSAppearance(named: .aqua)
+        hosting.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         hosting.frame = CGRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -260,7 +373,7 @@ extension AskRecoveryRenderTests {
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         hosting.rootView = content()
         model.objectWillChange.send()
-        return try snapshot(hosting, name: name)
+        return try snapshot(hosting, name: name, language: language)
     }
 
     @discardableResult
@@ -283,14 +396,23 @@ extension AskRecoveryRenderTests {
         window.contentView = hosting
         window.appearance = hosting.appearance
         defer { window.close() }
-        return try snapshot(hosting, name: name)
+        return try snapshot(hosting, name: name, language: language)
     }
 
-    private func snapshot(_ hosting: NSView, name: String) throws -> String {
+    private func snapshot(_ hosting: NSView, name: String, language: AppLanguage) throws -> String {
         hosting.needsLayout = true
         hosting.layoutSubtreeIfNeeded()
         hosting.displayIfNeeded()
-        let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+        // Explicit Retina density keeps small native labels legible both in the
+        // exported fixtures and to Vision, independent of the runtime display.
+        let bitmap = try #require(NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(hosting.bounds.width * 2),
+            pixelsHigh: Int(hosting.bounds.height * 2),
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
+            isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+        ))
+        bitmap.size = hosting.bounds.size
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         let png = try #require(bitmap.representation(using: .png, properties: [:]))
         if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_RECOVERY_SCREENSHOTS"] {
@@ -300,7 +422,9 @@ extension AskRecoveryRenderTests {
         }
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
-        request.recognitionLanguages = ["en-US", "zh-Hans"]
+        // Vision prioritizes the first language; English-first recognition misses
+        // entire Chinese labels even when zh-Hans is present as a fallback.
+        request.recognitionLanguages = language == .simplifiedChinese ? ["zh-Hans", "en-US"] : ["en-US", "zh-Hans"]
         request.usesLanguageCorrection = true
         request.minimumTextHeight = 0.005
         try VNImageRequestHandler(cgImage: #require(bitmap.cgImage)).perform([request])

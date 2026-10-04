@@ -58,7 +58,12 @@ interface. The journal is retained unchanged. Ending the inspected run uses
 No resolution endpoint is assumed.
 
 GUL-198 native SwiftUI fixtures show the [completed conversation](../images/ask-recovery-completed-zh.png)
-and [a task that needs review](../images/ask-recovery-review-zh.png). These are
+and a task that needs review in [light](../images/ask-recovery-review-zh.png),
+[dark](../images/ask-recovery-review-dark-zh.png), and
+[narrow](../images/ask-recovery-review-narrow-zh.png) windows. The notice uses the
+conversation's surfaces, icon treatment and capsule controls; its actions wrap
+below the description when space is limited. The [review sheet content](../images/ask-recovery-inspector-zh.png)
+uses the same controls and can shrink for the minimum window width. These are
 synthetic local test conversations, not captures of a live provider session.
 
 An unknown operation blocks ordinary resume, steering and queued-message resume.
@@ -131,7 +136,6 @@ live remote operation or an end-to-end desktop automation run. Interaction tests
 exercise the recovery action/state logic; native AX button dispatch was not
 reliably available in this test host.
 
-![Unknown outcome, light appearance](../images/r04-unknown-light.png)
-![Unknown outcome, dark appearance](../images/r04-unknown-dark.png)
-![Inspect an unknown local claim](../images/r04-inspect-unknown.png)
-![Saved receipt awaiting delivery](../images/r04-saved-receipt.png)
+![Task requiring review, light appearance](../images/ask-recovery-review-zh.png)
+![Task requiring review, dark appearance](../images/ask-recovery-review-dark-zh.png)
+![Review sheet content](../images/ask-recovery-inspector-zh.png)
