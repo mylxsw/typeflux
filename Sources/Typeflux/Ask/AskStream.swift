@@ -1,4 +1,5 @@
 import Foundation
+import TypefluxChat
 
 enum AskStreamError: Error {
     case invalidResponse, requestFailed
@@ -16,49 +17,19 @@ struct AskStreamProgress: Equatable, Sendable {
     var truncated = false
 }
 
-/// One bounded SSE decoder shared by provider and conversation streams.
+/// Keep desktop error semantics while sharing the framing implementation.
 struct AskSSEFrame {
-    var limit = 2_000_000
-    var event = "message"
-    var data = ""
-    private var lineBytes = Data()
-
-    // Explicit, because a private stored property makes the memberwise initializer private.
-    init(limit: Int = 2_000_000) { self.limit = limit }
-
-    /// AsyncBytes.lines omits empty lines, which are SSE frame delimiters.
-    /// Decode bytes directly to preserve those boundaries and split UTF-8 safely.
+    private var frame: SSEFrame
+    var event: String { frame.event }
+    var data: String { frame.data }
+    init(limit: Int = 2_000_000) { frame = SSEFrame(limit: limit) }
     mutating func push(_ byte: UInt8) throws -> (String, String)? {
-        if byte == 10 {
-            if lineBytes.last == 13 {
-                lineBytes.removeLast()
-            }
-            guard let line = String(data: lineBytes, encoding: .utf8) else { throw AskStreamError.invalidResponse }
-            lineBytes.removeAll(keepingCapacity: true)
-            return try append(line)
-        }
-        guard lineBytes.count < limit else { throw AskStreamError.invalidResponse }
-        lineBytes.append(byte)
-        return nil
+        do { return try frame.push(byte) }
+        catch { throw AskStreamError.invalidResponse }
     }
-
     mutating func append(_ line: String) throws -> (String, String)? {
-        if line.isEmpty {
-            defer { event = "message"; data = "" }
-            return data.isEmpty ? nil : (event, String(data.dropLast()))
-        }
-        if line.hasPrefix("event:") {
-            event = String(line.dropFirst(6)).trimmingCharacters(in: .whitespaces)
-        }
-        if line.hasPrefix("data:") {
-            var value = line.dropFirst(5)
-            if value.first == " " {
-                value = value.dropFirst()
-            }
-            data += value + "\n"
-            guard data.utf8.count <= limit else { throw AskStreamError.invalidResponse }
-        }
-        return nil
+        do { return try frame.append(line) }
+        catch { throw AskStreamError.invalidResponse }
     }
 }
 

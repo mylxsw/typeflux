@@ -5,6 +5,9 @@ coverage-report/
 coverage.lcov
 .xcode-derived/
 .xcode-app-derived/
+.xcode-ios-derived/
+*.xcresult/
+xcuserdata/
 *.local
 .agents
 .github/agents/

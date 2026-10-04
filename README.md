@@ -133,6 +133,7 @@ See [CLAUDE.md](./CLAUDE.md) for the full development guide.
 
 ## Documentation
 
+- [iOS Ask Client: Architecture and Development](./docs/IOS_CHAT.md)
 - [Usage Guide](./docs/USAGE.md)
 - [Make Commands](./docs/MAKE_COMMANDS.md)
 - [Release Guide](./docs/RELEASE.md)
