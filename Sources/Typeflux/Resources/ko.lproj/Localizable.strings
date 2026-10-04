@@ -141,7 +141,7 @@
 "settings.output.opencc.config.t2s" = "번체 → 간체";
 "settings.audio" = "오디오";
 "settings.microphone.title" = "마이크";
-"settings.microphone.subtitle" = "받아쓰기에 사용되는 장치를 선택하세요. 자동은 현재 macOS 기본 입력을 따릅니다.";
+"settings.microphone.subtitle" = "받아쓰기에 사용되는 장치를 선택하세요. 자동은 현재 macOS 기본 입력을 따르지만, 첫 단어가 잘리지 않도록 블루투스 헤드셋 대신 Mac 내장 또는 유선 마이크를 사용합니다.";
 "settings.microphone.automatic" = "자동";
 "settings.instantVoiceInput.title" = "바로 말하기";
 "settings.instantVoiceInput.subtitle" = "마이크 시작 시간을 줄여 단축키를 누르자마자 말해도 모든 내용을 빠짐없이 녹음합니다. 사용 후 마이크는 15분 동안 켜진 상태를 유지합니다.";

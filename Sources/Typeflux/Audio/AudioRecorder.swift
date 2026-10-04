@@ -30,9 +30,16 @@ protocol AudioRecorder {
         audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
     ) throws
     func stop() throws -> AudioFile
+    /// Whether the current recording captures from a Bluetooth headset. Such inputs
+    /// deliver digital silence while the headset switches profiles.
+    var activeInputIsBluetooth: Bool { get }
 }
 
 extension AudioRecorder {
+    var activeInputIsBluetooth: Bool {
+        false
+    }
+
     /// Hardware start may block inside a driver. Keep it off the workflow/UI executor.
     func startInBackground(
         levelHandler: @escaping (Float) -> Void,

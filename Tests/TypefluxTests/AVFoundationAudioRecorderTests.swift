@@ -496,6 +496,27 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         XCTAssertEqual(settingsStore.preferredMicrophoneID, "external-mic")
     }
 
+    func testAutomaticModeRecordsFromTheAutomaticInputAndExplicitModeKeepsTheChoice() throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settingsStore = SettingsStore(defaults: defaults)
+        let recorder = AVFoundationAudioRecorder(
+            settingsStore: settingsStore,
+            audioDeviceManager: MockAudioDeviceManager(
+                resolvedInputDeviceIDs: ["airpods": 9],
+                defaultInputDeviceID: 9,
+                automaticInputDeviceID: 3
+            )
+        )
+
+        XCTAssertEqual(recorder.resolvedInputDeviceIDForTesting(), 3)
+        XCTAssertFalse(recorder.activeInputIsBluetooth)
+        settingsStore.preferredMicrophoneID = "airpods"
+        XCTAssertEqual(recorder.resolvedInputDeviceIDForTesting(), 9)
+    }
+
     func testExplicitInputDeviceForRecordingIsNilInAutomaticMode() throws {
         let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -813,16 +834,23 @@ private final class MockAudioDeviceManager: AudioDeviceManaging {
     private let devices: [AudioInputDevice]
     private let resolvedInputDeviceIDs: [String: AudioDeviceID]
     private let defaultInputDevice: AudioDeviceID?
+    private let automaticInputDevice: AudioDeviceID?
     private var defaultInputDeviceChangeHandler: (@Sendable () -> Void)?
 
     init(
         devices: [AudioInputDevice] = [],
         resolvedInputDeviceIDs: [String: AudioDeviceID] = [:],
-        defaultInputDeviceID: AudioDeviceID? = nil
+        defaultInputDeviceID: AudioDeviceID? = nil,
+        automaticInputDeviceID: AudioDeviceID? = nil
     ) {
         self.devices = devices
         self.resolvedInputDeviceIDs = resolvedInputDeviceIDs
         defaultInputDevice = defaultInputDeviceID
+        automaticInputDevice = automaticInputDeviceID ?? defaultInputDeviceID
+    }
+
+    func automaticRecordingInputDeviceID() -> AudioDeviceID? {
+        automaticInputDevice
     }
 
     func availableInputDevices() -> [AudioInputDevice] {

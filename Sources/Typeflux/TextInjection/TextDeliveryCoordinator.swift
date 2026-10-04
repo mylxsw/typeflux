@@ -21,6 +21,30 @@ enum TextDeliveryObservation {
     }
 }
 
+/// Records when delivered text reached the target, as opposed to when delivery
+/// returned. Delivery keeps the clipboard lease for up to 1.5 s after a paste, which
+/// is cleanup the user does not wait for and must not be reported as apply latency.
+final class TextDeliveryTiming: @unchecked Sendable {
+    @TaskLocal static var current: TextDeliveryTiming?
+
+    private let lock = NSLock()
+    private var writtenAt: Date?
+
+    /// Runs `operation` and returns when its delivery wrote to the target, or now if
+    /// nothing was written.
+    static func measure<T>(_ operation: () async -> T) async -> (value: T, writtenAt: Date) {
+        let timing = TextDeliveryTiming()
+        let value = await $current.withValue(timing) { await operation() }
+        return (value, timing.lock.withLock { timing.writtenAt } ?? Date())
+    }
+
+    func markWritten() {
+        lock.withLock {
+            writtenAt = writtenAt ?? Date()
+        }
+    }
+}
+
 /// Platform calls live behind this boundary so tests exercise the actual delivery
 /// sequence, including focus changes and failures after a potentially effective write.
 @MainActor
@@ -52,7 +76,7 @@ final class TextDeliveryCoordinator<Backend: TextDeliveryBackend> {
 
         let initialTarget = try await backend.resolve(destination)
         try Task.checkCancellation()
-        switch try await backend.writeNative(text, to: initialTarget) {
+        switch try await writeNative(text, to: initialTarget) {
         case .acknowledged:
             // Do not turn a completed write into cancellation or retry it.
             return .delivered(.ax)
@@ -87,14 +111,14 @@ final class TextDeliveryCoordinator<Backend: TextDeliveryBackend> {
             try Task.checkCancellation()
             // The new destination may support native insertion even if the first
             // one did not. No earlier write occurred, so this attempt is safe.
-            switch try await backend.writeNative(text, to: target) {
+            switch try await writeNative(text, to: target) {
             case .acknowledged:
                 result = .delivered(.ax)
             case .unconfirmed:
                 result = await backend.observe(text, in: target).result(method: .ax)
             case .unsupported:
                 try Task.checkCancellation()
-                try await backend.paste(text, to: target, clipboard: clipboard)
+                try await paste(text, to: target, clipboard: clipboard)
                 result = await backend.observe(text, in: target).result(method: .paste)
             }
         } catch {
@@ -103,6 +127,20 @@ final class TextDeliveryCoordinator<Backend: TextDeliveryBackend> {
         }
         await backend.finishClipboard(clipboard, confirmed: result == .delivered(.paste))
         return result
+    }
+
+    /// Any native result other than `.unsupported` may already have changed the target.
+    private func writeNative(_ text: String, to target: Backend.Target) async throws -> NativeTextWriteResult {
+        let result = try await backend.writeNative(text, to: target)
+        if result != .unsupported {
+            TextDeliveryTiming.current?.markWritten()
+        }
+        return result
+    }
+
+    private func paste(_ text: String, to target: Backend.Target, clipboard: Backend.Clipboard) async throws {
+        try await backend.paste(text, to: target, clipboard: clipboard)
+        TextDeliveryTiming.current?.markWritten()
     }
 }
 

@@ -141,7 +141,7 @@
 "settings.output.opencc.config.t2s" = "繁體字 → 簡体字";
 "settings.audio" = "オーディオ";
 "settings.microphone.title" = "マイク";
-"settings.microphone.subtitle" = "ディクテーションに使用するデバイスを選択します。自動は、現在の macOS デフォルト入力に従います。";
+"settings.microphone.subtitle" = "ディクテーションに使用するデバイスを選択します。自動は現在の macOS デフォルト入力に従いますが、最初の言葉が欠けないよう Bluetooth ヘッドセットの代わりに Mac 内蔵または有線のマイクを使用します。";
 "settings.microphone.automatic" = "自動";
 "settings.instantVoiceInput.title" = "すぐに話す";
 "settings.instantVoiceInput.subtitle" = "マイクの起動時間を短縮し、ショートカットを押したらすぐに話せます。話した内容を最初から漏らさず記録します。使用後はマイクが15分間オンになります。";

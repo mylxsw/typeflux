@@ -1115,7 +1115,10 @@ final class WorkflowController {
                 targetBundleIdentifier: frontmostApplicationContext.bundleIdentifier
             )
             RecordingStartupLatencyTrace.shared.mark("workflow.context_end")
-            readiness.whenReady { [weak self, weak readiness] in
+            // Bluetooth headsets deliver silence while switching profiles. Show the
+            // recording UI only once they capture sound, so no words are spoken into it.
+            let readinessRequiresSignal = audioRecorder.activeInputIsBluetooth
+            readiness.whenReady(requiringSignal: readinessRequiresSignal) { [weak self, weak readiness] in
                 Task { @MainActor [weak self, weak readiness] in
                     guard let self, let readiness,
                           self.recordingAudioReadiness === readiness,
