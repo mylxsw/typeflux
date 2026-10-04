@@ -251,14 +251,14 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertThrowsError(try AskLocalEngine.parsePlan(#"{"items":[{"step":" ","status":"pending"}]}"#))
     }
 
-    func testStaleRunsExpireAndUnavailableFetchIsRejected() async throws {
+    func testWaitingInferenceRemainsReceiptableAndUnavailableFetchIsRejected() async throws {
         let clock = Clock()
         let engine = engine(now: { clock.now })
         var c = try await engine.send(conversationId: "stale", request: request(), token: "")
         clock.now = clock.now.addingTimeInterval(AskLocalEngine.staleAfter + 60)
         c = try await engine.conversation(id: "stale", token: "")
-        XCTAssertEqual(c.run?.status, "failed")
-        XCTAssertEqual(c.run?.error, L("ask.local.expired"))
+        XCTAssertEqual(c.run?.status, "waiting_inference")
+        XCTAssertNil(c.run?.error)
 
         // New runs do not advertise web_fetch. A model inventing it is rejected.
         c = try await engine.retry(conversationId: "stale", runId: c.run!.id, deviceId: device, modelRef: nil, token: "")

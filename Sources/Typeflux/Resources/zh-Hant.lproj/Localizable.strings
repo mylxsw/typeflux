@@ -2241,3 +2241,26 @@
 "ask.settings.skills.declarations" = "宣告權限（不授予存取權）：";
 
 "ask.skills.install.nameConflict" = "技能名稱與本機資料夾衝突。請先重新命名衝突的資料夾，再安裝。";
+
+/* Execution recovery */
+"ask.recovery.unknown" = "結果未知";
+"ask.recovery.unknownBody" = "操作可能已生效。請先核對目標位置，再決定下一步。結束任務不會撤銷操作，也不代表成功。新請求需要重新說明並授權。";
+"ask.recovery.binding" = "只有原帳戶和原裝置可以補送已綁定的回執。無法從歷史記錄補建缺失的身分。";
+"ask.recovery.saved" = "回執已儲存在本機";
+"ask.recovery.savedBody" = "結果已儲存，但尚未確認送達。可以補送原回執，不會重新執行工具或模型。";
+"ask.recovery.history" = "已還原對話歷史";
+"ask.recovery.historyBody" = "已載入儲存的訊息，尚未恢復執行。";
+"ask.recovery.activeBody" = "已取得任務的最新狀態。本機尚未恢復工具執行或模型呼叫。";
+"ask.recovery.localBody" = "只能恢復已儲存的步驟和回執。Typeflux 結束後，不保證本機任務繼續執行。重新啟動開發服務前，請先檢查其狀態。";
+"ask.recovery.steering" = "新的任務調整從下一步驟邊界生效，無法改變已送出的操作。";
+"ask.recovery.inspect" = "核對恢復記錄";
+"ask.recovery.retransmit" = "補送已儲存回執";
+"ask.recovery.continue" = "從已儲存步驟繼續";
+"ask.recovery.recorded" = "本機已記錄結果";
+"ask.recovery.noApproval" = "沒有儲存的核准記錄";
+"ask.recovery.approvalRecorded" = "已記錄核准；該記錄不能授權再次執行。";
+"ask.recovery.remoteEvidence" = "伺服器僅提供任務狀態，此處沒有遠端操作證據。";
+"ask.recovery.close" = "關閉";
+"ask.recovery.end" = "結束此任務";
+"ask.recovery.newRequest" = "撰寫新請求";
+"ask.recovery.newRequestBody" = "核對效果後，請撰寫並傳送新的指令。舊的未知操作仍會保留在日誌中。";

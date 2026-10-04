@@ -691,7 +691,7 @@ struct AskConversationView: View {
     /// Whether `statusArea` shows anything, so an empty one adds no gap to the transcript.
     private var hasStatus: Bool {
         model.visibleVisionSwitch != nil || model.error != nil || model.imageRecoveryTarget != nil
-            || stoppedRun || resumable
+            || stoppedRun || resumable || model.hasRecoveryNotice
     }
 
     /// The selected run failed or was stopped, and nothing is about to resume it.
@@ -701,6 +701,20 @@ struct AskConversationView: View {
     }
 
     @ViewBuilder private var statusArea: some View {
+        if model.hasRecoveryNotice, let value = model.selected, !model.busyIds.contains(value.id) {
+            AskRecoveryCard(
+                presentation: .init(run: value.run, entries: model.selectedRecoveryEntries,
+                                    deviceId: model.deviceId, local: model.isLocal(value.id)),
+                canRetransmit: model.canRetransmitReceipts,
+                canContinue: value.run?.isActive == true && value.run?.deviceId == model.deviceId
+                    && !model.recoveryBlocksResume(value) && !model.canRetransmitReceipts,
+                working: model.recoveryWorking,
+                inspect: { model.inspectingRecovery = true },
+                retransmit: { Task { await model.retransmitSavedReceipts() } },
+                continueRun: { model.resume() }
+            )
+            .sheet(isPresented: $model.inspectingRecovery) { AskRecoveryInspector(model: model) }
+        }
         if let change = model.visibleVisionSwitch {
             let library = model.modelLibrary
             AskSystemLine(text: String(format: L("ask.vision.switched"), library.name(for: change.to)),
@@ -721,7 +735,7 @@ struct AskConversationView: View {
         if let target = model.imageRecoveryTarget {
             AskImageRecoveryCard(model: model, target: target)
                 .id(target.id)
-        } else if stoppedRun, let run = model.selected?.run {
+        } else if stoppedRun, let value = model.selected, !model.recoveryBlocksResume(value), let run = value.run {
             AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })

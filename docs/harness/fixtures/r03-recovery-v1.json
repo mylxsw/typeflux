@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "capability": "run_recovery_v1",
+  "header": "X-Typeflux-Capabilities",
+  "execution_mode": "postgres_v1",
+  "sse_cursor": "conversation_revision:usage_version:budget_version",
+  "reconnect": "full_snapshot",
+  "worker_enabled_by_default": false,
+  "cases": [
+    {
+      "job_state": "queued",
+      "wire_status": "running",
+      "recovery": {
+        "version": 1,
+        "state": "queued",
+        "sequence": 7
+      }
+    },
+    {
+      "job_state": "running",
+      "wire_status": "running",
+      "recovery": {
+        "version": 1,
+        "state": "running",
+        "sequence": 7
+      }
+    },
+    {
+      "job_state": "waiting_device",
+      "wire_status": "waiting_tool",
+      "recovery": {
+        "version": 1,
+        "state": "waiting_device",
+        "sequence": 7
+      }
+    },
+    {
+      "job_state": "waiting_inference",
+      "wire_status": "waiting_inference",
+      "recovery": {
+        "version": 1,
+        "state": "waiting_inference",
+        "sequence": 7
+      }
+    },
+    {
+      "job_state": "budget_stopped",
+      "wire_status": "completed",
+      "recovery": {
+        "version": 1,
+        "state": "budget_stopped",
+        "sequence": 7
+      }
+    },
+    {
+      "job_state": "unknown_outcome",
+      "wire_status": "running",
+      "recovery": {
+        "version": 1,
+        "state": "unknown_outcome",
+        "sequence": 7
+      }
+    },
+    {
+      "job_state": "completed",
+      "wire_status": "completed",
+      "recovery": {
+        "version": 1,
+        "state": "completed",
+        "sequence": 7
+      }
+    },
+    {
+      "job_state": "failed",
+      "wire_status": "failed",
+      "recovery": {
+        "version": 1,
+        "state": "failed",
+        "sequence": 7
+      }
+    },
+    {
+      "job_state": "cancelled",
+      "wire_status": "cancelled",
+      "recovery": {
+        "version": 1,
+        "state": "cancelled",
+        "sequence": 7
+      }
+    }
+  ],
+  "waiting_binding": {
+    "owner_id": "10000000-0000-0000-0000-000000000001",
+    "conversation_id": "20000000-0000-0000-0000-000000000001",
+    "run_id": "30000000-0000-0000-0000-000000000001",
+    "root_run_id": "40000000-0000-0000-0000-000000000001",
+    "device_id": "50000000-0000-0000-0000-000000000001",
+    "deadline": "2026-10-04T01:00:00Z"
+  },
+  "unknown_operation": {
+    "operation_id": "60000000-0000-0000-0000-000000000001",
+    "step_id": "1",
+    "call_id": "70000000-0000-0000-0000-000000000001",
+    "kind": "model",
+    "recovery_class": "external",
+    "state": "unknown",
+    "fence": 1
+  }
+}

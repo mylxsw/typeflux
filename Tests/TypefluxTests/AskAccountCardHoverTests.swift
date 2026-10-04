@@ -10,7 +10,9 @@ struct AskAccountCardHoverTests {
     }
 
     /// Polls instead of sleeping a fixed time, so a loaded machine only slows the test down.
-    func wait(_ condition: () -> Bool, timeout: Duration = .seconds(3)) async throws {
+    /// Concurrent native rendering can occupy MainActor beyond the former 3s limit.
+    /// Keep the behavior assertion; allow the scheduled hover task time to run.
+    func wait(_ condition: () -> Bool, timeout: Duration = .seconds(15)) async throws {
         let deadline = ContinuousClock.now + timeout
         while !condition(), ContinuousClock.now < deadline {
             try await Task.sleep(for: .milliseconds(10))

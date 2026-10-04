@@ -75,8 +75,13 @@ struct AskRun: Codable, Equatable, Sendable {
     var budgetLimits: AskBudgetResources? = nil
     var budget: AskBudgetSummary? = nil
     var stopReason: String? = nil
+    var recovery: AskRunRecovery?
 
-    var isActive: Bool { status == "running" || status == "waiting_tool" || status == "waiting_inference" }
+    var isActive: Bool { !["completed", "failed", "cancelled"].contains(status) }
+    var needsRecoveryInspection: Bool {
+        recovery?.blocksExecution == true
+            || !["running", "waiting_tool", "waiting_inference", "completed", "failed", "cancelled"].contains(status)
+    }
 }
 
 struct AskPlanItem: Codable, Equatable, Sendable, Hashable {

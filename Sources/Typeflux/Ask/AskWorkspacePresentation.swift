@@ -6,8 +6,8 @@ enum AskRunTone: Equatable {
 
     static func of(_ run: AskRun?, pendingApproval: Bool) -> AskRunTone? {
         guard let run else { return nil }
-        if pendingApproval { return .attention }
-        if run.isActive { return .running }
+        if pendingApproval, !run.needsRecoveryInspection { return .attention }
+        if run.isActive, !run.needsRecoveryInspection { return .running }
         switch run.status {
         case "completed": return .done
         case "failed", "cancelled": return .failed

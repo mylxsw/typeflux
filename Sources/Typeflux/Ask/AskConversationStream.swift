@@ -24,17 +24,17 @@ struct AskConversationStreamState {
         }
         if event == "progress", var next = value {
             let progress = try AskCoding.decoder().decode(Progress.self, from: bytes)
-            let budgetChanged = progress.run?.id == next.run?.id && (progress.run?.budget?.version ?? 0) > (next.run?.budget?.version ?? 0)
-            guard progress.id == next.id, (progress.revision > next.revision || (progress.usage?.version ?? 0) > (next.usage?.version ?? 0) || budgetChanged) else { return nil }
-            if progress.revision >= next.revision {
-                next.revision = progress.revision; next.updatedAt = progress.updatedAt; next.run = progress.run
-                next.contextUsage = progress.contextUsage ?? next.contextUsage
-            }
-            if budgetChanged { next.run?.budget = progress.run?.budget }
-            if let usage = progress.usage, usage.version >= (next.usage?.version ?? 0) { next.usage = usage }
+            guard progress.id == next.id else { return nil }
+            var incoming = next
+            incoming.revision = progress.revision; incoming.updatedAt = progress.updatedAt
+            incoming.run = progress.run; incoming.usage = progress.usage
+            incoming.contextUsage = progress.contextUsage ?? next.contextUsage
+            guard incoming.isNewer(than: next) else { return nil }
+            next = next.reconciling(incoming, preservingEqualRevisionContent: true)
             value = next
             return next
         }
+
         if event == "unavailable" {
             throw AskStreamError.requestFailed
         }
@@ -53,6 +53,9 @@ extension AskAPIClient {
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         request.setValue("ask-anything", forHTTPHeaderField: "X-Scenario")
         TypefluxCloudRequestHeaders.applyClientInfo(to: &request)
+        if recoveryMetadataEnabled {
+            request.setValue("run_recovery_v1", forHTTPHeaderField: "X-Typeflux-Capabilities")
+        }
         request.timeoutInterval = 40
         let (bytes, response) = try await streamSession.bytes(for: request)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200,

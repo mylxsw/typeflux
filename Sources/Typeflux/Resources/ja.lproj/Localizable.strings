@@ -2234,3 +2234,26 @@
 "ask.settings.skills.declarations" = "宣言された権限（アクセスは付与されません）：";
 
 "ask.skills.install.nameConflict" = "スキル名がローカルフォルダと競合しています。競合するフォルダの名前を変更してからインストールしてください。";
+
+/* Execution recovery */
+"ask.recovery.unknown" = "結果不明";
+"ask.recovery.unknownBody" = "操作がすでに反映されている可能性があります。次の操作の前に対象を確認してください。タスクを終了しても操作は取り消されず、成功の確認にもなりません。新しいリクエストには新たな指示と承認が必要です。";
+"ask.recovery.binding" = "保存済みの結果を再送できるのは、元のアカウントとデバイスのみです。不明な識別情報は履歴から復元できません。";
+"ask.recovery.saved" = "結果をこのMacに保存済み";
+"ask.recovery.savedBody" = "結果は保存されていますが、送信を確認できていません。ツールやモデルを再実行せず、保存した結果のみ再送できます。";
+"ask.recovery.history" = "会話履歴を復元しました";
+"ask.recovery.historyBody" = "保存されたメッセージを読み込みました。実行は再開していません。";
+"ask.recovery.activeBody" = "タスクの最新状態を取得しました。このMacではツールやモデルの呼び出しを再開していません。";
+"ask.recovery.localBody" = "復元できるのは保存済みのステップと結果のみです。Typeflux終了後のローカル実行は保証されません。開発サービスを再起動する前に状態を確認してください。";
+"ask.recovery.steering" = "追加の指示は次のステップから反映されます。送信済みの操作は変更できません。";
+"ask.recovery.inspect" = "復元記録を確認";
+"ask.recovery.retransmit" = "保存した結果を再送";
+"ask.recovery.continue" = "保存したステップから続行";
+"ask.recovery.recorded" = "結果をローカルに記録済み";
+"ask.recovery.noApproval" = "承認記録なし";
+"ask.recovery.approvalRecorded" = "承認記録があります。この記録で再実行を承認することはできません。";
+"ask.recovery.remoteEvidence" = "サーバーが提供するのはタスクの状態のみです。リモート操作の証拠はここにはありません。";
+"ask.recovery.close" = "閉じる";
+"ask.recovery.end" = "このタスクを終了";
+"ask.recovery.newRequest" = "新しいリクエストを書く";
+"ask.recovery.newRequestBody" = "操作の影響を確認してから、新しい指示を入力して送信してください。結果不明の操作は記録に残ります。";

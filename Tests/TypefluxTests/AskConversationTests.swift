@@ -17,6 +17,8 @@ actor AskTestAPI: AskAPI {
     var results: [AskToolResultRequest] = []
     var inferenceResults: [AskInferenceResult] = []
     var nextTool: AskToolCall?
+    var failReceipts = false
+    func setFailReceipts(_ value: Bool) { failReceipts = value }
     var failSend = false
     var failList = false
     var failModels = false
@@ -74,6 +76,7 @@ actor AskTestAPI: AskAPI {
         return value
     }
     func result(conversationId: String, request: AskToolResultRequest, token: String) async throws -> AskConversation {
+        if failReceipts { throw URLError(.notConnectedToInternet) }
         results.append(request)
         var value = try await conversation(id: conversationId, token: token)
         value.messages.append(.init(id: UUID().uuidString, role: "tool", text: request.content, toolCallId: request.toolCallId, isError: request.isError, createdAt: Date()))
@@ -88,6 +91,7 @@ actor AskTestAPI: AskAPI {
         return value
     }
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation {
+        if failReceipts { throw URLError(.notConnectedToInternet) }
         inferenceResults.append(request)
         var value = try await conversation(id: conversationId, token: token)
         value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: request.content, toolCalls: request.toolCalls, createdAt: Date()))
@@ -480,7 +484,7 @@ struct AskConversationTests {
         #expect(try await f.cache.toolResult(id: "run/call", owner: "two") == nil)
     }
 
-    @Test func deletedConversationRemovesItsToolJournalOnly() async throws {
+    @Test func deletedConversationRetainsToolJournalEvidence() async throws {
         let f = try AskTestFixture()
         for id in ["one", "two"] {
             try await f.cache.associateTool(id: id + "/call", conversationId: id, owner: "owner")
@@ -488,7 +492,7 @@ struct AskConversationTests {
             try await f.cache.saveToolResult(.init(runId: id, deviceId: "device", toolCallId: "call", content: "private", isError: false), owner: "owner")
         }
         try await f.cache.delete(id: "one", owner: "owner")
-        #expect(try await f.cache.toolResult(id: "one/call", owner: "owner") == nil)
+        #expect(try await f.cache.toolResult(id: "one/call", owner: "owner")?.content == "private")
         #expect(try await f.cache.toolResult(id: "two/call", owner: "owner")?.content == "private")
     }
 
@@ -520,22 +524,14 @@ struct AskConversationTests {
             try await f.cache.saveToolResult(.init(runId: "run", deviceId: "device", toolCallId: "call", content: "Already executed", isError: false), owner: "owner")
         }
         await f.model.select(c.id); f.model.resume()
-        if !hasResult {
-            try await f.wait { !f.model.pendingApprovals.isEmpty }
-            f.model.approve(conversationId: c.id, allowed: true)
-        }
         try await f.wait { f.model.busyIds.isEmpty }
         #expect(f.tools.executions == 0)
-        let results = await f.api.results
-        #expect(results.count == 1)
-        #expect(results.first?.isError == !hasResult)
-        if hasResult { #expect(results.first?.content == "Already executed") }
-        else {
-            #expect(results.first?.content.contains("unknown") == true)
-            #expect(results.first?.harness?.outcome?.safeStatus == .unknown)
-            #expect(results.first?.harness?.context?.toolCallId == call.id)
-            #expect(results.first?.harness?.approval?.consumedAt == nil)
-        }
+        #expect(await f.api.results.isEmpty)
+        #expect(f.model.pendingApprovals.isEmpty)
+        #expect(f.model.inspectingRecovery)
+        #expect(f.model.recoveryBlocksResume(c))
+        // Legacy bytes remain readable; absent conversation/account binding is not invented.
+        #expect(try await f.cache.toolResult(id: "run/call", owner: "owner")?.content == (hasResult ? "Already executed" : nil))
     }
 
     @Test func oversizedInputStaysEditableWithoutNetworkRequest() async throws {

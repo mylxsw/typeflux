@@ -183,6 +183,43 @@ struct AskModelSelectionTests {
         #expect(result.1.first?.function.arguments == #"{"page_size":5}"#)
     }
 
+    @Test func inferenceDeliveryFailurePersistsBeforeRestartAndDoesNotNeedTheProviderToResend() async throws {
+        let defaults = try #require(UserDefaults(suiteName: "r04-provider-" + UUID().uuidString))
+        let profile = AskModelProfile(name: "Custom", baseURL: "https://example.invalid/v1", model: "chosen-model")
+        try defaults.set(JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let fixture = try AskTestFixture(modelLibrary: library)
+        let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [AskModelURLProtocol.self]
+        fixture.model.customInference = AskCustomInference(session: URLSession(configuration: config))
+        var value = AskRecoveryFixture.conversation(model: true)
+        value.run?.modelRef = profile.reference; value.run?.inference?.payload = #"{"messages":[]}"#
+        await fixture.api.seed(value); await fixture.api.setFailReceipts(true)
+        await fixture.model.select(value.id); fixture.model.resume()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        let entries = try await fixture.cache.executions(conversationId: value.id, owner: "owner")
+        #expect(entries.first?.receipt?.status == "ok")
+        #expect(await fixture.api.inferenceResults.isEmpty)
+        fixture.model.resetSession()
+        await fixture.api.setFailReceipts(false)
+        let restarted = try AskConversationModel(
+            api: fixture.api,
+            cache: AskConversationCache(url: fixture.root.appendingPathComponent("cache.sqlite")),
+            tools: fixture.tools,
+            capture: fixture.capture,
+            deviceId: "device",
+            modelLibrary: AskModelLibrary(
+                defaults: UserDefaults(suiteName: UUID().uuidString)!,
+                automaticallyLoadsCatalog: false
+            ),
+            session: { ("owner", "token") }
+        )
+        await restarted.select(value.id)
+        await restarted.retransmitSavedReceipts()
+        #expect(await fixture.api.inferenceResults.count == 1)
+        #expect(await fixture.api.inferenceResults.first?.content == "Answer")
+        #expect(restarted.selected?.run?.status == "completed")
+        restarted.resetSession()
+    }
     @Test func resumedDeviceInferencePostsResultAndKeepsConversationModel() async throws {
         let suite = "ask-bridge-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))

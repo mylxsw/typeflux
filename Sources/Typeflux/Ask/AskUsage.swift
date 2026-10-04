@@ -141,11 +141,22 @@ extension AskConversation {
         if older.run?.id == run?.id, (older.run?.budget?.version ?? 0) > (run?.budget?.version ?? 0) {
             result.run?.budget = older.run?.budget
         }
+        if older.run?.id == run?.id, let recovery = older.run?.recovery,
+           recovery.version == 1, (recovery.sequence ?? -1) > (run?.recovery?.sequence ?? -1),
+           run?.isActive == true {
+            result.run?.recovery = recovery
+        }
         return result
     }
     func reconciling(_ incoming: Self, preservingEqualRevisionContent: Bool = false) -> Self {
         guard incoming.id == id else { return incoming }
-        if preservingEqualRevisionContent, incoming.revision == revision { return mergingUsage(from: incoming) }
+        // Usage/recovery clocks cannot resurrect terminal content or replace a run.
+        if run?.id == incoming.run?.id, run?.isActive == false, incoming.run?.isActive == true {
+            return mergingUsage(from: incoming)
+        }
+        if preservingEqualRevisionContent || run?.id != incoming.run?.id, incoming.revision == revision {
+            return mergingUsage(from: incoming)
+        }
         var result = incoming.revision >= revision ? incoming.mergingUsage(from: self) : mergingUsage(from: incoming)
         // A legacy server cannot echo typed receipts; retain them only on the same
         // persisted message identity. Never resurrect a deleted message or permission.
@@ -163,6 +174,8 @@ extension AskConversation {
     }
     func isNewer(than older: Self) -> Bool {
         revision > older.revision || (usage?.version ?? 0) > (older.usage?.version ?? 0)
+            || (run?.id == older.run?.id && run?.recovery?.version == 1
+                && (run?.recovery?.sequence ?? -1) > (older.run?.recovery?.sequence ?? -1))
             || (run?.id == older.run?.id && (run?.budget?.version ?? 0) > (older.run?.budget?.version ?? 0))
     }
 }

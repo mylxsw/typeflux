@@ -184,7 +184,7 @@ extension AskToolResultRequest {
         }
         return AskMessage(id: id, role: "tool", text: projected.content, image: projected.image, toolCallId: toolCallId, isError: projected.isError,
                           createdAt: now, runId: runId, harness: projected.harness,
-                          diagnostic: .init(operationId: id, runId: runId, stepId: String(step), callId: toolCallId,
+                          diagnostic: .init(operationId: runId + "/" + toolCallId + "/tool", runId: runId, stepId: String(step), callId: toolCallId,
                                             status: status,
                                             contentCount: projected.harness?.outcome?.content?.count ?? 0, truncated: projected.harness?.outcome?.truncated == true))
     }
