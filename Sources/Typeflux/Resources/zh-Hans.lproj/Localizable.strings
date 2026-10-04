@@ -2245,27 +2245,26 @@
 "ask.skills.install.nameConflict" = "技能名称与本地文件夹冲突。请先重命名冲突的文件夹，再安装。";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "结果未知";
-"ask.recovery.unknownBody" = "操作可能已生效。请先核对目标位置，再决定下一步。结束任务不会撤销操作，也不代表成功。新请求需要重新说明并授权。";
-"ask.recovery.binding" = "只有原账户和原设备可以补发已绑定的回执。无法从历史记录补建缺失的身份。";
-"ask.recovery.saved" = "回执已保存在本机";
-"ask.recovery.savedBody" = "结果已保存，但尚未确认送达。可以补发原回执，不会重新执行工具或模型。";
-"ask.recovery.history" = "已恢复会话历史";
-"ask.recovery.historyBody" = "已载入保存的消息，尚未恢复执行。";
-"ask.recovery.activeBody" = "已获取任务的最新状态。本机尚未恢复工具执行或模型调用。";
-"ask.recovery.localBody" = "只能恢复已保存的步骤和回执。Typeflux 退出后，不保证本地任务继续执行。重启开发服务前，请先检查其状态。";
-"ask.recovery.steering" = "新的任务调整从下一步骤边界生效，无法改变已发出的操作。";
-"ask.recovery.inspect" = "核对恢复记录";
-"ask.recovery.retransmit" = "补发已保存回执";
-"ask.recovery.continue" = "从已保存步骤继续";
-"ask.recovery.recorded" = "本地已记录结果";
-"ask.recovery.noApproval" = "没有保存的批准记录";
-"ask.recovery.approvalRecorded" = "已记录批准；该记录不能授权再次执行。";
-"ask.recovery.remoteEvidence" = "服务端仅提供任务状态，此处没有远端操作证据。";
-"ask.recovery.close" = "关闭";
-"ask.recovery.end" = "结束此任务";
-"ask.recovery.newRequest" = "编写新请求";
-"ask.recovery.newRequestBody" = "核对效果后，请编写并发送新的指令。旧的未知操作仍会保留在日志中。";
+"ask.recovery.unknown" = "还不能确认这次处理的结果";
+"ask.recovery.unknownBody" = "Typeflux 无法确认这次处理是否完成。为避免做两遍，不会自动重复操作。";
+"ask.recovery.checkBody" = "如果这次涉及发消息、改文件等操作，请先到对应的应用里看看是否已经完成。";
+"ask.recovery.endBody" = "停止后，Typeflux 不会继续这次任务，已经完成的操作不会撤销。之后可以回到对话里继续提问。";
+"ask.recovery.binding" = "请回到发送这条消息时使用的设备，登录当时的账户，再打开这段对话。";
+"ask.recovery.otherDevice" = "请回到原来的设备处理";
+"ask.recovery.saved" = "对话进度还没更新";
+"ask.recovery.savedBody" = "处理结果已保存在这台 Mac 上。点击“更新对话”查看最新进度，不会把操作再做一遍。";
+"ask.recovery.paused" = "这次处理还没完成";
+"ask.recovery.activeBody" = "点击“继续处理”，Typeflux 会接着完成剩下的步骤。";
+"ask.recovery.finished" = "这次处理已结束";
+"ask.recovery.finishedBody" = "可以在下方输入框继续提问。";
+"ask.recovery.inspect" = "接下来怎么做";
+"ask.recovery.retransmit" = "更新对话";
+"ask.recovery.continue" = "继续处理";
+"ask.recovery.close" = "返回对话";
+"ask.recovery.end" = "停止后续处理";
+"ask.recovery.followUpBody" = "如果已经完成，就不用再做。若还需要帮助，返回对话后告诉 Typeflux 哪些事还没完成。";
+"ask.recovery.message" = "你的消息";
+"ask.recovery.stopped" = "后续处理已停止";
 
 /* GUL-193 Reasoning effort levels */
 "ask.reasoning.xhigh" = "超高";

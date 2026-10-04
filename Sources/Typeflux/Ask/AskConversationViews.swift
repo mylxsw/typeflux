@@ -887,11 +887,9 @@ struct AskConversationView: View {
     @ViewBuilder private var statusArea: some View {
         if model.hasRecoveryNotice, let value = model.selected, !model.busyIds.contains(value.id) {
             AskRecoveryCard(
-                presentation: .init(run: value.run, entries: model.selectedRecoveryEntries,
-                                    deviceId: model.deviceId, local: model.isLocal(value.id)),
+                presentation: model.recoveryPresentation,
                 canRetransmit: model.canRetransmitReceipts,
-                canContinue: value.run?.isActive == true && value.run?.deviceId == model.deviceId
-                    && !model.recoveryBlocksResume(value) && !model.canRetransmitReceipts,
+                canContinue: model.recoveryPresentation.canContinue && !model.canRetransmitReceipts,
                 working: model.recoveryWorking,
                 inspect: { model.inspectingRecovery = true },
                 retransmit: { Task { await model.retransmitSavedReceipts() } },
@@ -907,11 +905,12 @@ struct AskConversationView: View {
                           action: { model.revertVisionSwitch() },
                           onDismiss: { model.visionSwitch = nil })
         }
-        if model.imageRecoveryTarget == nil, let error = model.error {
+        if model.imageRecoveryTarget == nil, let error = model.error,
+           !model.hasRecoveryNotice || error != L("ask.recovery.unknownBody") {
             AskBanner(
                 text: error,
                 tone: .warning,
-                actionTitle: L("ask.retry"),
+                actionTitle: model.selectionLoadFailed || !model.hasRecoveryNotice ? L("ask.retry") : nil,
                 action: { if model.selectionLoadFailed { model.retrySelection() } else { model.resume() } },
                 onDismiss: { model.error = nil }
             )
@@ -919,11 +918,12 @@ struct AskConversationView: View {
         if let target = model.imageRecoveryTarget {
             AskImageRecoveryCard(model: model, target: target)
                 .id(target.id)
-        } else if stoppedRun, let value = model.selected, !model.recoveryBlocksResume(value), let run = value.run {
+        } else if stoppedRun, !model.hasRecoveryNotice, let value = model.selected,
+                  !model.recoveryBlocksResume(value), let run = value.run {
             AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
-        } else if resumable, model.error == nil {
+        } else if resumable, !model.hasRecoveryNotice, model.error == nil {
             AskBanner(text: L("ask.resume.hint"), tone: .info, systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
         }

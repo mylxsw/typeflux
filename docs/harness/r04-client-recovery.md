@@ -46,12 +46,34 @@ assertions. Account switching also hides another account's local recovery detail
 ## User interaction
 
 Opening history loads messages and observes authoritative status; it never
-resumes local execution. The recovery card distinguishes history restoration,
-saved-but-unconfirmed receipts, active execution status and unknown outcomes.
-The inspector shows real local result evidence and redacted correlations. For a
-remote unknown run it states that the API exposes status only, not operation
-evidence. Ending the inspected run uses `/cancel`; it neither undoes effects nor
-marks an unknown operation successful. No resolution endpoint is assumed.
+resumes local execution or adds a recovery notice by itself. Completed tasks
+with confirmed results stay quiet. A card appears only for the current task's
+unconfirmed results, unknown outcomes, or device work that can be continued.
+Ordinary server execution and earlier tasks' bound journal entries do not create
+a recovery notice. The card offers plain-language sync, continue, or review
+actions. Review explains why the result is uncertain and asks the user to check
+an app or file only if the task involved an external action. When available, it
+quotes the original user message explicitly associated with the current run;
+it never substitutes an unrelated or unbound message. Returning to the chat
+only closes the explanation: it does not send instructions, start a new task,
+or mark an unknown result as confirmed. If the work is already complete, the
+user need not repeat it. The stop action explains that it ends further work,
+and the sheet confirms when that work has stopped. Internal details such as
+raw receipts, hashes, tool identifiers and audit transitions stay out of the user
+interface. The journal is retained unchanged. Ending the inspected run uses
+`/cancel`; it neither undoes effects nor marks an unknown operation successful.
+No resolution endpoint is assumed.
+
+GUL-198 native SwiftUI fixtures show the [completed conversation](../images/ask-recovery-completed-zh.png)
+and a task that needs review in [light](../images/ask-recovery-review-zh.png),
+[dark](../images/ask-recovery-review-dark-zh.png), and
+[narrow](../images/ask-recovery-review-narrow-zh.png) windows. The notice uses the
+conversation's surfaces, icon treatment and capsule controls; its actions wrap
+below the description when space is limited. The [review sheet content](../images/ask-recovery-inspector-zh.png)
+uses the same controls and can shrink for the minimum window width. A task that
+is [still active](../images/ask-recovery-active-zh.png) explains what stopping
+does; an ended task only offers to return to the chat. These are
+synthetic local test conversations, not captures of a live provider session.
 
 An unknown operation blocks ordinary resume, steering and queued-message resume.
 After ending that run, the user can write and submit fresh instructions. This is
@@ -123,7 +145,6 @@ live remote operation or an end-to-end desktop automation run. Interaction tests
 exercise the recovery action/state logic; native AX button dispatch was not
 reliably available in this test host.
 
-![Unknown outcome, light appearance](../images/r04-unknown-light.png)
-![Unknown outcome, dark appearance](../images/r04-unknown-dark.png)
-![Inspect an unknown local claim](../images/r04-inspect-unknown.png)
-![Saved receipt awaiting delivery](../images/r04-saved-receipt.png)
+![Task requiring review, light appearance](../images/ask-recovery-review-zh.png)
+![Task requiring review, dark appearance](../images/ask-recovery-review-dark-zh.png)
+![Review sheet content](../images/ask-recovery-inspector-zh.png)

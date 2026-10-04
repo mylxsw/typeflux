@@ -2245,27 +2245,26 @@
 "ask.skills.install.nameConflict" = "This skill name conflicts with local folders. Rename the conflicting folders before installing.";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "Result unknown";
-"ask.recovery.unknownBody" = "An operation may already have taken effect. Check its destination before taking further action. Ending this run does not undo effects or confirm success. A new request requires fresh instructions and approval.";
-"ask.recovery.binding" = "Only the original account and device can resend a bound receipt. Missing identity cannot be reconstructed from history.";
-"ask.recovery.saved" = "Receipt saved on this Mac";
-"ask.recovery.savedBody" = "The result is saved, but delivery is unconfirmed. Resend the saved receipt without executing the tool or model again.";
-"ask.recovery.history" = "Conversation history restored";
-"ask.recovery.historyBody" = "Saved messages are available. No execution has been resumed.";
-"ask.recovery.activeBody" = "The latest run status is available. This Mac has not resumed tools or model calls.";
-"ask.recovery.localBody" = "Only saved steps and receipts can be recovered. Local execution after Typeflux exits is not guaranteed. Check any development service before restarting it.";
-"ask.recovery.steering" = "New steering takes effect at the next step boundary. It cannot change a dispatched operation.";
-"ask.recovery.inspect" = "Inspect recovery";
-"ask.recovery.retransmit" = "Resend saved receipt";
-"ask.recovery.continue" = "Continue from saved step";
-"ask.recovery.recorded" = "Result recorded locally";
-"ask.recovery.noApproval" = "No saved approval record";
-"ask.recovery.approvalRecorded" = "Approval recorded; a saved record cannot authorize another execution.";
-"ask.recovery.remoteEvidence" = "The server exposes run status only. No remote operation evidence is available here.";
-"ask.recovery.close" = "Close";
-"ask.recovery.end" = "End this run";
-"ask.recovery.newRequest" = "Write a new request";
-"ask.recovery.newRequestBody" = "After checking the effects, type and send new instructions. The unknown operation remains in the journal.";
+"ask.recovery.unknown" = "We couldn't confirm the result";
+"ask.recovery.unknownBody" = "Typeflux couldn't confirm whether this work finished. To avoid doing it twice, it won't repeat the action automatically.";
+"ask.recovery.checkBody" = "If this involved sending a message or changing a file, check the relevant app to see whether it's already done.";
+"ask.recovery.endBody" = "Stopping prevents Typeflux from continuing this task. It won't undo anything already done. You can then return to the chat and ask another question.";
+"ask.recovery.binding" = "Return to the device you used to send this message, sign in to the same account, and open this conversation.";
+"ask.recovery.otherDevice" = "Return to the original device";
+"ask.recovery.saved" = "The conversation needs an update";
+"ask.recovery.savedBody" = "The results are saved on this Mac. Click \"Update conversation\" to refresh its progress without repeating the work.";
+"ask.recovery.paused" = "This work is unfinished";
+"ask.recovery.activeBody" = "Click \"Continue\" and Typeflux will carry on with the remaining steps.";
+"ask.recovery.finished" = "This work has ended";
+"ask.recovery.finishedBody" = "You can ask another question in the message box below.";
+"ask.recovery.inspect" = "What to do next";
+"ask.recovery.retransmit" = "Update conversation";
+"ask.recovery.continue" = "Continue";
+"ask.recovery.close" = "Back to chat";
+"ask.recovery.end" = "Stop further work";
+"ask.recovery.followUpBody" = "If it's already done, there's no need to do it again. If you still need help, return to the chat and tell Typeflux what remains unfinished.";
+"ask.recovery.message" = "Your message";
+"ask.recovery.stopped" = "Further work has stopped";
 
 /* GUL-193 Reasoning effort levels */
 "ask.reasoning.xhigh" = "Extra high";

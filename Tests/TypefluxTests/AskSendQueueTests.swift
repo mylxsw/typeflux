@@ -208,12 +208,17 @@ struct AskSendQueueTests {
     @Test func aJumpTheRunNeverReadIsSentAsTheNextTurn() async throws {
         let f = try AskTestFixture()
         let id = try await busyConversation(f)
+        // Steering rejects the current approval. Hold the run at its next one
+        // so the unread state remains observable until this test ends the run.
+        let continuing = toolCall()
+        await f.api.queueFollowUpTools([continuing])
         f.model.draft.text = "Unread"
         f.model.submitDraft()
         let item = try #require(f.model.queuedMessages.first)
         f.model.steerQueued(item.id)
         try await f.wait { !f.model.steeredMessages.isEmpty }
         #expect(f.model.steeredMessages.map(\.id) == [item.id])
+        try await f.wait { f.model.pendingApprovals[id]?.id == continuing.id }
         f.model.approve(conversationId: id, allowed: false)
         try await f.wait { f.model.busyIds.isEmpty && f.model.steeredMessages.isEmpty && f.model.queuedMessages.isEmpty }
         try await f.wait { f.model.busyIds.isEmpty }
