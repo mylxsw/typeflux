@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 随便问 — 模型与推理强度合并选择器 交互设计稿</title>
+<style>
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Helvetica Neue", sans-serif;
+  --ease: cubic-bezier(.22, .9, .3, 1);
+  --accent: #0a84ff; --accent-rgb: 10,132,255;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0e0e13; --win: #1e1e22; --panel: #2a2a30; --menu: rgba(46,46,54,.97);
+  --text: rgba(255,255,255,.92); --text-2: rgba(235,235,245,.62); --text-3: rgba(235,235,245,.38);
+  --sep: rgba(255,255,255,.08); --hover: rgba(255,255,255,.07); --press: rgba(255,255,255,.12);
+  --border: rgba(255,255,255,.12); --shadow: 0 18px 50px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+  --track: rgba(255,255,255,.10); --accent-text: #8ebdff;
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --page: #e9e9ef; --win: #fbfbfd; --panel: #ffffff; --menu: rgba(255,255,255,.98);
+  --text: rgba(0,0,0,.86); --text-2: rgba(60,60,67,.68); --text-3: rgba(60,60,67,.42);
+  --sep: rgba(0,0,0,.07); --hover: rgba(0,0,0,.05); --press: rgba(0,0,0,.09);
+  --border: rgba(0,0,0,.10); --shadow: 0 16px 44px rgba(30,30,60,.16), 0 1px 2px rgba(30,30,60,.12);
+  --track: rgba(0,0,0,.08); --accent-text: #1b57d6;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font-family: var(--font); font-size: 13px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+svg.i { width: 15px; height: 15px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+svg.i.sm { width: 12px; height: 12px; }
+.page { display: grid; grid-template-columns: 1fr 340px; gap: 28px; max-width: 1480px; margin: 0 auto; padding: 24px 28px 60px; }
+h1 { font-size: 20px; margin: 0 0 6px; }
+.sub { color: var(--text-2); line-height: 1.6; margin: 0 0 16px; max-width: 980px; }
+.sub b { color: var(--text); }
+.dock { display: inline-flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--border); margin-bottom: 14px; }
+.dock .lbl { font-size: 11.5px; color: var(--text-3); }
+.seg { display: flex; padding: 2px; border-radius: 9px; background: var(--hover); }
+.seg button { padding: 4px 10px; border-radius: 7px; font-size: 12px; color: var(--text-2); }
+.seg button.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.notes { position: sticky; top: 20px; align-self: start; display: flex; flex-direction: column; gap: 14px; }
+.note { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; line-height: 1.6; color: var(--text-2); }
+.note h3 { margin: 0 0 6px; font-size: 13px; color: var(--text); }
+.note ul { margin: 0; padding-left: 18px; }
+.note b { color: var(--text); }
+.note code { font-size: 11.5px; background: var(--hover); padding: 1px 5px; border-radius: 5px; }
+
+/* stage = a slice of the Ask window around the composer */
+.stage { position: relative; background: var(--win); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: 26px 34px 30px; margin-bottom: 22px; }
+.stage .tag { position: absolute; top: 12px; left: 16px; font-size: 11.5px; color: var(--text-3); letter-spacing: .02em; }
+.stage.tall { padding-top: 330px; }
+.composer { border-radius: 22px; background: var(--panel); border: 1px solid var(--border); box-shadow: 0 6px 20px rgba(0,0,0,.18); padding: 12px 12px 10px; position: relative; }
+.composer .ph { color: var(--text-3); padding: 4px 10px 22px; font-size: 14px; }
+.bar { display: flex; align-items: center; gap: 4px; }
+.bar .sp { flex: 1; }
+.pill { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; }
+.pill.muted { color: var(--text-2); }
+.pill:hover, .pill.on { background: var(--hover); }
+.pill .chev { color: var(--text-3); }
+.pill .eff { color: var(--text-2); font-weight: 400; }
+.pill .eff.hi { color: var(--accent-text); }
+.pill .dot { color: var(--text-3); font-weight: 400; }
+.rule { width: 1px; height: 18px; background: var(--sep); margin: 0 4px; }
+.icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; color: var(--text-2); }
+.chip { width: 34px; height: 30px; display: grid; place-items: center; border-radius: 999px; color: var(--accent); background: rgba(var(--accent-rgb), .16); }
+.send { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--hover); color: var(--text-3); }
+.callout { position: absolute; border: 2px solid #ff453a; border-radius: 12px; pointer-events: none; }
+
+/* the combined card */
+.card { position: absolute; z-index: 10; width: 330px; background: var(--menu); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); padding: 14px; backdrop-filter: blur(20px); animation: pop .18s var(--ease); }
+@keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+.head { display: grid; grid-template-columns: 28px 1fr 28px; align-items: center; }
+.head .bolt { color: var(--accent); display: grid; place-items: center; }
+.head .bolt.off { color: var(--text-3); }
+.head .mid { text-align: center; }
+.head .lvl { font-size: 17px; font-weight: 650; color: var(--accent-text); }
+.head .lvl.def { color: var(--text); }
+.head .model { margin-top: 2px; font-size: 12.5px; color: var(--text-2); display: inline-flex; align-items: center; gap: 2px; border-radius: 6px; padding: 1px 6px; }
+.head .model:hover { background: var(--hover); color: var(--text); }
+.head .reset { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--text-2); }
+.head .reset:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+.head .reset:disabled { opacity: .3; cursor: default; }
+.slider { position: relative; height: 36px; margin: 14px 2px 6px; border-radius: 999px; background: var(--track); cursor: pointer; user-select: none; touch-action: none; }
+.slider .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: linear-gradient(90deg, rgba(var(--accent-rgb), .75), var(--accent)); transition: width .22s var(--ease); }
+.slider .stop { position: absolute; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%; background: var(--text-3); }
+.slider .stop.lit { background: rgba(255,255,255,.75); }
+.slider .knob { position: absolute; top: 3px; width: 30px; height: 30px; margin-left: -15px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); transition: left .22s var(--ease); }
+.slider.def .fill { width: 0 !important; }
+.slider.def .knob { background: transparent; border: 2px dashed var(--text-3); box-shadow: none; }
+.marks { display: flex; justify-content: space-between; padding: 0 10px; font-size: 11px; color: var(--text-3); }
+.marks span.on { color: var(--text); font-weight: 600; }
+.caption { margin-top: 10px; font-size: 11.5px; color: var(--text-2); text-align: center; line-height: 1.5; min-height: 18px; }
+.unsupported { margin: 14px 0 4px; padding: 10px 12px; border-radius: 10px; background: var(--hover); color: var(--text-2); font-size: 12px; line-height: 1.5; text-align: center; }
+.back { display: inline-flex; align-items: center; gap: 4px; color: var(--text-2); font-size: 12.5px; padding: 3px 6px; border-radius: 7px; margin-bottom: 6px; }
+.back:hover { background: var(--hover); color: var(--text); }
+.grp { font-size: 11px; color: var(--text-3); padding: 8px 8px 3px; }
+.mi { display: flex; align-items: center; gap: 9px; width: 100%; padding: 7px 8px; border-radius: 9px; text-align: left; }
+.mi:hover { background: var(--hover); }
+.mi .nm { flex: 1; }
+.mi .sub2 { font-size: 11px; color: var(--text-3); }
+.badge { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; background: var(--hover); color: var(--text-2); }
+.badge.r { color: var(--accent-text); background: rgba(var(--accent-rgb), .14); }
+.ck { color: var(--accent); }
+.kbd { font: 11px var(--font); color: var(--text-3); text-align: center; margin-top: 8px; }
+.kbd kbd { font: inherit; padding: 0 5px; border-radius: 4px; background: var(--hover); color: var(--text-2); }
+.hint { position: absolute; left: 50%; bottom: calc(100% + 12px); transform: translateX(-50%); font-size: 12px; color: var(--text-2); background: var(--menu); border: 1px solid var(--border); padding: 5px 12px; border-radius: 999px; box-shadow: var(--shadow); opacity: 0; transition: opacity .25s; white-space: nowrap; pointer-events: none; }
+.hint.show { opacity: 1; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="cloud" viewBox="0 0 16 16"><path d="M4.5 12.5h7.2a3 3 0 0 0 .3-6 4 4 0 0 0-7.7.9 2.6 2.6 0 0 0 .2 5.1z"/></symbol>
+  <symbol id="chev" viewBox="0 0 16 16"><path d="M4.5 6.5 8 10l3.5-3.5"/></symbol>
+  <symbol id="right" viewBox="0 0 16 16"><path d="M6.5 4.5 10 8l-3.5 3.5"/></symbol>
+  <symbol id="left" viewBox="0 0 16 16"><path d="M9.5 4.5 6 8l3.5 3.5"/></symbol>
+  <symbol id="plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+  <symbol id="spark" viewBox="0 0 16 16"><path d="M8 1.5 9.3 6.7 14.5 8 9.3 9.3 8 14.5 6.7 9.3 1.5 8l5.2-1.3z"/></symbol>
+  <symbol id="bolt" viewBox="0 0 16 16"><path d="M9 1.5 3.5 9H8l-1 5.5L12.5 7H8z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="reset" viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 0 1.5-3.6M3 2.5v2.8h2.8"/></symbol>
+  <symbol id="shot" viewBox="0 0 16 16"><path d="M2 5V3.2C2 2.5 2.5 2 3.2 2H5M11 2h1.8c.7 0 1.2.5 1.2 1.2V5M14 11v1.8c0 .7-.5 1.2-1.2 1.2H11M5 14H3.2C2.5 14 2 13.5 2 12.8V11"/><circle cx="8" cy="8" r="2.2"/></symbol>
+  <symbol id="brain" viewBox="0 0 16 16"><path d="M8 3v10M6 2.8C4.4 2.8 3.3 4 3.6 5.6 2.4 6.3 2.3 8.4 3.5 9.3 3 11 4.4 12.9 6 12.6M10 2.8c1.6 0 2.7 1.2 2.4 2.8 1.2.7 1.3 2.8.1 3.7.5 1.7-.9 3.6-2.5 3.3"/></symbol>
+  <symbol id="mic" viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></symbol>
+  <symbol id="up" viewBox="0 0 16 16"><path d="M8 13V3.5M3.8 7.5 8 3.3l4.2 4.2"/></symbol>
+  <symbol id="ok" viewBox="0 0 16 16"><path d="M3.5 8.3 6.5 11l6-6.5"/></symbol>
+</defs></svg>
+
+<div class="page">
+  <div>
+    <h1>随便问 · 模型与推理强度合并成一个选择器</h1>
+    <p class="sub">现在输入框里，模型名和「✦ 默认」是两个并排的下拉按钮。「默认」两个字看不出是在说什么，而且两个按钮其实都在回答“用什么方式来回答”这一个问题。参考 ChatGPT，方案把它们<b>合成一个按钮</b>：显示「模型名 · 强度」，选默认时只显示模型名。点开后是一张卡片：上方显示当前强度和模型，中间是可以拖动的<b>强度滑杆</b>，<b>↺</b> 恢复默认，点模型名进入模型列表。<br>
+    下面的方案<b>可以直接操作</b>：点按钮打开卡片，拖动或点击滑杆，按 ←/→ 键调整强度，点模型名换模型；也可以换成一个不支持推理强度的模型看看。</p>
+
+    <div class="dock">
+      <span class="lbl">主题</span>
+      <div class="seg" id="theme"><button data-v="dark" class="on">深色</button><button data-v="light">浅色</button></div>
+      <button class="seg" id="reset-demo" style="padding:4px 10px;font-size:12px;color:var(--text-2)">重置</button>
+    </div>
+
+    <div class="stage">
+      <span class="tag">现状</span>
+      <div class="composer" style="margin-top:14px">
+        <div class="ph">输入问题，/ 调用命令</div>
+        <div class="bar">
+          <span class="icon"><svg class="i"><use href="#plus"/></svg></span>
+          <span class="icon"><svg class="i sm"><use href="#cloud"/></svg></span>
+          <span class="pill">MiniMax M3 <svg class="i sm chev"><use href="#chev"/></svg></span>
+          <span class="pill muted"><svg class="i sm"><use href="#spark"/></svg>默认 <svg class="i sm chev"><use href="#chev"/></svg></span>
+          <span class="rule"></span>
+          <span class="icon"><svg class="i"><use href="#shot"/></svg></span>
+          <span class="chip"><svg class="i"><use href="#brain"/></svg></span>
+          <span class="sp"></span>
+          <span class="icon"><svg class="i"><use href="#mic"/></svg></span>
+          <span class="send"><svg class="i"><use href="#up"/></svg></span>
+        </div>
+        <div class="callout" style="left:96px;top:52px;width:210px;height:38px"></div>
+      </div>
+    </div>
+
+    <div class="stage tall" id="stage">
+      <span class="tag">方案（可操作）</span>
+      <div class="composer" id="composer">
+        <div class="ph">输入问题，/ 调用命令</div>
+        <div class="bar" id="bar"></div>
+        <div class="hint" id="hint"></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <div class="note">
+      <h3>设计要点</h3>
+      <ul>
+        <li><b>一个按钮</b>：显示「MiniMax M3 · 高」；默认时只显示「MiniMax M3」，不再出现“默认”两个字。选「高」时强度用强调色，提醒这档更慢、更费额度。</li>
+        <li><b>卡片标题</b>：大字显示当前强度，下面是模型名 ›，点击进入模型列表。⚡ 在默认时变灰。</li>
+        <li><b>滑杆</b>：低 · 中 · 高 三档，可以拖动、点击，或用 ←/→ 键。默认状态下滑杆不填充，滑块显示为虚线圈，表示“由模型决定”。</li>
+        <li><b>↺</b>：恢复默认。已经是默认时置灰。</li>
+        <li><b>不支持推理强度的模型</b>：按钮只显示模型名；卡片里的滑杆换成一行说明，卡片仍可用来换模型。</li>
+        <li>快捷浮窗（launcher）的输入框使用同一个按钮。</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>实现映射</h3>
+      <ul>
+        <li><code>AskModelMenu</code> 和 <code>AskReasoningMenu</code> 合并成一个控件，卡片分「强度」和「模型」两页，模型页沿用现有的 <code>AskModelChoices</code>。</li>
+        <li>强度沿用 <code>AskReasoningEffort</code>（默认 / 低 / 中 / 高），是否可调仍由 <code>isAvailable(for:)</code> 判断，请求参数不变。</li>
+        <li>斜杠命令 <code>/model</code> 和 <code>/think</code> 保持不变。</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<script>
+const MODELS = [
+  { group: 'Typeflux Cloud', items: [
+    { id: 'm3', name: 'MiniMax M3', sub: '自动选择', reasoning: true },
+    { id: 'sonnet', name: 'Claude Sonnet 5.5', sub: '', reasoning: true },
+    { id: 'mini', name: 'GPT-5.5 mini', sub: '速度优先', reasoning: false } ] },
+  { group: '我的模型', items: [
+    { id: 'qwen', name: 'qwen3:8b', sub: 'Ollama · 本机', reasoning: true },
+    { id: 'gpt41', name: 'gpt-4.1', sub: '自有 API', reasoning: false } ] },
+];
+const LEVELS = ['low', 'medium', 'high'];
+const LABEL = { default: '默认', low: '低', medium: '中', high: '高' };
+const CAPTION = { default: '由模型决定思考深度', low: '最快，适合简单问题', medium: '速度与深度均衡', high: '思考最充分，更慢且消耗更多积分' };
+const S = { model: 'm3', effort: 'default', open: false, page: 'effort', hint: '' };
+let hintTimer;
+const ic = (id, cls = '') => `<svg class="i ${cls}"><use href="#${id}"/></svg>`;
+const model = () => MODELS.flatMap(g => g.items).find(m => m.id === S.model);
+function flash(t) { S.hint = t; clearTimeout(hintTimer); hintTimer = setTimeout(() => { S.hint = ''; render(); }, 1600); }
+
+function chip() {
+  const m = model();
+  const eff = m.reasoning && S.effort !== 'default'
+    ? `<span class="dot">·</span><span class="eff ${S.effort === 'high' ? 'hi' : ''}">${LABEL[S.effort]}</span>` : '';
+  return `<button class="pill ${S.open ? 'on' : ''}" data-act="toggle" title="模型与推理强度">${m.name}${eff}${ic('chev', 'sm chev')}</button>`;
+}
+
+function effortPage() {
+  const m = model();
+  if (!m.reasoning) {
+    return `<div class="head"><span class="bolt off">${ic('bolt')}</span>
+      <div class="mid"><div class="lvl def">${m.name}</div>
+      <button class="model" data-act="models">更换模型 ${ic('right', 'sm')}</button></div><span></span></div>
+      <div class="unsupported">这个模型不支持调节推理强度，会按它自己的方式回答。</div>`;
+  }
+  const isDef = S.effort === 'default';
+  const idx = isDef ? 1 : LEVELS.indexOf(S.effort);
+  const pos = [12, 50, 88][idx];
+  const stops = [12, 50, 88].map((p, i) => `<span class="stop ${!isDef && i <= idx ? 'lit' : ''}" style="left:${p}%"></span>`).join('');
+  return `<div class="head"><span class="bolt ${isDef ? 'off' : ''}">${ic('bolt')}</span>
+      <div class="mid"><div class="lvl ${isDef ? 'def' : ''}">${LABEL[S.effort]}</div>
+      <button class="model" data-act="models">${m.name} ${ic('right', 'sm')}</button></div>
+      <button class="reset" data-act="reset" ${isDef ? 'disabled' : ''} title="恢复默认">${ic('reset')}</button></div>
+    <div class="slider ${isDef ? 'def' : ''}" id="slider">
+      <div class="fill" style="width:calc(${pos}% + 15px)"></div>${stops}
+      <div class="knob" style="left:${pos}%"></div></div>
+    <div class="marks">${LEVELS.map(l => `<span class="${S.effort === l ? 'on' : ''}">${LABEL[l]}</span>`).join('')}</div>
+    <div class="caption">${CAPTION[S.effort]}</div>
+    <div class="kbd"><kbd>←</kbd> <kbd>→</kbd> 调整 · <kbd>esc</kbd> 关闭</div>`;
+}
+
+function modelPage() {
+  let h = `<button class="back" data-act="back">${ic('left', 'sm')} 推理强度</button>`;
+  for (const g of MODELS) {
+    h += `<div class="grp">${g.group}</div>`;
+    for (const m of g.items) {
+      h += `<button class="mi" data-act="pick" data-id="${m.id}"><span class="nm">${m.name}${m.sub ? `<div class="sub2">${m.sub}</div>` : ''}</span>
+        ${m.reasoning ? '<span class="badge r">推理</span>' : ''}${S.model === m.id ? `<span class="ck">${ic('ok', 'sm')}</span>` : ''}</button>`;
+    }
+  }
+  return h;
+}
+
+function render() {
+  const bar = document.getElementById('bar');
+  bar.innerHTML = `<span class="icon">${ic('plus')}</span><span class="icon">${ic('cloud', 'sm')}</span>${chip()}
+    <span class="rule"></span><span class="icon">${ic('shot')}</span><span class="chip">${ic('brain')}</span>
+    <span class="sp"></span><span class="icon">${ic('mic')}</span><span class="send">${ic('up')}</span>`;
+  document.querySelector('.card')?.remove();
+  if (S.open) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = S.page === 'effort' ? effortPage() : modelPage();
+    const pill = bar.querySelector('[data-act=toggle]');
+    const stage = document.getElementById('stage').getBoundingClientRect();
+    const r = pill.getBoundingClientRect();
+    card.style.left = (r.left - stage.left - 6) + 'px';
+    document.getElementById('stage').appendChild(card);
+    card.style.top = (r.top - stage.top - card.offsetHeight - 10) + 'px';
+    bindSlider(card);
+  }
+  const hint = document.getElementById('hint');
+  hint.textContent = S.hint; hint.classList.toggle('show', !!S.hint);
+}
+
+function setEffort(e, announce = true) {
+  if (S.effort === e) return;
+  S.effort = e; if (announce) flash(e === 'default' ? '推理强度：默认' : `推理强度：${LABEL[e]}`); render();
+}
+
+function bindSlider(card) {
+  const slider = card.querySelector('#slider'); if (!slider) return;
+  const pick = x => {
+    const r = slider.getBoundingClientRect();
+    const t = Math.min(1, Math.max(0, (x - r.left) / r.width));
+    return LEVELS[t < .31 ? 0 : t < .69 ? 1 : 2];
+  };
+  slider.addEventListener('pointerdown', e => {
+    slider.setPointerCapture(e.pointerId);
+    setEffort(pick(e.clientX));
+    const move = ev => setEffortLive(pick(ev.clientX));
+    const up = () => { slider.removeEventListener('pointermove', move); slider.removeEventListener('pointerup', up); };
+    slider.addEventListener('pointermove', move); slider.addEventListener('pointerup', up);
+  });
+}
+function setEffortLive(e) {
+  if (S.effort === e) return;
+  S.effort = e; flash(`推理强度：${LABEL[e]}`);
+  // Update in place so the drag keeps its pointer capture.
+  const card = document.querySelector('.card'); if (!card) return;
+  const idx = LEVELS.indexOf(e), pos = [12, 50, 88][idx];
+  const slider = card.querySelector('#slider'); slider.classList.remove('def');
+  slider.querySelector('.fill').style.width = `calc(${pos}% + 15px)`;
+  slider.querySelector('.knob').style.left = pos + '%';
+  slider.querySelectorAll('.stop').forEach((s, i) => s.classList.toggle('lit', i <= idx));
+  card.querySelectorAll('.marks span').forEach((s, i) => s.classList.toggle('on', i === idx));
+  card.querySelector('.lvl').textContent = LABEL[e]; card.querySelector('.lvl').classList.remove('def');
+  card.querySelector('.bolt').classList.remove('off');
+  card.querySelector('.caption').textContent = CAPTION[e];
+  card.querySelector('.reset').disabled = false;
+  document.getElementById('bar').innerHTML = document.getElementById('bar').innerHTML.replace(/<button class="pill[\s\S]*?<\/button>/, chip());
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) { if (S.open && !e.target.closest('.card')) { S.open = false; render(); } return; }
+  switch (el.dataset.act) {
+    case 'toggle': S.open = !S.open; S.page = 'effort'; break;
+    case 'reset': setEffort('default'); return;
+    case 'models': S.page = 'models'; break;
+    case 'back': S.page = 'effort'; break;
+    case 'pick': S.model = el.dataset.id; S.page = 'effort'; flash('已切换到 ' + model().name); break;
+  }
+  render();
+});
+document.addEventListener('keydown', e => {
+  if (!S.open) return;
+  if (e.key === 'Escape') { S.open = false; render(); return; }
+  if (S.page !== 'effort' || !model().reasoning) return;
+  const i = S.effort === 'default' ? (e.key === 'ArrowRight' ? -1 : 3) : LEVELS.indexOf(S.effort);
+  if (e.key === 'ArrowRight') setEffort(LEVELS[Math.min(2, i + 1)]);
+  if (e.key === 'ArrowLeft') setEffort(LEVELS[Math.max(0, i - 1)]);
+});
+document.getElementById('theme').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.documentElement.dataset.theme = b.dataset.v;
+  document.querySelectorAll('#theme button').forEach(x => x.classList.toggle('on', x === b));
+});
+document.getElementById('reset-demo').addEventListener('click', () => { Object.assign(S, { model: 'm3', effort: 'default', open: false, page: 'effort' }); render(); });
+render();
+</script>
+</body>
+</html>
