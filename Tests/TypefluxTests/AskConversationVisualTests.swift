@@ -90,62 +90,55 @@ struct AskConversationVisualTests {
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let png = try AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 320, height: 200), type: .png)
-        var draft = AskDraft(text: "解释这段选中的内容", includeScreenshot: true,
-                             screenshot: "data:image/png;base64," + png.base64EncodedString(),
-                             selection: "来源信息属于这份草稿。\n重新截图不会更换选区来源。",
-                             source: "Safari — Typeflux 产品方案：上下文来源与截图范围说明",
-                             sourceBundleID: "com.apple.Safari", capturedAt: Date(timeIntervalSince1970: 1_791_014_400))
-        let localSuite = "ask-source-local-" + UUID().uuidString
-        let localDefaults = try #require(UserDefaults(suiteName: localSuite))
-        defer { localDefaults.removePersistentDomain(forName: localSuite) }
-        let profile = AskModelProfile(name: "Local model", baseURL: "http://127.0.0.1:11434/v1",
-                                      model: "typeflux/assistant-dev")
-        try localDefaults.set(JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
-        let localLibrary = AskModelLibrary(defaults: localDefaults, automaticallyLoadsCatalog: false)
-        localLibrary.defaultReference = profile.reference
-        let local = try AskTestFixture(localOnly: true, modelLibrary: localLibrary)
-        local.model.launcherDraft = AskDraft(includeScreenshot: false, source: "Safari", sourceBundleID: "com.apple.Safari")
-        local.model.launcherDraft.memory = AskMemory(global: "Saved preferences")
-        defer { local.model.resetSession() }
+        let captured = AskDraft(text: "解释这段选中的内容", includeScreenshot: true,
+                                screenshot: "data:image/png;base64," + png.base64EncodedString(),
+                                selection: "来源信息属于这份草稿。\n重新截图不会更换选区来源。",
+                                source: "Safari — Typeflux 产品方案：来源与截图范围说明",
+                                sourceBundleID: "com.apple.Safari", capturedAt: Date(timeIntervalSince1970: 1_791_014_400))
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             let fixture = try AskTestFixture()
-            fixture.model.launcherDraft = draft
             defer { fixture.model.resetSession() }
+            fixture.model.launcherDraft = captured
+            for width in [AskMetrics.launcherWidth, CGFloat(430)] {
+                try await render(AskLauncherView(model: fixture.model, onDismiss: {})
+                                    .environment(\.askGlassMaterialOverride, .opaque),
+                                 size: NSSize(width: width, height: width == 430 ? 232 : 190), appearance: appearance,
+                                 file: root.appendingPathComponent("captured-content-\(Int(width))-\(name).png"), minimumPNGBytes: 4000)
+            }
+            fixture.model.launcherDraft = AskDraft(text: "这个报错是什么意思", includeScreenshot: false,
+                                                   selection: "把远程桌面里的报错翻译一下", source: "Windows App — Dev Box")
+            fixture.model.restoreLauncherContextMarker(true)
+            try await render(AskLauncherView(model: fixture.model, onDismiss: {})
+                                .environment(\.askGlassMaterialOverride, .opaque),
+                             size: NSSize(width: AskMetrics.launcherWidth, height: 190), appearance: appearance,
+                             file: root.appendingPathComponent("captured-draft-\(name).png"), minimumPNGBytes: 4000)
+            fixture.model.launcherDraft = AskDraft(text: "讲讲这一屏在做什么", includeScreenshot: true,
+                                                   source: "Safari", sourceBundleID: "com.apple.Safari")
+            fixture.model.restoreLauncherContextMarker(false)
+            fixture.model.captureWarning = L("ask.capture.permission")
+            try await render(AskLauncherView(model: fixture.model, onDismiss: {})
+                                .environment(\.askGlassMaterialOverride, .opaque),
+                             size: NSSize(width: 430, height: 190), appearance: appearance,
+                             file: root.appendingPathComponent("captured-permission-\(name).png"), minimumPNGBytes: 4000)
+            fixture.model.launcherDraft = captured
+            fixture.model.captureWarning = nil
+            fixture.model.removeCapturedContent(.source, launcher: true)
             try await render(AskLauncherView(model: fixture.model, onDismiss: {})
                                 .environment(\.askGlassMaterialOverride, .opaque),
                              size: NSSize(width: AskMetrics.launcherWidth, height: 150), appearance: appearance,
-                             file: root.appendingPathComponent("source-launcher-\(name).png"), minimumPNGBytes: 4000)
-            try await render(AskLauncherView(model: fixture.model, onDismiss: {})
-                                .environment(\.askGlassMaterialOverride, .opaque),
-                             size: NSSize(width: 430, height: 150), appearance: appearance,
-                             file: root.appendingPathComponent("source-launcher-narrow-\(name).png"), minimumPNGBytes: 4000)
-            for width in [AskMetrics.launcherWidth, CGFloat(430)] {
-                try await render(AskLauncherView(model: local.model, onDismiss: {})
-                                    .environment(\.askGlassMaterialOverride, .opaque),
-                                 size: NSSize(width: width, height: AskMetrics.launcherHeight(editor: 32, banners: 0,
-                                                                                           suggestions: true)),
-                                 appearance: appearance,
-                                 file: root.appendingPathComponent("source-local-\(Int(width))-\(name).png"),
-                                 minimumPNGBytes: 4000)
-            }
-            try await render(AskSourceContextDetails(draft: .constant(draft), refresh: {}).background(Color(nsColor: .windowBackgroundColor)),
-                             size: NSSize(width: 430, height: 520), appearance: appearance,
-                             file: root.appendingPathComponent("source-context-included-\(name).png"), minimumPNGBytes: 4000)
-            draft.sourceOff = true
-            try await render(AskSourceContextDetails(draft: .constant(draft), refresh: {}).background(Color(nsColor: .windowBackgroundColor)),
-                             size: NSSize(width: 430, height: 520), appearance: appearance,
-                             file: root.appendingPathComponent("source-context-excluded-\(name).png"), minimumPNGBytes: 4000)
-            draft.sourceOff = nil
-            try await render(AskSourceContextDetails(draft: .constant(draft), restored: true, refresh: {}).background(Color(nsColor: .windowBackgroundColor)),
-                             size: NSSize(width: 430, height: 520), appearance: appearance,
-                             file: root.appendingPathComponent("source-context-restored-\(name).png"), minimumPNGBytes: 4000)
-            try await render(AskSourceContextDetails(draft: .constant(draft), capturing: true, refresh: {}).background(Color(nsColor: .windowBackgroundColor)),
-                             size: NSSize(width: 430, height: 520), appearance: appearance,
-                             file: root.appendingPathComponent("source-context-capturing-\(name).png"), minimumPNGBytes: 4000)
-            let unknown = AskDraft(text: "A question", includeScreenshot: false, selection: "Selected text")
-            try await render(AskSourceContextDetails(draft: .constant(unknown), warning: "屏幕录制权限尚未开启", refresh: {}).background(Color(nsColor: .windowBackgroundColor)),
-                             size: NSSize(width: 430, height: 520), appearance: appearance,
-                             file: root.appendingPathComponent("source-context-unavailable-\(name).png"), minimumPNGBytes: 4000)
+                             file: root.appendingPathComponent("captured-undo-\(name).png"), minimumPNGBytes: 4000)
+            try await render(AskSourceContextDetails(draft: .constant(captured), restored: true, refresh: {})
+                                .background(Color(nsColor: .windowBackgroundColor)),
+                             size: NSSize(width: 360, height: 230), appearance: appearance,
+                             file: root.appendingPathComponent("captured-source-details-\(name).png"), minimumPNGBytes: 4000)
+            try await render(AskSelectedTextDetails(text: captured.selection ?? "", source: "Safari", onRemove: {})
+                                .background(Color(nsColor: .windowBackgroundColor)),
+                             size: NSSize(width: 380, height: 250), appearance: appearance,
+                             file: root.appendingPathComponent("captured-selection-details-\(name).png"), minimumPNGBytes: 4000)
+            try await render(AskAttachChoices(clipboardHasImage: false, sourceToRestore: "Safari", selectionLinesToRestore: 2) { _ in }
+                                .background(Color(nsColor: .windowBackgroundColor)),
+                             size: NSSize(width: 300, height: 290), appearance: appearance,
+                             file: root.appendingPathComponent("captured-restore-\(name).png"), minimumPNGBytes: 4000)
         }
     }
 

@@ -4,7 +4,25 @@ Validated locally on 2026-10-04 on macOS 26.6.2, Apple Swift 6.4, against main
 `f403fbe33cdcbe0bd14a7ff859661501d59778bb`. The compatible API is
 [typeflux-api #100](https://github.com/mylxsw/typeflux-api/pull/100).
 
-## Final results
+## Main integration check
+
+On 2026-10-04, merged main `65f2d6fc` into the PR branch while preserving the
+R02 budget commit `8bf3c5f7`. The five localization conflicts were independent
+appended sections. All parent key/value changes were checked against the merge
+base, and all five resolved tables passed `plutil -lint`. `git diff --check`
+passed; the Memory, source-context, Skills, and budget changes are retained.
+
+The new `make coverage` run **failed**: XCTest executed 2,804 tests with five
+skips and zero failures; Swift Testing executed 793 tests and reported five
+assertion failures in two unchanged UI tests:
+`accountNameClickTogglesTheAccountCard` and
+`recordingHintsKeepTheirRoundedEndsInsideTheWindow` (classic style).
+The full overlay suite passed separately (six tests), and the account test passed
+separately (one test). These isolated checks do not turn the full run into a pass.
+No UI code was changed to suppress the failures, and no new full coverage summary
+was produced. The coverage figures below belong to the initial implementation.
+
+## Initial implementation results
 
 - `make coverage` (runs the complete `swift test --enable-code-coverage` suite):
   passed. XCTest executed 2,769 tests: 2,766 passed, three skipped, zero failures.

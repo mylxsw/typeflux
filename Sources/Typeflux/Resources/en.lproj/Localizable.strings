@@ -1406,15 +1406,41 @@
 "ask.context.source.remove" = "Remove source info";
 "ask.context.source.restore" = "Include source info";
 "ask.context.source.none" = "No source information";
-"ask.context.refresh" = "Capture current context";
-"ask.context.refresh.hint" = "Capture the active app and selected text again; replace the screenshot if enabled.";
-"ask.context.refresh.failed" = "Could not refresh context. Previous context has been kept.";
-"ask.context.refresh.externalApp" = "Switch to the source app before capturing context again.";
+"ask.context.refresh" = "Use current app info";
+"ask.context.refresh.hint" = "Replace the app info with the current app and clear the old selected text. Attached screenshots stay unchanged.";
+"ask.context.refresh.failed" = "Could not update the app info. Previous attachments have been kept.";
+"ask.context.refresh.externalApp" = "Switch to the source app before updating its app info.";
 "ask.context.screen.scope" = "The screenshot includes the entire captured display.";
 "ask.context.selection.source" = "From %@";
 "ask.context.screen.included" = "Screenshot attached";
 "ask.context.screen.excluded" = "No screenshot attached";
 "ask.context.selection.excluded" = "No selected text attached";
+"ask.context.refresh.target" = "Use app info from %@; clear the old selected text and keep attached screenshots.";
+"ask.context.source.previous" = "Previous";
+"ask.context.source.app" = "App";
+"ask.context.source.window" = "Window";
+"ask.context.source.metadataOnly" = "Only the app name and window title are attached. This does not read page or app content, or tell AI to control this app.";
+"ask.context.selection.lineCount" = "%d lines";
+"ask.context.selection.singleLine" = "%d line";
+"ask.context.screen.full" = "Full-screen screenshot";
+"ask.context.screen.capturing" = "Capturing the entire display…";
+"ask.context.screen.failed" = "Screenshot not attached";
+"ask.context.screen.grant" = "Grant access";
+"ask.context.screen.retry" = "Retry";
+"ask.context.screenshot.removeHint" = "Click to leave the screenshot out of this question";
+"ask.context.restore.source" = "Attach app info: %@";
+"ask.context.restore.selection" = "Attach selected text (%d lines)";
+"ask.context.undo" = "Undo";
+"ask.context.removed.source" = "App info removed";
+"ask.context.removed.selection" = "Selected text removed";
+"ask.context.removed.screenshot" = "Screenshot removed";
+"ask.context.restored.source" = "App info attached again";
+"ask.context.restored.selection" = "Selected text attached again";
+"ask.context.restored.screenshot" = "Screenshot attached again";
+"ask.context.refresh.applied" = "App info updated; old selected text cleared";
+"ask.context.undo.applied" = "Change undone";
+"ask.message.selection.line" = "Selected %d line";
+"ask.message.selection.lines" = "Selected %d lines";
 "ask.controlling" = "Typeflux is using your computer";
 "ask.copy" = "Copy";
 "ask.delete" = "Delete conversation";
@@ -1778,7 +1804,7 @@
 "ask.settings.skills.install" = "Install from GitHub…";
 "ask.settings.skills.installTitle" = "Install a skill from GitHub";
 "ask.settings.skills.installHint" = "Paste a repository, folder or SKILL.md link. Every folder with a SKILL.md becomes a skill; an installed skill with the same name is updated.";
-"ask.settings.skills.installWarning" = "Skills are instructions Ask follows and files it can read in the code sandbox. Install only from sources you trust.";
+"ask.settings.skills.installWarning" = "Skills provide instructions and sandbox-readable files. Install only from sources you trust. Matching names replace existing skills and keep one previous version. Disabled skills stay disabled; permission declarations grant no access.";
 "ask.settings.skills.installAction" = "Install";
 "ask.settings.skills.installing" = "Installing…";
 "ask.settings.skills.local" = "Local";
@@ -2195,3 +2221,27 @@
 "ask.budget.reason.context_capacity" = "context is full; reduce attachments or tool schemas";
 "ask.budget.reason.budget_unavailable" = "budget journal unavailable";
 "ask.budget.evidence" = "Collected tool results (not independently verified):";
+
+"ask.skills.parse.malformed" = "Invalid YAML frontmatter. Check the syntax and closing delimiter.";
+
+"ask.skills.parse.unsupported" = "Unsupported frontmatter structure. Use scalar fields, scalar metadata, and permission lists; anchors, tags and nested objects are not supported.";
+
+"ask.skills.parse.invalidSkill" = "The skill needs a valid name and a nonempty body.";
+
+"ask.skills.install.truncated" = "GitHub returned an incomplete file tree. Nothing was installed. Use a smaller repository.";
+
+"ask.skills.install.unsafeResource" = "The skill contains an unsafe path, symbolic link, submodule or unsupported file. Nothing was changed.";
+
+"ask.skills.install.invalidSource" = "The source version or downloaded files could not be verified. Nothing was installed.";
+
+"ask.skills.install.noPrevious" = "No previous version is available.";
+
+"ask.settings.skills.actionFailed" = "Could not change this skill";
+
+"ask.settings.skills.rollback" = "Restore previous version";
+
+"ask.settings.skills.unverifiedVersion" = "Legacy install: commit unknown";
+
+"ask.settings.skills.declarations" = "Declared permissions (no access granted):";
+
+"ask.skills.install.nameConflict" = "This skill name conflicts with local folders. Rename the conflicting folders before installing.";

@@ -22,6 +22,7 @@ struct AskToolsSettingsView: View {
     @State private var installError: String?
     @State private var installTask: Task<Void, Never>?
     @State private var pendingRemoval: AskSkill?
+    @State private var skillActionError: String?
 
     /// Which Agent settings tab to render; MCP servers are owned by the settings view model.
     var tab: AgentConfigurationTab = .general
@@ -170,6 +171,13 @@ struct AskToolsSettingsView: View {
             AgentSettingsActionRow(icon: "folder", title: L("ask.settings.skills.open")) { openSkillsFolder() }
         }
         .sheet(isPresented: $showingInstall) { installSheet }
+        .alert(L("ask.settings.skills.actionFailed"), isPresented: Binding(
+            get: { skillActionError != nil }, set: { if !$0 { skillActionError = nil } }
+        )) {
+            Button(L("common.ok")) { skillActionError = nil }
+        } message: {
+            Text(skillActionError ?? "")
+        }
         .alert(L("ask.settings.skills.removeTitle"), isPresented: Binding(
             get: { pendingRemoval != nil }, set: { if !$0 { pendingRemoval = nil } }
         )) {
@@ -187,8 +195,20 @@ struct AskToolsSettingsView: View {
         let source = skills.source(of: skill)
         let badge = skill.directory == nil ? L("ask.settings.skills.builtin")
             : source == nil ? L("ask.settings.skills.local") : "GitHub"
-        return AgentSettingsRow(icon: "wand.and.stars", title: skill.name, subtitle: skill.displayDescription, badge: badge) {
+        return AgentSettingsRow(icon: "wand.and.stars", title: skill.name,
+                                subtitle: skill.displayDescription, badge: badge) {
             HStack(spacing: 10) {
+                if skills.hasPreviousVersion(of: skill) {
+                    AgentSettingsIconButton(systemImage: "arrow.uturn.backward",
+                                            help: L("ask.settings.skills.rollback")) {
+                        do {
+                            try skills.rollback(skill)
+                            reload()
+                        } catch {
+                            skillActionError = error.localizedDescription
+                        }
+                    }
+                }
                 if skill.directory != nil {
                     AgentSettingsIconButton(systemImage: "trash", help: L("ask.remove"), role: .destructive) {
                         pendingRemoval = skill
@@ -201,7 +221,14 @@ struct AskToolsSettingsView: View {
                     .accessibilityLabel(skill.name)
             }
         }
-        .help(source.map { "\($0.repository)@\($0.ref)" + ($0.path.isEmpty ? "" : "/\($0.path)") } ?? "")
+        .help(source.map(Self.skillSourceDescription) ?? "")
+    }
+
+    static func skillSourceDescription(_ source: AskSkillSource) -> String {
+        let version = source.commit ?? L("ask.settings.skills.unverifiedVersion")
+        let declarations = (source.declaredPermissions ?? []).joined(separator: ", ")
+        return "\(source.repository)@\(source.ref)\n\(version)\n\(source.path)"
+            + (declarations.isEmpty ? "" : "\n" + L("ask.settings.skills.declarations") + " " + declarations)
     }
 
     private var installSheet: some View {
@@ -277,10 +304,14 @@ struct AskToolsSettingsView: View {
     }
 
     func removeSkill(_ skill: AskSkill) {
-        try? skills.remove(skill)
-        // A reinstalled skill with the same name starts enabled.
-        if disabledSkills.contains(skill.name) { setSkill(skill.name, enabled: true) }
-        reload()
+        do {
+            try skills.remove(skill)
+            // Explicit removal resets the name preference; updates and rollback preserve it.
+            if settings.askDisabledSkills.contains(skill.name) { setSkill(skill.name, enabled: true) }
+            reload()
+        } catch {
+            skillActionError = error.localizedDescription
+        }
     }
 
     var search: AskSearchSettings { AskSearchSettings(defaults: settings.defaults) }

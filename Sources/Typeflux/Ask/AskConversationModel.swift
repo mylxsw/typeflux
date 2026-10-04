@@ -153,8 +153,13 @@ final class AskConversationModel: ObservableObject {
     /// Queued messages being handed to a running run.
     @Published private(set) var steeringIds: Set<String> = []
     @Published private(set) var capturing = false
+    @Published private(set) var capturingScreenshot = false
     /// Reopening an unfinished question preserves its original captured context.
     @Published private(set) var launcherContextRestored = false
+    @Published var capturedContentChanges: [Bool: AskCapturedContentChange] = [:]
+    var capturedContentFeedbackTasks: [Bool: Task<Void, Never>] = [:]
+    var capturedContentFeedbackDuration: Duration = .seconds(5)
+    var capturedContentAccount: String? { session()?.owner }
     @Published var error: String?
     @Published var captureWarning: String?
     @Published private(set) var isRefreshingHistory = false
@@ -317,6 +322,9 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        capturedContentFeedbackTasks.values.forEach { $0.cancel() }
+        capturedContentFeedbackTasks = [:]
+        capturedContentChanges = [:]
         tools.cancelProjects(conversationId: nil)
         voiceInput.cancel()
         historyErrorTask?.cancel(); historyRefreshError = nil
@@ -336,10 +344,12 @@ final class AskConversationModel: ObservableObject {
         launcherScreenshotNotice = nil; screenshotNotice = nil; recoveringImages = [:]
         attachmentNotice = nil; launcherAttachmentNotice = nil
         launcherDraft = AskDraft(); draft = .followUp; launcherContextRestored = false
-        capturing = false; controllingConversationId = nil; onControlChanged?(false); owner = ""
+        capturing = false; capturingScreenshot = false
+        controllingConversationId = nil; onControlChanged?(false); owner = ""
     }
 
     func makeLauncherSelectionRequest() -> ReadOnlySelectionRequest { capture.makeSelectionRequest() }
+    func restoreLauncherContextMarker(_ restored: Bool) { launcherContextRestored = restored }
 
     func prepareLauncher(request: ReadOnlySelectionRequest? = nil) async {
         let request = request ?? makeLauncherSelectionRequest()
@@ -351,7 +361,7 @@ final class AskConversationModel: ObservableObject {
         let expectedOwner = owner
         let expectedSessionOwner = session()?.owner
         // Invalidate an older preparation before awaiting the draft cache.
-        let generation = UUID(); captureGeneration = generation; capturing = false
+        let generation = UUID(); captureGeneration = generation; capturing = false; capturingScreenshot = false
         let typedBefore = !launcherDraft.text.isEmpty
         var restored = false
         if !typedBefore, let cached = try? await cache.draft(key: "launcher", owner: owner) {
@@ -365,9 +375,10 @@ final class AskConversationModel: ObservableObject {
         // Restore an unfinished question without silently replacing its context.
         // Text typed into the just-opened panel still gets this launch's context.
         if typedBefore || restored { launcherContextRestored = true; return }
-        capturing = true; launcherContextRestored = false
+        clearCapturedContentFeedback(launcher: true)
+        capturing = true; capturingScreenshot = launcherDraft.includeScreenshot; launcherContextRestored = false
         let memoryGeneration = memoryPurgeGeneration
-        defer { if generation == captureGeneration { capturing = false } }
+        defer { if generation == captureGeneration { capturing = false; capturingScreenshot = false } }
         let context = await capture.capture(includeScreenshot: launcherDraft.includeScreenshot, includeSelection: true, request: request)
         guard !Task.isCancelled, generation == captureGeneration,
               owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
@@ -384,8 +395,8 @@ final class AskConversationModel: ObservableObject {
         persistDrafts()
     }
 
-    /// Explicitly replace captured context while keeping the question and the
-    /// user's inclusion choices, including changes made while capture awaits.
+    /// Replace only the source identity. Old selected text belongs to the old
+    /// source; screenshots and memory remain explicit, independent attachments.
     func refreshLauncherContext() async {
         guard !Task.isCancelled else { return }
         // The nonactivating launcher leaves the source app frontmost. Pin it
@@ -394,49 +405,59 @@ final class AskConversationModel: ObservableObject {
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
         normalizeScreenshotChoices()
         let expectedOwner = owner, expectedSessionOwner = session()?.owner
-        let memoryGeneration = memoryPurgeGeneration
-        let includeScreenshot = launcherDraft.includeScreenshot
         let generation = UUID(); captureGeneration = generation
-        capturing = true; captureWarning = nil
-        defer { if generation == captureGeneration { capturing = false } }
+        capturing = true; capturingScreenshot = false
+        defer { if generation == captureGeneration { capturing = false; capturingScreenshot = false } }
         // A popover can activate Typeflux even though the launcher itself is
         // nonactivating. Its editor is never a replacement source application.
         guard request.processID != ProcessInfo.processInfo.processIdentifier else {
-            captureWarning = L("ask.context.refresh.externalApp")
+            reportSourceRefreshFailure(L("ask.context.refresh.externalApp"))
             return
         }
-        let context = await capture.capture(includeScreenshot: includeScreenshot, includeSelection: true, request: request)
+        let context = await capture.capture(includeScreenshot: false, includeSelection: false, request: request)
         guard !Task.isCancelled, generation == captureGeneration,
               owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
-        // Only a completed read may replace the prior selection. Permission
-        // failures, AX errors and incomplete searches do not prove its absence.
-        let selectionFailed = context.selectionStatus.map {
-            !["accessibility-context", "no-selection-found"].contains($0)
+        let sourceFailed = context.selectionStatus.map {
+            !["selection-not-requested", "accessibility-context", "no-selection-found"].contains($0)
         } ?? false
-        guard !selectionFailed, !includeScreenshot || context.screenshot != nil else {
-            captureWarning = context.warning ?? L("ask.context.refresh.failed")
+        guard !sourceFailed, let source = context.source,
+              !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            reportSourceRefreshFailure(context.warning ?? L("ask.context.refresh.failed"))
             return
         }
-        launcherDraft.selection = context.selection
-        launcherDraft.source = context.source
+        let before = AskCapturedContentSnapshot(launcherDraft)
+        let wasRestored = launcherContextRestored
+        launcherDraft.selection = nil
+        launcherDraft.selectionOff = nil
+        launcherDraft.source = source
         launcherDraft.sourceBundleID = context.sourceBundleID
-        launcherDraft.screenshot = context.screenshot
-        launcherDraft.capturedAt = context.capturedAt
-        launcherDraft.memory = memoryGeneration == memoryPurgeGeneration ? context.memory ?? AskMemory() : AskMemory()
         launcherContextRestored = false
-        captureWarning = context.warning
+        recordCapturedContentChange(.sourceReplacement(restored: wasRestored), before: before,
+                                    text: L("ask.context.refresh.applied"), launcher: true)
         persistDrafts()
     }
 
     func refreshScreenshot(launcher: Bool) async {
-        guard screenshotCapability(launcher: launcher).canAttach else { return }
-        let generation = UUID(); captureGeneration = generation; capturing = true
-        let selectedId = selected?.id
+        guard !Task.isCancelled, !capturing || capturingScreenshot,
+              screenshotCapability(launcher: launcher).canAttach else { return }
+        let generation = UUID(); captureGeneration = generation; capturing = true; capturingScreenshot = true
+        let expectedOwner = owner, expectedSessionOwner = session()?.owner
+        let draftKey = capturedContentKey(launcher: launcher)
+        defer { if captureGeneration == generation { capturing = false; capturingScreenshot = false } }
         let context = await capture.capture(includeScreenshot: true, includeSelection: false)
-        guard captureGeneration == generation else { return }
-        defer { capturing = false }
-        if launcher { launcherDraft.screenshot = context.screenshot; launcherDraft.capturedAt = context.capturedAt }
-        else if selected?.id == selectedId { draft.screenshot = context.screenshot; draft.capturedAt = context.capturedAt }
+        guard !Task.isCancelled, captureGeneration == generation,
+              owner == expectedOwner, session()?.owner == expectedSessionOwner,
+              capturedContentKey(launcher: launcher) == draftKey else { return }
+        guard let screenshot = context.screenshot else {
+            captureWarning = context.warning ?? L("ask.capture.unavailable")
+            return
+        }
+        clearCapturedContentFeedback(launcher: launcher)
+        if launcher {
+            launcherDraft.screenshot = screenshot; launcherDraft.capturedAt = context.capturedAt
+        } else {
+            draft.screenshot = screenshot; draft.capturedAt = context.capturedAt
+        }
         captureWarning = context.warning; persistDrafts()
     }
 
@@ -556,6 +577,7 @@ final class AskConversationModel: ObservableObject {
         let id = AskConversationID.canonical(rawId)
         guard let current = credentials(for: id) else { return }
         if selectedId == id, isLoadingSelection || (!reload && selected != nil && !selectionLoadFailed) { return }
+        clearCapturedContentFeedback(launcher: false)
         voiceInput.cancel()
         cancelQueuedEdit(advancing: false)
         selectionObservation?.cancel(); selectionObservation = nil
@@ -566,7 +588,7 @@ final class AskConversationModel: ObservableObject {
         selectedId = id; selected = snapshots[id]; isLoadingSelection = true; selectionLoadFailed = false
         draft = drafts[id] ?? .followUp; error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
         attachmentNotice = nil
-        captureGeneration = UUID(); capturing = false
+        captureGeneration = UUID(); capturing = false; capturingScreenshot = false
         if let oldId, !deletedConversationIDs.contains(oldId), let saved = drafts[oldId] { try? await cache.saveDraft(saved, key: oldId, owner: cacheOwner(oldId)) }
         let cached = try? await cache.load(id: id, owner: current.owner)
         let savedDraft = try? await cache.draft(key: id, owner: current.owner)
@@ -610,13 +632,14 @@ final class AskConversationModel: ObservableObject {
     /// `storesLocally` starts a conversation kept on this Mac (true) or in Typeflux Cloud
     /// (false); nil follows the default from settings.
     func newConversation(storesLocally: Bool? = nil) {
+        clearCapturedContentFeedback(launcher: false)
         selectionObservation?.cancel(); selectionObservation = nil
         voiceInput.cancel()
         cancelQueuedEdit(advancing: false)
         persistDrafts()
         selectionGeneration = UUID(); selected = nil; selectedId = nil
         isLoadingSelection = false; selectionLoadFailed = false
-        captureGeneration = UUID(); capturing = false
+        captureGeneration = UUID(); capturing = false; capturingScreenshot = false
         draft = AskDraft(); error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
         attachmentNotice = nil
         if isSignedIn { draft.storesLocally = storesLocally }
@@ -642,6 +665,7 @@ final class AskConversationModel: ObservableObject {
         if isEditingQueued { saveQueuedEdit(); return }
         if canQueue, let id = selected?.id {
             sendQueue.enqueue(draft, to: id)
+            clearCapturedContentFeedback(launcher: false)
             draft = .followUp; persistDrafts()
             return
         }
@@ -688,10 +712,12 @@ final class AskConversationModel: ObservableObject {
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
         value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
         selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID()
-        if clearsDraft { draft = .followUp }
+        if clearsDraft { clearCapturedContentFeedback(launcher: false); draft = .followUp }
         snapshots[id] = value; selectionLoadFailed = false
         updateSummary(value)
-        if newConversation { launcherDraft = AskDraft(); launcherContextRestored = false }
+        if newConversation {
+            clearCapturedContentFeedback(launcher: true); launcherDraft = AskDraft(); launcherContextRestored = false
+        }
         // A queued message sending on its own must not bring the window forward.
         if clearsDraft { onShowConversation?() }
         persistDrafts()
@@ -1338,12 +1364,14 @@ extension AskConversationModel {
     func editQueued(_ itemId: String) {
         guard let id = selectedId, let item = sendQueue.messages(id).first(where: { $0.id == itemId }) else { return }
         if isEditingQueued { saveQueuedEdit(advancing: false) }
+        clearCapturedContentFeedback(launcher: false)
         sendQueue.editing = .init(conversationId: id, itemId: itemId, stash: draft)
         draft = item.draft
     }
 
     func saveQueuedEdit(advancing: Bool = true) {
         guard let editing = sendQueue.editing else { return }
+        clearCapturedContentFeedback(launcher: false)
         normalizeScreenshotChoices()
         sendQueue.update(editing.itemId, in: editing.conversationId, draft: draft)
         sendQueue.editing = nil
@@ -1354,6 +1382,7 @@ extension AskConversationModel {
 
     func cancelQueuedEdit(advancing: Bool = true) {
         guard let editing = sendQueue.editing else { return }
+        clearCapturedContentFeedback(launcher: false)
         sendQueue.editing = nil
         if selectedId == editing.conversationId { draft = editing.stash }
         if advancing { queueDidSettle(editing.conversationId) }

@@ -1,38 +1,45 @@
-# Ask source context (GUL-194)
+# Ask attached content (GUL-194)
 
-The composer exposes captured application metadata through **Context** instead
-of a standalone application icon. The entry remains available without a
-screenshot, and also appears on workspace drafts that carry source metadata
-(for example, a draft restored after a failed send).
-On narrow composers, context chips move into the Context panel so their
-controls, the microphone and the send button remain reachable.
+Both the launcher and workspace composer show captured content above the editor.
+There is no permanent **Context** button. The footer keeps screenshot and memory
+switches; included content stays visible when the window becomes narrow.
 
-- Source details show the captured app name and any available window title.
-  **Remove source info** excludes only the request's `source` field. Screenshots,
-  selected text and memory keep their independent inclusion controls. The local
-  source identity is retained so the user can inspect or re-enable it.
-- Selected-text chips show their source app as a small badge; the hover card and
-  attachment strip name it. The source is provenance, not a live foreground-app
-  indicator or a guarantee about a tool's execution target.
-- Screenshot details describe the whole captured display. Taking another
-  screenshot does not silently relabel an older text selection's source.
-- An unfinished launcher draft keeps its captured context and is labelled
-  **Draft source**. **Capture current context** explicitly replaces it, preserving
-  the question, attachments and inclusion choices. Failed or stale captures keep
-  the previous context. Refreshing from Typeflux itself is rejected so the
-  launcher/popover cannot become its own source. Switch to the source app first.
+- **Application information** shows the captured app and available window title.
+  Its details explain that these fields do not read page content or identify an
+  execution target. Removing it excludes only the request's `source` field.
+- **Selected text** shows a quotation and line count. Clicking it opens the full
+  text and its original source. Removing source metadata does not remove this
+  selection or its local provenance.
+- **Full-display screenshot** shows its thumbnail, with preview and recapture.
+  Pending captures and permission failures occupy the same content area. A
+  failed recapture retains the previous screenshot and reports the error in its
+  preview. Capturing source metadata does not show a screenshot spinner.
+- **Restored drafts** keep their original content and mark their source as
+  previous. The `arrow.clockwise` action replaces application metadata and clears
+  the old selected text. Its tooltip names the current application when known.
+  Existing screenshots, memory, typed text and files are retained. The metadata
+  capture does not fetch new selected text; only available fields are shown.
+- **Removal and recovery** show a five-second Undo confirmation. The attachment
+  menu can restore excluded application information or selected text afterward;
+  the screenshot switch restores its saved image. Undo changes only the affected
+  fields and cannot replay across another draft or account.
+- **Narrow windows** wrap content onto more rows. The launcher measures the strip
+  so its window grows with those rows. Screenshot and memory remain in the footer.
+- **Sent messages** summarize their actual app source, selection line count and
+  screenshot beneath the question. Selection and screenshot previews remain
+  available. User-uploaded images are not labelled as captured screenshots.
 
-`sourceOff` is optional in the local draft format; older drafts still include
-their source. The existing `source_bundle_id` cache key is preserved. No server
-or request schema change is required.
+The existing request and draft formats are unchanged, including optional
+`sourceOff`, `selectionOff` and `source_bundle_id`. Existing screenshot preferences
+remain in effect. No server or permission contract changes are required.
 
 ## Validation
 
-Model tests cover serialized sends and steering, source-size validation,
-cache compatibility, restored drafts, refresh success/failure, cancellation,
-target changes, account changes, concurrent captures and memory purges. Native
-interaction tests exercise the production Context button and source controls.
-The UI fixtures use synthetic content and do not capture the user's desktop.
+Model tests cover independent inclusion, Undo, expiration, source replacement,
+failed and cancelled captures, concurrent requests, account/draft changes and
+old draft compatibility. Native interaction tests exercise the actual chips,
+previews, restore menu, Undo and narrow composer controls. Rendering uses
+synthetic content and never captures the user's desktop.
 
 ```sh
 swift test --enable-code-coverage
@@ -40,16 +47,6 @@ TYPEFLUX_ASK_SNAPSHOTS=/path/to/artifacts swift test --enable-code-coverage \
   --filter AskConversationVisualTests.renderSourceContextSurfaces
 ```
 
-Review the standard and 430 pt launcher images in both appearances, then the
-included, excluded, restored, capturing and unavailable context details. Check
-that the Context entry and send button remain reachable, scope text wraps, and
-source exclusion does not imply disabling other context.
-
-The narrow fixtures use 430 pt for Chinese and 480 pt for English: the existing
-local-mode and reasoning labels need more space in English. Interaction tests
-check the window bounds and the folded memory and source controls.
-
-![Local launcher](images/ask-source-local-dark.png)
-![Narrow launcher](images/ask-source-narrow-light.png)
-![Selection provenance](images/ask-source-selection-dark.png)
-![Source excluded while other context stays included](images/ask-source-excluded-light.png)
+![Attached content](images/captured-content-dark.png)
+![Narrow composer](images/captured-content-narrow-light.png)
+![Restored draft](images/captured-draft-dark.png)

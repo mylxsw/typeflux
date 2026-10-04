@@ -1403,15 +1403,41 @@
 "ask.context.source.remove" = "移除來源資訊";
 "ask.context.source.restore" = "附帶來源資訊";
 "ask.context.source.none" = "無來源資訊";
-"ask.context.refresh" = "重新取得上下文";
-"ask.context.refresh.hint" = "重新取得目前的應用程式和選取文字；已開啟截圖時同時替換截圖。";
-"ask.context.refresh.failed" = "無法重新取得上下文，已保留原有內容。";
-"ask.context.refresh.externalApp" = "切換到來源應用程式後再重新取得上下文。";
+"ask.context.refresh" = "使用目前應用程式資訊";
+"ask.context.refresh.hint" = "重新取得目前應用程式資訊，清除舊的選取文字；已附加截圖保持不變。";
+"ask.context.refresh.failed" = "無法更新應用程式資訊，已保留原有附件。";
+"ask.context.refresh.externalApp" = "切換到來源應用程式後再更新應用程式資訊。";
 "ask.context.screen.scope" = "截圖包含擷取的整個螢幕。";
 "ask.context.selection.source" = "來自 %@";
 "ask.context.screen.included" = "已附帶截圖";
 "ask.context.screen.excluded" = "未附帶截圖";
 "ask.context.selection.excluded" = "未附帶選取文字";
+"ask.context.refresh.target" = "使用 %@ 的應用程式資訊；清除舊的選取文字，保留已附加截圖。";
+"ask.context.source.previous" = "上次";
+"ask.context.source.app" = "應用程式";
+"ask.context.source.window" = "視窗";
+"ask.context.source.metadataOnly" = "僅附加應用程式名稱和視窗標題，不讀取網頁內文或應用程式內容，也不表示 AI 將操作這個應用程式。";
+"ask.context.selection.lineCount" = "%d 行";
+"ask.context.selection.singleLine" = "%d 行";
+"ask.context.screen.full" = "全螢幕截圖";
+"ask.context.screen.capturing" = "正在擷取整個螢幕…";
+"ask.context.screen.failed" = "截圖未附加";
+"ask.context.screen.grant" = "前往授權";
+"ask.context.screen.retry" = "重試";
+"ask.context.screenshot.removeHint" = "點擊關閉，本次提問不附加截圖";
+"ask.context.restore.source" = "附加應用程式資訊：%@";
+"ask.context.restore.selection" = "附加選取文字（%d 行）";
+"ask.context.undo" = "還原";
+"ask.context.removed.source" = "已移除應用程式資訊";
+"ask.context.removed.selection" = "已移除選取文字";
+"ask.context.removed.screenshot" = "已移除螢幕截圖";
+"ask.context.restored.source" = "已重新附加應用程式資訊";
+"ask.context.restored.selection" = "已重新附加選取文字";
+"ask.context.restored.screenshot" = "已重新附加螢幕截圖";
+"ask.context.refresh.applied" = "已更新應用程式資訊，舊的選取文字已清除";
+"ask.context.undo.applied" = "已還原";
+"ask.message.selection.line" = "選取 %d 行";
+"ask.message.selection.lines" = "選取 %d 行";
 "ask.controlling" = "Typeflux is using your computer";
 "ask.copy" = "Copy";
 "ask.delete" = "Delete conversation";
@@ -1775,7 +1801,7 @@
 "ask.settings.skills.install" = "從 GitHub 安裝…";
 "ask.settings.skills.installTitle" = "從 GitHub 安裝技能";
 "ask.settings.skills.installHint" = "貼上儲存庫、資料夾或 SKILL.md 的連結。每個包含 SKILL.md 的資料夾會安裝為一個技能；同名的已安裝技能會被更新。";
-"ask.settings.skills.installWarning" = "技能是「隨便問」會遵循的指示，以及程式碼沙箱中可讀取的檔案。請只從可信來源安裝。";
+"ask.settings.skills.installWarning" = "技能提供指示與沙箱可讀檔案，請僅從可信來源安裝。同名技能會被取代並保留上一版本；停用狀態保持不變，權限宣告不授予存取權。";
 "ask.settings.skills.installAction" = "安裝";
 "ask.settings.skills.installing" = "正在安裝…";
 "ask.settings.skills.local" = "本機";
@@ -2192,3 +2218,27 @@
 "ask.budget.reason.context_capacity" = "context is full; reduce attachments or tool schemas";
 "ask.budget.reason.budget_unavailable" = "budget journal unavailable";
 "ask.budget.evidence" = "Collected tool results (not independently verified):";
+
+"ask.skills.parse.malformed" = "YAML 中繼資料格式無效，請檢查語法與結束分隔符。";
+
+"ask.skills.parse.unsupported" = "不支援此中繼資料結構。請使用純量欄位、純量 metadata 與權限清單；不支援錨點、自訂標籤與巢狀物件。";
+
+"ask.skills.parse.invalidSkill" = "技能需要有效名稱與非空內文。";
+
+"ask.skills.install.truncated" = "GitHub 傳回的檔案樹不完整，未安裝任何內容。請使用較小的儲存庫。";
+
+"ask.skills.install.unsafeResource" = "技能包含不安全路徑、符號連結、子模組或不支援的檔案，未作任何變更。";
+
+"ask.skills.install.invalidSource" = "無法驗證來源版本或下載的檔案，未安裝任何內容。";
+
+"ask.skills.install.noPrevious" = "沒有可還原的上一版本。";
+
+"ask.settings.skills.actionFailed" = "無法修改此技能";
+
+"ask.settings.skills.rollback" = "還原上一版本";
+
+"ask.settings.skills.unverifiedVersion" = "舊版安裝：提交版本未知";
+
+"ask.settings.skills.declarations" = "宣告權限（不授予存取權）：";
+
+"ask.skills.install.nameConflict" = "技能名稱與本機資料夾衝突。請先重新命名衝突的資料夾，再安裝。";
