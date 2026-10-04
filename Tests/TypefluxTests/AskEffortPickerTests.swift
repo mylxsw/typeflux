@@ -143,7 +143,8 @@ struct AskEffortPickerTests {
             let card = fits(AskModelEffortCard(library: library, reference: .constant(five.reference),
                                                effort: .constant(effort), loggedIn: true))
             #expect(card.width == AskModelEffortCard.width)
-            #expect(card.height > 100)
+            // Compact like the composer's other menus: title, model, slider and caption.
+            #expect(card.height > 90 && card.height < 140)
         }
         let unsupported = fits(AskModelEffortCard(library: library, reference: .constant(plain.reference),
                                                   effort: .constant(.high), loggedIn: true))
@@ -151,6 +152,7 @@ struct AskEffortPickerTests {
         let models = fits(AskModelEffortCard(library: library, reference: .constant(five.reference),
                                              effort: .constant(.high), loggedIn: true, page: .models))
         #expect(models.height > unsupported.height)
+        #expect(models.width == AskModelEffortCard.modelsWidth)
         let slider = fits(AskEffortSlider(levels: AskReasoningEffort.levels, effort: .constant(.max))
             .frame(width: 300))
         #expect(slider.height == AskEffortSlider.height)

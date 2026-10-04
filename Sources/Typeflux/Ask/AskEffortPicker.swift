@@ -32,7 +32,10 @@ struct AskModelEffortCard: View {
     var close: () -> Void = {}
     @State var page: Page = .effort
 
-    static let width: CGFloat = 330
+    /// Sized like the composer's other glass menus: 13pt rows, 11pt captions.
+    static let width: CGFloat = 272
+    /// The model list keeps the width of the composer's model menu.
+    static let modelsWidth: CGFloat = 330
 
     private var levels: [AskReasoningEffort] {
         AskReasoningEffort.levels(for: library.registry.resolve(reference)?.1)
@@ -42,17 +45,17 @@ struct AskModelEffortCard: View {
         Group {
             if page == .models { modelsPage } else { effortPage }
         }
-        .frame(width: Self.width)
+        .frame(width: page == .models ? Self.modelsWidth : Self.width)
     }
 
     @ViewBuilder private var effortPage: some View {
         let shown = effort.nearest(in: levels)
         VStack(spacing: 0) {
             HStack(alignment: .center, spacing: 0) {
-                Color.clear.frame(width: 30, height: 30)
-                VStack(spacing: 2) {
+                Color.clear.frame(width: 24, height: 24)
+                VStack(spacing: 1) {
                     Text(levels.isEmpty ? library.name(for: reference) : shown.label)
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(levels.isEmpty ? StudioTheme.textPrimary
                             : AskTheme.reasoningText(shown, defaultColor: StudioTheme.textPrimary))
                         .lineLimit(1)
@@ -61,9 +64,9 @@ struct AskModelEffortCard: View {
                         HStack(spacing: 2) {
                             Text(levels.isEmpty ? L("ask.reasoning.changeModel") : library.name(for: reference))
                                 .lineLimit(1).truncationMode(.middle)
-                            Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
+                            Image(systemName: "chevron.right").font(.system(size: 8, weight: .semibold))
                         }
-                        .font(.system(size: 12.5))
+                        .font(.system(size: 11.5))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .contentShape(Rectangle())
@@ -73,9 +76,9 @@ struct AskModelEffortCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 Button { effort = .providerDefault } label: {
-                    Image(systemName: "arrow.counterclockwise").font(.system(size: 14, weight: .medium))
+                    Image(systemName: "arrow.counterclockwise").font(.system(size: 12, weight: .medium))
                         .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 30, height: 30)
+                        .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(AskPressableStyle.subtle)
@@ -86,26 +89,26 @@ struct AskModelEffortCard: View {
             }
             if levels.isEmpty {
                 Text(L("ask.reasoning.unsupported"))
-                    .font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 12).padding(.vertical, 10)
-                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .padding(.top, 12)
-            } else {
-                AskEffortSlider(levels: levels, effort: $effort)
-                    .padding(.top, 14)
-                Text(shown.caption)
                     .font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 12)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 10).padding(.vertical, 8)
+                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .padding(.top, 10)
+            } else {
+                AskEffortSlider(levels: levels, effort: $effort)
+                    .padding(.top, 10)
+                Text(shown.caption)
+                    .font(.system(size: 11))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 8)
             }
         }
-        .padding(.horizontal, 14).padding(.top, 14).padding(.bottom, 16)
+        .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 12)
     }
 
     private var modelsPage: some View {
@@ -137,8 +140,8 @@ struct AskEffortSlider: View {
     let levels: [AskReasoningEffort]
     @Binding var effort: AskReasoningEffort
 
-    static let height: CGFloat = 38
-    static let knob: CGFloat = 32
+    static let height: CGFloat = 26
+    static let knob: CGFloat = 20
     static let inset: CGFloat = 3
 
     /// The knob's centre for stop `index` of `count` on a track `width` wide; the end
@@ -175,7 +178,7 @@ struct AskEffortSlider: View {
                     .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
                 ForEach(levels.indices, id: \.self) { stop in
                     Circle().fill(StudioTheme.textTertiary)
-                        .frame(width: 5, height: 5)
+                        .frame(width: 4, height: 4)
                         .position(x: Self.knobCenter(index: stop, count: levels.count, width: width), y: Self.height / 2)
                         .opacity(!auto && stop <= index ? 0 : 1)
                 }
@@ -209,14 +212,14 @@ struct AskEffortSlider: View {
 
     @ViewBuilder private var knob: some View {
         if auto {
-            Circle().strokeBorder(StudioTheme.textTertiary, style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
+            Circle().strokeBorder(StudioTheme.textTertiary, style: StrokeStyle(lineWidth: 1.2, dash: [2.5, 2.5]))
                 .frame(width: Self.knob, height: Self.knob)
         } else {
             Circle()
                 .fill(RadialGradient(colors: [.white, Color(white: 0.94), Color(white: 0.88)],
                                      center: UnitPoint(x: 0.5, y: 0.3), startRadius: 0, endRadius: Self.knob * 0.7))
                 .frame(width: Self.knob, height: Self.knob)
-                .shadow(color: .black.opacity(0.35), radius: 5, y: 3)
+                .shadow(color: .black.opacity(0.35), radius: 3.5, y: 2)
                 .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
         }
     }
@@ -229,7 +232,7 @@ struct AskLiquidFill: View {
     var top: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    static let particleCount = 34
+    static let particleCount = 26
 
     /// A stable pseudo-random value in 0..<1 for particle `index`, so the layout needs no state.
     static func noise(_ index: Int, _ salt: Double) -> Double {
@@ -267,9 +270,9 @@ struct AskLiquidFill: View {
             let left = (Self.noise(index, 2) * 340 + time * speed).truncatingRemainder(dividingBy: span) - 10
             guard left < Double(width) - AskEffortSlider.knob / 2 - 10 else { continue }
             let phase = Self.noise(index, 3) * 6.28
-            let top = 7 + Self.noise(index, 4) * Double(height - 14) + sin(time * 1.3 + phase) * 1.6
+            let top = 5 + Self.noise(index, 4) * Double(height - 10) + sin(time * 1.3 + phase) * 1.2
             let alpha = 0.35 + 0.65 * abs(sin(time * (0.6 + Self.noise(index, 5) * 1.6) + phase))
-            let radius = 0.6 + Self.noise(index, 6) * 1.1
+            let radius = 0.5 + Self.noise(index, 6) * 0.8
             canvas.fill(Path(ellipseIn: CGRect(x: left - radius, y: top - radius, width: radius * 2, height: radius * 2)),
                         with: .color(.white.opacity(alpha * 0.85)))
         }
