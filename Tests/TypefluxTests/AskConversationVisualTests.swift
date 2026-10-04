@@ -553,6 +553,79 @@ struct AskConversationVisualTests {
     /// Holds the workspace on screen, configured like the real window, so a window
     /// capture shows the glass the offscreen snapshots cannot draw. Each scene's name
     /// is written to `TYPEFLUX_ASK_HOLD_MARKER` while it is shown.
+    /// Holds the composer with the model and reasoning card open on screen, scene by
+    /// scene, so a window capture shows the real glass and the liquid fill moving.
+    @Test func holdEffortPickerWindow() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let seconds = environment["TYPEFLUX_ASK_EFFORT_HOLD"].flatMap(Double.init),
+              let marker = environment["TYPEFLUX_ASK_HOLD_MARKER"] else { return }
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let defaults = try #require(UserDefaults(suiteName: "ask-effort-hold-" + UUID().uuidString))
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        try library.addModels([
+            .init(id: "sonnet", name: "Claude Sonnet 5.5", reference: "cloud:sonnet", scenarios: ["ask"], reasoning: true,
+                  reasoningEfforts: ["low", "medium", "high", "xhigh", "max"]),
+            .init(id: "m3", name: "MiniMax M3", reference: "cloud:m3", scenarios: ["ask"], reasoning: true),
+            .init(id: "mini", name: "GPT-5.5 mini", reference: "cloud:mini", scenarios: ["ask"], reasoning: false)
+        ], providerID: "typefluxCloud")
+        let fixture = try AskTestFixture(modelLibrary: library)
+        defer { fixture.model.resetSession() }
+        final class Scene: ObservableObject {
+            @Published var reference = "cloud:sonnet"
+            @Published var effort = AskReasoningEffort.high
+            @Published var page = AskModelEffortCard.Page.effort
+        }
+        let scene = Scene()
+        struct Stage: View {
+            @ObservedObject var model: AskConversationModel
+            @ObservedObject var scene: Scene
+            var body: some View {
+                ZStack(alignment: .bottomLeading) {
+                    AskConversationView(model: model)
+                    AskGlassCardSurface(corner: AskGlassCardSurface<EmptyView>.menuCorner) {
+                        AskModelEffortCard(library: model.modelLibrary, reference: $scene.reference,
+                                           effort: $scene.effort, loggedIn: true, page: scene.page)
+                            .id(scene.page)
+                    }
+                    .padding(.leading, 380).padding(.bottom, 84)
+                }
+            }
+        }
+        let window = NSWindow(contentRect: NSRect(x: 120, y: 120, width: 1100, height: 740),
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                              backing: .buffered, defer: false)
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isReleasedWhenClosed = false
+        window.toolbar = NSToolbar(identifier: "ask-effort-hold")
+        window.toolbarStyle = .unified
+        window.appearance = NSAppearance(named: environment["TYPEFLUX_ASK_HOLD_LIGHT"] == nil ? .darkAqua : .aqua)
+        window.contentView = TransparentAskHostingView(rootView: Stage(model: fixture.model, scene: scene))
+        window.makeKeyAndOrderFront(nil)
+        defer { window.close() }
+        func show(_ name: String, reference: String, effort: AskReasoningEffort,
+                  page: AskModelEffortCard.Page = .effort) async throws {
+            scene.reference = reference; scene.effort = effort; scene.page = page
+            fixture.model.selectModel(reference, launcher: false)
+            fixture.model.reasoningEffort = effort
+            try name.write(toFile: marker, atomically: true, encoding: .utf8)
+            try await Task.sleep(for: .seconds(seconds))
+        }
+        try await show("high", reference: "cloud:sonnet", effort: .high)
+        try await show("max", reference: "cloud:sonnet", effort: .max)
+        try await show("low", reference: "cloud:sonnet", effort: .low)
+        try await show("auto", reference: "cloud:sonnet", effort: .providerDefault)
+        try await show("three-high", reference: "cloud:m3", effort: .high)
+        try await show("unsupported", reference: "cloud:mini", effort: .high)
+        try await show("models", reference: "cloud:sonnet", effort: .high, page: .models)
+        try "done".write(toFile: marker, atomically: true, encoding: .utf8)
+    }
+
     @Test func holdConversationStorageWindow() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let seconds = environment["TYPEFLUX_ASK_HOLD"].flatMap(Double.init),
