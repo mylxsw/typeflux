@@ -160,7 +160,6 @@ final class AskConversationModel: ObservableObject {
     var capturedContentFeedbackDuration: Duration = .seconds(5)
     var capturedContentAccount: String? { session()?.owner }
     @Published var recoveryEntries: [String: [AskExecutionEntry]] = [:]
-    @Published var restoredHistory: Set<String> = []
     @Published var inspectingRecovery = false
     @Published var recoveryWorking = false
     var recoveryGeneration = UUID()
@@ -327,7 +326,7 @@ final class AskConversationModel: ObservableObject {
 
     func resetSession() {
         recoveryGeneration = UUID(); recoveryWorking = false; inspectingRecovery = false
-        recoveryEntries = [:]; restoredHistory = []
+        recoveryEntries = [:]
         capturedContentFeedbackTasks.values.forEach { $0.cancel() }
         capturedContentFeedbackTasks = [:]
         capturedContentChanges = [:]
@@ -603,7 +602,6 @@ final class AskConversationModel: ObservableObject {
             let merged = sanitizedMemory(snapshots[id]?.reconciling(cached) ?? cached,
                                          account: current.account, local: current.token.isEmpty)
             selected = merged; snapshots[id] = merged
-            restoredHistory.insert(id)
             await refreshRecovery(merged, route: current)
         }
         draft = drafts[id] ?? savedDraft ?? .followUp
@@ -618,7 +616,6 @@ final class AskConversationModel: ObservableObject {
                                             account: current.account, local: current.token.isEmpty)
             guard generation == selectionGeneration else { return }
             selected = snapshots[id] ?? latest; isLoadingSelection = false
-            restoredHistory.insert(id)
             await refreshRecovery(selected ?? latest, route: current)
             guard generation == selectionGeneration, owner == current.account else { return }
             switchToVisionModelIfNeeded(launcher: false); normalizeScreenshotChoices(); error = operationErrors[id]

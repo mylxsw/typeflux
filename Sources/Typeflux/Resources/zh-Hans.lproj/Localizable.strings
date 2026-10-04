@@ -2245,27 +2245,25 @@
 "ask.skills.install.nameConflict" = "技能名称与本地文件夹冲突。请先重命名冲突的文件夹，再安装。";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "结果未知";
-"ask.recovery.unknownBody" = "操作可能已生效。请先核对目标位置，再决定下一步。结束任务不会撤销操作，也不代表成功。新请求需要重新说明并授权。";
-"ask.recovery.binding" = "只有原账户和原设备可以补发已绑定的回执。无法从历史记录补建缺失的身份。";
-"ask.recovery.saved" = "回执已保存在本机";
-"ask.recovery.savedBody" = "结果已保存，但尚未确认送达。可以补发原回执，不会重新执行工具或模型。";
-"ask.recovery.history" = "已恢复会话历史";
-"ask.recovery.historyBody" = "已载入保存的消息，尚未恢复执行。";
-"ask.recovery.activeBody" = "已获取任务的最新状态。本机尚未恢复工具执行或模型调用。";
-"ask.recovery.localBody" = "只能恢复已保存的步骤和回执。Typeflux 退出后，不保证本地任务继续执行。重启开发服务前，请先检查其状态。";
-"ask.recovery.steering" = "新的任务调整从下一步骤边界生效，无法改变已发出的操作。";
-"ask.recovery.inspect" = "核对恢复记录";
-"ask.recovery.retransmit" = "补发已保存回执";
-"ask.recovery.continue" = "从已保存步骤继续";
-"ask.recovery.recorded" = "本地已记录结果";
-"ask.recovery.noApproval" = "没有保存的批准记录";
-"ask.recovery.approvalRecorded" = "已记录批准；该记录不能授权再次执行。";
-"ask.recovery.remoteEvidence" = "服务端仅提供任务状态，此处没有远端操作证据。";
+"ask.recovery.unknown" = "请确认上次操作的结果";
+"ask.recovery.unknownBody" = "上次操作可能已经完成。请先检查相关应用或文件，避免重复操作。";
+"ask.recovery.checkBody" = "Typeflux 不会自动重复这次操作。";
+"ask.recovery.endBody" = "结束任务只会停止后续步骤，已经完成的操作不会撤销。";
+"ask.recovery.binding" = "请回到开始这项任务的设备，并使用原账户查看结果或继续处理。";
+"ask.recovery.otherDevice" = "请在原设备继续";
+"ask.recovery.saved" = "结果尚未同步";
+"ask.recovery.savedBody" = "结果已保存在本机。可以重新同步，无需再做一次。";
+"ask.recovery.paused" = "任务已暂停";
+"ask.recovery.activeBody" = "上次任务尚未完成，可以从中断处继续。";
+"ask.recovery.finished" = "任务已结束";
+"ask.recovery.finishedBody" = "可以继续提问，或开始新的任务。";
+"ask.recovery.inspect" = "查看处理方式";
+"ask.recovery.retransmit" = "同步结果";
+"ask.recovery.continue" = "继续任务";
 "ask.recovery.close" = "关闭";
 "ask.recovery.end" = "结束此任务";
 "ask.recovery.newRequest" = "编写新请求";
-"ask.recovery.newRequestBody" = "核对效果后，请编写并发送新的指令。旧的未知操作仍会保留在日志中。";
+"ask.recovery.newRequestBody" = "确认结果后，请输入并发送新的请求。";
 
 /* GUL-193 Reasoning effort levels */
 "ask.reasoning.xhigh" = "超高";

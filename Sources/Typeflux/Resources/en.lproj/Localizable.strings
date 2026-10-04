@@ -2245,27 +2245,25 @@
 "ask.skills.install.nameConflict" = "This skill name conflicts with local folders. Rename the conflicting folders before installing.";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "Result unknown";
-"ask.recovery.unknownBody" = "An operation may already have taken effect. Check its destination before taking further action. Ending this run does not undo effects or confirm success. A new request requires fresh instructions and approval.";
-"ask.recovery.binding" = "Only the original account and device can resend a bound receipt. Missing identity cannot be reconstructed from history.";
-"ask.recovery.saved" = "Receipt saved on this Mac";
-"ask.recovery.savedBody" = "The result is saved, but delivery is unconfirmed. Resend the saved receipt without executing the tool or model again.";
-"ask.recovery.history" = "Conversation history restored";
-"ask.recovery.historyBody" = "Saved messages are available. No execution has been resumed.";
-"ask.recovery.activeBody" = "The latest run status is available. This Mac has not resumed tools or model calls.";
-"ask.recovery.localBody" = "Only saved steps and receipts can be recovered. Local execution after Typeflux exits is not guaranteed. Check any development service before restarting it.";
-"ask.recovery.steering" = "New steering takes effect at the next step boundary. It cannot change a dispatched operation.";
-"ask.recovery.inspect" = "Inspect recovery";
-"ask.recovery.retransmit" = "Resend saved receipt";
-"ask.recovery.continue" = "Continue from saved step";
-"ask.recovery.recorded" = "Result recorded locally";
-"ask.recovery.noApproval" = "No saved approval record";
-"ask.recovery.approvalRecorded" = "Approval recorded; a saved record cannot authorize another execution.";
-"ask.recovery.remoteEvidence" = "The server exposes run status only. No remote operation evidence is available here.";
+"ask.recovery.unknown" = "Please check the previous result";
+"ask.recovery.unknownBody" = "The previous action may already be complete. Check the relevant app or file before doing it again.";
+"ask.recovery.checkBody" = "Typeflux will not automatically repeat this action.";
+"ask.recovery.endBody" = "Ending this task stops further work. It does not undo actions that have already finished.";
+"ask.recovery.binding" = "Return to the device where you started this task and sign in to the original account to check the result or continue.";
+"ask.recovery.otherDevice" = "Continue on the original device";
+"ask.recovery.saved" = "Results need syncing";
+"ask.recovery.savedBody" = "The results are saved on this Mac. You can sync them again without repeating the work.";
+"ask.recovery.paused" = "Task paused";
+"ask.recovery.activeBody" = "The previous task is unfinished. You can continue where you left off.";
+"ask.recovery.finished" = "Task ended";
+"ask.recovery.finishedBody" = "You can ask a follow-up question or start a new task.";
+"ask.recovery.inspect" = "What to do next";
+"ask.recovery.retransmit" = "Sync results";
+"ask.recovery.continue" = "Continue task";
 "ask.recovery.close" = "Close";
-"ask.recovery.end" = "End this run";
+"ask.recovery.end" = "End this task";
 "ask.recovery.newRequest" = "Write a new request";
-"ask.recovery.newRequestBody" = "After checking the effects, type and send new instructions. The unknown operation remains in the journal.";
+"ask.recovery.newRequestBody" = "After checking the result, type and send a new request.";
 
 /* GUL-193 Reasoning effort levels */
 "ask.reasoning.xhigh" = "Extra high";

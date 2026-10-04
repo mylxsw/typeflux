@@ -11,16 +11,20 @@ extension AskConversationModel {
         }
     }
 
+    var recoveryPresentation: AskRecoveryPresentation {
+        .init(run: selected?.run, entries: selectedRecoveryEntries, deviceId: deviceId,
+              local: selected.map { isLocal($0.id) } ?? false)
+    }
+
     var hasRecoveryNotice: Bool {
-        guard let value = selected else { return false }
-        return restoredHistory.contains(value.id) || value.run?.recovery != nil
-            || value.run?.needsRecoveryInspection == true || !selectedRecoveryEntries.isEmpty
+        selected != nil && recoveryPresentation.isVisible
     }
 
     var canRetransmitReceipts: Bool {
-        !recoveryWorking && selectedRecoveryEntries.contains {
+        guard !recoveryWorking, let run = selected?.run else { return false }
+        return selectedRecoveryEntries.contains {
             !$0.acknowledged && !$0.deleted && $0.receipt != nil && $0.audit?.identity.deviceId == deviceId
-                && $0.audit?.identity.owner == session()?.owner
+                && $0.audit?.identity.owner == session()?.owner && $0.audit?.identity.runId == run.id
         }
     }
 

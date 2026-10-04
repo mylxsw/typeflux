@@ -46,12 +46,20 @@ assertions. Account switching also hides another account's local recovery detail
 ## User interaction
 
 Opening history loads messages and observes authoritative status; it never
-resumes local execution. The recovery card distinguishes history restoration,
-saved-but-unconfirmed receipts, active execution status and unknown outcomes.
-The inspector shows real local result evidence and redacted correlations. For a
-remote unknown run it states that the API exposes status only, not operation
-evidence. Ending the inspected run uses `/cancel`; it neither undoes effects nor
-marks an unknown operation successful. No resolution endpoint is assumed.
+resumes local execution or adds a recovery notice by itself. Completed tasks
+with confirmed results stay quiet. A card appears only for the current task's
+unconfirmed results, unknown outcomes, or device work that can be continued.
+Ordinary server execution and earlier tasks' bound journal entries do not create
+a recovery notice. The card offers plain-language sync, continue, or review
+actions. Review explains what the user should check in the affected app or file;
+raw receipts, hashes, tool identifiers and audit transitions stay out of the user
+interface. The journal is retained unchanged. Ending the inspected run uses
+`/cancel`; it neither undoes effects nor marks an unknown operation successful.
+No resolution endpoint is assumed.
+
+GUL-198 native SwiftUI fixtures show the [completed conversation](../images/ask-recovery-completed-zh.png)
+and [a task that needs review](../images/ask-recovery-review-zh.png). These are
+synthetic local test conversations, not captures of a live provider session.
 
 An unknown operation blocks ordinary resume, steering and queued-message resume.
 After ending that run, the user can write and submit fresh instructions. This is
