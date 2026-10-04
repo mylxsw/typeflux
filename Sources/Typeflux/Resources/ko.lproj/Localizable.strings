@@ -2176,6 +2176,42 @@
 "ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
 "ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
 
+// Memory provenance and retention
+"memory.search" = "기억 검색";
+"memory.correct" = "기억 수정";
+"memory.deleteSource" = "원본 기억 삭제";
+"memory.boundaries" = "원본을 삭제하거나 수정하면 관련 스냅샷이 무효화되어 이후 주입이 중단됩니다. Ask의 기억 버튼은 주입만 제어하며 도구의 기억 저장에는 승인이 필요합니다. 대화 기록은 별도로 삭제해야 하며 요약과 이전 답변에 파생 텍스트가 남을 수 있습니다.";
+"memory.retention" = "보관 기간";
+"memory.keepRetention" = "현재 기간 유지";
+"memory.forever" = "삭제할 때까지";
+"memory.days7" = "7일";
+"memory.days30" = "30일";
+"memory.cancel" = "취소";
+"memory.save" = "수정 저장";
+"memory.correction" = "사용자 수정";
+"memory.explicit" = "명시적 메모";
+"memory.account" = "현재 계정";
+"memory.recentScope" = "Recent는 이 Mac에만 저장되며 계정 및 앱 또는 페이지별로 격리되고 24시간 후 만료됩니다. Soul은 계정의 자동 요약으로 삭제할 때까지 유지됩니다.";
+"memory.saveFailed" = "기억 변경 내용을 저장하지 못했습니다. 다시 시도하세요.";
+
+// Run budget reservations and reconciliation.
+"ask.budget.title" = "Run budget";
+"ask.budget.client" = "Usage is client-reported; external charges are not verified.";
+"ask.budget.estimate" = "Reservations are estimates; provider charges may differ.";
+"ask.budget.tokens" = "Reported tokens: %lld · occupied: %lld / %lld";
+"ask.budget.web" = "Web requests: %lld / %lld";
+"ask.budget.pending" = "%d unsettled reservations remain occupied.";
+"ask.budget.stopped" = "Stopped: %@. Existing results are preserved.";
+"ask.budget.reason.tokens" = "token budget reached";
+"ask.budget.reason.cost_estimate" = "estimated cost budget reached";
+"ask.budget.reason.web_requests" = "web request limit reached";
+"ask.budget.reason.children" = "research limit reached";
+"ask.budget.reason.operations" = "operation limit reached";
+"ask.budget.reason.duration" = "time limit reached";
+"ask.budget.reason.context_capacity" = "context is full; reduce attachments or tool schemas";
+"ask.budget.reason.budget_unavailable" = "budget journal unavailable";
+"ask.budget.evidence" = "Collected tool results (not independently verified):";
+
 "ask.skills.parse.malformed" = "YAML 프런트매터가 잘못되었습니다. 구문과 종료 구분자를 확인하세요.";
 
 "ask.skills.parse.unsupported" = "지원하지 않는 구조입니다. 스칼라 필드, 스칼라 metadata, 권한 목록을 사용하세요. 앵커, 사용자 지정 태그, 중첩 객체는 지원하지 않습니다.";

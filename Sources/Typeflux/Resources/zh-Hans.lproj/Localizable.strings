@@ -2186,6 +2186,42 @@
 "ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
 "ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
 
+// Memory provenance and retention
+"memory.search" = "搜索源记忆";
+"memory.correct" = "更正记忆";
+"memory.deleteSource" = "删除源记忆";
+"memory.boundaries" = "删除或更正源记忆会使相关快照失效，停止后续注入。Ask 的记忆按钮只控制注入；工具保存记忆仍需审批。会话历史须单独删除，摘要和已有回复可能保留衍生文本。";
+"memory.retention" = "保留期限";
+"memory.keepRetention" = "保留当前期限";
+"memory.forever" = "直到删除";
+"memory.days7" = "7 天";
+"memory.days30" = "30 天";
+"memory.cancel" = "取消";
+"memory.save" = "保存更正";
+"memory.correction" = "用户更正";
+"memory.explicit" = "显式笔记";
+"memory.account" = "当前账户";
+"memory.recentScope" = "Recent 仅保存在这台 Mac，按账户及应用或页面隔离，24 小时后过期。Soul 是当前账户的自动摘要，保留至删除。";
+"memory.saveFailed" = "无法保存记忆变更，请重试。";
+
+// Run budget reservations and reconciliation.
+"ask.budget.title" = "本轮预算";
+"ask.budget.client" = "用量由客户端报告，第三方费用尚未核实。";
+"ask.budget.estimate" = "预留量为估算值，供应商实际计费可能不同。";
+"ask.budget.tokens" = "报告 token：%lld · 已占用：%lld / %lld";
+"ask.budget.web" = "网页请求：%lld / %lld";
+"ask.budget.pending" = "%d 笔未结算预留仍占用预算。";
+"ask.budget.stopped" = "已停止：%@。已收集的结果仍保留。";
+"ask.budget.reason.tokens" = "已达 token 预算";
+"ask.budget.reason.cost_estimate" = "已达估算费用预算";
+"ask.budget.reason.web_requests" = "已达网页请求上限";
+"ask.budget.reason.children" = "已达研究任务上限";
+"ask.budget.reason.operations" = "已达操作次数上限";
+"ask.budget.reason.duration" = "已达时长上限";
+"ask.budget.reason.context_capacity" = "上下文已满，请减少附件或工具定义";
+"ask.budget.reason.budget_unavailable" = "预算记录暂不可用";
+"ask.budget.evidence" = "已收集的工具结果（尚未独立核实）：";
+
 "ask.skills.parse.malformed" = "YAML 元数据格式无效，请检查语法和结束分隔符。";
 
 "ask.skills.parse.unsupported" = "不支持此元数据结构。请使用标量字段、标量 metadata 和权限列表；不支持锚点、自定义标签和嵌套对象。";

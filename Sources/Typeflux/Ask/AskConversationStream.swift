@@ -24,11 +24,13 @@ struct AskConversationStreamState {
         }
         if event == "progress", var next = value {
             let progress = try AskCoding.decoder().decode(Progress.self, from: bytes)
-            guard progress.id == next.id, (progress.revision > next.revision || (progress.usage?.version ?? 0) > (next.usage?.version ?? 0)) else { return nil }
+            let budgetChanged = progress.run?.id == next.run?.id && (progress.run?.budget?.version ?? 0) > (next.run?.budget?.version ?? 0)
+            guard progress.id == next.id, (progress.revision > next.revision || (progress.usage?.version ?? 0) > (next.usage?.version ?? 0) || budgetChanged) else { return nil }
             if progress.revision >= next.revision {
                 next.revision = progress.revision; next.updatedAt = progress.updatedAt; next.run = progress.run
                 next.contextUsage = progress.contextUsage ?? next.contextUsage
             }
+            if budgetChanged { next.run?.budget = progress.run?.budget }
             if let usage = progress.usage, usage.version >= (next.usage?.version ?? 0) { next.usage = usage }
             value = next
             return next

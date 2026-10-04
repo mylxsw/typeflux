@@ -2176,6 +2176,42 @@
 "ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
 "ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
 
+// Memory provenance and retention
+"memory.search" = "記憶を検索";
+"memory.correct" = "記憶を訂正";
+"memory.deleteSource" = "記憶の元データを削除";
+"memory.boundaries" = "元データの削除や訂正は関連するスナップショットを無効にし、以後の注入を停止します。Ask の記憶ボタンは注入のみを制御し、ツールによる保存には承認が必要です。会話履歴は別途削除してください。要約や過去の返信には派生テキストが残る場合があります。";
+"memory.retention" = "保持期間";
+"memory.keepRetention" = "現在の期間を維持";
+"memory.forever" = "削除するまで";
+"memory.days7" = "7 日間";
+"memory.days30" = "30 日間";
+"memory.cancel" = "キャンセル";
+"memory.save" = "訂正を保存";
+"memory.correction" = "ユーザーによる訂正";
+"memory.explicit" = "明示的なメモ";
+"memory.account" = "このアカウント";
+"memory.recentScope" = "Recent はこの Mac にのみ保存され、アカウントとアプリまたはページごとに分離され、24 時間後に期限切れになります。Soul はアカウントの自動要約で、削除するまで保持されます。";
+"memory.saveFailed" = "記憶の変更を保存できませんでした。再試行してください。";
+
+// Run budget reservations and reconciliation.
+"ask.budget.title" = "Run budget";
+"ask.budget.client" = "Usage is client-reported; external charges are not verified.";
+"ask.budget.estimate" = "Reservations are estimates; provider charges may differ.";
+"ask.budget.tokens" = "Reported tokens: %lld · occupied: %lld / %lld";
+"ask.budget.web" = "Web requests: %lld / %lld";
+"ask.budget.pending" = "%d unsettled reservations remain occupied.";
+"ask.budget.stopped" = "Stopped: %@. Existing results are preserved.";
+"ask.budget.reason.tokens" = "token budget reached";
+"ask.budget.reason.cost_estimate" = "estimated cost budget reached";
+"ask.budget.reason.web_requests" = "web request limit reached";
+"ask.budget.reason.children" = "research limit reached";
+"ask.budget.reason.operations" = "operation limit reached";
+"ask.budget.reason.duration" = "time limit reached";
+"ask.budget.reason.context_capacity" = "context is full; reduce attachments or tool schemas";
+"ask.budget.reason.budget_unavailable" = "budget journal unavailable";
+"ask.budget.evidence" = "Collected tool results (not independently verified):";
+
 "ask.skills.parse.malformed" = "YAML フロントマターが無効です。構文と終了区切りを確認してください。";
 
 "ask.skills.parse.unsupported" = "未対応の構造です。スカラー値、スカラーの metadata、権限リストを使用してください。アンカー、独自タグ、入れ子のオブジェクトは未対応です。";

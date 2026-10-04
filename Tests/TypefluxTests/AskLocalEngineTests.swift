@@ -240,7 +240,7 @@ final class AskLocalEngineTests: XCTestCase {
             limitSeen = limitSeen || c.messages.contains { $0.text.contains("Web tool limit") }
             if c.run?.status != "waiting_inference" { break }
         }
-        XCTAssertTrue(limitSeen)
+        XCTAssertFalse(limitSeen, "Plan updates do not spend the web request quota")
         XCTAssertEqual(c.run?.status, "failed")
         XCTAssertEqual(c.run?.error, L("ask.local.stepLimit"))
         let invalid = try await engine.send(conversationId: "plan", request: request(), token: "")

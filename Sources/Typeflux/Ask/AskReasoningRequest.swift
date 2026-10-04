@@ -17,11 +17,20 @@ enum AskReasoningRequest {
     /// Enables Anthropic extended thinking. A turn that answers tool results is left alone:
     /// Anthropic requires the thinking block of that tool call to be sent back, and the
     /// bridge does not keep it.
-    static func applyAnthropic(effort: String?, to native: inout [String: Any]) {
+    static func applyAnthropic(effort: String?, to native: inout [String: Any], totalOutputLimit: Int? = nil) {
         guard let effort, let budget = anthropicBudgets[effort] else { return }
         let last = (native["messages"] as? [[String: Any]])?.last
         let parts = last?["content"] as? [[String: Any]] ?? []
         guard !parts.contains(where: { $0["type"] as? String == "tool_result" }) else { return }
+        if let totalOutputLimit {
+            native["max_tokens"] = totalOutputLimit
+            // Thinking consumes the same output reserve. Small reserves cannot
+            // support Anthropic's minimum thinking budget plus an answer.
+            if totalOutputLimit > 2048 {
+                native["thinking"] = ["type": "enabled", "budget_tokens": min(budget, totalOutputLimit - 1024)]
+            }
+            return
+        }
         native["thinking"] = ["type": "enabled", "budget_tokens": budget]
         // max_tokens must exceed the thinking budget and still leave room for the answer.
         let answer = native["max_tokens"] as? Int ?? AskLocalPrompt.maxAnswerTokens
@@ -56,10 +65,11 @@ enum AskReasoningRequest {
 
     /// Sends `body`; when the provider rejects it and it carried reasoning parameters,
     /// retries once without them so an unsupported effort never breaks the answer.
-    static func send<T>(_ body: [String: Any], _ attempt: ([String: Any]) async throws -> T) async throws -> T {
+    static func send<T>(_ body: [String: Any], allowRetry: Bool = true, _ attempt: ([String: Any]) async throws -> T) async throws -> T {
         do {
             return try await attempt(body)
         } catch AskStreamError.rejected {
+            guard allowRetry else { throw AskLocalError.message(L("ask.models.requestError")) }
             var fallback = body
             guard strip(&fallback) else { throw AskLocalError.message(L("ask.models.requestError")) }
             do {

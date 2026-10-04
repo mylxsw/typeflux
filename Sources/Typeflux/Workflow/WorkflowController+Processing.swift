@@ -964,11 +964,11 @@ extension WorkflowController {
 
             let isAskSelectionFlow = recordingIntent == .askSelection
                 && !(askContextText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+            let soulOwnerID = await MainActor.run { GlobalSoulOwner.currentID }
             let hasRecentMemory = recentInputMemoryScope.map { scope in
                 settingsStore.recentInputMemoryAllowed(for: scope.appIdentifier)
-                    && !RecentInputMemoryStore.shared.recent(scope: scope.key, limit: 1).isEmpty
+                    && !RecentInputMemoryStore.shared.recent(scope: scope.key, limit: 1, owner: soulOwnerID).isEmpty
             } ?? false
-            let soulOwnerID = await MainActor.run { GlobalSoulOwner.currentID }
             let hasGlobalSoul = settingsStore.globalSoulMemoryEnabled
                 && settingsStore.isLLMConfigured
                 && GlobalSoulMemoryStore.shared.soul(ownerID: soulOwnerID) != nil

@@ -88,7 +88,7 @@ final class AskAgentToolsTests: XCTestCase {
         XCTAssertNil(AskMemoryNoteStore.memoryText([], limit: 1000))
         XCTAssertNil(AskMemoryNoteStore.memoryText(reloaded.list(owner: "a"), limit: 10))
 
-        XCTAssertTrue(try store.execute(["action": "list"], owner: "a").contains("\(first.id): Prefers metric units"))
+        XCTAssertTrue(try store.execute(["action": "list"], owner: "a").contains("\(first.id) v1: Prefers metric units"))
         XCTAssertTrue(try store.execute(["action": "remember", "text": "Uses vim"], owner: "a").hasPrefix("Saved note"))
         XCTAssertEqual(try store.execute(["action": "forget", "id": first.id], owner: "a"), "Forgot note \(first.id).")
         XCTAssertThrowsError(try store.execute(["action": "forget", "id": "nope"], owner: "a"))

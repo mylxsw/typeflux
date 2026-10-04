@@ -18,6 +18,7 @@ protocol AskAPI: Sendable {
     func delete(conversationId: String, token: String) async throws
     /// Removes device memory pinned to every conversation of the signed-in user.
     func purgeMemory(token: String) async throws
+    func purgeMemory(owner: String, token: String) async throws
 }
 
 extension AskAPI {
@@ -42,6 +43,7 @@ extension AskAPI {
     func models(token: String) async throws -> [AskCloudModel] { [.init(id: "default", name: "Typeflux Cloud")] }
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation { throw AskLocalError.message(L("ask.models.requestError")) }
     func purgeMemory(token: String) async throws {}
+    func purgeMemory(owner: String, token: String) async throws { try await purgeMemory(token: token) }
 }
 
 struct AskAPIClient: AskAPI {

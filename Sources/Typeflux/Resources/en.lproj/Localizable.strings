@@ -2186,6 +2186,42 @@
 "ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
 "ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
 
+// Memory provenance and retention
+"memory.search" = "Search source memories";
+"memory.correct" = "Correct memory";
+"memory.deleteSource" = "Delete source memory";
+"memory.boundaries" = "Deleting a source invalidates its captured memory for future injection. Ask’s memory chip only stops injection; tool-driven saving still requires approval. To delete conversation history, delete the conversation separately. Summaries and earlier replies may still contain derived text.";
+"memory.retention" = "Retention";
+"memory.keepRetention" = "Keep current retention";
+"memory.forever" = "Until deleted";
+"memory.days7" = "7 days";
+"memory.days30" = "30 days";
+"memory.cancel" = "Cancel";
+"memory.save" = "Save correction";
+"memory.correction" = "User correction";
+"memory.explicit" = "Explicit note";
+"memory.account" = "This account";
+"memory.recentScope" = "Recent input stays on this Mac, is isolated by account and application/page, and expires after 24 hours. Soul is an automatic account summary retained until deleted.";
+"memory.saveFailed" = "Could not save the memory change. Please retry.";
+
+// Run budget reservations and reconciliation.
+"ask.budget.title" = "Run budget";
+"ask.budget.client" = "Usage is client-reported; external charges are not verified.";
+"ask.budget.estimate" = "Reservations are estimates; provider charges may differ.";
+"ask.budget.tokens" = "Reported tokens: %lld · occupied: %lld / %lld";
+"ask.budget.web" = "Web requests: %lld / %lld";
+"ask.budget.pending" = "%d unsettled reservations remain occupied.";
+"ask.budget.stopped" = "Stopped: %@. Existing results are preserved.";
+"ask.budget.reason.tokens" = "token budget reached";
+"ask.budget.reason.cost_estimate" = "estimated cost budget reached";
+"ask.budget.reason.web_requests" = "web request limit reached";
+"ask.budget.reason.children" = "research limit reached";
+"ask.budget.reason.operations" = "operation limit reached";
+"ask.budget.reason.duration" = "time limit reached";
+"ask.budget.reason.context_capacity" = "context is full; reduce attachments or tool schemas";
+"ask.budget.reason.budget_unavailable" = "budget journal unavailable";
+"ask.budget.evidence" = "Collected tool results (not independently verified):";
+
 "ask.skills.parse.malformed" = "Invalid YAML frontmatter. Check the syntax and closing delimiter.";
 
 "ask.skills.parse.unsupported" = "Unsupported frontmatter structure. Use scalar fields, scalar metadata, and permission lists; anchors, tags and nested objects are not supported.";

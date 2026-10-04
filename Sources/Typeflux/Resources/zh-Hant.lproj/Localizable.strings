@@ -2183,6 +2183,42 @@
 "ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
 "ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
 
+// Memory provenance and retention
+"memory.search" = "搜尋來源記憶";
+"memory.correct" = "更正記憶";
+"memory.deleteSource" = "刪除來源記憶";
+"memory.boundaries" = "刪除或更正來源記憶會使相關快照失效，停止後續注入。Ask 的記憶按鈕只控制注入；工具儲存記憶仍需核准。對話歷史須另外刪除，摘要和既有回覆可能保留衍生文字。";
+"memory.retention" = "保留期限";
+"memory.keepRetention" = "保留目前期限";
+"memory.forever" = "直到刪除";
+"memory.days7" = "7 天";
+"memory.days30" = "30 天";
+"memory.cancel" = "取消";
+"memory.save" = "儲存更正";
+"memory.correction" = "使用者更正";
+"memory.explicit" = "明確儲存的筆記";
+"memory.account" = "目前帳號";
+"memory.recentScope" = "Recent 只儲存在這台 Mac，依帳號及應用程式或頁面隔離，24 小時後到期。Soul 是目前帳號的自動摘要，保留至刪除。";
+"memory.saveFailed" = "無法儲存記憶變更，請重試。";
+
+// Run budget reservations and reconciliation.
+"ask.budget.title" = "Run budget";
+"ask.budget.client" = "Usage is client-reported; external charges are not verified.";
+"ask.budget.estimate" = "Reservations are estimates; provider charges may differ.";
+"ask.budget.tokens" = "Reported tokens: %lld · occupied: %lld / %lld";
+"ask.budget.web" = "Web requests: %lld / %lld";
+"ask.budget.pending" = "%d unsettled reservations remain occupied.";
+"ask.budget.stopped" = "Stopped: %@. Existing results are preserved.";
+"ask.budget.reason.tokens" = "token budget reached";
+"ask.budget.reason.cost_estimate" = "estimated cost budget reached";
+"ask.budget.reason.web_requests" = "web request limit reached";
+"ask.budget.reason.children" = "research limit reached";
+"ask.budget.reason.operations" = "operation limit reached";
+"ask.budget.reason.duration" = "time limit reached";
+"ask.budget.reason.context_capacity" = "context is full; reduce attachments or tool schemas";
+"ask.budget.reason.budget_unavailable" = "budget journal unavailable";
+"ask.budget.evidence" = "Collected tool results (not independently verified):";
+
 "ask.skills.parse.malformed" = "YAML 中繼資料格式無效，請檢查語法與結束分隔符。";
 
 "ask.skills.parse.unsupported" = "不支援此中繼資料結構。請使用純量欄位、純量 metadata 與權限清單；不支援錨點、自訂標籤與巢狀物件。";

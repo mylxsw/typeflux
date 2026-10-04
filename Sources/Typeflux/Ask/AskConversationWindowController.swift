@@ -41,7 +41,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let search = AskSearchSettings(defaults: settings.defaults)
         let api = AskRoutedAPI(cloud: AskAPIClient(), local: AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
             (search.provider, search.apiKey)
-        })))
+        }), budgetEnabled: settings.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
+            let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
+            return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
+                                    maxOutput: model?.maxOutputTokens ?? 4096,
+                                    known: model?.contextWindowTokens != nil)
+        }))
         model = AskConversationModel(api: api, cache: cache, tools: tools,
                                      capture: AskContextCapture(injector: injector,
                                                                 memory: AskMemoryProvider(settings: settings)),
