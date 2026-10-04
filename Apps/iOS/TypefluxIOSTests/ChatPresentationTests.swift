@@ -52,4 +52,34 @@ struct ChatPresentationTests {
         #expect(ChatPresentation.quote("one", into: "") == "> one\n\n")
         #expect(ChatPresentation.quote("1\n2\n3\n4\n5\n6\n7", into: "").hasSuffix("> 6\n> …\n\n"))
     }
+
+    @Test func `cancelled runs show a neutral notice even when the server supplies error text`() {
+        for error in [nil, "Response stopped.", "Operation cancelled", ""] as [String?] {
+            let run = ChatRun(id: "stop", deviceId: "test", status: "cancelled", error: error)
+            #expect(ChatPresentation.runNotice(run) == .stopped)
+        }
+    }
+
+    @Test func `run failures retain actionable details and missing details get a fallback`() {
+        let failed = ChatRun(id: "failure", deviceId: "test", status: "failed", error: "  Connection lost.\n")
+        #expect(ChatPresentation.runNotice(failed) == .failure("Connection lost."))
+        for error in [nil, "", " \n"] as [String?] {
+            let run = ChatRun(id: "failure", deviceId: "test", status: "failed", error: error)
+            #expect(ChatPresentation.runNotice(run) == .failure("The server could not complete this request."))
+        }
+        for status in ["running", "completed", "waiting_tool"] {
+            let run = ChatRun(id: "healthy", deviceId: "test", status: status)
+            #expect(ChatPresentation.runNotice(run) == nil)
+        }
+    }
+
+    @Test func `horizontal hint follows actual overflow including rotation and initial measurement`() {
+        #expect(ChatPresentation.hasHorizontalOverflow(contentWidth: 600, viewportWidth: 360))
+        #expect(!ChatPresentation.hasHorizontalOverflow(contentWidth: 600, viewportWidth: 780))
+        #expect(!ChatPresentation.hasHorizontalOverflow(contentWidth: 360, viewportWidth: 360))
+        #expect(!ChatPresentation.hasHorizontalOverflow(contentWidth: 360.5, viewportWidth: 360))
+        #expect(!ChatPresentation.hasHorizontalOverflow(contentWidth: 600, viewportWidth: 0))
+        #expect(!ChatPresentation.hasHorizontalOverflow(contentWidth: .infinity, viewportWidth: 360))
+        #expect(!ChatPresentation.hasHorizontalOverflow(contentWidth: 600, viewportWidth: .nan))
+    }
 }

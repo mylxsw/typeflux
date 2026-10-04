@@ -34,13 +34,24 @@ struct ChatTranscriptView: View {
                     ChatMarkdownView(text: preview).accessibilityElement(children: .contain)
                         .accessibilityIdentifier("chat.run.preview")
                 }
-                if let error = run.error, !error.isEmpty {
-                    Label(error, systemImage: "exclamationmark.circle")
-                        .font(.callout).foregroundStyle(.red)
-                        .accessibilityIdentifier("chat.run.error")
-                }
+                runNotice(run)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder private func runNotice(_ run: ChatRun) -> some View {
+        switch ChatPresentation.runNotice(run) {
+        case .stopped:
+            Label("Response stopped", systemImage: "stop.circle")
+                .font(.callout).foregroundStyle(ChatTheme.textSecondary)
+                .accessibilityIdentifier("chat.run.stopped")
+        case let .failure(error):
+            Label(NSLocalizedString(error, comment: "Run error"), systemImage: "exclamationmark.circle")
+                .font(.callout).foregroundStyle(.red)
+                .accessibilityIdentifier("chat.run.error")
+        case nil:
+            EmptyView()
         }
     }
 }
@@ -114,6 +125,7 @@ private struct ChatMessageView: View {
                         comment: "Message action"
                     ))
                     .accessibilityIdentifier("chat.copy." + message.id)
+                    .foregroundStyle(copied ? ChatTheme.accent : ChatTheme.textSecondary)
                     Button { quote(message.text) } label: {
                         Image(systemName: "text.quote").frame(width: 44, height: 44).contentShape(Rectangle())
                     }
@@ -121,7 +133,7 @@ private struct ChatMessageView: View {
                     .accessibilityIdentifier("chat.quote." + message.id)
                     .disabled(!allowsQuote)
                 }
-                .font(.system(size: 14)).foregroundStyle(ChatTheme.textTertiary).buttonStyle(.plain)
+                .font(.system(size: 14)).foregroundStyle(ChatTheme.textSecondary).buttonStyle(.plain)
                 .padding(.leading, -12)
             }
         }

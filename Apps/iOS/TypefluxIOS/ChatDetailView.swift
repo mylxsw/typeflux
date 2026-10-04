@@ -24,7 +24,12 @@ struct ChatDetailView: View {
                         if store.isLoadingConversation, store.conversation == nil {
                             ProgressView("Loading conversation…").frame(maxWidth: .infinity).padding(.vertical, 50)
                         } else if isEmpty {
-                            emptyState.frame(minHeight: max(380, geometry.size.height - 156))
+                            // Leave the limited keyboard/landscape viewport for composing.
+                            // Bottom anchoring a full welcome screen here clips the orb
+                            // and pushes its heading behind the navigation controls.
+                            if !editorFocused, geometry.size.height > 450 {
+                                emptyState.frame(minHeight: max(380, geometry.size.height - 156))
+                            }
                         } else if let conversation = store.conversation {
                             ChatTranscriptView(conversation: conversation, allowsQuote: !store.isSending) { text in
                                 store.draft = ChatPresentation.quote(text, into: store.draft)
@@ -52,6 +57,8 @@ struct ChatDetailView: View {
         .background(ChatTheme.background)
         .navigationTitle(store.conversation?.title ?? "")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(ChatTheme.background, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 if let conversation = store.conversation {

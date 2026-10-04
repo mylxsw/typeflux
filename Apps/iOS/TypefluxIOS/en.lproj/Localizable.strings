@@ -59,6 +59,7 @@
 "The deepest reasoning, slowest and uses the most credits" = "The deepest reasoning, slowest and uses the most credits";
 "Email" = "Email";
 "Password" = "Password";
+"Enter your password" = "Enter your password";
 "Sign in" = "Sign in";
 "Your Typeflux conversations, wherever an idea finds you." = "Your Typeflux conversations, wherever an idea finds you.";
 "Sign in with an existing Typeflux email and password account." = "Sign in with an existing Typeflux email and password account.";
@@ -110,6 +111,8 @@
 "Loading conversation…" = "Loading conversation…";
 "Load this conversation before sending a follow-up." = "Load this conversation before sending a follow-up.";
 "Stopped" = "Stopped";
+"Response stopped" = "Response stopped";
+"Swipe horizontally to see more" = "Swipe horizontally to see more";
 
 /* Settings and account */
 "Settings" = "Settings";

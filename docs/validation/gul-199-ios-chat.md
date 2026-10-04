@@ -4,6 +4,10 @@ Validated on 2026-10-04 with Xcode 27.0 / Swift 6.4 and an iPhone 17 Pro simulat
 running iOS 26.5. The iOS deployment target remains 17.0. These checks do not
 establish behavior on physical devices or with a production account.
 
+For the subsequent screenshot-driven optimization pass, see the
+[review, implementation plan, and current results](gul-199-ios-polish.md).
+The measurements below remain the pre-optimization baseline.
+
 ## Initial implementation baseline
 
 These results were recorded before the v3 UI revision. Current revision results

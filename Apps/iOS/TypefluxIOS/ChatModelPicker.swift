@@ -91,7 +91,7 @@ struct ChatModelEffortCard: View {
     private var effortPage: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
-                Color.clear.frame(width: 32, height: 44)
+                Color.clear.frame(width: 44, height: 44)
                 VStack(spacing: 1) {
                     Text(store.supportedReasoningLevels.isEmpty
                         ? store.selectedModel?.name ?? NSLocalizedString("Choose model", comment: "")
@@ -240,6 +240,7 @@ struct ChatModelEffortCard: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(model.name)
                         .font(.subheadline.weight(selected ? .semibold : .regular))
+                        .foregroundStyle(blocked ? ChatTheme.secondary : Color.primary)
                         .lineLimit(2)
                     if blocked {
                         Text(NSLocalizedString("Does not support photos", comment: ""))
@@ -264,12 +265,23 @@ struct ChatModelEffortCard: View {
             .padding(.horizontal, 14).padding(.vertical, 9)
             .frame(minHeight: 44)
             .contentShape(Rectangle())
-            .opacity(blocked ? 0.45 : 1)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChatModelRowStyle())
         .disabled(blocked || store.isBusy)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("model-" + model.id)
+    }
+}
+
+/// Keep an unavailable model's explanation readable. PlainButtonStyle dims the
+/// entire disabled label even when its text already uses a secondary foreground.
+struct ChatModelRowStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed && isEnabled ? ChatTheme.raised : .clear,
+                        in: RoundedRectangle(cornerRadius: 10))
     }
 }
 

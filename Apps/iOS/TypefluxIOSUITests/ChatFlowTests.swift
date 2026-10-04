@@ -99,8 +99,9 @@ final class ChatFlowTests: XCTestCase {
         XCTAssertFalse(app.buttons["modelPicker"].isEnabled)
         attachScreenshot(app, name: "v3-desktop-tool")
         app.buttons["Stop response"].tap()
-        XCTAssertTrue(app.staticTexts["chat.run.error"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["chat.run.error"].label, "Response stopped.")
+        XCTAssertTrue(app.staticTexts["chat.run.stopped"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["chat.run.stopped"].label, "Response stopped")
+        XCTAssertFalse(app.staticTexts["chat.run.error"].exists)
         XCTAssertFalse(app.buttons["Stop response"].exists)
         XCTAssertEqual(app.staticTexts["chat.header.status"].label, "Stopped")
     }
@@ -115,6 +116,9 @@ final class ChatFlowTests: XCTestCase {
         composer.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         composer.typeText("Hello")
+        XCTAssertFalse(app.staticTexts["有什么想问的？"].exists)
+        XCTAssertTrue(composer.isHittable)
+        attachScreenshot(app, name: "qa-zh-keyboard-composer")
         app.buttons["modelPicker"].tap()
         XCTAssertTrue(app.buttons["changeModel"].waitForExistence(timeout: 5))
         app.buttons["changeModel"].tap()
@@ -148,6 +152,8 @@ final class ChatFlowTests: XCTestCase {
         composer.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         composer.typeText("Hello")
+        XCTAssertFalse(app.staticTexts["What's on your mind?"].exists)
+        XCTAssertTrue(composer.isHittable)
         app.buttons["modelPicker"].tap()
         let changeModel = app.buttons["changeModel"]
         XCTAssertTrue(changeModel.waitForExistence(timeout: 5))
@@ -187,7 +193,14 @@ final class ChatFlowTests: XCTestCase {
 
     @MainActor
     private func attachScreenshot(_ app: XCUIApplication, name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        // Capture the display rather than the application's rotated window crop.
+        // The image's logical size includes its orientation, unlike CGImage pixels.
+        let screenshot = XCUIScreen.main.screenshot()
+        let windowSize = app.windows.firstMatch.frame.size
+        let imageSize = screenshot.image.size
+        XCTAssertEqual(imageSize.width / imageSize.height,
+                       windowSize.width / windowSize.height, accuracy: 0.01)
+        let attachment = XCTAttachment(screenshot: screenshot)
         attachment.name = name; attachment.lifetime = .keepAlways
         add(attachment)
     }

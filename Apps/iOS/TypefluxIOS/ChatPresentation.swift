@@ -18,6 +18,11 @@ enum ChatHistorySection: Int, CaseIterable, Identifiable {
 }
 
 enum ChatPresentation {
+    enum RunNotice: Equatable {
+        case stopped
+        case failure(String)
+    }
+
     static func matches(_ item: ChatConversationSummary, query: String) -> Bool {
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
         return query.isEmpty || item.title.localizedStandardContains(query)
@@ -30,6 +35,22 @@ enum ChatPresentation {
         case "completed": "Completed"
         default: run.requiresDesktop ? "Waiting for Mac" : "Running"
         }
+    }
+
+    static func runNotice(_ run: ChatRun) -> RunNotice? {
+        // A user-requested stop is a terminal state, not a connection failure.
+        if run.status == "cancelled" {
+            return .stopped
+        }
+        if let error = run.error?.trimmingCharacters(in: .whitespacesAndNewlines), !error.isEmpty {
+            return .failure(error)
+        }
+        return run.status == "failed" ? .failure("The server could not complete this request.") : nil
+    }
+
+    static func hasHorizontalOverflow(contentWidth: CGFloat, viewportWidth: CGFloat) -> Bool {
+        // Ignore initial geometry and subpoint rounding before advertising a gesture.
+        contentWidth.isFinite && viewportWidth.isFinite && viewportWidth > 0 && contentWidth > viewportWidth + 1
     }
 
     static func historySection(for date: Date, now: Date = Date(),

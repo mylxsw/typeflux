@@ -139,18 +139,22 @@ are outside this initial chat implementation.
 These screenshots come from the SwiftUI app with synthetic fixtures, not a live
 account or model response. The model names and credit multipliers are test data.
 
-<img src="images/ios/v3-new-conversation.png" alt="New conversation with the Mac colour drop" width="260">
-<img src="images/ios/v3-reasoning.png" alt="Unified model and reasoning card" width="260">
-<img src="images/ios/v3-model-list.png" alt="Cloud model list" width="260">
-<img src="images/ios/v3-conversation.png" alt="Conversation with reasoning and Markdown" width="260">
-<img src="images/ios/v3-zh-dark-empty.png" alt="Simplified Chinese dark appearance" width="260">
-<img src="images/ios/v3-zh-keyboard-models.png" alt="Model selection above the keyboard" width="260">
+<img src="images/ios/verification/v3-new-conversation.png" alt="New conversation with the Mac colour drop" width="260">
+<img src="images/ios/verification/v3-reasoning.png" alt="Unified model and reasoning card" width="260">
+<img src="images/ios/verification/v3-model-list.png" alt="Cloud model list" width="260">
+<img src="images/ios/verification/v3-conversation.png" alt="Conversation with reasoning and Markdown" width="260">
+<img src="images/ios/verification/v3-zh-dark-empty.png" alt="Simplified Chinese dark appearance" width="260">
+<img src="images/ios/verification/v3-zh-keyboard-models.png" alt="Model selection above the keyboard" width="260">
 
 ## Chat and settings verification screenshots
 
-The [39-image screenshot index](images/ios/verification/README.md) covers rich
+The [screenshot index](images/ios/verification/README.md) covers rich
 replies, long streaming output, stop/failure states, PhotosPicker and image
 messages, models, keyboard layouts, light/dark settings, account information,
 and sign-out confirmation. All images come from the final passing native
 iOS UI-test run using offline fixtures. See the
 [validation report](validation/gul-199-ios-chat.md) for results and limitations.
+
+The [screenshot review and optimization plan](validation/gul-199-ios-polish.md)
+records the follow-up fixes for navigation readability, neutral stop status,
+horizontal scrolling, keyboard layouts, search visibility, and login controls.

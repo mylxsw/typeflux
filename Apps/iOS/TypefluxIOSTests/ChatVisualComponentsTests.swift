@@ -240,4 +240,22 @@ struct ChatVisualComponentsTests {
             }
         }
     }
+
+    @Test func `disabled model rows preserve readable explanation colors in both appearances`() throws {
+        for scheme in [ColorScheme.light, .dark] {
+            func render(disabled: Bool) throws -> Data {
+                let button = Button {} label: {
+                    Text("Does not support photos")
+                        .font(.caption2).foregroundStyle(ChatTheme.secondary)
+                        .padding(12).frame(width: 272)
+                }
+                .buttonStyle(ChatModelRowStyle())
+                .disabled(disabled)
+                .background(ChatTheme.popover)
+                .environment(\.colorScheme, scheme)
+                return try #require(ImageRenderer(content: button).uiImage?.pngData())
+            }
+            #expect(try render(disabled: true) == render(disabled: false))
+        }
+    }
 }

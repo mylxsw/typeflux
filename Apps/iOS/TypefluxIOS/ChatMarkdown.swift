@@ -233,7 +233,7 @@ struct ChatMarkdownView: View {
     }
 
     private func table(headers: [String], rows: [[String]]) -> some View {
-        ScrollView(.horizontal) {
+        ChatHorizontalScroll(accessibilityLabel: "Table, scroll horizontally") {
             Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
                 tableRow(headers, header: true)
                 ForEach(Array(rows.enumerated()), id: \.offset) { _, cells in tableRow(cells, header: false) }
@@ -241,7 +241,6 @@ struct ChatMarkdownView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(ChatTheme.border, lineWidth: 0.5))
         }
-        .accessibilityLabel(NSLocalizedString("Table, scroll horizontally", comment: "Markdown table"))
     }
 
     private func tableRow(_ cells: [String], header: Bool) -> some View {
@@ -278,13 +277,14 @@ private struct ChatCodeBlock: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .foregroundStyle(copied ? ChatTheme.accent : ChatTheme.textSecondary)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(NSLocalizedString(copied ? "Copied" : "Copy code", comment: "Code action"))
             }
             .foregroundStyle(ChatTheme.textSecondary)
             .padding(.horizontal, 12)
             Divider()
-            ScrollView(.horizontal) {
+            ChatHorizontalScroll(accessibilityLabel: "Code", hintPadding: 12) {
                 Text(text).font(.system(.footnote, design: .monospaced))
                     .fixedSize(horizontal: true, vertical: false).padding(12)
             }
@@ -292,5 +292,42 @@ private struct ChatCodeBlock: View {
         .background(ChatTheme.raisedSurface, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(ChatTheme.border, lineWidth: 0.5))
         .onChange(of: text) { _, _ in copied = false }
+    }
+}
+
+/// Keep the full table or code intact while making offscreen content discoverable.
+private struct ChatHorizontalScroll<Content: View>: View {
+    let accessibilityLabel: String
+    var hintPadding: CGFloat = 0
+    @ViewBuilder var content: Content
+    @State private var contentWidth: CGFloat = 0
+    @State private var viewportWidth: CGFloat = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ScrollView(.horizontal) {
+                content.background {
+                    GeometryReader { geometry in
+                        Color.clear.onChange(of: geometry.size.width, initial: true) { _, width in
+                            contentWidth = width
+                        }
+                    }
+                }
+            }
+            .background {
+                GeometryReader { geometry in
+                    Color.clear.onChange(of: geometry.size.width, initial: true) { _, width in
+                        viewportWidth = width
+                    }
+                }
+            }
+            .accessibilityLabel(NSLocalizedString(accessibilityLabel, comment: "Scrollable Markdown content"))
+            if ChatPresentation.hasHorizontalOverflow(contentWidth: contentWidth, viewportWidth: viewportWidth) {
+                Label("Swipe horizontally to see more", systemImage: "arrow.left.and.right")
+                    .font(.caption).foregroundStyle(ChatTheme.textSecondary)
+                    .padding(.horizontal, hintPadding).padding(.bottom, hintPadding)
+                    .accessibilityIdentifier("chat.horizontalHint")
+            }
+        }
     }
 }

@@ -8,6 +8,11 @@ struct ChatRootView: View {
     @State private var showSettings = false
     @State private var search = ""
     @State private var collapsed: Set<ChatHistorySection> = []
+    @FocusState private var searchFocused: Bool
+
+    private var isSearching: Bool {
+        !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     var body: some View {
         NavigationSplitView(preferredCompactColumn: $compactColumn) {
@@ -21,7 +26,7 @@ struct ChatRootView: View {
                         let items = ChatPresentation.history(store.conversations, matching: search, section: section)
                         if !items.isEmpty {
                             sectionHeader(section)
-                            if !collapsed.contains(section) {
+                            if isSearching || !collapsed.contains(section) {
                                 ForEach(items) { item in historyRow(item) }
                             }
                         }
@@ -37,6 +42,7 @@ struct ChatRootView: View {
                     }
                 }.padding(.horizontal, 12).padding(.vertical, 8)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(ChatTheme.background)
             .safeAreaInset(edge: .top, spacing: 0) { searchField }
             .safeAreaInset(edge: .bottom, spacing: 0) { accountFooter }
@@ -47,7 +53,7 @@ struct ChatRootView: View {
                                                "Ask a question or continue a conversation from your Mac."
                                            ))
                                            .allowsHitTesting(false)
-                } else if !search.isEmpty,
+                } else if isSearching,
                           !store.conversations.contains(where: { ChatPresentation.matches($0, query: search) }) {
                     ContentUnavailableView.search(text: search).allowsHitTesting(false)
                 }
@@ -73,9 +79,14 @@ struct ChatRootView: View {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
             TextField("Search conversations", text: $search)
                 .font(.subheadline).accessibilityIdentifier("chat.search")
+                .focused($searchFocused).submitLabel(.search)
+                .onSubmit { searchFocused = false }
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
             if !search.isEmpty {
                 Button { search = "" } label: { Image(systemName: "xmark.circle.fill") }
+                    .frame(minWidth: 44, minHeight: 44)
                     .foregroundStyle(.secondary).accessibilityLabel("Clear search")
+                    .accessibilityIdentifier("chat.search.clear")
             }
         }
         .padding(.horizontal, 12).frame(minHeight: 44)
@@ -84,37 +95,63 @@ struct ChatRootView: View {
     }
 
     private var accountFooter: some View {
-        HStack {
-            Text(store.email).font(.caption.weight(.medium)).lineLimit(1).truncationMode(.middle)
-            Spacer(minLength: 8)
-            Button { showSettings = true } label: {
-                Image(systemName: "gearshape").foregroundStyle(.secondary).frame(width: 44, height: 44)
-            }.accessibilityLabel("Settings").accessibilityIdentifier("chat.account")
+        Button {
+            searchFocused = false
+            showSettings = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.title3).foregroundStyle(ChatTheme.accent)
+                Text(store.email).font(.subheadline.weight(.medium)).lineLimit(1).truncationMode(.middle)
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 8)
+                Image(systemName: "gearshape").foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Settings").accessibilityValue(store.email)
+        .accessibilityIdentifier("chat.account")
         .padding(.horizontal, 18).padding(.top, 4)
         .background(ChatTheme.background)
         .overlay(alignment: .top) { Divider().padding(.horizontal, 18) }
     }
 
+    @ViewBuilder
     private func sectionHeader(_ section: ChatHistorySection) -> some View {
-        Button {
-            if collapsed.contains(section) {
-                collapsed.remove(section)
-            } else {
-                collapsed.insert(section)
+        if isSearching {
+            sectionLabel(section).accessibilityAddTraits(.isHeader)
+        } else {
+            Button {
+                if collapsed.contains(section) {
+                    collapsed.remove(section)
+                } else {
+                    collapsed.insert(section)
+                }
+            } label: {
+                sectionLabel(section)
             }
-        } label: {
-            HStack(spacing: 5) {
+            .buttonStyle(.plain)
+            .accessibilityValue(collapsed.contains(section) ? Text("Collapsed") : Text("Expanded"))
+            .accessibilityIdentifier("chat.history.\(section.title)")
+        }
+    }
+
+    private func sectionLabel(_ section: ChatHistorySection) -> some View {
+        HStack(spacing: 5) {
+            if !isSearching {
                 Image(systemName: collapsed.contains(section) ? "chevron.right" : "chevron.down")
-                    .font(.system(size: 9, weight: .semibold))
-                Text(NSLocalizedString(section.title, comment: "History section")).font(.caption)
-                Spacer()
-            }.foregroundStyle(.secondary).padding(.horizontal, 8).frame(minHeight: 38)
-        }.buttonStyle(.plain).accessibilityIdentifier("chat.history.\(section.title)")
+                    .font(.system(size: 9, weight: .semibold)).accessibilityHidden(true)
+            }
+            Text(NSLocalizedString(section.title, comment: "History section")).font(.caption)
+            Spacer()
+        }.foregroundStyle(.secondary).padding(.horizontal, 8).frame(minHeight: 44)
     }
 
     private func historyRow(_ item: ChatConversationSummary) -> some View {
         Button {
+            searchFocused = false
             compactColumn = .detail
             Task { await store.select(item.id) }
         } label: {
@@ -138,6 +175,7 @@ struct ChatRootView: View {
     }
 
     private func newConversation() {
+        searchFocused = false
         store.newConversation()
         compactColumn = .detail
     }

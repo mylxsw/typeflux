@@ -79,6 +79,7 @@ final class ChatVerificationTests: XCTestCase {
         start.press(forDuration: 0.01, thenDragTo: end)
         XCTAssertTrue(app.staticTexts["多端合并"].isHittable)
         XCTAssertTrue(app.staticTexts["方案"].isHittable)
+        XCTAssertTrue(app.staticTexts.matching(identifier: "chat.horizontalHint").firstMatch.exists)
         screenshot(app, "qa-markdown-table")
         table.swipeLeft()
         XCTAssertTrue(app.staticTexts["适用场景"].isHittable)
@@ -100,7 +101,23 @@ final class ChatVerificationTests: XCTestCase {
         let app = launch("--synthetic-rich", "--synthetic-dark")
         app.buttons["chat.history.preview-rich"].tap()
         let photo = app.images["chat.photo.rich-image-question.0"]
-        reveal(photo, in: app.scrollViews.firstMatch, upwards: false)
+        XCTAssertTrue(photo.waitForExistence(timeout: 5))
+        let transcript = app.scrollViews.firstMatch
+        let top = app.navigationBars.firstMatch.frame.maxY + 12
+        let bottom = app.textFields["chat.composer"].frame.minY - 12
+        // isHittable alone can include content behind the opaque navigation bar.
+        // Require the complete image inside the reading area before documenting it.
+        for _ in 0 ..< 12 {
+            if photo.frame.minY >= top, photo.frame.maxY <= bottom {
+                break
+            }
+            let above = photo.frame.minY < top
+            let start = transcript.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: above ? 0.35 : 0.65))
+            let end = transcript.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: above ? 0.65 : 0.35))
+            start.press(forDuration: 0.01, thenDragTo: end)
+        }
+        XCTAssertGreaterThanOrEqual(photo.frame.minY, top)
+        XCTAssertLessThanOrEqual(photo.frame.maxY, bottom)
         screenshot(app, "qa-history-photo-dark")
         app.buttons["modelPicker"].tap()
         app.buttons["changeModel"].tap()
@@ -163,8 +180,10 @@ final class ChatVerificationTests: XCTestCase {
         app.buttons["chat.send"].tap()
         XCTAssertTrue(app.otherElements["chat.run.preview"].waitForExistence(timeout: 15))
         app.buttons["停止生成"].tap()
-        XCTAssertTrue(app.staticTexts["chat.run.error"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["chat.run.stopped"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["chat.header.status"].label, "已停止")
+        XCTAssertEqual(app.staticTexts["chat.run.stopped"].label, "已停止生成")
+        XCTAssertFalse(app.staticTexts["chat.run.error"].exists)
         XCTAssertTrue(app.otherElements["chat.run.preview"].exists)
         XCTAssertTrue(app.buttons["modelPicker"].isEnabled)
         screenshot(app, "qa-stream-stopped")
@@ -202,6 +221,47 @@ final class ChatVerificationTests: XCTestCase {
         app.buttons["chat.detail.new"].tap()
         XCTAssertTrue(app.staticTexts["有什么想问的？"].waitForExistence(timeout: 5))
         screenshot(app, "qa-new-conversation")
+    }
+
+    @MainActor
+    func testSearchRevealsCollapsedMatchesAndPreservesGrouping() {
+        let app = launch()
+        let group = app.buttons["chat.history.Today"]
+        group.tap()
+        XCTAssertFalse(app.buttons["chat.history.preview"].exists)
+        let search = app.textFields["chat.search"]
+        search.tap(); search.typeText("quieter\n")
+        XCTAssertTrue(app.buttons["chat.history.preview"].isHittable)
+        XCTAssertFalse(app.keyboards.firstMatch.exists)
+        screenshot(app, "qa-search-collapsed-matches")
+        app.buttons["chat.search.clear"].tap()
+        XCTAssertFalse(app.buttons["chat.history.preview"].exists)
+        XCTAssertEqual(group.value as? String, "已收起")
+        group.tap()
+        XCTAssertTrue(app.buttons["chat.history.preview"].exists)
+        // The identity area, not just the gear, must open settings.
+        app.buttons["chat.account"].coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).tap()
+        XCTAssertTrue(app.buttons["settings.account"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testLoginLabelsAndKeyboardNextThenGo() {
+        let app = launch()
+        app.buttons["chat.account"].tap()
+        app.buttons["settings.account"].tap()
+        app.buttons["account.signOut"].tap()
+        app.buttons.matching(identifier: "account.confirmSignOut").firstMatch.tap()
+        let email = app.textFields["login.email"]
+        XCTAssertTrue(email.waitForExistence(timeout: 5))
+        email.tap(); email.typeText("preview@example.invalid\n")
+        let password = app.secureTextFields["login.password"]
+        // Typing without a tap verifies that Next transferred focus.
+        password.typeText("synthetic-password")
+        XCTAssertTrue(app.staticTexts["login.email.label"].exists)
+        XCTAssertTrue(app.staticTexts["login.password.label"].exists)
+        screenshot(app, "qa-login-filled")
+        password.typeText("\n")
+        XCTAssertTrue(app.buttons["chat.new"].waitForExistence(timeout: 5))
     }
 }
 
@@ -258,8 +318,8 @@ private extension ChatVerificationTests {
     }
 
     @MainActor
-    func screenshot(_ app: XCUIApplication, _ name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+    func screenshot(_: XCUIApplication, _ name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)

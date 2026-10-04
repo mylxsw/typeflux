@@ -59,6 +59,7 @@
 "The deepest reasoning, slowest and uses the most credits" = "最大推理深度，最慢，消耗最多积分";
 "Email" = "邮箱";
 "Password" = "密码";
+"Enter your password" = "输入密码";
 "Sign in" = "登录";
 "Your Typeflux conversations, wherever an idea finds you." = "随时提问，与 Mac 上的云端对话同步。";
 "Sign in with an existing Typeflux email and password account." = "使用已有的 Typeflux 邮箱和密码登录。";
@@ -110,6 +111,8 @@
 "Loading conversation…" = "正在加载对话…";
 "Load this conversation before sending a follow-up." = "请先加载此对话，再继续追问。";
 "Stopped" = "已停止";
+"Response stopped" = "已停止生成";
+"Swipe horizontally to see more" = "左右滑动查看更多";
 
 /* Settings and account */
 "Settings" = "设置";
