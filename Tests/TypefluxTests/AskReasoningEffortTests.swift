@@ -13,7 +13,13 @@ struct AskReasoningEffortTests {
             let request = AskSendRequest(id: "m", deviceId: "d", text: "Question", tools: [],
                                          reasoningEffort: choice.requestValue(for: restored))
             let body = try #require(JSONSerialization.jsonObject(with: AskCoding.encoder().encode(request)) as? [String: Any])
-            #expect(body["reasoning_effort"] as? String == (choice == .providerDefault ? nil : choice.rawValue))
+            // A catalog without levels offers the default three; heavier choices use the closest.
+            let expected: String? = switch choice {
+            case .providerDefault: nil
+            case .xhigh, .max: "high"
+            default: choice.rawValue
+            }
+            #expect(body["reasoning_effort"] as? String == expected)
         }
         let old = try AskCoding.decoder().decode(AskSendRequest.self, from: Data(#"{"id":"m","device_id":"d","text":"Question","tools":[]}"#.utf8))
         #expect(old.reasoningEffort == nil)

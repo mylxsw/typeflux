@@ -16,11 +16,21 @@ struct AskModelMenu: View {
     var cloudAvailable: Bool? = nil
     /// Composer only: a "Manage models…" row that opens settings.
     var onManage: (() -> Void)?
+    /// Composer only: the reasoning level, shown after the model name and chosen on the
+    /// chip's card. Settings choose a model alone.
+    var effort: Binding<AskReasoningEffort>? = nil
     @ObservedObject private var auth = AuthState.shared
     @State private var expanded = false
     @State private var hovering = false
 
     private var loggedIn: Bool { cloudAvailable ?? auth.isLoggedIn }
+
+    /// The level shown after the model name: nothing for "Auto" or a model without levels.
+    private var shownEffort: AskReasoningEffort? {
+        guard let effort else { return nil }
+        let shown = effort.wrappedValue.nearest(in: AskReasoningEffort.levels(for: library.registry.resolve(reference)?.1))
+        return shown == .providerDefault ? nil : shown
+    }
 
     private var currentReason: String? {
         guard let (provider, model) = library.registry.resolve(reference) else { return L("ask.models.unavailable") }
@@ -48,6 +58,13 @@ struct AskModelMenu: View {
                 AskCappedWidth(maxWidth: compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
                     Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
                 }
+                if let shownEffort {
+                    Text(shownEffort.label)
+                        .font(.system(size: 13.5, weight: .regular))
+                        .foregroundStyle(AskTheme.reasoningText(shownEffort == .max ? .max : .providerDefault,
+                                                                defaultColor: StudioTheme.textSecondary))
+                        .lineLimit(1).fixedSize()
+                }
                 if fieldStyle {
                     Spacer(minLength: 4)
                 }
@@ -72,10 +89,17 @@ struct AskModelMenu: View {
         .onHover { hovering = $0 }
         .help(currentReason ?? L("ask.models.conversationOnly"))
         .askMenu(isPresented: $expanded, glass: compact) {
-            AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,
-                            hasImage: hasImage, loggedIn: loggedIn, dismiss: { expanded = false },
-                            composerStyle: compact, onManage: onManage,
-                            offersCloudSignIn: compact && scenario == "ask" && !auth.isLoggedIn)
+            if let effort, compact {
+                AskModelEffortCard(library: library, reference: $reference, effort: effort, hasImage: hasImage,
+                                   loggedIn: loggedIn, onManage: onManage,
+                                   offersCloudSignIn: scenario == "ask" && !auth.isLoggedIn,
+                                   close: { expanded = false })
+            } else {
+                AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,
+                                hasImage: hasImage, loggedIn: loggedIn, dismiss: { expanded = false },
+                                composerStyle: compact, onManage: onManage,
+                                offersCloudSignIn: compact && scenario == "ask" && !auth.isLoggedIn)
+            }
         }
         .onChange(of: expanded) { isExpanded in
             if isExpanded && library.automaticallyLoadsCatalog {

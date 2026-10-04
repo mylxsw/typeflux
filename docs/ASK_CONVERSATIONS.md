@@ -493,3 +493,22 @@ panel was even created, a few hundred milliseconds on every press. Now:
   text typed early still receives this launch's context.
 - Pressing the hotkey again while context is still arriving refocuses the
   editor; toggling closes it and cancels the capture as before.
+
+## Model and reasoning-effort chip (GUL-193)
+
+The composer shows one chip, "model · level" (only the model for Auto); the
+design board is `docs/design/ask-reasoning-effort.html`.
+
+- `AskReasoningEffort` has Auto (sends nothing) and five levels: `low`, `medium`,
+  `high`, `xhigh`, `max` (轻度 / 中等 / 高 / 超高 / 极致). A Cloud model offers
+  the levels its catalog entry lists in `reasoning_efforts` (the operator picks them
+  in the dashboard); a reasoning model without the field offers low / medium /
+  high, and so do the user's own models unless marked as not reasoning.
+- The choice is global. Switching to a model with fewer levels moves it to the
+  closest level (the lighter one on a tie) and says so once; requests always send
+  the nearest offered level, and the server applies the same rule on retry.
+- The chip's card (`AskModelEffortCard`) has the level, "model ›" (opens the model
+  list page), ↺ back to Auto, and `AskEffortSlider`: one stop per offered level, a
+  liquid fill drawn with `TimelineView` + `Canvas` (`AskLiquidFill`) that reaches
+  the end of the track at the top level and turns violet at `max`. Reduced motion
+  keeps the particles still. `/think` lists Auto plus the model's levels.

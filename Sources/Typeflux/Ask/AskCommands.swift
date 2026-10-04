@@ -74,6 +74,8 @@ struct AskCommandContext: Equatable, Sendable {
     var currentModel = ""
     var reasoningAvailable = false
     var reasoning: AskReasoningEffort = .providerDefault
+    /// The levels the current model offers; "Auto" is always listed too.
+    var reasoningLevels: [AskReasoningEffort] = AskReasoningEffort.defaultLevels
     /// The conversation is kept on this Mac.
     var localMode = false
     /// Why the conversation's storage cannot change, e.g. it has already started.
@@ -204,7 +206,7 @@ enum AskCommandCatalog {
                            plain: true)
             }
         case .reasoning:
-            return AskReasoningEffort.allCases.map { effort in
+            return ([.providerDefault] + context.reasoningLevels).map { effort in
                 AskCommand(action: .pickReasoning(effort), name: effort.label, title: "", detail: effort.caption,
                            symbol: "sparkles", group: .model, selected: effort == context.reasoning, plain: true)
             }

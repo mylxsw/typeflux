@@ -1551,10 +1551,10 @@
 "ask.empty.voice.button" = "Hold the microphone to speak";
 "ask.models.capacity" = "%@ context · %@ output";
 "ask.usage.spent" = "Spent";
-"ask.reasoning.default.caption" = "Let the model decide how much to think";
+"ask.reasoning.default.caption" = "The model decides how much to think";
 "ask.reasoning.low.caption" = "Fastest, for simple questions";
 "ask.reasoning.medium.caption" = "Balances speed and depth";
-"ask.reasoning.high.caption" = "Thinks longest; slower and uses more credits";
+"ask.reasoning.high.caption" = "Thinks more, for complex questions";
 "ask.suggest.screen" = "Tell me what is on this screen";
 "ask.suggest.screen.caption" = "With a screenshot";
 "ask.suggest.selection" = "Translate the text I selected";
@@ -1659,11 +1659,10 @@
 
 // Ask reasoning effort
 "ask.reasoning.title" = "Reasoning effort";
-"ask.reasoning.default" = "Default";
-"ask.reasoning.low" = "Low";
+"ask.reasoning.default" = "Auto";
+"ask.reasoning.low" = "Light";
 "ask.reasoning.medium" = "Medium";
 "ask.reasoning.high" = "High";
-"ask.reasoning.help" = "Choose the reasoning effort for your next message. Higher effort may take longer and use more credits.";
 
 // Server-managed Cloud model list
 "models.cloud.managed" = "All available Ask models are synced from Typeflux Cloud. Model settings are managed by the server.";
@@ -2267,3 +2266,13 @@
 "ask.recovery.end" = "End this run";
 "ask.recovery.newRequest" = "Write a new request";
 "ask.recovery.newRequestBody" = "After checking the effects, type and send new instructions. The unknown operation remains in the journal.";
+
+/* GUL-193 Reasoning effort levels */
+"ask.reasoning.xhigh" = "Extra high";
+"ask.reasoning.max" = "Ultra";
+"ask.reasoning.xhigh.caption" = "Deep reasoning, slower and uses more credits";
+"ask.reasoning.max.caption" = "The deepest reasoning, slowest and uses the most credits";
+"ask.reasoning.unsupported" = "This model does not offer reasoning levels and answers in its own way.";
+"ask.reasoning.changeModel" = "Change model";
+"ask.reasoning.reset" = "Back to Auto";
+"ask.reasoning.snapped" = "This model does not offer “%@”; using “%@”";

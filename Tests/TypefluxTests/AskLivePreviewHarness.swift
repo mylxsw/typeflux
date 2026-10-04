@@ -121,8 +121,10 @@ struct AskLivePreviewHarness {
                                     composerStyle: true, onManage: {}, offersCloudSignIn: localOnly),
                     owner: UUID(), anchor: anchor, onClose: {})
             } else {
-                AskGlassMenuPresenter.shared.show(AskReasoningChoices(effort: .constant(.providerDefault)),
-                                                  owner: UUID(), anchor: anchor, onClose: {})
+                AskGlassMenuPresenter.shared.show(
+                    AskModelEffortCard(library: library, reference: .constant(modelReference),
+                                       effort: .constant(.providerDefault), loggedIn: !localOnly),
+                    owner: UUID(), anchor: anchor, onClose: {})
             }
         }
         let marker = environment["TYPEFLUX_ASK_LIVE_MARKER"].map(URL.init(fileURLWithPath:))

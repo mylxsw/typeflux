@@ -11,6 +11,8 @@ struct AskCloudModel: Codable, Equatable, Identifiable, Sendable {
     var pricing: CloudModelPricing?
     var modelVersion: Int?
     var capabilities: [String: Bool]?
+    /// The efforts users may pick, lightest first; absent on older servers.
+    var reasoningEfforts: [String]? = nil
     var reference: String {
         "cloud:" + id
     }

@@ -1541,10 +1541,10 @@
 "ask.empty.voice.button" = "마이크를 길게 눌러 말하기";
 "ask.models.capacity" = "컨텍스트 %@ · 출력 %@";
 "ask.usage.spent" = "사용량";
-"ask.reasoning.default.caption" = "생각의 깊이를 모델이 결정";
+"ask.reasoning.default.caption" = "얼마나 생각할지 모델이 정합니다";
 "ask.reasoning.low.caption" = "가장 빠름, 간단한 질문에 적합";
 "ask.reasoning.medium.caption" = "속도와 깊이의 균형";
-"ask.reasoning.high.caption" = "가장 깊이 생각함, 더 느리고 크레딧을 더 사용";
+"ask.reasoning.high.caption" = "더 깊이 생각, 복잡한 질문에 적합";
 "ask.suggest.screen" = "이 화면에 무엇이 있는지 알려줘";
 "ask.suggest.screen.caption" = "스크린샷 포함";
 "ask.suggest.selection" = "선택한 텍스트를 번역해줘";
@@ -1649,11 +1649,10 @@
 
 // Ask reasoning effort
 "ask.reasoning.title" = "추론 강도";
-"ask.reasoning.default" = "기본값";
-"ask.reasoning.low" = "낮음";
-"ask.reasoning.medium" = "중간";
+"ask.reasoning.default" = "자동";
+"ask.reasoning.low" = "가볍게";
+"ask.reasoning.medium" = "보통";
 "ask.reasoning.high" = "높음";
-"ask.reasoning.help" = "다음 메시지의 추론 강도를 선택합니다. 강도가 높으면 시간과 크레딧이 더 필요할 수 있습니다.";
 
 // Server-managed Cloud model list
 "models.cloud.managed" = "사용 가능한 Ask 모델은 Typeflux Cloud에서 자동으로 동기화됩니다. 모델 설정은 서버에서 관리합니다.";
@@ -2257,3 +2256,13 @@
 "ask.recovery.end" = "이 실행 종료";
 "ask.recovery.newRequest" = "새 요청 작성";
 "ask.recovery.newRequestBody" = "영향을 확인한 후 새 지시를 입력하고 보내세요. 결과를 알 수 없는 이전 작업은 로그에 남습니다.";
+
+/* GUL-193 Reasoning effort levels */
+"ask.reasoning.xhigh" = "매우 높음";
+"ask.reasoning.max" = "최대";
+"ask.reasoning.xhigh.caption" = "깊은 추론, 더 느리고 크레딧을 더 사용";
+"ask.reasoning.max.caption" = "가장 깊은 추론, 가장 느리고 크레딧을 가장 많이 사용";
+"ask.reasoning.unsupported" = "이 모델은 추론 강도를 조절할 수 없으며 자체 방식으로 답합니다.";
+"ask.reasoning.changeModel" = "모델 변경";
+"ask.reasoning.reset" = "자동으로 되돌리기";
+"ask.reasoning.snapped" = "이 모델은 “%@”을(를) 지원하지 않아 “%@”(으)로 바꿨습니다";
