@@ -53,10 +53,17 @@ struct AskGlassTests {
     }
 
     @Test func onlyTheTopReasoningLevelIsViolet() {
-        #expect(AskTheme.reasoningText(.max, defaultColor: StudioTheme.textSecondary) == AskTheme.reasoningTopText)
-        #expect(AskTheme.reasoningText(.providerDefault, defaultColor: StudioTheme.textSecondary) == StudioTheme.textSecondary)
+        let five = AskReasoningEffort.levels, three = AskReasoningEffort.defaultLevels
+        let secondary = StudioTheme.textSecondary
+        #expect(AskTheme.reasoningText(.max, in: five, defaultColor: secondary) == AskTheme.reasoningTopText)
+        // Whatever the model's highest level is, it is violet.
+        #expect(AskTheme.reasoningText(.high, in: three, defaultColor: secondary) == AskTheme.reasoningTopText)
+        #expect(AskReasoningEffort.high.isTop(in: three) && !AskReasoningEffort.high.isTop(in: five))
+        #expect(!AskReasoningEffort.providerDefault.isTop(in: [.providerDefault]))
+        #expect(AskTheme.reasoningText(.providerDefault, in: five, defaultColor: StudioTheme.textSecondary)
+            == StudioTheme.textSecondary)
         for effort in [AskReasoningEffort.low, .medium, .high, .xhigh] {
-            #expect(AskTheme.reasoningText(effort, defaultColor: StudioTheme.textSecondary) == AskTheme.accentText)
+            #expect(AskTheme.reasoningText(effort, in: five, defaultColor: StudioTheme.textSecondary) == AskTheme.accentText)
         }
     }
 
