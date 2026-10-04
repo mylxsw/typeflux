@@ -2122,7 +2122,6 @@
 "ask.history.filter.all" = "전체";
 "ask.history.filter.cloud" = "클라우드";
 "ask.history.filter.local" = "이 Mac";
-"ask.new.more" = "다른 방식으로 새 대화 시작";
 
 // Project workspaces
 "ask.project.title" = "프로젝트 파일";

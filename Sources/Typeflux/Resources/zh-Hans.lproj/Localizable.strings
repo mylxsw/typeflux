@@ -2132,7 +2132,6 @@
 "ask.history.filter.all" = "全部";
 "ask.history.filter.cloud" = "云端";
 "ask.history.filter.local" = "仅本机";
-"ask.new.more" = "更多新建方式";
 
 // Project workspaces
 "ask.project.title" = "项目文件";
