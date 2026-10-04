@@ -4,9 +4,11 @@ import TypefluxChat
 
 struct ChatDetailView: View {
     @Bindable var store: ChatStore
+    var onOpenSidebar: () -> Void = {}
     var onNewConversation: () -> Void = {}
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var showPhotoPicker = false
+    @State private var showCamera = false
     @State private var isLoadingPhoto = false
     @FocusState private var editorFocused: Bool
 
@@ -20,211 +22,189 @@ struct ChatDetailView: View {
                 ScrollView {
                     // Bottom-anchored lazy height estimation can loop when a rich
                     // reply enters the viewport. Lay out the loaded snapshot exactly.
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 14) {
                         if store.isLoadingConversation, store.conversation == nil {
                             ProgressView("Loading conversation…").frame(maxWidth: .infinity).padding(.vertical, 50)
                         } else if isEmpty {
                             // Leave the limited keyboard/landscape viewport for composing.
-                            // Bottom anchoring a full welcome screen here clips the orb
-                            // and pushes its heading behind the navigation controls.
                             if !editorFocused, geometry.size.height > 450 {
-                                emptyState.frame(minHeight: max(380, geometry.size.height - 156))
+                                emptyState.frame(minHeight: max(380, geometry.size.height - 260))
                             }
                         } else if let conversation = store.conversation {
-                            ChatTranscriptView(conversation: conversation, allowsQuote: !store.isSending) { text in
-                                store.draft = ChatPresentation.quote(text, into: store.draft)
-                                editorFocused = true
-                            }
+                            ChatTranscriptView(
+                                conversation: conversation,
+                                allowsQuote: !store.isSending,
+                                regenerableMessageID: store.regenerableMessageID,
+                                quote: { text in
+                                    store.draft = ChatPresentation.quote(text, into: store.draft)
+                                    editorFocused = true
+                                },
+                                regenerate: { id in Task { await store.regenerate(messageID: id) } }
+                            )
                         }
                         Color.clear.frame(height: 1).id("bottom")
-                    }.padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 12)
-                        .frame(maxWidth: 800).frame(maxWidth: .infinity)
+                    }
+                    .padding(.horizontal, 22).padding(.top, 8).padding(.bottom, 12)
+                    .frame(maxWidth: 760).frame(maxWidth: .infinity)
                 }
                 .scrollDismissesKeyboard(.interactively)
-                .defaultScrollAnchor(.bottom)
+                .defaultScrollAnchor(isEmpty ? .top : .bottom)
                 .refreshable { await store.reloadConversation() }
                 .onChange(of: store.conversation?.messages.last?.id) { _, _ in
                     if !isEmpty {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
                 }
+                .safeAreaInset(edge: .top, spacing: 0) { topBar }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    composer(availableHeight: geometry.size.height)
-                        .background { ChatTheme.background.ignoresSafeArea(.container, edges: .bottom) }
-                }
-            }
-        }
-        .background(ChatTheme.background)
-        .navigationTitle(store.conversation?.title ?? "")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(ChatTheme.background, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                if let conversation = store.conversation {
-                    VStack(spacing: 2) {
-                        Text(conversation.title).font(.subheadline.weight(.semibold)).lineLimit(1)
-                        if let run = conversation.run {
-                            HStack(spacing: 4) {
-                                Circle()
-                                    .fill(runColor(run))
-                                    .frame(width: 5, height: 5)
-                                Text(NSLocalizedString(ChatPresentation.runTitle(run), comment: "Run state"))
-                                    .accessibilityIdentifier("chat.header.status")
-                                    .font(.system(size: 10)).foregroundStyle(.secondary)
-                            }
+                    VStack(spacing: 0) {
+                        if isEmpty, !editorFocused, geometry.size.height > 450 {
+                            suggestions.padding(.bottom, 12)
                         }
+                        ChatComposer(store: store, editorFocused: $editorFocused,
+                                     isLoadingPhoto: isLoadingPhoto, isEmpty: isEmpty,
+                                     availableHeight: geometry.size.height,
+                                     onPickPhoto: { showPhotoPicker = true },
+                                     onTakePhoto: { showCamera = true })
                     }
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: onNewConversation) { Image(systemName: "square.and.pencil") }
-                    .accessibilityLabel("New conversation").accessibilityIdentifier("chat.detail.new")
+        }
+        .background { ChatAmbientBackground() }
+        .toolbar(.hidden, for: .navigationBar)
+        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhoto, matching: .images)
+        .fullScreenCover(isPresented: $showCamera) {
+            ChatCameraPicker { data in Task { await attach(data) } }.ignoresSafeArea()
+        }
+        .task(id: selectedPhoto) { await loadPhoto() }
+    }
+
+    // MARK: Top bar
+
+    private var topBar: some View {
+        HStack(spacing: 10) {
+            barButton("sidebar.left", label: "Open sidebar", identifier: "chat.sidebar.open", action: onOpenSidebar)
+            if let conversation = store.conversation, !conversation.messages.isEmpty || store.isRunning {
+                titlePill(conversation)
+            } else {
+                Spacer()
+            }
+            barButton("square.and.pencil", label: "New conversation", identifier: "chat.detail.new",
+                      tint: isEmpty ? ChatTheme.tertiary : ChatTheme.accent, action: onNewConversation)
+                .disabled(isEmpty && store.draft.isEmpty && store.imageDataURL == nil)
+        }
+        .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 10)
+        .background {
+            // Content scrolls under the bar and fades out instead of colliding with the title.
+            LinearGradient(stops: [.init(color: ChatTheme.background, location: 0.55),
+                                   .init(color: ChatTheme.background.opacity(0), location: 1)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(edges: .top)
+                .opacity(isEmpty ? 0 : 1)
+        }
+    }
+
+    private func barButton(_ symbol: String, label: LocalizedStringKey, identifier: String,
+                           tint: Color = .primary, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 17, weight: .medium))
+                .foregroundStyle(tint).frame(width: 44, height: 44)
+                .chatGlassCircle()
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label).accessibilityIdentifier(identifier)
+    }
+
+    private func titlePill(_ conversation: ChatConversation) -> some View {
+        VStack(spacing: 1) {
+            Text(conversation.title.isEmpty ? NSLocalizedString("New conversation", comment: "") : conversation.title)
+                .font(.system(size: 14.5, weight: .semibold)).lineLimit(1)
+            if let run = conversation.run {
+                HStack(spacing: 5) {
+                    Circle().fill(runColor(run)).frame(width: 6, height: 6)
+                    Text(ChatPresentation.runStatusLine(run, steps: ChatTranscript.stepCount(conversation)))
+                        .font(.system(size: 11)).foregroundStyle(ChatTheme.secondary)
+                        .accessibilityIdentifier("chat.header.status")
+                }
             }
         }
-        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhoto, matching: .images)
-        .task(id: selectedPhoto) { await loadPhoto() }
+        .padding(.horizontal, 16).frame(maxWidth: .infinity, minHeight: 44)
+        .chatGlass(corner: 22)
+        .accessibilityElement(children: .contain)
     }
 
     private func runColor(_ run: ChatRun) -> Color {
         switch run.status {
         case "failed": .red
         case "cancelled": ChatTheme.secondary
-        case "completed": .green
+        case "completed": ChatTheme.success
         default: run.requiresDesktop ? .orange : ChatTheme.accent
         }
     }
 
+    // MARK: Empty state
+
     private var emptyState: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 24)
-            ChatOrb().padding(.bottom, 26)
-            Text("What's on your mind?").font(.system(size: 26, weight: .bold)).multilineTextAlignment(.center)
-            Text("Ask questions, explore images, read the web.")
-                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                .padding(.top, 10)
-            Spacer(minLength: 32)
-            VStack(spacing: 8) {
-                suggestion("Explain this image", caption: "Upload a photo or screenshot", symbol: "photo") {
-                    showPhotoPicker = true
-                }.disabled(store.selectedModel?.vision != true || store.isSending)
-                suggestion(
-                    "Translate some text",
-                    caption: "Paste text, keep its formatting",
-                    symbol: "character.bubble"
-                ) {
+            ChatOrb(size: 96).padding(.bottom, 22)
+            Text("What's on your mind?").font(.system(size: 25, weight: .semibold))
+                .multilineTextAlignment(.center)
+            Text("Look at photos, translate, read the web")
+                .font(.system(size: 14.5)).foregroundStyle(ChatTheme.secondary).multilineTextAlignment(.center)
+                .padding(.top, 8)
+            Spacer(minLength: 24)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.empty")
+    }
+
+    private var suggestions: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                suggestion("Explain this photo", caption: "Take one or pick a screenshot", symbol: "photo",
+                           identifier: "chat.suggestion.photo") { showPhotoPicker = true }
+                    .disabled(store.selectedModel?.vision != true || store.isSending)
+                suggestion("Translate some text", caption: "Keep its formatting", symbol: "character.bubble",
+                           identifier: "chat.suggestion.translate") {
                     store.draft = NSLocalizedString("Translate the following text:\n", comment: "Draft prompt")
                     editorFocused = true
                 }
-                suggestion("Read and summarize a webpage", caption: "Paste a link", symbol: "globe") {
+                suggestion("Summarize a webpage", caption: "Paste a link", symbol: "globe",
+                           identifier: "chat.suggestion.web") {
                     store.draft = NSLocalizedString("Read and summarize this webpage:\n", comment: "Draft prompt")
                     editorFocused = true
                 }
-            }.padding(.bottom, 28)
-        }.frame(maxWidth: 560).frame(maxWidth: .infinity)
-    }
-
-    private func suggestion(_ title: String, caption: String, symbol: String,
-                            action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: symbol).font(.system(size: 14))
-                    .foregroundStyle(ChatTheme.accent).frame(width: 28, height: 28)
-                    .background(ChatTheme.accentSoft, in: RoundedRectangle(cornerRadius: 8))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(NSLocalizedString(title, comment: "Suggestion")).font(.subheadline.weight(.medium))
-                    Text(NSLocalizedString(caption, comment: "Suggestion description"))
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
-            }.padding(12).frame(minHeight: 58).chatGlass(corner: 16)
-        }.buttonStyle(.plain).disabled(store.isSending)
-    }
-
-    private func composer(availableHeight: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let validation = store.composerValidation {
-                Text(NSLocalizedString(validation, comment: "Composer validation"))
-                    .font(.caption).foregroundStyle(.orange).padding(.horizontal, 8)
             }
-            if let error = store.errorMessage {
-                HStack(alignment: .top) {
-                    Text(NSLocalizedString(error, comment: "Chat error")).font(.caption).foregroundStyle(.red)
-                    Spacer(minLength: 4)
-                    Button { Task { await store.reloadConversation() } } label: { Image(systemName: "arrow.clockwise") }
-                        .frame(width: 44, height: 44).accessibilityLabel("Refresh conversation")
-                }.padding(.horizontal, 8)
-            }
-            if let data = store.imageDataURL {
-                HStack(spacing: 6) {
-                    if let photo = ImageAttachment.decode(data) {
-                        Image(uiImage: photo).resizable().scaledToFill().frame(width: 24, height: 24)
-                            .clipShape(RoundedRectangle(cornerRadius: 5))
-                    }
-                    Text("Photo attached").font(.caption).foregroundStyle(.secondary)
-                        .accessibilityIdentifier("chat.photo.preview")
-                    Button { store.imageDataURL = nil } label: {
-                        Image(systemName: "xmark").font(.caption).frame(width: 44, height: 44)
-                    }.accessibilityLabel("Remove photo").accessibilityIdentifier("chat.photo.remove")
-                }.padding(.leading, 8).padding(.trailing, 3)
-                    .background(ChatTheme.controlSurface.opacity(0.5), in: Capsule())
-                    .padding(.horizontal, 6)
-            }
-            TextField(
-                LocalizedStringKey(isEmpty ? "Message Typeflux" : "Ask a follow-up"),
-                text: $store.draft,
-                axis: .vertical
-            )
-            .font(.body).lineLimit(1 ... 7).padding(.horizontal, 10).padding(.top, 5)
-            .frame(minHeight: 34, alignment: .topLeading).focused($editorFocused)
-            .accessibilityIdentifier("chat.composer").disabled(store.isSending)
-            composerActions(availableHeight: availableHeight)
-        }.padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 6)
-            .chatGlass(corner: 28)
-            .padding(.horizontal, 12).padding(.top, 6).padding(.bottom, 8)
-            .frame(maxWidth: 780).frame(maxWidth: .infinity)
-    }
-
-    private func composerActions(availableHeight: CGFloat) -> some View {
-        HStack(spacing: 0) {
-            Button { showPhotoPicker = true } label: {
-                Image(systemName: "plus").font(.system(size: 18)).frame(width: 44, height: 44)
-                    .foregroundStyle(.secondary)
-            }
-            .disabled(store.isSending || store.isRunning || isLoadingPhoto || store.selectedModel?.vision != true)
-            .accessibilityLabel("Attach photo").accessibilityIdentifier("chat.attach")
-            ChatModelPicker(store: store, maximumHeight: max(100, availableHeight - 110))
-            Spacer(minLength: 4)
-            if store.isRunning {
-                Button { Task { await store.cancelRun() } } label: {
-                    Image(systemName: "stop.fill").font(.system(size: 11))
-                        .frame(width: 34, height: 34)
-                        .background(ChatTheme.controlSurface, in: Circle())
-                        .overlay(Circle().strokeBorder(ChatTheme.border, lineWidth: 0.5))
-                        .frame(width: 44, height: 44)
-                }.foregroundStyle(.primary).accessibilityLabel("Stop response")
-            } else {
-                Button {
-                    editorFocused = false
-                    Task { await store.send() }
-                } label: {
-                    Group {
-                        if store.isSending || isLoadingPhoto {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Image(systemName: "arrow.up").font(.system(size: 16, weight: .semibold))
-                        }
-                    }
-                    .foregroundStyle(store.canSend ? Color.white : ChatTheme.secondary)
-                    .frame(width: 34, height: 34)
-                    .background(store.canSend ? ChatTheme.accent : ChatTheme.controlSurface, in: Circle())
-                    .frame(width: 44, height: 44)
-                }.disabled(!store.canSend || isLoadingPhoto)
-                    .accessibilityLabel("Send message").accessibilityIdentifier("chat.send")
-            }
+            .padding(.horizontal, 20)
         }
+        .scrollClipDisabled()
     }
+
+    private func suggestion(_ title: LocalizedStringKey, caption: LocalizedStringKey, symbol: String,
+                            identifier: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 0) {
+                Image(systemName: symbol).font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(ChatTheme.accent).frame(width: 30, height: 30)
+                    .background(ChatTheme.accentSoft, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                Text(title).font(.system(size: 14.5, weight: .semibold)).foregroundStyle(.primary)
+                    .lineLimit(1).padding(.top, 12)
+                Text(caption).font(.system(size: 12.5)).foregroundStyle(ChatTheme.secondary).lineLimit(1)
+                    .padding(.top, 3)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 13)
+            .frame(width: 168, alignment: .leading)
+            .chatCard(corner: 20)
+            .shadow(color: .black.opacity(0.035), radius: 6, y: 2)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+    }
+
+    // MARK: Photos
 
     private func loadPhoto() async {
         guard let selectedPhoto else { return }
@@ -245,5 +225,19 @@ struct ChatDetailView: View {
             }
         }
         self.selectedPhoto = nil
+    }
+
+    private func attach(_ data: Data) async {
+        let context = store.attachmentContext
+        isLoadingPhoto = true
+        defer { isLoadingPhoto = false }
+        do {
+            let encoded = try ImageAttachment.dataURL(data)
+            if context == store.attachmentContext {
+                store.imageDataURL = encoded
+            }
+        } catch {
+            store.errorMessage = error.localizedDescription
+        }
     }
 }

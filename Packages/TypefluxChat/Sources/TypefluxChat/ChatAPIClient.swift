@@ -12,6 +12,28 @@ public protocol ChatAPI: Sendable {
     func send(conversationId: String, request: ChatSendRequest, token: String) async throws -> ChatConversation
     func cancel(conversationId: String, runId: String, token: String) async throws -> ChatConversation
     func observe(id: String, token: String, onValue: @Sendable (ChatConversation) async throws -> Void) async throws
+    func appleLogin(identityToken: String) async throws -> ChatSession
+    func forgotPassword(email: String) async throws
+    func resetPassword(email: String, code: String, newPassword: String) async throws
+    func profile(token: String) async throws -> ChatProfile
+    func creditUsage(token: String) async throws -> ChatCreditUsage
+    func regenerate(conversationId: String, request: ChatRegenerateRequest, token: String) async throws -> ChatConversation
+    func deleteConversation(id: String, token: String) async throws
+}
+
+/// Account and history extras are optional for test doubles and older fixtures:
+/// an implementation that does not provide them reports the feature unavailable.
+public extension ChatAPI {
+    func appleLogin(identityToken _: String) async throws -> ChatSession { throw ChatAPIError.unavailable }
+    func forgotPassword(email _: String) async throws { throw ChatAPIError.unavailable }
+    func resetPassword(email _: String, code _: String, newPassword _: String) async throws {
+        throw ChatAPIError.unavailable
+    }
+    func profile(token _: String) async throws -> ChatProfile { throw ChatAPIError.unavailable }
+    func creditUsage(token _: String) async throws -> ChatCreditUsage { throw ChatAPIError.unavailable }
+    func regenerate(conversationId _: String, request _: ChatRegenerateRequest,
+                    token _: String) async throws -> ChatConversation { throw ChatAPIError.unavailable }
+    func deleteConversation(id _: String, token _: String) async throws { throw ChatAPIError.unavailable }
 }
 
 public struct ChatAPIClient: ChatAPI {
@@ -61,6 +83,47 @@ public struct ChatAPIClient: ChatAPI {
         struct Cancel: Encodable { let runId: String }
         return try await execute(path: conversationPath(conversationId) + "/cancel", method: "POST",
                                  body: ChatCoding.encoder().encode(Cancel(runId: runId)), token: token)
+    }
+
+    public func appleLogin(identityToken: String) async throws -> ChatSession {
+        struct OAuth: Encodable { let idToken: String }
+        return try await execute(path: "/api/v1/auth/oauth/apple", method: "POST",
+                                 body: ChatCoding.encoder().encode(OAuth(idToken: identityToken)),
+                                 decoder: JSONDecoder())
+    }
+
+    public func forgotPassword(email: String) async throws {
+        struct Forgot: Encodable { let email: String }
+        struct Sent: Decodable { let sent: Bool }
+        let _: Sent = try await execute(path: "/api/v1/auth/forgot-password", method: "POST",
+                                        body: ChatCoding.encoder().encode(Forgot(email: email)))
+    }
+
+    public func resetPassword(email: String, code: String, newPassword: String) async throws {
+        struct Reset: Encodable { let email: String; let code: String; let newPassword: String }
+        struct Done: Decodable { let reset: Bool }
+        let _: Done = try await execute(path: "/api/v1/auth/reset-password", method: "POST",
+                                        body: ChatCoding.encoder().encode(Reset(email: email, code: code,
+                                                                                newPassword: newPassword)))
+    }
+
+    public func profile(token: String) async throws -> ChatProfile {
+        try await execute(path: "/api/v1/me", token: token)
+    }
+
+    public func creditUsage(token: String) async throws -> ChatCreditUsage {
+        try await execute(path: "/api/v1/usage/current-period/stats", token: token)
+    }
+
+    public func regenerate(conversationId: String, request: ChatRegenerateRequest,
+                           token: String) async throws -> ChatConversation {
+        try await execute(path: conversationPath(conversationId) + "/regenerate", method: "POST",
+                          body: ChatCoding.encoder().encode(request), token: token)
+    }
+
+    public func deleteConversation(id: String, token: String) async throws {
+        struct Deleted: Decodable { let deleted: Bool }
+        let _: Deleted = try await execute(path: conversationPath(id), method: "DELETE", token: token)
     }
 
     public func observe(id: String, token: String, onValue: @Sendable (ChatConversation) async throws -> Void) async throws {

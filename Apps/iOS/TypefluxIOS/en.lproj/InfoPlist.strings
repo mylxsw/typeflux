@@ -1,0 +1,3 @@
+"NSMicrophoneUsageDescription" = "Typeflux uses the microphone when you dictate a question.";
+"NSSpeechRecognitionUsageDescription" = "Typeflux turns your dictation into text for the message you are writing.";
+"NSCameraUsageDescription" = "Typeflux uses the camera when you take a photo to ask about.";

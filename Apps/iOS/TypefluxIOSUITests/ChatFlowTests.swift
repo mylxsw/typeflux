@@ -9,19 +9,18 @@ final class ChatFlowTests: XCTestCase {
     @MainActor
     func testUnifiedModelEffortPickerAndModelCapabilities() {
         let app = launchPreview()
-        app.buttons["chat.new"].tap()
         XCTAssertTrue(app.staticTexts["What's on your mind?"].waitForExistence(timeout: 5))
-        attachScreenshot(app, name: "v3-new-conversation")
+        attachScreenshot(app, name: "v4-new-conversation")
         app.buttons["modelPicker"].tap()
         XCTAssertTrue(app.staticTexts["reasoningTitle"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["reasoningTitle"].label, "Auto")
         XCTAssertFalse(app.buttons["resetReasoning"].isEnabled)
         pickHighestEffort(app)
         XCTAssertEqual(app.staticTexts["reasoningTitle"].label, "Ultra")
-        attachScreenshot(app, name: "v3-reasoning")
+        attachScreenshot(app, name: "v4-reasoning")
         app.buttons["changeModel"].tap()
         XCTAssertTrue(app.buttons["model-fast-preview"].waitForExistence(timeout: 5))
-        attachScreenshot(app, name: "v3-model-list")
+        attachScreenshot(app, name: "v4-model-list")
         app.buttons["model-fast-preview"].tap()
         XCTAssertEqual(app.staticTexts["reasoningTitle"].label, "High")
         XCTAssertTrue(app.staticTexts["reasoningAdjustment"].exists)
@@ -38,18 +37,23 @@ final class ChatFlowTests: XCTestCase {
     }
 
     @MainActor
-    func testReadConversationQuoteAndSendFollowUp() {
+    func testRegenerateAnswerAndSendFollowUp() {
         let app = launchPreview()
+        openHistory(app)
+        attachScreenshot(app, name: "v4-sidebar")
         app.buttons["chat.history.preview"].tap()
-        let quote = app.buttons["chat.quote.answer"]
-        if !quote.isHittable {
+        let regenerate = app.buttons["chat.regenerate.answer"]
+        if regenerate.waitForExistence(timeout: 5), !regenerate.isHittable {
             app.swipeUp()
         }
-        XCTAssertTrue(quote.waitForExistence(timeout: 5))
-        attachScreenshot(app, name: "v3-conversation")
-        quote.tap()
+        XCTAssertTrue(app.buttons["chat.copy.answer"].exists)
+        XCTAssertTrue(app.buttons["chat.share.answer"].exists)
+        attachScreenshot(app, name: "v4-conversation")
+        regenerate.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "regenerated synthetic answer"))
+            .firstMatch.waitForExistence(timeout: 5))
         let composer = app.textFields["chat.composer"]
-        XCTAssertTrue((composer.value as? String)?.contains("> Start with") == true)
+        composer.tap(); composer.typeText("One more idea, please.")
         app.buttons["chat.send"].tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "This is a synthetic preview."))
             .firstMatch.waitForExistence(timeout: 5))
@@ -59,45 +63,49 @@ final class ChatFlowTests: XCTestCase {
     @MainActor
     func testHistorySearchAndAccountValidation() {
         let app = launchPreview()
-        attachScreenshot(app, name: "v3-history")
+        openHistory(app)
         let search = app.textFields["chat.search"]
         search.tap(); search.typeText("no-matching-title")
         XCTAssertFalse(app.buttons["chat.history.preview"].exists)
-        app.buttons["Clear search"].tap()
+        app.buttons["chat.search.clear"].tap()
         XCTAssertTrue(app.buttons["chat.history.preview"].exists)
-        app.buttons["chat.history.Today"].tap()
-        XCTAssertFalse(app.buttons["chat.history.preview"].exists)
-        app.buttons["chat.history.Today"].tap()
         app.buttons["chat.account"].tap()
-        app.buttons["settings.account"].tap()
-        app.buttons["account.signOut"].tap()
+        let signOut = app.buttons["account.signOut"]
+        XCTAssertTrue(signOut.waitForExistence(timeout: 5))
+        signOut.tap()
         app.buttons.matching(identifier: "account.confirmSignOut").firstMatch.tap()
+        let emailEntry = app.buttons["login.email.open"]
+        XCTAssertTrue(emailEntry.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["login.apple"].exists)
+        attachScreenshot(app, name: "v4-welcome")
+        emailEntry.tap()
         let submit = app.buttons["login.submit"]
         XCTAssertTrue(submit.waitForExistence(timeout: 5))
         XCTAssertFalse(submit.isEnabled)
-        attachScreenshot(app, name: "v3-login")
         app.textFields["login.email"].tap()
         app.textFields["login.email"].typeText("preview@example.invalid")
         app.secureTextFields["login.password"].tap()
         app.secureTextFields["login.password"].typeText("invalid")
+        attachScreenshot(app, name: "v4-email-login")
         submit.tap()
         XCTAssertTrue(app.staticTexts["login.error"].waitForExistence(timeout: 5))
         app.secureTextFields["login.password"].tap()
         app.secureTextFields["login.password"].typeText("synthetic-password")
         submit.tap()
-        XCTAssertTrue(app.buttons["chat.new"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["chat.sidebar.open"].waitForExistence(timeout: 5))
         XCUIDevice.shared.press(.home); app.activate()
-        XCTAssertTrue(app.buttons["chat.new"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["chat.sidebar.open"].waitForExistence(timeout: 5))
     }
 
     @MainActor
     func testDesktopToolRunIsReadableAndCanBeStopped() {
         let app = launchPreview(arguments: ["--synthetic-tools"])
+        openHistory(app)
         app.buttons["chat.history.preview-tools"].tap()
         XCTAssertTrue(app.staticTexts["chat.run.status"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["chat.run.status"].label, "Waiting for the originating device")
         XCTAssertFalse(app.buttons["modelPicker"].isEnabled)
-        attachScreenshot(app, name: "v3-desktop-tool")
+        attachScreenshot(app, name: "v4-desktop-tool")
         app.buttons["Stop response"].tap()
         XCTAssertTrue(app.staticTexts["chat.run.stopped"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["chat.run.stopped"].label, "Response stopped")
@@ -109,9 +117,8 @@ final class ChatFlowTests: XCTestCase {
     @MainActor
     func testChineseAndDarkDesignAndKeyboardChooser() {
         let app = launchPreview(arguments: ["--synthetic-dark"], language: "zh-Hans")
-        app.buttons["chat.new"].tap()
         XCTAssertTrue(app.staticTexts["有什么想问的？"].waitForExistence(timeout: 5))
-        attachScreenshot(app, name: "v3-zh-dark-empty")
+        attachScreenshot(app, name: "v4-zh-dark-empty")
         let composer = app.textFields["chat.composer"]
         composer.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
@@ -126,17 +133,16 @@ final class ChatFlowTests: XCTestCase {
         let model = app.buttons["model-preview"]
         XCTAssertTrue(model.isHittable)
         XCTAssertLessThan(model.frame.maxY, app.keyboards.firstMatch.frame.minY)
-        attachScreenshot(app, name: "v3-zh-keyboard-models")
+        attachScreenshot(app, name: "v4-zh-keyboard-models")
         app.buttons["model-fast-preview"].tap()
         pickHighestEffort(app)
         XCTAssertEqual(app.staticTexts["reasoningTitle"].label, "高")
-        attachScreenshot(app, name: "v3-zh-dark-high")
+        attachScreenshot(app, name: "v4-zh-dark-high")
     }
 
     @MainActor
     func testLandscapeKeyboardCanReachLastModel() async throws {
         let app = launchPreview()
-        app.buttons["chat.new"].tap()
         let landscapeWidth = app.windows.firstMatch.frame.height
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
@@ -168,9 +174,9 @@ final class ChatFlowTests: XCTestCase {
         }
         XCTAssertTrue(lastModel.isHittable)
         XCTAssertLessThan(lastModel.frame.maxY, app.keyboards.firstMatch.frame.minY)
-        attachScreenshot(app, name: "v3-landscape-keyboard-last-model")
+        attachScreenshot(app, name: "v4-landscape-keyboard-last-model")
         lastModel.tap()
-        XCTAssertEqual(app.staticTexts["reasoningTitle"].label, "Standard preview model")
+        XCTAssertEqual(app.staticTexts["reasoningTitle"].label, "Kimi K2")
     }
 
     @MainActor
@@ -187,8 +193,14 @@ final class ChatFlowTests: XCTestCase {
         app.launchArguments = ["--synthetic-preview", "-AppleLanguages", "(\(language))", "-AppleLocale",
                                language == "en" ? "en_US" : "zh_CN"] + arguments
         app.launch()
-        XCTAssertTrue(app.buttons["chat.new"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["chat.sidebar.open"].waitForExistence(timeout: 10))
         return app
+    }
+
+    @MainActor
+    private func openHistory(_ app: XCUIApplication) {
+        app.buttons["chat.sidebar.open"].tap()
+        XCTAssertTrue(app.buttons["chat.new"].waitForExistence(timeout: 5))
     }
 
     @MainActor

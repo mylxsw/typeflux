@@ -37,6 +37,20 @@ enum ChatPresentation {
         }
     }
 
+    /// The title pill's second line: "Completed · 2 steps", "Running · step 2".
+    static func runStatusLine(_ run: ChatRun, steps: Int) -> String {
+        let title = NSLocalizedString(runTitle(run), comment: "Run state")
+        switch run.status {
+        case "completed":
+            guard steps > 0 else { return title }
+            return title + " · " + String(format: NSLocalizedString("%d steps", comment: "Run step count"), steps)
+        case "failed", "cancelled":
+            return title
+        default:
+            return title + " · " + String(format: NSLocalizedString("Step %d", comment: "Activity step"), max(1, steps))
+        }
+    }
+
     static func runNotice(_ run: ChatRun) -> RunNotice? {
         // A user-requested stop is a terminal state, not a connection failure.
         if run.status == "cancelled" {
@@ -72,6 +86,15 @@ enum ChatPresentation {
             historySection(for: $0.updatedAt, now: now, calendar: calendar) == section &&
                 matches($0, query: query)
         }.sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    /// Sidebar time: the clock for today and yesterday, the date for older items.
+    static func historyTime(_ date: Date, now: Date = Date(), calendar: Calendar = .current,
+                            locale: Locale = .current) -> String {
+        if historySection(for: date, now: now, calendar: calendar) == .earlier {
+            return date.formatted(.dateTime.month(.defaultDigits).day().locale(locale))
+        }
+        return date.formatted(.dateTime.hour().minute().locale(locale))
     }
 
     static func quote(_ text: String, into draft: String) -> String {

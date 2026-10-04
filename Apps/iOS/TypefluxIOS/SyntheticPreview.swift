@@ -343,17 +343,43 @@
 
         func logout(refreshToken _: String) async throws {}
         func models(token _: String) async throws -> [ChatModel] {
-            [ChatModel(id: "preview", name: "Preview model", vision: true,
-                       pricing: ["multiplier": "3"], reasoning: true,
-                       reasoningEfforts: ["low", "medium", "high", "xhigh", "max"],
-                       contextWindowTokens: 1_000_000, maxOutputTokens: 64000),
-             ChatModel(id: "text-preview", name: "Text preview model", vision: false,
-                       reasoning: true, reasoningEfforts: ["low", "medium", "high"]),
-             ChatModel(id: "fast-preview", name: "Fast preview model", vision: true,
+            [ChatModel(id: "preview", name: "MiniMax M3", vision: true,
                        pricing: ["multiplier": "1"], reasoning: true,
+                       reasoningEfforts: ["low", "medium", "high", "max"],
+                       contextWindowTokens: 1_000_000, maxOutputTokens: 64000),
+             ChatModel(id: "fast-preview", name: "Claude Sonnet", vision: true,
+                       pricing: ["multiplier": "3"], reasoning: true,
                        reasoningEfforts: ["low", "medium", "high"],
+                       contextWindowTokens: 200_000, maxOutputTokens: 64000),
+             ChatModel(id: "text-preview", name: "DeepSeek V4", vision: false,
+                       pricing: ["multiplier": "0.5"], reasoning: true, reasoningEfforts: ["low", "medium", "high"],
                        contextWindowTokens: 128_000, maxOutputTokens: 32000),
-             ChatModel(id: "standard-preview", name: "Standard preview model", vision: false, reasoning: false)]
+             ChatModel(id: "standard-preview", name: "Kimi K2", vision: false, reasoning: false)]
+        }
+
+        func profile(token _: String) async throws -> ChatProfile {
+            ChatProfile(id: "synthetic-user", email: "preview@example.invalid", name: "Demir Von")
+        }
+
+        func creditUsage(token _: String) async throws -> ChatCreditUsage {
+            ChatCreditUsage(periodEnd: Date().addingTimeInterval(20 * 86400), planCode: "pro", paid: true,
+                            credits: .init(limit: 500, used: 184, remaining: 316))
+        }
+
+        func deleteConversation(id: String, token _: String) async throws {
+            documents.removeAll { $0.id == id }
+        }
+
+        func regenerate(conversationId: String, request: ChatRegenerateRequest,
+                        token _: String) async throws -> ChatConversation {
+            let index = try documentIndex(conversationId)
+            guard let answer = documents[index].messages.firstIndex(where: { $0.id == request.messageId }) else {
+                throw ChatAPIError.server(code: "NOT_FOUND", message: "Synthetic message not found.")
+            }
+            documents[index].messages[answer].id = UUID().uuidString
+            documents[index].messages[answer].text = "This is a regenerated synthetic answer."
+            documents[index].revision += 1
+            return documents[index]
         }
 
         func list(token _: String, offset: Int) async throws -> [ChatConversationSummary] {

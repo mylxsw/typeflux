@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import SwiftUI
 import TypefluxChat
 import UIKit
@@ -7,32 +8,40 @@ import UIKit
 struct ChatTranscriptView: View {
     let conversation: ChatConversation
     var allowsQuote = true
+    var regenerableMessageID: String?
     var quote: (String) -> Void
+    var regenerate: (String) -> Void = { _ in }
 
     var body: some View {
         ForEach(ChatTranscript.items(conversation)) { item in
             switch item {
-            case let .message(message): ChatMessageView(message: message, allowsQuote: allowsQuote, quote: quote)
+            case let .message(message):
+                ChatMessageView(message: message, allowsQuote: allowsQuote,
+                                canRegenerate: message.id == regenerableMessageID,
+                                quote: quote, regenerate: regenerate)
             case let .activity(activity): ChatActivityView(activity: activity)
             }
         }
         if let run = conversation.run {
-            VStack(alignment: .leading, spacing: 12) {
-                if run.isActive {
-                    Label(NSLocalizedString(run.requiresDesktop ? "Waiting for the originating device" :
-                              "Typeflux is thinking…", comment: "Live response status"),
-                    systemImage: run.requiresDesktop ? "desktopcomputer" : "sparkles")
-                        .font(.subheadline).foregroundStyle(ChatTheme.textSecondary)
+            VStack(alignment: .leading, spacing: 10) {
+                let preview = ChatTranscript.preview(conversation)
+                if run.isActive, run.requiresDesktop {
+                    Label(NSLocalizedString("Waiting for the originating device", comment: "Live response status"),
+                          systemImage: "desktopcomputer")
+                        .font(.system(size: 13.5)).foregroundStyle(ChatTheme.secondary)
                         .accessibilityIdentifier("chat.run.status")
-                }
-                if let reasoning = run.reasoning, !reasoning.isEmpty,
-                   run.isActive || ChatTranscript.preview(conversation) != nil {
+                } else if let reasoning = run.reasoning, !reasoning.isEmpty, run.isActive || preview != nil {
                     ChatReasoningView(text: reasoning, milliseconds: run.reasoningMilliseconds,
                                       active: run.isActive && run.preview?.isEmpty != false)
+                } else if run.isActive, preview == nil {
+                    ChatThinkingLabel().accessibilityIdentifier("chat.run.status")
                 }
-                if let preview = ChatTranscript.preview(conversation) {
+                if let preview {
                     ChatMarkdownView(text: preview).accessibilityElement(children: .contain)
                         .accessibilityIdentifier("chat.run.preview")
+                    if run.isActive {
+                        ChatStreamingDot()
+                    }
                 }
                 runNotice(run)
             }
@@ -44,11 +53,11 @@ struct ChatTranscriptView: View {
         switch ChatPresentation.runNotice(run) {
         case .stopped:
             Label("Response stopped", systemImage: "stop.circle")
-                .font(.callout).foregroundStyle(ChatTheme.textSecondary)
+                .font(.system(size: 13.5)).foregroundStyle(ChatTheme.secondary)
                 .accessibilityIdentifier("chat.run.stopped")
         case let .failure(error):
             Label(NSLocalizedString(error, comment: "Run error"), systemImage: "exclamationmark.circle")
-                .font(.callout).foregroundStyle(.red)
+                .font(.system(size: 13.5)).foregroundStyle(.red)
                 .accessibilityIdentifier("chat.run.error")
         case nil:
             EmptyView()
@@ -59,7 +68,9 @@ struct ChatTranscriptView: View {
 private struct ChatMessageView: View {
     let message: ChatMessage
     let allowsQuote: Bool
+    let canRegenerate: Bool
     let quote: (String) -> Void
+    let regenerate: (String) -> Void
     @State private var copied = false
 
     var body: some View {
@@ -77,78 +88,79 @@ private struct ChatMessageView: View {
     }
 
     private var userMessage: some View {
-        HStack(alignment: .top, spacing: 0) {
-            Spacer(minLength: 36)
-            VStack(alignment: .trailing, spacing: 8) {
-                ChatMessageImages(message: message)
-                if !message.text.isEmpty {
-                    Text(message.text).font(.body).lineSpacing(3).textSelection(.enabled)
-                        .padding(.horizontal, 15).padding(.vertical, 11)
-                        .background(ChatTheme.accent.opacity(0.18), in: bubble)
-                        .overlay(bubble.strokeBorder(ChatTheme.accent.opacity(0.42), lineWidth: 0.5))
-                }
+        VStack(alignment: .trailing, spacing: 6) {
+            ChatMessageImages(message: message, maxWidth: 220)
+            if !message.text.isEmpty {
+                Text(message.text).font(.system(size: 16)).lineSpacing(3)
+                    .foregroundStyle(ChatTheme.bubbleText).textSelection(.enabled)
+                    .padding(.horizontal, 15).padding(.vertical, 10)
+                    .background(ChatTheme.bubble, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
         }
-    }
-
-    private var bubble: UnevenRoundedRectangle {
-        UnevenRoundedRectangle(topLeadingRadius: 20, bottomLeadingRadius: 20, bottomTrailingRadius: 6,
-                               topTrailingRadius: 20, style: .continuous)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.leading, 48)
+        .padding(.top, 4)
     }
 
     private var assistantMessage: some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: 10) {
             if let reasoning = message.reasoning, !reasoning.isEmpty {
                 ChatReasoningView(text: reasoning, milliseconds: message.reasoningMilliseconds, active: false)
             }
-            ChatMessageImages(message: message)
+            ChatMessageImages(message: message, maxWidth: .infinity)
             if !message.text.isEmpty {
+                // No context menu here: it would take over the long press that selects text.
                 ChatMarkdownView(text: message.text)
             }
             if message.isError == true {
-                Label(
-                    NSLocalizedString("Response interrupted", comment: "Incomplete answer"),
-                    systemImage: "exclamationmark.circle"
-                )
-                .font(.caption).foregroundStyle(ChatTheme.textSecondary)
+                Label(NSLocalizedString("Response interrupted", comment: "Incomplete answer"),
+                      systemImage: "exclamationmark.circle")
+                    .font(.footnote).foregroundStyle(ChatTheme.secondary)
             }
             if !message.text.isEmpty {
-                HStack(spacing: 2) {
-                    Button {
-                        UIPasteboard.general.string = message.text; copied = true
-                    } label: {
-                        Image(systemName: copied ? "checkmark" : "doc.on.doc").frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .accessibilityLabel(NSLocalizedString(
-                        copied ? "Copied" : "Copy response",
-                        comment: "Message action"
-                    ))
-                    .accessibilityIdentifier("chat.copy." + message.id)
-                    .foregroundStyle(copied ? ChatTheme.accent : ChatTheme.textSecondary)
-                    Button { quote(message.text) } label: {
-                        Image(systemName: "text.quote").frame(width: 44, height: 44).contentShape(Rectangle())
-                    }
-                    .accessibilityLabel(NSLocalizedString("Quote response", comment: "Message action"))
-                    .accessibilityIdentifier("chat.quote." + message.id)
-                    .disabled(!allowsQuote)
-                }
-                .font(.system(size: 14)).foregroundStyle(ChatTheme.textSecondary).buttonStyle(.plain)
-                .padding(.leading, -12)
+                actions
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onChange(of: message.text) { _, _ in copied = false }
     }
 
+    private var actions: some View {
+        HStack(spacing: 2) {
+            Button {
+                UIPasteboard.general.string = message.text
+                copied = true
+            } label: { actionIcon(copied ? "checkmark" : "doc.on.doc") }
+                .accessibilityLabel(NSLocalizedString(copied ? "Copied" : "Copy response", comment: "Message action"))
+                .accessibilityIdentifier("chat.copy." + message.id)
+                .foregroundStyle(copied ? ChatTheme.accent : ChatTheme.tertiary)
+            Button { quote(message.text) } label: { actionIcon("text.quote") }
+                .accessibilityLabel(NSLocalizedString("Quote response", comment: "Message action"))
+                .accessibilityIdentifier("chat.quote." + message.id)
+                .disabled(!allowsQuote)
+            if canRegenerate {
+                Button { regenerate(message.id) } label: { actionIcon("arrow.clockwise") }
+                    .accessibilityLabel(NSLocalizedString("Regenerate", comment: "Message action"))
+                    .accessibilityIdentifier("chat.regenerate." + message.id)
+            }
+            ShareLink(item: message.text) { actionIcon("square.and.arrow.up") }
+                .accessibilityLabel(NSLocalizedString("Share", comment: "Message action"))
+                .accessibilityIdentifier("chat.share." + message.id)
+        }
+        .foregroundStyle(ChatTheme.tertiary).buttonStyle(.plain)
+        .padding(.leading, -11).padding(.top, -6)
+    }
+
+    private func actionIcon(_ symbol: String) -> some View {
+        Image(systemName: symbol).font(.system(size: 14.5)).frame(width: 36, height: 36).contentShape(Rectangle())
+    }
+
     private var orphanedToolResult: some View {
-        DisclosureGroup(NSLocalizedString(
-            message.isError == true ? "Tool failed" : "View tool output",
-            comment: "Tool output"
-        )) {
+        DisclosureGroup(NSLocalizedString(message.isError == true ? "Tool failed" : "View tool output",
+                                          comment: "Tool output")) {
             Text(message.text).font(.system(.footnote, design: .monospaced)).textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            ChatMessageImages(message: message)
+            ChatMessageImages(message: message, maxWidth: .infinity)
         }
         .font(.subheadline).tint(ChatTheme.textSecondary)
     }
@@ -156,12 +168,16 @@ private struct ChatMessageView: View {
 
 private struct ChatMessageImages: View {
     let message: ChatMessage
+    let maxWidth: CGFloat
 
     var body: some View {
         ForEach(Array(message.imageDataURLs.enumerated()), id: \.offset) { index, dataURL in
             if let uiImage = ImageAttachment.decode(dataURL) {
-                Image(uiImage: uiImage).resizable().scaledToFit().frame(maxHeight: 260)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                Image(uiImage: uiImage).resizable().scaledToFit()
+                    .frame(maxWidth: maxWidth, maxHeight: 260)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(ChatTheme.border, lineWidth: 0.5))
                     .accessibilityLabel(NSLocalizedString("Attached photo", comment: "Message image"))
                     .accessibilityIdentifier("chat.photo.\(message.id).\(index)")
             }
@@ -169,6 +185,7 @@ private struct ChatMessageImages: View {
     }
 }
 
+/// "Thought for N seconds ›", expanding to the reasoning text, as on the Mac.
 struct ChatReasoningView: View {
     let text: String
     let milliseconds: Int?
@@ -176,9 +193,6 @@ struct ChatReasoningView: View {
     @State private var expanded = false
 
     private var label: String {
-        if active {
-            return NSLocalizedString("Thinking…", comment: "Active reasoning")
-        }
         if let milliseconds, milliseconds > 0 {
             return String(format: NSLocalizedString("Thought for %d seconds", comment: "Completed reasoning duration"),
                           max(1, milliseconds / 1000))
@@ -189,20 +203,25 @@ struct ChatReasoningView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Button { expanded.toggle() } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "sparkles")
-                    Text(label)
-                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                if active {
+                    ChatThinkingLabel()
+                } else {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles").foregroundStyle(ChatTheme.tertiary)
+                        Text(label)
+                        Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
+                            .rotationEffect(.degrees(expanded ? 90 : 0))
+                    }
+                    .font(.system(size: 13.5)).foregroundStyle(ChatTheme.secondary)
+                    .frame(minHeight: 30).contentShape(Rectangle())
                 }
-                .font(.subheadline).foregroundStyle(ChatTheme.textSecondary)
-                .frame(minHeight: 44).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityValue(NSLocalizedString(expanded ? "Expanded" : "Collapsed", comment: "Disclosure state"))
             if expanded {
-                ChatMarkdownView(text: text).foregroundStyle(ChatTheme.textSecondary).padding(.leading, 12)
-                    .overlay(alignment: .leading) { Rectangle().fill(ChatTheme.border).frame(width: 2) }
+                ChatMarkdownView(text: text).font(.system(size: 14)).foregroundStyle(ChatTheme.secondary)
+                    .padding(.leading, 12)
+                    .overlay(alignment: .leading) { Rectangle().fill(ChatTheme.border).frame(width: 1.5) }
             }
         }
         .onChange(of: active) { _, value in
@@ -213,6 +232,54 @@ struct ChatReasoningView: View {
     }
 }
 
+/// "Thinking" in a soft moving highlight; Reduce Motion shows plain text.
+struct ChatThinkingLabel: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "sparkles").foregroundStyle(ChatTheme.accent)
+            if reduceMotion {
+                Text("Thinking…").foregroundStyle(ChatTheme.secondary)
+            } else {
+                TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
+                    let phase = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.6) / 1.6
+                    Text("Thinking…")
+                        .foregroundStyle(LinearGradient(
+                            stops: [.init(color: ChatTheme.secondary, location: phase - 0.3),
+                                    .init(color: .primary, location: phase),
+                                    .init(color: ChatTheme.secondary, location: phase + 0.3)],
+                            startPoint: .leading, endPoint: .trailing
+                        ))
+                }
+            }
+        }
+        .font(.system(size: 13.5, weight: .medium))
+        .frame(minHeight: 30)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// The breathing dot at the end of a reply that is still being written.
+struct ChatStreamingDot: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulse = false
+
+    var body: some View {
+        Circle().fill(ChatTheme.accent).frame(width: 8, height: 8)
+            .background(Circle().fill(ChatTheme.accent.opacity(0.18)).frame(width: 16, height: 16)
+                .scaleEffect(pulse ? 1 : 0.6))
+            .frame(width: 16, height: 16)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) { pulse = true }
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+/// One card per turn of tool use: "Called N tools" with their readable names,
+/// expanded while running and folded once complete.
 private struct ChatActivityView: View {
     let activity: ChatTranscript.Activity
     @State private var userExpanded: Bool?
@@ -222,7 +289,7 @@ private struct ChatActivityView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             if let lead = activity.messages.first, let reasoning = lead.reasoning, !reasoning.isEmpty {
                 ChatReasoningView(text: reasoning, milliseconds: lead.reasoningMilliseconds, active: false)
             }
@@ -230,60 +297,48 @@ private struct ChatActivityView: View {
                 Button {
                     withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { userExpanded = !expanded }
                 } label: {
-                    HStack(spacing: 10) {
+                    HStack(spacing: 9) {
                         ChatActivityStatusIcon(status: activity.status)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(NSLocalizedString("Agent activity", comment: "Activity group title"))
-                                .font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                            Text(String(
-                                format: NSLocalizedString("%d steps · %@", comment: "Activity count and status"),
-                                activity.steps.count,
-                                activity.status.label
-                            ))
-                            .font(.caption).foregroundStyle(ChatTheme.textSecondary)
-                        }
-                        Spacer(minLength: 8)
+                        Text(ChatTranscript.activityTitle(activity))
+                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                            .fixedSize()
+                        Text(ChatTranscript.activitySubtitle(activity))
+                            .font(.system(size: 12)).foregroundStyle(ChatTheme.tertiary).lineLimit(1)
+                        Spacer(minLength: 4)
                         Image(systemName: "chevron.down").font(.system(size: 11, weight: .semibold))
-                            .rotationEffect(.degrees(expanded ? 180 : 0)).foregroundStyle(ChatTheme.textSecondary)
+                            .rotationEffect(.degrees(expanded ? 180 : 0)).foregroundStyle(ChatTheme.tertiary)
                     }
-                    .padding(14).frame(minHeight: 52).contentShape(Rectangle())
+                    .padding(.horizontal, 14).frame(minHeight: 44).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("chat.activity." + activity.id)
                 .accessibilityValue(NSLocalizedString(expanded ? "Expanded" : "Collapsed", comment: "Disclosure state"))
                 if expanded {
-                    Divider()
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
                         ForEach(activity.messages) { message in
                             if message.id != activity.messages.first?.id, let reasoning = message.reasoning,
                                !reasoning.isEmpty {
-                                ChatReasoningView(
-                                    text: reasoning,
-                                    milliseconds: message.reasoningMilliseconds,
-                                    active: false
-                                )
+                                ChatReasoningView(text: reasoning, milliseconds: message.reasoningMilliseconds,
+                                                  active: false)
                             }
                             if !message.text.isEmpty {
-                                Text(message.text).font(.subheadline).foregroundStyle(ChatTheme.textSecondary)
-                                    .textSelection(.enabled)
+                                Text(message.text).font(.system(size: 13.5)).foregroundStyle(ChatTheme.secondary)
+                                    .textSelection(.enabled).padding(.vertical, 2)
                             }
                             ForEach(activity.steps.filter { step in
                                 (message.toolCalls ?? []).contains { $0.id == step.id }
-                            }) { step in
-                                ChatToolStepView(step: step)
-                            }
+                            }) { step in ChatToolStepView(step: step) }
                         }
                         ForEach(activity.steps.filter { step in
                             !activity.messages.contains { ($0.toolCalls ?? []).contains { $0.id == step.id } }
                         }) { step in ChatToolStepView(step: step) }
-                    }.padding(14)
+                    }
+                    .padding(.leading, 12)
+                    .overlay(alignment: .leading) { Rectangle().fill(ChatTheme.border).frame(width: 1.5) }
+                    .padding(.leading, 23).padding(.trailing, 14).padding(.bottom, 10)
                 }
             }
-            .background(ChatTheme.raisedSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(
-                ChatTheme.border,
-                lineWidth: 0.5
-            ))
+            .chatCard(corner: 18)
         }
         .onChange(of: activity.status) { old, new in
             if old.isExpandedByDefault, !new.isExpandedByDefault {
@@ -301,30 +356,23 @@ private struct ChatToolStepView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Button { expanded.toggle() } label: {
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: ChatToolPresentation.symbol(step.call))
-                        .font(.system(size: 12)).foregroundStyle(ChatTheme.textSecondary)
-                        .frame(width: 26, height: 26)
-                        .background(ChatTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8))
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(ChatToolPresentation.title(step.call)).font(.subheadline.weight(.medium))
-                            .foregroundStyle(.primary)
-                        if let detail = ChatToolPresentation.detail(step.call) {
-                            Text(detail).font(.caption).foregroundStyle(ChatTheme.textSecondary).lineLimit(1)
-                                .truncationMode(.middle)
-                        }
-                        Text(step.status.label).font(.caption)
-                            .foregroundStyle(step.status == .failed ? .red : ChatTheme.textTertiary)
-                    }
+                HStack(spacing: 8) {
+                    ChatActivityStatusIcon(status: step.status, size: 14)
+                    (Text(ChatToolPresentation.title(step.call)).foregroundStyle(ChatTheme.secondary)
+                        + Text(ChatToolPresentation.detail(step.call).map { " · " + $0 } ?? "")
+                        .foregroundStyle(.primary))
+                        .font(.system(size: 13)).lineLimit(1).truncationMode(.middle)
                     Spacer(minLength: 4)
-                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
-                        .rotationEffect(.degrees(expanded ? 90 : 0)).foregroundStyle(ChatTheme.textSecondary)
+                    if step.status == .failed {
+                        Text(step.status.label).font(.system(size: 12)).foregroundStyle(.red)
+                    }
                 }
-                .frame(minHeight: 44, alignment: .leading).contentShape(Rectangle())
-            }.buttonStyle(.plain).accessibilityIdentifier("chat.tool." + step.id)
+                .frame(minHeight: 32).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).accessibilityIdentifier("chat.tool." + step.id)
             if expanded {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(step.call.function.name).font(.caption.monospaced()).foregroundStyle(ChatTheme.textSecondary)
+                    Text(step.call.function.name).font(.caption.monospaced()).foregroundStyle(ChatTheme.secondary)
                     if step.result != nil {
                         Picker(NSLocalizedString("Tool details", comment: "Tool detail pane"), selection: $showResult) {
                             Text(NSLocalizedString("Arguments", comment: "Tool detail pane")).tag(false)
@@ -335,10 +383,11 @@ private struct ChatToolStepView: View {
                         .font(.system(.footnote, design: .monospaced)).textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if showResult, let result = step.result {
-                        ChatMessageImages(message: result)
+                        ChatMessageImages(message: result, maxWidth: .infinity)
                     }
                 }
-                .padding(12).background(ChatTheme.controlSurface, in: RoundedRectangle(cornerRadius: 10))
+                .padding(12).background(ChatTheme.codeBackground, in: RoundedRectangle(cornerRadius: 12))
+                .padding(.bottom, 4)
             }
         }
     }
@@ -346,16 +395,40 @@ private struct ChatToolStepView: View {
 
 private struct ChatActivityStatusIcon: View {
     let status: ChatTranscript.Status
+    var size: CGFloat = 18
 
     var body: some View {
         Group {
             switch status {
-            case .running: ProgressView().controlSize(.small)
-            case .waiting: Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
-            case .done: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-            case .failed: Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
-            case .stopped: Image(systemName: "pause.circle.fill").foregroundStyle(ChatTheme.textSecondary)
+            case .running: ChatSpinner(size: size)
+            case .waiting: Image(systemName: "exclamationmark.circle.fill").resizable().foregroundStyle(.orange)
+            case .done:
+                Image(systemName: "checkmark").font(.system(size: size * 0.5, weight: .bold)).foregroundStyle(.white)
+                    .frame(width: size, height: size).background(ChatTheme.success, in: Circle())
+            case .failed: Image(systemName: "xmark.circle.fill").resizable().foregroundStyle(.red)
+            case .stopped: Image(systemName: "pause.circle.fill").resizable().foregroundStyle(ChatTheme.secondary)
             }
-        }.frame(width: 20, height: 20).accessibilityHidden(true)
+        }
+        .frame(width: size, height: size).accessibilityHidden(true)
+    }
+}
+
+/// A thin accent ring; Reduce Motion keeps it still.
+struct ChatSpinner: View {
+    var size: CGFloat = 16
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var turning = false
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(ChatTheme.accent.opacity(0.22), lineWidth: 2)
+            Circle().trim(from: 0, to: 0.28).stroke(ChatTheme.accent, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .rotationEffect(.degrees(turning ? 360 : 0))
+        }
+        .frame(width: size - 2, height: size - 2)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.linear(duration: 0.9).repeatForever(autoreverses: false)) { turning = true }
+        }
     }
 }
