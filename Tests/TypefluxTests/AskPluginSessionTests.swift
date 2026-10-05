@@ -2,11 +2,22 @@ import Foundation
 import Testing
 @testable import Typeflux
 
+extension AskLauncherPlugin {
+    /// Runs without watching the progress.
+    func run(_ request: AskPluginRequest, plan: AskPluginPlan) async throws -> AskPluginOutput {
+        try await run(request, plan: plan) { _ in }
+    }
+}
+
 /// A plugin whose plans and results the test decides, recording every run.
+/// With `steps`, it reports each one as progress before finishing.
 final class AskTestPlugin: AskLauncherPlugin, @unchecked Sendable {
     var live = true
     var failure: AskPluginFailure?
     var runDelay: Duration = .zero
+    var steps: [String] = []
+    var stepDelay: Duration = .milliseconds(20)
+    var planActions: [AskPluginAction] = []
     private(set) var runs: [AskPluginRequest] = []
 
     let id = "test"
@@ -19,12 +30,19 @@ final class AskTestPlugin: AskLauncherPlugin, @unchecked Sendable {
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
         let mode: AskPluginPlan.Mode = live && request.origin == .argument && request.options["engine"] == nil ? .live : .onSubmit
-        return AskPluginPlan(mode: mode, title: "plan " + request.text, values: request.options)
+        return AskPluginPlan(mode: mode, title: "plan " + request.text, values: request.options, actions: planActions)
     }
 
-    func run(_ request: AskPluginRequest, plan: AskPluginPlan) async throws -> AskPluginOutput {
+    func run(_ request: AskPluginRequest, plan: AskPluginPlan,
+             progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
         runs.append(request)
         if runDelay != .zero { try await Task.sleep(for: runDelay) }
+        var text = ""
+        for step in steps {
+            text += step
+            await progress(AskPluginOutput(body: text, original: request.text, meta: [], source: "test", actions: []))
+            try await Task.sleep(for: stepDelay)
+        }
         if let failure { throw failure }
         return AskPluginOutput(body: "done " + request.text, original: request.text, meta: [], source: "test",
                                actions: [AskPluginAction(kind: .copy("done " + request.text), title: "Copy",
@@ -39,13 +57,13 @@ final class AskTestPlugin: AskLauncherPlugin, @unchecked Sendable {
 @Suite("Ask plugin session", .serialized)
 @MainActor
 struct AskPluginSessionTests {
-    private func session(_ plugin: AskTestPlugin = AskTestPlugin()) -> AskPluginSession {
+    func session(_ plugin: AskTestPlugin = AskTestPlugin()) -> AskPluginSession {
         let session = AskPluginSession(plugins: [plugin]) { plugin.defaultKeywords + [AskKeyword(keyword: "zz", pluginID: "missing")] }
         session.debounce = .milliseconds(10)
         return session
     }
 
-    private func settle(_ session: AskPluginSession, until condition: () -> Bool) async throws {
+    func settle(_ session: AskPluginSession, until condition: () -> Bool) async throws {
         for _ in 0 ..< 400 where !condition() { try await Task.sleep(for: .milliseconds(5)) }
         #expect(condition(), "timed out")
     }
@@ -159,6 +177,71 @@ struct AskPluginSessionTests {
     }
 }
 
+extension AskPluginSessionTests {
+    @Test func aStreamingRunShowsItsTextAsItGrows() async throws {
+        let plugin = AskTestPlugin()
+        plugin.live = false
+        plugin.steps = ["Hel", "lo"]
+        plugin.stepDelay = .milliseconds(60)
+        let session = session(plugin)
+        _ = session.detect(in: "tt x")
+        session.update(text: "x", selection: nil, language: .english)
+        try await settle(session) { session.plan != nil }
+        #expect(session.run())
+        try await settle(session) { session.partial?.body == "Hel" }
+        #expect(session.isRunning)
+        try await settle(session) { session.partial?.body == "Hello" }
+        try await settle(session) { session.output != nil }
+        #expect(session.partial == nil, "the finished result replaces the partial one")
+        // Esc drops what had arrived.
+        session.rerun(with: [:], selection: nil, text: "x", language: .english)
+        try await settle(session) { session.partial != nil }
+        #expect(session.cancelRun())
+        #expect(session.partial == nil)
+    }
+
+    @Test func returnRightAfterTypingRunsTheLatestText() async throws {
+        let plugin = AskTestPlugin()
+        plugin.live = false
+        let session = session(plugin)
+        _ = session.detect(in: "tt a")
+        session.update(text: "a", selection: nil, language: .english)
+        try await settle(session) { session.plan != nil }
+        #expect(session.isPlanCurrent)
+        session.update(text: "ab", selection: nil, language: .english)
+        #expect(!session.isPlanCurrent, "the shown plan is still for \"a\"")
+        #expect(session.run(), "Return is taken and waits for the new plan")
+        try await settle(session) { session.output != nil }
+        #expect(plugin.runs.map(\.text) == ["ab"])
+        // A waiting Return does not outlive the keyword.
+        let quiet = AskTestPlugin()
+        quiet.live = false
+        let other = self.session(quiet)
+        _ = other.detect(in: "tt a")
+        other.update(text: "a", selection: nil, language: .english)
+        try await settle(other) { other.plan != nil }
+        other.update(text: "ab", selection: nil, language: .english)
+        #expect(other.run())
+        other.deactivate()
+        _ = other.detect(in: "tt ab")
+        other.update(text: "ab", selection: nil, language: .english)
+        try await settle(other) { other.plan != nil }
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(quiet.runs.isEmpty, "nothing runs on its own")
+    }
+
+    @Test func thePaletteEntersAKeyword() {
+        let session = session()
+        session.enter(AskKeyword(keyword: "zz", pluginID: "missing"))
+        #expect(!session.isActive, "a keyword without its plugin is ignored")
+        _ = session.detect(in: "tt")
+        session.enter(AskKeyword(keyword: "tt", pluginID: "test"))
+        #expect(session.isActive && session.hint == nil)
+        session.enter(AskKeyword(keyword: "tt2", pluginID: "test", options: ["target": "x"]))
+        #expect(session.keyword?.keyword == "tt2", "a chosen keyword replaces the active one")
+    }
+}
+
 /// A plugin that fails with an error that is not a plugin failure.
 private struct ThrowingPlugin: AskLauncherPlugin {
     struct Broken: Error {}
@@ -167,6 +250,7 @@ private struct ThrowingPlugin: AskLauncherPlugin {
     func placeholder(selectionLines: Int?) -> String { "" }
     func chipDetail(for keyword: AskKeyword, language: AppLanguage) -> String? { nil }
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan { AskPluginPlan(mode: .onSubmit, title: "t") }
-    func run(_ request: AskPluginRequest, plan: AskPluginPlan) async throws -> AskPluginOutput { throw Broken() }
+    func run(_ request: AskPluginRequest, plan: AskPluginPlan,
+             progress: @escaping AskPluginProgress) async throws -> AskPluginOutput { throw Broken() }
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? { nil }
 }

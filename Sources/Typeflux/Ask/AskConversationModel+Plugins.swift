@@ -3,25 +3,61 @@ import Foundation
 
 /// The plugins the launcher knows and the keywords they start with.
 enum AskPluginRegistry {
-    static var defaultKeywords: [AskKeyword] { AskTranslatePlugin.keywords }
+    /// Every built-in plugin, in the order settings and the `/` palette list them.
+    static let pluginIDs = [AskTranslatePlugin.id, AskPromptPlugin.id, AskWebSearchPlugin.id]
+
+    static var defaultKeywords: [AskKeyword] {
+        AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords
+    }
+
+    /// The keywords in use: the saved ones, plus the defaults of plugins that came
+    /// after they were saved (`known` lists the plugins the saved list covers; lists
+    /// saved before it existed only knew translation).
+    static func keywords(saved: [AskKeyword]?, known: [String]?) -> [AskKeyword] {
+        guard let saved else { return defaultKeywords }
+        let covered = Set(known ?? [AskTranslatePlugin.id])
+        return saved + defaultKeywords.filter { keyword in
+            !covered.contains(keyword.pluginID) && !saved.contains { $0.id == keyword.id }
+        }
+    }
+
+    /// The display name of a model for result cards.
+    static func modelName(_ settings: SettingsStore?) -> String {
+        settings.map { $0.llmModel.isEmpty ? "AI" : $0.llmModel } ?? "AI"
+    }
+}
+
+extension SettingsStore {
+    /// The launcher's keywords, with any added since they were saved.
+    var effectiveAskLauncherKeywords: [AskKeyword] {
+        AskPluginRegistry.keywords(saved: askLauncherKeywords, known: askLauncherKeywordPlugins)
+    }
+
+    /// Saves the keywords as covering every plugin there is now.
+    func saveAskLauncherKeywords(_ keywords: [AskKeyword]?) {
+        askLauncherKeywords = keywords
+        askLauncherKeywordPlugins = keywords == nil ? nil : AskPluginRegistry.pluginIDs
+    }
 }
 
 extension AskConversationModel {
     /// The user's keywords, or each plugin's defaults until they change them.
-    var launcherKeywords: [AskKeyword] {
-        modelLibrary.settings.askLauncherKeywords ?? AskPluginRegistry.defaultKeywords
-    }
+    var launcherKeywords: [AskKeyword] { modelLibrary.settings.effectiveAskLauncherKeywords }
 
     func makeLauncherPlugins() -> [any AskLauncherPlugin] {
         let settings = modelLibrary.settings
-        return [AskTranslatePlugin(
-            onDevice: AskOnDeviceTranslationEngine(),
-            ai: translationAI,
-            aiName: { [weak settings] in settings.map { $0.llmModel.isEmpty ? "AI" : $0.llmModel } ?? "AI" },
-            secondLanguage: { [weak settings] language in
-                settings?.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
-            }
-        )]
+        return [
+            AskTranslatePlugin(
+                onDevice: AskOnDeviceTranslationEngine(),
+                ai: translationAI,
+                aiName: { [weak settings] in AskPluginRegistry.modelName(settings) },
+                secondLanguage: { [weak settings] language in
+                    settings?.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
+                }
+            ),
+            AskPromptPlugin(generator: promptAI, modelName: { [weak settings] in AskPluginRegistry.modelName(settings) }),
+            AskWebSearchPlugin()
+        ]
     }
 
     /// What a plugin result's action needs from the launcher afterwards.
@@ -55,7 +91,17 @@ extension AskConversationModel {
         case let .askAI(prompt):
             askAIFromPlugin(prompt)
             return .close
+        case let .open(url):
+            finishPluginResult()
+            openURL(url)
+            return .close
         }
+    }
+
+    /// ⌘C: copies and keeps the launcher open, saying so in the bottom bar.
+    func copyPluginText(_ text: String) {
+        AskQuickResults.copy(text)
+        confirm(L("ask.plugin.copied"))
     }
 
     /// ⌘↩ in keyword mode: the AI gets the plugin's prompt about its result, or

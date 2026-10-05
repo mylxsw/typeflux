@@ -19,6 +19,7 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     var id: String { Self.id }
     var title: String { L("ask.plugin.translate.title") }
     var symbol: String { "translate" }
+    var optionName: String? { L("ask.plugin.translate.option") }
 
     static let keywords = ["fy", "tr", "翻译"].map { AskKeyword(keyword: $0, pluginID: id) }
     var defaultKeywords: [AskKeyword] { Self.keywords }
@@ -55,7 +56,8 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         return AskPluginPlan(mode: mode, title: title, meta: meta, values: values)
     }
 
-    func run(_ request: AskPluginRequest, plan: AskPluginPlan) async throws -> AskPluginOutput {
+    func run(_ request: AskPluginRequest, plan: AskPluginPlan,
+             progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
         let source = plan.values["source"]
         let target = plan.values["target"] ?? AskTranslationLanguages.code(for: request.interfaceLanguage)
         let usesAI = plan.values["engine"] == "ai"

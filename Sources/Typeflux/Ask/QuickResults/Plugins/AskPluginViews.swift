@@ -9,8 +9,12 @@ struct AskPluginDisplay: Equatable {
     var hint: AskKeyword?
     var title: String
     var symbol: String
+    /// What ⇥ changes, when it changes anything.
+    var optionName: String?
     var phase: AskPluginSession.Phase
     var previous: AskPluginOutput?
+    /// The result so far while it streams in.
+    var partial: AskPluginOutput?
     var comparing = false
     /// 0 is the plugin's row or card, 1 is "Ask AI".
     var highlighted = 0
@@ -75,6 +79,8 @@ struct AskPluginResultsView: View {
     static let maximumOriginalHeight: CGFloat = 64
     static let noteHeight: CGFloat = 16
     static let skeletonHeight: CGFloat = 44
+    static let caret = " ▍"
+    private static let bodyID = "ask.plugin.body"
 
     /// The width text wraps to inside a card in the launcher.
     static var textWidth: CGFloat {
@@ -122,7 +128,8 @@ struct AskPluginResultsView: View {
         if display.hint != nil { return askHeight }
         switch display.phase {
         case .waiting, .ready: return rowHeight
-        case .running: return cardHeight(output: display.previous, failure: nil, comparing: display.comparing)
+        case .running:
+            return cardHeight(output: display.partial ?? display.previous, failure: nil, comparing: display.comparing)
         case let .done(_, output): return cardHeight(output: output, failure: nil, comparing: display.comparing)
         case let .failed(_, failure): return cardHeight(output: nil, failure: failure, comparing: false)
         }
@@ -137,15 +144,26 @@ struct AskPluginResultsView: View {
     static func hint(for display: AskPluginDisplay) -> String {
         if display.hint != nil { return L("ask.plugin.hint.keyword") }
         if display.asksAI { return L("ask.launcher.hint") }
+        let option = display.optionName.map { L("ask.plugin.hint.option", $0) }
+        let parts: [String?]
         switch display.phase {
         case .waiting: return L("ask.plugin.hint.waiting")
-        case .ready: return L("ask.plugin.hint.ready")
+        case let .ready(plan):
+            if let action = plan.action(for: .enter) {
+                parts = [L("ask.plugin.hint.action", action.title),
+                         plan.action(for: .commandC).map { L("ask.plugin.hint.copy", $0.title) },
+                         option, L("ask.plugin.hint.askAI")]
+            } else {
+                parts = [L("ask.plugin.hint.ready"), option, L("ask.plugin.hint.waiting")]
+            }
         case .running: return L("ask.plugin.hint.running")
         case let .done(_, output):
-            let writes = output.action(for: .optionEnter)?.title ?? ""
-            return L("ask.plugin.hint.done", output.action(for: .enter)?.title ?? "", writes)
+            let main = output.action(for: .enter)?.title ?? ""
+            parts = [output.action(for: .optionEnter).map { L("ask.plugin.hint.done", main, $0.title) }
+                ?? L("ask.plugin.hint.action", main), option, L("ask.plugin.hint.askAI")]
         case let .failed(_, failure): return L(failure.retry ? "ask.plugin.hint.failed" : "ask.plugin.hint.waiting")
         }
+        return parts.compactMap { $0 }.joined(separator: " · ")
     }
 
     var body: some View {
@@ -183,9 +201,10 @@ struct AskPluginResultsView: View {
             case .waiting:
                 row(title: L("ask.plugin.waiting"), meta: [], enabled: false)
             case let .ready(plan):
-                row(title: plan.title, meta: plan.meta, enabled: true)
+                row(title: plan.title, meta: plan.meta, enabled: true, action: plan.action(for: .enter))
             case let .running(plan):
-                card(plan: plan, output: display.previous, failure: nil, running: true)
+                card(plan: plan, output: display.partial ?? display.previous, failure: nil, running: true,
+                     streaming: display.partial != nil)
             case let .done(plan, output):
                 card(plan: plan, output: output, failure: nil, running: false)
             case let .failed(plan, failure):
@@ -221,7 +240,7 @@ struct AskPluginResultsView: View {
     }
 
     /// Waiting for input, or ready to run on Return.
-    private func row(title: String, meta: [AskPluginMeta], enabled: Bool) -> some View {
+    private func row(title: String, meta: [AskPluginMeta], enabled: Bool, action: AskPluginAction? = nil) -> some View {
         Button(action: onMain) {
             HStack(spacing: 12) {
                 tile(display.symbol).opacity(enabled ? 1 : 0.45)
@@ -231,7 +250,8 @@ struct AskPluginResultsView: View {
                 metaChips(meta)
                 Spacer(minLength: 8)
                 if enabled {
-                    Text("↩").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(action.map { $0.title + "  ↩" } ?? "↩").font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
                 }
             }
             .padding(.horizontal, 10)
@@ -275,7 +295,8 @@ struct AskPluginResultsView: View {
     }
 
     /// A result, the previous one dimmed while the next runs, or what went wrong.
-    private func card(plan: AskPluginPlan, output: AskPluginOutput?, failure: AskPluginFailure?, running: Bool) -> some View {
+    private func card(plan: AskPluginPlan, output: AskPluginOutput?, failure: AskPluginFailure?, running: Bool,
+                      streaming: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
                 Text(plan.title).font(.system(size: 13, weight: .semibold))
@@ -301,11 +322,18 @@ struct AskPluginResultsView: View {
                     .frame(height: Self.originalHeight(output.original))
                     Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 4)
                 }
-                ScrollView(.vertical) {
-                    Text(output.body).font(Font(Self.bodyFont)).lineSpacing(Self.bodyLineSpacing)
-                        .foregroundStyle(running ? StudioTheme.textTertiary : StudioTheme.textPrimary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
+                ScrollViewReader { reader in
+                    ScrollView(.vertical) {
+                        // A streaming result is bright with a caret; an old one waiting for its successor is dim.
+                        Text(streaming ? output.body + Self.caret : output.body)
+                            .font(Font(Self.bodyFont)).lineSpacing(Self.bodyLineSpacing)
+                            .foregroundStyle(running && !streaming ? StudioTheme.textTertiary : StudioTheme.textPrimary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                            .id(Self.bodyID)
+                    }
+                    // Long streams keep their newest line in view.
+                    .onChange(of: output.body) { _ in if streaming { reader.scrollTo(Self.bodyID, anchor: .bottom) } }
                 }
                 .frame(height: Self.bodyHeight(output.body))
                 if let note = output.note {
@@ -365,6 +393,7 @@ struct AskPluginResultsView: View {
         case .optionEnter: "⌥↩"
         case .commandR: "⌘R"
         case .commandD: "⌘D"
+        case .commandC: "⌘C"
         case nil: nil
         }
     }

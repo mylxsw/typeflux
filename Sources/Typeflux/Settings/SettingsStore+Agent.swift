@@ -61,6 +61,12 @@ extension SettingsStore {
         }
     }
 
+    /// The plugins `askLauncherKeywords` was saved with, so plugins added later bring their keywords.
+    var askLauncherKeywordPlugins: [String]? {
+        get { defaults.stringArray(forKey: "ask.launcher.keywordPlugins") }
+        set { defaults.set(newValue, forKey: "ask.launcher.keywordPlugins") }
+    }
+
     /// The language translations go into when the text is already in the
     /// interface language. Nil follows the interface: English, or Simplified Chinese.
     var askTranslationSecondLanguage: String? {

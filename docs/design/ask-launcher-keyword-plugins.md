@@ -1,6 +1,6 @@
 # 随便问：启动器关键字插件（翻译先行）设计方案
 
-> 状态：P1（插件框架 + 翻译）已实现，实现说明和与设计的差异见第 12 节；P2、P3 仍是设计。配套设计稿：`docs/design/ask-launcher-keyword-plugins.html`，截图在 `docs/design/ask-launcher-keyword-plugins/`。基于 GUL-214 之后的启动器（上下文标记、分组结果、底栏按键提示）。
+> 状态：P1（插件框架 + 翻译）和 P2（AI 指令、网页搜索、完整的关键字设置、`/` 面板插件分组）已实现，实现说明和与设计的差异见第 12、13 节；P3 仍是设计。配套设计稿：`docs/design/ask-launcher-keyword-plugins.html`，截图在 `docs/design/ask-launcher-keyword-plugins/`。基于 GUL-214 之后的启动器（上下文标记、分组结果、底栏按键提示）。
 >
 > 本文取代 `ask-launcher-translation.md` 里「前缀翻译」一节（§2.2）。那份文档里的翻译引擎、隐私规则和路线仍然有效。
 
@@ -298,3 +298,29 @@ struct AskPluginAction: Equatable {
 - `AskPluginSessionTests`：状态机的每条边，包括防抖、过期结果、取消、失败重试、⇥ 和 ⌘R 的选项。
 - `AskPluginViewTests`：高度计算、底栏提示、按键标签。
 - `AskQuickResultsInteractionTests+Plugins`：用真实启动器按键，覆盖进入 / 退出标签、边打边出后 ↩ 复制、选中文字 ↩ 后才翻译、⌥↩ 写回、⇥ / ⇧⇥ / ⌘R / ⌘D、单独输入关键字时 ↩ 仍然问 AI、⌘↩ 带结果问 AI、esc 先取消再关闭、写回失败时的回退。
+
+## 13. P2 实现说明（与设计的差异）
+
+**新增**
+- `Plugins/Prompt/AskPromptPlugin.swift`：AI 指令。默认关键字 `rw` 润色、`sum` 总结、`ex` 解释（选项 `preset`，名称和提示词跟随界面语言）；用户自己加的关键字填「名称」和「提示词」，`{input}` 是占位符，没写 `{input}` 时内容接在提示词后面。总是等 ↩ 才运行（内容会交给模型），结果流式出字；↩ 复制、⌥↩ 写回 / 替换、⌘R 重新生成、⌘D 对照、⌘↩ 带上原文和结果问 AI。用的是「设置 → 模型」里的文本处理模型（新增 `LLMService.streamComplete`，OpenAI 兼容服务真正流式，其余服务退回整段返回）。
+- `Plugins/WebSearch/AskWebSearchPlugin.swift`：网页搜索。默认 `g` Google、`bd` 百度、`gh` GitHub；用户可以加「名称 + 网址模板」，`{query}` 是占位符。查询词做百分号编码，只接受带主机名的 http / https 网址。这是「直接执行」类：计划里就带了操作，↩ 打开浏览器并关闭启动器，⌘C 复制链接（启动器不关），⇥ / ⇧⇥ 换搜索引擎。
+- 框架：`run` 多了 `progress` 回调，会话里的 `partial` 是正在生成的结果（亮色、末尾带光标，正文自动滚到底）；`AskPluginPlan.actions` 让插件不运行也能响应按键；新增 `.open(URL)` 操作和 ⌘C（输入框没有选中文字时才接管，结果默认就能 ⌘C 复制，复制后不关闭，底栏提示「已复制」）；插件可以声明 ⇥ 改的是什么（`optionName`），底栏提示按插件实际有的按键拼出来。
+- `/` 面板（只在启动器里）新增「插件」分组，列出所有启用的关键字，例如「AI 指令 → 润色」；选中后进入该关键字，输入框里剩下的文字就是它的内容。和内置命令重名时加 `kw:` 前缀。
+- 设置 → Agent → 内置工具 →「启动器关键字」：三个插件分组，每个关键字可以改名、启用 / 停用、删除；翻译选目标语言，AI 指令填名称和提示词（带「插入 {input}」按钮，默认提示词显示为占位文字），网页搜索填名称和网址（实时校验 `{query}` 和 http / https）；底部「恢复默认关键字」。
+- 关键字升级：保存关键字时同时记下当时有哪些插件（`ask.launcher.keywordPlugins`）。P1 时保存过关键字的用户，会自动得到 AI 指令和网页搜索的默认关键字；以后删掉的不会再回来；和用户已有关键字重名的默认关键字不加。
+
+**实际渲染**（`AskPluginVisualTests.renderSearchAndPrompt`）：`ask-launcher-keyword-plugins/` 下的 `implemented-web-dark.png`、`implemented-prompt-ready-dark.png`、`implemented-prompt-done-dark.png`、`implemented-prompt-done-light.png`。
+
+**和设计不同、或留到后面的地方**
+1. 条目列表（多行结果，例如搜索建议）没有做：网页搜索目前只有一行，直接执行就够了，列表视图随 P3 的文件 / 历史插件一起做。
+2. AI 指令的 ⌘D 对照显示的是原文和结果上下排列，没有按段落交替。
+3. 元信息标签还不能点开下拉菜单（⇥ 轮换已经可以）。
+4. macOS 15–25 的本机翻译桥接仍未做（见第 12 节）。
+
+**测试**
+- `AskPromptAndWebPluginTests`：AI 指令的名称 / 提示词解析、`{input}` 替换、运行时机、流式进度、各种操作和失败；网页搜索的引擎解析、编码和网址安全校验、计划里的操作、⇥ 换引擎；关键字升级合并和设置里的选项编辑。
+- `AskPluginSessionTests`：流式结果的出现、替换和取消；`/` 面板进入关键字。
+- `AskPluginViewTests`：直接执行和带 ⇥ 选项时的底栏提示、流式结果的高度。
+- `AskCommandTests`：插件分组只在启动器出现、重名前缀、执行后进入关键字；⌘C 的按键映射。
+- `AskQuickResultsInteractionTests+Plugins`：真实启动器里 `g swift actors` → ⌘C 复制链接 → ⇥ 换百度 → ↩ 打开；`rw` → ↩ 流式出字 → 复制（不关闭）→ ⌘R 重新生成 → ↩ 复制并关闭。
+- `LLMRouterTests`：`streamComplete` 按服务商转发，以及不支持流式时的整段回退。

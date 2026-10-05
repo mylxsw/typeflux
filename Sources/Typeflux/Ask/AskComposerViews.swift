@@ -217,7 +217,7 @@ struct AskComposer: View {
         case .tab:
             guard let value = results.value(of: .calculation), !results.stale else { return false }
             draft.wrappedValue.text = value
-        case .escape, .optionEnter, .shiftTab, .commandR, .commandD:
+        case .escape, .optionEnter, .shiftTab, .commandR, .commandD, .commandC:
             return false
         }
         return true
@@ -233,9 +233,9 @@ struct AskComposer: View {
     private var pluginDisplay: AskPluginDisplay? {
         guard launcher else { return nil }
         if let plugin = plugins.plugin {
-            return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, phase: plugins.phase,
-                                    previous: plugins.previous, comparing: plugins.comparing,
-                                    highlighted: pluginHighlight)
+            return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, optionName: plugin.optionName,
+                                    phase: plugins.phase, previous: plugins.previous, partial: plugins.partial,
+                                    comparing: plugins.comparing, highlighted: pluginHighlight)
         }
         if let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
             return AskPluginDisplay(hint: hint, title: plugin.title, symbol: plugin.symbol, phase: .waiting,
@@ -275,11 +275,19 @@ struct AskComposer: View {
         return true
     }
 
-    /// Return on the plugin's row: run it, or use its result.
+    /// Return on the plugin's row: run it (or do what its plan offers, like opening
+    /// a search), or use its result.
     private func runPluginMain() {
         if pluginDisplay?.hint != nil { _ = acceptPluginHint(); return }
         switch plugins.phase {
-        case .ready, .failed: plugins.run()
+        case let .ready(plan):
+            // A plan that acts (open a search) must be for the text as typed; it lands within moments.
+            if let action = plan.action(for: .enter) {
+                if plugins.isPlanCurrent { performPluginAction(action) }
+            } else {
+                plugins.run()
+            }
+        case .failed: plugins.run()
         case let .done(_, output): if let action = output.action(for: .enter) { performPluginAction(action) }
         case .waiting, .running: break
         }
@@ -320,6 +328,16 @@ struct AskComposer: View {
         case .optionEnter, .commandR, .commandD:
             let shortcut: AskPluginAction.Shortcut = key == .optionEnter ? .optionEnter : key == .commandR ? .commandR : .commandD
             if let action = plugins.output?.action(for: shortcut) { performPluginAction(action) }
+        case .commandC:
+            // With nothing selected in the editor, ⌘C copies the result (or a search's link) and stays.
+            let offered: AskPluginAction?
+            switch plugins.phase {
+            case let .ready(plan): offered = plugins.isPlanCurrent ? plan.action(for: .commandC) : nil
+            case let .done(_, output): offered = output.action(for: .commandC)
+            default: offered = nil
+            }
+            guard let action = offered else { return false }
+            if case let .copy(text) = action.kind { model.copyPluginText(text) } else { performPluginAction(action) }
         case .escape: return plugins.cancelRun()
         }
         return true
@@ -645,7 +663,7 @@ struct AskComposer: View {
         case .escape:
             dismissedSlash = slash?.range.location
             closePalette()
-        case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD:
+        case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }

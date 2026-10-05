@@ -52,7 +52,8 @@ extension AskQuickResultsInteractionTests {
             #expect(model.plugins.isActive)
             #expect(model.launcherDraft.text.isEmpty, "the keyword left the editor for its chip")
             try await type("hello", into: launcher)
-            try await settle { model.plugins.output != nil }
+            // Under load a result for "hell" may land first; wait for the whole word.
+            try await settle { model.plugins.output?.body == "[zh-Hans] hello" }
             #expect(model.plugins.output?.body == "[zh-Hans] hello", "English text goes into the second language")
             #expect(translation.ai.requests.isEmpty)
             try await launcher.press(Self.returnKey)
@@ -191,8 +192,75 @@ extension AskQuickResultsInteractionTests {
             model.deliverText = nil
             model.writeBack("plain")
             #expect(pasteboard.string(forType: .string) == "plain")
-            #expect(model.launcherKeywords == AskTranslatePlugin.keywords)
-            #expect(model.makeLauncherPlugins().map(\.id) == ["translate"])
+            var opened: [URL] = []
+            model.openURL = { opened.append($0) }
+            let link = try #require(URL(string: "https://example.com/?q=x"))
+            #expect(model.performPluginAction(AskPluginAction(kind: .open(link), title: "", symbol: "")) == .close)
+            #expect(opened == [link])
+            model.copyPluginText("kept")
+            #expect(pasteboard.string(forType: .string) == "kept" && model.commandFeedback == L("ask.plugin.copied"))
+            #expect(model.launcherKeywords == AskPluginRegistry.defaultKeywords)
+            #expect(model.makeLauncherPlugins().map(\.id) == AskPluginRegistry.pluginIDs)
+        }
+    }
+
+    // MARK: - Web search and AI prompts
+
+    @Test func aWebSearchOpensOnReturnAndCommandCCopiesItsLink() async throws {
+        try await withPasteboard { pasteboard in
+            final class Opened { var urls: [URL] = [] }
+            let opened = Opened()
+            let launcher = try await Launcher(text: "") { model in
+                model.plugins = AskPluginSession(plugins: [AskWebSearchPlugin()]) { AskWebSearchPlugin.keywords }
+                model.openURL = { opened.urls.append($0) }
+            }
+            defer { launcher.close() }
+            let model = launcher.fixture.model
+            try await type("g swift actors", into: launcher)
+            try await settle { model.plugins.isPlanCurrent && model.plugins.plan?.action(for: .enter) != nil }
+            try await launcher.press(8, .command)
+            #expect(pasteboard.string(forType: .string) == "https://www.google.com/search?q=swift%20actors")
+            #expect(launcher.dismissed == 0, "⌘C keeps the launcher open")
+            try await launcher.press(Self.tab)
+            try await settle { model.plugins.isPlanCurrent && model.plugins.plan?.title.contains(L("ask.plugin.web.baidu")) == true }
+            try await launcher.press(Self.returnKey)
+            #expect(opened.urls.map(\.absoluteString) == ["https://www.baidu.com/s?wd=swift%20actors"])
+            #expect(launcher.dismissed == 1)
+            #expect(!model.plugins.isActive && model.launcherDraft.text.isEmpty)
+            #expect(await launcher.fixture.api.sends.isEmpty)
+        }
+    }
+
+    @Test func anAIPromptStreamsOnReturnThenCopiesAndRegenerates() async throws {
+        try await withPasteboard { pasteboard in
+            let generator = AskTestTextGenerator()
+            generator.pieces = ["Pol", "ished"]
+            generator.delay = .milliseconds(80)
+            let launcher = try await Launcher(text: "") { model in
+                let plugin = AskPromptPlugin(generator: generator, modelName: { "m" })
+                model.plugins = AskPluginSession(plugins: [plugin]) { AskPromptPlugin.keywords }
+            }
+            defer { launcher.close() }
+            let model = launcher.fixture.model
+            try await type("rw teh text", into: launcher)
+            try await settle { if case .ready = model.plugins.phase { true } else { false } }
+            #expect(generator.prompts.isEmpty, "nothing goes to the model before Return")
+            try await launcher.press(Self.returnKey)
+            try await settle { model.plugins.partial?.body == "Pol" }
+            try await settle { model.plugins.output != nil }
+            #expect(model.plugins.output?.body == "Polished")
+            #expect(generator.prompts.first?.user.hasSuffix("teh text") == true)
+            // The editor has nothing selected, so copying copies the result and stays.
+            launcher.editor.copy(nil)
+            #expect(pasteboard.string(forType: .string) == "Polished")
+            #expect(launcher.dismissed == 0)
+            generator.pieces = ["Again"]
+            try await launcher.press(15, .command)
+            try await settle { model.plugins.output?.body == "Again" }
+            #expect(generator.prompts.count == 2)
+            try await launcher.press(Self.returnKey)
+            #expect(pasteboard.string(forType: .string) == "Again")
+            #expect(launcher.dismissed == 1)
         }
     }
 }
