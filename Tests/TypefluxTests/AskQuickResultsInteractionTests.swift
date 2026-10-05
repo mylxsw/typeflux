@@ -9,17 +9,19 @@ import Testing
 @Suite("Ask quick results in the launcher", .serialized)
 @MainActor
 struct AskQuickResultsInteractionTests {
-    @MainActor private final class Launcher {
+    @MainActor final class Launcher {
         let fixture: AskTestFixture
         let window: AskTestVoiceWindow
         let editor: AskComposerTextView.Editor
         var dismissed = 0
         var opened: [URL] = []
 
-        init(text: String, apps: AskTestAppIndex = AskTestAppIndex([])) async throws {
+        init(text: String, apps: AskTestAppIndex = AskTestAppIndex([]), selection: String? = nil,
+             prepare: (AskConversationModel) -> Void = { _ in }) async throws {
             fixture = try AskTestFixture()
             fixture.model.appIndex = apps
-            fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false)
+            prepare(fixture.model)
+            fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false, selection: selection)
             window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: 420),
                                         styleMask: [.borderless], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
@@ -66,9 +68,9 @@ struct AskQuickResultsInteractionTests {
         }
     }
 
-    private static let returnKey: UInt16 = 36, tab: UInt16 = 48, escape: UInt16 = 53, down: UInt16 = 125, up: UInt16 = 126
+    static let returnKey: UInt16 = 36, tab: UInt16 = 48, escape: UInt16 = 53, down: UInt16 = 125, up: UInt16 = 126
 
-    private func withPasteboard(_ body: (NSPasteboard) async throws -> Void) async throws {
+    func withPasteboard(_ body: (NSPasteboard) async throws -> Void) async throws {
         let pasteboard = NSPasteboard(name: NSPasteboard.Name("ask.quick.interaction.\(UUID().uuidString)"))
         let previous = AskQuickResults.pasteboard
         let previousLanguage = AppLocalization.shared.language

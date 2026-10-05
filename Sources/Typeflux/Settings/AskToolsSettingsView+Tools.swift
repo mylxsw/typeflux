@@ -87,6 +87,10 @@ extension AskToolsSettingsView {
             }
         }
 
+        AgentSettingsSection(title: L("ask.settings.plugins.title"), footnote: L("ask.settings.plugins.footnote")) {
+            AskLauncherPluginSettingsView(settings: settings)
+        }
+
         ModelSurface {
             VStack(alignment: .leading, spacing: 0) {
                 AgentSettingsRow(icon: "cursorarrow.click.2", title: L("agent.capability.automation.title"),

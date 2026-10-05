@@ -1,6 +1,6 @@
 # 随便问：启动器关键字插件（翻译先行）设计方案
 
-> 状态：设计稿，待确认后开发。配套设计稿：`docs/design/ask-launcher-keyword-plugins.html`，截图在 `docs/design/ask-launcher-keyword-plugins/`。基于 GUL-214 之后的启动器（上下文标记、分组结果、底栏按键提示）。
+> 状态：P1（插件框架 + 翻译）已实现，实现说明和与设计的差异见第 12 节；P2、P3 仍是设计。配套设计稿：`docs/design/ask-launcher-keyword-plugins.html`，截图在 `docs/design/ask-launcher-keyword-plugins/`。基于 GUL-214 之后的启动器（上下文标记、分组结果、底栏按键提示）。
 >
 > 本文取代 `ask-launcher-translation.md` 里「前缀翻译」一节（§2.2）。那份文档里的翻译引擎、隐私规则和路线仍然有效。
 
@@ -204,7 +204,7 @@ struct AskPluginAction: Equatable {
 | 组件 | 职责 |
 |------|------|
 | `AskKeywordMatcher` | 纯函数：输入 → 命中的关键字和参数。规则见 §2，表驱动测试。 |
-| `AskKeywordStore` | 设置里的关键字列表（JSON），首次使用时写入各插件的默认关键字；校验重名和前缀冲突。 |
+| `AskKeywordStore` | 设置里的关键字列表（JSON），用户没改过时用各插件的默认关键字；校验格式和重名（实现为 `SettingsStore.askLauncherKeywords` 加上 `AskKeywordList`）。 |
 | `AskPluginRegistry` | 内置插件表。以后的脚本插件也从这里注册。 |
 | `AskPluginSession`（`@MainActor ObservableObject`，由 `AskConversationModel` 持有） | 状态机（§4）、防抖、按代号丢弃过期结果、取消，**只在状态真的变化时发布**（吸取 M1 录音回归的教训）。 |
 | `AskPluginActionPerformer` | 执行操作：剪贴板、`TextInjector`、`NSWorkspace`、`AVSpeechSynthesizer`、打开对话。全部可以注入，测试里替换。 |
@@ -235,7 +235,7 @@ struct AskPluginAction: Equatable {
 - 点开插件：
   - 关键字表格：关键字、预设参数、启用。
   - 「添加关键字」：输入关键字，再填插件声明的选项（下拉、文本框、提示词编辑器）。
-  - 实时校验：重名、和已有关键字互为前缀时给出提示，例如 `f` 会挡住 `fy` 的空格判断。
+  - 实时校验：空、过长、含空格或冒号、以 `/` 开头、重名。**互为前缀不算冲突**：关键字后面必须跟空格或冒号，`f hello` 只会进入 `f`，`fy hello` 只会进入 `fy`。
 - 「恢复默认关键字」。
 - AI 指令的提示词编辑器带 `{input}` 插入按钮和一行预览。
 
@@ -266,3 +266,35 @@ struct AskPluginAction: Equatable {
 3. 翻译选中文字后，↩ 是「复制」，⌥↩ 是「替换选中」，还是反过来？我建议 ↩ 复制：选中外文多半是为了看懂，不是为了替换。
 4. P1 只做翻译加框架，P2 再做 AI 指令和网页搜索。这个顺序可以吗？还是希望 AI 指令一起上（它最能体现扩展性）？
 5. 脚本插件（类似 Alfred 跑用户脚本）这次只预留，不做，可以吗？
+
+## 12. P1 实现说明（与设计的差异）
+
+确认的默认值：关键字 `fy` / `tr` / `翻译`（`fyja` 这类只作为可以添加的示例）；用户输入的参数在本机引擎下边打边出，选中文字和 AI 必须按 ↩；↩ 复制、⌥↩ 写回 / 替换；先做框架加翻译；脚本插件只预留。
+
+**代码位置**
+- `Ask/QuickResults/Plugins/`：
+  - `AskKeyword.swift`：关键字和识别规则。
+  - `AskLauncherPlugin.swift`：协议、请求、计划、结果、操作。
+  - `AskPluginSession.swift`：状态机。
+  - `AskPluginViews.swift`：关键字标签和结果视图，高度可以先算出来。
+  - `Translation/`：语言、检测、两个引擎、翻译插件。
+- `AskConversationModel+Plugins.swift`：执行操作（复制、写回、朗读、对照、交给 AI），关闭时把关键字折回输入框。
+- `AskComposerViews.swift`：标签、结果区、按键、占位文字、底栏提示、高度（沿用 #307 的保留高度）。
+- `Settings/AskLauncherPluginSettingsView.swift`：设置 → Agent → 内置工具 →「启动器关键字」。可以增删改翻译关键字、给关键字设预设目标语言、启用或停用，并选择第二语言。
+
+**和设计不同、或留到后面的地方**
+1. **本机翻译只支持 macOS 26 以上**（直接 `TranslationSession(installedSource:target:)`）。macOS 15–25 需要通过 SwiftUI `.translationTask` 桥接，这台开发 Mac 是 26，没法验证，这次没有做。这些系统以及没下载语言包的语言对，会按 ↩ 用 AI 翻译，卡片上注明「已用 AI 翻译」。语言包下载引导留到后面。
+2. **AI 结果整段返回，不是流式**（用的是 `LLMService.complete`）。流式输出和 AI 指令插件一起在 P2 做。
+3. **⌘C 复制没有做**（↩ 已经是复制）；条目列表和直接执行两种结果类型随网页搜索在 P2 做；`/` 面板里的「插件」分组也在 P2。
+4. **⌥↩ 写回**：关闭启动器后，往原应用的当前输入位置写入。启动器不会激活本应用，所以原应用的选区还在，写入时就是替换选区。写入失败会把结果复制到剪贴板，并在启动器底栏提示一次。
+5. **关键字前缀冲突**：见 §8，改为不检查（不会真的冲突）。
+
+
+**实际渲染**（`AskPluginVisualTests`，设置 `TYPEFLUX_ASK_SNAPSHOTS` 时生成）：`ask-launcher-keyword-plugins/` 目录下的 `implemented-hint-dark.png`、`implemented-selection-ready-dark.png`、`implemented-selection-done-dark.png`、`implemented-selection-done-light.png`、`implemented-typed-dark.png`。
+
+**测试**
+- `AskKeywordTests`：识别规则、格式和重名校验、关键字列表的编辑、设置项的读写。
+- `AskTranslationTests`：方向判断和 ⇥ 轮换、系统语言检测；插件的运行时机（含隐私：选中文字和 AI 必须按 ↩）、引擎选择、各种操作；AI 引擎的提示词和空结果处理。
+- `AskPluginSessionTests`：状态机的每条边，包括防抖、过期结果、取消、失败重试、⇥ 和 ⌘R 的选项。
+- `AskPluginViewTests`：高度计算、底栏提示、按键标签。
+- `AskQuickResultsInteractionTests+Plugins`：用真实启动器按键，覆盖进入 / 退出标签、边打边出后 ↩ 复制、选中文字 ↩ 后才翻译、⌥↩ 写回、⇥ / ⇧⇥ / ⌘R / ⌘D、单独输入关键字时 ↩ 仍然问 AI、⌘↩ 带结果问 AI、esc 先取消再关闭、写回失败时的回退。

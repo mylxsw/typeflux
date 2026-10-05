@@ -347,10 +347,18 @@ enum AskCommandKey: Equatable {
     case up, down, enter, tab, escape
     /// ⌘Return: send to the AI whatever the launcher offers.
     case commandEnter
+    /// Keys a keyword plugin's result answers to: ⌥Return writes it back,
+    /// ⇧Tab steps an option back, ⌘R runs again, ⌘D compares with the original.
+    case optionEnter, shiftTab, commandR, commandD
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
-        if modifiers == .command, event.keyCode == 36 || event.keyCode == 76 { self = .commandEnter; return }
+        let isReturn = event.keyCode == 36 || event.keyCode == 76
+        if modifiers == .command, isReturn { self = .commandEnter; return }
+        if modifiers == .option, isReturn { self = .optionEnter; return }
+        if modifiers == .shift, event.keyCode == 48 { self = .shiftTab; return }
+        if modifiers == .command, event.keyCode == 15 { self = .commandR; return }
+        if modifiers == .command, event.keyCode == 2 { self = .commandD; return }
         guard modifiers.isEmpty else { return nil }
         switch event.keyCode {
         case 126: self = .up

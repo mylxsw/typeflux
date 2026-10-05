@@ -35,6 +35,8 @@ struct AskComposer: View {
     /// panel. The launcher has no panel, so it also keeps its fixed footer height.
     var onToggleUsage: (() -> Void)?
     @ObservedObject private var voice: AskVoiceInput
+    /// The launcher's keyword mode (`fy` → translate).
+    @ObservedObject private var plugins: AskPluginSession
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var glassOverride
     @Environment(\.colorSchemeContrast) private var contrast
@@ -54,6 +56,7 @@ struct AskComposer: View {
         self.onHeightChange = onHeightChange
         self.onToggleUsage = onToggleUsage
         self.voice = model.voiceInput
+        self.plugins = model.plugins
         self._voiceShortcut = State(initialValue: model.modelLibrary.settings.activationHotkey)
     }
 
@@ -136,6 +139,8 @@ struct AskComposer: View {
         chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency) : nil
     }
     private func submit() {
+        // The send button in keyword mode asks the AI, like ⌘Return.
+        if launcher, plugins.isActive, !active { askAIFromPlugin(); return }
         if launcher, showsLauncherSuggestions, !active {
             let disabled = AskLauncherSuggestions.disabled(screenshot: model.screenshotSuggestion(launcher: true))
             let index = AskSuggestion.available(min(suggestionIndex, AskSuggestion.all.count - 1), skipping: disabled)
@@ -154,7 +159,7 @@ struct AskComposer: View {
     /// Quick results show while the launcher's text is all there is to send:
     /// quotes, files or chosen tools mean the text is written for the AI.
     private var showsQuickResults: Bool {
-        guard launcher, quickResults != nil, !paletteOpen else { return false }
+        guard launcher, quickResults != nil, !paletteOpen, pluginDisplay == nil else { return false }
         let value = draft.wrappedValue
         return (value.references ?? []).isEmpty && (value.attachments ?? []).isEmpty
             && (value.skills ?? []).isEmpty && (value.mcpServers ?? []).isEmpty
@@ -164,6 +169,7 @@ struct AskComposer: View {
     /// ordinary questions must not re-render on every keystroke for this.
     private func refreshQuickResults() {
         guard launcher else { return }
+        if refreshPlugins() { return }
         let calculator = model.quickCalculatorEnabled, apps = model.quickAppsEnabled
         let next = calculator || apps
             ? AskQuickResults.resolve(text: draft.wrappedValue.text, previous: quickResults,
@@ -211,15 +217,130 @@ struct AskComposer: View {
         case .tab:
             guard let value = results.value(of: .calculation), !results.stale else { return false }
             draft.wrappedValue.text = value
-        case .escape:
+        case .escape, .optionEnter, .shiftTab, .commandR, .commandD:
             return false
         }
         return true
     }
+    // MARK: - Keyword plugins
+
+    /// Which row in keyword mode is highlighted: 0 the plugin's, 1 "Ask AI".
+    @State private var pluginHighlight = 0
+    /// Like `quickReserve`: the tallest the plugin's results have been in this keyword mode.
+    @State private var pluginReserve: CGFloat = 0
+
+    /// The keyword mode's results, or nil outside it.
+    private var pluginDisplay: AskPluginDisplay? {
+        guard launcher else { return nil }
+        if let plugin = plugins.plugin {
+            return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, phase: plugins.phase,
+                                    previous: plugins.previous, comparing: plugins.comparing,
+                                    highlighted: pluginHighlight)
+        }
+        if let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
+            return AskPluginDisplay(hint: hint, title: plugin.title, symbol: plugin.symbol, phase: .waiting,
+                                    highlighted: pluginHighlight)
+        }
+        return nil
+    }
+
+    /// Keyword mode takes the launcher's text first. True when it handled it:
+    /// a keyword became a chip (the editor now holds only its argument) or is active.
+    private func refreshPlugins() -> Bool {
+        let text = draft.wrappedValue.text
+        let hadHint = plugins.hint != nil
+        if let argument = plugins.detect(in: text) {
+            pluginHighlight = 0
+            pluginReserve = 0
+            draft.wrappedValue.text = argument
+            return true
+        }
+        if plugins.isActive {
+            plugins.update(text: text, selection: draft.wrappedValue.sentSelection, language: AppLocalization.shared.language)
+            if quickResults != nil { quickResults = nil; quickReserve = 0 }
+            reportHeight()
+            return true
+        }
+        // A keyword alone is offered, but Return still asks the AI.
+        if plugins.hint != nil, !hadHint, pluginHighlight != 1 { pluginHighlight = 1 }
+        return false
+    }
+
+    /// ⇥ on a lone keyword, or a click on its row: enter keyword mode.
+    private func acceptPluginHint() -> Bool {
+        guard plugins.acceptHint() else { return false }
+        pluginHighlight = 0
+        pluginReserve = 0
+        draft.wrappedValue.text = ""
+        return true
+    }
+
+    /// Return on the plugin's row: run it, or use its result.
+    private func runPluginMain() {
+        if pluginDisplay?.hint != nil { _ = acceptPluginHint(); return }
+        switch plugins.phase {
+        case .ready, .failed: plugins.run()
+        case let .done(_, output): if let action = output.action(for: .enter) { performPluginAction(action) }
+        case .waiting, .running: break
+        }
+    }
+
+    private func performPluginAction(_ action: AskPluginAction) {
+        if model.performPluginAction(action) == .close { onDismiss() }
+    }
+
+    private func askAIFromPlugin() {
+        if let output = plugins.output, let action = output.actions.first(where: { if case .askAI = $0.kind { true } else { false } }) {
+            performPluginAction(action)
+        } else {
+            model.askAIFromPlugin()
+        }
+    }
+
+    /// Keys in keyword mode, see `docs/design/ask-launcher-keyword-plugins.md` §5.5.
+    private func pluginKey(_ key: AskCommandKey) -> Bool {
+        guard launcher, !active, let display = pluginDisplay else { return false }
+        let selection = draft.wrappedValue.sentSelection, text = draft.wrappedValue.text
+        let language = AppLocalization.shared.language
+        if display.hint != nil {
+            switch key {
+            case .up, .down: pluginHighlight = pluginHighlight == 0 ? 1 : 0
+            case .tab: return acceptPluginHint()
+            case .enter: if pluginHighlight == 0 { return acceptPluginHint() } else { return false }
+            default: return false
+            }
+            return true
+        }
+        switch key {
+        case .up, .down: pluginHighlight = pluginHighlight == 0 ? 1 : 0
+        case .tab: _ = plugins.cycle(1, selection: selection, text: text, language: language)
+        case .shiftTab: _ = plugins.cycle(-1, selection: selection, text: text, language: language)
+        case .enter: if display.asksAI { askAIFromPlugin() } else { runPluginMain() }
+        case .commandEnter: askAIFromPlugin()
+        case .optionEnter, .commandR, .commandD:
+            let shortcut: AskPluginAction.Shortcut = key == .optionEnter ? .optionEnter : key == .commandR ? .commandR : .commandD
+            if let action = plugins.output?.action(for: shortcut) { performPluginAction(action) }
+        case .escape: return plugins.cancelRun()
+        }
+        return true
+    }
+
+    /// ⌫ in an empty editor in keyword mode turns the chip back into text.
+    private func removeKeyword() -> Bool {
+        guard launcher, !active, plugins.isActive else { return false }
+        draft.wrappedValue.text = plugins.deactivate() ?? ""
+        pluginReserve = 0
+        return true
+    }
+
+    private var pluginHeight: CGFloat {
+        pluginDisplay.map { max(pluginReserve, AskPluginResultsView.height(for: $0)) } ?? 0
+    }
+
     /// The launcher offers its starting points until something is typed. They
     /// stay (disabled) while dictating, so the panel never jumps mid-recording.
     private var showsLauncherSuggestions: Bool {
-        launcher && draft.wrappedValue.text.isEmpty && (draft.wrappedValue.references ?? []).isEmpty
+        launcher && !plugins.isActive && draft.wrappedValue.text.isEmpty && (draft.wrappedValue.references ?? []).isEmpty
             && (draft.wrappedValue.attachments ?? []).isEmpty && !model.isLoadingAttachments(launcher: true) && !paletteOpen
     }
 
@@ -279,6 +400,13 @@ struct AskComposer: View {
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
             .onChange(of: draft.wrappedValue.text) { _ in refreshQuickResults() }
+            .onChange(of: pluginDisplay) { display in
+                guard launcher else { return }
+                let reserve = display.map { max(pluginReserve, AskPluginResultsView.height(for: $0)) } ?? 0
+                if reserve != pluginReserve { pluginReserve = reserve }
+                reportHeight()
+            }
+            .onChange(of: draft.wrappedValue.sentSelection) { _ in if launcher, plugins.isActive { refreshQuickResults() } }
             .onChange(of: noticeRows) { _ in reportHeight() }
             .onChange(of: showsStrip) { _ in reportHeight() }
             .onChange(of: attachmentHeight) { _ in reportHeight() }
@@ -329,6 +457,12 @@ struct AskComposer: View {
                 AskLauncherSuggestions(highlighted: $suggestionIndex,
                                        screenshot: model.screenshotSuggestion(launcher: true), onPick: pick)
                     .disabled(active)
+            } else if let pluginDisplay {
+                AskPluginResultsView(display: pluginDisplay, question: draft.wrappedValue.text,
+                                     minimumHeight: pluginReserve,
+                                     onMain: runPluginMain, onAction: performPluginAction,
+                                     onAskAI: askAIFromPlugin,
+                                     onHighlight: { pluginHighlight = $0 })
             } else if showsQuickResults, let quickResults {
                 AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
                                     minimumHeight: quickReserve, onRun: runQuickResult,
@@ -502,7 +636,7 @@ struct AskComposer: View {
     }
 
     private func commandKey(_ key: AskCommandKey) -> Bool {
-        guard paletteOpen else { return quickResultsKey(key) }
+        guard paletteOpen else { return pluginKey(key) || quickResultsKey(key) }
         switch key {
         case .up: palette.move(-1)
         case .down: palette.move(1)
@@ -511,8 +645,8 @@ struct AskComposer: View {
         case .escape:
             dismissedSlash = slash?.range.location
             closePalette()
-        case .commandEnter:
-            // ⌘Return sends as before, with the palette still open.
+        case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD:
+            // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }
         return true
@@ -574,6 +708,10 @@ struct AskComposer: View {
     /// Quotes waiting in the draft name what the follow-up is about. The
     /// launcher says what it does besides asking: search and calculate.
     private var placeholder: String {
+        if launcher, let plugin = plugins.plugin {
+            let lines = draft.wrappedValue.sentSelection.map { AskPresentation.lineCount($0) }
+            return plugin.placeholder(selectionLines: lines)
+        }
         if launcher { return L("ask.launcher.placeholder") }
         if model.selectedId == nil { return L("ask.input.placeholder") }
         return AskReferenceStrip.placeholder(count: draft.wrappedValue.references?.count ?? 0)
@@ -606,7 +744,7 @@ struct AskComposer: View {
                 onDropTargetChange: { editorDropTargeted = $0 },
                 onSlashQuery: slashChanged,
                 onCommandKey: commandKey,
-                onEmptyBackspace: launcher ? removeLastContext : nil,
+                onEmptyBackspace: launcher ? { removeKeyword() || removeLastContext() } : nil,
                 onContextShortcut: launcher ? toggleContextPanel : nil
             )
             .frame(height: min(editorHeight, layout.editorMaximumHeight))
@@ -641,6 +779,11 @@ struct AskComposer: View {
                 .padding(.vertical, 2)
                 .popover(isPresented: $contextPanelOpen, arrowEdge: .bottom) { contextPanel }
             }
+            if !active, let keyword = plugins.keyword, let plugin = plugins.plugin {
+                AskKeywordChip(title: plugin.title, symbol: plugin.symbol,
+                               detail: plugin.chipDetail(for: keyword, language: AppLocalization.shared.language))
+                    .padding(.vertical, 2)
+            }
             editorField
                 // The text sits 2pt high in its view; this centres it on the 34pt buttons.
                 .offset(y: 2)
@@ -671,7 +814,7 @@ struct AskComposer: View {
                 .accessibilityIdentifier("ask.composer.voice")
             if !active {
                 AskSendButton(enabled: canSend, tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
-                              prominent: AskLauncherContext.sendIsProminent(
+                              prominent: pluginDisplay.map(\.asksAI) ?? AskLauncherContext.sendIsProminent(
                                   quickResults: showsQuickResults && !showsLauncherSuggestions ? quickResults : nil),
                               action: submit)
                     .accessibilityIdentifier("ask.composer.send")
@@ -724,7 +867,8 @@ struct AskComposer: View {
     }
 
     private var launcherHint: String {
-        AskLauncherContext.hint(voice: active ? voice.phase : .idle,
+        if !active, let pluginDisplay { return AskPluginResultsView.hint(for: pluginDisplay) }
+        return AskLauncherContext.hint(voice: active ? voice.phase : .idle,
                                 quickResults: showsQuickResults && !showsLauncherSuggestions ? quickResults : nil,
                                 hasContext: contextToken != nil)
     }
@@ -732,6 +876,7 @@ struct AskComposer: View {
     /// The launcher's results area: its starting points or quick results.
     private var resultsHeight: CGFloat {
         if showsLauncherSuggestions { return AskLauncherSuggestions.height }
+        if pluginDisplay != nil { return pluginHeight }
         if showsQuickResults, let quickResults {
             return max(quickReserve, AskQuickResultsView.height(for: quickResults))
         }
@@ -1045,10 +1190,11 @@ struct AskComposer: View {
         let quick = !recording && showsQuickResults && !showsLauncherSuggestions
             ? quickResults.map { max(quickReserve, AskQuickResultsView.height(for: $0)) } ?? 0 : 0
         let panel = recording ? voicePanelHeight : 0
+        let keyword = !recording ? pluginHeight : 0
         onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
                                                  suggestions: !recording && showsLauncherSuggestions,
                                                  attachments: showsStrip,
-                                                 attachmentHeight: attachmentHeight) + commands + quick + panel)
+                                                 attachmentHeight: attachmentHeight) + commands + quick + panel + keyword)
     }
 }
 

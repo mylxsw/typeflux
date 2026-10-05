@@ -30,7 +30,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private var localClickMonitor: Any?
 
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary,
-         dockVisibility: DockVisibilityController = .shared) throws {
+         llmService: LLMService? = nil, dockVisibility: DockVisibilityController = .shared) throws {
         self.dockVisibility = dockVisibility
         self.settings = settings
         conversationFrameAutosaveName = "AskConversationWorkspace"
@@ -60,6 +60,17 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             AskRoutedAPI.session(token: AuthState.shared.accessToken, owner: AuthState.shared.userProfile?.id)
         }
         super.init()
+        // Keyword plugins: translation falls back to the text-processing model, and
+        // ⌥Return types results into the app the launcher came from.
+        if let llmService {
+            model.translationAI = AskAITranslationEngine(service: llmService) { [weak settings] in
+                settings.map { $0.llmModel.isEmpty ? "AI" : $0.llmModel } ?? "AI"
+            }
+        }
+        model.deliverText = { text in
+            let result = try await injector.deliver(text: text, to: .currentInput)
+            if case .notApplied = result { throw TextDeliveryError.noInput }
+        }
         model.commandSources = AskCommandSources(
             skills: { tools.enabledSkills },
             mcpServers: { MCPSettingsStore().servers.map { AskMCPServerSummary(name: $0.name, enabled: $0.enabled) } },
@@ -168,6 +179,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.voiceInput.cancel()
         launchTask?.cancel()
         launchTask = nil
+        model.foldLauncherKeyword()
         model.persistDrafts()
         launcher?.orderOut(nil)
         if let clickMonitor { NSEvent.removeMonitor(clickMonitor); self.clickMonitor = nil }
