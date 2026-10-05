@@ -528,12 +528,15 @@ private extension ChatStore {
         selectedID = nil
     }
 
-    private func report(_ error: Error, generation: Int) {
+    private func report(_ error: Error, generation: Int, signInRejection: String? = nil) {
         guard generation == accountGeneration, !(error is CancellationError), !Task.isCancelled else { return }
-        if case let ChatAPIError.server(_, message) = error {
+        if case ChatAPIError.server("AUTH_OAUTH_INVALID_TOKEN", _) = error {
+            errorMessage = signInRejection ??
+                "The server could not verify your sign-in. Please try again or contact support."
+        } else if case let ChatAPIError.server(_, message) = error {
             errorMessage = message ?? "The server could not complete this request."
         } else if case ChatAPIError.unauthorized = error {
-            errorMessage = "Please check your email and password."
+            errorMessage = signInRejection ?? "Please check your email and password."
         } else {
             errorMessage = error.localizedDescription
         }
@@ -606,7 +609,11 @@ extension ChatStore {
             profile = fetched
             isAuthenticated = true
             await refreshHome()
-        } catch { report(error, generation: generation) }
+        } catch {
+            report(error, generation: generation,
+                   signInRejection:
+                   "The server could not verify your Google sign-in. Please try again or contact support.")
+        }
     }
 
     func loginWithApple(identityToken: String, email appleEmail: String?) async {
@@ -633,7 +640,11 @@ extension ChatStore {
             profile = fetched
             isAuthenticated = true
             await refreshHome()
-        } catch { report(error, generation: generation) }
+        } catch {
+            report(error, generation: generation,
+                   signInRejection:
+                   "The server could not verify your Apple sign-in. Please try again or contact support.")
+        }
     }
 
     /// Sends a reset code. Returns true when the server accepted the request.

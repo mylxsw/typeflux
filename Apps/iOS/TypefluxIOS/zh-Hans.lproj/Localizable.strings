@@ -188,3 +188,7 @@
 "Unable to sign in with Google. Please try again." = "无法使用 Google 登录，请重试。";
 
 "Select text" = "选择文本";
+
+"The server could not verify your Google sign-in. Please try again or contact support." = "服务器无法验证你的 Google 登录，请重试或联系支持。";
+"The server could not verify your Apple sign-in. Please try again or contact support." = "服务器无法验证你的 Apple 登录，请重试或联系支持。";
+"The server could not verify your sign-in. Please try again or contact support." = "服务器无法验证你的登录，请重试或联系支持。";

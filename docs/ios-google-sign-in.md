@@ -40,6 +40,31 @@ Live Google authorization requires console/server configuration and is separate
 from the automated tests, which never contact an identity provider. Synthetic
 preview launches always use an unconfigured Google adapter, even in a configured build.
 
+## Authorization succeeds but Typeflux rejects sign-in
+
+A 401 response from `POST /api/v1/auth/oauth/google` means the Typeflux API rejected
+the login. The API returns `AUTH_OAUTH_INVALID_TOKEN` when token verification fails
+or required identity claims are missing. Older iOS builds incorrectly displayed
+"Please check your email and password." for this response. Current builds preserve
+the OAuth error code and show a social-sign-in rejection instead.
+
+Check the effective `GOOGLE_OIDC_CLIENT_ID` on every API instance serving the app's
+configured endpoint. It must include the iOS client above, separated from existing
+desktop/web IDs by commas. Updating the Xcode settings does not update that list;
+the API process must restart after its environment changes.
+
+To establish the actual cause, inspect server logs for the failed request:
+
+- `oidc audience not accepted`: compare `audience` with `configured_client_id`;
+  append the iOS client ID to the allowlist without removing existing clients.
+- `oidc verify failed`: inspect the verification error for expiry, issuer,
+  signature or Google key-fetch failures.
+- `request failed` with `AUTH_OAUTH_INVALID_TOKEN`: inspect the wrapped error for
+  absent configuration or other verification failures.
+
+Do not share raw ID tokens, authorization codes or refresh tokens in issue comments.
+A generic 401 or screenshot alone cannot establish which verification check failed.
+
 ## Regression checks
 
 - `swift test --package-path Packages/TypefluxChat --enable-code-coverage`

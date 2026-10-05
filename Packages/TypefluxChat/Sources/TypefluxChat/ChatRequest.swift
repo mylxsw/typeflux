@@ -51,7 +51,14 @@ public enum ChatRequest {
 
     public static func decode<Value: Decodable>(_ type: Value.Type = Value.self, data: Data,
                                                 statusCode: Int, decoder: JSONDecoder = ChatCoding.decoder()) throws -> Value {
-        if statusCode == 401 { throw ChatAPIError.unauthorized }
+        if statusCode == 401 {
+            // OAuth rejection is not a bad password or an expired Typeflux session.
+            if let error = try? decoder.decode(ChatAPIEnvelope<Value>.self, from: data),
+               error.code == "AUTH_OAUTH_INVALID_TOKEN" {
+                throw ChatAPIError.server(code: error.code, message: error.message)
+            }
+            throw ChatAPIError.unauthorized
+        }
         let envelope: ChatAPIEnvelope<Value>
         do { envelope = try decoder.decode(ChatAPIEnvelope<Value>.self, from: data) }
         catch { throw ChatAPIError.invalidResponse }
