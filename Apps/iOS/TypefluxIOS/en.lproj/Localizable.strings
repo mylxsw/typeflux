@@ -156,8 +156,8 @@
 "Regenerate" = "Regenerate";
 "Share" = "Share";
 "Using tools" = "Using tools";
-"Called %d tools" = "Called %d tools";
 "Step %d" = "Step %d";
+"%d failed" = "%d failed";
 "%d steps" = "%d steps";
 "Ask, look at photos and search the web. Conversations sync with your Mac." = "Ask, look at photos and search the web. Conversations sync with your Mac.";
 "Sign in with email" = "Sign in with email";

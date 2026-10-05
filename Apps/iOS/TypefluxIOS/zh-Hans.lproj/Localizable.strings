@@ -156,8 +156,8 @@
 "Regenerate" = "重新生成";
 "Share" = "分享";
 "Using tools" = "正在调用工具";
-"Called %d tools" = "调用了 %d 次工具";
 "Step %d" = "第 %d 步";
+"%d failed" = "%d 次失败";
 "%d steps" = "%d 步";
 "Ask, look at photos and search the web. Conversations sync with your Mac." = "随时提问、看图、联网查资料，对话与 Mac 自动同步。";
 "Sign in with email" = "邮箱登录";

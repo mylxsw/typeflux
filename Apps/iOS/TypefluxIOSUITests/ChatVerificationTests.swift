@@ -328,15 +328,34 @@ private extension ChatVerificationTests {
 
     @MainActor
     func reveal(_ element: XCUIElement, in scroll: XCUIElement, upwards: Bool) {
+        let app = XCUIApplication()
         for _ in 0 ..< 14 {
+            var upwards = upwards
             if element.exists, element.isHittable {
-                return
+                guard let below = outsideReadingArea(element, app: app) else { return }
+                // Hittable but under the glass: scroll toward it.
+                upwards = below
             }
             let start = scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: upwards ? 0.72 : 0.30))
             let end = scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: upwards ? 0.30 : 0.72))
             start.press(forDuration: 0.01, thenDragTo: end)
         }
         XCTAssertTrue(element.isHittable)
+    }
+
+    /// isHittable alone accepts content under the floating top bar or composer,
+    /// where a tap lands on the glass instead. Returns nil inside the reading
+    /// area (or when the element is taller than it), true when it sits below.
+    @MainActor
+    func outsideReadingArea(_ element: XCUIElement, app: XCUIApplication) -> Bool? {
+        let bar = app.buttons["chat.sidebar.open"], field = app.textFields["chat.composer"]
+        guard bar.exists, field.exists else { return nil }
+        let top = bar.frame.maxY + 12, bottom = field.frame.minY - 24
+        let frame = element.frame
+        if frame.height > bottom - top || (frame.minY >= top && frame.maxY <= bottom) {
+            return nil
+        }
+        return frame.maxY > bottom
     }
 
     @MainActor
