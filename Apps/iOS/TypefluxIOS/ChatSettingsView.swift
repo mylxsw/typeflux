@@ -17,8 +17,19 @@ struct ChatSettingsView: View {
                     accountCard
                     sectionLabel("General")
                     group {
-                        row(symbol: "moon.fill", tint: Color(red: 0.35, green: 0.34, blue: 0.84), title: "Appearance") {
-                            appearanceChoices
+                        ViewThatFits(in: .horizontal) {
+                            row(
+                                symbol: "moon.fill",
+                                tint: Color(red: 0.35, green: 0.34, blue: 0.84),
+                                title: "Appearance"
+                            ) {
+                                appearanceChoices
+                            }
+                            VStack(alignment: .trailing, spacing: 0) {
+                                row(symbol: "moon.fill", tint: Color(red: 0.35, green: 0.34, blue: 0.84),
+                                    title: "Appearance") { EmptyView() }
+                                appearanceChoices.padding(.horizontal, 16).padding(.bottom, 12)
+                            }
                         }
                         divider
                         Button(action: openSystemSettings) {
@@ -39,9 +50,9 @@ struct ChatSettingsView: View {
                         Link(destination: ChatSettingsInfo.privacyURL) {
                             row(symbol: "hand.raised.fill", tint: Color(red: 0.2, green: 0.78, blue: 0.35),
                                 title: "Privacy Policy") {
-                                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(ChatTheme.tertiary)
-                            }
+                                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(ChatTheme.tertiary)
+                                }
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("settings.privacy")
@@ -60,9 +71,11 @@ struct ChatSettingsView: View {
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("account.signOut")
                     }
-                    Text("Signing out removes this account from this device. Your cloud conversations stay in your account.")
-                        .font(.system(size: 12.5)).foregroundStyle(ChatTheme.tertiary)
-                        .padding(.horizontal, 16)
+                    Text(
+                        "Signing out removes this account from this device. Your cloud conversations stay in your account."
+                    )
+                    .font(.system(size: 12.5)).foregroundStyle(ChatTheme.tertiary)
+                    .padding(.horizontal, 16)
                 }
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 28)
                 .frame(maxWidth: 560).frame(maxWidth: .infinity)
@@ -160,7 +173,7 @@ struct ChatSettingsView: View {
                 .frame(width: 29, height: 29)
                 .background(tint, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .accessibilityHidden(true)
-            Text(title).font(.system(size: 16)).foregroundStyle(.primary)
+            Text(title).font(.system(size: 16)).foregroundStyle(.primary).fixedSize()
             Spacer(minLength: 8)
             trailing().font(.system(size: 15))
         }
@@ -174,6 +187,7 @@ struct ChatSettingsView: View {
                 Button { preferences.appearance = appearance } label: {
                     Text(appearance.shortTitle)
                         .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                        .lineLimit(1).fixedSize()
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 11).frame(minHeight: 30)
                         .background {
@@ -234,9 +248,12 @@ struct ChatCreditSummary: View {
                 GeometryReader { geometry in
                     Capsule().fill(ChatTheme.fill)
                         .overlay(alignment: .leading) {
-                            Capsule().fill(LinearGradient(colors: [ChatTheme.accent, Color(red: 0.55, green: 0.36, blue: 0.96)],
-                                                          startPoint: .leading, endPoint: .trailing))
-                                .frame(width: geometry.size.width * max(0, 1 - fraction))
+                            Capsule().fill(LinearGradient(
+                                colors: [ChatTheme.accent, Color(red: 0.55, green: 0.36, blue: 0.96)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ))
+                            .frame(width: geometry.size.width * max(0, 1 - fraction))
                         }
                 }
                 .frame(height: 6).padding(.top, 12).padding(.bottom, 8)
@@ -251,39 +268,62 @@ struct ChatAccountView: View {
     @Bindable var store: ChatStore
 
     var body: some View {
-        Form {
-            Section {
-                LabeledContent("Name", value: store.displayName)
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Email").font(.caption).foregroundStyle(.secondary)
-                    Text(store.email)
-                        .font(.body).textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("account.email")
+        ScrollView {
+            VStack(spacing: 16) {
+                VStack(spacing: 0) {
+                    accountRow("Name", value: store.displayName, identifier: "account.name")
+                    divider
+                    accountRow("Email", value: store.email, identifier: "account.email", selectable: true)
+                    divider
+                    accountRow("Status", value: NSLocalizedString("Signed in", comment: "Account status"),
+                               identifier: "account.status")
+                    if let plan = store.planLabel {
+                        divider
+                        accountRow("Plan", value: plan, identifier: "account.plan")
+                    }
                 }
-                .padding(.vertical, 6)
-                LabeledContent("Status") {
-                    Label("Signed in", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(ChatTheme.accentText)
-                        .accessibilityIdentifier("account.status")
-                }
-                if let plan = store.planLabel {
-                    LabeledContent("Plan", value: plan)
+                .chatCard(corner: 20)
+                if let usage = store.creditUsage {
+                    ChatCreditSummary(usage: usage).padding(16).chatCard(corner: 20)
                 }
             }
-            .listRowBackground(ChatTheme.card)
-            if let usage = store.creditUsage {
-                Section {
-                    ChatCreditSummary(usage: usage).padding(.vertical, 6)
-                }
-                .listRowBackground(ChatTheme.card)
-            }
+            .padding(16).frame(maxWidth: 560).frame(maxWidth: .infinity)
         }
-        .scrollContentBackground(.hidden)
         .background(ChatTheme.background)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("account.root")
         .navigationTitle("Account")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(ChatTheme.separator).frame(height: 0.5).padding(.horizontal, 16)
+    }
+
+    private func accountRow(_ title: LocalizedStringKey, value: String, identifier: String,
+                            selectable: Bool = false) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 16) {
+                Text(title).fixedSize()
+                Spacer(minLength: 12)
+                valueText(value, identifier: identifier, selectable: selectable).fixedSize()
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                valueText(value, identifier: identifier, selectable: selectable)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.body).padding(16)
+    }
+
+    @ViewBuilder private func valueText(_ value: String, identifier: String, selectable: Bool) -> some View {
+        if selectable {
+            Text(value).foregroundStyle(ChatTheme.secondary).textSelection(.enabled)
+                .accessibilityIdentifier(identifier)
+        } else {
+            Text(value).foregroundStyle(ChatTheme.secondary).accessibilityIdentifier(identifier)
+        }
     }
 }

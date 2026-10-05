@@ -85,7 +85,9 @@ struct LoginView: View {
             .toolbar(.hidden, for: .navigationBar)
             .onDisappear {
                 // Successful sign-in replaces this view while the initial history is still loading.
-                if !store.isAuthenticated { googleTask?.cancel() }
+                if !store.isAuthenticated {
+                    googleTask?.cancel()
+                }
                 googleTask = nil
             }
             .navigationDestination(for: Route.self) { _ in
@@ -95,10 +97,12 @@ struct LoginView: View {
     }
 
     private var legal: some View {
-        Text("By continuing you agree to the [Terms of Service](https://typeflux.app/terms) and [Privacy Policy](https://typeflux.app/privacy).")
-            .font(.system(size: 11.5)).foregroundStyle(ChatTheme.tertiary)
-            .tint(ChatTheme.secondary)
-            .multilineTextAlignment(.center)
+        Text(
+            "By continuing you agree to the [Terms of Service](https://typeflux.app/terms) and [Privacy Policy](https://typeflux.app/privacy)."
+        )
+        .font(.system(size: 11.5)).foregroundStyle(ChatTheme.tertiary)
+        .tint(ChatTheme.secondary)
+        .multilineTextAlignment(.center)
     }
 
     private func handleApple(_ result: Result<ASAuthorization, Error>) {
@@ -208,13 +212,9 @@ struct ChatEmailLoginView: View {
 
     private func field(label: LocalizedStringKey, identifier: String,
                        @ViewBuilder input: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(label).font(.system(size: 12, weight: .medium)).foregroundStyle(ChatTheme.secondary)
-                .accessibilityIdentifier(identifier + ".label")
-            input().font(.system(size: 16.5)).frame(minHeight: 28)
-                .accessibilityLabel(Text(label)).accessibilityIdentifier(identifier)
-        }
-        .padding(.horizontal, 16).padding(.vertical, 10)
+        input().font(.system(size: 16.5)).frame(minHeight: 32)
+            .accessibilityLabel(Text(label)).accessibilityIdentifier(identifier)
+            .padding(.horizontal, 16).padding(.vertical, 12)
     }
 
     private func signIn() {

@@ -72,6 +72,7 @@ private struct ChatMessageView: View {
     let quote: (String) -> Void
     let regenerate: (String) -> Void
     @State private var copied = false
+    @State private var selectingText = false
 
     var body: some View {
         Group {
@@ -85,14 +86,14 @@ private struct ChatMessageView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.message." + message.id)
+        .sheet(isPresented: $selectingText) { ChatTextSelectionSheet(text: message.text) }
     }
 
     private var userMessage: some View {
         VStack(alignment: .trailing, spacing: 6) {
             ChatMessageImages(message: message, maxWidth: 220)
             if !message.text.isEmpty {
-                Text(message.text).font(.system(size: 16)).lineSpacing(3)
-                    .foregroundStyle(ChatTheme.bubbleText).textSelection(.enabled)
+                ChatSelectableText(blocks: [], plainText: message.text, foreground: UIColor(ChatTheme.bubbleText))
                     .padding(.horizontal, 15).padding(.vertical, 10)
                     .background(ChatTheme.bubble, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
@@ -134,6 +135,9 @@ private struct ChatMessageView: View {
                 .accessibilityLabel(NSLocalizedString(copied ? "Copied" : "Copy response", comment: "Message action"))
                 .accessibilityIdentifier("chat.copy." + message.id)
                 .foregroundStyle(copied ? ChatTheme.accent : ChatTheme.tertiary)
+            Button { selectingText = true } label: { actionIcon("text.cursor") }
+                .accessibilityLabel(NSLocalizedString("Select text", comment: "Message action"))
+                .accessibilityIdentifier("chat.select." + message.id)
             Button { quote(message.text) } label: { actionIcon("text.quote") }
                 .accessibilityLabel(NSLocalizedString("Quote response", comment: "Message action"))
                 .accessibilityIdentifier("chat.quote." + message.id)

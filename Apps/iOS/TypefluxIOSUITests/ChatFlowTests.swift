@@ -104,12 +104,12 @@ final class ChatFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["chat.share.answer"].exists)
         attachScreenshot(app, name: "v4-conversation")
         regenerate.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "regenerated synthetic answer"))
+        XCTAssertTrue(app.textViews.matching(NSPredicate(format: "value CONTAINS %@", "regenerated synthetic answer"))
             .firstMatch.waitForExistence(timeout: 5))
         let composer = app.textFields["chat.composer"]
         composer.tap(); composer.typeText("One more idea, please.")
         app.buttons["chat.send"].tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "This is a synthetic preview."))
+        XCTAssertTrue(app.textViews.matching(NSPredicate(format: "value CONTAINS %@", "This is a synthetic preview."))
             .firstMatch.waitForExistence(timeout: 5))
         XCTAssertEqual(composer.value as? String, "Ask a follow-up")
     }

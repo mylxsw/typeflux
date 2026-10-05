@@ -197,35 +197,19 @@ struct ChatMarkdownView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ForEach(Array(ChatMarkdown.parse(text).enumerated()), id: \.offset) { _, block in
-                blockView(block)
+            ForEach(Array(ChatSelectableContent.groups(ChatMarkdown.parse(text)).enumerated()),
+                    id: \.offset) { _, blocks in
+                if blocks.count == 1, case let .code(language, text) = blocks[0] {
+                    ChatCodeBlock(language: language, text: text)
+                } else if blocks.count == 1, case let .table(headers, rows) = blocks[0] {
+                    table(headers: headers, rows: rows)
+                } else {
+                    ChatSelectableText(blocks: blocks)
+                }
             }
         }
-        .font(.system(size: 16))
-        .lineSpacing(5)
         .textSelection(.enabled)
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder private func blockView(_ block: ChatMarkdown.Block) -> some View {
-        switch block {
-        case let .paragraph(text): inline(text)
-        case let .heading(level, text):
-            inline(text).font(.system(size: level == 1 ? 20 : level == 2 ? 18 : 17, weight: .semibold))
-                .padding(.top, 2).accessibilityAddTraits(.isHeader)
-        case let .listItem(marker, text, depth):
-            HStack(alignment: .firstTextBaseline, spacing: 9) {
-                Text(marker).monospacedDigit().foregroundStyle(ChatTheme.tertiary)
-                    .frame(minWidth: 14, alignment: .trailing)
-                inline(text).frame(maxWidth: .infinity, alignment: .leading)
-            }.padding(.leading, CGFloat(depth) * 14)
-        case let .quote(text):
-            inline(text).foregroundStyle(ChatTheme.textSecondary).padding(.leading, 14)
-                .overlay(alignment: .leading) { Rectangle().fill(ChatTheme.border).frame(width: 2) }
-        case let .code(language, text): ChatCodeBlock(language: language, text: text)
-        case let .table(headers, rows): table(headers: headers, rows: rows)
-        case .divider: Divider().padding(.vertical, 4)
-        }
     }
 
     private func inline(_ text: String) -> Text {

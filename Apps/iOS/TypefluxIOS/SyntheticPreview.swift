@@ -18,7 +18,8 @@
         static func makeStore(arguments: [String] = ProcessInfo.processInfo.arguments,
                               now: Date = Date(), streamInterval: Duration? = nil) -> ChatStore {
             ChatStore(service: makeService(arguments: arguments, now: now, streamInterval: streamInterval),
-                      credentials: PreviewCredentials(), deviceID: "synthetic-device", isSynthetic: true)
+                      credentials: PreviewCredentials(longEmail: arguments.contains("--synthetic-long-email")),
+                      deviceID: "synthetic-device", isSynthetic: true)
         }
 
         static func makeService(arguments: [String] = [], now: Date = Date(),
@@ -253,6 +254,13 @@
             email: "preview@example.invalid",
             session: ChatSession(accessToken: "synthetic", expiresAt: 0, refreshToken: nil)
         )
+        init(longEmail: Bool = false) {
+            if longEmail {
+                value = SavedAccount(email: "very.long.account.address.for.layout.testing@example.invalid",
+                                     session: ChatSession(accessToken: "synthetic", expiresAt: 0, refreshToken: nil))
+            }
+        }
+
         func load() throws -> SavedAccount? {
             value
         }

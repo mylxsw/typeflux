@@ -56,6 +56,7 @@ struct ChatPreferencesTests {
     }
 
     @Test func `appearance titles distinguish light mode from light reasoning`() {
+        #expect(ChatAppearance.system.shortTitle == NSLocalizedString("Auto", comment: ""))
         #expect(Set(ChatAppearance.allCases.map(\.title)).count == 3)
         #expect(ChatAppearance.allCases.allSatisfy { !$0.title.isEmpty && $0.id == $0.rawValue })
     }
