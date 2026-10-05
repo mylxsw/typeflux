@@ -116,6 +116,8 @@ final class SettingsStore {
         let baseURL: String
         let model: String
         let apiKey: String
+        var apiStyle: LLMRemoteAPIStyle?
+        var effectiveAPIStyle: LLMRemoteAPIStyle { apiStyle ?? provider.apiStyle }
     }
 
     /// Identifier of the built-in "Typeflux" persona. Used as the smart default
@@ -883,7 +885,7 @@ final class SettingsStore {
                     provider: .custom,
                     baseURL: profile.baseURL,
                     model: profile.model,
-                    apiKey: AskModelLibrary.key(for: profile)
+                    apiKey: AskModelLibrary.key(for: profile), apiStyle: profile.apiStyle
                 )
             }
             // A removed profile remains unavailable instead of silently changing provider.
@@ -903,7 +905,8 @@ final class SettingsStore {
             provider: llmRemoteProvider,
             baseURL: llmBaseURL,
             model: llmModel,
-            apiKey: llmAPIKey
+            apiKey: llmAPIKey,
+            apiStyle: ModelRegistry.read(defaults)?.providers.first { $0.remote == llmRemoteProvider }?.apiStyle
         )
     }
 

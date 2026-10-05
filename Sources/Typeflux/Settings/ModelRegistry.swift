@@ -37,6 +37,9 @@ struct RegisteredProvider: Codable, Equatable, Identifiable, Sendable {
     var baseURL: String = ""
     var credentialAccount: String?
     var models: [RegisteredModel] = []
+    var apiStyle: LLMRemoteAPIStyle?
+    var effectiveAPIStyle: LLMRemoteAPIStyle { apiStyle ?? remote?.apiStyle ?? .openAICompatible }
+    var supportsProtocolSelection: Bool { !isOllama && (remote == nil || remote == .custom) }
     var isOllama: Bool {
         id == "ollama"
     }
@@ -109,7 +112,7 @@ struct ModelRegistry: Codable, Equatable {
                                               id: profile.model,
                                               name: profile.model,
                                               reference: profile.reference
-                                          )]))
+                                          )], apiStyle: profile.apiStyle))
         }
         return result
     }
@@ -132,13 +135,14 @@ extension RegisteredProvider {
                 provider: remote,
                 baseURL: settings.llmBaseURL(for: remote),
                 model: remote == .typefluxCloud && model.id != "default" ? model.reference : model.id,
-                apiKey: settings.llmAPIKey(for: remote)
+                apiKey: settings.llmAPIKey(for: remote), apiStyle: effectiveAPIStyle
             )
         }
         if isOllama {
             return .init(provider: .custom, baseURL: settings.ollamaBaseURL, model: model.id, apiKey: "")
         }
         return .init(provider: .custom, baseURL: baseURL, model: model.id,
-                     apiKey: credentialAccount.flatMap { KeychainTokenStore.getKeychainValue(account: $0) } ?? "")
+                     apiKey: credentialAccount.flatMap { KeychainTokenStore.getKeychainValue(account: $0) } ?? "",
+                     apiStyle: effectiveAPIStyle)
     }
 }

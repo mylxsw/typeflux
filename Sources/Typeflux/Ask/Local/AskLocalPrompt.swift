@@ -118,6 +118,7 @@ enum AskLocalPrompt {
         if let calls = m.toolCalls, !calls.isEmpty {
             result["tool_calls"] = calls.map { call -> [String: Any] in
                 var item: [String: Any] = ["id": call.id, "type": "function", "function": ["name": call.function.name, "arguments": call.function.arguments]]
+                if let context = call.providerContext { item["provider_context"] = context }
                 if let signature = call.thoughtSignature { item["thought_signature"] = signature }
                 return item
             }

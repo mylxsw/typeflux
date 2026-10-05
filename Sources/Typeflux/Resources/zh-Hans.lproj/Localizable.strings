@@ -2275,3 +2275,7 @@
 "ask.reasoning.changeModel" = "更换模型";
 "ask.reasoning.reset" = "恢复为自动";
 "ask.reasoning.snapped" = "当前模型不支持「%@」，已调整为「%@」";
+
+"models.protocol" = "协议";
+"models.protocolHint" = "选择此服务商支持的 API 协议。";
+"models.protocolUnsupported" = "暂不支持此协议，请选择其他协议或更新 Typeflux。";

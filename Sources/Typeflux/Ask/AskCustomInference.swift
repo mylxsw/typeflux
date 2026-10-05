@@ -33,6 +33,13 @@ struct AskCustomInference: Sendable {
     var session: URLSession = .init(configuration: .ephemeral, delegate: AskModelRedirectPolicy(), delegateQueue: nil)
 
     func complete(profile: AskModelProfile, key: String, payload: String, onUsage: (@Sendable (AskTokenUsage) async -> Void)? = nil, onProgress: (@Sendable (AskStreamProgress) async -> Void)? = nil) async throws -> (String, [AskToolCall]) {
+        if let style = profile.apiStyle, style != .openAICompatible {
+            return try await complete(
+                provider: .init(id: "endpoint:" + profile.id, name: profile.name, apiStyle: style),
+                connection: .init(provider: .custom, baseURL: profile.baseURL, model: profile.model,
+                                  apiKey: key, apiStyle: style),
+                payload: payload, onUsage: onUsage, onProgress: onProgress)
+        }
         try profile.validate()
         guard var body = try JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any],
               let base = URL(string: profile.baseURL) else { throw AskLocalError.message(L("ask.models.invalid")) }
@@ -46,6 +53,7 @@ struct AskCustomInference: Sendable {
                     message["tool_calls"] = calls.map { call in
                         var call = call
                         call.removeValue(forKey: "thought_signature")
+                        call.removeValue(forKey: "provider_context")
                         return call
                     }
                 }

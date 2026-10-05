@@ -14,14 +14,20 @@ enum AskReasoningRequest {
         return effort
     }
 
-    /// Enables Anthropic extended thinking. A turn that answers tool results is left alone:
-    /// Anthropic requires the thinking block of that tool call to be sent back, and the
-    /// bridge does not keep it.
+    /// Tool continuations require the original signed thinking blocks. Legacy
+    /// histories without those blocks keep the provider default.
     static func applyAnthropic(effort: String?, to native: inout [String: Any], totalOutputLimit: Int? = nil) {
         guard let effort, let budget = anthropicBudgets[effort] else { return }
         let last = (native["messages"] as? [[String: Any]])?.last
         let parts = last?["content"] as? [[String: Any]] ?? []
-        guard !parts.contains(where: { $0["type"] as? String == "tool_result" }) else { return }
+        let messages = native["messages"] as? [[String: Any]] ?? []
+        let hasSignedThinking = messages.contains { message in
+            (message["content"] as? [[String: Any]] ?? []).contains {
+                $0["type"] as? String == "thinking" && $0["signature"] != nil
+            }
+        }
+        guard !parts.contains(where: { $0["type"] as? String == "tool_result" }) || hasSignedThinking else { return }
+        native.removeValue(forKey: "temperature")
         if let totalOutputLimit {
             native["max_tokens"] = totalOutputLimit
             // Thinking consumes the same output reserve. Small reserves cannot

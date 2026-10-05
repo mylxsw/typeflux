@@ -80,6 +80,13 @@ Create named instruction sets for different scenarios — work emails, study not
 | Groq | Cloud | Fast inference, low cost |
 | Free Models | Cloud | No API key, open-source endpoints |
 
+### Custom Model Protocols
+In **Settings → Models → Add Endpoint**, choose **Chat Completions**, **Anthropic Messages**, or **Responses**, then enter the endpoint, API key, and model ID. The protocol is saved with the provider and used for model discovery, connection tests, rewrite, and Ask, including streamed replies and tools. Existing custom providers keep Chat Completions until you change their protocol.
+
+You can enter a base URL such as `https://api.example.com/v1` or a full inference URL. Typeflux preserves gateway path prefixes when selecting `/models`, `/messages`, `/responses`, or `/chat/completions`. Model discovery depends on the gateway exposing a compatible `/models` endpoint; otherwise add model IDs manually.
+
+![Custom provider protocol selector](docs/screenshots/add-model-protocol.png)
+
 ### Local Models
 When you choose **Local Model**, Typeflux downloads and runs the model entirely on your Mac:
 

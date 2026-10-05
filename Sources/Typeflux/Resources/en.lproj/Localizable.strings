@@ -2275,3 +2275,7 @@
 "ask.reasoning.changeModel" = "Change model";
 "ask.reasoning.reset" = "Back to Auto";
 "ask.reasoning.snapped" = "This model does not offer “%@”; using “%@”";
+
+"models.protocol" = "Protocol";
+"models.protocolHint" = "Choose the API protocol supported by this provider.";
+"models.protocolUnsupported" = "This protocol is not supported. Select another protocol or update Typeflux.";

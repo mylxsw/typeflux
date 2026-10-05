@@ -7,12 +7,20 @@ enum OpenAIEndpointResolver {
         }
 
         let sanitizedPath = expectedPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        return configuredURL.appendingPathComponent(sanitizedPath)
+        var base = configuredURL
+        let normalized = base.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")).lowercased()
+        for suffix in ["chat/completions", "messages", "responses", "models"] {
+            if normalized == suffix || normalized.hasSuffix("/" + suffix) {
+                for _ in suffix.split(separator: "/") { base.deleteLastPathComponent() }
+                break
+            }
+        }
+        return base.appendingPathComponent(sanitizedPath)
     }
 
     private static func matchesEndpoint(_ url: URL, expectedPath: String) -> Bool {
         let normalizedURLPath = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")).lowercased()
         let normalizedExpectedPath = expectedPath.trimmingCharacters(in: CharacterSet(charactersIn: "/")).lowercased()
-        return normalizedURLPath.hasSuffix(normalizedExpectedPath)
+        return normalizedURLPath == normalizedExpectedPath || normalizedURLPath.hasSuffix("/" + normalizedExpectedPath)
     }
 }

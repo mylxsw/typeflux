@@ -34,23 +34,31 @@ struct AskSSEFrame {
 }
 
 struct AskProviderStream {
-    enum Style { case openAI, anthropic, gemini }
+    enum Style { case openAI, anthropic, gemini, responses }
     var style: Style
     private(set) var progress = AskStreamProgress()
     private(set) var finished = false
     private var calls: [Int: AskToolCall] = [:]
+    private var responses = ResponsesStream()
+    private var nativeBlocks: [Int: [String: Any]] = [:]
     private var emptyArgumentPrefixes: [Int: Int] = [:]
 
     init(style: Style) { self.style = style }
 
     mutating func consume(_ data: String) throws {
+        if style == .responses {
+            try responses.consume(data); progress = responses.progress; finished = responses.finished
+            return
+        }
         if data == "[DONE]" {
+            guard style == .openAI else { throw invalid() }
             finished = true; return
         }
         guard let body = try JSONSerialization.jsonObject(with: Data(data.utf8)) as? [String: Any],
               body["error"] == nil else { throw AskStreamError.invalidResponse }
         progress.usage = AskTokenUsage.parse(body, style: style, previous: progress.usage)
         switch style {
+        case .responses: break
         case .openAI:
             guard let choice = (body["choices"] as? [[String: Any]])?.first else { return }
             if let finish = choice["finish_reason"] as? String, !finish.isEmpty {
@@ -67,6 +75,10 @@ struct AskProviderStream {
                 let repeatedID = !id.isEmpty && id == call.id
                 if let id = part["id"] as? String {
                     call.id = id
+                }
+                if let context = part["provider_context"] as? String {
+                    guard context.utf8.count <= 256000 else { throw invalid() }
+                    call.providerContext = context
                 }
                 let function = part["function"] as? [String: Any] ?? [:]
                 let name = function["name"] as? String ?? ""
@@ -95,6 +107,8 @@ struct AskProviderStream {
                 progress.truncated = reason == "max_tokens"
             }
             if type == "content_block_start", let block = body["content_block"] as? [String: Any] {
+                guard let index = body["index"] as? Int, (0..<64).contains(index) else { throw invalid() }
+                nativeBlocks[index] = block
                 if block["type"] as? String == "tool_use" {
                     guard let index = body["index"] as? Int else { throw invalid() }
                     var call = try tool(index)
@@ -116,6 +130,16 @@ struct AskProviderStream {
                 call.function.arguments = "{}"; calls[index] = call
             }
             if type == "content_block_delta", let delta = body["delta"] as? [String: Any] {
+                if let index = body["index"] as? Int, var block = nativeBlocks[index] {
+                    for field in ["text", "thinking", "signature"] {
+                        if let value = delta[field] as? String {
+                            let joined = (block[field] as? String ?? "") + value
+                            guard joined.utf8.count <= 256000 else { throw invalid() }
+                            block[field] = joined
+                        }
+                    }
+                    nativeBlocks[index] = block
+                }
                 progress.text += delta["text"] as? String ?? ""
                 progress.reasoning += delta["thinking"] as? String ?? ""
                 if let fragment = delta["partial_json"] as? String, let index = body["index"] as? Int {
@@ -151,12 +175,23 @@ struct AskProviderStream {
                 }
             }
         }
+        if style == .anthropic, finished, let first = calls.keys.sorted().first {
+            for (index, call) in calls {
+                nativeBlocks[index]?["input"] = try JSONSerialization.jsonObject(
+                    with: Data(call.function.arguments.utf8)
+                )
+            }
+            calls[first]?.providerContext = try ProviderContinuation.encode(
+                nativeBlocks.keys.sorted().compactMap { nativeBlocks[$0] }, protocolName: "anthropic"
+            )
+        }
         progress.toolCalls = calls.keys.sorted().compactMap { calls[$0] }
         guard progress.text.utf8.count <= 256_000, progress.reasoning.utf8.count <= 256_000,
               progress.toolCalls.allSatisfy({ $0.function.arguments.utf8.count <= 64000 }) else { throw invalid() }
     }
 
     func result() throws -> (String, [AskToolCall]) {
+        if style == .responses { return try responses.result() }
         guard finished, !progress.text.isEmpty || !progress.toolCalls.isEmpty else { throw invalid() }
         var resultCalls: [AskToolCall] = []
         for index in calls.keys.sorted() {
@@ -218,7 +253,7 @@ extension AskCustomInference {
                     var progress = parser.progress; progress.reasoningMilliseconds = reasoningMilliseconds
                     await onProgress(progress); last = now
                 }
-                if data == "[DONE]" || (style == .anthropic && parser.finished) {
+                if data == "[DONE]" || ((style == .anthropic || style == .responses) && parser.finished) {
                     break
                 }
             }

@@ -1,9 +1,25 @@
 import Foundation
 
-enum LLMRemoteAPIStyle {
+enum LLMRemoteAPIStyle: String, Codable, CaseIterable, Sendable {
     case openAICompatible
     case anthropic
     case gemini
+    case responses
+    case unsupported
+
+    static let customChoices: [Self] = [.openAICompatible, .anthropic, .responses]
+    var displayName: String {
+        switch self {
+        case .openAICompatible: "OpenAI Chat Completions"
+        case .anthropic: "Anthropic Messages"
+        case .responses: "OpenAI Responses"
+        case .gemini: "Gemini"
+        case .unsupported: L("models.protocolUnsupported")
+        }
+    }
+    init(from decoder: Decoder) throws {
+        self = Self(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .unsupported
+    }
 }
 
 struct LLMRemoteEndpointPreset: Equatable {
