@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// The Built-in Tools tab: web search, file access, code execution, the launcher
-/// calculator, and computer and browser control.
+/// The Built-in Tools tab: web search, file access, code execution, the launcher's
+/// calculator and application search, and computer and browser control.
 extension AskToolsSettingsView {
     @ViewBuilder var toolSections: some View {
         ModelSurface {
@@ -70,11 +70,20 @@ extension AskToolsSettingsView {
         }
 
         ModelSurface {
-            AgentSettingsRow(icon: "plus.forwardslash.minus", title: L("ask.settings.quick.calculator.title"),
-                             subtitle: L("ask.settings.quick.calculator.subtitle"), subtitleLineLimit: nil) {
-                Toggle("", isOn: Binding(get: { quickCalculatorEnabled }, set: setQuickCalculator))
-                    .labelsHidden().toggleStyle(.switch)
-                    .accessibilityLabel(L("ask.settings.quick.calculator.title"))
+            VStack(alignment: .leading, spacing: 0) {
+                AgentSettingsRow(icon: "plus.forwardslash.minus", title: L("ask.settings.quick.calculator.title"),
+                                 subtitle: L("ask.settings.quick.calculator.subtitle"), subtitleLineLimit: nil) {
+                    Toggle("", isOn: Binding(get: { quickCalculatorEnabled }, set: setQuickCalculator))
+                        .labelsHidden().toggleStyle(.switch)
+                        .accessibilityLabel(L("ask.settings.quick.calculator.title"))
+                }
+                ModelRowDivider(leading: 66)
+                AgentSettingsRow(icon: "square.grid.2x2", title: L("ask.settings.quick.apps.title"),
+                                 subtitle: L("ask.settings.quick.apps.subtitle"), subtitleLineLimit: nil) {
+                    Toggle("", isOn: Binding(get: { quickAppsEnabled }, set: setQuickApps))
+                        .labelsHidden().toggleStyle(.switch)
+                        .accessibilityLabel(L("ask.settings.quick.apps.title"))
+                }
             }
         }
 

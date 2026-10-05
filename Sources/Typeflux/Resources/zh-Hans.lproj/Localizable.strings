@@ -1532,6 +1532,11 @@
 "ask.quick.calculator" = "计算器";
 "ask.quick.askAI" = "问 AI";
 "ask.quick.hint" = "↩ 复制结果 · ⌘↩ 问 AI · esc 关闭";
+"ask.quick.hint.app" = "↩ 打开 · ⌘↩ 问 AI · esc 关闭";
+"ask.quick.app.open" = "打开";
+"ask.quick.app.system" = "系统";
+"ask.settings.quick.apps.title" = "启动器应用搜索";
+"ask.settings.quick.apps.subtitle" = "在启动器里输入应用名称、首字母或拼音即可打开应用。";
 "ask.quick.copy" = "复制";
 "ask.quick.format.chineseAmount" = "中文大写";
 "ask.quick.format.grouped" = "千分位";

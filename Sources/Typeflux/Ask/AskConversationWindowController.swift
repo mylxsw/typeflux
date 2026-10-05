@@ -98,6 +98,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // Already open (its context may still be arriving): just bring the editor back.
         if launcher?.isVisible == true { launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher); return }
         guard launchTask == nil else { return }
+        model.refreshQuickApps()
         if NSWorkspace.shared.frontmostApplication?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             tools?.targetApplication = NSWorkspace.shared.frontmostApplication
         }
@@ -141,6 +142,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     /// Builds the launcher panel and lays out its view while the app is idle.
     func prewarmLauncher() {
+        model.refreshQuickApps()
         let panel = launcherPanel()
         panel.contentView?.layoutSubtreeIfNeeded()
     }

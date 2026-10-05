@@ -14,9 +14,11 @@ struct AskQuickResultsInteractionTests {
         let window: AskTestVoiceWindow
         let editor: AskComposerTextView.Editor
         var dismissed = 0
+        var opened: [URL] = []
 
-        init(text: String) async throws {
+        init(text: String, apps: AskTestAppIndex = AskTestAppIndex([])) async throws {
             fixture = try AskTestFixture()
+            fixture.model.appIndex = apps
             fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false)
             window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: 420),
                                         styleMask: [.borderless], backing: .buffered, defer: false)
@@ -33,6 +35,7 @@ struct AskQuickResultsInteractionTests {
             }
             editor = try #require(found)
             dismiss = { [unowned self] in dismissed += 1 }
+            fixture.model.openApplication = { [unowned self] url in opened.append(url) }
             try await Task.sleep(for: .milliseconds(100))
         }
 
@@ -156,5 +159,80 @@ struct AskQuickResultsInteractionTests {
             #expect(try await launcher.sentCount() == 1)
             #expect(pasteboard.string(forType: .string) == nil)
         }
+    }
+
+    // MARK: - Applications
+
+    @Test func returnOpensAClearlyNamedApplication() async throws {
+        try await withPasteboard { pasteboard in
+            let apps = AskTestAppIndex(AskTestAppIndex.sample.entries)
+            let launcher = try await Launcher(text: "wx", apps: apps)
+            defer { launcher.close() }
+            try await launcher.press(Self.returnKey)
+            #expect(launcher.opened == [URL(fileURLWithPath: "/Applications/微信.app")])
+            #expect(apps.launched == ["com.tencent.xinWeChat"])
+            #expect(launcher.dismissed == 1)
+            #expect(launcher.fixture.model.launcherDraft.text.isEmpty)
+            #expect(pasteboard.string(forType: .string) == nil)
+            #expect(await launcher.fixture.api.sends.isEmpty)
+        }
+    }
+
+    @Test func aQuestionStillGoesToTheAIWithAppsBelow() async throws {
+        try await withPasteboard { _ in
+            let launcher = try await Launcher(text: "wechat?", apps: AskTestAppIndex(AskTestAppIndex.sample.entries))
+            defer { launcher.close() }
+            try await launcher.press(Self.returnKey)
+            #expect(try await launcher.sentCount() == 1)
+            #expect(launcher.opened.isEmpty)
+        }
+    }
+
+    @Test func arrowsReachAnApplicationBelowAskAI() async throws {
+        try await withPasteboard { _ in
+            let launcher = try await Launcher(text: "wechat?", apps: AskTestAppIndex(AskTestAppIndex.sample.entries))
+            defer { launcher.close() }
+            try await launcher.press(Self.down)
+            try await launcher.press(Self.tab)
+            #expect(launcher.fixture.model.launcherDraft.text == "wechat?", "Tab only writes back calculations")
+            try await launcher.press(Self.returnKey)
+            #expect(launcher.opened.count == 1)
+            #expect(await launcher.fixture.api.sends.isEmpty)
+        }
+    }
+
+    @Test func commandReturnAsksTheAIOverAnApplication() async throws {
+        try await withPasteboard { _ in
+            let launcher = try await Launcher(text: "wx", apps: AskTestAppIndex(AskTestAppIndex.sample.entries))
+            defer { launcher.close() }
+            try await launcher.press(Self.returnKey, .command)
+            #expect(try await launcher.sentCount() == 1)
+            #expect(launcher.opened.isEmpty)
+        }
+    }
+
+    @Test func turnedOffAppSearchLeavesNamesToTheAI() async throws {
+        try await withPasteboard { _ in
+            let launcher = try await Launcher(text: "", apps: AskTestAppIndex(AskTestAppIndex.sample.entries))
+            defer { launcher.close() }
+            launcher.fixture.model.modelLibrary.settings.askQuickAppSearchEnabled = false
+            launcher.fixture.model.launcherDraft.text = "wx"
+            try await Task.sleep(for: .milliseconds(100))
+            try await launcher.press(Self.returnKey)
+            #expect(try await launcher.sentCount() == 1)
+            #expect(launcher.opened.isEmpty)
+        }
+    }
+
+    @Test func refreshingAppsFollowsTheSetting() throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let apps = AskTestAppIndex([])
+        fixture.model.appIndex = apps
+        fixture.model.refreshQuickApps()
+        #expect(apps.refreshes == 1)
+        fixture.model.modelLibrary.settings.askQuickAppSearchEnabled = false
+        fixture.model.refreshQuickApps()
+        #expect(apps.refreshes == 1)
     }
 }

@@ -24,6 +24,12 @@ final class AskConversationModel: ObservableObject {
     }
 
     let voiceInput = AskVoiceInput()
+    /// Applications the launcher can open; tests supply their own list.
+    var appIndex: any AskAppSearching = AskAppIndex.shared
+    /// Opens an application chosen in the launcher; tests record it instead.
+    var openApplication: (URL) -> Void = { url in
+        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+    }
     @Published var reasoningEffort: AskReasoningEffort = .providerDefault
     let modelLibrary: AskModelLibrary
     private var inferenceUsage: [String: AskTokenUsage] = [:]

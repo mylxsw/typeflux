@@ -139,19 +139,27 @@ struct AskComposer: View {
     /// ordinary questions must not re-render on every keystroke for this.
     private func refreshQuickResults() {
         guard launcher else { return }
-        let next = model.quickResultsEnabled
+        let calculator = model.quickCalculatorEnabled, apps = model.quickAppsEnabled
+        let next = calculator || apps
             ? AskQuickResults.resolve(text: draft.wrappedValue.text, previous: quickResults,
-                                      chinese: AppLocalization.shared.language == .simplifiedChinese)
+                                      chinese: AppLocalization.shared.language == .simplifiedChinese,
+                                      calculator: calculator, apps: apps ? model.appIndex : nil)
             : nil
         guard next != quickResults else { return }
         quickResults = next
         reportHeight()
     }
 
-    /// Copies a quick result, closing the launcher when asked to, or sends the text to the AI.
+    /// Copies a quick result, closing the launcher when asked to, opens an
+    /// application, or sends the text to the AI.
     private func runQuickResult(_ row: AskQuickResults.Row, close: Bool) {
         guard let results = quickResults else { return }
         if row == .askAI { model.submitLauncher(); return }
+        if let app = results.app(at: row) {
+            model.openQuickApp(app)
+            onDismiss()
+            return
+        }
         guard results.isEnabled(row), let value = results.value(of: row) else { return }
         AskQuickResults.copy(value)
         if close {
@@ -160,8 +168,9 @@ struct AskComposer: View {
         }
     }
 
-    /// Return runs the highlighted row, ⌘Return asks the AI, Tab writes the
-    /// result into the editor to keep calculating, and the arrows move.
+    /// Return runs the highlighted row (copy, or open an application), ⌘Return
+    /// asks the AI, Tab writes a calculation's result into the editor to keep
+    /// calculating, and the arrows move.
     private func quickResultsKey(_ key: AskCommandKey) -> Bool {
         guard showsQuickResults, !active, var results = quickResults else { return false }
         switch key {

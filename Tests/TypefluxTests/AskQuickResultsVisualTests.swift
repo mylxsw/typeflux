@@ -36,12 +36,21 @@ struct AskQuickResultsVisualTests {
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let cases: [(name: String, text: String, height: CGFloat)] = [
-            ("calculator", "1234567.89*2", 360), ("error", "100/0", 270), ("radix", "0xff+1", 360)
+            ("calculator", "1234567.89*2", 360), ("error", "100/0", 270), ("radix", "0xff+1", 360),
+            ("app", "jsq", 250), ("app-question", "ji?", 330)
         ]
+        // Real system applications, so the rows show their icons.
+        func system(_ file: String, _ name: String, _ english: String) -> AskAppEntry {
+            AskAppEntry(name: name, url: URL(fileURLWithPath: "/System/Applications/\(file).app"),
+                        bundleID: "com.apple." + file.lowercased(), names: [english])
+        }
+        let apps = AskTestAppIndex([system("Calculator", "计算器", "Calculator"), system("Calendar", "日历", "Calendar"),
+                                    system("Notes", "备忘录", "Notes"), system("Reminders", "提醒事项", "Reminders")])
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for item in cases {
                 let fixture = try AskTestFixture()
                 defer { fixture.model.resetSession() }
+                fixture.model.appIndex = apps
                 fixture.model.launcherDraft = AskDraft(text: item.text, includeScreenshot: false)
                 try await render(AskLauncherView(model: fixture.model, onDismiss: {})
                                     .environment(\.askGlassMaterialOverride, .opaque),

@@ -39,6 +39,12 @@ extension SettingsStore {
         set { defaults.set(newValue, forKey: "ask.quickResults.calculator") }
     }
 
+    /// Whether the Ask launcher lists applications matching what is typed into it.
+    var askQuickAppSearchEnabled: Bool {
+        get { defaults.object(forKey: "ask.quickResults.apps") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "ask.quickResults.apps") }
+    }
+
     /// Skills the user turned off; they are not offered to the model.
     var askDisabledSkills: Set<String> {
         get { Set(defaults.stringArray(forKey: "ask.disabledSkills") ?? []) }

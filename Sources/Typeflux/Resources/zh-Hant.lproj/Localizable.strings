@@ -1529,6 +1529,11 @@
 "ask.quick.calculator" = "計算機";
 "ask.quick.askAI" = "問 AI";
 "ask.quick.hint" = "↩ 拷貝結果 · ⌘↩ 問 AI · esc 關閉";
+"ask.quick.hint.app" = "↩ 打開 · ⌘↩ 問 AI · esc 關閉";
+"ask.quick.app.open" = "打開";
+"ask.quick.app.system" = "系統";
+"ask.settings.quick.apps.title" = "啟動器 App 搜尋";
+"ask.settings.quick.apps.subtitle" = "在啟動器中輸入 App 名稱、首字母或拼音即可打開 App。";
 "ask.quick.copy" = "拷貝";
 "ask.quick.format.chineseAmount" = "中文大寫";
 "ask.quick.format.grouped" = "千分位";

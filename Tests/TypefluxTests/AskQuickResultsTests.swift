@@ -129,11 +129,14 @@ struct AskQuickResultsTests {
     @Test @MainActor func finishingClearsTheLauncherText() throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
-        #expect(fixture.model.quickResultsEnabled)
+        #expect(fixture.model.quickCalculatorEnabled)
+        #expect(fixture.model.quickAppsEnabled)
         fixture.model.launcherDraft.text = "1+1"
         fixture.model.finishQuickResult()
         #expect(fixture.model.launcherDraft.text.isEmpty)
         fixture.model.modelLibrary.settings.askQuickCalculatorEnabled = false
-        #expect(!fixture.model.quickResultsEnabled)
+        #expect(!fixture.model.quickCalculatorEnabled)
+        fixture.model.modelLibrary.settings.askQuickAppSearchEnabled = false
+        #expect(!fixture.model.quickAppsEnabled)
     }
 }
