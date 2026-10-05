@@ -104,9 +104,23 @@ struct AskQuickResultsTests {
         let none = try #require(resolve("1/0"))
         let rowAndSpacing = AskQuickResultsView.formatHeight + AskQuickResultsView.rowSpacing
         #expect(AskQuickResultsView.height(for: three) - AskQuickResultsView.height(for: none) == rowAndSpacing * 3)
-        // Hairline, list padding, calculation, "Ask AI", one gap between them, hint.
-        let bare: CGFloat = 147
+        // Hairline, list padding, calculation, "Ask AI" and one gap between them,
+        // plus a heading for each; the hint sits in the launcher's bottom bar.
+        let bare: CGFloat = 123 + 2 * (AskQuickResultsView.sectionHeight + AskQuickResultsView.rowSpacing)
         #expect(AskQuickResultsView.height(for: none) == bare)
+    }
+
+    @Test func headingsStartEachKindOfResult() throws {
+        let three = try #require(resolve("1234567.89*2"))
+        let rows = three.rows
+        #expect(AskQuickResultsView.sectionStart(at: 0, in: rows) == .calculation)
+        #expect(AskQuickResultsView.sectionStart(at: 1, in: rows) == nil, "the spellings belong to the calculation")
+        #expect(AskQuickResultsView.sectionStart(at: rows.count - 1, in: rows) == .ai)
+        #expect(AskQuickResultsView.sectionStart(at: rows.count, in: rows) == nil)
+        #expect(AskQuickResultsView.section(of: .app(0)) == .apps)
+        #expect(AskQuickResultsView.Section.apps.title == L("ask.quick.section.apps"))
+        #expect(AskQuickResultsView.Section.calculation.title != "ask.quick.section.calculation")
+        #expect(AskQuickResultsView.Section.ai.title != "ask.quick.section.ai")
     }
 
     @Test func theHintFollowsTheHighlight() throws {

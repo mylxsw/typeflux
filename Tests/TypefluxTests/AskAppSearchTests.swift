@@ -287,7 +287,7 @@ struct AskQuickResultsAppTests {
         let one = try #require(resolve("wx"))
         let two = try #require(resolve("wechat?"))
         #expect(AskQuickResultsView.height(for: one) == AskQuickResultsView.height(for: two))
-        let bare: CGFloat = 1 + 12 + 42 + 42 + 2 + 24
+        let bare: CGFloat = 1 + 12 + 42 + 42 + 2 + 2 * (AskQuickResultsView.sectionHeight + AskQuickResultsView.rowSpacing)
         #expect(AskQuickResultsView.height(for: one) == bare)
         #expect(AskQuickResultsView.hint(for: one) == L("ask.quick.hint.app"))
         #expect(AskQuickResultsView.hint(for: two) == L("ask.launcher.hint"))

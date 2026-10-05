@@ -11,6 +11,14 @@ final class WorkflowComposerRecording: AskVoiceRecording {
     private var prepared = false
     private(set) var audioStartedAt: TimeInterval?
     private let isAppBundle: () -> Bool
+    private var onLevel: (@MainActor (Float) -> Void)?
+    private var onTranscript: (@MainActor (String, Bool) -> Void)?
+    /// Holds the audio captured before the realtime recogniser is ready.
+    private var audioRelay: RecordingStartupAudioBufferRelay?
+    /// A realtime recogniser, when the configured service has one, shows the
+    /// words while speaking; its result then replaces the pass over the file.
+    private var realtime: (any RealtimeTranscriptionSession)?
+    private var realtimePump: RealtimeAudioBufferPump?
     init(_ workflow: WorkflowController, isAppBundle: @escaping () -> Bool = { PrivacyGuard.isRunningInAppBundle }) {
         self.workflow = workflow; self.isAppBundle = isAppBundle
     }
@@ -68,6 +76,12 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         )
     }
 
+    func observe(level: @escaping @MainActor (Float) -> Void,
+                 transcript: @escaping @MainActor (String, Bool) -> Void) {
+        onLevel = level
+        onTranscript = transcript
+    }
+
     func start() async throws {
         guard let workflow, !workflow.isRecording, !workflow.isAudioRecorderStarting,
               !workflow.isAudioRecorderStarted else { throw CancellationError() }
@@ -81,8 +95,18 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         workflow.isRecording = true
         workflow.isAudioRecorderStarting = true
         defer { workflow.isAudioRecorderStarting = false }
+        // Audio waits here until the realtime recogniser is ready, then streams to it.
+        let relay = RecordingStartupAudioBufferRelay(maximumBufferedDuration: Self.maximumRelayedAudio)
+        audioRelay = relay
+        let level = onLevel
         do {
-            try await workflow.audioRecorder.startInBackground(levelHandler: { _ in }, audioBufferHandler: nil)
+            try await workflow.audioRecorder.startInBackground(levelHandler: { value in
+                guard let level else { return }
+                DispatchQueue.main.async { MainActor.assumeIsolated { level(value) } }
+            }, audioBufferHandler: { buffer in
+                guard buffer.frameLength > 0 else { return }
+                relay.append(buffer)
+            })
             started = true
             workflow.isAudioRecorderStarted = true
             audioStartedAt = workflow.monotonicNow()
@@ -93,10 +117,83 @@ final class WorkflowComposerRecording: AskVoiceRecording {
             }
             try Task.checkCancellation()
             settlePersona()
+            await startRealtime(relay: relay)
         } catch {
+            relay.cancel()
             workflow.isRecording = false
             throw error
         }
+    }
+
+    /// Audio kept for a realtime recogniser that is still connecting.
+    static let maximumRelayedAudio: TimeInterval = 30
+
+    /// The persona prompt the transcript is rewritten with; quick input skips it.
+    private var personaPrompt: String? {
+        guard let workflow else { return nil }
+        let quickInput = workflow.shouldUseQuickInput(recordingMode: workflow.recordingMode, recordingIntent: .dictation)
+        return quickInput ? nil : workflow.recordingPersonaSnapshot?.prompt
+    }
+
+    private func startRealtime(relay: RecordingStartupAudioBufferRelay) async {
+        guard let workflow else { relay.cancel(); return }
+        let transcript = onTranscript
+        let session = await workflow.sttRouter.makeRealtimeTranscriptionSession(
+            scenario: .voiceInput, optimize: !WorkflowController.hasRewritePersona(personaPrompt)
+        ) { snapshot in
+            guard let transcript else { return }
+            await MainActor.run { transcript(snapshot.text, snapshot.isFinal) }
+        }
+        guard let session else { relay.cancel(); return }
+        await session.start()
+        // Cancelled or stopped while connecting: nothing will read the session.
+        guard started, audioRelay === relay, !Task.isCancelled else {
+            relay.cancel()
+            await session.cancel()
+            return
+        }
+        let pump = RealtimeAudioBufferPump(session: session)
+        realtime = session
+        realtimePump = pump
+        relay.activate { pump.append($0) }
+    }
+
+    /// Takes the realtime result when there is one, else transcribes the file.
+    /// A realtime failure falls back to the file, as dictation does.
+    private func recognize(file: AudioFile, session: (any RealtimeTranscriptionSession)?,
+                           pump: RealtimeAudioBufferPump?, optimize: Bool) async throws -> String {
+        guard let workflow else { throw CancellationError() }
+        let router = workflow.sttRouter
+        guard let session else {
+            return try await router.transcribeStream(audioFile: file, optimize: optimize) { _ in }
+        }
+        await pump?.finishInput()
+        do {
+            if workflow.settingsStore.sttProvider == .typefluxOfficial, router.usesTypefluxOfficialCloudLocalRace {
+                return try await router.transcribeWithTypefluxOfficialCloudPriority(audioFile: file, onUpdate: { _ in }) {
+                    try await session.finish()
+                }
+            }
+            return try await session.finish()
+        } catch is CancellationError {
+            await session.cancel()
+            throw CancellationError()
+        } catch {
+            NetworkDebugLogger.logError(context: "Composer realtime STT failed; falling back to recorded audio",
+                                        error: error)
+            return try await router.transcribeStream(audioFile: file, optimize: optimize) { _ in }
+        }
+    }
+
+    /// Hands over the realtime recogniser. Finishing keeps the relay delivering
+    /// the last buffers still on their way from the stopped recorder; the
+    /// pump's end of input closes the stream. Cancelling drops them.
+    private func releaseRealtime(cancelling: Bool) -> (session: (any RealtimeTranscriptionSession)?,
+                                                       pump: RealtimeAudioBufferPump?) {
+        if cancelling { audioRelay?.cancel() }
+        audioRelay = nil
+        defer { realtime = nil; realtimePump = nil }
+        return (realtime, realtimePump)
     }
 
     func transcribe() async throws -> String {
@@ -109,7 +206,16 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         let persona = workflow.recordingPersonaSnapshot
         // The same tail capture as normal dictation preserves final consonants.
         try await Task.sleep(for: WorkflowController.recordingTailCaptureDuration)
-        let file = try workflow.audioRecorder.stop()
+        let file: AudioFile
+        do {
+            file = try workflow.audioRecorder.stop()
+        } catch {
+            let pending = releaseRealtime(cancelling: true)
+            pending.pump?.cancel()
+            await pending.session?.cancel()
+            throw error
+        }
+        let pending = releaseRealtime(cancelling: false)
         started = false
         workflow.isRecording = false; workflow.isAudioRecorderStarted = false
         defer {
@@ -119,14 +225,15 @@ final class WorkflowComposerRecording: AskVoiceRecording {
             prepared = false
         }
         guard file.duration >= WorkflowController.minimumRecordingDuration else {
+            pending.pump?.cancel()
+            await pending.session?.cancel()
             throw MessageError(message: L("workflow.recording.tooShort"))
         }
         workflow.appState.setStatus(.processing)
         let personaContext = TranscriptionPersonaContext(prompt: useQuickInput ? nil : persona?.prompt)
         let text = try await TranscriptionPersonaContext.$current.withValue(personaContext) {
-            try await workflow.sttRouter.transcribeStream(
-                audioFile: file, optimize: !WorkflowController.hasRewritePersona(personaContext.prompt)
-            ) { _ in }
+            try await recognize(file: file, session: pending.session, pump: pending.pump,
+                                optimize: !WorkflowController.hasRewritePersona(personaContext.prompt))
         }
         try Task.checkCancellation()
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -150,6 +257,9 @@ final class WorkflowComposerRecording: AskVoiceRecording {
     }
 
     func cancel() async {
+        let pending = releaseRealtime(cancelling: true)
+        pending.pump?.cancel()
+        await pending.session?.cancel()
         guard let workflow else { return }
         if prepared {
             workflow.recordingGestureDecision?.resolve()

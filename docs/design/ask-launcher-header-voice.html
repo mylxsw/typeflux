@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · 随便问 启动器头部与语音输入 设计稿</title>
+<style>
+  :root {
+    --canvas: #0c0c0d; --desk: #1b1c1f;
+    --glass: rgba(58,58,62,.82);
+    --hair: rgba(255,255,255,.10);
+    --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: rgba(10,132,255,.16); --accent-text: #8ebdff;
+    --hover: rgba(255,255,255,.08); --ctl: rgba(255,255,255,.08);
+    --danger: #ff6961; --warn: #ffb340;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 48px; background: var(--canvas); color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans SC", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 26px; max-width: 1240px; }
+  h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 780px 1fr; gap: 28px 40px; align-items: start; }
+  .stage { border-radius: 14px; padding: 30px 44px; border: 1px solid rgba(255,255,255,.05);
+    background: radial-gradient(1200px 400px at 30% -40%, #2c3442 0%, transparent 60%), var(--desk); }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 10px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  code { font-size: 11.5px; color: #c9c9cc; }
+
+  /* ===== launcher card ===== */
+  .card { width: 680px; border-radius: 24px; background: var(--glass); border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 24px 60px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
+    overflow: hidden; position: relative; }
+  .card.rec { border-color: rgba(10,132,255,.70); box-shadow: 0 0 0 3px rgba(10,132,255,.14), 0 24px 60px rgba(0,0,0,.55); }
+
+  /* input row: context token + query + mic/send */
+  .inrow { display: flex; align-items: center; gap: 10px; height: 58px; padding: 0 12px 0 12px; }
+  .q { flex: 1; min-width: 0; font-size: 17px; line-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .q .ph { color: var(--text-3); }
+  .q .ph b { color: var(--text-3); font-weight: 600; }
+  .q .unstable { color: var(--text-3); }
+  .caret { display: inline-block; width: 1.5px; height: 20px; background: var(--accent); vertical-align: -4px; margin-left: 1px; }
+  .round { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-2); font-size: 15px; flex: none; }
+  .send { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.10); color: var(--text-2);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex: none; }
+  .send.on { background: var(--accent); color: #fff; }
+  .send.stop { background: var(--accent); color: #fff; font-size: 11px; }
+
+  /* context token (replaces the chip row) */
+  .tok { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 4px 0 6px; border-radius: 9px; flex: none;
+    background: rgba(255,255,255,.07); border: 1px solid var(--hair); font-size: 12.5px; color: var(--text); white-space: nowrap; position: relative; }
+  .tok.hl { box-shadow: 0 0 0 2px rgba(10,132,255,.45); }
+  .tok .t { max-width: 150px; overflow: hidden; text-overflow: ellipsis; color: var(--text-2); }
+  .tok .sep { width: 1px; height: 16px; background: var(--hair); }
+  .tok .chev { color: var(--text-3); font-size: 9px; padding: 0 3px 0 1px; }
+  .ico { width: 18px; height: 18px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; flex: none; position: relative; }
+  .ico.chrome { border-radius: 50%; background: conic-gradient(#ea4335 0 33%, #fbbc05 0 66%, #34a853 0); }
+  .ico.chrome::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #4285f4; border: 1.5px solid #fff; }
+  .ico.grok { background: #111; border: 1px solid #444; color: #ddd; font-size: 10px; }
+  .ico.freeform { background: #fff; color: #1a8cff; font-size: 11px; font-weight: 800; }
+  .ico .badge { position: absolute; right: -4px; bottom: -4px; width: 11px; height: 11px; border-radius: 50%; background: #48484a;
+    border: 1.5px solid #3a3a3e; color: #ddd; font-size: 7px; display: flex; align-items: center; justify-content: center; }
+  .shot { width: 27px; height: 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,.22); flex: none; position: relative; overflow: hidden;
+    background: linear-gradient(180deg,#3d4552 0 22%, #24272d 22% 100%); }
+  .shot::before { content: ""; position: absolute; left: 3px; right: 9px; top: 7px; height: 2px; background: rgba(255,255,255,.35); box-shadow: 0 4px 0 rgba(255,255,255,.22), 0 8px 0 rgba(255,255,255,.18); }
+  .shot.off { opacity: .35; }
+  .shot.off::after { content: ""; position: absolute; left: -2px; right: -2px; top: 8px; height: 1.5px; background: #fff; transform: rotate(-30deg); }
+  .sel { display: inline-flex; align-items: center; gap: 3px; color: var(--text-2); font-size: 12px; }
+
+  /* bottom bar (model + tools on the left, contextual keys on the right) */
+  .bar { display: flex; align-items: center; gap: 4px; height: 38px; padding: 0 8px 0 8px; border-top: 1px solid var(--hair);
+    background: rgba(0,0,0,.10); font-size: 12px; color: var(--text-2); }
+  .bar .mini { width: 26px; height: 26px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); font-size: 13px; }
+  .bar .mini.on { background: var(--accent-soft); color: var(--accent-text); }
+  .bar .model { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; border-radius: 7px; color: var(--text); font-weight: 600; font-size: 12px; }
+  .bar .model i { width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg,#ff5f6d,#ffc371); display: inline-block; }
+  .bar .vsep { width: 1px; height: 16px; background: var(--hair); margin: 0 3px; }
+  .bar .spacer { flex: 1; }
+  .bar .keys { color: var(--text-3); font-size: 11px; white-space: nowrap; }
+  .bar .keys b { color: var(--text-2); font-weight: 600; }
+  .bar.dim > :not(.keys):not(.spacer) { opacity: .35; }
+
+  /* results */
+  .hair { height: 1px; background: var(--hair); }
+  .qr { padding: 6px; }
+  .grp { font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--text-3); padding: 6px 12px 4px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 0 12px; height: 42px; border-radius: 12px; font-size: 13.5px; }
+  .row.hl { background: var(--hover); box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); }
+  .row .cap { margin-left: auto; color: var(--text-3); font-size: 11.5px; white-space: nowrap; }
+  .row .qt { color: var(--text-2); }
+  .row .meta { color: var(--text-3); font-size: 12px; }
+  .tile { width: 26px; height: 26px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--accent-soft); color: var(--accent); font-size: 13px; flex: none; }
+  .tile.app { background: linear-gradient(135deg,#2b2b2e,#111); color: #fff; border: 1px solid #555; }
+  .tile.weather { background: linear-gradient(180deg,#4aa8ff,#1f6fe0); color: #fff; }
+  .tile.ai { background: rgba(191,90,242,.18); color: #d6a1f7; }
+  .kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 18px; padding: 0 5px;
+    border-radius: 5px; background: rgba(255,255,255,.08); border: 1px solid var(--hair); font-size: 10.5px; font-weight: 600; color: var(--text-2); }
+  .calc { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; min-height: 62px; }
+  .calc.hl { background: var(--hover); box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); }
+  .calc .rhs { margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; }
+  .calc .expr { font-size: 12.5px; color: var(--text-2); }
+  .calc .val { font-size: 26px; font-weight: 600; line-height: 1.15; }
+  .fmt { display: grid; grid-template-columns: 82px 1fr 28px; align-items: center; gap: 10px; padding: 0 12px 0 50px; min-height: 32px; font-size: 12.5px; }
+  .fmt .k { color: var(--text-3); font-size: 11.5px; } .fmt .cp { color: var(--text-3); text-align: center; }
+
+  /* voice */
+  .orb { width: 30px; height: 30px; border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle, rgba(10,132,255,.95) 0 38%, rgba(10,132,255,.30) 39% 62%, rgba(10,132,255,.12) 63%); color: #fff; font-size: 12px; }
+  .orb.busy { background: conic-gradient(var(--accent) 0 30%, rgba(255,255,255,.12) 30%); }
+  .orb.busy::after { content: ""; width: 24px; height: 24px; border-radius: 50%; background: #3a3a3e; position: absolute; }
+  .orb.busy { position: relative; }
+  .timer { color: var(--text-2); font-size: 12.5px; font-variant-numeric: tabular-nums; flex: none; }
+  .vpanel { padding: 18px 20px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; min-height: 150px; justify-content: center; }
+  .wave { display: flex; align-items: center; gap: 3px; height: 44px; }
+  .wave i { width: 3px; border-radius: 3px; background: var(--accent); display: block; }
+  .wave.idle i { background: rgba(255,255,255,.20); }
+  .vhint { color: var(--text-3); font-size: 12px; text-align: center; }
+  .vhint b { color: var(--text-2); font-weight: 500; }
+  .shimmer { background: linear-gradient(90deg, var(--text-3) 0 30%, var(--text) 45%, var(--text-3) 60%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; background: rgba(255,255,255,.06);
+    border: 1px solid var(--hair); color: var(--text-2); font-size: 11.5px; }
+
+  /* popover */
+  .pop { position: absolute; left: 10px; top: 52px; width: 330px; border-radius: 14px; background: #2c2c2f; border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 18px 40px rgba(0,0,0,.6); padding: 8px; z-index: 3; font-size: 12.5px; }
+  .pop .it { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 9px; }
+  .pop .it.hl { background: var(--hover); }
+  .pop .it .d { color: var(--text-3); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .pop .sw { margin-left: auto; width: 30px; height: 18px; border-radius: 9px; background: #34c759; position: relative; flex: none; }
+  .pop .sw::after { content: ""; position: absolute; right: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+  .pop .sw.off { background: rgba(255,255,255,.18); } .pop .sw.off::after { right: auto; left: 2px; }
+  .pop .big { margin: 2px 8px 6px; height: 96px; border-radius: 8px; border: 1px solid var(--hair);
+    background: linear-gradient(180deg,#3d4552 0 16%, #24272d 16% 100%); position: relative; }
+  .pop .big::before { content: ""; position: absolute; left: 14px; right: 90px; top: 34px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.25);
+    box-shadow: 0 14px 0 rgba(255,255,255,.16), 0 28px 0 rgba(255,255,255,.16), 0 42px 0 rgba(255,255,255,.12); }
+  .pop .hr { height: 1px; background: var(--hair); margin: 4px 6px; }
+  .pop .foot { color: var(--text-3); font-size: 11px; padding: 4px 8px 2px; }
+
+  /* before/after */
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; }
+  .cmp table { border-collapse: collapse; width: 100%; }
+  .cmp td, .cmp th { border-bottom: 1px solid var(--hair); padding: 6px 8px; text-align: left; vertical-align: top; }
+  .cmp th { color: var(--text-3); font-weight: 600; font-size: 11px; }
+  .new { display: inline-block; font-size: 10px; font-weight: 700; color: #0b0b0c; background: #ffd60a; border-radius: 4px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
+  .old { position: relative; }
+  .ann { position: absolute; font-size: 11px; color: #ffd60a; font-weight: 600; white-space: nowrap; }
+  .ann::before { content: "●"; margin-right: 4px; }
+
+  body.solo { width: auto; padding: 0; }
+  body.solo h1, body.solo .sub, body.solo .notes { display: none; }
+  body.solo .grid { display: block; }
+  body.solo .stage { display: none; border-radius: 0; border: 0; }
+  body.solo .stage.only { display: block; width: 780px; }
+</style></head><body>
+<h1>随便问 · 启动器头部与语音输入</h1>
+<p class="sub">启动器不只是输入框：它会先搜索、计算、翻译，最后才问 AI。所以把<b>输入框放到第一行</b>，来源和截图合成输入框左侧的一个<b>上下文标记</b>（只显示应用图标、去掉应用名的短标题和截图缩略图，开始输入后只剩图标）；
+模型和工具放到底栏，和按键提示合成一行。语音输入不再把整块面板调暗：<b>边说边出字</b>，波形跟着真实音量动，结果区换成一块聆听面板。详见 <code>docs/design/ask-launcher-header-voice.md</code>。</p>
+<div class="grid">
+
+  <!-- ① idle -->
+  <div class="stage" id="idle">
+    <div class="label">① 刚打开 · 输入框为空，显示起手建议</div>
+    <div class="card">
+      <div class="inrow">
+        <span class="tok hl"><span class="ico chrome"></span><span class="t">Issues | Multica</span><span class="sep"></span><span class="shot"></span><span class="chev">⌄</span></span>
+        <div class="q"><span class="ph">搜索应用、计算，或直接提问 · <b>/</b> 命令</span><span class="caret"></span></div>
+        <span class="round">🎙</span><span class="send">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="row hl"><span class="tile">▢</span>讲讲这一屏在做什么<span class="cap">带截图</span></div>
+        <div class="row"><span class="tile">文</span>翻译我选中的文字<span class="cap">保留原格式</span></div>
+        <div class="row"><span class="tile">◍</span>读一下这个网页并总结<span class="cap">当前标签页</span></div>
+      </div>
+      <div class="bar">
+        <span class="mini">＋</span><span class="model"><i></i>MiniMax M3 ⌄</span><span class="vsep"></span>
+        <span class="mini on">◎</span><span class="mini on">✺</span><span class="mini">☁</span>
+        <span class="spacer"></span><span class="keys"><b>↩</b> 发送 · <b>⌘K</b> 上下文 · <b>esc</b> 关闭</span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>三行变两行，应用名不再占地方</h2>
+    <ul>
+      <li><b>输入框是第一行</b>，字号 15 → 17，占位文字说明它能做什么：搜索应用、计算、提问。</li>
+      <li><b>上下文标记</b>代替原来的整行标签：应用图标 + 短窗口标题 + 截图缩略图，一个标记、一个关闭入口。
+        <ul>
+          <li>应用名只用图标表示，悬停时显示全名。</li>
+          <li>窗口标题去掉结尾的应用名（<code>Issues | Multica - Google Chrome</code> → <code>Issues | Multica</code>），最宽 150pt。</li>
+          <li>「整屏截图」四个字换成 27×18 的缩略图。</li>
+        </ul></li>
+      <li>「上次」标签改为图标右下角的 🕘 小角标（见 ⑥）。</li>
+      <li>模型、＋、截图/记忆开关和隐私开关挪到<b>底栏</b>，和按键提示合成一行。底栏是 38pt 的辅助区，视觉权重低于输入框。</li>
+      <li>空闲时整体高度：标签行 42 + 输入 44 + 工具栏 54 + 提示 28 ≈ <b>168pt</b> → 输入 58 + 底栏 38 = <b>96pt</b>，结果区多出约 70pt。</li>
+    </ul>
+  </div>
+
+  <!-- ② typing: app search -->
+  <div class="stage" id="typing">
+    <div class="label">② 开始输入 · 上下文标记收起为图标，空间让给输入内容</div>
+    <div class="card">
+      <div class="inrow">
+        <span class="tok"><span class="ico chrome"></span><span class="shot"></span></span>
+        <div class="q">war<span class="caret"></span></div>
+        <span class="round">🎙</span><span class="send">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="grp">应用</div>
+        <div class="row hl"><span class="tile app">⌘</span>Warp <span class="meta">/Applications</span><span class="cap">打开 <span class="kbd">↩</span></span></div>
+        <div class="row"><span class="tile weather">☁</span>Weather <span class="meta">系统</span></div>
+        <div class="grp">AI</div>
+        <div class="row"><span class="tile ai">✦</span>问 AI <span class="qt">“war”</span><span class="cap"><span class="kbd">⌘↩</span></span></div>
+      </div>
+      <div class="bar">
+        <span class="mini">＋</span><span class="model"><i></i>MiniMax M3 ⌄</span><span class="vsep"></span>
+        <span class="mini on">◎</span><span class="mini on">✺</span><span class="mini">☁</span>
+        <span class="spacer"></span><span class="keys"><b>↩</b> 打开 · <b>⌘↩</b> 问 AI · <b>esc</b> 关闭</span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>输入时，上下文退后</h2>
+    <ul>
+      <li>输入框一有内容，标记就收起短标题，只剩<b>图标和缩略图（约 64pt）</b>，有 0.18s 的宽度过渡；清空后再展开。</li>
+      <li>结果加上分组小标题（<b>应用 / 计算 / 翻译 / AI</b>），说明这个窗口在做什么：先给本地结果，「问 AI」放在最后。</li>
+      <li>原来的独立提示行合进底栏右侧，内容跟着高亮项变化（打开 / 复制结果 / 发送）。</li>
+      <li>只有高亮项是 AI 时，发送按钮才是实心蓝色；高亮项是本地结果时，↩ 执行的是本地动作。</li>
+    </ul>
+  </div>
+
+  <!-- ③ calculator -->
+  <div class="stage" id="calc">
+    <div class="label">③ 快捷结果 · 计算器（原有功能，套用新布局）</div>
+    <div class="card">
+      <div class="inrow">
+        <span class="tok"><span class="ico chrome"></span><span class="shot"></span></span>
+        <div class="q">1+1<span class="caret"></span></div>
+        <span class="round">🎙</span><span class="send">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="grp">计算</div>
+        <div class="calc hl"><span class="tile">=</span><span>计算器</span><span class="rhs"><div class="expr">1 + 1</div><div class="val">2</div></span></div>
+        <div class="fmt"><span class="k">中文大写</span><span>贰元整</span><span class="cp">⧉</span></div>
+        <div class="fmt"><span class="k">英文金额</span><span>SAY US DOLLARS TWO ONLY</span><span class="cp">⧉</span></div>
+        <div class="grp">AI</div>
+        <div class="row"><span class="tile ai">✦</span>问 AI <span class="qt">“1+1”</span><span class="cap"><span class="kbd">⌘↩</span></span></div>
+      </div>
+      <div class="bar">
+        <span class="mini">＋</span><span class="model"><i></i>MiniMax M3 ⌄</span><span class="vsep"></span>
+        <span class="mini on">◎</span><span class="mini on">✺</span><span class="mini">☁</span>
+        <span class="spacer"></span><span class="keys"><b>↩</b> 复制结果 · <b>⌘↩</b> 问 AI · <b>esc</b> 关闭</span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>快捷结果不变，只换外框</h2>
+    <ul>
+      <li>计算器、应用搜索和后续的翻译卡片都放在同一个结果区，不需要改各自的行组件。</li>
+      <li>和现在相比，结果区上方少了标签行和工具栏，第一条结果离输入框更近，视线移动更短。</li>
+    </ul>
+  </div>
+
+  <!-- ④ voice listening -->
+  <div class="stage" id="listening">
+    <div class="label">④ 语音 · 聆听中（实时转写）</div>
+    <div class="card rec">
+      <div class="inrow">
+        <span class="orb">🎙</span>
+        <div class="q">帮我把这段话翻译成英文，<span class="unstable">语气正式一点</span><span class="caret"></span></div>
+        <span class="timer">0:04</span>
+        <span class="round" title="取消">✕</span><span class="send stop">■</span>
+      </div>
+      <div class="hair"></div>
+      <div class="vpanel">
+        <div class="wave" id="wave"></div>
+        <div class="vhint"><b>松开 ⌥Space</b> 或点 ■ 结束 · <b>esc</b> 取消 · 也可以说「打开 Warp」「算一下 12 乘 7」</div>
+        <span class="pill"><span class="ico chrome" style="width:14px;height:14px"></span>Issues | Multica · <span class="shot" style="width:20px;height:13px"></span> 结束后一起发送</span>
+      </div>
+      <div class="bar dim">
+        <span class="mini">＋</span><span class="model"><i></i>MiniMax M3 ⌄</span><span class="vsep"></span>
+        <span class="mini on">◎</span><span class="mini on">✺</span><span class="mini">☁</span>
+        <span class="spacer"></span><span class="keys"><b>↩</b> 结束并填入 · <b>esc</b> 取消</span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>不调暗，让人看到「它在听」</h2>
+    <ul>
+      <li><b>现在的问题</b>：整块面板降到 40% 不透明度，像被禁用了一样；状态只是挤在发送按钮旁边的一小段波形，而且是固定动画，不随声音变化；说完之前输入框一直是空的；外圈蓝框加右下角的蓝点显得杂乱。</li>
+      <li><b>输入行变成录音行</b>：左边上下文标记的位置换成跟着音量缩放的麦克风圆点，中间<b>实时显示转写</b>（已确定的字是白色，还会变的尾巴是灰色），右边是计时、✕ 取消、■ 结束。</li>
+      <li><b>结果区换成聆听面板</b>，高度和原来的建议区一样，面板不会跳。波形有 32 根柱，取<b>真实麦克风音量</b>（复用 <code>levelHandler</code>）；下面一行写清怎么结束、怎么取消，再给两个示例说法。</li>
+      <li>上下文没有消失，收进聆听面板底部的小胶囊，说明「结束后一起发送」。</li>
+      <li>只用 1px 蓝框和 3px 浅色外发光表示录音中，去掉多余的角点。底栏的工具降到 35%，按键提示保持清晰。</li>
+    </ul>
+  </div>
+
+  <!-- ⑤ transcribing / fallback -->
+  <div class="stage" id="transcribing">
+    <div class="label">⑤ 语音 · 识别中（服务不支持实时转写时：听的时候只显示波形，说完统一出字）</div>
+    <div class="card rec">
+      <div class="inrow">
+        <span class="orb busy"></span>
+        <div class="q"><span class="shimmer">正在识别…</span></div>
+        <span class="timer">0:06</span>
+        <span class="round">✕</span><span class="send" style="opacity:.4">■</span>
+      </div>
+      <div class="hair"></div>
+      <div class="vpanel">
+        <div class="wave idle" id="wave2"></div>
+        <div class="vhint">说完了，正在转成文字 · <b>esc</b> 取消</div>
+      </div>
+      <div class="bar dim">
+        <span class="mini">＋</span><span class="model"><i></i>MiniMax M3 ⌄</span><span class="vsep"></span>
+        <span class="mini on">◎</span><span class="mini on">✺</span><span class="mini">☁</span>
+        <span class="spacer"></span><span class="keys"><b>esc</b> 取消</span>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>识别完，直接回到搜索</h2>
+    <ul>
+      <li>识别中：圆点换成进度环，输入行显示流光文字「正在识别…」，波形停住并变灰。</li>
+      <li>服务不支持实时转写时（本机 Whisper、普通接口），聆听阶段输入行显示「正在听…」，波形照样跟着音量动；说完统一出字。</li>
+      <li>文字写进输入框后，<b>和手动输入走同一条路径</b>：快捷结果立即计算。说「打开 Warp」，第一条就是 Warp；说「1 加 1」，就出计算器。默认不自动发送，↩ 再确认一次。</li>
+      <li>出错时（没有麦克风权限、网络失败），输入行显示红色的一行原因和「重试」，面板不关。</li>
+    </ul>
+  </div>
+
+  <!-- ⑥ context popover -->
+  <div class="stage" id="context">
+    <div class="label">⑥ 上下文浮层 · 点击标记或 ⌘K；这次带的是「上次」的来源</div>
+    <div class="card" style="min-height:470px">
+      <div class="inrow">
+        <span class="tok hl"><span class="ico freeform">~<span class="badge">🕘</span></span><span class="t">Typeflux AnyAsk UI Design</span><span class="sep"></span><span class="shot"></span><span class="chev">⌃</span></span>
+        <div class="q"><span class="ph">搜索应用、计算，或直接提问 · <b>/</b> 命令</span></div>
+        <span class="round">🎙</span><span class="send">↑</span>
+      </div>
+      <div class="pop">
+        <div class="it"><span class="ico freeform" style="width:22px;height:22px">~</span>
+          <div><div>Freeform</div><div class="d">上次 · Typeflux AnyAsk UI Design</div></div><span class="sw"></span></div>
+        <div class="it hl"><span class="shot" style="width:22px;height:15px"></span><div><div>整屏截图</div><div class="d">2560×1440 · 点开预览</div></div><span class="sw"></span></div>
+        <div class="big"></div>
+        <div class="it"><span class="tile" style="width:22px;height:22px;font-size:11px">❝</span><div><div>选中文字</div><div class="d">未获取到选中内容</div></div><span class="sw off"></span></div>
+        <div class="hr"></div>
+        <div class="it"><span style="width:22px;text-align:center">↻</span><div>使用当前应用（Google Chrome）</div></div>
+        <div class="foot">只附带应用名和窗口标题，不读取网页正文。截图、选中文字分别控制。</div>
+      </div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>细节都在浮层里，不放在常驻区域</h2>
+    <ul>
+      <li>原来每个标签上的 ✕、「上次」、刷新按钮都收进浮层：每项来源一行开关，截图有大图预览，最后一行是「使用当前应用」（即现在的 <code>ask.context.refresh</code>）。</li>
+      <li>键盘：<b>⌘K</b> 打开浮层；输入框为空时按 <b>⌫</b> 先关掉截图，再按一次去掉来源，和 Spotlight 去掉范围标记的方式一致；<b>⌘Z</b> 撤销（沿用现有的撤销提示）。</li>
+      <li>状态都画在标记上：截图失败时缩略图换成 ⚠ 并描橙色边，关掉截图时缩略图上加斜线，没有任何上下文时标记整个隐藏。</li>
+      <li>隐私说明（<code>ask.context.source.metadataOnly</code>）放在浮层底部，不再挤在悬停提示里。</li>
+    </ul>
+  </div>
+
+</div>
+<script>
+  // Waveforms: deterministic "real level" shapes for the static mockup.
+  function fill(id, n, f) { const w = document.getElementById(id); if (!w) return;
+    for (let i = 0; i < n; i++) { const b = document.createElement('i'); b.style.height = Math.max(4, f(i)) + 'px'; w.appendChild(b); } }
+  fill('wave', 32, i => 6 + 34 * Math.abs(Math.sin(i * 0.55) * Math.cos(i * 0.21 + 1)) * (i > 4 && i < 28 ? 1 : .35));
+  fill('wave2', 32, () => 4);
+  const only = new URLSearchParams(location.search).get('only');
+  if (only) { document.body.classList.add('solo'); const el = document.getElementById(only); el.classList.add('only'); document.body.dataset.h = Math.ceil(el.getBoundingClientRect().height); }
+</script>
+</body></html>

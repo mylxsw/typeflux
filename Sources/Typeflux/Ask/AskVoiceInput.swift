@@ -13,11 +13,17 @@ protocol AskVoiceRecording: AnyObject {
     func start() async throws
     func transcribe() async throws -> String
     func cancel() async
+    /// Receives input levels (0...1) and recognised text while recording.
+    /// Recorders call the handlers on the main actor; ones without live data never call them.
+    func observe(level: @escaping @MainActor (Float) -> Void,
+                 transcript: @escaping @MainActor (String, Bool) -> Void)
 }
 
 extension AskVoiceRecording {
     var audioStartedAt: TimeInterval? { nil }
     func handleHotkey(_ event: AskVoiceHotkeyEvent) {}
+    func observe(level: @escaping @MainActor (Float) -> Void,
+                 transcript: @escaping @MainActor (String, Bool) -> Void) {}
 }
 
 /// Owns one editor and its insertion range for the entire recording transaction.
@@ -29,7 +35,12 @@ final class AskVoiceInput: ObservableObject {
     @Published private(set) var context: String?
     @Published var focusedContext: String?
     @Published var error: String?
+    /// Levels and live text for the recording views.
+    let live = AskVoiceLive()
     var recorder: (any AskVoiceRecording)?
+    /// Identifies the recording that live data belongs to; late callbacks from
+    /// an earlier recording are ignored.
+    private var session = UUID()
     private weak var editor: AskComposerTextView.Editor?
     private var task: Task<Void, Never>?
     private var timeout: Task<Void, Never>?
@@ -58,6 +69,16 @@ final class AskVoiceInput: ObservableObject {
         beganAt = hotkeyUptime ?? monotonicNow(); startedAt = nil
         recorder.handleHotkey(.prepare(auxiliary: auxiliary, locked: locked))
         error = nil; phase = .listening
+        let session = UUID()
+        self.session = session
+        live.reset(startedAt: Date())
+        recorder.observe(level: { [weak self] level in
+            guard let self, self.session == session, phase == .listening else { return }
+            live.receive(level: level)
+        }, transcript: { [weak self] text, isFinal in
+            guard let self, self.session == session, phase != .idle else { return }
+            live.receive(text: text, isFinal: isFinal)
+        })
         observeInterruptions()
         task = Task { [weak self, weak editor] in
             guard let self else { return }
@@ -67,6 +88,7 @@ final class AskVoiceInput: ObservableObject {
                 interruptionObservers.forEach { NSWorkspace.shared.notificationCenter.removeObserver($0) }
                 interruptionObservers = []
                 phase = .idle; self.context = nil; self.editor = nil; task = nil
+                if self.session == session { live.reset() }
             }
             do {
                 try Task.checkCancellation()
@@ -156,6 +178,8 @@ final class AskVoiceInput: ObservableObject {
         task?.cancel(); timeout?.cancel()
         release?.resume(); release = nil
         phase = .idle
+        session = UUID()
+        live.reset()
     }
 
     func cancel(ifOwnedBy editor: AskComposerTextView.Editor) {

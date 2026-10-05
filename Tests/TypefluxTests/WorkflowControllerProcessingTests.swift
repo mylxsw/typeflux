@@ -4331,3 +4331,203 @@ private final class PersonaAwareComposerTranscriber: Transcriber {
         return appliesPersona ? "integrated rewrite" : "raw speech"
     }
 }
+
+// MARK: - Composer live voice
+
+extension WorkflowControllerProcessingTests {
+    @MainActor
+    private func composerObservations(_ service: WorkflowComposerRecording) -> ComposerLiveObservations {
+        let observations = ComposerLiveObservations()
+        service.observe(level: { observations.levels.append($0) },
+                        transcript: { observations.texts.append(($0, $1)) })
+        return observations
+    }
+
+    @MainActor
+    private func drainMainQueue() async {
+        for _ in 0..<20 { await Task.yield(); try? await Task.sleep(for: .milliseconds(5)) }
+    }
+
+    @MainActor
+    func testComposerRecordingForwardsMicrophoneLevels() async throws {
+        let recorder = ComposerLevelAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: recorder,
+            sttTranscriber: MockProcessingTranscriber(transcript: "file text"),
+            configureSettings: { $0.sttProvider = .appleSpeech }, hasPaidCloudSubscription: { true })
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        let observations = composerObservations(service)
+        try await service.start()
+        recorder.emit(level: 0.4)
+        recorder.emit(level: 0.7)
+        await drainMainQueue()
+        XCTAssertEqual(observations.levels, [0.4, 0.7])
+        XCTAssertTrue(observations.texts.isEmpty, "without a realtime recogniser there is no live text")
+        let text = try await service.transcribe()
+        XCTAssertEqual(text, "file text")
+    }
+
+    @MainActor
+    func testComposerRecordingStreamsLiveTextAndUsesTheRealtimeResult() async throws {
+        let recorder = ComposerLevelAudioRecorder()
+        let factory = ComposerLiveSessionFactory(result: .success(" hello world "))
+        let controller = makeWorkflowController(audioRecorder: recorder, sttTranscriber: factory,
+            configureSettings: { $0.sttProvider = .aliCloud }, hasPaidCloudSubscription: { true })
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        let observations = composerObservations(service)
+        // Audio captured before the recogniser is ready is replayed into it.
+        recorder.onStart = { try? recorder.emitAudio() }
+        try await service.start()
+        let session = try XCTUnwrap(factory.session)
+        try recorder.emitAudio()
+        for _ in 0..<100 {
+            if await session.appendCount >= 2 { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let appended = await session.appendCount
+        XCTAssertEqual(appended, 2)
+        await drainMainQueue()
+        XCTAssertEqual(observations.texts.first?.0, "hello wor")
+        XCTAssertEqual(observations.texts.first?.1, false)
+        let text = try await service.transcribe()
+        XCTAssertEqual(text, "hello world", "the realtime result replaces the file transcription")
+        let counts = await session.counts
+        XCTAssertEqual(counts.finish, 1)
+        XCTAssertEqual(counts.cancel, 0)
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertEqual(controller.appState.status, .idle)
+    }
+
+    @MainActor
+    func testComposerRealtimeFailureFallsBackToTheRecordedAudio() async throws {
+        let recorder = ComposerLevelAudioRecorder()
+        let factory = ComposerLiveSessionFactory(result: .failure(NSError(domain: "socket", code: 9)))
+        let controller = makeWorkflowController(audioRecorder: recorder, sttTranscriber: factory,
+            configureSettings: { $0.sttProvider = .aliCloud }, hasPaidCloudSubscription: { true })
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        try await service.start()
+        XCTAssertNotNil(factory.session)
+        let text = try await service.transcribe()
+        XCTAssertEqual(text, "file text")
+    }
+
+    @MainActor
+    func testComposerCancelAndShortRecordingCancelTheRealtimeSession() async throws {
+        for short in [false, true] {
+            let recorder = ComposerLevelAudioRecorder(duration: short ? 0.05 : 1)
+            let factory = ComposerLiveSessionFactory(result: .success("unused"))
+            let controller = makeWorkflowController(audioRecorder: recorder, sttTranscriber: factory,
+                configureSettings: { $0.sttProvider = .aliCloud }, hasPaidCloudSubscription: { true })
+            let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+            try await service.start()
+            let session = try XCTUnwrap(factory.session)
+            if short {
+                do { _ = try await service.transcribe(); XCTFail("A short recording is rejected") } catch {}
+            } else {
+                await service.cancel()
+            }
+            let counts = await session.counts
+            XCTAssertEqual(counts.cancel, 1)
+            XCTAssertEqual(counts.finish, 0)
+            XCTAssertFalse(controller.isRecording)
+        }
+    }
+
+    @MainActor
+    func testComposerWithoutCloudSubscriptionHasNoRealtimeSession() async throws {
+        let recorder = ComposerLevelAudioRecorder()
+        let factory = ComposerLiveSessionFactory(result: .success("unused"))
+        let controller = makeWorkflowController(audioRecorder: recorder, sttTranscriber: factory,
+            configureSettings: { $0.sttProvider = .aliCloud }, hasPaidCloudSubscription: { false })
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        try await service.start()
+        XCTAssertNil(factory.session, "live text needs the realtime service the subscription pays for")
+        await service.cancel()
+        XCTAssertFalse(controller.isRecording)
+    }
+}
+
+@MainActor
+private final class ComposerLiveObservations {
+    var levels: [Float] = []
+    var texts: [(String, Bool)] = []
+}
+
+/// Reports levels and audio buffers on demand, like the microphone tap.
+private final class ComposerLevelAudioRecorder: AudioRecorder, @unchecked Sendable {
+    private let lock = NSLock()
+    private var levelHandler: ((Float) -> Void)?
+    private var bufferHandler: ((AVAudioPCMBuffer) -> Void)?
+    private let duration: TimeInterval
+    var onStart: () -> Void = {}
+
+    init(duration: TimeInterval = 1) { self.duration = duration }
+
+    func start(levelHandler: @escaping (Float) -> Void,
+               audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?) throws {
+        lock.withLock { self.levelHandler = levelHandler; bufferHandler = audioBufferHandler }
+        onStart()
+    }
+
+    func emit(level: Float) { lock.withLock { levelHandler }?(level) }
+
+    func emitAudio() throws {
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 16000, channels: 1))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 160))
+        buffer.frameLength = 160
+        lock.withLock { bufferHandler }?(buffer)
+    }
+
+    func stop() throws -> AudioFile {
+        AudioFile(fileURL: URL(fileURLWithPath: "/tmp/composer-live-mock.wav"), duration: duration)
+    }
+}
+
+private actor ComposerLiveSession: RealtimeTranscriptionSession {
+    private let onUpdate: @Sendable (TranscriptionSnapshot) async -> Void
+    private let result: Result<String, Error>
+    private(set) var appendCount = 0
+    private var finishCount = 0
+    private var cancelCount = 0
+
+    init(onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void, result: Result<String, Error>) {
+        self.onUpdate = onUpdate
+        self.result = result
+    }
+
+    var counts: (finish: Int, cancel: Int) { (finishCount, cancelCount) }
+
+    func start() async {}
+
+    func append(_ buffer: AVAudioPCMBuffer) async {
+        appendCount += 1
+        await onUpdate(TranscriptionSnapshot(text: "hello wor", isFinal: false))
+    }
+
+    func finish() async throws -> String {
+        finishCount += 1
+        return try result.get()
+    }
+
+    func cancel() async { cancelCount += 1 }
+}
+
+private final class ComposerLiveSessionFactory: RealtimeTranscriptionSessionFactory, @unchecked Sendable {
+    private let result: Result<String, Error>
+    private let lock = NSLock()
+    private var made: ComposerLiveSession?
+
+    init(result: Result<String, Error>) { self.result = result }
+
+    var session: ComposerLiveSession? { lock.withLock { made } }
+
+    func transcribe(audioFile _: AudioFile) async throws -> String { "file text" }
+
+    func makeRealtimeTranscriptionSession(
+        scenario _: TypefluxCloudScenario,
+        onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> any RealtimeTranscriptionSession {
+        let session = ComposerLiveSession(onUpdate: onUpdate, result: result)
+        lock.withLock { made = session }
+        return session
+    }
+}

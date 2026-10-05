@@ -3,12 +3,13 @@ import SwiftUI
 /// The launcher's quick results in place of its starting points: the
 /// calculation with its expression and large value and a few other spellings
 /// that copy on their own, or the applications to open; then the way back to
-/// the AI and the keyboard hint.
+/// the AI. Each kind of result starts with a small heading, so the list reads
+/// as search results; the keyboard hint for the highlighted row sits in the bottom bar.
 struct AskQuickResultsView: View {
     var results: AskQuickResults
     /// The launcher's text, which "Ask AI" sends as it is.
     var question: String
-    /// Height held while typing; rows stay at the top and the hint at the bottom.
+    /// Height held while typing; rows stay at the top.
     var minimumHeight: CGFloat = 0
     /// Runs a row. `close` is true for Return and for the calculation row.
     var onRun: (AskQuickResults.Row, _ close: Bool) -> Void
@@ -23,7 +24,34 @@ struct AskQuickResultsView: View {
     static let appHeight: CGFloat = 42
     static let rowSpacing: CGFloat = 2
     static let listPadding: CGFloat = 6
-    static let hintHeight: CGFloat = 24
+    static let sectionHeight: CGFloat = 20
+
+    enum Section: Equatable {
+        case calculation, apps, ai
+
+        var title: String {
+            switch self {
+            case .calculation: L("ask.quick.section.calculation")
+            case .apps: L("ask.quick.section.apps")
+            case .ai: L("ask.quick.section.ai")
+            }
+        }
+    }
+
+    static func section(of row: AskQuickResults.Row) -> Section {
+        switch row {
+        case .calculation, .format: .calculation
+        case .app: .apps
+        case .askAI: .ai
+        }
+    }
+
+    /// The heading shown above the row at `index`: where a new kind of result begins.
+    static func sectionStart(at index: Int, in rows: [AskQuickResults.Row]) -> Section? {
+        guard rows.indices.contains(index) else { return nil }
+        let section = section(of: rows[index])
+        return index == 0 || Self.section(of: rows[index - 1]) != section ? section : nil
+    }
 
     /// Everything this list adds to the launcher card.
     static func height(for results: AskQuickResults) -> CGFloat {
@@ -36,7 +64,9 @@ struct AskQuickResultsView: View {
             case .askAI: total + askHeight
             }
         }
-        return 1 + listPadding * 2 + content + CGFloat(max(0, rows.count - 1)) * rowSpacing + hintHeight
+        let sections = CGFloat(rows.indices.filter { sectionStart(at: $0, in: rows) != nil }.count)
+        return 1 + listPadding * 2 + content + CGFloat(max(0, rows.count - 1)) * rowSpacing
+            + sections * (sectionHeight + rowSpacing)
     }
 
     /// Return copies a calculation, opens an application, or sends to the AI.
@@ -53,19 +83,21 @@ struct AskQuickResultsView: View {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
             VStack(spacing: Self.rowSpacing) {
                 ForEach(Array(results.rows.enumerated()), id: \.offset) { index, row in
+                    if let section = Self.sectionStart(at: index, in: results.rows) {
+                        Text(section.title)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 10)
+                            .frame(height: Self.sectionHeight, alignment: .bottom)
+                            .accessibilityAddTraits(.isHeader)
+                    }
                     content(row, index: index, highlighted: index == results.highlighted)
                         .onHover { if $0 { onHighlight(index) } }
                 }
             }
             .padding(Self.listPadding)
             Spacer(minLength: 0)
-            Text(Self.hint(for: results))
-                .font(.system(size: 11))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.horizontal, 16)
-                .frame(height: Self.hintHeight, alignment: .top)
-                .accessibilityHidden(true)
         }
         .frame(height: max(minimumHeight, Self.height(for: results)), alignment: .top)
         .onDisappear { copiedReset?.cancel() }
