@@ -137,13 +137,32 @@ enum AskActivity {
         return try? AskLocalEngine.parsePlan(call.function.arguments)
     }
 
-    /// "Search 1 · Files 2 · Other 1", in a fixed order.
+    /// "Search 2 · Files 1 · Memory", in a fixed order. Calls that fit no category
+    /// are named by their tool rather than lumped together as "Other".
     static func categorySummary(_ calls: [AskToolCall]) -> String {
         var counts: [Category: Int] = [:]
-        for call in calls where call.function.name != "update_plan" { counts[Category.of(call.function.name), default: 0] += 1 }
-        return Category.allCases.compactMap { category in
+        var others: [(name: String, count: Int)] = []
+        for call in calls where call.function.name != "update_plan" {
+            let category = Category.of(call.function.name)
+            guard category == .other else { counts[category, default: 0] += 1; continue }
+            let name = toolName(call)
+            if let index = others.firstIndex(where: { $0.name == name }) {
+                others[index].count += 1
+            } else {
+                others.append((name, 1))
+            }
+        }
+        let known = Category.allCases.compactMap { category in
             counts[category].map { category.title + " " + String($0) }
-        }.joined(separator: " · ")
+        }
+        return (known + others.map { $0.count > 1 ? $0.name + " " + String($0.count) : $0.name })
+            .joined(separator: " · ")
+    }
+
+    /// The tool part of a readable title: "Memory" for "Memory · List".
+    static func toolName(_ call: AskToolCall) -> String {
+        let title = AskTheme.toolTitle(call)
+        return title.components(separatedBy: " · ").first ?? title
     }
 
     enum Status: Equatable { case running, attention, failed, done }
@@ -161,22 +180,50 @@ enum AskActivity {
         return .done
     }
 
+    /// What the block did, in one line: the step itself when there is one,
+    /// otherwise the kinds of steps it took; while working, the step under way.
     static func title(_ group: AskActivityGroup, status: Status, plan: [AskPlanItem]?, results: [AskMessage]) -> String {
-        let count = group.steps.count
+        let steps = group.steps
         switch status {
-        case .running: return L("ask.activity.running", count)
+        case .running:
+            return steps.last.map { AskTheme.toolTitle($0) } ?? L("ask.activity.working")
         case .attention: return L("ask.activity.attention")
         case .failed, .done:
-            var title = L("ask.activity.done", count)
+            var parts: [String] = []
             if let plan, !plan.isEmpty {
-                title = L("ask.activity.plan", plan.filter { $0.status == "completed" }.count, plan.count) + " · " + title
+                parts.append(L("ask.activity.plan", plan.filter { $0.status == "completed" }.count, plan.count))
             }
-            let failures = group.steps.filter { call in
-                AskPresentation.toolState(result: results.first { $0.toolCallId == call.id }) == .failed
-            }.count
-            if failures > 0 { title += " · " + L("ask.activity.failures", failures) }
-            return title
+            if steps.count == 1, parts.isEmpty {
+                parts.append(AskTheme.toolTitle(steps[0]))
+            } else if !steps.isEmpty {
+                parts.append(categorySummary(steps))
+            }
+            // A block that only updated its plan, with the plan itself gone.
+            return parts.isEmpty ? L("ask.tool.update_plan") : parts.joined(separator: " · ")
         }
+    }
+
+    /// The quieter tail of the line: "Step 3" while working, "3 steps" once
+    /// there was more than one, nothing for a single step.
+    static func stepNote(_ group: AskActivityGroup, status: Status) -> String? {
+        let count = group.steps.count
+        switch status {
+        case .running: return count > 0 ? L("ask.activity.step", count) : nil
+        case .attention: return nil
+        case .failed, .done: return count > 1 ? L("ask.activity.steps", count) : nil
+        }
+    }
+
+    /// Steps whose result failed; only these are colored on the line.
+    static func failures(_ group: AskActivityGroup, results: [AskMessage]) -> Int {
+        group.steps.filter { call in
+            AskPresentation.toolState(result: results.first { $0.toolCallId == call.id }) == .failed
+        }.count
+    }
+
+    /// The line's glyph: the first step's tool.
+    static func symbol(_ group: AskActivityGroup) -> String {
+        group.steps.first.map(AskPresentation.toolSymbol) ?? "list.bullet.clipboard"
     }
 
     /// The header's run line: where Ask runs, then the run's state and step count.

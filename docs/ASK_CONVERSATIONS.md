@@ -398,7 +398,8 @@ the bottom switches scenes, appearance and glass style).
   capsule; per-answer actions are icon-only with the answer's credits as a
   caption; tool blocks are 18 pt cards with filled status discs and a rotating
   chevron. Tool cards scroll with the transcript, so they use the glass card's
-  shape on an opaque surface rather than live glass.
+  shape on an opaque surface rather than live glass. (Since GUL-205 only a step
+  waiting for approval keeps the card; see "Quiet tool activity".)
 - Empty state: a slowly turning glass orb (still with Reduce Motion) above the
   title, shortcut hint and three accent suggestion cards.
 
@@ -493,6 +494,29 @@ panel was even created, a few hundred milliseconds on every press. Now:
   text typed early still receives this launch's context.
 - Pressing the hotkey again while context is still arriving refocuses the
   editor; toggling closes it and cancels the capture as before.
+
+### Quiet tool activity (GUL-205)
+
+The 46pt tool card weighed as much as the user's bubble, so a run's tool steps
+now read as a process trace above the answer, in the reasoning line's style:
+
+- No card: one 26pt line (12.5pt, tertiary grey) with the first step's glyph and
+  a chevron; it takes a capsule hover wash like the reasoning line. One step is
+  named by its tool ("Memory · List"); several by their kinds plus a quieter
+  "· 3 steps". "Other" never shows: such tools are named instead.
+- Success is silent. Failures add a red dot and "1 failed" only.
+- While working the line stays folded and names the step under way with a
+  spinner, shimmer and "· Step 2"; it unfolds only on click.
+- Unfolded, steps sit under a 2pt left rule like expanded reasoning: a bare
+  glyph, the step name and detail, and a status only when it is not done. The
+  tool tag moved to the row's tooltip; 参数/结果 stays inside each step.
+- Waiting for approval is the one state that keeps the card, orange outline and
+  embedded approval, because it needs the user.
+
+Line text is built by `AskActivity.title`, `stepNote`, `failures` and `symbol`,
+covered by `AskHarnessUITests`. `renderToolActivityStates` (opt-in with
+`TYPEFLUX_ASK_SNAPSHOTS`) captures every state:
+`docs/images/ask-tool-activity-{dark,light}.png`.
 
 ## Model and reasoning-effort chip (GUL-193)
 

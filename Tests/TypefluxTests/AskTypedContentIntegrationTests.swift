@@ -18,7 +18,7 @@ final class AskTypedContentIntegrationTests: XCTestCase {
             message.isError = false
             XCTAssertEqual(AskPresentation.toolState(result: message), .failed)
             XCTAssertEqual(AskActivity.status(group, results: [message], streamingId: nil, approvalToolId: nil), .failed)
-            XCTAssertTrue(AskActivity.title(group, status: .failed, plan: nil, results: [message]).contains(L("ask.activity.failures", 1)))
+            XCTAssertEqual(AskActivity.failures(group, results: [message]), 1)
         }
         message.harness?.version = 2
         message.harness?.outcome?.status = "ok"

@@ -1874,9 +1874,10 @@
 "ask.activity.kind.code" = "程式碼";
 "ask.activity.kind.computer" = "電腦";
 "ask.activity.kind.other" = "其他";
-"ask.activity.running" = "處理中 · 已呼叫 %d 次工具";
+"ask.activity.working" = "處理中";
+"ask.activity.step" = "第 %d 步";
 "ask.activity.attention" = "等待你的確認";
-"ask.activity.done" = "呼叫了 %d 次工具";
+"ask.activity.steps" = "%d 步";
 "ask.activity.plan" = "完成了 %d/%d 項計畫";
 "ask.activity.failures" = "%d 次失敗";
 "ask.activity.expanded" = "已展開";

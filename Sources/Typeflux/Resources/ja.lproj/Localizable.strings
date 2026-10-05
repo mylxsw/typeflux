@@ -1867,9 +1867,10 @@
 "ask.activity.kind.code" = "コード";
 "ask.activity.kind.computer" = "コンピュータ";
 "ask.activity.kind.other" = "その他";
-"ask.activity.running" = "処理中 · ツール呼び出し %d 回";
+"ask.activity.working" = "処理中";
+"ask.activity.step" = "ステップ %d";
 "ask.activity.attention" = "承認待ち";
-"ask.activity.done" = "ツール呼び出し %d 回";
+"ask.activity.steps" = "%d ステップ";
 "ask.activity.plan" = "計画 %d/%d 完了";
 "ask.activity.failures" = "%d 件失敗";
 "ask.activity.expanded" = "展開中";

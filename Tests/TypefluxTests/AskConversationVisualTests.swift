@@ -263,6 +263,57 @@ struct AskConversationVisualTests {
         fixture.model.resetSession()
     }
 
+    /// Tool activity in every state, as quiet lines above their answers (GUL-205).
+    @Test func renderToolActivityStates() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let now = Date()
+        func call(_ id: String, _ name: String, _ arguments: String = "{}") -> AskToolCall {
+            AskToolCall(id: id, type: "function", function: .init(name: name, arguments: arguments))
+        }
+        func result(_ id: String, _ text: String, error: Bool = false) -> AskMessage {
+            AskMessage(id: "t-" + id, role: "tool", text: text, toolCallId: id, isError: error, createdAt: now)
+        }
+        func group(_ id: String, _ calls: [AskToolCall]) -> AskActivityGroup {
+            AskActivityGroup(id: id, messages: [AskMessage(id: id, role: "assistant", text: "", toolCalls: calls, createdAt: now)])
+        }
+        let memory = call("m", "memory", #"{"action":"list"}"#)
+        let search = call("s", "web_search", #"{"query":"WWDC 2026 日期"}"#)
+        let fetch = call("f", "web_fetch", #"{"url":"https://developer.apple.com/wwdc26/"}"#)
+        let write = call("w", "files", #"{"action":"write","path":"~/Documents/notes/wwdc.md"}"#)
+        let results = [result("m", "1482afe9 (v1): AI 助手的名字叫星期五"), result("s", "5 条结果"),
+                       result("f", "WWDC26 · June 8–12"), result("w", "Permission denied", error: true)]
+        let plan = [AskPlanItem(step: "查到 WWDC 日期", status: "completed"), AskPlanItem(step: "写入笔记", status: "completed")]
+        func answer(_ text: String) -> some View {
+            Text(text).font(.system(size: 14.5)).foregroundStyle(StudioTheme.textPrimary)
+        }
+        let sheet = VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 8) {
+                AskActivityBlock(group: group("a", [memory]), results: results, plan: nil, status: .done)
+                answer("目前只保存了一条笔记：AI 助手的名字叫星期五，英文 Friday。")
+            }
+            AskActivityBlock(group: group("b", [search, fetch, fetch]), results: results, plan: nil, status: .done)
+            AskActivityBlock(group: group("c", [search, fetch]), results: results, plan: nil, status: .running, streamingId: "c")
+            AskActivityBlock(group: group("d", [fetch, write]), results: results, plan: nil, status: .failed)
+            AskActivityBlock(group: group("e", [search, fetch, write]), results: results, plan: plan, status: .failed,
+                             startsExpanded: true)
+            AskActivityBlock(group: group("g", [write]), results: [], plan: nil, status: .attention, approvalToolId: "w")
+        }
+        .padding(28)
+        .frame(width: 720, height: 600, alignment: .topLeading)
+        .background(AskTheme.surface)
+        .environment(\.askGlassMaterialOverride, .opaque)
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            try await render(sheet, size: NSSize(width: 720, height: 600), appearance: appearance,
+                             file: root.appendingPathComponent("tool-activity-\(name).png"))
+        }
+    }
+
     @Test func renderModelSelectionSurfaces() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)

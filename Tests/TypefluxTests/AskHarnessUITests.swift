@@ -84,18 +84,58 @@ struct AskHarnessUITests {
         #expect(AskActivity.status(group, results: done, streamingId: nil, approvalToolId: "other") == .done)
     }
 
-    @Test func titlesSummarizePlanCallsAndFailures() {
+    @Test func titlesSayWhatTheBlockDid() {
         let plan = [AskPlanItem(step: "A", status: "completed"), AskPlanItem(step: "B", status: "pending")]
         let group = AskActivityGroup(id: "a", messages: [step("a", [call("p", "update_plan"), call("s", "web_search"),
                                                                     call("r", "research"), call("f", "files"), call("m", "mcp_x")])])
         let results = [result("s"), result("r"), result("f", error: true), result("m")]
-        #expect(AskActivity.title(group, status: .running, plan: nil, results: results) == L("ask.activity.running", 4))
+        let summary = AskActivity.categorySummary(group.calls)
+        // The step under way names the line while working.
+        #expect(AskActivity.title(group, status: .running, plan: nil, results: results) == AskTheme.toolTitle(group.steps[3]))
         #expect(AskActivity.title(group, status: .attention, plan: nil, results: results) == L("ask.activity.attention"))
         #expect(AskActivity.title(group, status: .failed, plan: plan, results: results)
-            == L("ask.activity.plan", 1, 2) + " · " + L("ask.activity.done", 4) + " · " + L("ask.activity.failures", 1))
-        #expect(AskActivity.title(group, status: .done, plan: [], results: [result("s")]) == L("ask.activity.done", 4))
-        #expect(AskActivity.categorySummary(group.calls)
-            == [L("ask.activity.kind.search") + " 2", L("ask.activity.kind.files") + " 1", L("ask.activity.kind.other") + " 1"].joined(separator: " · "))
+            == L("ask.activity.plan", 1, 2) + " · " + summary)
+        #expect(AskActivity.title(group, status: .done, plan: [], results: [result("s")]) == summary)
+        // "Other" never shows; such tools are named instead.
+        #expect(summary == [L("ask.activity.kind.search") + " 2", L("ask.activity.kind.files") + " 1", "MCP"].joined(separator: " · "))
+        #expect(!summary.contains(L("ask.activity.kind.other")))
+        #expect(AskActivity.failures(group, results: results) == 1)
+        #expect(AskActivity.failures(group, results: []) == 0)
+        #expect(AskActivity.stepNote(group, status: .done) == L("ask.activity.steps", 4))
+        #expect(AskActivity.stepNote(group, status: .running) == L("ask.activity.step", 4))
+        #expect(AskActivity.stepNote(group, status: .attention) == nil)
+        #expect(AskActivity.symbol(group) == AskPresentation.toolSymbol(group.steps[0]))
+    }
+
+    @Test func aSingleStepIsNamedByItsTool() {
+        let list = call("m", "memory", ["action": "list"])
+        let group = AskActivityGroup(id: "a", messages: [step("a", [list])])
+        let title = AskActivity.title(group, status: .done, plan: nil, results: [result("m")])
+        #expect(title == AskTheme.toolTitle(list))
+        #expect(title.hasPrefix(L("ask.tool.memory")))
+        #expect(AskActivity.stepNote(group, status: .done) == nil)
+        #expect(AskActivity.stepNote(group, status: .running) == L("ask.activity.step", 1))
+        #expect(AskActivity.symbol(group) == "brain")
+        // A plan keeps its count in front, with the step summarized after it.
+        let planned = AskActivity.title(group, status: .done, plan: [AskPlanItem(step: "A", status: "completed")], results: [])
+        #expect(planned == L("ask.activity.plan", 1, 1) + " · " + L("ask.tool.memory"))
+        // Repeated unnamed tools carry a count; the category ones keep their order.
+        let two = AskActivityGroup(id: "b", messages: [step("b", [call("x", "memory"), call("y", "memory", ["action": "remember"]),
+                                                                  call("z", "web_fetch", ["url": "https://a.b"])])])
+        #expect(AskActivity.categorySummary(two.calls) == L("ask.activity.kind.web") + " 1 · " + L("ask.tool.memory") + " 2")
+    }
+
+    @Test func aBlockStillPlanningHasAFallbackTitleAndGlyph() {
+        let planning = AskActivityGroup(id: "a", messages: [step("a", [call("p", "update_plan")])])
+        #expect(AskActivity.title(planning, status: .running, plan: nil, results: []) == L("ask.activity.working"))
+        #expect(AskActivity.title(planning, status: .done, plan: nil, results: []) == L("ask.tool.update_plan"))
+        #expect(AskActivity.stepNote(planning, status: .running) == nil)
+        #expect(AskActivity.symbol(planning) == "list.bullet.clipboard")
+        #expect(AskToolStepRow.showsStatus(.failed) && AskToolStepRow.showsStatus(.attention) && AskToolStepRow.showsStatus(.running))
+        #expect(!AskToolStepRow.showsStatus(.done))
+    }
+
+    @Test func activityCategoriesFollowTheirTools() {
         #expect(AskActivity.Category.of("browser") == .web)
         #expect(AskActivity.Category.of("computer") == .computer)
         #expect(AskActivity.Category.of("run_code") == .code)
@@ -207,8 +247,15 @@ struct AskHarnessUITests {
         outputs.artifacts = [.init(id: "c", image: image, toolName: "run_code")]
         outputs.sources = (1 ... 8).map { URL(string: "https://example.com/\($0)")! }
         let collapsed = fits(AskActivityBlock(group: group, results: results, plan: plan, status: .done))
-        let open = fits(AskActivityBlock(group: group, results: results, plan: plan, status: .running, streamingId: "a"))
-        #expect(open > collapsed)
+        // Working stays one folded line too; the line names the step under way.
+        let running = fits(AskActivityBlock(group: group, results: results, plan: plan, status: .running, streamingId: "a"))
+        #expect(running == collapsed)
+        let plain = fits(AskActivityBlock(group: AskActivityGroup(id: "b", messages: [step("b", [calls[1]])]),
+                                          results: results, plan: nil, status: .done))
+        #expect(plain <= AskActivityBlock.lineHeight + 1)
+        #expect(fits(AskActivityBlock(group: group, results: results, plan: plan, status: .done, startsExpanded: true)) > collapsed)
+        #expect(fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention, startsExpanded: false))
+            < fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention)))
         #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .attention, approvalToolId: "c")) > collapsed)
         #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .failed, outputs: outputs)) > collapsed)
         #expect(fits(AskToolStepRow(call: calls[1], result: results[1])) > 10)

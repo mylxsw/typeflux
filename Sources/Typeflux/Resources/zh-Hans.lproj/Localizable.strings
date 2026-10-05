@@ -1877,9 +1877,10 @@
 "ask.activity.kind.code" = "代码";
 "ask.activity.kind.computer" = "电脑";
 "ask.activity.kind.other" = "其他";
-"ask.activity.running" = "正在处理 · 已调用 %d 次工具";
+"ask.activity.working" = "正在处理";
+"ask.activity.step" = "第 %d 步";
 "ask.activity.attention" = "等待你的确认";
-"ask.activity.done" = "调用了 %d 次工具";
+"ask.activity.steps" = "%d 步";
 "ask.activity.plan" = "完成了 %d/%d 项计划";
 "ask.activity.failures" = "%d 次失败";
 "ask.activity.expanded" = "已展开";

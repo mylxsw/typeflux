@@ -1877,9 +1877,10 @@
 "ask.activity.kind.code" = "Code";
 "ask.activity.kind.computer" = "Computer";
 "ask.activity.kind.other" = "Other";
-"ask.activity.running" = "Working · %d tool calls";
+"ask.activity.working" = "Working";
+"ask.activity.step" = "Step %d";
 "ask.activity.attention" = "Waiting for your approval";
-"ask.activity.done" = "%d tool calls";
+"ask.activity.steps" = "%d steps";
 "ask.activity.plan" = "Plan %d/%d done";
 "ask.activity.failures" = "%d failed";
 "ask.activity.expanded" = "Expanded";
