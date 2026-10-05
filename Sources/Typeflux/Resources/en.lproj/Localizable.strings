@@ -1857,7 +1857,7 @@
 "ask.settings.local.title" = "Keep new conversations";
 "ask.settings.local.subtitle" = "With Only on this Mac, new conversations are not uploaded to Typeflux Cloud and use the models you set up. Existing conversations stay where they are. You can pick either kind from the new conversation menu or the storage icon in the composer. When signed out, every conversation stays on this Mac.";
 "ask.settings.search.title" = "Web search on this Mac";
-"ask.settings.search.subtitle" = "Local conversations can search the web with your own Tavily or Brave Search key, stored in the keychain. Reading web pages works without a key.";
+"ask.settings.search.subtitle" = "Local conversations can search the web with your own Tavily, Brave Search or Cloudflare key, stored in the keychain.";
 "ask.settings.search.provider" = "Search provider";
 "ask.settings.search.none" = "Off";
 "ask.settings.search.key" = "API key";
@@ -2283,3 +2283,19 @@
 "ask.tool.automationUnavailable" = "Only screen and page observation is available. Clicking, typing and other control actions are unavailable.";
 "ask.tool.observationExpired" = "The target changed or its observation expired. Capture the screen or read the target again before acting.";
 "ask.tool.notExecuted" = "This tool was not executed: %@ Use an available alternative or correct the problem; do not repeat this call unchanged.";
+
+// Cloudflare Web Search
+"ask.settings.search.cloudflare.token" = "Cloudflare API Token";
+"ask.settings.search.cloudflare.account" = "Account ID";
+"ask.settings.search.cloudflare.gateway" = "Gateway ID";
+"ask.settings.search.cloudflare.provider" = "Search engine";
+"ask.settings.search.cloudflare.alias" = "BYOK alias (optional)";
+"ask.settings.search.cloudflare.help" = "Local conversations use your Cloudflare account. The token needs Workers AI Read and AI Gateway Read permissions. Searches use your gateway’s provider key (the specified alias, or default) or AI Gateway credits. Testing sends one billable search. Cloud conversations use Typeflux Cloud configuration.";
+"ask.settings.search.cloudflare.guide" = "Setup guide";
+"ask.settings.search.cloudflare.test" = "Test connection";
+"ask.settings.search.cloudflare.testing" = "Testing…";
+"ask.settings.search.cloudflare.connected" = "Connected successfully.";
+"ask.settings.search.cloudflare.invalid" = "Enter a valid Account ID, Gateway ID, API Token, search engine and optional BYOK alias.";
+"ask.settings.search.cloudflare.unauthorized" = "Cloudflare rejected the token. Check its account and Workers AI Read / AI Gateway Read permissions.";
+"ask.settings.search.cloudflare.rateLimited" = "Cloudflare search is rate limited. Try again later.";
+"ask.settings.search.cloudflare.unavailable" = "Cloudflare search is temporarily unavailable. Check your gateway, credits and BYOK alias.";

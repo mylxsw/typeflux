@@ -1847,7 +1847,7 @@
 "ask.settings.local.title" = "새 대화 기본 저장 위치";
 "ask.settings.local.subtitle" = "「이 Mac에만」을 선택하면 새 대화는 Typeflux Cloud에 업로드되지 않고 직접 설정한 모델을 사용합니다. 기존 대화는 그대로입니다. 새 대화 메뉴나 입력창의 저장 위치 아이콘에서 언제든 고를 수 있습니다. 로그아웃 상태에서는 모든 대화가 이 Mac에 저장됩니다.";
 "ask.settings.search.title" = "이 Mac의 웹 검색";
-"ask.settings.search.subtitle" = "로컬 대화는 키체인에 저장된 직접 발급한 Tavily 또는 Brave Search 키로 웹을 검색할 수 있습니다. 웹 페이지 읽기에는 키가 필요 없습니다.";
+"ask.settings.search.subtitle" = "로컬 대화는 키체인에 저장된 직접 발급한 Tavily, Brave Search 또는 Cloudflare 키로 웹을 검색할 수 있습니다.";
 "ask.settings.search.provider" = "검색 서비스";
 "ask.settings.search.none" = "끔";
 "ask.settings.search.key" = "API 키";
@@ -2273,3 +2273,19 @@
 "ask.tool.automationUnavailable" = "화면과 페이지 조회만 사용할 수 있습니다. 클릭, 입력 등의 조작은 사용할 수 없습니다.";
 "ask.tool.observationExpired" = "대상이 변경되었거나 관찰 정보가 만료되었습니다. 화면을 캡처하거나 대상을 다시 읽은 후 조작하세요.";
 "ask.tool.notExecuted" = "이 도구는 실행되지 않았습니다: %@ 사용 가능한 방법을 선택하거나 문제를 수정하세요. 같은 호출을 그대로 반복하지 마세요.";
+
+// Cloudflare Web Search
+"ask.settings.search.cloudflare.token" = "Cloudflare API Token";
+"ask.settings.search.cloudflare.account" = "계정 ID";
+"ask.settings.search.cloudflare.gateway" = "Gateway ID";
+"ask.settings.search.cloudflare.provider" = "검색 엔진";
+"ask.settings.search.cloudflare.alias" = "BYOK 별칭 (선택)";
+"ask.settings.search.cloudflare.help" = "로컬 대화에서는 본인의 Cloudflare 계정을 사용합니다. 토큰에는 Workers AI Read 및 AI Gateway Read 권한이 필요합니다. 검색은 Gateway의 공급자 키(지정한 별칭 또는 default)나 AI Gateway 크레딧을 사용합니다. 연결 테스트는 유료 검색을 한 번 실행합니다. 클라우드 대화는 Typeflux Cloud 설정을 사용합니다.";
+"ask.settings.search.cloudflare.guide" = "설정 가이드";
+"ask.settings.search.cloudflare.test" = "연결 테스트";
+"ask.settings.search.cloudflare.testing" = "테스트 중…";
+"ask.settings.search.cloudflare.connected" = "연결되었습니다.";
+"ask.settings.search.cloudflare.invalid" = "유효한 계정 ID, Gateway ID, API Token, 검색 엔진 및 선택 사항인 BYOK 별칭을 입력하세요.";
+"ask.settings.search.cloudflare.unauthorized" = "Cloudflare에서 토큰을 거부했습니다. 계정과 Workers AI Read / AI Gateway Read 권한을 확인하세요.";
+"ask.settings.search.cloudflare.rateLimited" = "Cloudflare 검색 요청 한도에 도달했습니다. 잠시 후 다시 시도하세요.";
+"ask.settings.search.cloudflare.unavailable" = "Cloudflare 검색을 사용할 수 없습니다. Gateway, 크레딧 및 BYOK 별칭을 확인하세요.";

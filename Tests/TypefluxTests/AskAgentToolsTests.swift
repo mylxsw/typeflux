@@ -343,13 +343,14 @@ final class AskAgentToolsTests: XCTestCase {
         XCTAssertEqual(AskToolsSettingsView.searchProviderName(.none), L("ask.settings.search.none"))
         XCTAssertEqual(AskToolsSettingsView.searchProviderName(.tavily), "Tavily")
         XCTAssertEqual(AskToolsSettingsView.searchProviderName(.brave), "Brave Search")
+        XCTAssertEqual(AskToolsSettingsView.searchProviderName(.cloudflare), "Cloudflare Web Search")
     }
 
     func testNewStringsExistInEveryLanguage() throws {
         for language in AppLanguage.allCases {
             let bundle = try XCTUnwrap(language.bundleLocalizationCandidates.lazy
                 .compactMap { Bundle.appResources.path(forResource: $0, ofType: "lproj") }.first.flatMap(Bundle.init(path:)))
-            for key in ["ask.files.denied", "ask.code.unavailable", "ask.settings.folders.title", "ask.tool.update_plan", "ask.action.inspect", "agent.section.tools",
+            for key in ["ask.settings.search.cloudflare.token", "ask.settings.search.cloudflare.help", "ask.settings.search.cloudflare.unavailable", "ask.files.denied", "ask.code.unavailable", "ask.settings.folders.title", "ask.tool.update_plan", "ask.action.inspect", "agent.section.tools",
                         "agent.section.skills", "agent.section.memory", "ask.settings.skills.install", "ask.skills.install.notFound",
                         "agent.settings.runMode", "agent.settings.web", "agent.settings.code", "agent.settings.mcp"] {
                 XCTAssertNotEqual(bundle.localizedString(forKey: key, value: nil, table: nil), key, "\(key) in \(language.rawValue)")

@@ -97,7 +97,7 @@ final class AskLocalWebBoundaryTests: XCTestCase {
         var tools = AskLocalWebTools()
         defer { tools.session.invalidateAndCancel() }
         XCTAssertTrue(tools.definitions().isEmpty)
-        tools.searchProvider = { (.tavily, "fixture-key") }
+        tools.searchProvider = { .init(provider: .tavily, apiKey: "fixture-key") }
         XCTAssertEqual(tools.definitions().map(\.name), ["web_search"])
         XCTAssertFalse(tools.definitions()[0].description.contains("web_fetch"))
     }
