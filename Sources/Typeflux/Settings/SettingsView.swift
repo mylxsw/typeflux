@@ -432,7 +432,11 @@ struct StudioView: View {
     @State private var feedbackImageUploadTasks: [FeedbackImageAttachment.ID: Task<Void, Never>] = [:]
     @State private var isSubmittingFeedback = false
     @State private var feedbackSubmissionError: String?
-    @State private var agentConfigurationTab: AgentConfigurationTab = .general
+    @State private var agentConfigurationTab: AgentConfigurationTab = .overview
+    @State private var agentExtensionsTab: AgentExtensionsTab = .skills
+    @State private var agentStatuses: [AgentCapabilityStatus] = []
+    @State private var isMCPImportPresented = false
+    @State private var mcpImportText = ""
     @State private var isAdvancedSettingsExpanded = false
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject private var authState = AuthState.shared
@@ -2836,40 +2840,88 @@ struct StudioView: View {
 
     private var agentPage: some View {
         VStack(alignment: .leading, spacing: 24) {
-            ModelSegmentedControl(
-                options: AgentConfigurationTab.allCases.map { (label: $0.title, value: $0) },
+            AgentUnderlineTabs(
+                options: AgentConfigurationTab.allCases.map { tab in
+                    (label: tab.title, value: tab, needsAttention: agentStatuses.contains {
+                        $0.level == .attention && $0.capability.destination.tab == tab
+                    })
+                },
                 selection: $agentConfigurationTab
             )
 
-            if agentConfigurationTab == .mcpServers {
+            if agentConfigurationTab == .extensions, agentExtensionsTab == .mcpServers {
+                AgentExtensionsHeader(selection: $agentExtensionsTab) {
+                    if !viewModel.mcpServers.isEmpty {
+                        Button { beginMCPImport() } label: {
+                            Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
+                        }
+                        .buttonStyle(ModelActionStyle())
+                        Button {
+                            viewModel.beginAddMCPServer()
+                            isMCPServerDialogPresented = true
+                        } label: {
+                            Label(L("agent.mcp.addServer"), systemImage: "plus")
+                        }
+                        .buttonStyle(ModelActionStyle(primary: true))
+                    }
+                }
                 agentMCPServersTabContent
             } else {
-                AskToolsSettingsView(settings: viewModel.askToolSettings, tab: agentConfigurationTab)
-                    // Rebuild per tab so each tab reloads its values when shown.
-                    .id(agentConfigurationTab)
+                AskToolsSettingsView(
+                    settings: viewModel.askToolSettings,
+                    tab: agentConfigurationTab,
+                    extensionsTab: $agentExtensionsTab,
+                    onNavigate: { tab, extensions in
+                        if let extensions { agentExtensionsTab = extensions }
+                        agentConfigurationTab = tab
+                    },
+                    onStatusesChange: { agentStatuses = $0 }
+                )
+                // Rebuild per tab so each tab reloads its values when shown.
+                .id(agentConfigurationTab)
             }
         }
+        .sheet(isPresented: $isMCPImportPresented) { mcpImportSheet }
     }
 
-    private var agentMCPServersTabContent: some View {
-        AgentSettingsSection(
-            title: L("agent.settings.mcp"),
-            detail: "\(viewModel.mcpServers.count)",
-            footnote: viewModel.mcpServers.isEmpty ? L("agent.mcp.empty") : nil
-        ) {
-            ForEach(viewModel.mcpServers) { server in
-                mcpServerRow(server)
-                ModelRowDivider(leading: 66)
+    @ViewBuilder private var agentMCPServersTabContent: some View {
+        if viewModel.mcpServers.isEmpty {
+            ModelSurface {
+                AgentEmptyState(symbol: "server.rack", title: L("agent.mcp.emptyTitle"), message: L("agent.mcp.emptyMessage")) {
+                    Button {
+                        viewModel.beginAddMCPServer()
+                        isMCPServerDialogPresented = true
+                    } label: {
+                        Label(L("agent.mcp.addServer"), systemImage: "plus")
+                    }
+                    .buttonStyle(ModelActionStyle(primary: true))
+                    Button { beginMCPImport() } label: {
+                        Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
+                    }
+                    .buttonStyle(ModelActionStyle())
+                }
             }
-            AgentSettingsActionRow(icon: "plus", title: L("agent.mcp.addServer")) {
-                viewModel.beginAddMCPServer()
-                isMCPServerDialogPresented = true
+            Text(L("agent.mcp.emptyHint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                .padding(.horizontal, 4)
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                ModelSurface {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(viewModel.mcpServers.enumerated()), id: \.element.id) { index, server in
+                            if index > 0 { ModelRowDivider(leading: 66) }
+                            mcpServerRow(server)
+                        }
+                    }
+                }
+                Text(L("agent.mcp.listHint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
             }
         }
     }
 
     private func mcpServerRow(_ server: MCPServerConfig) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let status = MCPServerStatusPresentation(enabled: server.enabled, result: viewModel.mcpServerTestResults[server.id])
+        return VStack(alignment: .leading, spacing: 0) {
             AgentSettingsRow(
                 icon: "server.rack",
                 title: server.name.isEmpty ? L("agent.mcp.untitled") : server.name,
@@ -2877,20 +2929,16 @@ struct StudioView: View {
                 badge: mcpTransportLabel(for: server),
                 subtitleLineLimit: 1
             ) {
-                HStack(spacing: 10) {
-                    Button {
-                        viewModel.testMCPConnection(for: server)
-                    } label: {
-                        HStack(spacing: 5) {
-                            if viewModel.isTestingMCPServer(server.id) {
-                                ProgressView().controlSize(.small)
-                            }
-                            Text(viewModel.isTestingMCPServer(server.id)
-                                ? L("agent.mcp.testing") : L("agent.mcp.testConnection"))
+                HStack(spacing: 12) {
+                    HStack(spacing: 6) {
+                        if status.isTesting {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Circle().fill(status.color).frame(width: 7, height: 7)
                         }
+                        Text(status.label).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
                     }
-                    .buttonStyle(ModelActionStyle())
-                    .disabled(viewModel.isTestingMCPServer(server.id))
+                    .fixedSize()
 
                     Toggle("", isOn: Binding(
                         get: { server.enabled },
@@ -2898,12 +2946,28 @@ struct StudioView: View {
                     ))
                     .labelsHidden()
                     .toggleStyle(.switch)
+                    .accessibilityLabel(server.name)
+
+                    Menu {
+                        mcpServerMenuItems(server)
+                    } label: {
+                        Image(systemName: "ellipsis").font(.system(size: 13, weight: .semibold))
+                    }
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .frame(width: 28)
+                    .accessibilityLabel(L("agent.mcp.more"))
                 }
             }
 
-            if viewModel.shouldShowMCPConnectionTestResult(for: server.id) {
-                mcpConnectionTestResultView
-                    .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 14)
+            if case let .failure(message)? = viewModel.mcpServerTestResults[server.id] {
+                Text(message).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 12)
+            } else if case let .success(tools)? = viewModel.mcpServerTestResults[server.id], !tools.isEmpty {
+                Text(L("agent.mcp.toolList", tools.map(\.name).joined(separator: ", ")))
+                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(2)
+                    .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 12)
             }
         }
         .contentShape(Rectangle())
@@ -2911,16 +2975,81 @@ struct StudioView: View {
             viewModel.beginEditMCPServer(server)
             isMCPServerDialogPresented = true
         }
-        .contextMenu {
-            Button(L("agent.mcp.edit")) {
-                viewModel.beginEditMCPServer(server)
-                isMCPServerDialogPresented = true
+        .contextMenu { mcpServerMenuItems(server) }
+    }
+
+    @ViewBuilder
+    private func mcpServerMenuItems(_ server: MCPServerConfig) -> some View {
+        Button(L("agent.mcp.testConnection")) { viewModel.testMCPConnection(for: server) }
+            .disabled(viewModel.isTestingMCPServer(server.id))
+        Button(L("agent.mcp.edit")) {
+            viewModel.beginEditMCPServer(server)
+            isMCPServerDialogPresented = true
+        }
+        Button(L("agent.mcp.duplicate")) { viewModel.duplicateMCPServer(id: server.id) }
+        Divider()
+        Button(L("common.delete"), role: .destructive) {
+            mcpServerPendingDeletion = server
+        }
+    }
+
+    private func beginMCPImport() {
+        mcpImportText = ""
+        isMCPImportPresented = true
+    }
+
+    private var mcpImportSheet: some View {
+        let parsed = Result(catching: { try MCPServerImport.parse(mcpImportText, existingNames: viewModel.mcpServers.map(\.name)) })
+        let servers = (try? parsed.get())?.servers ?? []
+        return VStack(alignment: .leading, spacing: 14) {
+            Text(L("agent.mcp.import.title"))
+                .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+            Text(L("agent.mcp.import.hint")).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            TextEditor(text: $mcpImportText)
+                .font(.system(size: 12, design: .monospaced))
+                .scrollContentBackground(.hidden)
+                .padding(6)
+                .frame(height: 180)
+                .background(ModelVisualStyle.control,
+                            in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
+                    .strokeBorder(ModelVisualStyle.border))
+                .accessibilityLabel(L("agent.mcp.import.title"))
+            if !mcpImportText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                switch parsed {
+                case let .success(result):
+                    VStack(alignment: .leading, spacing: 4) {
+                        if !result.servers.isEmpty {
+                            Text(L("agent.mcp.import.preview", result.servers.count,
+                                   result.servers.map(\.name).joined(separator: L("agent.listSeparator"))))
+                        }
+                        if !result.skipped.isEmpty {
+                            Text(L("agent.mcp.import.skipped", result.skipped.joined(separator: L("agent.listSeparator"))))
+                                .foregroundStyle(StudioTheme.warning)
+                        }
+                    }
+                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                case let .failure(error):
+                    Text(error.localizedDescription).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
+                }
             }
-            Divider()
-            Button(L("common.delete"), role: .destructive) {
-                mcpServerPendingDeletion = server
+            HStack {
+                Spacer()
+                Button(L("common.cancel")) { isMCPImportPresented = false }.buttonStyle(ModelActionStyle())
+                Button(L("agent.mcp.import.confirm")) {
+                    viewModel.importMCPServers(servers)
+                    isMCPImportPresented = false
+                }
+                .buttonStyle(ModelActionStyle(primary: true))
+                .disabled(servers.isEmpty)
+                .keyboardShortcut(.defaultAction)
             }
         }
+        .padding(22)
+        .frame(width: 520)
+        .background(ModelVisualStyle.canvas)
     }
 
     private var mcpServerDialog: some View {
@@ -2950,8 +3079,8 @@ struct StudioView: View {
 
                         StudioSegmentedPicker(
                             options: [
-                                (label: "STDIO", value: MCPTransportType.stdio),
-                                (label: "HTTP/SSE", value: MCPTransportType.http)
+                                (label: L("agent.mcp.transport.stdio"), value: MCPTransportType.stdio),
+                                (label: L("agent.mcp.transport.http"), value: MCPTransportType.http)
                             ],
                             selection: $viewModel.mcpDraftTransportType
                         )
@@ -2970,7 +3099,7 @@ struct StudioView: View {
                         )
                         mcpKeyValueEditor(
                             label: L("agent.mcp.stdio.env"),
-                            hint: L("agent.mcp.stdio.envHint"),
+                            keyPlaceholder: "NODE_ENV",
                             text: $viewModel.mcpDraftStdioEnv
                         )
                     } else {
@@ -2981,7 +3110,7 @@ struct StudioView: View {
                         )
                         mcpKeyValueEditor(
                             label: L("agent.mcp.http.headers"),
-                            hint: L("agent.mcp.http.headersHint"),
+                            keyPlaceholder: "Authorization",
                             text: $viewModel.mcpDraftHTTPHeaders
                         )
                     }
@@ -3053,37 +3182,12 @@ struct StudioView: View {
         )
     }
 
-    private func mcpKeyValueEditor(label: String, hint: String, text: Binding<String>) -> some View {
+    private func mcpKeyValueEditor(label: String, keyPlaceholder: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
             Text(label)
                 .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
-            ZStack(alignment: .topLeading) {
-                if text.wrappedValue.isEmpty {
-                    Text(hint)
-                        .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal + 4)
-                        .padding(.vertical, StudioTheme.Insets.textFieldVertical + 2)
-                        .allowsHitTesting(false)
-                }
-
-                TextEditor(text: text)
-                    .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .scrollContentBackground(.hidden)
-                    .frame(minHeight: 60, maxHeight: 100)
-                    .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
-                    .padding(.vertical, StudioTheme.Insets.textFieldVertical)
-            }
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .fill(StudioTheme.controlSurface.opacity(StudioTheme.Opacity.textFieldFill))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
-            )
+            MCPKeyValueEditor(text: text, keyPlaceholder: keyPlaceholder, valuePlaceholder: L("agent.mcp.kv.value"))
         }
     }
 
@@ -3155,14 +3259,14 @@ struct StudioView: View {
 
     private func mcpTransportLabel(for server: MCPServerConfig) -> String {
         switch server.transport {
-        case .stdio: "STDIO"
-        case .http: "HTTP/SSE"
+        case .stdio: L("agent.mcp.transport.stdio")
+        case .http: "HTTP"
         }
     }
 
     private func mcpTransportDetail(for server: MCPServerConfig) -> String {
         switch server.transport {
-        case let .stdio(config): config.command
+        case let .stdio(config): ([config.command] + config.args).joined(separator: " ")
         case let .http(config): config.url
         }
     }

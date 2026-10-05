@@ -1,108 +1,209 @@
 import AppKit
 import SwiftUI
 
-/// Ask settings: where it runs, web search, local tools, skills and saved notes.
+/// Ask settings: the capability overview, built-in tools, skills and saved notes.
+/// MCP servers are owned by the settings view model and rendered by `StudioView`.
 struct AskToolsSettingsView: View {
     let settings: SettingsStore
     var skills = AskSkillLibrary()
     var notes: AskMemoryNoteStore = .shared
     var owner: () -> String = { GlobalSoulOwner.currentID }
 
-    @State private var folders: [String] = []
-    @State private var codeEnabled = true
-    @State private var newConversationsStayLocal = false
-    @State private var searchProvider = AskSearchSettings.Provider.none
-    @State private var searchKey = ""
-    @State private var cloudflareSearch = AskCloudflareSearchConfiguration()
-    @State private var skillList: [AskSkill] = []
-    @State private var disabledSkills: Set<String> = []
+    @State var folders: [String] = []
+    @State var codeEnabled = true
+    @State var newConversationsStayLocal = false
+    @State var searchProvider = AskSearchSettings.Provider.none
+    @State var searchKey = ""
+    @State var cloudflareSearch = AskCloudflareSearchConfiguration()
+    @State var skillList: [AskSkill] = []
+    @State var disabledSkills: Set<String> = []
     @StateObject var memoryNotes = AskMemoryNotesSettingsModel()
-    @State private var showingInstall = false
-    @State private var installURL = ""
-    @State private var installing = false
-    @State private var installError: String?
-    @State private var installTask: Task<Void, Never>?
-    @State private var pendingRemoval: AskSkill?
-    @State private var skillActionError: String?
+    @State var showingInstall = false
+    @State var installURL = ""
+    @State var installing = false
+    @State var installError: String?
+    @State var installTask: Task<Void, Never>?
+    @State var pendingRemoval: AskSkill?
+    @State var skillActionError: String?
+    @State var skillQuery = ""
+    @State var skillFilter = SkillFilter.all
+    @State var inspectedSkill: InspectedSkill?
+    @State var removedFolder: RemovedFolder?
+    @State var mcpServerCount = 0
+    @State var enabledMCPServerCount = 0
+    @State var accessibilityGranted = false
+    @State var screenRecordingGranted = false
 
-    /// Which Agent settings tab to render; MCP servers are owned by the settings view model.
-    var tab: AgentConfigurationTab = .general
+    /// Which Agent settings tab to render.
+    var tab: AgentConfigurationTab = .overview
+    /// The Extensions tab's selected kind; MCP servers are rendered by the caller.
+    var extensionsTab: Binding<AgentExtensionsTab> = .constant(.skills)
+    /// Opens another tab, e.g. from an overview card.
+    var onNavigate: (AgentConfigurationTab, AgentExtensionsTab?) -> Void = { _, _ in }
+    /// Reports capability states so the caller can flag tabs that need attention.
+    var onStatusesChange: ([AgentCapabilityStatus]) -> Void = { _ in }
+    var permissions = AgentAutomationPermissions.live
+
+    enum SkillFilter: Hashable { case all, enabled, disabled }
+
+    struct InspectedSkill: Identifiable {
+        let name: String
+        var id: String {
+            name
+        }
+    }
+
+    struct RemovedFolder: Equatable {
+        let path: String
+        let index: Int
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             switch tab {
-            case .general:
-                generalSections
+            case .overview:
+                overviewSections
             case .tools:
                 toolSections
-            case .skills:
+            case .extensions:
+                AgentExtensionsHeader(selection: extensionsTab) {
+                    skillHeaderActions
+                }
                 skillSections
             case .memory:
                 memorySections
-            case .mcpServers:
-                EmptyView()
             }
         }
         .onAppear(perform: reload)
+        .onChange(of: capabilityStatuses) { onStatusesChange($0) }
     }
 
-    @ViewBuilder private var generalSections: some View {
-        AgentSettingsSection(title: L("agent.settings.runMode")) {
-            AgentSettingsRow(icon: newConversationsStayLocal ? "lock" : "cloud", title: L("ask.settings.local.title"),
-                             subtitle: L("ask.settings.local.subtitle"), subtitleLineLimit: nil) {
-                selectorMenu(Self.storageName(local: newConversationsStayLocal),
-                             label: L("ask.settings.local.title")) {
-                    ForEach([false, true], id: \.self) { local in
-                        Button(Self.storageName(local: local)) { setNewConversationsStayLocal(local) }
-                    }
-                }
-            }
-        }
-        AgentSettingsSection(title: L("agent.settings.web")) {
-            AgentSettingsRow(icon: "globe", title: L("ask.settings.search.title"),
-                             subtitle: L("ask.settings.search.subtitle"), subtitleLineLimit: nil) {
-                searchProviderMenu
-            }
-            if searchProvider != .none {
-                ModelRowDivider(leading: 66)
-                AgentSettingsRow(icon: "key", title: L(searchProvider == .cloudflare ? "ask.settings.search.cloudflare.token" : "ask.settings.search.key")) {
-                    SecureField(L(searchProvider == .cloudflare ? "ask.settings.search.cloudflare.token" : "ask.settings.search.key"), text: $searchKey, onCommit: { saveSearchKey() })
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 13, design: .monospaced))
-                        .padding(.horizontal, 10).frame(width: 240, height: 30)
-                        .background(
-                            ModelVisualStyle.control,
-                            in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                                .strokeBorder(ModelVisualStyle.border)
-                        )
-                        .onChange(of: searchKey) { _ in saveSearchKey() }
-                }
-                if searchProvider == .cloudflare {
-                    AskCloudflareSearchSettingsView(configuration: $cloudflareSearch, apiKey: searchKey)
-                        .onChange(of: cloudflareSearch) { value in search.cloudflare = value }
-                }
-            }
-        }
+    // MARK: - Shared state
+
+    var search: AskSearchSettings { AskSearchSettings(defaults: settings.defaults) }
+
+    var searchConfiguration: AskSearchConfiguration {
+        AskSearchConfiguration(provider: searchProvider, apiKey: searchKey, cloudflare: cloudflareSearch)
     }
 
-    private var searchProviderMenu: some View {
-        selectorMenu(Self.searchProviderName(searchProvider), label: L("ask.settings.search.provider")) {
-            ForEach(AskSearchSettings.Provider.allCases, id: \.self) { provider in
-                Button(Self.searchProviderName(provider)) { setSearchProvider(provider) }
-            }
-        }
+    var missingSearchFields: [AgentSearchField] {
+        AgentSearchField.missing(in: searchConfiguration)
+    }
+
+    var capabilityInputs: AgentCapabilityInputs {
+        AgentCapabilityInputs(
+            newConversationsStayLocal: newConversationsStayLocal,
+            searchProvider: searchProvider,
+            missingSearchFields: missingSearchFields,
+            folderCount: folders.count,
+            codeExecutionEnabled: codeEnabled,
+            accessibilityGranted: accessibilityGranted,
+            screenRecordingGranted: screenRecordingGranted,
+            skillCount: skillList.count,
+            enabledSkillCount: skillList.filter { !disabledSkills.contains($0.name) }.count,
+            mcpServerCount: mcpServerCount,
+            enabledMCPServerCount: enabledMCPServerCount
+        )
+    }
+
+    var capabilityStatuses: [AgentCapabilityStatus] {
+        AgentCapabilityStatus.statuses(for: capabilityInputs)
     }
 
     static func storageName(local: Bool) -> String {
         L(local ? "ask.storage.local" : "ask.storage.cloud")
     }
 
+    static func searchProviderName(_ provider: AskSearchSettings.Provider) -> String {
+        AgentCapabilityStatus.searchProviderName(provider)
+    }
+
+    func reload() {
+        folders = settings.askFileAccessFolders
+        codeEnabled = settings.askCodeExecutionEnabled
+        newConversationsStayLocal = settings.askNewConversationsStayLocal
+        searchProvider = search.provider
+        searchKey = search.apiKey
+        cloudflareSearch = search.cloudflare
+        skillList = skills.skills()
+        disabledSkills = settings.askDisabledSkills
+        let servers = settings.mcpServers
+        mcpServerCount = servers.count
+        enabledMCPServerCount = servers.filter(\.enabled).count
+        accessibilityGranted = permissions.accessibilityGranted()
+        screenRecordingGranted = permissions.screenRecordingGranted()
+        memoryNotes.reload(from: notes, owner: owner())
+        onStatusesChange(capabilityStatuses)
+    }
+
+    // MARK: - Actions
+
+    func setNewConversationsStayLocal(_ local: Bool) {
+        newConversationsStayLocal = local
+        settings.askNewConversationsStayLocal = local
+    }
+
+    func setSearchProvider(_ provider: AskSearchSettings.Provider) {
+        searchProvider = provider
+        search.provider = provider
+        searchKey = search.apiKey
+    }
+
+    func saveSearchKey() { search.setAPIKey(searchKey) }
+
+    func setCodeExecution(_ enabled: Bool) {
+        codeEnabled = enabled
+        settings.askCodeExecutionEnabled = enabled
+    }
+
+    func setSkill(_ name: String, enabled: Bool) {
+        var disabled = settings.askDisabledSkills
+        if enabled { disabled.remove(name) } else { disabled.insert(name) }
+        settings.askDisabledSkills = disabled
+        disabledSkills = disabled
+    }
+
+    func removeFolder(_ folder: String) {
+        let index = settings.askFileAccessFolders.firstIndex(of: folder)
+        settings.askFileAccessFolders.removeAll { $0 == folder }
+        if let index { removedFolder = RemovedFolder(path: folder, index: index) }
+        reload()
+    }
+
+    /// Puts the last removed folder back where it was.
+    func undoRemoveFolder() {
+        guard let removed = removedFolder else { return }
+        removedFolder = nil
+        settings.askFileAccessFolders = Self.restoring(removed, in: settings.askFileAccessFolders)
+        reload()
+    }
+
+    /// `list` with the removed folder back at its old position, unless it was added again meanwhile.
+    static func restoring(_ removed: RemovedFolder, in list: [String]) -> [String] {
+        guard !list.contains(removed.path) else { return list }
+        var result = list
+        result.insert(removed.path, at: min(max(removed.index, 0), result.count))
+        return result
+    }
+
+    func removeNote(_ note: AskMemoryNote) {
+        memoryNotes.remove(note, from: notes, owner: owner())
+    }
+
+    func addFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = true
+        panel.prompt = L("ask.settings.folders.add")
+        guard panel.runModal() == .OK else { return }
+        settings.askFileAccessFolders += panel.urls.map(\.path)
+        reload()
+    }
+
     /// A pop-up styled like the Models page selectors.
-    private func selectorMenu<Items: View>(_ value: String, label: String,
-                                           @ViewBuilder items: () -> Items) -> some View {
+    func selectorMenu<Items: View>(_ value: String, label: String, width: CGFloat = 160,
+                                   @ViewBuilder items: () -> Items) -> some View {
         Menu {
             items()
         } label: {
@@ -119,7 +220,7 @@ struct AskToolsSettingsView: View {
                 .allowsHitTesting(false)
         }
         .font(.system(size: 13))
-        .padding(.horizontal, 10).frame(width: 160, height: 30, alignment: .leading)
+        .padding(.horizontal, 10).frame(width: width, height: 30, alignment: .leading)
         .background(
             ModelVisualStyle.control,
             in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
@@ -131,244 +232,25 @@ struct AskToolsSettingsView: View {
         .accessibilityLabel(label)
     }
 
-    static func searchProviderName(_ provider: AskSearchSettings.Provider) -> String {
-        switch provider {
-        case .none: L("ask.settings.search.none")
-        case .tavily: "Tavily"
-        case .brave: "Brave Search"
-        case .cloudflare: "Cloudflare Web Search"
-        }
-    }
-
-    @ViewBuilder private var toolSections: some View {
-        AgentSettingsSection(title: L("agent.settings.code")) {
-            AgentSettingsRow(icon: "terminal", title: L("ask.settings.code.title"),
-                             subtitle: L("ask.settings.code.subtitle"), subtitleLineLimit: nil) {
-                Toggle("", isOn: Binding(get: { codeEnabled }, set: { codeEnabled = $0; settings.askCodeExecutionEnabled = $0 }))
-                    .labelsHidden().toggleStyle(.switch)
-            }
-        }
-        AgentSettingsSection(title: L("ask.settings.folders.title"), detail: "\(folders.count)",
-                             footnote: L("ask.settings.folders.subtitle")) {
-            ForEach(folders, id: \.self) { folder in
-                AgentSettingsRow(icon: "folder", title: (folder as NSString).lastPathComponent,
-                                 subtitle: folder, subtitleLineLimit: 1) {
-                    AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove")) { removeFolder(folder) }
-                }
-                ModelRowDivider(leading: 66)
-            }
-            AgentSettingsActionRow(icon: "plus", title: L("ask.settings.folders.add")) { addFolder() }
-        }
-    }
-
-    @ViewBuilder private var skillSections: some View {
-        AgentSettingsSection(title: L("ask.settings.skills.title"), detail: "\(skillList.count)",
-                             footnote: L("ask.settings.skills.subtitle")) {
-            ForEach(skillList, id: \.name) { skill in
-                skillRow(skill)
-                ModelRowDivider(leading: 66)
-            }
-            AgentSettingsActionRow(icon: "arrow.down.circle", title: L("ask.settings.skills.install")) {
-                installError = nil
-                installURL = ""
-                showingInstall = true
-            }
-            ModelRowDivider(leading: 66)
-            AgentSettingsActionRow(icon: "folder", title: L("ask.settings.skills.open")) { openSkillsFolder() }
-        }
-        .sheet(isPresented: $showingInstall) { installSheet }
-        .alert(L("ask.settings.skills.actionFailed"), isPresented: Binding(
-            get: { skillActionError != nil }, set: { if !$0 { skillActionError = nil } }
-        )) {
-            Button(L("common.ok")) { skillActionError = nil }
-        } message: {
-            Text(skillActionError ?? "")
-        }
-        .alert(L("ask.settings.skills.removeTitle"), isPresented: Binding(
-            get: { pendingRemoval != nil }, set: { if !$0 { pendingRemoval = nil } }
-        )) {
-            Button(L("ask.remove"), role: .destructive) {
-                if let skill = pendingRemoval { removeSkill(skill) }
-                pendingRemoval = nil
-            }
-            Button(L("common.cancel"), role: .cancel) { pendingRemoval = nil }
-        } message: {
-            Text(String(format: L("ask.settings.skills.removeMessage"), pendingRemoval?.name ?? ""))
-        }
-    }
-
-    private func skillRow(_ skill: AskSkill) -> some View {
-        let source = skills.source(of: skill)
-        let badge = skill.directory == nil ? L("ask.settings.skills.builtin")
-            : source == nil ? L("ask.settings.skills.local") : "GitHub"
-        return AgentSettingsRow(icon: "wand.and.stars", title: skill.name,
-                                subtitle: skill.displayDescription, badge: badge) {
-            HStack(spacing: 10) {
-                if skills.hasPreviousVersion(of: skill) {
-                    AgentSettingsIconButton(systemImage: "arrow.uturn.backward",
-                                            help: L("ask.settings.skills.rollback")) {
-                        do {
-                            try skills.rollback(skill)
-                            reload()
-                        } catch {
-                            skillActionError = error.localizedDescription
-                        }
-                    }
-                }
-                if skill.directory != nil {
-                    AgentSettingsIconButton(systemImage: "trash", help: L("ask.remove"), role: .destructive) {
-                        pendingRemoval = skill
-                    }
-                }
-                // A turned-off skill is neither offered to the model nor loaded.
-                Toggle("", isOn: Binding(get: { !disabledSkills.contains(skill.name) },
-                                         set: { setSkill(skill.name, enabled: $0) }))
-                    .labelsHidden().toggleStyle(.switch)
-                    .accessibilityLabel(skill.name)
-            }
-        }
-        .help(source.map(Self.skillSourceDescription) ?? "")
-    }
-
-    static func skillSourceDescription(_ source: AskSkillSource) -> String {
-        let version = source.commit ?? L("ask.settings.skills.unverifiedVersion")
-        let declarations = (source.declaredPermissions ?? []).joined(separator: ", ")
-        return "\(source.repository)@\(source.ref)\n\(version)\n\(source.path)"
-            + (declarations.isEmpty ? "" : "\n" + L("ask.settings.skills.declarations") + " " + declarations)
-    }
-
-    private var installSheet: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(L("ask.settings.skills.installTitle"))
-                .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-            Text(L("ask.settings.skills.installHint"))
-                .font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            TextField("https://github.com/owner/repo/tree/main/skills/name", text: $installURL)
-                .textFieldStyle(ModelFieldStyle())
-                .disabled(installing)
-                .onSubmit { startInstall() }
-            Text(L("ask.settings.skills.installWarning"))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
-            if let installError {
-                Text(installError).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            HStack {
-                Spacer()
-                Button(L("common.cancel")) { installTask?.cancel(); showingInstall = false }
-                    .buttonStyle(ModelActionStyle())
-                Button {
-                    startInstall()
-                } label: {
-                    HStack(spacing: 6) {
-                        if installing { ProgressView().controlSize(.small) }
-                        Text(L(installing ? "ask.settings.skills.installing" : "ask.settings.skills.installAction"))
-                    }
-                }
-                .buttonStyle(ModelActionStyle(primary: true))
-                .disabled(installing || installURL.trimmingCharacters(in: .whitespaces).isEmpty)
-                .keyboardShortcut(.defaultAction)
-            }
-        }
-        .padding(22)
-        .frame(width: 480)
-        .background(ModelVisualStyle.canvas)
-    }
-
-    private var memorySections: some View {
+    var memorySections: some View {
         MemoryNotesEditorView(model: memoryNotes, store: notes, owner: owner(),
                               correctionsEnabled: MemoryRollout.enabled(settings.defaults))
     }
+}
 
-    func setSkill(_ name: String, enabled: Bool) {
-        var disabled = settings.askDisabledSkills
-        if enabled { disabled.remove(name) } else { disabled.insert(name) }
-        settings.askDisabledSkills = disabled
-        disabledSkills = disabled
-    }
+/// Switch between skills and MCP servers, with the selected kind's actions on the right.
+struct AgentExtensionsHeader<Actions: View>: View {
+    @Binding var selection: AgentExtensionsTab
+    @ViewBuilder var actions: Actions
 
-    private func startInstall() {
-        let url = installURL
-        guard !installing, !url.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-        installing = true
-        installError = nil
-        installTask = Task { @MainActor in
-            defer { installing = false; installTask = nil }
-            do {
-                _ = try await AskSkillInstaller(library: skills).install(from: url)
-                guard !Task.isCancelled else { return }
-                reload()
-                showingInstall = false
-            } catch is CancellationError {
-            } catch {
-                installError = error.localizedDescription
-            }
+    var body: some View {
+        HStack(spacing: 8) {
+            ModelSegmentedControl(
+                options: AgentExtensionsTab.allCases.map { (label: $0.title, value: $0) },
+                selection: $selection
+            )
+            Spacer()
+            actions
         }
-    }
-
-    func removeSkill(_ skill: AskSkill) {
-        do {
-            try skills.remove(skill)
-            // Explicit removal resets the name preference; updates and rollback preserve it.
-            if settings.askDisabledSkills.contains(skill.name) { setSkill(skill.name, enabled: true) }
-            reload()
-        } catch {
-            skillActionError = error.localizedDescription
-        }
-    }
-
-    var search: AskSearchSettings { AskSearchSettings(defaults: settings.defaults) }
-
-    func setNewConversationsStayLocal(_ local: Bool) {
-        newConversationsStayLocal = local
-        settings.askNewConversationsStayLocal = local
-    }
-
-    func setSearchProvider(_ provider: AskSearchSettings.Provider) {
-        searchProvider = provider
-        search.provider = provider
-        searchKey = search.apiKey
-    }
-
-    func saveSearchKey() { search.setAPIKey(searchKey) }
-
-    func reload() {
-        folders = settings.askFileAccessFolders
-        codeEnabled = settings.askCodeExecutionEnabled
-        newConversationsStayLocal = settings.askNewConversationsStayLocal
-        searchProvider = search.provider
-        searchKey = search.apiKey
-        cloudflareSearch = search.cloudflare
-        skillList = skills.skills()
-        disabledSkills = settings.askDisabledSkills
-        memoryNotes.reload(from: notes, owner: owner())
-    }
-
-    private func addFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.allowsMultipleSelection = true
-        panel.prompt = L("ask.settings.folders.add")
-        guard panel.runModal() == .OK else { return }
-        settings.askFileAccessFolders += panel.urls.map(\.path)
-        reload()
-    }
-
-    func removeFolder(_ folder: String) {
-        settings.askFileAccessFolders.removeAll { $0 == folder }
-        reload()
-    }
-
-    func removeNote(_ note: AskMemoryNote) {
-        memoryNotes.remove(note, from: notes, owner: owner())
-    }
-
-    private func openSkillsFolder() {
-        try? FileManager.default.createDirectory(at: skills.userDirectory, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(skills.userDirectory)
     }
 }

@@ -332,7 +332,7 @@ final class AskAgentToolsTests: XCTestCase {
                                         notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("s.json")), owner: { "o" })
         view.removeFolder("/a")
         XCTAssertEqual(settings.askFileAccessFolders, ["/b"])
-        for tab in [AgentConfigurationTab.general, .tools, .skills, .memory] {
+        for tab in AgentConfigurationTab.allCases {
             var tabView = view
             tabView.tab = tab
             let settingsHost = NSHostingView(rootView: tabView.frame(width: 600))
