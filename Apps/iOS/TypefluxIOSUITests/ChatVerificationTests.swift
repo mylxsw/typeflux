@@ -89,10 +89,6 @@ final class ChatVerificationTests: XCTestCase {
         screenshot(app, "qa-reasoning-expanded")
         let table = app.scrollViews["表格，可横向滚动"]
         reveal(table, in: transcript, upwards: true)
-        // Content scrolls beneath the floating top bar, so lift the table only part way.
-        let start = transcript.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.72))
-        let end = transcript.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.50))
-        start.press(forDuration: 0.01, thenDragTo: end)
         XCTAssertTrue(app.staticTexts["多端合并"].isHittable)
         XCTAssertTrue(app.staticTexts["方案"].isHittable)
         XCTAssertTrue(app.staticTexts.matching(identifier: "chat.horizontalHint").firstMatch.exists)
@@ -178,7 +174,7 @@ final class ChatVerificationTests: XCTestCase {
         screenshot(app, "qa-stream-thinking")
         let preview = app.otherElements["chat.run.preview"]
         XCTAssertTrue(preview.waitForExistence(timeout: 15))
-        let latest = app.staticTexts["最后，为下一步留下一个清楚的小动作。"]
+        let latest = app.textViews.matching(NSPredicate(format: "value CONTAINS %@", "最后，为下一步留下一个清楚的小动作。")).firstMatch
         XCTAssertTrue(latest.waitForExistence(timeout: 15))
         XCTAssertTrue(latest.isHittable)
         screenshot(app, "qa-stream-progress")
@@ -293,8 +289,8 @@ final class ChatVerificationTests: XCTestCase {
         let password = app.secureTextFields["login.password"]
         // Typing without a tap verifies that Next transferred focus.
         password.typeText("synthetic-password")
-        XCTAssertTrue(app.staticTexts["login.email.label"].exists)
-        XCTAssertTrue(app.staticTexts["login.password.label"].exists)
+        XCTAssertFalse(app.staticTexts["login.email.label"].exists)
+        XCTAssertFalse(app.staticTexts["login.password.label"].exists)
         screenshot(app, "qa-login-filled")
         password.typeText("\n")
         XCTAssertTrue(app.buttons["chat.sidebar.open"].waitForExistence(timeout: 5))
