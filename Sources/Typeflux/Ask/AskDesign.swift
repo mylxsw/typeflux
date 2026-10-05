@@ -670,12 +670,11 @@ struct AskStopButton: View {
 
     var body: some View {
         Button(action: action) {
+            // Just the square, like every other composer icon: no circle around it.
             RoundedRectangle(cornerRadius: 3, style: .continuous)
                 .fill(StudioTheme.textPrimary)
-                .frame(width: 11, height: 11)
+                .frame(width: 12, height: 12)
                 .frame(width: AskSendButton.size, height: AskSendButton.size)
-                .background(Circle().fill(AskTheme.hoverFill))
-                .overlay(Circle().strokeBorder(AskTheme.border))
                 .contentShape(Circle())
         }
         .buttonStyle(AskPressableStyle())

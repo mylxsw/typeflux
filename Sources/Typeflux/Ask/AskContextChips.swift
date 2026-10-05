@@ -168,7 +168,8 @@ enum AskContextChips {
     @MainActor private static var iconCache: [String: NSImage] = [:]
 }
 
-/// A round context chip. Colour carries the state; after a short hover a card
+/// An icon context chip. The icon's colour carries the state; there is no
+/// circle, ring or glow around it. After a short hover a card
 /// above it gives the name, the details and what a click does. Removal is a
 /// corner badge that appears on hover.
 struct AskIconChip: View {
@@ -259,7 +260,6 @@ struct AskIconChipFace: View {
     let item: AskContextItem
     var hovering = false
 
-    private var shape: Circle { Circle() }
     private var appImage: NSImage? {
         guard let bundleID = item.appBundleID else { return nil }
         return AskContextChips.appIcon(bundleID)
@@ -268,18 +268,9 @@ struct AskIconChipFace: View {
     var body: some View {
         icon
             .frame(width: AskContextChips.chipSize, height: AskContextChips.chipSize)
-            // Borderless like the other footer controls: only state and hover fill the circle.
-            // An app icon is its own tile, so it only takes the hover wash.
-            .background(appImage == nil ? fill : (hovering ? AskTheme.hoverFill : .clear), in: shape)
-            // A switched-on toggle glows like the design board's lit glass buttons.
-            .overlay {
-                if item.style == .active, appImage == nil {
-                    shape.strokeBorder(AskTheme.accent.opacity(0.45), lineWidth: 0.5)
-                }
-            }
-            .shadow(color: item.style == .active && appImage == nil ? AskTheme.accent.opacity(0.22) : .clear, radius: 9)
-            // Switching a toggle lights or dims its glass on a short spring.
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: item.style)
+            // Borderless like every composer control: switching on lights the icon itself.
+            .animation(.easeOut(duration: 0.15), value: item.style)
+            .animation(.easeOut(duration: 0.12), value: hovering)
             .overlay(alignment: .topTrailing) {
                 if case let .count(value) = item.badge {
                     Text(verbatim: value > 99 ? "99+" : String(value))
@@ -318,28 +309,17 @@ struct AskIconChipFace: View {
                     Rectangle().frame(width: 20, height: 1.5).rotationEffect(.degrees(-45))
                 }
             }
-            .foregroundStyle(foreground)
+            .foregroundStyle(Self.iconColor(item.style, hovering: hovering))
         }
     }
 
-    private var foreground: Color {
-        switch item.style {
-        case .active: return AskTheme.accentText
+    /// The icon is the whole control: on is the accent, hover brightens an off icon.
+    static func iconColor(_ style: AskChip.Style, hovering: Bool) -> Color {
+        switch style {
+        case .active: return AskTheme.accent
         case .warning: return StudioTheme.warning
         case .unavailable: return StudioTheme.textTertiary
-        case .neutral: return StudioTheme.textSecondary
-        }
-    }
-
-    private var fill: Color { Self.fillColor(item.style, hovering: hovering) }
-
-    /// Translucent washes rather than the opaque soft tokens, so the chips sit on the
-    /// launcher's glass as well as on the workspace card.
-    static func fillColor(_ style: AskChip.Style, hovering: Bool) -> Color {
-        switch style {
-        case .active: return AskTheme.accent.opacity(hovering ? 0.24 : 0.16)
-        case .warning: return StudioTheme.warning.opacity(hovering ? 0.26 : 0.18)
-        case .neutral, .unavailable: return hovering ? AskTheme.hoverFill : .clear
+        case .neutral: return hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary
         }
     }
 }
