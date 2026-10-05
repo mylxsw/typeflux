@@ -16,32 +16,36 @@ struct ChatRootView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let width = min(Self.sidebarWidth, geometry.size.width - 56)
+            let width = max(0, min(Self.sidebarWidth, geometry.size.width - 56))
             let progress = sidebarProgress(width: width)
             ZStack(alignment: .leading) {
                 ChatDetailView(store: store, onOpenSidebar: { setSidebar(true) },
                                onNewConversation: newConversation)
                     .accessibilityHidden(sidebarOpen)
+                    .allowsHitTesting(!sidebarOpen)
                 // A thin leading strip opens the sidebar, like the system back swipe.
                 Color.clear.frame(width: 18).contentShape(Rectangle())
                     .gesture(openGesture(width: width))
                     .allowsHitTesting(!sidebarOpen)
                     .accessibilityHidden(true)
-                if progress > 0 {
-                    Color.black.opacity(0.18 * progress).ignoresSafeArea()
-                        .onTapGesture { setSidebar(false) }
-                        .gesture(closeGesture(width: width))
-                        .accessibilityLabel(Text("Close sidebar"))
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityAction { setSidebar(false) }
-                    ChatSidebar(store: store, onSelect: select, onNewConversation: newConversation,
-                                onSettings: openSettings)
-                        .frame(width: width)
-                        .padding(.vertical, 8).padding(.leading, 8)
-                        .offset(x: (progress - 1) * (width + 16))
-                        .gesture(closeGesture(width: width))
-                        .accessibilityAddTraits(.isModal)
-                }
+                Color.black.opacity(0.18 * progress).ignoresSafeArea()
+                    .onTapGesture { setSidebar(false) }
+                    .gesture(closeGesture(width: width))
+                    .accessibilityLabel(Text("Close sidebar"))
+                    .accessibilityIdentifier("chat.sidebar.close")
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction { setSidebar(false) }
+                    .allowsHitTesting(progress > 0)
+                    .accessibilityHidden(!sidebarOpen)
+                ChatSidebar(store: store, onSelect: select, onNewConversation: newConversation,
+                            onSettings: openSettings)
+                    .frame(width: width)
+                    .frame(maxHeight: .infinity)
+                    .offset(x: (progress - 1) * width)
+                    .gesture(closeGesture(width: width))
+                    .accessibilityAddTraits(.isModal)
+                    .allowsHitTesting(progress > 0)
+                    .accessibilityHidden(!sidebarOpen)
             }
         }
         .sheet(isPresented: $showSettings) {
@@ -64,7 +68,6 @@ struct ChatRootView: View {
             .onChanged { value in dragOffset = max(0, value.translation.width) }
             .onEnded { value in
                 let opens = value.translation.width > width * 0.35 || value.predictedEndTranslation.width > width
-                dragOffset = 0
                 setSidebar(opens)
             }
     }
@@ -74,17 +77,15 @@ struct ChatRootView: View {
             .onChanged { value in dragOffset = min(0, value.translation.width) }
             .onEnded { value in
                 let closes = -value.translation.width > width * 0.35 || -value.predictedEndTranslation.width > width
-                dragOffset = 0
                 setSidebar(!closes)
             }
     }
 
     private func setSidebar(_ open: Bool) {
-        if open {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        }
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         withAnimation(reduceMotion ? nil : .spring(response: 0.36, dampingFraction: 0.88)) {
             sidebarOpen = open
+            dragOffset = 0
         }
     }
 

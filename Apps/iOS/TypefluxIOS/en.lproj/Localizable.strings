@@ -181,3 +181,8 @@
 "Name" = "Name";
 "Plan" = "Plan";
 "Automatic" = "Automatic";
+
+"Continue with Google" = "Continue with Google";
+"Google sign-in is not configured." = "Google sign-in is not configured.";
+"Google sign-in returned an invalid response. Please try again." = "Google sign-in returned an invalid response. Please try again.";
+"Unable to sign in with Google. Please try again." = "Unable to sign in with Google. Please try again.";

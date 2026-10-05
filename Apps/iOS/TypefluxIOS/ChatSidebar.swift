@@ -56,12 +56,8 @@ struct ChatSidebar: View {
         .padding(.top, 18).padding(.horizontal, 8).padding(.bottom, 10)
         // A nearly opaque panel: the conversation behind must not show through the list.
         .background {
-            RoundedRectangle(cornerRadius: 30, style: .continuous).fill(.regularMaterial)
-                .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(ChatTheme.background.opacity(0.88)))
-                .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .strokeBorder(ChatTheme.border, lineWidth: 0.5))
-                .shadow(color: .black.opacity(0.18), radius: 24, x: 6)
+            ChatTheme.background.ignoresSafeArea()
+                .shadow(color: .black.opacity(0.18), radius: 16, x: 6)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.sidebar")
@@ -83,10 +79,12 @@ struct ChatSidebar: View {
                 .accessibilityAddTraits(.isHeader)
             Spacer()
             Button(action: onNewConversation) {
-                Image(systemName: "square.and.pencil").font(.system(size: 18, weight: .medium))
+                Label("New conversation", systemImage: "square.and.pencil")
+                    .labelStyle(.iconOnly).font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(ChatTheme.accent).frame(width: 44, height: 44)
             }
-            .accessibilityLabel("New conversation").accessibilityIdentifier("chat.new")
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("New conversation")).accessibilityIdentifier("chat.new")
         }
         .padding(.leading, 12).padding(.trailing, 2)
     }

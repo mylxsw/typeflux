@@ -68,3 +68,43 @@ captures with the same normalized name. The index identifies the source test; it
 | [qa-login.png](qa-login.png) | 1206 × 2622 | `ChatVerificationTests/testSettingsAccountAndSignOutConfirmation()` | `ios-polish-final-attachments` |
 | [qa-login-filled.png](qa-login-filled.png) | 1206 × 2622 | `ChatVerificationTests/testLoginLabelsAndKeyboardNextThenGo()` | `ios-polish-final-attachments` |
 | [v3-login.png](v3-login.png) | 1206 × 2622 | `ChatFlowTests/testHistorySearchAndAccountValidation()` | `ios-polish-final-attachments` |
+## GUL-209 verification (2026-10-05)
+
+Environment: Xcode 27.0, iPhone 17 Pro simulator, iOS 26.5.
+
+| Screenshot | Source |
+| --- | --- |
+| [Full-height Chinese drawer](gul209-zh-drawer.png) | `ChatFlowTests/testDrawerAndOutsideTapDismissKeyboardInChinese()` |
+| [Chinese new conversation](gul209-zh-new-conversation.png) | `ChatFlowTests/testDrawerAndOutsideTapDismissKeyboardInChinese()` |
+| [Google login entry](gul209-google-login.png) | `ChatFlowTests/testGoogleEntryReportsMissingConfigurationWithoutLeavingLogin()` |
+
+The shared package's 44 tests and the iOS application's 136 unit tests passed.
+The full iOS UI run passed 18 of 19 tests. Combined iOS unit/UI line coverage was
+94.2%; `GoogleSignIn.swift` reached 90.8%, and the shared OAuth core reached 99.0%.
+The final header-dismissal and model-effort interaction rerun also passed both UI
+tests; its screen recording is attached to GUL-209.
+
+After merging `main` at `596d9aef`, all 139 iOS unit tests passed, including the
+new upstream local-network endpoint checks. The Chinese drawer/keyboard and Google
+login entry UI checks were rerun successfully. Both Debug and Release plist files
+preserve the Google callback and localization metadata; the built Debug app also
+retains the upstream local-network configuration. The full-run coverage and macOS
+results below refer to the pre-merge implementation.
+
+`testLandscapeKeyboardCanReachLastModel()` fails before opening the model picker:
+the simulator window remains 402 × 874 after requesting landscape. The same test
+fails identically on the unchanged baseline commit `1a891a0f` in a separate checkout.
+The baseline runner then exited unexpectedly and hung while reporting; its owned
+`xcodebuild` process was stopped after the assertion had been captured.
+The sidebar keyboard test now waits for keyboard dismissal to complete instead of
+asserting during the dismissal animation.
+
+The full macOS run executed 2,848 XCTest cases with zero failures (7 skipped); the separate Swift Testing
+run executed 914 tests with 11 issues. Isolated reruns reproduced the window-height
+and short-model-label width assertions on both the working tree and the unchanged
+baseline. Other selection and animation failures passed in isolated reruns; the
+baseline's account-click and compose-button checks also passed. The full macOS run
+is therefore recorded as failing, not as a clean regression pass.
+
+Live Google authorization requires the configuration described in
+[iOS Google sign-in](../../../ios-google-sign-in.md) and a real-account device check.

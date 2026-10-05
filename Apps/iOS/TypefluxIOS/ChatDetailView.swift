@@ -48,6 +48,8 @@ struct ChatDetailView: View {
                     .frame(maxWidth: 760).frame(maxWidth: .infinity)
                 }
                 .scrollDismissesKeyboard(.interactively)
+                .contentShape(Rectangle())
+                .simultaneousGesture(TapGesture().onEnded { editorFocused = false })
                 .defaultScrollAnchor(isEmpty ? .top : .bottom)
                 .refreshable { await store.reloadConversation() }
                 .onChange(of: store.conversation?.messages.last?.id) { _, _ in
@@ -83,17 +85,25 @@ struct ChatDetailView: View {
 
     private var topBar: some View {
         HStack(spacing: 10) {
-            barButton("sidebar.left", label: "Open sidebar", identifier: "chat.sidebar.open", action: onOpenSidebar)
+            barButton("sidebar.left", label: "Open sidebar", identifier: "chat.sidebar.open") {
+                editorFocused = false
+                onOpenSidebar()
+            }
             if let conversation = store.conversation, !conversation.messages.isEmpty || store.isRunning {
                 titlePill(conversation)
             } else {
                 Spacer()
             }
             barButton("square.and.pencil", label: "New conversation", identifier: "chat.detail.new",
-                      tint: isEmpty ? ChatTheme.tertiary : ChatTheme.accent, action: onNewConversation)
+                      tint: isEmpty ? ChatTheme.tertiary : ChatTheme.accent) {
+                editorFocused = false
+                onNewConversation()
+            }
                 .disabled(isEmpty && store.draft.isEmpty && store.imageDataURL == nil)
         }
         .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 10)
+        .contentShape(Rectangle())
+        .simultaneousGesture(TapGesture().onEnded { editorFocused = false })
         .background {
             // Content scrolls under the bar and fades out instead of colliding with the title.
             LinearGradient(stops: [.init(color: ChatTheme.background, location: 0.55),
@@ -107,13 +117,14 @@ struct ChatDetailView: View {
     private func barButton(_ symbol: String, label: LocalizedStringKey, identifier: String,
                            tint: Color = .primary, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 17, weight: .medium))
+            Label(label, systemImage: symbol).labelStyle(.iconOnly)
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(tint).frame(width: 44, height: 44)
                 .chatGlassCircle()
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(label).accessibilityIdentifier(identifier)
+        .accessibilityLabel(Text(label)).accessibilityIdentifier(identifier)
     }
 
     private func titlePill(_ conversation: ChatConversation) -> some View {

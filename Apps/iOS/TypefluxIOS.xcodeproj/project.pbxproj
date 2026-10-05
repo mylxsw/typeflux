@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A20900000000000000000004 /* GoogleSignInTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20900000000000000000003 /* GoogleSignInTests.swift */; };
+		A20900000000000000000002 /* GoogleSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20900000000000000000001 /* GoogleSignIn.swift */; };
 		000000000000000000000034 /* TypefluxChat in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000000000033 /* TypefluxChat */; };
 		000000000000000000000035 /* TypefluxChat in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000000000033 /* TypefluxChat */; };
 		00000000000000000000003E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000003D /* Assets.xcassets */; };
@@ -56,6 +58,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A20900000000000000000003 /* GoogleSignInTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignInTests.swift; sourceTree = "<group>"; };
+		A20900000000000000000001 /* GoogleSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignIn.swift; sourceTree = "<group>"; };
 		000000000000000000000006 /* TypefluxIOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TypefluxIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000000000000000000007 /* TypefluxIOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TypefluxIOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000000000000000000009 /* TypefluxIOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TypefluxIOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -149,6 +153,7 @@
 				000000000000000000000066 /* ChatStore.swift */,
 				000000000000000000000067 /* CredentialStore.swift */,
 				000000000000000000000068 /* ImageAttachment.swift */,
+				A20900000000000000000001 /* GoogleSignIn.swift */,
 				000000000000000000000069 /* LoginView.swift */,
 				00000000000000000000006A /* SyntheticPreview.swift */,
 				00000000000000000000006B /* TypefluxIOSApp.swift */,
@@ -171,6 +176,7 @@
 		000000000000000000000004 /* TypefluxIOSTests */ = {
 			isa = PBXGroup;
 			children = (
+				A20900000000000000000003 /* GoogleSignInTests.swift */,
 				6EDC9ED4857EF34E96A3F17C /* ChatAccountTests.swift */,
 				00000000000000000000012C /* ChatStoreTests.swift */,
 				00000000000000000000012D /* PlatformTests.swift */,
@@ -323,6 +329,7 @@
 				0000000000000000000000CA /* ChatStore.swift in Sources */,
 				0000000000000000000000CB /* CredentialStore.swift in Sources */,
 				0000000000000000000000CC /* ImageAttachment.swift in Sources */,
+				A20900000000000000000002 /* GoogleSignIn.swift in Sources */,
 				0000000000000000000000CD /* LoginView.swift in Sources */,
 				0000000000000000000000CE /* SyntheticPreview.swift in Sources */,
 				0000000000000000000000CF /* TypefluxIOSApp.swift in Sources */,
@@ -342,6 +349,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A20900000000000000000004 /* GoogleSignInTests.swift in Sources */,
 				27D885831CAAFB84B2CFE3DA /* ChatAccountTests.swift in Sources */,
 				000000000000000000000190 /* ChatStoreTests.swift in Sources */,
 				000000000000000000000191 /* PlatformTests.swift in Sources */,
@@ -454,6 +462,8 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TYPEFLUX_ALLOW_INSECURE_HTTP = NO;
+				GOOGLE_IOS_CLIENT_ID = "";
+				GOOGLE_IOS_CALLBACK_SCHEME = app.typeflux.ios.google;
 				TYPEFLUX_API_URL = "https://api.typeflux.app";
 			};
 			name = Debug;
@@ -479,6 +489,8 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				GOOGLE_IOS_CLIENT_ID = "";
+				GOOGLE_IOS_CALLBACK_SCHEME = app.typeflux.ios.google;
 				TYPEFLUX_API_URL = "https://api.typeflux.app";
 			};
 			name = Release;
