@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import AppKit
 import SwiftUI
 
@@ -19,7 +20,9 @@ struct AskLauncherView: View {
 }
 
 /// Included content sits above the editor; switches and actions sit below it.
-/// The launcher and the workspace share the same composer.
+/// The launcher and the workspace share the same composer. The launcher reads
+/// as a search field: the editor is its first row, led by one context token,
+/// and its switches sit in a bottom bar under the results.
 struct AskComposer: View {
     @ObservedObject var model: AskConversationModel
     var compact: Bool
@@ -82,11 +85,25 @@ struct AskComposer: View {
     @State private var dismissedSlash: Int?
     /// Read once when the palette opens; running a command closes it.
     @State private var commandContext: AskCommandContext?
-    /// The workspace shows the content that is sent above the editor.
+    /// The workspace shows the content that is sent above the editor; the
+    /// launcher shows it in its context token.
     private var attachedItems: [AskContextItem] {
-        AskAttachmentStrip.contentItems(draft: draft.wrappedValue, screenshotState: screenshotState,
-                                        capturing: model.capturingScreenshot)
+        guard !launcher else { return [] }
+        return AskAttachmentStrip.contentItems(draft: draft.wrappedValue, screenshotState: screenshotState,
+                                               capturing: model.capturingScreenshot)
     }
+    /// The launcher's captured app, selection and screenshot; nil when nothing was captured.
+    private var contextToken: AskLauncherContext.Token? {
+        guard launcher else { return nil }
+        return AskLauncherContext.token(draft: draft.wrappedValue, screenshotState: screenshotState,
+                                        capturing: model.capturingScreenshot,
+                                        restored: model.launcherContextRestored,
+                                        collapsed: !draft.wrappedValue.text.isEmpty)
+    }
+    private var screenshotThumbnail: NSImage? {
+        AskAttachmentStrip.thumbnail(dataURL: draft.wrappedValue.screenshot, capturedAt: draft.wrappedValue.capturedAt)
+    }
+    @State private var contextPanelOpen = false
     @State private var editorHeight: CGFloat = 32
     @State private var measuredWidth: CGFloat = 600
     @State private var supplementalHeight: CGFloat = 0
@@ -270,7 +287,10 @@ struct AskComposer: View {
             }
             .onChange(of: paletteOpen) { _ in reportHeight() }
             .onChange(of: palette) { _ in if launcher { reportHeight() } }
-            .onChange(of: active) { recording in if recording { closePalette() } }
+            .onChange(of: active) { recording in
+                if recording { closePalette(); contextPanelOpen = false }
+                reportHeight()
+            }
             .onAppear { refreshQuickResults(); reportHeight() }
             .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in
                 voiceShortcut = model.modelLibrary.settings.activationHotkey
@@ -290,25 +310,33 @@ struct AskComposer: View {
                 }
                 .frame(height: min(max(1, supplementalHeight), layout.supplementalMaximumHeight))
             }
-            editorRow
-            footer
+            if launcher {
+                launcherHeader
+            } else {
+                editorRow
+                footer
+            }
             if launcher, paletteOpen {
                 paletteView
                     .frame(height: AskCommandPaletteView.height(for: palette))
                     .padding(.horizontal, 10)
                     .padding(.bottom, 10)
             }
-            if showsLauncherSuggestions {
+            if launcher, active {
+                // Recording takes the results' place at their height, so the panel stays put.
+                AskVoicePanel(live: voice.live, listening: listening, height: voicePanelHeight, token: contextToken)
+            } else if showsLauncherSuggestions {
                 AskLauncherSuggestions(highlighted: $suggestionIndex,
                                        screenshot: model.screenshotSuggestion(launcher: true), onPick: pick)
                     .disabled(active)
-                    .opacity(Self.recordingDim(active))
             } else if showsQuickResults, let quickResults {
                 AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
                                     minimumHeight: quickReserve, onRun: runQuickResult,
                                     onHighlight: { index in self.quickResults?.highlight(index) })
                     .disabled(active)
-                    .opacity(Self.recordingDim(active))
+            }
+            if launcher {
+                launcherBar
             }
         }
         .background {
@@ -321,7 +349,8 @@ struct AskComposer: View {
         .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
         .modifier(AskWorkspaceCardDepth(enabled: !launcher, corner: chrome.corner))
         .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
-                                 idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased)))
+                                 idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased),
+                                 sheen: !launcher))
         .overlay {
             if editingQueued || dropTargeted {
                 RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
@@ -542,41 +571,110 @@ struct AskComposer: View {
         slashChanged(AskSlashQuery.parse(draft.wrappedValue.text, caret: (draft.wrappedValue.text as NSString).length), typed: true)
     }
 
-    /// Quotes waiting in the draft name what the follow-up is about.
+    /// Quotes waiting in the draft name what the follow-up is about. The
+    /// launcher says what it does besides asking: search and calculate.
     private var placeholder: String {
-        if launcher || model.selectedId == nil { return L("ask.input.placeholder") }
+        if launcher { return L("ask.launcher.placeholder") }
+        if model.selectedId == nil { return L("ask.input.placeholder") }
         return AskReferenceStrip.placeholder(count: draft.wrappedValue.references?.count ?? 0)
             ?? L("ask.followup.placeholder")
     }
 
+    private var editorField: some View {
+        ZStack(alignment: .topLeading) {
+            if draft.wrappedValue.text.isEmpty {
+                Text(placeholder)
+                    .font(.system(size: chrome.editorFontSize))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    // Beside the launcher's token a long placeholder truncates rather than wraps.
+                    .lineLimit(launcher ? 1 : nil)
+                    .padding(.leading, AskComposerTextView.lineFragmentPadding)
+                    .padding(.top, 4)
+                    .allowsHitTesting(false)
+            }
+            AskComposerTextView(
+                text: draft.text,
+                placeholder: placeholder,
+                voice: voice,
+                contextID: contextID,
+                fontSize: chrome.editorFontSize,
+                maximumHeight: layout.editorMaximumHeight,
+                onSubmit: submit,
+                onDismiss: { if editingQueued { model.cancelQueuedEdit() } else { onDismiss() } },
+                onHeightChange: { editorHeight = $0 },
+                onAttach: { model.addAttachments($0, launcher: launcher) },
+                onDropTargetChange: { editorDropTargeted = $0 },
+                onSlashQuery: slashChanged,
+                onCommandKey: commandKey,
+                onEmptyBackspace: launcher ? removeLastContext : nil,
+                onContextShortcut: launcher ? toggleContextPanel : nil
+            )
+            .frame(height: min(editorHeight, layout.editorMaximumHeight))
+            .disabled(!launcher && model.isLoadingSelection)
+        }
+    }
+
     private var editorRow: some View {
         HStack(alignment: .top, spacing: 11) {
-            ZStack(alignment: .topLeading) {
-                if draft.wrappedValue.text.isEmpty {
-                    Text(placeholder)
-                        .font(.system(size: chrome.editorFontSize))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .padding(.leading, AskComposerTextView.lineFragmentPadding)
-                        .padding(.top, 4)
-                        .allowsHitTesting(false)
+            editorField
+        }
+        .padding(.horizontal, chrome.horizontalInset)
+        .padding(.top, layout.editorTopInset)
+        .padding(.bottom, layout.editorBottomInset)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Launcher
+
+    /// The launcher's first row: the context token (the recording dot while
+    /// dictating), the editor (the words being recognised), then the microphone
+    /// and send buttons, or the elapsed time, cancel and stop while recording.
+    private var launcherHeader: some View {
+        HStack(alignment: .top, spacing: 10) {
+            if active {
+                AskVoiceOrb(live: voice.live, listening: listening)
+                    .padding(.vertical, 2)
+            } else if let token = contextToken {
+                AskLauncherContextTokenView(token: token, thumbnail: screenshotThumbnail) {
+                    contextPanelOpen.toggle()
                 }
-                AskComposerTextView(
-                    text: draft.text,
-                    placeholder: placeholder,
-                    voice: voice,
-                    contextID: contextID,
-                    fontSize: chrome.editorFontSize,
-                    maximumHeight: layout.editorMaximumHeight,
-                    onSubmit: submit,
-                    onDismiss: { if editingQueued { model.cancelQueuedEdit() } else { onDismiss() } },
-                    onHeightChange: { editorHeight = $0 },
-                    onAttach: { model.addAttachments($0, launcher: launcher) },
-                    onDropTargetChange: { editorDropTargeted = $0 },
-                    onSlashQuery: slashChanged,
-                    onCommandKey: commandKey
-                )
-                .frame(height: min(editorHeight, layout.editorMaximumHeight))
-                .disabled(!launcher && model.isLoadingSelection)
+                .padding(.vertical, 2)
+                .popover(isPresented: $contextPanelOpen, arrowEdge: .bottom) { contextPanel }
+            }
+            editorField
+                // The text sits 2pt high in its view; this centres it on the 34pt buttons.
+                .offset(y: 2)
+                .opacity(active ? 0 : 1)
+                .overlay(alignment: .topLeading) {
+                    if active {
+                        AskVoiceLiveText(live: voice.live, listening: listening, existing: draft.wrappedValue.text,
+                                         fontSize: chrome.editorFontSize)
+                            .frame(height: AskMetrics.composerControlHeight)
+                    }
+                }
+            if active {
+                AskVoiceElapsed(live: voice.live)
+                    .frame(height: AskMetrics.composerControlHeight)
+                Button { voice.cancel() } label: {
+                    Image(systemName: "xmark").font(.system(size: 12, weight: .semibold))
+                        .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(StudioTheme.textSecondary)
+                .help(L("ask.voice.cancel"))
+                .accessibilityLabel(L("ask.voice.cancel"))
+                .accessibilityIdentifier("ask.voice.cancel")
+            }
+            AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
+                .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+                .accessibilityIdentifier("ask.composer.voice")
+            if !active {
+                AskSendButton(enabled: canSend, tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
+                              prominent: AskLauncherContext.sendIsProminent(
+                                  quickResults: showsQuickResults && !showsLauncherSuggestions ? quickResults : nil),
+                              action: submit)
+                    .accessibilityIdentifier("ask.composer.send")
             }
         }
         .padding(.horizontal, chrome.horizontalInset)
@@ -585,30 +683,113 @@ struct AskComposer: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Under the results: the model and switches, then what the keys do now.
+    private var launcherBar: some View {
+        HStack(spacing: 4) {
+            composerTools
+            Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
+            contextChips
+                .disabled(active)
+                .opacity(Self.recordingDim(active))
+            Spacer(minLength: 8)
+            Group {
+                if let feedback = model.capturedContentFeedback(launcher: true), !active {
+                    AskCapturedContentFeedbackView(feedback: feedback) {
+                        model.undoCapturedContent(launcher: true)
+                    }
+                } else if let feedback = model.commandFeedback, !active {
+                    AskComposerFootnote(text: feedback)
+                        .transition(.opacity)
+                } else {
+                    Text(launcherHint)
+                        .font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .lineLimit(1)
+                        .accessibilityHidden(true)
+                }
+            }
+            .layoutPriority(1)
+        }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: model.commandFeedback)
+        .padding(.leading, chrome.footerLeadingInset)
+        .padding(.trailing, 14)
+        .frame(height: layout.footerHeight)
+        .frame(maxWidth: .infinity)
+        .overlay(alignment: .top) {
+            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
+        }
+        .background {
+            AskSlashShortcut(disabled: active, action: startCommand)
+        }
+    }
+
+    private var launcherHint: String {
+        AskLauncherContext.hint(voice: active ? voice.phase : .idle,
+                                quickResults: showsQuickResults && !showsLauncherSuggestions ? quickResults : nil,
+                                hasContext: contextToken != nil)
+    }
+
+    /// The launcher's results area: its starting points or quick results.
+    private var resultsHeight: CGFloat {
+        if showsLauncherSuggestions { return AskLauncherSuggestions.height }
+        if showsQuickResults, let quickResults {
+            return max(quickReserve, AskQuickResultsView.height(for: quickResults))
+        }
+        return 0
+    }
+
+    private var voicePanelHeight: CGFloat { max(AskVoicePanel.minimumHeight, resultsHeight) }
+
+    private var contextPanel: some View {
+        AskLauncherContextPanel(
+            draft: draft, thumbnail: screenshotThumbnail, screenshotState: screenshotState,
+            restored: model.launcherContextRestored, capturing: model.capturing,
+            screenshotCapturing: model.capturingScreenshot,
+            setIncluded: { kind, included in
+                if included {
+                    model.restoreCapturedContent(kind, launcher: true)
+                } else {
+                    model.removeCapturedContent(kind, launcher: true)
+                }
+            },
+            toggleScreenshot: screenshotToggleAction,
+            fixScreenshot: screenshotFixAction,
+            recapture: { Task { await model.refreshScreenshot(launcher: true) } },
+            refresh: model.launcherContextRestored ? { Task { await model.refreshLauncherContext() } } : nil,
+            refreshTitle: model.launcherReplacementAppName.map { L("ask.context.panel.useApp", $0) }
+                ?? L("ask.context.refresh")
+        )
+    }
+
+    /// Grants access to, or retries, a screenshot that failed.
+    private var screenshotFixAction: (() -> Void)? {
+        if case .failed = screenshotState { return screenshotAction }
+        return nil
+    }
+
+    /// ⌫ in the empty launcher takes the captured content off, the screenshot first.
+    private func removeLastContext() -> Bool {
+        guard launcher, !active, let token = contextToken,
+              let kind = AskLauncherContext.backspaceTarget(draft.wrappedValue, screenshot: token.screenshot),
+              kind == .screenshot || !model.capturing else { return false }
+        model.removeCapturedContent(kind, launcher: true)
+        return true
+    }
+
+    /// ⌘K opens and closes the context panel.
+    private func toggleContextPanel() -> Bool {
+        guard launcher, !active, contextToken != nil else { return false }
+        contextPanelOpen.toggle()
+        return true
+    }
+
     /// Signed in, a conversation kept on this Mac is marked in the private tint; signed
     /// out every conversation is, so nothing needs telling apart.
     private var privateTint: Bool { model.isSignedIn && model.storesLocally(launcher: launcher) }
 
     private var footer: some View {
         HStack(spacing: 4) {
-            AskAttachButton(model: model, launcher: launcher,
-                            disabled: active || (!launcher && model.isLoadingSelection))
-                .opacity(Self.recordingDim(active))
-                .accessibilityIdentifier("ask.composer.attach")
-            AskStorageButton(model: model, launcher: launcher)
-                .disabled(active)
-                .opacity(Self.recordingDim(active))
-            AskModelMenu(library: model.modelLibrary, reference: Binding(
-                get: { model.modelReference(launcher: launcher) },
-                set: { model.selectModel($0, launcher: launcher) }
-            ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
-               hasImage: !launcher && model.hasConversationImages, compact: true,
-               condensed: layout.condensedFooter,
-               cloudAvailable: model.cloudAvailable(launcher: launcher),
-               onManage: model.onOpenSettings.map { open in { open(.models) } },
-               effort: $model.reasoningEffort)
-            .opacity(Self.recordingDim(active))
-            .accessibilityIdentifier("ask.composer.model")
+            composerTools
             // "How to ask" and "what rides along" are separated by a rule.
             if layout.condensedFooter {
                 contextMenu
@@ -676,6 +857,28 @@ struct AskComposer: View {
         .background {
             AskSlashShortcut(disabled: active || (!launcher && model.isLoadingSelection), action: startCommand)
         }
+    }
+
+    /// Attach, where the conversation is kept, and the model: the same in both composers.
+    @ViewBuilder private var composerTools: some View {
+        AskAttachButton(model: model, launcher: launcher,
+                        disabled: active || (!launcher && model.isLoadingSelection))
+            .opacity(Self.recordingDim(active))
+            .accessibilityIdentifier("ask.composer.attach")
+        AskStorageButton(model: model, launcher: launcher)
+            .disabled(active)
+            .opacity(Self.recordingDim(active))
+        AskModelMenu(library: model.modelLibrary, reference: Binding(
+            get: { model.modelReference(launcher: launcher) },
+            set: { model.selectModel($0, launcher: launcher) }
+        ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
+           hasImage: !launcher && model.hasConversationImages, compact: true,
+           condensed: layout.condensedFooter,
+           cloudAvailable: model.cloudAvailable(launcher: launcher),
+           onManage: model.onOpenSettings.map { open in { open(.models) } },
+           effort: $model.reasoningEffort)
+        .opacity(Self.recordingDim(active))
+        .accessibilityIdentifier("ask.composer.model")
     }
 
     /// Secondary switches remain reachable without pushing primary actions out
@@ -837,11 +1040,15 @@ struct AskComposer: View {
         // Confirmations ride in the footer, so only notice rows add height.
         let banners = noticeRows
         let commands = launcher && paletteOpen ? AskCommandPaletteView.height(for: palette) + 10 : 0
-        let quick = showsQuickResults && !showsLauncherSuggestions
+        // Recording shows its panel in the results' place, at least as tall as they were.
+        let recording = launcher && active
+        let quick = !recording && showsQuickResults && !showsLauncherSuggestions
             ? quickResults.map { max(quickReserve, AskQuickResultsView.height(for: $0)) } ?? 0 : 0
+        let panel = recording ? voicePanelHeight : 0
         onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
-                                                 suggestions: showsLauncherSuggestions, attachments: showsStrip,
-                                                 attachmentHeight: attachmentHeight) + commands + quick)
+                                                 suggestions: !recording && showsLauncherSuggestions,
+                                                 attachments: showsStrip,
+                                                 attachmentHeight: attachmentHeight) + commands + quick + panel)
     }
 }
 

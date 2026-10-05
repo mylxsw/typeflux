@@ -36,9 +36,9 @@ struct AskSuggestion: Equatable, Identifiable {
     }
 }
 
-/// The launcher's suggestion list under its controls, as on the design board:
-/// a hairline, three rows with an accent icon tile and a trailing caption, and
-/// the keyboard hint. ↑/↓ move the highlight and Return sends it.
+/// The launcher's suggestion list under its editor: a hairline and three rows
+/// with an accent icon tile and a trailing caption. The keyboard hint sits in
+/// the launcher's bottom bar. ↑/↓ move the highlight and Return sends it.
 struct AskLauncherSuggestions: View {
     @Binding var highlighted: Int
     /// What the screenshot suggestion can do with the launcher's model.
@@ -54,11 +54,10 @@ struct AskLauncherSuggestions: View {
     static let rowHeight: CGFloat = 42
     static let rowSpacing: CGFloat = 2
     static let listPadding: CGFloat = 6
-    static let hintHeight: CGFloat = 24
     /// Everything this list adds to the launcher card.
     static var height: CGFloat {
         let rows = CGFloat(AskSuggestion.all.count)
-        return 1 + listPadding * 2 + rows * rowHeight + (rows - 1) * rowSpacing + hintHeight
+        return 1 + listPadding * 2 + rows * rowHeight + (rows - 1) * rowSpacing
     }
 
     var body: some View {
@@ -72,13 +71,6 @@ struct AskLauncherSuggestions: View {
                 }
             }
             .padding(Self.listPadding)
-            Text(L("ask.launcher.hint"))
-                .font(.system(size: 11))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.horizontal, 16)
-                .frame(height: Self.hintHeight, alignment: .top)
-                .accessibilityHidden(true)
         }
         .background(AskArrowKeyMonitor { delta in
             highlighted = AskSuggestion.step(highlighted, by: delta, skipping: disabled)

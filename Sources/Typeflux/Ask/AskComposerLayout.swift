@@ -1,7 +1,7 @@
 import Foundation
 
 /// Keep the editor and primary actions available as the workspace shrinks.
-/// The floating launcher retains its existing dimensions and controls.
+/// The floating launcher keeps its own fixed header and bottom bar.
 struct AskComposerLayout: Equatable {
     var launcher: Bool
     var compact: Bool
@@ -42,14 +42,14 @@ struct AskComposerLayout: Equatable {
     }
 
     var editorTopInset: CGFloat {
-        usesCompactMetrics ? 6 : 14
+        launcher ? AskComposerChrome.launcher.editorTopInset : usesCompactMetrics ? 6 : 14
     }
 
     var editorBottomInset: CGFloat {
-        launcher || usesCompactMetrics ? 2 : 4
+        launcher ? AskComposerChrome.launcher.editorBottomInset : usesCompactMetrics ? 2 : 4
     }
 
     var footerHeight: CGFloat {
-        launcher ? 54 : usesCompactMetrics ? 40 : 48
+        launcher ? AskComposerChrome.launcher.footerHeight : usesCompactMetrics ? 40 : 48
     }
 }

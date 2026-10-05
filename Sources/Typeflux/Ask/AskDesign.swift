@@ -163,9 +163,9 @@ enum AskMetrics {
     static let launcherWidth: CGFloat = 680
     /// Breathing room around the launcher card.
     static let launcherGutter: CGFloat = 6
-    /// The launcher's glass card: 27 = footer inset 10 + the 34pt controls' radius 17,
-    /// so the corner stays concentric with the controls in it.
-    static let launcherCardCorner: CGFloat = 27
+    /// The launcher's glass card: 29 = the header's 12pt inset + the 34pt controls'
+    /// radius 17, so the corner stays concentric with the microphone and send buttons.
+    static let launcherCardCorner: CGFloat = 29
     /// Height of every footer control: menus, context chips, microphone and send.
     static let composerControlHeight: CGFloat = 34
     /// Horizontal padding inside the footer's text menus (model, reasoning).
@@ -234,7 +234,7 @@ enum AskMetrics {
     static func launcherHeight(editor: CGFloat, banners: Int, suggestions: Bool = false, attachments: Bool = false,
                                attachmentHeight: CGFloat? = nil) -> CGFloat {
         let chrome = AskComposerChrome.launcher
-        return editor + chrome.editorTopInset + chrome.editorBottomInset + chrome.footerHeight + launcherGutter * 2
+        return launcherHeaderHeight(editor: editor) + chrome.footerHeight + launcherGutter * 2
             + CGFloat(banners) * (bannerHeight + bannerSpacing)
             + (suggestions ? AskLauncherSuggestions.height : 0)
             + (attachments ? attachmentHeight.map { max(0, $0) + 10 } ?? attachmentStripHeight : 0)
@@ -242,6 +242,13 @@ enum AskMetrics {
 
     /// The attachment strip above the editor: one row of chips and its top padding.
     static let attachmentStripHeight: CGFloat = 40
+
+    /// The launcher's first row: the editor beside the context token and the
+    /// microphone and send buttons. One line of text keeps it at 58pt.
+    static func launcherHeaderHeight(editor: CGFloat) -> CGFloat {
+        let chrome = AskComposerChrome.launcher
+        return max(composerControlHeight, editor) + chrome.editorTopInset + chrome.editorBottomInset
+    }
 }
 
 /// Surface of the shared composer. The launcher and the workspace are the same
@@ -263,19 +270,19 @@ struct AskComposerChrome: Equatable {
     var footerHeight: CGFloat = 44
     var footerLeadingInset: CGFloat = 12
 
-    /// The editor text starts where the model name does: footer inset 10 plus the
-    /// menu's own 10pt padding, less the text view's 5pt line fragment padding.
+    /// The launcher reads as a search field first: its editor is the first row,
+    /// in larger text, and the model and switches sit in a quieter bottom bar.
     static let launcher = AskComposerChrome(
         fill: AskTheme.composerSurface,
         corner: AskMetrics.launcherCardCorner,
-        editorFontSize: 15,
-        horizontalInset: 15,
+        editorFontSize: 17,
+        horizontalInset: 12,
         idleBorder: AskTheme.floatingBorder,
         glass: true,
-        editorTopInset: 14,
-        editorBottomInset: 2,
-        footerHeight: 54,
-        footerLeadingInset: 10
+        editorTopInset: 12,
+        editorBottomInset: 12,
+        footerHeight: 42,
+        footerLeadingInset: 7
     )
 
     /// The launcher's card inside the conversation window. It sits on the
@@ -285,12 +292,14 @@ struct AskComposerChrome: Equatable {
         chrome.idleBorder = AskTheme.border
         chrome.placement = .inWindow
         chrome.fill = AskTheme.glassFill
-        // The design board's in-window card: 28pt corners, text 20pt in, a 48pt footer.
+        // The design board's in-window card: 28pt corners, 15pt text 20pt in, a 48pt footer.
         chrome.corner = 28
+        chrome.editorFontSize = 15
         chrome.horizontalInset = 20
         chrome.editorTopInset = 14
         chrome.editorBottomInset = 4
         chrome.footerHeight = 48
+        chrome.footerLeadingInset = 10
         return chrome
     }()
 
@@ -617,7 +626,12 @@ struct AskSendButton: View {
     var enabled: Bool
     /// Lit in the private tint for a conversation kept on this Mac.
     var tint: Color = AskTheme.accent
+    /// Unlit but still clickable while Return does something else, such as
+    /// opening the launcher's highlighted application.
+    var prominent = true
     var action: () -> Void
+
+    private var lit: Bool { enabled && prominent }
 
     var body: some View {
         Button(action: action) {
@@ -627,22 +641,22 @@ struct AskSendButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(AskPressableStyle())
-        .foregroundStyle(enabled ? Color.white : StudioTheme.textTertiary)
+        .foregroundStyle(lit ? Color.white : enabled ? StudioTheme.textSecondary : StudioTheme.textTertiary)
         // The only solid control in the composer: a lit accent drop when it can send,
         // a faint translucent well otherwise, so it sits on glass and opaque cards alike.
-        .background(Circle().fill(enabled ? tint : AskTheme.hoverFill))
+        .background(Circle().fill(lit ? tint : AskTheme.hoverFill))
         .overlay {
-            if enabled {
+            if lit {
                 Circle().fill(RadialGradient(colors: [Color.white.opacity(0.32), .clear],
                                              center: UnitPoint(x: 0.3, y: 0), startRadius: 0, endRadius: 22))
                     .allowsHitTesting(false)
             }
         }
-        .shadow(color: enabled ? tint.opacity(0.5) : .clear, radius: 9, y: 3)
+        .shadow(color: lit ? tint.opacity(0.5) : .clear, radius: 9, y: 3)
         // Becoming sendable, the button lights up with a small spring.
-        .scaleEffect(enabled ? 1 : 0.94)
+        .scaleEffect(lit ? 1 : 0.94)
         .disabled(!enabled)
-        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: enabled)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: lit)
         // The keys live here rather than in a hint row under the composer.
         .help(L("ask.send.help"))
         .accessibilityLabel(L("ask.send"))
@@ -925,6 +939,8 @@ struct AskVoiceBorder: ViewModifier {
     var context: String
     var radius: CGFloat
     var idle: Color = AskTheme.border
+    /// The travelling highlight; the launcher shows the voice in its own row instead.
+    var sheen = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var listening: Bool { voice.context == context && voice.phase == .listening }
@@ -940,7 +956,7 @@ struct AskVoiceBorder: ViewModifier {
             // The travelling highlight is a Core Animation layer, so it never
             // makes SwiftUI redraw the glass card per frame.
             .overlay {
-                if Self.showsSheen(listening: listening, reduceMotion: reduceMotion) {
+                if sheen, Self.showsSheen(listening: listening, reduceMotion: reduceMotion) {
                     AskRecordingSheen(cornerRadius: radius, lineWidth: Self.borderWidth(listening: true), animated: true)
                         .allowsHitTesting(false)
                 }

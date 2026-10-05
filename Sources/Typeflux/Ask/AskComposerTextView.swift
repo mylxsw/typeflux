@@ -26,6 +26,10 @@ struct AskComposerTextView: NSViewRepresentable {
     var onSlashQuery: ((AskSlashQuery?, Bool) -> Void)?
     /// Arrow, Return, Tab and Escape while the command palette is open; true when handled.
     var onCommandKey: ((AskCommandKey) -> Bool)?
+    /// Delete in an empty editor; true when it removed something instead.
+    var onEmptyBackspace: (() -> Bool)?
+    /// ⌘K; true when handled.
+    var onContextShortcut: (() -> Bool)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -62,6 +66,8 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onDropTargetChange = onDropTargetChange
         editor.onSlashQuery = onSlashQuery
         editor.onCommandKey = onCommandKey
+        editor.onEmptyBackspace = onEmptyBackspace
+        editor.onContextShortcut = onContextShortcut
         editor.setAccessibilityLabel(placeholder)
         editor.setAccessibilityHelp(L("ask.voice.holdHint"))
         scroll.documentView = editor
@@ -93,6 +99,8 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onDropTargetChange = onDropTargetChange
         editor.onSlashQuery = onSlashQuery
         editor.onCommandKey = onCommandKey
+        editor.onEmptyBackspace = onEmptyBackspace
+        editor.onContextShortcut = onContextShortcut
         if editor.font?.pointSize != fontSize { editor.font = .systemFont(ofSize: fontSize) }
         if editor.string != text, !editor.hasMarkedText() {
             editor.string = text
@@ -138,6 +146,8 @@ struct AskComposerTextView: NSViewRepresentable {
         var onDropTargetChange: (Bool) -> Void = { _ in }
         var onSlashQuery: ((AskSlashQuery?, Bool) -> Void)?
         var onCommandKey: ((AskCommandKey) -> Bool)?
+        var onEmptyBackspace: (() -> Bool)?
+        var onContextShortcut: (() -> Bool)?
         /// A key press is being handled; edits made now were typed.
         private(set) var typing = false
         private var reportedHeight: CGFloat = 0
@@ -340,12 +350,27 @@ struct AskComposerTextView: NSViewRepresentable {
             reportedHeight = height
             DispatchQueue.main.async { [weak self] in self?.onHeightChange(height) }
         }
+        override func performKeyEquivalent(with event: NSEvent) -> Bool {
+            if Self.isContextShortcut(event), window?.firstResponder === self, voice?.isActive != true,
+               onContextShortcut?() == true { return true }
+            return super.performKeyEquivalent(with: event)
+        }
+        static func isContextShortcut(_ event: NSEvent) -> Bool {
+            event.type == .keyDown && event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command
+                && event.charactersIgnoringModifiers?.lowercased() == "k"
+        }
         override func keyDown(with event: NSEvent) {
             if event.keyCode == 53, mouseDownEvent != nil { cancelInteraction(); return }
             if voice?.isActive == true {
                 if event.keyCode == 53 { cancelInteraction() }
+                // Return finishes recording and fills in the words, like the stop button.
+                if event.keyCode == 36 || event.keyCode == 76, voice?.phase == .listening,
+                   voice?.context == contextID { voice?.stop() }
                 return
             }
+            if event.keyCode == 51, string.isEmpty, !hasMarkedText(),
+               event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
+               onEmptyBackspace?() == true { return }
             if !hasMarkedText(), let key = AskCommandKey(event), onCommandKey?(key) == true { return }
             if event.keyCode == 36, !event.modifierFlags.contains(.shift), !hasMarkedText() {
                 onSubmit(); return

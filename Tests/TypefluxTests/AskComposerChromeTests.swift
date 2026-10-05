@@ -9,11 +9,13 @@ struct AskComposerChromeTests {
         let workspace = AskComposerChrome.of(launcher: false)
         #expect(launcher.glass)
         #expect(workspace.glass)
-        // The same controls and type; the in-window card takes the design board's
-        // larger corner, wider text inset and its own glass tint.
-        #expect(workspace.editorFontSize == launcher.editorFontSize)
-        #expect(workspace.editorTopInset == launcher.editorTopInset)
-        #expect(workspace.footerLeadingInset == launcher.footerLeadingInset)
+        // The same controls; the launcher reads as a search field in larger type,
+        // and the in-window card takes the design board's larger corner, wider
+        // text inset and its own glass tint.
+        #expect(launcher.editorFontSize == 17)
+        #expect(workspace.editorFontSize == 15)
+        #expect(workspace.editorTopInset == 14)
+        #expect(workspace.footerLeadingInset == 10)
         #expect(workspace.corner == 28)
         #expect(workspace.horizontalInset == 20)
         #expect(workspace.footerHeight == 48)
@@ -24,13 +26,18 @@ struct AskComposerChromeTests {
         #expect(workspace.placement == .inWindow)
     }
 
-    @Test func launcherCornerIsConcentricWithTheFooterControls() {
+    @Test func launcherCornerIsConcentricWithTheHeaderControls() {
         let launcher = AskComposerChrome.launcher
-        // The send button sits 10pt from the trailing edge; the corner wraps it at the same centre.
-        #expect(launcher.corner == 10 + AskMetrics.composerControlHeight / 2)
-        // Controls are vertically centred in the footer with the same 10pt clearance.
-        #expect((launcher.footerHeight - AskMetrics.composerControlHeight) / 2 == 10)
-        #expect(launcher.footerLeadingInset == 10)
+        // The send button sits 12pt from the trailing and top edges; the corner wraps it at the same centre.
+        #expect(launcher.horizontalInset == 12)
+        #expect(launcher.editorTopInset == 12)
+        #expect(launcher.corner == 12 + AskMetrics.composerControlHeight / 2)
+        // One line of text keeps the header at 58pt, with the buttons centred in it.
+        #expect(AskMetrics.launcherHeaderHeight(editor: 32) == 58)
+        #expect(AskMetrics.launcherHeaderHeight(editor: 33) == 58)
+        #expect(AskMetrics.launcherHeaderHeight(editor: 60) == 84)
+        // The bottom bar holds the same 34pt controls with 4pt to spare above and below.
+        #expect((launcher.footerHeight - AskMetrics.composerControlHeight) / 2 == 4)
     }
 
     @Test func launcherEditorTextLinesUpWithTheModelName() {

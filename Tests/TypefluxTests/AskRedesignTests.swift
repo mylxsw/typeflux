@@ -70,9 +70,9 @@ struct AskPresentationTests {
 
     @Test func launcherHeightIsTheComposerCardPlusItsGutter() {
         let resting = AskMetrics.launcherHeight(editor: 32, banners: 0)
-        // 32 editor + 14 + 2 insets + 54 footer + 6 gutter on each side.
-        #expect(resting == 114)
-        #expect(AskMetrics.launcherHeight(editor: 148, banners: 0) == 230)
+        // 58 header (34pt row + 12 + 12 insets) + 42 bottom bar + 6 gutter on each side.
+        #expect(resting == 112)
+        #expect(AskMetrics.launcherHeight(editor: 148, banners: 0) == 226)
         #expect(AskMetrics.launcherHeight(editor: 32, banners: 1) == resting + 38)
         #expect(AskMetrics.launcherHeight(editor: 32, banners: 2) == resting + 76)
         // The empty launcher lists its suggestions under the controls.
