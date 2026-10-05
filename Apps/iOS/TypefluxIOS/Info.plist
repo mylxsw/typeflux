@@ -15,6 +15,11 @@
     <key>UILaunchScreen</key><dict/>
     <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
     <key>UISupportedInterfaceOrientations~ipad</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationPortraitUpsideDown</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
+    <key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string></array>
+    <key>GOOGLE_IOS_CLIENT_ID</key><string>$(GOOGLE_IOS_CLIENT_ID)</string>
+    <key>CFBundleURLTypes</key><array><dict>
+        <key>CFBundleURLSchemes</key><array><string>$(GOOGLE_IOS_CALLBACK_SCHEME)</string></array>
+    </dict></array>
     <key>TYPEFLUX_API_URL</key><string>$(TYPEFLUX_API_URL)</string>
     <key>ITSAppUsesNonExemptEncryption</key><false/>
     <key>NSMicrophoneUsageDescription</key><string>Typeflux uses the microphone when you dictate a question.</string>

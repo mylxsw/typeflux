@@ -7,6 +7,60 @@ final class ChatFlowTests: XCTestCase {
     }
 
     @MainActor
+    func testDrawerAndOutsideTapDismissKeyboardInChinese() {
+        let app = launchPreview(language: "zh-Hans")
+        let composer = app.textFields["chat.composer"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["chat.detail.new"].label, "新对话")
+        composer.tap()
+        composer.typeText("Draft stays here")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.scrollViews.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(composer.value as? String, "Draft stays here")
+        composer.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        app.buttons["chat.sidebar.open"].tap()
+        let sidebar = app.descendants(matching: .any)["chat.sidebar"].firstMatch
+        XCTAssertTrue(sidebar.waitForExistence(timeout: 5))
+        XCTAssertEqual(sidebar.frame.minX, app.frame.minX, accuracy: 1)
+        XCTAssertGreaterThan(sidebar.frame.height, app.frame.height * 0.8)
+        XCTAssertEqual(app.buttons["chat.new"].label, "新对话")
+        attachScreenshot(app, name: "gul209-zh-drawer")
+        // The exposed strip belongs to the dismissing scrim, not the conversation.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.4)).tap()
+        XCTAssertTrue(app.buttons["chat.detail.new"].waitForExistence(timeout: 5))
+        composer.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.buttons["chat.detail.new"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        attachScreenshot(app, name: "gul209-zh-new-conversation")
+        app.buttons["chat.sidebar.open"].tap()
+        sidebar.swipeLeft()
+        XCTAssertTrue(app.buttons["chat.detail.new"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testGoogleEntryReportsMissingConfigurationWithoutLeavingLogin() {
+        let app = launchPreview(language: "zh-Hans")
+        openHistory(app)
+        app.buttons["chat.account"].tap()
+        app.buttons["account.signOut"].tap()
+        app.buttons.matching(identifier: "account.confirmSignOut").firstMatch.tap()
+        let google = app.buttons["login.google"]
+        XCTAssertTrue(google.waitForExistence(timeout: 5))
+        XCTAssertEqual(google.label, "使用 Google 账号继续")
+        attachScreenshot(app, name: "gul209-google-login")
+        google.tap()
+        XCTAssertTrue(app.staticTexts["login.error"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["login.error"].label, "Google 登录尚未配置。")
+        XCTAssertTrue(google.isEnabled)
+        XCTAssertTrue(app.buttons["login.email.open"].isEnabled)
+    }
+
+    @MainActor
     func testUnifiedModelEffortPickerAndModelCapabilities() {
         let app = launchPreview()
         XCTAssertTrue(app.staticTexts["What's on your mind?"].waitForExistence(timeout: 5))

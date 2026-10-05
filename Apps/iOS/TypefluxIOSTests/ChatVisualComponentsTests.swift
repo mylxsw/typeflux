@@ -7,6 +7,16 @@ import UIKit
 @MainActor
 @Suite("Mac-aligned mobile visual components")
 struct ChatVisualComponentsTests {
+    @Test func `liquid clock does not jump when time or layout changes`() {
+        let clock = ChatLiquidClock()
+        let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        #expect(clock.advance(to: start) == 0)
+        #expect(abs(clock.advance(to: start.addingTimeInterval(0.03)) - 0.03) < 0.000001)
+        let before = clock.elapsed
+        #expect(clock.advance(to: start.addingTimeInterval(120)) == before + 0.1)
+        #expect(clock.advance(to: start.addingTimeInterval(119)) == before + 0.1)
+    }
+
     @Test func `orb integrates eight seconds without jumping after background or clock skew`() {
         let clock = ChatOrbClock()
         let start = Date(timeIntervalSinceReferenceDate: 0)

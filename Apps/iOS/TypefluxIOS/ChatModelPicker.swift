@@ -504,8 +504,11 @@ struct ChatEffortSlider: View {
                         .opacity(!auto && stop <= index ? 0 : 1)
                 }
                 ChatLiquidFill(top: effort.nearest(in: levels).isTop(in: levels), reduceMotionOverride: reduceMotion)
-                    .frame(width: auto ? 0 : Self.fillWidth(knobCenter: center, width: width), height: Self.height)
-                    .clipShape(Capsule()).opacity(auto ? 0 : 1)
+                    .frame(width: width, height: Self.height)
+                    .mask(alignment: .leading) {
+                        Capsule().frame(width: auto ? 0 : Self.fillWidth(knobCenter: center, width: width))
+                    }
+                    .opacity(auto ? 0 : 1)
                 knob.position(x: center, y: Self.height / 2)
             }
             .frame(height: Self.height)
@@ -515,8 +518,7 @@ struct ChatEffortSlider: View {
                 guard !levels.isEmpty else { return }
                 effort = levels[Self.index(at: value.location.x, count: levels.count, width: width)]
             })
-            .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.82), value: index)
-            .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.82), value: auto)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: effort)
         }
         .frame(height: Self.touchHeight)
         .accessibilityElement()
@@ -552,6 +554,7 @@ struct ChatLiquidFill: View {
     var reduceMotionOverride: Bool?
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     static let particleCount = 26
+    @State private var clock = ChatLiquidClock()
 
     private var reduceMotion: Bool {
         reduceMotionOverride ?? systemReduceMotion
@@ -564,14 +567,23 @@ struct ChatLiquidFill: View {
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { context in
-            Canvas { canvas, size in
-                draw(in: &canvas, size: size, time: reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate)
+            let time = reduceMotion ? 0 : clock.advance(to: context.date)
+            ZStack {
+                Canvas { canvas, size in
+                    draw(in: &canvas, size: size, time: time, top: false)
+                }
+                Canvas { canvas, size in
+                    draw(in: &canvas, size: size, time: time, top: true)
+                }
+                .opacity(top ? 1 : 0)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: top)
             }
         }
+        .transaction { $0.animation = nil }
         .allowsHitTesting(false)
     }
 
-    private func draw(in canvas: inout GraphicsContext, size: CGSize, time: TimeInterval) {
+    private func draw(in canvas: inout GraphicsContext, size: CGSize, time: TimeInterval, top: Bool) {
         let width = size.width, height = size.height
         guard width > 1 else { return }
         let rect = CGRect(origin: .zero, size: size)
@@ -615,5 +627,17 @@ struct ChatLiquidFill: View {
         canvas.stroke(Path(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), cornerRadius: height / 2),
                       with: .color(top ? Color(red: 0.78, green: 0.67, blue: 1).opacity(0.35)
                           : Color(red: 0.55, green: 0.71, blue: 1).opacity(0.35)), lineWidth: 1)
+    }
+}
+
+/// Visible elapsed time stays continuous across foreground changes and layout updates.
+final class ChatLiquidClock {
+    private(set) var elapsed: TimeInterval = 0
+    private var last: Date?
+
+    func advance(to date: Date) -> TimeInterval {
+        elapsed += min(max(last.map { date.timeIntervalSince($0) } ?? 0, 0), 0.1)
+        last = date
+        return elapsed
     }
 }

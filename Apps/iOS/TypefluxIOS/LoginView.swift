@@ -1,11 +1,21 @@
 import AuthenticationServices
 import SwiftUI
 
-/// Welcome: the brand, one sentence and two ways in. Email sign-in is its own page.
+/// Welcome: the brand, one sentence and three ways in. Email sign-in is its own page.
 struct LoginView: View {
     @Bindable var store: ChatStore
     @State private var path: [Route] = []
+    @State private var googleSignIn: GoogleSignIn
+    @State private var googleTask: Task<Void, Never>?
     @Environment(\.colorScheme) private var colorScheme
+
+    init(store: ChatStore) {
+        self.store = store
+        // Synthetic previews must never open a real identity provider.
+        _googleSignIn = State(initialValue: GoogleSignIn(
+            clientID: store.isSynthetic ? "" : GoogleSignIn.configuredClientID
+        ))
+    }
 
     enum Route: Hashable {
         case email
@@ -37,6 +47,20 @@ struct LoginView: View {
                     .clipShape(Capsule())
                     .disabled(store.isLoading)
                     .accessibilityIdentifier("login.apple")
+                    Button {
+                        googleTask = Task { await store.loginWithGoogle(using: googleSignIn) }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image("GoogleMark").resizable().scaledToFit().frame(width: 20, height: 20)
+                                .accessibilityHidden(true)
+                            Text("Continue with Google").font(.system(size: 16.5, weight: .semibold))
+                        }
+                        .foregroundStyle(.primary).frame(maxWidth: .infinity, minHeight: 52)
+                        .chatCard(corner: 26)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(store.isLoading)
+                    .accessibilityIdentifier("login.google")
                     Button { path.append(.email) } label: {
                         Label("Sign in with email", systemImage: "envelope")
                             .font(.system(size: 16.5, weight: .semibold)).foregroundStyle(.primary)
@@ -45,6 +69,7 @@ struct LoginView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("login.email.open")
+                    .disabled(store.isLoading)
                     legal.padding(.top, 8)
                 }
                 .frame(maxWidth: 420)
@@ -58,6 +83,11 @@ struct LoginView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .onDisappear {
+                // Successful sign-in replaces this view while the initial history is still loading.
+                if !store.isAuthenticated { googleTask?.cancel() }
+                googleTask = nil
+            }
             .navigationDestination(for: Route.self) { _ in
                 ChatEmailLoginView(store: store)
             }

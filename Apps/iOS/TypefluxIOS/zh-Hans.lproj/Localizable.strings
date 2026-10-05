@@ -181,3 +181,8 @@
 "Name" = "名称";
 "Plan" = "套餐";
 "Automatic" = "自动";
+
+"Continue with Google" = "使用 Google 账号继续";
+"Google sign-in is not configured." = "Google 登录尚未配置。";
+"Google sign-in returned an invalid response. Please try again." = "Google 登录返回了无效响应，请重试。";
+"Unable to sign in with Google. Please try again." = "无法使用 Google 登录，请重试。";

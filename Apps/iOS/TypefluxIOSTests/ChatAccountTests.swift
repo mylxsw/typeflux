@@ -69,6 +69,77 @@ struct ChatAccountTests {
         #expect(store.errorMessage == "Apple sign-in is not configured.")
     }
 
+    @Test func `google sign in saves the verified profile and reuses the account lifecycle`() async {
+        let (store, api, credentials) = makeStore()
+        await store.loginWithGoogle(using: FakeGoogleAuthorizer())
+        #expect(store.isAuthenticated)
+        #expect(!store.isLoading)
+        #expect(store.email == "demir.von@example.com")
+        #expect(credentials.value?.session.accessToken == "valid")
+        #expect(await api.googleTokens == ["google-token"])
+        #expect(store.conversations.map(\.id) == ["one"])
+        await store.signOut()
+        #expect(credentials.value == nil)
+        #expect(!store.isAuthenticated)
+    }
+
+    @Test func `cancelled google authorization stays signed out without an error`() async {
+        let (store, api, credentials) = makeStore()
+        await store.loginWithGoogle(using: FakeGoogleAuthorizer(error: CancellationError()))
+        #expect(!store.isAuthenticated)
+        #expect(!store.isLoading)
+        #expect(store.errorMessage == nil)
+        #expect(credentials.value == nil)
+        #expect(await api.googleTokens.isEmpty)
+    }
+
+    @Test func `google configuration and backend errors are recoverable`() async {
+        let (store, api, credentials) = makeStore()
+        await store.loginWithGoogle(using: FakeGoogleAuthorizer(error: GoogleOAuthError.notConfigured))
+        #expect(store.errorMessage == GoogleOAuthError.notConfigured.rawValue)
+        await api.rejectApple()
+        await store.loginWithGoogle(using: FakeGoogleAuthorizer())
+        #expect(!store.isAuthenticated)
+        #expect(!store.isLoading)
+        #expect(credentials.value == nil)
+        #expect(store.errorMessage == "Google sign-in is not configured.")
+    }
+
+    @Test func `google login tolerates a missing profile endpoint`() async {
+        let (store, api, credentials) = makeStore()
+        await api.disableAccountEndpoints()
+        await store.loginWithGoogle(using: FakeGoogleAuthorizer())
+        #expect(store.isAuthenticated)
+        #expect(credentials.value?.session.accessToken == "valid")
+        #expect(store.email.isEmpty)
+    }
+
+    @Test func `google login cannot resurrect an account after sign out during authorization`() async {
+        let (store, api, credentials) = makeStore()
+        await store.loginWithGoogle(using: ClosureGoogleAuthorizer {
+            await store.signOut()
+            return "late-token"
+        })
+        #expect(!store.isAuthenticated)
+        #expect(!store.isLoading)
+        #expect(credentials.value == nil)
+        #expect(await api.googleTokens.isEmpty)
+    }
+
+    @Test func `duplicate google sign in is ignored and keychain failures stay signed out`() async {
+        let (store, api, credentials) = makeStore()
+        credentials.failSave = true
+        await store.loginWithGoogle(using: ClosureGoogleAuthorizer {
+            await store.loginWithGoogle(using: FakeGoogleAuthorizer())
+            return "first-token"
+        })
+        #expect(await api.googleTokens == ["first-token"])
+        #expect(!store.isAuthenticated)
+        #expect(!store.isLoading)
+        #expect(credentials.value == nil)
+        #expect(store.errorMessage != nil)
+    }
+
     @Test func `password reset sends a code then resets with it`() async {
         let (store, api, _) = makeStore()
         #expect(await store.requestPasswordReset(email: "  ") == false)
@@ -162,6 +233,7 @@ private extension ChatAccountTests {
 
 private actor AccountFakeAPI: ChatAPI {
     var appleTokens: [String] = []
+    var googleTokens: [String] = []
     var resetEmails: [String] = []
     var resetCodes: [String] = []
     var regenerateRequests: [ChatRegenerateRequest] = []
@@ -240,6 +312,14 @@ private actor AccountFakeAPI: ChatAPI {
     func observe(id _: String, token _: String,
                  onValue _: @concurrent @Sendable (ChatConversation) async throws -> Void) async throws {}
 
+    func googleLogin(identityToken: String) async throws -> ChatSession {
+        googleTokens.append(identityToken)
+        if appleRejected {
+            throw ChatAPIError.server(code: "OAUTH_NOT_CONFIGURED", message: "Google sign-in is not configured.")
+        }
+        return ChatSession(accessToken: "valid", expiresAt: 0, refreshToken: "refresh")
+    }
+
     func appleLogin(identityToken: String) async throws -> ChatSession {
         appleTokens.append(identityToken)
         if appleRejected {
@@ -291,4 +371,19 @@ private actor AccountFakeAPI: ChatAPI {
         }
         deleted.append(id)
     }
+}
+
+@MainActor
+private struct FakeGoogleAuthorizer: GoogleSignInAuthorizing {
+    var error: (any Error)?
+    func signIn() async throws -> String {
+        if let error { throw error }
+        return "google-token"
+    }
+}
+
+@MainActor
+private struct ClosureGoogleAuthorizer: GoogleSignInAuthorizing {
+    var operation: () async throws -> String
+    func signIn() async throws -> String { try await operation() }
 }

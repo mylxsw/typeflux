@@ -255,7 +255,7 @@ final class ChatVerificationTests: XCTestCase {
         let search = app.textFields["chat.search"]
         search.tap(); search.typeText("quieter\n")
         XCTAssertTrue(app.buttons["chat.history.preview"].isHittable)
-        XCTAssertFalse(app.keyboards.firstMatch.exists)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
         screenshot(app, "qa-sidebar-search")
         app.buttons["chat.search.clear"].tap()
         let row = app.buttons["chat.history.preview"]

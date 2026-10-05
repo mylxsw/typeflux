@@ -12,6 +12,7 @@ public protocol ChatAPI: Sendable {
     func send(conversationId: String, request: ChatSendRequest, token: String) async throws -> ChatConversation
     func cancel(conversationId: String, runId: String, token: String) async throws -> ChatConversation
     func observe(id: String, token: String, onValue: @Sendable (ChatConversation) async throws -> Void) async throws
+    func googleLogin(identityToken: String) async throws -> ChatSession
     func appleLogin(identityToken: String) async throws -> ChatSession
     func forgotPassword(email: String) async throws
     func resetPassword(email: String, code: String, newPassword: String) async throws
@@ -24,6 +25,7 @@ public protocol ChatAPI: Sendable {
 /// Account and history extras are optional for test doubles and older fixtures:
 /// an implementation that does not provide them reports the feature unavailable.
 public extension ChatAPI {
+    func googleLogin(identityToken _: String) async throws -> ChatSession { throw ChatAPIError.unavailable }
     func appleLogin(identityToken _: String) async throws -> ChatSession { throw ChatAPIError.unavailable }
     func forgotPassword(email _: String) async throws { throw ChatAPIError.unavailable }
     func resetPassword(email _: String, code _: String, newPassword _: String) async throws {
@@ -83,6 +85,12 @@ public struct ChatAPIClient: ChatAPI {
         struct Cancel: Encodable { let runId: String }
         return try await execute(path: conversationPath(conversationId) + "/cancel", method: "POST",
                                  body: ChatCoding.encoder().encode(Cancel(runId: runId)), token: token)
+    }
+
+    public func googleLogin(identityToken: String) async throws -> ChatSession {
+        struct OAuth: Encodable { let idToken: String }
+        return try await execute(path: "/api/v1/auth/oauth/google", method: "POST",
+                                 body: ChatCoding.encoder().encode(OAuth(idToken: identityToken)), decoder: JSONDecoder())
     }
 
     public func appleLogin(identityToken: String) async throws -> ChatSession {

@@ -76,6 +76,29 @@ final class ChatAPIClientTests: XCTestCase {
         try await api.logout(refreshToken: "refresh")
     }
 
+    func testGoogleLoginAndTokenExchangeWireContracts() async throws {
+        let (api, session, host) = fixture { request, client, proto in
+            XCTAssertEqual(request.url?.path, "/proxy/api/v1/auth/oauth/google")
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+            XCTAssertEqual(try self.body(request)["id_token"] as? String, "google-token")
+            self.finish(request, client, proto,
+                        body: #"{"code":"OK","data":{"access_token":"access","expires_at":123,"refresh_token":"refresh"}}"#)
+        }
+        defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
+        let account = try await api.googleLogin(identityToken: "google-token")
+        XCTAssertEqual(account.accessToken, "access")
+        XCTAssertEqual(account.refreshToken, "refresh")
+        FixtureProtocol.registry.set("oauth2.googleapis.com") { request, client, proto in
+            XCTAssertEqual(request.url?.path, "/token")
+            self.finish(request, client, proto, body: #"{"id_token":"google-token"}"#)
+        }
+        defer { FixtureProtocol.registry.remove("oauth2.googleapis.com") }
+        let auth = try GoogleOAuthAuthorization.make(clientID: "123-ios.apps.googleusercontent.com")
+        let token = try await auth.exchange(code: "authorization-code", session: session)
+        XCTAssertEqual(token, "google-token")
+    }
+
     func testModelsListDetailSendAndCancelWireContracts() async throws {
         let (api, session, host) = fixture { request, client, proto in
             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access")

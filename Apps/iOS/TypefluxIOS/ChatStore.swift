@@ -583,6 +583,32 @@ extension ChatStore {
         }
     }
 
+    func loginWithGoogle(using authorizer: any GoogleSignInAuthorizing) async {
+        guard !isLoading else { return }
+        resetAccount()
+        let generation = accountGeneration
+        isLoading = true
+        defer {
+            if generation == accountGeneration { isLoading = false }
+        }
+        do {
+            let token = try await authorizer.signIn()
+            try checkAccount(generation)
+            try credentials.clear()
+            let account = try await service.googleLogin(identityToken: token)
+            try checkAccount(generation)
+            let fetched = try? await service.profile(token: account.accessToken)
+            try checkAccount(generation)
+            let resolved = fetched?.email ?? ""
+            try credentials.save(SavedAccount(email: resolved, session: account))
+            session = account
+            email = resolved
+            profile = fetched
+            isAuthenticated = true
+            await refreshHome()
+        } catch { report(error, generation: generation) }
+    }
+
     func loginWithApple(identityToken: String, email appleEmail: String?) async {
         resetAccount()
         let generation = accountGeneration
