@@ -114,6 +114,29 @@ struct ChatAccountTests {
         #expect(store.email.isEmpty)
     }
 
+    @Test(arguments: [ChatAPIError.unauthorized,
+                      .server(code: "AUTH_OAUTH_INVALID_TOKEN", message: "invalid OAuth token")])
+    func `rejected social sign in never suggests an email password error`(error: ChatAPIError) async {
+        let (store, api, credentials) = makeStore()
+        await api.setOAuthError(error)
+        await store.loginWithGoogle(using: FakeGoogleAuthorizer())
+        #expect(!store.isAuthenticated)
+        #expect(!store.isLoading)
+        #expect(credentials.value == nil)
+        #expect(store.errorMessage ==
+            "The server could not verify your Google sign-in. Please try again or contact support.")
+        await store.loginWithApple(identityToken: "apple-token", email: nil)
+        #expect(!store.isAuthenticated)
+        #expect(!store.isLoading)
+        #expect(credentials.value == nil)
+        #expect(store.errorMessage ==
+            "The server could not verify your Apple sign-in. Please try again or contact support.")
+        await api.setOAuthError(nil)
+        await store.loginWithGoogle(using: FakeGoogleAuthorizer())
+        #expect(store.isAuthenticated)
+        #expect(store.errorMessage == nil)
+    }
+
     @Test func `google login cannot resurrect an account after sign out during authorization`() async {
         let (store, api, credentials) = makeStore()
         await store.loginWithGoogle(using: ClosureGoogleAuthorizer {
@@ -243,6 +266,7 @@ private actor AccountFakeAPI: ChatAPI {
     private var paid = true
     private var accountEndpoints = true
     private var appleRejected = false
+    private var oauthError: ChatAPIError?
     private var resetRejected = false
     private var regenerateRejected = false
     private var deleteRejected = false
@@ -261,6 +285,10 @@ private actor AccountFakeAPI: ChatAPI {
 
     func rejectApple() {
         appleRejected = true
+    }
+
+    func setOAuthError(_ error: ChatAPIError?) {
+        oauthError = error
     }
 
     func rejectReset() {
@@ -314,6 +342,7 @@ private actor AccountFakeAPI: ChatAPI {
 
     func googleLogin(identityToken: String) async throws -> ChatSession {
         googleTokens.append(identityToken)
+        if let oauthError { throw oauthError }
         if appleRejected {
             throw ChatAPIError.server(code: "OAUTH_NOT_CONFIGURED", message: "Google sign-in is not configured.")
         }
@@ -322,6 +351,7 @@ private actor AccountFakeAPI: ChatAPI {
 
     func appleLogin(identityToken: String) async throws -> ChatSession {
         appleTokens.append(identityToken)
+        if let oauthError { throw oauthError }
         if appleRejected {
             throw ChatAPIError.server(code: "OAUTH_NOT_CONFIGURED", message: "Apple sign-in is not configured.")
         }
