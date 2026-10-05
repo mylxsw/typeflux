@@ -169,7 +169,7 @@ final class AskLocalTools: AskToolExecuting {
 
     func definitions(conversationId: String?) async -> [AskToolDefinition] {
         await registry.connectAutoConnectServers()
-        var result = Self.builtins.filter { $0.name != "browser" || browserBundle(conversationId: conversationId) != nil }
+        var result = automationDefinitions.filter { $0.name != "browser" || browserBundle(conversationId: conversationId) != nil }
         if let files = AskFileTools.definition(roots: fileTools(conversationId: conversationId).roots) { result.append(files) }
         if projectModeEnabled, !fileTools(conversationId: conversationId).roots.isEmpty,
            let project = try? Self.projectDefinition(roots: fileTools(conversationId: conversationId).roots) {
@@ -253,37 +253,55 @@ final class AskLocalTools: AskToolExecuting {
         return slug.isEmpty ? String(id.uuidString.prefix(8)).lowercased() : String(slug)
     }
 
-    static let builtins: [AskToolDefinition] = [
-        definition("computer", description: """
+    static let builtins = builtinDefinitions(computerWrites: false, browserWrites: false)
+
+    var automationDefinitions: [AskToolDefinition] {
+        Self.builtinDefinitions(computerWrites: computerExecutor.writesEnabled,
+                                browserWrites: browserExecutor.writesEnabled)
+    }
+
+    private static func builtinDefinitions(computerWrites: Bool, browserWrites: Bool) -> [AskToolDefinition] {
+        [definition("computer", description: computerWrites ? """
         Observe or control the user's desktop after approval, one action per call. Start with screenshot or inspect \
         (inspect lists the target app's accessibility elements with click coordinates). Every write requires a fresh \
         observation_id from this conversation; observe again after every action or needs-observation error. Coordinates \
         are fractions (0...1) of the observed display and must fall inside the observed window. Actions: click, double_click, right_click, drag (x,y to to_x,to_y), type, \
         key (return, tab, escape, backspace, delete, arrows, home, end, pageup, pagedown, space, f1-f12), hotkey \
         (e.g. "cmd+c", "cmd+shift+t"), scroll (requires x,y and amount), wait (seconds up to 5). Event dispatch does \
-        not prove the business effect. Write actions are currently disabled pending acceptance.
+        not prove the business effect.
+        """ : """
+        Observe the user's desktop after approval, one action per call. screenshot captures the screen; inspect lists \
+        the target app's accessibility elements; wait pauses for up to 5 seconds. Only observation is available. \
+        Desktop control is unavailable; do not request click, typing, keyboard, drag or scroll actions.
         """, properties: [
             "observation_id": ["type": "string"],
-            "action": ["type": "string", "enum": ["screenshot", "inspect", "click", "double_click", "right_click", "drag", "type", "key", "hotkey", "scroll", "wait"]],
+            "action": ["type": "string", "enum": computerWrites
+                ? ["screenshot", "inspect", "click", "double_click", "right_click", "drag", "type", "key", "hotkey", "scroll", "wait"]
+                : ["screenshot", "inspect", "wait"]],
             "x": ["type": "number", "minimum": 0, "maximum": 1], "y": ["type": "number", "minimum": 0, "maximum": 1],
             "to_x": ["type": "number", "minimum": 0, "maximum": 1], "to_y": ["type": "number", "minimum": 0, "maximum": 1],
             "text": ["type": "string"], "key": ["type": "string"], "keys": ["type": "string"],
             "amount": ["type": "integer", "minimum": -10, "maximum": 10], "seconds": ["type": "number", "minimum": 0, "maximum": 5]
         ]),
-        definition("browser", description: """
+        definition("browser", description: browserWrites ? """
         Read or interact with the front Safari or Chrome tab after approval, one action per call. read returns URL, \
         visible text and links; snapshot lists interactive elements with versioned string refs. Every write requires \
         observation_id from the latest read/snapshot in this conversation. click/fill take an observed ref (or an \
         observed CSS selector); open navigates to an http(s) URL; back goes back; scroll moves by screens. Observe \
-        again after every action or needs-observation error. Event dispatch does not prove the business effect. \
-        Write actions are currently disabled pending acceptance.
+        again after every action or needs-observation error. Event dispatch does not prove the business effect.
+        """ : """
+        Read the front Safari or Chrome tab after approval, one action per call. read returns URL, visible text and \
+        links; snapshot lists interactive elements with versioned string refs. Only observation is available. \
+        Browser interaction is unavailable; do not request navigation, click, fill, back or scroll actions.
         """, properties: [
             "observation_id": ["type": "string"],
-            "action": ["type": "string", "enum": ["read", "snapshot", "open", "click", "fill", "back", "scroll"]], "url": ["type": "string"],
+            "action": ["type": "string", "enum": browserWrites
+                ? ["read", "snapshot", "open", "click", "fill", "back", "scroll"] : ["read", "snapshot"]], "url": ["type": "string"],
             "selector": ["type": "string"], "ref": ["type": "string"], "text": ["type": "string"],
             "amount": ["type": "integer", "minimum": -10, "maximum": 10]
         ])
-    ]
+        ]
+    }
 
     private static func definition(_ name: String, description: String, properties: [String: Any]) -> AskToolDefinition {
         let schema: [String: Any] = ["type": "object", "properties": properties, "required": ["action"], "additionalProperties": false]

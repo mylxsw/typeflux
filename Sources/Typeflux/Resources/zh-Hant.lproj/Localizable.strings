@@ -2277,3 +2277,6 @@
 "models.protocol" = "協定";
 "models.protocolHint" = "選擇此服務商支援的 API 協定。";
 "models.protocolUnsupported" = "暫不支援此協定，請選擇其他協定或更新 Typeflux。";
+"ask.tool.automationUnavailable" = "目前僅支援查看螢幕或網頁，無法執行點擊、輸入等操作。";
+"ask.tool.observationExpired" = "操作目標已變更或觀察記錄已過期，請重新截圖或讀取目標後再操作。";
+"ask.tool.notExecuted" = "此工具未執行：%@ 請改用可用方式或修正問題，不要原樣重複呼叫。";

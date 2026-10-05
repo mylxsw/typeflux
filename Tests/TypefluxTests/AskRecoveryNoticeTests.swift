@@ -23,6 +23,7 @@ struct AskRecoveryNoticePresentationTests {
         #expect(!presentation.canContinue)
         #expect(presentation.titleKey == "ask.recovery.finished")
         #expect(presentation.bodyKey == "ask.recovery.finishedBody")
+        #expect(!presentation.canEnd)
     }
 
     @Test(arguments: ["waiting_tool", "completed"])
@@ -39,6 +40,7 @@ struct AskRecoveryNoticePresentationTests {
         )
         #expect(presentation.isVisible && !presentation.canContinue)
         #expect(presentation.titleKey == "ask.recovery.otherDevice")
+        #expect(!presentation.canEnd)
         #expect(presentation.bodyKey == "ask.recovery.binding")
     }
 
@@ -49,6 +51,7 @@ struct AskRecoveryNoticePresentationTests {
         let local = AskRecoveryPresentation(run: value.run, entries: [], deviceId: "device", local: false)
         let remote = AskRecoveryPresentation(run: value.run, entries: [], deviceId: "other-device", local: false)
         #expect(local.isVisible && local.canContinue)
+        #expect(local.canEnd && !remote.canEnd)
         #expect(!local.unknown && local.savedReceipts == 0)
         #expect(!remote.isVisible && !remote.canContinue)
     }

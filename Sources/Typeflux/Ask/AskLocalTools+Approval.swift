@@ -42,7 +42,7 @@ extension AskLocalTools {
             target = .init(kind: "workspace", id: conversationId, version: "analysis-v1")
             summary = (args["language"] as? String ?? "Code") + " / " + conversationId
         case "computer", "browser":
-            definition = Self.builtins.first { $0.name == call.function.name }
+            definition = automationDefinitions.first { $0.name == call.function.name }
             target = try await automationBinding(call.function.name, args: args, conversationId: conversationId)
             summary = target.id + (target.domain.map { " / " + $0 } ?? "")
             if let destination = args["url"] as? String { summary += " → " + destination }

@@ -172,8 +172,12 @@ final class AskTestTools: AskToolExecuting {
     var bindingVersion = "v1"
     var targetID = "test-target"
     var beforeBinding: (() -> Void)?
+    var bindingError: Error?
+    var beforeBindingAsync: (() async throws -> Void)?
     func approvalBinding(for call: AskToolCall, conversationId: String) async throws -> AskToolBinding {
         beforeBinding?()
+        try await beforeBindingAsync?()
+        if let bindingError { throw bindingError }
         return .init(target: .init(kind: "workspace", id: targetID), toolVersion: bindingVersion,
               summary: "Test target", allowsReuse: true)
     }

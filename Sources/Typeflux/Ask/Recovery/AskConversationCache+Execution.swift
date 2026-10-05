@@ -44,12 +44,8 @@ extension AskConversationCache {
 
     /// Claim, binding and approval audit must all reach disk before dispatch.
     func claimExecution(_ audit: AskExecutionAudit, owner: String) throws -> Bool {
+        try validateExecutionAudit(audit, owner: owner)
         let identity = audit.identity
-        guard ![identity.owner, identity.conversationId, identity.runId, identity.deviceId,
-                identity.callId, identity.stepId, audit.toolVersion, audit.argumentsHash].contains(where: \.isEmpty),
-            ["model", "tool"].contains(identity.kind),
-            try read(table: "ask_deleted", id: identity.conversationId, owner: owner) == nil
-        else { throw AskRecoveryError.binding }
         try execute("BEGIN IMMEDIATE", strings: [])
         do {
             let claimed = try claimTool(id: identity.key, owner: owner)
@@ -65,6 +61,47 @@ extension AskConversationCache {
             try execute("COMMIT", strings: [])
             return claimed
         } catch { try? execute("ROLLBACK", strings: []); throw error }
+    }
+
+    /// A pre-dispatch refusal is atomic: a crash must not leave an empty execution
+    /// claim that would later be mistaken for an action with an unknown effect.
+    func saveRejectedToolReceipt(audit: AskExecutionAudit, receipt: AskToolResultRequest, owner: String) throws {
+        try Task.checkCancellation()
+        let identity = audit.identity
+        let saved = AskExecutionReceipt.tool(receipt)
+        guard identity.kind == "tool", saved.matches(identity), audit.approvalId == nil,
+              audit.approvedAt == nil, receipt.isError, receipt.harness?.version == 1,
+              receipt.harness?.outcome?.eventDispatched == false,
+              ["denied", "invalid"].contains(saved.status) else { throw AskRecoveryError.binding }
+        try execute("BEGIN IMMEDIATE", strings: [])
+        do {
+            try validateExecutionAudit(audit, owner: owner)
+            if let previous = try execution(id: identity.key, owner: owner) {
+                guard previous.permits(identity), let oldReceipt = previous.receipt,
+                      previous.audit?.toolVersion == audit.toolVersion,
+                      previous.audit?.toolName == audit.toolName,
+                      previous.audit?.argumentsHash == audit.argumentsHash,
+                      try receiptBytes(oldReceipt) == receiptBytes(saved) else { throw AskRecoveryError.unknown }
+            } else {
+                guard try claimTool(id: identity.key, owner: owner) else { throw AskRecoveryError.unknown }
+                try associateTool(id: identity.key, conversationId: identity.conversationId, owner: owner)
+                var recorded = audit
+                recorded.record(.receiptSaved)
+                try write(table: "ask_execution", id: identity.key, owner: owner,
+                          data: AskCoding.encoder().encode(recorded))
+                try write(table: "ask_tools", id: identity.key, owner: owner, data: receiptBytes(saved))
+            }
+            try execute("COMMIT", strings: [])
+        } catch { try? execute("ROLLBACK", strings: []); throw error }
+    }
+
+    private func validateExecutionAudit(_ audit: AskExecutionAudit, owner: String) throws {
+        let identity = audit.identity
+        guard ![identity.owner, identity.conversationId, identity.runId, identity.deviceId,
+                identity.callId, identity.stepId, audit.toolVersion, audit.argumentsHash].contains(where: \.isEmpty),
+              ["model", "tool"].contains(identity.kind),
+              try read(table: "ask_deleted", id: identity.conversationId, owner: owner) == nil
+        else { throw AskRecoveryError.binding }
     }
 
     /// A receipt is immutable. Retransmission sends exactly these saved bytes.

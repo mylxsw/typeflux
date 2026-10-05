@@ -24,6 +24,8 @@ struct AskRecoveryPresentation: Equatable {
         unknown || savedReceipts > 0 || canContinue
     }
 
+    var canEnd: Bool { isVisible && active && !otherDevice }
+
     var titleKey: String {
         if unknown {
             return "ask.recovery.unknown"
