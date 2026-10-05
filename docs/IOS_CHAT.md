@@ -1,8 +1,9 @@
 # iOS Ask client
 
-The initial iOS app is a SwiftUI chat client for Typeflux Ask. It uses the existing
-account and cloud conversation API. It does not include dictation, a keyboard
-extension, local model inference, or a desktop tool executor.
+The iOS app is a SwiftUI chat client for Typeflux Ask. It uses the existing
+account and cloud conversation API and supports dictation through Apple Speech.
+It does not include a keyboard extension, local model inference, or a desktop
+tool executor.
 
 ## Code ownership
 
@@ -34,35 +35,43 @@ replacement document that could erase desktop-only metadata.
 
 ## Current behavior
 
-- Sign in with an existing email/password account; store access and rotating
-  refresh tokens in endpoint-scoped Keychain entries.
-- Open Settings from the history footer. Account shows the signed-in email and
-  a confirmed sign-out action. Appearance supports System, Light, and Dark and
-  persists on this device; Language opens the app's iOS Settings page. Version
-  and the existing privacy-policy link are available in About.
-- Browse and continue cloud conversations, create conversations, and choose
-  from the account's cloud models with their server-provided credit multiplier.
-- Use the Mac-aligned colour drop, composer, message bubbles, and history rows.
-  A single model entry opens the reasoning card; its model subtitle opens the
-  model list. Selecting a model returns to the reasoning card.
-- Choose Auto or a supported reasoning level. The model's highest level uses
-  purple; switching models keeps the closest supported level and explains any
-  adjustment. Auto omits `reasoning_effort` from the request.
-- Read foldable reasoning and grouped tool steps, copy or quote a response, and
-  view Markdown headings, lists, quotes, code, and horizontally scrolling tables.
-- Search loaded history and collapse date groups. English and Simplified Chinese
-  follow system language; colours follow the saved appearance preference. Reduce Motion
-  freezes ambient animation and Reduce Transparency uses solid card surfaces.
-- Send text and a photo with a vision-capable model; show streamed responses,
-  tool activity/results, and cancellation. A conversation containing photos
-  requires a vision-capable model. An existing conversation must load
-  successfully before its composer can send a follow-up.
-- Read both legacy message images and current Mac image attachments. A late
-  send response clears only the submitted draft and image, preserving later edits.
+The interface follows design v4 (GUL-199): the Mac Ask visual language on a
+phone, with one accent colour, one type scale and glass only on floating layers.
+
+- The app opens on a new conversation, like the Mac window. History lives in a
+  sidebar opened from the top-left button or a swipe from the leading edge: title
+  and new conversation, search, Today / Yesterday / Earlier, and an account footer
+  with avatar, plan badge and settings. Rows swipe left to delete.
+- Sign in from a welcome page with Sign in with Apple or email. The email page has
+  persistent field labels, Next → Go keyboard flow, and a two-step password reset
+  (emailed code, then new password). Tokens live in endpoint-scoped Keychain entries.
+- The conversation shows a glass title pill with the run state
+  ("Completed · 2 steps", "Running · step 2"), right-aligned user bubbles, the
+  "Thought for N seconds" row, and one tool card per turn ("Called N tools" with
+  readable tool names) that stays open while running and folds when done.
+  Answers can be copied, shared, or regenerated (latest answer only).
+- The composer is the Mac's two-row card: text on top; attach (photo library or
+  camera), the model and reasoning chip, dictation (Apple Speech) and send/stop.
+- The chip opens the Mac `AskModelEffortCard` layout: level title, model link,
+  reset to Auto and the liquid slider with level names; the model page lists
+  provider tile, capacity, vision badge and credit multiplier. Switching models
+  keeps the closest supported level and explains any adjustment. Auto omits
+  `reasoning_effort` from the request.
+- Settings shows the profile and this period's credits (shared with the Mac),
+  appearance (Automatic / Light / Dark, persisted on this device), language
+  (opens iOS Settings), privacy policy, version and a confirmed sign-out.
+- Markdown headings, lists, quotes, code cards and horizontally scrolling table
+  cards. English and Simplified Chinese follow the system language. Reduce Motion
+  freezes the orb, shimmer and spinners; Reduce Transparency uses solid surfaces.
+- Send text and a photo with a vision-capable model; a conversation containing
+  photos requires one. An existing conversation must load before a follow-up.
 - Reload the server snapshot after returning to the foreground. Reconnect an
   interrupted stream without automatically replaying message POSTs.
-- Show runs waiting for a desktop tool or local model as waiting for their
+- Runs waiting for a desktop tool or local model show as waiting for their
   originating device. The phone does not take over those operations.
+
+Not yet available on iOS: deleting the account (no API exists yet; required
+before App Store submission), renaming conversations, and in-app purchase.
 
 The server owns cloud history and run state. Drafts and loaded history are held
 in memory; this first app does not promise offline history or draft recovery
@@ -78,10 +87,14 @@ Configured server tools remain available. An iOS turn selects a cloud model,
 including when continuing a conversation previously using a Mac custom model.
 
 The companion `typeflux-api` change adds platform-aware prompt context and
-distinguishes omitted regeneration tools from an explicit empty list. Deploy
-that API change before enabling cross-device regeneration. This initial iOS UI
-has no retry/regenerate controls, tool-result submission, or device-inference
-submission. The existing Mac payload remains compatible with the new backend.
+distinguishes omitted regeneration tools from an explicit empty list; iOS
+regeneration always sends an explicit empty `tools` array, so deploy that API
+change first. iOS has no tool-result or device-inference submission. The
+existing Mac payload remains compatible with the new backend.
+
+Sign in with Apple on iOS uses the bundle ID `app.typeflux.ios` as the token
+audience. Enable the capability for that App ID in the Apple Developer account
+and add it to the API's comma-separated `APPLE_OIDC_CLIENT_ID`.
 
 ## Build and test
 
@@ -131,28 +144,33 @@ preferences use a separate UserDefaults domain and reset to System by default;
 `--synthetic-preserve-settings` explicitly retains them for persistence tests.
 
 The existing `@autotest` PR workflow runs shared-package, iOS, and Mac tests.
-Account registration, password reset, purchasing, and App Store distribution
-are outside this initial chat implementation.
+Account registration, purchasing, and App Store distribution are outside this
+implementation.
 
 ## Simulator previews
 
 These screenshots come from the SwiftUI app with synthetic fixtures, not a live
 account or model response. The model names and credit multipliers are test data.
 
-<img src="images/ios/verification/v3-new-conversation.png" alt="New conversation with the Mac colour drop" width="260">
-<img src="images/ios/verification/v3-reasoning.png" alt="Unified model and reasoning card" width="260">
-<img src="images/ios/verification/v3-model-list.png" alt="Cloud model list" width="260">
-<img src="images/ios/verification/v3-conversation.png" alt="Conversation with reasoning and Markdown" width="260">
-<img src="images/ios/verification/v3-zh-dark-empty.png" alt="Simplified Chinese dark appearance" width="260">
-<img src="images/ios/verification/v3-zh-keyboard-models.png" alt="Model selection above the keyboard" width="260">
+<img src="images/ios/v4/01-new-conversation.png" alt="New conversation and two-row composer" width="260">
+<img src="images/ios/v4/02-reasoning.png" alt="Model and reasoning card" width="260">
+<img src="images/ios/v4/04-sidebar.png" alt="History sidebar and account footer" width="260">
+<img src="images/ios/v4/05-conversation.png" alt="Conversation with reasoning and Markdown" width="260">
+<img src="images/ios/v4/07-settings.png" alt="Settings with profile and credits" width="260">
+<img src="images/ios/v4/08-welcome.png" alt="Apple and email sign-in options" width="260">
 
-## Chat and settings verification screenshots
+The [v4 validation report](validation/gul-199-ios-v4.md) records the test results
+and remaining limitations. The [v4 screenshot set](images/ios/v4) includes all
+14 captures, including model selection, streaming, dark appearance, tool details,
+email login, and password reset.
+
+## Earlier chat and settings verification
 
 The [screenshot index](images/ios/verification/README.md) covers rich
 replies, long streaming output, stop/failure states, PhotosPicker and image
 messages, models, keyboard layouts, light/dark settings, account information,
-and sign-out confirmation. All images come from the final passing native
-iOS UI-test run using offline fixtures. See the
+and sign-out confirmation from the earlier interface. Those images came from
+its passing native iOS UI-test run using offline fixtures. See the
 [validation report](validation/gul-199-ios-chat.md) for results and limitations.
 
 The [screenshot review and optimization plan](validation/gul-199-ios-polish.md)

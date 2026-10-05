@@ -17,6 +17,15 @@ enum ChatAppearance: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The segmented control's short label.
+    var shortTitle: String {
+        switch self {
+        case .system: NSLocalizedString("Automatic", comment: "Appearance choice")
+        case .light: NSLocalizedString("Light appearance", comment: "Appearance choice")
+        case .dark: NSLocalizedString("Dark appearance", comment: "Appearance choice")
+        }
+    }
+
     var colorScheme: ColorScheme? {
         switch self {
         case .system: nil

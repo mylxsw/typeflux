@@ -196,13 +196,13 @@ struct ChatMarkdownView: View {
     let text: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(ChatMarkdown.parse(text).enumerated()), id: \.offset) { _, block in
                 blockView(block)
             }
         }
-        .font(.body)
-        .lineSpacing(4)
+        .font(.system(size: 16))
+        .lineSpacing(5)
         .textSelection(.enabled)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -211,11 +211,12 @@ struct ChatMarkdownView: View {
         switch block {
         case let .paragraph(text): inline(text)
         case let .heading(level, text):
-            inline(text).font(level == 1 ? .title2 : level == 2 ? .title3 : .headline).fontWeight(.semibold)
-                .accessibilityAddTraits(.isHeader)
+            inline(text).font(.system(size: level == 1 ? 20 : level == 2 ? 18 : 17, weight: .semibold))
+                .padding(.top, 2).accessibilityAddTraits(.isHeader)
         case let .listItem(marker, text, depth):
             HStack(alignment: .firstTextBaseline, spacing: 9) {
-                Text(marker).monospacedDigit().frame(minWidth: 14, alignment: .trailing)
+                Text(marker).monospacedDigit().foregroundStyle(ChatTheme.tertiary)
+                    .frame(minWidth: 14, alignment: .trailing)
                 inline(text).frame(maxWidth: .infinity, alignment: .leading)
             }.padding(.leading, CGFloat(depth) * 14)
         case let .quote(text):
@@ -238,19 +239,27 @@ struct ChatMarkdownView: View {
                 tableRow(headers, header: true)
                 ForEach(Array(rows.enumerated()), id: \.offset) { _, cells in tableRow(cells, header: false) }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(ChatTheme.border, lineWidth: 0.5))
+            .background(ChatTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(ChatTheme.border, lineWidth: 0.5))
         }
     }
 
     private func tableRow(_ cells: [String], header: Bool) -> some View {
         GridRow {
             ForEach(Array(cells.enumerated()), id: \.offset) { _, cell in
-                inline(cell).font(.subheadline).fontWeight(header ? .semibold : .regular)
-                    .frame(minWidth: 100, maxWidth: 260, alignment: .leading)
-                    .padding(12)
-                    .background(header ? ChatTheme.controlSurface : ChatTheme.raisedSurface)
-                    .overlay(alignment: .bottom) { Rectangle().fill(ChatTheme.separator).frame(height: 0.5) }
+                inline(cell).font(.system(size: header ? 12.5 : 13.5, weight: header ? .semibold : .regular))
+                    .foregroundStyle(header ? ChatTheme.secondary : Color.primary)
+                    .lineSpacing(2)
+                    .frame(minWidth: 90, maxWidth: 240, alignment: .leading)
+                    .padding(.horizontal, 12).padding(.vertical, 9)
+                    .background(header ? ChatTheme.fill : .clear)
+                    .overlay(alignment: .top) {
+                        if !header {
+                            Rectangle().fill(ChatTheme.separator).frame(height: 0.5)
+                        }
+                    }
             }
         }
     }
@@ -265,32 +274,28 @@ private struct ChatCodeBlock: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(language.isEmpty ? NSLocalizedString("Code", comment: "Code block") : language)
-                    .font(.caption.monospaced())
+                    .font(.system(size: 12))
                 Spacer()
                 Button {
                     UIPasteboard.general.string = text; copied = true
                 } label: {
-                    Label(NSLocalizedString(copied ? "Copied" : "Copy code", comment: "Code action"),
-                          systemImage: copied ? "checkmark" : "doc.on.doc")
-                        .font(.caption)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(Rectangle())
+                    Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 13))
+                        .frame(width: 36, height: 32).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(copied ? ChatTheme.accent : ChatTheme.textSecondary)
-                .accessibilityElement(children: .ignore)
                 .accessibilityLabel(NSLocalizedString(copied ? "Copied" : "Copy code", comment: "Code action"))
             }
             .foregroundStyle(ChatTheme.textSecondary)
-            .padding(.horizontal, 12)
-            Divider()
+            .padding(.leading, 12).padding(.trailing, 4)
+            Rectangle().fill(ChatTheme.separator).frame(height: 0.5)
             ChatHorizontalScroll(accessibilityLabel: "Code", hintPadding: 12) {
-                Text(text).font(.system(.footnote, design: .monospaced))
+                Text(text).font(.system(size: 12.5, design: .monospaced)).lineSpacing(3)
                     .fixedSize(horizontal: true, vertical: false).padding(12)
             }
         }
-        .background(ChatTheme.raisedSurface, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(ChatTheme.border, lineWidth: 0.5))
+        .background(ChatTheme.codeBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(ChatTheme.border, lineWidth: 0.5))
         .onChange(of: text) { _, _ in copied = false }
     }
 }
@@ -324,7 +329,7 @@ private struct ChatHorizontalScroll<Content: View>: View {
             .accessibilityLabel(NSLocalizedString(accessibilityLabel, comment: "Scrollable Markdown content"))
             if ChatPresentation.hasHorizontalOverflow(contentWidth: contentWidth, viewportWidth: viewportWidth) {
                 Label("Swipe horizontally to see more", systemImage: "arrow.left.and.right")
-                    .font(.caption).foregroundStyle(ChatTheme.textSecondary)
+                    .font(.system(size: 12)).foregroundStyle(ChatTheme.textSecondary)
                     .padding(.horizontal, hintPadding).padding(.bottom, hintPadding)
                     .accessibilityIdentifier("chat.horizontalHint")
             }

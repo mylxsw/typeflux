@@ -117,6 +117,109 @@ final class ChatAPIClientTests: XCTestCase {
         XCTAssertEqual(cancelled.id, "chat")
     }
 
+    func testAccountAppleResetRegenerateAndDeleteWireContracts() async throws {
+        let (api, session, host) = fixture { request, client, proto in
+            let path = request.url!.path
+            var payload = chatSnapshot
+            switch path {
+            case "/proxy/api/v1/auth/oauth/apple":
+                XCTAssertEqual(request.httpMethod, "POST")
+                XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+                XCTAssertEqual(try self.body(request)["id_token"] as? String, "apple-token")
+                payload = #"{"access_token":"access","expires_at":123,"refresh_token":"refresh"}"#
+            case "/proxy/api/v1/auth/forgot-password":
+                XCTAssertEqual(try self.body(request)["email"] as? String, "me@example.test")
+                payload = #"{"sent":true}"#
+            case "/proxy/api/v1/auth/reset-password":
+                let body = try self.body(request)
+                XCTAssertEqual(body["code"] as? String, "123456")
+                XCTAssertEqual(body["new_password"] as? String, "new-password")
+                payload = #"{"reset":true}"#
+            case "/proxy/api/v1/me":
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access")
+                payload = #"{"id":"u1","email":"me@example.test","name":"Me","status":1,"providers":["apple"]}"#
+            case "/proxy/api/v1/usage/current-period/stats":
+                payload = #"{"period_start":"2026-10-01T00:00:00Z","period_end":"2026-11-01T00:00:00Z","plan_code":"pro","paid":true,"period_source":"subscription","stats":{},"credits":{"limit":500,"used":200,"remaining":300,"unlimited":false}}"#
+            case "/proxy/api/v1/ask/conversations/chat/regenerate":
+                XCTAssertEqual(request.httpMethod, "POST")
+                let body = try self.body(request)
+                XCTAssertEqual(body["message_id"] as? String, "answer")
+                XCTAssertEqual(body["device_id"] as? String, "phone")
+                XCTAssertEqual(body["model_ref"] as? String, "cloud:model")
+                XCTAssertEqual(body["tools"] as? [String], [])
+            case "/proxy/api/v1/ask/conversations/chat":
+                XCTAssertEqual(request.httpMethod, "DELETE")
+                payload = #"{"deleted":true}"#
+            default:
+                XCTFail("Unexpected path \(path)")
+            }
+            self.finish(request, client, proto, body: "{\"code\":\"OK\",\"data\":\(payload)}")
+        }
+        defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
+        let apple = try await api.appleLogin(identityToken: "apple-token")
+        XCTAssertEqual(apple.accessToken, "access")
+        try await api.forgotPassword(email: "me@example.test")
+        try await api.resetPassword(email: "me@example.test", code: "123456", newPassword: "new-password")
+        let profile = try await api.profile(token: "access")
+        XCTAssertEqual(profile, ChatProfile(id: "u1", email: "me@example.test", name: "Me"))
+        let usage = try await api.creditUsage(token: "access")
+        XCTAssertEqual(usage.credits.remaining, 300)
+        XCTAssertTrue(usage.paid)
+        XCTAssertEqual(usage.usedFraction ?? 0, 0.4, accuracy: 0.0001)
+        let regenerated = try await api.regenerate(
+            conversationId: "chat",
+            request: .init(messageId: "answer", deviceId: "phone", modelRef: "cloud:model"),
+            token: "access"
+        )
+        XCTAssertEqual(regenerated.id, "chat")
+        try await api.deleteConversation(id: "chat", token: "access")
+    }
+
+    func testCreditFractionClampsAndSkipsUnlimitedPlans() {
+        let end = Date(timeIntervalSince1970: 0)
+        XCTAssertNil(ChatCreditUsage(periodEnd: end, planCode: "max", paid: true,
+                                     credits: .init(limit: 0, used: 0, remaining: 0, unlimited: true)).usedFraction)
+        XCTAssertNil(ChatCreditUsage(periodEnd: end, planCode: "free", paid: false,
+                                     credits: .init(limit: 0, used: 5, remaining: 0)).usedFraction)
+        XCTAssertEqual(ChatCreditUsage(periodEnd: end, planCode: "free", paid: false,
+                                       credits: .init(limit: 100, used: 150, remaining: 0)).usedFraction, 1)
+        XCTAssertEqual(ChatCreditUsage(periodEnd: end, planCode: "free", paid: false,
+                                       credits: .init(limit: 100, used: -5, remaining: 105)).usedFraction, 0)
+    }
+
+    func testOptionalEndpointsReportUnavailableOnMinimalImplementations() async {
+        struct Minimal: ChatAPI {
+            func login(email _: String, password _: String) async throws -> ChatSession { throw ChatAPIError.unavailable }
+            func refresh(refreshToken _: String) async throws -> ChatSession { throw ChatAPIError.unavailable }
+            func logout(refreshToken _: String) async throws {}
+            func models(token _: String) async throws -> [ChatModel] { [] }
+            func list(token _: String, offset _: Int) async throws -> [ChatConversationSummary] { [] }
+            func conversation(id _: String, token _: String) async throws -> ChatConversation { throw ChatAPIError.unavailable }
+            func send(conversationId _: String, request _: ChatSendRequest, token _: String) async throws -> ChatConversation {
+                throw ChatAPIError.unavailable
+            }
+            func cancel(conversationId _: String, runId _: String, token _: String) async throws -> ChatConversation {
+                throw ChatAPIError.unavailable
+            }
+            func observe(id _: String, token _: String, onValue _: @Sendable (ChatConversation) async throws -> Void) async throws {}
+        }
+        let api = Minimal()
+        func expectUnavailable(_ operation: () async throws -> Void) async {
+            do { try await operation(); XCTFail("Expected unavailable") } catch {
+                XCTAssertEqual(error as? ChatAPIError, .unavailable)
+            }
+        }
+        await expectUnavailable { _ = try await api.appleLogin(identityToken: "t") }
+        await expectUnavailable { try await api.forgotPassword(email: "e") }
+        await expectUnavailable { try await api.resetPassword(email: "e", code: "c", newPassword: "p") }
+        await expectUnavailable { _ = try await api.profile(token: "t") }
+        await expectUnavailable { _ = try await api.creditUsage(token: "t") }
+        await expectUnavailable {
+            _ = try await api.regenerate(conversationId: "c", request: .init(messageId: "m", deviceId: "d"), token: "t")
+        }
+        await expectUnavailable { try await api.deleteConversation(id: "c", token: "t") }
+    }
+
     func testEveryConversationRouteUsesTheRealUUIDWithoutDoubleEncoding() async throws {
         let id = "550e8400-e29b-41d4-a716-446655440000"
         let snapshot = chatSnapshot.replacingOccurrences(of: "\"id\":\"chat\"", with: "\"id\":\"\(id)\"")

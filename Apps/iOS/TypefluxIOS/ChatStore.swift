@@ -15,6 +15,10 @@ final class ChatStore {
     private(set) var conversation: ChatConversation?
     private(set) var selectedID: String?
     private(set) var hasMore = false
+    /// Account details for the sidebar and settings. Both are best-effort: a
+    /// missing profile or usage endpoint never blocks chatting.
+    private(set) var profile: ChatProfile?
+    private(set) var creditUsage: ChatCreditUsage?
     var modelRef = "" {
         didSet { reasoningEffort = reasoningEffort.nearest(in: supportedReasoningLevels) }
     }
@@ -121,6 +125,7 @@ final class ChatStore {
             }
             reasoningEffort = reasoningEffort.nearest(in: supportedReasoningLevels)
         } catch { report(error, generation: generation) }
+        await refreshAccountDetails()
     }
 
     func loadMore() async {
@@ -517,6 +522,8 @@ private extension ChatStore {
         models = []
         modelRef = ""
         hasMore = false
+        profile = nil
+        creditUsage = nil
         changeSelection(UUID().uuidString.lowercased())
         selectedID = nil
     }
@@ -530,5 +537,159 @@ private extension ChatStore {
         } else {
             errorMessage = error.localizedDescription
         }
+    }
+}
+
+// MARK: - Account, Apple sign-in and conversation actions
+
+extension ChatStore {
+    /// The name the sidebar footer and settings card show: the profile name, else
+    /// the part of the email before "@".
+    var displayName: String {
+        if let name = profile?.name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            return name
+        }
+        let local = email.split(separator: "@").first.map(String.init) ?? ""
+        return local.isEmpty ? email : local
+    }
+
+    /// Up to two letters for the avatar: initials of a two-word name, else the
+    /// first two characters.
+    var initials: String {
+        let words = displayName.split(whereSeparator: { $0 == " " || $0 == "." || $0 == "_" || $0 == "-" })
+        let letters = words.count >= 2 ? words.prefix(2).compactMap(\.first).map(String.init).joined()
+            : String(displayName.prefix(2))
+        return letters.isEmpty ? "?" : letters.uppercased()
+    }
+
+    /// "Pro" for a paid plan, "Free" otherwise; nil until usage has loaded.
+    var planLabel: String? {
+        guard let usage = creditUsage else { return nil }
+        return usage.paid ? "Pro" : "Free"
+    }
+
+    func refreshAccountDetails() async {
+        guard isAuthenticated else { return }
+        let generation = accountGeneration
+        // Each request stands alone so an older server without one endpoint
+        // still shows the other. Neither failure is surfaced as a chat error.
+        if let value = try? await authorized({ [service] token in try await service.profile(token: token) }),
+           generation == accountGeneration {
+            profile = value
+        }
+        if let value = try? await authorized({ [service] token in try await service.creditUsage(token: token) }),
+           generation == accountGeneration {
+            creditUsage = value
+        }
+    }
+
+    func loginWithApple(identityToken: String, email appleEmail: String?) async {
+        resetAccount()
+        let generation = accountGeneration
+        isLoading = true
+        defer {
+            if generation == accountGeneration {
+                isLoading = false
+            }
+        }
+        do {
+            try credentials.clear()
+            let account = try await service.appleLogin(identityToken: identityToken)
+            try checkAccount(generation)
+            session = account
+            // Apple shares the email only on the first authorization; the profile
+            // is the source of truth for every later sign-in.
+            let fetched = try? await service.profile(token: account.accessToken)
+            try checkAccount(generation)
+            let resolved = fetched?.email ?? appleEmail?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            try credentials.save(SavedAccount(email: resolved, session: account))
+            email = resolved
+            profile = fetched
+            isAuthenticated = true
+            await refreshHome()
+        } catch { report(error, generation: generation) }
+    }
+
+    /// Sends a reset code. Returns true when the server accepted the request.
+    func requestPasswordReset(email address: String) async -> Bool {
+        let normalized = address.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return false }
+        let generation = accountGeneration
+        errorMessage = nil
+        do {
+            try await service.forgotPassword(email: normalized)
+            return generation == accountGeneration
+        } catch {
+            report(error, generation: generation)
+            return false
+        }
+    }
+
+    /// Sets a new password with the emailed code. Returns true on success.
+    func resetPassword(email address: String, code: String, newPassword: String) async -> Bool {
+        let generation = accountGeneration
+        errorMessage = nil
+        do {
+            try await service.resetPassword(
+                email: address.trimmingCharacters(in: .whitespacesAndNewlines),
+                code: code.trimmingCharacters(in: .whitespacesAndNewlines),
+                newPassword: newPassword
+            )
+            return generation == accountGeneration
+        } catch {
+            report(error, generation: generation)
+            return false
+        }
+    }
+
+    /// The assistant message that "Regenerate" replaces: the last answer, and only
+    /// when no run is active.
+    var regenerableMessageID: String? {
+        guard !isBusy, let messages = conversation?.messages,
+              let answer = messages.lastIndex(where: { $0.role == "assistant" && !$0.text.isEmpty }),
+              let question = messages.lastIndex(where: { $0.role == "user" }),
+              answer > question else { return nil }
+        return messages[answer].id
+    }
+
+    func regenerate(messageID: String) async {
+        guard let value = conversation, regenerableMessageID == messageID, composerValidation == nil else { return }
+        let generation = accountGeneration
+        let selection = selectionGeneration
+        let request = ChatRegenerateRequest(messageId: messageID, deviceId: deviceID,
+                                            modelRef: modelRef.isEmpty ? nil : modelRef)
+        isSending = true
+        errorMessage = nil
+        defer {
+            if generation == accountGeneration, selection == selectionGeneration {
+                isSending = false
+            }
+        }
+        do {
+            let updated = try await authorized { [service] token in
+                try await service.regenerate(conversationId: value.id, request: request, token: token)
+            }
+            guard generation == accountGeneration, selection == selectionGeneration else { return }
+            accept(updated)
+            isSending = false
+            startObservation()
+        } catch {
+            if selection == selectionGeneration {
+                report(error, generation: generation)
+            }
+        }
+    }
+
+    func deleteConversation(_ id: String) async {
+        guard isAuthenticated else { return }
+        let generation = accountGeneration
+        do {
+            try await authorized { [service] token in try await service.deleteConversation(id: id, token: token) }
+            guard generation == accountGeneration else { return }
+            conversations.removeAll { $0.id == id }
+            if selectedID == id {
+                newConversation()
+            }
+        } catch { report(error, generation: generation) }
     }
 }
