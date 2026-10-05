@@ -1532,6 +1532,11 @@
 "ask.quick.calculator" = "Calculator";
 "ask.quick.askAI" = "Ask AI";
 "ask.quick.hint" = "↩ Copy result · ⌘↩ Ask AI · esc Close";
+"ask.quick.hint.app" = "↩ Open · ⌘↩ Ask AI · esc Close";
+"ask.quick.app.open" = "Open";
+"ask.quick.app.system" = "System";
+"ask.settings.quick.apps.title" = "Launcher app search";
+"ask.settings.quick.apps.subtitle" = "Type part of an app's name, its initials or pinyin in the launcher to open it.";
 "ask.quick.copy" = "Copy";
 "ask.quick.format.chineseAmount" = "Chinese amount";
 "ask.quick.format.grouped" = "Thousands";

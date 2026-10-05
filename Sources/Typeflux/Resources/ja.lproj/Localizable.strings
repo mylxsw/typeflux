@@ -1522,6 +1522,11 @@
 "ask.quick.calculator" = "計算機";
 "ask.quick.askAI" = "AI に質問";
 "ask.quick.hint" = "↩ 結果をコピー · ⌘↩ AI に質問 · esc 閉じる";
+"ask.quick.hint.app" = "↩ 開く · ⌘↩ AI に質問 · esc 閉じる";
+"ask.quick.app.open" = "開く";
+"ask.quick.app.system" = "システム";
+"ask.settings.quick.apps.title" = "ランチャーのアプリ検索";
+"ask.settings.quick.apps.subtitle" = "ランチャーにアプリ名の一部、頭文字、ピンインを入力して開きます。";
 "ask.quick.copy" = "コピー";
 "ask.quick.format.chineseAmount" = "中国語の大写金額";
 "ask.quick.format.grouped" = "桁区切り";

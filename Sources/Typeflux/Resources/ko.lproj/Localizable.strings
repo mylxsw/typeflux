@@ -1522,6 +1522,11 @@
 "ask.quick.calculator" = "계산기";
 "ask.quick.askAI" = "AI에게 질문";
 "ask.quick.hint" = "↩ 결과 복사 · ⌘↩ AI에게 질문 · esc 닫기";
+"ask.quick.hint.app" = "↩ 열기 · ⌘↩ AI에게 질문 · esc 닫기";
+"ask.quick.app.open" = "열기";
+"ask.quick.app.system" = "시스템";
+"ask.settings.quick.apps.title" = "런처 앱 검색";
+"ask.settings.quick.apps.subtitle" = "런처에 앱 이름의 일부, 머리글자 또는 병음을 입력해 앱을 엽니다.";
 "ask.quick.copy" = "복사";
 "ask.quick.format.chineseAmount" = "중국어 금액 대문자";
 "ask.quick.format.grouped" = "천 단위 구분";

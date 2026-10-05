@@ -1,6 +1,6 @@
 # 随便问：启动器快捷结果（计算器先行）设计方案
 
-> 状态：M1（计算器）已实现，代码位置见第 5 节；M2 及以后仍是设计。配套可交互设计稿：`docs/design/ask-launcher-quick-results.html`（浏览器直接打开），截图见 `docs/design/ask-launcher-quick-results/`。
+> 状态：M1（计算器）、M2（应用搜索，见第 9 节）已实现；M3 及以后仍是设计。配套可交互设计稿：`docs/design/ask-launcher-quick-results.html`（浏览器直接打开），截图见 `docs/design/ask-launcher-quick-results/`。
 
 ## 1. 背景与目标
 
@@ -184,9 +184,9 @@ function := sqrt abs round floor ceil ln log log2 sin cos tan asin acos atan min
 
 另有 `Ask/AskConversationModel+QuickResults.swift`（开关读取、执行后清空草稿）。
 
-### 5.2 接口（M2 引入）
+### 5.2 接口（第一个异步来源时引入）
 
-M1 只有计算器一个来源，`AskQuickResults.resolve` 直接调用它，没有提前抽象出来源协议。M2 加入第二个来源（应用搜索）时，按下面的接口拆出来：
+计算器和应用搜索都是同步的：应用列表常驻内存，逐键查询只要几十微秒。所以 `AskQuickResults.resolve` 直接调用这两个来源，没有提前抽象。第一个需要异步的来源（翻译或文档搜索）加入时，按下面的接口拆出来：
 
 ```swift
 /// What the launcher's text looks like to a quick-result source.
@@ -261,7 +261,7 @@ protocol AskQuickResultProvider: Sendable {
 | 阶段 | 内容 |
 |------|------|
 | M1 | 快捷结果框架（同步档）+ 计算器 + 结果视图 + 键盘 + 设置开关 + 测试 |
-| M2 | 异步档 + 应用搜索（含拼音）+ ⌥↩ 粘贴到原应用 |
+| M2 ✅ | 应用搜索（中英文名、首字母、拼音）、↩ 打开、按启动次数排序、设置开关（异步档与 ⌥↩ 写回随翻译 / 文档一起做） |
 | M3 | 文档搜索、历史对话 |
 | M4 | 单位 / 日期 / 汇率换算、语音算式 |
 
@@ -270,3 +270,46 @@ protocol AskQuickResultProvider: Sendable {
 1. ↩ 复制结果并关闭；⇥ 把结果写回输入框接着算。
 2. `200+10%` 按日常计算器语义算作 220。
 3. 中文大写金额用「元角分」形式；只有角没有分时以「整」结尾（`伍角整`）。
+
+## 9. M2 应用搜索（已实现）
+
+### 9.1 行为
+
+- 输入不是算式时，在本机应用里查找。最多列 5 个，每行显示图标、名称和安装位置。
+- **谁占回车**：查询短（2 个字符以上，最多 3 个词）、不含问号或句读，并且第一名明确匹配（得分 ≥ 0.8，即名称前缀、首字母或拼音命中）时，应用排在第一、默认高亮，↩ 打开它。否则「问 AI」排在第一、保持默认，应用列在下面，用 ↓ 选中后按 ↩ 打开。
+  - `wx` → 微信，↩ 打开。
+  - `wechat?` → ↩ 问 AI，微信列在下面。
+- ⌘↩ 始终问 AI；⇥ 只对计算结果有效。
+- 打开应用后关闭启动器、清空输入，并记一次启动次数；常用的应用排在前面。
+- 设置 → Agent → 内置工具 →「启动器应用搜索」，默认开启。
+
+### 9.2 匹配与排序（`AskAppMatcher`）
+
+| 命中方式 | 得分 | 例子 |
+|---------|------|------|
+| 名称完全相同 | 1.0 | `wechat` |
+| 拼音全拼完全相同 | 0.95 | `weixin` → 微信 |
+| 名称前缀 | 0.9 | `calc` → 计算器（Calculator） |
+| 首字母或拼音首字母完全相同 | 0.88 | `vsc`、`wx`、`jsq` |
+| 拼音全拼前缀 | 0.86 | `weix` |
+| 名称中某个词的前缀 | 0.82 | `studio` |
+| 首字母前缀 | 0.8 | `vs` |
+| 名称包含 | 0.6 | `hat` → WeChat |
+| 字母按顺序出现 | 0.45 | `tbpls` → TablePlus |
+
+- 单个字母只匹配名称或其中某个词的开头。
+- 查询里的标点会被忽略（只影响谁占回车）。
+- 启动次数每次加 0.005，最多加 0.05；同分时名称短的排在前面。
+
+### 9.3 应用列表（`AskAppIndex`）
+
+- 扫描 `/Applications`、`/System/Applications`、`/System/Library/CoreServices/Applications`、`~/Applications`（各自往下一层，例如 `Utilities`）以及 Finder。跳过 `LSBackgroundOnly` 的后台程序；同一个 bundle ID 只保留先找到的那个。
+- 每个应用收集这些名字：Finder 显示名、本地化名、`CFBundleDisplayName` / `CFBundleName`、文件名，以及简体中文名。中文名来自第三方应用的 `zh-Hans.lproj/InfoPlist.strings`，或苹果自带应用的 `InfoPlist.loctable`。因此系统是英文时，输入「微信」或 `jsq` 也能找到。
+- 拼音用 `CFStringTransform`（Mandarin → Latin，去掉声调）生成，只在扫描时计算一次。系统转换按单字读音，没有词的上下文（音乐 → yin le，银行 → yin xing），所以应用名里常见的多音词（音乐、银行等）先用一张小表校正。
+- 启动器构建时（App 启动后）和每次打开时，如果列表超过 5 分钟，就在后台重新扫描；查询从不等待扫描。启动次数存在 `UserDefaults`。
+
+### 9.4 测试
+
+- `AskAppSearchTests.swift`：名称、首字母、拼音的生成；匹配表与边界（单字母、超长、换行、标点）；排序与启动次数；谁占回车；用临时目录里的假 `.app` 扫描（中文 `.strings` / `.loctable`、后台程序、重复 bundle ID、嵌套文件夹）；后台刷新与过期；`resolve` 与计算器的优先级；记住用户选中的行；视图高度与提示。
+- `AskQuickResultsInteractionTests.swift`：真实启动器按键，覆盖 ↩ 打开、问句仍发给 AI、↓ 选中应用、⌘↩、关闭开关，以及按设置决定是否刷新列表。打开应用由假实现记录，不会真的启动应用。
+

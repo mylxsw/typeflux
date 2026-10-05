@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// The launcher's quick results in place of its starting points: the
-/// calculation with its expression and large value, a few other spellings that
-/// copy on their own, the way back to the AI, and the keyboard hint.
+/// calculation with its expression and large value and a few other spellings
+/// that copy on their own, or the applications to open; then the way back to
+/// the AI and the keyboard hint.
 struct AskQuickResultsView: View {
     var results: AskQuickResults
     /// The launcher's text, which "Ask AI" sends as it is.
@@ -17,20 +18,32 @@ struct AskQuickResultsView: View {
     static let calculationHeight: CGFloat = 66
     static let formatHeight: CGFloat = 32
     static let askHeight: CGFloat = 42
+    static let appHeight: CGFloat = 42
     static let rowSpacing: CGFloat = 2
     static let listPadding: CGFloat = 6
     static let hintHeight: CGFloat = 24
 
     /// Everything this list adds to the launcher card.
     static func height(for results: AskQuickResults) -> CGFloat {
-        let formats = CGFloat(results.formats.count)
-        return 1 + listPadding * 2 + calculationHeight + formats * formatHeight + askHeight
-            + (formats + 1) * rowSpacing + hintHeight
+        let rows = results.rows
+        let content = rows.reduce(CGFloat(0)) { total, row in
+            switch row {
+            case .calculation: total + calculationHeight
+            case .format: total + formatHeight
+            case .app: total + appHeight
+            case .askAI: total + askHeight
+            }
+        }
+        return 1 + listPadding * 2 + content + CGFloat(max(0, rows.count - 1)) * rowSpacing + hintHeight
     }
 
-    /// Return copies unless the highlight is on "Ask AI".
+    /// Return copies a calculation, opens an application, or sends to the AI.
     static func hint(for results: AskQuickResults) -> String {
-        L(results.highlightedRow == .askAI ? "ask.launcher.hint" : "ask.quick.hint")
+        switch results.highlightedRow {
+        case .askAI: L("ask.launcher.hint")
+        case .app: L("ask.quick.hint.app")
+        case .calculation, .format: L("ask.quick.hint")
+        }
     }
 
     var body: some View {
@@ -58,12 +71,18 @@ struct AskQuickResultsView: View {
         switch row {
         case .calculation: calculationRow(highlighted: highlighted)
         case let .format(formatIndex): formatRow(results.formats[formatIndex], index: index, highlighted: highlighted)
+        case let .app(appIndex): appRow(results.apps[appIndex].entry, row: row, highlighted: highlighted)
         case .askAI: askRow(highlighted: highlighted)
         }
     }
 
-    private func calculationRow(highlighted: Bool) -> some View {
-        let calculation = results.calculation
+    @ViewBuilder private func calculationRow(highlighted: Bool) -> some View {
+        if let calculation = results.calculation {
+            calculationRow(calculation, highlighted: highlighted)
+        }
+    }
+
+    private func calculationRow(_ calculation: AskCalculation, highlighted: Bool) -> some View {
         let expression = results.pendingExpression.map { $0 + " …" } ?? calculation.expression
         return Button { onRun(.calculation, true) } label: {
             HStack(spacing: 12) {
@@ -108,10 +127,58 @@ struct AskQuickResultsView: View {
     }
 
     private var accessibilityValue: String {
-        switch results.calculation.outcome {
-        case let .success(number): results.calculation.expression + " = " + number.displayText
-        case let .failure(error): error.message
+        guard let calculation = results.calculation else { return "" }
+        switch calculation.outcome {
+        case let .success(number): return calculation.expression + " = " + number.displayText
+        case let .failure(error): return error.message
         }
+    }
+
+    /// The application's icon and name, where it lives, and "Open" when highlighted.
+    private func appRow(_ app: AskAppEntry, row: AskQuickResults.Row, highlighted: Bool) -> some View {
+        Button { onRun(row, true) } label: {
+            HStack(spacing: 12) {
+                Image(nsImage: AskAppIcon.image(for: app.url))
+                    .resizable().interpolation(.high)
+                    .frame(width: 28, height: 28)
+                    .accessibilityHidden(true)
+                Text(app.name).font(.system(size: 13.5))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(1)
+                Text(Self.location(of: app.url)).font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1).truncationMode(.middle)
+                Spacer(minLength: 8)
+                if highlighted {
+                    Text(L("ask.quick.app.open") + " ↩").font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
+            }
+            .padding(.horizontal, 10)
+            .frame(height: Self.appHeight)
+            .background(highlighted ? AskTheme.hoverFill : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                if highlighted, results.appsLead, row == results.rows.first {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(AskTheme.accent.opacity(0.55), lineWidth: 1)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(app.name)
+        .accessibilityHint(L("ask.quick.app.open"))
+        .accessibilityAddTraits(highlighted ? .isSelected : [])
+        .accessibilityIdentifier("ask.quick.app")
+    }
+
+    /// "/Applications", "~/Applications/Chrome Apps" or "System": where the application is installed.
+    static func location(of url: URL) -> String {
+        let folder = url.deletingLastPathComponent().path
+        if folder.hasPrefix("/System/") { return L("ask.quick.app.system") }
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        return folder.hasPrefix(home) ? "~" + folder.dropFirst(home.count) : folder
     }
 
     private func formatRow(_ format: AskCalculatorFormat, index: Int, highlighted: Bool) -> some View {
