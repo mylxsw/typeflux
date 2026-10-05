@@ -17,6 +17,79 @@ This document explains the purpose of each `make` command in the repository, whe
 | `make dmg` | Build the signed DMG from the release app bundle | Prepare `.dmg` artifact |
 | `make release-notarize` | Run the full release pipeline including notarization and stapling | One-step external distribution build |
 | `make format` | Format the codebase | Cleanup before commit or review |
+| `make ios-run` | Build, install, and launch the iOS app in Simulator | Normal iOS development |
+| `make ios-preview` | Launch the Debug-only offline iOS preview | Review the UI without an account |
+| `make ios-deploy` | Build, install, and launch on a specified physical iPhone | Device testing after signing setup |
+| `make ios-archive` | Create a local Release `.xcarchive` | Prepare an archive for Organizer |
+| `make ios-test` | Run iOS unit and UI tests | iOS regression validation |
+
+## iOS Commands
+
+Use full Xcode 26+ with an installed iOS Simulator runtime and Python 3.9+.
+Run these commands from the repository root. The app's deployment target is
+iOS 17. The detailed [iOS quickstart (中文)](IOS_QUICKSTART.zh-CN.md) covers
+first-time setup, signing, API environments, output paths, and troubleshooting.
+The existing commands without an `ios-` prefix continue to target macOS.
+
+| Command | Behavior |
+| --- | --- |
+| `make ios-help` | Print the iOS command help |
+| `make ios-doctor` | Check the Xcode toolchain and simulator environment |
+| `make ios-devices` | List simulators and physical devices with their identifiers |
+| `make ios-build` | Build the simulator app without installing or launching |
+| `make ios-install` | Build, boot the selected simulator, and install the app |
+| `make ios-run` | Build, install, and launch the live app in Simulator |
+| `make ios-preview` | Build Debug, install, and launch with offline synthetic data |
+| `make ios-deploy` | Build, install, and launch on the specified physical device |
+| `make ios-archive` | Build a local Release archive without uploading it |
+| `make ios-test` | Run `scripts/test_ios.sh`, including photo-fixture setup and UI tests |
+| `make ios-test-scripts` | Test the iOS command orchestration without building the app |
+
+Typical simulator workflow:
+
+```sh
+make ios-doctor
+make ios-run
+make ios-preview
+```
+
+Set `TYPEFLUX_IOS_SIMULATOR=<UDID>` to choose a simulator; otherwise the launcher
+prefers a booted iPhone, then an iPhone on the newest available runtime.
+`TYPEFLUX_IOS_CONFIGURATION` defaults to `Debug` and accepts `Release`.
+Preview requires Debug and rejects a Release override; archive always uses Release.
+
+After pairing a physical device, enabling Developer Mode, and configuring the
+development team's signing credentials in Xcode:
+
+```sh
+TYPEFLUX_IOS_DEVICE='<device-UDID>' TYPEFLUX_IOS_TEAM='<TEAMID>' make ios-deploy
+TYPEFLUX_IOS_TEAM='<TEAMID>' make ios-archive
+```
+
+Use the physical UDID from the `xctrace` section of `make ios-devices`, not a
+Simulator UDID or CoreDevice UUID. Deploy and archive allow Xcode to update
+provisioning resources using the signed-in developer account.
+Deploy also allows Xcode to register the explicitly selected device with that
+team if necessary; simulator commands and archive do not register devices.
+
+`TYPEFLUX_IOS_DERIVED_DATA` defaults to `.xcode-ios-derived`.
+`TYPEFLUX_IOS_ARCHIVE_PATH` defaults to
+`archives/TypefluxIOS.xcarchive` under the configured DerivedData directory and
+must not already exist.
+Relative DerivedData and archive paths are resolved against the repository root.
+The archive command does not export an IPA or submit to TestFlight/App Store;
+continue through Xcode Organizer once distribution prerequisites are satisfied.
+`ios-deploy` installs the client and does not deploy the backend.
+
+The live app defaults to `https://api.typeflux.app`. Set `TYPEFLUX_API_URL` at
+build time for an HTTPS staging endpoint. The offline preview makes no live
+account/API requests. Keep credentials out of URLs, Makefiles, and project files.
+
+Tests use their own `TYPEFLUX_IOS_TEST_DESTINATION` (a concrete
+`platform=iOS Simulator,id=<UDID>`) and optional
+`TYPEFLUX_IOS_TEST_RESULT_BUNDLE_PATH` (a new `.xcresult` path). They do not use
+`TYPEFLUX_IOS_SIMULATOR`; the test script keeps its existing
+`.xcode-ios-derived` cache path.
 
 ## Command Details
 

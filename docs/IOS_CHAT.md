@@ -98,6 +98,19 @@ and add it to the API's comma-separated `APPLE_OIDC_CLIENT_ID`.
 
 ## Build and test
 
+For first-time setup, simulator installation, physical-device signing, API
+configuration, and Release archives, follow the
+[iOS run, installation, and deployment guide (中文)](IOS_QUICKSTART.zh-CN.md).
+From the repository root, use:
+
+```sh
+make ios-doctor
+make ios-run      # Build, install, and launch the live app in Simulator.
+make ios-preview  # Debug-only, network-free UI preview.
+make ios-help
+```
+
+Full Xcode 26+ is required to compile the current SDK APIs and Swift features.
 Validation environment: Xcode 27.0 (Swift 6.4) with an iOS 26.5 Simulator
 runtime. The deployment target is iOS 17. Open
 `Apps/iOS/TypefluxIOS.xcodeproj` and select the `TypefluxIOS` scheme. Simulator
@@ -107,7 +120,7 @@ enabled so Keychain tests receive the app's entitlements.
 
 ```sh
 swift test --package-path Packages/TypefluxChat --enable-code-coverage
-scripts/test_ios.sh
+make ios-test
 make coverage
 ```
 

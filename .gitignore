@@ -1,5 +1,6 @@
 .build/
 *.log
+__pycache__/
 .swiftpm/
 coverage-report/
 coverage.lcov

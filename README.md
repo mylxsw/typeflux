@@ -131,8 +131,27 @@ collaborator can comment `@autotest` to run the test workflow.
 
 See [CLAUDE.md](./CLAUDE.md) for the full development guide.
 
+### Run the iOS Ask app
+
+With full Xcode 26+ and an iOS Simulator runtime installed, run from the repository root:
+
+```sh
+make ios-doctor   # check the Xcode and simulator environment
+make ios-run      # build, install, and launch in Simulator
+make ios-preview  # launch an offline UI preview without an account
+```
+
+For a paired iPhone with development signing configured:
+
+```sh
+TYPEFLUX_IOS_DEVICE='<device-UDID>' TYPEFLUX_IOS_TEAM='<TEAMID>' make ios-deploy
+```
+
+The iOS app requires iOS 17+. See the [iOS run, installation, and deployment guide (中文)](./docs/IOS_QUICKSTART.zh-CN.md) for first-time setup, signing, API environments, local archives, and troubleshooting. These commands install the client; they do not deploy the backend or publish to the App Store.
+
 ## Documentation
 
+- [iOS Run, Installation, and Deployment (中文)](./docs/IOS_QUICKSTART.zh-CN.md)
 - [iOS Ask Client: Architecture and Development](./docs/IOS_CHAT.md)
 - [Usage Guide](./docs/USAGE.md)
 - [Make Commands](./docs/MAKE_COMMANDS.md)
