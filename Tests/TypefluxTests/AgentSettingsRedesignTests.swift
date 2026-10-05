@@ -46,6 +46,37 @@ final class AgentSettingsRedesignTests: XCTestCase {
                                            L("agent.skills.install.defaultBranch"), L("agent.skills.install.root")))
     }
 
+    func testSkillActionsOnALocalSkill() async throws {
+        let settings = try settings()
+        let library = AskSkillLibrary(userDirectory: root.appendingPathComponent("Skills"))
+        let folder = library.userDirectory.appendingPathComponent("house-style")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try "---\ndescription: Our house style\n---\nSign as Team.".write(
+            to: folder.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+        let view = AskToolsSettingsView(settings: settings, skills: library,
+                                        notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")),
+                                        owner: { "o" }, tab: .extensions,
+                                        permissions: .fixed(accessibility: false, screenRecording: false))
+        let local = try XCTUnwrap(library.skills().first { $0.name == "house-style" })
+        let builtin = try XCTUnwrap(library.skills().first { $0.directory == nil })
+        XCTAssertEqual(view.skillBadge(local).text, L("ask.settings.skills.local"))
+        XCTAssertEqual(view.skillBadge(builtin).text, L("ask.settings.skills.builtin"))
+        XCTAssertFalse(view.skillBadge(builtin).accent)
+
+        _ = NSApplication.shared
+        let sheet = try await render(view.installSheet, appearance: .aqua, height: 400)
+        XCTAssertGreaterThan(sheet.count, 4000)
+        view.startInstall()  // An empty link never starts an install.
+
+        view.rollbackSkill(local)  // No previous version: reported, not thrown.
+        XCTAssertNotNil(library.skills().first { $0.name == "house-style" })
+        view.setSkill("house-style", enabled: false)
+        view.removeSkill(local)
+        XCTAssertNil(library.skills().first { $0.name == "house-style" })
+        XCTAssertFalse(settings.askDisabledSkills.contains("house-style"), "Removal resets the preference")
+        view.removeSkill(local)  // Already gone: reported, not thrown.
+    }
+
     func testFolderRemovalCanBeRestored() throws {
         let removed = AskToolsSettingsView.RemovedFolder(path: "/b", index: 1)
         XCTAssertEqual(AskToolsSettingsView.restoring(removed, in: ["/a", "/c"]), ["/a", "/b", "/c"])

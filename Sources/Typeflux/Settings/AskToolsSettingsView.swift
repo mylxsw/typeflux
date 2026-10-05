@@ -201,37 +201,6 @@ struct AskToolsSettingsView: View {
         reload()
     }
 
-    /// A pop-up styled like the Models page selectors.
-    func selectorMenu<Items: View>(_ value: String, label: String, width: CGFloat = 160,
-                                   @ViewBuilder items: () -> Items) -> some View {
-        Menu {
-            items()
-        } label: {
-            Text(value)
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        // Same up/down indicator as the Models page selectors; clicks fall through to the menu.
-        .overlay(alignment: .trailing) {
-            Image(systemName: "chevron.up.chevron.down")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .allowsHitTesting(false)
-        }
-        .font(.system(size: 13))
-        .padding(.horizontal, 10).frame(width: width, height: 30, alignment: .leading)
-        .background(
-            ModelVisualStyle.control,
-            in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                .strokeBorder(ModelVisualStyle.border)
-        )
-        .accessibilityLabel(label)
-    }
-
     var memorySections: some View {
         MemoryNotesEditorView(model: memoryNotes, store: notes, owner: owner(),
                               correctionsEnabled: MemoryRollout.enabled(settings.defaults))
