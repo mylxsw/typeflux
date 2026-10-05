@@ -2280,3 +2280,6 @@
 "models.protocol" = "协议";
 "models.protocolHint" = "选择此服务商支持的 API 协议。";
 "models.protocolUnsupported" = "暂不支持此协议，请选择其他协议或更新 Typeflux。";
+"ask.tool.automationUnavailable" = "当前仅支持查看屏幕或网页，无法执行点击、输入等操作。";
+"ask.tool.observationExpired" = "操作目标已变化或观察记录已过期，请重新截图或读取目标后再操作。";
+"ask.tool.notExecuted" = "此工具未执行：%@ 请改用可用方式或修正问题，不要原样重复调用。";

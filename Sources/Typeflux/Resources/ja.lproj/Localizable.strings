@@ -2270,3 +2270,6 @@
 "models.protocol" = "プロトコル";
 "models.protocolHint" = "プロバイダーが対応する API プロトコルを選択してください。";
 "models.protocolUnsupported" = "このプロトコルには対応していません。別のプロトコルを選択するか、Typeflux を更新してください。";
+"ask.tool.automationUnavailable" = "画面やページの表示のみ利用できます。クリック、入力などの操作は利用できません。";
+"ask.tool.observationExpired" = "対象が変わったか、観察情報の有効期限が切れました。画面を撮影するか対象を読み直してから操作してください。";
+"ask.tool.notExecuted" = "このツールは実行されませんでした：%@ 利用可能な方法に切り替えるか問題を修正し、同じ呼び出しを繰り返さないでください。";

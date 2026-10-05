@@ -2280,3 +2280,6 @@
 "models.protocol" = "Protocol";
 "models.protocolHint" = "Choose the API protocol supported by this provider.";
 "models.protocolUnsupported" = "This protocol is not supported. Select another protocol or update Typeflux.";
+"ask.tool.automationUnavailable" = "Only screen and page observation is available. Clicking, typing and other control actions are unavailable.";
+"ask.tool.observationExpired" = "The target changed or its observation expired. Capture the screen or read the target again before acting.";
+"ask.tool.notExecuted" = "This tool was not executed: %@ Use an available alternative or correct the problem; do not repeat this call unchanged.";

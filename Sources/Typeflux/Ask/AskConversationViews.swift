@@ -893,7 +893,8 @@ struct AskConversationView: View {
                 working: model.recoveryWorking,
                 inspect: { model.inspectingRecovery = true },
                 retransmit: { Task { await model.retransmitSavedReceipts() } },
-                continueRun: { model.resume() }
+                continueRun: { model.resume() },
+                endRun: { Task { await model.endRecoveryRun() } }
             )
             .sheet(isPresented: $model.inspectingRecovery) { AskRecoveryInspector(model: model) }
         }

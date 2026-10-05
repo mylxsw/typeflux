@@ -5,6 +5,7 @@ protocol AskCaching: Sendable {
     func execution(id: String, owner: String) async throws -> AskExecutionEntry?
     func executions(conversationId: String, owner: String) async throws -> [AskExecutionEntry]
     func claimExecution(_ audit: AskExecutionAudit, owner: String) async throws -> Bool
+    func saveRejectedToolReceipt(audit: AskExecutionAudit, receipt: AskToolResultRequest, owner: String) async throws
     func saveReceipt(_ receipt: AskExecutionReceipt, identity: AskExecutionIdentity, owner: String) async throws
     func recordExecution(id: String, event: AskExecutionAudit.Event, owner: String) async throws
     func save(_ conversation: AskConversation, owner: String) async throws

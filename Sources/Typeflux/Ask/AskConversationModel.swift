@@ -140,7 +140,7 @@ final class AskConversationModel: ObservableObject {
     @Published private(set) var selectedId: String?
     @Published private(set) var isLoadingSelection = false
     @Published private(set) var selectionLoadFailed = false
-    private var snapshots: [String: AskConversation] = [:]
+    private(set) var snapshots: [String: AskConversation] = [:]
     var transcriptPositions: [String: String] = [:]
     private var drafts: [String: AskDraft] = [:]
     private var historyGeneration = UUID()
@@ -1069,7 +1069,15 @@ final class AskConversationModel: ObservableObject {
                 // Consent comes from the submitted draft, never from historical images or live UI state.
                 let isScreenshot = call.function.name == "computer"
                     && (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot"
-                let binding = try await tools.approvalBinding(for: call, conversationId: value.id)
+                let binding: AskToolBinding
+                do {
+                    binding = try await tools.preparedBinding(for: call, conversationId: value.id)
+                } catch let failure as AskToolPreparationFailure {
+                    guard let rejected = try await rejectToolPreparation(failure, call: call, value: value,
+                                                                         identity: identity, current: current) else { return }
+                    value = try await deliverToolResult(rejected, identity: identity, current: current)
+                    continue
+                }
                 try Task.checkCancellation()
                 guard session()?.owner == current.account else { throw CancellationError() }
                 let request = AskToolPolicy.request(call: call, owner: current.account, conversation: value.id,
@@ -1122,7 +1130,7 @@ final class AskConversationModel: ObservableObject {
                             controllingConversationId = value.id; onControlChanged?(true)
                         }
                         // Claiming and fetching can suspend. Re-resolve local evidence at dispatch.
-                        let bindingNow = try await tools.approvalBinding(for: call, conversationId: value.id)
+                        let bindingNow = try await tools.preparedBinding(for: call, conversationId: value.id)
                         try Task.checkCancellation()
                         guard session()?.owner == current.account else { throw CancellationError() }
                         guard bindingNow == request.binding,
@@ -1146,7 +1154,16 @@ final class AskConversationModel: ObservableObject {
                     } catch is CancellationError { throw CancellationError() }
                     catch {
                         result?.content = error.localizedDescription
-                        if error is MCPInputError { result?.harness?.outcome?.status = "invalid" }
+                        if let failure = error as? AskToolPreparationFailure {
+                            result?.content = L("ask.tool.notExecuted", failure.message)
+                            result?.harness?.outcome = failure.outcome
+                        } else if let observation = error as? AskObservationError {
+                            // Automation executors return an unknown receipt once any event
+                            // was dispatched; these thrown refusals precede that boundary.
+                            let failure = AskToolPreparationFailure(observation)
+                            result?.content = L("ask.tool.notExecuted", failure.message)
+                            result?.harness?.outcome = failure.outcome
+                        } else if error is MCPInputError { result?.harness?.outcome?.status = "invalid" }
                         else if let projectError = error as? AskProjectError {
                             result?.harness?.outcome?.status = projectError == .denied ? "denied" : "invalid"
                         } else if let artifactError = error as? AskArtifactError {
@@ -1161,10 +1178,7 @@ final class AskConversationModel: ObservableObject {
                 }
                 try await cache.saveReceipt(.tool(result!), identity: identity, owner: current.owner)
             }
-            try Task.checkCancellation()
-            guard session()?.owner == current.account else { throw CancellationError() }
-            value = try await api.result(conversationId: value.id, request: result!, token: current.token)
-            try await cache.recordExecution(id: journalKey, event: .acknowledged, owner: current.owner)
+            value = try await deliverToolResult(result!, identity: identity, current: current)
         }
     }
 

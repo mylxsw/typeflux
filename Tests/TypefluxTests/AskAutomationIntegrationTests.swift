@@ -48,7 +48,9 @@ struct AskAutomationIntegrationTests {
         let properties = schema["properties"] as! [String: [String: Any]]
         #expect(properties["observation_id"]?["type"] as? String == "string")
         if tool == "browser" { #expect(properties["ref"]?["type"] as? String == "string") }
-        else { #expect(definition.description.contains("scroll (requires x,y")) }
+        #expect(definition.description.contains("Only observation is available"))
+        #expect(properties["action"]?["enum"] as? [String] ==
+            (tool == "browser" ? ["read", "snapshot"] : ["screenshot", "inspect", "wait"]))
     }
 
     @Test(arguments: [false, true])

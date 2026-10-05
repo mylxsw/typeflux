@@ -66,6 +66,7 @@ struct AskRecoveryRenderTests {
         )
         #expect(synced.contains(localized("ask.recovery.saved")))
         #expect(synced.contains(localized("ask.recovery.retransmit")))
+        #expect(synced.contains(localized("ask.recovery.end")))
         #expect(!synced.contains(localized("ask.recovery.inspect")))
         #expect(!synced.contains(localized("ask.recovery.continue")))
 
@@ -76,6 +77,7 @@ struct AskRecoveryRenderTests {
         )
         #expect(continued.contains(localized("ask.recovery.paused")))
         #expect(continued.contains(localized("ask.recovery.continue")))
+        #expect(continued.contains(localized("ask.recovery.end")))
         #expect(!continued.contains(localized("ask.recovery.inspect")))
         #expect(!continued.contains(localized("ask.recovery.retransmit")))
 
@@ -88,7 +90,8 @@ struct AskRecoveryRenderTests {
             try render(
                 AskRecoveryCard(presentation: paused, canContinue: true).padding(24),
                 name: "paused-zh",
-                language: .simplifiedChinese
+                language: .simplifiedChinese,
+                size: .init(width: 650, height: 140)
             )
             let unknown = AskRecoveryPresentation(run: value.run,
                                                   entries: [.init(id: entry.id, audit: entry.audit, receipt: nil)],

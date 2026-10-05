@@ -10,6 +10,7 @@ struct AskRecoveryCard: View {
     var inspect: () -> Void = {}
     var retransmit: () -> Void = {}
     var continueRun: () -> Void = {}
+    var endRun: () -> Void = {}
 
     var body: some View {
         if presentation.isVisible {
@@ -68,6 +69,10 @@ struct AskRecoveryCard: View {
     }
 
     @ViewBuilder private var buttons: some View {
+        if presentation.canEnd {
+            Button(L("ask.recovery.end"), action: endRun)
+                .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+        }
         if presentation.unknown {
             Button(action: inspect) {
                 HStack(spacing: 6) {
