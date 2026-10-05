@@ -2637,6 +2637,8 @@ final class StudioViewModel: ObservableObject {
 
         let capturedProvider = focusedModelProvider
         let capturedRemoteProvider = LLMRemoteProvider.from(providerID: capturedProvider) ?? llmRemoteProvider
+        let capturedAPIStyle = ModelRegistry.read(settingsStore.defaults)?.providers
+            .first { $0.remote == capturedRemoteProvider }?.effectiveAPIStyle
         let capturedBaseURL = llmBaseURL
         let capturedModel = llmModel
         let capturedAPIKey = llmAPIKey
@@ -2660,10 +2662,11 @@ final class StudioViewModel: ObservableObject {
                             provider: capturedRemoteProvider,
                             baseURL: capturedBaseURL,
                             model: capturedModel,
-                            apiKey: capturedAPIKey
+                            apiKey: capturedAPIKey, apiStyle: capturedAPIStyle
                         )
                         let preview = try await RemoteLLMClient.previewConnection(
                             provider: connection.provider,
+                            apiStyle: connection.effectiveAPIStyle,
                             baseURL: connection.baseURL,
                             model: connection.model,
                             apiKey: connection.apiKey,

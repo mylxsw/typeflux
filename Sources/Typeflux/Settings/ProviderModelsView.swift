@@ -9,6 +9,8 @@ struct ProviderModelsView: View {
     @State private var key = ""
     @State private var savedBaseURL = ""
     @State private var savedKey = ""
+    @State private var apiStyle = LLMRemoteAPIStyle.openAICompatible
+    @State private var savedAPIStyle = LLMRemoteAPIStyle.openAICompatible
     @State private var showsKey = false
     @State private var modelID = ""
     @State private var manual = false
@@ -69,6 +71,7 @@ struct ProviderModelsView: View {
         .onAppear {
             if let provider {
                 let value = library.connection(provider)
+                apiStyle = value.effectiveAPIStyle; savedAPIStyle = apiStyle
                 baseURL = value.baseURL; key = value.apiKey
                 savedBaseURL = value.baseURL; savedKey = value.apiKey
             }
@@ -99,6 +102,14 @@ struct ProviderModelsView: View {
     private func connectionCard(_ provider: RegisteredProvider) -> some View {
         ModelSurface {
             VStack(alignment: .leading, spacing: 0) {
+                if provider.supportsProtocolSelection {
+                    formRow(L("models.protocol")) {
+                        Picker(L("models.protocol"), selection: $apiStyle) {
+                            ForEach(LLMRemoteAPIStyle.customChoices, id: \.self) { Text($0.displayName).tag($0) }
+                        }.labelsHidden()
+                    }
+                    ModelRowDivider()
+                }
                 formRow(L("settings.models.apiEndpoint")) {
                     TextField("https://api.example.com/v1", text: $baseURL).textFieldStyle(ModelFieldStyle())
                 }
@@ -118,7 +129,8 @@ struct ProviderModelsView: View {
                     Button(L("ask.models.save")) { save(provider) }
                         .buttonStyle(ModelActionStyle(primary: true))
                         .disabled(loading || !ModelSettingsPresentation.connectionChanged(
-                            savedBaseURL: savedBaseURL, savedKey: savedKey, baseURL: baseURL, key: key
+                            savedBaseURL: savedBaseURL, savedKey: savedKey, baseURL: baseURL, key: key,
+                            savedAPIStyle: savedAPIStyle, apiStyle: apiStyle
                         ))
                 }
                 .padding(.horizontal, 18).padding(.vertical, 12)
@@ -297,8 +309,8 @@ extension ProviderModelsView {
 
     private func save(_ provider: RegisteredProvider) {
         perform {
-            try library.updateConnection(provider, baseURL: baseURL, key: key)
-            savedBaseURL = baseURL; savedKey = key
+            try library.updateConnection(provider, baseURL: baseURL, key: key, apiStyle: apiStyle)
+            savedBaseURL = baseURL; savedKey = key; savedAPIStyle = apiStyle
         }
     }
 
@@ -344,9 +356,9 @@ extension ProviderModelsView {
                     try library.updateConnection(
                         provider,
                         baseURL: baseURL,
-                        key: key
+                        key: key, apiStyle: apiStyle
                     )
-                    savedBaseURL = baseURL; savedKey = key
+                    savedBaseURL = baseURL; savedKey = key; savedAPIStyle = apiStyle
                 }
                 guard let latest = self.provider else { return }
                 let models = try await library.loadModels(provider: latest)
@@ -368,8 +380,8 @@ extension ProviderModelsView {
         operation = Task {
             defer { loading = false }
             do {
-                try library.updateConnection(provider, baseURL: baseURL, key: key)
-                savedBaseURL = baseURL; savedKey = key
+                try library.updateConnection(provider, baseURL: baseURL, key: key, apiStyle: apiStyle)
+                savedBaseURL = baseURL; savedKey = key; savedAPIStyle = apiStyle
                 guard let latest = self.provider,
                       let model = latest.models.first else { throw AskLocalError.message(L("models.noModels")) }
                 _ = try await AskCustomInference().complete(

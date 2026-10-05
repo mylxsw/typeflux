@@ -23,6 +23,7 @@ struct AskModelProfile: Codable, Equatable, Identifiable, Sendable {
     var name: String
     var baseURL: String
     var model: String
+    var apiStyle: LLMRemoteAPIStyle?
     var reference: String {
         "custom:" + id
     }
@@ -109,7 +110,7 @@ final class AskModelLibrary: ObservableObject {
             return registry.providers.filter { $0.id.hasPrefix("endpoint:") }.flatMap { provider in
                 provider.models.map { model in
                     AskModelProfile(id: String(model.reference.dropFirst("custom:".count)), name: provider.name,
-                                    baseURL: provider.baseURL, model: model.id)
+                                    baseURL: provider.baseURL, model: model.id, apiStyle: provider.apiStyle)
                 }
             }
         }
@@ -158,7 +159,7 @@ final class AskModelLibrary: ObservableObject {
                                               id: profile.model,
                                               name: profile.model,
                                               reference: profile.reference
-                                          )])
+                                          )], apiStyle: profile.apiStyle)
         if let index = next.providers.firstIndex(where: { $0.id == provider.id }) {
             var updated = provider
             updated.models = next.providers[index].models
@@ -228,7 +229,10 @@ final class AskModelLibrary: ObservableObject {
         try commit(next)
     }
 
-    func updateConnection(_ provider: RegisteredProvider, baseURL: String, key: String) throws {
+    func updateConnection(_ provider: RegisteredProvider, baseURL: String, key: String, apiStyle: LLMRemoteAPIStyle? = nil) throws {
+        var next = registry
+        guard let index = next.providers.firstIndex(where: { $0.id == provider.id }) else { throw unavailable() }
+        if provider.supportsProtocolSelection, let apiStyle { next.providers[index].apiStyle = apiStyle }
         if let remote = provider.remote {
             settings.setLLMBaseURL(baseURL, for: remote)
             settings.setLLMAPIKey(key, for: remote)
@@ -240,11 +244,9 @@ final class AskModelLibrary: ObservableObject {
                   KeychainTokenStore.setKeychainValue(key, account: account) else {
                 throw AskLocalError.message(L("ask.models.keychainError"))
             }
-            var next = registry
-            guard let index = next.providers.firstIndex(where: { $0.id == provider.id }) else { throw unavailable() }
             next.providers[index].baseURL = baseURL
-            try commit(next)
         }
+        try commit(next)
         objectWillChange.send()
     }
 

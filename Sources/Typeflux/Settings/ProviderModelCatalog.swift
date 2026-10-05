@@ -15,6 +15,7 @@ struct HTTPProviderModelCatalog: ProviderModelCatalog {
 
     func models(provider: RegisteredProvider,
                 connection: SettingsStore.TextLLMConfiguration) async throws -> [RegisteredModel] {
+        guard connection.effectiveAPIStyle != .unsupported else { throw AskStreamError.invalidResponse }
         try AskModelProfile(name: provider.name, baseURL: connection.baseURL, model: "catalog").validate()
         guard let base = URL(string: connection.baseURL) else { throw AskLocalError.message(L("ask.models.invalid")) }
         let path = provider.isOllama ? "api/tags" : "models"
@@ -34,7 +35,7 @@ struct HTTPProviderModelCatalog: ProviderModelCatalog {
             }
             var request = URLRequest(url: components.url!)
             request.timeoutInterval = 20
-            Self.authenticate(&request, provider: provider, key: connection.apiKey)
+            Self.authenticate(&request, style: connection.effectiveAPIStyle, key: connection.apiKey)
             let (data, response) = try await session.data(for: request)
             guard let response = response as? HTTPURLResponse
             else { throw AskLocalError.message(L("models.invalidResponse")) }
@@ -55,8 +56,8 @@ struct HTTPProviderModelCatalog: ProviderModelCatalog {
         return result.sorted { $0.id.localizedStandardCompare($1.id) == .orderedAscending }
     }
 
-    private static func authenticate(_ request: inout URLRequest, provider: RegisteredProvider, key: String) {
-        switch provider.remote?.apiStyle {
+    private static func authenticate(_ request: inout URLRequest, style: LLMRemoteAPIStyle, key: String) {
+        switch style {
         case .anthropic:
             request.setValue(key, forHTTPHeaderField: "x-api-key")
             request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")

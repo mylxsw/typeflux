@@ -4,7 +4,12 @@ import Foundation
 extension AskCustomInference {
     func complete(provider: RegisteredProvider, connection: SettingsStore.TextLLMConfiguration,
                   payload: String, onUsage: (@Sendable (AskTokenUsage) async -> Void)? = nil, onProgress: (@Sendable (AskStreamProgress) async -> Void)? = nil) async throws -> (String, [AskToolCall]) {
-        if connection.provider.apiStyle == .openAICompatible {
+        if connection.effectiveAPIStyle == .unsupported { throw AskStreamError.invalidResponse }
+        if connection.effectiveAPIStyle == .responses {
+            return try await completeResponses(connection: connection, payload: payload,
+                                               onUsage: onUsage, onProgress: onProgress)
+        }
+        if connection.effectiveAPIStyle == .openAICompatible {
             var endpoint = connection.baseURL
             if provider.isOllama, !endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/")).hasSuffix("/v1") {
                 endpoint = endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/v1"
@@ -18,7 +23,7 @@ extension AskCustomInference {
         let bounded = body["typeflux_budget"] as? Bool == true
         let deadline = body["typeflux_deadline"] as? Double
         if bounded, let deadline, Date().timeIntervalSince1970 >= deadline { throw AskBudgetError.reached("duration") }
-        let anthropic = connection.provider.apiStyle == .anthropic
+        let anthropic = connection.effectiveAPIStyle == .anthropic
         var url = anthropic ? OpenAIEndpointResolver.resolve(from: base, path: "messages")
             : base.appendingPathComponent("models/\(connection.model):generateContent")
         if !anthropic, onProgress != nil {
@@ -129,6 +134,8 @@ extension AskCustomInference {
 
     private static func nativeParts(_ message: [String: Any], anthropic: Bool,
                                     names: inout [String: String]) throws -> [[String: Any]] {
+        if anthropic, message["role"] as? String == "assistant",
+           let context = try ProviderContinuation.restore(message, protocolName: "anthropic") { return context }
         if message["role"] as? String == "tool" {
             let id = message["tool_call_id"] as? String ?? ""
             let text = message["content"] as? String ?? ""
@@ -213,6 +220,9 @@ extension AskCustomInference {
             }
         }
         guard !text.isEmpty || !calls.isEmpty else { throw AskLocalError.message(L("ask.models.requestError")) }
+        if anthropic, !calls.isEmpty {
+            calls[0].providerContext = try ProviderContinuation.encode(parts, protocolName: "anthropic")
+        }
         return (text, calls)
     }
 }

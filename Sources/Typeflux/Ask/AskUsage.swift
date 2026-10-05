@@ -24,6 +24,11 @@ struct AskTokenUsage: Codable, Equatable, Sendable {
             total = usage["total_tokens"] as? Int
             cached = (usage["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
                 ?? usage["prompt_cache_hit_tokens"] as? Int ?? usage["cached_tokens"] as? Int
+        case .responses:
+            guard let usage = body["usage"] as? [String: Any] else { return previous }
+            input = usage["input_tokens"] as? Int; output = usage["output_tokens"] as? Int
+            total = usage["total_tokens"] as? Int
+            cached = (usage["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
         case .anthropic:
             let message = body["message"] as? [String: Any]
             guard let usage = (body["usage"] ?? message?["usage"]) as? [String: Any] else { return previous }

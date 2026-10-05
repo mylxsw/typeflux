@@ -45,8 +45,9 @@ enum ModelSettingsPresentation {
     }
 
     /// Save is offered only once the draft differs from what was last stored.
-    static func connectionChanged(savedBaseURL: String, savedKey: String, baseURL: String, key: String) -> Bool {
-        savedBaseURL != baseURL || savedKey != key
+    static func connectionChanged(savedBaseURL: String, savedKey: String, baseURL: String, key: String,
+                                  savedAPIStyle: LLMRemoteAPIStyle? = nil, apiStyle: LLMRemoteAPIStyle? = nil) -> Bool {
+        savedBaseURL != baseURL || savedKey != key || savedAPIStyle != apiStyle
     }
 
     /// The add-endpoint form needs a name, an http(s) endpoint with a host and a model ID.

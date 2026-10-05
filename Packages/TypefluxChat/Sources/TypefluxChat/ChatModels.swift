@@ -79,9 +79,10 @@ public struct ChatToolCall: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var type: String?
     public var function: Function
+    public var providerContext: String?
     public var thoughtSignature: String?
-    public init(id: String, type: String? = nil, function: Function, thoughtSignature: String? = nil) {
-        self.id = id; self.type = type; self.function = function; self.thoughtSignature = thoughtSignature
+    public init(id: String, type: String? = nil, function: Function, thoughtSignature: String? = nil, providerContext: String? = nil) {
+        self.id = id; self.type = type; self.function = function; self.thoughtSignature = thoughtSignature; self.providerContext = providerContext
     }
 }
 

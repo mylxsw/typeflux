@@ -26,7 +26,7 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
             provider: config.provider,
             baseURL: config.baseURL,
             model: config.model,
-            apiKey: config.apiKey
+            apiKey: config.apiKey, apiStyle: config.effectiveAPIStyle
         )
     }
 
@@ -71,6 +71,7 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
             return try await Self.reportingFailures(cloudBaseURL: cloudBaseURL) {
                 try await RemoteAgentClient.runTool(
                     provider: connection.provider,
+                    apiStyle: connection.effectiveAPIStyle,
                     baseURL: connection.baseURL,
                     model: connection.model,
                     apiKey: connection.apiKey,
@@ -123,6 +124,7 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
             return try await Self.reportingFailures(cloudBaseURL: cloudBaseURL) {
                 try await RemoteAgentClient.runAnyTool(
                     provider: connection.provider,
+                    apiStyle: connection.effectiveAPIStyle,
                     baseURL: connection.baseURL,
                     model: connection.model,
                     apiKey: connection.apiKey,
@@ -155,6 +157,7 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
 enum RemoteAgentClient {
     static func runTool<T: Decodable & Sendable>(
         provider: LLMRemoteProvider,
+        apiStyle: LLMRemoteAPIStyle? = nil,
         baseURL: URL,
         model: String,
         apiKey: String,
@@ -162,7 +165,12 @@ enum RemoteAgentClient {
         request: LLMAgentRequest,
         decoding type: T.Type
     ) async throws -> T {
-        switch provider.apiStyle {
+        switch apiStyle ?? provider.apiStyle {
+        case .unsupported: throw LLMAgentError.unsupportedProvider
+        case .responses:
+            try decodeToolArguments(try await fetchResponsesTool(baseURL: baseURL, model: model, apiKey: apiKey,
+                additionalHeaders: additionalHeaders, request: request),
+                expectedToolName: request.forcedToolName, as: type)
         case .openAICompatible:
             try await runOpenAICompatibleTool(
                 provider: provider,
@@ -248,13 +256,18 @@ enum RemoteAgentClient {
     /// Used by the Phase 1 router which needs to dispatch on the tool name.
     static func runAnyTool(
         provider: LLMRemoteProvider,
+        apiStyle: LLMRemoteAPIStyle? = nil,
         baseURL: URL,
         model: String,
         apiKey: String,
         additionalHeaders: [String: String] = [:],
         request: LLMAgentRequest
     ) async throws -> LLMAgentToolCall {
-        switch provider.apiStyle {
+        switch apiStyle ?? provider.apiStyle {
+        case .unsupported: throw LLMAgentError.unsupportedProvider
+        case .responses:
+            try await fetchResponsesTool(baseURL: baseURL, model: model, apiKey: apiKey,
+                additionalHeaders: additionalHeaders, request: request)
         case .openAICompatible:
             try await fetchOpenAICompatibleToolCall(
                 provider: provider, baseURL: baseURL, model: model, apiKey: apiKey,
@@ -271,6 +284,16 @@ enum RemoteAgentClient {
                 additionalHeaders: additionalHeaders, request: request
             )
         }
+    }
+
+    private static func fetchResponsesTool(baseURL: URL, model: String, apiKey: String,
+                                           additionalHeaders: [String: String], request: LLMAgentRequest) async throws -> LLMAgentToolCall {
+        let body = LLMAgentResponseSupport.openAICompatibleToolBody(model: model, systemPrompt: request.systemPrompt,
+            userPrompt: request.userPrompt, tools: request.tools, forcedToolName: request.forcedToolName)
+        let result = try await ResponsesLLMClient.complete(baseURL: baseURL, model: model, apiKey: apiKey,
+            headers: additionalHeaders, body: body)
+        guard let call = result.1.first else { throw LLMAgentError.textResponse(text: result.0) }
+        return .init(name: call.function.name, argumentsJSON: call.function.arguments)
     }
 
     // MARK: - HTTP fetch helpers (provider-specific, return raw LLMAgentToolCall)

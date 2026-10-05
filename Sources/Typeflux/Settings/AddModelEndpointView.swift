@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Sheet for registering an OpenAI-compatible endpoint, styled like the provider connection card.
+/// Sheet for registering a model endpoint and its wire protocol.
 struct AddModelEndpointView: View {
     @ObservedObject var library: AskModelLibrary
     @Environment(\.dismiss) private var dismiss
@@ -8,6 +8,7 @@ struct AddModelEndpointView: View {
     @State private var endpoint = "https://"
     @State private var key = ""
     @State private var model = ""
+    @State private var apiStyle = LLMRemoteAPIStyle.openAICompatible
     @State private var showsKey = false
     @State private var error: String?
 
@@ -24,7 +25,7 @@ struct AddModelEndpointView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L("models.addEndpoint")).font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text(L("ask.models.compatible")).font(.system(size: 12.5))
+                    Text(L("models.protocolHint")).font(.system(size: 12.5))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -36,6 +37,12 @@ struct AddModelEndpointView: View {
                     formRow(L("ask.models.name")) {
                         TextField(L("ask.models.name"), text: $name)
                             .textFieldStyle(ModelFieldStyle(monospaced: false))
+                    }
+                    ModelRowDivider()
+                    formRow(L("models.protocol")) {
+                        Picker(L("models.protocol"), selection: $apiStyle) {
+                            ForEach(LLMRemoteAPIStyle.customChoices, id: \.self) { Text($0.displayName).tag($0) }
+                        }.labelsHidden()
                     }
                     ModelRowDivider()
                     formRow(L("ask.models.url")) {
@@ -110,7 +117,10 @@ struct AddModelEndpointView: View {
         do {
             // Pasted values often carry stray whitespace that would fail URL validation.
             let trim: (String) -> String = { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            try library.save(.init(name: trim(name), baseURL: trim(endpoint), model: trim(model)), key: trim(key))
+            try library.save(
+                .init(name: trim(name), baseURL: trim(endpoint), model: trim(model), apiStyle: apiStyle),
+                key: trim(key)
+            )
             dismiss()
         } catch { self.error = error.localizedDescription }
     }

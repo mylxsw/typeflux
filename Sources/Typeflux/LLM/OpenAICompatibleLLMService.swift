@@ -19,6 +19,8 @@ struct ResolvedLLMConnection {
     let model: String
     let apiKey: String
     let additionalHeaders: [String: String]
+    var apiStyle: LLMRemoteAPIStyle?
+    var effectiveAPIStyle: LLMRemoteAPIStyle { apiStyle ?? provider.apiStyle }
 }
 
 enum LLMConnectionResolver {
@@ -27,7 +29,8 @@ enum LLMConnectionResolver {
         baseURL: String,
         model: String,
         apiKey: String,
-        typefluxCloudBaseURL: URL? = nil
+        typefluxCloudBaseURL: URL? = nil,
+        apiStyle: LLMRemoteAPIStyle? = nil
     ) throws -> ResolvedLLMConnection {
         let trimmedBaseURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -116,7 +119,7 @@ enum LLMConnectionResolver {
             baseURL: url,
             model: trimmedModel.isEmpty ? provider.defaultModel : trimmedModel,
             apiKey: apiKey,
-            additionalHeaders: [:]
+            additionalHeaders: [:], apiStyle: apiStyle
         )
     }
 }
@@ -156,7 +159,7 @@ final class OpenAICompatibleLLMService: LLMService {
             provider: config.provider,
             baseURL: config.baseURL,
             model: config.model,
-            apiKey: config.apiKey
+            apiKey: config.apiKey, apiStyle: config.effectiveAPIStyle
         )
         return ResolvedLLMCall(connection: connection, cloudBaseURL: nil)
     }
@@ -202,6 +205,7 @@ final class OpenAICompatibleLLMService: LLMService {
             return try await runWithFailureReporting(cloudBaseURL: call.cloudBaseURL) {
                 try await RemoteLLMClient.complete(
                     provider: call.connection.provider,
+                    apiStyle: call.connection.effectiveAPIStyle,
                     baseURL: call.connection.baseURL,
                     model: call.connection.model,
                     apiKey: call.connection.apiKey,
@@ -231,6 +235,7 @@ final class OpenAICompatibleLLMService: LLMService {
             return try await runWithFailureReporting(cloudBaseURL: call.cloudBaseURL) {
                 try await RemoteLLMClient.complete(
                     provider: call.connection.provider,
+                    apiStyle: call.connection.effectiveAPIStyle,
                     baseURL: call.connection.baseURL,
                     model: call.connection.model,
                     apiKey: call.connection.apiKey,
@@ -302,6 +307,7 @@ final class OpenAICompatibleLLMService: LLMService {
         let final = try await runWithFailureReporting(cloudBaseURL: call.cloudBaseURL) {
             try await RemoteLLMClient.streamRewrite(
                 provider: call.connection.provider,
+                apiStyle: call.connection.effectiveAPIStyle,
                 baseURL: call.connection.baseURL,
                 model: call.connection.model,
                 apiKey: call.connection.apiKey,
@@ -324,6 +330,7 @@ enum RemoteLLMClient {
 
     static func streamRewrite(
         provider: LLMRemoteProvider,
+        apiStyle: LLMRemoteAPIStyle? = nil,
         baseURL: URL,
         model: String,
         apiKey: String,
@@ -333,7 +340,11 @@ enum RemoteLLMClient {
         diagnosticsRecorder: LLMRequestDiagnosticsRecorder? = nil,
         continuation: AsyncThrowingStream<String, Error>.Continuation
     ) async throws -> String {
-        switch provider.apiStyle {
+        switch apiStyle ?? provider.apiStyle {
+        case .unsupported: throw AskLocalError.message(L("models.protocolUnsupported"))
+        case .responses:
+            return try await ResponsesLLMClient.stream(baseURL: baseURL, model: model, apiKey: apiKey,
+                headers: additionalHeaders, system: systemPrompt, user: userPrompt, continuation: continuation)
         case .openAICompatible:
             return try await streamOpenAICompatible(
                 provider: provider,
@@ -379,12 +390,18 @@ enum RemoteLLMClient {
 
     static func previewConnection(
         provider: LLMRemoteProvider,
+        apiStyle: LLMRemoteAPIStyle? = nil,
         baseURL: URL,
         model: String,
         apiKey: String,
         additionalHeaders: [String: String] = [:]
     ) async throws -> String {
-        switch provider.apiStyle {
+        switch apiStyle ?? provider.apiStyle {
+        case .unsupported: throw AskLocalError.message(L("models.protocolUnsupported"))
+        case .responses:
+            try await ResponsesLLMClient.complete(baseURL: baseURL, model: model, apiKey: apiKey,
+                headers: additionalHeaders,
+                body: ResponsesLLMClient.textBody(system: "Reply with a short greeting.", user: "Hello")).0
         case .openAICompatible:
             try await previewOpenAICompatible(
                 provider: provider,
@@ -418,6 +435,7 @@ enum RemoteLLMClient {
 
     static func complete(
         provider: LLMRemoteProvider,
+        apiStyle: LLMRemoteAPIStyle? = nil,
         baseURL: URL,
         model: String,
         apiKey: String,
@@ -426,7 +444,12 @@ enum RemoteLLMClient {
         userPrompt: String,
         schema: LLMJSONSchema?
     ) async throws -> String {
-        switch provider.apiStyle {
+        switch apiStyle ?? provider.apiStyle {
+        case .unsupported: throw AskLocalError.message(L("models.protocolUnsupported"))
+        case .responses:
+            try await ResponsesLLMClient.complete(baseURL: baseURL, model: model, apiKey: apiKey,
+                headers: additionalHeaders,
+                body: ResponsesLLMClient.textBody(system: systemPrompt, user: userPrompt, schema: schema)).0
         case .openAICompatible:
             try await requestOpenAICompatible(
                 provider: provider,
@@ -914,9 +937,9 @@ enum RemoteLLMClient {
         }
     }
 
-    static func performJSONRequest(_ request: URLRequest) async throws -> Data {
+    static func performJSONRequest(_ request: URLRequest, session: URLSession = LLMHTTPSession.shared) async throws -> Data {
         NetworkDebugLogger.logRequest(request)
-        let (data, response) = try await LLMHTTPSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         NetworkDebugLogger.logResponse(response, data: data)
         guard let http = response as? HTTPURLResponse else {
             throw NSError(domain: "LLM", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid response."])

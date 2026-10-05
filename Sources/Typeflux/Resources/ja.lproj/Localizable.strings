@@ -2265,3 +2265,7 @@
 "ask.reasoning.changeModel" = "モデルを変更";
 "ask.reasoning.reset" = "自動に戻す";
 "ask.reasoning.snapped" = "このモデルは「%@」に対応していないため、「%@」にしました";
+
+"models.protocol" = "プロトコル";
+"models.protocolHint" = "プロバイダーが対応する API プロトコルを選択してください。";
+"models.protocolUnsupported" = "このプロトコルには対応していません。別のプロトコルを選択するか、Typeflux を更新してください。";
