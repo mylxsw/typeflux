@@ -107,7 +107,13 @@ struct ChatComposer: View {
     private var controls: some View {
         HStack(spacing: 2) {
             attachMenu
-            ChatModelPicker(store: store, maximumHeight: max(100, availableHeight - 170))
+            if store.isAuthenticated {
+                ChatModelPicker(store: store, maximumHeight: max(100, availableHeight - 170))
+            } else {
+                Label("Sign in to send", systemImage: "lock")
+                    .font(.footnote).foregroundStyle(ChatTheme.secondary)
+                    .accessibilityIdentifier("guest.sendNotice")
+            }
             Spacer(minLength: 4)
             if !store.isRunning {
                 micButton

@@ -253,3 +253,14 @@
 "Your account has been deleted." = "Your account has been deleted.";
 "Your account was deleted, but local sign-in data could not be cleared." = "Your account was deleted, but local sign-in data could not be cleared.";
 "Dismiss" = "Dismiss";
+
+/* GUL-217 interface polish */
+"Sign in to send" = "Sign in to send";
+"Shared with Typeflux" = "Shared with Typeflux";
+"Continue to review your draft. Nothing is sent automatically." = "Continue to review your draft. Nothing is sent automatically.";
+"Subscriptions and retained records" = "Subscriptions and retained records";
+"Confirm above, then verify your identity to delete the account." = "Confirm above, then verify your identity to delete the account.";
+"Current password" = "Current password";
+"Enter your current password" = "Enter your current password";
+"Answer being reported" = "Answer being reported";
+"Tell us more (optional)" = "Tell us more (optional)";

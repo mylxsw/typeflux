@@ -420,9 +420,12 @@ extension ChatVerificationTests {
         ]
         app.launch()
         XCTAssertTrue(app.buttons["login.close"].waitForExistence(timeout: 8))
+        XCTAssertGreaterThanOrEqual(app.buttons["login.close"].frame.height, 44)
         screenshot(app, "gul217-welcome")
         app.buttons["login.close"].tap()
         XCTAssertTrue(app.buttons["guest.login"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["modelPicker"].exists)
+        XCTAssertTrue(app.staticTexts["guest.sendNotice"].exists)
         screenshot(app, "gul217-guest-home")
         app.buttons["guest.example.email"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["guest.example"].waitForExistence(timeout: 5))
@@ -472,6 +475,10 @@ extension ChatVerificationTests {
         let submit = app.buttons["report.submit"]
         XCTAssertTrue(submit.waitForExistence(timeout: 5))
         XCTAssertTrue(submit.isHittable)
+        XCTAssertTrue(app.staticTexts["report.answer"].exists)
+        XCTAssertFalse(submit.isEnabled)
+        app.buttons["report.reason.1"].tap()
+        XCTAssertTrue(submit.isEnabled)
         screenshot(app, "gul217-report-answer")
         submit.tap()
         XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 5))
@@ -489,11 +496,20 @@ extension ChatVerificationTests {
         deletion.tap()
         XCTAssertTrue(app.switches["account.delete.confirm"].waitForExistence(timeout: 5))
         screenshot(app, "gul217-delete-account")
+        for _ in 0 ..< 4 where !app.switches["account.delete.confirm"].isHittable {
+            app.swipeUp()
+        }
         // SwiftUI exposes the entire labelled row as a switch. Tap its trailing control.
         app.switches["account.delete.confirm"].coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
         XCTAssertEqual(app.switches["account.delete.confirm"].value as? String, "1")
         let password = app.secureTextFields["account.delete.password"]
+        for _ in 0 ..< 4 where !password.isHittable {
+            app.swipeUp()
+        }
+        app.swipeUp()
+        screenshot(app, "gul217-delete-verification")
         password.tap(); password.typeText("proof")
+        XCTAssertTrue(app.staticTexts["当前密码"].exists)
         let remove = app.buttons["account.delete.submit"]
         if !remove.isHittable {
             app.swipeUp()
@@ -510,6 +526,52 @@ extension ChatVerificationTests {
 }
 
 extension ChatVerificationTests {
+    @MainActor
+    func testWelcomeAndConsentInEnglishDarkMode() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--synthetic-preview", "--synthetic-guest", "--synthetic-dark",
+                               "-AppleLanguages", "(en)", "-AppleLocale", "en_US",
+                               "-guest.welcome-dismissed", "NO"]
+        app.launch()
+        XCTAssertTrue(app.buttons["login.close"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["login.browse"].isHittable)
+        screenshot(app, "gul217-welcome-dark-english")
+        app.buttons["login.close"].tap()
+        XCTAssertTrue(app.buttons["guest.login"].waitForExistence(timeout: 5))
+        app.terminate()
+        app.launchArguments = ["--synthetic-preview", "--synthetic-empty", "--synthetic-no-consent", "--synthetic-dark",
+                               "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        XCTAssertTrue(app.textFields["chat.composer"].waitForExistence(timeout: 8))
+        enter("Check my draft", in: app)
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.buttons["privacy.agree"].waitForExistence(timeout: 5))
+        screenshot(app, "gul217-consent-dark-english")
+        app.buttons["privacy.decline"].tap()
+        XCTAssertEqual(app.textFields["chat.composer"].value as? String, "Check my draft")
+    }
+
+    @MainActor
+    func testPrivacyActionsRemainReachableWithLargeText() {
+        let app = launch("--synthetic-empty", "--synthetic-no-consent",
+                         "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL")
+        enter("Keep this draft", in: app)
+        app.buttons["chat.send"].tap()
+        let agree = app.buttons["privacy.agree"]
+        XCTAssertTrue(agree.waitForExistence(timeout: 5))
+        XCTAssertTrue(agree.isHittable)
+        XCTAssertTrue(app.buttons["privacy.decline"].isHittable)
+        XCTAssertGreaterThan(agree.frame.width, app.frame.width * 0.8)
+        let policy = app.descendants(matching: .any)["privacy.policy"].firstMatch
+        for _ in 0 ..< 14 where !policy.isHittable {
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        XCTAssertTrue(policy.isHittable)
+        screenshot(app, "gul217-consent-large-text")
+        app.buttons["privacy.decline"].tap()
+        XCTAssertEqual(app.textFields["chat.composer"].value as? String, "Keep this draft")
+    }
+
     @MainActor
     func testWithdrawConsentInSettings() {
         let app = launch("--synthetic-empty")
