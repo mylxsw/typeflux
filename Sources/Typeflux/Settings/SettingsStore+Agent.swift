@@ -45,6 +45,29 @@ extension SettingsStore {
         set { defaults.set(newValue, forKey: "ask.quickResults.apps") }
     }
 
+    /// The launcher's keywords (`fy` → translate). Nil until the user edits them,
+    /// so new plugins' default keywords keep arriving.
+    var askLauncherKeywords: [AskKeyword]? {
+        get {
+            guard let data = defaults.data(forKey: "ask.launcher.keywords") else { return nil }
+            return try? JSONDecoder().decode([AskKeyword].self, from: data)
+        }
+        set {
+            if let newValue, let data = try? JSONEncoder().encode(newValue) {
+                defaults.set(data, forKey: "ask.launcher.keywords")
+            } else {
+                defaults.removeObject(forKey: "ask.launcher.keywords")
+            }
+        }
+    }
+
+    /// The language translations go into when the text is already in the
+    /// interface language. Nil follows the interface: English, or Simplified Chinese.
+    var askTranslationSecondLanguage: String? {
+        get { defaults.string(forKey: "ask.translation.secondLanguage") }
+        set { defaults.set(newValue, forKey: "ask.translation.secondLanguage") }
+    }
+
     /// Skills the user turned off; they are not offered to the model.
     var askDisabledSkills: Set<String> {
         get { Set(defaults.stringArray(forKey: "ask.disabledSkills") ?? []) }

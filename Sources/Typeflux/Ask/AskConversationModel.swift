@@ -30,6 +30,16 @@ final class AskConversationModel: ObservableObject {
     var openApplication: (URL) -> Void = { url in
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
     }
+    /// AI translation with the text-processing model; the window controller supplies it.
+    var translationAI: (any AskTranslationEngine)?
+    /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.
+    lazy var plugins = AskPluginSession(plugins: makeLauncherPlugins()) { [weak self] in
+        self?.launcherKeywords ?? AskPluginRegistry.defaultKeywords
+    }
+    /// Types text into the app the launcher came from; the window controller supplies it.
+    var deliverText: ((String) async throws -> Void)?
+    /// Reads text aloud in a language; tests record it instead.
+    var speak: @MainActor (String, String) -> Void = { text, language in AskSpeaker.shared.speak(text, language: language) }
     @Published var reasoningEffort: AskReasoningEffort = .providerDefault
     let modelLibrary: AskModelLibrary
     private var inferenceUsage: [String: AskTokenUsage] = [:]

@@ -37,7 +37,8 @@ final class DIContainer {
             settings: settingsStore,
             injector: textInjector,
             registry: mcpRegistry,
-            modelLibrary: modelLibrary
+            modelLibrary: modelLibrary,
+            llmService: llmService
         ) } catch {
             ErrorLogStore.shared
                 .log("Ask conversation storage could not be initialized: \(error.localizedDescription)"); return nil
