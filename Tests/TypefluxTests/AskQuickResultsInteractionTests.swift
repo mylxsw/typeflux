@@ -1,0 +1,160 @@
+import AppKit
+import SwiftUI
+import Testing
+@testable import Typeflux
+
+/// Drives the real launcher with key presses: Return copies, ⌘Return asks the
+/// AI, Tab keeps calculating and the arrows move. Copies go to a private
+/// pasteboard, never the user's clipboard.
+@Suite("Ask quick results in the launcher", .serialized)
+@MainActor
+struct AskQuickResultsInteractionTests {
+    @MainActor private final class Launcher {
+        let fixture: AskTestFixture
+        let window: AskTestVoiceWindow
+        let editor: AskComposerTextView.Editor
+        var dismissed = 0
+
+        init(text: String) async throws {
+            fixture = try AskTestFixture()
+            fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false)
+            window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: 420),
+                                        styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            var dismiss: () -> Void = {}
+            let hosting = NSHostingView(rootView: AskLauncherView(model: fixture.model, onDismiss: { dismiss() }))
+            window.contentView = hosting
+            window.orderFront(nil)
+            var found: AskComposerTextView.Editor?
+            for _ in 0 ..< 1000 where found == nil {
+                hosting.layoutSubtreeIfNeeded()
+                found = Self.editor(in: hosting)
+                if found == nil { try await Task.sleep(for: .milliseconds(5)) }
+            }
+            editor = try #require(found)
+            dismiss = { [unowned self] in dismissed += 1 }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+
+        private static func editor(in view: NSView) -> AskComposerTextView.Editor? {
+            (view as? AskComposerTextView.Editor) ?? view.subviews.lazy.compactMap(editor(in:)).first
+        }
+
+        func press(_ keyCode: UInt16, _ flags: NSEvent.ModifierFlags = []) async throws {
+            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0,
+                                                      windowNumber: window.windowNumber, context: nil, characters: "",
+                                                      charactersIgnoringModifiers: "", isARepeat: false, keyCode: keyCode))
+            editor.keyDown(with: event)
+            try await Task.sleep(for: .milliseconds(50))
+        }
+
+        /// Waits for the question to reach the stubbed service.
+        func sentCount() async throws -> Int {
+            for _ in 0 ..< 500 {
+                if await !fixture.api.sends.isEmpty { break }
+                try await Task.sleep(for: .milliseconds(4))
+            }
+            return await fixture.api.sends.count
+        }
+
+        func close() {
+            fixture.model.resetSession()
+            window.close()
+        }
+    }
+
+    private static let returnKey: UInt16 = 36, tab: UInt16 = 48, escape: UInt16 = 53, down: UInt16 = 125, up: UInt16 = 126
+
+    private func withPasteboard(_ body: (NSPasteboard) async throws -> Void) async throws {
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("ask.quick.interaction.\(UUID().uuidString)"))
+        let previous = AskQuickResults.pasteboard
+        let previousLanguage = AppLocalization.shared.language
+        AskQuickResults.pasteboard = pasteboard
+        AppLocalization.shared.setLanguage(.english)
+        defer {
+            AskQuickResults.pasteboard = previous
+            AppLocalization.shared.setLanguage(previousLanguage)
+            pasteboard.releaseGlobally()
+        }
+        try await body(pasteboard)
+    }
+
+    @Test func returnCopiesTheResultAndClosesTheLauncher() async throws {
+        try await withPasteboard { pasteboard in
+            let launcher = try await Launcher(text: "1234567.89*2")
+            defer { launcher.close() }
+            try await launcher.press(Self.returnKey)
+            #expect(pasteboard.string(forType: .string) == "2469135.78")
+            #expect(launcher.dismissed == 1)
+            #expect(launcher.fixture.model.launcherDraft.text.isEmpty, "the expression is not restored next time")
+            #expect(await launcher.fixture.api.sends.isEmpty, "nothing goes to the AI")
+        }
+    }
+
+    @Test func arrowsChooseAnotherSpelling() async throws {
+        try await withPasteboard { pasteboard in
+            let launcher = try await Launcher(text: "1234567.89*2")
+            defer { launcher.close() }
+            try await launcher.press(Self.down)
+            try await launcher.press(Self.down)
+            try await launcher.press(Self.up)
+            try await launcher.press(Self.returnKey)
+            #expect(pasteboard.string(forType: .string) == "2,469,135.78")
+            #expect(launcher.dismissed == 1)
+        }
+    }
+
+    @Test func tabWritesTheResultBackToKeepCalculating() async throws {
+        try await withPasteboard { pasteboard in
+            let launcher = try await Launcher(text: "1+1")
+            defer { launcher.close() }
+            try await launcher.press(Self.tab)
+            #expect(launcher.fixture.model.launcherDraft.text == "2")
+            #expect(pasteboard.string(forType: .string) == nil)
+            #expect(launcher.dismissed == 0)
+        }
+    }
+
+    @Test func commandReturnAsksTheAIInstead() async throws {
+        try await withPasteboard { pasteboard in
+            let launcher = try await Launcher(text: "1+1")
+            defer { launcher.close() }
+            try await launcher.press(Self.returnKey, .command)
+            #expect(try await launcher.sentCount() == 1)
+            #expect(pasteboard.string(forType: .string) == nil)
+        }
+    }
+
+    @Test func returnOnAFailedCalculationAsksTheAI() async throws {
+        try await withPasteboard { pasteboard in
+            let launcher = try await Launcher(text: "1/0")
+            defer { launcher.close() }
+            try await launcher.press(Self.returnKey)
+            #expect(try await launcher.sentCount() == 1)
+            #expect(pasteboard.string(forType: .string) == nil)
+        }
+    }
+
+    @Test func escapeStillCloses() async throws {
+        try await withPasteboard { _ in
+            let launcher = try await Launcher(text: "1+1")
+            defer { launcher.close() }
+            try await launcher.press(Self.escape)
+            #expect(launcher.dismissed == 1)
+            #expect(launcher.fixture.model.launcherDraft.text == "1+1", "closing keeps the draft")
+        }
+    }
+
+    @Test func turnedOffTheLauncherSendsArithmeticToTheAI() async throws {
+        try await withPasteboard { pasteboard in
+            let launcher = try await Launcher(text: "")
+            defer { launcher.close() }
+            launcher.fixture.model.modelLibrary.settings.askQuickCalculatorEnabled = false
+            launcher.fixture.model.launcherDraft.text = "1+1"
+            try await Task.sleep(for: .milliseconds(100))
+            try await launcher.press(Self.returnKey)
+            #expect(try await launcher.sentCount() == 1)
+            #expect(pasteboard.string(forType: .string) == nil)
+        }
+    }
+}

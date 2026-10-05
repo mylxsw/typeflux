@@ -33,6 +33,12 @@ extension SettingsStore {
         set { defaults.set(newValue, forKey: "ask.codeExecutionEnabled") }
     }
 
+    /// Whether the Ask launcher shows the result of arithmetic typed into it.
+    var askQuickCalculatorEnabled: Bool {
+        get { defaults.object(forKey: "ask.quickResults.calculator") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "ask.quickResults.calculator") }
+    }
+
     /// Skills the user turned off; they are not offered to the model.
     var askDisabledSkills: Set<String> {
         get { Set(defaults.stringArray(forKey: "ask.disabledSkills") ?? []) }

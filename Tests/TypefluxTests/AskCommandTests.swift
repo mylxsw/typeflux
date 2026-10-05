@@ -52,6 +52,10 @@ struct AskSlashQueryTests {
         #expect(AskCommandKey(event(48)) == .tab)
         #expect(AskCommandKey(event(53)) == .escape)
         #expect(AskCommandKey(event(36, .shift)) == nil, "shift-return is a new line")
+        #expect(AskCommandKey(event(36, .command)) == .commandEnter)
+        #expect(AskCommandKey(event(76, .command)) == .commandEnter)
+        #expect(AskCommandKey(event(36, [.command, .shift])) == nil)
+        #expect(AskCommandKey(event(48, .command)) == nil)
         #expect(AskCommandKey(event(0)) == nil)
     }
 }
