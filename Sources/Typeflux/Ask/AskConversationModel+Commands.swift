@@ -69,6 +69,15 @@ extension AskConversationModel {
         context.chosenSkills = value.skills ?? []
         context.chosenServers = value.mcpServers ?? []
         context.recent = recentCommands
+        if launcher {
+            let language = AppLocalization.shared.language
+            context.keywords = launcherKeywords.filter(\.enabled).compactMap { keyword in
+                plugins.plugin(for: keyword).map { plugin in
+                    .init(keyword: keyword.keyword, id: keyword.id, title: plugin.title,
+                          detail: plugin.chipDetail(for: keyword, language: language), symbol: plugin.symbol)
+                }
+            }
+        }
         return context
     }
 
@@ -145,6 +154,12 @@ extension AskConversationModel {
             toggleChoice(name, keyPath: \.skills, limit: Self.maximumChosenSkills, launcher: launcher)
         case let .mcpServer(name):
             toggleChoice(name, keyPath: \.mcpServers, limit: Self.maximumChosenServers, launcher: launcher)
+        case let .keyword(id):
+            // What is left in the editor becomes the keyword's text.
+            guard launcher, let keyword = launcherKeywords.first(where: { $0.id == id && $0.enabled }) else { return }
+            plugins.enter(keyword)
+            plugins.update(text: launcherDraft.text, selection: launcherDraft.sentSelection,
+                           language: AppLocalization.shared.language)
         case .help:
             break // The palette shows every command.
         case .settings:

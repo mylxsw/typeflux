@@ -134,6 +134,6 @@ struct AskKeywordListTests {
         #expect(settings.askLauncherKeywords == nil)
         settings.askTranslationSecondLanguage = "ja"
         #expect(settings.askTranslationSecondLanguage == "ja")
-        #expect(AskPluginRegistry.defaultKeywords == AskTranslatePlugin.keywords)
+        #expect(AskPluginRegistry.defaultKeywords.map(\.keyword) == ["fy", "tr", "翻译", "rw", "sum", "ex", "g", "bd", "gh"])
     }
 }

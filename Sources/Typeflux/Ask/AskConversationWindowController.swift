@@ -64,8 +64,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // ⌥Return types results into the app the launcher came from.
         if let llmService {
             model.translationAI = AskAITranslationEngine(service: llmService) { [weak settings] in
-                settings.map { $0.llmModel.isEmpty ? "AI" : $0.llmModel } ?? "AI"
+                AskPluginRegistry.modelName(settings)
             }
+            model.promptAI = AskLLMTextGenerator(service: llmService)
         }
         model.deliverText = { text in
             let result = try await injector.deliver(text: text, to: .currentInput)

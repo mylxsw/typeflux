@@ -49,4 +49,24 @@ protocol LLMService {
     func streamRewrite(request: LLMRewriteRequest) -> AsyncThrowingStream<String, Error>
     func complete(systemPrompt: String, userPrompt: String) async throws -> String
     func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String
+    /// `complete`, delivered as it is generated: each element is the next piece of text.
+    func streamComplete(systemPrompt: String, userPrompt: String) -> AsyncThrowingStream<String, Error>
+}
+
+extension LLMService {
+    /// Services that cannot stream deliver the whole completion as one piece.
+    func streamComplete(systemPrompt: String, userPrompt: String) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    let text = try await complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+                    if !text.isEmpty { continuation.yield(text) }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
 }

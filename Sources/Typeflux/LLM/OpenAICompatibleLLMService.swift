@@ -186,6 +186,39 @@ final class OpenAICompatibleLLMService: LLMService {
         }
     }
 
+    /// Like `complete`, streamed: the same prompts and connection, without retries
+    /// once text has started to arrive.
+    func streamComplete(systemPrompt: String, userPrompt: String) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    let llmConfig = settingsStore.textLLMConfiguration()
+                    let call = try await resolveConnection(for: llmConfig)
+                    let additionalHeaders = headers(for: call.connection, scenario: .askAnything)
+                    let system = PromptCatalog.appendLanguageResolutionPolicy(to: systemPrompt)
+                    let user = PromptCatalog.appendUserEnvironmentContext(to: userPrompt, appLanguage: settingsStore.appLanguage)
+                    _ = try await runWithFailureReporting(cloudBaseURL: call.cloudBaseURL) {
+                        try await RemoteLLMClient.streamRewrite(
+                            provider: call.connection.provider,
+                            apiStyle: call.connection.effectiveAPIStyle,
+                            baseURL: call.connection.baseURL,
+                            model: call.connection.model,
+                            apiKey: call.connection.apiKey,
+                            additionalHeaders: additionalHeaders,
+                            systemPrompt: system,
+                            userPrompt: user,
+                            continuation: continuation
+                        )
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
     func complete(systemPrompt: String, userPrompt: String) async throws -> String {
         let llmConfig = settingsStore.textLLMConfiguration()
         let appLanguage = settingsStore.appLanguage

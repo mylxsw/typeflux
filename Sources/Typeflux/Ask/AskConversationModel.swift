@@ -30,8 +30,12 @@ final class AskConversationModel: ObservableObject {
     var openApplication: (URL) -> Void = { url in
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
     }
+    /// Opens links, such as a launcher web search; tests record them instead.
+    var openURL: (URL) -> Void = { url in NSWorkspace.shared.open(url) }
     /// AI translation with the text-processing model; the window controller supplies it.
     var translationAI: (any AskTranslationEngine)?
+    /// AI prompts (`rw`, `sum`) with the text-processing model; the window controller supplies it.
+    var promptAI: (any AskTextGenerating)?
     /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.
     lazy var plugins = AskPluginSession(plugins: makeLauncherPlugins()) { [weak self] in
         self?.launcherKeywords ?? AskPluginRegistry.defaultKeywords

@@ -20,6 +20,15 @@ final class LLMRouter: LLMService {
         }
     }
 
+    func streamComplete(systemPrompt: String, userPrompt: String) -> AsyncThrowingStream<String, Error> {
+        switch settingsStore.effectiveLLMProvider {
+        case .openAICompatible:
+            openAICompatible.streamComplete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+        case .ollama:
+            ollama.streamComplete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+        }
+    }
+
     func complete(systemPrompt: String, userPrompt: String) async throws -> String {
         switch settingsStore.effectiveLLMProvider {
         case .openAICompatible:

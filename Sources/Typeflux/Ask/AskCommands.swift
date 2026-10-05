@@ -9,6 +9,8 @@ enum AskCommandAction: Equatable, Hashable, Sendable {
     case suggestion(String)
     case skill(String)
     case mcpServer(String)
+    /// Enters a launcher keyword's plugin, by `AskKeyword.id`.
+    case keyword(String)
     case help, settings
     /// Rows of a submenu.
     case pickModel(String)
@@ -19,7 +21,7 @@ enum AskCommandAction: Equatable, Hashable, Sendable {
 /// a submenu (models, reasoning levels) have no slash and are matched by title.
 struct AskCommand: Equatable, Identifiable, Sendable {
     enum Group: String, CaseIterable, Sendable {
-        case recent, conversation, model, context, prompts, skills, mcp, other
+        case recent, conversation, model, context, prompts, plugins, skills, mcp, other
 
         var title: String { L("ask.command.group." + rawValue) }
     }
@@ -91,6 +93,16 @@ struct AskCommandContext: Equatable, Sendable {
     var chosenSkills: [String] = []
     var chosenServers: [String] = []
     var recent: [String] = []
+    /// The launcher's keywords and their plugins, for the plugins group.
+    var keywords: [Keyword] = []
+
+    struct Keyword: Equatable, Sendable {
+        var keyword: String
+        var id: String
+        var title: String
+        var detail: String?
+        var symbol: String
+    }
 }
 
 struct AskSkillSummary: Equatable, Sendable {
@@ -155,6 +167,13 @@ enum AskCommandCatalog {
                                      detail: suggestion.caption, symbol: suggestion.systemImage, group: .prompts,
                                      disabledReason: screenshot ? context.screenshotUnavailable : nil))
         }
+        if context.launcher {
+            for keyword in context.keywords {
+                result.append(AskCommand(action: .keyword(keyword.id), name: keyword.keyword,
+                                         title: keyword.detail.map { keyword.title + " → " + $0 } ?? keyword.title,
+                                         symbol: keyword.symbol, group: .plugins, aliases: ["keyword", "plugin"]))
+            }
+        }
         for skill in context.skills {
             result.append(AskCommand(action: .skill(skill.name), name: skill.name, title: "", detail: skill.description,
                                      symbol: "bolt", group: .skills, kind: .token,
@@ -177,9 +196,10 @@ enum AskCommandCatalog {
 
     /// A skill or server named like a built-in command keeps working under a prefix.
     static func disambiguated(_ commands: [AskCommand]) -> [AskCommand] {
-        let builtins = Set(commands.filter { ![.skills, .mcp].contains($0.group) }.map(\.name))
+        let builtins = Set(commands.filter { ![.plugins, .skills, .mcp].contains($0.group) }.map(\.name))
         return commands.map { command in
             var command = command
+            if command.group == .plugins, builtins.contains(command.name) { command.name = "kw:" + command.name }
             if command.group == .skills, builtins.contains(command.name) { command.name = "skill:" + command.name }
             if command.group == .mcp, builtins.contains(command.name) { command.name = "mcp:" + command.name }
             return command
@@ -348,8 +368,9 @@ enum AskCommandKey: Equatable {
     /// ⌘Return: send to the AI whatever the launcher offers.
     case commandEnter
     /// Keys a keyword plugin's result answers to: ⌥Return writes it back,
-    /// ⇧Tab steps an option back, ⌘R runs again, ⌘D compares with the original.
-    case optionEnter, shiftTab, commandR, commandD
+    /// ⇧Tab steps an option back, ⌘R runs again, ⌘D compares with the original,
+    /// ⌘C copies (the editor only offers it when it has nothing selected).
+    case optionEnter, shiftTab, commandR, commandD, commandC
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
@@ -359,6 +380,7 @@ enum AskCommandKey: Equatable {
         if modifiers == .shift, event.keyCode == 48 { self = .shiftTab; return }
         if modifiers == .command, event.keyCode == 15 { self = .commandR; return }
         if modifiers == .command, event.keyCode == 2 { self = .commandD; return }
+        if modifiers == .command, event.keyCode == 8 { self = .commandC; return }
         guard modifiers.isEmpty else { return nil }
         switch event.keyCode {
         case 126: self = .up

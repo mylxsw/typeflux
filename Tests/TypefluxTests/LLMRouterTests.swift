@@ -65,6 +65,17 @@ final class LLMRouterTests: XCTestCase {
         XCTAssertEqual(openAISpy.completeCallCount, 0)
     }
 
+    func testStreamCompleteRoutesByProviderAndFallsBackToOneWholePiece() async throws {
+        settings.llmProvider = .ollama
+        var pieces: [String] = []
+        for try await piece in router.streamComplete(systemPrompt: "sys", userPrompt: "usr") { pieces.append(piece) }
+        XCTAssertEqual(pieces, ["completed"])
+        XCTAssertEqual(ollamaSpy.completeCallCount, 1)
+        settings.llmProvider = .openAICompatible
+        for try await _ in router.streamComplete(systemPrompt: "sys", userPrompt: "usr") {}
+        XCTAssertEqual(openAISpy.completeCallCount, 1)
+    }
+
     func testCompleteJSONRoutesToOpenAI() async throws {
         settings.llmProvider = .openAICompatible
         let schema = LLMJSONSchema(name: "test", schema: [:])

@@ -43,17 +43,50 @@ struct AskPluginViewTests {
         #expect(AskPluginResultsView.hint(for: display(.waiting, hint: AskTranslatePlugin.keywords[0])) == L("ask.plugin.hint.keyword"))
         #expect(AskPluginResultsView.hint(for: display(.ready(plan), highlighted: 1)) == L("ask.launcher.hint"))
         #expect(AskPluginResultsView.hint(for: display(.waiting)) == L("ask.plugin.hint.waiting"))
-        #expect(AskPluginResultsView.hint(for: display(.ready(plan))) == L("ask.plugin.hint.ready"))
+        #expect(AskPluginResultsView.hint(for: display(.ready(plan))) == L("ask.plugin.hint.ready") + " · " + L("ask.plugin.hint.waiting"))
         #expect(AskPluginResultsView.hint(for: display(.running(plan))) == L("ask.plugin.hint.running"))
-        #expect(AskPluginResultsView.hint(for: display(.done(plan, output()))) == L("ask.plugin.hint.done", "Copy", "Replace"))
+        #expect(AskPluginResultsView.hint(for: display(.done(plan, output())))
+            == L("ask.plugin.hint.done", "Copy", "Replace") + " · " + L("ask.plugin.hint.askAI"))
         #expect(AskPluginResultsView.hint(for: display(.failed(plan, AskPluginFailure(message: "x")))) == L("ask.plugin.hint.failed"))
         #expect(AskPluginResultsView.hint(for: display(.failed(plan, AskPluginFailure(message: "x", retry: false))))
             == L("ask.plugin.hint.waiting"))
         #expect(AskPluginResultsView.key(.enter) == "↩" && AskPluginResultsView.key(.optionEnter) == "⌥↩")
         #expect(AskPluginResultsView.key(.commandR) == "⌘R" && AskPluginResultsView.key(.commandD) == "⌘D")
         #expect(AskPluginResultsView.key(nil) == nil)
+        #expect(AskPluginResultsView.key(.commandC) == "⌘C")
         #expect(display(.done(plan, output())).output?.body == "Hola")
         #expect(display(.waiting).output == nil && display(.waiting, highlighted: 1).asksAI)
+    }
+
+    @Test func hintsFollowThePluginsKeysAndActions() throws {
+        let url = try #require(URL(string: "https://example.com/?q=x"))
+        let search = AskPluginPlan(mode: .onSubmit, title: "Search", actions: [
+            AskPluginAction(kind: .open(url), title: "Open", symbol: "safari", shortcut: .enter),
+            AskPluginAction(kind: .copy(url.absoluteString), title: "Copy link", symbol: "link", shortcut: .commandC)
+        ])
+        var shown = display(.ready(search))
+        shown.optionName = "Engine"
+        #expect(AskPluginResultsView.hint(for: shown) == [L("ask.plugin.hint.action", "Open"), L("ask.plugin.hint.copy", "Copy link"),
+                                                           L("ask.plugin.hint.option", "Engine"), L("ask.plugin.hint.askAI")]
+                .joined(separator: " · "))
+        shown.phase = .ready(plan)
+        #expect(AskPluginResultsView.hint(for: shown) == [L("ask.plugin.hint.ready"), L("ask.plugin.hint.option", "Engine"),
+                                                           L("ask.plugin.hint.waiting")].joined(separator: " · "))
+        let copyOnly = AskPluginOutput(body: "x", original: "y", meta: [], source: "s",
+                                       actions: [AskPluginAction(kind: .copy("x"), title: "Copy", symbol: "doc", shortcut: .enter)])
+        #expect(AskPluginResultsView.hint(for: display(.done(plan, copyOnly)))
+            == L("ask.plugin.hint.action", "Copy") + " · " + L("ask.plugin.hint.askAI"))
+        #expect(search.action(for: .commandC)?.title == "Copy link" && plan.action(for: .commandC) == nil)
+    }
+
+    @Test func aStreamingResultTakesTheCardsHeight() {
+        let short = output("Hola")
+        let long = output(String(repeating: "Streaming text ", count: 30))
+        var streaming = display(.running(plan), previous: short)
+        let dimmed = AskPluginResultsView.height(for: streaming)
+        streaming.partial = long
+        #expect(AskPluginResultsView.height(for: streaming) > dimmed)
+        #expect(AskPluginResultsView.height(for: streaming) == AskPluginResultsView.height(for: display(.done(plan, long))))
     }
 }
 
@@ -61,7 +94,7 @@ struct AskPluginViewTests {
 @Suite("Ask plugin snapshots", .serialized)
 @MainActor
 struct AskPluginVisualTests {
-    private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL) async throws {
+    func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
                                         backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -106,6 +139,49 @@ struct AskPluginVisualTests {
                 let view = AskLauncherView(model: fixture.model, onDismiss: {}).environment(\.askGlassMaterialOverride, .opaque)
                 if run {
                     // Let the chip form and the plan land, then press Return's equivalent.
+                    let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: height),
+                                                    styleMask: [.borderless], backing: .buffered, defer: false)
+                    window.contentView = NSHostingView(rootView: view)
+                    window.orderFront(nil)
+                    for _ in 0 ..< 200 where fixture.model.plugins.plan == nil { try await Task.sleep(for: .milliseconds(5)) }
+                    fixture.model.plugins.run()
+                    for _ in 0 ..< 200 where fixture.model.plugins.output == nil { try await Task.sleep(for: .milliseconds(5)) }
+                    window.orderOut(nil)
+                }
+                try await render(view, size: NSSize(width: AskMetrics.launcherWidth, height: height), appearance: appearance,
+                                 file: root.appendingPathComponent("plugin-\(file)-\(name).png"))
+            }
+        }
+    }
+}
+
+extension AskPluginVisualTests {
+    /// The web search and AI prompt plugins, for the P2 screenshots.
+    @Test func renderSearchAndPrompt() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let generator = AskTestTextGenerator()
+        generator.pieces = ["这次更新修复了外接显示器上启动器位置偏移的问题，", "并让会议中的语音输入更加稳定。"]
+        let plugins: [any AskLauncherPlugin] = [AskWebSearchPlugin(),
+                                                AskPromptPlugin(generator: generator, modelName: { "MiniMax M3" })]
+        // name, editor text, run it, height
+        let cases: [(String, String, Bool, CGFloat)] = [
+            ("web", "g swift actors", false, 300), ("prompt-ready", "rw 这次更新修好了外接显示器上启动器跑偏，会议时语音输入也更稳了", false, 300),
+            ("prompt-done", "rw 这次更新修好了外接显示器上启动器跑偏，会议时语音输入也更稳了", true, 380)
+        ]
+        for (name, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
+            for (file, text, run, height) in cases {
+                let fixture = try AskTestFixture()
+                defer { fixture.model.resetSession() }
+                fixture.model.plugins = AskPluginSession(plugins: plugins) { AskPluginRegistry.defaultKeywords }
+                fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false)
+                let view = AskLauncherView(model: fixture.model, onDismiss: {}).environment(\.askGlassMaterialOverride, .opaque)
+                if run {
                     let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: height),
                                                     styleMask: [.borderless], backing: .buffered, defer: false)
                     window.contentView = NSHostingView(rootView: view)

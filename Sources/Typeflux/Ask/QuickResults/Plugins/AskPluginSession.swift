@@ -7,6 +7,7 @@ import Foundation
 ///     waiting ─text─▶ ready ─Return─▶ running ─▶ done / failed
 ///                       └── live plugins go straight to running
 ///     done ─edit─▶ the old result stays, dimmed, until the next one arrives
+///     running ─progress─▶ the growing result (`partial`) replaces the dimmed one
 @MainActor
 final class AskPluginSession: ObservableObject {
     enum Phase: Equatable {
@@ -23,7 +24,11 @@ final class AskPluginSession: ObservableObject {
     @Published private(set) var hint: AskKeyword?
     /// The keyword shown as a chip; its text has left the editor.
     @Published private(set) var keyword: AskKeyword?
-    @Published private(set) var phase: Phase = .waiting
+    @Published private(set) var phase: Phase = .waiting {
+        didSet { if !isRunning { set(\.partial, nil) } }
+    }
+    /// The result so far while a streaming run goes on.
+    @Published private(set) var partial: AskPluginOutput?
     /// The last result while a newer one is on its way, drawn dimmed.
     @Published private(set) var previous: AskPluginOutput?
     @Published private(set) var request: AskPluginRequest?
@@ -33,6 +38,10 @@ final class AskPluginSession: ObservableObject {
     private let plugins: [String: any AskLauncherPlugin]
     private var keywords: () -> [AskKeyword]
     private var overrides: [String: String] = [:]
+    /// The request the shown plan was made for; the text may have moved on since.
+    private var plannedFor: AskPluginRequest?
+    /// Return came while the plan for the latest text was still being made.
+    private var pendingRun = false
     private var generation = 0
     private var task: Task<Void, Never>?
     /// How long a live plugin waits after the last keystroke.
@@ -79,6 +88,14 @@ final class AskPluginSession: ObservableObject {
         return true
     }
 
+    /// Enters a keyword chosen in the `/` palette, leaving any other first.
+    func enter(_ chosen: AskKeyword) {
+        guard plugin(for: chosen) != nil else { return }
+        deactivate()
+        set(\.hint, nil)
+        activate(chosen)
+    }
+
     private func activate(_ found: AskKeyword) {
         overrides = [:]
         set(\.keyword, found)
@@ -93,6 +110,8 @@ final class AskPluginSession: ObservableObject {
         cancel()
         self.keyword = nil
         request = nil
+        plannedFor = nil
+        pendingRun = false
         previous = nil
         comparing = false
         overrides = [:]
@@ -121,15 +140,18 @@ final class AskPluginSession: ObservableObject {
         request = next
         if let output { set(\.previous, output) }
         cancel()
-        guard let next else { set(\.phase, .waiting); set(\.previous, nil); return }
+        guard let next else { set(\.phase, .waiting); set(\.previous, nil); pendingRun = false; return }
         generation += 1
         let current = generation
         task = Task { [weak self] in
             let plan = await plugin.plan(next)
             guard let self, !Task.isCancelled, current == self.generation else { return }
-            if plan.mode == .live || runWhenPlanned {
+            self.plannedFor = next
+            let runNow = runWhenPlanned || self.pendingRun
+            self.pendingRun = false
+            if plan.mode == .live || runNow {
                 self.set(\.phase, .running(plan))
-                if plan.mode == .live, !runWhenPlanned {
+                if plan.mode == .live, !runNow {
                     try? await Task.sleep(for: self.debounce)
                     guard !Task.isCancelled, current == self.generation else { return }
                 }
@@ -150,6 +172,8 @@ final class AskPluginSession: ObservableObject {
         case let .failed(failed, failure) where failure.retry: plan = failed
         default: return false
         }
+        // The shown plan is for older text: run as soon as the current one is made.
+        guard isPlanCurrent else { pendingRun = true; return true }
         cancel()
         generation += 1
         let current = generation
@@ -188,8 +212,12 @@ final class AskPluginSession: ObservableObject {
         }
     }
 
+    /// The shown plan was made for the text as it is now, so its actions apply to it.
+    var isPlanCurrent: Bool { plannedFor != nil && plannedFor == request }
+
     /// Esc while running: back to ready. False when nothing was running.
     func cancelRun() -> Bool {
+        pendingRun = false
         guard case let .running(plan) = phase else { return false }
         cancel()
         generation += 1
@@ -200,7 +228,10 @@ final class AskPluginSession: ObservableObject {
     private func execute(_ plan: AskPluginPlan, request: AskPluginRequest, generation current: Int,
                          plugin: any AskLauncherPlugin) async {
         do {
-            let output = try await plugin.run(request, plan: plan)
+            let output = try await plugin.run(request, plan: plan) { [weak self] partial in
+                guard let self, current == self.generation, self.isRunning else { return }
+                self.set(\.partial, partial)
+            }
             guard !Task.isCancelled, current == generation else { return }
             set(\.previous, nil)
             set(\.phase, .done(plan, output))
@@ -217,6 +248,7 @@ final class AskPluginSession: ObservableObject {
     private func cancel() {
         task?.cancel()
         task = nil
+        set(\.partial, nil)
     }
 
     private func set<Value: Equatable>(_ path: ReferenceWritableKeyPath<AskPluginSession, Value>, _ value: Value) {

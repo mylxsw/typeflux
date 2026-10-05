@@ -57,6 +57,8 @@ struct AskSlashQueryTests {
         #expect(AskCommandKey(event(36, [.command, .shift])) == nil)
         #expect(AskCommandKey(event(48, .command)) == nil)
         #expect(AskCommandKey(event(0)) == nil)
+        #expect(AskCommandKey(event(8, .command)) == .commandC)
+        #expect(AskCommandKey(event(8)) == nil)
     }
 }
 
@@ -132,6 +134,23 @@ struct AskCommandCatalogTests {
             AskCommand(action: .mcpServer("search"), name: "search", title: "", symbol: "", group: .mcp)
         ])
         #expect(clash.map(\.name) == ["search", "mcp:search"])
+    }
+
+    @Test func theLauncherListsItsKeywordsAsPlugins() {
+        var launcher = context
+        launcher.launcher = true
+        launcher.keywords = [.init(keyword: "fy", id: "fy", title: "Translate", detail: nil, symbol: "translate"),
+                             .init(keyword: "rw", id: "rw", title: "AI Prompt", detail: "Polish", symbol: "wand.and.stars"),
+                             .init(keyword: "new", id: "new", title: "Web", detail: nil, symbol: "magnifyingglass")]
+        let commands = AskCommandCatalog.commands(launcher)
+        let groups = commands.map(\.group).reduce(into: [AskCommand.Group]()) { if $0.last != $1 { $0.append($1) } }
+        #expect(groups == [.conversation, .model, .context, .prompts, .plugins, .skills, .mcp, .other])
+        #expect(command("fy", in: launcher)?.action == .keyword("fy"))
+        #expect(command("rw", in: launcher)?.title == "AI Prompt → Polish")
+        #expect(command("kw:new", in: launcher)?.action == .keyword("new"), "a keyword named like a command is prefixed")
+        var window = launcher
+        window.launcher = false
+        #expect(!AskCommandCatalog.commands(window).contains { $0.group == .plugins }, "keywords are the launcher's")
     }
 
     @Test func submenusListModelsAndReasoningLevels() {
@@ -305,6 +324,27 @@ struct AskCommandExecutionTests {
         var notes: [String] = []
         var local = false
         var copied: String?
+    }
+
+    @Test func aKeywordCommandEntersItsPluginWithWhatIsTyped() async throws {
+        let (f, _) = try fixture()
+        defer { f.model.resetSession() }
+        let plugin = AskTestPlugin()
+        f.model.plugins = AskPluginSession(plugins: [plugin]) { plugin.defaultKeywords }
+        f.model.modelLibrary.settings.saveAskLauncherKeywords([AskKeyword(keyword: "tt", pluginID: "test"),
+                                                               AskKeyword(keyword: "off", pluginID: "test", enabled: false)])
+        defer { f.model.modelLibrary.settings.saveAskLauncherKeywords(nil) }
+        let context = f.model.commandContext(launcher: true)
+        #expect(context.keywords.map(\.keyword) == ["tt"], "disabled keywords are not offered")
+        #expect(f.model.commandContext(launcher: false).keywords.isEmpty)
+        f.model.launcherDraft.text = "hello"
+        f.model.runCommand(command(.keyword("off"), "off"), launcher: true)
+        #expect(!f.model.plugins.isActive)
+        f.model.runCommand(command(.keyword("tt"), "tt"), launcher: false)
+        #expect(!f.model.plugins.isActive, "only the launcher has keywords")
+        f.model.runCommand(command(.keyword("tt"), "tt"), launcher: true)
+        #expect(f.model.plugins.keyword?.keyword == "tt")
+        #expect(f.model.plugins.request?.text == "hello")
     }
 
     @Test func togglesChangeTheDraftAndConfirm() throws {

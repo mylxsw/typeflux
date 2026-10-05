@@ -174,6 +174,11 @@ struct AskComposerTextView: NSViewRepresentable {
         override func pasteAsPlainText(_ sender: Any?) {
             if !attach(from: .general) { super.pasteAsPlainText(sender) }
         }
+        /// Copy with nothing selected goes to the launcher (a plugin's result); otherwise the text's own.
+        override func copy(_ sender: Any?) {
+            if selectedRange().length == 0, onCommandKey?(.commandC) == true { return }
+            super.copy(sender)
+        }
         /// A plain text view disables Paste for an image-only pasteboard; attaching makes it valid.
         override func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
             if [#selector(paste(_:)), #selector(pasteAsPlainText(_:))].contains(item.action),
@@ -371,7 +376,8 @@ struct AskComposerTextView: NSViewRepresentable {
             if event.keyCode == 51, string.isEmpty, !hasMarkedText(),
                event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
                onEmptyBackspace?() == true { return }
-            if !hasMarkedText(), let key = AskCommandKey(event), onCommandKey?(key) == true { return }
+            if !hasMarkedText(), let key = AskCommandKey(event), key != .commandC || selectedRange().length == 0,
+               onCommandKey?(key) == true { return }
             if event.keyCode == 36, !event.modifierFlags.contains(.shift), !hasMarkedText() {
                 onSubmit(); return
             }
