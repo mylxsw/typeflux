@@ -135,8 +135,28 @@ swift test        # 运行测试
 
 完整开发指南请参阅 [CLAUDE.md](./CLAUDE.md)。
 
+### 运行 iOS Ask 应用
+
+安装完整的 Xcode 26+ 和 iOS Simulator runtime 后，在仓库根目录执行：
+
+```sh
+make ios-doctor   # 检查 Xcode 和模拟器环境
+make ios-run      # 一键构建、安装并启动模拟器应用
+make ios-preview  # 无需账号的离线界面预览
+```
+
+连接并配对 iPhone、完成开发签名配置后，一键部署到真机：
+
+```sh
+TYPEFLUX_IOS_DEVICE='<device-UDID>' TYPEFLUX_IOS_TEAM='<TEAMID>' make ios-deploy
+```
+
+iOS 应用最低支持 iOS 17。首次环境准备、签名、API 环境切换、Release 归档和故障排查见 [iOS 运行、安装与部署指南](./docs/IOS_QUICKSTART.zh-CN.md)。这些命令安装客户端，不部署后端或自动发布到 App Store。
+
 ## 文档
 
+- [iOS 运行、安装与部署](./docs/IOS_QUICKSTART.zh-CN.md)
+- [iOS Ask 架构与开发说明](./docs/IOS_CHAT.md)
 - [使用指南](./docs/USAGE.md)
 - [Make 命令](./docs/MAKE_COMMANDS.md)
 - [发布指南](./docs/RELEASE.md)

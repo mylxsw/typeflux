@@ -8,6 +8,40 @@ help: ## Display this help message
 
 .DEFAULT_GOAL := help
 
+.PHONY: ios-help ios-doctor ios-devices ios-build ios-install ios-run ios-preview ios-deploy ios-archive ios-test ios-test-scripts
+ios-help: ## Show iOS commands and configuration variables
+	python3 ./scripts/ios.py --help
+
+ios-doctor: ## Check Xcode and iOS simulator prerequisites
+	python3 ./scripts/ios.py doctor
+
+ios-devices: ## List iOS simulators and connected physical devices
+	python3 ./scripts/ios.py devices
+
+ios-build: ## Build the iOS app for a simulator
+	python3 ./scripts/ios.py build
+
+ios-install: ## Build and install the iOS app on a simulator
+	python3 ./scripts/ios.py install
+
+ios-run: ## Build, install, and launch the iOS app on a simulator
+	python3 ./scripts/ios.py run
+
+ios-preview: ## Launch the iOS app with offline demo conversations
+	python3 ./scripts/ios.py preview
+
+ios-deploy: ## Build, install, and launch on a signed physical iOS device
+	python3 ./scripts/ios.py deploy
+
+ios-archive: ## Create a signed iOS Release archive locally (no upload)
+	python3 ./scripts/ios.py archive
+
+ios-test: ## Run iOS unit and UI tests with coverage
+	./scripts/test_ios.sh
+
+ios-test-scripts: ## Test the iOS build and deployment commands without devices
+	python3 -m unittest discover -s scripts/tests -p 'test_ios_cli.py' -v
+
 .PHONY: run
 run: ## Run the development version of the app
 	./scripts/run_dev_app.sh
