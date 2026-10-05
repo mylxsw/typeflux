@@ -29,6 +29,18 @@ struct AskLauncherPlacementTests {
         #expect(AskLauncherPlacement.resized(start, height: 230, screen: nil).maxY == start.maxY)
     }
 
+    @Test func resizingReturnsToTheEdgeItOpenedWith() {
+        let top = AskLauncherPlacement.top(on: screen)
+        #expect(AskLauncherPlacement.frame(height: 114, width: 680, screen: screen).maxY == top)
+        // Pushed up to fit a tall panel, it comes back down once it is short again.
+        let raised = NSRect(x: 416, y: 600, width: 680, height: 114)
+        let back = AskLauncherPlacement.resized(raised, height: 114, top: top, screen: screen)
+        #expect(back.maxY == top)
+        #expect(back.minX == raised.minX && back.height == 114)
+        let tall = AskLauncherPlacement.resized(raised, height: 800, top: top, screen: screen)
+        #expect(tall.minY >= screen.minY + AskLauncherPlacement.screenMargin, "still clamped to the screen")
+    }
+
     @Test func aTallPanelStaysOnScreen() {
         let low = NSRect(x: 416, y: 60, width: 680, height: 114)
         let grown = AskLauncherPlacement.resized(low, height: 400, screen: screen)

@@ -8,6 +8,8 @@ struct AskQuickResultsView: View {
     var results: AskQuickResults
     /// The launcher's text, which "Ask AI" sends as it is.
     var question: String
+    /// Height held while typing; rows stay at the top and the hint at the bottom.
+    var minimumHeight: CGFloat = 0
     /// Runs a row. `close` is true for Return and for the calculation row.
     var onRun: (AskQuickResults.Row, _ close: Bool) -> Void
     var onHighlight: (Int) -> Void
@@ -56,6 +58,7 @@ struct AskQuickResultsView: View {
                 }
             }
             .padding(Self.listPadding)
+            Spacer(minLength: 0)
             Text(Self.hint(for: results))
                 .font(.system(size: 11))
                 .foregroundStyle(StudioTheme.textTertiary)
@@ -64,6 +67,7 @@ struct AskQuickResultsView: View {
                 .frame(height: Self.hintHeight, alignment: .top)
                 .accessibilityHidden(true)
         }
+        .frame(height: max(minimumHeight, Self.height(for: results)), alignment: .top)
         .onDisappear { copiedReset?.cancel() }
     }
 
