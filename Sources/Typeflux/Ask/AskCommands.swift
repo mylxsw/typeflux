@@ -345,9 +345,13 @@ struct AskSlashQuery: Equatable {
 /// Keys the command palette takes from the editor while it is open.
 enum AskCommandKey: Equatable {
     case up, down, enter, tab, escape
+    /// ⌘Return: send to the AI whatever the launcher offers.
+    case commandEnter
 
     init?(_ event: NSEvent) {
-        guard event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty else { return nil }
+        let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
+        if modifiers == .command, event.keyCode == 36 || event.keyCode == 76 { self = .commandEnter; return }
+        guard modifiers.isEmpty else { return nil }
         switch event.keyCode {
         case 126: self = .up
         case 125: self = .down

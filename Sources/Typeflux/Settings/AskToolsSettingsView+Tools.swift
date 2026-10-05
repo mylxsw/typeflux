@@ -1,7 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// The Built-in Tools tab: web search, file access, code execution, and computer and browser control.
+/// The Built-in Tools tab: web search, file access, code execution, the launcher
+/// calculator, and computer and browser control.
 extension AskToolsSettingsView {
     @ViewBuilder var toolSections: some View {
         ModelSurface {
@@ -65,6 +66,15 @@ extension AskToolsSettingsView {
                     }
                     .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 14)
                 }
+            }
+        }
+
+        ModelSurface {
+            AgentSettingsRow(icon: "plus.forwardslash.minus", title: L("ask.settings.quick.calculator.title"),
+                             subtitle: L("ask.settings.quick.calculator.subtitle"), subtitleLineLimit: nil) {
+                Toggle("", isOn: Binding(get: { quickCalculatorEnabled }, set: setQuickCalculator))
+                    .labelsHidden().toggleStyle(.switch)
+                    .accessibilityLabel(L("ask.settings.quick.calculator.title"))
             }
         }
 

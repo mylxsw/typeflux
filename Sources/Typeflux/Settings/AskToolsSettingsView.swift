@@ -11,6 +11,7 @@ struct AskToolsSettingsView: View {
 
     @State var folders: [String] = []
     @State var codeEnabled = true
+    @State var quickCalculatorEnabled = true
     @State var newConversationsStayLocal = false
     @State var searchProvider = AskSearchSettings.Provider.none
     @State var searchKey = ""
@@ -121,6 +122,7 @@ struct AskToolsSettingsView: View {
     func reload() {
         folders = settings.askFileAccessFolders
         codeEnabled = settings.askCodeExecutionEnabled
+        quickCalculatorEnabled = settings.askQuickCalculatorEnabled
         newConversationsStayLocal = settings.askNewConversationsStayLocal
         searchProvider = search.provider
         searchKey = search.apiKey
@@ -154,6 +156,11 @@ struct AskToolsSettingsView: View {
     func setCodeExecution(_ enabled: Bool) {
         codeEnabled = enabled
         settings.askCodeExecutionEnabled = enabled
+    }
+
+    func setQuickCalculator(_ enabled: Bool) {
+        quickCalculatorEnabled = enabled
+        settings.askQuickCalculatorEnabled = enabled
     }
 
     func setSkill(_ name: String, enabled: Bool) {

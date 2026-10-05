@@ -124,6 +124,62 @@ struct AskComposer: View {
         if launcher { model.submitLauncher() } else { model.submitDraft() }
     }
     @State private var suggestionIndex = 0
+    /// A local answer for the launcher's text, such as a calculation.
+    @State private var quickResults: AskQuickResults?
+    /// Quick results show while the launcher's text is all there is to send:
+    /// quotes, files or chosen tools mean the text is written for the AI.
+    private var showsQuickResults: Bool {
+        guard launcher, quickResults != nil, !paletteOpen else { return false }
+        let value = draft.wrappedValue
+        return (value.references ?? []).isEmpty && (value.attachments ?? []).isEmpty
+            && (value.skills ?? []).isEmpty && (value.mcpServers ?? []).isEmpty
+    }
+
+    /// Writes state only when the results change: the workspace composer and
+    /// ordinary questions must not re-render on every keystroke for this.
+    private func refreshQuickResults() {
+        guard launcher else { return }
+        let next = model.quickResultsEnabled
+            ? AskQuickResults.resolve(text: draft.wrappedValue.text, previous: quickResults,
+                                      chinese: AppLocalization.shared.language == .simplifiedChinese)
+            : nil
+        guard next != quickResults else { return }
+        quickResults = next
+        reportHeight()
+    }
+
+    /// Copies a quick result, closing the launcher when asked to, or sends the text to the AI.
+    private func runQuickResult(_ row: AskQuickResults.Row, close: Bool) {
+        guard let results = quickResults else { return }
+        if row == .askAI { model.submitLauncher(); return }
+        guard results.isEnabled(row), let value = results.value(of: row) else { return }
+        AskQuickResults.copy(value)
+        if close {
+            model.finishQuickResult()
+            onDismiss()
+        }
+    }
+
+    /// Return runs the highlighted row, ⌘Return asks the AI, Tab writes the
+    /// result into the editor to keep calculating, and the arrows move.
+    private func quickResultsKey(_ key: AskCommandKey) -> Bool {
+        guard showsQuickResults, !active, var results = quickResults else { return false }
+        switch key {
+        case .up, .down:
+            results.move(key == .up ? -1 : 1)
+            quickResults = results
+        case .enter:
+            runQuickResult(results.highlightedRow, close: true)
+        case .commandEnter:
+            model.submitLauncher()
+        case .tab:
+            guard let value = results.value(of: .calculation), !results.stale else { return false }
+            draft.wrappedValue.text = value
+        case .escape:
+            return false
+        }
+        return true
+    }
     /// The launcher offers its starting points until something is typed. They
     /// stay (disabled) while dictating, so the panel never jumps mid-recording.
     private var showsLauncherSuggestions: Bool {
@@ -186,6 +242,7 @@ struct AskComposer: View {
             .onPreferenceChange(AskComposerHeight.self) { cardHeight = $0 }
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
+            .onChange(of: draft.wrappedValue.text) { _ in refreshQuickResults() }
             .onChange(of: noticeRows) { _ in reportHeight() }
             .onChange(of: showsStrip) { _ in reportHeight() }
             .onChange(of: attachmentHeight) { _ in reportHeight() }
@@ -195,7 +252,7 @@ struct AskComposer: View {
             .onChange(of: paletteOpen) { _ in reportHeight() }
             .onChange(of: palette) { _ in if launcher { reportHeight() } }
             .onChange(of: active) { recording in if recording { closePalette() } }
-            .onAppear { reportHeight() }
+            .onAppear { refreshQuickResults(); reportHeight() }
             .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in
                 voiceShortcut = model.modelLibrary.settings.activationHotkey
             }
@@ -225,6 +282,12 @@ struct AskComposer: View {
             if showsLauncherSuggestions {
                 AskLauncherSuggestions(highlighted: $suggestionIndex,
                                        screenshot: model.screenshotSuggestion(launcher: true), onPick: pick)
+                    .disabled(active)
+                    .opacity(Self.recordingDim(active))
+            } else if showsQuickResults, let quickResults {
+                AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
+                                    onRun: runQuickResult,
+                                    onHighlight: { index in self.quickResults?.highlight(index) })
                     .disabled(active)
                     .opacity(Self.recordingDim(active))
             }
@@ -391,7 +454,7 @@ struct AskComposer: View {
     }
 
     private func commandKey(_ key: AskCommandKey) -> Bool {
-        guard paletteOpen else { return false }
+        guard paletteOpen else { return quickResultsKey(key) }
         switch key {
         case .up: palette.move(-1)
         case .down: palette.move(1)
@@ -400,6 +463,9 @@ struct AskComposer: View {
         case .escape:
             dismissedSlash = slash?.range.location
             closePalette()
+        case .commandEnter:
+            // ⌘Return sends as before, with the palette still open.
+            return false
         }
         return true
     }
@@ -752,9 +818,11 @@ struct AskComposer: View {
         // Confirmations ride in the footer, so only notice rows add height.
         let banners = noticeRows
         let commands = launcher && paletteOpen ? AskCommandPaletteView.height(for: palette) + 10 : 0
+        let quick = showsQuickResults && !showsLauncherSuggestions
+            ? quickResults.map(AskQuickResultsView.height(for:)) ?? 0 : 0
         onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
                                                  suggestions: showsLauncherSuggestions, attachments: showsStrip,
-                                                 attachmentHeight: attachmentHeight) + commands)
+                                                 attachmentHeight: attachmentHeight) + commands + quick)
     }
 }
 
