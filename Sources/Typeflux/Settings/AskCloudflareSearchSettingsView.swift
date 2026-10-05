@@ -1,56 +1,86 @@
 import SwiftUI
 
+/// Cloudflare-specific search fields; the token and connection test live in the surrounding form.
 struct AskCloudflareSearchSettingsView: View {
     @Binding var configuration: AskCloudflareSearchConfiguration
-    let apiKey: String
-    @StateObject private var connection = AskCloudflareConnectionTest()
-
-    private var searchConfiguration: AskSearchConfiguration {
-        .init(provider: .cloudflare, apiKey: apiKey, cloudflare: configuration)
-    }
+    @State private var showsAdvanced = false
 
     var body: some View {
-        Group {
-            field("ask.settings.search.cloudflare.account", text: $configuration.accountID)
-            field("ask.settings.search.cloudflare.gateway", text: $configuration.gatewayID)
-            ModelRowDivider(leading: 66)
-            AgentSettingsRow(icon: "magnifyingglass", title: L("ask.settings.search.cloudflare.provider")) {
+        VStack(alignment: .leading, spacing: 10) {
+            AgentFormRow(label: L("ask.settings.search.cloudflare.account"), required: true) {
+                TextField(L("agent.search.cloudflare.accountPlaceholder"), text: $configuration.accountID)
+                    .textFieldStyle(ModelFieldStyle())
+            }
+            AgentFormRow(label: L("ask.settings.search.cloudflare.gateway"), required: true) {
+                TextField("default", text: $configuration.gatewayID).textFieldStyle(ModelFieldStyle())
+            }
+            AgentFormRow(label: L("ask.settings.search.cloudflare.provider")) {
                 Picker(L("ask.settings.search.cloudflare.provider"), selection: $configuration.provider) {
                     ForEach(AskCloudflareSearchConfiguration.providers, id: \.self) { provider in
-                        Text(provider == "ceramic" ? "Ceramic.ai" : provider == "exa" ? "Exa" : "Linkup").tag(provider)
+                        Text(Self.engineName(provider)).tag(provider)
                     }
-                }.labelsHidden().frame(width: 240)
-            }
-            field("ask.settings.search.cloudflare.alias", text: $configuration.byokAlias)
-            Text(L("ask.settings.search.cloudflare.help"))
-                .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 20)
-            HStack {
-                Link(L("ask.settings.search.cloudflare.guide"), destination: URL(string: "https://developers.cloudflare.com/web-search/how-to-use/")!)
-                Spacer()
-                Button(L(connection.testing
-                         ? "ask.settings.search.cloudflare.testing" : "ask.settings.search.cloudflare.test")) {
-                    connection.start(searchConfiguration)
                 }
-                    .disabled(connection.testing || !searchConfiguration.isConfigured)
-            }.padding(.horizontal, 20).padding(.bottom, 12)
-            if let testResult = connection.result {
-                Text(testResult).font(.system(size: 12))
-                    .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 20).padding(.bottom, 12)
+                .labelsHidden()
+            }
+            AgentDisclosureButton(title: L("agent.search.advanced"), expanded: $showsAdvanced)
+            if showsAdvanced || !configuration.byokAlias.isEmpty {
+                AgentFormRow(label: L("ask.settings.search.cloudflare.alias")) {
+                    TextField(L("agent.search.cloudflare.aliasPlaceholder"), text: $configuration.byokAlias)
+                        .textFieldStyle(ModelFieldStyle())
+                }
             }
         }
-        .onChange(of: configuration) { _ in connection.reset() }
-        .onChange(of: apiKey) { _ in connection.reset() }
-        .onDisappear { connection.reset() }
     }
 
-    private func field(_ title: String, text: Binding<String>) -> some View {
-        Group {
-            ModelRowDivider(leading: 66)
-            AgentSettingsRow(icon: "globe", title: L(title)) {
-                TextField(L(title), text: text)
-                    .textFieldStyle(.roundedBorder).font(.system(size: 13, design: .monospaced)).frame(width: 240)
-            }
+    static func engineName(_ provider: String) -> String {
+        switch provider {
+        case "ceramic": "Ceramic.ai"
+        case "exa": "Exa"
+        default: "Linkup"
         }
+    }
+}
+
+/// A label column followed by its control, as used by the search and MCP forms.
+struct AgentFormRow<Field: View>: View {
+    let label: String
+    var required = false
+    var labelWidth: CGFloat = 150
+    @ViewBuilder var field: Field
+
+    var body: some View {
+        HStack(spacing: 14) {
+            HStack(spacing: 2) {
+                Text(label).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                if required {
+                    Text("*").font(.system(size: 12.5)).foregroundStyle(StudioTheme.danger)
+                        .accessibilityLabel(L("agent.form.required"))
+                }
+            }
+            .frame(width: labelWidth, alignment: .leading)
+            field.frame(maxWidth: 420, alignment: .leading)
+        }
+    }
+}
+
+/// Small chevron toggle that reveals rarely needed fields.
+struct AgentDisclosureButton: View {
+    let title: String
+    @Binding var expanded: Bool
+
+    var body: some View {
+        Button {
+            withAnimation(.easeOut(duration: 0.15)) { expanded.toggle() }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
+                    .rotationEffect(.degrees(expanded ? 90 : 0))
+                Text(title).font(.system(size: 12))
+            }
+            .foregroundStyle(StudioTheme.textSecondary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(expanded ? .isSelected : [])
     }
 }

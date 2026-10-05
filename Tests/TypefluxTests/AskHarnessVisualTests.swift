@@ -167,7 +167,7 @@ struct AskHarnessVisualTests {
         let notes = AskMemoryNoteStore(fileURL: temp.appendingPathComponent("notes.json"))
         try notes.add("偏好简洁的周报", owner: "o")
         try notes.add("常用 Python 做数据分析", owner: "o")
-        for tab in [AgentConfigurationTab.general, .tools, .skills, .memory] {
+        for tab in AgentConfigurationTab.allCases {
             let settingsView = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: temp.appendingPathComponent("skills")),
                                                     notes: notes, owner: { "o" }, tab: tab)
                 .padding(24).frame(width: 760, alignment: .top).frame(maxHeight: .infinity, alignment: .top).background(StudioTheme.surface)

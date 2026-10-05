@@ -20,7 +20,7 @@ final class AskCloudflareSettingsVisualTests: XCTestCase {
                     SecureField("Cloudflare API Token", text: .constant("fixture-token"))
                         .textFieldStyle(.roundedBorder).frame(width: 240)
                 }
-                AskCloudflareSearchSettingsView(configuration: .constant(.init(accountID: "0123456789abcdef0123456789abcdef")), apiKey: "fixture-token")
+                AskCloudflareSearchSettingsView(configuration: .constant(.init(accountID: "0123456789abcdef0123456789abcdef")))
             }.padding(24).frame(width: 760, height: 600, alignment: .top).background(StudioTheme.surface)
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 600), styleMask: [.borderless], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false

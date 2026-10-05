@@ -143,10 +143,9 @@ enum StudioModelDomain: String, CaseIterable, Identifiable {
 
 /// Tabs of the Agent settings page, in display order.
 enum AgentConfigurationTab: String, CaseIterable, Identifiable {
-    case general
+    case overview
     case tools
-    case mcpServers
-    case skills
+    case extensions
     case memory
 
     var id: String {
@@ -155,16 +154,33 @@ enum AgentConfigurationTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .general:
-            L("agent.section.general")
+        case .overview:
+            L("agent.section.overview")
         case .tools:
             L("agent.section.tools")
-        case .mcpServers:
-            L("agent.section.mcpServers")
-        case .skills:
-            L("agent.section.skills")
+        case .extensions:
+            L("agent.section.extensions")
         case .memory:
             L("agent.section.memory")
+        }
+    }
+}
+
+/// The two kinds of extension listed under the Extensions tab.
+enum AgentExtensionsTab: String, CaseIterable, Identifiable {
+    case skills
+    case mcpServers
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .skills:
+            L("agent.section.skills")
+        case .mcpServers:
+            L("agent.settings.mcp")
         }
     }
 }

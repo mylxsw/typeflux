@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Typeflux · Agent 配置页重新设计（可交互）</title>
+<style>
+  :root {
+    --bg: #0c0c0d; --win: #1e1e20; --side: #252528; --card: #2a2a2d; --card-2: #303034; --hair: rgba(255,255,255,.08);
+    --hair-2: rgba(255,255,255,.14); --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: rgba(10,132,255,.16); --accent-text: #8ebdff; --hover: rgba(255,255,255,.06);
+    --ctl: #3a3a3e; --ok: #30d158; --ok-soft: rgba(48,209,88,.14); --warn: #ffb340; --warn-soft: rgba(255,179,64,.13);
+    --danger: #ff6961; --danger-soft: rgba(255,105,97,.13); --shadow: 0 30px 80px rgba(0,0,0,.55);
+  }
+  body.light {
+    --bg: #dfe1e5; --win: #f6f6f7; --side: #ececee; --card: #ffffff; --card-2: #f3f3f5; --hair: rgba(0,0,0,.08);
+    --hair-2: rgba(0,0,0,.14); --text: #1d1d1f; --text-2: #5f5f64; --text-3: #8e8e93; --accent-text: #0a6ee0;
+    --accent-soft: rgba(10,132,255,.11); --hover: rgba(0,0,0,.04); --ctl: #e6e6e9; --ok: #1f9d47; --ok-soft: rgba(31,157,71,.12);
+    --warn: #c27400; --warn-soft: rgba(255,159,10,.14); --danger: #d93a32; --danger-soft: rgba(217,58,50,.10);
+    --shadow: 0 30px 80px rgba(0,0,0,.18);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 36px 48px; background: var(--bg); color: var(--text); min-width: 1560px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- page chrome (outside the app window) ---------- */
+  .topbar { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+  .topbar h1 { font-size: 18px; margin: 0; font-weight: 650; }
+  .topbar .sub { color: var(--text-2); }
+  .topbar .sp { flex: 1; }
+  .pill-btn { border: 1px solid var(--hair-2); background: transparent; border-radius: 999px; padding: 5px 12px; cursor: pointer; color: var(--text-2); }
+  .pill-btn.on { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
+  .layout { display: grid; grid-template-columns: 1120px 1fr; gap: 28px; align-items: start; }
+
+  /* ---------- app window ---------- */
+  .window { height: 760px; border-radius: 12px; overflow: hidden; display: grid; grid-template-columns: 196px 1fr;
+    background: var(--win); box-shadow: var(--shadow); border: 1px solid var(--hair); position: relative; overflow: clip; }
+  .side { background: var(--side); padding: 12px 10px; display: flex; flex-direction: column; }
+  .lights { display: flex; gap: 8px; padding: 2px 4px 18px; }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 0 8px 18px; font-weight: 650; font-size: 14px; }
+  .brand small { color: var(--text-3); font-weight: 400; font-size: 10px; }
+  .logo { width: 22px; height: 22px; border-radius: 50%; background: var(--text); color: var(--side); display: grid; place-items: center; font-size: 12px; font-weight: 800; }
+  .nav a { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; color: var(--text-2); text-decoration: none; margin-bottom: 2px; }
+  .nav a.on { background: var(--hover); color: var(--text); font-weight: 600; }
+  .acct { margin-top: auto; background: var(--card); border-radius: 10px; padding: 10px; font-size: 11.5px; color: var(--text-2); border: 1px solid var(--hair); }
+  .acct b { color: var(--text); } .acct .bar { height: 4px; border-radius: 2px; background: var(--ctl); margin: 6px 0 2px; }
+  .acct .bar i { display: block; height: 100%; width: 41%; background: var(--accent); border-radius: 2px; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .head { padding: 26px 32px 0; }
+  .head h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: .2px; }
+  .head p { margin: 4px 0 16px; color: var(--text-2); }
+  .tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--hair); }
+  .tab { background: none; border: 0; padding: 8px 0 10px; cursor: pointer; color: var(--text-2); position: relative; display: flex; gap: 6px; align-items: center; }
+  .tab .n { font-size: 11px; color: var(--text-3); }
+  .tab.on { color: var(--text); font-weight: 600; }
+  .tab.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); border-radius: 2px; }
+  .tab .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+  .scroll { flex: 1; overflow: auto; padding: 22px 32px 40px; position: relative; }
+
+  /* ---------- building blocks ---------- */
+  .sec { margin-bottom: 26px; }
+  .sec-h { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; }
+  .sec-h h3 { margin: 0; font-size: 13px; font-weight: 650; }
+  .sec-h .meta { color: var(--text-3); font-size: 12px; }
+  .sec-h .sp { flex: 1; }
+  .card { background: var(--card); border: 1px solid var(--hair); border-radius: 12px; }
+  .card + .card { margin-top: 12px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 56px; }
+  .row + .row { border-top: 1px solid var(--hair); }
+  .row .ic { width: 30px; height: 30px; border-radius: 8px; background: var(--card-2); display: grid; place-items: center; color: var(--text-2); flex: none; }
+  .row .ic.blue { background: var(--accent-soft); color: var(--accent-text); }
+  .row .ic.green { background: var(--ok-soft); color: var(--ok); }
+  .row .ic.amber { background: var(--warn-soft); color: var(--warn); }
+  .row .tx { flex: 1; min-width: 0; }
+  .row .t { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .row .s { color: var(--text-2); font-size: 12px; margin-top: 2px; }
+  .row .s.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row.click { cursor: pointer; } .row.click:hover { background: var(--hover); }
+  .card-body { padding: 4px 16px 16px 58px; }
+  .hint { color: var(--text-3); font-size: 12px; margin-top: 8px; }
+  .hint a, a.link { color: var(--accent-text); text-decoration: none; cursor: pointer; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 9px; white-space: nowrap; background: var(--hover); color: var(--text-2); }
+  .chip.ok { background: var(--ok-soft); color: var(--ok); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); }
+  .chip.blue { background: var(--accent-soft); color: var(--accent-text); }
+  .chip.danger { background: var(--danger-soft); color: var(--danger); }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .facts .chip { font-weight: 500; padding: 3px 9px; }
+
+  .btn { border: 1px solid var(--hair-2); background: var(--card-2); border-radius: 7px; padding: 5px 12px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.primary { background: var(--accent); border-color: transparent; color: #fff; }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--accent-text); padding-left: 6px; padding-right: 6px; }
+  .btn.danger { color: var(--danger); }
+  .btn[disabled] { opacity: .45; cursor: default; filter: none; }
+  .ibtn { width: 28px; height: 28px; border-radius: 7px; border: 0; background: transparent; color: var(--text-2); display: grid; place-items: center; cursor: pointer; }
+  .ibtn:hover { background: var(--hover); color: var(--text); }
+  .ibtn.danger:hover { color: var(--danger); }
+
+  .sw { width: 34px; height: 20px; border-radius: 10px; background: var(--ctl); position: relative; cursor: pointer; border: 0; flex: none; transition: background .15s; }
+  .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .sw.on { background: var(--accent); } .sw.on::after { left: 16px; }
+
+  .seg { display: inline-flex; background: var(--ctl); border-radius: 8px; padding: 2px; gap: 2px; }
+  .seg button { border: 0; background: transparent; padding: 4px 12px; border-radius: 6px; cursor: pointer; color: var(--text-2); }
+  .seg button.on { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+
+  .field { display: grid; grid-template-columns: 150px 1fr; gap: 6px 14px; align-items: center; margin-top: 10px; max-width: 600px; }
+  .modal .field { max-width: none; }
+  .field label { color: var(--text-2); font-size: 12.5px; }
+  .field label .req { color: var(--danger); margin-left: 2px; }
+  .input { width: 100%; height: 30px; border-radius: 7px; border: 1px solid var(--hair-2); background: var(--win); padding: 0 10px; outline: none; }
+  .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .input.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  textarea.input { height: auto; padding: 8px 10px; resize: vertical; }
+  select.input { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--text-2) 50%), linear-gradient(135deg, var(--text-2) 50%, transparent 50%);
+    background-position: calc(100% - 15px) 13px, calc(100% - 10px) 13px; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 28px; }
+  .search { position: relative; } .search svg { position: absolute; left: 9px; top: 7px; color: var(--text-3); }
+  .search .input { padding-left: 30px; width: 240px; }
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .toolbar .sp { flex: 1; }
+
+  .result { margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: 12px; display: flex; gap: 8px; align-items: flex-start; }
+  .result.ok { background: var(--ok-soft); color: var(--ok); } .result.err { background: var(--danger-soft); color: var(--danger); }
+  .result.busy { background: var(--hover); color: var(--text-2); }
+  .disclosure { margin-top: 12px; color: var(--text-2); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; user-select: none; }
+  .disclosure svg { width: 12px; height: 12px; transition: transform .15s; } .disclosure.open svg { transform: rotate(90deg); }
+
+  /* overview */
+  .storage { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .opt { background: var(--card); border: 1px solid var(--hair); border-radius: 12px; padding: 14px 16px; cursor: pointer; position: relative; }
+  .opt:hover { border-color: var(--hair-2); }
+  .opt.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .opt .oh { display: flex; align-items: center; gap: 8px; font-weight: 650; }
+  .opt .radio { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--text-3); margin-left: auto; }
+  .opt.on .radio { border: 5px solid var(--accent); }
+  .opt ul { margin: 10px 0 0; padding: 0; list-style: none; color: var(--text-2); font-size: 12px; }
+  .opt li { display: flex; gap: 6px; margin-bottom: 4px; } .opt li .y { color: var(--ok); } .opt li .n { color: var(--text-3); }
+  .caps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .cap { background: var(--card); border: 1px solid var(--hair); border-radius: 12px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; min-height: 112px; }
+  .cap:hover { border-color: var(--hair-2); background: var(--card-2); }
+  .cap .ch { display: flex; align-items: center; gap: 10px; }
+  .cap .ch .ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); }
+  .cap .ch .ic.off { background: var(--card-2); color: var(--text-3); }
+  .cap .ch b { font-size: 13px; } .cap .ch .sp { flex: 1; }
+  .cap p { margin: 0; color: var(--text-2); font-size: 12px; flex: 1; }
+  .cap .cf { display: flex; align-items: center; justify-content: space-between; }
+  .cap .go { color: var(--text-3); font-size: 12px; }
+  .summary { display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 22px; border-radius: 12px;
+    background: linear-gradient(120deg, var(--accent-soft), transparent 70%); border: 1px solid var(--hair); }
+  .summary b { font-size: 15px; } .summary .s { color: var(--text-2); font-size: 12px; }
+
+  /* empty */
+  .empty { text-align: center; padding: 34px 20px 30px; }
+  .empty .big { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; margin: 0 auto 12px; background: var(--accent-soft); color: var(--accent-text); }
+  .empty .big svg { width: 22px; height: 22px; }
+  .empty h4 { margin: 0 0 4px; font-size: 14px; } .empty p { margin: 0 auto 14px; color: var(--text-2); max-width: 420px; font-size: 12.5px; }
+
+  /* drawer + modal */
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.35); z-index: 10; display: none; }
+  .scrim.show { display: block; }
+  .drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 380px; background: var(--win); border-left: 1px solid var(--hair-2);
+    z-index: 11; transform: translateX(100%); visibility: hidden; transition: transform .2s ease, visibility 0s .2s; display: flex; flex-direction: column; box-shadow: -20px 0 50px rgba(0,0,0,.3); }
+  .drawer.show { transform: none; visibility: visible; transition: transform .2s ease; }
+  .drawer .dh { padding: 18px 20px 12px; display: flex; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--hair); }
+  .drawer .db { padding: 16px 20px; overflow: auto; flex: 1; }
+  .drawer .df { padding: 12px 20px; border-top: 1px solid var(--hair); display: flex; gap: 8px; }
+  .kv { display: grid; grid-template-columns: 76px 1fr; gap: 8px 10px; font-size: 12px; margin: 12px 0; }
+  .kv dt { color: var(--text-3); } .kv dd { margin: 0; word-break: break-all; }
+  .modal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -48%); width: 520px; max-height: 680px; overflow: auto; background: var(--win);
+    border: 1px solid var(--hair-2); border-radius: 14px; z-index: 12; display: none; box-shadow: var(--shadow); }
+  .modal.show { display: block; }
+  .modal .mh { padding: 20px 22px 4px; } .modal .mh h3 { margin: 0 0 4px; font-size: 15px; } .modal .mh p { margin: 0; color: var(--text-2); font-size: 12.5px; }
+  .modal .mb { padding: 8px 22px 6px; }
+  .modal .mf { padding: 14px 22px 18px; display: flex; gap: 8px; align-items: center; }
+  .modal .mf .sp { flex: 1; }
+  .kvrow { display: grid; grid-template-columns: 1fr 1.4fr 28px; gap: 6px; margin-bottom: 6px; }
+  .warnbox { margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-size: 12px; display: flex; gap: 8px; }
+  .parsed { margin-top: 8px; font-size: 12px; color: var(--text-2); }
+  .parsed b { color: var(--text); font-weight: 600; }
+
+  .toast { position: absolute; left: 50%; bottom: 22px; transform: translate(-50%, 20px); opacity: 0; background: #3a3a3e; color: #fff; padding: 8px 10px 8px 14px; border-radius: 10px;
+    display: flex; gap: 12px; align-items: center; z-index: 20; transition: all .2s; pointer-events: none; box-shadow: 0 8px 30px rgba(0,0,0,.35); }
+  .toast.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+  .toast .btn { padding: 3px 10px; background: transparent; color: #8ebdff; border: 0; }
+  .flash { animation: flash 1.2s ease; }
+  @keyframes flash { 0%, 40% { box-shadow: 0 0 0 2px var(--accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+  .note-text { white-space: pre-wrap; font-weight: 500; }
+  .tools-list { margin: 0 16px 12px 58px; padding: 8px 12px; border-radius: 8px; background: var(--card-2); font-size: 12px; color: var(--text-2); }
+  .tools-list code { color: var(--text); font-size: 11.5px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .menu { position: absolute; background: var(--card-2); border: 1px solid var(--hair-2); border-radius: 8px; padding: 4px; z-index: 30; min-width: 140px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .menu button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 6px 10px; border-radius: 5px; cursor: pointer; }
+  .menu button:hover { background: var(--accent); color: #fff; }
+  .menu button.danger { color: var(--danger); } .menu button.danger:hover { color: #fff; background: var(--danger); }
+
+  /* annotation panel */
+  .notes { position: sticky; top: 20px; }
+  .notes h3 { margin: 0 0 4px; font-size: 14px; }
+  .notes .lead { color: var(--text-2); font-size: 12.5px; margin-bottom: 14px; }
+  .note { background: var(--win); border: 1px solid var(--hair); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; font-size: 12.5px; color: var(--text-2); }
+  .note b { color: var(--text); }
+  .note .tag { font-size: 10.5px; font-weight: 700; letter-spacing: .4px; margin-bottom: 4px; display: block; }
+  .note .tag.fix { color: var(--ok); } .note .tag.new { color: var(--accent-text); } .note .tag.ask { color: var(--warn); }
+  body.no-notes .layout { grid-template-columns: 1120px; } body.no-notes .notes { display: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Agent 配置页 · 重新设计</h1>
+  <span class="sub">可交互设计稿 — 所有按钮、开关、弹窗都可以点；数据仅保存在本页内存中。</span>
+  <span class="sp"></span>
+  <button class="pill-btn on" id="btnNotes" onclick="toggleNotes()">设计标注</button>
+  <button class="pill-btn" id="btnTheme" onclick="toggleTheme()">浅色</button>
+  <button class="pill-btn" onclick="resetDemo()">重置数据</button>
+</div>
+
+<div class="layout">
+  <div class="window" id="win">
+    <aside class="side">
+      <div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+      <div class="brand"><span class="logo">∞</span>Typeflux <small>0.9.0</small></div>
+      <nav class="nav">
+        <a><svg class="i"><use href="#i-home"/></svg>概览</a>
+        <a><svg class="i"><use href="#i-book"/></svg>词库</a>
+        <a><svg class="i"><use href="#i-clock"/></svg>历史</a>
+        <a><svg class="i"><use href="#i-cpu"/></svg>模型</a>
+        <a><svg class="i"><use href="#i-person"/></svg>人设</a>
+        <a class="on"><svg class="i"><use href="#i-puzzle"/></svg>Agent</a>
+      </nav>
+      <div class="acct">
+        <div style="display:flex;justify-content:space-between"><b>Demir Von</b><span style="color:var(--accent-text)">升级</span></div>
+        <div style="margin-top:6px">Free · 剩余额度 <b style="float:right">24.9k / 60k</b></div>
+        <div class="bar"><i></i></div>
+      </div>
+    </aside>
+
+    <section class="main">
+      <div class="head">
+        <h2>Agent</h2>
+        <p>决定“随便问”能用哪些能力、装了哪些扩展，以及它记住了什么。</p>
+        <div class="tabs" id="tabs"></div>
+      </div>
+      <div class="scroll" id="content"></div>
+    </section>
+
+    <div class="scrim" id="scrim" onclick="closeOverlays()"></div>
+    <div class="drawer" id="drawer"></div>
+    <div class="modal" id="modal"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <aside class="notes" id="notes"></aside>
+</div>
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 16 16"><path d="M2.5 7.5 8 3l5.5 4.5V13a.5.5 0 0 1-.5.5H10V10H6v3.5H3a.5.5 0 0 1-.5-.5z"/></symbol>
+    <symbol id="i-book" viewBox="0 0 16 16"><path d="M3 2.5h7.5A1.5 1.5 0 0 1 12 4v9.5H4.5A1.5 1.5 0 0 1 3 12zM3 12a1.5 1.5 0 0 1 1.5-1.5H12"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M6 2v2M10 2v2M6 12v2M10 12v2M2 6h2M2 10h2M12 6h2M12 10h2"/></symbol>
+    <symbol id="i-person" viewBox="0 0 16 16"><circle cx="8" cy="6" r="2.5"/><path d="M3.5 13.5c.6-2.3 2.4-3.5 4.5-3.5s3.9 1.2 4.5 3.5"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 16 16"><path d="M3 5h2.5a1.5 1.5 0 1 1 3 0H11v2.5a1.5 1.5 0 1 1 0 3V13H3z"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M2.5 8h11M8 2.5c1.6 1.6 2.3 3.4 2.3 5.5S9.6 11.9 8 13.5C6.4 11.9 5.7 10.1 5.7 8S6.4 4.1 8 2.5"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 16 16"><path d="M2.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-term" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="m5 7 2 1.5L5 10M8.5 10.5H11"/></symbol>
+    <symbol id="i-cursor" viewBox="0 0 16 16"><path d="m4 3 8 4-3.5 1L7 12z"/></symbol>
+    <symbol id="i-wand" viewBox="0 0 16 16"><path d="m3 13 7-7M9 3v2M12 6h2M11.5 3.5 10.5 4.5M13 11l-1-1"/></symbol>
+    <symbol id="i-plug" viewBox="0 0 16 16"><path d="M6 2v3M10 2v3M4.5 5h7v2.5a3.5 3.5 0 0 1-7 0zM8 11v3"/></symbol>
+    <symbol id="i-brain" viewBox="0 0 16 16"><path d="M6 3a2 2 0 0 0-2 2 2 2 0 0 0-1 3.5A2 2 0 0 0 5 12a2 2 0 0 0 3 1V3.5A1.5 1.5 0 0 0 6 3zM10 3a2 2 0 0 1 2 2 2 2 0 0 1 1 3.5 2 2 0 0 1-2 3.5 2 2 0 0 1-3 1"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 16 16"><path d="M4.5 12.5a3 3 0 0 1-.3-6A4 4 0 0 1 12 6.8a2.9 2.9 0 0 1-.5 5.7z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3.5v9M3.5 8h9"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 16 16"><path d="M3.5 8h9"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.5 9h6l.5-9"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 16 16"><path d="M10.5 3 13 5.5 6 12.5H3.5V10z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4"/><path d="m10 10 3 3"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 16 16"><path d="m6 3.5 4.5 4.5L6 12.5"/></symbol>
+    <symbol id="i-more" viewBox="0 0 16 16"><circle cx="4" cy="8" r=".6"/><circle cx="8" cy="8" r=".6"/><circle cx="12" cy="8" r=".6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7"/></symbol>
+    <symbol id="i-x" viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.5 14 13H2zM8 6.5v3M8 11.3v.2"/></symbol>
+    <symbol id="i-github" viewBox="0 0 16 16"><path d="M6 13c-3 .9-3-1.5-4-1.8M10 14.5v-2.3c0-.7 0-1.2-.4-1.6 1.9-.2 3.9-.9 3.9-4.1 0-.9-.3-1.6-.9-2.2.1-.5.1-1.2-.1-2 0 0-.7-.2-2.2.8a7.6 7.6 0 0 0-4 0C4.8 2.1 4.1 2.3 4.1 2.3c-.2.8-.2 1.5-.1 2-.6.6-.9 1.3-.9 2.2 0 3.2 2 3.9 3.9 4.1-.4.4-.4.9-.4 1.6v2.3"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 4 3 6.5 5.5 9M3 6.5h6.5a3.5 3.5 0 0 1 0 7H7"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 2.5 13 4.5V8c0 3-2.2 4.9-5 5.5C5.2 12.9 3 11 3 8V4.5z"/></symbol>
+    <symbol id="i-import" viewBox="0 0 16 16"><path d="M8 2.5v7M5 6.5l3 3 3-3M3 11v2h10v-2"/></symbol>
+  </defs>
+</svg>
+
+<script>
+const ic = (n, cls = 'i') => `<svg class="${cls}"><use href="#i-${n}"/></svg>`;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// ---------------------------------------------------------------- demo data
+const seed = () => ({
+  tab: 'overview',
+  storage: 'cloud',
+  search: { provider: 'cloudflare', key: '', cf: { account: '', gateway: 'default', engine: 'ceramic', alias: '' }, advanced: false, test: null },
+  code: true,
+  folders: ['/Users/mylxsw/Downloads'],
+  automation: { accessibility: true, screen: false },
+  extTab: 'skills', skillQuery: '', skillFilter: 'all',
+  skills: [
+    { name: 'data-analysis', desc: '用代码分析表格或数字，报告经过验证的结果，可用图表。', source: 'builtin', on: true },
+    { name: 'email-reply', desc: '起草清晰、礼貌的邮件回复，语气和语言与原邮件一致。', source: 'builtin', on: true },
+    { name: 'meeting-notes', desc: '把会议记录或草稿整理成包含决定和待办事项的纪要。', source: 'builtin', on: true },
+    { name: 'translate-polish', desc: '翻译或润色文本，保留原意、术语和格式。', source: 'builtin', on: true },
+  ],
+  mcp: [],
+  notes: [
+    { id: 1, text: 'AI 助手的名字叫星期五，英文 Friday。', kind: 'explicit', v: 1, expiry: null, at: '2026-09-28' },
+  ],
+  noteQuery: '', editingNote: null,
+});
+let S = seed();
+let undo = null;
+
+// ---------------------------------------------------------------- derived status
+function searchState() {
+  const s = S.search;
+  if (s.provider === 'none') return S.storage === 'local' ? { level: 'warn', label: '本机对话无法联网' } : { level: 'off', label: '未开启' };
+  if (s.provider === 'cloudflare') {
+    const missing = cfMissing();
+    if (missing.length) return { level: 'warn', label: '待完成配置' };
+  } else if (!s.key) return { level: 'warn', label: '缺少 API 密钥' };
+  if (s.test && s.test.ok) return { level: 'ok', label: providerName(s.provider) + ' · 已连通' };
+  return { level: 'ok', label: providerName(s.provider) };
+}
+function cfMissing() {
+  const s = S.search, m = [];
+  if (!s.key) m.push('API Token');
+  if (!s.cf.account) m.push('账户 ID');
+  if (!s.cf.gateway) m.push('Gateway ID');
+  return m;
+}
+const providerName = p => ({ none: '关闭', tavily: 'Tavily', brave: 'Brave Search', cloudflare: 'Cloudflare' }[p]);
+const enabledSkills = () => S.skills.filter(s => s.on).length;
+const enabledMCP = () => S.mcp.filter(s => s.enabled).length;
+function autoState() {
+  const a = S.automation;
+  if (a.accessibility && a.screen) return { level: 'ok', label: '每次操作前询问' };
+  return { level: 'warn', label: '缺少系统权限' };
+}
+function caps() {
+  const ss = searchState(), as = autoState();
+  return [
+    { id: 'search', tab: 'tools', icon: 'globe', name: '联网搜索', desc: '本机对话用你自己的搜索服务查网页；云端对话由 Typeflux Cloud 提供。', st: ss },
+    { id: 'files', tab: 'tools', icon: 'folder', name: '文件访问', desc: '读写你授权的文件夹，写入前会确认。',
+      st: S.folders.length ? { level: 'ok', label: S.folders.length + ' 个文件夹' } : { level: 'off', label: '未授权文件夹' } },
+    { id: 'code', tab: 'tools', icon: 'term', name: '代码执行', desc: '在隔离沙箱里运行 Python、JavaScript 和 shell。',
+      st: S.code ? { level: 'ok', label: '已开启 · 每次确认' } : { level: 'off', label: '已关闭' } },
+    { id: 'automation', tab: 'tools', icon: 'cursor', name: '操作电脑与浏览器', desc: '看屏幕、点击、输入，替你完成网页和应用里的操作。', st: as },
+    { id: 'skills', tab: 'extensions', ext: 'skills', icon: 'wand', name: '技能', desc: '特定任务的做事方法，需要时自动加载。',
+      st: { level: enabledSkills() ? 'ok' : 'off', label: `${enabledSkills()} / ${S.skills.length} 已启用` } },
+    { id: 'mcp', tab: 'extensions', ext: 'mcp', icon: 'plug', name: 'MCP 服务器', desc: '连接外部工具和数据源。',
+      st: S.mcp.length ? { level: 'ok', label: `${enabledMCP()} 个已启用` } : { level: 'off', label: '未添加' } },
+  ];
+}
+const chip = st => `<span class="chip ${st.level === 'ok' ? 'ok' : st.level === 'warn' ? 'warn' : ''}">${esc(st.label)}</span>`;
+
+// ---------------------------------------------------------------- tabs
+const TABS = [
+  { id: 'overview', label: '概览' },
+  { id: 'tools', label: '内置工具' },
+  { id: 'extensions', label: '扩展' },
+  { id: 'memory', label: '记忆' },
+];
+function renderTabs() {
+  const warnTools = ['warn'].includes(searchState().level) || autoState().level === 'warn';
+  const counts = { extensions: S.skills.length + S.mcp.length, memory: S.notes.length };
+  document.getElementById('tabs').innerHTML = TABS.map(t => `
+    <button class="tab ${S.tab === t.id ? 'on' : ''}" onclick="go('${t.id}')">${t.label}
+      ${counts[t.id] != null ? `<span class="n">${counts[t.id]}</span>` : ''}
+      ${t.id === 'tools' && warnTools ? '<span class="dot" title="有待处理的配置"></span>' : ''}
+    </button>`).join('');
+}
+function go(tab, anchor, ext) {
+  S.tab = tab;
+  if (ext) S.extTab = ext;
+  render();
+  document.getElementById('content').scrollTop = 0;
+  if (anchor) {
+    const el = document.getElementById('a-' + anchor);
+    if (el) { el.scrollIntoView({ block: 'start' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1300); }
+  }
+}
+
+// ---------------------------------------------------------------- overview
+function overview() {
+  const list = caps();
+  const ready = list.filter(c => c.st.level === 'ok').length;
+  const todo = list.filter(c => c.st.level === 'warn');
+  return `
+  <div class="summary">
+    <div style="flex:1">
+      <b>随便问 现在可以使用 ${ready} 项能力</b>
+      <div class="s">${[todo.length ? `还有 ${todo.length} 项需要处理：${todo.map(t => t.name).join('、')}` : '一切就绪', S.notes.length ? `记住了 ${S.notes.length} 条笔记` : ''].filter(Boolean).join(' · ')}</div>
+    </div>
+    ${todo.length ? `<button class="btn primary" onclick="go('${todo[0].tab}','${todo[0].id}','${todo[0].ext || ''}')">去处理</button>` : ''}
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><h3>新对话默认保存在</h3><span class="meta">每个对话开始前，仍可在新建菜单或输入框里改选</span></div>
+    <div class="storage">
+      ${storageOpt('cloud', 'cloud', '云端同步', [
+        ['y', '可用云端模型、识图、深入研究、后台运行'],
+        ['y', '多台设备同步对话'],
+        ['y', '联网搜索由 Typeflux Cloud 提供'],
+        ['n', '云端模型用量计入额度'],
+      ])}
+      ${storageOpt('local', 'lock', '仅存本机', [
+        ['y', '对话不上传到 Typeflux Cloud'],
+        ['y', '只使用你在「模型」里配置的模型'],
+        ['n', '联网搜索需自备密钥（见内置工具）'],
+        ['n', '不能使用深入研究、后台运行和多设备同步'],
+      ])}
+    </div>
+    <div class="hint">已经开始的对话不能更改存储位置。未登录时，所有对话都只保存在本机。</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><h3>能力</h3><span class="meta">点击卡片进入设置</span></div>
+    <div class="caps">
+      ${list.map(c => `
+        <div class="cap" onclick="go('${c.tab}','${c.id}','${c.ext || ''}')">
+          <div class="ch"><span class="ic ${c.st.level === 'off' ? 'off' : ''}">${ic(c.icon)}</span><b>${c.name}</b><span class="sp"></span></div>
+          <p>${c.desc}</p>
+          <div class="cf">${chip(c.st)}<span class="go">${ic('chev')}</span></div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+function storageOpt(id, icon, title, items) {
+  return `<div class="opt ${S.storage === id ? 'on' : ''}" onclick="setStorage('${id}')">
+    <div class="oh">${ic(icon)}${title}<span class="radio"></span></div>
+    <ul>${items.map(([k, t]) => `<li><span class="${k}">${k === 'y' ? '✓' : '–'}</span>${t}</li>`).join('')}</ul>
+  </div>`;
+}
+function setStorage(v) { S.storage = v; render(); toast(v === 'local' ? '新对话将只保存在这台 Mac 上' : '新对话将同步到 Typeflux Cloud'); }
+
+// ---------------------------------------------------------------- built-in tools
+function tools() {
+  const s = S.search, ss = searchState();
+  const providers = ['none', 'tavily', 'brave', 'cloudflare'];
+  let searchBody = '';
+  if (s.provider === 'none') {
+    searchBody = `<div class="hint" style="margin-top:4px">关闭后，本机对话不能联网搜索；云端对话不受影响。</div>`;
+  } else if (s.provider === 'cloudflare') {
+    const missing = cfMissing();
+    searchBody = `
+      <div class="field">
+        <label>API Token<span class="req">*</span></label>
+        <input class="input mono" type="password" placeholder="需要 Workers AI Read、AI Gateway Read 权限" value="${esc(s.key)}" oninput="S.search.key=this.value;searchChanged()">
+        <label>账户 ID<span class="req">*</span></label>
+        <input class="input mono" placeholder="在 Cloudflare 控制台右侧栏可找到" value="${esc(s.cf.account)}" oninput="S.search.cf.account=this.value;searchChanged()">
+        <label>Gateway ID<span class="req">*</span></label>
+        <input class="input mono" value="${esc(s.cf.gateway)}" oninput="S.search.cf.gateway=this.value;searchChanged()">
+        <label>搜索引擎</label>
+        <select class="input" onchange="S.search.cf.engine=this.value;searchChanged()">
+          ${[['ceramic', 'Ceramic.ai'], ['exa', 'Exa'], ['linkup', 'Linkup']].map(([v, n]) => `<option value="${v}" ${s.cf.engine === v ? 'selected' : ''}>${n}</option>`).join('')}
+        </select>
+      </div>
+      <div class="disclosure ${s.advanced ? 'open' : ''}" onclick="S.search.advanced=!S.search.advanced;render()">${ic('chev')}高级选项</div>
+      ${s.advanced ? `<div class="field">
+        <label>BYOK 别名</label>
+        <input class="input mono" placeholder="留空则使用 default 或 Gateway 额度" value="${esc(s.cf.alias)}" oninput="S.search.cf.alias=this.value;searchChanged()">
+      </div>` : ''}
+      ${testBar(missing)}
+      <div class="hint">搜索会使用 Gateway 里的服务商密钥，或消耗 AI Gateway 额度；测试会发送一次计费搜索。<a href="#" onclick="return false">配置指南 ↗</a></div>`;
+  } else {
+    searchBody = `
+      <div class="field">
+        <label>${providerName(s.provider)} API 密钥<span class="req">*</span></label>
+        <input class="input mono" type="password" placeholder="保存在钥匙串中" value="${esc(s.key)}" oninput="S.search.key=this.value;searchChanged()">
+      </div>
+      ${testBar(s.key ? [] : ['API 密钥'])}
+      <div class="hint"><a href="#" onclick="return false">获取 ${providerName(s.provider)} 密钥 ↗</a></div>`;
+  }
+
+  return `
+  <div class="sec" id="a-search">
+    <div class="card">
+      <div class="row">
+        <span class="ic blue">${ic('globe')}</span>
+        <div class="tx"><div class="t">联网搜索 <span class="chip blue">仅本机对话</span></div>
+          <div class="s">云端对话由 Typeflux Cloud 提供搜索，无需配置。密钥保存在钥匙串中。</div></div>
+        ${chip(ss)}
+      </div>
+      <div class="card-body">
+        <div class="seg">${providers.map(p => `<button class="${s.provider === p ? 'on' : ''}" onclick="setProvider('${p}')">${providerName(p)}</button>`).join('')}</div>
+        ${searchBody}
+      </div>
+    </div>
+  </div>
+
+  <div class="sec" id="a-files">
+    <div class="sec-h"><h3>文件访问</h3><span class="meta">${S.folders.length} 个文件夹</span></div>
+    <div class="card">
+      ${S.folders.length ? S.folders.map((f, i) => `
+        <div class="row"><span class="ic">${ic('folder')}</span>
+          <div class="tx"><div class="t">${esc(f.split('/').pop())}</div><div class="s mono">${esc(f)}</div></div>
+          <button class="ibtn danger" title="移除" onclick="removeFolder(${i})">${ic('minus')}</button></div>`).join('')
+        : `<div class="row"><span class="ic">${ic('folder')}</span><div class="tx"><div class="s">还没有授权文件夹，“随便问”现在不能读写你的文件。</div></div></div>`}
+      <div class="row click" onclick="addFolder()"><span class="ic blue">${ic('plus')}</span><div class="tx"><div class="t" style="color:var(--accent-text)">添加文件夹…</div></div></div>
+    </div>
+    <div class="facts"><span class="chip">${ic('check')} 只能访问列表里的文件夹</span><span class="chip">读取：对话内可一次性允许</span><span class="chip">写入：每次都要确认</span></div>
+  </div>
+
+  <div class="sec" id="a-code">
+    <div class="card">
+      <div class="row"><span class="ic ${S.code ? 'green' : ''}">${ic('term')}</span>
+        <div class="tx"><div class="t">代码执行</div><div class="s">在隔离沙箱里运行 Python、JavaScript 和 shell，用于计算、处理表格、画图。</div></div>
+        <button class="sw ${S.code ? 'on' : ''}" onclick="S.code=!S.code;render()"></button></div>
+      ${S.code ? `<div class="card-body" style="padding-top:0"><div class="facts" style="margin-top:0">
+        <span class="chip">${ic('shield')} 无网络</span><span class="chip">${ic('shield')} 不能访问个人目录</span><span class="chip">${ic('shield')} 每次运行前确认</span></div></div>` : ''}
+    </div>
+  </div>
+
+  <div class="sec" id="a-automation">
+    <div class="card">
+      <div class="row"><span class="ic ${autoState().level === 'ok' ? 'green' : 'amber'}">${ic('cursor')}</span>
+        <div class="tx"><div class="t">操作电脑与浏览器</div><div class="s">查看屏幕、点击和输入。每一步操作执行前都会请你确认，可以随时停止。</div></div>
+        ${chip(autoState())}</div>
+      <div class="row"><span class="ic"></span><div class="tx"><div class="t" style="font-weight:500">辅助功能</div><div class="s">用于点击和输入</div></div>
+        ${S.automation.accessibility ? '<span class="chip ok">已授权</span>' : `<button class="btn" onclick="grant('accessibility')">打开系统设置</button>`}</div>
+      <div class="row"><span class="ic"></span><div class="tx"><div class="t" style="font-weight:500">屏幕录制</div><div class="s">用于查看屏幕内容</div></div>
+        ${S.automation.screen ? '<span class="chip ok">已授权</span>' : `<button class="btn" onclick="grant('screen')">打开系统设置</button>`}</div>
+    </div>
+  </div>`;
+}
+function testBar(missing) {
+  const t = S.search.test;
+  return `<div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+      <button class="btn" ${missing.length || (t && t.busy) ? 'disabled' : ''} onclick="testSearch()">${t && t.busy ? '测试中…' : '测试连接'}</button>
+      ${missing.length ? `<span class="hint" style="margin:0">还需填写：${missing.join('、')}</span>` : ''}
+    </div>
+    ${t && !t.busy ? `<div class="result ${t.ok ? 'ok' : 'err'}">${ic(t.ok ? 'check' : 'warn')}<span>${t.msg}</span></div>` : ''}`;
+}
+function setProvider(p) { S.search.provider = p; S.search.key = ''; S.search.test = null; render(); }
+function searchChanged() { S.search.test = null; renderTabs(); refreshTestBarOnly(); }
+function refreshTestBarOnly() {
+  // Re-render without losing input focus: patch the test bar area only.
+  const active = document.activeElement, pos = active && active.selectionStart;
+  const idx = active ? [...document.querySelectorAll('#content input, #content select')].indexOf(active) : -1;
+  render();
+  if (idx >= 0) { const el = document.querySelectorAll('#content input, #content select')[idx]; el.focus(); if (pos != null && el.setSelectionRange) el.setSelectionRange(pos, pos); }
+}
+function testSearch() {
+  S.search.test = { busy: true }; render();
+  setTimeout(() => {
+    const bad = S.search.key.toLowerCase().includes('bad');
+    S.search.test = bad
+      ? { ok: false, msg: 'Cloudflare 拒绝了此 Token，请检查所属账户及 Workers AI Read / AI Gateway Read 权限。' }
+      : { ok: true, msg: '连接成功，返回了 5 条搜索结果。' };
+    render();
+  }, 900);
+}
+function addFolder() {
+  const pool = ['/Users/mylxsw/Documents', '/Users/mylxsw/Desktop', '/Users/mylxsw/Projects/typeflux'];
+  const next = pool.find(p => !S.folders.includes(p));
+  if (!next) return toast('（演示）没有更多示例文件夹');
+  S.folders.push(next); render(); toast('已添加「' + next.split('/').pop() + '」');
+}
+function removeFolder(i) {
+  const f = S.folders[i]; S.folders.splice(i, 1); render();
+  toast(`已移除「${f.split('/').pop()}」`, () => { S.folders.splice(i, 0, f); render(); });
+}
+function grant(k) { S.automation[k] = true; render(); toast('（演示）已在系统设置中授权'); }
+
+// ---------------------------------------------------------------- extensions
+function extensions() {
+  return `
+  <div class="toolbar" id="a-${S.extTab}">
+    <div class="seg">
+      <button class="${S.extTab === 'skills' ? 'on' : ''}" onclick="S.extTab='skills';render()">技能 <span style="color:var(--text-3)">${S.skills.length}</span></button>
+      <button class="${S.extTab === 'mcp' ? 'on' : ''}" onclick="S.extTab='mcp';render()">MCP 服务器 <span style="color:var(--text-3)">${S.mcp.length}</span></button>
+    </div>
+    <span class="sp"></span>
+    ${S.extTab === 'skills'
+      ? `<button class="btn" onclick="openSkillsFolder()">${ic('folder')}打开技能文件夹</button><button class="btn primary" onclick="openInstall()">${ic('github')}从 GitHub 安装</button>`
+      : S.mcp.length ? `<button class="btn" onclick="openImport()">${ic('import')}导入 JSON</button><button class="btn primary" onclick="openMCP()">${ic('plus')}添加服务器</button>` : ''}
+  </div>
+  ${S.extTab === 'skills' ? skillsView() : mcpView()}`;
+}
+function skillsView() {
+  const q = S.skillQuery.toLowerCase();
+  const list = S.skills.filter(s => (!q || (s.name + s.desc).toLowerCase().includes(q))
+    && (S.skillFilter === 'all' || (S.skillFilter === 'on' ? s.on : !s.on)));
+  return `
+  <div class="toolbar">
+    <div class="search">${ic('search')}<input class="input" placeholder="搜索技能" value="${esc(S.skillQuery)}" oninput="S.skillQuery=this.value;refreshTestBarOnly()"></div>
+    <div class="seg">${[['all', '全部'], ['on', '已启用'], ['off', '已停用']].map(([k, n]) => `<button class="${S.skillFilter === k ? 'on' : ''}" onclick="S.skillFilter='${k}';render()">${n}</button>`).join('')}</div>
+  </div>
+  <div class="card">
+    ${list.length ? list.map(s => `
+      <div class="row click" onclick="openSkill('${esc(s.name)}')">
+        <span class="ic ${s.on ? 'blue' : ''}">${ic('wand')}</span>
+        <div class="tx"><div class="t">${esc(s.name)} ${sourceChip(s)}</div><div class="s">${esc(s.desc)}</div></div>
+        <button class="sw ${s.on ? 'on' : ''}" onclick="event.stopPropagation();toggleSkill('${esc(s.name)}')"></button>
+        <span style="color:var(--text-3)">${ic('chev')}</span>
+      </div>`).join('') : `<div class="empty"><p>没有匹配的技能。</p></div>`}
+  </div>
+  <div class="hint">“随便问”会在任务需要时自动加载已启用的技能。也可以在技能文件夹中新建 <code>&lt;名称&gt;/SKILL.md</code> 添加自己的技能。</div>`;
+}
+const sourceChip = s => s.source === 'builtin' ? '<span class="chip">内置</span>' : s.source === 'github' ? `<span class="chip blue">${ic('github')}GitHub</span>` : '<span class="chip">本地</span>';
+function toggleSkill(name) { const s = S.skills.find(x => x.name === name); s.on = !s.on; render(); if (drawerSkill === name) openSkill(name); }
+let drawerSkill = null;
+function openSkill(name) {
+  const s = S.skills.find(x => x.name === name); if (!s) return;
+  drawerSkill = name;
+  const d = document.getElementById('drawer');
+  d.innerHTML = `
+    <div class="dh"><span class="ic blue" style="width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-text)">${ic('wand')}</span>
+      <div style="flex:1"><div style="font-weight:650;font-size:15px">${esc(s.name)}</div><div style="margin-top:4px">${sourceChip(s)}</div></div>
+      <button class="ibtn" onclick="closeOverlays()">${ic('x')}</button></div>
+    <div class="db">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:9px;background:var(--card)">
+        <div><b>${s.on ? '已启用' : '已停用'}</b><div class="hint" style="margin:2px 0 0">${s.on ? '任务需要时会自动加载' : '不会提供给模型，也不会被加载'}</div></div>
+        <button class="sw ${s.on ? 'on' : ''}" onclick="toggleSkill('${esc(s.name)}')"></button></div>
+      <div style="margin-top:16px;color:var(--text-2)">${esc(s.desc)}</div>
+      ${s.source === 'github' ? `
+        <dl class="kv"><dt>仓库</dt><dd>${esc(s.repo)}</dd><dt>版本</dt><dd class="mono">${esc(s.ref)} · ${esc(s.commit)}</dd><dt>路径</dt><dd>${esc(s.path)}</dd></dl>
+        ${s.perms && s.perms.length ? `<div style="font-size:12px;color:var(--text-3);margin-top:14px">声明需要的权限</div>
+          <div class="facts">${s.perms.map(p => `<span class="chip">${esc(p)}</span>`).join('')}</div>
+          <div class="hint">声明只用于提示，不会自动授予访问权限。</div>` : ''}`
+        : s.source === 'builtin' ? `<dl class="kv"><dt>来源</dt><dd>Typeflux 内置，随应用更新</dd></dl>`
+        : `<dl class="kv"><dt>位置</dt><dd>Skills/${esc(s.name)}/SKILL.md</dd></dl>`}
+    </div>
+    <div class="df">
+      ${s.source === 'github' && s.prev ? `<button class="btn" onclick="rollbackSkill('${esc(s.name)}')">${ic('undo')}恢复上一版本</button>` : ''}
+      ${s.source !== 'builtin' ? `<button class="btn" onclick="toast('（演示）已在访达中显示')">在访达中显示</button>` : ''}
+      <span style="flex:1"></span>
+      ${s.source !== 'builtin' ? `<button class="btn danger" onclick="removeSkill('${esc(s.name)}')">${ic('trash')}移除</button>` : ''}
+    </div>`;
+  d.classList.add('show'); document.getElementById('scrim').classList.add('show');
+}
+function rollbackSkill(name) { const s = S.skills.find(x => x.name === name); s.prev = false; s.commit = '3e1f0a2'; openSkill(name); toast('已恢复到上一版本'); }
+function removeSkill(name) {
+  if (!confirm(`确定移除“${name}”及其文件吗？此操作无法撤销。`)) return;
+  S.skills = S.skills.filter(x => x.name !== name); closeOverlays(); render(); toast(`已移除技能“${name}”`);
+}
+function openSkillsFolder() { toast('（演示）已在访达中打开技能文件夹'); }
+
+function parseGitHub(url) {
+  const m = url.trim().match(/^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:\/(?:tree|blob)\/([\w.\-/]+?)(?:\/(.+))?)?\/?$/);
+  if (!m) return null;
+  return { repo: `${m[1]}/${m[2]}`, ref: m[3] || '默认分支', path: m[4] || '（仓库根目录）' };
+}
+let installing = false;
+function openInstall() {
+  showModal(`
+    <div class="mh"><h3>从 GitHub 安装技能</h3><p>粘贴仓库、文件夹或 SKILL.md 的链接。每个包含 SKILL.md 的文件夹会安装为一个技能。</p></div>
+    <div class="mb">
+      <input class="input mono" id="installUrl" placeholder="https://github.com/owner/repo/tree/main/skills/name" oninput="installPreview()" autofocus>
+      <div class="parsed" id="installParsed"></div>
+      <div class="warnbox">${ic('warn')}<span>技能会向模型提供指令，并可被沙箱读取，请只从可信来源安装。同名技能会被替换，旧版本会保留以便恢复。</span></div>
+    </div>
+    <div class="mf"><span class="sp"></span><button class="btn" onclick="closeOverlays()">取消</button><button class="btn primary" id="installGo" disabled onclick="doInstall()">安装</button></div>`);
+  setTimeout(() => document.getElementById('installUrl').focus(), 30);
+}
+function installPreview() {
+  const v = document.getElementById('installUrl').value, p = parseGitHub(v);
+  document.getElementById('installParsed').innerHTML = !v ? '' : p
+    ? `将从 <b>${esc(p.repo)}</b> · 分支 <b>${esc(p.ref)}</b> · 路径 <b>${esc(p.path)}</b> 安装`
+    : `<span style="color:var(--danger)">请输入 github.com 上的仓库、文件夹或文件链接</span>`;
+  document.getElementById('installGo').disabled = !p || installing;
+}
+function doInstall() {
+  const p = parseGitHub(document.getElementById('installUrl').value); if (!p) return;
+  installing = true;
+  const b = document.getElementById('installGo'); b.disabled = true; b.textContent = '正在安装…';
+  setTimeout(() => {
+    installing = false;
+    const name = (p.path.split('/').filter(Boolean).pop() || p.repo.split('/')[1]).replace(/[（）]/g, '').replace('SKILL.md', '') || 'new-skill';
+    const existing = S.skills.find(s => s.name === name);
+    const skill = { name, desc: `来自 ${p.repo} 的技能。`, source: 'github', on: existing ? existing.on : true, repo: p.repo,
+      ref: p.ref, commit: 'a9c4d71', path: p.path, perms: ['network', 'files:read'], prev: !!existing };
+    if (existing) Object.assign(existing, skill); else S.skills.push(skill);
+    closeOverlays(); S.extTab = 'skills'; render(); toast(existing ? `已更新技能“${name}”` : `已安装技能“${name}”`);
+  }, 1100);
+}
+
+// MCP
+const blankServer = () => ({ id: null, name: '', transport: 'stdio', command: '', args: '', env: [['', '']], url: '', headers: [['', '']], enabled: true, autoConnect: false, test: null });
+let draft = null;
+function mcpView() {
+  if (!S.mcp.length) return `
+    <div class="card"><div class="empty">
+      <div class="big">${ic('plug')}</div>
+      <h4>连接外部工具</h4>
+      <p>MCP 服务器可以让“随便问”使用更多工具和数据，例如读取 Notion、查询数据库或调用公司内部服务。服务器由你自己提供，Typeflux 只负责连接。</p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn primary" onclick="openMCP()">${ic('plus')}添加服务器</button>
+        <button class="btn" onclick="openImport()">${ic('import')}从 JSON 导入</button>
+      </div>
+      <div class="hint" style="margin-top:14px">支持本地命令（stdio）和远程 HTTP 两种连接方式，兼容 Claude Desktop / Cursor 的 <code>mcpServers</code> 配置。</div>
+    </div></div>`;
+  return `<div class="card">${S.mcp.map(m => {
+    const st = !m.enabled ? ['var(--text-3)', '已停用'] : m.test?.busy ? ['var(--warn)', '连接中…'] : m.test?.ok ? ['var(--ok)', `已连接 · ${m.test.tools.length} 个工具`]
+      : m.test && !m.test.ok ? ['var(--danger)', '连接失败'] : ['var(--text-3)', '未测试'];
+    return `
+    <div class="row click" onclick="openMCP(${m.id})">
+      <span class="ic ${m.enabled ? 'blue' : ''}">${ic('plug')}</span>
+      <div class="tx"><div class="t">${esc(m.name || '未命名服务器')} <span class="chip">${m.transport === 'stdio' ? '本地命令' : 'HTTP'}</span></div>
+        <div class="s mono">${esc(m.transport === 'stdio' ? [m.command, m.args.split('\n').join(' ')].join(' ') : m.url)}</div></div>
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)"><span class="status-dot" style="background:${st[0]}"></span>${st[1]}</span>
+      <button class="sw ${m.enabled ? 'on' : ''}" onclick="event.stopPropagation();toggleMCP(${m.id})"></button>
+      <button class="ibtn" onclick="event.stopPropagation();mcpMenu(event,${m.id})">${ic('more')}</button>
+    </div>
+    ${m.test?.ok && m.expanded ? `<div class="tools-list">可用工具：${m.test.tools.map(t => `<code>${t}</code>`).join('、')}</div>` : ''}
+    ${m.test && !m.test.ok && !m.test.busy ? `<div class="tools-list" style="color:var(--danger)">${esc(m.test.msg)}</div>` : ''}`;
+  }).join('')}</div>
+  <div class="hint">点击服务器可编辑。启用的服务器会在对话需要时连接；开启“自动连接”的会在“随便问”启动时连接。</div>`;
+}
+function toggleMCP(id) { const m = S.mcp.find(x => x.id === id); m.enabled = !m.enabled; render(); }
+function mcpMenu(ev, id) {
+  closeMenu();
+  const m = S.mcp.find(x => x.id === id);
+  const r = ev.currentTarget.getBoundingClientRect(), w = document.getElementById('win').getBoundingClientRect();
+  const el = document.createElement('div'); el.className = 'menu'; el.id = 'menu';
+  el.style.left = (r.right - w.left - 150) + 'px'; el.style.top = (r.bottom - w.top + 4) + 'px';
+  el.innerHTML = `<button onclick="closeMenu();testMCP(${id})">测试连接</button>
+    ${m.test?.ok ? `<button onclick="closeMenu();toggleTools(${id})">${m.expanded ? '隐藏工具列表' : '查看工具列表'}</button>` : ''}
+    <button onclick="closeMenu();openMCP(${id})">编辑…</button><button onclick="closeMenu();dupMCP(${id})">复制</button>
+    <button class="danger" onclick="closeMenu();deleteMCP(${id})">删除…</button>`;
+  document.getElementById('win').appendChild(el);
+  setTimeout(() => document.addEventListener('click', closeMenu, { once: true }), 0);
+}
+function toggleTools(id) { const m = S.mcp.find(x => x.id === id); m.expanded = !m.expanded; render(); }
+function closeMenu() { document.getElementById('menu')?.remove(); }
+function fakeTest(server) {
+  const bad = (server.command + server.url).includes('bad');
+  return bad ? { ok: false, msg: server.transport === 'stdio' ? '无法启动命令：找不到可执行文件。请检查命令路径，或使用绝对路径。' : '服务器返回 401，请检查请求头中的认证信息。' }
+    : { ok: true, tools: ['search', 'fetch_page', 'list_items', 'create_item'].slice(0, 2 + (server.name.length % 3)) };
+}
+function testMCP(id) {
+  const m = S.mcp.find(x => x.id === id); m.test = { busy: true }; render();
+  setTimeout(() => { m.test = fakeTest(m); m.expanded = m.test.ok; render(); }, 900);
+}
+function dupMCP(id) { const m = S.mcp.find(x => x.id === id); S.mcp.push({ ...JSON.parse(JSON.stringify(m)), id: Date.now(), name: m.name + ' 副本', test: null }); render(); }
+function deleteMCP(id) {
+  const i = S.mcp.findIndex(x => x.id === id), m = S.mcp[i];
+  if (!confirm(`确定删除「${m.name || '未命名服务器'}」吗？此操作无法撤销。`)) return;
+  S.mcp.splice(i, 1); render(); toast(`已删除「${m.name}」`);
+}
+function openMCP(id) {
+  const m = id ? S.mcp.find(x => x.id === id) : null;
+  draft = m ? JSON.parse(JSON.stringify({ ...m, test: null })) : blankServer();
+  renderMCPModal();
+}
+function kvRows(list, field, kp, vp) {
+  return list.map((kv, i) => `<div class="kvrow">
+      <input class="input mono" placeholder="${kp}" value="${esc(kv[0])}" oninput="draft.${field}[${i}][0]=this.value">
+      <input class="input mono" placeholder="${vp}" value="${esc(kv[1])}" oninput="draft.${field}[${i}][1]=this.value" ${field === 'headers' || /key|token|secret/i.test(kv[0]) ? 'type="password"' : ''}>
+      <button class="ibtn danger" onclick="draft.${field}.splice(${i},1);if(!draft.${field}.length)draft.${field}.push(['','']);renderMCPModal()">${ic('minus')}</button></div>`).join('')
+    + `<button class="btn ghost" onclick="draft.${field}.push(['','']);renderMCPModal()">${ic('plus')}添加一行</button>`;
+}
+function renderMCPModal() {
+  const d = draft, valid = d.name.trim() && (d.transport === 'stdio' ? d.command.trim() : /^https?:\/\/.+/.test(d.url.trim()));
+  showModal(`
+    <div class="mh"><h3>${d.id ? '编辑 MCP 服务器' : '添加 MCP 服务器'}</h3><p>填写服务器提供的连接方式。不确定时，参考服务器 README 中给 Claude Desktop 的配置。</p></div>
+    <div class="mb">
+      <div class="field" style="grid-template-columns:110px 1fr">
+        <label>名称<span class="req">*</span></label><input class="input" placeholder="例如：Notion" value="${esc(d.name)}" oninput="draft.name=this.value;mcpValid()">
+        <label>连接方式</label>
+        <div class="seg"><button class="${d.transport === 'stdio' ? 'on' : ''}" onclick="draft.transport='stdio';renderMCPModal()">本地命令</button><button class="${d.transport === 'http' ? 'on' : ''}" onclick="draft.transport='http';renderMCPModal()">远程 HTTP</button></div>
+        ${d.transport === 'stdio' ? `
+          <label>命令<span class="req">*</span></label><input class="input mono" placeholder="npx" value="${esc(d.command)}" oninput="draft.command=this.value;mcpValid()">
+          <label style="align-self:start;margin-top:7px">参数</label><textarea class="input mono" rows="2" placeholder="每行一个，例如&#10;-y&#10;@notionhq/notion-mcp-server" oninput="draft.args=this.value">${esc(d.args)}</textarea>
+          <label style="align-self:start;margin-top:7px">环境变量</label><div>${kvRows(d.env, 'env', 'NAME', '值')}</div>`
+        : `
+          <label>URL<span class="req">*</span></label><input class="input mono" placeholder="https://mcp.example.com/mcp" value="${esc(d.url)}" oninput="draft.url=this.value;mcpValid()">
+          <label style="align-self:start;margin-top:7px">请求头</label><div>${kvRows(d.headers, 'headers', 'Authorization', 'Bearer …')}</div>`}
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="row" style="min-height:48px"><div class="tx"><div class="t">启用</div><div class="s">关闭后“随便问”不会使用这个服务器的工具</div></div><button class="sw ${d.enabled ? 'on' : ''}" onclick="draft.enabled=!draft.enabled;renderMCPModal()"></button></div>
+        <div class="row" style="min-height:48px"><div class="tx"><div class="t">启动时自动连接</div><div class="s">首次使用更快，但会常驻一个进程</div></div><button class="sw ${d.autoConnect ? 'on' : ''}" onclick="draft.autoConnect=!draft.autoConnect;renderMCPModal()"></button></div>
+      </div>
+      ${d.test ? `<div class="result ${d.test.busy ? 'busy' : d.test.ok ? 'ok' : 'err'}">${d.test.busy ? '正在连接…' : d.test.ok ? `${ic('check')}<span>连接成功，共 ${d.test.tools.length} 个工具：${d.test.tools.join('、')}</span>` : `${ic('warn')}<span>${esc(d.test.msg)}</span>`}</div>` : ''}
+    </div>
+    <div class="mf">
+      ${d.id ? `<button class="btn danger" onclick="closeOverlays();deleteMCP(${d.id})">删除</button>` : ''}
+      <button class="btn" id="mcpTest" ${valid ? '' : 'disabled'} onclick="draftTest()">测试连接</button>
+      <span class="sp"></span><button class="btn" onclick="closeOverlays()">取消</button>
+      <button class="btn primary" id="mcpSave" ${valid ? '' : 'disabled'} onclick="saveMCP()">${d.id ? '保存' : '添加'}</button></div>`);
+}
+function mcpValid() {
+  const d = draft, valid = d.name.trim() && (d.transport === 'stdio' ? d.command.trim() : /^https?:\/\/.+/.test(d.url.trim()));
+  document.getElementById('mcpSave').disabled = !valid; document.getElementById('mcpTest').disabled = !valid;
+}
+function draftTest() { draft.test = { busy: true }; renderMCPModal(); setTimeout(() => { if (!draft) return; draft.test = fakeTest(draft); renderMCPModal(); }, 900); }
+function saveMCP() {
+  const d = draft, saved = { ...d, env: d.env.filter(k => k[0]), headers: d.headers.filter(k => k[0]) };
+  if (!saved.env.length) saved.env = [['', '']]; if (!saved.headers.length) saved.headers = [['', '']];
+  if (d.id) { const i = S.mcp.findIndex(x => x.id === d.id); S.mcp[i] = { ...saved, expanded: !!saved.test?.ok }; }
+  else S.mcp.push({ ...saved, id: Date.now(), expanded: !!saved.test?.ok });
+  closeOverlays(); S.extTab = 'mcp'; render(); toast(d.id ? '已保存' : `已添加「${d.name}」`);
+}
+function openImport() {
+  showModal(`
+    <div class="mh"><h3>从 JSON 导入 MCP 服务器</h3><p>粘贴 Claude Desktop、Cursor 等使用的 <code>mcpServers</code> 配置，会逐个添加为服务器。</p></div>
+    <div class="mb"><textarea class="input mono" id="importJson" rows="10" oninput="importPreview()">{
+  "mcpServers": {
+    "notion": { "command": "npx", "args": ["-y", "@notionhq/notion-mcp-server"], "env": { "NOTION_TOKEN": "" } },
+    "linear": { "url": "https://mcp.linear.app/mcp" }
+  }
+}</textarea><div class="parsed" id="importParsed"></div></div>
+    <div class="mf"><span class="sp"></span><button class="btn" onclick="closeOverlays()">取消</button><button class="btn primary" id="importGo" onclick="doImport()">导入</button></div>`);
+  importPreview();
+}
+function parseImport() {
+  try {
+    const o = JSON.parse(document.getElementById('importJson').value), map = o.mcpServers || o;
+    const out = Object.entries(map).map(([name, c]) => ({ ...blankServer(), id: Date.now() + Math.random(), name,
+      transport: c.url ? 'http' : 'stdio', command: c.command || '', args: (c.args || []).join('\n'), url: c.url || '',
+      env: Object.entries(c.env || {}).length ? Object.entries(c.env) : [['', '']], headers: Object.entries(c.headers || {}).length ? Object.entries(c.headers) : [['', '']] }));
+    return out.filter(s => s.command || s.url);
+  } catch { return null; }
+}
+function importPreview() {
+  const r = parseImport(), el = document.getElementById('importParsed');
+  el.innerHTML = r == null ? '<span style="color:var(--danger)">JSON 格式不正确</span>' : r.length ? `将添加 <b>${r.length}</b> 个服务器：${r.map(s => `<b>${esc(s.name)}</b>（${s.transport === 'stdio' ? '本地命令' : 'HTTP'}）`).join('、')}` : '没有找到可导入的服务器';
+  document.getElementById('importGo').disabled = !r || !r.length;
+}
+function doImport() { const r = parseImport(); S.mcp.push(...r); closeOverlays(); S.extTab = 'mcp'; render(); toast(`已导入 ${r.length} 个服务器`); }
+
+// ---------------------------------------------------------------- memory
+function memory() {
+  const q = S.noteQuery.toLowerCase(), list = S.notes.filter(n => !q || n.text.toLowerCase().includes(q));
+  return `
+  <div class="card" style="padding:14px 16px;margin-bottom:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+    ${[['brain', '会用在新对话里', '这里的笔记会作为背景信息提供给新开始的对话。'],
+       ['shield', '保存前先问你', '“随便问”想记住新内容时，会先请你确认。'],
+       ['trash', '删除即停止使用', '删除或修改后，之后的对话不再使用旧内容；已有的回复不会改变。']]
+      .map(([i, t, d]) => `<div style="display:flex;gap:10px"><span style="color:var(--accent-text);margin-top:1px">${ic(i)}</span><div><b>${t}</b><div class="hint" style="margin-top:2px">${d}</div></div></div>`).join('')}
+  </div>
+  <div class="toolbar">
+    <div class="search">${ic('search')}<input class="input" placeholder="搜索笔记" value="${esc(S.noteQuery)}" oninput="S.noteQuery=this.value;refreshTestBarOnly()"></div>
+    <span class="meta" style="color:var(--text-3);font-size:12px">${S.notes.length} 条笔记</span>
+    <span class="sp"></span>
+    <button class="btn primary" onclick="newNote()">${ic('plus')}添加笔记</button>
+  </div>
+  ${S.notes.length ? `<div class="card">${list.map(n => S.editingNote === n.id ? noteEditor(n) : `
+    <div class="row">
+      <span class="ic">${ic('brain')}</span>
+      <div class="tx"><div class="t note-text">${esc(n.text)}</div>
+        <div class="s">${n.kind === 'correction' ? '你修改过' : '你让它记住的'} · ${n.at} · ${n.expiry ? '保留到 ' + n.expiry : '一直保留'}</div></div>
+      <button class="ibtn" title="修改" onclick="S.editingNote=${n.id};render()">${ic('edit')}</button>
+      <button class="ibtn danger" title="删除" onclick="deleteNote(${n.id})">${ic('trash')}</button>
+    </div>`).join('') || `<div class="empty"><p>没有匹配的笔记。</p></div>`}</div>`
+  : `<div class="card"><div class="empty"><div class="big">${ic('brain')}</div><h4>还没有笔记</h4>
+      <p>在对话里说“记住……”，或在这里手动添加。例如你的称呼、常用语言、工作习惯。</p></div></div>`}
+  <div class="hint">删除笔记不会删除对话历史；需要的话，请在「历史」中单独删除。</div>`;
+}
+function noteEditor(n) {
+  return `<div class="row" style="align-items:flex-start;padding:14px 16px">
+    <span class="ic blue">${ic('edit')}</span>
+    <div class="tx">
+      <textarea class="input" id="noteText" rows="3" placeholder="例如：我习惯用中文回复，代码注释用英文。">${esc(n.text)}</textarea>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <span class="hint" style="margin:0">保留</span>
+        <select class="input" id="noteRet" style="width:150px"><option value="keep">${n.expiry ? '保持当前期限' : '一直保留'}</option><option value="7">7 天</option><option value="30">30 天</option>${n.expiry ? '<option value="forever">一直保留</option>' : ''}</select>
+        <span style="flex:1"></span>
+        <button class="btn" onclick="cancelNote(${n.id})">取消</button>
+        <button class="btn primary" onclick="saveNote(${n.id})">保存</button>
+      </div>
+    </div></div>`;
+}
+function newNote() {
+  const id = Date.now(); S.notes.unshift({ id, text: '', kind: 'explicit', v: 1, expiry: null, at: '2026-10-05', fresh: true });
+  S.editingNote = id; S.noteQuery = ''; render(); setTimeout(() => document.getElementById('noteText')?.focus(), 20);
+}
+function cancelNote(id) { const n = S.notes.find(x => x.id === id); if (n.fresh) S.notes = S.notes.filter(x => x.id !== id); S.editingNote = null; render(); }
+function saveNote(id) {
+  const n = S.notes.find(x => x.id === id), text = document.getElementById('noteText').value.trim();
+  if (!text) return toast('笔记内容不能为空');
+  const ret = document.getElementById('noteRet').value;
+  if (!n.fresh && text !== n.text) { n.kind = 'correction'; n.v++; }
+  n.text = text; delete n.fresh;
+  if (ret === '7' || ret === '30') { const d = new Date('2026-10-05'); d.setDate(d.getDate() + +ret); n.expiry = d.toISOString().slice(0, 10); }
+  if (ret === 'forever') n.expiry = null;
+  S.editingNote = null; render(); toast('已保存');
+}
+function deleteNote(id) {
+  const i = S.notes.findIndex(x => x.id === id), n = S.notes[i]; S.notes.splice(i, 1); render();
+  toast('已删除笔记', () => { S.notes.splice(i, 0, n); render(); });
+}
+
+// ---------------------------------------------------------------- overlays
+function showModal(html) { const m = document.getElementById('modal'); m.innerHTML = html; m.classList.add('show'); document.getElementById('scrim').classList.add('show'); }
+function closeOverlays() {
+  ['modal', 'drawer', 'scrim'].forEach(id => document.getElementById(id).classList.remove('show'));
+  drawerSkill = null; draft = null; installing = false;
+}
+let toastTimer;
+function toast(msg, onUndo) {
+  const t = document.getElementById('toast');
+  undo = onUndo || null;
+  t.innerHTML = `<span>${esc(msg)}</span>${onUndo ? '<button class="btn" onclick="doUndo()">撤销</button>' : ''}`;
+  t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.remove('show'); undo = null; }, onUndo ? 5000 : 2200);
+}
+function doUndo() { if (undo) undo(); undo = null; document.getElementById('toast').classList.remove('show'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlays(); });
+
+// ---------------------------------------------------------------- annotation panel
+const NOTES = {
+  overview: [
+    ['new', '新增「概览」作为默认页', '一屏回答“随便问现在能做什么、还差什么”。每张能力卡片显示真实状态，点击直达对应设置；顶部汇总待处理项并提供“去处理”。'],
+    ['fix', '存储选择改为二选一卡片', '原来是一段 100+ 字的说明配一个下拉框。现在把两种方式的差异拆成 ✓/– 清单并列对比，选择即生效，说明文字从段落降为一行提示。'],
+    ['fix', '“对话存储”不再和“联网”挤在「通用」里', '存储是全局默认值，放概览；联网搜索是工具，移到「内置工具」。'],
+  ],
+  tools: [
+    ['fix', '联网搜索：服务商用分段控件，配置分层展示', '选 Cloudflare 才出现 Cloudflare 字段；必填项标 *；BYOK 别名收进“高级选项”。测试按钮在未填完时提示“还需填写：…”，而不是静默禁用。测试结果就地显示。'],
+    ['fix', '明确作用范围', '标签“仅本机对话”+副标题说明云端对话无需配置——原页面没讲清这一点，用户会误以为云端也要填密钥。'],
+    ['fix', '规则用标签而不是长句', '文件访问、代码执行的安全规则拆成 3 个标签，一眼能读完。'],
+    ['new', '新增「操作电脑与浏览器」', '已有 computer / browser 工具，但设置里完全看不到。这里展示所需的系统权限及授权入口。', 'ask'],
+  ],
+  extensions: [
+    ['fix', '技能与 MCP 合并为「扩展」', '两者都是“给随便问加能力”的外部扩展，合并后减少一级 tab；用分段控件切换，各自有主操作按钮。'],
+    ['new', '技能：搜索、筛选、详情抽屉', '来源、版本、声明权限原来只藏在悬停提示里，现在点开行即可看到；恢复上一版本、移除放在抽屉底部，降低误操作。'],
+    ['fix', '安装弹窗即时解析链接', '输入链接后立即显示“将从 仓库 · 分支 · 路径 安装”，非法链接当场提示。'],
+    ['fix', 'MCP 空状态讲清用途', '原来只有一行“尚未配置”。新空状态解释 MCP 是什么、举例、给出两个入口。'],
+    ['new', 'MCP：从 JSON 导入', '兼容 Claude Desktop / Cursor 的 mcpServers 配置，大多数服务器 README 都提供这段 JSON，复制即可。', 'ask'],
+    ['fix', 'MCP 列表显示连接状态', '每行展示状态点（已连接 · N 个工具 / 连接失败 / 已停用），测试、编辑、复制、删除收进“…”菜单；环境变量和请求头改为键值行编辑，敏感值默认隐藏。'],
+  ],
+  memory: [
+    ['fix', '用三条人话替换“源记忆 / 快照 / 注入”', '原脚注是开发者视角的术语。现在用三张小卡片说明：用在哪里、何时保存、删除后会怎样。'],
+    ['fix', '修改改为行内编辑', '不再弹出原生 sheet；保留期限用下拉选择，就地保存。'],
+    ['new', '删除可撤销、可手动添加笔记', '删除后 5 秒内可撤销；新增“添加笔记”入口（原来只能在对话里让它记住）。', 'ask'],
+    ['fix', '元信息可读', '“显式笔记 · v1 · 当前账户 · 直到删除”改为“你让它记住的 · 日期 · 一直保留”。'],
+  ],
+};
+function renderNotes() {
+  const tagName = { fix: '改进', new: '新增', ask: '待确认' };
+  document.getElementById('notes').innerHTML = `
+    <h3>设计标注 · ${TABS.find(t => t.id === S.tab).label}</h3>
+    <div class="lead">切换左侧页签，这里会显示该页相对现状的改动。“待确认”表示需要新开发或产品确认。</div>
+    ${NOTES[S.tab].map(([k, t, d, extra]) => `<div class="note"><span class="tag ${extra || k}">${tagName[extra || k]}</span><b>${t}</b><div style="margin-top:4px">${d}</div></div>`).join('')}`;
+}
+
+// ---------------------------------------------------------------- render
+function render() {
+  renderTabs();
+  const c = document.getElementById('content');
+  const st = c.scrollTop;
+  c.innerHTML = { overview, tools, extensions, memory }[S.tab]();
+  c.scrollTop = st;
+  renderNotes();
+}
+function toggleNotes() { document.body.classList.toggle('no-notes'); document.getElementById('btnNotes').classList.toggle('on'); }
+function toggleTheme() { const l = document.body.classList.toggle('light'); document.getElementById('btnTheme').textContent = l ? '深色' : '浅色'; }
+function resetDemo() { closeOverlays(); S = seed(); render(); toast('已重置演示数据'); }
+
+// Deep links for screenshots: #tab=tools&ext=mcp&theme=light&modal=mcp
+(function boot() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  if (p.get('tab')) S.tab = p.get('tab');
+  if (p.get('ext')) S.extTab = p.get('ext');
+  if (p.get('theme') === 'light') toggleTheme();
+  render();
+  if (p.get('modal') === 'mcp') openMCP();
+  if (p.get('modal') === 'install') openInstall();
+  if (p.get('modal') === 'import') openImport();
+  if (p.get('drawer')) openSkill(p.get('drawer'));
+})();
+</script>
+</body>
+</html>
