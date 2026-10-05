@@ -74,11 +74,11 @@ final class AskLocalWebToolsTests: XCTestCase {
         let (_, noSearch) = await tools.execute(name: "web_search", arguments: #"{"query":"go"}"#)
         XCTAssertTrue(noSearch)
 
-        tools.searchProvider = { (.tavily, "tv") }
+        tools.searchProvider = { .init(provider: .tavily, apiKey: "tv") }
         XCTAssertEqual(tools.definitions().map(\.name), ["web_search"])
         let found = try await tools.search("go release", count: 50)
         XCTAssertEqual(found, "1. Go\n   https://go.dev\n   Release notes")
-        tools.searchProvider = { (.brave, "br") }
+        tools.searchProvider = { .init(provider: .brave, apiKey: "br") }
         let none = try await tools.search("nothing", count: 3)
         XCTAssertEqual(none, "No results.")
         do {
@@ -123,7 +123,7 @@ final class AskLocalWebToolsTests: XCTestCase {
         var tools = AskLocalWebTools(session: LocalStubProtocol.session)
         defer { tools.session.invalidateAndCancel() }
         for provider in [AskSearchSettings.Provider.tavily, .brave] {
-            tools.searchProvider = { (provider, "fixture-key") }
+            tools.searchProvider = { .init(provider: provider, apiKey: "fixture-key") }
             let result = try await tools.search("query", count: 2)
             let expected = provider == .tavily
                 ? "1. \n   \n2. Notes\n   https://example.com/notes\n   Read the snippet"

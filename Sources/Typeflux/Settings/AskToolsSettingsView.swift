@@ -13,6 +13,7 @@ struct AskToolsSettingsView: View {
     @State private var newConversationsStayLocal = false
     @State private var searchProvider = AskSearchSettings.Provider.none
     @State private var searchKey = ""
+    @State private var cloudflareSearch = AskCloudflareSearchConfiguration()
     @State private var skillList: [AskSkill] = []
     @State private var disabledSkills: Set<String> = []
     @StateObject var memoryNotes = AskMemoryNotesSettingsModel()
@@ -64,8 +65,8 @@ struct AskToolsSettingsView: View {
             }
             if searchProvider != .none {
                 ModelRowDivider(leading: 66)
-                AgentSettingsRow(icon: "key", title: L("ask.settings.search.key")) {
-                    SecureField(L("ask.settings.search.key"), text: $searchKey, onCommit: { saveSearchKey() })
+                AgentSettingsRow(icon: "key", title: L(searchProvider == .cloudflare ? "ask.settings.search.cloudflare.token" : "ask.settings.search.key")) {
+                    SecureField(L(searchProvider == .cloudflare ? "ask.settings.search.cloudflare.token" : "ask.settings.search.key"), text: $searchKey, onCommit: { saveSearchKey() })
                         .textFieldStyle(.plain)
                         .font(.system(size: 13, design: .monospaced))
                         .padding(.horizontal, 10).frame(width: 240, height: 30)
@@ -78,6 +79,10 @@ struct AskToolsSettingsView: View {
                                 .strokeBorder(ModelVisualStyle.border)
                         )
                         .onChange(of: searchKey) { _ in saveSearchKey() }
+                }
+                if searchProvider == .cloudflare {
+                    AskCloudflareSearchSettingsView(configuration: $cloudflareSearch, apiKey: searchKey)
+                        .onChange(of: cloudflareSearch) { value in search.cloudflare = value }
                 }
             }
         }
@@ -131,6 +136,7 @@ struct AskToolsSettingsView: View {
         case .none: L("ask.settings.search.none")
         case .tavily: "Tavily"
         case .brave: "Brave Search"
+        case .cloudflare: "Cloudflare Web Search"
         }
     }
 
@@ -324,7 +330,7 @@ struct AskToolsSettingsView: View {
     func setSearchProvider(_ provider: AskSearchSettings.Provider) {
         searchProvider = provider
         search.provider = provider
-        if provider == .none { search.setAPIKey(""); searchKey = "" }
+        searchKey = search.apiKey
     }
 
     func saveSearchKey() { search.setAPIKey(searchKey) }
@@ -335,6 +341,7 @@ struct AskToolsSettingsView: View {
         newConversationsStayLocal = settings.askNewConversationsStayLocal
         searchProvider = search.provider
         searchKey = search.apiKey
+        cloudflareSearch = search.cloudflare
         skillList = skills.skills()
         disabledSkills = settings.askDisabledSkills
         memoryNotes.reload(from: notes, owner: owner())

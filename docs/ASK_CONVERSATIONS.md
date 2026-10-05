@@ -359,9 +359,26 @@ this Mac; signing in is optional. The design board is
   It ports the system/memory/environment prompt, references, screen observations,
   summaries after 28 messages, truncation detection, the 24-step limit, cancel,
   retry, regenerate, expiry of interrupted runs and memory purge.
-- Engine-side tools: `update_plan`, `web_fetch` (public addresses only, checked after
-  DNS resolution and on redirects) and `web_search` when the user configures a
-  Tavily or Brave key in Ask tools settings (stored in the keychain).
+- Engine-side tools: `update_plan` and `web_search` when the user configures
+  Tavily, Brave or Cloudflare in Agent → General → Web search. Local `web_fetch`
+  remains disabled; see `LOCAL_WEB_FETCH_BOUNDARY.md`.
+- Cloudflare local search requires an Account ID and Cloudflare API Token with
+  Workers AI Read and AI Gateway Read permissions. Gateway ID defaults to
+  `default`; the search engine defaults to Ceramic.ai, with Exa and Linkup also
+  available. An optional BYOK alias selects a provider key stored on that gateway.
+  A missing explicit alias fails; without an alias Cloudflare uses the provider's
+  `default` key, or AI Gateway credits if no default key exists. Test connection
+  sends one billable search. See [setup](https://developers.cloudflare.com/web-search/how-to-use/).
+- Cloudflare tokens occupy a separate, device-only Keychain item. Existing
+  Tavily/Brave tokens keep their legacy item; changing or disabling the selected
+  provider retains credentials. Clear the token field to delete that provider's
+  token. Account/gateway/engine/alias settings use UserDefaults.
+- Local Cloudflare search calls the fixed API endpoint directly, rejects redirects,
+  caps responses at 4 MiB and returned text at 16,000 characters, and exposes
+  `web_search` only with valid configuration. User tokens are never sent to Typeflux
+  Cloud. Cloud conversations use the server's search configuration; the choice
+  follows conversation execution location, not the selected model provider.
+  iOS uses server-side search and does not expose local search configuration.
 - A Cloud model reference in a private conversation falls back to the first
   available configured model; with none configured the send is refused with
   guidance to add one in Settings → Models. Cloud models stay disabled in the picker.

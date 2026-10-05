@@ -1,42 +1,4 @@
 import Foundation
-import Security
-
-/// Web search configuration for local Ask: the user's own Tavily or Brave key.
-struct AskSearchSettings: Sendable {
-    enum Provider: String, CaseIterable, Sendable { case none, tavily, brave }
-
-    var defaults: UserDefaults
-    var keychainService = "com.typeflux.ask.search"
-
-    var provider: Provider {
-        get { Provider(rawValue: defaults.string(forKey: "ask.search.provider") ?? "") ?? .none }
-        nonmutating set { defaults.set(newValue.rawValue, forKey: "ask.search.provider") }
-    }
-
-    private var query: [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: keychainService, kSecAttrAccount as String: "api-key"]
-    }
-
-    var apiKey: String {
-        var item: CFTypeRef?
-        var request = query
-        request[kSecReturnData as String] = true
-        guard SecItemCopyMatching(request as CFDictionary, &item) == errSecSuccess, let data = item as? Data else { return "" }
-        return String(decoding: data, as: UTF8.self)
-    }
-
-    func setAPIKey(_ key: String) {
-        SecItemDelete(query as CFDictionary)
-        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        var item = query
-        item[kSecValueData as String] = Data(trimmed.utf8)
-        item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        SecItemAdd(item as CFDictionary, nil)
-    }
-
-    var isConfigured: Bool { provider != .none && !apiKey.isEmpty }
-}
 
 /// Web search executed on this Mac for local conversations. General web_fetch
 /// fails closed until a transport can enforce the public-address policy at the
@@ -44,7 +6,7 @@ struct AskSearchSettings: Sendable {
 struct AskLocalWebTools: Sendable {
     /// Used only for the configured search provider, never arbitrary fetch URLs.
     var session: URLSession = .init(configuration: .ephemeral, delegate: AskPublicRedirectPolicy(), delegateQueue: nil)
-    var searchProvider: @Sendable () -> (AskSearchSettings.Provider, String) = { (.none, "") }
+    var searchProvider: @Sendable () -> AskSearchConfiguration = { .init() }
     /// Resolves a host to its IP addresses; injectable for tests.
     var resolve: @Sendable (String) -> [String] = AskLocalWebTools.addresses(of:)
     var searchEndpoints: [AskSearchSettings.Provider: String] = [
@@ -52,8 +14,7 @@ struct AskLocalWebTools: Sendable {
     ]
 
     var searchEnabled: Bool {
-        let (provider, key) = searchProvider()
-        return provider != .none && !key.isEmpty
+        searchProvider().isConfigured
     }
 
     static func schema(_ properties: [String: Any], required: [String]) -> JSONValue {
@@ -202,8 +163,13 @@ struct AskLocalWebTools: Sendable {
     func search(_ query: String, count: Int) async throws -> String {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= 400 else { throw AskLocalError.message("A query of at most 400 characters is required.") }
-        let (provider, key) = searchProvider()
-        guard provider != .none, !key.isEmpty, let endpoint = searchEndpoints[provider].flatMap(URL.init(string:)) else {
+        let configuration = searchProvider()
+        guard configuration.isConfigured else { throw AskLocalError.message("Web search is not configured.") }
+        if configuration.provider == .cloudflare {
+            return try await AskCloudflareSearch.search(trimmed, count: count, configuration: configuration, session: session)
+        }
+        let provider = configuration.provider, key = configuration.apiKey
+        guard let endpoint = searchEndpoints[provider].flatMap(URL.init(string:)) else {
             throw AskLocalError.message("Web search is not configured.")
         }
         let limit = min(max(count, 1), 10)

@@ -1847,7 +1847,7 @@
 "ask.settings.local.title" = "新しい会話の保存先";
 "ask.settings.local.subtitle" = "「このMacのみ」を選ぶと、新しい会話は Typeflux Cloud にアップロードされず、設定したモデルを使います。既存の会話は変わりません。新規作成メニューや入力欄の保存先アイコンからいつでも選べます。サインアウト中は、すべての会話がこのMacに保存されます。";
 "ask.settings.search.title" = "この Mac でのウェブ検索";
-"ask.settings.search.subtitle" = "ローカルの会話では、キーチェーンに保存した自分の Tavily または Brave Search のキーでウェブ検索できます。ウェブページの読み取りにキーは不要です。";
+"ask.settings.search.subtitle" = "ローカルの会話では、キーチェーンに保存した自分の Tavily、Brave Search または Cloudflare のキーでウェブ検索できます。";
 "ask.settings.search.provider" = "検索サービス";
 "ask.settings.search.none" = "オフ";
 "ask.settings.search.key" = "API キー";
@@ -2273,3 +2273,19 @@
 "ask.tool.automationUnavailable" = "画面やページの表示のみ利用できます。クリック、入力などの操作は利用できません。";
 "ask.tool.observationExpired" = "対象が変わったか、観察情報の有効期限が切れました。画面を撮影するか対象を読み直してから操作してください。";
 "ask.tool.notExecuted" = "このツールは実行されませんでした：%@ 利用可能な方法に切り替えるか問題を修正し、同じ呼び出しを繰り返さないでください。";
+
+// Cloudflare Web Search
+"ask.settings.search.cloudflare.token" = "Cloudflare API Token";
+"ask.settings.search.cloudflare.account" = "アカウント ID";
+"ask.settings.search.cloudflare.gateway" = "Gateway ID";
+"ask.settings.search.cloudflare.provider" = "検索エンジン";
+"ask.settings.search.cloudflare.alias" = "BYOK エイリアス（任意）";
+"ask.settings.search.cloudflare.help" = "ローカル会話では自分の Cloudflare アカウントを使用します。トークンには Workers AI Read と AI Gateway Read の権限が必要です。検索には Gateway のプロバイダーキー（指定したエイリアスまたは default）、もしくは AI Gateway クレジットを使用します。接続テストは課金対象の検索を1回実行します。クラウド会話は Typeflux Cloud の設定を使用します。";
+"ask.settings.search.cloudflare.guide" = "設定ガイド";
+"ask.settings.search.cloudflare.test" = "接続テスト";
+"ask.settings.search.cloudflare.testing" = "テスト中…";
+"ask.settings.search.cloudflare.connected" = "接続に成功しました。";
+"ask.settings.search.cloudflare.invalid" = "有効なアカウント ID、Gateway ID、API Token、検索エンジン、任意の BYOK エイリアスを入力してください。";
+"ask.settings.search.cloudflare.unauthorized" = "Cloudflare がトークンを拒否しました。アカウントと Workers AI Read / AI Gateway Read の権限を確認してください。";
+"ask.settings.search.cloudflare.rateLimited" = "Cloudflare 検索のレート制限に達しました。しばらくしてから再試行してください。";
+"ask.settings.search.cloudflare.unavailable" = "Cloudflare 検索を利用できません。Gateway、クレジット、BYOK エイリアスを確認してください。";

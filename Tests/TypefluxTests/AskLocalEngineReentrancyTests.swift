@@ -360,7 +360,7 @@ private final class SuspendedLocalFetch: @unchecked Sendable {
     }
 
     var tools: AskLocalWebTools {
-        AskLocalWebTools(session: session, searchProvider: { (.tavily, "fixture") },
+        AskLocalWebTools(session: session, searchProvider: { .init(provider: .tavily, apiKey: "fixture") },
                          resolve: { _ in ["93.184.216.34"] }, searchEndpoints: [.tavily: url.absoluteString])
     }
     var requestCount: Int { lock.withLock { count } }

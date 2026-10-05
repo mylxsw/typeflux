@@ -1854,7 +1854,7 @@
 "ask.settings.local.title" = "新對話預設儲存在";
 "ask.settings.local.subtitle" = "選擇「僅存本機」後，新對話不會上傳到 Typeflux Cloud，只使用你設定的模型；既有對話不受影響。新增選單和輸入框裡的儲存圖示隨時可以改選。未登入時，所有對話都只儲存在本機。";
 "ask.settings.search.title" = "本機網頁搜尋";
-"ask.settings.search.subtitle" = "本機對話可使用你自己的 Tavily 或 Brave Search 金鑰搜尋網頁，金鑰儲存在鑰匙圈中。讀取網頁不需要金鑰。";
+"ask.settings.search.subtitle" = "本機對話可使用你自己的 Tavily、Brave Search 或 Cloudflare 金鑰搜尋網頁，金鑰儲存在鑰匙圈中。";
 "ask.settings.search.provider" = "搜尋服務";
 "ask.settings.search.none" = "關閉";
 "ask.settings.search.key" = "API 金鑰";
@@ -2280,3 +2280,19 @@
 "ask.tool.automationUnavailable" = "目前僅支援查看螢幕或網頁，無法執行點擊、輸入等操作。";
 "ask.tool.observationExpired" = "操作目標已變更或觀察記錄已過期，請重新截圖或讀取目標後再操作。";
 "ask.tool.notExecuted" = "此工具未執行：%@ 請改用可用方式或修正問題，不要原樣重複呼叫。";
+
+// Cloudflare Web Search
+"ask.settings.search.cloudflare.token" = "Cloudflare API Token";
+"ask.settings.search.cloudflare.account" = "帳戶 ID";
+"ask.settings.search.cloudflare.gateway" = "Gateway ID";
+"ask.settings.search.cloudflare.provider" = "搜尋引擎";
+"ask.settings.search.cloudflare.alias" = "BYOK 別名（選填）";
+"ask.settings.search.cloudflare.help" = "本機對話使用你的 Cloudflare 帳戶。Token 需要 Workers AI Read 和 AI Gateway Read 權限。搜尋使用 Gateway 中的服務商金鑰（指定別名或 default），或消耗 AI Gateway 額度。測試會傳送一次計費搜尋。雲端對話使用 Typeflux Cloud 設定。";
+"ask.settings.search.cloudflare.guide" = "設定指南";
+"ask.settings.search.cloudflare.test" = "測試連線";
+"ask.settings.search.cloudflare.testing" = "測試中…";
+"ask.settings.search.cloudflare.connected" = "連線成功。";
+"ask.settings.search.cloudflare.invalid" = "請填寫有效的帳戶 ID、Gateway ID、API Token、搜尋引擎及選填 BYOK 別名。";
+"ask.settings.search.cloudflare.unauthorized" = "Cloudflare 拒絕了此 Token，請檢查所屬帳戶及 Workers AI Read / AI Gateway Read 權限。";
+"ask.settings.search.cloudflare.rateLimited" = "Cloudflare 搜尋請求過於頻繁，請稍後再試。";
+"ask.settings.search.cloudflare.unavailable" = "Cloudflare 搜尋暫時無法使用，請檢查 Gateway、額度與 BYOK 別名。";
