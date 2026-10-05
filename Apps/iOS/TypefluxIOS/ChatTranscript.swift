@@ -7,10 +7,6 @@ enum ChatTranscript {
     enum Status: Equatable {
         case running, waiting, done, failed, stopped
 
-        var isExpandedByDefault: Bool {
-            self == .running || self == .waiting
-        }
-
         var label: String {
             let key = switch self {
             case .running: "Running"
@@ -117,30 +113,58 @@ enum ChatTranscript {
         return ids.count
     }
 
-    /// "Called 2 tools", or the live state while the card is still working.
+    /// What the turn's tools did, in one quiet line: the step itself when there
+    /// is one, otherwise each distinct tool with its count; while working, the
+    /// step under way.
     static func activityTitle(_ activity: Activity) -> String {
         switch activity.status {
-        case .running: NSLocalizedString("Using tools", comment: "Activity card title")
-        case .waiting: NSLocalizedString("Waiting for Mac", comment: "Activity card title")
-        case .failed: NSLocalizedString("Tool failed", comment: "Activity card title")
-        case .stopped, .done:
-            String(format: NSLocalizedString("Called %d tools", comment: "Activity card title"), activity.steps.count)
+        case .waiting: return NSLocalizedString("Waiting for Mac", comment: "Activity line title")
+        case .running:
+            return activity.steps.last.map(stepTitle)
+                ?? NSLocalizedString("Using tools", comment: "Activity line title")
+        case .done, .failed, .stopped:
+            guard activity.steps.count != 1 else { return stepTitle(activity.steps[0]) }
+            var counts: [(name: String, count: Int)] = []
+            for step in activity.steps {
+                let name = ChatToolPresentation.title(step.call)
+                if let index = counts.firstIndex(where: { $0.name == name }) {
+                    counts[index].count += 1
+                } else {
+                    counts.append((name, 1))
+                }
+            }
+            return counts.map { $0.count > 1 ? $0.name + " " + String($0.count) : $0.name }
+                .joined(separator: " · ")
         }
     }
 
-    /// The distinct readable tool names, or the live step number.
-    static func activitySubtitle(_ activity: Activity) -> String {
-        if activity.status == .running || activity.status == .waiting {
-            return String(format: NSLocalizedString("Step %d", comment: "Activity step"), max(1, activity.steps.count))
+    /// The quieter tail of the line: "Step 3" while working, "3 steps" once
+    /// there was more than one, "Interrupted" when the run ended mid-step.
+    static func activityNote(_ activity: Activity) -> String? {
+        let count = activity.steps.count
+        switch activity.status {
+        case .running, .waiting:
+            return String(format: NSLocalizedString("Step %d", comment: "Activity step"), max(1, count))
+        case .stopped: return Status.stopped.label
+        case .done, .failed:
+            return count > 1 ? String(format: NSLocalizedString("%d steps", comment: "Activity step count"), count) : nil
         }
-        var names: [String] = []
-        for step in activity.steps {
-            let name = ChatToolPresentation.title(step.call)
-            if !names.contains(name) {
-                names.append(name)
-            }
-        }
-        return names.joined(separator: " · ")
+    }
+
+    /// Steps whose result failed; only these are colored on the line.
+    static func failures(_ activity: Activity) -> Int {
+        activity.steps.filter { $0.status == .failed }.count
+    }
+
+    /// The line's glyph: the first step's tool.
+    static func activitySymbol(_ activity: Activity) -> String {
+        activity.steps.first.map { ChatToolPresentation.symbol($0.call) } ?? "list.bullet.clipboard"
+    }
+
+    /// A step's readable name with its target: "Search the web · WWDC dates".
+    static func stepTitle(_ step: Step) -> String {
+        let title = ChatToolPresentation.title(step.call)
+        return ChatToolPresentation.detail(step.call).map { title + " · " + $0 } ?? title
     }
 
     static func preview(_ conversation: ChatConversation) -> String? {

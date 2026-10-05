@@ -219,6 +219,23 @@ struct ChatVisualComponentsTests {
         }
     }
 
+    @Test func `tool activity folds into one quiet line in every state`() throws {
+        let search = ChatToolCall(id: "s", function: .init(name: "web_search", arguments: #"{"query":"WWDC"}"#))
+        let fetch = ChatToolCall(id: "f", function: .init(name: "web_fetch", arguments: "{}"))
+        for status in [ChatTranscript.Status.done, .running, .waiting, .failed, .stopped] {
+            let steps = [ChatTranscript.Step(call: search, result: nil, status: .done),
+                         ChatTranscript.Step(call: fetch, result: nil, status: status == .failed ? .failed : .done)]
+            let activity = ChatTranscript.Activity(id: "a", messages: [], steps: steps, status: status)
+            for expanded in [false, true] {
+                let line = ImageRenderer(content: ChatActivityLine(activity: activity, expanded: expanded)
+                    .frame(width: 360, alignment: .leading))
+                let image = try #require(line.uiImage)
+                #expect(image.size.width == 360)
+                #expect(image.size.height == 30, "\(status) stays a single 30pt line")
+            }
+        }
+    }
+
     @Test func `popover uses natural short height and bounds long pages to keyboard space`() throws {
         for width: CGFloat in [272, 330] {
             let compact = ImageRenderer(content: ChatPopoverContent(maximumHeight: 420) {

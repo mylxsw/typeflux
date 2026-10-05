@@ -107,23 +107,41 @@ struct ChatPresentationTests {
         #expect(ChatTranscript.stepCount(ChatConversation(id: "empty", title: "", revision: 0)) == 0)
     }
 
-    @Test func `tool card titles name the distinct tools or the live step`() {
-        let search = ChatToolCall(id: "s", function: .init(name: "web_search", arguments: "{}"))
+    @Test func `tool lines name the single step, the distinct tools, or the live step`() {
+        let search = ChatToolCall(id: "s", function: .init(name: "web_search", arguments: #"{"query":"WWDC"}"#))
         let again = ChatToolCall(id: "s2", function: .init(name: "web_search", arguments: "{}"))
         let fetch = ChatToolCall(id: "f", function: .init(name: "web_fetch", arguments: "{}"))
-        let steps = [search, again, fetch].map { ChatTranscript.Step(call: $0, result: nil, status: .done) }
+        var steps = [search, again, fetch].map { ChatTranscript.Step(call: $0, result: nil, status: .done) }
         var activity = ChatTranscript.Activity(id: "a", messages: [], steps: steps, status: .done)
-        #expect(ChatTranscript.activityTitle(activity) == "Called 3 tools")
-        #expect(ChatTranscript.activitySubtitle(activity) == "Search the web · Read webpage")
+        #expect(ChatTranscript.activityTitle(activity) == "Search the web 2 · Read webpage")
+        #expect(ChatTranscript.activityNote(activity) == "3 steps")
+        #expect(ChatTranscript.failures(activity) == 0)
+        #expect(ChatTranscript.activitySymbol(activity) == "magnifyingglass")
         activity.status = .running
-        #expect(ChatTranscript.activityTitle(activity) == "Using tools")
-        #expect(ChatTranscript.activitySubtitle(activity) == "Step 3")
+        #expect(ChatTranscript.activityTitle(activity) == "Read webpage")
+        #expect(ChatTranscript.activityNote(activity) == "Step 3")
         activity.status = .waiting
         #expect(ChatTranscript.activityTitle(activity) == "Waiting for Mac")
-        activity.status = .failed
-        #expect(ChatTranscript.activityTitle(activity) == "Tool failed")
+        #expect(ChatTranscript.activityNote(activity) == "Step 3")
+        steps[2] = ChatTranscript.Step(call: fetch, result: nil, status: .failed)
+        activity = ChatTranscript.Activity(id: "a", messages: [], steps: steps, status: .failed)
+        #expect(ChatTranscript.activityTitle(activity) == "Search the web 2 · Read webpage")
+        #expect(ChatTranscript.failures(activity) == 1)
         activity.status = .stopped
-        #expect(ChatTranscript.activityTitle(activity) == "Called 3 tools")
+        #expect(ChatTranscript.activityNote(activity) == "Interrupted")
+    }
+
+    @Test func `a single step is named with its target and an empty live turn has a fallback`() {
+        let search = ChatToolCall(id: "s", function: .init(name: "web_search", arguments: #"{"query":"WWDC"}"#))
+        let one = ChatTranscript.Activity(id: "a", messages: [],
+                                          steps: [.init(call: search, result: nil, status: .done)], status: .done)
+        #expect(ChatTranscript.activityTitle(one) == "Search the web · WWDC")
+        #expect(ChatTranscript.activityNote(one) == nil)
+        #expect(ChatTranscript.activitySymbol(one) == "magnifyingglass")
+        let empty = ChatTranscript.Activity(id: "b", messages: [], steps: [], status: .running)
+        #expect(ChatTranscript.activityTitle(empty) == "Using tools")
+        #expect(ChatTranscript.activityNote(empty) == "Step 1")
+        #expect(ChatTranscript.activitySymbol(empty) == "list.bullet.clipboard")
     }
 
     @Test func `sidebar times show the clock for recent items and the date for older ones`() throws {

@@ -17,7 +17,6 @@ struct ChatTranscriptTests {
         #expect(group.steps.map(\.id) == ["a", "b"])
         #expect(group.steps.map { $0.result?.toolCallId } == ["a", "b"])
         #expect(group.status == .done)
-        #expect(!group.status.isExpandedByDefault)
         #expect(items.map(\.id) == ["message/user", "activity/one", "message/answer"])
     }
 
@@ -47,7 +46,6 @@ struct ChatTranscriptTests {
         #expect(old.status == .stopped)
         #expect(live.status == .running)
         #expect(live.steps.first?.status == .running)
-        #expect(live.status.isExpandedByDefault)
     }
 
     @Test(arguments: ["waiting_tool", "waiting_inference"])
@@ -59,7 +57,6 @@ struct ChatTranscriptTests {
         #expect(group.steps.map(\.id) == ["a", "b"])
         #expect(group.status == .waiting)
         #expect(group.steps.allSatisfy { $0.status == .waiting })
-        #expect(group.status.isExpandedByDefault)
     }
 
     @Test func `pending calls without assistant message still show an activity`() {
@@ -84,7 +81,6 @@ struct ChatTranscriptTests {
         guard case let .activity(group) = items[0] else { Issue.record("Missing group"); return }
         #expect(group.status == .stopped)
         #expect(group.steps.first?.status == .stopped)
-        #expect(!group.status.isExpandedByDefault)
     }
 
     @Test func `failed results are visible and completed results win over active pending status`() {

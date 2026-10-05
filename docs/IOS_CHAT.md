@@ -47,8 +47,11 @@ phone, with one accent colour, one type scale and glass only on floating layers.
   (emailed code, then new password). Tokens live in endpoint-scoped Keychain entries.
 - The conversation shows a glass title pill with the run state
   ("Completed · 2 steps", "Running · step 2"), right-aligned user bubbles, the
-  "Thought for N seconds" row, and one tool card per turn ("Called N tools" with
-  readable tool names) that stays open while running and folds when done.
+  "Thought for N seconds" row, and one quiet tool line per turn in the reasoning
+  row's style (GUL-205): the step itself ("Search the web · WWDC") or each tool
+  with its count plus "· 3 steps"; the step under way with a spinner while
+  running; "Waiting for Mac" in orange; failures only as a red "1 failed". It
+  stays folded until tapped; steps then sit under a left rule.
   Answers can be copied, shared, or regenerated (latest answer only).
 - The composer is the Mac's two-row card: text on top; attach (photo library or
   camera), the model and reasoning chip, dictation (Apple Speech) and send/stop.

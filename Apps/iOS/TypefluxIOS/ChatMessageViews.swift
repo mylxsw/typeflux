@@ -278,73 +278,92 @@ struct ChatStreamingDot: View {
     }
 }
 
-/// One card per turn of tool use: "Called N tools" with their readable names,
-/// expanded while running and folded once complete.
+/// One turn of tool use as a single quiet line above the answer, like the
+/// reasoning row: what the tools did, unfolded on tap into their steps. Success
+/// stays silent; only failures are colored.
 private struct ChatActivityView: View {
     let activity: ChatTranscript.Activity
-    @State private var userExpanded: Bool?
+    @State private var expanded = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private var expanded: Bool {
-        userExpanded ?? activity.status.isExpandedByDefault
-    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             if let lead = activity.messages.first, let reasoning = lead.reasoning, !reasoning.isEmpty {
                 ChatReasoningView(text: reasoning, milliseconds: lead.reasoningMilliseconds, active: false)
             }
-            VStack(alignment: .leading, spacing: 0) {
-                Button {
-                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { userExpanded = !expanded }
-                } label: {
-                    HStack(spacing: 9) {
-                        ChatActivityStatusIcon(status: activity.status)
-                        Text(ChatTranscript.activityTitle(activity))
-                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
-                            .fixedSize()
-                        Text(ChatTranscript.activitySubtitle(activity))
-                            .font(.system(size: 12)).foregroundStyle(ChatTheme.tertiary).lineLimit(1)
-                        Spacer(minLength: 4)
-                        Image(systemName: "chevron.down").font(.system(size: 11, weight: .semibold))
-                            .rotationEffect(.degrees(expanded ? 180 : 0)).foregroundStyle(ChatTheme.tertiary)
-                    }
-                    .padding(.horizontal, 14).frame(minHeight: 44).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("chat.activity." + activity.id)
-                .accessibilityValue(NSLocalizedString(expanded ? "Expanded" : "Collapsed", comment: "Disclosure state"))
-                if expanded {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(activity.messages) { message in
-                            if message.id != activity.messages.first?.id, let reasoning = message.reasoning,
-                               !reasoning.isEmpty {
-                                ChatReasoningView(text: reasoning, milliseconds: message.reasoningMilliseconds,
-                                                  active: false)
-                            }
-                            if !message.text.isEmpty {
-                                Text(message.text).font(.system(size: 13.5)).foregroundStyle(ChatTheme.secondary)
-                                    .textSelection(.enabled).padding(.vertical, 2)
-                            }
-                            ForEach(activity.steps.filter { step in
-                                (message.toolCalls ?? []).contains { $0.id == step.id }
-                            }) { step in ChatToolStepView(step: step) }
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { expanded.toggle() }
+            } label: {
+                ChatActivityLine(activity: activity, expanded: expanded)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("chat.activity." + activity.id)
+            .accessibilityValue(NSLocalizedString(expanded ? "Expanded" : "Collapsed", comment: "Disclosure state"))
+            if expanded {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(activity.messages) { message in
+                        if message.id != activity.messages.first?.id, let reasoning = message.reasoning,
+                           !reasoning.isEmpty {
+                            ChatReasoningView(text: reasoning, milliseconds: message.reasoningMilliseconds,
+                                              active: false)
+                        }
+                        if !message.text.isEmpty {
+                            Text(message.text).font(.system(size: 13.5)).foregroundStyle(ChatTheme.secondary)
+                                .textSelection(.enabled).padding(.vertical, 2)
                         }
                         ForEach(activity.steps.filter { step in
-                            !activity.messages.contains { ($0.toolCalls ?? []).contains { $0.id == step.id } }
+                            (message.toolCalls ?? []).contains { $0.id == step.id }
                         }) { step in ChatToolStepView(step: step) }
                     }
-                    .padding(.leading, 12)
-                    .overlay(alignment: .leading) { Rectangle().fill(ChatTheme.border).frame(width: 1.5) }
-                    .padding(.leading, 23).padding(.trailing, 14).padding(.bottom, 10)
+                    ForEach(activity.steps.filter { step in
+                        !activity.messages.contains { ($0.toolCalls ?? []).contains { $0.id == step.id } }
+                    }) { step in ChatToolStepView(step: step) }
+                }
+                .padding(.leading, 12)
+                .overlay(alignment: .leading) { Rectangle().fill(ChatTheme.border).frame(width: 1.5) }
+                .padding(.bottom, 4)
+            }
+        }
+    }
+}
+
+/// The activity's folded line: tool glyph (or spinner), what was done, a quiet
+/// step note, failures in red, and a chevron.
+struct ChatActivityLine: View {
+    let activity: ChatTranscript.Activity
+    var expanded = false
+
+    var body: some View {
+        let failures = ChatTranscript.failures(activity)
+        HStack(spacing: 6) {
+            Group {
+                switch activity.status {
+                case .running: ChatSpinner(size: 14)
+                case .waiting:
+                    Image(systemName: "exclamationmark.circle.fill").font(.system(size: 12)).foregroundStyle(.orange)
+                default: Image(systemName: ChatTranscript.activitySymbol(activity)).font(.system(size: 12))
                 }
             }
-            .chatCard(corner: 18)
-        }
-        .onChange(of: activity.status) { old, new in
-            if old.isExpandedByDefault, !new.isExpandedByDefault {
-                userExpanded = nil
+            .frame(width: 16, height: 16)
+            Text(ChatTranscript.activityTitle(activity))
+                .foregroundStyle(activity.status == .waiting ? Color.orange : ChatTheme.secondary)
+                .lineLimit(1).truncationMode(.middle)
+            if let note = ChatTranscript.activityNote(activity) {
+                Text("· " + note).lineLimit(1).layoutPriority(1)
             }
+            if failures > 0 {
+                HStack(spacing: 4) {
+                    Circle().fill(.red).frame(width: 6, height: 6)
+                    Text(String(format: NSLocalizedString("%d failed", comment: "Failed tool steps"), failures))
+                }
+                .foregroundStyle(.red).lineLimit(1).layoutPriority(1)
+            }
+            Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
+                .rotationEffect(.degrees(expanded ? 90 : 0))
         }
+        .font(.system(size: 13.5))
+        .foregroundStyle(ChatTheme.tertiary)
+        .frame(minHeight: 30).contentShape(Rectangle())
     }
 }
 
@@ -357,14 +376,20 @@ private struct ChatToolStepView: View {
         VStack(alignment: .leading, spacing: 6) {
             Button { expanded.toggle() } label: {
                 HStack(spacing: 8) {
-                    ChatActivityStatusIcon(status: step.status, size: 14)
+                    if step.status == .done {
+                        Image(systemName: ChatToolPresentation.symbol(step.call)).font(.system(size: 11))
+                            .foregroundStyle(ChatTheme.tertiary).frame(width: 14, height: 14)
+                    } else {
+                        ChatActivityStatusIcon(status: step.status, size: 14)
+                    }
                     (Text(ChatToolPresentation.title(step.call)).foregroundStyle(ChatTheme.secondary)
                         + Text(ChatToolPresentation.detail(step.call).map { " · " + $0 } ?? "")
-                        .foregroundStyle(.primary))
+                        .foregroundStyle(ChatTheme.tertiary))
                         .font(.system(size: 13)).lineLimit(1).truncationMode(.middle)
                     Spacer(minLength: 4)
-                    if step.status == .failed {
-                        Text(step.status.label).font(.system(size: 12)).foregroundStyle(.red)
+                    if step.status == .failed || step.status == .stopped {
+                        Text(step.status.label).font(.system(size: 12))
+                            .foregroundStyle(step.status == .failed ? Color.red : ChatTheme.tertiary)
                     }
                 }
                 .frame(minHeight: 32).contentShape(Rectangle())
