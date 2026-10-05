@@ -1,121 +1,599 @@
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
-	classes = {};
+	classes = {
+	};
 	objectVersion = 60;
 	objects = {
-        6EDC9ED4857EF34E96A3F17C = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAccountTests.swift; sourceTree = "<group>"; };
-        27D885831CAAFB84B2CFE3DA = { isa = PBXBuildFile; fileRef = 6EDC9ED4857EF34E96A3F17C; };
-        6A1F0C2E9D3B4A5E8F7C6D01 = { isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "en.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-        6A1F0C2E9D3B4A5E8F7C6D02 = { isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-        6A1F0C2E9D3B4A5E8F7C6D03 = { isa = PBXVariantGroup; children = (6A1F0C2E9D3B4A5E8F7C6D01,6A1F0C2E9D3B4A5E8F7C6D02,); name = InfoPlist.strings; sourceTree = "<group>"; };
-        6A1F0C2E9D3B4A5E8F7C6D04 = { isa = PBXBuildFile; fileRef = 6A1F0C2E9D3B4A5E8F7C6D03; };
-        6A1F0C2E9D3B4A5E8F7C6D05 = { isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TypefluxIOS.entitlements; sourceTree = "<group>"; };
-        AA1C64D0A26949F64EF8C4B6 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDictation.swift; sourceTree = "<group>"; };
-        B90CFD2DCACB58F5C635AE35 = { isa = PBXBuildFile; fileRef = AA1C64D0A26949F64EF8C4B6; };
-        E4D05EAD7AB304C3E51FB5D2 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatComposer.swift; sourceTree = "<group>"; };
-        2AB4FE017BC3920B3576B7F8 = { isa = PBXBuildFile; fileRef = E4D05EAD7AB304C3E51FB5D2; };
-        1B7544D05164C2387E4A1629 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSidebar.swift; sourceTree = "<group>"; };
-        1A21F9F168C3E41C47553DAD = { isa = PBXBuildFile; fileRef = 1B7544D05164C2387E4A1629; };
-        8600FF50CFFBD65952C46E06 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticPreviewTests.swift; sourceTree = "<group>"; };
-        04431571BB119E7574F0C302 = { isa = PBXBuildFile; fileRef = 8600FF50CFFBD65952C46E06; };
-        292AE82520A2009E372E3F40 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPreferences.swift; sourceTree = "<group>"; };
-        C8CB23790EF24DD1D1E9E935 = { isa = PBXBuildFile; fileRef = 292AE82520A2009E372E3F40; };
-        7DEF3F74976AE35C15AD619F = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSettingsView.swift; sourceTree = "<group>"; };
-        B6A18D912191CDDE99B711B7 = { isa = PBXBuildFile; fileRef = 7DEF3F74976AE35C15AD619F; };
-        18B2FDFCCBF1BCB102476D8C = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPreferencesTests.swift; sourceTree = "<group>"; };
-        BA00E0679C9783B9DE431E2A = { isa = PBXBuildFile; fileRef = 18B2FDFCCBF1BCB102476D8C; };
-        BE9C134009BEF1F2D651EE59 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatVerificationTests.swift; sourceTree = "<group>"; };
-        3426366FA84749B4BC8E300D = { isa = PBXBuildFile; fileRef = BE9C134009BEF1F2D651EE59; };
-        A474B5F117EB2B75C2766D2E = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMarkdownTests.swift; sourceTree = "<group>"; };
-        D7AD93BD3CE95D55F6D4E98F = { isa = PBXBuildFile; fileRef = A474B5F117EB2B75C2766D2E; };
-        EE14CD5FFA9F3A26B79E2671 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTranscriptTests.swift; sourceTree = "<group>"; };
-        4FFB8ECD2C9F8D45FC3DA5F8 = { isa = PBXBuildFile; fileRef = EE14CD5FFA9F3A26B79E2671; };
-        6B868344AB7294E4F8C51139 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMarkdown.swift; sourceTree = "<group>"; };
-        13D8E35AB0CEC1E67DB27B0F = { isa = PBXBuildFile; fileRef = 6B868344AB7294E4F8C51139; };
-        1C187A1380D2EE1897B9198C = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageViews.swift; sourceTree = "<group>"; };
-        8EDAE39C8E334F157E9CBDFC = { isa = PBXBuildFile; fileRef = 1C187A1380D2EE1897B9198C; };
-        6ED6837EC7AB809D90190FBE = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModelPicker.swift; sourceTree = "<group>"; };
-        CADE6C777F56E47DA2C35AE8 = { isa = PBXBuildFile; fileRef = 6ED6837EC7AB809D90190FBE; };
-        B752CD6BDDE38EC7D1A2C892 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatOrb.swift; sourceTree = "<group>"; };
-        48A0F24C3897FDD3440ECE69 = { isa = PBXBuildFile; fileRef = B752CD6BDDE38EC7D1A2C892; };
-        A93963717DC26AB386B98C8F = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPresentation.swift; sourceTree = "<group>"; };
-        E25288558A0BCF16AF150125 = { isa = PBXBuildFile; fileRef = A93963717DC26AB386B98C8F; };
-        B81AC1F5418F4D737B8EF8F6 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTheme.swift; sourceTree = "<group>"; };
-        1EFBD9C88D1DB393F7B858CB = { isa = PBXBuildFile; fileRef = B81AC1F5418F4D737B8EF8F6; };
-        89FC27794BC62EECC2FC209E = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTranscript.swift; sourceTree = "<group>"; };
-        5D6004A2082941E89C718AD1 = { isa = PBXBuildFile; fileRef = 89FC27794BC62EECC2FC209E; };
-        B3DDBF0BF21F3C6EF11F383B = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPresentationTests.swift; sourceTree = "<group>"; };
-        46541A7671FBF7ED48366811 = { isa = PBXBuildFile; fileRef = B3DDBF0BF21F3C6EF11F383B; };
-        D9BFEEE1307B424C80BF6F19 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatVisualComponentsTests.swift; sourceTree = "<group>"; };
-        AD0929A6B478ABA412104B19 = { isa = PBXBuildFile; fileRef = D9BFEEE1307B424C80BF6F19; };
-        3D3DF372284A2D79BF3036C4 = { isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "en.lproj/Localizable.strings"; sourceTree = "<group>"; };
-        3A5B501CAD882C0C935D69FE = { isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
-        9E67E6FC41E4FD3453A359BC = { isa = PBXVariantGroup; children = (3D3DF372284A2D79BF3036C4,3A5B501CAD882C0C935D69FE,); name = Localizable.strings; sourceTree = "<group>"; };
-        9F613572A83517F8D7F50ECE = { isa = PBXBuildFile; fileRef = 9E67E6FC41E4FD3453A359BC; };
-        000000000000000000000008 = { isa = PBXGroup; children = (00000000000000000000012E,BE9C134009BEF1F2D651EE59,); path = TypefluxIOSUITests; sourceTree = "<group>"; };
-        000000000000000000000009 = { isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TypefluxIOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-        00000000000000000000012E = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatFlowTests.swift; sourceTree = "<group>"; };
-        000000000000000000000192 = { isa = PBXBuildFile; fileRef = 00000000000000000000012E; };
-        00000000000000000000000C = { isa = PBXNativeTarget; buildConfigurationList = 000000000000000000000040; buildPhases = (000000000000000000000043,000000000000000000000044); buildRules = (); dependencies = (000000000000000000000028); name = TypefluxIOSUITests; productName = TypefluxIOSUITests; productReference = 000000000000000000000009; productType = "com.apple.product-type.bundle.ui-testing"; };
-        000000000000000000000040 = { isa = XCConfigurationList; buildConfigurations = (000000000000000000000041,000000000000000000000042); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-        000000000000000000000041 = { isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = TypefluxIOS; }; name = Debug; };
-        000000000000000000000042 = { isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = TypefluxIOS; }; name = Release; };
-        000000000000000000000043 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (000000000000000000000192,3426366FA84749B4BC8E300D,); runOnlyForDeploymentPostprocessing = 0; };
-        000000000000000000000044 = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 
-		000000000000000000000064 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDetailView.swift; sourceTree = "<group>"; };
-		0000000000000000000000C8 = { isa = PBXBuildFile; fileRef = 000000000000000000000064; };
-		000000000000000000000065 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRootView.swift; sourceTree = "<group>"; };
-		0000000000000000000000C9 = { isa = PBXBuildFile; fileRef = 000000000000000000000065; };
-		000000000000000000000066 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStore.swift; sourceTree = "<group>"; };
-		0000000000000000000000CA = { isa = PBXBuildFile; fileRef = 000000000000000000000066; };
-		000000000000000000000067 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialStore.swift; sourceTree = "<group>"; };
-		0000000000000000000000CB = { isa = PBXBuildFile; fileRef = 000000000000000000000067; };
-		000000000000000000000068 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageAttachment.swift; sourceTree = "<group>"; };
-		0000000000000000000000CC = { isa = PBXBuildFile; fileRef = 000000000000000000000068; };
-		000000000000000000000069 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		0000000000000000000000CD = { isa = PBXBuildFile; fileRef = 000000000000000000000069; };
-		00000000000000000000006A = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticPreview.swift; sourceTree = "<group>"; };
-		0000000000000000000000CE = { isa = PBXBuildFile; fileRef = 00000000000000000000006A; };
-		00000000000000000000006B = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypefluxIOSApp.swift; sourceTree = "<group>"; };
-		0000000000000000000000CF = { isa = PBXBuildFile; fileRef = 00000000000000000000006B; };
-		00000000000000000000012C = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStoreTests.swift; sourceTree = "<group>"; };
-		000000000000000000000190 = { isa = PBXBuildFile; fileRef = 00000000000000000000012C; };
-		00000000000000000000012D = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformTests.swift; sourceTree = "<group>"; };
-		000000000000000000000191 = { isa = PBXBuildFile; fileRef = 00000000000000000000012D; };
-		000000000000000000000001 = { isa = PBXProject; attributes = { BuildIndependentTargetsInParallel = YES; LastSwiftUpdateCheck = 2700; LastUpgradeCheck = 2700; }; buildConfigurationList = 000000000000000000000014; compatibilityVersion = "Xcode 15.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en,"zh-Hans",Base); mainGroup = 000000000000000000000002; productRefGroup = 000000000000000000000005; projectDirPath = ""; projectRoot = ""; targets = (00000000000000000000000A,00000000000000000000000B,00000000000000000000000C); packageReferences = (000000000000000000000032); };
-		000000000000000000000002 = { isa = PBXGroup; children = (000000000000000000000003,000000000000000000000004,000000000000000000000008,000000000000000000000005); sourceTree = "<group>"; };
-		000000000000000000000003 = { isa = PBXGroup; children = (6A1F0C2E9D3B4A5E8F7C6D03,6A1F0C2E9D3B4A5E8F7C6D05,AA1C64D0A26949F64EF8C4B6,E4D05EAD7AB304C3E51FB5D2,1B7544D05164C2387E4A1629,000000000000000000000064,000000000000000000000065,000000000000000000000066,000000000000000000000067,000000000000000000000068,000000000000000000000069,00000000000000000000006A,00000000000000000000006B,00000000000000000000003C,00000000000000000000003D,6B868344AB7294E4F8C51139,1C187A1380D2EE1897B9198C,6ED6837EC7AB809D90190FBE,B752CD6BDDE38EC7D1A2C892,A93963717DC26AB386B98C8F,B81AC1F5418F4D737B8EF8F6,89FC27794BC62EECC2FC209E,9E67E6FC41E4FD3453A359BC,292AE82520A2009E372E3F40,7DEF3F74976AE35C15AD619F,); path = TypefluxIOS; sourceTree = "<group>"; };
-		000000000000000000000004 = { isa = PBXGroup; children = (6EDC9ED4857EF34E96A3F17C,00000000000000000000012C,00000000000000000000012D,B3DDBF0BF21F3C6EF11F383B,D9BFEEE1307B424C80BF6F19,A474B5F117EB2B75C2766D2E,EE14CD5FFA9F3A26B79E2671,18B2FDFCCBF1BCB102476D8C,8600FF50CFFBD65952C46E06,); path = TypefluxIOSTests; sourceTree = "<group>"; };
-		000000000000000000000005 = { isa = PBXGroup; children = (000000000000000000000006,000000000000000000000007,000000000000000000000009); name = Products; sourceTree = "<group>"; };
-		000000000000000000000006 = { isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TypefluxIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		000000000000000000000007 = { isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TypefluxIOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		00000000000000000000000A = { isa = PBXNativeTarget; buildConfigurationList = 000000000000000000000015; buildPhases = (00000000000000000000001E,00000000000000000000001F,000000000000000000000020); buildRules = (); dependencies = (); name = TypefluxIOS; packageProductDependencies = (000000000000000000000033); productName = TypefluxIOS; productReference = 000000000000000000000006; productType = "com.apple.product-type.application"; };
-		00000000000000000000000B = { isa = PBXNativeTarget; buildConfigurationList = 000000000000000000000016; buildPhases = (000000000000000000000021,000000000000000000000022); buildRules = (); dependencies = (000000000000000000000028); name = TypefluxIOSTests; packageProductDependencies = (000000000000000000000033); productName = TypefluxIOSTests; productReference = 000000000000000000000007; productType = "com.apple.product-type.bundle.unit-test"; };
-		000000000000000000000014 = { isa = XCConfigurationList; buildConfigurations = (000000000000000000000017,000000000000000000000018,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		000000000000000000000015 = { isa = XCConfigurationList; buildConfigurations = (000000000000000000000019,00000000000000000000001A,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		000000000000000000000016 = { isa = XCConfigurationList; buildConfigurations = (00000000000000000000001B,00000000000000000000001C,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		000000000000000000000017 = { isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 6.0; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_APPROACHABLE_CONCURRENCY = YES; ENABLE_USER_SCRIPT_SANDBOXING = YES; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; GCC_OPTIMIZATION_LEVEL = 0; ONLY_ACTIVE_ARCH = YES; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; }; name = Debug; };
-		000000000000000000000018 = { isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 6.0; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_APPROACHABLE_CONCURRENCY = YES; ENABLE_USER_SCRIPT_SANDBOXING = YES; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; SWIFT_COMPILATION_MODE = wholemodule; VALIDATE_PRODUCT = YES; }; name = Release; };
-		000000000000000000000019 = { isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = TypefluxIOS/TypefluxIOS.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = TypefluxIOS/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks"; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor; TARGETED_DEVICE_FAMILY = "1,2"; TYPEFLUX_API_URL = "https://api.typeflux.app";}; name = Debug; };
-		00000000000000000000001A = { isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = TypefluxIOS/TypefluxIOS.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = TypefluxIOS/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks"; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor; TARGETED_DEVICE_FAMILY = "1,2"; TYPEFLUX_API_URL = "https://api.typeflux.app";}; name = Release; };
-		00000000000000000000001B = { isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TypefluxIOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TypefluxIOS";}; name = Debug; };
-		00000000000000000000001C = { isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TypefluxIOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TypefluxIOS";}; name = Release; };
-		00000000000000000000001E = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B90CFD2DCACB58F5C635AE35,2AB4FE017BC3920B3576B7F8,1A21F9F168C3E41C47553DAD,0000000000000000000000C8,0000000000000000000000C9,0000000000000000000000CA,0000000000000000000000CB,0000000000000000000000CC,0000000000000000000000CD,0000000000000000000000CE,0000000000000000000000CF,13D8E35AB0CEC1E67DB27B0F,8EDAE39C8E334F157E9CBDFC,CADE6C777F56E47DA2C35AE8,48A0F24C3897FDD3440ECE69,E25288558A0BCF16AF150125,1EFBD9C88D1DB393F7B858CB,5D6004A2082941E89C718AD1,C8CB23790EF24DD1D1E9E935,B6A18D912191CDDE99B711B7,); runOnlyForDeploymentPostprocessing = 0; };
-		00000000000000000000001F = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (000000000000000000000034,); runOnlyForDeploymentPostprocessing = 0; };
-		000000000000000000000020 = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (00000000000000000000003E,9F613572A83517F8D7F50ECE,6A1F0C2E9D3B4A5E8F7C6D04,); runOnlyForDeploymentPostprocessing = 0; };
-		000000000000000000000021 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (27D885831CAAFB84B2CFE3DA,000000000000000000000190,000000000000000000000191,46541A7671FBF7ED48366811,AD0929A6B478ABA412104B19,D7AD93BD3CE95D55F6D4E98F,4FFB8ECD2C9F8D45FC3DA5F8,BA00E0679C9783B9DE431E2A,04431571BB119E7574F0C302,); runOnlyForDeploymentPostprocessing = 0; };
-		000000000000000000000022 = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (000000000000000000000035,); runOnlyForDeploymentPostprocessing = 0; };
-		000000000000000000000028 = { isa = PBXTargetDependency; target = 00000000000000000000000A; targetProxy = 000000000000000000000029; };
-		000000000000000000000029 = { isa = PBXContainerItemProxy; containerPortal = 000000000000000000000001; proxyType = 1; remoteGlobalIDString = 00000000000000000000000A; remoteInfo = TypefluxIOS; };
-		000000000000000000000032 = { isa = XCLocalSwiftPackageReference; relativePath = ../../Packages/TypefluxChat; };
-		000000000000000000000033 = { isa = XCSwiftPackageProductDependency; package = 000000000000000000000032; productName = TypefluxChat; };
-		000000000000000000000034 = { isa = PBXBuildFile; productRef = 000000000000000000000033; };
-		000000000000000000000035 = { isa = PBXBuildFile; productRef = 000000000000000000000033; };
-		00000000000000000000003C = { isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		00000000000000000000003D = { isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		00000000000000000000003E = { isa = PBXBuildFile; fileRef = 00000000000000000000003D; };
+/* Begin PBXBuildFile section */
+		000000000000000000000034 /* TypefluxChat in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000000000033 /* TypefluxChat */; };
+		000000000000000000000035 /* TypefluxChat in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000000000033 /* TypefluxChat */; };
+		00000000000000000000003E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000003D /* Assets.xcassets */; };
+		0000000000000000000000C8 /* ChatDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000064 /* ChatDetailView.swift */; };
+		0000000000000000000000C9 /* ChatRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000065 /* ChatRootView.swift */; };
+		0000000000000000000000CA /* ChatStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000066 /* ChatStore.swift */; };
+		0000000000000000000000CB /* CredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000067 /* CredentialStore.swift */; };
+		0000000000000000000000CC /* ImageAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000068 /* ImageAttachment.swift */; };
+		0000000000000000000000CD /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000069 /* LoginView.swift */; };
+		0000000000000000000000CE /* SyntheticPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000006A /* SyntheticPreview.swift */; };
+		0000000000000000000000CF /* TypefluxIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000006B /* TypefluxIOSApp.swift */; };
+		000000000000000000000190 /* ChatStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000012C /* ChatStoreTests.swift */; };
+		000000000000000000000191 /* PlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000012D /* PlatformTests.swift */; };
+		000000000000000000000192 /* ChatFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000012E /* ChatFlowTests.swift */; };
+		04431571BB119E7574F0C302 /* SyntheticPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8600FF50CFFBD65952C46E06 /* SyntheticPreviewTests.swift */; };
+		13D8E35AB0CEC1E67DB27B0F /* ChatMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B868344AB7294E4F8C51139 /* ChatMarkdown.swift */; };
+		1A21F9F168C3E41C47553DAD /* ChatSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7544D05164C2387E4A1629 /* ChatSidebar.swift */; };
+		1EFBD9C88D1DB393F7B858CB /* ChatTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81AC1F5418F4D737B8EF8F6 /* ChatTheme.swift */; };
+		27D885831CAAFB84B2CFE3DA /* ChatAccountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDC9ED4857EF34E96A3F17C /* ChatAccountTests.swift */; };
+		2AB4FE017BC3920B3576B7F8 /* ChatComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D05EAD7AB304C3E51FB5D2 /* ChatComposer.swift */; };
+		3426366FA84749B4BC8E300D /* ChatVerificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE9C134009BEF1F2D651EE59 /* ChatVerificationTests.swift */; };
+		46541A7671FBF7ED48366811 /* ChatPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DDBF0BF21F3C6EF11F383B /* ChatPresentationTests.swift */; };
+		48A0F24C3897FDD3440ECE69 /* ChatOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = B752CD6BDDE38EC7D1A2C892 /* ChatOrb.swift */; };
+		4FFB8ECD2C9F8D45FC3DA5F8 /* ChatTranscriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE14CD5FFA9F3A26B79E2671 /* ChatTranscriptTests.swift */; };
+		5D6004A2082941E89C718AD1 /* ChatTranscript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89FC27794BC62EECC2FC209E /* ChatTranscript.swift */; };
+		6A1F0C2E9D3B4A5E8F7C6D04 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 6A1F0C2E9D3B4A5E8F7C6D03 /* InfoPlist.strings */; };
+		8EDAE39C8E334F157E9CBDFC /* ChatMessageViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C187A1380D2EE1897B9198C /* ChatMessageViews.swift */; };
+		9F613572A83517F8D7F50ECE /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 9E67E6FC41E4FD3453A359BC /* Localizable.strings */; };
+		AD0929A6B478ABA412104B19 /* ChatVisualComponentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BFEEE1307B424C80BF6F19 /* ChatVisualComponentsTests.swift */; };
+		B6A18D912191CDDE99B711B7 /* ChatSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DEF3F74976AE35C15AD619F /* ChatSettingsView.swift */; };
+		B90CFD2DCACB58F5C635AE35 /* ChatDictation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1C64D0A26949F64EF8C4B6 /* ChatDictation.swift */; };
+		BA00E0679C9783B9DE431E2A /* ChatPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B2FDFCCBF1BCB102476D8C /* ChatPreferencesTests.swift */; };
+		C8CB23790EF24DD1D1E9E935 /* ChatPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292AE82520A2009E372E3F40 /* ChatPreferences.swift */; };
+		CADE6C777F56E47DA2C35AE8 /* ChatModelPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED6837EC7AB809D90190FBE /* ChatModelPicker.swift */; };
+		D7AD93BD3CE95D55F6D4E98F /* ChatMarkdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A474B5F117EB2B75C2766D2E /* ChatMarkdownTests.swift */; };
+		E25288558A0BCF16AF150125 /* ChatPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A93963717DC26AB386B98C8F /* ChatPresentation.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		000000000000000000000029 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 00000000000000000000000A;
+			remoteInfo = TypefluxIOS;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000006 /* TypefluxIOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TypefluxIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000007 /* TypefluxIOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TypefluxIOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000009 /* TypefluxIOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TypefluxIOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000003C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		00000000000000000000003D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		000000000000000000000064 /* ChatDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDetailView.swift; sourceTree = "<group>"; };
+		000000000000000000000065 /* ChatRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRootView.swift; sourceTree = "<group>"; };
+		000000000000000000000066 /* ChatStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStore.swift; sourceTree = "<group>"; };
+		000000000000000000000067 /* CredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialStore.swift; sourceTree = "<group>"; };
+		000000000000000000000068 /* ImageAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageAttachment.swift; sourceTree = "<group>"; };
+		000000000000000000000069 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		00000000000000000000006A /* SyntheticPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticPreview.swift; sourceTree = "<group>"; };
+		00000000000000000000006B /* TypefluxIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypefluxIOSApp.swift; sourceTree = "<group>"; };
+		00000000000000000000012C /* ChatStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStoreTests.swift; sourceTree = "<group>"; };
+		00000000000000000000012D /* PlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformTests.swift; sourceTree = "<group>"; };
+		00000000000000000000012E /* ChatFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatFlowTests.swift; sourceTree = "<group>"; };
+		18B2FDFCCBF1BCB102476D8C /* ChatPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPreferencesTests.swift; sourceTree = "<group>"; };
+		1B7544D05164C2387E4A1629 /* ChatSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSidebar.swift; sourceTree = "<group>"; };
+		1C187A1380D2EE1897B9198C /* ChatMessageViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageViews.swift; sourceTree = "<group>"; };
+		292AE82520A2009E372E3F40 /* ChatPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPreferences.swift; sourceTree = "<group>"; };
+		3A5B501CAD882C0C935D69FE /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		3D3DF372284A2D79BF3036C4 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		6A1F0C2E9D3B4A5E8F7C6D01 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		6A1F0C2E9D3B4A5E8F7C6D02 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		6A1F0C2E9D3B4A5E8F7C6D05 /* TypefluxIOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TypefluxIOS.entitlements; sourceTree = "<group>"; };
+		6B868344AB7294E4F8C51139 /* ChatMarkdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMarkdown.swift; sourceTree = "<group>"; };
+		6ED6837EC7AB809D90190FBE /* ChatModelPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModelPicker.swift; sourceTree = "<group>"; };
+		6EDC9ED4857EF34E96A3F17C /* ChatAccountTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAccountTests.swift; sourceTree = "<group>"; };
+		7DEF3F74976AE35C15AD619F /* ChatSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSettingsView.swift; sourceTree = "<group>"; };
+		8600FF50CFFBD65952C46E06 /* SyntheticPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticPreviewTests.swift; sourceTree = "<group>"; };
+		89FC27794BC62EECC2FC209E /* ChatTranscript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTranscript.swift; sourceTree = "<group>"; };
+		A474B5F117EB2B75C2766D2E /* ChatMarkdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMarkdownTests.swift; sourceTree = "<group>"; };
+		A93963717DC26AB386B98C8F /* ChatPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPresentation.swift; sourceTree = "<group>"; };
+		AA1C64D0A26949F64EF8C4B6 /* ChatDictation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDictation.swift; sourceTree = "<group>"; };
+		B3DDBF0BF21F3C6EF11F383B /* ChatPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPresentationTests.swift; sourceTree = "<group>"; };
+		B752CD6BDDE38EC7D1A2C892 /* ChatOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatOrb.swift; sourceTree = "<group>"; };
+		B81AC1F5418F4D737B8EF8F6 /* ChatTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTheme.swift; sourceTree = "<group>"; };
+		BE9C134009BEF1F2D651EE59 /* ChatVerificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatVerificationTests.swift; sourceTree = "<group>"; };
+		D9BFEEE1307B424C80BF6F19 /* ChatVisualComponentsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatVisualComponentsTests.swift; sourceTree = "<group>"; };
+		E4D05EAD7AB304C3E51FB5D2 /* ChatComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatComposer.swift; sourceTree = "<group>"; };
+		EE14CD5FFA9F3A26B79E2671 /* ChatTranscriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTranscriptTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		00000000000000000000001F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000034 /* TypefluxChat in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000022 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000035 /* TypefluxChat in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000044 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		000000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000003 /* TypefluxIOS */,
+				000000000000000000000004 /* TypefluxIOSTests */,
+				000000000000000000000008 /* TypefluxIOSUITests */,
+				000000000000000000000005 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		000000000000000000000003 /* TypefluxIOS */ = {
+			isa = PBXGroup;
+			children = (
+				6A1F0C2E9D3B4A5E8F7C6D03 /* InfoPlist.strings */,
+				6A1F0C2E9D3B4A5E8F7C6D05 /* TypefluxIOS.entitlements */,
+				AA1C64D0A26949F64EF8C4B6 /* ChatDictation.swift */,
+				E4D05EAD7AB304C3E51FB5D2 /* ChatComposer.swift */,
+				1B7544D05164C2387E4A1629 /* ChatSidebar.swift */,
+				000000000000000000000064 /* ChatDetailView.swift */,
+				000000000000000000000065 /* ChatRootView.swift */,
+				000000000000000000000066 /* ChatStore.swift */,
+				000000000000000000000067 /* CredentialStore.swift */,
+				000000000000000000000068 /* ImageAttachment.swift */,
+				000000000000000000000069 /* LoginView.swift */,
+				00000000000000000000006A /* SyntheticPreview.swift */,
+				00000000000000000000006B /* TypefluxIOSApp.swift */,
+				00000000000000000000003C /* Info.plist */,
+				00000000000000000000003D /* Assets.xcassets */,
+				6B868344AB7294E4F8C51139 /* ChatMarkdown.swift */,
+				1C187A1380D2EE1897B9198C /* ChatMessageViews.swift */,
+				6ED6837EC7AB809D90190FBE /* ChatModelPicker.swift */,
+				B752CD6BDDE38EC7D1A2C892 /* ChatOrb.swift */,
+				A93963717DC26AB386B98C8F /* ChatPresentation.swift */,
+				B81AC1F5418F4D737B8EF8F6 /* ChatTheme.swift */,
+				89FC27794BC62EECC2FC209E /* ChatTranscript.swift */,
+				9E67E6FC41E4FD3453A359BC /* Localizable.strings */,
+				292AE82520A2009E372E3F40 /* ChatPreferences.swift */,
+				7DEF3F74976AE35C15AD619F /* ChatSettingsView.swift */,
+			);
+			path = TypefluxIOS;
+			sourceTree = "<group>";
+		};
+		000000000000000000000004 /* TypefluxIOSTests */ = {
+			isa = PBXGroup;
+			children = (
+				6EDC9ED4857EF34E96A3F17C /* ChatAccountTests.swift */,
+				00000000000000000000012C /* ChatStoreTests.swift */,
+				00000000000000000000012D /* PlatformTests.swift */,
+				B3DDBF0BF21F3C6EF11F383B /* ChatPresentationTests.swift */,
+				D9BFEEE1307B424C80BF6F19 /* ChatVisualComponentsTests.swift */,
+				A474B5F117EB2B75C2766D2E /* ChatMarkdownTests.swift */,
+				EE14CD5FFA9F3A26B79E2671 /* ChatTranscriptTests.swift */,
+				18B2FDFCCBF1BCB102476D8C /* ChatPreferencesTests.swift */,
+				8600FF50CFFBD65952C46E06 /* SyntheticPreviewTests.swift */,
+			);
+			path = TypefluxIOSTests;
+			sourceTree = "<group>";
+		};
+		000000000000000000000005 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000006 /* TypefluxIOS.app */,
+				000000000000000000000007 /* TypefluxIOSTests.xctest */,
+				000000000000000000000009 /* TypefluxIOSUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		000000000000000000000008 /* TypefluxIOSUITests */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000012E /* ChatFlowTests.swift */,
+				BE9C134009BEF1F2D651EE59 /* ChatVerificationTests.swift */,
+			);
+			path = TypefluxIOSUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		00000000000000000000000A /* TypefluxIOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000015 /* Build configuration list for PBXNativeTarget "TypefluxIOS" */;
+			buildPhases = (
+				00000000000000000000001E /* Sources */,
+				00000000000000000000001F /* Frameworks */,
+				000000000000000000000020 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TypefluxIOS;
+			packageProductDependencies = (
+				000000000000000000000033 /* TypefluxChat */,
+			);
+			productName = TypefluxIOS;
+			productReference = 000000000000000000000006 /* TypefluxIOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		00000000000000000000000B /* TypefluxIOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000016 /* Build configuration list for PBXNativeTarget "TypefluxIOSTests" */;
+			buildPhases = (
+				000000000000000000000021 /* Sources */,
+				000000000000000000000022 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				000000000000000000000028 /* PBXTargetDependency */,
+			);
+			name = TypefluxIOSTests;
+			packageProductDependencies = (
+				000000000000000000000033 /* TypefluxChat */,
+			);
+			productName = TypefluxIOSTests;
+			productReference = 000000000000000000000007 /* TypefluxIOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		00000000000000000000000C /* TypefluxIOSUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000040 /* Build configuration list for PBXNativeTarget "TypefluxIOSUITests" */;
+			buildPhases = (
+				000000000000000000000043 /* Sources */,
+				000000000000000000000044 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				000000000000000000000028 /* PBXTargetDependency */,
+			);
+			name = TypefluxIOSUITests;
+			productName = TypefluxIOSUITests;
+			productReference = 000000000000000000000009 /* TypefluxIOSUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		000000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+			};
+			buildConfigurationList = 000000000000000000000014 /* Build configuration list for PBXProject "TypefluxIOS" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				"zh-Hans",
+				Base,
+			);
+			mainGroup = 000000000000000000000002;
+			packageReferences = (
+				000000000000000000000032 /* XCLocalSwiftPackageReference "../../Packages/TypefluxChat" */,
+			);
+			productRefGroup = 000000000000000000000005 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				00000000000000000000000A /* TypefluxIOS */,
+				00000000000000000000000B /* TypefluxIOSTests */,
+				00000000000000000000000C /* TypefluxIOSUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		000000000000000000000020 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00000000000000000000003E /* Assets.xcassets in Resources */,
+				9F613572A83517F8D7F50ECE /* Localizable.strings in Resources */,
+				6A1F0C2E9D3B4A5E8F7C6D04 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		00000000000000000000001E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B90CFD2DCACB58F5C635AE35 /* ChatDictation.swift in Sources */,
+				2AB4FE017BC3920B3576B7F8 /* ChatComposer.swift in Sources */,
+				1A21F9F168C3E41C47553DAD /* ChatSidebar.swift in Sources */,
+				0000000000000000000000C8 /* ChatDetailView.swift in Sources */,
+				0000000000000000000000C9 /* ChatRootView.swift in Sources */,
+				0000000000000000000000CA /* ChatStore.swift in Sources */,
+				0000000000000000000000CB /* CredentialStore.swift in Sources */,
+				0000000000000000000000CC /* ImageAttachment.swift in Sources */,
+				0000000000000000000000CD /* LoginView.swift in Sources */,
+				0000000000000000000000CE /* SyntheticPreview.swift in Sources */,
+				0000000000000000000000CF /* TypefluxIOSApp.swift in Sources */,
+				13D8E35AB0CEC1E67DB27B0F /* ChatMarkdown.swift in Sources */,
+				8EDAE39C8E334F157E9CBDFC /* ChatMessageViews.swift in Sources */,
+				CADE6C777F56E47DA2C35AE8 /* ChatModelPicker.swift in Sources */,
+				48A0F24C3897FDD3440ECE69 /* ChatOrb.swift in Sources */,
+				E25288558A0BCF16AF150125 /* ChatPresentation.swift in Sources */,
+				1EFBD9C88D1DB393F7B858CB /* ChatTheme.swift in Sources */,
+				5D6004A2082941E89C718AD1 /* ChatTranscript.swift in Sources */,
+				C8CB23790EF24DD1D1E9E935 /* ChatPreferences.swift in Sources */,
+				B6A18D912191CDDE99B711B7 /* ChatSettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000021 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				27D885831CAAFB84B2CFE3DA /* ChatAccountTests.swift in Sources */,
+				000000000000000000000190 /* ChatStoreTests.swift in Sources */,
+				000000000000000000000191 /* PlatformTests.swift in Sources */,
+				46541A7671FBF7ED48366811 /* ChatPresentationTests.swift in Sources */,
+				AD0929A6B478ABA412104B19 /* ChatVisualComponentsTests.swift in Sources */,
+				D7AD93BD3CE95D55F6D4E98F /* ChatMarkdownTests.swift in Sources */,
+				4FFB8ECD2C9F8D45FC3DA5F8 /* ChatTranscriptTests.swift in Sources */,
+				BA00E0679C9783B9DE431E2A /* ChatPreferencesTests.swift in Sources */,
+				04431571BB119E7574F0C302 /* SyntheticPreviewTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000043 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000192 /* ChatFlowTests.swift in Sources */,
+				3426366FA84749B4BC8E300D /* ChatVerificationTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		000000000000000000000028 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 00000000000000000000000A /* TypefluxIOS */;
+			targetProxy = 000000000000000000000029 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		6A1F0C2E9D3B4A5E8F7C6D03 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6A1F0C2E9D3B4A5E8F7C6D01 /* en */,
+				6A1F0C2E9D3B4A5E8F7C6D02 /* zh-Hans */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		9E67E6FC41E4FD3453A359BC /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				3D3DF372284A2D79BF3036C4 /* en */,
+				3A5B501CAD882C0C935D69FE /* zh-Hans */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		000000000000000000000017 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		000000000000000000000018 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		000000000000000000000019 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TypefluxIOS/TypefluxIOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = N95437SZ2A;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "TypefluxIOS/Info-Debug.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TYPEFLUX_ALLOW_INSECURE_HTTP = NO;
+				TYPEFLUX_API_URL = "https://api.typeflux.app";
+			};
+			name = Debug;
+		};
+		00000000000000000000001A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TypefluxIOS/TypefluxIOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = N95437SZ2A;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TypefluxIOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TYPEFLUX_API_URL = "https://api.typeflux.app";
+			};
+			name = Release;
+		};
+		00000000000000000000001B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TypefluxIOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TypefluxIOS";
+			};
+			name = Debug;
+		};
+		00000000000000000000001C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TypefluxIOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TypefluxIOS";
+			};
+			name = Release;
+		};
+		000000000000000000000041 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = TypefluxIOS;
+			};
+			name = Debug;
+		};
+		000000000000000000000042 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = app.typeflux.ios.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = TypefluxIOS;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		000000000000000000000014 /* Build configuration list for PBXProject "TypefluxIOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000017 /* Debug */,
+				000000000000000000000018 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		000000000000000000000015 /* Build configuration list for PBXNativeTarget "TypefluxIOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000019 /* Debug */,
+				00000000000000000000001A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		000000000000000000000016 /* Build configuration list for PBXNativeTarget "TypefluxIOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000001B /* Debug */,
+				00000000000000000000001C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		000000000000000000000040 /* Build configuration list for PBXNativeTarget "TypefluxIOSUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000041 /* Debug */,
+				000000000000000000000042 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		000000000000000000000032 /* XCLocalSwiftPackageReference "../../Packages/TypefluxChat" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../Packages/TypefluxChat;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		000000000000000000000033 /* TypefluxChat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 000000000000000000000032 /* XCLocalSwiftPackageReference "../../Packages/TypefluxChat" */;
+			productName = TypefluxChat;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 000000000000000000000001;
+	rootObject = 000000000000000000000001 /* Project object */;
 }

@@ -98,6 +98,8 @@ TYPEFLUX_IOS_CONFIGURATION=Release make ios-run
 open Apps/iOS/TypefluxIOS.xcodeproj
 ```
 
+脚本会优先使用明确设置的 `TYPEFLUX_IOS_TEAM`，然后读取 Xcode 工程对应构建配置的团队；工程未配置时，从本机可用的 Apple 开发证书中识别团队。只有一个团队时自动使用，多个时在终端列出供选择；无交互终端时需明确设置 `TYPEFLUX_IOS_TEAM`。
+
 团队 ID 是 Apple Developer 账号中的 **Team ID**，不是账号邮箱、证书名称或 App ID。团队、证书和描述文件保存在自己的开发环境中，不要提交到仓库。macOS 的 `scripts/setup_dev_cert.sh` 所创建的本地证书不能用于 iPhone 签名。
 
 ### 部署命令
@@ -105,7 +107,6 @@ open Apps/iOS/TypefluxIOS.xcodeproj
 ```sh
 make ios-devices
 TYPEFLUX_IOS_DEVICE='<physical-device-UDID>' \
-TYPEFLUX_IOS_TEAM='<TEAMID>' \
 make ios-deploy
 ```
 
@@ -160,9 +161,35 @@ make ios-deploy
 
 以上域名是示例，请替换为真实环境。配置会写入本次构建的应用，修改后需要重新构建、安装；仅在 Mac 终端导出变量不会改变已经安装的应用。登录凭据按 API 地址隔离，切换环境后需要使用对应环境的账号。
 
-应用只接受 HTTPS 地址，不接受含用户名、密码、查询参数或 fragment 的 URL。不要把密钥或账号密码放进 URL、Makefile 或工程文件。
+应用默认只接受 HTTPS 地址，不接受含用户名、密码、查询参数或 fragment 的 URL。不要把密钥或账号密码放进 URL、Makefile 或工程文件。
 
-连接本地 API 时，先独立启动 `typeflux-api`，通过手机能访问且证书受信任的 HTTPS 域名或反向代理暴露服务，再把该地址传给客户端。实体 iPhone 上的 `localhost` / `127.0.0.1` 指向手机自身，不能用来连接 Mac；模拟器能访问的地址也不一定能被真机访问。HTTP 开发地址（例如 macOS `make dev` 使用的地址）不能直接用于 iOS。后端配置和部署属于 `typeflux-api` 仓库的工作流。
+使用 MacBook 或 Mac mini 的局域网 API，可以直接执行：
+
+```sh
+make dev-macbook PLATFORM=ios
+make dev-macmini PLATFORM=ios
+make dev-macbook PLATFORM=ios DEVICE=<真机或模拟器的UDID>
+```
+
+前两条命令会列出已配对的 iPhone/iPad 和可用的 iOS 17+ 模拟器，显示名称、类型、状态及 UDID。
+输入编号后继续构建、安装和启动；输错编号会重新提示，`q` 或 Ctrl+C 取消。
+只有一个目标时自动使用它。指定 `DEVICE` 时跳过交互；在没有交互终端且存在多个目标时，必须明确指定。
+真机自动识别开发者团队，多个团队时继续选择；也可以用 `TYPEFLUX_IOS_TEAM` 指定。
+选择模拟器则无需开发者团队。
+
+MacBook 对应 `http://mac-pro.local:8080`，Mac mini 对应 `http://mac-mini.local:8080`。
+这些命令自动开启 Debug 局域网 HTTP 配置；Release 和归档仍要求 HTTPS。
+不加 `PLATFORM=ios` 时，它们仍启动 macOS 应用。
+其他局域网 API 可以明确开启 Debug HTTP：
+
+```sh
+TYPEFLUX_API_URL=http://192.168.1.20:8080 TYPEFLUX_ALLOW_INSECURE_HTTP=YES make ios-run
+```
+
+先独立启动 `typeflux-api`，确保设备能解析主机名并访问 8080 端口，首次连接时允许 iOS 的局域网访问权限。
+实体 iPhone 上的 `localhost` / `127.0.0.1` 指向手机自身，不能用来连接 Mac。
+HTTP 仅限 `.local`、localhost 和回环/私有/链路本地 IP，公网 API 使用 HTTPS。
+后端配置和部署属于 `typeflux-api` 仓库的工作流。
 
 ## 7. 命令和配置速查
 
@@ -187,11 +214,13 @@ make ios-deploy
 | `DEVELOPER_DIR` | 可选，指定完整 Xcode 的 `Contents/Developer` 目录 |
 | `TYPEFLUX_IOS_SIMULATOR` | 可选，模拟器 UDID；不设置时自动选取 iPhone |
 | `TYPEFLUX_IOS_DEVICE` | `ios-deploy` 必填，实体设备 UDID |
-| `TYPEFLUX_IOS_TEAM` | `ios-deploy` 和 `ios-archive` 必填，开发团队 ID |
+| `TYPEFLUX_IOS_TEAM` | 可选，明确指定开发团队 ID；默认从 Xcode 工程或本机开发证书识别 |
 | `TYPEFLUX_IOS_CONFIGURATION` | `Debug`；可设 `Release`。预览仅接受 Debug，归档固定 Release |
 | `TYPEFLUX_IOS_DERIVED_DATA` | `.xcode-ios-derived`；应用构建缓存和产物目录 |
 | `TYPEFLUX_IOS_ARCHIVE_PATH` | 默认在配置的 DerivedData 下的 `archives/TypefluxIOS.xcarchive`；归档路径，不能已存在 |
-| `TYPEFLUX_API_URL` | `https://api.typeflux.app`；本次构建使用的 HTTPS API 地址 |
+| `TYPEFLUX_API_URL` | `https://api.typeflux.app`；本次构建的 API 地址，Debug 可明确开启局域网 HTTP |
+| `TYPEFLUX_ALLOW_INSECURE_HTTP` | 设置为 `YES` 时，Debug 构建允许局域网 HTTP；新环境命令自动传入 |
+| `TYPEFLUX_IOS_TARGET` | `PLATFORM=ios` 启动时的真机或模拟器 UDID，Make 通过 `DEVICE` 传入 |
 | `TYPEFLUX_IOS_TEST_DESTINATION` | 仅测试脚本使用；格式为 `platform=iOS Simulator,id=<UDID>` |
 | `TYPEFLUX_IOS_TEST_RESULT_BUNDLE_PATH` | 仅测试脚本使用；新的 `.xcresult` 路径，用于保留测试报告、覆盖率及截图 |
 
@@ -228,7 +257,7 @@ xcrun simctl shutdown '<simulator-UDID>'
 | 没有可用的 iPhone 模拟器 | 在 Xcode Settings 安装 iOS runtime，再创建 iPhone 模拟器；执行 `make ios-devices` 确认 |
 | 指定 UDID 不存在或不可用 | 重新查看 `make ios-devices`，使用当前 runtime 下可用设备的标识符 |
 | 已安装但仍显示离线测试数据 | 执行 `make ios-run`；不要在 Xcode scheme 中保留 `--synthetic-preview` 参数 |
-| 提示需要 development team / provisioning profile | 检查 `TYPEFLUX_IOS_TEAM`、Xcode 登录账号、证书和 App ID entitlement；不要使用 macOS 自签名证书 |
+| 无法识别团队，或提示需要 provisioning profile | 在 Xcode 登录开发者账号并确认开发证书、团队和 App ID entitlement；必要时设置 `TYPEFLUX_IOS_TEAM` |
 | 找不到实体设备或启动失败 | 解锁手机、确认信任和 Developer Mode，等待 Xcode 配对完成，再核对实体设备标识符 |
 | Apple 登录失败 | 检查 App ID 的 Sign in with Apple、签名 profile，以及后端 `APPLE_OIDC_CLIENT_ID` 是否包含 iOS bundle ID |
 | 网络错误或切换环境后没有历史 | 检查构建使用的 HTTPS 地址、设备网络和证书；不同 API 的登录与云端历史相互独立 |

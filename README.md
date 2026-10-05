@@ -125,11 +125,30 @@ scripts/setup_dev_cert.sh
 
 make run          # build + launch as .app bundle
 make dev          # launch with terminal logs attached
+make dev-macbook  # use the MacBook API at mac-pro.local:8080
+make dev-macmini  # use the Mac mini API at mac-mini.local:8080
+make dev-macbook PLATFORM=ios # choose an iOS device/simulator and use the MacBook API
+make dev-macmini PLATFORM=ios # choose an iOS device/simulator and use the Mac mini API
 make full-dev     # launch dev app with bundled SenseVoice resources
 make full-release # build the full notarized production installer locally
 make release-continue # resume an interrupted local release
 swift test        # run tests
 ```
+
+The Mac LAN targets select a single API endpoint even when `TYPEFLUX_API_URLS`
+is inherited from the shell. Realtime ASR addresses are supplied by the selected
+API, not by the app Makefile. Set `REALTIME_ASR_SERVER_ORIGINS` in each API's
+environment to `http://mac-pro.local:8081` (MacBook) or
+`http://mac-mini.local:8081` (Mac mini), then restart that API service.
+Clients must be on a network that can resolve these names and reach both ports.
+Do not advertise `127.0.0.1` to clients on other devices.
+These targets default to `PLATFORM=macos`. With `PLATFORM=ios`, they list paired
+iPhones/iPads and available simulators for selection; `DEVICE=<UDID>` skips the
+prompt. Simulator launches need no developer team. Physical-device launches
+automatically use the Xcode project's team or an available Apple Development
+certificate; multiple certificate teams prompt for selection. Set
+`TYPEFLUX_IOS_TEAM` to override the team. Local HTTP is enabled
+only for the iOS Debug build. See [the iOS quickstart](docs/IOS_QUICKSTART.zh-CN.md).
 
 CI tests are opt-in. On an open pull request, a repository owner, member, or
 collaborator can comment `@autotest` to run the test workflow.

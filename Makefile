@@ -1,6 +1,16 @@
 RELEASE_VARIANT := $(if $(TYPEFLUX_RELEASE_VARIANT),$(TYPEFLUX_RELEASE_VARIANT),minimal)
 RELEASE_ARCH := $(if $(TYPEFLUX_RELEASE_ARCH),$(TYPEFLUX_RELEASE_ARCH),native)
 PACKAGE_NAME = Typeflux$(if $(filter full,$(RELEASE_VARIANT)),-full,$(if $(filter app-only,$(RELEASE_VARIANT)),-app-only,))$(if $(filter arm64,$(RELEASE_ARCH)),-apple-silicon,$(if $(filter x86_64,$(RELEASE_ARCH)),-intel,$(if $(filter universal,$(RELEASE_ARCH)),-universal,)))
+PLATFORM ?= macos
+DEVICE ?=
+
+ifeq ($(PLATFORM),ios)
+NETWORK_DEV_LAUNCH = TYPEFLUX_ALLOW_INSECURE_HTTP=YES TYPEFLUX_IOS_TARGET="$(DEVICE)" python3 ./scripts/ios.py start
+else ifeq ($(PLATFORM),macos)
+NETWORK_DEV_LAUNCH = ./scripts/run_dev_attached.sh
+else
+NETWORK_DEV_LAUNCH = python3 -c 'import sys; sys.exit("PLATFORM must be macos or ios.")'
+endif
 
 .PHONY: help
 help: ## Display this help message
@@ -89,6 +99,13 @@ dev: ## Run dev version attached to terminal with local API URL
 .PHONY: full-dev
 full-dev: ## Run "full" variant dev version attached to terminal
 	TYPEFLUX_API_URL=http://127.0.0.1:8080 TYPEFLUX_DEV_VARIANT=full ./scripts/run_dev_attached.sh
+
+.PHONY: dev-macbook dev-macmini
+dev-macbook: ## Run against the MacBook API (PLATFORM=macos|ios, optional DEVICE=<UDID>)
+	TYPEFLUX_API_URL=http://mac-pro.local:8080 TYPEFLUX_API_URLS=http://mac-pro.local:8080 $(NETWORK_DEV_LAUNCH)
+
+dev-macmini: ## Run against the Mac mini API (PLATFORM=macos|ios, optional DEVICE=<UDID>)
+	TYPEFLUX_API_URL=http://mac-mini.local:8080 TYPEFLUX_API_URLS=http://mac-mini.local:8080 $(NETWORK_DEV_LAUNCH)
 
 .PHONY: build
 build: ## Build the Swift package

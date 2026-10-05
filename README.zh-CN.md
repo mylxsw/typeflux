@@ -125,11 +125,27 @@ scripts/setup_dev_cert.sh
 
 make run          # 构建并以 .app bundle 形式启动
 make dev          # 启动并附带终端日志
+make dev-macbook  # 使用 MacBook 的 API：mac-pro.local:8080
+make dev-macmini  # 使用 Mac mini 的 API：mac-mini.local:8080
+make dev-macbook PLATFORM=ios # 选择 iOS 真机或模拟器，连接 MacBook API
+make dev-macmini PLATFORM=ios # 选择 iOS 真机或模拟器，连接 Mac mini API
 make full-dev     # 使用内置 SenseVoice 资源启动开发应用
 make full-release # 在本地构建完整的已公证生产安装包
 make release-continue # 继续中断的本地发布流程
 swift test        # 运行测试
 ```
+
+两个 Mac 局域网命令会使用指定的单个 API 地址，覆盖终端中已有的
+`TYPEFLUX_API_URLS`。realtime 地址由选中的 API 下发：在 MacBook 的 API
+环境中设置 `REALTIME_ASR_SERVER_ORIGINS=http://mac-pro.local:8081`，Mac mini
+设置 `REALTIME_ASR_SERVER_ORIGINS=http://mac-mini.local:8081`，然后重启对应的 API
+服务。客户端需要能够解析这两个主机名并访问 8080、8081 端口；给其他设备使用时，
+不要下发 `127.0.0.1`。
+不指定平台时仍启动 macOS 应用。`PLATFORM=ios` 会列出已配对的 iPhone/iPad 和
+可用模拟器，输入编号后构建、安装并启动；也可以用 `DEVICE=<UDID>` 直接指定。
+模拟器不需要开发者团队；真机会自动读取 Xcode 工程的团队或本机 Apple 开发证书，
+证书对应多个团队时列出供选择。也可以用 `TYPEFLUX_IOS_TEAM` 指定团队。
+局域网 HTTP 仅用于 iOS Debug 构建。详见 [iOS 快速入门](docs/IOS_QUICKSTART.zh-CN.md)。
 
 > ⚠️ 如果跳过 `setup_dev_cert.sh`，`make run` 仍然可用，但 macOS 会在每次构建后重新请求权限（ad-hoc 签名）。
 
