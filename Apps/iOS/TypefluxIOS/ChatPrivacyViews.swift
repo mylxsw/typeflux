@@ -9,22 +9,24 @@ struct ChatConsentView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    Image(systemName: "checkmark.shield.fill").font(.largeTitle).foregroundStyle(ChatTheme.accent)
+                VStack(alignment: .leading, spacing: 20) {
                     Text("Before sending, review how your data is used").font(.title2.bold())
-                    Label(
-                        "Your messages, selected photos, dictated text and conversation context are sent to Typeflux to generate and sync replies.",
-                        systemImage: "bubble.left.and.bubble.right"
-                    )
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Shared with Typeflux", systemImage: "bubble.left.and.bubble.right").font(.headline)
+                        Text(
+                            "Your messages, selected photos, dictated text and conversation context are sent to Typeflux to generate and sync replies."
+                        )
+                        .font(.subheadline)
+                    }.padding(16).frame(maxWidth: .infinity, alignment: .leading).chatCard()
                     if let disclosure = store.disclosure {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("AI and tool providers").font(.headline)
-                            Text(disclosure.providers.joined(separator: ", "))
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label("AI and tool providers", systemImage: "network").font(.headline)
+                            Text(disclosure.providers.joined(separator: ", ")).font(.subheadline)
                             Text(
                                 "These providers may receive the context needed to answer your request, including search queries when web tools are used."
                             )
                             .font(.footnote).foregroundStyle(.secondary)
-                        }
+                        }.padding(16).frame(maxWidth: .infinity, alignment: .leading).chatCard()
                     } else {
                         Text("Provider details are unavailable. Try again before sending any content.")
                             .foregroundStyle(.orange)
@@ -39,13 +41,25 @@ struct ChatConsentView: View {
                         Button("Retry") { Task { await store.refreshAccountDetails() } }
                     }
                     Link("Privacy Policy", destination: ChatSettingsInfo.privacyURL)
-                    Button("Agree and continue") { store.acceptAIConsent(); dismiss() }
-                        .buttonStyle(.borderedProminent).controlSize(.large)
-                        .disabled(store.disclosure?.isValid != true || store.profile == nil)
-                        .accessibilityIdentifier("privacy.agree")
-                    Button("Not now") { store.showsConsent = false; dismiss() }
-                        .accessibilityIdentifier("privacy.decline")
-                }.padding(24)
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("privacy.policy")
+                }.padding(20)
+            }
+            .background(ChatTheme.background)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 8) {
+                    Text("Continue to review your draft. Nothing is sent automatically.")
+                        .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    Button { store.acceptAIConsent(); dismiss() } label: {
+                        Text("Agree and continue").frame(maxWidth: .infinity, minHeight: 28)
+                    }
+                    .buttonStyle(.borderedProminent).controlSize(.large)
+                    .disabled(store.disclosure?.isValid != true || store.profile == nil)
+                    .accessibilityIdentifier("privacy.agree")
+                    Button { store.showsConsent = false; dismiss() } label: {
+                        Text("Not now").frame(maxWidth: .infinity, minHeight: 44)
+                    }.accessibilityIdentifier("privacy.decline")
+                }.padding(.horizontal, 20).padding(.top, 12).background(.regularMaterial)
             }
             .navigationTitle("AI data sharing").navigationBarTitleDisplayMode(.inline)
         }.presentationDragIndicator(.visible)
@@ -98,13 +112,18 @@ struct ChatDeleteAccountView: View {
     var body: some View {
         Form {
             Section {
-                Label("Permanently delete your account", systemImage: "trash").font(.headline).foregroundStyle(.red)
-                Text(
-                    "Your account, cloud conversations, photos, memories and sync data will be deleted. All devices will lose account access. This cannot be undone."
-                )
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Permanently delete your account", systemImage: "trash").font(.headline).foregroundStyle(.red)
+                    Text(
+                        "Your account, cloud conversations, photos, memories and sync data will be deleted. All devices will lose account access. This cannot be undone."
+                    )
+                    .font(.subheadline)
+                }.padding(.vertical, 4)
+            }
+            Section("Subscriptions and retained records") {
                 Text(
                     "Website subscriptions will be cancelled immediately. Deletion does not issue a refund. Any App Store subscriptions must be managed separately."
-                )
+                ).font(.subheadline)
                 Link(
                     "Manage App Store subscriptions",
                     destination: URL(string: "https://apps.apple.com/account/subscriptions")!
@@ -113,13 +132,16 @@ struct ChatDeleteAccountView: View {
                     "Payment records required for accounting, security logs and previously submitted support reports may be retained under the Privacy Policy. Data already sent to providers is subject to their retention policies."
                 )
                 .font(.footnote).foregroundStyle(.secondary)
-                Toggle("I understand and want to delete my account", isOn: $confirmed)
-                    .accessibilityIdentifier("account.delete.confirm")
+                Link("Privacy Policy", destination: ChatSettingsInfo.privacyURL)
             }
             if let error = store.errorMessage {
                 Text(error).foregroundStyle(.red)
             }
             Section("Verify your identity") {
+                Toggle("I understand and want to delete my account", isOn: $confirmed)
+                    .accessibilityIdentifier("account.delete.confirm")
+                Text("Confirm above, then verify your identity to delete the account.")
+                    .font(.footnote).foregroundStyle(.secondary)
                 if needsApple {
                     SignInWithAppleButton(.continue) { request in
                         request.requestedScopes = []
@@ -146,8 +168,13 @@ struct ChatDeleteAccountView: View {
                     Text("Continue with Apple to verify and permanently delete this account.").font(.footnote)
                 } else {
                     if store.profile?.providers?.contains("password") == true {
-                        SecureField("Password", text: $password).textContentType(.password)
-                            .accessibilityIdentifier("account.delete.password")
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Current password").font(.subheadline.weight(.medium))
+                            SecureField("Enter your current password", text: $password).textContentType(.password)
+                                .frame(minHeight: 44)
+                                .accessibilityLabel("Current password")
+                                .accessibilityIdentifier("account.delete.password")
+                        }
                         Button("Verify and delete account", role: .destructive) {
                             remove(.init(provider: "password", password: password))
                         }.disabled(!confirmed || password.isEmpty || busy)
@@ -194,7 +221,7 @@ struct ChatReportView: View {
     @Bindable var store: ChatStore
     let message: ChatMessage
     @Environment(\.dismiss) private var dismiss
-    @State private var reason = "Harmful or unsafe content"
+    @State private var reason = ""
     @State private var details = ""
     @State private var busy = false
     @State private var submitted = false
@@ -208,14 +235,35 @@ struct ChatReportView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Picker("Reason", selection: $reason) {
-                    ForEach(reasons, id: \.self) { Text(LocalizedStringKey($0)).tag($0) }
-                }.pickerStyle(.inline)
-                TextField("Additional details (optional)", text: $details, axis: .vertical).lineLimit(3 ... 6)
-                Text(
-                    "Submitting sends this answer, its identifiers and your explanation to the Typeflux support team. Other messages and photos are not attached."
-                )
-                .font(.footnote).foregroundStyle(.secondary)
+                Section("Answer being reported") {
+                    Text(message.text).font(.subheadline).lineLimit(3)
+                        .accessibilityIdentifier("report.answer")
+                }
+                Section("Reason") {
+                    ForEach(Array(reasons.enumerated()), id: \.offset) { index, value in
+                        Button { reason = value } label: {
+                            HStack {
+                                Text(LocalizedStringKey(value)).foregroundStyle(.primary)
+                                Spacer(minLength: 12)
+                                Image(systemName: "checkmark").foregroundStyle(ChatTheme.accent)
+                                    .opacity(reason == value ? 1 : 0).accessibilityHidden(true)
+                            }.frame(minHeight: 32).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(reason == value ? .isSelected : [])
+                        .accessibilityIdentifier("report.reason.\(index)")
+                    }
+                }
+                Section {
+                    TextField("Tell us more (optional)", text: $details, axis: .vertical).lineLimit(3 ... 6)
+                        .accessibilityIdentifier("report.details")
+                } header: {
+                    Text("Additional details (optional)")
+                } footer: {
+                    Text(
+                        "Submitting sends this answer, its identifiers and your explanation to the Typeflux support team. Other messages and photos are not attached."
+                    )
+                }
                 if let error = store.errorMessage {
                     Text(error).foregroundStyle(.red)
                 }
@@ -230,7 +278,7 @@ struct ChatReportView: View {
                             submitted = await store.reportAnswer(message: message, reason: reason, details: details)
                             busy = false
                         }
-                    }.disabled(busy).accessibilityIdentifier("report.submit")
+                    }.disabled(busy || reason.isEmpty).accessibilityIdentifier("report.submit")
                 }
             }
             .alert("Report submitted", isPresented: $submitted) { Button("OK") { dismiss() } }

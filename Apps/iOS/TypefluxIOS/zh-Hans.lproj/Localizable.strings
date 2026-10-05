@@ -253,3 +253,14 @@
 "Your account has been deleted." = "账号已删除。";
 "Your account was deleted, but local sign-in data could not be cleared." = "账号已删除，但无法清理本机登录信息。";
 "Dismiss" = "关闭";
+
+/* GUL-217 interface polish */
+"Sign in to send" = "登录后发送";
+"Shared with Typeflux" = "发送给 Typeflux 的数据";
+"Continue to review your draft. Nothing is sent automatically." = "继续后可检查草稿，不会自动发送。";
+"Subscriptions and retained records" = "订阅与保留记录";
+"Confirm above, then verify your identity to delete the account." = "请先勾选上方确认，再验证身份以删除账号。";
+"Current password" = "当前密码";
+"Enter your current password" = "请输入当前密码";
+"Answer being reported" = "你正在举报的回答";
+"Tell us more (optional)" = "请补充相关情况（选填）";

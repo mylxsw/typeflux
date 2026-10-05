@@ -111,7 +111,9 @@ struct ChatDetailView: View {
             if !store.isAuthenticated {
                 Label("Guest mode", systemImage: "person.crop.circle").font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button("Sign in") { store.showsLogin = true }.accessibilityIdentifier("guest.login")
+                Button { store.showsLogin = true } label: {
+                    Text("Sign in").frame(minWidth: 44, minHeight: 44)
+                }.accessibilityIdentifier("guest.login")
             }
             if store.isAuthenticated {
                 if let conversation = store.conversation, !conversation.messages.isEmpty || store.isRunning {

@@ -27,11 +27,6 @@ struct LoginView: View {
             GeometryReader { geometry in
                 ScrollView {
                     VStack(spacing: 0) {
-                        HStack {
-                            Spacer()
-                            Button { dismiss() } label: { Image(systemName: "xmark.circle.fill").font(.title2) }
-                                .accessibilityLabel("Browse first").accessibilityIdentifier("login.close")
-                        }
                         if !store.draft.isEmpty || store.imageDataURL != nil {
                             Label(
                                 "Your draft is saved. Sign in, then review and send it yourself.",
@@ -59,6 +54,7 @@ struct LoginView: View {
                                 handleApple(result)
                             }
                             .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                            .id(colorScheme)
                             .frame(height: 52)
                             .clipShape(Capsule())
                             .disabled(store.isLoading)
@@ -86,7 +82,9 @@ struct LoginView: View {
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("login.email.open")
                             .disabled(store.isLoading)
-                            Button("Browse first") { dismiss() }.accessibilityIdentifier("login.browse")
+                            Button { dismiss() } label: {
+                                Text("Browse first").frame(maxWidth: .infinity, minHeight: 44)
+                            }.accessibilityIdentifier("login.browse")
                             legal.padding(.top, 8)
                         }
                         .frame(maxWidth: 420)
@@ -101,7 +99,19 @@ struct LoginView: View {
                     ProgressView().controlSize(.large)
                 }
             }
-            .toolbar(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    // Keep this a custom toolbar item: the automatic bar-button bridge
+                    // otherwise discards the label frame and reports a 36-point target.
+                    HStack(spacing: 0) {
+                        Button { dismiss() } label: {
+                            Image(systemName: "xmark").frame(width: 44, height: 44).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Browse first").accessibilityIdentifier("login.close")
+                    }
+                }
+            }
             .onDisappear {
                 // Successful sign-in replaces this view while the initial history is still loading.
                 if !store.isAuthenticated {
@@ -119,9 +129,10 @@ struct LoginView: View {
         Text(
             "By continuing you agree to the [Terms of Service](https://typeflux.app/terms) and [Privacy Policy](https://typeflux.app/privacy)."
         )
-        .font(.system(size: 11.5)).foregroundStyle(ChatTheme.tertiary)
-        .tint(ChatTheme.secondary)
+        .font(.footnote).foregroundStyle(ChatTheme.secondary)
+        .tint(ChatTheme.accent)
         .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func handleApple(_ result: Result<ASAuthorization, Error>) {
