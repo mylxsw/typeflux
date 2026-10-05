@@ -50,11 +50,12 @@ struct AskVoiceButton: NSViewRepresentable {
         var pressed = false
         var reduceMotion = false
 
-        private var accented: Bool { phase == .listening || (enabled && hovered) }
 
-        static func fill(phase: AskVoiceInput.Phase, hovered: Bool) -> Color {
-            if phase == .listening { return AskTheme.accent.opacity(0.22) }
-            return hovered ? AskTheme.hoverFill : .clear
+        /// No circle behind the microphone: recording turns the icon into an
+        /// accent stop square, hover brightens it.
+        static func iconColor(phase: AskVoiceInput.Phase, hovered: Bool) -> Color {
+            if phase == .listening { return AskTheme.accent }
+            return hovered ? StudioTheme.textPrimary : StudioTheme.textSecondary
         }
 
         var body: some View {
@@ -68,13 +69,14 @@ struct AskVoiceButton: NSViewRepresentable {
                             .rotationEffect(.degrees(reduceMotion ? -90 : context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 0.9) * 400))
                     }
                 } else {
-                    // Borderless like the other footer controls; colour only for hover and recording.
-                    Circle().fill(Self.fill(phase: phase, hovered: enabled && hovered))
+                    // Borderless like the other composer controls; the icon carries hover and recording.
                     if phase == .listening {
-                        RoundedRectangle(cornerRadius: 2).fill(AskTheme.accent).frame(width: 9, height: 9)
+                        RoundedRectangle(cornerRadius: 2.5)
+                            .fill(Self.iconColor(phase: phase, hovered: hovered))
+                            .frame(width: 12, height: 12)
                     } else {
                         Image(systemName: "mic").font(.system(size: 15, weight: .regular))
-                            .foregroundStyle(accented ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                            .foregroundStyle(Self.iconColor(phase: phase, hovered: enabled && hovered))
                     }
                 }
             }

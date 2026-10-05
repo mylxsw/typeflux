@@ -17,7 +17,6 @@ struct AskAttachButton: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(hovering || expanded ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                 .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                .background(hovering || expanded ? AskTheme.hoverFill : Color.clear, in: Circle())
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

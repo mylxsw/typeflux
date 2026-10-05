@@ -287,12 +287,9 @@ struct AskStorageButton: View {
         let active = hovering || presented
         Button { presented.toggle() } label: {
             Image(systemName: local ? "lock" : "cloud")
-                .font(.system(size: 12.5, weight: .medium))
-                .foregroundStyle(local ? AskTheme.privateTint
-                    : active ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .font(.system(size: 12.5, weight: local || active ? .semibold : .medium))
+                .foregroundStyle(Self.iconColor(local: local, active: active))
                 .frame(width: Self.size, height: Self.size)
-                .background(active ? (local ? AskTheme.privateTint.opacity(0.14) : AskTheme.hoverFill) : .clear,
-                            in: Circle())
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -303,6 +300,13 @@ struct AskStorageButton: View {
         .modifier(AskLocalModeMenu(isPresented: $presented,
                                    status: .make(model: model, signedIn: model.isSignedIn, launcher: launcher),
                                    model: model, launcher: launcher))
+    }
+
+    /// No circle behind the icon: the private tint marks this Mac, hover or an
+    /// open menu brightens the cloud.
+    static func iconColor(local: Bool, active: Bool) -> Color {
+        if local { return AskTheme.privateTint }
+        return active ? StudioTheme.textPrimary : StudioTheme.textSecondary
     }
 }
 
