@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · 随便问 启动器翻译 设计稿</title>
+<style>
+  :root {
+    --canvas: #0c0c0d; --desk: #1b1c1f;
+    --glass: rgba(58,58,62,.82);
+    --hair: rgba(255,255,255,.10);
+    --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: rgba(10,132,255,.16); --accent-text: #8ebdff;
+    --hover: rgba(255,255,255,.08); --ctl: rgba(255,255,255,.08);
+    --danger: #ff8a80;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 48px; background: var(--canvas); color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 26px; max-width: 1200px; }
+  h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 780px 1fr; gap: 28px 40px; align-items: start; }
+  .stage { border-radius: 14px; padding: 30px 44px; border: 1px solid rgba(255,255,255,.05);
+    background: radial-gradient(1200px 400px at 30% -40%, #2c3442 0%, transparent 60%), var(--desk); }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 10px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  code { font-size: 11.5px; color: #c9c9cc; }
+
+  /* ===== launcher card (AskComposer, launcher chrome) ===== */
+  .card { width: 680px; border-radius: 27px; background: var(--glass); border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 24px 60px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
+    backdrop-filter: blur(30px); overflow: hidden; }
+  .chips { display: flex; gap: 8px; padding: 12px 12px 0; }
+  .ctx { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 10px; border-radius: 999px;
+    border: 1px solid var(--hair); background: rgba(255,255,255,.05); font-size: 12.5px; color: var(--text); white-space: nowrap; }
+  .ctx small { color: var(--text-2); font-size: 12px; }
+  .ctx .x { color: var(--text-3); font-size: 10px; margin-left: 2px; }
+  .dot { width: 16px; height: 16px; border-radius: 50%; background: conic-gradient(#ea4335 0 33%, #fbbc05 0 66%, #34a853 0); display: inline-block; }
+  .editor { padding: 13px 16px 8px; font-size: 15px; line-height: 22px; min-height: 44px; font-variant-numeric: tabular-nums; }
+  .caret { display: inline-block; width: 1.5px; height: 18px; background: var(--accent); vertical-align: -3px; margin-left: 1px; }
+  .ghost { color: var(--text-3); }
+  .foot { display: flex; align-items: center; gap: 6px; height: 54px; padding: 0 10px; }
+  .round { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-2); font-size: 16px; flex: none; }
+  .round.tile { background: var(--accent-soft); color: var(--accent-text); border: 1px solid rgba(10,132,255,.35); }
+  .menu { font-size: 13.5px; font-weight: 600; padding: 0 8px; white-space: nowrap; }
+  .vsep { width: 1px; height: 20px; background: var(--hair); margin: 0 4px; }
+  .spacer { flex: 1; }
+  .send { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.10); color: var(--text-2);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 15px; }
+  .send.on { background: var(--accent); color: #fff; }
+  .hair { height: 1px; background: var(--hair); margin: 0 12px; }
+
+  /* ===== quick results (new) ===== */
+  .qr { padding: 6px; }
+  .grp { font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--text-3); padding: 6px 12px 4px; }
+  .calc { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; min-height: 66px; }
+  .calc.hl { background: var(--hover); box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); }
+  .tile { width: 28px; height: 28px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--accent-soft); color: var(--accent); font-size: 14px; flex: none; }
+  .tile.app { background: linear-gradient(135deg,#ff9f0a,#ff6b00); color: #fff; }
+  .tile.app2 { background: linear-gradient(135deg,#30d158,#0a9f3a); color: #fff; }
+  .tile.doc { background: rgba(255,255,255,.10); color: var(--text-2); }
+  .tile.ai { background: rgba(191,90,242,.18); color: #d6a1f7; }
+  .calc .title { font-size: 13.5px; }
+  .calc .rhs { margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; }
+  .calc .expr { font-size: 12.5px; color: var(--text-2); }
+  .calc .val { font-size: 26px; font-weight: 600; line-height: 1.15; letter-spacing: -.3px; }
+  .calc .val.dim { color: var(--text-3); }
+  .calc .val.err { font-size: 14px; font-weight: 500; color: var(--danger); }
+  .fmt { display: grid; grid-template-columns: 82px 1fr 28px; align-items: center; gap: 10px; padding: 0 12px 0 52px;
+    min-height: 32px; border-radius: 12px; font-size: 12.5px; }
+  .fmt .k { color: var(--text-3); font-size: 11.5px; }
+  .fmt .v { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .fmt .cp { color: var(--text-3); text-align: center; font-size: 13px; }
+  .fmt .cp.ok { color: #30d158; }
+  .fmt.hl { background: var(--hover); }
+  .row { display: flex; align-items: center; gap: 12px; padding: 0 12px; height: 42px; border-radius: 14px; font-size: 13.5px; }
+  .row.hl { background: var(--hover); }
+  .row .cap { margin-left: auto; color: var(--text-3); font-size: 11.5px; white-space: nowrap; }
+  .row .q { color: var(--text-2); }
+  .kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 18px; padding: 0 5px;
+    border-radius: 5px; background: rgba(255,255,255,.08); border: 1px solid var(--hair); font-size: 10.5px; font-weight: 600; color: var(--text-2); }
+  .hint { font-size: 11px; color: var(--text-3); text-align: right; padding: 2px 18px 10px; }
+  .hint b { color: var(--text-2); font-weight: 600; }
+  .new { display: inline-block; font-size: 10px; font-weight: 700; color: #0b0b0c; background: #ffd60a; border-radius: 4px;
+    padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
+  .later { display: inline-block; font-size: 10px; font-weight: 700; color: var(--text-2); border: 1px solid var(--hair);
+    border-radius: 4px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
+</style><style>
+  .tcard { border-radius: 16px; padding: 12px 14px 10px; background: var(--hover); box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); margin: 0 0 4px; }
+  .tcard.plain { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); }
+  .thead { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); margin-bottom: 8px; }
+  .lang { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--text); font-size: 12px; }
+  .lang.to { background: var(--accent-soft); color: var(--accent-text); }
+  .engine { margin-left: auto; font-size: 11px; color: var(--text-3); border: 1px solid var(--hair); border-radius: 5px; padding: 0 6px; }
+  .engine.ai { color: #d6a1f7; border-color: rgba(191,90,242,.35); }
+  .ttext { font-size: 15px; line-height: 1.55; color: var(--text); }
+  .ttext.dim { color: var(--text-3); }
+  .tacts { display: flex; justify-content: flex-end; gap: 14px; margin-top: 8px; font-size: 11.5px; color: var(--text-3); }
+  .bar { height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--accent) 0 40%, transparent 40%); margin-top: 8px; }
+  .dict { display: grid; grid-template-columns: 52px 1fr 24px; gap: 10px; padding: 0 12px 0 52px; min-height: 30px; align-items: center; font-size: 12.5px; }
+  .dict .k { color: var(--text-3); font-size: 11.5px; }
+  .mini { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 12px 0 52px; border-radius: 12px; font-size: 13px; color: var(--text-2); }
+  .mini b { color: var(--text-3); font-weight: 500; font-size: 11.5px; }
+  .mini .t { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sel { color: var(--text-3); }
+</style></head><body>
+<h1>随便问 · 启动器翻译</h1>
+<p class="sub">翻译是快捷结果的第二个来源：选中即译、前缀翻译、自动识别三个入口；本机 Translation 引擎优先（离线、不出本机），AI 引擎兜底和精修。
+↩ 复制 · ⌥↩ 写回原应用（选中即译时原地替换）· ⇥ 换目标语言 · ⌘R 用 AI 重译 · ⌘↩ 问 AI。详见 <code>docs/design/ask-launcher-translation.md</code>。</p>
+<div class="grid">
+
+  <div class="stage" id="selection">
+    <div class="label">① 选中即译 · 输入框为空，选中的是外文，卡片默认高亮</div>
+    <div class="card">
+      <div class="chips">
+        <span class="ctx"><i class="dot"></i>Google Chrome <small>· Release notes — Typeflux</small><span class="x">✕</span></span>
+        <span class="ctx">选中文字 · 2 行<span class="x">✕</span></span>
+      </div>
+      <div class="editor"><span class="sel">输入问题，/ 调用命令</span><span class="caret"></span></div>
+      <div class="foot">
+        <span class="round">＋</span><span class="round">☁</span>
+        <span class="menu">MiniMax M3 ⌄</span><span class="vsep"></span>
+        <span class="round tile">◎</span><span class="round tile">✺</span>
+        <span class="spacer"></span><span class="round">🎙</span><span class="send">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="tcard">
+          <div class="thead"><span class="tile">文</span><span style="color:var(--text);font-size:13.5px">翻译</span>
+            <span class="lang">英语</span>→<span class="lang to">简体中文 ⌄</span><span class="engine">本机</span></div>
+          <div class="ttext">这次更新修复了外接显示器上启动器位置偏移的问题，并让会议中的语音输入更加稳定。</div>
+          <div class="tacts"><span>⧉ 复制</span><span>🔊 朗读</span><span>↺ AI 重译 ⌘R</span></div>
+        </div>
+        <div class="row"><span class="tile">▢</span>讲讲这一屏在做什么<span class="cap">带当前截图</span></div>
+        <div class="row"><span class="tile">◱</span>读一下这个网页并总结<span class="cap">用当前浏览器</span></div>
+      </div>
+      <div class="hint"><b>↩</b> 复制译文 · <b>⌥↩</b> 替换原文 · <b>⇥</b> 换语言 · <b>esc</b> 关闭</div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>选中 → ⌥Space → 已经译好</h2>
+    <ul>
+      <li>启动器本来就会抓取选中文字；输入框为空时，起手建议上方出现翻译卡片。</li>
+      <li>选中的是外语：卡片<b>默认高亮</b>，↩ 复制。选中的是主语言：译成第二语言，但不抢默认高亮。</li>
+      <li><b>⌥↩ 原地替换</b>：关闭启动器后，用 <code>TextInjector</code> 把译文写回原应用，替换刚才的选区；失败时回退为复制并给出提示。</li>
+      <li>只用<b>本机引擎</b>，选中的文字不会被自动发到云端。本机不支持时显示「用 AI 翻译 ⌘R」，由用户决定。</li>
+    </ul>
+  </div>
+
+  <div class="stage" id="prefix">
+    <div class="label">② 前缀翻译 · <code>fy&gt;ja</code> 指定目标语言；AI 引擎重译中</div>
+    <div class="card">
+      <div class="editor">fy&gt;ja 明天下午三点开会，记得带上周报<span class="caret"></span></div>
+      <div class="foot">
+        <span class="round">＋</span><span class="round">☁</span>
+        <span class="menu">MiniMax M3 ⌄</span><span class="vsep"></span>
+        <span class="round tile">◎</span><span class="round tile">✺</span>
+        <span class="spacer"></span><span class="round">🎙</span><span class="send on">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="tcard">
+          <div class="thead"><span class="tile">文</span><span style="color:var(--text);font-size:13.5px">翻译</span>
+            <span class="lang">简体中文</span>→<span class="lang to">日语 ⌄</span><span class="engine ai">AI · GPT-5 mini</span></div>
+          <div class="ttext dim">明日の午後3時に会議があります。週報を忘れずに持ってきてください。</div>
+          <div class="bar"></div>
+        </div>
+        <div class="row"><span class="tile ai">✦</span>问 AI：<span class="q">“明天下午三点开会，记得带上周报”</span><span class="cap"><span class="kbd">⌘↩</span></span></div>
+      </div>
+      <div class="hint"><b>↩</b> 复制译文 · <b>⇥</b> 换语言 · <b>⌘↩</b> 问 AI · <b>esc</b> 关闭</div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>明确意图：fy / tr / 翻译 / translate</h2>
+    <ul>
+      <li>写法：<code>fy 文本</code>、<code>fy&gt;ja 文本</code>、<code>tr 文本 to french</code>、<code>翻译成日语 文本</code>、命令面板 <code>/translate</code>。</li>
+      <li>语言可以写代码、中文名或英文名；⇥ 在主语言 / 第二语言 / 最近用过的语言之间轮换，也可以点语言标签选择。</li>
+      <li>引擎「自动」：本机优先，本机不支持的语言对走 AI；右上角标明结果来源。</li>
+      <li>重译中保留上一次译文并变暗，加细进度条，面板高度不跳。</li>
+    </ul>
+  </div>
+
+  <div class="stage" id="implicit">
+    <div class="label">③ 自动识别 · 直接输入外文：多一行轻量译文，回车仍是问 AI</div>
+    <div class="card">
+      <div class="editor">serendipity<span class="caret"></span></div>
+      <div class="foot">
+        <span class="round">＋</span><span class="round">☁</span>
+        <span class="menu">MiniMax M3 ⌄</span><span class="vsep"></span>
+        <span class="round tile">◎</span><span class="round tile">✺</span>
+        <span class="spacer"></span><span class="round">🎙</span><span class="send on">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="row hl"><span class="tile ai">✦</span>问 AI：<span class="q">“serendipity”</span><span class="cap"><span class="kbd">↩</span></span></div>
+        <div class="mini"><b>译</b><span class="t">意外发现美好事物的运气；机缘巧合</span><span class="cap" style="margin-left:auto;color:var(--text-3);font-size:11px">本机 · ↓ 选中</span></div>
+        <div class="dict"><span class="k">词典</span><span>n. the occurrence of events by chance in a happy or beneficial way</span><span class="cap">⧉</span></div>
+      </div>
+      <div class="hint"><b>↩</b> 发送 · <b>↓</b> 选择译文 · <b>⌥↩</b> 写回原应用 · <b>esc</b> 关闭</div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>低打扰：不抢回车</h2>
+    <ul>
+      <li>输入不是算式、没有前缀，且检测为非主语言时，在「问 AI」下方加一行「译：…」。</li>
+      <li>默认高亮仍是「问 AI」：用英文提问的人照常回车发送；需要译文按 ↓ 再 ↩，或 ⌥↩ 写回。</li>
+      <li>单个英文单词额外给出<b>系统词典</b>释义（离线），可以单独复制。</li>
+      <li>只用本机引擎，防抖 250 ms；设置里可以关闭。</li>
+    </ul>
+  </div>
+
+</div></body></html>
