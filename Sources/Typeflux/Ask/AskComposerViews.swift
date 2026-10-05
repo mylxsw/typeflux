@@ -9,6 +9,10 @@ struct AskLauncherView: View {
     var body: some View {
         AskComposer(model: model, launcher: true, onDismiss: onDismiss, onHeightChange: onHeightChange)
             .padding(AskMetrics.launcherGutter)
+            // Pinned to the panel's top edge: SwiftUI draws new results before the panel
+            // takes their height, and centred content would shift the editor and its
+            // controls up or down for that frame.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .tint(AskTheme.accent)
             .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
     }
@@ -126,6 +130,10 @@ struct AskComposer: View {
     @State private var suggestionIndex = 0
     /// A local answer for the launcher's text, such as a calculation.
     @State private var quickResults: AskQuickResults?
+    /// The tallest the quick results have been since they appeared. The list keeps
+    /// that height while typing, so the panel does not shrink and grow with every
+    /// keystroke as matches come and go; it resets when the results go away.
+    @State private var quickReserve: CGFloat = 0
     /// Quick results show while the launcher's text is all there is to send:
     /// quotes, files or chosen tools mean the text is written for the AI.
     private var showsQuickResults: Bool {
@@ -147,6 +155,8 @@ struct AskComposer: View {
             : nil
         guard next != quickResults else { return }
         quickResults = next
+        let reserve = next.map { max(quickReserve, AskQuickResultsView.height(for: $0)) } ?? 0
+        if reserve != quickReserve { quickReserve = reserve }
         reportHeight()
     }
 
@@ -295,7 +305,7 @@ struct AskComposer: View {
                     .opacity(Self.recordingDim(active))
             } else if showsQuickResults, let quickResults {
                 AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
-                                    onRun: runQuickResult,
+                                    minimumHeight: quickReserve, onRun: runQuickResult,
                                     onHighlight: { index in self.quickResults?.highlight(index) })
                     .disabled(active)
                     .opacity(Self.recordingDim(active))
@@ -828,7 +838,7 @@ struct AskComposer: View {
         let banners = noticeRows
         let commands = launcher && paletteOpen ? AskCommandPaletteView.height(for: palette) + 10 : 0
         let quick = showsQuickResults && !showsLauncherSuggestions
-            ? quickResults.map(AskQuickResultsView.height(for:)) ?? 0 : 0
+            ? quickResults.map { max(quickReserve, AskQuickResultsView.height(for: $0)) } ?? 0 : 0
         onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
                                                  suggestions: showsLauncherSuggestions, attachments: showsStrip,
                                                  attachmentHeight: attachmentHeight) + commands + quick)

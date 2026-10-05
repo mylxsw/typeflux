@@ -12,15 +12,23 @@ enum AskLauncherPlacement {
         AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true)
     }
 
+    /// The top edge every launcher on `screen` shares: the empty one's, centred.
+    static func top(on screen: NSRect) -> CGFloat {
+        (screen.midY + restingHeight / 2).rounded()
+    }
+
     static func frame(height: CGFloat, width: CGFloat, screen: NSRect) -> NSRect {
-        let top = (screen.midY + restingHeight / 2).rounded()
+        let top = top(on: screen)
         return clamped(NSRect(x: (screen.midX - width / 2).rounded(), y: top - height, width: width, height: height),
                        screen: screen)
     }
 
-    /// The same panel at a new height, its top edge unchanged.
-    static func resized(_ frame: NSRect, height: CGFloat, screen: NSRect?) -> NSRect {
-        let next = NSRect(x: frame.minX, y: frame.maxY - height, width: frame.width, height: height)
+    /// The same panel at a new height, its top edge at `top` (the edge it opened
+    /// with) or else unchanged. Keeping the opening edge means a panel moved up to
+    /// fit the screen returns to its place once it is short again.
+    static func resized(_ frame: NSRect, height: CGFloat, top: CGFloat? = nil, screen: NSRect?) -> NSRect {
+        let edge = top ?? frame.maxY
+        let next = NSRect(x: frame.minX, y: edge - height, width: frame.width, height: height)
         guard let screen else { return next }
         return clamped(next, screen: screen)
     }

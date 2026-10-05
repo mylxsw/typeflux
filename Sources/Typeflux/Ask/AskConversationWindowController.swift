@@ -21,6 +21,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private let conversationFrameAutosaveName: NSWindow.FrameAutosaveName
     private var launcher: AskFloatingPanel?
     private var launcherHeight = AskMetrics.launcherHeight(editor: 32, banners: 0)
+    /// The top edge the launcher opened with; every resize keeps it.
+    private var launcherTop: CGFloat?
     private var conversationWindow: NSWindow?
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
@@ -109,6 +111,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         if let frame = screen?.visibleFrame {
             let width = min(AskMetrics.launcherWidth, frame.width - 40)
             panel.setFrame(AskLauncherPlacement.frame(height: launcherHeight, width: width, screen: frame), display: true)
+            launcherTop = AskLauncherPlacement.top(on: frame)
         }
         // Take keyboard focus without activating the app and raising its other windows.
         panel.makeKeyAndOrderFront(nil)
@@ -135,7 +138,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-launcher")
-        panel.contentView = FirstMouseHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }))
+        let hosting = FirstMouseHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }))
+        // Only `resizeLauncher` sizes the panel. Left to itself, the hosting view resizes the
+        // window from its bottom edge as content changes, moving the top edge while typing.
+        hosting.sizingOptions = []
+        panel.contentView = hosting
         launcher = panel
         return panel
     }
@@ -150,7 +157,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private func resizeLauncher(height: CGFloat) {
         launcherHeight = height
         guard let launcher, abs(launcher.frame.height - height) > 1 else { return }
-        launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height,
+        launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height, top: launcherTop,
                                                        screen: launcher.screen?.visibleFrame), display: true)
     }
 
