@@ -462,8 +462,8 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TYPEFLUX_ALLOW_INSECURE_HTTP = NO;
-				GOOGLE_IOS_CLIENT_ID = "";
-				GOOGLE_IOS_CALLBACK_SCHEME = app.typeflux.ios.google;
+				GOOGLE_IOS_CLIENT_ID = "567492048493-vc6r99q2hh0b158u3nvjn8i3asaunl3j.apps.googleusercontent.com";
+				GOOGLE_IOS_CALLBACK_SCHEME = "com.googleusercontent.apps.567492048493-vc6r99q2hh0b158u3nvjn8i3asaunl3j";
 				TYPEFLUX_API_URL = "https://api.typeflux.app";
 			};
 			name = Debug;
@@ -489,8 +489,8 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				GOOGLE_IOS_CLIENT_ID = "";
-				GOOGLE_IOS_CALLBACK_SCHEME = app.typeflux.ios.google;
+				GOOGLE_IOS_CLIENT_ID = "567492048493-vc6r99q2hh0b158u3nvjn8i3asaunl3j.apps.googleusercontent.com";
+				GOOGLE_IOS_CALLBACK_SCHEME = "com.googleusercontent.apps.567492048493-vc6r99q2hh0b158u3nvjn8i3asaunl3j";
 				TYPEFLUX_API_URL = "https://api.typeflux.app";
 			};
 			name = Release;

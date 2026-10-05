@@ -7,33 +7,32 @@ saved in the existing Keychain store. Google access/refresh tokens are not persi
 
 ## Configuration
 
-1. Create an **iOS** OAuth client in the project's Google Cloud console for bundle
-   identifier `app.typeflux.ios`. This is a public client; no client secret belongs
-   in the app.
-2. Supply these Xcode build settings for both Debug and Release, either through
-   the build command or a private build configuration:
+Debug and Release include the project's public iOS OAuth configuration for bundle
+identifier `app.typeflux.ios`. Normal builds require no OAuth build-setting overrides:
 
-   ```text
-   GOOGLE_IOS_CLIENT_ID = <client-id>.apps.googleusercontent.com
-   GOOGLE_IOS_CALLBACK_SCHEME = com.googleusercontent.apps.<client-id>
-   ```
+```text
+GOOGLE_IOS_CLIENT_ID = 567492048493-vc6r99q2hh0b158u3nvjn8i3asaunl3j.apps.googleusercontent.com
+GOOGLE_IOS_CALLBACK_SCHEME = com.googleusercontent.apps.567492048493-vc6r99q2hh0b158u3nvjn8i3asaunl3j
+```
 
-   The callback scheme must correspond to that client ID. The checked-in defaults
-   intentionally contain no client ID; the button reports a localized configuration
-   error until a valid client is provided.
-3. Append the iOS client ID to the API's comma-separated `GOOGLE_OIDC_CLIENT_ID`
-   allowlist, preserving every existing desktop/web client ID. The current API
-   already supports multiple audiences; no migration is needed.
-4. Build and install the configured application, then verify sign-in, cancellation,
-   profile/history loading, relaunch and sign-out with a real Google account.
+These values are public identifiers, not secrets. To use another iOS OAuth client,
+override both build settings together; the callback scheme must correspond to the
+client ID, and the Google Cloud client must match the app's bundle identifier.
+No client secret belongs in the app.
 
-Example build (replace the two public configuration values):
+The API's comma-separated `GOOGLE_OIDC_CLIENT_ID` allowlist must also include the
+iOS client ID, preserving every existing desktop/web client ID. The current API
+already supports multiple audiences; no migration is needed. Client build settings
+do not update the deployed server's allowlist.
+
+After installing, verify sign-in, cancellation, profile/history loading, relaunch
+and sign-out with a real Google account.
+
+Example build using the checked-in configuration:
 
 ```sh
 xcodebuild -project Apps/iOS/TypefluxIOS.xcodeproj -scheme TypefluxIOS \
-  -configuration Release -destination 'generic/platform=iOS' \
-  GOOGLE_IOS_CLIENT_ID='<client-id>.apps.googleusercontent.com' \
-  GOOGLE_IOS_CALLBACK_SCHEME='com.googleusercontent.apps.<client-id>' build
+  -configuration Release -destination 'generic/platform=iOS' build
 ```
 
 See [Google's native OAuth documentation](https://developers.google.com/identity/protocols/oauth2/native-app).
