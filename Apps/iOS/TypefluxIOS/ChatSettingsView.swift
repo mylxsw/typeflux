@@ -14,7 +14,29 @@ struct ChatSettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    accountCard
+                    if store.isAuthenticated {
+                        accountCard
+                    } else {
+                        Button("Sign in") { dismiss(); store.showsLogin = true }
+                            .buttonStyle(.borderedProminent).padding().accessibilityIdentifier("settings.login")
+                    }
+                    sectionLabel("Data and privacy")
+                    group {
+                        if store.isAuthenticated {
+                            NavigationLink { ChatPrivacySettings(store: store) } label: {
+                                row(symbol: "checkmark.shield.fill", tint: ChatTheme.accent, title: "AI data sharing") {
+                                    Text(store.hasAIConsent ? "Consent granted" : "Consent not granted").font(.caption)
+                                }
+                            }.buttonStyle(.plain).accessibilityIdentifier("settings.aiPrivacy")
+                        }
+                        Link(destination: URL(string: "https://typeflux.app/terms")!) {
+                            row(symbol: "doc.text.fill", tint: .gray, title: "Terms of Service") { EmptyView() }
+                        }
+                        Link(destination: URL(string: "https://typeflux.app/feedback")!) {
+                            row(symbol: "bubble.left.fill", tint: .orange, title: "Contact and feedback") { EmptyView()
+                            }
+                        }
+                    }
                     sectionLabel("General")
                     group {
                         ViewThatFits(in: .horizontal) {
@@ -63,19 +85,23 @@ struct ChatSettingsView: View {
                         .accessibilityElement(children: .combine)
                         .accessibilityIdentifier("settings.version")
                     }
-                    group {
-                        Button { confirmingSignOut = true } label: {
-                            Text("Sign out").font(.system(size: 16, weight: .medium)).foregroundStyle(.red)
-                                .frame(maxWidth: .infinity, minHeight: 50).contentShape(Rectangle())
+                    if store.isAuthenticated {
+                        group {
+                            Button { confirmingSignOut = true } label: {
+                                Text("Sign out").font(.system(size: 16, weight: .medium)).foregroundStyle(.red)
+                                    .frame(maxWidth: .infinity, minHeight: 50).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("account.signOut")
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("account.signOut")
+                        Text(
+                            "Signing out removes this account from this device. Your cloud conversations stay in your account."
+                        )
+                        .font(.system(size: 12.5)).foregroundStyle(ChatTheme.tertiary)
+                        .padding(.horizontal, 16)
+                        NavigationLink("Delete account") { ChatDeleteAccountView(store: store) }
+                            .foregroundStyle(.red).padding().accessibilityIdentifier("settings.deleteAccount")
                     }
-                    Text(
-                        "Signing out removes this account from this device. Your cloud conversations stay in your account."
-                    )
-                    .font(.system(size: 12.5)).foregroundStyle(ChatTheme.tertiary)
-                    .padding(.horizontal, 16)
                 }
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 28)
                 .frame(maxWidth: 560).frame(maxWidth: .infinity)

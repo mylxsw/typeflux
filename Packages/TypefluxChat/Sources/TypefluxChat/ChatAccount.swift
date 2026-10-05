@@ -6,9 +6,10 @@ public struct ChatProfile: Decodable, Equatable, Sendable {
     public var id: String
     public var email: String
     public var name: String?
+    public var providers: [String]?
 
-    public init(id: String, email: String, name: String? = nil) {
-        self.id = id; self.email = email; self.name = name
+    public init(id: String, email: String, name: String? = nil, providers: [String]? = nil) {
+        self.id = id; self.email = email; self.name = name; self.providers = providers
     }
 }
 
@@ -52,5 +53,32 @@ public struct ChatRegenerateRequest: Encodable, Equatable, Sendable {
 
     public init(messageId: String, deviceId: String, modelRef: String? = nil) {
         self.messageId = messageId; self.deviceId = deviceId; self.modelRef = modelRef
+    }
+}
+
+/// Operator-reviewed recipients, including gateways and tool processors.
+public struct ChatAIDisclosure: Codable, Equatable, Sendable {
+    public let version: String
+    public let providers: [String]
+    public init(version: String, providers: [String]) {
+        self.version = version; self.providers = providers
+    }
+
+    public var isValid: Bool {
+        !version.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !providers.isEmpty &&
+            providers.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+}
+
+public struct ChatDeletionProof: Encodable, Sendable {
+    public let provider: String
+    public let password: String?
+    public let idToken: String?
+    public let authorizationCode: String?
+    public let clientId: String?
+    public init(provider: String, password: String? = nil, idToken: String? = nil,
+                authorizationCode: String? = nil, clientId: String? = nil) {
+        self.provider = provider; self.password = password; self.idToken = idToken
+        self.authorizationCode = authorizationCode; self.clientId = clientId
     }
 }

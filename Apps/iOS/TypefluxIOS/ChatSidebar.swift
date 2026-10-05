@@ -21,6 +21,14 @@ struct ChatSidebar: View {
             header
             searchField.padding(.horizontal, 4).padding(.top, 10).padding(.bottom, 4)
             List {
+                if !store.isAuthenticated {
+                    Section {
+                        Button("Sign in to sync your conversations") { store.showsLogin = true }
+                        ForEach(ChatExample.allCases) { example in
+                            Button(example.title) { store.example = example; onSelect("example:" + example.id) }
+                        }
+                    } header: { Text("Examples") }
+                }
                 if store.isSynthetic {
                     Label("Synthetic preview · No network", systemImage: "testtube.2")
                         .font(.caption2).foregroundStyle(.secondary)
@@ -62,7 +70,11 @@ struct ChatSidebar: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.sidebar")
         .confirmationDialog(Text("Delete this conversation?"), isPresented: Binding(
-            get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }
+            get: { pendingDelete != nil }, set: {
+                if !$0 {
+                    pendingDelete = nil
+                }
+            }
         ), titleVisibility: .visible, presenting: pendingDelete) { item in
             Button("Delete", role: .destructive) {
                 Task { await store.deleteConversation(item.id) }
@@ -141,7 +153,7 @@ struct ChatSidebar: View {
     }
 
     @ViewBuilder private var emptyOverlay: some View {
-        if store.conversations.isEmpty, !store.isLoading {
+        if store.isAuthenticated, store.conversations.isEmpty, !store.isLoading {
             ContentUnavailableView("Start a conversation", systemImage: "bubble.left.and.bubble.right",
                                    description: Text("Ask a question or continue a conversation from your Mac."))
                 .allowsHitTesting(false)
@@ -154,7 +166,11 @@ struct ChatSidebar: View {
         Button(action: onSettings) {
             HStack(spacing: 10) {
                 ChatAvatar(initials: store.initials, size: 32)
-                Text(store.displayName).font(.system(size: 14.5, weight: .semibold))
+                Text(store.isAuthenticated ? store.displayName : NSLocalizedString("Guest mode", comment: ""))
+                    .font(.system(
+                        size: 14.5,
+                        weight: .semibold
+                    ))
                     .foregroundStyle(.primary).lineLimit(1).truncationMode(.middle)
                 if let plan = store.planLabel {
                     ChatPlanBadge(label: plan, paid: store.creditUsage?.paid == true)

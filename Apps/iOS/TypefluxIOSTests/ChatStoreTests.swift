@@ -7,6 +7,106 @@ import TypefluxChat
 @MainActor
 @Suite("Mobile session and chat lifecycle")
 struct ChatStoreTests {
+    @Test func `editing while disclosure refreshes requires another explicit send`() async throws {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        await api.pausePrivacy()
+        store.draft = "Original"
+        let sending = Task { await store.send() }
+        try await eventually { await api.waitingForPrivacy }
+        store.draft = "Edited while checking"
+        await api.resumePrivacy()
+        await sending.value
+        #expect(await api.sentRequests.isEmpty)
+        #expect(store.draft == "Edited while checking")
+    }
+
+    @Test func `guest can compose and sending asks for login without a request`() async {
+        let (store, api, _) = makeStore(consented: false)
+        store.draft = "Keep this draft"
+        store.imageDataURL = "data:image/png;base64,local"
+        #expect(store.canAttemptSend)
+        #expect(!store.canSend)
+        await store.send()
+        #expect(store.showsLogin)
+        #expect(await api.sentRequests.isEmpty)
+        #expect(await api.loginCount == 0)
+        #expect(store.draft == "Keep this draft")
+        store.cancelPendingLogin()
+        #expect(store.imageDataURL == "data:image/png;base64,local")
+    }
+
+    @Test func `login and consent preserve draft and require a separate send`() async {
+        let (store, api, _) = makeStore(consented: false)
+        store.draft = "Review me"
+        store.imageDataURL = "data:image/png;base64,local"
+        await store.login(email: "user@example.com", password: "password")
+        #expect(store.showsConsent)
+        #expect(store.draft == "Review me")
+        #expect(store.imageDataURL != nil)
+        #expect(!store.hasAIConsent)
+        await store.send()
+        #expect(await api.sentRequests.isEmpty)
+        store.acceptAIConsent()
+        #expect(store.hasAIConsent)
+        #expect(await api.sentRequests.isEmpty)
+        await store.send()
+        #expect(await api.sentRequests.count == 1)
+    }
+
+    @Test func `withdrawal and changed recipients prevent sending`() async {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        store.draft = "Private"
+        store.revokeAIConsent()
+        await store.send()
+        #expect(await api.sentRequests.isEmpty)
+        store.acceptAIConsent()
+        await api.changePrivacy(version: "updated")
+        await store.send()
+        #expect(!store.hasAIConsent)
+        #expect(await api.sentRequests.isEmpty)
+        #expect(store.draft == "Private")
+    }
+
+    @Test func `unavailable disclosure fails closed`() async {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        await api.disablePrivacy()
+        store.draft = "Private"
+        await store.send()
+        store.acceptAIConsent()
+        #expect(!store.hasAIConsent)
+        #expect(await api.sentRequests.isEmpty)
+    }
+
+    @Test func `failed deletion retains account and successful deletion clears everything`() async {
+        let (store, api, credentials) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        #expect(await store.deleteAccount(proof: .init(provider: "password", password: "proof")))
+        #expect(!store.isAuthenticated)
+        #expect(credentials.value == nil)
+        #expect(store.conversations.isEmpty)
+        #expect(!store.hasAIConsent)
+        #expect(await api.deletedAccounts == 1)
+        let (other, rejected, saved) = makeStore()
+        await other.login(email: "user@example.com", password: "password")
+        await rejected.rejectDeletion()
+        #expect(await !other.deleteAccount(proof: .init(provider: "password", password: "proof")))
+        #expect(other.isAuthenticated)
+        #expect(saved.value != nil)
+        #expect(other.errorMessage != nil)
+    }
+
+    @Test func `report sends only the selected answer after explicit submission`() async {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        await store.select("one")
+        let wrong = ChatMessage(id: "not-in-conversation", role: "assistant", text: "example")
+        #expect(await !store.reportAnswer(message: wrong, reason: "unsafe", details: ""))
+        #expect(await api.reports.isEmpty)
+    }
+
     @Test func `login loads history and cloud model`() async {
         let (store, _, credentials) = makeStore()
         await store.login(email: "person@example.com", password: "password")
@@ -648,11 +748,21 @@ extension ChatStoreTests {
 private extension ChatStoreTests {
     // A fixture groups the subject with its two independent test doubles.
     // swiftlint:disable:next large_tuple
-    func makeStore() -> (ChatStore, FakeChatAPI, MemoryCredentials) {
+    func makeStore(consented: Bool = true) -> (ChatStore, FakeChatAPI, MemoryCredentials) {
         let api = FakeChatAPI()
         let credentials = MemoryCredentials()
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        if consented {
+            defaults.set("test|Test Provider", forKey: "ai-consent.test-user")
+        }
         return (
-            ChatStore(service: api, credentials: credentials, deviceID: "ios-test", reconnectDelay: .milliseconds(1)),
+            ChatStore(
+                service: api,
+                credentials: credentials,
+                deviceID: "ios-test",
+                consentDefaults: defaults,
+                reconnectDelay: .milliseconds(1)
+            ),
             api,
             credentials
         )
@@ -697,6 +807,62 @@ final class MemoryCredentials: CredentialStore {
 }
 
 private actor FakeChatAPI: ChatAPI {
+    func profile(token _: String) async throws -> ChatProfile {
+        .init(id: "test-user", email: "test@example.com")
+    }
+
+    var waitingForPrivacy: Bool {
+        privacyContinuation != nil
+    }
+
+    private var privacyPaused = false
+    private var privacyContinuation: CheckedContinuation<Void, Never>?
+    func pausePrivacy() {
+        privacyPaused = true
+    }
+
+    func resumePrivacy() {
+        privacyPaused = false; privacyContinuation?.resume(); privacyContinuation = nil
+    }
+
+    var privacyVersion = "test"
+    var privacyUnavailable = false
+    var deletionRejected = false
+    var deletedAccounts = 0
+    var reports: [String] = []
+    func changePrivacy(version: String) {
+        privacyVersion = version
+    }
+
+    func disablePrivacy() {
+        privacyUnavailable = true
+    }
+
+    func rejectDeletion() {
+        deletionRejected = true
+    }
+
+    func aiDisclosure(token _: String) async throws -> ChatAIDisclosure {
+        if privacyPaused {
+            await withCheckedContinuation { privacyContinuation = $0 }
+        }
+        if privacyUnavailable {
+            throw ChatAPIError.unavailable
+        }
+        return .init(version: privacyVersion, providers: ["Test Provider"])
+    }
+
+    func deleteAccount(proof _: ChatDeletionProof, token _: String) async throws {
+        if deletionRejected {
+            throw ChatAPIError.unavailable
+        }
+        deletedAccounts += 1
+    }
+
+    func reportAnswer(content: String, token _: String) async throws {
+        reports.append(content)
+    }
+
     var loginCount = 0
     var loginEmails: [String] = []
     var listCount = 0

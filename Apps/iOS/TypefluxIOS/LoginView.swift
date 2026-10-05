@@ -4,6 +4,7 @@ import SwiftUI
 /// Welcome: the brand, one sentence and three ways in. Email sign-in is its own page.
 struct LoginView: View {
     @Bindable var store: ChatStore
+    @Environment(\.dismiss) private var dismiss
     @State private var path: [Route] = []
     @State private var googleSignIn: GoogleSignIn
     @State private var googleTask: Task<Void, Never>?
@@ -23,59 +24,77 @@ struct LoginView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            VStack(spacing: 0) {
-                Spacer(minLength: 40)
-                ChatOrb(size: 132)
-                Text(verbatim: "Typeflux").font(.system(size: 30, weight: .bold)).padding(.top, 28)
-                Text("Ask, look at photos and search the web. Conversations sync with your Mac.")
-                    .font(.system(size: 16)).foregroundStyle(ChatTheme.secondary)
-                    .multilineTextAlignment(.center).frame(maxWidth: 300).padding(.top, 10)
-                Spacer(minLength: 40)
-                if let error = store.errorMessage {
-                    Text(NSLocalizedString(error, comment: "Sign-in error")).font(.footnote).foregroundStyle(.red)
-                        .multilineTextAlignment(.center).padding(.bottom, 12)
-                        .accessibilityIdentifier("login.error")
-                }
-                VStack(spacing: 12) {
-                    SignInWithAppleButton(.continue) { request in
-                        request.requestedScopes = [.email, .fullName]
-                    } onCompletion: { result in
-                        handleApple(result)
-                    }
-                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                    .frame(height: 52)
-                    .clipShape(Capsule())
-                    .disabled(store.isLoading)
-                    .accessibilityIdentifier("login.apple")
-                    Button {
-                        googleTask = Task { await store.loginWithGoogle(using: googleSignIn) }
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image("GoogleMark").resizable().scaledToFit().frame(width: 20, height: 20)
-                                .accessibilityHidden(true)
-                            Text("Continue with Google").font(.system(size: 16.5, weight: .semibold))
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        HStack {
+                            Spacer()
+                            Button { dismiss() } label: { Image(systemName: "xmark.circle.fill").font(.title2) }
+                                .accessibilityLabel("Browse first").accessibilityIdentifier("login.close")
                         }
-                        .foregroundStyle(.primary).frame(maxWidth: .infinity, minHeight: 52)
-                        .chatCard(corner: 26)
+                        if !store.draft.isEmpty || store.imageDataURL != nil {
+                            Label(
+                                "Your draft is saved. Sign in, then review and send it yourself.",
+                                systemImage: "checkmark.shield"
+                            )
+                            .font(.footnote).foregroundStyle(ChatTheme.secondary).padding(.top, 12)
+                        }
+                        Spacer(minLength: 12)
+                        ChatOrb(size: 132)
+                        Text(verbatim: "Typeflux").font(.system(size: 30, weight: .bold)).padding(.top, 28)
+                        Text("Ask, look at photos and search the web. Conversations sync with your Mac.")
+                            .font(.system(size: 16)).foregroundStyle(ChatTheme.secondary)
+                            .multilineTextAlignment(.center).frame(maxWidth: 300).padding(.top, 10)
+                        Spacer(minLength: 40)
+                        if let error = store.errorMessage {
+                            Text(NSLocalizedString(error, comment: "Sign-in error")).font(.footnote)
+                                .foregroundStyle(.red)
+                                .multilineTextAlignment(.center).padding(.bottom, 12)
+                                .accessibilityIdentifier("login.error")
+                        }
+                        VStack(spacing: 12) {
+                            SignInWithAppleButton(.continue) { request in
+                                request.requestedScopes = [.email, .fullName]
+                            } onCompletion: { result in
+                                handleApple(result)
+                            }
+                            .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                            .frame(height: 52)
+                            .clipShape(Capsule())
+                            .disabled(store.isLoading)
+                            .accessibilityIdentifier("login.apple")
+                            Button {
+                                googleTask = Task { await store.loginWithGoogle(using: googleSignIn) }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image("GoogleMark").resizable().scaledToFit().frame(width: 20, height: 20)
+                                        .accessibilityHidden(true)
+                                    Text("Continue with Google").font(.system(size: 16.5, weight: .semibold))
+                                }
+                                .foregroundStyle(.primary).frame(maxWidth: .infinity, minHeight: 52)
+                                .chatCard(corner: 26)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(store.isLoading)
+                            .accessibilityIdentifier("login.google")
+                            Button { path.append(.email) } label: {
+                                Label("Sign in with email", systemImage: "envelope")
+                                    .font(.system(size: 16.5, weight: .semibold)).foregroundStyle(.primary)
+                                    .frame(maxWidth: .infinity, minHeight: 52)
+                                    .chatCard(corner: 26)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("login.email.open")
+                            .disabled(store.isLoading)
+                            Button("Browse first") { dismiss() }.accessibilityIdentifier("login.browse")
+                            legal.padding(.top, 8)
+                        }
+                        .frame(maxWidth: 420)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(store.isLoading)
-                    .accessibilityIdentifier("login.google")
-                    Button { path.append(.email) } label: {
-                        Label("Sign in with email", systemImage: "envelope")
-                            .font(.system(size: 16.5, weight: .semibold)).foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity, minHeight: 52)
-                            .chatCard(corner: 26)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("login.email.open")
-                    .disabled(store.isLoading)
-                    legal.padding(.top, 8)
+                    .padding(.horizontal, 24).padding(.bottom, 24)
+                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
                 }
-                .frame(maxWidth: 420)
             }
-            .padding(.horizontal, 24).padding(.bottom, 24)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background { ChatAmbientBackground() }
             .overlay {
                 if store.isLoading, path.isEmpty {
@@ -106,6 +125,7 @@ struct LoginView: View {
     }
 
     private func handleApple(_ result: Result<ASAuthorization, Error>) {
+        guard store.showsLogin else { return }
         switch result {
         case let .success(authorization):
             guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,

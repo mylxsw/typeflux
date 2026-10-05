@@ -7,9 +7,13 @@ import UIKit
 struct ChatRootView: View {
     @Bindable var store: ChatStore
     @Bindable var preferences: ChatPreferences
+    @State private var checkingSession = true
     @State private var sidebarOpen = false
     @State private var dragOffset: CGFloat = 0
     @State private var showSettings = false
+    @State private var settingsDismissed = true
+    @State private var loginDismissed = true
+    @AppStorage("guest.welcome-dismissed") private var welcomeDismissed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static let sidebarWidth: CGFloat = 318
@@ -48,12 +52,43 @@ struct ChatRootView: View {
                     .accessibilityHidden(!sidebarOpen)
             }
         }
-        .sheet(isPresented: $showSettings) {
+        .allowsHitTesting(!checkingSession)
+        .overlay {
+            if checkingSession {
+                ChatTheme.background.ignoresSafeArea().overlay { ProgressView() }
+            }
+        }
+        .task {
+            await store.restore()
+            checkingSession = false
+            if !store.isAuthenticated, !welcomeDismissed {
+                store.showsLogin = true
+            }
+        }
+        .sheet(isPresented: Binding(get: { store.showsLogin && settingsDismissed },
+                                    set: { store.showsLogin = $0 }), onDismiss: {
+                welcomeDismissed = true
+                store.cancelPendingLogin()
+                loginDismissed = true
+            }) {
+                LoginView(store: store)
+                    .presentationDetents([.large])
+                    .onAppear { loginDismissed = false }
+        }
+        .sheet(isPresented: Binding(
+            get: { store.showsConsent && !store.showsLogin && loginDismissed && settingsDismissed },
+            set: { store.showsConsent = $0 }
+        )) {
+            ChatConsentView(store: store)
+        }
+        .sheet(isPresented: $showSettings, onDismiss: { settingsDismissed = true }) {
             ChatSettingsView(store: store, preferences: preferences)
+                .onAppear { settingsDismissed = false }
         }
         .onChange(of: store.isAuthenticated) { _, authenticated in
+            sidebarOpen = false
             if !authenticated {
-                sidebarOpen = false
+                showSettings = false
             }
         }
     }
@@ -91,7 +126,9 @@ struct ChatRootView: View {
 
     private func select(_ id: String) {
         setSidebar(false)
-        Task { await store.select(id) }
+        if !id.hasPrefix("example:") {
+            Task { await store.select(id) }
+        }
     }
 
     private func newConversation() {
