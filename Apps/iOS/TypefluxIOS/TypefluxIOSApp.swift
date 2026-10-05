@@ -1,6 +1,6 @@
+import Network
 import SwiftUI
 import TypefluxChat
-import Network
 
 @main
 struct TypefluxIOSApp: App {
@@ -28,19 +28,12 @@ struct TypefluxIOSApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if store.isAuthenticated {
-                    ChatRootView(store: store, preferences: preferences)
-                } else {
-                    LoginView(store: store)
+            ChatRootView(store: store, preferences: preferences)
+                .tint(ChatTheme.accent)
+                .preferredColorScheme(preferredColorScheme)
+                .onChange(of: scenePhase) { _, phase in
+                    Task { await store.setForeground(phase == .active) }
                 }
-            }
-            .tint(ChatTheme.accent)
-            .preferredColorScheme(preferredColorScheme)
-            .task { await store.restore() }
-            .onChange(of: scenePhase) { _, phase in
-                Task { await store.setForeground(phase == .active) }
-            }
         }
     }
 
@@ -67,7 +60,7 @@ enum AppConfiguration {
         guard let configured, !configured.contains(where: \.isWhitespace),
               let url = URL(string: configured), let host = url.host, !host.isEmpty,
               url.user == nil, url.password == nil, url.query == nil, url.fragment == nil,
-              url.port.map({ (1...65535).contains($0) }) ?? true else { return fallback }
+              url.port.map({ (1 ... 65535).contains($0) }) ?? true else { return fallback }
         var localHTTPAllowed = false
         #if DEBUG
             localHTTPAllowed = allowLocalHTTP && url.scheme == "http" && isLocalDevelopmentHost(host)
@@ -78,15 +71,17 @@ enum AppConfiguration {
 
     static func isLocalDevelopmentHost(_ host: String) -> Bool {
         let name = host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
-        if name == "localhost" || (name.hasSuffix(".local") && name.count > 6) { return true }
+        if name == "localhost" || (name.hasSuffix(".local") && name.count > 6) {
+            return true
+        }
         if let bytes = IPv4Address(name)?.rawValue {
             return bytes[0] == 127 || bytes[0] == 10 ||
-                (bytes[0] == 172 && (16...31).contains(bytes[1])) ||
+                (bytes[0] == 172 && (16 ... 31).contains(bytes[1])) ||
                 (bytes[0] == 192 && bytes[1] == 168) || (bytes[0] == 169 && bytes[1] == 254)
         }
         if let bytes = IPv6Address(name)?.rawValue {
             return (bytes.dropLast().allSatisfy { $0 == 0 } && bytes.last == 1) ||
-                bytes[0] & 0xfe == 0xfc || (bytes[0] == 0xfe && bytes[1] & 0xc0 == 0x80)
+                bytes[0] & 0xFE == 0xFC || (bytes[0] == 0xFE && bytes[1] & 0xC0 == 0x80)
         }
         return false
     }

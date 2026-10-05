@@ -6,6 +6,7 @@ struct ChatDetailView: View {
     @Bindable var store: ChatStore
     var onOpenSidebar: () -> Void = {}
     var onNewConversation: () -> Void = {}
+    @State private var reportedMessage: ChatMessage?
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var showPhotoPicker = false
     @State private var showCamera = false
@@ -13,7 +14,8 @@ struct ChatDetailView: View {
     @FocusState private var editorFocused: Bool
 
     private var isEmpty: Bool {
-        store.conversation?.messages.isEmpty != false && !store.isRunning && !store.isLoadingConversation
+        store.example == nil && store.conversation?.messages.isEmpty != false && !store.isRunning && !store
+            .isLoadingConversation
     }
 
     var body: some View {
@@ -23,7 +25,22 @@ struct ChatDetailView: View {
                     // Bottom-anchored lazy height estimation can loop when a rich
                     // reply enters the viewport. Lay out the loaded snapshot exactly.
                     VStack(alignment: .leading, spacing: 14) {
-                        if store.isLoadingConversation, store.conversation == nil {
+                        if let example = store.example, !store.isAuthenticated {
+                            VStack(alignment: .leading, spacing: 20) {
+                                Label("Local example · No credits used", systemImage: "sparkles").font(.caption)
+                                    .foregroundStyle(ChatTheme.accent)
+                                Text(example.question).padding().frame(maxWidth: .infinity, alignment: .trailing)
+                                    .background(
+                                        ChatTheme.accentSoft,
+                                        in: RoundedRectangle(cornerRadius: 16)
+                                    )
+                                ChatMarkdownView(text: example.answer)
+                                Text(
+                                    "This is a preset example. Your own message will start a new conversation after sign-in."
+                                )
+                                .font(.footnote).foregroundStyle(.secondary)
+                            }.accessibilityIdentifier("guest.example")
+                        } else if store.isLoadingConversation, store.conversation == nil {
                             ProgressView("Loading conversation…").frame(maxWidth: .infinity).padding(.vertical, 50)
                         } else if isEmpty {
                             // Leave the limited keyboard/landscape viewport for composing.
@@ -39,7 +56,8 @@ struct ChatDetailView: View {
                                     store.draft = ChatPresentation.quote(text, into: store.draft)
                                     editorFocused = true
                                 },
-                                regenerate: { id in Task { await store.regenerate(messageID: id) } }
+                                regenerate: { id in Task { await store.regenerate(messageID: id) } },
+                                report: { reportedMessage = $0 }
                             )
                         }
                         Color.clear.frame(height: 1).id("bottom")
@@ -74,6 +92,7 @@ struct ChatDetailView: View {
         }
         .background { ChatAmbientBackground() }
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(item: $reportedMessage) { ChatReportView(store: store, message: $0) }
         .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhoto, matching: .images)
         .fullScreenCover(isPresented: $showCamera) {
             ChatCameraPicker { data in Task { await attach(data) } }.ignoresSafeArea()
@@ -89,17 +108,24 @@ struct ChatDetailView: View {
                 editorFocused = false
                 onOpenSidebar()
             }
-            if let conversation = store.conversation, !conversation.messages.isEmpty || store.isRunning {
-                titlePill(conversation)
-            } else {
+            if !store.isAuthenticated {
+                Label("Guest mode", systemImage: "person.crop.circle").font(.caption).foregroundStyle(.secondary)
                 Spacer()
+                Button("Sign in") { store.showsLogin = true }.accessibilityIdentifier("guest.login")
             }
-            barButton("square.and.pencil", label: "New conversation", identifier: "chat.detail.new",
-                      tint: isEmpty ? ChatTheme.tertiary : ChatTheme.accent) {
-                editorFocused = false
-                onNewConversation()
-            }
+            if store.isAuthenticated {
+                if let conversation = store.conversation, !conversation.messages.isEmpty || store.isRunning {
+                    titlePill(conversation)
+                } else {
+                    Spacer()
+                }
+                barButton("square.and.pencil", label: "New conversation", identifier: "chat.detail.new",
+                          tint: isEmpty ? ChatTheme.tertiary : ChatTheme.accent) {
+                    editorFocused = false
+                    onNewConversation()
+                }
                 .disabled(isEmpty && store.draft.isEmpty && store.imageDataURL == nil)
+            }
         }
         .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 10)
         .contentShape(Rectangle())
@@ -175,18 +201,30 @@ struct ChatDetailView: View {
     private var suggestions: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-                suggestion("Explain this photo", caption: "Take one or pick a screenshot", symbol: "photo",
-                           identifier: "chat.suggestion.photo") { showPhotoPicker = true }
-                    .disabled(store.selectedModel?.vision != true || store.isSending)
-                suggestion("Translate some text", caption: "Keep its formatting", symbol: "character.bubble",
-                           identifier: "chat.suggestion.translate") {
-                    store.draft = NSLocalizedString("Translate the following text:\n", comment: "Draft prompt")
-                    editorFocused = true
-                }
-                suggestion("Summarize a webpage", caption: "Paste a link", symbol: "globe",
-                           identifier: "chat.suggestion.web") {
-                    store.draft = NSLocalizedString("Read and summarize this webpage:\n", comment: "Draft prompt")
-                    editorFocused = true
+                if !store.isAuthenticated {
+                    ForEach(ChatExample.allCases) { example in
+                        Button { store.example = example; editorFocused = false } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Image(systemName: "sparkles").foregroundStyle(ChatTheme.accent)
+                                Text(example.title).font(.subheadline.bold())
+                                Text("Local example · No credits used").font(.caption2).foregroundStyle(.secondary)
+                            }.padding(14).frame(width: 190, alignment: .leading).chatCard(corner: 18)
+                        }.buttonStyle(.plain).accessibilityIdentifier("guest.example." + example.id)
+                    }
+                } else {
+                    suggestion("Explain this photo", caption: "Take one or pick a screenshot", symbol: "photo",
+                               identifier: "chat.suggestion.photo") { showPhotoPicker = true }
+                        .disabled(store.selectedModel?.vision != true || store.isSending)
+                    suggestion("Translate some text", caption: "Keep its formatting", symbol: "character.bubble",
+                               identifier: "chat.suggestion.translate") {
+                        store.draft = NSLocalizedString("Translate the following text:\n", comment: "Draft prompt")
+                        editorFocused = true
+                    }
+                    suggestion("Summarize a webpage", caption: "Paste a link", symbol: "globe",
+                               identifier: "chat.suggestion.web") {
+                        store.draft = NSLocalizedString("Read and summarize this webpage:\n", comment: "Draft prompt")
+                        editorFocused = true
+                    }
                 }
             }
             .padding(.horizontal, 20)

@@ -23,14 +23,22 @@ final class ChatVerificationTests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
         let signOut = app.buttons["account.signOut"]
         XCTAssertTrue(signOut.waitForExistence(timeout: 5))
+        if !signOut.isHittable {
+            app.scrollViews.firstMatch.swipeUp()
+        }
         signOut.tap()
         XCTAssertTrue(app.buttons.matching(identifier: "account.confirmSignOut").firstMatch
             .waitForExistence(timeout: 5))
         screenshot(app, "qa-signout-confirmation")
         app.buttons.matching(identifier: "account.cancelSignOut").firstMatch.tap()
         XCTAssertTrue(app.buttons["settings.account"].exists)
+        if !signOut.isHittable {
+            app.scrollViews.firstMatch.swipeUp()
+        }
         signOut.tap()
         app.buttons.matching(identifier: "account.confirmSignOut").firstMatch.tap()
+        XCTAssertTrue(app.buttons["guest.login"].waitForExistence(timeout: 5))
+        app.buttons["guest.login"].tap()
         XCTAssertTrue(app.buttons["login.email.open"].waitForExistence(timeout: 5))
         screenshot(app, "qa-welcome")
         app.buttons["login.email.open"].tap()
@@ -277,8 +285,13 @@ final class ChatVerificationTests: XCTestCase {
         app.buttons["chat.account"].tap()
         let signOut = app.buttons["account.signOut"]
         XCTAssertTrue(signOut.waitForExistence(timeout: 5))
+        if !signOut.isHittable {
+            app.scrollViews.firstMatch.swipeUp()
+        }
         signOut.tap()
         app.buttons.matching(identifier: "account.confirmSignOut").firstMatch.tap()
+        XCTAssertTrue(app.buttons["guest.login"].waitForExistence(timeout: 5))
+        app.buttons["guest.login"].tap()
         let entry = app.buttons["login.email.open"]
         XCTAssertTrue(entry.waitForExistence(timeout: 5))
         entry.tap()
@@ -313,7 +326,12 @@ private extension ChatVerificationTests {
     @MainActor
     func openHistory(_ app: XCUIApplication) {
         app.buttons["chat.sidebar.open"].tap()
-        XCTAssertTrue(app.buttons["chat.new"].waitForExistence(timeout: 5))
+        let account = app.buttons["chat.account"]
+        let visible = NSPredicate { _, _ in
+            account.exists && account.isHittable && account.frame.minX >= 0
+        }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: visible, object: nil)],
+                                      timeout: 5), .completed)
     }
 
     @MainActor
@@ -383,5 +401,170 @@ private extension ChatVerificationTests {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+}
+
+extension ChatVerificationTests {
+    @MainActor
+    func testGuestWelcomeExamplesAndPreservedDraft() {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "--synthetic-preview",
+            "--synthetic-guest",
+            "-AppleLanguages",
+            "(zh-Hans)",
+            "-AppleLocale",
+            "zh_CN",
+            "-guest.welcome-dismissed",
+            "NO"
+        ]
+        app.launch()
+        XCTAssertTrue(app.buttons["login.close"].waitForExistence(timeout: 8))
+        screenshot(app, "gul217-welcome")
+        app.buttons["login.close"].tap()
+        XCTAssertTrue(app.buttons["guest.login"].waitForExistence(timeout: 5))
+        screenshot(app, "gul217-guest-home")
+        app.buttons["guest.example.email"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["guest.example"].waitForExistence(timeout: 5))
+        screenshot(app, "gul217-local-example")
+        let field = app.textFields["chat.composer"]
+        field.tap(); field.typeText("Keep my draft")
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.buttons["login.close"].waitForExistence(timeout: 5))
+        screenshot(app, "gul217-login-draft")
+        app.buttons["login.close"].tap()
+        XCTAssertEqual(field.value as? String, "Keep my draft")
+        app.buttons["chat.sidebar.open"].tap()
+        screenshot(app, "gul217-guest-sidebar")
+        app.buttons["chat.account"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["settings.root"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["account.signOut"].exists)
+        XCTAssertFalse(app.buttons["settings.deleteAccount"].exists)
+    }
+
+    @MainActor
+    func testConsentDeclineAndManualSend() {
+        let app = launch("--synthetic-empty", "--synthetic-no-consent")
+        let field = app.textFields["chat.composer"]
+        field.tap(); field.typeText("Review then send")
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.buttons["privacy.decline"].waitForExistence(timeout: 5))
+        screenshot(app, "gul217-ai-consent")
+        app.buttons["privacy.decline"].tap()
+        XCTAssertEqual(field.value as? String, "Review then send")
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.buttons["privacy.agree"].waitForExistence(timeout: 5))
+        app.buttons["privacy.agree"].tap()
+        XCTAssertEqual(field.value as? String, "Review then send")
+        screenshot(app, "gul217-draft-after-consent")
+        app.buttons["chat.send"].tap()
+        XCTAssertNotEqual(field.value as? String, "Review then send")
+    }
+
+    @MainActor
+    func testPrivateReportAndAccountDeletion() {
+        let app = launch("--synthetic-empty")
+        enter("A short answer for reporting", in: app)
+        app.buttons["chat.send"].tap()
+        let report = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.report.")).firstMatch
+        XCTAssertTrue(report.waitForExistence(timeout: 5))
+        report.tap()
+        let submit = app.buttons["report.submit"]
+        XCTAssertTrue(submit.waitForExistence(timeout: 5))
+        XCTAssertTrue(submit.isHittable)
+        screenshot(app, "gul217-report-answer")
+        submit.tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 5))
+        app.alerts.buttons.firstMatch.tap()
+        XCTAssertTrue(submit.waitForNonExistence(timeout: 5))
+        openHistory(app)
+        app.buttons["chat.account"].tap()
+        XCTAssertTrue(app.buttons["settings.done"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["settings.done"].isHittable)
+        screenshot(app, "gul217-settings")
+        let deletion = app.buttons["settings.deleteAccount"]
+        for _ in 0 ..< 4 where !deletion.isHittable {
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        deletion.tap()
+        XCTAssertTrue(app.switches["account.delete.confirm"].waitForExistence(timeout: 5))
+        screenshot(app, "gul217-delete-account")
+        // SwiftUI exposes the entire labelled row as a switch. Tap its trailing control.
+        app.switches["account.delete.confirm"].coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertEqual(app.switches["account.delete.confirm"].value as? String, "1")
+        let password = app.secureTextFields["account.delete.password"]
+        password.tap(); password.typeText("proof")
+        let remove = app.buttons["account.delete.submit"]
+        if !remove.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(remove.isEnabled)
+        remove.tap()
+        let deletionResult = XCTAttachment(string: app.debugDescription)
+        deletionResult.name = "account-deletion-result"
+        deletionResult.lifetime = .keepAlways
+        add(deletionResult)
+        XCTAssertTrue(app.buttons["guest.login"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["settings.account"].exists)
+    }
+}
+
+extension ChatVerificationTests {
+    @MainActor
+    func testWithdrawConsentInSettings() {
+        let app = launch("--synthetic-empty")
+        openHistory(app)
+        app.buttons["chat.account"].tap()
+        let privacy = app.buttons["settings.aiPrivacy"]
+        XCTAssertTrue(privacy.waitForExistence(timeout: 5))
+        privacy.tap()
+        let revoke = app.buttons["privacy.revoke"]
+        XCTAssertTrue(revoke.waitForExistence(timeout: 5))
+        revoke.tap()
+        XCTAssertTrue(revoke.waitForNonExistence(timeout: 5))
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["settings.done"].tap()
+        enter("Consent is required again", in: app)
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.buttons["privacy.decline"].waitForExistence(timeout: 5))
+    }
+}
+
+extension ChatVerificationTests {
+    @MainActor
+    func testGuestSettingsLoginPreservesDraftThroughConsent() {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "--synthetic-preview",
+            "--synthetic-guest",
+            "--synthetic-no-consent",
+            "-AppleLanguages",
+            "(zh-Hans)",
+            "-AppleLocale",
+            "zh_CN",
+            "-guest.welcome-dismissed",
+            "YES"
+        ]
+        app.launch()
+        let composer = app.textFields["chat.composer"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
+        composer.tap(); composer.typeText("Draft before sign-in")
+        openHistory(app)
+        app.buttons["chat.account"].tap()
+        app.buttons["settings.login"].tap()
+        XCTAssertTrue(app.buttons["login.email.open"].waitForExistence(timeout: 5))
+        app.buttons["login.email.open"].tap()
+        app.textFields["login.email"].tap()
+        app.textFields["login.email"].typeText("preview@example.invalid")
+        app.secureTextFields["login.password"].tap()
+        app.secureTextFields["login.password"].typeText("proof")
+        app.buttons["login.submit"].tap()
+        XCTAssertTrue(app.buttons["privacy.agree"].waitForExistence(timeout: 8))
+        app.buttons["privacy.agree"].tap()
+        XCTAssertEqual(composer.value as? String, "Draft before sign-in")
+        XCTAssertFalse(app.buttons["guest.login"].exists)
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.report.")).firstMatch
+            .exists)
+        screenshot(app, "gul217-draft-after-login")
     }
 }

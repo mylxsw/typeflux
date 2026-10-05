@@ -11,6 +11,7 @@ struct ChatTranscriptView: View {
     var regenerableMessageID: String?
     var quote: (String) -> Void
     var regenerate: (String) -> Void = { _ in }
+    var report: ((ChatMessage) -> Void)?
 
     var body: some View {
         ForEach(ChatTranscript.items(conversation)) { item in
@@ -18,7 +19,7 @@ struct ChatTranscriptView: View {
             case let .message(message):
                 ChatMessageView(message: message, allowsQuote: allowsQuote,
                                 canRegenerate: message.id == regenerableMessageID,
-                                quote: quote, regenerate: regenerate)
+                                quote: quote, regenerate: regenerate, report: report)
             case let .activity(activity): ChatActivityView(activity: activity)
             }
         }
@@ -71,6 +72,7 @@ private struct ChatMessageView: View {
     let canRegenerate: Bool
     let quote: (String) -> Void
     let regenerate: (String) -> Void
+    let report: ((ChatMessage) -> Void)?
     @State private var copied = false
     @State private var selectingText = false
 
@@ -146,6 +148,10 @@ private struct ChatMessageView: View {
                 Button { regenerate(message.id) } label: { actionIcon("arrow.clockwise") }
                     .accessibilityLabel(NSLocalizedString("Regenerate", comment: "Message action"))
                     .accessibilityIdentifier("chat.regenerate." + message.id)
+            }
+            if let report {
+                Button { report(message) } label: { actionIcon("flag") }
+                    .accessibilityLabel("Report answer").accessibilityIdentifier("chat.report." + message.id)
             }
             ShareLink(item: message.text) { actionIcon("square.and.arrow.up") }
                 .accessibilityLabel(NSLocalizedString("Share", comment: "Message action"))

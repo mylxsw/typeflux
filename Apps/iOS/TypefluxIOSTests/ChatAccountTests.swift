@@ -250,11 +250,24 @@ private extension ChatAccountTests {
     func makeStore() -> (ChatStore, AccountFakeAPI, MemoryCredentials) {
         let api = AccountFakeAPI()
         let credentials = MemoryCredentials()
-        return (ChatStore(service: api, credentials: credentials, deviceID: "ios-test"), api, credentials)
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("test|Test Provider", forKey: "ai-consent.u1")
+        return (
+            ChatStore(service: api, credentials: credentials, deviceID: "ios-test", consentDefaults: defaults),
+            api,
+            credentials
+        )
     }
 }
 
 private actor AccountFakeAPI: ChatAPI {
+    func aiDisclosure(token _: String) async throws -> ChatAIDisclosure {
+        .init(
+            version: "test",
+            providers: ["Test Provider"]
+        )
+    }
+
     var appleTokens: [String] = []
     var googleTokens: [String] = []
     var resetEmails: [String] = []
@@ -342,7 +355,9 @@ private actor AccountFakeAPI: ChatAPI {
 
     func googleLogin(identityToken: String) async throws -> ChatSession {
         googleTokens.append(identityToken)
-        if let oauthError { throw oauthError }
+        if let oauthError {
+            throw oauthError
+        }
         if appleRejected {
             throw ChatAPIError.server(code: "OAUTH_NOT_CONFIGURED", message: "Google sign-in is not configured.")
         }
@@ -351,7 +366,9 @@ private actor AccountFakeAPI: ChatAPI {
 
     func appleLogin(identityToken: String) async throws -> ChatSession {
         appleTokens.append(identityToken)
-        if let oauthError { throw oauthError }
+        if let oauthError {
+            throw oauthError
+        }
         if appleRejected {
             throw ChatAPIError.server(code: "OAUTH_NOT_CONFIGURED", message: "Apple sign-in is not configured.")
         }
@@ -407,7 +424,9 @@ private actor AccountFakeAPI: ChatAPI {
 private struct FakeGoogleAuthorizer: GoogleSignInAuthorizing {
     var error: (any Error)?
     func signIn() async throws -> String {
-        if let error { throw error }
+        if let error {
+            throw error
+        }
         return "google-token"
     }
 }
@@ -415,5 +434,7 @@ private struct FakeGoogleAuthorizer: GoogleSignInAuthorizing {
 @MainActor
 private struct ClosureGoogleAuthorizer: GoogleSignInAuthorizing {
     var operation: () async throws -> String
-    func signIn() async throws -> String { try await operation() }
+    func signIn() async throws -> String {
+        try await operation()
+    }
 }

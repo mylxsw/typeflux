@@ -1,6 +1,6 @@
 import Foundation
-import XCTest
 @testable import TypefluxChat
+import XCTest
 
 /// Every test uses a unique URL host so URLSession callbacks cannot read another
 /// test's fixture. Synchronization is confined to this URLProtocol bridge.
@@ -8,19 +8,34 @@ private final class FixtureRegistry: @unchecked Sendable {
     typealias Handler = (URLRequest, URLProtocolClient, URLProtocol) throws -> Void
     let lock = NSLock()
     var handlers: [String: Handler] = [:]
-    func set(_ host: String, _ handler: @escaping Handler) { lock.lock(); defer { lock.unlock() }; handlers[host] = handler }
-    func get(_ host: String) -> Handler? { lock.lock(); defer { lock.unlock() }; return handlers[host] }
-    func remove(_ host: String) { lock.lock(); defer { lock.unlock() }; handlers.removeValue(forKey: host) }
+    func set(_ host: String, _ handler: @escaping Handler) {
+        lock.lock(); defer { lock.unlock() }; handlers[host] = handler
+    }
+
+    func get(_ host: String) -> Handler? {
+        lock.lock(); defer { lock.unlock() }; return handlers[host]
+    }
+
+    func remove(_ host: String) {
+        lock.lock(); defer { lock.unlock() }; handlers.removeValue(forKey: host)
+    }
 }
 
 private final class FixtureProtocol: URLProtocol {
     static let registry = FixtureRegistry()
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override class func canInit(with _: URLRequest) -> Bool {
+        true
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
     override func startLoading() {
         guard let client, let handler = Self.registry.get(request.url!.host!) else { return }
         do { try handler(request, client, self) } catch { client.urlProtocol(self, didFailWithError: error) }
     }
+
     override func stopLoading() {}
 }
 
@@ -31,26 +46,35 @@ final class ChatAPIClientTests: XCTestCase {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [FixtureProtocol.self]
         let session = URLSession(configuration: configuration)
-        return (ChatAPIClient(baseURL: URL(string: "https://\(host)/proxy")!, session: session, deviceId: "phone"), session, host)
+        return (
+            ChatAPIClient(baseURL: URL(string: "https://\(host)/proxy")!, session: session, deviceId: "phone"),
+            session,
+            host
+        )
     }
 
     private func finish(_ request: URLRequest, _ client: URLProtocolClient, _ proto: URLProtocol,
                         body: String, status: Int = 200, contentType: String = "application/json") {
         client.urlProtocol(proto, didReceive: HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil,
-            headerFields: ["Content-Type": contentType])!, cacheStoragePolicy: .notAllowed)
+                                                              headerFields: ["Content-Type": contentType])!,
+                           cacheStoragePolicy: .notAllowed)
         client.urlProtocol(proto, didLoad: Data(body.utf8))
         client.urlProtocolDidFinishLoading(proto)
     }
 
     private func body(_ request: URLRequest) throws -> [String: Any] {
-        if let data = request.httpBody { return try JSONSerialization.jsonObject(with: data) as! [String: Any] }
+        if let data = request.httpBody {
+            return try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        }
         let stream = try XCTUnwrap(request.httpBodyStream)
         stream.open(); defer { stream.close() }
         var result = Data()
         var buffer = [UInt8](repeating: 0, count: 4096)
         while stream.hasBytesAvailable {
             let count = stream.read(&buffer, maxLength: buffer.count)
-            if count <= 0 { break }
+            if count <= 0 {
+                break
+            }
             result.append(contentsOf: buffer.prefix(count))
         }
         return try JSONSerialization.jsonObject(with: result) as! [String: Any]
@@ -64,7 +88,9 @@ final class ChatAPIClientTests: XCTestCase {
             if request.url!.path.hasSuffix("/login") {
                 XCTAssertEqual(body["email"] as? String, "user@example.test")
                 XCTAssertEqual(body["password"] as? String, "password")
-            } else { XCTAssertEqual(body["refresh_token"] as? String, "refresh") }
+            } else {
+                XCTAssertEqual(body["refresh_token"] as? String, "refresh")
+            }
             let payload = request.url!.path.hasSuffix("/logout") ? #"{"logged_out":true}"# : #"{"access_token":"access","expires_at":123,"refresh_token":"refresh"}"#
             self.finish(request, client, proto, body: "{\"code\":\"OK\",\"data\":\(payload)}")
         }
@@ -124,7 +150,9 @@ final class ChatAPIClientTests: XCTestCase {
             } else if path.hasSuffix("/cancel") {
                 XCTAssertEqual(request.httpMethod, "POST")
                 XCTAssertEqual(try self.body(request)["run_id"] as? String, "run")
-            } else { XCTAssertEqual(path, "/proxy/api/v1/ask/conversations/chat") }
+            } else {
+                XCTAssertEqual(path, "/proxy/api/v1/ask/conversations/chat")
+            }
             self.finish(request, client, proto, body: "{\"code\":\"OK\",\"data\":\(payload)}")
         }
         defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
@@ -134,7 +162,11 @@ final class ChatAPIClientTests: XCTestCase {
         XCTAssertEqual(list.first?.id, "chat")
         let detail = try await api.conversation(id: "chat", token: "access")
         XCTAssertEqual(detail.messages.first?.text, "hello")
-        let sent = try await api.send(conversationId: "chat", request: .init(id: "message", deviceId: "phone", text: "Hello"), token: "access")
+        let sent = try await api.send(
+            conversationId: "chat",
+            request: .init(id: "message", deviceId: "phone", text: "Hello"),
+            token: "access"
+        )
         XCTAssertEqual(sent.id, "chat")
         let cancelled = try await api.cancel(conversationId: "chat", runId: "run", token: "access")
         XCTAssertEqual(cancelled.id, "chat")
@@ -184,7 +216,7 @@ final class ChatAPIClientTests: XCTestCase {
         try await api.forgotPassword(email: "me@example.test")
         try await api.resetPassword(email: "me@example.test", code: "123456", newPassword: "new-password")
         let profile = try await api.profile(token: "access")
-        XCTAssertEqual(profile, ChatProfile(id: "u1", email: "me@example.test", name: "Me"))
+        XCTAssertEqual(profile, ChatProfile(id: "u1", email: "me@example.test", name: "Me", providers: ["apple"]))
         let usage = try await api.creditUsage(token: "access")
         XCTAssertEqual(usage.credits.remaining, 300)
         XCTAssertTrue(usage.paid)
@@ -212,19 +244,43 @@ final class ChatAPIClientTests: XCTestCase {
 
     func testOptionalEndpointsReportUnavailableOnMinimalImplementations() async {
         struct Minimal: ChatAPI {
-            func login(email _: String, password _: String) async throws -> ChatSession { throw ChatAPIError.unavailable }
-            func refresh(refreshToken _: String) async throws -> ChatSession { throw ChatAPIError.unavailable }
-            func logout(refreshToken _: String) async throws {}
-            func models(token _: String) async throws -> [ChatModel] { [] }
-            func list(token _: String, offset _: Int) async throws -> [ChatConversationSummary] { [] }
-            func conversation(id _: String, token _: String) async throws -> ChatConversation { throw ChatAPIError.unavailable }
-            func send(conversationId _: String, request _: ChatSendRequest, token _: String) async throws -> ChatConversation {
+            func login(email _: String,
+                       password _: String) async throws -> ChatSession {
                 throw ChatAPIError.unavailable
             }
+
+            func refresh(refreshToken _: String) async throws -> ChatSession {
+                throw ChatAPIError.unavailable
+            }
+
+            func logout(refreshToken _: String) async throws {}
+            func models(token _: String) async throws -> [ChatModel] {
+                []
+            }
+
+            func list(token _: String, offset _: Int) async throws -> [ChatConversationSummary] {
+                []
+            }
+
+            func conversation(id _: String,
+                              token _: String) async throws -> ChatConversation {
+                throw ChatAPIError.unavailable
+            }
+
+            func send(conversationId _: String, request _: ChatSendRequest,
+                      token _: String) async throws -> ChatConversation {
+                throw ChatAPIError.unavailable
+            }
+
             func cancel(conversationId _: String, runId _: String, token _: String) async throws -> ChatConversation {
                 throw ChatAPIError.unavailable
             }
-            func observe(id _: String, token _: String, onValue _: @Sendable (ChatConversation) async throws -> Void) async throws {}
+
+            func observe(
+                id _: String,
+                token _: String,
+                onValue _: @Sendable (ChatConversation) async throws -> Void
+            ) async throws {}
         }
         let api = Minimal()
         func expectUnavailable(_ operation: () async throws -> Void) async {
@@ -252,7 +308,13 @@ final class ChatAPIClientTests: XCTestCase {
             XCTAssertFalse(url.absoluteString.contains("%25"))
             XCTAssertFalse(url.absoluteString.contains("%2D"))
             if url.path.hasSuffix("/events") {
-                self.finish(request, client, proto, body: "event: snapshot\ndata: \(snapshot)\n\n", contentType: "text/event-stream")
+                self.finish(
+                    request,
+                    client,
+                    proto,
+                    body: "event: snapshot\ndata: \(snapshot)\n\n",
+                    contentType: "text/event-stream"
+                )
             } else {
                 self.finish(request, client, proto, body: "{\"code\":\"OK\",\"data\":\(snapshot)}")
             }
@@ -275,12 +337,18 @@ final class ChatAPIClientTests: XCTestCase {
                 let body = try self.body(request)
                 XCTAssertEqual(body["reasoning_effort"] as? String, effort)
                 XCTAssertEqual(body["model_ref"] as? String, "cloud:reasoner")
-                if effort == nil { XCTAssertFalse(body.keys.contains("reasoning_effort")) }
+                if effort == nil {
+                    XCTAssertFalse(body.keys.contains("reasoning_effort"))
+                }
                 self.finish(request, client, proto, body: "{\"code\":\"OK\",\"data\":\(chatSnapshot)}")
             }
             defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
-            _ = try await api.send(conversationId: "chat", request: .init(deviceId: "phone", text: "Hello",
-                modelRef: "cloud:reasoner", reasoningEffort: effort), token: "access")
+            _ = try await api.send(conversationId: "chat", request: .init(
+                deviceId: "phone",
+                text: "Hello",
+                modelRef: "cloud:reasoner",
+                reasoningEffort: effort
+            ), token: "access")
         }
     }
 
@@ -296,15 +364,23 @@ final class ChatAPIClientTests: XCTestCase {
     func testObserveConsumesChunkedSnapshotsAndProgress() async throws {
         actor Values {
             var values: [ChatConversation] = []
-            func append(_ value: ChatConversation) { values.append(value) }
+            func append(_ value: ChatConversation) {
+                values.append(value)
+            }
         }
         let (api, session, host) = fixture { request, client, proto in
             XCTAssertEqual(request.url!.path, "/proxy/api/v1/ask/conversations/chat/events")
             XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "text/event-stream")
-            client.urlProtocol(proto, didReceive: HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil,
-                headerFields: ["Content-Type": "text/event-stream; charset=utf-8"])!, cacheStoragePolicy: .notAllowed)
+            client.urlProtocol(proto, didReceive: HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "text/event-stream; charset=utf-8"]
+            )!, cacheStoragePolicy: .notAllowed)
             let wire = "event: snapshot\ndata: \(chatSnapshot)\n\nevent: progress\ndata: \(chatProgress)\n\n"
-            for byte in wire.utf8 { client.urlProtocol(proto, didLoad: Data([byte])) }
+            for byte in wire.utf8 {
+                client.urlProtocol(proto, didLoad: Data([byte]))
+            }
             client.urlProtocolDidFinishLoading(proto)
         }
         defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
@@ -329,7 +405,9 @@ final class ChatAPIClientTests: XCTestCase {
     func testPhotoSendAndEventStreamPreserveImagesToolsReasoningAndTerminalError() async throws {
         actor Values {
             var snapshots: [ChatConversation] = []
-            func append(_ value: ChatConversation) { snapshots.append(value) }
+            func append(_ value: ChatConversation) {
+                snapshots.append(value)
+            }
         }
         let initial = #"{"id":"chat","title":"Photos","revision":1,"updated_at":"2026-01-02T03:04:05Z","messages":[{"id":"photo","role":"user","text":"Compare","created_at":"2026-01-02T03:04:05Z","image":"data:image/jpeg;base64,mobile","attachments":[{"id":"desktop-photo","kind":"image","name":"reference.jpg","image":"data:image/jpeg;base64,desktop"}]}],"run":{"id":"run","device_id":"phone","status":"running","updated_at":"2026-01-02T03:04:05Z"}}"#
         let progress = #"{"id":"chat","revision":2,"updated_at":"2026-01-02T03:04:06Z","run":{"id":"run","device_id":"phone","status":"waiting_tool","updated_at":"2026-01-02T03:04:06Z","reasoning":"Checking references","reasoning_milliseconds":1300,"preview":"Partial answer","pending":[{"id":"tool","type":"function","function":{"name":"web_fetch","arguments":"{}"}}]}}"#
@@ -348,8 +426,13 @@ final class ChatAPIClientTests: XCTestCase {
             }
         }
         defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
-        let sent = try await api.send(conversationId: "chat", request: .init(deviceId: "phone", text: "Compare",
-            image: "data:image/jpeg;base64,mobile", modelRef: "cloud:vision", reasoningEffort: "high"), token: "access")
+        let sent = try await api.send(conversationId: "chat", request: .init(
+            deviceId: "phone",
+            text: "Compare",
+            image: "data:image/jpeg;base64,mobile",
+            modelRef: "cloud:vision",
+            reasoningEffort: "high"
+        ), token: "access")
         XCTAssertTrue(sent.run?.isActive == true)
         let values = Values()
         try await api.observe(id: "chat", token: "access") { await values.append($0) }
@@ -370,7 +453,8 @@ final class ChatAPIClientTests: XCTestCase {
         let started = expectation(description: "Stream opened")
         let (api, session, host) = fixture { request, client, proto in
             client.urlProtocol(proto, didReceive: HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil,
-                headerFields: ["Content-Type": "text/event-stream"])!, cacheStoragePolicy: .notAllowed)
+                                                                  headerFields: ["Content-Type": "text/event-stream"])!,
+                               cacheStoragePolicy: .notAllowed)
             client.urlProtocol(proto, didLoad: Data(": keepalive\n\n".utf8))
             started.fulfill()
         }
@@ -382,7 +466,7 @@ final class ChatAPIClientTests: XCTestCase {
         catch { XCTAssertTrue(error is CancellationError || (error as? URLError)?.code == .cancelled) }
     }
 
-    func testCancelledRequestNeverStartsNetworkOperation() async throws {
+    func testCancelledRequestNeverStartsNetworkOperation() async {
         let (api, session, host) = fixture { _, _, _ in XCTFail("Cancelled task started a network request") }
         defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
         let task = Task {
@@ -393,5 +477,57 @@ final class ChatAPIClientTests: XCTestCase {
             catch { XCTAssertTrue(error is CancellationError) }
         }
         await task.value
+    }
+}
+
+extension ChatAPIClientTests {
+    func testPrivacyDeletionAndPrivateReportWireContracts() async throws {
+        let (api, session, host) = fixture { request, client, proto in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access")
+            switch request.url!.path {
+            case let path where path.hasSuffix("/privacy/ai"):
+                XCTAssertEqual(request.httpMethod, "GET")
+                self.finish(
+                    request,
+                    client,
+                    proto,
+                    body: #"{"code":"OK","data":{"version":"v1","providers":["Actual Gateway","Search Provider"]}}"#
+                )
+            case let path where path.hasSuffix("/me"):
+                XCTAssertEqual(request.httpMethod, "DELETE")
+                let body = try self.body(request)
+                XCTAssertEqual(body["provider"] as? String, "apple")
+                XCTAssertEqual(body["authorization_code"] as? String, "one-time-code")
+                XCTAssertEqual(body["client_id"] as? String, "app.id")
+                self.finish(request, client, proto, body: #"{"code":"OK","data":{"deleted":true}}"#)
+            default:
+                XCTAssertTrue(request.url!.path.hasSuffix("/feedback"))
+                let body = try self.body(request)
+                XCTAssertEqual(body["type"] as? String, "ai-report")
+                XCTAssertEqual(body["content"] as? String, "Reported answer only")
+                XCTAssertNil(body["image_urls"])
+                self.finish(request, client, proto, body: #"{"code":"OK","data":{"id":"report"}}"#)
+            }
+        }
+        defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
+        let disclosure = try await api.aiDisclosure(token: "access")
+        XCTAssertTrue(disclosure.isValid)
+        XCTAssertEqual(disclosure.providers.count, 2)
+        try await api.deleteAccount(
+            proof: .init(provider: "apple", idToken: "proof", authorizationCode: "one-time-code", clientId: "app.id"),
+            token: "access"
+        )
+        try await api.reportAnswer(content: "Reported answer only", token: "access")
+    }
+
+    func testDeletionDoesNotTreatFalseAsSuccess() async throws {
+        let (api, session, host) = fixture { request, client, proto in
+            self.finish(request, client, proto, body: #"{"code":"OK","data":{"deleted":false}}"#)
+        }
+        defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
+        do {
+            try await api.deleteAccount(proof: .init(provider: "password", password: "proof"), token: "access")
+            XCTFail("Deletion must be explicitly confirmed by the server")
+        } catch { XCTAssertEqual(error as? ChatAPIError, .invalidResponse) }
     }
 }

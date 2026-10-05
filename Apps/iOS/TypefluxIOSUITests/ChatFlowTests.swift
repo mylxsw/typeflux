@@ -47,8 +47,13 @@ final class ChatFlowTests: XCTestCase {
         let app = launchPreview(language: "zh-Hans")
         openHistory(app)
         app.buttons["chat.account"].tap()
+        if !app.buttons["account.signOut"].isHittable {
+            app.scrollViews.firstMatch.swipeUp()
+        }
         app.buttons["account.signOut"].tap()
         app.buttons.matching(identifier: "account.confirmSignOut").firstMatch.tap()
+        XCTAssertTrue(app.buttons["guest.login"].waitForExistence(timeout: 5))
+        app.buttons["guest.login"].tap()
         let google = app.buttons["login.google"]
         XCTAssertTrue(google.waitForExistence(timeout: 5))
         XCTAssertEqual(google.label, "使用 Google 账号继续")
@@ -126,8 +131,13 @@ final class ChatFlowTests: XCTestCase {
         app.buttons["chat.account"].tap()
         let signOut = app.buttons["account.signOut"]
         XCTAssertTrue(signOut.waitForExistence(timeout: 5))
+        if !signOut.isHittable {
+            app.scrollViews.firstMatch.swipeUp()
+        }
         signOut.tap()
         app.buttons.matching(identifier: "account.confirmSignOut").firstMatch.tap()
+        XCTAssertTrue(app.buttons["guest.login"].waitForExistence(timeout: 5))
+        app.buttons["guest.login"].tap()
         let emailEntry = app.buttons["login.email.open"]
         XCTAssertTrue(emailEntry.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["login.apple"].exists)

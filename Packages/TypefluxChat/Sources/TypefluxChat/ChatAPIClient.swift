@@ -18,24 +18,61 @@ public protocol ChatAPI: Sendable {
     func resetPassword(email: String, code: String, newPassword: String) async throws
     func profile(token: String) async throws -> ChatProfile
     func creditUsage(token: String) async throws -> ChatCreditUsage
-    func regenerate(conversationId: String, request: ChatRegenerateRequest, token: String) async throws -> ChatConversation
+    func regenerate(conversationId: String, request: ChatRegenerateRequest, token: String) async throws
+        -> ChatConversation
     func deleteConversation(id: String, token: String) async throws
+    func aiDisclosure(token: String) async throws -> ChatAIDisclosure
+    func deleteAccount(proof: ChatDeletionProof, token: String) async throws
+    func reportAnswer(content: String, token: String) async throws
 }
 
 /// Account and history extras are optional for test doubles and older fixtures:
 /// an implementation that does not provide them reports the feature unavailable.
 public extension ChatAPI {
-    func googleLogin(identityToken _: String) async throws -> ChatSession { throw ChatAPIError.unavailable }
-    func appleLogin(identityToken _: String) async throws -> ChatSession { throw ChatAPIError.unavailable }
-    func forgotPassword(email _: String) async throws { throw ChatAPIError.unavailable }
+    func aiDisclosure(token _: String) async throws -> ChatAIDisclosure {
+        throw ChatAPIError.unavailable
+    }
+
+    func deleteAccount(proof _: ChatDeletionProof, token _: String) async throws {
+        throw ChatAPIError.unavailable
+    }
+
+    func reportAnswer(content _: String, token _: String) async throws {
+        throw ChatAPIError.unavailable
+    }
+
+    func googleLogin(identityToken _: String) async throws -> ChatSession {
+        throw ChatAPIError.unavailable
+    }
+
+    func appleLogin(identityToken _: String) async throws -> ChatSession {
+        throw ChatAPIError.unavailable
+    }
+
+    func forgotPassword(email _: String) async throws {
+        throw ChatAPIError.unavailable
+    }
+
     func resetPassword(email _: String, code _: String, newPassword _: String) async throws {
         throw ChatAPIError.unavailable
     }
-    func profile(token _: String) async throws -> ChatProfile { throw ChatAPIError.unavailable }
-    func creditUsage(token _: String) async throws -> ChatCreditUsage { throw ChatAPIError.unavailable }
+
+    func profile(token _: String) async throws -> ChatProfile {
+        throw ChatAPIError.unavailable
+    }
+
+    func creditUsage(token _: String) async throws -> ChatCreditUsage {
+        throw ChatAPIError.unavailable
+    }
+
     func regenerate(conversationId _: String, request _: ChatRegenerateRequest,
-                    token _: String) async throws -> ChatConversation { throw ChatAPIError.unavailable }
-    func deleteConversation(id _: String, token _: String) async throws { throw ChatAPIError.unavailable }
+                    token _: String) async throws -> ChatConversation {
+        throw ChatAPIError.unavailable
+    }
+
+    func deleteConversation(id _: String, token _: String) async throws {
+        throw ChatAPIError.unavailable
+    }
 }
 
 public struct ChatAPIClient: ChatAPI {
@@ -56,12 +93,21 @@ public struct ChatAPIClient: ChatAPI {
     }
 
     public func refresh(refreshToken: String) async throws -> ChatSession {
-        try await execute(path: "/api/v1/auth/refresh", method: "POST", body: refreshBody(refreshToken), decoder: JSONDecoder())
+        try await execute(
+            path: "/api/v1/auth/refresh",
+            method: "POST",
+            body: refreshBody(refreshToken),
+            decoder: JSONDecoder()
+        )
     }
 
     public func logout(refreshToken: String) async throws {
         struct LoggedOut: Decodable { let loggedOut: Bool }
-        let _: LoggedOut = try await execute(path: "/api/v1/auth/logout", method: "POST", body: refreshBody(refreshToken))
+        let _: LoggedOut = try await execute(
+            path: "/api/v1/auth/logout",
+            method: "POST",
+            body: refreshBody(refreshToken)
+        )
     }
 
     public func models(token: String) async throws -> [ChatModel] {
@@ -90,7 +136,8 @@ public struct ChatAPIClient: ChatAPI {
     public func googleLogin(identityToken: String) async throws -> ChatSession {
         struct OAuth: Encodable { let idToken: String }
         return try await execute(path: "/api/v1/auth/oauth/google", method: "POST",
-                                 body: ChatCoding.encoder().encode(OAuth(idToken: identityToken)), decoder: JSONDecoder())
+                                 body: ChatCoding.encoder().encode(OAuth(idToken: identityToken)),
+                                 decoder: JSONDecoder())
     }
 
     public func appleLogin(identityToken: String) async throws -> ChatSession {
@@ -134,15 +181,39 @@ public struct ChatAPIClient: ChatAPI {
         let _: Deleted = try await execute(path: conversationPath(id), method: "DELETE", token: token)
     }
 
-    public func observe(id: String, token: String, onValue: @Sendable (ChatConversation) async throws -> Void) async throws {
+    public func aiDisclosure(token: String) async throws -> ChatAIDisclosure {
+        try await execute(path: "/api/v1/privacy/ai", token: token)
+    }
+
+    public func deleteAccount(proof: ChatDeletionProof, token: String) async throws {
+        struct Deleted: Decodable { let deleted: Bool }
+        let result: Deleted = try await execute(path: "/api/v1/me", method: "DELETE",
+                                                body: ChatCoding.encoder().encode(proof), token: token)
+        guard result.deleted else { throw ChatAPIError.invalidResponse }
+    }
+
+    public func reportAnswer(content: String, token: String) async throws {
+        struct Report: Encodable { let content: String; let type = "ai-report" }
+        struct Receipt: Decodable { let id: String }
+        let _: Receipt = try await execute(path: "/api/v1/feedback", method: "POST",
+                                           body: ChatCoding.encoder().encode(Report(content: content)), token: token)
+    }
+
+    public func observe(
+        id: String,
+        token: String,
+        onValue: @Sendable (ChatConversation) async throws -> Void
+    ) async throws {
         try Task.checkCancellation()
         var headers = clientHeaders
         headers["Accept"] = "text/event-stream"
         let request = ChatRequest.make(baseURL: baseURL, path: conversationPath(id) + "/events", token: token,
-                                           timeout: 40, headers: headers)
+                                       timeout: 40, headers: headers)
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse else { throw ChatAPIError.invalidResponse }
-        if http.statusCode == 401 { throw ChatAPIError.unauthorized }
+        if http.statusCode == 401 {
+            throw ChatAPIError.unauthorized
+        }
         guard http.statusCode == 200,
               http.value(forHTTPHeaderField: "Content-Type")?.lowercased().contains("text/event-stream") == true else {
             throw ChatAPIError.unavailable
@@ -159,10 +230,11 @@ public struct ChatAPIClient: ChatAPI {
     }
 
     private func execute<Value: Decodable>(path: String, method: String = "GET", body: Data? = nil,
-                                           token: String? = nil, decoder: JSONDecoder = ChatCoding.decoder()) async throws -> Value {
+                                           token: String? = nil,
+                                           decoder: JSONDecoder = ChatCoding.decoder()) async throws -> Value {
         try Task.checkCancellation()
         let request = ChatRequest.make(baseURL: baseURL, path: path, method: method, body: body,
-                                           token: token, headers: clientHeaders)
+                                       token: token, headers: clientHeaders)
         let (data, response) = try await session.data(for: request)
         try Task.checkCancellation()
         guard let http = response as? HTTPURLResponse else { throw ChatAPIError.invalidResponse }
@@ -172,7 +244,9 @@ public struct ChatAPIClient: ChatAPI {
     private var clientHeaders: [String: String] {
         var headers = ["X-Typeflux-Model-Catalog": "1", "X-Scenario": "ask-anything",
                        "X-Client-OS": "iOS", "User-Agent": "Typeflux/\(clientVersion)"]
-        if let deviceId { headers["X-Client-ID"] = deviceId }
+        if let deviceId {
+            headers["X-Client-ID"] = deviceId
+        }
         return headers
     }
 

@@ -12,8 +12,11 @@ struct ChatModelPicker: View {
         let shown = store.reasoningEffort.nearest(in: store.supportedReasoningLevels)
         Button { expanded = true } label: {
             HStack(spacing: 6) {
-                Text(store.selectedModel?.name ?? NSLocalizedString("Choose model", comment: ""))
-                    .lineLimit(1).truncationMode(.middle)
+                Text(store.selectedModel?.name ?? NSLocalizedString(
+                    store.isAuthenticated ? "Choose model" : "Auto",
+                    comment: ""
+                ))
+                .lineLimit(1).truncationMode(.middle)
                 if shown != .providerDefault {
                     Text(shown.label)
                         .font(.system(size: 13.5, weight: .regular))
@@ -252,7 +255,8 @@ struct ChatModelEffortCard: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(model.name)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(blocked ? ChatTheme.secondary : selected ? ChatTheme.accentText : Color.primary)
+                        .foregroundStyle(blocked ? ChatTheme.secondary : selected ? ChatTheme.accentText : Color
+                            .primary)
                         .lineLimit(2)
                     if blocked {
                         Text(NSLocalizedString("Does not support photos", comment: ""))

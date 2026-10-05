@@ -27,12 +27,20 @@ final class ChatStore {
     var draft = ""
     var imageDataURL: String?
     var errorMessage: String?
+    var infoMessage: String?
 
     let isSynthetic: Bool
     let deviceID: String
     private let service: any ChatAPI
     private let credentials: any CredentialStore
     private let reconnectDelay: Duration
+    var showsLogin = false
+    var showsConsent = false
+    var example: ChatExample?
+    private(set) var disclosure: ChatAIDisclosure?
+    private(set) var isCheckingConsent = false
+    private let consentDefaults: UserDefaults
+    private var consentRevision = 0
     private var session: ChatSession?
     private var accountGeneration = 0
     private var selectionGeneration = 0
@@ -48,8 +56,10 @@ final class ChatStore {
         credentials: any CredentialStore,
         deviceID: String,
         isSynthetic: Bool = false,
+        consentDefaults: UserDefaults = .standard,
         reconnectDelay: Duration = .milliseconds(500)
     ) {
+        self.consentDefaults = consentDefaults
         self.service = service
         self.credentials = credentials
         self.deviceID = deviceID
@@ -65,11 +75,12 @@ final class ChatStore {
             session = account.session
             isAuthenticated = true
             await refreshHome()
+            await loadDisclosure()
         } catch { errorMessage = error.localizedDescription }
     }
 
     func login(email: String, password: String) async {
-        resetAccount()
+        beginLogin()
         let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
         let generation = accountGeneration
         isLoading = true
@@ -90,6 +101,7 @@ final class ChatStore {
             session = account
             isAuthenticated = true
             await refreshHome()
+            await finishLogin()
         } catch { report(error, generation: generation) }
     }
 
@@ -151,6 +163,7 @@ final class ChatStore {
     }
 
     func newConversation() {
+        example = nil
         changeSelection(UUID().uuidString.lowercased())
     }
 
@@ -186,7 +199,12 @@ final class ChatStore {
     }
 
     func send() async {
-        guard canSend else { return }
+        guard canAttemptSend else { return }
+        guard isAuthenticated else { showsLogin = true; return }
+        let intendedDraft = draft
+        let intendedImage = imageDataURL
+        guard await ensureConsent() else { return }
+        guard draft == intendedDraft, imageDataURL == intendedImage, canSend else { return }
         if selectedID == nil {
             selectedID = UUID().uuidString.lowercased()
         }
@@ -285,7 +303,7 @@ extension ChatStore {
         if isAuthenticated, !models.contains(where: { $0.reference == modelRef }) {
             return "Choose an available cloud model. Refresh if the model list is empty."
         }
-        if hasConversationImages, selectedModel?.vision != true {
+        if isAuthenticated, hasConversationImages, selectedModel?.vision != true {
             if conversation?.messages.contains(where: \.hasImage) == true {
                 return "This conversation contains photos. Choose a model that supports photos."
             }
@@ -295,7 +313,7 @@ extension ChatStore {
     }
 
     var canSend: Bool {
-        isAuthenticated && !isSending && !isRunning && composerValidation == nil && !draft
+        isAuthenticated && hasAIConsent && !isSending && !isRunning && composerValidation == nil && !draft
             .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -469,7 +487,12 @@ private extension ChatStore {
                 return result
             } catch ChatAPIError.unauthorized {
                 if generation == accountGeneration {
+                    let pendingDraft = draft
+                    let pendingImage = imageDataURL
                     resetAccount()
+                    draft = pendingDraft
+                    imageDataURL = pendingImage
+                    showsLogin = true
                     try? credentials.clear()
                     errorMessage = "Your session expired. Please sign in again."
                 }
@@ -509,6 +532,10 @@ private extension ChatStore {
     }
 
     private func resetAccount() {
+        infoMessage = nil
+        disclosure = nil
+        showsConsent = false
+        example = nil
         accountGeneration += 1
         observationTask?.cancel()
         observationTask = nil
@@ -588,11 +615,13 @@ extension ChatStore {
 
     func loginWithGoogle(using authorizer: any GoogleSignInAuthorizing) async {
         guard !isLoading else { return }
-        resetAccount()
+        beginLogin()
         let generation = accountGeneration
         isLoading = true
         defer {
-            if generation == accountGeneration { isLoading = false }
+            if generation == accountGeneration {
+                isLoading = false
+            }
         }
         do {
             let token = try await authorizer.signIn()
@@ -609,6 +638,7 @@ extension ChatStore {
             profile = fetched
             isAuthenticated = true
             await refreshHome()
+            await finishLogin()
         } catch {
             report(error, generation: generation,
                    signInRejection:
@@ -617,7 +647,7 @@ extension ChatStore {
     }
 
     func loginWithApple(identityToken: String, email appleEmail: String?) async {
-        resetAccount()
+        beginLogin()
         let generation = accountGeneration
         isLoading = true
         defer {
@@ -640,6 +670,7 @@ extension ChatStore {
             profile = fetched
             isAuthenticated = true
             await refreshHome()
+            await finishLogin()
         } catch {
             report(error, generation: generation,
                    signInRejection:
@@ -690,6 +721,7 @@ extension ChatStore {
     }
 
     func regenerate(messageID: String) async {
+        guard isAuthenticated, await ensureConsent() else { return }
         guard let value = conversation, regenerableMessageID == messageID, composerValidation == nil else { return }
         let generation = accountGeneration
         let selection = selectionGeneration
@@ -728,5 +760,130 @@ extension ChatStore {
                 newConversation()
             }
         } catch { report(error, generation: generation) }
+    }
+}
+
+extension ChatStore {
+    var canAttemptSend: Bool {
+        !isSending && !isRunning && !isCheckingConsent &&
+            (!isAuthenticated || composerValidation == nil) &&
+            !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var hasAIConsent: Bool {
+        // UserDefaults writes alone do not invalidate SwiftUI observation.
+        _ = consentRevision
+        guard isAuthenticated, let id = profile?.id, let disclosure, disclosure.isValid else { return false }
+        return consentDefaults.string(forKey: "ai-consent." + id) == consentFingerprint(disclosure)
+    }
+
+    private func consentFingerprint(_ value: ChatAIDisclosure) -> String {
+        // Include recipients as well as the policy revision to detect an operator edit.
+        value.version + "|" + value.providers.sorted().joined(separator: "|")
+    }
+
+    func acceptAIConsent() {
+        guard let id = profile?.id, let disclosure, disclosure.isValid else { return }
+        consentDefaults.set(consentFingerprint(disclosure), forKey: "ai-consent." + id)
+        consentDefaults.set(Date(), forKey: "ai-consent-date." + id)
+        consentRevision += 1
+        showsConsent = false
+        // Deliberately never send here: the user reviews the restored draft first.
+    }
+
+    func revokeAIConsent() {
+        if let id = profile?.id {
+            consentDefaults.removeObject(forKey: "ai-consent." + id)
+            consentDefaults.removeObject(forKey: "ai-consent-date." + id)
+            consentRevision += 1
+        }
+    }
+
+    func cancelPendingLogin() {
+        guard !isAuthenticated else { return }
+        beginLogin()
+    }
+
+    private func beginLogin() {
+        let pendingDraft = isAuthenticated ? "" : draft
+        let pendingImage = isAuthenticated ? nil : imageDataURL
+        resetAccount()
+        draft = pendingDraft
+        imageDataURL = pendingImage
+    }
+
+    private func finishLogin() async {
+        guard isAuthenticated else { return }
+        let generation = accountGeneration
+        showsLogin = false
+        await loadDisclosure()
+        guard generation == accountGeneration, isAuthenticated else { return }
+        if !hasAIConsent {
+            showsConsent = true
+        }
+    }
+
+    func loadDisclosure() async {
+        guard isAuthenticated else { return }
+        let generation = accountGeneration
+        do {
+            let value = try await authorized { [service] token in try await service.aiDisclosure(token: token) }
+            try checkAccount(generation)
+            disclosure = value.isValid ? value : nil
+        } catch {
+            if generation == accountGeneration {
+                disclosure = nil
+            }
+        }
+    }
+
+    private func ensureConsent() async -> Bool {
+        guard !isCheckingConsent else { return false }
+        isCheckingConsent = true
+        defer { isCheckingConsent = false }
+        let generation = accountGeneration
+        let selection = selectionGeneration
+        await loadDisclosure()
+        guard generation == accountGeneration, selection == selectionGeneration, isAuthenticated else { return false }
+        if !hasAIConsent {
+            showsConsent = true; return false
+        }
+        return true
+    }
+
+    func deleteAccount(proof: ChatDeletionProof) async -> Bool {
+        guard isAuthenticated, !isLoading else { return false }
+        let generation = accountGeneration
+        isLoading = true
+        defer {
+            if generation == accountGeneration {
+                isLoading = false
+            }
+        }
+        do {
+            try await authorized { [service] token in try await service.deleteAccount(proof: proof, token: token) }
+            try checkAccount(generation)
+            revokeAIConsent()
+            resetAccount()
+            do { try credentials.clear() } catch {
+                errorMessage = "Your account was deleted, but local sign-in data could not be cleared."
+            }
+            infoMessage = "Your account has been deleted."
+            return true
+        } catch { report(error, generation: generation); return false }
+    }
+
+    func reportAnswer(message: ChatMessage, reason: String, details: String) async -> Bool {
+        guard isAuthenticated, message.role == "assistant", let id = conversation?.id,
+              conversation?.messages.contains(where: { $0.id == message.id }) == true else { return false }
+        let generation = accountGeneration
+        do {
+            // No transcript or images are attached; include only the explicitly reported answer.
+            let content = "AI answer report\nConversation: \(id)\nMessage: \(message.id)\nReason: \(reason)\n" +
+                String(details.prefix(2000)) + "\nAnswer:\n" + String(message.text.prefix(12000))
+            try await authorized { [service] token in try await service.reportAnswer(content: content, token: token) }
+            try checkAccount(generation)
+            return true
+        } catch { report(error, generation: generation); return false }
     }
 }

@@ -45,6 +45,14 @@ struct ChatComposer: View {
     }
 
     @ViewBuilder private var notices: some View {
+        if let info = store.infoMessage {
+            HStack {
+                Label(NSLocalizedString(info, comment: "Account notice"), systemImage: "checkmark.circle")
+                Spacer()
+                Button { store.infoMessage = nil } label: { Image(systemName: "xmark") }
+                    .accessibilityLabel("Dismiss")
+            }.font(.footnote).foregroundStyle(ChatTheme.accent).padding(8)
+        }
         if let validation = store.composerValidation {
             Text(NSLocalizedString(validation, comment: "Composer validation"))
                 .font(.footnote).foregroundStyle(.orange)
@@ -56,6 +64,10 @@ struct ChatComposer: View {
                 Text(NSLocalizedString(error, comment: "Chat error")).font(.footnote).foregroundStyle(.red)
                     .accessibilityIdentifier("chat.composer.error")
                 Spacer(minLength: 4)
+                if dictation.errorMessage != nil {
+                    Link("Open Settings", destination: URL(string: UIApplication.openSettingsURLString)!)
+                        .font(.footnote)
+                }
                 if store.errorMessage != nil {
                     Button { Task { await store.reloadConversation() } } label: {
                         Image(systemName: "arrow.clockwise").font(.footnote)
@@ -105,7 +117,8 @@ struct ChatComposer: View {
     }
 
     private var attachDisabled: Bool {
-        store.isSending || store.isRunning || isLoadingPhoto || store.selectedModel?.vision != true
+        store.isSending || store
+            .isRunning || isLoadingPhoto || (store.isAuthenticated && store.selectedModel?.vision != true)
     }
 
     private var attachMenu: some View {
@@ -171,14 +184,14 @@ struct ChatComposer: View {
                         Image(systemName: "arrow.up").font(.system(size: 15, weight: .semibold))
                     }
                 }
-                .foregroundStyle(store.canSend ? Color.white : ChatTheme.tertiary)
+                .foregroundStyle(store.canAttemptSend ? Color.white : ChatTheme.tertiary)
                 .frame(width: 34, height: 34)
-                .background(store.canSend ? ChatTheme.accent : ChatTheme.strongFill, in: Circle())
-                .shadow(color: store.canSend ? ChatTheme.accent.opacity(0.35) : .clear, radius: 6, y: 3)
+                .background(store.canAttemptSend ? ChatTheme.accent : ChatTheme.strongFill, in: Circle())
+                .shadow(color: store.canAttemptSend ? ChatTheme.accent.opacity(0.35) : .clear, radius: 6, y: 3)
                 .frame(width: 40, height: 44).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(!store.canSend || isLoadingPhoto)
+            .disabled(!store.canAttemptSend || isLoadingPhoto)
             .accessibilityLabel("Send message").accessibilityIdentifier("chat.send")
         }
     }

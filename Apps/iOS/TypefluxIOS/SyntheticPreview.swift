@@ -17,9 +17,17 @@
 
         static func makeStore(arguments: [String] = ProcessInfo.processInfo.arguments,
                               now: Date = Date(), streamInterval: Duration? = nil) -> ChatStore {
-            ChatStore(service: makeService(arguments: arguments, now: now, streamInterval: streamInterval),
-                      credentials: PreviewCredentials(longEmail: arguments.contains("--synthetic-long-email")),
-                      deviceID: "synthetic-device", isSynthetic: true)
+            let defaults = UserDefaults(suiteName: "app.typeflux.ios.synthetic-consent")!
+            defaults.removePersistentDomain(forName: "app.typeflux.ios.synthetic-consent")
+            if !arguments.contains("--synthetic-no-consent") {
+                defaults.set("preview|Preview Provider", forKey: "ai-consent.synthetic-user")
+            }
+            return ChatStore(service: makeService(arguments: arguments, now: now, streamInterval: streamInterval),
+                             credentials: PreviewCredentials(
+                                 longEmail: arguments.contains("--synthetic-long-email"),
+                                 guest: arguments.contains("--synthetic-guest")
+                             ),
+                             deviceID: "synthetic-device", isSynthetic: true, consentDefaults: defaults)
         }
 
         static func makeService(arguments: [String] = [], now: Date = Date(),
@@ -254,7 +262,10 @@
             email: "preview@example.invalid",
             session: ChatSession(accessToken: "synthetic", expiresAt: 0, refreshToken: nil)
         )
-        init(longEmail: Bool = false) {
+        init(longEmail: Bool = false, guest: Bool = false) {
+            if guest {
+                value = nil; return
+            }
             if longEmail {
                 value = SavedAccount(email: "very.long.account.address.for.layout.testing@example.invalid",
                                      session: ChatSession(accessToken: "synthetic", expiresAt: 0, refreshToken: nil))
@@ -350,6 +361,13 @@
         }
 
         func logout(refreshToken _: String) async throws {}
+        func reportAnswer(content _: String, token _: String) async throws {}
+        func deleteAccount(proof _: ChatDeletionProof, token _: String) async throws {}
+
+        func aiDisclosure(token _: String) async throws -> ChatAIDisclosure {
+            .init(version: "preview", providers: ["Preview Provider"])
+        }
+
         func models(token _: String) async throws -> [ChatModel] {
             [ChatModel(id: "preview", name: "MiniMax M3", vision: true,
                        pricing: ["multiplier": "1"], reasoning: true,
@@ -366,7 +384,12 @@
         }
 
         func profile(token _: String) async throws -> ChatProfile {
-            ChatProfile(id: "synthetic-user", email: "preview@example.invalid", name: "Demir Von")
+            ChatProfile(
+                id: "synthetic-user",
+                email: "preview@example.invalid",
+                name: "Demir Von",
+                providers: ["password"]
+            )
         }
 
         func creditUsage(token _: String) async throws -> ChatCreditUsage {
