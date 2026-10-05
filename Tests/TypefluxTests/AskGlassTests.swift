@@ -36,20 +36,22 @@ struct AskGlassTests {
         #expect(AskGlassMaterial.opaque.idleBorder(border, increasedContrast: false) == border)
     }
 
-    @Test func chipsUseTranslucentWashesSoTheyWorkOnGlass() {
-        #expect(AskIconChipFace.fillColor(.neutral, hovering: false) == .clear)
-        #expect(AskIconChipFace.fillColor(.unavailable, hovering: false) == .clear)
-        #expect(AskIconChipFace.fillColor(.neutral, hovering: true) == AskTheme.hoverFill)
-        #expect(AskIconChipFace.fillColor(.active, hovering: false) == AskTheme.accent.opacity(0.16))
-        #expect(AskIconChipFace.fillColor(.active, hovering: true) == AskTheme.accent.opacity(0.24))
-        #expect(AskIconChipFace.fillColor(.warning, hovering: false) == StudioTheme.warning.opacity(0.18))
-        #expect(AskIconChipFace.fillColor(.warning, hovering: true) == StudioTheme.warning.opacity(0.26))
+    @Test func chipsLightTheirIconInsteadOfACircle() {
+        #expect(AskIconChipFace.iconColor(.active, hovering: false) == AskTheme.accent)
+        #expect(AskIconChipFace.iconColor(.active, hovering: true) == AskTheme.accent)
+        #expect(AskIconChipFace.iconColor(.neutral, hovering: false) == StudioTheme.textSecondary)
+        #expect(AskIconChipFace.iconColor(.neutral, hovering: true) == StudioTheme.textPrimary)
+        #expect(AskIconChipFace.iconColor(.unavailable, hovering: true) == StudioTheme.textTertiary)
+        #expect(AskIconChipFace.iconColor(.warning, hovering: false) == StudioTheme.warning)
     }
 
-    @Test func microphoneIsBorderlessUntilHoveredOrRecording() {
-        #expect(AskVoiceButton.Appearance.fill(phase: .idle, hovered: false) == .clear)
-        #expect(AskVoiceButton.Appearance.fill(phase: .idle, hovered: true) == AskTheme.hoverFill)
-        #expect(AskVoiceButton.Appearance.fill(phase: .listening, hovered: false) == AskTheme.accent.opacity(0.22))
+    @Test func microphoneAndStorageLightTheirIconInsteadOfACircle() {
+        #expect(AskVoiceButton.Appearance.iconColor(phase: .idle, hovered: false) == StudioTheme.textSecondary)
+        #expect(AskVoiceButton.Appearance.iconColor(phase: .idle, hovered: true) == StudioTheme.textPrimary)
+        #expect(AskVoiceButton.Appearance.iconColor(phase: .listening, hovered: false) == AskTheme.accent)
+        #expect(AskStorageButton.iconColor(local: true, active: false) == AskTheme.privateTint)
+        #expect(AskStorageButton.iconColor(local: false, active: false) == StudioTheme.textSecondary)
+        #expect(AskStorageButton.iconColor(local: false, active: true) == StudioTheme.textPrimary)
     }
 
     @Test func onlyTheTopReasoningLevelIsViolet() {

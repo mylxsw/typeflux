@@ -117,6 +117,17 @@ struct AskLauncherHeaderVisualTests {
                     try record(fixture, in: window, words: words, stop: stop)
                 }
             }
+            // The conversation window's composer follows the same icon rule.
+            do {
+                let fixture = try AskTestFixture()
+                defer { fixture.model.resetSession() }
+                fixture.model.draft = AskDraft(text: "继续追问")
+                let composer = AskComposer(model: fixture.model, availableWidth: 720, launcher: false)
+                    .padding(20)
+                    .environment(\.askGlassMaterialOverride, .opaque)
+                try await render(composer, size: NSSize(width: 760, height: 180), appearance: appearance,
+                                 file: root.appendingPathComponent("header-workspace-composer-\(name).png"))
+            }
             // The context panel the token opens.
             do {
                 let fixture = try AskTestFixture()

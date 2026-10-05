@@ -13,7 +13,9 @@ struct AskLauncherHeaderTests {
 
     private func host(_ fixture: AskTestFixture) -> (NSWindow, Reported) {
         _ = NSApplication.shared
-        // SwiftUI builds its accessibility tree only for assistive clients.
+        // SwiftUI builds its accessibility tree only for assistive clients. It is a
+        // process-wide flag other suites also set, so it is never switched off here:
+        // doing so mid-run would hide their controls from them.
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         let reported = Reported()
         let size = NSSize(width: AskMetrics.launcherWidth, height: 360)
@@ -41,7 +43,6 @@ struct AskLauncherHeaderTests {
         captured(fixture)
         let (window, reported) = host(fixture)
         defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         try await Task.sleep(for: .milliseconds(300))
         let token = try element("ask.context.token", in: window)
         let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
@@ -68,7 +69,6 @@ struct AskLauncherHeaderTests {
         fixture.model.voiceInput.recorder = recorder
         let (window, reported) = host(fixture)
         defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         try await Task.sleep(for: .milliseconds(300))
         let resting = reported.height
         #expect(AskVoicePanel.minimumHeight <= AskLauncherSuggestions.height)
@@ -97,7 +97,6 @@ struct AskLauncherHeaderTests {
         fixture.model.voiceInput.recorder = recorder
         let (window, reported) = host(fixture)
         defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         try await Task.sleep(for: .milliseconds(300))
         let resting = reported.height
         let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
