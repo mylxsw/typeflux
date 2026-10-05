@@ -73,7 +73,77 @@ class SimulatorSelectionTests(unittest.TestCase):
                 ios.selected_simulator(catalog)
 
 
+class NativeDeviceSelectionTests(unittest.TestCase):
+    def test_physical_catalog_supports_both_xcode_schemas_and_excludes_other_platforms(self):
+        hardware = {"platform": "iOS", "reality": "physical", "udid": "PHONE"}
+        state = {"name": "iPhone"}
+        connection = {"pairingState": "paired", "state": "connected"}
+        for record in (
+            {"properties": {"hardware": hardware, "state": state, "connection": connection}},
+            {"hardwareProperties": hardware, "deviceProperties": state, "connectionProperties": connection},
+        ):
+            with self.subTest(record=record):
+                records = [record, {"hardwareProperties": dict(hardware, platform="watchOS")},
+                           {"properties": {"hardware": dict(hardware, reality="simulated"), "connection": connection}}]
+                targets = ios.physical_targets({"result": {"devices": records}})
+                self.assertEqual(targets, [{"udid": "PHONE", "name": "iPhone", "kind": "physical", "state": "connected"}])
+
+    def test_empty_single_explicit_and_noninteractive_selection(self):
+        first = {"udid": "PHONE", "name": "iPhone", "kind": "physical", "state": "connected"}
+        second = {"udid": "SIM", "name": "iPad", "kind": "simulator", "state": "Shutdown"}
+        with self.assertRaisesRegex(ios.CLIError, "No iOS devices"):
+            ios.select_ios_target([])
+        with mock.patch("builtins.input") as prompt:
+            self.assertEqual(ios.select_ios_target([first]), first)
+            self.assertEqual(ios.select_ios_target([first, second], "sim"), second)
+        prompt.assert_not_called()
+        with self.assertRaisesRegex(ios.CLIError, "DEVICE"):
+            ios.select_ios_target([first], "unknown")
+        output = io.StringIO()
+        with mock.patch.object(ios.sys.stdin, "isatty", return_value=False), contextlib.redirect_stdout(output):
+            with self.assertRaisesRegex(ios.CLIError, "DEVICE"):
+                ios.select_ios_target([first, second])
+        self.assertIn("PHONE", output.getvalue())
+        self.assertIn("SIM", output.getvalue())
+
+    def test_eof_cancels_selection(self):
+        targets = [{"udid": "A", "name": "iPhone", "kind": "physical", "state": "connected"},
+                   {"udid": "B", "name": "iPad", "kind": "simulator", "state": "Shutdown"}]
+        with mock.patch.object(ios.sys.stdin, "isatty", return_value=True), \
+                mock.patch("builtins.input", side_effect=EOFError), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(ios.CLIError, "cancelled"):
+                ios.select_ios_target(targets)
+
+    def test_http_exception_is_only_in_debug_plist(self):
+        root = SCRIPT.parents[1] / "Apps/iOS/TypefluxIOS"
+        debug = plistlib.loads((root / "Info-Debug.plist").read_bytes())
+        release = plistlib.loads((root / "Info.plist").read_bytes())
+        self.assertTrue(debug["NSAppTransportSecurity"]["NSAllowsLocalNetworking"])
+        self.assertIn("NSLocalNetworkUsageDescription", debug)
+        self.assertNotIn("NSAppTransportSecurity", release)
+        self.assertNotIn("TYPEFLUX_ALLOW_INSECURE_HTTP", release)
+
+
 class ConfigurationTests(unittest.TestCase):
+    def test_debug_http_opt_in_accepts_only_local_hosts(self):
+        for host in ("mac-pro.local", "mac-mini.local", "localhost", "127.0.0.1", "192.168.1.20", "[::1]", "[fd12::1]"):
+            with self.subTest(host=host):
+                value = f"http://{host}:8080"
+                self.assertEqual(ios.validate_api_url(value, allow_local_http=True), value)
+                with self.assertRaises(ios.CLIError):
+                    ios.validate_api_url(value)
+        for host in ("example.com", "mac-pro.local.example.com", "8.8.8.8", "172.15.1.1", "172.32.1.1"):
+            with self.subTest(host=host), self.assertRaises(ios.CLIError):
+                ios.validate_api_url(f"http://{host}:8080", allow_local_http=True)
+
+    def test_http_build_flag_is_debug_only_and_does_not_leak_into_release(self):
+        for configuration, origin, expected in (("Debug", "http://mac-pro.local:8080", "YES"),
+                                                ("Debug", "https://api.typeflux.app", "NO"),
+                                                ("Release", "http://mac-pro.local:8080", "NO")):
+            with self.subTest(configuration=configuration, origin=origin):
+                arguments = ios.build_arguments(configuration, "generic/platform=iOS", Path("build"), origin)
+                self.assertIn("TYPEFLUX_ALLOW_INSECURE_HTTP=" + expected, arguments)
+
     def test_accepts_https_api_origin_and_path(self):
         for value in ("", "https://api.example.com", "https://api.example.com/v1", "https://localhost:8443", "https://[::1]:8443"):
             with self.subTest(value=value):
@@ -99,6 +169,85 @@ class ConfigurationTests(unittest.TestCase):
         self.assertNotIn("-allowProvisioningUpdates", arguments)
 
 
+class SigningTeamTests(unittest.TestCase):
+    def setUp(self):
+        environment = mock.patch.dict(os.environ, {}, clear=True)
+        environment.start()
+        self.addCleanup(environment.stop)
+
+    def test_explicit_team_wins_and_invalid_override_does_not_fall_back(self):
+        with mock.patch.object(ios, "project_signing_team") as project, mock.patch.object(ios, "apple_development_teams") as certificates:
+            os.environ["TYPEFLUX_IOS_TEAM"] = "ABCDEFGHIJ"
+            self.assertEqual(ios.signing_team(), "ABCDEFGHIJ")
+            os.environ["TYPEFLUX_IOS_TEAM"] = "invalid"
+            with self.assertRaisesRegex(ios.CLIError, "10-character"):
+                ios.signing_team()
+            project.assert_not_called()
+            certificates.assert_not_called()
+
+    def test_project_team_wins_over_certificates(self):
+        with mock.patch.object(ios, "project_signing_team", return_value="ABCDEFGHIJ") as project, \
+                mock.patch.object(ios, "apple_development_teams") as certificates, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(ios.signing_team("Release"), "ABCDEFGHIJ")
+        project.assert_called_once_with("Release")
+        certificates.assert_not_called()
+
+    def test_project_reads_the_app_target_and_requested_configuration(self):
+        payload = {"objects": {
+            "app": {"isa": "PBXNativeTarget", "name": "TypefluxIOS", "buildConfigurationList": "configs"},
+            "configs": {"buildConfigurations": ["debug", "release"]},
+            "debug": {"name": "Debug", "buildSettings": {"DEVELOPMENT_TEAM": "ABCDEFGHIJ"}},
+            "release": {"name": "Release", "buildSettings": {"DEVELOPMENT_TEAM": "KLMNOPQRST"}},
+        }}
+        with mock.patch.object(ios, "run", return_value=json.dumps(payload)):
+            self.assertEqual(ios.project_signing_team("Debug"), "ABCDEFGHIJ")
+            self.assertEqual(ios.project_signing_team("Release"), "KLMNOPQRST")
+            self.assertEqual(ios.project_signing_team("Unknown"), "")
+
+    def test_team_comes_from_certificate_ou_not_the_identity_name_suffix(self):
+        fingerprint = ios.hashlib.sha1(b"\x00").hexdigest().upper()
+        identity = f'1) {fingerprint} "Apple Development: Example (KLMNOPQRST)"\n'
+        pem = "-----BEGIN CERTIFICATE-----\nAA==\n-----END CERTIFICATE-----"
+        subject = "subject=C=US,O=Example,OU=ABCDEFGHIJ,CN=Apple Development: Example (KLMNOPQRST)\n"
+        with mock.patch.object(ios, "run", side_effect=[identity, pem]), \
+                mock.patch.object(ios.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, stdout=subject)) as process:
+            self.assertEqual(ios.apple_development_teams(), {"ABCDEFGHIJ": "Apple Development: Example (KLMNOPQRST)"})
+        self.assertEqual(process.call_args.kwargs["input"], pem)
+        self.assertNotIn("shell", process.call_args.kwargs)
+
+    def test_macos_only_identities_are_not_used_for_ios(self):
+        fingerprint = ios.hashlib.sha1(b"\x00").hexdigest().upper()
+        identities = f'1) {fingerprint} "Developer ID Application: Example (ABCDEFGHIJ)"\n2) {fingerprint} "Typeflux Dev"'
+        with mock.patch.object(ios, "run", return_value=identities) as command:
+            self.assertEqual(ios.apple_development_teams(), {})
+        self.assertEqual(command.call_count, 1)
+
+    def test_one_certificate_team_is_used_without_prompting(self):
+        with mock.patch.object(ios, "project_signing_team", return_value=""), \
+                mock.patch.object(ios, "apple_development_teams", return_value={"ABCDEFGHIJ": "Example"}), \
+                mock.patch("builtins.input") as prompt, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(ios.signing_team(), "ABCDEFGHIJ")
+        prompt.assert_not_called()
+
+    def test_multiple_teams_allow_selection_and_retry_invalid_input(self):
+        output = io.StringIO()
+        with mock.patch.object(ios, "project_signing_team", return_value=""), \
+                mock.patch.object(ios, "apple_development_teams", return_value={"ABCDEFGHIJ": "First", "KLMNOPQRST": "Second"}), \
+                mock.patch.object(ios.sys.stdin, "isatty", return_value=True), \
+                mock.patch("builtins.input", side_effect=["0", "3", "2"]), contextlib.redirect_stdout(output):
+            self.assertEqual(ios.signing_team(), "KLMNOPQRST")
+        self.assertIn("Team ID: ABCDEFGHIJ", output.getvalue())
+        self.assertIn("Team ID: KLMNOPQRST", output.getvalue())
+
+    def test_multiple_noninteractive_teams_and_missing_identities_are_actionable(self):
+        for teams, message in (({}, "No usable Apple Development"), ({"ABCDEFGHIJ": "First", "KLMNOPQRST": "Second"}, "TYPEFLUX_IOS_TEAM")):
+            with self.subTest(teams=teams), mock.patch.object(ios, "project_signing_team", return_value=""), \
+                    mock.patch.object(ios, "apple_development_teams", return_value=teams), \
+                    mock.patch.object(ios.sys.stdin, "isatty", return_value=False), contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(ios.CLIError, message):
+                    ios.signing_team()
+
+
 class CommandTests(unittest.TestCase):
     """Execute command orchestration against a synthetic build and device catalogue."""
 
@@ -114,7 +263,12 @@ class CommandTests(unittest.TestCase):
         self.environment_patch = mock.patch.dict(os.environ, self.environ, clear=True)
         self.environment_patch.start()
         self.addCleanup(self.environment_patch.stop)
+        for name, result in (("project_signing_team", ""), ("apple_development_teams", {})):
+            discovery = mock.patch.object(ios, name, return_value=result)
+            discovery.start()
+            self.addCleanup(discovery.stop)
         self.catalog = simulator_catalog(("com.apple.CoreSimulator.SimRuntime.iOS-26-5", [device("SIM")]))
+        self.physical_payload = {"result": {"devices": []}}
         self.calls = []
         self.failure = None
         self.runner = mock.patch.object(ios, "run", side_effect=self.run_command)
@@ -138,6 +292,8 @@ class CommandTests(unittest.TestCase):
             raise subprocess.CalledProcessError(65, arguments)
         if arguments[:4] == ["xcrun", "simctl", "list", "devices"]:
             return json.dumps(self.catalog)
+        if arguments[:4] == ["xcrun", "devicectl", "list", "devices"] and "--json-output" in arguments:
+            Path(arguments[arguments.index("--json-output") + 1]).write_text(json.dumps(self.physical_payload))
         return ""
 
     def invoke(self, command):
@@ -148,6 +304,57 @@ class CommandTests(unittest.TestCase):
 
     def command_index(self, prefix):
         return next(index for index, command in enumerate(self.calls) if command[:len(prefix)] == prefix)
+
+    def test_start_routes_explicit_simulator_to_build_install_and_launch(self):
+        os.environ.update(TYPEFLUX_IOS_TARGET="SIM", TYPEFLUX_API_URL="http://mac-pro.local:8080",
+                          TYPEFLUX_ALLOW_INSECURE_HTTP="YES")
+        self.assertEqual(self.invoke("start"), 0, self.stderr.getvalue())
+        build = self.calls[self.command_index(["xcodebuild"])]
+        self.assertIn("platform=iOS Simulator,id=SIM", build)
+        self.assertIn("TYPEFLUX_API_URL=http://mac-pro.local:8080", build)
+        self.assertIn("TYPEFLUX_ALLOW_INSECURE_HTTP=YES", build)
+        self.assertIn(["xcrun", "simctl", "bootstatus", "SIM", "-b"], self.calls)
+        self.assertFalse(any(call[:3] == ["xcrun", "devicectl", "device"] for call in self.calls))
+
+    def test_missing_simulator_viewer_does_not_prevent_app_launch(self):
+        self.failure = lambda arguments: arguments[:2] == ["open", "-a"]
+        self.assertEqual(self.invoke("run"), 0, self.stderr.getvalue())
+        self.assertIn("continuing to launch", self.stdout.getvalue())
+        self.assertIn("SIM", self.calls[self.command_index(["xcrun", "simctl", "launch"])])
+
+    def test_start_routes_explicit_physical_device_to_signed_deploy(self):
+        identifier = "00008101-0000000000000001"
+        self.physical_payload = {"result": {"devices": [{"properties": {
+            "hardware": {"platform": "iOS", "reality": "physical", "udid": identifier},
+            "state": {"name": "Test iPhone"}, "connection": {"pairingState": "paired", "state": "connected"},
+        }}]}}
+        os.environ.update(TYPEFLUX_IOS_TARGET=identifier, TYPEFLUX_IOS_TEAM="ABCDEFGHIJ",
+                          TYPEFLUX_API_URL="http://mac-mini.local:8080", TYPEFLUX_ALLOW_INSECURE_HTTP="YES")
+        self.assertEqual(self.invoke("start"), 0, self.stderr.getvalue())
+        build = self.calls[self.command_index(["xcodebuild"])]
+        self.assertIn("platform=iOS,id=" + identifier, build)
+        self.assertIn("DEVELOPMENT_TEAM=ABCDEFGHIJ", build)
+        self.assertIn("TYPEFLUX_ALLOW_INSECURE_HTTP=YES", build)
+        self.assertIn(identifier, self.calls[self.command_index(["xcrun", "devicectl", "device", "process", "launch"])])
+
+    def test_start_uses_interactive_selection_and_never_builds_on_cancel(self):
+        self.catalog["devices"]["com.apple.CoreSimulator.SimRuntime.iOS-26-5"].append(device("OTHER", "iPad Pro"))
+        with mock.patch.object(ios.sys.stdin, "isatty", return_value=True), mock.patch("builtins.input", return_value="q"):
+            self.assertEqual(self.invoke("start"), 130)
+        self.assertFalse(any(call[0] == "xcodebuild" for call in self.calls))
+        with mock.patch.object(ios.sys.stdin, "isatty", return_value=True), mock.patch("builtins.input", side_effect=["0", "2"]):
+            self.assertEqual(self.invoke("start"), 0, self.stderr.getvalue())
+        self.assertIn("iPad Pro", self.stdout.getvalue())
+        self.assertIn(["xcrun", "simctl", "bootstatus", "OTHER", "-b"], self.calls)
+
+    def test_local_http_cannot_build_release_or_archive(self):
+        os.environ.update(TYPEFLUX_API_URL="http://mac-pro.local:8080", TYPEFLUX_ALLOW_INSECURE_HTTP="YES")
+        for command, configuration in (("start", "Release"), ("archive", "Debug")):
+            with self.subTest(command=command):
+                os.environ["TYPEFLUX_IOS_CONFIGURATION"] = configuration
+                self.calls.clear()
+                self.assertEqual(self.invoke(command), 1)
+                self.assertEqual(self.calls, [])
 
     def test_build_does_not_install_or_launch(self):
         self.assertEqual(self.invoke("build"), 0, self.stderr.getvalue())

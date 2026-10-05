@@ -1,3 +1,4 @@
 "NSMicrophoneUsageDescription" = "语音输入问题时，Typeflux 需要使用麦克风。";
 "NSSpeechRecognitionUsageDescription" = "Typeflux 会把你的语音转成正在编写的消息文字。";
 "NSCameraUsageDescription" = "拍照提问时，Typeflux 需要使用相机。";
+"NSLocalNetworkUsageDescription" = "Typeflux 需要连接你选择的局域网 API 服务。";

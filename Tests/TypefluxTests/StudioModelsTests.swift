@@ -101,7 +101,19 @@ final class StudioModelsTests: XCTestCase {
     // MARK: - AgentConfigurationTab
 
     func testAgentConfigurationTabCount() {
-        XCTAssertEqual(AgentConfigurationTab.allCases, [.general, .tools, .mcpServers, .skills, .memory])
+        XCTAssertEqual(AgentConfigurationTab.allCases, [.overview, .tools, .extensions, .memory])
+        XCTAssertEqual(AgentExtensionsTab.allCases, [.skills, .mcpServers])
+    }
+
+    func testAgentExtensionsTabIdAndTitles() {
+        for tab in AgentExtensionsTab.allCases {
+            XCTAssertEqual(tab.id, tab.rawValue)
+            XCTAssertFalse(tab.title.isEmpty)
+        }
+        XCTAssertEqual(AgentConfigurationTab.overview.title, L("agent.section.overview"))
+        XCTAssertEqual(AgentConfigurationTab.extensions.title, L("agent.section.extensions"))
+        XCTAssertEqual(AgentConfigurationTab.memory.title, L("agent.section.memory"))
+        XCTAssertEqual(AgentExtensionsTab.mcpServers.title, L("agent.settings.mcp"))
     }
 
     func testAgentConfigurationTabId() {

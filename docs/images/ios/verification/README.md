@@ -84,6 +84,13 @@ The full iOS UI run passed 18 of 19 tests. Combined iOS unit/UI line coverage wa
 The final header-dismissal and model-effort interaction rerun also passed both UI
 tests; its screen recording is attached to GUL-209.
 
+After merging `main` at `596d9aef`, all 139 iOS unit tests passed, including the
+new upstream local-network endpoint checks. The Chinese drawer/keyboard and Google
+login entry UI checks were rerun successfully. Both Debug and Release plist files
+preserve the Google callback and localization metadata; the built Debug app also
+retains the upstream local-network configuration. The full-run coverage and macOS
+results below refer to the pre-merge implementation.
+
 `testLandscapeKeyboardCanReachLastModel()` fails before opening the model picker:
 the simulator window remains 402 × 874 after requesting landscape. The same test
 fails identically on the unchanged baseline commit `1a891a0f` in a separate checkout.

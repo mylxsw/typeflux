@@ -64,6 +64,27 @@ struct PlatformTests {
         #expect(AppConfiguration.resolve("https://staging.example.com").host == "staging.example.com")
     }
 
+    @Test(arguments: ["mac-pro.local", "mac-mini.local", "localhost", "127.0.0.1", "192.168.1.20", "[::1]", "[fd12::1]"])
+    func `local HTTP requires an explicit Debug override`(host: String) {
+        let endpoint = "http://\(host):8080"
+        #expect(AppConfiguration.resolve(endpoint).absoluteString == "https://api.typeflux.app")
+        #if DEBUG
+            #expect(AppConfiguration.resolve(endpoint, allowLocalHTTP: true).absoluteString == endpoint)
+        #else
+            #expect(AppConfiguration.resolve(endpoint, allowLocalHTTP: true).absoluteString == "https://api.typeflux.app")
+        #endif
+    }
+
+    @Test(arguments: ["example.com", "mac-pro.local.example.com", "8.8.8.8", "172.15.1.1", "172.32.1.1", "192.169.1.1", "[2001:4860::1]"])
+    func `development override rejects public HTTP hosts`(host: String) {
+        #expect(AppConfiguration.resolve("http://\(host):8080", allowLocalHTTP: true).absoluteString == "https://api.typeflux.app")
+    }
+
+    @Test(arguments: ["http://user:secret@mac-pro.local:8080", "http://mac-mini.local:8080?token=fixture", "http://mac-pro.local:8080#fragment", "http://mac-pro.local:0"])
+    func `development override rejects unsafe URLs`(endpoint: String) {
+        #expect(AppConfiguration.resolve(endpoint, allowLocalHTTP: true).absoluteString == "https://api.typeflux.app")
+    }
+
     @Test func `model selection shows server price multiplier`() {
         #expect(ChatModel(id: "priced", name: "Pro", pricing: ["multiplier": "2.5", "unit": "credit"])
             .mobileDisplayName == "Pro · 2.5× credits")

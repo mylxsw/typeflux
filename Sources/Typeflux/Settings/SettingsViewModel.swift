@@ -205,6 +205,8 @@ final class StudioViewModel: ObservableObject {
     @Published var mcpDraftEditingServerID: UUID?
     @Published var mcpConnectionTestTargetServerID: UUID?
     @Published var mcpConnectionTestState: MCPConnectionTestState = .idle
+    /// Latest connection test of each saved server in this session; untested servers are absent.
+    @Published private(set) var mcpServerTestResults: [UUID: MCPConnectionTestState] = [:]
 
     // Agent Jobs
 
@@ -1625,6 +1627,7 @@ final class StudioViewModel: ObservableObject {
 
     func removeMCPServer(id: UUID) {
         mcpServers.removeAll { $0.id == id }
+        mcpServerTestResults[id] = nil
         settingsStore.mcpServers = mcpServers
     }
 
@@ -1708,6 +1711,8 @@ final class StudioViewModel: ObservableObject {
             mcpServers[idx].transport = transport
             mcpServers[idx].enabled = mcpDraftEnabled
             mcpServers[idx].autoConnect = mcpDraftAutoConnect
+            // The saved result described the previous configuration.
+            mcpServerTestResults[editingID] = nil
         } else {
             let server = MCPServerConfig(
                 name: mcpDraftName.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -1736,7 +1741,28 @@ final class StudioViewModel: ObservableObject {
 
     func testMCPConnection(for server: MCPServerConfig) {
         mcpConnectionTestTargetServerID = server.id
-        testMCPConnectionWithConfig(server.transport)
+        mcpServerTestResults[server.id] = .testing
+        testMCPConnectionWithConfig(server.transport, serverID: server.id)
+    }
+
+    /// Adds servers read by `MCPServerImport`; they start enabled and connect on demand.
+    func importMCPServers(_ servers: [MCPServerConfig]) {
+        guard !servers.isEmpty else { return }
+        mcpServers.append(contentsOf: servers)
+        settingsStore.mcpServers = mcpServers
+    }
+
+    /// Saves a copy of a server under a free name, so a variant can be edited without losing the original.
+    @discardableResult
+    func duplicateMCPServer(id: UUID) -> MCPServerConfig? {
+        guard let source = mcpServers.first(where: { $0.id == id }) else { return nil }
+        let name = MCPServerImport.uniqueName(L("agent.mcp.copyName", source.name),
+                                              taken: Set(mcpServers.map { $0.name.lowercased() }))
+        let copy = MCPServerConfig(name: name, transport: source.transport, enabled: source.enabled,
+                                   autoConnect: source.autoConnect)
+        mcpServers.append(copy)
+        settingsStore.mcpServers = mcpServers
+        return copy
     }
 
     func testMCPDraftConnection() {
@@ -1768,8 +1794,12 @@ final class StudioViewModel: ObservableObject {
         mcpConnectionTestTargetServerID == serverID && mcpConnectionTestState != .idle
     }
 
-    private func testMCPConnectionWithConfig(_ transport: MCPTransportConfig) {
+    private func testMCPConnectionWithConfig(_ transport: MCPTransportConfig, serverID: UUID? = nil) {
         mcpTestTask?.cancel()
+        // A replaced test of another server would otherwise stay "testing" forever.
+        for (id, state) in mcpServerTestResults where state == .testing && id != serverID {
+            mcpServerTestResults[id] = nil
+        }
         mcpConnectionTestState = .testing
         mcpTestTask = Task {
             do {
@@ -1782,7 +1812,7 @@ final class StudioViewModel: ObservableObject {
                 case let .http(config):
                     guard let url = URL(string: config.url) else {
                         if !Task.isCancelled {
-                            mcpConnectionTestState = .failure(message: "Invalid URL")
+                            finishMCPTest(.failure(message: "Invalid URL"), serverID: serverID)
                         }
                         return
                     }
@@ -1802,13 +1832,20 @@ final class StudioViewModel: ObservableObject {
                             description: $0.description ?? ""
                         )
                     }
-                    mcpConnectionTestState = .success(tools: discoveredTools)
+                    finishMCPTest(.success(tools: discoveredTools), serverID: serverID)
                 }
             } catch {
                 if !Task.isCancelled {
-                    mcpConnectionTestState = .failure(message: error.localizedDescription)
+                    finishMCPTest(.failure(message: error.localizedDescription), serverID: serverID)
                 }
             }
+        }
+    }
+
+    private func finishMCPTest(_ state: MCPConnectionTestState, serverID: UUID?) {
+        mcpConnectionTestState = state
+        if let serverID, mcpServers.contains(where: { $0.id == serverID }) {
+            mcpServerTestResults[serverID] = state
         }
     }
 
