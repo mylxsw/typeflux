@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Typeflux · 随便问 启动器快捷结果 设计稿</title>
+<style>
+  :root {
+    --canvas: #0c0c0d; --desk: #1b1c1f;
+    --glass: rgba(58,58,62,.82);
+    --hair: rgba(255,255,255,.10);
+    --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: rgba(10,132,255,.16); --accent-text: #8ebdff;
+    --hover: rgba(255,255,255,.08); --ctl: rgba(255,255,255,.08);
+    --danger: #ff8a80;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 48px; background: var(--canvas); color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 26px; max-width: 1200px; }
+  h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 780px 1fr; gap: 28px 40px; align-items: start; }
+  .stage { border-radius: 14px; padding: 30px 44px; border: 1px solid rgba(255,255,255,.05);
+    background: radial-gradient(1200px 400px at 30% -40%, #2c3442 0%, transparent 60%), var(--desk); }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 10px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  code { font-size: 11.5px; color: #c9c9cc; }
+
+  /* ===== launcher card (AskComposer, launcher chrome) ===== */
+  .card { width: 680px; border-radius: 27px; background: var(--glass); border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 24px 60px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
+    backdrop-filter: blur(30px); overflow: hidden; }
+  .chips { display: flex; gap: 8px; padding: 12px 12px 0; }
+  .ctx { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 10px; border-radius: 999px;
+    border: 1px solid var(--hair); background: rgba(255,255,255,.05); font-size: 12.5px; color: var(--text); white-space: nowrap; }
+  .ctx small { color: var(--text-2); font-size: 12px; }
+  .ctx .x { color: var(--text-3); font-size: 10px; margin-left: 2px; }
+  .dot { width: 16px; height: 16px; border-radius: 50%; background: conic-gradient(#ea4335 0 33%, #fbbc05 0 66%, #34a853 0); display: inline-block; }
+  .editor { padding: 13px 16px 8px; font-size: 15px; line-height: 22px; min-height: 44px; font-variant-numeric: tabular-nums; }
+  .caret { display: inline-block; width: 1.5px; height: 18px; background: var(--accent); vertical-align: -3px; margin-left: 1px; }
+  .ghost { color: var(--text-3); }
+  .foot { display: flex; align-items: center; gap: 6px; height: 54px; padding: 0 10px; }
+  .round { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-2); font-size: 16px; flex: none; }
+  .round.tile { background: var(--accent-soft); color: var(--accent-text); border: 1px solid rgba(10,132,255,.35); }
+  .menu { font-size: 13.5px; font-weight: 600; padding: 0 8px; white-space: nowrap; }
+  .vsep { width: 1px; height: 20px; background: var(--hair); margin: 0 4px; }
+  .spacer { flex: 1; }
+  .send { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.10); color: var(--text-2);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 15px; }
+  .send.on { background: var(--accent); color: #fff; }
+  .hair { height: 1px; background: var(--hair); margin: 0 12px; }
+
+  /* ===== quick results (new) ===== */
+  .qr { padding: 6px; }
+  .grp { font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--text-3); padding: 6px 12px 4px; }
+  .calc { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; min-height: 66px; }
+  .calc.hl { background: var(--hover); box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); }
+  .tile { width: 28px; height: 28px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--accent-soft); color: var(--accent); font-size: 14px; flex: none; }
+  .tile.app { background: linear-gradient(135deg,#ff9f0a,#ff6b00); color: #fff; }
+  .tile.app2 { background: linear-gradient(135deg,#30d158,#0a9f3a); color: #fff; }
+  .tile.doc { background: rgba(255,255,255,.10); color: var(--text-2); }
+  .tile.ai { background: rgba(191,90,242,.18); color: #d6a1f7; }
+  .calc .title { font-size: 13.5px; }
+  .calc .rhs { margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; }
+  .calc .expr { font-size: 12.5px; color: var(--text-2); }
+  .calc .val { font-size: 26px; font-weight: 600; line-height: 1.15; letter-spacing: -.3px; }
+  .calc .val.dim { color: var(--text-3); }
+  .calc .val.err { font-size: 14px; font-weight: 500; color: var(--danger); }
+  .fmt { display: grid; grid-template-columns: 82px 1fr 28px; align-items: center; gap: 10px; padding: 0 12px 0 52px;
+    min-height: 32px; border-radius: 12px; font-size: 12.5px; }
+  .fmt .k { color: var(--text-3); font-size: 11.5px; }
+  .fmt .v { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .fmt .cp { color: var(--text-3); text-align: center; font-size: 13px; }
+  .fmt .cp.ok { color: #30d158; }
+  .fmt.hl { background: var(--hover); }
+  .row { display: flex; align-items: center; gap: 12px; padding: 0 12px; height: 42px; border-radius: 14px; font-size: 13.5px; }
+  .row.hl { background: var(--hover); }
+  .row .cap { margin-left: auto; color: var(--text-3); font-size: 11.5px; white-space: nowrap; }
+  .row .q { color: var(--text-2); }
+  .kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 18px; padding: 0 5px;
+    border-radius: 5px; background: rgba(255,255,255,.08); border: 1px solid var(--hair); font-size: 10.5px; font-weight: 600; color: var(--text-2); }
+  .hint { font-size: 11px; color: var(--text-3); text-align: right; padding: 2px 18px 10px; }
+  .hint b { color: var(--text-2); font-weight: 600; }
+  .new { display: inline-block; font-size: 10px; font-weight: 700; color: #0b0b0c; background: #ffd60a; border-radius: 4px;
+    padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
+  .later { display: inline-block; font-size: 10px; font-weight: 700; color: var(--text-2); border: 1px solid var(--hair);
+    border-radius: 4px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
+</style>
+</head>
+<body>
+
+<h1>随便问 · 启动器快捷结果（计算器先行）</h1>
+<p class="sub">在启动器（⌥Space）里输入算式，原先起手建议所在的区域显示计算结果，不经过 AI。
+结果区是一个通用的「快捷结果」列表，计算器是第一个来源，以后加入应用、文档、历史对话不必再改启动器结构。
+「问 AI」行一直在最后，按 ⌘↩ 随时回到原有用法。详细规则见 <code>docs/design/ask-launcher-quick-results.md</code>。</p>
+
+<div class="grid">
+
+  <!-- ===== 1. Calculator ===== -->
+  <div class="stage" id="calc">
+    <div class="label">① 计算器 · 默认高亮结果行</div>
+    <div class="card">
+      <div class="chips">
+        <span class="ctx"><i class="dot"></i>Google Chrome <small>· Multica — Project Management…</small><span class="x">✕</span></span>
+        <span class="ctx">整屏截图<span class="x">✕</span></span>
+      </div>
+      <div class="editor">1234567.89*2<span class="caret"></span></div>
+      <div class="foot">
+        <span class="round">＋</span><span class="round">☁</span>
+        <span class="menu">MiniMax M3 ⌄</span><span class="vsep"></span>
+        <span class="round tile">◎</span><span class="round tile">✺</span>
+        <span class="spacer"></span>
+        <span class="round">🎙</span><span class="send on">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="calc hl">
+          <span class="tile">＝</span><span class="title">计算器</span>
+          <div class="rhs"><div class="expr">1234567.89 × 2</div><div class="val">2,469,135.78</div></div>
+        </div>
+        <div class="fmt"><span class="k">中文大写</span><span class="v">贰佰肆拾陆万玖仟壹佰叁拾伍元柒角捌分</span><span class="cp ok">✓</span></div>
+        <div class="fmt"><span class="k">千分位</span><span class="v">2,469,135.78</span><span class="cp">⧉</span></div>
+        <div class="fmt"><span class="k">英文金额</span><span class="v">SAY US DOLLARS TWO MILLION FOUR HUNDRED SIXTY-NINE THOUSAND ONE HUNDRED THIRTY-FIVE AND CENTS SEVENTY-EIGHT ONLY</span><span class="cp">⧉</span></div>
+        <div class="row" style="margin-top:4px"><span class="tile ai">✦</span>问 AI：<span class="q">“1234567.89*2”</span><span class="cap"><span class="kbd">⌘↩</span></span></div>
+      </div>
+      <div class="hint"><b>↩</b> 复制结果 · <b>⌘↩</b> 问 AI · <b>esc</b> 关闭</div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>结果行 + 格式行 + 「问 AI」行</h2>
+    <ul>
+      <li><b>结果行</b>替换掉原先的三条起手建议，位置相同。右侧显示规范化后的算式（<code>*</code>→<code>×</code>）和放大的结果。</li>
+      <li>显示带千分位，<b>↩ 复制的是原始值</b> <code>2469135.78</code>，然后关闭启动器并清空草稿。</li>
+      <li><b>格式行</b>最多 3 行，按语言排序。点 ⧉ 只复制、不关闭，图标变 ✓ 约 1 秒（图中「中文大写」刚被复制）。</li>
+      <li><b>问 AI</b> 行始终在最后；⌘↩ 不管高亮在哪都按原文提问，识别错了也不会挡住原有用法。</li>
+      <li>↑/↓ 在行之间移动，复用 <code>AskArrowKeyMonitor</code>。底部提示随状态切换。</li>
+      <li>只在启动器里生效；工作区里的输入框不接入。</li>
+    </ul>
+  </div>
+
+  <!-- ===== 2. Incomplete and errors ===== -->
+  <div class="stage" id="states">
+    <div class="label">② 没写完 / 无法计算</div>
+    <div class="card" style="margin-bottom:22px">
+      <div class="editor">12*3+<span class="caret"></span></div>
+      <div class="foot">
+        <span class="round">＋</span><span class="round">☁</span><span class="menu">MiniMax M3 ⌄</span>
+        <span class="spacer"></span><span class="round">🎙</span><span class="send on">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="calc hl">
+          <span class="tile">＝</span><span class="title">计算器</span>
+          <div class="rhs"><div class="expr">12 × 3 + …</div><div class="val dim">36</div></div>
+        </div>
+        <div class="row"><span class="tile ai">✦</span>问 AI：<span class="q">“12*3+”</span><span class="cap"><span class="kbd">⌘↩</span></span></div>
+      </div>
+      <div class="hint"><b>↩</b> 复制结果 · <b>⌘↩</b> 问 AI · <b>esc</b> 关闭</div>
+    </div>
+    <div class="card">
+      <div class="editor">100/0<span class="caret"></span></div>
+      <div class="foot">
+        <span class="round">＋</span><span class="round">☁</span><span class="menu">MiniMax M3 ⌄</span>
+        <span class="spacer"></span><span class="round">🎙</span><span class="send on">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="calc">
+          <span class="tile">＝</span><span class="title">计算器</span>
+          <div class="rhs"><div class="expr">100 ÷ 0</div><div class="val err">除数不能为 0</div></div>
+        </div>
+        <div class="row hl"><span class="tile ai">✦</span>问 AI：<span class="q">“100/0”</span><span class="cap"><span class="kbd">↩</span></span></div>
+      </div>
+      <div class="hint"><b>↩</b> 问 AI · <b>esc</b> 关闭</div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>不让面板每次按键都跳</h2>
+    <ul>
+      <li><b>没写完</b>（以运算符或左括号结尾）：保留上一次的结果，数值变暗。上一次也没有结果就什么都不显示。</li>
+      <li><b>无法计算</b>（除以 0、<code>sqrt(-1)</code>、超出范围）：结果位置显示原因，结果行不可执行，高亮落到「问 AI」，↩ 照常提问。</li>
+      <li><b>不是算式</b>：不显示快捷结果，和现在一样 ↩ 问 AI。识别规则（排除日期 <code>2024-10-05</code>、电话 <code>138-1234-5678</code>、纯数字 <code>2024</code> 等）见文档第 3 节。</li>
+      <li>输入法组字中不计算，与现有回车逻辑一致。</li>
+    </ul>
+  </div>
+
+  <!-- ===== 3. Future providers ===== -->
+  <div class="stage" id="future">
+    <div class="label">③ 以后：应用 / 文档 / 历史对话 <span class="later">M2–M3</span></div>
+    <div class="card">
+      <div class="editor">wx<span class="caret"></span></div>
+      <div class="foot">
+        <span class="round">＋</span><span class="round">☁</span><span class="menu">MiniMax M3 ⌄</span>
+        <span class="spacer"></span><span class="round">🎙</span><span class="send on">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="grp">应用</div>
+        <div class="row hl"><span class="tile app2">微</span>微信<span class="cap">打开 <span class="kbd">↩</span></span></div>
+        <div class="row"><span class="tile app">W</span>WPS Office<span class="cap">打开</span></div>
+        <div class="grp">文档</div>
+        <div class="row"><span class="tile doc">▤</span>wx-小程序接入说明.pdf<span class="cap">~/Documents · 昨天</span></div>
+        <div class="row" style="margin-top:4px"><span class="tile ai">✦</span>问 AI：<span class="q">“wx”</span><span class="cap"><span class="kbd">⌘↩</span></span></div>
+      </div>
+      <div class="hint"><b>↩</b> 打开 · <b>⌘↩</b> 问 AI · <b>esc</b> 关闭</div>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>同一个列表，按来源分组</h2>
+    <ul>
+      <li>每个来源实现 <code>AskQuickResultProvider</code>：计算器走同步档（逐键出结果），应用、文档走异步档（约 120 ms 防抖，文字变了就取消）。</li>
+      <li>结果带 0–1 的分数：算式 1.0 独占首位；应用名完全匹配 0.9、前缀 0.8、拼音首字母 0.7（图中 <code>wx</code> → 微信）。</li>
+      <li>按来源分组，每组有条数上限，整个列表有高度上限，超出滚动。</li>
+      <li>「问 AI」行和 ⌘↩ 在所有来源下保持不变。</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>
