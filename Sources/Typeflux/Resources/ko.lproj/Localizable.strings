@@ -1867,9 +1867,10 @@
 "ask.activity.kind.code" = "코드";
 "ask.activity.kind.computer" = "컴퓨터";
 "ask.activity.kind.other" = "기타";
-"ask.activity.running" = "작업 중 · 도구 호출 %d회";
+"ask.activity.working" = "처리 중";
+"ask.activity.step" = "%d단계";
 "ask.activity.attention" = "승인 대기 중";
-"ask.activity.done" = "도구 호출 %d회";
+"ask.activity.steps" = "%d단계";
 "ask.activity.plan" = "계획 %d/%d 완료";
 "ask.activity.failures" = "%d회 실패";
 "ask.activity.expanded" = "펼침";
