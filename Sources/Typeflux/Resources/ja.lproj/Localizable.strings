@@ -2645,13 +2645,10 @@
 "ask.workflow.assistant.testedSummary" = "テスト済み · %1$d/%2$d 成功";
 "ask.workflow.assistant.supersededLine" = "提案 %1$d：%2$@";
 "ask.workflow.assistant.testedShort" = "テスト %1$d/%2$d ✓";
-"ask.workflow.assistant.approval.title" = "このバージョンを実行しますか？";
 "ask.workflow.assistant.approval.body" = "実行するとこの Mac で新しいコードが動きます。承認したバージョンになかった操作が現れたときだけ、アシスタントは確認を求めます。";
 "ask.workflow.assistant.approval.allow" = "許可して続行";
 "ask.workflow.assistant.approval.decline" = "実行しない";
 "ask.workflow.assistant.approval.useOnly" = "提案 %d だけ使う";
-"ask.workflow.assistant.autoTest" = "自動でテスト";
-"ask.workflow.assistant.autoTest.help" = "新しいリスクがない限り、アシスタントがコードを実行します";
 "ask.workflow.assistant.cloud" = "Typeflux Cloud";
 "ask.workflow.assistant.local" = "この Mac で";
 "ask.workflow.assistant.empty" = "変えたいことを伝えてください（例：「rate キーワードを追加」「小数点以下 2 桁にする」）。アシスタントが変更を提案し、確認してから適用します。";
@@ -2677,7 +2674,6 @@
 "ask.workflow.assistant.tool.keywordTaken" = "キーワード %@ は使用中です";
 "ask.workflow.assistant.tool.limit" = "このメッセージのツール呼び出し上限に達しました";
 "ask.workflow.assistant.tool.proposeFailed" = "提案に問題があり修正中";
-"ask.workflow.assistant.tool.proposed" = "変更を提案";
 "ask.workflow.assistant.tool.read" = "%@ を読み込み";
 "ask.workflow.assistant.tool.readWorkflow" = "ワークフローを読み込み";
 "ask.workflow.assistant.tool.testDeclined" = "テスト実行は許可されませんでした";
@@ -2712,7 +2708,7 @@
 "ask.workflow.editor.new.keywordFree" = "使用できます";
 "ask.workflow.editor.new.generate" = "作成";
 "ask.workflow.editor.new.create" = "作成して編集";
-"ask.workflow.editor.new.aiFootnote" = "アシスタントが作成し、この Mac のクリーンな環境（シークレットなし）でテストします。保存するまでランチャーには出ません。";
+"ask.workflow.editor.new.aiFootnote" = "鍵を含まないクリーンな環境でテストします。保存するまでランチャーには表示されません。";
 "ask.workflow.editor.new.footnote" = "ここで作ったワークフローは信頼済みになります。";
 "ask.workflow.editor.name" = "名前";
 "ask.workflow.editor.description" = "説明";
@@ -2727,7 +2723,6 @@
 "ask.workflow.editor.empty" = "開いているワークフローはありません。";
 "ask.workflow.editor.missing" = "このワークフローはもうありません。";
 "ask.workflow.editor.save" = "保存";
-"ask.workflow.editor.saved" = "保存済み";
 "ask.workflow.editor.unsaved" = "未保存";
 "ask.workflow.editor.discard" = "保存しない";
 "ask.workflow.editor.dismiss" = "OK";
@@ -2738,27 +2733,17 @@
 "ask.workflow.editor.deleteTitle" = "「%@」をゴミ箱に入れますか？";
 "ask.workflow.editor.togglePanel" = "サイドパネルを表示／非表示";
 "ask.workflow.editor.conflict" = "エディタの外でファイルが変更されました。どちらを残すか選んでください。";
-"ask.workflow.editor.outside" = "未保存の変更があるあいだに、エディタの外でファイルが変更されました。確認するまでランチャーでは実行されません。";
 "ask.workflow.editor.outside.keepMine" = "自分の版を残す";
 "ask.workflow.editor.outside.loadTheirs" = "ディスクから読み込む";
-"ask.workflow.editor.outside.diff" = "比較";
-"ask.workflow.editor.outside.diffTitle" = "自分の版 → ディスク上の版";
 "ask.workflow.editor.needsTrust" = "実行するには、このワークフローを確認して信頼してください。";
-"ask.workflow.editor.generationNotice" = "このワークフローはアシスタントが作成中で、まだ保存されていません。確認して保存するとランチャーに追加されます。";
 "ask.workflow.editor.saveGenerated" = "確認して保存";
 "ask.workflow.editor.proposalApplied" = "アシスタントの提案をエディタに適用しました。保存すると反映されます。";
 "ask.workflow.editor.undoProposal" = "取り消す";
-"ask.workflow.editor.proposalPreview" = "提案：現在 → 提案";
-"ask.workflow.editor.status.ready" = "実行可能";
 "ask.workflow.editor.status.generating" = "作成中";
 "ask.workflow.editor.status.problems" = "問題 %d 件";
-"ask.workflow.editor.noProblems" = "問題なし";
-"ask.workflow.editor.problemSummary" = "問題 %1$d 件 · %2$@";
-"ask.workflow.editor.lineMessage" = "%1$d 行目：%2$@";
 "ask.workflow.editor.noScript" = "このワークフローにはスクリプトファイルがありません。";
 "ask.workflow.editor.form" = "フォーム";
 "ask.workflow.editor.format" = "整形";
-"ask.workflow.editor.synced" = "フォームと workflow.json は同期しています。";
 "ask.workflow.editor.step.keywords" = "キーワード";
 "ask.workflow.editor.step.input" = "入力";
 "ask.workflow.editor.step.script" = "スクリプト";
@@ -2792,7 +2777,6 @@
 "ask.workflow.editor.timeout" = "タイムアウト";
 "ask.workflow.editor.seconds" = "%d 秒";
 "ask.workflow.editor.runtime" = "ランタイム";
-"ask.workflow.editor.interpreter" = "インタプリタ（自動）";
 "ask.workflow.editor.script" = "スクリプトファイル";
 "ask.workflow.editor.env" = "環境変数";
 "ask.workflow.editor.env.hint" = "1 行に 1 つ、名前=値。シークレットは入れないでください。";
@@ -2801,7 +2785,6 @@
 "ask.workflow.editor.test.title" = "テスト";
 "ask.workflow.editor.test.run" = "テスト実行";
 "ask.workflow.editor.test.stop" = "停止";
-"ask.workflow.editor.test.input" = "キーワードの後のテキスト";
 "ask.workflow.editor.test.placeholder" = "100 usd jpy";
 "ask.workflow.editor.test.withSelection" = "選択テキストの例を含める";
 "ask.workflow.editor.test.empty" = "実行すると、ランチャーでの表示を確認できます。";
@@ -2812,7 +2795,6 @@
 "ask.workflow.editor.test.tab.stderr" = "stderr";
 "ask.workflow.editor.test.tab.received" = "受け取った内容";
 "ask.workflow.editor.test.nothing" = "（空）";
-"ask.workflow.editor.test.card" = "ランチャー";
 "ask.workflow.editor.test.dismisses" = "完了：ランチャーが閉じます";
 "ask.workflow.editor.test.recent" = "最近の実行";
 "ask.workflow.editor.test.sourceTest" = "テスト · %@";
@@ -2828,7 +2810,6 @@
 "ask.workflow.action.copyError" = "エラーをコピー";
 "ask.workflow.assistant.approval.paused" = "自動修正を一時停止中";
 "ask.workflow.assistant.approval.titleNumbered" = "提案 %d を実行しますか？";
-"ask.workflow.assistant.context.lastTest" = "前回のテスト";
 "ask.workflow.assistant.files" = "%d 個のファイル";
 "ask.workflow.editor.applyToEditor" = "エディタに適用";
 "ask.workflow.editor.args.example" = "例：";
@@ -2840,20 +2821,15 @@
 "ask.workflow.editor.diff.diffSuffix" = "差分";
 "ask.workflow.editor.diff.differences" = "差分";
 "ask.workflow.editor.duplicateTitle" = "既存のワークフローを複製";
-"ask.workflow.editor.find" = "検索";
-"ask.workflow.editor.import" = "読み込む…";
-"ask.workflow.editor.importLater" = "ワークフローパッケージの読み込みは今後のバージョンで対応します。";
 "ask.workflow.editor.interpreterAuto" = "インタプリタ：自動（%@）";
 "ask.workflow.editor.justNow" = "たった今";
 "ask.workflow.editor.keywordTakenBy" = "「%1$@」は「%2$@」が使っています。別のものにするか、先に設定で変更してください。";
 "ask.workflow.editor.keywords.drag" = "ドラッグで並べ替え";
 "ask.workflow.editor.keywords.optionsPlaceholder" = "なし";
-"ask.workflow.editor.new.aiSubtitle" = "何を入力して何が得られるかを書いてください。AI がマニフェストとスクリプトを書き、この Mac でテストしてから確認用に渡します。";
+"ask.workflow.editor.new.aiSubtitle" = "何を入力して何が得られるかを書いてください。AI が作成し、この Mac でテストします。";
 "ask.workflow.editor.new.subtitle" = "出発点を選んでください。ファイルはワークフローのフォルダに作られ、いつでも変更できます。";
-"ask.workflow.editor.new.autoTest" = "作成後に自動でテスト";
 "ask.workflow.editor.new.copyBadge" = "複製";
 "ask.workflow.editor.new.duplicateShort" = "複製";
-"ask.workflow.editor.new.waitingApproval" = "AI アシスタントでテスト実行の許可を待っています。";
 "ask.workflow.editor.new.tile.pythonText" = "テキストを出力";
 "ask.workflow.editor.new.tile.nodeText" = "テキストを出力";
 "ask.workflow.editor.new.tile.shellText" = "テキストを出力";
@@ -2879,7 +2855,6 @@
 "ask.workflow.editor.outside.detail" = "（%1$@、+%2$d −%3$d 行）。確認するまで、このワークフローはランチャーで実行されません。";
 "ask.workflow.editor.outside.diffTrust" = "変更を確認して信頼…";
 "ask.workflow.editor.outside.trustTheirs" = "読み込んで信頼…";
-"ask.workflow.editor.outsideBadge" = "外部";
 "ask.workflow.editor.preview.title" = "ランチャーでの表示";
 "ask.workflow.editor.preview.hint" = "前回のテスト出力を使います。未実行なら例を表示します。";
 "ask.workflow.editor.preview.kind" = "ワークフロー";
@@ -2895,8 +2870,6 @@
 "ask.workflow.editor.runMode.live" = "入力しながら";
 "ask.workflow.editor.runMode.liveDetail" = "キーごとに実行。入力のみ渡し、3 秒まで。";
 "ask.workflow.editor.secondsUnit" = "秒";
-"ask.workflow.editor.spaces" = "スペース %d";
-"ask.workflow.editor.tabs" = "タブ";
 "ask.workflow.editor.status.cursor" = "%1$d 行、%2$d 列";
 "ask.workflow.editor.status.more" = "他 %d 件";
 "ask.workflow.editor.status.outside" = "外部の変更：+%1$d −%2$d";
@@ -2907,7 +2880,6 @@
 "ask.workflow.editor.test.launcherShows" = "ランチャーの表示";
 "ask.workflow.editor.test.lines" = "出力 %d 行";
 "ask.workflow.editor.test.running" = "実行中 · %.1f 秒";
-"ask.workflow.editor.test.sameRunner" = "ランチャーと同じ実行環境";
 "ask.workflow.editor.unsavedFile" = "%@ 未保存";
 "ask.workflow.editor.unsavedFiles" = "%d 個のファイルが未保存";
 "ask.workflow.risk.existing" = "（既存）";
@@ -2915,6 +2887,22 @@
 "ask.workflow.risk.noPrograms" = "他のプログラムを起動しない";
 "ask.workflow.assistant.defaultModel" = "既定のモデル";
 "ask.workflow.assistant.tool.proposedFiles" = "%@ を作成";
+"ask.workflow.editor.test.runShort" = "テスト";
+"ask.workflow.assistant.autoTestMenu" = "AI の変更を自動でテスト";
+"ask.workflow.editor.new.options" = "オプション";
+"ask.workflow.editor.new.keywordAuto" = "自動";
+"ask.workflow.editor.new.askRun" = "新しいコードをテストしますか？次のことを行います：";
+"ask.workflow.editor.new.details" = "%d ステップ";
+"ask.workflow.editor.new.after" = "%@、作業中…";
+"ask.workflow.editor.new.version" = "第 %d 版";
+"ask.workflow.editor.new.passed" = "テスト %1$d/%2$d 成功";
+"ask.workflow.editor.new.doneTitle" = "「%@」ができました";
+"ask.workflow.editor.new.usage.before" = "ランチャーで";
+"ask.workflow.editor.new.usage.after" = "と内容を入力するだけです。";
+"ask.workflow.editor.new.adjust" = "エディタで調整";
+"ask.workflow.editor.new.save" = "保存";
+"ask.workflow.assistant.steps" = "%d ステップ";
+"ask.workflow.assistant.generate.promptPickKeyword" = "このワークフローを作ってください：%1$@\n\n入力しやすい短いキーワードを選び、workflow_check_keyword で使えるか確認してください。id は「%2$@」のままにしてください。環境を確認し、マニフェストとスクリプトを提案してテストしてください。";
 
 /* Agent and Launcher settings panes */
 "studio.section.launcher" = "ランチャー";

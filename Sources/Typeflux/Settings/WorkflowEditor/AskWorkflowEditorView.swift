@@ -89,46 +89,45 @@ struct AskWorkflowEditorView: View {
                     Text([draft.manifest?.id, draft.manifest?.version].compactMap(\.self).joined(separator: " · "))
                         .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
                 }
-                if let runtime = draft.manifest?.command.runtime.title {
-                    AskWorkflowBadge(text: runtime, color: .blue)
-                }
                 statusBadge
                 Spacer()
-                if let unsaved = model.unsavedLabel {
+                if model.unsavedLabel != nil {
                     HStack(spacing: 5) {
                         Circle().fill(Color.orange).frame(width: 7, height: 7)
-                        Text(unsaved)
+                        Text(L("ask.workflow.editor.unsaved"))
                     }
                     .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                    .help(model.unsavedLabel ?? "")
+                }
+                if model.generation != nil {
+                    // A generated workflow is saved into the launcher in one step.
+                    Button(L("ask.workflow.editor.new.save")) { model.saveGenerated() }
+                        .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
+                        .keyboardShortcut("s", modifiers: .command)
+                        .disabled(model.assistant.isBusy || !model.canSaveGenerated)
+                        .accessibilityIdentifier("ask.workflow.editor.saveGenerated")
                 } else {
-                    Text(L("ask.workflow.editor.saved")).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-                Button { model.save() } label: {
-                    HStack(spacing: 5) {
-                        Text(L("ask.workflow.editor.save"))
-                        Text("⌘S").foregroundStyle(StudioTheme.textTertiary)
+                    Button(L("ask.workflow.editor.save")) { model.save() }
+                        .keyboardShortcut("s", modifiers: .command)
+                        .help(L("ask.workflow.editor.save") + " ⌘S")
+                        .accessibilityIdentifier("ask.workflow.editor.save")
+                    Button {
+                        panel = .test
+                        showsPanel = true
+                        model.runTest()
+                    } label: {
+                        Label(L("ask.workflow.editor.test.runShort"), systemImage: "play.fill")
                     }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut("r", modifiers: .command)
+                    .help(L("ask.workflow.editor.test.run") + " ⌘R")
+                    .disabled(model.isTesting || !model.problems.isEmpty)
                 }
-                .keyboardShortcut("s", modifiers: .command)
-                .accessibilityIdentifier("ask.workflow.editor.save")
-                Button {
-                    panel = .test
-                    showsPanel = true
-                    model.runTest()
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "play.fill")
-                        Text(L("ask.workflow.editor.test.run"))
-                        Text("⌘R").opacity(0.7)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut("r", modifiers: .command)
-                .disabled(model.isTesting || model.generation != nil || !model.problems.isEmpty)
                 Menu {
                     Button(L("ask.workflow.editor.togglePanel")) { showsPanel.toggle() }
                         .keyboardShortcut("t", modifiers: [.command, .option])
+                    Toggle(L("ask.workflow.assistant.autoTestMenu"), isOn: $model.autoTest)
+                    Divider()
                     if let folder = model.folder {
                         Button(L("ask.workflow.reveal")) { NSWorkspace.shared.activateFileViewerSelecting([folder]) }
                     }
@@ -164,11 +163,7 @@ struct AskWorkflowEditorView: View {
             AskWorkflowBadge(text: L("ask.workflow.editor.status.problems", model.problems.count), color: .red)
         } else if let workflow = model.workflow {
             switch workflow.status {
-            case .ready: AskWorkflowBadge(
-                    text: L("ask.workflow.editor.status.ready"),
-                    color: .green,
-                    symbol: "checkmark"
-                )
+            case .ready: EmptyView()
             case .untrusted, .modified: AskWorkflowBadge(text: L("ask.workflow.status.modified"), color: .orange)
             case .disabled: AskWorkflowBadge(text: L("ask.workflow.status.disabled"), color: .gray)
             case .invalid: AskWorkflowBadge(text: L("ask.workflow.status.invalid"), color: .red)
@@ -214,22 +209,6 @@ extension AskWorkflowEditorView {
                 Button(L("ask.workflow.assistant.discard")) { model.discard(id) }
                 Button(L("ask.workflow.editor.applyToEditor")) { model.apply(id) }
                     .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
-            }
-        }
-        if model.generation != nil {
-            banner(symbol: "sparkles", tint: AskWorkflowEditorStyle.assistant) {
-                Text(L("ask.workflow.editor.generationNotice"))
-            } actions: {
-                Button(L("ask.workflow.editor.saveGenerated")) { model.saveGenerated() }
-                    .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
-                    .disabled(model.assistant.isBusy || !model.canSaveGenerated)
-            }
-        }
-        if model.canUndoProposal {
-            banner(symbol: "sparkles", tint: AskWorkflowEditorStyle.assistant) {
-                Text(L("ask.workflow.editor.proposalApplied"))
-            } actions: {
-                Button(L("ask.workflow.editor.undoProposal")) { model.undoProposal() }
             }
         }
     }
@@ -315,13 +294,11 @@ extension Notification.Name {
     static let askWorkflowEditorReviewTrust = Notification.Name("AskWorkflowEditor.reviewTrust")
 }
 
-/// Workflows, their status, and the open workflow's files.
+/// Workflows and their status; the open workflow's files are tabs over the code.
 struct AskWorkflowEditorSidebar: View {
     @ObservedObject var model: AskWorkflowEditorModel
     @ObservedObject var store: AskWorkflowStore
     var create: (AskWorkflowNewSheet.Mode) -> Void
-    @State private var newFile = ""
-    @State private var addingFile = false
     @State private var switching: String?
 
     var body: some View {
@@ -342,7 +319,6 @@ struct AskWorkflowEditorSidebar: View {
                         row(Row(id: "new", title: model.draft?.manifest?.name ?? L("ask.workflow.editor.newTitle"),
                                 subtitle: L("ask.workflow.editor.status.generating"), symbol: "sparkles",
                                 dot: .purple, selected: true)) {}
-                        files
                     }
                     ForEach(model.filteredWorkflows) { workflow in
                         let selected = workflow.id == model.workflowID && model.generation == nil
@@ -355,9 +331,6 @@ struct AskWorkflowEditorSidebar: View {
                             } else if !selected {
                                 model.open(workflow.id)
                             }
-                        }
-                        if selected {
-                            files
                         }
                     }
                 }
@@ -377,8 +350,6 @@ struct AskWorkflowEditorSidebar: View {
                 }
                 .menuStyle(.borderedButton).fixedSize()
                 .accessibilityIdentifier("ask.workflow.editor.new")
-                Button(L("ask.workflow.editor.import")) {}
-                    .buttonStyle(.borderless).disabled(true).help(L("ask.workflow.editor.importLater"))
                 Spacer()
                 Button { store.revealRoot() } label: { Image(systemName: "folder") }
                     .buttonStyle(.borderless).help(L("ask.workflow.revealFolder"))
@@ -400,11 +371,6 @@ struct AskWorkflowEditorSidebar: View {
                 switching = nil
             }
         }
-        .alert(L("ask.workflow.editor.addFile"), isPresented: $addingFile) {
-            TextField("helper.py", text: $newFile)
-            Button(L("ask.workflow.editor.add")) { model.addFile(newFile); newFile = "" }
-            Button(L("ask.workflow.cancel"), role: .cancel) { newFile = "" }
-        }
     }
 
     private var switchingBinding: Binding<Bool> {
@@ -413,52 +379,6 @@ struct AskWorkflowEditorSidebar: View {
                 switching = nil
             }
         })
-    }
-
-    private var files: some View {
-        let outside = Set(model.outsideStats?.paths ?? [])
-        return VStack(alignment: .leading, spacing: 1) {
-            ForEach(model.draft?.paths ?? [], id: \.self) { path in
-                let selected = model.selectedFile == path
-                let isConfig = path == AskWorkflowManifest.fileName
-                Button {
-                    model.selectedFile = path
-                    model.step = isConfig ? .keywords : .script
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: isConfig ? "gearshape" : "doc.text")
-                            .font(.system(size: 10.5)).frame(width: 14)
-                        Text(isConfig ? L("ask.workflow.editor.config") : path)
-                            .font(.system(size: 11.5)).lineLimit(1)
-                        Spacer()
-                        if outside.contains(path) {
-                            Text(L("ask.workflow.editor.outsideBadge")).font(.system(size: 10))
-                                .foregroundStyle(Color.orange)
-                        } else if model.draft?.isDirty(path) == true {
-                            Circle().fill(Color.orange).frame(width: 6, height: 6)
-                        } else if isConfig {
-                            Text(AskWorkflowManifest.fileName).font(.system(size: 10))
-                                .foregroundStyle(StudioTheme.textTertiary)
-                        }
-                    }
-                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                    .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(selected ? StudioTheme.controlSurface : .clear, in: RoundedRectangle(cornerRadius: 6))
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .contextMenu {
-                    if !isConfig {
-                        Button(L("ask.workflow.editor.removeFile"), role: .destructive) { model.removeFile(path) }
-                    }
-                }
-            }
-            Button { addingFile = true } label: {
-                Label(L("ask.workflow.editor.addFile"), systemImage: "plus").font(.system(size: 11))
-            }
-            .buttonStyle(.borderless).padding(.horizontal, 8).padding(.vertical, 2)
-        }
-        .padding(.leading, 26).padding(.trailing, 6).padding(.bottom, 4)
     }
 
     private struct Row {

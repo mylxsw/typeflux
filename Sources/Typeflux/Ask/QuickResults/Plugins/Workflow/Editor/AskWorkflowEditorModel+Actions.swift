@@ -37,34 +37,45 @@ extension AskWorkflowEditorModel {
 
     /// Starts a generated workflow: a staging folder with a skeleton manifest, and the
     /// assistant asked to write it. Nothing reaches the workflows folder until saved.
-    func generate(description: String, name: String, keyword: String, id: String,
-                  runtime: AskWorkflowRuntime?) -> Bool {
-        guard settledForSwitch() else { return false }
-        let description = description.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !description.isEmpty else { return false }
-        if let problem = store.keywordProblem(keyword, builtIn: builtInKeywords) {
-            message = problem; return false
-        }
-        guard AskWorkflowManifest.isValidID(id), store.workflow(id) == nil else {
-            message = L("ask.workflow.editor.error.duplicateID", id)
-            return false
-        }
+    /// The workflow the assistant starts from: a template in the chosen language,
+    /// with no keyword when the assistant is to pick one.
+    private func generationSkeleton(name: String, keyword: String, id: String,
+                                    runtime: AskWorkflowRuntime?) -> AskWorkflowDraft? {
         let template: AskWorkflowTemplate = switch runtime {
         case .node: .nodeText
         case .zsh, .bash: .shellText
         default: .pythonText
         }
         var manifest = template.manifest(id: id, keyword: keyword)
-        manifest.name = name.isEmpty ? keyword : name
+        manifest.name = name.isEmpty ? (keyword.isEmpty ? id : keyword) : name
+        if keyword.isEmpty {
+            manifest.keywords = []
+        }
         manifest.description = nil
-        guard let data = try? AskWorkflowStore.encode(manifest) else { return false }
-        var skeleton = AskWorkflowDraft(
-            folder: staging.root,
-            manifestText: String(bytes: data, encoding: .utf8) ?? "",
-            files: [:]
-        )
+        guard let data = try? AskWorkflowStore.encode(manifest) else { return nil }
+        var skeleton = AskWorkflowDraft(folder: staging.root, manifestText: String(bytes: data, encoding: .utf8) ?? "",
+                                        files: [:])
         if let script = manifest.command.script {
             skeleton.files[script] = template.script
+        }
+        return skeleton
+    }
+
+    func generate(description: String, name: String, keyword: String, id: String,
+                  runtime: AskWorkflowRuntime?) -> Bool {
+        guard settledForSwitch() else { return false }
+        let description = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !description.isEmpty else { return false }
+        // No keyword: the assistant picks one and checks it is free.
+        if !keyword.isEmpty, let problem = store.keywordProblem(keyword, builtIn: builtInKeywords) {
+            message = problem; return false
+        }
+        guard AskWorkflowManifest.isValidID(id), store.workflow(id) == nil else {
+            message = L("ask.workflow.editor.error.duplicateID", id)
+            return false
+        }
+        guard let skeleton = generationSkeleton(name: name, keyword: keyword, id: id, runtime: runtime) else {
+            return false
         }
         do {
             stopWatching()
@@ -80,7 +91,9 @@ extension AskWorkflowEditorModel {
             assistant.bind(workflowID: nil)
             step = .script
             let language = runtime.map { L("ask.workflow.assistant.generate.runtime", $0.title) } ?? ""
-            assistant.send(L("ask.workflow.assistant.generate.prompt", description, keyword, id) + language)
+            let prompt = keyword.isEmpty ? L("ask.workflow.assistant.generate.promptPickKeyword", description, id)
+                : L("ask.workflow.assistant.generate.prompt", description, keyword, id)
+            assistant.send(prompt + language, shown: description)
             return true
         } catch {
             message = error.localizedDescription
@@ -224,8 +237,17 @@ extension AskWorkflowEditorModel {
         }
     }
 
+    /// The proposal applied last, which "Undo" takes back.
+    var lastAppliedProposal: UUID? {
+        proposals.last { $0.state == .applied }?.id
+    }
+
+    /// Takes the last applied proposal back out of the draft; it can be applied again.
     func undoProposal() {
         guard let undoDraft else { return }
+        if let id = lastAppliedProposal, let index = proposals.firstIndex(where: { $0.id == id }) {
+            proposals[index].state = .pending
+        }
         draft = undoDraft
         self.undoDraft = nil
         canUndoProposal = false

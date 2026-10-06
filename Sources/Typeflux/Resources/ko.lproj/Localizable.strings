@@ -2645,13 +2645,10 @@
 "ask.workflow.assistant.testedSummary" = "테스트함 · %1$d/%2$d 통과";
 "ask.workflow.assistant.supersededLine" = "제안 %1$d: %2$@";
 "ask.workflow.assistant.testedShort" = "테스트 %1$d/%2$d ✓";
-"ask.workflow.assistant.approval.title" = "이 버전을 실행할까요?";
 "ask.workflow.assistant.approval.body" = "실행하면 이 Mac에서 새 코드가 실행됩니다. 승인한 버전에 없던 동작이 나타날 때만 어시스턴트가 확인을 요청합니다.";
 "ask.workflow.assistant.approval.allow" = "허용하고 계속";
 "ask.workflow.assistant.approval.decline" = "실행 안 함";
 "ask.workflow.assistant.approval.useOnly" = "제안 %d만 사용";
-"ask.workflow.assistant.autoTest" = "자동 테스트";
-"ask.workflow.assistant.autoTest.help" = "새 위험이 없으면 어시스턴트가 코드를 실행합니다";
 "ask.workflow.assistant.cloud" = "Typeflux Cloud";
 "ask.workflow.assistant.local" = "이 Mac에서";
 "ask.workflow.assistant.empty" = "바꿀 내용을 알려 주세요(예: “rate 키워드 추가”, “소수점 둘째 자리까지”). 어시스턴트가 변경을 제안하면 확인한 뒤 적용합니다.";
@@ -2677,7 +2674,6 @@
 "ask.workflow.assistant.tool.keywordTaken" = "키워드 %@ 사용 중";
 "ask.workflow.assistant.tool.limit" = "이 메시지의 도구 호출 한도에 도달";
 "ask.workflow.assistant.tool.proposeFailed" = "제안에 문제가 있어 수정 중";
-"ask.workflow.assistant.tool.proposed" = "변경 제안";
 "ask.workflow.assistant.tool.read" = "%@ 읽음";
 "ask.workflow.assistant.tool.readWorkflow" = "워크플로 읽음";
 "ask.workflow.assistant.tool.testDeclined" = "테스트 실행이 허용되지 않음";
@@ -2712,7 +2708,7 @@
 "ask.workflow.editor.new.keywordFree" = "사용 가능";
 "ask.workflow.editor.new.generate" = "생성";
 "ask.workflow.editor.new.create" = "만들고 편집";
-"ask.workflow.editor.new.aiFootnote" = "어시스턴트가 작성하고 이 Mac의 깨끗한 환경(비밀 정보 없이)에서 테스트합니다. 저장하기 전에는 런처에 나타나지 않습니다.";
+"ask.workflow.editor.new.aiFootnote" = "키 없이 깨끗한 환경에서 테스트합니다. 저장하기 전에는 런처에 나타나지 않습니다.";
 "ask.workflow.editor.new.footnote" = "여기서 만든 워크플로는 신뢰됨으로 표시됩니다.";
 "ask.workflow.editor.name" = "이름";
 "ask.workflow.editor.description" = "설명";
@@ -2727,7 +2723,6 @@
 "ask.workflow.editor.empty" = "열린 워크플로가 없습니다.";
 "ask.workflow.editor.missing" = "이 워크플로는 더 이상 없습니다.";
 "ask.workflow.editor.save" = "저장";
-"ask.workflow.editor.saved" = "저장됨";
 "ask.workflow.editor.unsaved" = "저장 안 됨";
 "ask.workflow.editor.discard" = "저장 안 함";
 "ask.workflow.editor.dismiss" = "확인";
@@ -2738,27 +2733,17 @@
 "ask.workflow.editor.deleteTitle" = "“%@”을(를) 휴지통으로 옮길까요?";
 "ask.workflow.editor.togglePanel" = "사이드 패널 보기/숨기기";
 "ask.workflow.editor.conflict" = "편집기 밖에서 파일이 바뀌었습니다. 남길 버전을 선택하세요.";
-"ask.workflow.editor.outside" = "저장하지 않은 변경이 있는 동안 편집기 밖에서 파일이 바뀌었습니다. 확인하기 전까지 런처에서 실행되지 않습니다.";
 "ask.workflow.editor.outside.keepMine" = "내 버전 유지";
 "ask.workflow.editor.outside.loadTheirs" = "디스크에서 불러오기";
-"ask.workflow.editor.outside.diff" = "비교";
-"ask.workflow.editor.outside.diffTitle" = "내 버전 → 디스크의 버전";
 "ask.workflow.editor.needsTrust" = "실행하려면 이 워크플로를 확인하고 신뢰하세요.";
-"ask.workflow.editor.generationNotice" = "이 워크플로는 어시스턴트가 만드는 중이며 아직 저장되지 않았습니다. 확인 후 저장하면 런처에 추가됩니다.";
 "ask.workflow.editor.saveGenerated" = "확인하고 저장";
 "ask.workflow.editor.proposalApplied" = "어시스턴트의 제안을 편집기에 적용했습니다. 저장하면 반영됩니다.";
 "ask.workflow.editor.undoProposal" = "실행 취소";
-"ask.workflow.editor.proposalPreview" = "제안: 현재 → 제안";
-"ask.workflow.editor.status.ready" = "실행 가능";
 "ask.workflow.editor.status.generating" = "생성 중";
 "ask.workflow.editor.status.problems" = "문제 %d개";
-"ask.workflow.editor.noProblems" = "문제 없음";
-"ask.workflow.editor.problemSummary" = "문제 %1$d개 · %2$@";
-"ask.workflow.editor.lineMessage" = "%1$d번째 줄: %2$@";
 "ask.workflow.editor.noScript" = "이 워크플로에는 스크립트 파일이 없습니다.";
 "ask.workflow.editor.form" = "양식";
 "ask.workflow.editor.format" = "서식 정리";
-"ask.workflow.editor.synced" = "양식과 workflow.json은 동기화됩니다.";
 "ask.workflow.editor.step.keywords" = "키워드";
 "ask.workflow.editor.step.input" = "입력";
 "ask.workflow.editor.step.script" = "스크립트";
@@ -2792,7 +2777,6 @@
 "ask.workflow.editor.timeout" = "시간 제한";
 "ask.workflow.editor.seconds" = "%d초";
 "ask.workflow.editor.runtime" = "런타임";
-"ask.workflow.editor.interpreter" = "인터프리터(자동)";
 "ask.workflow.editor.script" = "스크립트 파일";
 "ask.workflow.editor.env" = "환경 변수";
 "ask.workflow.editor.env.hint" = "한 줄에 하나씩 이름=값. 비밀 정보는 넣지 마세요.";
@@ -2801,7 +2785,6 @@
 "ask.workflow.editor.test.title" = "테스트";
 "ask.workflow.editor.test.run" = "테스트 실행";
 "ask.workflow.editor.test.stop" = "중지";
-"ask.workflow.editor.test.input" = "키워드 뒤 텍스트";
 "ask.workflow.editor.test.placeholder" = "100 usd jpy";
 "ask.workflow.editor.test.withSelection" = "예시 선택 텍스트 포함";
 "ask.workflow.editor.test.empty" = "실행하면 런처에 무엇이 보일지 확인할 수 있습니다.";
@@ -2812,7 +2795,6 @@
 "ask.workflow.editor.test.tab.stderr" = "stderr";
 "ask.workflow.editor.test.tab.received" = "전달된 내용";
 "ask.workflow.editor.test.nothing" = "(비어 있음)";
-"ask.workflow.editor.test.card" = "런처";
 "ask.workflow.editor.test.dismisses" = "완료: 런처가 닫힙니다";
 "ask.workflow.editor.test.recent" = "최근 실행";
 "ask.workflow.editor.test.sourceTest" = "테스트 · %@";
@@ -2828,7 +2810,6 @@
 "ask.workflow.action.copyError" = "오류 복사";
 "ask.workflow.assistant.approval.paused" = "자동 수정 일시 중지";
 "ask.workflow.assistant.approval.titleNumbered" = "제안 %d을(를) 실행할까요?";
-"ask.workflow.assistant.context.lastTest" = "지난 테스트";
 "ask.workflow.assistant.files" = "파일 %d개";
 "ask.workflow.editor.applyToEditor" = "편집기에 적용";
 "ask.workflow.editor.args.example" = "예시:";
@@ -2840,20 +2821,15 @@
 "ask.workflow.editor.diff.diffSuffix" = "차이";
 "ask.workflow.editor.diff.differences" = "차이";
 "ask.workflow.editor.duplicateTitle" = "기존 워크플로 복제";
-"ask.workflow.editor.find" = "찾기";
-"ask.workflow.editor.import" = "가져오기…";
-"ask.workflow.editor.importLater" = "워크플로 패키지 가져오기는 이후 버전에서 지원됩니다.";
 "ask.workflow.editor.interpreterAuto" = "인터프리터: 자동(%@)";
 "ask.workflow.editor.justNow" = "방금";
 "ask.workflow.editor.keywordTakenBy" = "“%1$@”은(는) 이미 “%2$@”에서 사용 중입니다. 다른 키워드를 쓰거나 설정에서 먼저 바꾸세요.";
 "ask.workflow.editor.keywords.drag" = "끌어서 순서 변경";
 "ask.workflow.editor.keywords.optionsPlaceholder" = "없음";
-"ask.workflow.editor.new.aiSubtitle" = "무엇을 입력하고 무엇을 얻는지 알려 주세요. AI가 매니페스트와 스크립트를 작성하고 이 Mac에서 테스트한 뒤 확인하도록 넘겨줍니다.";
+"ask.workflow.editor.new.aiSubtitle" = "무엇을 입력하고 무엇을 얻는지 알려 주세요. AI가 작성하고 이 Mac에서 테스트합니다.";
 "ask.workflow.editor.new.subtitle" = "시작점을 고르세요. 파일은 워크플로 폴더에 만들어지며 언제든 바꿀 수 있습니다.";
-"ask.workflow.editor.new.autoTest" = "생성 후 자동 테스트";
 "ask.workflow.editor.new.copyBadge" = "복제";
 "ask.workflow.editor.new.duplicateShort" = "복제";
-"ask.workflow.editor.new.waitingApproval" = "AI 어시스턴트에서 테스트 실행 허용을 기다리는 중입니다.";
 "ask.workflow.editor.new.tile.pythonText" = "텍스트 출력";
 "ask.workflow.editor.new.tile.nodeText" = "텍스트 출력";
 "ask.workflow.editor.new.tile.shellText" = "텍스트 출력";
@@ -2879,7 +2855,6 @@
 "ask.workflow.editor.outside.detail" = " (%1$@, +%2$d −%3$d줄). 확인하기 전까지 이 워크플로는 런처에서 실행되지 않습니다.";
 "ask.workflow.editor.outside.diffTrust" = "변경 확인 후 신뢰…";
 "ask.workflow.editor.outside.trustTheirs" = "불러오고 신뢰…";
-"ask.workflow.editor.outsideBadge" = "외부";
 "ask.workflow.editor.preview.title" = "런처에서의 모습";
 "ask.workflow.editor.preview.hint" = "마지막 테스트 출력을 사용하며, 없으면 예시를 보여 줍니다.";
 "ask.workflow.editor.preview.kind" = "워크플로";
@@ -2895,8 +2870,6 @@
 "ask.workflow.editor.runMode.live" = "입력 중 실행";
 "ask.workflow.editor.runMode.liveDetail" = "키마다 실행, 입력만 전달, 3초 제한.";
 "ask.workflow.editor.secondsUnit" = "초";
-"ask.workflow.editor.spaces" = "공백 %d";
-"ask.workflow.editor.tabs" = "탭";
 "ask.workflow.editor.status.cursor" = "%1$d줄, %2$d열";
 "ask.workflow.editor.status.more" = "외 %d개";
 "ask.workflow.editor.status.outside" = "외부 변경: +%1$d −%2$d";
@@ -2907,7 +2880,6 @@
 "ask.workflow.editor.test.launcherShows" = "런처 표시";
 "ask.workflow.editor.test.lines" = "출력 %d줄";
 "ask.workflow.editor.test.running" = "실행 중 · %.1f초";
-"ask.workflow.editor.test.sameRunner" = "런처와 같은 실행기";
 "ask.workflow.editor.unsavedFile" = "%@ 저장 안 됨";
 "ask.workflow.editor.unsavedFiles" = "파일 %d개 저장 안 됨";
 "ask.workflow.risk.existing" = " (기존)";
@@ -2915,6 +2887,22 @@
 "ask.workflow.risk.noPrograms" = "다른 프로그램 실행 안 함";
 "ask.workflow.assistant.defaultModel" = "기본 모델";
 "ask.workflow.assistant.tool.proposedFiles" = "%@ 작성";
+"ask.workflow.editor.test.runShort" = "테스트";
+"ask.workflow.assistant.autoTestMenu" = "AI 변경 사항 자동 테스트";
+"ask.workflow.editor.new.options" = "옵션";
+"ask.workflow.editor.new.keywordAuto" = "자동";
+"ask.workflow.editor.new.askRun" = "새 코드를 테스트할까요? 다음을 수행합니다:";
+"ask.workflow.editor.new.details" = "%d단계";
+"ask.workflow.editor.new.after" = "%@, 진행 중…";
+"ask.workflow.editor.new.version" = "%d번째 버전";
+"ask.workflow.editor.new.passed" = "테스트 %1$d/%2$d 통과";
+"ask.workflow.editor.new.doneTitle" = "“%@” 완성";
+"ask.workflow.editor.new.usage.before" = "런처에서";
+"ask.workflow.editor.new.usage.after" = "와 내용을 입력하면 됩니다.";
+"ask.workflow.editor.new.adjust" = "편집기에서 조정";
+"ask.workflow.editor.new.save" = "저장";
+"ask.workflow.assistant.steps" = "%d단계";
+"ask.workflow.assistant.generate.promptPickKeyword" = "이 워크플로를 만들어 주세요: %1$@\n\n입력하기 쉬운 짧은 키워드를 직접 고르고 workflow_check_keyword로 사용 가능한지 확인해 주세요. id는 “%2$@”를 유지해 주세요. 환경을 확인하고 매니페스트와 스크립트를 제안한 뒤 테스트해 주세요.";
 
 /* Agent and Launcher settings panes */
 "studio.section.launcher" = "런처";

@@ -2652,13 +2652,10 @@
 "ask.workflow.assistant.testedSummary" = "已試跑 · %1$d/%2$d 通過";
 "ask.workflow.assistant.supersededLine" = "提案 %1$d：%2$@";
 "ask.workflow.assistant.testedShort" = "試跑 %1$d/%2$d ✓";
-"ask.workflow.assistant.approval.title" = "要試跑這個版本嗎？";
 "ask.workflow.assistant.approval.body" = "試跑會在這台 Mac 上執行新程式碼。只有和你認可的版本相比出現新的風險時，助手才會停下來問你。";
 "ask.workflow.assistant.approval.allow" = "允許並繼續";
 "ask.workflow.assistant.approval.decline" = "不要執行";
 "ask.workflow.assistant.approval.useOnly" = "只用提案 %d";
-"ask.workflow.assistant.autoTest" = "自動試跑";
-"ask.workflow.assistant.autoTest.help" = "除非出現新的風險，否則讓助手自己試跑程式碼";
 "ask.workflow.assistant.cloud" = "Typeflux Cloud";
 "ask.workflow.assistant.local" = "在這台 Mac 上";
 "ask.workflow.assistant.empty" = "說說要改什麼，例如「加一個 rate 關鍵字」「結果保留兩位小數」。助手會給出修改提案，你看過後再套用。";
@@ -2684,7 +2681,6 @@
 "ask.workflow.assistant.tool.keywordTaken" = "關鍵字 %@ 已被佔用";
 "ask.workflow.assistant.tool.limit" = "這則訊息的工具呼叫已達上限";
 "ask.workflow.assistant.tool.proposeFailed" = "提案有問題，正在修改";
-"ask.workflow.assistant.tool.proposed" = "提交了修改提案";
 "ask.workflow.assistant.tool.read" = "讀取了 %@";
 "ask.workflow.assistant.tool.readWorkflow" = "讀取了工作流程";
 "ask.workflow.assistant.tool.testDeclined" = "沒有允許試跑";
@@ -2719,7 +2715,7 @@
 "ask.workflow.editor.new.keywordFree" = "可以使用";
 "ask.workflow.editor.new.generate" = "產生";
 "ask.workflow.editor.new.create" = "建立並編輯";
-"ask.workflow.editor.new.aiFootnote" = "助手會撰寫並在這台 Mac 上試跑（乾淨環境，不帶你的密鑰）。儲存之前不會出現在啟動器裡。";
+"ask.workflow.editor.new.aiFootnote" = "在乾淨的環境裡試跑，不帶你的密鑰。儲存前不會出現在啟動器裡。";
 "ask.workflow.editor.new.footnote" = "在這裡建立的工作流程直接視為已信任。";
 "ask.workflow.editor.name" = "名稱";
 "ask.workflow.editor.description" = "說明";
@@ -2734,7 +2730,6 @@
 "ask.workflow.editor.empty" = "沒有打開的工作流程。";
 "ask.workflow.editor.missing" = "這個工作流程已經不存在了。";
 "ask.workflow.editor.save" = "儲存";
-"ask.workflow.editor.saved" = "已儲存";
 "ask.workflow.editor.unsaved" = "未儲存";
 "ask.workflow.editor.discard" = "不儲存";
 "ask.workflow.editor.dismiss" = "好";
@@ -2745,27 +2740,17 @@
 "ask.workflow.editor.deleteTitle" = "要把「%@」移到垃圾桶嗎？";
 "ask.workflow.editor.togglePanel" = "顯示或隱藏側邊面板";
 "ask.workflow.editor.conflict" = "檔案在編輯器外被修改了，請選擇保留哪一份。";
-"ask.workflow.editor.outside" = "你有未儲存的修改時，檔案在編輯器外被改了。確認之前，這個工作流程不會在啟動器裡執行。";
 "ask.workflow.editor.outside.keepMine" = "保留我的版本";
 "ask.workflow.editor.outside.loadTheirs" = "載入外部版本";
-"ask.workflow.editor.outside.diff" = "查看差異";
-"ask.workflow.editor.outside.diffTitle" = "我的版本 → 磁碟上的版本";
 "ask.workflow.editor.needsTrust" = "檢查並信任後，這個工作流程才能執行。";
-"ask.workflow.editor.generationNotice" = "這個工作流程由助手產生，還沒有儲存。檢查後儲存，才會加入啟動器。";
 "ask.workflow.editor.saveGenerated" = "檢查並儲存";
 "ask.workflow.editor.proposalApplied" = "已把助手的提案套用到編輯器，儲存後生效。";
 "ask.workflow.editor.undoProposal" = "復原";
-"ask.workflow.editor.proposalPreview" = "提案：目前 → 提案";
-"ask.workflow.editor.status.ready" = "可以執行";
 "ask.workflow.editor.status.generating" = "產生中";
 "ask.workflow.editor.status.problems" = "%d 個問題";
-"ask.workflow.editor.noProblems" = "沒有問題";
-"ask.workflow.editor.problemSummary" = "%1$d 個問題 · %2$@";
-"ask.workflow.editor.lineMessage" = "第 %1$d 行：%2$@";
 "ask.workflow.editor.noScript" = "這個工作流程沒有腳本檔案。";
 "ask.workflow.editor.form" = "表單";
 "ask.workflow.editor.format" = "格式化";
-"ask.workflow.editor.synced" = "表單和 workflow.json 兩邊同步。";
 "ask.workflow.editor.step.keywords" = "關鍵字";
 "ask.workflow.editor.step.input" = "輸入";
 "ask.workflow.editor.step.script" = "腳本";
@@ -2799,7 +2784,6 @@
 "ask.workflow.editor.timeout" = "逾時";
 "ask.workflow.editor.seconds" = "%d 秒";
 "ask.workflow.editor.runtime" = "執行環境";
-"ask.workflow.editor.interpreter" = "直譯器（自動）";
 "ask.workflow.editor.script" = "腳本檔案";
 "ask.workflow.editor.env" = "環境變數";
 "ask.workflow.editor.env.hint" = "每行一個 名稱=值。不要在這裡放密鑰。";
@@ -2808,7 +2792,6 @@
 "ask.workflow.editor.test.title" = "測試執行";
 "ask.workflow.editor.test.run" = "測試執行";
 "ask.workflow.editor.test.stop" = "停止";
-"ask.workflow.editor.test.input" = "關鍵字後面的內容";
 "ask.workflow.editor.test.placeholder" = "100 usd jpy";
 "ask.workflow.editor.test.withSelection" = "帶上範例選取文字";
 "ask.workflow.editor.test.empty" = "執行一次，看看啟動器裡會顯示什麼。";
@@ -2819,7 +2802,6 @@
 "ask.workflow.editor.test.tab.stderr" = "stderr";
 "ask.workflow.editor.test.tab.received" = "傳入了什麼";
 "ask.workflow.editor.test.nothing" = "（空）";
-"ask.workflow.editor.test.card" = "啟動器";
 "ask.workflow.editor.test.dismisses" = "已完成，啟動器關閉";
 "ask.workflow.editor.test.recent" = "最近執行";
 "ask.workflow.editor.test.sourceTest" = "測試 · %@";
@@ -2835,7 +2817,6 @@
 "ask.workflow.action.copyError" = "複製錯誤";
 "ask.workflow.assistant.approval.paused" = "自動修復已暫停";
 "ask.workflow.assistant.approval.titleNumbered" = "要試跑提案 %d 嗎？";
-"ask.workflow.assistant.context.lastTest" = "上次測試";
 "ask.workflow.assistant.files" = "%d 個檔案";
 "ask.workflow.editor.applyToEditor" = "套用到編輯器";
 "ask.workflow.editor.args.example" = "範例：";
@@ -2847,20 +2828,15 @@
 "ask.workflow.editor.diff.diffSuffix" = "差異";
 "ask.workflow.editor.diff.differences" = "差異";
 "ask.workflow.editor.duplicateTitle" = "複製現有工作流程";
-"ask.workflow.editor.find" = "尋找";
-"ask.workflow.editor.import" = "匯入…";
-"ask.workflow.editor.importLater" = "匯入工作流程套件將在之後的版本支援。";
 "ask.workflow.editor.interpreterAuto" = "直譯器：自動（%@）";
 "ask.workflow.editor.justNow" = "剛剛";
 "ask.workflow.editor.keywordTakenBy" = "「%1$@」已經被「%2$@」使用。換一個，或者先在設定裡改掉它。";
 "ask.workflow.editor.keywords.drag" = "拖曳排序";
 "ask.workflow.editor.keywords.optionsPlaceholder" = "沒有";
-"ask.workflow.editor.new.aiSubtitle" = "說清楚輸入什麼、得到什麼。AI 會寫清單和腳本，在這台 Mac 上試跑，通過後交給你檢查。";
+"ask.workflow.editor.new.aiSubtitle" = "說清楚輸入什麼、得到什麼，AI 會寫好並在這台 Mac 上試跑。";
 "ask.workflow.editor.new.subtitle" = "選一個起點。產生的檔案放在工作流程資料夾裡，隨時可以改。";
-"ask.workflow.editor.new.autoTest" = "產生後自動試跑";
 "ask.workflow.editor.new.copyBadge" = "複製";
 "ask.workflow.editor.new.duplicateShort" = "複製現有";
-"ask.workflow.editor.new.waitingApproval" = "等待你在 AI 助手裡允許試跑。";
 "ask.workflow.editor.new.tile.pythonText" = "輸出文字";
 "ask.workflow.editor.new.tile.nodeText" = "輸出文字";
 "ask.workflow.editor.new.tile.shellText" = "輸出文字";
@@ -2886,7 +2862,6 @@
 "ask.workflow.editor.outside.detail" = "（%1$@，+%2$d −%3$d 行）。在你確認之前，這個工作流程不會在啟動器裡執行。";
 "ask.workflow.editor.outside.diffTrust" = "查看差異並信任…";
 "ask.workflow.editor.outside.trustTheirs" = "載入並信任…";
-"ask.workflow.editor.outsideBadge" = "外部";
 "ask.workflow.editor.preview.title" = "啟動器裡的樣子";
 "ask.workflow.editor.preview.hint" = "用上次測試執行的輸出；沒執行過就用範例。";
 "ask.workflow.editor.preview.kind" = "工作流程";
@@ -2902,8 +2877,6 @@
 "ask.workflow.editor.runMode.live" = "邊打邊出";
 "ask.workflow.editor.runMode.liveDetail" = "每次按鍵都執行，只傳參數，限時 3 秒。";
 "ask.workflow.editor.secondsUnit" = "秒";
-"ask.workflow.editor.spaces" = "空格 %d";
-"ask.workflow.editor.tabs" = "定位字元";
 "ask.workflow.editor.status.cursor" = "第 %1$d 行，第 %2$d 欄";
 "ask.workflow.editor.status.more" = "還有 %d 個";
 "ask.workflow.editor.status.outside" = "外部修改：+%1$d −%2$d";
@@ -2914,7 +2887,6 @@
 "ask.workflow.editor.test.launcherShows" = "啟動器裡會顯示";
 "ask.workflow.editor.test.lines" = "%d 行輸出";
 "ask.workflow.editor.test.running" = "執行中 · %.1f 秒";
-"ask.workflow.editor.test.sameRunner" = "和啟動器同一個執行器";
 "ask.workflow.editor.unsavedFile" = "%@ 未儲存";
 "ask.workflow.editor.unsavedFiles" = "%d 個檔案未儲存";
 "ask.workflow.risk.existing" = "（原本就有）";
@@ -2922,6 +2894,22 @@
 "ask.workflow.risk.noPrograms" = "不啟動其他程式";
 "ask.workflow.assistant.defaultModel" = "預設模型";
 "ask.workflow.assistant.tool.proposedFiles" = "寫了 %@";
+"ask.workflow.editor.test.runShort" = "測試";
+"ask.workflow.assistant.autoTestMenu" = "AI 改完自動試跑";
+"ask.workflow.editor.new.options" = "選項";
+"ask.workflow.editor.new.keywordAuto" = "自動";
+"ask.workflow.editor.new.askRun" = "要試跑新程式碼嗎？它會：";
+"ask.workflow.editor.new.details" = "%d 個步驟";
+"ask.workflow.editor.new.after" = "%@，繼續中…";
+"ask.workflow.editor.new.version" = "第 %d 版";
+"ask.workflow.editor.new.passed" = "試跑 %1$d/%2$d 通過";
+"ask.workflow.editor.new.doneTitle" = "「%@」做好了";
+"ask.workflow.editor.new.usage.before" = "在啟動器裡輸入";
+"ask.workflow.editor.new.usage.after" = "加內容就能用。";
+"ask.workflow.editor.new.adjust" = "在編輯器裡調整";
+"ask.workflow.editor.new.save" = "儲存";
+"ask.workflow.assistant.steps" = "%d 步";
+"ask.workflow.assistant.generate.promptPickKeyword" = "幫我做這個工作流程：%1$@\n\n自己挑一個好記、好打的短關鍵字，用 workflow_check_keyword 確認可用，id 保持「%2$@」。先檢查本機環境，再提交清單和腳本，並試跑。";
 
 /* Agent and Launcher settings panes */
 "studio.section.launcher" = "啟動器";
