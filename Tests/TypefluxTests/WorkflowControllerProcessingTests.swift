@@ -1832,6 +1832,28 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
     }
 
+    func testLivePreviewReceivesSnapshotBeforeTheRecordingCallbackReturns() async throws {
+        let recorder = MockProcessingAudioRecorder()
+        let previewer = SnapshotProcessingLivePreviewer()
+        let controller = makeWorkflowController(
+            audioRecorder: recorder,
+            liveTranscriptionPreviewer: previewer,
+            configureSettings: { $0.sttProvider = .localModel }
+        )
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        XCTAssertTrue(controller.isRecording)
+        try recorder.emitAudio(frameCount: 512, value: 0.25, valueAfterDelivery: 0.75)
+        await previewer.releaseInput()
+        for _ in 0..<100 {
+            if await !previewer.values.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let values = await previewer.values
+        XCTAssertEqual(values, [0.25], "The preview must own its audio before the producer resumes")
+        controller.cancelRecording()
+        await waitForMainActorWork()
+    }
+
     func testAudioStartFailureCopyExplainsMissingMicrophoneAndRecovery() {
         XCTAssertEqual(
             WorkflowController.audioStartFailureLocalizationKey(
@@ -2956,6 +2978,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         historyStore: HistoryStore = MockProcessingHistoryStore(),
         clipboard: ClipboardService = MockClipboardService(),
         soundEffectPlayer: SoundEffectPlayer? = nil,
+        liveTranscriptionPreviewer: (any LiveTranscriptionPreviewing)? = nil,
         localModelManager: (any LocalSTTModelManaging)? = nil,
         localModelDownloadAlertPresenter: any LocalModelDownloadAlertPresenting =
             MockLocalModelDownloadAlertPresenter(),
@@ -3009,6 +3032,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
                 outputPostProcessor: NoopOutputPostProcessor()
             ),
             soundEffectPlayer: soundEffectPlayer ?? SoundEffectPlayer(settingsStore: settingsStore),
+            liveTranscriptionPreviewer: liveTranscriptionPreviewer,
             localModelManager: localModelManager,
             localModelDownloadAlertPresenter: localModelDownloadAlertPresenter,
             outputPostProcessor: NoopOutputPostProcessor(),
@@ -3481,13 +3505,18 @@ private final class MockProcessingAudioRecorder: AudioRecorder {
         onStart()
     }
 
-    func emitAudio(frameCount: AVAudioFrameCount, recordingIndex: Int = 0, value: Float = 0) throws {
+    func emitAudio(
+        frameCount: AVAudioFrameCount, recordingIndex: Int = 0, value: Float = 0, valueAfterDelivery: Float? = nil
+    ) throws {
         let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 16000, channels: 1))
         let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: max(1, frameCount)))
         buffer.frameLength = frameCount
         buffer.floatChannelData?[0].update(repeating: value, count: Int(frameCount))
         let handler = lock.withLock { bufferHandlers[recordingIndex] }
         handler?(buffer)
+        if let valueAfterDelivery {
+            buffer.floatChannelData?[0].update(repeating: valueAfterDelivery, count: Int(frameCount))
+        }
     }
 
     func stop() throws -> AudioFile {
@@ -3496,6 +3525,26 @@ private final class MockProcessingAudioRecorder: AudioRecorder {
         lock.unlock()
         return AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1)
     }
+}
+
+private actor SnapshotProcessingLivePreviewer: LiveTranscriptionPreviewing {
+    private var released = false
+    private var waiter: CheckedContinuation<Void, Never>?
+    private(set) var values: [Float] = []
+
+    func prepareForStart() async {}
+    func start(onTextUpdate _: @escaping @Sendable (String) -> Void) async throws {}
+    func append(_ buffer: AVAudioPCMBuffer) async {
+        if !released { await withCheckedContinuation { waiter = $0 } }
+        values.append(buffer.floatChannelData![0][0])
+    }
+    func releaseInput() {
+        released = true
+        waiter?.resume()
+        waiter = nil
+    }
+    func finish() async -> String { "" }
+    func cancel() async { releaseInput() }
 }
 
 private final class FileReturningAudioRecorder: AudioRecorder {

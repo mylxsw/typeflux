@@ -50,7 +50,7 @@ actor LocalModelLivePreviewBackend: LivePreviewBackend {
     }
 
     func append(_ buffer: AVAudioPCMBuffer) async {
-        guard let copy = clone(buffer: buffer) else { return }
+        guard let copy = AudioPCMBufferSnapshot.copy(buffer) else { return }
         pendingBuffers.append(copy)
         pendingDuration += duration(of: copy)
         startDecodeIfNeeded(force: false)
@@ -151,32 +151,6 @@ actor LocalModelLivePreviewBackend: LivePreviewBackend {
         }
 
         return AudioFile(fileURL: fileURL, duration: duration)
-    }
-
-    private func clone(buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
-        guard let copy = AVAudioPCMBuffer(pcmFormat: buffer.format, frameCapacity: buffer.frameCapacity) else {
-            return nil
-        }
-
-        copy.frameLength = buffer.frameLength
-
-        if let source = buffer.floatChannelData, let destination = copy.floatChannelData {
-            let frameCount = Int(buffer.frameLength)
-            for channel in 0 ..< Int(buffer.format.channelCount) {
-                destination[channel].update(from: source[channel], count: frameCount)
-            }
-            return copy
-        }
-
-        if let source = buffer.int16ChannelData, let destination = copy.int16ChannelData {
-            let frameCount = Int(buffer.frameLength)
-            for channel in 0 ..< Int(buffer.format.channelCount) {
-                destination[channel].update(from: source[channel], count: frameCount)
-            }
-            return copy
-        }
-
-        return nil
     }
 
     private func duration(of buffer: AVAudioPCMBuffer) -> TimeInterval {

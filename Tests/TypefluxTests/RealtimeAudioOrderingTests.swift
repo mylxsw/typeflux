@@ -1,18 +1,32 @@
 import AVFoundation
+@testable import Typeflux
 import XCTest
 
-@testable import Typeflux
-
 final class RealtimeAudioOrderingTests: XCTestCase {
+    func testPumpSnapshotsAudioBeforeTheProducerCanReuseIt() async throws {
+        let session = SuspendedSnapshotRealtimeSession()
+        let pump = RealtimeAudioBufferPump(session: session)
+        let first = try buffer(value: 100)
+        let second = try buffer(value: 200)
+        pump.append(first)
+        pump.append(second)
+        first.int16ChannelData?[0].update(repeating: 999, count: Int(first.frameLength))
+        second.int16ChannelData?[0].update(repeating: 999, count: Int(second.frameLength))
+        await session.releaseInput()
+        await pump.finishInput()
+        let values = await session.values
+        XCTAssertEqual(values, [100, 200])
+    }
+
     func testLiveAudioCannotOvertakeBufferedPrefixDuringConnectionFlush() async throws {
         let upstream = SuspendedWritePCMStream()
         let session = BufferedRealtimeTranscriptionSession(upstream: upstream)
         await session.start()
-        await session.append(try buffer(value: 100))
-        await session.append(try buffer(value: 200))
+        try await session.append(buffer(value: 100))
+        try await session.append(buffer(value: 200))
         await upstream.releaseStart()
         await upstream.waitForFirstWrite()
-        await session.append(try buffer(value: 300))
+        try await session.append(buffer(value: 300))
         let beforeRelease = await upstream.values
         await upstream.releaseWrite()
         _ = try await session.finish()
@@ -25,8 +39,8 @@ final class RealtimeAudioOrderingTests: XCTestCase {
         let upstream = SuspendedWritePCMStream()
         let session = BufferedRealtimeTranscriptionSession(upstream: upstream)
         await session.start()
-        await session.append(try buffer(value: 100))
-        await session.append(try buffer(value: 200))
+        try await session.append(buffer(value: 100))
+        try await session.append(buffer(value: 200))
         await upstream.releaseStart()
         await upstream.waitForFirstWrite()
         let finish = Task { try await session.finish() }
@@ -45,8 +59,8 @@ final class RealtimeAudioOrderingTests: XCTestCase {
         let upstream = SuspendedWritePCMStream()
         let session = BufferedRealtimeTranscriptionSession(upstream: upstream)
         await session.start()
-        await session.append(try buffer(value: 100))
-        await session.append(try buffer(value: 200))
+        try await session.append(buffer(value: 100))
+        try await session.append(buffer(value: 200))
         await upstream.releaseStart()
         await upstream.waitForFirstWrite()
         await session.cancel()
@@ -64,12 +78,40 @@ final class RealtimeAudioOrderingTests: XCTestCase {
         let format = try XCTUnwrap(
             AVAudioFormat(
                 commonFormat: .pcmFormatInt16,
-                sampleRate: CloudASRAudioConverter.targetSampleRate, channels: 1, interleaved: true))
+                sampleRate: CloudASRAudioConverter.targetSampleRate, channels: 1, interleaved: true
+            )
+        )
         let frames = AVAudioFrameCount(CloudASRAudioConverter.chunkSize / 2)
         let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames))
         buffer.frameLength = frames
         buffer.int16ChannelData![0].update(repeating: value, count: Int(frames))
         return buffer
+    }
+}
+
+private actor SuspendedSnapshotRealtimeSession: RealtimeTranscriptionSession {
+    private var released = false
+    private var waiter: CheckedContinuation<Void, Never>?
+    private(set) var values: [Int16] = []
+
+    func start() async {}
+    func append(_ buffer: AVAudioPCMBuffer) async {
+        if !released { await withCheckedContinuation { waiter = $0 } }
+        values.append(buffer.int16ChannelData![0][0])
+    }
+
+    func releaseInput() {
+        released = true
+        waiter?.resume()
+        waiter = nil
+    }
+
+    func finish() async throws -> String {
+        "done"
+    }
+
+    func cancel() async {
+        releaseInput()
     }
 }
 
@@ -84,11 +126,13 @@ private actor SuspendedWritePCMStream: PCM16RealtimeTranscriptionSession {
     func start() async {
         if !startReleased { await withCheckedContinuation { startWaiter = $0 } }
     }
+
     func releaseStart() {
         startReleased = true
         startWaiter?.resume()
         startWaiter = nil
     }
+
     func appendPCM16(_ data: Data) async {
         values.append(data.withUnsafeBytes { $0.loadUnaligned(as: Int16.self) })
         if values.count == 1 {
@@ -97,17 +141,21 @@ private actor SuspendedWritePCMStream: PCM16RealtimeTranscriptionSession {
             await withCheckedContinuation { writeWaiter = $0 }
         }
     }
+
     func waitForFirstWrite() async {
         if values.isEmpty { await withCheckedContinuation { firstWriteWaiter = $0 } }
     }
+
     func releaseWrite() {
         writeWaiter?.resume()
         writeWaiter = nil
     }
+
     func finish() async throws -> String {
         didFinish = true
         return "done"
     }
+
     func cancel() async {
         releaseStart()
         releaseWrite()

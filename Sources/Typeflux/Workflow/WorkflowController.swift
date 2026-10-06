@@ -1210,10 +1210,13 @@ final class WorkflowController {
             }
             if usesLivePreview || realtimeAudioBufferPump != nil {
                 recordingAudioBufferRelay?.activate { buffer in
+                    // Snapshot on the recording callback before the task can race
+                    // the recorder's metering/readiness reads of the original buffer.
+                    let previewBuffer = usesLivePreview ? AudioPCMBufferSnapshot.copy(buffer) : nil
                     realtimeAudioBufferPump?.append(buffer)
-                    Task {
-                        if usesLivePreview {
-                            await livePreviewer?.append(buffer)
+                    if let previewBuffer {
+                        Task {
+                            await livePreviewer?.append(previewBuffer)
                         }
                     }
                 }

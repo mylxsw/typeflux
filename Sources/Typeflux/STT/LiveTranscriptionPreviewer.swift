@@ -113,7 +113,7 @@ actor LiveTranscriptionPreviewer: LiveTranscriptionPreviewing {
     func append(_ buffer: AVAudioPCMBuffer) async {
         switch state {
         case .starting:
-            if let copy = clone(buffer: buffer) {
+            if let copy = AudioPCMBufferSnapshot.copy(buffer) {
                 pendingBuffers.append(copy)
             }
             return
@@ -145,32 +145,6 @@ actor LiveTranscriptionPreviewer: LiveTranscriptionPreviewing {
         for buffer in buffers {
             await append(buffer)
         }
-    }
-
-    private func clone(buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
-        guard let copy = AVAudioPCMBuffer(pcmFormat: buffer.format, frameCapacity: buffer.frameCapacity) else {
-            return nil
-        }
-
-        copy.frameLength = buffer.frameLength
-
-        if let source = buffer.floatChannelData, let destination = copy.floatChannelData {
-            let frameCount = Int(buffer.frameLength)
-            for channel in 0 ..< Int(buffer.format.channelCount) {
-                destination[channel].update(from: source[channel], count: frameCount)
-            }
-            return copy
-        }
-
-        if let source = buffer.int16ChannelData, let destination = copy.int16ChannelData {
-            let frameCount = Int(buffer.frameLength)
-            for channel in 0 ..< Int(buffer.format.channelCount) {
-                destination[channel].update(from: source[channel], count: frameCount)
-            }
-            return copy
-        }
-
-        return nil
     }
 
     private func stopBackend(clearPendingBuffers: Bool) async {

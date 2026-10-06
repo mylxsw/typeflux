@@ -90,7 +90,8 @@ final class RealtimeAudioBufferPump {
     }
 
     func append(_ buffer: AVAudioPCMBuffer) {
-        continuation.yield(buffer)
+        guard let snapshot = AudioPCMBufferSnapshot.copy(buffer) else { return }
+        continuation.yield(snapshot)
     }
 
     func finishInput() async {
