@@ -86,16 +86,26 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
 
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
              progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
-        if let blocked = plan.values["blocked"] { throw AskPluginFailure(message: blocked, retry: false) }
-        guard let manifest else { throw AskPluginFailure(message: L("ask.workflow.invalid"), retry: false) }
+        if let blocked = plan.values["blocked"] {
+            throw AskPluginFailure(message: blocked, retry: false, actions: editActions())
+        }
+        guard let manifest else {
+            throw AskPluginFailure(message: L("ask.workflow.invalid"), retry: false, actions: editActions())
+        }
         // Trust was checked when the launcher opened; the files may have changed since.
         guard AskWorkflow.contentHash(of: workflow.folder) == workflow.hash else {
-            throw AskPluginFailure(message: L("ask.workflow.blocked.modified"), retry: false)
+            throw AskPluginFailure(message: L("ask.workflow.blocked.modified"), retry: false, actions: editActions())
         }
         let input = input(for: request)
         let source = await source()
         let path = await searchPath()
-        let invocation = try invocation(for: request, input: input, manifest: manifest, source: source, path: path)
+        let invocation: AskWorkflowInvocation
+        do {
+            invocation = try self.invocation(for: request, input: input, manifest: manifest, source: source, path: path)
+        } catch var failure as AskPluginFailure {
+            failure.actions = editActions()
+            throw failure
+        }
         var result: AskWorkflowRunResult?
         do {
             for try await event in runner.run(invocation) {
@@ -109,7 +119,8 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
                 }
             }
         } catch let AskWorkflowRunError.spawnFailed(code) {
-            throw AskPluginFailure(message: L("ask.workflow.spawnFailed", String(cString: strerror(code))))
+            throw AskPluginFailure(message: L("ask.workflow.spawnFailed", String(cString: strerror(code))),
+                                   actions: editActions())
         }
         try Task.checkCancellation()
         guard let result else { throw CancellationError() }
@@ -122,13 +133,16 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
     private func finish(_ result: AskWorkflowRunResult, request: AskPluginRequest, plan: AskPluginPlan, input: Input,
                         manifest: AskWorkflowManifest) throws -> AskPluginOutput {
         if result.timedOut {
-            throw AskPluginFailure(message: L("ask.workflow.timedOut", Int(manifest.timeout)) + Self.tail(result.stderr))
+            let reason = L("ask.workflow.timedOut", Int(manifest.timeout))
+            throw AskPluginFailure(message: reason + Self.tail(result.stderr),
+                                   actions: editActions(query: input.query, stderr: result.stderr, reason: reason))
         }
         let text = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
         // A run cut off for printing too much still shows what it printed.
         if result.exitCode != 0, !result.truncated {
             let reason = Self.errorMessage(in: result.stdout) ?? L("ask.workflow.failed", Int(result.exitCode))
-            throw AskPluginFailure(message: reason + Self.tail(result.stderr))
+            throw AskPluginFailure(message: reason + Self.tail(result.stderr),
+                                   actions: editActions(query: input.query, stderr: result.stderr, reason: reason))
         }
         if manifest.output == .none || text.isEmpty {
             var done = output("", request: request, plan: plan, input: input, duration: result.duration)
@@ -157,8 +171,23 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
                             shortcut: .commandR),
             AskPluginAction(kind: .askAI(L("ask.workflow.askAI", title, original, text)),
                             title: L("ask.quick.askAI"), symbol: "bubble.left", shortcut: nil)
-        ]
+        ] + editActions().prefix(1)
         return AskPluginOutput(body: text, original: original, meta: [], source: source, actions: actions)
+    }
+
+    /// ⌘E opens the workflow in the editor, at the line stderr points to; after a
+    /// failed run the assistant can also be asked to fix it.
+    func editActions(query: String? = nil, stderr: String = "", reason: String = "") -> [AskPluginAction] {
+        let files = Set([manifest?.command.script].compactMap { $0 })
+        let location = AskWorkflowStderrLocator.locate(stderr, folder: workflow.folder, files: files)
+        var actions = [AskPluginAction(kind: .editWorkflow(id: workflow.id, path: location?.path, line: location?.line),
+                                       title: L("ask.workflow.action.edit"), symbol: "pencil", shortcut: .commandE)]
+        if let query {
+            let error = (reason + Self.tail(stderr, lines: 20)).trimmingCharacters(in: .whitespacesAndNewlines)
+            actions.append(AskPluginAction(kind: .fixWorkflow(id: workflow.id, query: query, error: error),
+                                           title: L("ask.workflow.action.fix"), symbol: "sparkles", shortcut: nil))
+        }
+        return actions
     }
 
     /// The last lines a failed script wrote to stderr, to show under the reason.

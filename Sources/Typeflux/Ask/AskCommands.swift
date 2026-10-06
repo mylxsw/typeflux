@@ -371,6 +371,8 @@ enum AskCommandKey: Equatable {
     /// ⇧Tab steps an option back, ⌘R runs again, ⌘D compares with the original,
     /// ⌘C copies (the editor only offers it when it has nothing selected), ⇧⌘C copies all of a word card.
     case optionEnter, shiftTab, commandR, commandD, commandC, shiftCommandC
+    /// ⌘E: edit the workflow that produced the result.
+    case commandE
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
@@ -380,6 +382,7 @@ enum AskCommandKey: Equatable {
         if modifiers == .shift, event.keyCode == 48 { self = .shiftTab; return }
         if modifiers == .command, event.keyCode == 15 { self = .commandR; return }
         if modifiers == .command, event.keyCode == 2 { self = .commandD; return }
+        if modifiers == .command, event.keyCode == 14 { self = .commandE; return }
         if modifiers == .command, event.keyCode == 8 { self = .commandC; return }
         if modifiers == [.command, .shift], event.keyCode == 8 { self = .shiftCommandC; return }
         guard modifiers.isEmpty else { return nil }

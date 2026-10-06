@@ -121,7 +121,8 @@ struct AskPluginResultsView: View {
             if output.note != nil { height += 6 + noteHeight }
             height += 10 + actionsHeight
         } else if let failure {
-            height += textHeight(failure.message, font: .systemFont(ofSize: 13.5)) + (failure.retry ? 10 + actionsHeight : 0)
+            height += textHeight(failure.message, font: .systemFont(ofSize: 13.5))
+                + (failure.retry || !failure.actions.isEmpty ? 10 + actionsHeight : 0)
         } else {
             height += skeletonHeight
         }
@@ -356,12 +357,19 @@ struct AskPluginResultsView: View {
             } else if let failure {
                 Text(failure.message).font(.system(size: 13.5)).foregroundStyle(StudioTheme.danger)
                     .fixedSize(horizontal: false, vertical: true)
-                if failure.retry {
-                    HStack {
+                if failure.retry || !failure.actions.isEmpty {
+                    HStack(spacing: 6) {
                         Spacer()
-                        actionButton(title: L("ask.plugin.action.retry"), symbol: "arrow.clockwise", key: "↩",
-                                     primary: true, action: onMain)
+                        ForEach(Array(failure.actions.enumerated()), id: \.offset) { _, action in
+                            actionButton(title: action.title, symbol: action.symbol, key: Self.key(action.shortcut),
+                                         primary: false) { onAction(action) }
+                        }
+                        if failure.retry {
+                            actionButton(title: L("ask.plugin.action.retry"), symbol: "arrow.clockwise", key: "↩",
+                                         primary: true, action: onMain)
+                        }
                     }
+                    .frame(height: Self.actionsHeight)
                     .padding(.top, 10)
                 }
             } else {
@@ -387,7 +395,13 @@ struct AskPluginResultsView: View {
     private func actions(_ actions: [AskPluginAction], enabled: Bool) -> some View {
         HStack(spacing: 6) {
             Spacer(minLength: 0)
-            ForEach(Array(actions.filter { if case .askAI = $0.kind { false } else { true } }.enumerated()),
+            // ⌘E (edit the workflow) works from the keyboard without taking room in the row.
+            ForEach(Array(actions.filter {
+                switch $0.kind {
+                case .askAI, .editWorkflow: false
+                default: true
+                }
+            }.enumerated()),
                     id: \.offset) { _, action in
                 actionButton(title: action.title, symbol: action.symbol, key: Self.key(action.shortcut),
                              primary: action.shortcut == .enter) { onAction(action) }
@@ -414,6 +428,7 @@ struct AskPluginResultsView: View {
         case .commandD: "⌘D"
         case .commandC: "⌘C"
         case .shiftCommandC: "⇧⌘C"
+        case .commandE: "⌘E"
         case nil: nil
         }
     }

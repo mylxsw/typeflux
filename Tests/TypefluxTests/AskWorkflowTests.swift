@@ -447,8 +447,16 @@ struct AskWorkflowPluginTests {
         return plugin
     }
 
+    /// Runs a request; failures are compared without the editor actions they carry
+    /// (those are covered in `AskWorkflowLauncherActionTests`).
     private func run(_ plugin: AskWorkflowPlugin, _ request: AskPluginRequest) async throws -> AskPluginOutput {
-        try await plugin.run(request, plan: await plugin.plan(request))
+        do {
+            return try await plugin.run(request, plan: await plugin.plan(request))
+        } catch var failure as AskPluginFailure {
+            #expect(failure.action(for: .commandE) != nil)
+            failure.actions = []
+            throw failure
+        }
     }
 
     @Test func textOutputBecomesACardWithTheSharedActions() async throws {

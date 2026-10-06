@@ -32,6 +32,14 @@ final class AskConversationModel: ObservableObject {
     }
     /// Opens links, such as a launcher web search; tests record them instead.
     var openURL: (URL) -> Void = { url in NSWorkspace.shared.open(url) }
+    /// Opens a workflow in the workflow editor; tests record it instead.
+    var editWorkflow: @MainActor (String, String?, Int?) -> Void = { id, path, line in
+        AskWorkflowEditorWindowController.shared.show(workflowID: id, path: path, line: line)
+    }
+    /// Opens the workflow editor and asks its assistant to fix a failed run.
+    var fixWorkflow: @MainActor (String, String, String) -> Void = { id, query, error in
+        AskWorkflowEditorWindowController.shared.fix(workflowID: id, query: query, error: error)
+    }
     /// AI translation with the text-processing model; the window controller supplies it.
     var translationAI: (any AskTranslationEngine)?
     /// AI prompts (`rw`, `sum`) with the text-processing model; the window controller supplies it.

@@ -124,6 +124,14 @@ extension AskConversationModel {
             finishPluginResult()
             openURL(url)
             return .close
+        case let .editWorkflow(id, path, line):
+            finishPluginResult()
+            editWorkflow(id, path, line)
+            return .close
+        case let .fixWorkflow(id, query, error):
+            finishPluginResult()
+            fixWorkflow(id, query, error)
+            return .close
         }
     }
 

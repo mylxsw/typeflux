@@ -247,7 +247,7 @@ struct AskComposer: View {
         case .tab:
             guard let value = results.value(of: .calculation), !results.stale else { return false }
             draft.wrappedValue.text = value
-        case .escape, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC:
+        case .escape, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE:
             return false
         }
         return true
@@ -365,6 +365,15 @@ struct AskComposer: View {
             guard let action = plugins.output?.action(for: shortcut) else { return key != .shiftCommandC }
             // ⇧⌘C copies and stays, like ⌘C.
             if shortcut == .shiftCommandC, case let .copy(text) = action.kind { model.copyPluginText(text) } else { performPluginAction(action) }
+        case .commandE:
+            let offered: AskPluginAction?
+            switch plugins.phase {
+            case let .done(_, output): offered = output.action(for: .commandE)
+            case let .failed(_, failure): offered = failure.action(for: .commandE)
+            default: offered = nil
+            }
+            guard let offered else { return false }
+            performPluginAction(offered)
         case .commandC:
             // With nothing selected in the editor, ⌘C copies the result (or a search's link) and stays.
             let offered: AskPluginAction?
@@ -702,7 +711,7 @@ struct AskComposer: View {
         case .escape:
             dismissedSlash = slash?.range.location
             closePalette()
-        case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC:
+        case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }
