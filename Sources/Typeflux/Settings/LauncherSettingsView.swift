@@ -17,9 +17,7 @@ struct LauncherSettingsView: View {
                 basicsPane
             case .keywords:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title, subtitle: L("ask.settings.plugins.footnote"))
-                ModelSurface {
-                    AskLauncherPluginSettingsView(settings: settings)
-                }
+                AskLauncherPluginSettingsView(settings: settings, workflows: workflows)
             case .workflows:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title, subtitle: L("ask.workflow.footnote"))
                 ModelSurface {

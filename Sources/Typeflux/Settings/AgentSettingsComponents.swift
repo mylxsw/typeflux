@@ -235,6 +235,7 @@ struct AgentFlowLayout: Layout {
 struct AgentSearchBox: View {
     let placeholder: String
     @Binding var text: String
+    var width: CGFloat = 240
 
     var body: some View {
         HStack(spacing: 6) {
@@ -248,7 +249,7 @@ struct AgentSearchBox: View {
                 .accessibilityLabel(L("common.clear"))
             }
         }
-        .padding(.horizontal, 10).frame(width: 240, height: 30)
+        .padding(.horizontal, 10).frame(width: width, height: 30)
         .background(ModelVisualStyle.control,
                     in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)

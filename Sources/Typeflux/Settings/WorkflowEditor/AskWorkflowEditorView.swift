@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import AppKit
 import SwiftUI
 
@@ -12,40 +13,49 @@ struct AskWorkflowEditorView: View {
     @State private var confirmingDelete = false
     @State private var panel: Panel
     @State private var showsPanel = true
+    @State private var editingInfo = false
 
     enum Panel: String { case assistant, test }
 
-    init(model: AskWorkflowEditorModel, store: AskWorkflowStore, panel: Panel = .assistant) {
+    /// Opens the script step's run settings, for snapshots.
+    private let showsRunSettings: Bool
+
+    init(model: AskWorkflowEditorModel, store: AskWorkflowStore, panel: Panel = .assistant,
+         showsRunSettings: Bool = false) {
         self.model = model
         self.store = store
+        self.showsRunSettings = showsRunSettings
         _panel = State(initialValue: panel)
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            toolbar
-            Divider()
-            banners
-            HStack(spacing: 0) {
-                AskWorkflowEditorSidebar(model: model, store: store, create: { creating = $0 })
-                    .frame(width: 214)
-                Divider()
-                Group {
-                    if model.draft != nil {
-                        AskWorkflowEditorCenter(model: model)
-                    } else {
-                        empty
+        HStack(spacing: 0) {
+            AskWorkflowEditorSidebar(model: model, store: store, create: { creating = $0 })
+                .frame(width: 220)
+            Rectangle().fill(ModelVisualStyle.border).frame(width: 1)
+            VStack(spacing: 0) {
+                header
+                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                banners
+                HStack(spacing: 0) {
+                    Group {
+                        if model.draft != nil {
+                            AskWorkflowEditorCenter(model: model, showsRunSettings: showsRunSettings)
+                        } else {
+                            empty
+                        }
                     }
-                }
-                .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
-                if showsPanel, model.draft != nil {
-                    Divider()
-                    rightPanel.frame(width: 360)
+                    .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
+                    if showsPanel, model.draft != nil {
+                        Rectangle().fill(ModelVisualStyle.divider).frame(width: 1)
+                        rightPanel.frame(width: 340)
+                    }
                 }
             }
         }
         .frame(minWidth: 960, minHeight: 560)
         .background(StudioTheme.windowBackground)
+        .ignoresSafeArea(.container, edges: .top)
         .sheet(item: $creating) { mode in
             AskWorkflowNewSheet(model: model, mode: mode) { creating = nil }
         }
@@ -73,21 +83,40 @@ struct AskWorkflowEditorView: View {
         }
     }
 
-    // MARK: - Toolbar
+    // MARK: - Header
 
-    private var toolbar: some View {
+    /// One row with the window's title bar: the workflow, its state, then Save,
+    /// Run test (the one primary button), the switch and the menus.
+    private var header: some View {
         HStack(spacing: 10) {
             if let draft = model.draft {
                 Image(systemName: model.workflow?.symbol ?? "sparkles")
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
+                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
                     .background(AskWorkflowEditorStyle.tileColor(for: model.workflowID ?? "new"),
                                 in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(draft.manifest?.name ?? model.workflowID ?? L("ask.workflow.editor.newTitle"))
-                        .font(.system(size: 13.5, weight: .semibold)).lineLimit(1)
-                    Text([draft.manifest?.id, draft.manifest?.version].compactMap(\.self).joined(separator: " · "))
-                        .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                Button { editingInfo = true } label: {
+                    VStack(alignment: .leading, spacing: 1) {
+                        HStack(spacing: 5) {
+                            Text(draft.manifest?.name ?? model.workflowID ?? L("ask.workflow.editor.newTitle"))
+                                .font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                                .lineLimit(1)
+                            Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(StudioTheme.textTertiary)
+                        }
+                        Text([draft.manifest?.id, draft.manifest?.version].compactMap(\.self).joined(separator: " · "))
+                            .font(.system(size: 11, design: .monospaced)).foregroundStyle(StudioTheme.textTertiary)
+                            .lineLimit(1)
+                    }
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(draft.isFormEditable != true)
+                .help(L("ask.workflow.editor.info.help"))
+                .accessibilityIdentifier("ask.workflow.editor.info")
+                .popover(isPresented: $editingInfo, arrowEdge: .bottom) {
+                    AskWorkflowInfoForm(model: model) { editingInfo = false }
                 }
                 statusBadge
                 Spacer()
@@ -96,64 +125,90 @@ struct AskWorkflowEditorView: View {
                         Circle().fill(Color.orange).frame(width: 7, height: 7)
                         Text(L("ask.workflow.editor.unsaved"))
                     }
-                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
                     .help(model.unsavedLabel ?? "")
                 }
                 if model.generation != nil {
                     // A generated workflow is saved into the launcher in one step.
                     Button(L("ask.workflow.editor.new.save")) { model.saveGenerated() }
-                        .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
+                        .buttonStyle(AskWorkflowActionStyle(kind: .assistant))
                         .keyboardShortcut("s", modifiers: .command)
                         .disabled(model.assistant.isBusy || !model.canSaveGenerated)
                         .accessibilityIdentifier("ask.workflow.editor.saveGenerated")
                 } else {
-                    Button(L("ask.workflow.editor.save")) { model.save() }
-                        .keyboardShortcut("s", modifiers: .command)
-                        .help(L("ask.workflow.editor.save") + " ⌘S")
-                        .accessibilityIdentifier("ask.workflow.editor.save")
+                    Button { model.save() } label: {
+                        HStack(spacing: 6) {
+                            Text(L("ask.workflow.editor.save"))
+                            AskWorkflowShortcutHint(text: "⌘S")
+                        }
+                    }
+                    .buttonStyle(AskWorkflowActionStyle())
+                    .keyboardShortcut("s", modifiers: .command)
+                    .help(L("ask.workflow.editor.save") + " ⌘S")
+                    .accessibilityIdentifier("ask.workflow.editor.save")
                     Button {
                         panel = .test
                         showsPanel = true
                         model.runTest()
                     } label: {
-                        Label(L("ask.workflow.editor.test.runShort"), systemImage: "play.fill")
+                        HStack(spacing: 6) {
+                            Image(systemName: "play.fill").font(.system(size: 10))
+                            Text(L("ask.workflow.editor.test.runButton"))
+                            AskWorkflowShortcutHint(text: "⌘R")
+                        }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(AskWorkflowActionStyle(kind: .primary))
                     .keyboardShortcut("r", modifiers: .command)
                     .help(L("ask.workflow.editor.test.run") + " ⌘R")
                     .disabled(model.isTesting || !model.problems.isEmpty)
                 }
-                Menu {
-                    Button(L("ask.workflow.editor.togglePanel")) { showsPanel.toggle() }
-                        .keyboardShortcut("t", modifiers: [.command, .option])
-                    Toggle(L("ask.workflow.assistant.autoTestMenu"), isOn: $model.autoTest)
-                    Divider()
-                    if let folder = model.folder {
-                        Button(L("ask.workflow.reveal")) { NSWorkspace.shared.activateFileViewerSelecting([folder]) }
-                    }
-                    if model.workflow != nil {
-                        Button(L("ask.workflow.editor.openExternal")) { openExternally() }
-                        Button(L("ask.workflow.editor.duplicate")) { creating = .duplicate }
-                        Divider()
-                        Button(L("ask.workflow.delete"), role: .destructive) { confirmingDelete = true }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                }
-                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-                .accessibilityLabel(L("ask.workflow.more"))
                 if let id = model.workflowID, model.generation == nil {
-                    Toggle("", isOn: Binding(get: { store.isEnabled(id) }, set: { store.setEnabled(id, $0) }))
-                        .labelsHidden().toggleStyle(.switch).controlSize(.small)
-                        .accessibilityLabel(L("ask.settings.keywords.enabled"))
+                    Rectangle().fill(ModelVisualStyle.border).frame(width: 1, height: 18).padding(.horizontal, 2)
+                    Toggle(isOn: Binding(get: { store.isEnabled(id) }, set: { store.setEnabled(id, $0) })) {
+                        Text(L("ask.settings.keywords.enabled")).font(.system(size: 12))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                    }
+                    .toggleStyle(.switch).controlSize(.small)
+                    .accessibilityLabel(L("ask.settings.keywords.enabled"))
                 }
+                moreMenu
+                Button { showsPanel.toggle() } label: {
+                    Image(systemName: "sidebar.right").font(.system(size: 14))
+                        .foregroundStyle(showsPanel ? StudioTheme.textPrimary : StudioTheme.textTertiary)
+                        .frame(width: 28, height: 28).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut("t", modifiers: [.command, .option])
+                .help(L("ask.workflow.editor.togglePanel") + " ⌥⌘T")
             } else {
-                Text(L("ask.workflow.editor.title")).font(.system(size: 13.5, weight: .semibold))
+                Text(L("ask.workflow.editor.title")).font(.system(size: 14, weight: .semibold))
                 Spacer()
             }
         }
-        .padding(.horizontal, 14)
-        .frame(height: 50)
+        .padding(.leading, 18).padding(.trailing, 14)
+        .frame(height: 56)
+    }
+
+    private var moreMenu: some View {
+        Menu {
+            Toggle(L("ask.workflow.assistant.autoTestMenu"), isOn: $model.autoTest)
+            Divider()
+            if let folder = model.folder {
+                Button(L("ask.workflow.reveal")) { NSWorkspace.shared.activateFileViewerSelecting([folder]) }
+            }
+            if model.workflow != nil {
+                Button(L("ask.workflow.editor.openExternal")) { openExternally() }
+                Button(L("ask.workflow.editor.duplicate")) { creating = .duplicate }
+                Divider()
+                Button(L("ask.workflow.delete"), role: .destructive) { confirmingDelete = true }
+            }
+        } label: {
+            Image(systemName: "ellipsis").font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(StudioTheme.textSecondary)
+        }
+        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+        .frame(width: 28, height: 28)
+        .accessibilityLabel(L("ask.workflow.more"))
     }
 
     @ViewBuilder private var statusBadge: some View {
@@ -163,7 +218,9 @@ struct AskWorkflowEditorView: View {
             AskWorkflowBadge(text: L("ask.workflow.editor.status.problems", model.problems.count), color: .red)
         } else if let workflow = model.workflow {
             switch workflow.status {
-            case .ready: EmptyView()
+            case .ready:
+                AskWorkflowBadge(text: L("ask.workflow.editor.status.ready"), color: StudioTheme.success,
+                                 symbol: "checkmark.shield")
             case .untrusted, .modified: AskWorkflowBadge(text: L("ask.workflow.status.modified"), color: .orange)
             case .disabled: AskWorkflowBadge(text: L("ask.workflow.status.disabled"), color: .gray)
             case .invalid: AskWorkflowBadge(text: L("ask.workflow.status.invalid"), color: .red)
@@ -190,14 +247,14 @@ extension AskWorkflowEditorView {
                 Button(L("ask.workflow.editor.outside.keepMine")) { model.keepMine() }
                 Button(L("ask.workflow.editor.outside.loadTheirs")) { model.loadTheirs() }
                 Button(L("ask.workflow.editor.outside.diffTrust")) { model.showingDiff = true }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(AskWorkflowActionStyle(kind: .primary, small: true))
             }
         } else if model.needsTrust, let workflow = model.workflow {
             banner(symbol: "lock.shield", tint: StudioTheme.warning) {
                 Text(L("ask.workflow.editor.needsTrust"))
             } actions: {
                 Button(L("ask.workflow.review")) { reviewing = workflow }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(AskWorkflowActionStyle(kind: .primary, small: true))
                     .accessibilityIdentifier("ask.workflow.editor.review")
             }
         }
@@ -208,7 +265,7 @@ extension AskWorkflowEditorView {
             } actions: {
                 Button(L("ask.workflow.assistant.discard")) { model.discard(id) }
                 Button(L("ask.workflow.editor.applyToEditor")) { model.apply(id) }
-                    .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
+                    .buttonStyle(AskWorkflowActionStyle(kind: .assistant, small: true))
             }
         }
     }
@@ -229,7 +286,7 @@ extension AskWorkflowEditorView {
                 Image(systemName: symbol).foregroundStyle(tint)
                 text().font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
                 Spacer()
-                actions()
+                HStack(spacing: 6) { actions() }.buttonStyle(AskWorkflowActionStyle(small: true))
             }
             .padding(.horizontal, 14).padding(.vertical, 7)
             .background(tint.opacity(0.10))
@@ -241,23 +298,19 @@ extension AskWorkflowEditorView {
 
     private var rightPanel: some View {
         VStack(spacing: 0) {
-            HStack {
-                AskWorkflowTabs(items: [
-                    .init(tab: Panel.assistant, title: L("ask.workflow.assistant.title"), symbol: "sparkles",
-                          tint: AskWorkflowEditorStyle.assistant),
-                    .init(tab: Panel.test, title: L("ask.workflow.editor.test.title"),
-                          badge: model.results.last.map { $0.succeeded ? nil : "●" } ?? nil)
-                ], selection: $panel, size: 12.5)
-                Spacer()
-            }
-            .padding(.horizontal, 10).padding(.top, 10)
-            Divider()
+            AskWorkflowTabs(items: [
+                .init(tab: Panel.assistant, title: L("ask.workflow.assistant.title"), symbol: "sparkles",
+                      tint: AskWorkflowEditorStyle.assistant),
+                .init(tab: Panel.test, title: L("ask.workflow.editor.test.title"), symbol: "play.fill",
+                      badge: model.results.last.map { $0.succeeded ? nil : "●" } ?? nil)
+            ], selection: $panel, size: 12.5, fills: true)
+                .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 10)
             switch panel {
             case .assistant: AskWorkflowAssistantPanel(model: model, assistant: model.assistant)
             case .test: AskWorkflowTestPanel(model: model) { panel = .assistant; model.fixWithAssistant() }
             }
         }
-        .background(StudioTheme.surface)
+        .background(StudioTheme.windowBackground)
     }
 
     private var empty: some View {
@@ -268,8 +321,9 @@ extension AskWorkflowEditorView {
                 Button { creating = .assistant } label: {
                     Label(L("ask.workflow.editor.new.ai"), systemImage: "sparkles")
                 }
-                .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
+                .buttonStyle(AskWorkflowActionStyle(kind: .assistant))
                 Button(L("ask.workflow.editor.new.template")) { creating = .template }
+                    .buttonStyle(AskWorkflowActionStyle())
             }
         }
     }
@@ -303,18 +357,21 @@ struct AskWorkflowEditorSidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            // The window's traffic lights sit here: there is no separate title bar.
+            Color.clear.frame(height: 44)
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass").foregroundStyle(StudioTheme.textTertiary)
                 TextField(L("ask.workflow.editor.search"), text: $model.search).textFieldStyle(.plain)
             }
-            .font(.system(size: 12)).padding(.horizontal, 8).frame(height: 26)
-            .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 7))
-            .padding(10)
+            .font(.system(size: 12.5)).padding(.horizontal, 9).frame(height: 28)
+            .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            .padding(.horizontal, 12).padding(.bottom, 8)
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L("ask.workflow.editor.list", store.workflows.count))
-                        .font(.system(size: 10.5, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
-                        .padding(.horizontal, 14).padding(.vertical, 4)
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
+                        .padding(.horizontal, 18).padding(.top, 6).padding(.bottom, 4)
                     if model.generation != nil {
                         row(Row(id: "new", title: model.draft?.manifest?.name ?? L("ask.workflow.editor.newTitle"),
                                 subtitle: L("ask.workflow.editor.status.generating"), symbol: "sparkles",
@@ -335,8 +392,8 @@ struct AskWorkflowEditorSidebar: View {
                     }
                 }
             }
-            Divider()
-            HStack(spacing: 8) {
+            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+            HStack(spacing: 6) {
                 Menu {
                     Button { create(.assistant) } label: {
                         Label(L("ask.workflow.editor.new.ai"), systemImage: "sparkles")
@@ -346,15 +403,25 @@ struct AskWorkflowEditorSidebar: View {
                         Button(L("ask.workflow.editor.duplicate")) { create(.duplicate) }
                     }
                 } label: {
-                    Label(L("ask.workflow.editor.new"), systemImage: "plus")
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus").font(.system(size: 11, weight: .semibold))
+                        Text(L("ask.workflow.editor.newWorkflow")).font(.system(size: 12.5, weight: .medium))
+                    }
+                    .foregroundStyle(StudioTheme.textPrimary)
                 }
-                .menuStyle(.borderedButton).fixedSize()
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .frame(maxWidth: .infinity).frame(height: 28)
+                .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(ModelVisualStyle.border))
+                .contentShape(Rectangle())
                 .accessibilityIdentifier("ask.workflow.editor.new")
-                Spacer()
-                Button { store.revealRoot() } label: { Image(systemName: "folder") }
-                    .buttonStyle(.borderless).help(L("ask.workflow.revealFolder"))
+                Button { store.revealRoot() } label: {
+                    Image(systemName: "folder").font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+                        .frame(width: 28, height: 28).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).help(L("ask.workflow.revealFolder"))
             }
-            .font(.system(size: 12)).padding(10)
+            .padding(12)
         }
         .background(StudioTheme.surfaceMuted)
         .confirmationDialog(L("ask.workflow.editor.unsavedTitle"), isPresented: switchingBinding) {
@@ -392,27 +459,29 @@ struct AskWorkflowEditorSidebar: View {
 
     private func row(_ row: Row, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 9) {
-                Image(systemName: row.symbol).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
-                    .frame(width: 22, height: 22)
+            HStack(spacing: 10) {
+                Image(systemName: row.symbol).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                    .frame(width: 26, height: 26)
                     .background(AskWorkflowEditorStyle.tileColor(for: row.id),
-                                in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(row.title).font(.system(size: 12.5)).lineLimit(1)
+                                in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(row.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
+                        .lineLimit(1)
                     if !row.subtitle.isEmpty {
-                        Text(row.subtitle).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
-                            .lineLimit(1)
+                        Text(row.subtitle).font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
                     }
                 }
                 Spacer()
                 Circle().fill(row.dot).frame(width: 7, height: 7)
             }
-            .padding(.horizontal, 8).padding(.vertical, 6)
-            .background(row.selected ? StudioTheme.accentSoft : .clear, in: RoundedRectangle(cornerRadius: 8))
+            .padding(.horizontal, 10).padding(.vertical, 7)
+            .background(row.selected ? StudioTheme.accentSoft : .clear,
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 8)
     }
 
     static func color(_ status: AskWorkflow.Status) -> Color {

@@ -433,7 +433,13 @@ struct StudioView: View {
     @State private var isSubmittingFeedback = false
     @State private var feedbackSubmissionError: String?
     @State private var agentPane: AgentSettingsPane = .overview
-    @State private var launcherPane: LauncherSettingsPane = .basics
+    @State private var launcherPane: LauncherSettingsPane
+
+    /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
+    init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics) {
+        self.viewModel = viewModel
+        _launcherPane = State(initialValue: launcherPane)
+    }
     @State private var agentStatuses: [AgentCapabilityStatus] = []
     @State private var isMCPImportPresented = false
     @State private var mcpImportText = ""

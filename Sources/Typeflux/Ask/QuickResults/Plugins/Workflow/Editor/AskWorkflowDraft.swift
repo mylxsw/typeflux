@@ -228,8 +228,10 @@ struct AskWorkflowDraft: Equatable, Sendable {
         switch root {
         case "keywords": return .keywords
         case "input": return .input
-        case "command": return .script
-        case "output", "run", "env": return .output
+        // Run settings (timeout, environment) are edited with the script; when it runs is an output choice.
+        case "command", "env": return .script
+        case "run": return field.hasPrefix("run.mode") ? .output : .script
+        case "output": return .output
         default: return nil
         }
     }

@@ -85,9 +85,12 @@ final class AskWorkflowEditorWindowController: NSObject, NSWindowDelegate {
         }
         let view = AskWorkflowEditorView(model: model, store: model.store)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1220, height: 720),
-                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
         window.title = L("ask.workflow.editor.title")
+        // The header row is the title bar: the traffic lights sit over the sidebar.
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
         window.contentView = NSHostingView(rootView: view)
         window.minSize = NSSize(width: 960, height: 560)
         window.setFrameAutosaveName("AskWorkflowEditor")

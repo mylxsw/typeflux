@@ -95,7 +95,8 @@ struct AskWorkflowDraftTests {
         #expect(AskWorkflowDraft.step(for: "command.script") == .script)
         #expect(AskWorkflowDraft.step(for: "run.mode") == .output)
         #expect(AskWorkflowDraft.step(for: "output") == .output)
-        #expect(AskWorkflowDraft.step(for: "env") == .output)
+        #expect(AskWorkflowDraft.step(for: "run.timeoutSeconds") == .script)
+        #expect(AskWorkflowDraft.step(for: "env") == .script)
         #expect(AskWorkflowDraft.step(for: "id") == nil)
     }
 

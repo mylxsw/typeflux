@@ -5,15 +5,21 @@ import SwiftUI
 struct AskKeywordList: Equatable {
     var keywords: [AskKeyword]
 
-    func keywords(for pluginID: String) -> [AskKeyword] { keywords.filter { $0.pluginID == pluginID } }
+    func keywords(for pluginID: String) -> [AskKeyword] {
+        keywords.filter { $0.pluginID == pluginID }
+    }
 
     /// Renames `keyword`, or says why it cannot be: empty, a space, taken…
     mutating func rename(_ keyword: AskKeyword, to text: String) -> AskKeywordMatcher.Problem? {
         let word = text.trimmingCharacters(in: .whitespaces)
         guard let index = keywords.firstIndex(of: keyword) else { return nil }
-        if word.lowercased() == keyword.keyword.lowercased() { return nil }
+        if word.lowercased() == keyword.keyword.lowercased() {
+            return nil
+        }
         let others = keywords.enumerated().filter { $0.offset != index }.map(\.element)
-        if let problem = AskKeywordMatcher.problem(with: word, among: others) { return problem }
+        if let problem = AskKeywordMatcher.problem(with: word, among: others) {
+            return problem
+        }
         keywords[index].keyword = word
         return nil
     }
@@ -23,13 +29,17 @@ struct AskKeywordList: Equatable {
     mutating func add(pluginID: String) -> AskKeyword {
         let base = keywords(for: pluginID).first?.keyword ?? "kw"
         var number = 2
-        while keywords.contains(where: { $0.keyword.lowercased() == "\(base)\(number)" }) { number += 1 }
+        while keywords.contains(where: { $0.keyword.lowercased() == "\(base)\(number)" }) {
+            number += 1
+        }
         let keyword = AskKeyword(keyword: "\(base)\(number)", pluginID: pluginID)
         keywords.append(keyword)
         return keyword
     }
 
-    mutating func remove(_ keyword: AskKeyword) { keywords.removeAll { $0 == keyword } }
+    mutating func remove(_ keyword: AskKeyword) {
+        keywords.removeAll { $0 == keyword }
+    }
 
     mutating func update(_ keyword: AskKeyword, _ change: (inout AskKeyword) -> Void) {
         guard let index = keywords.firstIndex(of: keyword) else { return }
@@ -45,7 +55,9 @@ struct AskKeywordList: Equatable {
     /// Saves a web search URL template, or says why it cannot be used.
     mutating func setURL(_ template: String, on keyword: AskKeyword) -> String? {
         let trimmed = template.trimmingCharacters(in: .whitespaces)
-        if !trimmed.isEmpty, let problem = AskWebSearchPlugin.problem(with: trimmed) { return problem }
+        if !trimmed.isEmpty, let problem = AskWebSearchPlugin.problem(with: trimmed) {
+            return problem
+        }
         set(AskWebSearchPlugin.urlOption, to: trimmed, on: keyword)
         return nil
     }
@@ -61,194 +73,210 @@ struct AskKeywordList: Equatable {
     }
 }
 
-/// Settings → Launcher → Keywords: each plugin's keywords
-/// and what they preset (a target language, a prompt, a search URL), and the
-/// language translations go into.
+/// Settings → Launcher → Keywords: every keyword in one list (keyword, what it
+/// reaches, what it does, on/off), edited one at a time in a sheet. The workflows'
+/// keywords are listed too, read-only, since they share the namespace.
+/// See `docs/design/launcher-keywords-workflow-editor.md` §3.1.
 struct AskLauncherPluginSettingsView: View {
     let settings: SettingsStore
+    @ObservedObject var workflows: AskWorkflowStore
+    /// Opens the workflow editor at a workflow, or its new-workflow sheet for nil.
+    let openWorkflow: @MainActor (String?) -> Void
 
     @State private var list = AskKeywordList(keywords: [])
-    /// Text being edited, by keyword and field, until it is submitted.
-    @State private var drafts: [String: String] = [:]
-    @State private var problems: [String: String] = [:]
     @State private var secondLanguage = "en"
+    @State private var filter: AskKeywordKind?
+    @State private var query: String
+    @State private var editing: AskKeywordSheetItem?
+    @State private var adding = false
+    @State private var confirmingRestore = false
 
-    private var interface: AppLanguage { AppLocalization.shared.language }
+    init(settings: SettingsStore, workflows: AskWorkflowStore, initialFilter: AskKeywordKind? = nil,
+         initialQuery: String = "", openWorkflow: @escaping @MainActor (String?) -> Void = Self.openInEditor) {
+        self.settings = settings
+        self.workflows = workflows
+        self.openWorkflow = openWorkflow
+        _filter = State(initialValue: initialFilter)
+        _query = State(initialValue: initialQuery)
+    }
 
-    // The section around it draws the surface.
+    @MainActor static func openInEditor(_ workflowID: String?) {
+        if let workflowID {
+            AskWorkflowEditorWindowController.shared.show(workflowID: workflowID)
+        } else {
+            AskWorkflowEditorWindowController.shared.showNew(.assistant)
+        }
+    }
+
+    private var interface: AppLanguage {
+        AppLocalization.shared.language
+    }
+
+    private var workflowEntries: [AskWorkflowKeywordEntry] {
+        AskKeywordListPresentation.workflowEntries(workflows.workflows) { workflows.isEnabled($0) }
+    }
+
+    private var rows: [AskKeywordListRow] {
+        AskKeywordListPresentation.rows(keywords: list.keywords, workflows: workflowEntries,
+                                        interface: interface, secondLanguage: secondLanguage)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            pluginHeader(icon: "translate", title: L("ask.plugin.translate.title"),
-                         subtitle: L("ask.settings.plugins.translate.subtitle"))
-            keywords(for: AskTranslatePlugin.id) { translateOptions($0) }
-            AgentSettingsRow(icon: "globe", title: L("ask.settings.plugins.translate.second"),
-                             subtitle: L("ask.settings.plugins.translate.secondSubtitle"), subtitleLineLimit: nil) {
-                Picker("", selection: Binding(get: { secondLanguage }, set: setSecondLanguage)) {
-                    ForEach(AskTranslationLanguages.common, id: \.self) { code in
-                        Text(AskTranslationLanguages.name(code, in: interface)).tag(code)
+        VStack(alignment: .leading, spacing: 10) {
+            toolbar
+            listCard
+            Text(L("ask.settings.keywords.listFootnote"))
+                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 4)
+            ModelSectionLabel(title: L("ask.plugin.translate.title")).padding(.top, 14)
+            ModelSurface {
+                AgentSettingsRow(icon: "globe", title: L("ask.settings.plugins.translate.second"),
+                                 subtitle: L("ask.settings.plugins.translate.secondSubtitle"), subtitleLineLimit: nil) {
+                    Picker("", selection: Binding(get: { secondLanguage }, set: setSecondLanguage)) {
+                        ForEach(AskTranslationLanguages.common, id: \.self) { code in
+                            Text(AskTranslationLanguages.name(code, in: interface)).tag(code)
+                        }
                     }
+                    .labelsHidden().frame(width: 150)
+                    .accessibilityLabel(L("ask.settings.plugins.translate.second"))
                 }
-                .labelsHidden().frame(width: 160)
-                .accessibilityLabel(L("ask.settings.plugins.translate.second"))
             }
-            ModelRowDivider(leading: 0)
-            pluginHeader(icon: "wand.and.stars", title: L("ask.plugin.prompt.title"),
-                         subtitle: L("ask.settings.plugins.prompt.subtitle"))
-            keywords(for: AskPromptPlugin.id) { promptOptions($0) }
-            ModelRowDivider(leading: 0)
-            pluginHeader(icon: "magnifyingglass", title: L("ask.plugin.web.title"),
-                         subtitle: L("ask.settings.plugins.web.subtitle"))
-            keywords(for: AskWebSearchPlugin.id) { webOptions($0) }
-            ModelRowDivider(leading: 0)
-            AgentSettingsActionRow(icon: "arrow.counterclockwise", title: L("ask.settings.keywords.restore")) {
-                list = AskKeywordList(keywords: AskPluginRegistry.defaultKeywords)
-                drafts = [:]
-                problems = [:]
-                settings.saveAskLauncherKeywords(nil)
-            }
+            Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
+                .buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(ModelVisualStyle.accent)
+                .padding(.horizontal, 4)
+                .accessibilityIdentifier("ask.settings.keywords.restore")
         }
         .onAppear(perform: reload)
-    }
-
-    private func pluginHeader(icon: String, title: String, subtitle: String) -> some View {
-        VStack(spacing: 0) {
-            AgentSettingsRow(icon: icon, title: title, subtitle: subtitle, subtitleLineLimit: nil) { EmptyView() }
-            ModelRowDivider(leading: 66)
+        .sheet(item: $editing) { item in
+            AskKeywordEditorSheet(
+                draft: item.draft, keywords: list.keywords, workflows: workflowEntries,
+                onSave: { save($0, replacing: item.draft.original) },
+                onDelete: item.draft.isNew ? nil : { remove(item.draft.original) },
+                onCancel: { editing = nil }
+            )
+        }
+        .confirmationDialog(L("ask.settings.keywords.restoreTitle"), isPresented: $confirmingRestore) {
+            Button(L("ask.settings.keywords.restore"), role: .destructive, action: restoreDefaults)
+        } message: {
+            Text(L("ask.settings.keywords.restoreMessage"))
         }
     }
 
-    /// A plugin's keywords, each with its options below, and "Add keyword".
-    private func keywords<Options: View>(for pluginID: String,
-                                         @ViewBuilder options: @escaping (AskKeyword) -> Options) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(list.keywords(for: pluginID)) { keyword in
-                VStack(alignment: .leading, spacing: 6) {
-                    keywordRow(keyword)
-                    options(keyword)
-                    ForEach(problems.filter { $0.key.hasPrefix(keyword.id + "/") }.sorted { $0.key < $1.key },
-                            id: \.key) { _, problem in
-                        Text(problem).font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning)
+    // MARK: - Toolbar
+
+    /// Filters, search and "Add keyword" on one row, or the filters above the
+    /// other two when the pane is narrow (the settings window's default width).
+    private var toolbar: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                filterBar
+                Spacer(minLength: 8)
+                searchAndAdd
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                filterBar
+                HStack(spacing: 8) {
+                    searchAndAdd
+                }
+            }
+        }
+        .popover(isPresented: $adding, arrowEdge: .bottom) { addMenu }
+    }
+
+    private var filterBar: some View {
+        AskKeywordFilterBar(selection: $filter, counts: AskKeywordListPresentation.counts(rows))
+    }
+
+    @ViewBuilder private var searchAndAdd: some View {
+        AgentSearchBox(placeholder: L("ask.settings.keywords.search"), text: $query, width: 200)
+        Button { adding = true } label: {
+            Label(L("ask.settings.keywords.add"), systemImage: "plus")
+        }
+        .buttonStyle(ModelActionStyle(primary: true))
+        .fixedSize()
+        .accessibilityIdentifier("ask.settings.keywords.add")
+    }
+
+    private var addMenu: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach([AskKeywordKind.translate, .prompt, .web], id: \.self) { kind in
+                addItem(kind, title: kind.title) {
+                    adding = false
+                    editing = AskKeywordSheetItem(draft: AskKeywordDraft(adding: kind))
+                }
+            }
+            Divider().padding(.vertical, 3)
+            addItem(.workflow, title: L("ask.settings.keywords.newWorkflow")) {
+                adding = false
+                openWorkflow(nil)
+            }
+        }
+        .padding(6).frame(width: 300)
+    }
+
+    private func addItem(_ kind: AskKeywordKind, title: String, action: @escaping () -> Void) -> some View {
+        AskKeywordMenuItem(kind: kind, title: title, action: action)
+    }
+
+    // MARK: - List
+
+    private var listCard: some View {
+        let shown = AskKeywordListPresentation.filter(rows, kind: filter, query: query)
+        return ModelSurface {
+            VStack(alignment: .leading, spacing: 0) {
+                if shown.isEmpty {
+                    AgentSettingsEmptyRow(text: L("ask.settings.keywords.noMatch", query))
+                }
+                ForEach(AskKeywordKind.allCases, id: \.self) { kind in
+                    let group = shown.filter { $0.kind == kind }
+                    if !group.isEmpty {
+                        if filter == nil {
+                            AskKeywordGroupHeader(kind: kind, first: shown.first?.kind == kind)
+                        }
+                        ForEach(Array(group.enumerated()), id: \.element.id) { index, row in
+                            if index > 0 {
+                                ModelRowDivider(leading: 16)
+                            }
+                            AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
+                        }
                     }
                 }
-                .padding(.leading, 66).padding(.trailing, 18).padding(.vertical, 6)
-            }
-            AgentSettingsActionRow(icon: "plus", title: L("ask.settings.keywords.add")) {
-                let added = list.add(pluginID: pluginID)
-                drafts[added.id + "/keyword"] = added.keyword
-                save()
-            }
-            ModelRowDivider(leading: 66)
-        }
-    }
-
-    private func keywordRow(_ keyword: AskKeyword) -> some View {
-        HStack(spacing: 10) {
-            TextField("", text: draft(keyword, "keyword", keyword.keyword))
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 12.5, design: .monospaced))
-                .frame(width: 110)
-                .onSubmit { rename(keyword) }
-                .accessibilityLabel(L("ask.settings.keywords.keyword"))
-            if keyword.pluginID == AskTranslatePlugin.id {
-                translateTarget(keyword)
-            } else {
-                // A name for the chip: "Polish", "Wikipedia".
-                TextField(nameFallback(keyword), text: draft(keyword, "title", keyword.options["title"] ?? ""))
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 180)
-                    .onSubmit { submit(keyword, "title") { list.set("title", to: $0, on: keyword); return nil } }
-                    .accessibilityLabel(L("ask.settings.keywords.name"))
-            }
-            Spacer(minLength: 8)
-            Toggle("", isOn: Binding(get: { keyword.enabled }, set: { enabled in
-                list.update(keyword) { $0.enabled = enabled }
-                save()
-            }))
-            .labelsHidden().toggleStyle(.switch)
-            .accessibilityLabel(L("ask.settings.keywords.enabled"))
-            AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove")) {
-                list.remove(keyword)
-                problems = problems.filter { !$0.key.hasPrefix(keyword.id + "/") }
-                save()
             }
         }
     }
 
-    private func translateTarget(_ keyword: AskKeyword) -> some View {
-        Picker("", selection: Binding(get: { keyword.options[AskTranslatePlugin.targetOption] ?? "" },
-                                      set: { target in
-                                          list.set(AskTranslatePlugin.targetOption, to: target, on: keyword)
-                                          save()
-                                      })) {
-            Text(L("ask.settings.plugins.translate.auto")).tag("")
-            ForEach(AskTranslationLanguages.common, id: \.self) { code in
-                Text(L("ask.settings.plugins.translate.into", AskTranslationLanguages.name(code, in: interface))).tag(code)
-            }
-        }
-        .labelsHidden().frame(width: 180)
-        .accessibilityLabel(L("ask.settings.plugins.translate.target"))
-    }
+    // MARK: - Actions
 
-    @ViewBuilder private func translateOptions(_ keyword: AskKeyword) -> some View { EmptyView() }
-
-    /// The prompt, with `{input}` where the text goes; a preset's shows until it is changed.
-    private func promptOptions(_ keyword: AskKeyword) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            TextField(AskPromptPlugin.template(of: keyword.options.filter { $0.key != AskPromptPlugin.promptOption })
-                ?? L("ask.settings.plugins.prompt.placeholder"),
-                text: draft(keyword, "prompt", keyword.options[AskPromptPlugin.promptOption] ?? ""), axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 12))
-                .lineLimit(2 ... 5)
-                .onSubmit { savePrompt(keyword) }
-                .accessibilityLabel(L("ask.settings.plugins.prompt.prompt"))
-            Button(AskPromptPlugin.inputToken) {
-                let key = keyword.id + "/prompt"
-                drafts[key] = (drafts[key] ?? keyword.options[AskPromptPlugin.promptOption] ?? "") + AskPromptPlugin.inputToken
-            }
-            .help(L("ask.settings.plugins.prompt.insert"))
-            Button(L("ask.settings.keywords.save")) { savePrompt(keyword) }
+    private func open(_ row: AskKeywordListRow) {
+        if let workflowID = row.workflowID {
+            openWorkflow(workflowID)
+        } else if let source = row.source {
+            editing = AskKeywordSheetItem(draft: AskKeywordDraft(editing: source))
         }
     }
 
-    /// The search URL, with `{query}` where the words go; a built-in engine's shows until it is changed.
-    private func webOptions(_ keyword: AskKeyword) -> some View {
-        TextField(AskWebSearchPlugin.engine(of: keyword.options.filter { $0.key != AskWebSearchPlugin.urlOption }).template,
-                  text: draft(keyword, "url", keyword.options[AskWebSearchPlugin.urlOption] ?? ""))
-            .textFieldStyle(.roundedBorder)
-            .font(.system(size: 12, design: .monospaced))
-            .onSubmit { submit(keyword, "url") { list.setURL($0, on: keyword) } }
-            .accessibilityLabel(L("ask.settings.plugins.web.url"))
+    private func toggle(_ row: AskKeywordListRow) {
+        guard let source = row.source else { return }
+        list.update(source) { $0.enabled.toggle() }
+        persist()
     }
 
-    private func nameFallback(_ keyword: AskKeyword) -> String {
-        keyword.pluginID == AskWebSearchPlugin.id
-            ? AskWebSearchPlugin.engine(of: keyword.options.filter { $0.key != "title" }).title
-            : AskPromptPlugin.name(of: keyword.options.filter { $0.key != "title" })
+    private func save(_ keyword: AskKeyword, replacing original: AskKeyword?) {
+        list.save(keyword, replacing: original)
+        persist()
+        editing = nil
     }
 
-    private func draft(_ keyword: AskKeyword, _ field: String, _ saved: String) -> Binding<String> {
-        Binding(get: { drafts[keyword.id + "/" + field] ?? saved }, set: { drafts[keyword.id + "/" + field] = $0 })
-    }
-
-    /// Applies a field's draft, or shows why it cannot be used.
-    private func submit(_ keyword: AskKeyword, _ field: String, apply: (String) -> String?) {
-        let key = keyword.id + "/" + field
-        guard let text = drafts[key] else { return }
-        if let problem = apply(text) { problems[key] = problem; return }
-        problems[key] = nil
-        drafts[key] = nil
-        save()
-    }
-
-    private func savePrompt(_ keyword: AskKeyword) {
-        submit(keyword, "prompt") { list.set(AskPromptPlugin.promptOption, to: $0, on: keyword); return nil }
-    }
-
-    private func rename(_ keyword: AskKeyword) {
-        submit(keyword, "keyword") { text in
-            list.rename(keyword, to: text).map(AskKeywordList.message(for:))
+    private func remove(_ keyword: AskKeyword?) {
+        if let keyword {
+            list.remove(keyword)
         }
+        persist()
+        editing = nil
+    }
+
+    private func restoreDefaults() {
+        list = AskKeywordList(keywords: AskPluginRegistry.defaultKeywords)
+        settings.saveAskLauncherKeywords(nil)
     }
 
     private func setSecondLanguage(_ code: String) {
@@ -261,5 +289,13 @@ struct AskLauncherPluginSettingsView: View {
         secondLanguage = settings.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: interface)
     }
 
-    private func save() { settings.saveAskLauncherKeywords(list.keywords) }
+    private func persist() {
+        settings.saveAskLauncherKeywords(list.keywords)
+    }
+}
+
+/// A keyword sheet to present: a fresh id each time, so reopening the same keyword shows its saved values.
+struct AskKeywordSheetItem: Identifiable {
+    let id = UUID()
+    var draft: AskKeywordDraft
 }

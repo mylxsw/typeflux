@@ -263,7 +263,8 @@ final class AskWorkflowLineRuler: NSRulerView {
 
     override func drawHashMarksAndLabels(in _: NSRect) {
         guard let textView, let layout = textView.layoutManager, let container = textView.textContainer else { return }
-        NSColor.textBackgroundColor.blended(withFraction: 0.04, of: .labelColor)?.setFill()
+        // The same colour as the code: the gutter is part of one card, not a panel beside it.
+        NSColor.textBackgroundColor.setFill()
         bounds.fill()
         let content = textView.string as NSString
         let visible = textView.enclosingScrollView?.contentView.bounds ?? textView.visibleRect

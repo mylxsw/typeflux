@@ -1,55 +1,51 @@
+// swiftlint:disable file_length
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Form sections share a heading and a hint.
-private struct FormSection<Content: View>: View {
+/// Form sections share a heading and a hint, like the settings pages.
+struct AskWorkflowFormSection<Content: View>: View {
     var title: String
     var hint: String?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 13, weight: .semibold))
+        VStack(alignment: .leading, spacing: 0) {
+            Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                .padding(.horizontal, 4)
             if let hint {
-                Text(hint).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text(hint).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 4).padding(.top, 3)
             }
-            content().padding(.top, 2)
+            content().padding(.top, 10)
         }
     }
 }
 
 /// A field whose text is parsed into the manifest (`to=cny`): what the user types
 /// stays as typed while focused, even before it parses.
-private struct DraftField: View {
+struct AskWorkflowDraftField: View {
     var placeholder: String
     var value: String
-    var multiline = false
     var commit: (String) -> Void
     @State private var text = ""
     @FocusState private var focused: Bool
 
     var body: some View {
-        Group {
-            if multiline {
-                TextEditor(text: $text).focused($focused)
-            } else {
-                TextField(placeholder, text: $text).focused($focused)
+        TextField(placeholder, text: $text).focused($focused)
+            .onAppear { text = value }
+            .onChange(of: value) { newValue in
+                guard !focused else { return }
+                text = newValue
             }
-        }
-        .onAppear { text = value }
-        .onChange(of: value) { newValue in
-            guard !focused else { return }
-            text = newValue
-        }
-        .onChange(of: text) { newValue in
-            guard focused else { return }
-            commit(newValue)
-        }
+            .onChange(of: text) { newValue in
+                guard focused else { return }
+                commit(newValue)
+            }
     }
 }
 
-private func problemsText(_ problems: [AskWorkflowManifest.Problem]) -> some View {
+func askWorkflowProblemsText(_ problems: [AskWorkflowManifest.Problem]) -> some View {
     VStack(alignment: .leading, spacing: 2) {
         ForEach(problems, id: \.field) { problem in
             Label(problem.field + ": " + problem.message, systemImage: "xmark.circle")
@@ -58,55 +54,51 @@ private func problemsText(_ problems: [AskWorkflowManifest.Problem]) -> some Vie
     }
 }
 
-/// Keywords as a table: keyword, title, preset options (`name=value, …`); rows can be dragged.
+/// Keywords as a table in a card: keyword, display name, preset options as tags.
+/// Rows can be dragged by their handle.
 struct AskWorkflowKeywordsForm: View {
     @ObservedObject var model: AskWorkflowEditorModel
     @State private var dragging: Int?
+    /// The row whose "+ Option" field is open, and what is typed in it.
+    @State private var addingOption: Int?
+    @State private var newOption = ""
+    @FocusState private var optionFocused: Bool
 
     private var rows: [[String: Any]] {
         model.draft?.value(at: ["keywords"]) as? [[String: Any]] ?? []
     }
 
     var body: some View {
-        FormSection(title: L("ask.workflow.editor.step.keywords"), hint: L("ask.workflow.editor.keywords.hint")) {
-            VStack(spacing: 0) {
+        AskWorkflowFormSection(title: L("ask.workflow.editor.step.keywords"),
+                               hint: L("ask.workflow.editor.keywords.hint")) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 10) {
                     Text(L("ask.workflow.trust.keywords")).frame(width: 120, alignment: .leading)
-                    Text(L("ask.workflow.editor.keywords.title")).frame(maxWidth: .infinity, alignment: .leading)
-                    Text(L("ask.workflow.editor.keywords.options")).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(L("ask.workflow.editor.keywords.title")).frame(width: 180, alignment: .leading)
+                    Text(L("ask.workflow.editor.keywords.optionsShort")).frame(maxWidth: .infinity, alignment: .leading)
                     Color.clear.frame(width: 44)
                 }
                 .font(.system(size: 11, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
-                .padding(.horizontal, 12).padding(.vertical, 7).background(StudioTheme.controlSurface)
+                .padding(.horizontal, 14).frame(height: 32)
                 ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
                     keywordRow(index, row)
-                    if index < rows.count - 1 {
-                        Divider()
-                    }
                 }
+                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                Button { add() } label: {
+                    Label(L("ask.workflow.editor.keywords.add"), systemImage: "plus")
+                        .font(.system(size: 12.5, weight: .medium)).foregroundStyle(ModelVisualStyle.accent)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14).frame(height: 40).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("ask.workflow.editor.keywords.add")
             }
-            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(StudioTheme.border))
-            .clipShape(RoundedRectangle(cornerRadius: 9))
-            Button { add() } label: { Label(L("ask.workflow.editor.keywords.add"), systemImage: "plus") }
-                .buttonStyle(.borderless)
-            problemsText(model.problems(for: .keywords).filter { !$0.field.hasPrefix("keywords[") })
-        }
-        FormSection(title: L("ask.workflow.editor.general"), hint: nil) {
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
-                GridRow {
-                    Text(L("ask.workflow.editor.name")).foregroundStyle(StudioTheme.textSecondary)
-                    TextField("", text: stringBinding(["name"]))
-                }
-                GridRow {
-                    Text(L("ask.workflow.editor.description")).foregroundStyle(StudioTheme.textSecondary)
-                    TextField("", text: stringBinding(["description"]))
-                }
-                GridRow {
-                    Text(L("ask.workflow.editor.icon")).foregroundStyle(StudioTheme.textSecondary)
-                    TextField("sf:dollarsign.circle", text: stringBinding(["icon"]))
-                }
-            }
-            .textFieldStyle(.roundedBorder).font(.system(size: 12.5))
+            .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            askWorkflowProblemsText(model.problems(for: .keywords).filter { !$0.field.hasPrefix("keywords[") })
+                .padding(.top, 6)
         }
     }
 
@@ -116,31 +108,83 @@ struct AskWorkflowKeywordsForm: View {
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 10) {
                 TextField("fx", text: binding(index, "keyword"))
-                    .font(.system(size: 12, design: .monospaced)).frame(width: 120)
-                    .overlay(RoundedRectangle(cornerRadius: 5)
+                    .textFieldStyle(ModelFieldStyle())
+                    .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
                         .strokeBorder(problem == nil ? .clear : StudioTheme.danger.opacity(0.7)))
+                    .frame(width: 120)
                 TextField(L("ask.workflow.editor.keywords.titlePlaceholder"), text: binding(index, "title"))
-                DraftField(placeholder: L("ask.workflow.editor.keywords.optionsPlaceholder"),
-                           value: optionsText(index)) { setOptions($0, index) }
-                    .font(.system(size: 12, design: .monospaced))
-                Image(systemName: "line.3.horizontal").foregroundStyle(StudioTheme.textTertiary)
+                    .textFieldStyle(ModelFieldStyle(monospaced: false))
+                    .frame(width: 180)
+                optionTags(index)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "line.3.horizontal").font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
                     .frame(width: 16).help(L("ask.workflow.editor.keywords.drag"))
                     .onDrag {
                         dragging = index
                         return NSItemProvider(object: "\(index)" as NSString)
                     }
-                Button { remove(index) } label: { Image(systemName: "xmark") }
-                    .buttonStyle(.borderless).frame(width: 16).disabled(rows.count <= 1)
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Button { remove(index) } label: {
+                    Image(systemName: "xmark").font(.system(size: 11, weight: .semibold))
+                        .frame(width: 20, height: 20).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).disabled(rows.count <= 1)
+                .foregroundStyle(StudioTheme.textTertiary).opacity(rows.count <= 1 ? 0.35 : 1)
+                .help(L("ask.workflow.editor.keywords.remove"))
             }
-            .textFieldStyle(.roundedBorder)
             if let problem {
                 Text(problem).font(.system(size: 11.5)).foregroundStyle(StudioTheme.danger)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 7)
+        .padding(.horizontal, 14).padding(.vertical, 9)
         .background(problem == nil ? Color.clear : StudioTheme.danger.opacity(0.06))
         .onDrop(of: [UTType.text], delegate: KeywordDrop(target: index, dragging: $dragging, move: move))
+    }
+
+    /// Preset options as `name=value` tags with a remove button, then "+ Option".
+    private func optionTags(_ index: Int) -> some View {
+        let options = optionsOf(index)
+        return AgentFlowLayout(spacing: 5) {
+            ForEach(options.keys.sorted(), id: \.self) { key in
+                HStack(spacing: 3) {
+                    Text("\(key)=\(options[key] ?? "")").font(.system(size: 11.5, design: .monospaced))
+                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                    Button { removeOption(key, index) } label: {
+                        Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
+                            .frame(width: 14, height: 14).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+                    .accessibilityLabel(L("ask.workflow.editor.keywords.removeOption", key))
+                }
+                .padding(.leading, 7).padding(.trailing, 3).frame(height: 22)
+                .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            }
+            if addingOption == index {
+                TextField("name=value", text: $newOption)
+                    .textFieldStyle(.plain).font(.system(size: 11.5, design: .monospaced))
+                    .focused($optionFocused)
+                    .frame(width: 120, height: 22).padding(.horizontal, 6)
+                    .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(AskTheme.accent))
+                    .onSubmit { commitOption(index) }
+                    .onExitCommand { addingOption = nil; newOption = "" }
+            } else {
+                Button {
+                    addingOption = index
+                    newOption = ""
+                    optionFocused = true
+                } label: {
+                    Text(L("ask.workflow.editor.keywords.addOption")).font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .padding(.horizontal, 8).frame(height: 22)
+                        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(ModelVisualStyle.border, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(L("ask.workflow.editor.keywords.optionsPlaceholderHint"))
+            }
+        }
     }
 
     /// Moves the dragged row onto the row it is dropped on.
@@ -180,17 +224,30 @@ struct AskWorkflowKeywordsForm: View {
         })
     }
 
-    private func optionsText(_ index: Int) -> String {
-        let options = rows.indices.contains(index) ? rows[index]["options"] as? [String: String] ?? [:] : [:]
-        return options.keys.sorted().map { "\($0)=\(options[$0] ?? "")" }.joined(separator: ", ")
+    private func optionsOf(_ index: Int) -> [String: String] {
+        rows.indices.contains(index) ? rows[index]["options"] as? [String: String] ?? [:] : [:]
     }
 
-    private func setOptions(_ text: String, _ index: Int) {
+    private func setOptions(_ options: [String: String], _ index: Int) {
         var all = rows
         guard all.indices.contains(index) else { return }
-        let options = Self.parseOptions(text)
         all[index]["options"] = options.isEmpty ? nil : options
         model.set(all, at: ["keywords"])
+    }
+
+    private func commitOption(_ index: Int) {
+        let parsed = Self.parseOptions(newOption)
+        if !parsed.isEmpty {
+            setOptions(optionsOf(index).merging(parsed) { $1 }, index)
+        }
+        addingOption = nil
+        newOption = ""
+    }
+
+    private func removeOption(_ key: String, _ index: Int) {
+        var options = optionsOf(index)
+        options[key] = nil
+        setOptions(options, index)
     }
 
     /// `to=cny, scope=mine` → `["to": "cny", "scope": "mine"]`.
@@ -215,6 +272,41 @@ struct AskWorkflowKeywordsForm: View {
         all.remove(at: index)
         model.set(all, at: ["keywords"])
     }
+}
+
+/// Name, description and icon: edited from the title in the toolbar.
+struct AskWorkflowInfoForm: View {
+    @ObservedObject var model: AskWorkflowEditorModel
+    var done: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            row(L("ask.workflow.editor.name")) {
+                TextField("", text: stringBinding(["name"])).textFieldStyle(ModelFieldStyle(monospaced: false))
+                    .accessibilityIdentifier("ask.workflow.editor.info.name")
+            }
+            row(L("ask.workflow.editor.description")) {
+                TextField("", text: stringBinding(["description"])).textFieldStyle(ModelFieldStyle(monospaced: false))
+            }
+            row(L("ask.workflow.editor.icon")) {
+                TextField("sf:dollarsign.circle", text: stringBinding(["icon"])).textFieldStyle(ModelFieldStyle())
+            }
+            HStack {
+                Spacer()
+                Button(L("ask.workflow.editor.done"), action: done).buttonStyle(AskWorkflowActionStyle(small: true))
+                    .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(14).frame(width: 340)
+    }
+
+    private func row(_ label: String, @ViewBuilder content: () -> some View) -> some View {
+        HStack(spacing: 10) {
+            Text(label).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                .frame(width: 44, alignment: .leading)
+            content()
+        }
+    }
 
     private func stringBinding(_ path: [String]) -> Binding<String> {
         Binding(get: { model.draft?.value(at: path) as? String ?? "" },
@@ -235,81 +327,109 @@ struct AskWorkflowInputForm: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 20) {
-            FormSection(title: L("ask.workflow.editor.argument"), hint: L("ask.workflow.editor.argument.hint")) {
-                HStack(spacing: 8) {
-                    ForEach([AskWorkflowManifest.Input.Argument.required, .optional, .none], id: \.self) { value in
-                        AskWorkflowOptionCard(title: L("ask.workflow.editor.argument." + value.rawValue),
-                                              detail: L("ask.workflow.editor.argumentDetail." + value.rawValue),
-                                              selected: (manifest?.input.argument ?? .optional) == value) {
-                            model.set(value.rawValue, at: ["input", "argument"])
-                        }
-                    }
-                }
-                .fixedSize(horizontal: false, vertical: true)
+        HStack(alignment: .top, spacing: 16) {
+            AskWorkflowFormSection(
+                title: L("ask.workflow.editor.argument"),
+                hint: L("ask.workflow.editor.argument.hint")
+            ) {
+                AskWorkflowRadioList(
+                    choices: [AskWorkflowManifest.Input.Argument.required, .optional, .none].map {
+                        AskWorkflowChoice(value: $0, title: L("ask.workflow.editor.argument." + $0.rawValue),
+                                          detail: L("ask.workflow.editor.argumentDetail." + $0.rawValue))
+                    },
+                    selection: manifest?.input.argument ?? .optional
+                ) { model.set($0.rawValue, at: ["input", "argument"]) }
             }
-            FormSection(title: L("ask.workflow.trust.selection"), hint: L("ask.workflow.editor.selection.hint")) {
-                HStack(spacing: 8) {
-                    ForEach([AskWorkflowManifest.Input.Selection.ifEmpty, .always, .never], id: \.self) { value in
-                        AskWorkflowOptionCard(title: L("ask.workflow.editor.selection." + value.rawValue),
-                                              detail: L("ask.workflow.editor.selectionDetail." + value.rawValue),
-                                              selected: (manifest?.input.selection ?? .ifEmpty) == value) {
-                            model.set(value.rawValue, at: ["input", "selection"])
-                        }
-                    }
-                }
-                .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
+            AskWorkflowFormSection(
+                title: L("ask.workflow.trust.selection"),
+                hint: L("ask.workflow.editor.selection.hint")
+            ) {
+                AskWorkflowRadioList(
+                    choices: [AskWorkflowManifest.Input.Selection.ifEmpty, .always, .never].map {
+                        AskWorkflowChoice(value: $0, title: L("ask.workflow.editor.selection." + $0.rawValue),
+                                          detail: L("ask.workflow.editor.selectionDetail." + $0.rawValue))
+                    },
+                    selection: manifest?.input.selection ?? .ifEmpty
+                ) { model.set($0.rawValue, at: ["input", "selection"]) }
             }
+            .frame(maxWidth: .infinity)
         }
-        FormSection(title: L("ask.workflow.editor.args"), hint: L("ask.workflow.editor.args.hint")) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    Text(program).font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                    ForEach(Array(template.enumerated()), id: \.offset) { index, _ in
-                        HStack(spacing: 3) {
-                            Text("$\(index + 1)").font(.system(size: 10)).foregroundStyle(StudioTheme.textTertiary)
-                            TextField("", text: argument(index)).font(.system(size: 12, design: .monospaced))
-                                .textFieldStyle(.plain).frame(minWidth: 60, maxWidth: 150).fixedSize()
-                            Button { removeArgument(index) } label: { Image(systemName: "xmark") }
-                                .buttonStyle(.borderless).font(.system(size: 8))
-                                .foregroundStyle(StudioTheme.textTertiary)
-                        }
-                        .padding(.horizontal, 7).frame(height: 24)
-                        .overlay(RoundedRectangle(cornerRadius: 6)
-                            .strokeBorder(StudioTheme.border, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
-                    }
-                    Button { setTemplate(template + [""]) } label: { Image(systemName: "plus") }
-                        .buttonStyle(.borderless)
-                    Spacer()
-                }
-                .padding(10)
-                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 9))
-                .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(StudioTheme.border))
-                HStack(spacing: 6) {
-                    Text(L("ask.workflow.editor.args.insert")).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                    ForEach(tokens, id: \.self) { token in
-                        Button { setTemplate(template + [token]) } label: { AskWorkflowChip(text: token, style: .token)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    Spacer()
-                    if let keyword = manifest?.keywords.first?.keyword {
-                        HStack(spacing: 4) {
-                            Text(L("ask.workflow.editor.args.example"))
-                            AskWorkflowChip(text: keyword)
-                            Text(sampleQuery).font(.system(size: 11.5, design: .monospaced))
-                        }
-                        .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-                    }
-                }
-                Text(preview).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(StudioTheme.textSecondary)
-                    .textSelection(.enabled).padding(10).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8))
+        AskWorkflowFormSection(title: L("ask.workflow.editor.args"), hint: L("ask.workflow.editor.args.hint")) {
+            VStack(alignment: .leading, spacing: 0) {
+                argv.padding(.horizontal, 12).padding(.vertical, 10)
+                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                insertBar.padding(.horizontal, 12).frame(height: 40)
+                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                Text(preview).font(.system(size: 12, design: .monospaced)).foregroundStyle(StudioTheme.textSecondary)
+                    .textSelection(.enabled).lineSpacing(3)
+                    .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(StudioTheme.textSecondary.opacity(0.04))
             }
+            .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
-        problemsText(model.problems(for: .input))
+        askWorkflowProblemsText(model.problems(for: .input))
+    }
+
+    private var argv: some View {
+        AgentFlowLayout(spacing: 6) {
+            Text(program).font(.system(size: 12.5, design: .monospaced)).foregroundStyle(StudioTheme.textSecondary)
+                .frame(height: 26)
+            ForEach(Array(template.enumerated()), id: \.offset) { index, _ in
+                HStack(spacing: 4) {
+                    Text("$\(index + 1)").font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
+                    TextField("", text: argument(index)).font(.system(size: 12.5, design: .monospaced))
+                        .textFieldStyle(.plain).frame(minWidth: 50, maxWidth: 160).fixedSize()
+                    Button { removeArgument(index) } label: {
+                        Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
+                            .frame(width: 14, height: 14).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+                }
+                .padding(.leading, 8).padding(.trailing, 4).frame(height: 26)
+                .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            }
+            Button { setTemplate(template + [""]) } label: {
+                Image(systemName: "plus").font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(width: 26, height: 26)
+                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .strokeBorder(ModelVisualStyle.border, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(L("ask.workflow.editor.args.add"))
+        }
+    }
+
+    private var insertBar: some View {
+        HStack(spacing: 6) {
+            Text(L("ask.workflow.editor.args.insert")).font(.system(size: 12))
+                .foregroundStyle(StudioTheme.textTertiary)
+            ForEach(tokens, id: \.self) { token in
+                Button { setTemplate(template + [token]) } label: {
+                    Text(token).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(AskTheme.accent)
+                        .padding(.horizontal, 7).frame(height: 20)
+                        .background(AskTheme.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer(minLength: 8)
+            Text(L("ask.workflow.editor.args.try")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+            HStack(spacing: 5) {
+                if let keyword = manifest?.keywords.first?.keyword {
+                    AskWorkflowChip(text: keyword)
+                }
+                TextField("100 usd", text: $model.testQuery).textFieldStyle(.plain)
+                    .font(.system(size: 12, design: .monospaced))
+            }
+            .padding(.horizontal, 6).frame(width: 170, height: 24)
+            .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        }
     }
 
     private var program: String {
@@ -344,7 +464,7 @@ struct AskWorkflowInputForm: View {
             "options": options
         ]
         stdin["selection"] = selection ?? NSNull()
-        return "argv  " + AskWorkflowAuthorTools.json(argv) + "\nstdin " + AskWorkflowAuthorTools.json(stdin)
+        return "argv   " + AskWorkflowAuthorTools.json(argv) + "\nstdin  " + AskWorkflowAuthorTools.json(stdin)
     }
 
     private func argument(_ index: Int) -> Binding<String> {
@@ -368,8 +488,8 @@ struct AskWorkflowInputForm: View {
     }
 }
 
-/// What the script prints, when it runs, its limits, runtime and variables, with
-/// the launcher as it would look on the right.
+/// What the script prints and when it runs, with the launcher as it would look
+/// on the right. Limits, runtime and variables live with the script.
 struct AskWorkflowOutputForm: View {
     @ObservedObject var model: AskWorkflowEditorModel
 
@@ -378,13 +498,42 @@ struct AskWorkflowOutputForm: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 22) {
-            VStack(alignment: .leading, spacing: 20) {
-                outputChoices
-                runChoices
+        HStack(alignment: .top, spacing: 20) {
+            VStack(alignment: .leading, spacing: 22) {
+                AskWorkflowFormSection(
+                    title: L("ask.workflow.editor.output"),
+                    hint: L("ask.workflow.editor.output.hint")
+                ) {
+                    AskWorkflowRadioList(
+                        choices: [AskWorkflowManifest.Output.text, .none, .auto].map {
+                            AskWorkflowChoice(value: $0, title: L("ask.workflow.editor.output." + $0.rawValue),
+                                              detail: L("ask.workflow.editor.outputDetail." + $0.rawValue))
+                        } + [AskWorkflowChoice(value: AskWorkflowManifest.Output.items,
+                                               title: L("ask.workflow.editor.output.items"),
+                                               detail: L("ask.workflow.editor.outputDetail.items"), comingSoon: true)],
+                        selection: manifest?.output ?? .auto, stacked: true
+                    ) { model.set($0.rawValue, at: ["output"]) }
+                }
+                AskWorkflowFormSection(title: L("ask.workflow.editor.runMode"), hint: nil) {
+                    HStack(spacing: 2) {
+                        runMode(L("ask.workflow.editor.runMode.onSubmit"), selected: true)
+                        runMode(L("ask.workflow.editor.runMode.live") + " · " + L("ask.workflow.editor.comingSoon"),
+                                selected: false)
+                            .opacity(0.45)
+                            .help(L("ask.workflow.editor.runMode.liveDetail"))
+                    }
+                    .padding(2)
+                    .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(ModelVisualStyle.border))
+                    .fixedSize()
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            FormSection(title: L("ask.workflow.editor.preview.title"), hint: L("ask.workflow.editor.preview.hint")) {
+            AskWorkflowFormSection(
+                title: L("ask.workflow.editor.preview.title"),
+                hint: L("ask.workflow.editor.preview.hint")
+            ) {
                 VStack(alignment: .leading, spacing: 10) {
                     AskWorkflowLauncherPreview(
                         name: manifest?.name ?? "", keyword: manifest?.keywords.first?.keyword ?? "",
@@ -398,127 +547,148 @@ struct AskWorkflowOutputForm: View {
                         .foregroundStyle(StudioTheme.textTertiary).fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .frame(width: 300)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        limits
-        problemsText(model.problems(for: .output) + model.problems(for: .script))
+        askWorkflowProblemsText(model.problems(for: .output))
     }
 
-    private var outputChoices: some View {
-        FormSection(title: L("ask.workflow.editor.output"), hint: L("ask.workflow.editor.output.hint")) {
-            let current = manifest?.output ?? .auto
-            Grid(horizontalSpacing: 8, verticalSpacing: 8) {
-                GridRow {
-                    card(.text, current)
-                    card(.none, current)
+    private func runMode(_ title: String, selected: Bool) -> some View {
+        Text(title).font(.system(size: 12, weight: selected ? .semibold : .regular))
+            .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .padding(.horizontal, 11).frame(height: 24)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(selected ? StudioTheme.selectionSurfaceRaised : Color.clear)
+                    .shadow(color: .black.opacity(selected ? 0.18 : 0), radius: 1, y: 1)
+            )
+    }
+}
+
+/// Runtime, interpreter, script, timeout and environment: shown above the code
+/// when "Run settings" is open.
+struct AskWorkflowRunSettings: View {
+    @ObservedObject var model: AskWorkflowEditorModel
+    /// Environment rows as typed, so a half-written row is not dropped while editing.
+    @State private var env: [EnvRow] = []
+
+    struct EnvRow: Identifiable, Equatable {
+        let id = UUID()
+        var name: String
+        var value: String
+    }
+
+    private var manifest: AskWorkflowManifest? {
+        model.draft?.manifest
+    }
+
+    var body: some View {
+        Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
+            GridRow {
+                label(L("ask.workflow.editor.runtime"))
+                Picker("", selection: Binding(get: { manifest?.command.runtime ?? .python3 },
+                                              set: { model.set($0.rawValue, at: ["command", "runtime"]) })) {
+                    ForEach(AskWorkflowRuntime.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
-                GridRow {
-                    card(.auto, current)
-                    AskWorkflowOptionCard(title: L("ask.workflow.editor.output.items"),
-                                          detail: L("ask.workflow.editor.outputDetail.items"), selected: false,
-                                          comingIn: "W2") {}
+                .labelsHidden().frame(maxWidth: .infinity, alignment: .leading)
+                label(L("ask.workflow.editor.interpreter"))
+                TextField(L("ask.workflow.editor.interpreterAutoShort", model.runtimeInfo ?? "…"), text: Binding(
+                    get: { model.draft?.value(at: ["command", "interpreter"]) as? String ?? "" },
+                    set: { model.set($0.isEmpty ? nil : $0, at: ["command", "interpreter"]) }
+                ))
+                .textFieldStyle(ModelFieldStyle())
+            }
+            GridRow {
+                label(L("ask.workflow.editor.script"))
+                TextField("main.py", text: Binding(
+                    get: { model.draft?.value(at: ["command", "script"]) as? String ?? "" },
+                    set: { model.set($0.isEmpty ? nil : $0, at: ["command", "script"]) }
+                ))
+                .textFieldStyle(ModelFieldStyle())
+                label(L("ask.workflow.editor.timeout"))
+                HStack(spacing: 8) {
+                    Slider(value: Binding(get: { manifest?.timeout ?? AskWorkflowManifest.defaultTimeout },
+                                          set: { model.set(Int($0.rounded()), at: ["run", "timeoutSeconds"]) }),
+                           in: 1 ... 120)
+                        .controlSize(.small)
+                    TextField(
+                        "",
+                        value: Binding(get: { Int(manifest?.timeout ?? AskWorkflowManifest.defaultTimeout) },
+                                       set: { model.set(min(300, max(1, $0)), at: ["run", "timeoutSeconds"]) }),
+                        format: .number
+                    )
+                    .textFieldStyle(ModelFieldStyle()).multilineTextAlignment(.trailing).frame(width: 52)
+                    Text(L("ask.workflow.editor.secondsUnit")).font(.system(size: 12.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
                 }
             }
-            .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private func card(_ value: AskWorkflowManifest.Output, _ current: AskWorkflowManifest.Output) -> some View {
-        AskWorkflowOptionCard(title: L("ask.workflow.editor.output." + value.rawValue),
-                              detail: L("ask.workflow.editor.outputDetail." + value.rawValue),
-                              selected: current == value) { model.set(value.rawValue, at: ["output"]) }
-    }
-
-    private var runChoices: some View {
-        FormSection(title: L("ask.workflow.editor.runMode"), hint: nil) {
-            HStack(spacing: 8) {
-                AskWorkflowOptionCard(title: L("ask.workflow.editor.runMode.onSubmit"),
-                                      detail: L("ask.workflow.editor.runMode.onSubmitDetail"),
-                                      selected: (manifest?.run.mode ?? .onSubmit) == .onSubmit) {
-                    model.set("onSubmit", at: ["run", "mode"])
-                }
-                AskWorkflowOptionCard(title: L("ask.workflow.editor.runMode.live"),
-                                      detail: L("ask.workflow.editor.runMode.liveDetail"), selected: false,
-                                      comingIn: "W2") {}
-            }
-            .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var limits: some View {
-        FormSection(title: L("ask.workflow.editor.limits"), hint: nil) {
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
-                GridRow {
-                    Text(L("ask.workflow.editor.timeout")).foregroundStyle(StudioTheme.textSecondary)
-                    HStack {
-                        Slider(value: Binding(get: { manifest?.timeout ?? AskWorkflowManifest.defaultTimeout },
-                                              set: { model.set(Int($0.rounded()), at: ["run", "timeoutSeconds"]) }),
-                               in: 1 ... 120)
-                        TextField(
-                            "",
-                            value: Binding(get: { Int(manifest?.timeout ?? AskWorkflowManifest.defaultTimeout) },
-                                           set: { model.set(
-                                               min(300, max(1, $0)),
-                                               at: ["run", "timeoutSeconds"]
-                                           ) }),
-                            format: .number
-                        )
-                        .frame(width: 44).multilineTextAlignment(.trailing)
-                        Text(L("ask.workflow.editor.secondsUnit")).foregroundStyle(StudioTheme.textTertiary)
-                    }
-                }
-                GridRow {
-                    Text(L("ask.workflow.editor.runtime")).foregroundStyle(StudioTheme.textSecondary)
-                    HStack {
-                        Picker("", selection: Binding(get: { manifest?.command.runtime ?? .python3 },
-                                                      set: { model.set($0.rawValue, at: ["command", "runtime"]) })) {
-                            ForEach(AskWorkflowRuntime.allCases, id: \.self) { Text($0.title).tag($0) }
+            GridRow(alignment: .top) {
+                label(L("ask.workflow.editor.env")).padding(.top, 6)
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach($env) { $row in
+                        HStack(spacing: 6) {
+                            TextField("NAME", text: $row.name).textFieldStyle(ModelFieldStyle()).frame(width: 170)
+                            TextField(L("ask.workflow.editor.env.value"), text: $row.value)
+                                .textFieldStyle(ModelFieldStyle())
+                            Button { env.removeAll { $0.id == row.id } } label: {
+                                Image(systemName: "xmark").font(.system(size: 10, weight: .semibold))
+                                    .frame(width: 24, height: 24).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
                         }
-                        .labelsHidden().frame(width: 140)
-                        TextField(L("ask.workflow.editor.interpreterAuto", model.runtimeInfo ?? "…"), text: Binding(
-                            get: { model.draft?.value(at: ["command", "interpreter"]) as? String ?? "" },
-                            set: { model.set($0.isEmpty ? nil : $0, at: ["command", "interpreter"]) }
-                        ))
-                        .font(.system(size: 12, design: .monospaced))
                     }
-                }
-                GridRow {
-                    Text(L("ask.workflow.editor.script")).foregroundStyle(StudioTheme.textSecondary)
-                    TextField("main.py", text: Binding(
-                        get: { model.draft?.value(at: ["command", "script"]) as? String ?? "" },
-                        set: { model.set($0.isEmpty ? nil : $0, at: ["command", "script"]) }
-                    ))
-                    .font(.system(size: 12, design: .monospaced))
-                }
-                GridRow(alignment: .top) {
-                    Text(L("ask.workflow.editor.env")).foregroundStyle(StudioTheme.textSecondary)
-                    VStack(alignment: .leading, spacing: 4) {
-                        DraftField(placeholder: "", value: envText, multiline: true) { setEnv($0) }
-                            .font(.system(size: 12, design: .monospaced)).frame(height: 56)
-                            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(StudioTheme.border))
-                        Text(L("ask.workflow.editor.env.hint")).font(.system(size: 11))
+                    HStack(spacing: 10) {
+                        Button { env.append(EnvRow(name: "", value: "")) } label: {
+                            Label(L("ask.workflow.editor.env.add"), systemImage: "plus")
+                                .font(.system(size: 12, weight: .medium)).foregroundStyle(AskTheme.accent)
+                        }
+                        .buttonStyle(.plain)
+                        Text(L("ask.workflow.editor.env.noSecrets")).font(.system(size: 11.5))
                             .foregroundStyle(StudioTheme.textTertiary)
                     }
                 }
+                .gridCellColumns(3)
             }
-            .textFieldStyle(.roundedBorder).font(.system(size: 12.5))
+        }
+        .font(.system(size: 12.5))
+        .padding(14)
+        .onAppear(perform: loadEnv)
+        .onChange(of: model.workflowID) { _ in loadEnv() }
+        // `workflow.json` or an applied proposal changed the variables: show them.
+        .onChange(of: savedEnv) { saved in
+            if saved != Self.environment(env) {
+                loadEnv()
+            }
+        }
+        .onChange(of: env) { rows in
+            let edited = Self.environment(rows)
+            if edited != savedEnv {
+                model.set(edited.isEmpty ? nil : edited, at: ["env"])
+            }
         }
     }
 
-    /// One `NAME=value` per line.
-    private var envText: String {
-        let env = model.draft?.value(at: ["env"]) as? [String: String] ?? [:]
-        return env.keys.sorted().map { "\($0)=\(env[$0] ?? "")" }.joined(separator: "\n")
+    private var savedEnv: [String: String] {
+        model.draft?.value(at: ["env"]) as? [String: String] ?? [:]
     }
 
-    private func setEnv(_ text: String) {
+    private func label(_ text: String) -> some View {
+        Text(text).foregroundStyle(StudioTheme.textSecondary).frame(width: 64, alignment: .leading)
+    }
+
+    private func loadEnv() {
+        let saved = savedEnv
+        env = saved.keys.sorted().map { EnvRow(name: $0, value: saved[$0] ?? "") }
+    }
+
+    /// The rows with a name, as the manifest's `env`; a later row wins over an earlier one.
+    static func environment(_ rows: [EnvRow]) -> [String: String] {
         var env: [String: String] = [:]
-        for line in text.split(separator: "\n") {
-            let pair = line.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-            if pair.count == 2, !pair[0].isEmpty {
-                env[pair[0]] = pair[1]
+        for row in rows {
+            let name = row.name.trimmingCharacters(in: .whitespaces)
+            if !name.isEmpty {
+                env[name] = row.value
             }
         }
-        model.set(env.isEmpty ? nil : env, at: ["env"])
+        return env
     }
 }
