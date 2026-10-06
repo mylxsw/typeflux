@@ -808,7 +808,7 @@ struct AskWorkflowEditorModelTests {
         let second = model.submit(AskWorkflowProposal(summary: "b", manifestText: nil,
                                                       files: ["main.sh": "curl https://new.example.com\n"],
                                                       deletes: []))
-        #expect(model.proposal(first.id)?.state == .discarded && model.latestProposal?.id == second.id)
+        #expect(model.proposal(first.id)?.state == .superseded && model.latestProposal?.id == second.id)
         #expect(second.newRisks == [AskWorkflowRisk(kind: .network, detail: "new.example.com")])
         #expect(model.authoringDraft.files["main.sh"] == "curl https://new.example.com\n")
         model.apply(second.id)
@@ -863,6 +863,31 @@ struct AskWorkflowEditorModelTests {
         await waitFor("manual approval") { model.pendingRun != nil }
         model.resolvePendingRun(true)
         await waitFor("manual") { manual.value != nil }
+    }
+
+    @Test func aRiskyFollowUpCanFallBackToTheProposalThatRan() async throws {
+        let fixture = try AskWorkflowFixture()
+        let model = model(fixture)
+        try model.open(scriptWorkflow(fixture))
+        let first = model.submit(AskWorkflowProposal(summary: "", manifestText: nil,
+                                                     files: ["main.sh": "#!/bin/zsh\nprint -r -- \"one $1\"\n"],
+                                                     deletes: []))
+        _ = await model.testLatestProposal([.init(query: "a")])
+        #expect(model.fallbackProposal == nil, "nothing is waiting")
+        let risky = model.submit(AskWorkflowProposal(summary: "", manifestText: nil,
+                                                     files: ["main.sh": "#!/bin/zsh\ncurl https://new.example.com\n"],
+                                                     deletes: []))
+        let declined = Box<[AskWorkflowTestResult]?>()
+        Task { declined.value = await .some(model.testLatestProposal([.init(query: "b")])) }
+        await waitFor("approval") { model.pendingRun != nil }
+        #expect(model.fallbackProposal?.id == first.id && model.proposalNumber(first.id) == 1)
+        model.useFallbackProposal()
+        await waitFor("declined") { declined.value != nil }
+        #expect(declined.value == .some(nil) && model.pendingRun == nil)
+        #expect(model.proposal(risky.id)?.state == .discarded && model.proposal(first.id)?.state == .applied)
+        #expect(model.draft?.files["main.sh"]?.contains("one") == true && model.canUndoProposal)
+        model.useFallbackProposal()
+        #expect(model.proposal(first.id)?.state == .applied, "without a waiting run nothing changes")
     }
 
     @Test func generatedWorkflowsAreWrittenTestedAndInstalledOnSave() async throws {

@@ -240,6 +240,22 @@ extension AskWorkflowEditorModel {
         pendingRunContinuation?.resume(returning: allowed)
         pendingRunContinuation = nil
     }
+
+    /// The proposal before the one waiting to run, if it already ran: "Use only proposal 1".
+    var fallbackProposal: AskWorkflowProposal? {
+        guard let pendingRun, let index = proposals.firstIndex(where: { $0.id == pendingRun.proposalID })
+        else { return nil }
+        return proposals[..<index].last { $0.state == .superseded && !$0.tests.isEmpty }
+    }
+
+    /// Stops the assistant, drops the proposal waiting to run and applies the earlier one.
+    func useFallbackProposal() {
+        guard let fallback = fallbackProposal, let waiting = pendingRun?.proposalID else { return }
+        resolvePendingRun(false)
+        assistant.stop()
+        discard(waiting)
+        apply(fallback.id)
+    }
 }
 
 extension AskWorkflowEditorModel {

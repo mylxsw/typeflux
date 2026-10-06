@@ -2656,10 +2656,13 @@
 "ask.workflow.assistant.proposal" = "修改提案";
 "ask.workflow.assistant.untested" = "还没试跑";
 "ask.workflow.assistant.testedSummary" = "已试跑 · %1$d/%2$d 通过";
+"ask.workflow.assistant.supersededLine" = "提案 %1$d：%2$@";
+"ask.workflow.assistant.testedShort" = "试跑 %1$d/%2$d ✓";
 "ask.workflow.assistant.approval.title" = "要试跑这个版本吗？";
 "ask.workflow.assistant.approval.body" = "试跑会在这台 Mac 上运行新代码。只有和你认可的版本相比出现新的风险时，助手才会停下来问你。";
 "ask.workflow.assistant.approval.allow" = "允许并继续";
 "ask.workflow.assistant.approval.decline" = "不要运行";
+"ask.workflow.assistant.approval.useOnly" = "只用提案 %d";
 "ask.workflow.assistant.autoTest" = "自动试跑";
 "ask.workflow.assistant.autoTest.help" = "除非出现新的风险，否则让助手自己试跑代码";
 "ask.workflow.assistant.cloud" = "Typeflux Cloud";

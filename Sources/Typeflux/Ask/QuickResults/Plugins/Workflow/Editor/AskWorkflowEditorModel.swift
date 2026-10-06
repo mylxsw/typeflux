@@ -252,7 +252,9 @@ final class AskWorkflowEditorModel: ObservableObject {
             selectedFile = draft?.files.keys.sorted().first ?? AskWorkflowManifest.fileName
         }
     }
+}
 
+extension AskWorkflowEditorModel {
     // MARK: - Saving
 
     /// Saves under §6.2. Returns false when nothing could be written (a conflict or an error).
@@ -446,13 +448,16 @@ extension AskWorkflowEditorModel: AskWorkflowAuthoringHost {
 
     func submit(_ proposal: AskWorkflowProposal) -> AskWorkflowProposal {
         var proposal = proposal
+        if let earlier = latestProposal {
+            proposal = proposal.following(earlier)
+        }
         let result = proposal.applied(to: draft ?? authoringDraft)
         proposal.risks = AskWorkflowRiskScanner.scan(result.files)
         proposal.newRisks = AskWorkflowRiskScanner.newRisks(proposal.risks,
                                                             since: approvedRisks ?? AskWorkflowRiskScanner
                                                                 .scan(draft?.files ?? [:]))
         for index in proposals.indices where proposals[index].state == .pending {
-            proposals[index].state = .discarded
+            proposals[index].state = .superseded
         }
         proposals.append(proposal)
         return proposal

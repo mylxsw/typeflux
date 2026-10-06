@@ -181,7 +181,7 @@ struct AskWorkflowDraft: Equatable, Sendable {
         guard !path.isEmpty, let data = manifestText.data(using: .utf8),
               var object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return false }
         Self.assign(value, at: path[...], in: &object)
-        guard let text = Self.format(object) else { return false }
+        guard let text = AskWorkflowJSONLayout.format(object, like: manifestText) else { return false }
         manifestText = text
         return true
     }
@@ -208,21 +208,16 @@ struct AskWorkflowDraft: Equatable, Sendable {
         object[key] = child.isEmpty && value == nil ? nil : child
     }
 
-    /// Pretty JSON with sorted keys, like the templates write.
+    /// Pretty JSON with sorted keys, for a manifest that has no layout of its own yet.
     static func format(_ object: [String: Any]) -> String? {
-        guard let data = try? JSONSerialization.data(withJSONObject: object,
-                                                     options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
-        else {
-            return nil
-        }
-        return String(data: data, encoding: .utf8).map { $0 + "\n" }
+        AskWorkflowJSONLayout.format(object)
     }
 
     /// Re-indents the manifest; nil when it is not valid JSON.
     func formattedManifest() -> String? {
         guard let data = manifestText.data(using: .utf8),
               let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return nil }
-        return Self.format(object)
+        return AskWorkflowJSONLayout.format(object, like: manifestText)
     }
 
     // MARK: - Problems → places

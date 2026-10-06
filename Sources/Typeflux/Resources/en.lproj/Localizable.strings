@@ -2656,10 +2656,13 @@
 "ask.workflow.assistant.proposal" = "Proposal";
 "ask.workflow.assistant.untested" = "Not tested";
 "ask.workflow.assistant.testedSummary" = "Tested · %1$d/%2$d passed";
+"ask.workflow.assistant.supersededLine" = "Proposal %1$d: %2$@";
+"ask.workflow.assistant.testedShort" = "Tested %1$d/%2$d ✓";
 "ask.workflow.assistant.approval.title" = "Run this version?";
 "ask.workflow.assistant.approval.body" = "Running it executes new code on this Mac. The assistant only stops to ask when a version does something the one you approved did not.";
 "ask.workflow.assistant.approval.allow" = "Allow and Continue";
 "ask.workflow.assistant.approval.decline" = "Don't Run";
+"ask.workflow.assistant.approval.useOnly" = "Use Only Proposal %d";
 "ask.workflow.assistant.autoTest" = "Test automatically";
 "ask.workflow.assistant.autoTest.help" = "Let the assistant run its code unless a new risk appears";
 "ask.workflow.assistant.cloud" = "Typeflux Cloud";

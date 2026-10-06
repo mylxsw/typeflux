@@ -197,16 +197,16 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
     static func tail(_ stderr: String, lines: Int = 6, folder: URL? = nil) -> String {
         let kept = stderr.split(separator: "\n", omittingEmptySubsequences: true).suffix(lines)
         guard !kept.isEmpty else { return "" }
-        var text = "\n" + kept.joined(separator: "\n")
-        if let folder {
-            // Temporary folders appear both as /var/… and /private/var/….
-            let path = folder.standardizedFileURL.path
-            let plain = path.hasPrefix("/private/") ? String(path.dropFirst("/private".count)) : path
-            for prefix in ["/private" + plain + "/", plain + "/"] {
-                text = text.replacingOccurrences(of: prefix, with: "")
-            }
-        }
-        return text
+        let text = "\n" + kept.joined(separator: "\n")
+        return folder.map { relative(text, to: $0) } ?? text
+    }
+
+    /// `text` with paths inside `folder` written relative to it.
+    static func relative(_ text: String, to folder: URL) -> String {
+        // Temporary folders appear both as /var/… and /private/var/….
+        let path = folder.standardizedFileURL.path
+        let plain = path.hasPrefix("/private/") ? String(path.dropFirst("/private".count)) : path
+        return ["/private" + plain + "/", plain + "/"].reduce(text) { $0.replacingOccurrences(of: $1, with: "") }
     }
 
     /// A script may explain its failure itself by printing `{"error": "…"}` as its last line.

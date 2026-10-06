@@ -4,7 +4,8 @@ import Foundation
 /// remove. It never touches the user's files; applying it changes the editor's
 /// draft, which is saved like any edit. See `docs/design/ask-workflow-editor.md` §10.3.
 struct AskWorkflowProposal: Identifiable, Equatable, Sendable {
-    enum State: Equatable, Sendable { case pending, applied, discarded }
+    /// `superseded`: a newer proposal from the assistant took its place (and its changes).
+    enum State: Equatable, Sendable { case pending, applied, discarded, superseded }
 
     static let maximumFiles = 20
     static let maximumFileSize = 256_000
@@ -36,6 +37,16 @@ struct AskWorkflowProposal: Identifiable, Equatable, Sendable {
             draft.files[path] = nil
         }
         return draft
+    }
+
+    /// This proposal on top of an earlier pending one: the assistant builds each on
+    /// the last, while the user applies them to their own draft.
+    func following(_ earlier: AskWorkflowProposal) -> AskWorkflowProposal {
+        var merged = self
+        merged.manifestText = manifestText ?? earlier.manifestText
+        merged.files = earlier.files.filter { !deletes.contains($0.key) }.merging(files) { $1 }
+        merged.deletes = Array(Set(earlier.deletes).union(deletes).subtracting(files.keys)).sorted()
+        return merged
     }
 
     /// Paths the proposal changes against `base`, with lines added and removed.

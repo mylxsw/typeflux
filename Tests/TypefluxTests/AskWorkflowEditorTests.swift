@@ -134,6 +134,58 @@ struct AskWorkflowDraftTests {
     }
 }
 
+@Suite("Ask workflow JSON layout")
+struct AskWorkflowJSONLayoutTests {
+    private let original = """
+    {
+        "name" : "Rates",
+        "id" : "local.fx",
+        "keywords" : [
+            { "keyword" : "fx", "title" : "Rate" }
+        ],
+        "command" : { "script" : "main.sh", "runtime" : "zsh" },
+        "note" : "a \\"quoted\\" {brace} [bracket], here"
+    }
+    """
+
+    @Test func editsKeepTheKeyOrderAndTheStyle() {
+        var draft = AskWorkflowDraft(folder: URL(fileURLWithPath: "/tmp/wf"), manifestText: original, files: [:])
+        let timeoutSet = draft.set(30, at: ["timeout"])
+        let keywordsSet = draft.set([["keyword": "fx", "title": "Rate", "options": ["to": "jpy"]]], at: ["keywords"])
+        #expect(timeoutSet && keywordsSet)
+        let lines = draft.manifestText.components(separatedBy: "\n")
+        let keys = lines.compactMap { line -> String? in
+            guard line.hasPrefix("    \""), let end = line.dropFirst(5).firstIndex(of: "\"") else { return nil }
+            return String(line[line.index(line.startIndex, offsetBy: 5) ..< end])
+        }
+        #expect(keys == ["name", "id", "keywords", "command", "note", "timeout"])
+        #expect(draft.manifestText.contains("\"script\" : \"main.sh\",\n        \"runtime\""))
+        #expect(draft.manifestText
+            .contains("\"keyword\" : \"fx\",\n            \"title\" : \"Rate\",\n            \"options\""))
+        #expect(draft.manifestText.contains(#""note" : "a \"quoted\" {brace} [bracket], here""#))
+        #expect(draft.manifest?.timeout == 30 && draft.manifest?.keywords.first?.options?["to"] == "jpy")
+    }
+
+    @Test func layoutDetailsAndDefaults() throws {
+        #expect(AskWorkflowJSONLayout.style(of: original) == .init(indent: "    ", colon: " : "))
+        #expect(AskWorkflowJSONLayout.style(of: "{\n\t\"a\": 1\n}") == .init(indent: "\t", colon: ": "))
+        #expect(AskWorkflowJSONLayout.style(of: "{}") == .init())
+        let order = AskWorkflowJSONLayout.keyOrder(of: original)
+        #expect(order[""] == ["name", "id", "keywords", "command", "note"])
+        #expect(order["keywords.0"] == ["keyword", "title"] && order["command"] == ["script", "runtime"])
+        let sorted = try #require(AskWorkflowJSONLayout.format([
+            "b": [1, true, NSNull()] as [Any],
+            "a": [String: Any](),
+            "c": [Any](),
+            "d": "x/y"
+        ]))
+        #expect(sorted ==
+            "{\n  \"a\": {},\n  \"b\": [\n    1,\n    true,\n    null\n  ],\n  \"c\": [],\n  \"d\": \"x/y\"\n}\n")
+        #expect(AskWorkflowJSONLayout.format(["bad": Date()]) == nil)
+        #expect(AskWorkflowJSONLayout.format(["a": 1.5], like: "not json") == "{\n  \"a\": 1.5\n}\n")
+    }
+}
+
 @Suite("Ask workflow store editing")
 @MainActor
 struct AskWorkflowStoreEditorTests {
@@ -514,6 +566,20 @@ struct AskWorkflowProposalTests {
         #expect(changes.first { $0.path == "old.py" }?.isDeleted == true)
         let unchanged = AskWorkflowProposal(summary: "", manifestText: nil, files: [:], deletes: [])
         #expect(unchanged.applied(to: base) == base && unchanged.changes(against: base).isEmpty)
+    }
+
+    @Test func aFollowUpCarriesTheChangesItBuiltOn() {
+        let earlier = AskWorkflowProposal(summary: "1", manifestText: "{\"a\": 1}",
+                                          files: ["lib.sh": "x", "old.sh": "y"], deletes: ["gone.sh", "back.sh"])
+        let later = AskWorkflowProposal(summary: "2", manifestText: nil, files: ["main.sh": "z", "back.sh": "b"],
+                                        deletes: ["old.sh"])
+        let merged = later.following(earlier)
+        #expect(merged.id == later.id && merged.summary == "2")
+        #expect(merged.manifestText == "{\"a\": 1}")
+        #expect(merged.files == ["lib.sh": "x", "main.sh": "z", "back.sh": "b"])
+        #expect(merged.deletes == ["gone.sh", "old.sh"])
+        let replaced = AskWorkflowProposal(summary: "3", manifestText: "{}", files: [:], deletes: []).following(earlier)
+        #expect(replaced.manifestText == "{}")
     }
 
     @Test func proposedPathsStayInTheFolder() {
