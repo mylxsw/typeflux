@@ -56,7 +56,16 @@ enum AskWorkflowAuthorSkill {
       command.args: each entry is one argv entry, never parsed by a shell. Only {query}, {selection} and \
     {option:NAME} are replaced. Optional "interpreter" names a specific program (a virtualenv's python).
     - output: "text" (stdout shown line by line; Return copies, Option-Return types it into the app) or \
-    "none" (prints nothing; the launcher closes). Item lists and live mode are not available yet. \
+    "none" (prints nothing; the launcher closes), "markdown" (a Markdown card: headings, lists, tables, code) \
+    or "items": a list to choose from, printed as one JSON object in Alfred's Script Filter format: \
+    {"items": [{"uid": …, "title": …, "subtitle": …, "arg": …, "icon": "sf:symbol" | "file.png" | \
+    {"type": "fileicon", "path": …}, "action": "open" | "copy" | "paste" | "reveal" | "run" | "askAI", \
+    "app": "Visual Studio Code" (open with it), "autocomplete": …, "valid": false, \
+    "mods": {"alt": {"arg": …, "action": …}, "copy": {"arg": …}}}], "rerun": seconds, "variables": {…}}. \
+    Return does `action` with `arg` (default: open links and paths, copy the rest), Option-Return pastes \
+    unless mods.alt says otherwise, Tab runs again with `autocomplete`, `run` runs again with `arg`, \
+    `variables` come back as options. "auto" lists {"items": …} and shows anything else as text. \
+    Live mode is not available yet. \
     To act after a run, use the object form: {"display": "text", "onSuccess": [...], "onFailure": [...], \
     "close": false}. Actions, at most 8 per list, run in order: {"action": "copy", "value": …}, \
     {"action": "writeBack", "value": …}, {"action": "notify", "title": …, "body": …}, \

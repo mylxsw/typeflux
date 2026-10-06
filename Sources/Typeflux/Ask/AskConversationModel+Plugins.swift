@@ -97,6 +97,7 @@ extension AskConversationModel {
     }
 
     /// Carries out a result's action.
+    // swiftlint:disable:next cyclomatic_complexity
     func performPluginAction(_ action: AskPluginAction) -> PluginActionOutcome {
         switch action.kind {
         case let .copy(text):
@@ -124,6 +125,22 @@ extension AskConversationModel {
             finishPluginResult()
             openURL(url)
             return .close
+        case let .openIn(url, application):
+            finishPluginResult()
+            // Without that application the file opens as Finder would open it.
+            if !openFileInApplication(url, application) {
+                openURL(url)
+            }
+            return .close
+        case let .reveal(url):
+            finishPluginResult()
+            revealFile(url)
+            return .close
+        case let .runWith(text):
+            launcherDraft.text = text
+            plugins.rerun(with: [:], selection: launcherDraft.sentSelection, text: text,
+                          language: AppLocalization.shared.language)
+            return .stay
         case let .editWorkflow(id, path, line):
             finishPluginResult()
             editWorkflow(id, path, line)

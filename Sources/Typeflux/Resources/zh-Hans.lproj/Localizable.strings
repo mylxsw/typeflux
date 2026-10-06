@@ -2559,7 +2559,6 @@
 "ask.workflow.problem.id" = "只能用字母、数字、点、短横线和下划线";
 "ask.workflow.problem.name" = "请填写工作流名称";
 "ask.workflow.problem.noKeywords" = "至少需要一个关键字";
-"ask.workflow.problem.items" = "条目列表将在下个版本支持，目前请用 text";
 "ask.workflow.problem.live" = "边打边出将在下个版本支持，目前请用 onSubmit";
 "ask.workflow.problem.noScript" = "请设置 command.script（zsh 和 bash 也可以用 command.inline）";
 "ask.workflow.problem.scriptAndInline" = "command.script 和 command.inline 只能选一个";
@@ -2782,7 +2781,6 @@
 "ask.workflow.editor.output.none" = "不显示，只做事";
 "ask.workflow.editor.output.auto" = "自动判断";
 "ask.workflow.editor.output.items" = "条目列表";
-"ask.workflow.editor.output.later" = "条目列表和边打边出将在之后的版本支持。";
 "ask.workflow.editor.limits" = "运行";
 "ask.workflow.editor.timeout" = "超时";
 "ask.workflow.editor.seconds" = "%d 秒";
@@ -3206,3 +3204,28 @@
 "ask.workflow.gallery.wc.keyword.wc" = "字数统计";
 "ask.workflow.gallery.wc.usage.1" = "统计选中的文字";
 "ask.workflow.gallery.wc.usage.2" = "统计输入的文字";
+
+/* Workflow item lists and Markdown (O3) */
+"ask.plugin.action.openIn" = "用 %@ 打开";
+"ask.plugin.action.reveal" = "在 Finder 中显示";
+"ask.plugin.action.run" = "运行";
+"ask.plugin.action.complete" = "进入";
+"ask.plugin.hint.option.enter" = "⌥↩ %@";
+"ask.plugin.hint.complete" = "⇥ 进入";
+"ask.workflow.items.empty" = "没有结果";
+"ask.workflow.items.invalid" = "输出不是条目列表（{\"items\": […]}），按文本显示";
+"ask.workflow.editor.preview.sampleMarkdown" = "### 100 美元\n\n| 货币 | 金额 |\n|---|---:|\n| 日元 | 14,912.30 |\n| 欧元 | 92.18 |\n\n汇率来自 **open.er-api.com**。";
+"ask.workflow.editor.preview.moreItems" = "启动器里还有 %d 条";
+"ask.workflow.gallery.list" = "显示列表供选择";
+"ask.workflow.gallery.ip.name" = "本机 IP";
+"ask.workflow.gallery.ip.summary" = "列出本机的网络地址，选一条复制。";
+"ask.workflow.gallery.ip.demonstrates" = "条目列表：上下选择，↩ 复制，⌥↩ 写回";
+"ask.workflow.gallery.ip.keyword.ip" = "本机 IP";
+"ask.workflow.gallery.ip.usage.1" = "列出所有地址和本机主机名";
+"ask.workflow.gallery.ip.usage.2" = "只列出匹配的地址";
+"ask.workflow.gallery.code.name" = "在编辑器打开项目";
+"ask.workflow.gallery.code.summary" = "找到项目文件夹，在编辑器里打开。";
+"ask.workflow.gallery.code.demonstrates" = "列表 + 打开应用：↩ 用编辑器打开，⌥↩ 在 Finder 中显示，文件图标，预设参数";
+"ask.workflow.gallery.code.keyword.code" = "打开项目";
+"ask.workflow.gallery.code.usage.1" = "列出项目，最近改过的在前";
+"ask.workflow.gallery.code.usage.2" = "只列出名称包含「web」的项目";

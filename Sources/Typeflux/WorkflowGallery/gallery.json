@@ -144,6 +144,48 @@
           "text": "wc.usage.2"
         }
       ]
+    },
+    {
+      "id": "ip",
+      "category": "system",
+      "order": 7,
+      "color": "teal",
+      "preview": {
+        "keyword": "ip",
+        "query": "",
+        "output": "{\"items\": [{\"title\": \"192.168.1.23\", \"subtitle\": \"Wi-Fi · en0 · IPv4\", \"arg\": \"192.168.1.23\", \"icon\": \"sf:wifi\", \"action\": \"copy\"}, {\"title\": \"10.0.0.8\", \"subtitle\": \"Thunderbolt Ethernet · en5 · IPv4\", \"arg\": \"10.0.0.8\", \"icon\": \"sf:cable.connector\", \"action\": \"copy\"}, {\"title\": \"MacBook-Pro.local\", \"subtitle\": \"Local host name\", \"arg\": \"MacBook-Pro.local\", \"icon\": \"sf:desktopcomputer\", \"action\": \"copy\"}]}"
+      },
+      "usage": [
+        {
+          "example": "ip",
+          "text": "ip.usage.1"
+        },
+        {
+          "example": "ip 192.168",
+          "text": "ip.usage.2"
+        }
+      ]
+    },
+    {
+      "id": "code",
+      "category": "system",
+      "order": 8,
+      "color": "indigo",
+      "preview": {
+        "keyword": "code",
+        "query": "",
+        "output": "{\"items\": [{\"title\": \"typeflux\", \"subtitle\": \"~/Projects/typeflux\", \"arg\": \"/Users/me/Projects/typeflux\", \"action\": \"open\", \"app\": \"Visual Studio Code\", \"icon\": {\"type\": \"filetype\", \"path\": \"public.folder\"}, \"mods\": {\"alt\": {\"action\": \"reveal\"}}}, {\"title\": \"homepage\", \"subtitle\": \"~/Projects/homepage\", \"arg\": \"/Users/me/Projects/homepage\", \"action\": \"open\", \"app\": \"Visual Studio Code\", \"icon\": {\"type\": \"filetype\", \"path\": \"public.folder\"}, \"mods\": {\"alt\": {\"action\": \"reveal\"}}}, {\"title\": \"dotfiles\", \"subtitle\": \"~/Code/dotfiles\", \"arg\": \"/Users/me/Code/dotfiles\", \"action\": \"open\", \"app\": \"Visual Studio Code\", \"icon\": {\"type\": \"filetype\", \"path\": \"public.folder\"}, \"mods\": {\"alt\": {\"action\": \"reveal\"}}}]}"
+      },
+      "usage": [
+        {
+          "example": "code",
+          "text": "code.usage.1"
+        },
+        {
+          "example": "code web",
+          "text": "code.usage.2"
+        }
+      ]
     }
   ]
 }

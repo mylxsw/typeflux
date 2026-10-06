@@ -310,3 +310,59 @@ stdout 是下面这样的 JSON 时，启动器把 `text` 当作显示内容，�
 对照时发现并修了这些问题：对话框背景半透明（截图里透出编辑器）；卡片底部放不下，「Python」被折成两行，「联网」「已添加」被截断；名称「URL / Base64 编解码」被截断（左栏比设计稿宽，改为 230pt）；入口脚本预览自动换行；「入口」下拉没有边框；文件卡片说明的句号落到下一行开头；更新页的按钮挤压了文件标签；没有动作的示例「会做什么」是空的。
 
 和设计稿的差异：详情页「用法」来自 `gallery.json` 里多语言的用法列表，不是直接显示 `README.md`（`README.md` 是英文，仍随示例一起复制）；编辑器左上角工作流图标的颜色仍按 id 计算，不用示例的颜色。
+
+## 8. O3 实现说明（GUL-232）
+
+**已实现**：3.2 里的 `items`、`markdown` 两种显示方式（`auto` 也会按列表显示），条目动作、Alfred 兼容字段、`rerun`、`variables`；编辑器「输出」步骤的预览随显示方式变化（截图 ⑦）；示例库加上「本机 IP」「在编辑器打开项目」。`image` 仍是「即将支持」（O4）。
+
+| 部分 | 代码 |
+|---|---|
+| 解析 `{"items": …}`（Alfred Script Filter）、按显示方式解码 | `AskWorkflowItems.swift`（`AskWorkflowItemList`、`AskWorkflowDecodedOutput`） |
+| 条目 → 启动器的行：每个键做什么、图标、路径 | `AskWorkflowItemRows.swift`（启动器和编辑器预览共用） |
+| 运行后按显示方式出结果；列表不流式显示 | `AskWorkflowPlugin.finish` / `run` |
+| 结果里的条目、选中的行、`rerun`、`variables` | `AskPluginOutput.items` / `selectedItem` / `rerunAfter` / `variables`，`AskPluginItem` |
+| 上下选择、定时重跑、`variables` 作为下次的参数 | `AskPluginSession.moveSelection` / `selectItem` / `scheduleRerun` / `adopt` |
+| 键盘：↑↓、⇥ 补全、↩ / ⌥↩ / ⌘C / ⌘↩ | `AskComposerViews.pluginKey`、`AskConversationModel.performPluginAction`（新增 `.openIn`、`.reveal`、`.runWith`） |
+| 列表和 Markdown 的卡片 | `AskPluginViews`（`itemList`、`markdownHeight`）、`AskPluginItemViews.swift` |
+| 编辑器预览、示例库详情的预览 | `AskWorkflowLauncherPreview`（`decoded`、示例列表 / Markdown） |
+| 示例 | `WorkflowGallery/ip`、`WorkflowGallery/code`，`gallery.json` 新增「系统」类 |
+
+**条目字段**（`ask-launcher-workflows.md` §4.2）：
+
+- ↩：`action` + `arg`。不写 `action` 时，http(s) 链接、`file:` 和以 `/`、`~` 开头的路径打开，其他复制。`open` 只打开 http(s) 和文件，别的 scheme（`javascript:`、`mailto:` 等）不打开；条目可以加 `"app": "Visual Studio Code"`，用这个应用打开文件或文件夹（找不到这个应用时按 Finder 的方式打开）。`paste` 写回（有选中文字时是「替换选中」），`reveal` 在 Finder 中显示，`run` 把 `arg` 填进输入框再运行一次，`askAI` 把 `arg` 交给 AI。
+- ⌥↩：`mods.alt` 的 `action` / `arg` / `valid`，默认写回 `arg`。`mods.alt.subtitle` 能读，但没有显示（启动器没有「按住 ⌥ 换副标题」）。`mods.cmd` 等其他修饰键忽略：⌘↩ 永远是问 AI，问的是选中的那一行。
+- ⌘C：`mods.copy.arg` 或 Alfred 的 `text.copy`，再没有就复制 `arg`、标题；不关闭启动器。
+- ⇥：选中的行有 `autocomplete` 时，填进输入框并立即重新运行（逐级深入）；没有时 ⇥ 照旧切换选项。`valid: false` 的行 ↩ / ⌥↩ 不做事，但有 `autocomplete` 时 ↩ 也是补全（和 Alfred 一样）。
+- 图标：`sf:符号名`；图片文件（相对工作流文件夹、`~` 或绝对路径）；`{"type": "fileicon", "path": …}` 显示这个文件的图标；`{"type": "filetype", "path": "public.folder"}` 显示类型图标。没有图标的行用工作流的图标。
+- 容错：没有标题的条目跳过；标题、`arg`、`uid` 可以是数字；`arg` 是数组时按行合并；`valid` 可以写成 `"no"`、`0`；不认识的 `action` 按默认处理；最多 200 条。空列表显示一行「没有结果」。
+- `display: items` 但输出不是列表：按文本显示，并提示「输出不是条目列表」；`{"text": "…"}` 按文本卡片显示。`auto` 不提示。
+
+**重跑和参数**：
+
+- `rerun`：最小 0.5 秒。只在结果还显示着时安静地重跑：不显示骨架，结果到了直接替换，按 `uid` 保持选中的行（行没了就留在原来的位置）。输入变化、按 ⌘R / ⇥、退出关键字模式、关闭启动器都会停止。重跑出来的结果不再执行「运行成功后」的动作（只在第一次结果时执行一次）。运行失败时停止重跑，显示错误卡片。
+- `variables`：在这次关键字模式里，作为之后每次运行的 `options` 传回（stdin 的 `options`、`TYPEFLUX_OPTION_*`），退出关键字模式后清空。
+- 列表在脚本打印时不逐行显示（半个 JSON 没法显示），显示骨架；`auto` 下以 `{` 开头的输出同样。
+
+**Markdown**：复用随便问的渲染（`AskTranscriptText` / `AskMarkdownText`）：标题、列表、表格、代码块、链接（只有 http(s) 和 mailto 可点）。卡片高度按真实排版算出，最高 280pt，超出滚动。↩ / ⌥↩ 复制、写回的是 Markdown 原文。
+
+**示例**：
+
+- `ip`（zsh，「系统」类）：列出本机各网络端口的 IPv4 / IPv6 地址和本机主机名；`ip 192.168` 只列出匹配的。↩ 复制，⌥↩ 写回。不查公网 IP，不联网。
+- `code`（zsh，「系统」类）：列出 `~/Projects ~/Code ~/Developer ~/src ~/GitHub` 下的文件夹（最近修改的在前，最多 50 个），`code web` 按名称过滤；↩ 用编辑器打开（依次找 Visual Studio Code、Cursor、Zed、Sublime Text、Nova、BBEdit），⌥↩ 在 Finder 中显示，⌘C 复制路径，行图标是文件夹图标。查找目录和编辑器是关键字的预设参数 `roots`、`editor`。
+- 两个示例的详情页里，「启动器里的样子」按列表显示；「会做什么」写「显示列表供选择」。
+
+### 逐屏对照
+
+截图由 `WorkflowItemsVisualTests` 用真实视图渲染（`TYPEFLUX_ASK_SNAPSHOTS=<目录> swift test --filter WorkflowItemsVisualTests`）。
+
+| 设计稿 | 实现 | 对照结果 |
+|---|---|---|
+| ⑦ `ed-items.png` | `implemented-ed-items(-light).png` | 一致：「条目列表」可选，Markdown 卡片可选，图片标「即将支持」；步骤条「列表 · 2 个动作」；右侧「启动器里的样子」是可点选的列表（选中行蓝底，写出「↩ 复制」），下面的按键提示换成选中行的 ↩ / ⌥↩ / ⌘C；「这次运行成功后会执行」用 `{json.items.0.…}` 取值。 |
+| — | `implemented-launcher-items(-light).png` | 启动器里的列表：图标、标题、副标题，选中行蓝底并写出 ↩ 的动作；底栏「↩ 复制 · ⌥↩ 插入 · ⌘↩ 问 AI」。 |
+| — | `implemented-launcher-markdown.png` | Markdown 卡片：标题、表格（右对齐的列）、行内代码、粗体，下面是复制 / 插入 / 对照 / 重新运行。 |
+| — | `implemented-ed-markdown(-light).png` | 编辑器选「Markdown 卡片」时的预览。 |
+| — | `implemented-g-detail-ip.png`、`implemented-g-detail-code.png`、`implemented-g-list-o3.png` | 示例库：「系统」类两个新示例，详情页的启动器预览按列表显示。 |
+
+对照时发现并修了：选中行写「↩ 用 Visual Studio Code 打开」这类长动作名时，行被撑宽、溢出示例库对话框（改为标题优先，动作名截断）；预览下面的按键提示放不下时整行溢出（改为放不下就少显示几个）。
+
+和设计稿的差异：设计稿 ⑦ 里列表的按键提示只有「↩ 复制」，实现里按选中行列出 ↩ / ⌥↩ / ⌘C / ⌘↩。

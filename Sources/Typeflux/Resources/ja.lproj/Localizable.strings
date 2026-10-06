@@ -2549,7 +2549,6 @@
 "ask.workflow.problem.id" = "英数字・ドット・ハイフン・アンダースコアのみ使えます";
 "ask.workflow.problem.name" = "名前を入力してください";
 "ask.workflow.problem.noKeywords" = "キーワードを 1 つ以上追加してください";
-"ask.workflow.problem.items" = "項目リストは次のバージョンで対応します。今は text を使ってください";
 "ask.workflow.problem.live" = "入力中の実行は次のバージョンで対応します。今は onSubmit を使ってください";
 "ask.workflow.problem.noScript" = "command.script（zsh / bash は command.inline も可）を設定してください";
 "ask.workflow.problem.scriptAndInline" = "command.script と command.inline はどちらか一方だけ";
@@ -2772,7 +2771,6 @@
 "ask.workflow.editor.output.none" = "表示せず、実行だけ";
 "ask.workflow.editor.output.auto" = "自動判定";
 "ask.workflow.editor.output.items" = "項目リスト";
-"ask.workflow.editor.output.later" = "項目リストと入力中の結果表示は今後のバージョンで対応します。";
 "ask.workflow.editor.limits" = "実行";
 "ask.workflow.editor.timeout" = "タイムアウト";
 "ask.workflow.editor.seconds" = "%d 秒";
@@ -3196,3 +3194,28 @@
 "ask.workflow.gallery.wc.keyword.wc" = "文字数";
 "ask.workflow.gallery.wc.usage.1" = "選択テキストを数える";
 "ask.workflow.gallery.wc.usage.2" = "入力したテキストを数える";
+
+/* Workflow item lists and Markdown (O3) */
+"ask.plugin.action.openIn" = "%@ で開く";
+"ask.plugin.action.reveal" = "Finder に表示";
+"ask.plugin.action.run" = "実行";
+"ask.plugin.action.complete" = "開く";
+"ask.plugin.hint.option.enter" = "⌥↩ %@";
+"ask.plugin.hint.complete" = "⇥ 開く";
+"ask.workflow.items.empty" = "結果なし";
+"ask.workflow.items.invalid" = "項目リスト（{\"items\": […]}）ではないため、テキストで表示しています";
+"ask.workflow.editor.preview.sampleMarkdown" = "### 100 米ドル\n\n| 通貨 | 金額 |\n|---|---:|\n| 円 | 14,912.30 |\n| ユーロ | 92.18 |\n\nレートは **open.er-api.com** から。";
+"ask.workflow.editor.preview.moreItems" = "ランチャーではほかに %d 件";
+"ask.workflow.gallery.list" = "選べるリストを表示";
+"ask.workflow.gallery.ip.name" = "ローカル IP";
+"ask.workflow.gallery.ip.summary" = "この Mac のネットワークアドレスを一覧にし、選んだものをコピーします。";
+"ask.workflow.gallery.ip.demonstrates" = "項目リスト：矢印で選び、↩ でコピー、⌥↩ で書き戻し";
+"ask.workflow.gallery.ip.keyword.ip" = "ローカル IP";
+"ask.workflow.gallery.ip.usage.1" = "すべてのアドレスとローカルホスト名を表示";
+"ask.workflow.gallery.ip.usage.2" = "一致するアドレスだけを表示";
+"ask.workflow.gallery.code.name" = "プロジェクトを開く";
+"ask.workflow.gallery.code.summary" = "プロジェクトフォルダを探してエディタで開きます。";
+"ask.workflow.gallery.code.demonstrates" = "リスト＋アプリで開く：↩ でエディタ、⌥↩ で Finder に表示、ファイルアイコン、プリセット";
+"ask.workflow.gallery.code.keyword.code" = "プロジェクトを開く";
+"ask.workflow.gallery.code.usage.1" = "最近変更したものから順にプロジェクトを表示";
+"ask.workflow.gallery.code.usage.2" = "名前に「web」を含むプロジェクトだけ";

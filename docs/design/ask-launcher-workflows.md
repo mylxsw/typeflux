@@ -1,6 +1,6 @@
 # 随便问：自定义工作流（脚本插件）设计方案
 
-> 状态：W1 已实现（实现说明见第 12 节），W2、W3 仍是设计。配套设计稿：`docs/design/ask-launcher-workflows.html`，截图在 `docs/design/ask-launcher-workflows/`。截图：`1-list.png` 条目列表、`2-text.png` 文本结果、`3-error.png` 出错、`4-settings.png` 工作流列表、`5-editor.png` 编辑和测试运行、`6-trust.png` 信任确认。
+> 状态：W1 已实现（实现说明见第 12 节）；W2 的条目列表和 Alfred 兼容已随 GUL-232 实现（见 `workflow-gallery-output-actions.md` 第 8 节），W2 其余部分和 W3 仍是设计。配套设计稿：`docs/design/ask-launcher-workflows.html`，截图在 `docs/design/ask-launcher-workflows/`。截图：`1-list.png` 条目列表、`2-text.png` 文本结果、`3-error.png` 出错、`4-settings.png` 工作流列表、`5-editor.png` 编辑和测试运行、`6-trust.png` 信任确认。
 > 基于已经上线的关键字插件框架（`docs/design/ask-launcher-keyword-plugins.md`，P1 翻译、P2 AI 指令和网页搜索）。工作流就是那份文档 P3 里预留的「脚本插件」。
 
 ## 0. 一页结论
@@ -179,7 +179,8 @@
 | `title` / `subtitle` / `icon` | 列表行。`icon` 可以是文件、`sf:符号名`，或 `{"type": "fileicon", "path": …}`（显示这个文件的图标）。 |
 | `arg` + `action` | ↩ 做什么：`open`（打开 URL 或文件，默认，`arg` 是 http(s) / file 时）、`copy`、`paste`（写回原应用）、`reveal`（在 Finder 中显示）、`run`（把 `arg` 作为新的参数重跑这个工作流）、`askAI`（把 `arg` 交给 AI）。 |
 | `mods.alt` / `mods.copy` | ⌥↩ 的动作（默认是写回），以及 ⌘C 复制的内容（默认复制 `arg`）。Alfred 的 `mods.cmd` 会被忽略：在 Typeflux 里 ⌘↩ 永远是「问 AI」，同一个键只有一个意思。 |
-| `autocomplete` | ⇥ 把它填进输入框（用于逐级深入，例如先选项目再选问题）。 |
+| `app` | `open` 用这个应用打开文件或文件夹（名称或 bundle id），例如 `"app": "Visual Studio Code"`。Typeflux 自己的字段，Alfred 没有。 |
+| `autocomplete` | ⇥ 把它填进输入框并重新运行（用于逐级深入，例如先选项目再选问题）。 |
 | `valid: false` | 这一行只能看，不能执行（例如「没有结果」「需要先登录」）。 |
 | `rerun` | 秒数，到时自动再运行一次（例如显示正在进行的构建状态），最小 0.5 秒。 |
 | `variables` | 下次运行时作为 `options` 传回去。 |
