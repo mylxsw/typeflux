@@ -122,33 +122,123 @@ extension AskWordCard {
     }
 
     /// Reads the model's reply: the schema's JSON, possibly inside a code block or prose.
-    static func parse(_ reply: String) -> AskWordLookup {
+    /// Many providers do not enforce the schema, so the usual alternative names
+    /// (`word`, `value`, `parts_of_speech`, `definitions`, …) are read too.
+    /// `word` stands in for a missing headword.
+    static func parse(_ reply: String, word: String = "") -> AskWordLookup {
         let trimmed = reply.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let start = trimmed.firstIndex(of: "{"), let end = trimmed.lastIndex(of: "}"), start < end,
-              let reply = try? JSONDecoder().decode(Reply.self, from: Data(trimmed[start...end].utf8)) else {
-            return .unreadable(trimmed)
+        guard let object = jsonObject(in: trimmed) else { return .unreadable(trimmed) }
+        let translation = text(object, "translation", "translated", "result")
+        if text(object, "kind", "type")?.lowercased() == "text" {
+            return translation.map(AskWordLookup.translation) ?? .unreadable(trimmed)
         }
-        if reply.kind == "text" {
-            let translation = reply.translation?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            return translation.isEmpty ? .unreadable(trimmed) : .translation(translation)
-        }
-        let card = AskWordCard(headword: reply.headword ?? "", phonetics: reply.phonetics ?? [], senses: reply.senses ?? [],
-                               forms: reply.forms ?? [], examples: reply.examples ?? [], synonyms: reply.synonyms ?? [])
-            .tidied()
-        guard !card.headword.isEmpty, !card.senses.isEmpty else { return .unreadable(trimmed) }
-        return .card(card)
+        let card = AskWordCard(
+            headword: text(object, "headword", "word", "term", "entry") ?? word,
+            phonetics: phonetics(object), senses: senses(object), forms: forms(object),
+            examples: list(object, "examples", "example_sentences", "sentences").compactMap(example),
+            synonyms: texts(object, "synonyms", "similar_words", "related")
+        ).tidied()
+        if !card.headword.isEmpty, !card.senses.isEmpty { return .card(card) }
+        return translation.map(AskWordLookup.translation) ?? .unreadable(trimmed)
     }
 
-    /// The reply's shape, every field optional so a partial answer still reads.
-    private struct Reply: Decodable {
-        var kind: String?
-        var headword: String?
-        var phonetics: [Phonetic]?
-        var senses: [Sense]?
-        var forms: [Form]?
-        var examples: [Example]?
-        var synonyms: [String]?
-        var translation: String?
+    /// Whether a reply that could not be read was meant to be structured, so it
+    /// must not be shown as it came.
+    static func looksStructured(_ reply: String) -> Bool {
+        let trimmed = reply.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.hasPrefix("{") || trimmed.hasPrefix("[") || trimmed.hasPrefix("```")
+            || (trimmed.contains("{") && trimmed.contains("\":"))
+    }
+
+    private typealias Object = [String: Any]
+
+    private static func jsonObject(in reply: String) -> Object? {
+        guard let start = reply.firstIndex(of: "{"), let end = reply.lastIndex(of: "}"), start < end,
+              let value = try? JSONSerialization.jsonObject(with: Data(reply[start...end].utf8)) else { return nil }
+        return value as? Object
+    }
+
+    /// The first of `keys` holding text; a list of texts is joined.
+    private static func text(_ object: Object, _ keys: String...) -> String? {
+        for key in keys {
+            if let value = object[key] as? String, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return value.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            if let values = object[key] as? [String], !values.isEmpty { return values.joined(separator: meaningSeparator) }
+        }
+        return nil
+    }
+
+    /// The first of `keys` holding one text or several; objects give their text-like field.
+    private static func texts(_ object: Object, _ keys: String...) -> [String] {
+        for key in keys {
+            if let value = object[key] as? String { return value.isEmpty ? [] : [value] }
+            if let values = object[key] as? [Any] {
+                let found = values.compactMap { item -> String? in
+                    if let value = item as? String { return value }
+                    guard let item = item as? Object else { return nil }
+                    return text(item, "meaning", "definition", "text", "translation", "value", "word")
+                }
+                if !found.isEmpty { return found }
+            }
+        }
+        return []
+    }
+
+    private static func list(_ object: Object, _ keys: String...) -> [Any] {
+        for key in keys { if let values = object[key] as? [Any] { return values } }
+        return []
+    }
+
+    private static func phonetics(_ object: Object) -> [Phonetic] {
+        for key in ["phonetics", "pronunciations", "pronunciation", "phonetic", "ipa", "pinyin"] {
+            switch object[key] {
+            case let value as String: return [Phonetic(label: key == "pinyin" ? "pinyin" : "", text: value)]
+            case let byLabel as [String: String]:
+                return byLabel.sorted { $0.key < $1.key }.map { Phonetic(label: $0.key, text: $0.value) }
+            case let values as [Any]:
+                return values.compactMap { item in
+                    if let value = item as? String { return Phonetic(label: "", text: value) }
+                    guard let item = item as? Object,
+                          let value = text(item, "text", "value", "ipa", "phonetic", "pronunciation", "pinyin") else { return nil }
+                    return Phonetic(label: text(item, "label", "accent", "region", "dialect", "type") ?? "", text: value)
+                }
+            default: continue
+            }
+        }
+        return []
+    }
+
+    private static func senses(_ object: Object) -> [Sense] {
+        list(object, "senses", "parts_of_speech", "partsOfSpeech", "definitions", "meanings", "entries").compactMap { item in
+            if let meaning = item as? String { return Sense(pos: "", meanings: [meaning]) }
+            guard let item = item as? Object else { return nil }
+            return Sense(pos: text(item, "pos", "part_of_speech", "partOfSpeech", "type", "label") ?? "",
+                         meanings: texts(item, "meanings", "definitions", "meaning", "definition", "translations",
+                                         "translation", "senses"))
+        }
+    }
+
+    private static func forms(_ object: Object) -> [Form] {
+        for key in ["forms", "inflections", "word_forms"] {
+            if let byLabel = object[key] as? [String: String] {
+                return byLabel.sorted { $0.key < $1.key }.map { Form(label: $0.key, value: $0.value) }
+            }
+            if let values = object[key] as? [Any] {
+                return values.compactMap { item in
+                    guard let item = item as? Object, let value = text(item, "value", "form", "word", "text") else { return nil }
+                    return Form(label: text(item, "label", "type", "name") ?? "", value: value)
+                }
+            }
+        }
+        return []
+    }
+
+    private static func example(_ item: Any) -> Example? {
+        if let sentence = item as? String { return Example(source: sentence, target: "") }
+        guard let item = item as? Object,
+              let source = text(item, "source", "sentence", "example", "original", "text") else { return nil }
+        return Example(source: source, target: text(item, "target", "translation", "meaning") ?? "")
     }
 
     /// The structured output the AI is asked for.
