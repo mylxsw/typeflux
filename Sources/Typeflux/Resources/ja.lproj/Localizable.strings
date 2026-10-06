@@ -701,6 +701,12 @@
 "settings.shortcuts.ask.title" = "何でも聞いてください";
 "settings.shortcuts.ask.subtitle" = "Fn を 2 回押すと録音が開始され、何でも質問できます。回答はポップアップに表示されます。テキストが選択されている場合、明示的な編集リクエストによってテキストを直接書き換えることもできます。";
 "settings.shortcuts.ask.footnote" = "";
+"settings.shortcuts.launcherPosition.title" = "表示位置";
+"settings.shortcuts.launcherPosition.center" = "常に中央";
+"settings.shortcuts.launcherPosition.last" = "前回の位置を記憶";
+"settings.shortcuts.launcherPosition.center.subtitle" = "ポインタのある画面の中央に開きます。ドラッグはその回だけ有効です。";
+"settings.shortcuts.launcherPosition.last.subtitle" = "その画面で最後に置いた位置に開きます。上端や空いている所をドラッグして移動します。";
+"settings.shortcuts.launcherPosition.reset" = "中央に戻す";
 "settings.shortcuts.persona.title" = "ペルソナスイッチャー";
 "settings.shortcuts.persona.subtitle" = "中央揃えピッカーを開きます。テキストを選択すると、その選択範囲にペルソナを直接適用することもできます。";
 "settings.shortcuts.persona.footnote" = "";
@@ -1519,6 +1525,7 @@
 "ask.search.conversations" = "会話";
 "ask.search.placeholder" = "Search conversations or actions";
 "ask.launcher.hint" = "↩ Send · esc Close";
+"ask.launcher.drag" = "ドラッグで移動 · ダブルクリックで中央へ";
 "ask.quick.calculator" = "計算機";
 "ask.quick.askAI" = "AI に質問";
 "ask.quick.hint" = "↩ 結果をコピー · ⌘↩ AI に質問 · esc 閉じる";

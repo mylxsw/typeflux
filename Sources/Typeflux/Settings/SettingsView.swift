@@ -2180,7 +2180,8 @@ struct StudioView: View {
                         },
                         onUnset: {
                             viewModel.unsetAskHotkey()
-                        }
+                        },
+                        showsLauncherPositionSetting: true
                     )
 
                     shortcutConfigurationRow(
@@ -3276,7 +3277,8 @@ struct StudioView: View {
         onStartRecording: @escaping () -> Void,
         onReset: @escaping () -> Void,
         onUnset: @escaping () -> Void,
-        showsQuickInputSetting: Bool = false
+        showsQuickInputSetting: Bool = false,
+        showsLauncherPositionSetting: Bool = false
     ) -> some View {
         StudioCard(padding: StudioTheme.Insets.cardDense) {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
@@ -3339,8 +3341,46 @@ struct StudioView: View {
                         .toggleStyle(.switch)
                     }
                 }
+
+                if showsLauncherPositionSetting {
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    launcherPositionSetting
+                }
             }
         }
+    }
+
+    /// Where ⌥Space opens the launcher: always centred, or where it was last dragged.
+    private var launcherPositionSetting: some View {
+        StudioSettingRow(
+            title: L("settings.shortcuts.launcherPosition.title"),
+            subtitle: L(viewModel.askLauncherPosition == .center
+                ? "settings.shortcuts.launcherPosition.center.subtitle"
+                : "settings.shortcuts.launcherPosition.last.subtitle")
+        ) {
+            HStack(spacing: StudioTheme.Spacing.medium) {
+                if viewModel.askLauncherPosition == .lastPosition {
+                    Button(L("settings.shortcuts.launcherPosition.reset")) {
+                        viewModel.resetAskLauncherPositions()
+                    }
+                    .buttonStyle(.link)
+                    .fixedSize()
+                    .disabled(!viewModel.hasRememberedLauncherPositions)
+                }
+                StudioSegmentedPicker(
+                    options: [
+                        (label: L("settings.shortcuts.launcherPosition.center"), value: AskLauncherPosition.center),
+                        (label: L("settings.shortcuts.launcherPosition.last"), value: .lastPosition)
+                    ],
+                    selection: Binding(
+                        get: { viewModel.askLauncherPosition },
+                        set: viewModel.setAskLauncherPosition
+                    )
+                )
+                .fixedSize()
+            }
+        }
+        .onAppear { viewModel.refreshAskLauncherPositions() }
     }
 
     private var recordingShortcutBanner: some View {

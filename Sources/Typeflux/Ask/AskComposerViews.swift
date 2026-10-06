@@ -6,6 +6,9 @@ struct AskLauncherView: View {
     @ObservedObject var model: AskConversationModel
     var onDismiss: () -> Void
     var onHeightChange: (CGFloat) -> Void = { _ in }
+    /// Moving the panel: a strip along the card's top edge and the bottom bar's empty space.
+    var drag: AskWindowDragHandlers?
+    @State private var hovering = false
 
     var body: some View {
         AskComposer(model: model, launcher: true, onDismiss: onDismiss, onHeightChange: onHeightChange)
@@ -14,9 +17,35 @@ struct AskLauncherView: View {
             // takes their height, and centred content would shift the editor and its
             // controls up or down for that frame.
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .overlay(alignment: .top) { if let drag { grip(drag) } }
+            .onHover { hovering = $0 }
+            .environment(\.askWindowDrag, drag)
             .tint(AskTheme.accent)
             .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
     }
+
+    /// A strip along the top edge, above the editor's controls, marked by a short
+    /// bar while the pointer is over the launcher. Double-click puts it back in the middle.
+    /// The strip sits on the card itself: the panel is transparent around the card,
+    /// and clicks there fall through to the window below.
+    private func grip(_ drag: AskWindowDragHandlers) -> some View {
+        AskWindowDragArea(handlers: drag)
+            .frame(height: Self.gripHeight)
+            .overlay(alignment: .top) {
+                Capsule().fill(StudioTheme.textTertiary)
+                    .frame(width: 36, height: 4)
+                    .padding(.top, 3)
+                    .opacity(hovering ? 0.5 : 0)
+                    .allowsHitTesting(false)
+            }
+            .help(L("ask.launcher.drag"))
+            .accessibilityIdentifier("ask.launcher.grip")
+            .padding(.top, AskMetrics.launcherGutter)
+            .padding(.horizontal, AskMetrics.launcherCardCorner)
+    }
+
+    /// The card's top points, clear of the editor row's controls (they start 14pt down).
+    static let gripHeight: CGFloat = 9
 }
 
 /// Included content sits above the editor; switches and actions sit below it.
@@ -41,6 +70,7 @@ struct AskComposer: View {
     @Environment(\.askGlassMaterialOverride) private var glassOverride
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.askWindowDrag) private var windowDrag
 
     init(model: AskConversationModel, compact: Bool = false, availableWidth: CGFloat? = nil,
          availableHeight: CGFloat? = nil,
@@ -854,7 +884,10 @@ struct AskComposer: View {
             contextChips
                 .disabled(active)
                 .opacity(Self.recordingDim(active))
+            // In the launcher the empty space moves the panel; it lays out exactly like the spacer.
             Spacer(minLength: 8)
+                .frame(maxHeight: .infinity)
+                .background { if let windowDrag { AskWindowDragArea(handlers: windowDrag) } }
             Group {
                 if let feedback = model.capturedContentFeedback(launcher: true), !active {
                     AskCapturedContentFeedbackView(feedback: feedback) {

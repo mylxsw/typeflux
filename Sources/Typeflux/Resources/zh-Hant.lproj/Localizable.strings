@@ -708,6 +708,12 @@
 "settings.shortcuts.ask.title" = "隨便問";
 "settings.shortcuts.ask.subtitle" = "連按兩次 Fn 即可開始錄音提問，回答會在視窗中展示。若有選取文字，明確的編輯請求也可以直接改寫選取範圍。";
 "settings.shortcuts.ask.footnote" = "";
+"settings.shortcuts.launcherPosition.title" = "開啟位置";
+"settings.shortcuts.launcherPosition.center" = "永遠置中";
+"settings.shortcuts.launcherPosition.last" = "記住上次位置";
+"settings.shortcuts.launcherPosition.center.subtitle" = "在滑鼠所在螢幕的正中開啟。拖動只影響這一次。";
+"settings.shortcuts.launcherPosition.last.subtitle" = "在這塊螢幕上次放下的位置開啟。拖動頂部邊緣或空白處即可移動。";
+"settings.shortcuts.launcherPosition.reset" = "恢復置中";
 "settings.shortcuts.persona.title" = "人設切換器";
 "settings.shortcuts.persona.subtitle" = "打開置中的選擇器；如果目前有選取文字，也可以直接把所選人設套用到這段文字。";
 "settings.shortcuts.persona.footnote" = "";
@@ -1526,6 +1532,7 @@
 "ask.search.conversations" = "對話";
 "ask.search.placeholder" = "Search conversations or actions";
 "ask.launcher.hint" = "↩ Send · esc Close";
+"ask.launcher.drag" = "拖動以移動 · 按兩下回到中間";
 "ask.quick.calculator" = "計算機";
 "ask.quick.askAI" = "問 AI";
 "ask.quick.hint" = "↩ 拷貝結果 · ⌘↩ 問 AI · esc 關閉";

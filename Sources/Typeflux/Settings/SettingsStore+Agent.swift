@@ -67,6 +67,31 @@ extension SettingsStore {
         set { defaults.set(newValue, forKey: "ask.launcher.keywordPlugins") }
     }
 
+    /// Whether the launcher opens centred or where it was last dragged.
+    var askLauncherPosition: AskLauncherPosition {
+        get { defaults.string(forKey: "ask.launcher.position").flatMap(AskLauncherPosition.init(rawValue:)) ?? .center }
+        set {
+            defaults.set(newValue.rawValue, forKey: "ask.launcher.position")
+            // Centring forgets the old positions, so remembering again starts afresh.
+            if newValue == .center { askLauncherAnchors = [:] }
+        }
+    }
+
+    /// Where the launcher was last left on each display, by `AskLauncherPlacement.key(for:)`.
+    var askLauncherAnchors: [String: AskLauncherPlacement.Anchor] {
+        get {
+            guard let data = defaults.data(forKey: "ask.launcher.anchors") else { return [:] }
+            return (try? JSONDecoder().decode([String: AskLauncherPlacement.Anchor].self, from: data)) ?? [:]
+        }
+        set {
+            if newValue.isEmpty {
+                defaults.removeObject(forKey: "ask.launcher.anchors")
+            } else if let data = try? JSONEncoder().encode(newValue) {
+                defaults.set(data, forKey: "ask.launcher.anchors")
+            }
+        }
+    }
+
     /// The language translations go into when the text is already in the
     /// interface language. Nil follows the interface: English, or Simplified Chinese.
     var askTranslationSecondLanguage: String? {
