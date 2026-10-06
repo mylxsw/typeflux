@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "id": "local.codec",
+  "name": "@L:codec.name",
+  "description": "@L:codec.summary",
+  "icon": "sf:percent",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    { "keyword": "url", "title": "@L:codec.keyword.url", "options": { "codec": "url" } },
+    { "keyword": "b64", "title": "@L:codec.keyword.b64", "options": { "codec": "base64" } }
+  ],
+  "input": { "argument": "optional", "selection": "ifEmpty" },
+  "run": { "mode": "onSubmit", "timeoutSeconds": 10 },
+  "command": { "runtime": "node", "script": "main.js", "args": ["{option:codec}", "{query}"] },
+  "output": "text"
+}

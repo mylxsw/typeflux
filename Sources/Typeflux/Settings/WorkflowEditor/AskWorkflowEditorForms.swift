@@ -73,8 +73,11 @@ struct AskWorkflowKeywordsForm: View {
                                hint: L("ask.workflow.editor.keywords.hint")) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 10) {
-                    Text(L("ask.workflow.trust.keywords")).frame(width: 120, alignment: .leading)
-                    Text(L("ask.workflow.editor.keywords.title")).frame(width: 180, alignment: .leading)
+                    Text(L("ask.workflow.trust.keywords")).frame(width: 110, alignment: .leading)
+                    Text(L("ask.workflow.editor.keywords.title")).frame(width: 150, alignment: .leading)
+                    if showsEntries {
+                        Text(L("ask.workflow.editor.keywords.entry")).frame(width: 150, alignment: .leading)
+                    }
                     Text(L("ask.workflow.editor.keywords.optionsShort")).frame(maxWidth: .infinity, alignment: .leading)
                     Color.clear.frame(width: 44)
                 }
@@ -111,10 +114,14 @@ struct AskWorkflowKeywordsForm: View {
                     .textFieldStyle(ModelFieldStyle())
                     .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
                         .strokeBorder(problem == nil ? .clear : StudioTheme.danger.opacity(0.7)))
-                    .frame(width: 120)
+                    .frame(width: 110)
                 TextField(L("ask.workflow.editor.keywords.titlePlaceholder"), text: binding(index, "title"))
                     .textFieldStyle(ModelFieldStyle(monospaced: false))
-                    .frame(width: 180)
+                    .frame(width: 150)
+                if showsEntries {
+                    entryPicker(index, row)
+                        .frame(width: 150)
+                }
                 optionTags(index)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "line.3.horizontal").font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
@@ -134,10 +141,37 @@ struct AskWorkflowKeywordsForm: View {
             if let problem {
                 Text(problem).font(.system(size: 11.5)).foregroundStyle(StudioTheme.danger)
             }
+            if let entryProblem = model.problems.first(where: { $0.field == "keywords[\(index)].script" }) {
+                Text(entryProblem.message).font(.system(size: 11.5)).foregroundStyle(StudioTheme.danger)
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
         .background(problem == nil ? Color.clear : StudioTheme.danger.opacity(0.06))
         .onDrop(of: [UTType.text], delegate: KeywordDrop(target: index, dragging: $dragging, move: move))
+    }
+
+    /// A workflow with an inline script has one entry; only script files can be chosen per keyword.
+    private var showsEntries: Bool {
+        model.draft?.manifest?.command.inline == nil && model.draft?.manifest?.command.script != nil
+    }
+
+    /// The keyword's entry: "Default (main.py)" or one of the workflow's scripts.
+    private func entryPicker(_ index: Int, _ row: [String: Any]) -> some View {
+        let fallback = model.draft?.manifest?.command.script ?? ""
+        let current = row["script"] as? String ?? ""
+        // A missing or unusual entry stays listed so the picker can show it.
+        let listed = model.entryCandidates
+        let candidates = listed + (current.isEmpty || listed.contains(current) ? [] : [current])
+        return Picker("", selection: Binding(get: { current },
+                                             set: { model.setKeywordScript($0.isEmpty ? nil : $0, at: index) })) {
+            Text(L("ask.workflow.editor.keywords.entryDefault", fallback)).tag("")
+            ForEach(candidates, id: \.self) { path in
+                Text(path).tag(path)
+            }
+        }
+        .pickerStyle(.menu).labelsHidden()
+        .accessibilityIdentifier("ask.workflow.editor.keywords.entry.\(index)")
+        .accessibilityLabel(L("ask.workflow.editor.keywords.entry"))
     }
 
     /// Preset options as `name=value` tags with a remove button, then "+ Option".

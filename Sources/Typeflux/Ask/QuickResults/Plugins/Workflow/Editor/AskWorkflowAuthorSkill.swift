@@ -44,7 +44,10 @@ enum AskWorkflowAuthorSkill {
       "output": "text",
       "env": {"FX_PROVIDER": "frankfurter"}
     }
-    - keywords: short, lowercase, no spaces, must be free (check them). Options are presets passed to the script.
+    - keywords: short, lowercase, no spaces, must be free (check them). Options are presets passed to the script. \
+    A keyword may run its own entry instead of command.script: {"keyword": "rate", "script": "table.py"} \
+    (a file in the folder, same runtime; not with an inline script). Shared code goes in another file \
+    that the entries import (Python `import helper`, Node `require('./helper')`, shell `source ./lib.sh`).
     - input.argument: required | optional | none (none: the keyword alone runs it, e.g. `ip`).
     - input.selection: ifEmpty (selected text when nothing was typed) | never | always.
     - run.mode must be "onSubmit"; timeoutSeconds 1-300 (default 30; use 5-15 for network calls).

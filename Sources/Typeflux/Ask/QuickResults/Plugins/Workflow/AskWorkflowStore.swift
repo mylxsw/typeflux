@@ -101,6 +101,7 @@ final class AskWorkflowStore: ObservableObject {
         }
         settings.askWorkflowTrust[id] = nil
         settings.askDisabledWorkflows.remove(id)
+        settings.askWorkflowGalleryBaseline[id] = nil
         reload()
     }
 

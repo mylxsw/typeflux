@@ -62,7 +62,8 @@ struct AskWorkflowEditorCenter: View {
             HStack(spacing: 4) {
                 ForEach(fileOrder, id: \.self) { path in
                     AskWorkflowFileTab(title: path, selected: model.selectedFile == path,
-                                       dirty: model.draft?.isDirty(path) == true) { model.selectedFile = path }
+                                       dirty: model.draft?.isDirty(path) == true,
+                                       entry: entries.contains(path)) { model.selectedFile = path }
                         .contextMenu {
                             Button(L("ask.workflow.editor.removeFile"), role: .destructive) { model.removeFile(path) }
                         }
@@ -111,11 +112,15 @@ struct AskWorkflowEditorCenter: View {
         }
     }
 
-    /// The script first, then the other files by name.
+    /// The default entry first, then the keywords' own entries, then the other files by name.
     private var fileOrder: [String] {
-        let script = model.draft?.manifest?.command.script
         let files = model.draft?.files.keys.sorted() ?? []
-        return files.filter { $0 == script } + files.filter { $0 != script }
+        let ordered = (model.draft?.manifest?.entryScripts ?? []).filter { model.draft?.files[$0] != nil }
+        return ordered + files.filter { !ordered.contains($0) }
+    }
+
+    private var entries: Set<String> {
+        model.entryScripts
     }
 
     /// "Run settings · Python · 30 s".
@@ -170,7 +175,9 @@ struct AskWorkflowEditorCenter: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
                         switch model.step {
-                        case .keywords: AskWorkflowKeywordsForm(model: model)
+                        case .keywords:
+                            AskWorkflowKeywordsForm(model: model)
+                            AskWorkflowFilesCard(model: model)
                         case .input: AskWorkflowInputForm(model: model)
                         case .output, .script: AskWorkflowOutputForm(model: model)
                         }
@@ -203,11 +210,18 @@ struct AskWorkflowFileTab: View {
     var title: String
     var selected: Bool
     var dirty: Bool
+    /// An entry script: marked with a small play symbol.
+    var entry = false
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 5) {
+                if entry {
+                    Image(systemName: "play.fill").font(.system(size: 7)).foregroundStyle(AskTheme.accent)
+                        .help(L("ask.workflow.editor.files.entry"))
+                        .accessibilityLabel(L("ask.workflow.editor.files.entry"))
+                }
                 Text(title).font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                     .lineLimit(1)
@@ -426,17 +440,33 @@ struct AskWorkflowDiffView<Actions: View>: View {
     var labels: (String, String)
     /// After the file name in its tab: "· Proposal", "· Differences".
     var suffix: String
+    /// Files to flag in their tab, such as the ones the user changed.
+    var marked: Set<String> = []
+    var markHint = ""
     @ViewBuilder var actions: () -> Actions
     @State private var mode: Mode = .diff
     @State private var path: String?
+
+    init(old: AskWorkflowDraft, new: AskWorkflowDraft, labels: (String, String), suffix: String,
+         marked: Set<String> = [], markHint: String = "", @ViewBuilder actions: @escaping () -> Actions) {
+        self.old = old
+        self.new = new
+        self.labels = labels
+        self.suffix = suffix
+        self.marked = marked
+        self.markHint = markHint
+        self.actions = actions
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
                 ForEach(changedPaths, id: \.self) { file in
-                    AskWorkflowFileTab(title: file + " · " + suffix, selected: file == current, dirty: false) {
+                    AskWorkflowFileTab(title: file + " · " + suffix, selected: file == current,
+                                       dirty: marked.contains(file)) {
                         path = file
                     }
+                    .help(marked.contains(file) ? markHint : "")
                 }
                 Spacer()
                 Picker("", selection: $mode) {

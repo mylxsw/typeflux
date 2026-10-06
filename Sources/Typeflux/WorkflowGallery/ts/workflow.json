@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "local.ts",
+  "name": "@L:ts.name",
+  "description": "@L:ts.summary",
+  "icon": "sf:clock",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    { "keyword": "ts", "title": "@L:ts.keyword.ts" }
+  ],
+  "input": { "argument": "optional", "selection": "ifEmpty" },
+  "run": { "mode": "onSubmit", "timeoutSeconds": 10 },
+  "command": { "runtime": "python3", "script": "main.py", "args": ["{query}"] },
+  "output": "text"
+}

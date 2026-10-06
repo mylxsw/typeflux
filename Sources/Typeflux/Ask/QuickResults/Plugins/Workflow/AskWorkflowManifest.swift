@@ -7,6 +7,21 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
         var keyword: String
         var title: String?
         var options: [String: String]?
+        /// This keyword's own entry script, relative to the folder; nil runs `command.script`.
+        var script: String?
+
+        init(keyword: String, title: String? = nil, options: [String: String]? = nil, script: String? = nil) {
+            self.keyword = keyword
+            self.title = title
+            self.options = options
+            self.script = script
+        }
+    }
+
+    /// Where a workflow came from: the gallery example it was added from, and that example's version.
+    struct Origin: Codable, Equatable, Sendable {
+        var gallery: String
+        var version: String
     }
 
     struct Input: Codable, Equatable, Sendable {
@@ -72,6 +87,7 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
     var command: Command
     var output: Output = .init()
     var env: [String: String]?
+    var origin: Origin?
 
     static let currentSchema = 1
     static let fileName = "workflow.json"
@@ -80,7 +96,8 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
 
     init(schema: Int = currentSchema, id: String, name: String, description: String? = nil, icon: String? = nil,
          version: String? = nil, author: String? = nil, keywords: [Keyword], input: Input = .init(),
-         run: Run = .init(), command: Command, output: Output = .init(), env: [String: String]? = nil) {
+         run: Run = .init(), command: Command, output: Output = .init(), env: [String: String]? = nil,
+         origin: Origin? = nil) {
         self.schema = schema
         self.id = id
         self.name = name
@@ -94,6 +111,7 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
         self.command = command
         self.output = output
         self.env = env
+        self.origin = origin
     }
 
     init(from decoder: Decoder) throws {
@@ -111,10 +129,23 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
         command = try container.decode(Command.self, forKey: .command)
         output = try container.decodeIfPresent(Output.self, forKey: .output) ?? .init()
         env = try container.decodeIfPresent([String: String].self, forKey: .env)
+        origin = try container.decodeIfPresent(Origin.self, forKey: .origin)
     }
 
     /// The timeout a run gets: the manifest's, kept between one second and five minutes.
     var timeout: Double { min(Self.maximumTimeout, max(1, run.timeoutSeconds ?? Self.defaultTimeout)) }
+
+    /// The script a keyword runs: its own entry, or the workflow's. Nil for an inline script.
+    func script(forKeyword keyword: String) -> String? {
+        let word = keyword.lowercased()
+        return keywords.first { $0.keyword.lowercased() == word }?.script ?? command.script
+    }
+
+    /// Every entry script: the workflow's, then the keywords' own, each once.
+    var entryScripts: [String] {
+        var seen = Set<String>()
+        return ([command.script] + keywords.map(\.script)).compactMap { $0 }.filter { seen.insert($0).inserted }
+    }
 
     /// The argument template, `["{query}"]` unless the manifest says otherwise.
     var argumentTemplate: [String] { command.args ?? ["{query}"] }
@@ -170,10 +201,40 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
                                         message: keyword.keyword + ": " + AskKeywordList.message(for: problem)))
             }
         }
+        problems += keywordScriptProblems(in: folder, fileManager: fileManager)
         problems += output.problems(folder: folder)
         if run.mode == .live { problems.append(Problem(field: "run.mode", message: L("ask.workflow.problem.live"))) }
         problems += commandProblems(in: folder, fileManager: fileManager)
         return problems
+    }
+
+    /// A keyword's own entry: a file in the folder, not the manifest, and only for a
+    /// workflow that runs a script file (an inline script has no file to swap).
+    private func keywordScriptProblems(in folder: URL, fileManager: FileManager) -> [Problem] {
+        keywords.enumerated().compactMap { index, keyword -> Problem? in
+            guard let script = keyword.script else { return nil }
+            let field = "keywords[\(index)].script"
+            if command.inline != nil {
+                return Problem(field: field, message: L("ask.workflow.problem.keywordScriptInline"))
+            }
+            return Self.scriptProblem(script, field: field, runtime: command.runtime, in: folder,
+                                      fileManager: fileManager)
+        }
+    }
+
+    /// What is wrong with an entry script file, or nil.
+    static func scriptProblem(_ script: String, field: String, runtime: AskWorkflowRuntime, in folder: URL,
+                              fileManager: FileManager) -> Problem? {
+        guard script != fileName, let url = scriptURL(script, in: folder, fileManager: fileManager) else {
+            return Problem(field: field, message: L("ask.workflow.problem.scriptOutside"))
+        }
+        guard fileManager.fileExists(atPath: url.path) else {
+            return Problem(field: field, message: L("ask.workflow.problem.scriptMissing", script))
+        }
+        if runtime == .exec, !fileManager.isExecutableFile(atPath: url.path) {
+            return Problem(field: field, message: L("ask.workflow.problem.notExecutable", script))
+        }
+        return nil
     }
 
     private func commandProblems(in folder: URL, fileManager: FileManager) -> [Problem] {
@@ -186,16 +247,8 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
             return command.runtime.allowsInline ? []
                 : [Problem(field: "command.inline", message: L("ask.workflow.problem.inlineRuntime"))]
         case let (.some(script), nil):
-            guard let url = Self.scriptURL(script, in: folder) else {
-                return [Problem(field: "command.script", message: L("ask.workflow.problem.scriptOutside"))]
-            }
-            guard fileManager.fileExists(atPath: url.path) else {
-                return [Problem(field: "command.script", message: L("ask.workflow.problem.scriptMissing", script))]
-            }
-            if command.runtime == .exec, !fileManager.isExecutableFile(atPath: url.path) {
-                return [Problem(field: "command.script", message: L("ask.workflow.problem.notExecutable", script))]
-            }
-            return []
+            return Self.scriptProblem(script, field: "command.script", runtime: command.runtime, in: folder,
+                                      fileManager: fileManager).map { [$0] } ?? []
         }
     }
 

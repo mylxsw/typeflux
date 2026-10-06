@@ -169,13 +169,22 @@ struct AskWorkflowDraft: Equatable, Sendable {
             [AskWorkflowManifest.Problem(field: AskWorkflowManifest.fileName, message: error.message)]
         case let .success(manifest):
             manifest.problems(in: folder, fileManager: fileManager).filter { problem in
-                guard problem.field == "command.script", let script = manifest.command.script else { return true }
+                guard let script = Self.entryScript(of: problem.field, in: manifest) else { return true }
                 let missing = L("ask.workflow.problem.scriptMissing", script)
                 let notExecutable = L("ask.workflow.problem.notExecutable", script)
                 // The draft has it (or will mark it executable on save).
                 return !(files[script] != nil && (problem.message == missing || problem.message == notExecutable))
             }
         }
+    }
+
+    /// The entry script a problem's field names (`command.script`, `keywords[1].script`), if any.
+    static func entryScript(of field: String, in manifest: AskWorkflowManifest) -> String? {
+        if field == "command.script" { return manifest.command.script }
+        guard field.hasPrefix("keywords["), field.hasSuffix("].script"),
+              let index = Int(field.dropFirst("keywords[".count).dropLast("].script".count)),
+              manifest.keywords.indices.contains(index) else { return nil }
+        return manifest.keywords[index].script
     }
 
     /// Sets a value at a key path of the manifest (`["command", "script"]`), keeping

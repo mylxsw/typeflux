@@ -46,6 +46,9 @@ extension AskWorkflowStore {
         if newID != id {
             // A renamed workflow keeps its switch; its old trust entry goes.
             settings.askWorkflowTrust[id] = nil
+            if let baseline = settings.askWorkflowGalleryBaseline.removeValue(forKey: id) {
+                settings.askWorkflowGalleryBaseline[newID] = baseline
+            }
             if settings.askDisabledWorkflows.remove(id) != nil {
                 settings.askDisabledWorkflows.insert(newID)
             }
@@ -58,7 +61,7 @@ extension AskWorkflowStore {
     }
 
     /// Writes files atomically inside `folder`, keeping each file's permissions. New
-    /// files that start with `#!` or are the manifest's script become executable.
+    /// files that start with `#!` or are one of the manifest's entry scripts become executable.
     nonisolated static func write(_ writes: [String: Data], deletes: [String], in folder: URL,
                                   fileManager: FileManager) throws {
         let paths = Array(writes.keys) + deletes
@@ -67,14 +70,14 @@ extension AskWorkflowStore {
         }
         let manifestData = writes[AskWorkflowManifest.fileName]
             ?? (try? Data(contentsOf: folder.appendingPathComponent(AskWorkflowManifest.fileName)))
-        let script = manifestData.flatMap { try? JSONDecoder().decode(AskWorkflowManifest.self, from: $0) }?.command
-            .script
+        let entries = Set(manifestData.flatMap { try? JSONDecoder().decode(AskWorkflowManifest.self, from: $0) }?
+            .entryScripts ?? [])
         for (path, data) in writes.sorted(by: { $0.key < $1.key }) {
             let url = folder.appendingPathComponent(path)
             try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             let existing = (try? fileManager.attributesOfItem(atPath: url.path))?[.posixPermissions] as? NSNumber
             try data.write(to: url, options: .atomic)
-            let executable = path == script || data.starts(with: Data("#!".utf8))
+            let executable = entries.contains(path) || data.starts(with: Data("#!".utf8))
             let permissions = existing?.intValue ?? (executable ? 0o755 : 0o644)
             try fileManager.setAttributes([.posixPermissions: permissions], ofItemAtPath: url.path)
         }
@@ -180,6 +183,8 @@ extension AskWorkflowStore {
         draft.set(id, at: ["id"])
         draft.set(name, at: ["name"])
         draft.set([["keyword": keyword]], at: ["keywords"])
+        // A copy is the user's own workflow, not the gallery example the original was added from.
+        draft.set(nil, at: ["origin"])
         try Self.write([AskWorkflowManifest.fileName: Data(draft.manifestText.utf8)], deletes: [], in: folder,
                        fileManager: fileManager)
         if trusted {
