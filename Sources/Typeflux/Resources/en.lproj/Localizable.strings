@@ -710,6 +710,12 @@
 "settings.shortcuts.ask.title" = "Ask Anything";
 "settings.shortcuts.ask.subtitle" = "Double-tap Fn to start recording and ask anything. Answers appear in a popup. If text is selected, explicit edit requests can also rewrite it directly.";
 "settings.shortcuts.ask.footnote" = "";
+"settings.shortcuts.launcherPosition.title" = "Open position";
+"settings.shortcuts.launcherPosition.center" = "Always center";
+"settings.shortcuts.launcherPosition.last" = "Remember last position";
+"settings.shortcuts.launcherPosition.center.subtitle" = "Opens in the middle of the screen with the pointer. Dragging it only moves it this time.";
+"settings.shortcuts.launcherPosition.last.subtitle" = "Opens where you last left it on that screen. Drag its top edge or empty space to move it.";
+"settings.shortcuts.launcherPosition.reset" = "Center again";
 "settings.shortcuts.persona.title" = "Persona switcher";
 "settings.shortcuts.persona.subtitle" = "Open a centered picker. With selected text, it can also apply a persona directly to that selection.";
 "settings.shortcuts.persona.footnote" = "";
@@ -1529,6 +1535,7 @@
 "ask.search.conversations" = "Conversations";
 "ask.search.placeholder" = "Search conversations or actions";
 "ask.launcher.hint" = "↩ Send · esc Close";
+"ask.launcher.drag" = "Drag to move · double-click to center";
 "ask.quick.calculator" = "Calculator";
 "ask.quick.askAI" = "Ask AI";
 "ask.quick.hint" = "↩ Copy result · ⌘↩ Ask AI · esc Close";

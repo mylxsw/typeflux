@@ -213,6 +213,9 @@ final class StudioViewModel: ObservableObject {
     @Published var personaRewriteEnabled: Bool
     @Published var personaHotkeyAppliesToSelection: Bool
     @Published var quickInputEnabled: Bool
+    /// Where the Ask launcher opens, and whether it has remembered any positions to forget.
+    @Published var askLauncherPosition: AskLauncherPosition
+    @Published var hasRememberedLauncherPositions: Bool
     @Published var personas: [PersonaProfile]
     @Published var personaAppBindings: [PersonaAppBinding]
     @Published var personaAppBindingsEnabled: Bool
@@ -402,6 +405,8 @@ final class StudioViewModel: ObservableObject {
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
         quickInputEnabled = settingsStore.quickInputEnabled
+        askLauncherPosition = settingsStore.askLauncherPosition
+        hasRememberedLauncherPositions = !settingsStore.askLauncherAnchors.isEmpty
         personas = currentPersonas
         personaAppBindings = settingsStore.personaAppBindings
         personaAppBindingsEnabled = settingsStore.personaAppBindingsEnabled
@@ -1866,6 +1871,24 @@ final class StudioViewModel: ObservableObject {
     func setQuickInputEnabled(_ value: Bool) {
         quickInputEnabled = value
         settingsStore.quickInputEnabled = value
+    }
+
+    func setAskLauncherPosition(_ value: AskLauncherPosition) {
+        settingsStore.askLauncherPosition = value
+        askLauncherPosition = value
+        hasRememberedLauncherPositions = !settingsStore.askLauncherAnchors.isEmpty
+    }
+
+    /// Forgets where the launcher was left on every screen; it opens centred until moved again.
+    func resetAskLauncherPositions() {
+        settingsStore.askLauncherAnchors = [:]
+        hasRememberedLauncherPositions = false
+    }
+
+    /// The launcher remembers positions while settings are open; check again when they are shown.
+    func refreshAskLauncherPositions() {
+        askLauncherPosition = settingsStore.askLauncherPosition
+        hasRememberedLauncherPositions = !settingsStore.askLauncherAnchors.isEmpty
     }
 
     var defaultPersonaSelectionID: UUID? {

@@ -121,11 +121,13 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let selectionRequest = model.makeLauncherSelectionRequest()
         let panel = launcherPanel()
         applyAppearance(panel)
-        let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
-        if let frame = screen?.visibleFrame {
+        if let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main {
+            let frame = screen.visibleFrame
             let width = min(AskMetrics.launcherWidth, frame.width - 40)
-            panel.setFrame(AskLauncherPlacement.frame(height: launcherHeight, width: width, screen: frame), display: true)
-            launcherTop = AskLauncherPlacement.top(on: frame)
+            let anchor = launcherAnchor(on: screen)
+            panel.setFrame(AskLauncherPlacement.frame(height: launcherHeight, width: width, screen: frame, anchor: anchor),
+                           display: true)
+            launcherTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
         }
         // Take keyboard focus without activating the app and raising its other windows.
         panel.makeKeyAndOrderFront(nil)
@@ -152,7 +154,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-launcher")
-        let hosting = FirstMouseHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }))
+        let drag = AskWindowDragHandlers(
+            move: { [weak self] origin in self?.dragLauncher(to: origin) ?? origin },
+            end: { [weak self] in self?.finishLauncherDrag() },
+            reset: { [weak self] in self?.recenterLauncher() }
+        )
+        let hosting = FirstMouseHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }, drag: drag))
         // Only `resizeLauncher` sizes the panel. Left to itself, the hosting view resizes the
         // window from its bottom edge as content changes, moving the top edge while typing.
         hosting.sizingOptions = []
@@ -174,6 +181,51 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         guard let launcher, abs(launcher.frame.height - height) > 1 else { return }
         launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height, top: launcherTop,
                                                        screen: launcher.screen?.visibleFrame), display: true)
+    }
+
+    // MARK: - Launcher position
+
+    /// Where the launcher opens on `screen`: centred, or where it was left there.
+    private func launcherAnchor(on screen: NSScreen) -> AskLauncherPlacement.Anchor? {
+        guard settings.askLauncherPosition == .lastPosition else { return nil }
+        return settings.askLauncherAnchors[AskLauncherPlacement.key(for: screen)]
+    }
+
+    /// The launcher panel once it has been shown, for tests that move it.
+    var launcherWindow: NSWindow? { launcher }
+
+    /// The screen the launcher is on, or the main one before it has been shown.
+    private var launcherScreen: NSScreen? { launcher?.screen ?? NSScreen.main }
+
+    /// While dragged the launcher follows the pointer, snapping to its screen's centre line.
+    /// Results arriving mid-drag grow it down from where it is now, not where it opened.
+    func dragLauncher(to origin: NSPoint) -> NSPoint {
+        guard let launcher, let screen = launcherScreen else { return origin }
+        let snapped = AskLauncherPlacement.snapped(origin: origin, width: launcher.frame.width, screen: screen.visibleFrame)
+        launcherTop = snapped.y + launcher.frame.height
+        return snapped
+    }
+
+    /// Let go: back inside the screen, growing down from its new top edge, and
+    /// remembered for next time when the user chose that.
+    func finishLauncherDrag() {
+        guard let launcher, let screen = launcherScreen else { return }
+        let visible = screen.visibleFrame
+        let frame = AskLauncherPlacement.clamped(launcher.frame, screen: visible)
+        if frame != launcher.frame { launcher.setFrame(frame, display: true) }
+        launcherTop = frame.maxY
+        guard settings.askLauncherPosition == .lastPosition else { return }
+        settings.askLauncherAnchors[AskLauncherPlacement.key(for: screen)] = AskLauncherPlacement.anchor(of: frame, on: visible)
+    }
+
+    /// Double-clicking the top edge: back to the middle, forgetting this screen's position.
+    func recenterLauncher() {
+        guard let launcher, let screen = launcherScreen else { return }
+        settings.askLauncherAnchors[AskLauncherPlacement.key(for: screen)] = nil
+        let visible = screen.visibleFrame
+        launcher.setFrame(AskLauncherPlacement.frame(height: launcher.frame.height, width: launcher.frame.width,
+                                                     screen: visible), display: true)
+        launcherTop = AskLauncherPlacement.top(on: visible)
     }
 
     func dismissLauncher() {

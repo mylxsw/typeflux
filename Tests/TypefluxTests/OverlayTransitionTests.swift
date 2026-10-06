@@ -108,7 +108,7 @@ struct OverlayTransitionTests {
         defer { controller.dismissImmediately() }
         try await settle()
         controller.dismiss(after: 0)
-        try await settle()
+        try await waitUntilHidden(window)
         #expect(!window.isVisible)
         controller.updateRecordingPreviewText("Late caption")
         #expect(!window.isVisible)
@@ -116,7 +116,7 @@ struct OverlayTransitionTests {
         controller.showProcessing()
         try await settle()
         controller.dismiss(after: 0)
-        try await settle()
+        try await waitUntilHidden(window)
         controller.updateStreamingText("Late processing caption")
         #expect(!window.isVisible)
     }
@@ -135,5 +135,15 @@ struct OverlayTransitionTests {
 
     private func settle() async throws {
         try await Task.sleep(for: .milliseconds(420))
+    }
+
+    /// The fade-out finishes on the main run loop, which other tests running at the
+    /// same time can hold up; wait for it rather than for a fixed time.
+    @MainActor
+    private func waitUntilHidden(_ window: NSWindow) async throws {
+        try await settle()
+        for _ in 0..<100 where window.isVisible {
+            try await Task.sleep(for: .milliseconds(20))
+        }
     }
 }
