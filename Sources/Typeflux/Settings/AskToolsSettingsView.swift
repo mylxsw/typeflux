@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Ask settings: the capability overview, built-in tools, skills and saved notes.
+/// Agent settings panes: the overview, one pane per built-in capability, skills and saved notes.
 /// MCP servers are owned by the settings view model and rendered by `StudioView`.
 struct AskToolsSettingsView: View {
     let settings: SettingsStore
@@ -11,8 +11,6 @@ struct AskToolsSettingsView: View {
 
     @State var folders: [String] = []
     @State var codeEnabled = true
-    @State var quickCalculatorEnabled = true
-    @State var quickAppsEnabled = true
     @State var newConversationsStayLocal = false
     @State var searchProvider = AskSearchSettings.Provider.none
     @State var searchKey = ""
@@ -36,13 +34,11 @@ struct AskToolsSettingsView: View {
     @State var accessibilityGranted = false
     @State var screenRecordingGranted = false
 
-    /// Which Agent settings tab to render.
-    var tab: AgentConfigurationTab = .overview
-    /// The Extensions tab's selected kind; MCP servers are rendered by the caller.
-    var extensionsTab: Binding<AgentExtensionsTab> = .constant(.skills)
-    /// Opens another tab, e.g. from an overview card.
-    var onNavigate: (AgentConfigurationTab, AgentExtensionsTab?) -> Void = { _, _ in }
-    /// Reports capability states so the caller can flag tabs that need attention.
+    /// Which Agent settings pane to render; the caller renders `.mcpServers` itself.
+    var pane: AgentSettingsPane = .overview
+    /// Opens another pane, e.g. from the overview's attention list.
+    var onNavigate: (AgentSettingsPane) -> Void = { _ in }
+    /// Reports capability states so the caller can show them in the pane list.
     var onStatusesChange: ([AgentCapabilityStatus]) -> Void = { _ in }
     var permissions = AgentAutomationPermissions.live
 
@@ -62,16 +58,25 @@ struct AskToolsSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            switch tab {
+            switch pane {
             case .overview:
                 overviewSections
-            case .tools:
-                toolSections
-            case .extensions:
-                AgentExtensionsHeader(selection: extensionsTab) {
+            case .webSearch:
+                searchPane
+            case .files:
+                filesPane
+            case .codeExecution:
+                codePane
+            case .automation:
+                automationPane
+            case .skills:
+                AgentPaneHeader(symbol: AgentCapability.skills.symbol, title: AgentCapability.skills.title,
+                                subtitle: AgentCapability.skills.summary) {
                     skillHeaderActions
                 }
                 skillSections
+            case .mcpServers:
+                EmptyView()
             case .memory:
                 memorySections
             }
@@ -123,8 +128,6 @@ struct AskToolsSettingsView: View {
     func reload() {
         folders = settings.askFileAccessFolders
         codeEnabled = settings.askCodeExecutionEnabled
-        quickCalculatorEnabled = settings.askQuickCalculatorEnabled
-        quickAppsEnabled = settings.askQuickAppSearchEnabled
         newConversationsStayLocal = settings.askNewConversationsStayLocal
         searchProvider = search.provider
         searchKey = search.apiKey
@@ -155,19 +158,19 @@ struct AskToolsSettingsView: View {
 
     func saveSearchKey() { search.setAPIKey(searchKey) }
 
+    /// Turns local web search on with the provider most likely to be set up, or off.
+    func setSearchEnabled(_ enabled: Bool) {
+        setSearchProvider(enabled ? Self.providerWhenEnabling(cloudflare: cloudflareSearch) : .none)
+    }
+
+    /// Cloudflare when its account is already filled in, otherwise Tavily.
+    static func providerWhenEnabling(cloudflare: AskCloudflareSearchConfiguration) -> AskSearchSettings.Provider {
+        cloudflare.accountID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .tavily : .cloudflare
+    }
+
     func setCodeExecution(_ enabled: Bool) {
         codeEnabled = enabled
         settings.askCodeExecutionEnabled = enabled
-    }
-
-    func setQuickCalculator(_ enabled: Bool) {
-        quickCalculatorEnabled = enabled
-        settings.askQuickCalculatorEnabled = enabled
-    }
-
-    func setQuickApps(_ enabled: Bool) {
-        quickAppsEnabled = enabled
-        settings.askQuickAppSearchEnabled = enabled
     }
 
     func setSkill(_ name: String, enabled: Bool) {
@@ -215,25 +218,13 @@ struct AskToolsSettingsView: View {
         reload()
     }
 
-    var memorySections: some View {
+    @ViewBuilder var memorySections: some View {
+        AgentPaneHeader(symbol: AgentSettingsPane.memory.symbol, title: AgentSettingsPane.memory.title,
+                        subtitle: L("agent.memory.subtitle")) {
+            AgentStatusBadge(level: memoryNotes.notes.isEmpty ? .off : .ready,
+                             label: L("agent.memory.count", memoryNotes.notes.count))
+        }
         MemoryNotesEditorView(model: memoryNotes, store: notes, owner: owner(),
                               correctionsEnabled: MemoryRollout.enabled(settings.defaults))
-    }
-}
-
-/// Switch between skills and MCP servers, with the selected kind's actions on the right.
-struct AgentExtensionsHeader<Actions: View>: View {
-    @Binding var selection: AgentExtensionsTab
-    @ViewBuilder var actions: Actions
-
-    var body: some View {
-        HStack(spacing: 8) {
-            ModelSegmentedControl(
-                options: AgentExtensionsTab.allCases.map { (label: $0.title, value: $0) },
-                selection: $selection
-            )
-            Spacer()
-            actions
-        }
     }
 }

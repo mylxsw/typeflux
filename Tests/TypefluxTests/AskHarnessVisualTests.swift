@@ -167,9 +167,9 @@ struct AskHarnessVisualTests {
         let notes = AskMemoryNoteStore(fileURL: temp.appendingPathComponent("notes.json"))
         try notes.add("偏好简洁的周报", owner: "o")
         try notes.add("常用 Python 做数据分析", owner: "o")
-        for tab in AgentConfigurationTab.allCases {
+        for tab in AgentSettingsPane.allCases where tab != .mcpServers {
             let settingsView = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: temp.appendingPathComponent("skills")),
-                                                    notes: notes, owner: { "o" }, tab: tab)
+                                                    notes: notes, owner: { "o" }, pane: tab)
                 .padding(24).frame(width: 760, alignment: .top).frame(maxHeight: .infinity, alignment: .top).background(StudioTheme.surface)
             for appearance in [NSAppearance.Name.aqua, .darkAqua] {
                 try await render(settingsView, size: NSSize(width: 760, height: 900), appearance: appearance,

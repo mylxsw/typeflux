@@ -1122,7 +1122,6 @@
 "settings.advanced.stubbornPasteFallback.subtitle" = "激活目标应用并以真实按键方式发送 Cmd+V，让 Alfred、Raycast、Warp、iTerm2 等启动器或热键悬浮窗口能正常插入文本。若与其他键盘工具冲突，可关闭此选项。";
 
 "agent.section.general" = "通用";
-"agent.section.tools" = "工具";
 "agent.section.skills" = "技能";
 "agent.section.memory" = "记忆";
 "agent.settings.runMode" = "对话存储";
@@ -1822,7 +1821,7 @@
 "ask.usage.externalShort" = "自有 API";
 
 /* GUL-151 Ask tools */
-"ask.files.denied" = "该路径不在授权给 Ask 的文件夹中。请在 设置 → Agent → Ask 工具 中添加该文件夹。";
+"ask.files.denied" = "该路径不在授权给 Ask 的文件夹中。请在 设置 → Agent → 文件访问 中添加该文件夹。";
 "ask.files.tooLarge" = "文件超过 1 MB。";
 "ask.files.editMissing" = "未找到要替换的文本，请重新读取文件。";
 "ask.files.editAmbiguous" = "要替换的文本出现了 %d 次，请提供更多上下文。";
@@ -1952,7 +1951,7 @@
 "ask.local.card.readPages" = "读取网页";
 "ask.local.card.available" = "可用";
 "ask.local.card.noSearch" = "网页搜索未配置";
-"ask.local.card.noSearchHint" = "设置 → Agent → 通用";
+"ask.local.card.noSearchHint" = "设置 → Agent → 联网搜索";
 "ask.local.card.configure" = "去设置";
 "ask.local.card.cloudQuestion" = "想用云端模型？";
 "ask.local.identity" = "未登录";
@@ -2364,7 +2363,6 @@
 "agent.capability.skills.summary" = "特定任务的做事方法，需要时自动加载。";
 "agent.capability.mcp.summary" = "连接外部工具和数据源。";
 "agent.status.off" = "未开启";
-"agent.status.needsAttention" = "需要处理";
 "agent.status.search.localOffline" = "本机对话无法联网";
 "agent.status.search.incomplete" = "待完成配置";
 "agent.status.files.count" = "%d 个文件夹";
@@ -2383,14 +2381,13 @@
 "agent.overview.fix" = "去处理";
 "agent.overview.storage.hint" = "每个对话开始前，仍可在新建菜单或输入框里改选。";
 "agent.overview.storage.footnote" = "已经开始的对话不能更改存储位置。未登录时，所有对话都只保存在本机。";
-"agent.overview.capabilities" = "能力";
 "agent.storage.cloud.models" = "可用云端模型、识图、深入研究、后台运行";
 "agent.storage.cloud.sync" = "多台设备同步对话";
 "agent.storage.cloud.search" = "联网搜索由 Typeflux Cloud 提供";
 "agent.storage.cloud.credits" = "云端模型用量计入额度";
 "agent.storage.local.private" = "对话不上传到 Typeflux Cloud";
 "agent.storage.local.models" = "只使用你在「模型」里配置的模型";
-"agent.storage.local.search" = "联网搜索需自备密钥（见内置工具）";
+"agent.storage.local.search" = "联网搜索需自备密钥（见「联网搜索」）";
 "agent.storage.local.limits" = "不能使用深入研究、后台运行和多设备同步";
 "agent.search.subtitle" = "用于本机对话。云端对话由 Typeflux Cloud 提供搜索，无需配置。密钥保存在钥匙串中。";
 "agent.search.off" = "关闭后，本机对话不能联网搜索；云端对话不受影响。";
@@ -2554,7 +2551,7 @@
 "ask.workflow.missingRuntime" = "没有找到「%@」，请先安装或把它加入 PATH";
 "ask.workflow.spawnFailed" = "工作流无法启动：%@";
 "ask.workflow.invalid" = "无法读取这个工作流的清单";
-"ask.workflow.blocked.untrusted" = "请先在「设置 → Agent → 内置工具」里检查并信任这个工作流";
+"ask.workflow.blocked.untrusted" = "请先在「设置 → 启动器 → 启动器工作流」里检查并信任这个工作流";
 "ask.workflow.blocked.modified" = "这个工作流的文件被修改过，请先在设置里重新确认";
 "ask.workflow.blocked.invalid" = "这个工作流无法运行：%@";
 "ask.workflow.blocked.disabled" = "这个工作流已停用";
@@ -2606,7 +2603,7 @@
 "ask.plugin.prompt.placeholder.selection" = "要处理的内容 · 留空处理选中的 %d 行";
 "ask.plugin.prompt.selection" = "%1$@选中的 %2$d 行";
 "ask.plugin.prompt.noModel" = "先在「设置 → 模型」里配置文本处理模型，才能使用 AI 指令";
-"ask.plugin.prompt.noPrompt" = "这个关键字还没有提示词，请到「设置 → Agent → 内置工具」里填写";
+"ask.plugin.prompt.noPrompt" = "这个关键字还没有提示词，请到「设置 → 启动器 → 启动器关键字」里填写";
 "ask.plugin.prompt.empty" = "模型没有返回内容";
 "ask.plugin.prompt.askAI" = "我用「%1$@」处理了一段文字，帮我把结果改得更好。\n\n原文：\n%2$@\n\n结果：\n%3$@";
 "ask.plugin.web.title" = "网页搜索";
@@ -2916,3 +2913,26 @@
 "ask.workflow.editor.new.save" = "保存";
 "ask.workflow.assistant.steps" = "%d 步";
 "ask.workflow.assistant.generate.promptPickKeyword" = "帮我做这个工作流：%1$@\n\n自己挑一个好记、好打的短关键字，用 workflow_check_keyword 确认可用，id 保持「%2$@」。先检查本机环境，再提交清单和脚本，并试跑。";
+
+/* Agent and Launcher settings panes */
+"studio.section.launcher" = "启动器";
+"studio.eyebrow.launcher" = "启动器";
+"studio.heading.launcher" = "启动器";
+"studio.subheading.launcher" = "启动器里的计算器、应用搜索、关键字和你自己的工作流。它们由启动器直接触发，不经过 Agent。";
+"studio.search.launcher" = "搜索启动器设置...";
+"launcher.pane.basics" = "内置功能";
+"launcher.basics.subtitle" = "在启动器里直接得到结果，不发送给 AI。";
+"agent.group.capabilities" = "能力";
+"agent.group.personalization" = "个性化";
+"agent.rules.title" = "安全规则";
+"agent.memory.rules.title" = "使用规则";
+"agent.memory.subtitle" = "随便问记住的关于你的笔记，会作为背景信息提供给新对话。";
+"agent.search.section" = "服务与凭据";
+"agent.automation.permissions" = "系统权限";
+"agent.automation.permissions.hint" = "在系统设置中授权后回到 Typeflux，状态会自动刷新。";
+"agent.automation.rule.confirm" = "每一步操作前确认";
+"agent.automation.rule.stop" = "可以随时停止";
+"agent.overview.attention.title" = "需要处理";
+"agent.overview.attention.count" = "%d 项";
+"agent.overview.attention.none" = "没有需要处理的事项。";
+"agent.overview.attention.action" = "去设置";

@@ -5,7 +5,7 @@ final class StudioModelsTests: XCTestCase {
     // MARK: - StudioSection
 
     func testStudioSectionAllCasesCount() {
-        XCTAssertEqual(StudioSection.allCases.count, 8)
+        XCTAssertEqual(StudioSection.allCases.count, 9)
     }
 
     func testStudioSectionId() {
@@ -50,7 +50,7 @@ final class StudioModelsTests: XCTestCase {
 
     func testSidebarUpperCases() {
         let upper = StudioSection.sidebarUpperCases
-        XCTAssertEqual(upper, [.home, .vocabulary, .history, .models, .personas, .agent])
+        XCTAssertEqual(upper, [.home, .vocabulary, .history, .models, .personas, .agent, .launcher])
     }
 
     func testSidebarLowerCases() {
@@ -98,34 +98,55 @@ final class StudioModelsTests: XCTestCase {
         XCTAssertEqual(StudioModelDomain.llm.iconName, "ellipsis.message")
     }
 
-    // MARK: - AgentConfigurationTab
+    // MARK: - Agent and Launcher panes
 
-    func testAgentConfigurationTabCount() {
-        XCTAssertEqual(AgentConfigurationTab.allCases, [.overview, .tools, .extensions, .memory])
-        XCTAssertEqual(AgentExtensionsTab.allCases, [.skills, .mcpServers])
+    func testAgentSettingsPanesInDisplayOrder() {
+        XCTAssertEqual(AgentSettingsPane.allCases,
+                       [.overview, .webSearch, .files, .codeExecution, .automation, .skills, .mcpServers, .memory])
+        XCTAssertEqual(AgentSettingsPane.sections.map { $0.panes }, [
+            [.overview], [.webSearch, .files, .codeExecution, .automation], [.skills, .mcpServers], [.memory],
+        ])
+        XCTAssertNil(AgentSettingsPane.sections.first?.title, "The overview needs no caption")
+        XCTAssertEqual(AgentSettingsPane.sections.map { $0.title }.dropFirst().map { $0 ?? "" },
+                       [L("agent.group.capabilities"), L("agent.section.extensions"), L("agent.group.personalization")])
     }
 
-    func testAgentExtensionsTabIdAndTitles() {
-        for tab in AgentExtensionsTab.allCases {
-            XCTAssertEqual(tab.id, tab.rawValue)
-            XCTAssertFalse(tab.title.isEmpty)
+    func testAgentSettingsPanePresentation() {
+        for pane in AgentSettingsPane.allCases {
+            XCTAssertEqual(pane.id, pane.rawValue)
+            XCTAssertFalse(pane.title.isEmpty, "\(pane) title should not be empty")
+            XCTAssertFalse(pane.symbol.isEmpty, "\(pane) symbol should not be empty")
+            if let capability = pane.capability {
+                XCTAssertEqual(capability.pane, pane, "\(pane) round-trips through its capability")
+                XCTAssertEqual(pane.title, capability.title)
+                XCTAssertEqual(pane.symbol, capability.symbol)
+            }
         }
-        XCTAssertEqual(AgentConfigurationTab.overview.title, L("agent.section.overview"))
-        XCTAssertEqual(AgentConfigurationTab.extensions.title, L("agent.section.extensions"))
-        XCTAssertEqual(AgentConfigurationTab.memory.title, L("agent.section.memory"))
-        XCTAssertEqual(AgentExtensionsTab.mcpServers.title, L("agent.settings.mcp"))
+        XCTAssertNil(AgentSettingsPane.overview.capability)
+        XCTAssertNil(AgentSettingsPane.memory.capability)
+        XCTAssertEqual(AgentSettingsPane.overview.title, L("agent.section.overview"))
+        XCTAssertEqual(AgentSettingsPane.memory.title, L("agent.section.memory"))
     }
 
-    func testAgentConfigurationTabId() {
-        for tab in AgentConfigurationTab.allCases {
-            XCTAssertEqual(tab.id, tab.rawValue)
+    func testLauncherSettingsPanes() {
+        XCTAssertEqual(LauncherSettingsPane.allCases, [.basics, .keywords, .workflows])
+        XCTAssertEqual(LauncherSettingsPane.sections.map { $0.panes }, [[.basics, .keywords, .workflows]])
+        XCTAssertNil(LauncherSettingsPane.sections.first?.title)
+        for pane in LauncherSettingsPane.allCases {
+            XCTAssertEqual(pane.id, pane.rawValue)
+            XCTAssertFalse(pane.title.isEmpty)
+            XCTAssertFalse(pane.symbol.isEmpty)
         }
+        XCTAssertEqual(LauncherSettingsPane.keywords.title, L("ask.settings.plugins.title"))
+        XCTAssertEqual(LauncherSettingsPane.workflows.title, L("ask.workflow.section"))
+        XCTAssertEqual(StudioSection.launcher.iconName, "command")
+        XCTAssertNotNil(StudioSection.launcher.subheading)
     }
 
-    func testAgentConfigurationTabTitlesAreNonEmpty() {
-        for tab in AgentConfigurationTab.allCases {
-            XCTAssertFalse(tab.title.isEmpty, "\(tab) title should not be empty")
-        }
+    func testPaneListFoldsIntoMenuWhenNarrow() {
+        XCTAssertTrue(SettingsPaneMetrics.isCompact(contentWidth: 600))
+        XCTAssertFalse(SettingsPaneMetrics.isCompact(contentWidth: SettingsPaneMetrics.compactWidth))
+        XCTAssertFalse(SettingsPaneMetrics.isCompact(contentWidth: 1160))
     }
 
     // MARK: - StudioModelProviderID

@@ -7,6 +7,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case personas
     case models
     case agent
+    case launcher
     case settings
     case account
 
@@ -16,7 +17,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     /// Sections that appear in the upper sidebar group.
     static var sidebarUpperCases: [StudioSection] {
-        [.home, .vocabulary, .history, .models, .personas, .agent]
+        [.home, .vocabulary, .history, .models, .personas, .agent, .launcher]
     }
 
     /// Sections that appear in the lower sidebar group.
@@ -32,6 +33,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .vocabulary: L("studio.section.vocabulary")
         case .history: L("studio.section.history")
         case .agent: L("studio.section.agent")
+        case .launcher: L("studio.section.launcher")
         case .settings: L("studio.section.settings")
         case .account: L("studio.section.account")
         }
@@ -45,6 +47,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .vocabulary: "text.book.closed"
         case .history: "clock.arrow.circlepath"
         case .agent: "puzzlepiece.extension"
+        case .launcher: "command"
         case .settings: "gearshape.fill"
         case .account: "person.circle"
         }
@@ -58,6 +61,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .vocabulary: L("studio.eyebrow.vocabulary")
         case .history: L("studio.eyebrow.history")
         case .agent: L("studio.eyebrow.agent")
+        case .launcher: L("studio.eyebrow.launcher")
         case .settings: L("studio.eyebrow.settings")
         case .account: L("studio.eyebrow.account")
         }
@@ -71,6 +75,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .vocabulary: L("studio.heading.vocabulary")
         case .history: L("studio.heading.history")
         case .agent: L("studio.heading.agent")
+        case .launcher: L("studio.heading.launcher")
         case .settings: L("studio.heading.settings")
         case .account: L("studio.heading.account")
         }
@@ -90,6 +95,8 @@ enum StudioSection: String, CaseIterable, Identifiable {
             nil
         case .agent:
             L("studio.subheading.agent")
+        case .launcher:
+            L("studio.subheading.launcher")
         case .settings:
             nil
         case .account:
@@ -105,6 +112,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .vocabulary: L("studio.search.vocabulary")
         case .history: L("studio.search.history")
         case .agent: L("studio.search.agent")
+        case .launcher: L("studio.search.launcher")
         case .settings: L("studio.search.settings")
         case .account: L("studio.search.account")
         }
@@ -141,35 +149,90 @@ enum StudioModelDomain: String, CaseIterable, Identifiable {
     }
 }
 
-/// Tabs of the Agent settings page, in display order.
-enum AgentConfigurationTab: String, CaseIterable, Identifiable {
-    case overview
-    case tools
+/// Groups in the Agent settings page's pane list, in display order.
+enum AgentSettingsPaneGroup: String, CaseIterable {
+    case general
+    case capabilities
     case extensions
+    case personalization
+
+    /// Caption above the group; the general group has none.
+    var title: String? {
+        switch self {
+        case .general: nil
+        case .capabilities: L("agent.group.capabilities")
+        case .extensions: L("agent.section.extensions")
+        case .personalization: L("agent.group.personalization")
+        }
+    }
+}
+
+/// Panes of the Agent settings page, one per capability, in display order.
+enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
+    case overview
+    case webSearch
+    case files
+    case codeExecution
+    case automation
+    case skills
+    case mcpServers
     case memory
 
     var id: String {
         rawValue
     }
 
+    var group: AgentSettingsPaneGroup {
+        switch self {
+        case .overview: .general
+        case .webSearch, .files, .codeExecution, .automation: .capabilities
+        case .skills, .mcpServers: .extensions
+        case .memory: .personalization
+        }
+    }
+
+    /// The capability configured in this pane, whose state the pane list shows.
+    var capability: AgentCapability? {
+        switch self {
+        case .overview, .memory: nil
+        case .webSearch: .webSearch
+        case .files: .files
+        case .codeExecution: .codeExecution
+        case .automation: .automation
+        case .skills: .skills
+        case .mcpServers: .mcpServers
+        }
+    }
+
     var title: String {
         switch self {
-        case .overview:
-            L("agent.section.overview")
-        case .tools:
-            L("agent.section.tools")
-        case .extensions:
-            L("agent.section.extensions")
-        case .memory:
-            L("agent.section.memory")
+        case .overview: L("agent.section.overview")
+        case .memory: L("agent.section.memory")
+        default: capability?.title ?? ""
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .overview: "square.grid.2x2"
+        case .memory: "brain"
+        default: capability?.symbol ?? ""
+        }
+    }
+
+    /// Panes grouped for the pane list.
+    static var sections: [(title: String?, panes: [AgentSettingsPane])] {
+        AgentSettingsPaneGroup.allCases.map { group in
+            (title: group.title, panes: allCases.filter { $0.group == group })
         }
     }
 }
 
-/// The two kinds of extension listed under the Extensions tab.
-enum AgentExtensionsTab: String, CaseIterable, Identifiable {
-    case skills
-    case mcpServers
+/// Panes of the Launcher settings page, in display order.
+enum LauncherSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
+    case basics
+    case keywords
+    case workflows
 
     var id: String {
         rawValue
@@ -177,11 +240,22 @@ enum AgentExtensionsTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .skills:
-            L("agent.section.skills")
-        case .mcpServers:
-            L("agent.settings.mcp")
+        case .basics: L("launcher.pane.basics")
+        case .keywords: L("ask.settings.plugins.title")
+        case .workflows: L("ask.workflow.section")
         }
+    }
+
+    var symbol: String {
+        switch self {
+        case .basics: "square.grid.2x2"
+        case .keywords: "keyboard"
+        case .workflows: "point.3.connected.trianglepath.dotted"
+        }
+    }
+
+    static var sections: [(title: String?, panes: [LauncherSettingsPane])] {
+        [(title: nil, panes: allCases)]
     }
 }
 

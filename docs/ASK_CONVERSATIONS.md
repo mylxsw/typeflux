@@ -296,7 +296,7 @@ with the run `running` and the desktop follows progress as before. Device tools:
 
 | Tool | What it does | Approval |
 | --- | --- | --- |
-| `files` | `list`, `read` (numbered lines, paging), `search`, `write`, `edit` (one unique snippet) inside folders authorized in Settings → Agent → Ask tools. Paths resolve through symlinks first; new files are checked through their nearest existing folder. Text only, 1 MB writes. | reads: read tier; writes: write tier |
+| `files` | `list`, `read` (numbered lines, paging), `search`, `write`, `edit` (one unique snippet) inside folders authorized in Settings → Agent → File Access. Paths resolve through symlinks first; new files are checked through their nearest existing folder. Text only, 1 MB writes. | reads: read tier; writes: write tier |
 | `run_code` | Python, JavaScript (Node) or zsh under `sandbox-exec`: no network, no reads from the home folder, writes only in a per-conversation workspace in the temporary directory (pruned after seven days). 30 s default, 120 s max; output capped; the first new PNG/JPEG is attached. Interpreters under the home folder (pyenv, nvm) stay readable. Toggle in Settings. | write tier |
 | `skill` | Loads a built-in skill (`email-reply`, `meeting-notes`, `translate-polish`, `data-analysis`) or a user skill from `~/Library/Application Support/Typeflux/Skills/<name>/SKILL.md` (optional `name`/`description` front matter; a user skill replaces a built-in one). Only names and descriptions are in the tool definition. | none (app-provided instructions) |
 | `memory` | `list`, `remember`, `forget` explicit notes per account. Notes join the global memory of new conversations after the soul summary, within the 1,000-character budget, and can be removed in Settings. | list: read; changes: write |
@@ -360,7 +360,7 @@ this Mac; signing in is optional. The design board is
   summaries after 28 messages, truncation detection, the 24-step limit, cancel,
   retry, regenerate, expiry of interrupted runs and memory purge.
 - Engine-side tools: `update_plan` and `web_search` when the user configures
-  Tavily, Brave or Cloudflare in Agent → General → Web search. Local `web_fetch`
+  Tavily, Brave or Cloudflare in Agent → Web Search. Local `web_fetch`
   remains disabled; see `LOCAL_WEB_FETCH_BOUNDARY.md`.
 - Cloudflare local search requires an Account ID and Cloudflare API Token with
   Workers AI Read and AI Gateway Read permissions. Gateway ID defaults to

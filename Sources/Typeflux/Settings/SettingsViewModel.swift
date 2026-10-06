@@ -252,7 +252,7 @@ final class StudioViewModel: ObservableObject {
 
     let modelLibrary: AskModelLibrary
     private let settingsStore: SettingsStore
-    /// Backs the Ask tools tab, which edits its own settings directly.
+    /// Backs the Agent and Launcher settings pages, which edit their own settings directly.
     var askToolSettings: SettingsStore { settingsStore }
     private let historyStore: HistoryStore
     private let historyStoreBox: HistoryStoreSendableBox

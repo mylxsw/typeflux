@@ -86,7 +86,7 @@ struct AskWorkflowTrustSummary: Equatable {
     }
 }
 
-/// Settings → Agent → Built-in Tools → launcher workflows: the installed
+/// Settings → Launcher → Workflows: the installed
 /// workflows, their state and switches, new ones from templates, and the trust sheet.
 struct AskWorkflowSettingsView: View {
     @ObservedObject var store: AskWorkflowStore

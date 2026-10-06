@@ -46,12 +46,15 @@ enum AgentCapability: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Where the capability is configured.
-    var destination: (tab: AgentConfigurationTab, extensions: AgentExtensionsTab?) {
+    /// The settings pane that configures the capability.
+    var pane: AgentSettingsPane {
         switch self {
-        case .webSearch, .files, .codeExecution, .automation: (.tools, nil)
-        case .skills: (.extensions, .skills)
-        case .mcpServers: (.extensions, .mcpServers)
+        case .webSearch: .webSearch
+        case .files: .files
+        case .codeExecution: .codeExecution
+        case .automation: .automation
+        case .skills: .skills
+        case .mcpServers: .mcpServers
         }
     }
 }
@@ -131,6 +134,12 @@ struct AgentCapabilityStatus: Equatable, Identifiable {
         case .brave: "Brave Search"
         case .cloudflare: "Cloudflare Web Search"
         }
+    }
+
+    /// The MCP servers' state for a server list, without the rest of the inputs.
+    static func mcpStatus(for servers: [MCPServerConfig]) -> AgentCapabilityStatus {
+        status(of: .mcpServers, inputs: AgentCapabilityInputs(mcpServerCount: servers.count,
+                                                              enabledMCPServerCount: servers.filter(\.enabled).count))
     }
 
     static func statuses(for inputs: AgentCapabilityInputs) -> [AgentCapabilityStatus] {
