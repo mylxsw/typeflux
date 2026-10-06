@@ -2646,10 +2646,13 @@
 "ask.workflow.assistant.proposal" = "변경 제안";
 "ask.workflow.assistant.untested" = "테스트 안 함";
 "ask.workflow.assistant.testedSummary" = "테스트함 · %1$d/%2$d 통과";
+"ask.workflow.assistant.supersededLine" = "제안 %1$d: %2$@";
+"ask.workflow.assistant.testedShort" = "테스트 %1$d/%2$d ✓";
 "ask.workflow.assistant.approval.title" = "이 버전을 실행할까요?";
 "ask.workflow.assistant.approval.body" = "실행하면 이 Mac에서 새 코드가 실행됩니다. 승인한 버전에 없던 동작이 나타날 때만 어시스턴트가 확인을 요청합니다.";
 "ask.workflow.assistant.approval.allow" = "허용하고 계속";
 "ask.workflow.assistant.approval.decline" = "실행 안 함";
+"ask.workflow.assistant.approval.useOnly" = "제안 %d만 사용";
 "ask.workflow.assistant.autoTest" = "자동 테스트";
 "ask.workflow.assistant.autoTest.help" = "새 위험이 없으면 어시스턴트가 코드를 실행합니다";
 "ask.workflow.assistant.cloud" = "Typeflux Cloud";

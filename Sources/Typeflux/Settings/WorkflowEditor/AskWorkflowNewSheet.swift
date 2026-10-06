@@ -189,25 +189,28 @@ struct AskWorkflowNewSheet: View {
         }
         return nil
     }
+}
 
+extension AskWorkflowNewSheet {
     // MARK: - From a template
 
     private var templateTiles: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
             ForEach(AskWorkflowTemplate.allCases) { item in
-                tile(selected: mode == .template && template == item, runtime: item.runtime.title,
-                     title: L("ask.workflow.editor.new.tile." + item.rawValue),
-                     detail: L("ask.workflow.editor.new.tileDetail." + item.rawValue),
-                     code: Self.snippet(item.script)) {
+                tile(Tile(runtime: item.runtime.title, title: L("ask.workflow.editor.new.tile." + item.rawValue),
+                          detail: L("ask.workflow.editor.new.tileDetail." + item.rawValue),
+                          code: Self.snippet(item.script)),
+                     selected: mode == .template && template == item) {
                     mode = .template
                     template = item
                 }
             }
             if let source = model.workflow, let manifest = source.manifest {
-                tile(selected: mode == .duplicate, runtime: L("ask.workflow.editor.new.copyBadge"),
-                     title: L("ask.workflow.editor.duplicateTitle"),
-                     detail: L("ask.workflow.editor.new.duplicateHint", manifest.name),
-                     code: source.id + " → " + (id.isEmpty ? source.id + "-2" : id)) {
+                tile(Tile(runtime: L("ask.workflow.editor.new.copyBadge"),
+                          title: L("ask.workflow.editor.duplicateTitle"),
+                          detail: L("ask.workflow.editor.new.duplicateHint", manifest.name),
+                          code: source.id + " → " + (id.isEmpty ? source.id + "-2" : id)),
+                     selected: mode == .duplicate) {
                     mode = .duplicate
                     if name.isEmpty {
                         name = manifest.name + " " + L("ask.workflow.editor.new.copySuffix")
@@ -228,17 +231,25 @@ struct AskWorkflowNewSheet: View {
             .suffix(2).joined(separator: "\n")
     }
 
-    private func tile(selected: Bool, runtime: String, title: String, detail: String, code: String,
-                      action: @escaping () -> Void) -> some View {
+    /// What a start tile shows: its runtime, name, what it does and a bit of its code.
+    struct Tile {
+        var runtime: String
+        var title: String
+        var detail: String
+        var code: String
+    }
+
+    private func tile(_ tile: Tile, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    AskWorkflowBadge(text: runtime, color: .blue)
-                    Text(title).font(.system(size: 12.5, weight: .semibold)).lineLimit(1)
+                    AskWorkflowBadge(text: tile.runtime, color: .blue)
+                    Text(tile.title).font(.system(size: 12.5, weight: .semibold)).lineLimit(1)
                 }
-                Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text(tile.detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
                     .lineLimit(2).frame(height: 30, alignment: .topLeading)
-                Text(code).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(StudioTheme.textSecondary)
+                Text(tile.code).font(.system(size: 10.5, design: .monospaced))
+                    .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(2).frame(maxWidth: .infinity, minHeight: 34, alignment: .topLeading)
                     .padding(7).background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
             }

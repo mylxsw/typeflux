@@ -175,7 +175,9 @@ struct AskWorkflowEditorView: View {
             }
         }
     }
+}
 
+extension AskWorkflowEditorView {
     // MARK: - Banners
 
     @ViewBuilder private var banners: some View {

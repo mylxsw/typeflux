@@ -2646,10 +2646,13 @@
 "ask.workflow.assistant.proposal" = "変更の提案";
 "ask.workflow.assistant.untested" = "未テスト";
 "ask.workflow.assistant.testedSummary" = "テスト済み · %1$d/%2$d 成功";
+"ask.workflow.assistant.supersededLine" = "提案 %1$d：%2$@";
+"ask.workflow.assistant.testedShort" = "テスト %1$d/%2$d ✓";
 "ask.workflow.assistant.approval.title" = "このバージョンを実行しますか？";
 "ask.workflow.assistant.approval.body" = "実行するとこの Mac で新しいコードが動きます。承認したバージョンになかった操作が現れたときだけ、アシスタントは確認を求めます。";
 "ask.workflow.assistant.approval.allow" = "許可して続行";
 "ask.workflow.assistant.approval.decline" = "実行しない";
+"ask.workflow.assistant.approval.useOnly" = "提案 %d だけ使う";
 "ask.workflow.assistant.autoTest" = "自動でテスト";
 "ask.workflow.assistant.autoTest.help" = "新しいリスクがない限り、アシスタントがコードを実行します";
 "ask.workflow.assistant.cloud" = "Typeflux Cloud";

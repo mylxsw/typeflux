@@ -290,3 +290,47 @@ struct AskWorkflowLauncherPreview: View {
                 ("⌘R", L("ask.workflow.action.rerun")), ("⌘↩", L("ask.quick.askAI"))]
     }
 }
+
+/// Risk tags, new ones highlighted; optionally also what the code does not do.
+struct AskWorkflowRiskChips: View {
+    var risks: [AskWorkflowRisk]
+    var new: Set<AskWorkflowRisk>
+    var showsAbsent: Bool
+
+    var body: some View {
+        let kinds = Set(risks.map(\.kind))
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(risks, id: \.self) { risk in
+                chip(new.contains(risk) || !showsAbsent ? risk.title : risk.title + L("ask.workflow.risk.existing"),
+                     symbol: risk.kind == .network ? "network" : risk.isHigh ? "exclamationmark.shield" : "doc",
+                     highlighted: new.contains(risk))
+            }
+            if showsAbsent {
+                HStack(spacing: 4) {
+                    if !kinds.contains(.writesFiles), !kinds.contains(.deletes) {
+                        chip(L("ask.workflow.risk.noWrites"), symbol: nil, highlighted: false)
+                    }
+                    if !kinds.contains(.runsPrograms) {
+                        chip(L("ask.workflow.risk.noPrograms"), symbol: nil, highlighted: false)
+                    }
+                }
+            }
+        }
+    }
+
+    private func chip(_ text: String, symbol: String?, highlighted: Bool) -> some View {
+        HStack(spacing: 4) {
+            if let symbol {
+                Image(systemName: symbol)
+            }
+            Text(text)
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(highlighted ? Color.orange : StudioTheme.textSecondary)
+        .padding(.horizontal, 7).padding(.vertical, 2)
+        .background((highlighted ? Color.orange : Color.gray).opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+        .overlay(RoundedRectangle(cornerRadius: 6)
+            .strokeBorder(highlighted ? Color.orange.opacity(0.35) : StudioTheme.border))
+        .fixedSize()
+    }
+}

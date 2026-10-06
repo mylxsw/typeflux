@@ -10,6 +10,12 @@ struct AskWorkflowTestPanel: View {
 
     enum Tab: String, CaseIterable { case preview, stdout, stderr, received }
 
+    init(model: AskWorkflowEditorModel, tab: Tab = .preview, fix: @escaping () -> Void) {
+        self.model = model
+        self.fix = fix
+        _tab = State(initialValue: tab)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             input
@@ -158,12 +164,12 @@ struct AskWorkflowTestPanel: View {
                         model.selectedFile = location.path
                         model.reveal = (location.path, location.line)
                     } label: {
-                        Text(line).underline().foregroundStyle(AskTheme.accent)
+                        Text(AskWorkflowPlugin.relative(line, to: folder)).underline().foregroundStyle(AskTheme.accent)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .buttonStyle(.plain)
                 } else {
-                    Text(line.isEmpty ? " " : line)
+                    Text(line.isEmpty ? " " : AskWorkflowPlugin.relative(line, to: folder))
                         .foregroundStyle(line.contains("Error") || line.contains("error")
                             ? StudioTheme.danger : StudioTheme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -228,9 +234,6 @@ struct AskWorkflowAssistantPanel: View {
                                 .foregroundStyle(StudioTheme.textTertiary)
                         }
                         ForEach(assistant.items) { item in itemView(item) }
-                        if let run = model.pendingRun {
-                            approval(run)
-                        }
                         if assistant.isBusy {
                             HStack(alignment: .top, spacing: 6) {
                                 ProgressView().controlSize(.small)
@@ -247,10 +250,10 @@ struct AskWorkflowAssistantPanel: View {
                     .padding(12)
                 }
                 .onChange(of: assistant.items.count) { _ in withAnimation { reader.scrollTo("bottom") } }
-                .onChange(of: model.pendingRun) { _ in
-                    // After the card is laid out, so all of it comes into view.
-                    DispatchQueue.main.async { withAnimation { reader.scrollTo("bottom") } }
-                }
+            }
+            // The assistant waits on this question, so it stays in view above the composer.
+            if let run = model.pendingRun {
+                approval(run).padding(.horizontal, 12).padding(.bottom, 10)
             }
             Divider()
             composer
@@ -281,7 +284,11 @@ struct AskWorkflowAssistantPanel: View {
                 .font(.system(size: 11.5)).foregroundStyle(failed ? StudioTheme.warning : StudioTheme.textSecondary)
         case let .proposal(id):
             if let proposal = model.proposal(id) {
-                proposalCard(proposal)
+                if proposal.state == .superseded {
+                    supersededLine(proposal)
+                } else {
+                    proposalCard(proposal)
+                }
             }
         case let .notice(_, text):
             Text(text).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
@@ -341,10 +348,26 @@ struct AskWorkflowAssistantPanel: View {
             .strokeBorder(AskWorkflowEditorStyle.assistant.opacity(proposal.state == .pending ? 0.5 : 0.15)))
     }
 
+    /// A proposal the next one replaced, as one line: "Proposal 1: … · 3/3 passed".
+    private func supersededLine(_ proposal: AskWorkflowProposal) -> some View {
+        let passed = proposal.tests.filter(\.succeeded).count
+        return HStack(spacing: 6) {
+            Image(systemName: "checkmark.circle").foregroundStyle(StudioTheme.textSecondary)
+            Text(L("ask.workflow.assistant.supersededLine", model.proposalNumber(proposal.id), proposal.summary))
+                .foregroundStyle(StudioTheme.textSecondary).lineLimit(2)
+            Spacer(minLength: 6)
+            Text(proposal.tests.isEmpty ? L("ask.workflow.assistant.untested")
+                : L("ask.workflow.assistant.testedShort", passed, proposal.tests.count))
+                .foregroundStyle(proposal.tests.isEmpty || passed < proposal.tests.count
+                    ? StudioTheme.textTertiary : StudioTheme.success)
+        }
+        .font(.system(size: 11.5))
+    }
+
     private func stateText(_ proposal: AskWorkflowProposal, files: Int) -> String {
         switch proposal.state {
         case .applied: return L("ask.workflow.assistant.applied")
-        case .discarded: return L("ask.workflow.assistant.discarded")
+        case .discarded, .superseded: return L("ask.workflow.assistant.discarded")
         case .pending:
             let count = L("ask.workflow.assistant.files", files)
             guard !proposal.tests.isEmpty else { return count + " · " + L("ask.workflow.assistant.untested") }
@@ -352,7 +375,9 @@ struct AskWorkflowAssistantPanel: View {
                                      proposal.tests.filter(\.succeeded).count, proposal.tests.count)
         }
     }
+}
 
+extension AskWorkflowAssistantPanel {
     private func approval(_ run: AskWorkflowEditorModel.PendingRun) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -369,8 +394,14 @@ struct AskWorkflowAssistantPanel: View {
                 .foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()
+                if let fallback = model.fallbackProposal {
+                    Button(L("ask.workflow.assistant.approval.useOnly", model.proposalNumber(fallback.id))) {
+                        model.useFallbackProposal()
+                    }
+                } else {
+                    Button(L("ask.workflow.assistant.approval.decline")) { model.resolvePendingRun(false) }
+                }
                 Button(L("ask.workflow.assistant.preview")) { model.previewingProposal = run.proposalID }
-                Button(L("ask.workflow.assistant.approval.decline")) { model.resolvePendingRun(false) }
                 Button(L("ask.workflow.assistant.approval.allow")) { model.resolvePendingRun(true) }
                     .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
                     .accessibilityIdentifier("ask.workflow.assistant.allow")
@@ -469,49 +500,5 @@ struct AskWorkflowAssistantPanel: View {
 
     private var sendable: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-}
-
-/// Risk tags, new ones highlighted; optionally also what the code does not do.
-struct AskWorkflowRiskChips: View {
-    var risks: [AskWorkflowRisk]
-    var new: Set<AskWorkflowRisk>
-    var showsAbsent: Bool
-
-    var body: some View {
-        let kinds = Set(risks.map(\.kind))
-        VStack(alignment: .leading, spacing: 4) {
-            ForEach(risks, id: \.self) { risk in
-                chip(new.contains(risk) || !showsAbsent ? risk.title : risk.title + L("ask.workflow.risk.existing"),
-                     symbol: risk.kind == .network ? "network" : risk.isHigh ? "exclamationmark.shield" : "doc",
-                     highlighted: new.contains(risk))
-            }
-            if showsAbsent {
-                HStack(spacing: 4) {
-                    if !kinds.contains(.writesFiles), !kinds.contains(.deletes) {
-                        chip(L("ask.workflow.risk.noWrites"), symbol: nil, highlighted: false)
-                    }
-                    if !kinds.contains(.runsPrograms) {
-                        chip(L("ask.workflow.risk.noPrograms"), symbol: nil, highlighted: false)
-                    }
-                }
-            }
-        }
-    }
-
-    private func chip(_ text: String, symbol: String?, highlighted: Bool) -> some View {
-        HStack(spacing: 4) {
-            if let symbol {
-                Image(systemName: symbol)
-            }
-            Text(text)
-        }
-        .font(.system(size: 11))
-        .foregroundStyle(highlighted ? Color.orange : StudioTheme.textSecondary)
-        .padding(.horizontal, 7).padding(.vertical, 2)
-        .background((highlighted ? Color.orange : Color.gray).opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6)
-            .strokeBorder(highlighted ? Color.orange.opacity(0.35) : StudioTheme.border))
-        .fixedSize()
     }
 }

@@ -240,7 +240,10 @@ final class AskWorkflowAssistant: ObservableObject {
         return output
     }
 
-    /// Runs one model step on this Mac for a conversation whose model is the user's own.
+    // Runs one model step on this Mac for a conversation whose model is the user's own.
+}
+
+extension AskWorkflowAssistant {
     private func infer(_ inference: AskInference, run: AskRun, conversation: String,
                        token: String) async throws -> AskConversation {
         let library = dependencies.modelLibrary

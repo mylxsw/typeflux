@@ -165,7 +165,7 @@ struct AskWorkflowAuthorTools {
     private func propose(_ arguments: [String: Any], host: AskWorkflowAuthoringHost) -> Output {
         let failed = L("ask.workflow.assistant.tool.proposeFailed")
         guard let manifest = arguments["manifest"] as? [String: Any],
-              let text = AskWorkflowDraft.format(manifest) else {
+              let text = AskWorkflowJSONLayout.format(manifest, like: host.authoringDraft.manifestText) else {
             return Output(
                 content: "`manifest` must be the complete workflow.json object.",
                 isError: true,

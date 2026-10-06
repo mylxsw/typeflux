@@ -156,6 +156,9 @@ struct AskWorkflowEditorVisualTests {
                 .tool("workflow_read", [:]),
                 .tool("workflow_check_keyword", ["keyword": "rate"]),
                 .tool("workflow_propose", ["summary": "加了关键字 rate，并把汇率保留两位小数。", "manifest": proposed,
+                                           "files": [["path": "main.sh", "content": Self.script]]]),
+                .tool("workflow_test", ["inputs": [["query": "100 usd jpy"]]]),
+                .tool("workflow_propose", ["summary": "查不到时改查 open.er-api.com 的实时汇率。", "manifest": proposed,
                                            "files": [[
                                                "path": "main.sh",
                                                "content": Self.script + "curl -s https://open.er-api.com/v6/latest/USD\n"
@@ -171,8 +174,9 @@ struct AskWorkflowEditorVisualTests {
             model.previewingProposal = model.latestProposal?.id
             try await render(AskWorkflowEditorView(model: model, store: fixture.store),
                              size: NSSize(width: 1220, height: 720), name: "implemented-11-proposal.png")
-            model.resolvePendingRun(false)
-            await waitFor { !model.assistant.isBusy }
+            #expect(model.fallbackProposal.map { model.proposalNumber($0.id) } == 1)
+            model.useFallbackProposal()
+            #expect(!model.assistant.isBusy && model.draft?.manifest?.keywords.count == 2)
         }
     }
 
@@ -194,6 +198,16 @@ struct AskWorkflowEditorVisualTests {
             #expect(model.failureLocation?.line == 4)
             try await render(AskWorkflowEditorView(model: model, store: fixture.store, panel: .test),
                              size: NSSize(width: 1220, height: 720), name: "implemented-4-failure.png")
+            for tab in [AskWorkflowTestPanel.Tab.stdout, .stderr, .received] {
+                try await render(AskWorkflowTestPanel(model: model, tab: tab) {},
+                                 size: NSSize(width: 380, height: 640), name: "extra-test-\(tab.rawValue).png")
+            }
+            model.results = []
+            model.isTesting = true
+            model.testStartedAt = Date()
+            try await render(AskWorkflowTestPanel(model: model) {}, size: NSSize(width: 380, height: 640),
+                             name: "extra-test-running.png")
+            model.isTesting = false
         }
     }
 
@@ -222,6 +236,35 @@ struct AskWorkflowEditorVisualTests {
                              size: NSSize(width: 720, height: 420), name: "implemented-10-generating.png")
             try await render(AskWorkflowEditorView(model: model, store: fixture.store),
                              size: NSSize(width: 1220, height: 720), name: "implemented-10-generated-editor.png")
+        }
+    }
+
+    @Test func bannersAndEmptyStates() async throws {
+        try await chinese {
+            let fixture = try AskWorkflowFixture()
+            let model = try editor(fixture)
+            let size = NSSize(width: 1220, height: 720)
+            model.message = "没保存：磁盘已满"
+            _ = model.submit(AskWorkflowProposal(summary: "", manifestText: nil,
+                                                 files: ["main.sh": Self.script + "# more\n"], deletes: []))
+            try model.apply(#require(model.latestProposal?.id))
+            #expect(model.canUndoProposal)
+            try await render(AskWorkflowEditorView(model: model, store: fixture.store), size: size,
+                             name: "extra-banners.png")
+            model.undoProposal()
+            model.message = nil
+            try fixture.write(
+                "local.new",
+                manifest: AskWorkflowFixture.inline("local.new", keyword: "nw", script: "print hi")
+            )
+            fixture.store.reload()
+            model.open("local.new")
+            #expect(model.needsTrust)
+            try await render(AskWorkflowEditorView(model: model, store: fixture.store), size: size,
+                             name: "extra-needs-trust.png")
+            model.close()
+            try await render(AskWorkflowEditorView(model: model, store: fixture.store), size: size,
+                             name: "extra-empty.png")
         }
     }
 
