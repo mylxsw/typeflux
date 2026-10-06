@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import AppKit
 import Foundation
 
@@ -28,6 +29,7 @@ final class AskWorkflowEditorModel: ObservableObject {
 
     /// The assistant wants to run code with risks the user has not approved.
     struct PendingRun: Equatable {
+        let id = UUID()
         var proposalID: UUID
         var risks: [AskWorkflowRisk]
     }
@@ -206,8 +208,7 @@ final class AskWorkflowEditorModel: ObservableObject {
     /// a run waiting for approval (its tool call gets a refusal), a staged generation.
     func endSession() {
         stopTest()
-        resolvePendingRun(false)
-        assistant.stop()
+        stopAssistant()
         discardGeneration()
     }
 
@@ -464,14 +465,13 @@ extension AskWorkflowEditorModel: AskWorkflowAuthoringHost {
     }
 
     func testLatestProposal(_ inputs: [AskWorkflowTestInput]) async -> [AskWorkflowTestResult]? {
-        guard let proposal = latestProposal, let base = draft else { return nil }
+        guard !Task.isCancelled, let proposal = latestProposal, let base = draft else { return nil }
         if !autoTest || AskWorkflowRiskScanner.needsApproval(proposal.risks, baseline: approvedRisks) {
             let risks = autoTest ?
                 (approvedRisks.map { proposal.risks.subtracting($0) } ?? proposal.risks.filter(\.isHigh))
                 : proposal.risks
-            pendingRun = PendingRun(proposalID: proposal.id, risks: risks.sorted())
-            let allowed = await withCheckedContinuation { pendingRunContinuation = $0 }
-            guard allowed else { return nil }
+            let allowed = await waitForRunApproval(PendingRun(proposalID: proposal.id, risks: risks.sorted()))
+            guard allowed, !Task.isCancelled else { return nil }
         }
         let candidate = proposal.applied(to: base)
         let fileManager = store.fileManager
@@ -484,7 +484,9 @@ extension AskWorkflowEditorModel: AskWorkflowAuthoringHost {
             if Task.isCancelled {
                 break
             }
-            await runs.append(tester.run(workflow, input: input))
+            let result = await tester.run(workflow, input: input)
+            guard !Task.isCancelled else { return nil }
+            runs.append(result)
         }
         if let index = proposals.firstIndex(where: { $0.id == proposal.id }) {
             proposals[index].tests += runs

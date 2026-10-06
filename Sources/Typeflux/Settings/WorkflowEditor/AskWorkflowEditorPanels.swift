@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import SwiftUI
 
 /// Test runs: the input, then what the launcher would show, stdout, stderr and
@@ -253,7 +254,10 @@ struct AskWorkflowAssistantPanel: View {
             }
             // The assistant waits on this question, so it stays in view above the composer.
             if let run = model.pendingRun {
-                approval(run).padding(.horizontal, 12).padding(.bottom, 10)
+                AskWorkflowRunApproval(model: model, run: run) {
+                    model.previewingProposal = run.proposalID
+                }
+                .padding(.horizontal, 12).padding(.bottom, 10)
             }
             Divider()
             composer
@@ -378,41 +382,6 @@ struct AskWorkflowAssistantPanel: View {
 }
 
 extension AskWorkflowAssistantPanel {
-    private func approval(_ run: AskWorkflowEditorModel.PendingRun) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(L("ask.workflow.assistant.approval.titleNumbered", model.proposalNumber(run.proposalID)),
-                      systemImage: "exclamationmark.triangle")
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(StudioTheme.warning)
-                Spacer()
-                Text(L("ask.workflow.assistant.approval.paused")).font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-            AskWorkflowRiskChips(risks: model.proposal(run.proposalID)?.risks.sorted() ?? run.risks,
-                                 new: Set(run.risks), showsAbsent: false)
-            Text(L("ask.workflow.assistant.approval.body")).font(.system(size: 11.5))
-                .foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
-            HStack {
-                Spacer()
-                if let fallback = model.fallbackProposal {
-                    Button(L("ask.workflow.assistant.approval.useOnly", model.proposalNumber(fallback.id))) {
-                        model.useFallbackProposal()
-                    }
-                } else {
-                    Button(L("ask.workflow.assistant.approval.decline")) { model.resolvePendingRun(false) }
-                }
-                Button(L("ask.workflow.assistant.preview")) { model.previewingProposal = run.proposalID }
-                Button(L("ask.workflow.assistant.approval.allow")) { model.resolvePendingRun(true) }
-                    .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
-                    .accessibilityIdentifier("ask.workflow.assistant.allow")
-            }
-            .controlSize(.small)
-        }
-        .padding(10)
-        .background(StudioTheme.warning.opacity(0.08), in: RoundedRectangle(cornerRadius: 11))
-        .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(StudioTheme.warning.opacity(0.5)))
-    }
-
     /// What the assistant gets with each message: the open files and the last test run.
     private var context: [String] {
         guard let draft = model.draft else { return [] }
@@ -461,7 +430,7 @@ extension AskWorkflowAssistantPanel {
                         .foregroundStyle(StudioTheme.textTertiary)
                     Spacer()
                     if assistant.isBusy {
-                        Button { assistant.stop() } label: {
+                        Button { model.stopAssistant() } label: {
                             Image(systemName: "stop.fill").font(.system(size: 10)).foregroundStyle(.white)
                                 .frame(width: 24, height: 24)
                                 .background(AskWorkflowEditorStyle.assistant, in: Circle())

@@ -12,6 +12,7 @@ struct AskWorkflowNewSheet: View {
     }
 
     @ObservedObject var model: AskWorkflowEditorModel
+    @ObservedObject var assistant: AskWorkflowAssistant
     @State var mode: Mode
     var done: () -> Void
 
@@ -26,6 +27,7 @@ struct AskWorkflowNewSheet: View {
 
     init(model: AskWorkflowEditorModel, mode: Mode, generating: Bool = false, done: @escaping () -> Void) {
         self.model = model
+        assistant = model.assistant
         _mode = State(initialValue: mode)
         _generating = State(initialValue: generating)
         self.done = done
@@ -154,23 +156,24 @@ struct AskWorkflowNewSheet: View {
     /// What the assistant has done so far, with a spinner on what it is doing.
     private var progress: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ForEach(model.assistant.items) { item in
+            ForEach(assistant.items) { item in
                 if case let .tool(_, summary, failed) = item {
                     Label(summary, systemImage: failed ? "xmark.circle" : "checkmark.circle")
                         .foregroundStyle(failed ? StudioTheme.warning : StudioTheme.success)
                 }
             }
-            if model.pendingRun != nil {
-                Label(L("ask.workflow.editor.new.waitingApproval"), systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(StudioTheme.warning)
-            } else if model.assistant.isBusy {
+            if let run = model.pendingRun {
+                AskWorkflowRunApproval(model: model, run: run, allowsFallback: false) {
+                    model.previewingProposal = run.proposalID
+                    done()
+                }
+            } else if assistant.isBusy {
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.small)
-                    Text(model.assistant.preview.isEmpty ? L("ask.workflow.assistant.working") : model.assistant
-                        .preview)
+                    Text(assistant.preview.isEmpty ? L("ask.workflow.assistant.working") : assistant.preview)
                         .lineLimit(2).foregroundStyle(StudioTheme.textSecondary)
                 }
-            } else if let error = model.assistant.error {
+            } else if let error = assistant.error {
                 Label(error, systemImage: "xmark.octagon").foregroundStyle(StudioTheme.danger)
             } else if let reply = lastReply {
                 Text(reply).foregroundStyle(StudioTheme.textSecondary).lineLimit(4)
@@ -182,7 +185,7 @@ struct AskWorkflowNewSheet: View {
     }
 
     private var lastReply: String? {
-        for item in model.assistant.items.reversed() {
+        for item in assistant.items.reversed() {
             if case let .reply(_, text) = item {
                 return text
             }
@@ -297,17 +300,19 @@ extension AskWorkflowNewSheet {
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
             if generating {
-                if model.assistant.isBusy {
-                    Button(L("ask.workflow.assistant.stop")) { model.assistant.stop() }
+                if assistant.isBusy {
+                    Button(L("ask.workflow.assistant.stop")) { model.stopAssistant() }
+                        .accessibilityIdentifier("ask.workflow.editor.new.stop")
                 } else {
                     Button(L("ask.workflow.editor.close")) { done() }
+                        .accessibilityIdentifier("ask.workflow.editor.new.close")
                 }
                 Button(L("ask.workflow.editor.saveGenerated")) {
                     model.previewingProposal = model.latestProposal?.id
                     done()
                 }
                 .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
-                .disabled(model.assistant.isBusy || model.latestProposal == nil)
+                .disabled(assistant.isBusy || model.latestProposal == nil)
                 .accessibilityIdentifier("ask.workflow.editor.new.review")
             } else {
                 Button(L("ask.workflow.cancel"), action: done).keyboardShortcut(.cancelAction)

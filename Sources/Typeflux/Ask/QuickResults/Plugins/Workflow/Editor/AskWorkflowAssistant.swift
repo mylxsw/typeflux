@@ -162,7 +162,7 @@ final class AskWorkflowAssistant: ObservableObject {
             var value = try await start(dependencies.api)
             var calls = 0
             while true {
-                try Task.checkCancellation()
+                try checkCurrent(current)
                 accept(value)
                 guard let run = value.run, run.isActive else {
                     if let failure = value.run?.error, value.run?.status == "failed" {
@@ -170,7 +170,13 @@ final class AskWorkflowAssistant: ObservableObject {
                     }
                     return
                 }
-                value = try await advance(run, conversation: conversation, token: token, calls: &calls)
+                value = try await advance(
+                    run,
+                    conversation: conversation,
+                    token: token,
+                    calls: &calls,
+                    generation: current
+                )
             }
         } catch is CancellationError {
         } catch {
@@ -182,7 +188,7 @@ final class AskWorkflowAssistant: ObservableObject {
 
     /// One step of an active run: wait for the server, run the model here, or run a tool.
     private func advance(_ run: AskRun, conversation: String, token: String,
-                         calls: inout Int) async throws -> AskConversation {
+                         calls: inout Int, generation current: UUID) async throws -> AskConversation {
         let api = dependencies.api
         runID = run.id
         if run.needsRecoveryInspection {
@@ -194,11 +200,17 @@ final class AskWorkflowAssistant: ObservableObject {
         if run.status != "running" {
             guard run.deviceId == dependencies.deviceId else { throw AskLocalError.message(L("ask.tool.otherDevice")) }
             if run.status == "waiting_inference", let inference = run.inference {
-                return try await infer(inference, run: run, conversation: conversation, token: token)
+                return try await infer(
+                    inference,
+                    run: run,
+                    conversation: conversation,
+                    token: token,
+                    generation: current
+                )
             }
             if run.status == "waiting_tool", let call = run.pending.first {
                 calls += 1
-                let output = await execute(call, count: calls)
+                let output = try await execute(call, count: calls, generation: current)
                 try Task.checkCancellation()
                 let result = AskToolResultRequest(runId: run.id, deviceId: dependencies.deviceId, toolCallId: call.id,
                                                   content: output.content, isError: output.isError)
@@ -209,7 +221,8 @@ final class AskWorkflowAssistant: ObservableObject {
         return try await api.conversation(id: conversation, token: token)
     }
 
-    private func execute(_ call: AskToolCall, count: Int) async -> AskWorkflowAuthorTools.Output {
+    private func execute(_ call: AskToolCall, count: Int, generation current: UUID) async throws
+        -> AskWorkflowAuthorTools.Output {
         guard AskWorkflowAuthorTools.names.contains(call.function.name) else {
             return .init(
                 content: "This tool is not available here.",
@@ -233,6 +246,7 @@ final class AskWorkflowAssistant: ObservableObject {
         }
         preview = ""
         let output = await tools.execute(call, host: host)
+        try checkCurrent(current)
         items.append(.tool(id: UUID(), summary: output.summary, failed: output.isError))
         if let proposal = output.proposalID {
             items.append(.proposal(proposal))
@@ -245,7 +259,7 @@ final class AskWorkflowAssistant: ObservableObject {
 
 extension AskWorkflowAssistant {
     private func infer(_ inference: AskInference, run: AskRun, conversation: String,
-                       token: String) async throws -> AskConversation {
+                       token: String, generation current: UUID) async throws -> AskConversation {
         let library = dependencies.modelLibrary
         guard let reference = run.modelRef, let (provider, model) = library.registry.resolve(reference) else {
             throw AskLocalError.message(L("ask.models.unavailable"))
@@ -262,22 +276,29 @@ extension AskWorkflowAssistant {
         do {
             let (text, calls) = try await dependencies.inference.complete(
                 provider: provider, connection: library.connection(provider, model: model), payload: payload,
-                onProgress: { [weak self] progress in await self?.showProgress(progress.text) }
+                onProgress: { [weak self] progress in await self?.showProgress(progress.text, generation: current) }
             )
             receipt = AskInferenceResult(runId: run.id, deviceId: dependencies.deviceId, inferenceId: inference.id,
                                          content: text, toolCalls: calls)
         } catch is CancellationError {
             throw CancellationError()
         } catch {
+            try checkCurrent(current)
             receipt = AskInferenceResult(runId: run.id, deviceId: dependencies.deviceId, inferenceId: inference.id,
                                          content: "", failed: true)
             self.error = error.localizedDescription
         }
-        try Task.checkCancellation()
+        try checkCurrent(current)
         return try await dependencies.api.inferenceResult(conversationId: conversation, request: receipt, token: token)
     }
 
-    private func showProgress(_ text: String) {
+    private func checkCurrent(_ current: UUID) throws {
+        try Task.checkCancellation()
+        guard generation == current else { throw CancellationError() }
+    }
+
+    private func showProgress(_ text: String, generation current: UUID) {
+        guard generation == current, !Task.isCancelled else { return }
         preview = text
     }
 
@@ -318,8 +339,10 @@ extension AskWorkflowAssistant {
         isLocal = parts.dropFirst().first == "local"
         let token = isLocal ? "" : dependencies.session().token
         guard isLocal || !token.isEmpty else { conversationID = nil; return }
+        let current = generation
         task = Task { [weak self, api = dependencies.api] in
-            guard let value = try? await api.conversation(id: id, token: token) else { return }
+            guard let value = try? await api.conversation(id: id, token: token),
+                  !Task.isCancelled, self?.generation == current else { return }
             self?.restore(value)
         }
     }

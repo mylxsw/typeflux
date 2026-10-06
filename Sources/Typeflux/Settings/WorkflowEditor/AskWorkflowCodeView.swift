@@ -83,7 +83,12 @@ struct AskWorkflowCodeView: NSViewRepresentable {
         if textView.string != text {
             let selection = textView.selectedRanges
             textView.string = text
-            textView.selectedRanges = selection.filter { $0.rangeValue.upperBound <= (text as NSString).length }
+            let length = (text as NSString).length
+            let valid = selection.filter { $0.rangeValue.upperBound <= length }
+            // NSTextView requires at least one range, even when replacing all text.
+            textView.selectedRanges = valid.isEmpty
+                ? [NSValue(range: NSRange(location: min(selection.first?.rangeValue.location ?? 0, length), length: 0))]
+                : valid
             coordinator.highlight(all: true)
         } else if coordinator.language != language {
             coordinator.highlight(all: true)

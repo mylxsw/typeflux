@@ -391,3 +391,171 @@ struct AskWorkflowEditorWindowTests {
         try await Task.sleep(for: .milliseconds(100))
     }
 }
+
+extension AskWorkflowEditorVisualTests {
+    @Test(arguments: ["", "short", "你好"])
+    func replacingCodeWithShorterTextKeepsAValidSelection(replacement: String) async throws {
+        _ = NSApplication.shared
+        let original = "A longer source file"
+        let hosting = NSHostingView(rootView: AskWorkflowCodeView(text: .constant(original), language: .plain))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 200),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = hosting
+        window.orderFront(nil)
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(200))
+        func findTextView(_ view: NSView) -> NSTextView? {
+            (view as? AskWorkflowTextView) ?? view.subviews.lazy.compactMap(findTextView).first
+        }
+        let textView = try #require(findTextView(hosting))
+        textView.setSelectedRange(NSRange(location: (original as NSString).length, length: 0))
+        hosting.rootView = AskWorkflowCodeView(text: .constant(replacement), language: .plain)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(textView.string == replacement)
+        #expect(textView.selectedRanges.count == 1)
+        #expect(textView.selectedRange() == NSRange(location: (replacement as NSString).length, length: 0))
+    }
+
+    @Test(arguments: [false, true])
+    func anOpenGenerationSheetUpdatesWhenOnlyTheAssistantFinishes(failed: Bool) async throws {
+        let api = AskWorkflowScriptedAPI([.running, failed ? .fail("Generation failed") : .reply("Ready to review")],
+                                         holdRunning: true)
+        let fixture = try AskWorkflowFixture()
+        let model = try editor(fixture, api: api)
+        #expect(model.generate(description: "Count words", name: "", keyword: "wc", id: "local.wc", runtime: .zsh))
+        _ = model.submit(AskWorkflowProposal(summary: "Words", manifestText: nil,
+                                             files: ["main.sh": "print hello"], deletes: []))
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore(); model.close() }
+        let window = generationWindow(model)
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(sheetElement("ask.workflow.editor.new.stop", in: window) != nil)
+        #expect(sheetEnabled("ask.workflow.editor.new.review", in: window) == false)
+        await api.releaseRunning()
+        await waitFor { !model.assistant.isBusy }
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(sheetElement("ask.workflow.editor.new.stop", in: window) == nil)
+        #expect(sheetElement("ask.workflow.editor.new.close", in: window) != nil)
+        #expect(sheetEnabled("ask.workflow.editor.new.review", in: window) == true)
+        #expect(sheetText(in: window).contains(failed ? "Generation failed" : "Ready to review"))
+    }
+
+    @Test func stopInAnOpenSheetRefreshesControlsAndKeepsTheProposal() async throws {
+        let api = AskWorkflowScriptedAPI([.running], holdRunning: true)
+        let fixture = try AskWorkflowFixture()
+        let model = try editor(fixture, api: api)
+        #expect(model.generate(description: "Count words", name: "", keyword: "wc", id: "local.wc", runtime: .zsh))
+        let proposal = model.submit(AskWorkflowProposal(summary: "Words", manifestText: nil,
+                                                        files: ["main.sh": "print hello"], deletes: []))
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore(); model.close() }
+        let window = generationWindow(model)
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(300))
+        try clickSheet("ask.workflow.editor.new.stop", in: window)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(!model.assistant.isBusy)
+        #expect(model.latestProposal?.id == proposal.id)
+        #expect(sheetElement("ask.workflow.editor.new.close", in: window) != nil)
+        #expect(sheetEnabled("ask.workflow.editor.new.review", in: window) == true)
+        #expect(await api.cancels == 1)
+        try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {},
+                         size: NSSize(width: 720, height: 420), name: "gul-228-stopped.png")
+    }
+
+    @Test(arguments: ["allow", "decline", "stop", "preview"])
+    func approvalIsActionableInsideTheGenerationSheet(action: String) async throws {
+        var proposed = manifest
+        proposed["id"] = "local.wc"
+        proposed["keywords"] = [["keyword": "wc"]]
+        let api = AskWorkflowScriptedAPI([
+            .tool("workflow_propose", ["summary": "Count words", "manifest": proposed,
+                                       "files": [["path": "main.sh", "content": "#!/bin/zsh\nprint hello\n"]]]),
+            .tool("workflow_test", ["inputs": [["query": "hello"]]]), .reply("Done")
+        ])
+        let fixture = try AskWorkflowFixture()
+        let model = try editor(fixture, api: api)
+        model.autoTest = false
+        #expect(model.generate(description: "Count words", name: "", keyword: "wc", id: "local.wc", runtime: .zsh))
+        await waitFor { model.pendingRun != nil }
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore(); model.close() }
+        var dismissed = false
+        let proposalID = model.latestProposal?.id
+        let window = generationWindow(model) { dismissed = true }
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(sheetEnabled("ask.workflow.assistant.allow", in: window) == true)
+        #expect(sheetEnabled("ask.workflow.assistant.decline", in: window) == true)
+        if action == "allow" {
+            try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {},
+                             size: NSSize(width: 720, height: 540), name: "gul-228-approval.png")
+        }
+        let identifier = action == "stop" ? "ask.workflow.editor.new.stop" : "ask.workflow.assistant." + action
+        try clickSheet(identifier, in: window)
+        if action == "preview" {
+            #expect(dismissed && model.previewingProposal == proposalID)
+            #expect(model.pendingRun != nil, "viewing changes never approves execution")
+            return
+        }
+        await waitFor { !model.assistant.isBusy }
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(model.pendingRun == nil && model.pendingRunContinuation == nil)
+        #expect(model.latestProposal?.tests.count == (action == "allow" ? 1 : 0))
+        #expect(sheetElement("ask.workflow.assistant.allow", in: window) == nil)
+        #expect(sheetEnabled("ask.workflow.editor.new.review", in: window) == true)
+    }
+
+    private func generationWindow(_ model: AskWorkflowEditorModel, done: @escaping () -> Void = {}) -> NSWindow {
+        _ = NSApplication.shared
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 720, height: 540),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: AskWorkflowNewSheet(model: model, mode: .assistant,
+                                                                         generating: true, done: done))
+        window.orderFront(nil)
+        return window
+    }
+
+    private func sheetNodes(in window: NSWindow) -> [NSObject] {
+        var seen = Set<ObjectIdentifier>()
+        func visit(_ node: NSObject) -> [NSObject] {
+            guard seen.insert(ObjectIdentifier(node)).inserted else { return [] }
+            let children = sheetValue(node, "accessibilityChildren") as? [NSObject] ?? []
+            return [node] + children.flatMap(visit)
+        }
+        return visit(window) + (window.contentView.map(visit) ?? [])
+    }
+
+    private func sheetValue(_ node: NSObject, _ key: String) -> Any? {
+        node.responds(to: NSSelectorFromString(key)) ? node.value(forKey: key) : nil
+    }
+
+    private func sheetElement(_ identifier: String, in window: NSWindow) -> NSObject? {
+        sheetNodes(in: window).first { sheetValue($0, "accessibilityIdentifier") as? String == identifier }
+    }
+
+    private func sheetEnabled(_ identifier: String, in window: NSWindow) -> Bool? {
+        sheetElement(identifier, in: window).flatMap { sheetValue($0, "isAccessibilityEnabled") as? Bool }
+    }
+
+    private func sheetText(in window: NSWindow) -> String {
+        sheetNodes(in: window).flatMap { node in
+            ["accessibilityValue", "accessibilityLabel"].compactMap { sheetValue(node, $0) as? String }
+        }.joined(separator: "\n")
+    }
+
+    private func clickSheet(_ identifier: String, in window: NSWindow) throws {
+        let point = try AskWorkspaceTestAccessibility.center(identifier: identifier, in: window)
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                                                        timestamp: ProcessInfo.processInfo.systemUptime,
+                                                        windowNumber: window.windowNumber, context: nil,
+                                                        eventNumber: 0, clickCount: 1,
+                                                        pressure: type == .leftMouseDown ? 1 : 0))
+            NSApp.sendEvent(event)
+        }
+    }
+}

@@ -9,13 +9,19 @@ actor AskWorkflowScriptedAPI: AskAPI {
     enum Step { case tool(String, [String: Any]), reply(String), running, fail(String), inference(String) }
 
     private var steps: [Step]
+    private var holdRunning: Bool
     private(set) var sends: [AskSendRequest] = []
     private(set) var results: [AskToolResultRequest] = []
     private(set) var cancels = 0
     private var values: [String: AskConversation] = [:]
 
-    init(_ steps: [Step]) {
+    init(_ steps: [Step], holdRunning: Bool = false) {
         self.steps = steps
+        self.holdRunning = holdRunning
+    }
+
+    func releaseRunning() {
+        holdRunning = false
     }
 
     func enqueue(_ more: [Step]) {
@@ -92,7 +98,7 @@ actor AskWorkflowScriptedAPI: AskAPI {
     func conversation(id: String, token _: String) async throws -> AskConversation {
         guard let value = values[id] else { throw AskLocalError.message("missing") }
         // A running step finishes by the next read.
-        if value.run?.status == "running" {
+        if value.run?.status == "running", !holdRunning {
             return advance(id, deviceId: value.run?.deviceId ?? "")
         }
         return value
@@ -515,6 +521,27 @@ struct AskWorkflowAssistantSessionTests {
         #expect(assistant.error == L("ask.models.unavailable"))
     }
 
+    @Test func cancelledToolCannotAppendToTheNextConversation() async {
+        let api = AskWorkflowScriptedAPI([
+            .tool("workflow_test", ["inputs": [["query": "old"]]]), .reply("new reply")
+        ])
+        let assistant = makeAssistant(api)
+        let host = SlowHost(draft: AskWorkflowDraft(folder: URL(fileURLWithPath: "/tmp"),
+                                                    manifestText: "{}", files: [:]))
+        assistant.host = host
+        assistant.send("old")
+        await waitFor { host.started }
+        assistant.bind(workflowID: nil)
+        assistant.send("new")
+        await waitFor { !assistant.isBusy }
+        let items = assistant.items
+        host.release()
+        await waitFor { host.finished }
+        #expect(assistant.items == items)
+        #expect(await api.results.isEmpty)
+        #expect(assistant.error == nil && assistant.preview.isEmpty)
+    }
+
     @Test func stopCancelsTheRun() async {
         let api = AskWorkflowScriptedAPI([.tool("workflow_test", ["inputs": [["query": "x"]]])])
         let assistant = makeAssistant(api)
@@ -549,6 +576,7 @@ private final class Box<Value> {
 private final class SlowHost: AskWorkflowAuthoringHost {
     var draft: AskWorkflowDraft
     var started = false
+    var finished = false
     private var continuation: CheckedContinuation<Void, Never>?
     init(draft: AskWorkflowDraft) {
         self.draft = draft
@@ -577,6 +605,7 @@ private final class SlowHost: AskWorkflowAuthoringHost {
     func testLatestProposal(_: [AskWorkflowTestInput]) async -> [AskWorkflowTestResult]? {
         started = true
         await withCheckedContinuation { continuation = $0 }
+        finished = true
         return []
     }
 
@@ -863,6 +892,86 @@ struct AskWorkflowEditorModelTests {
         await waitFor("manual approval") { model.pendingRun != nil }
         model.resolvePendingRun(true)
         await waitFor("manual") { manual.value != nil }
+    }
+
+    @Test func stoppingAnAssistantWaitingForApprovalPreservesTheProposal() async throws {
+        let fixture = try AskWorkflowFixture()
+        let api = AskWorkflowScriptedAPI([
+            .tool("workflow_propose", ["summary": "new", "manifest": echoManifest,
+                                       "files": [["path": "main.sh", "content": "print hello"]]]),
+            .tool("workflow_test", ["inputs": [["query": "hello"]]])
+        ])
+        let model = model(fixture, api: api)
+        try model.open(scriptWorkflow(fixture))
+        model.autoTest = false
+        model.assistant.send("test")
+        await waitFor { model.pendingRun != nil }
+        let proposalID = model.latestProposal?.id
+        model.stopAssistant()
+        #expect(!model.assistant.isBusy && model.pendingRun == nil && model.pendingRunContinuation == nil)
+        #expect(model.latestProposal?.id == proposalID)
+        model.stopAssistant()
+        await waitFor { model.assistant.preview.isEmpty }
+        #expect(model.latestProposal?.tests.isEmpty == true)
+        model.assistant.send("continue")
+        await waitFor { !model.assistant.isBusy }
+        #expect(await api.results.count == 1, "the cancelled test never submits a tool result")
+    }
+
+    @Test func cancellingApprovalTaskReleasesItsContinuation() async throws {
+        let fixture = try AskWorkflowFixture()
+        let model = model(fixture)
+        try model.open(scriptWorkflow(fixture))
+        model.autoTest = false
+        _ = model.submit(AskWorkflowProposal(summary: "test", manifestText: nil,
+                                             files: ["main.sh": "print hello"], deletes: []))
+        let result = Box<[AskWorkflowTestResult]?>()
+        let task = Task { result.value = await .some(model.testLatestProposal([.init(query: "x")])) }
+        await waitFor { model.pendingRun != nil }
+        task.cancel()
+        await waitFor { result.value != nil }
+        #expect(result.value == .some(nil))
+        #expect(model.pendingRun == nil && model.pendingRunContinuation == nil)
+        #expect(model.latestProposal?.tests.isEmpty == true)
+        model.resolvePendingRun(true)
+        #expect(model.pendingRun == nil, "a late approval cannot revive cancelled work")
+    }
+
+    @Test func cancellationOfAnOldApprovalCannotDismissTheNextOne() async throws {
+        let fixture = try AskWorkflowFixture()
+        let model = model(fixture)
+        let proposalID = UUID()
+        let old = AskWorkflowEditorModel.PendingRun(proposalID: proposalID, risks: [])
+        let new = AskWorkflowEditorModel.PendingRun(proposalID: proposalID, risks: [])
+        let oldResult = Box<Bool>()
+        let first = Task { oldResult.value = await model.waitForRunApproval(old) }
+        await waitFor { model.pendingRun != nil }
+        first.cancel()
+        model.resolvePendingRun(false)
+        // The old cancellation callback is queued on MainActor. Install the next wait
+        // synchronously before yielding to it, then inspect and resolve the new wait.
+        let resolver = Task { @MainActor in
+            await Task.yield()
+            #expect(model.pendingRun?.id == new.id)
+            #expect(await model.waitForRunApproval(old) == false,
+                    "a second wait cannot replace the active one")
+            model.resolvePendingRun(true)
+        }
+        let allowed = await model.waitForRunApproval(new)
+        await resolver.value
+        await first.value
+        #expect(allowed && oldResult.value == false && model.pendingRun == nil)
+    }
+
+    @Test func anAlreadyCancelledTaskNeverRequestsApproval() async throws {
+        let fixture = try AskWorkflowFixture()
+        let model = model(fixture)
+        let task = Task { @MainActor in
+            await model.waitForRunApproval(.init(proposalID: UUID(), risks: []))
+        }
+        task.cancel()
+        #expect(await task.value == false)
+        #expect(model.pendingRun == nil && model.pendingRunContinuation == nil)
     }
 
     @Test func aRiskyFollowUpCanFallBackToTheProposalThatRan() async throws {
