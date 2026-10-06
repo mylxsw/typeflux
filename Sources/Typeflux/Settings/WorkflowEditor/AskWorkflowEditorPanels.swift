@@ -47,11 +47,6 @@ struct AskWorkflowTestPanel: View {
 
     private var input: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(L("ask.workflow.editor.test.title")).font(.system(size: 12.5, weight: .semibold))
-                Spacer()
-                AskWorkflowBadge(text: L("ask.workflow.editor.test.sameRunner"), color: StudioTheme.textSecondary)
-            }
             let keywords = model.draft?.manifest?.keywords.map(\.keyword) ?? []
             HStack(spacing: 5) {
                 Text(L("ask.workflow.editor.test.inputBefore"))
@@ -223,6 +218,7 @@ struct AskWorkflowAssistantPanel: View {
     @ObservedObject var model: AskWorkflowEditorModel
     @ObservedObject var assistant: AskWorkflowAssistant
     @State private var text = ""
+    @State private var expandedSteps: Set<String> = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -233,7 +229,12 @@ struct AskWorkflowAssistantPanel: View {
                             Text(L("ask.workflow.assistant.empty")).font(.system(size: 12))
                                 .foregroundStyle(StudioTheme.textTertiary)
                         }
-                        ForEach(assistant.items) { item in itemView(item) }
+                        ForEach(AskWorkflowAssistantPanel.entries(assistant.items)) { entry in
+                            switch entry {
+                            case let .item(item): itemView(item)
+                            case let .steps(id, summaries): stepsLine(id: id, summaries: summaries)
+                            }
+                        }
                         if assistant.isBusy {
                             HStack(alignment: .top, spacing: 6) {
                                 ProgressView().controlSize(.small)
@@ -258,6 +259,34 @@ struct AskWorkflowAssistantPanel: View {
             Divider()
             composer
         }
+    }
+
+    /// "✓ Wrote main.py · 3 steps", opening to every step.
+    private func stepsLine(id: String, summaries: [String]) -> some View {
+        let expanded = expandedSteps.contains(id)
+        return VStack(alignment: .leading, spacing: 3) {
+            Button {
+                if expanded { expandedSteps.remove(id) } else { expandedSteps.insert(id) }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle")
+                    Text(summaries.last ?? "").lineLimit(1)
+                    if summaries.count > 1 {
+                        Text(L("ask.workflow.assistant.steps", summaries.count))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                        Image(systemName: expanded ? "chevron.down" : "chevron.right").font(.system(size: 9))
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).disabled(summaries.count < 2)
+            if expanded {
+                ForEach(Array(summaries.dropLast().enumerated()), id: \.offset) { _, summary in
+                    Text(summary).padding(.leading, 20)
+                }
+            }
+        }
+        .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
     }
 
     @ViewBuilder private func itemView(_ item: AskWorkflowAssistant.Item) -> some View {
@@ -328,8 +357,7 @@ struct AskWorkflowAssistantPanel: View {
                 .padding(10)
                 Divider()
             }
-            AskWorkflowRiskChips(risks: proposal.risks.sorted(), new: proposal.newRisks, showsAbsent: true)
-                .padding(10)
+            proposalExtras(proposal)
             if proposal.state == .pending {
                 Divider()
                 HStack {
@@ -346,6 +374,24 @@ struct AskWorkflowAssistantPanel: View {
         .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 11))
         .overlay(RoundedRectangle(cornerRadius: 11)
             .strokeBorder(AskWorkflowEditorStyle.assistant.opacity(proposal.state == .pending ? 0.5 : 0.15)))
+    }
+
+    /// Its risks, and "Undo" right after it was applied.
+    @ViewBuilder private func proposalExtras(_ proposal: AskWorkflowProposal) -> some View {
+        if !proposal.risks.isEmpty {
+            AskWorkflowRiskChips(risks: proposal.risks.sorted(), new: proposal.newRisks, showsAbsent: false)
+                .padding(10)
+        }
+        if proposal.state == .applied, model.canUndoProposal, model.lastAppliedProposal == proposal.id {
+            Divider()
+            HStack {
+                Text(L("ask.workflow.editor.proposalApplied")).font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Spacer()
+                Button(L("ask.workflow.editor.undoProposal")) { model.undoProposal() }
+            }
+            .controlSize(.small).padding(10)
+        }
     }
 
     /// A proposal the next one replaced, as one line: "Proposal 1: … · 3/3 passed".
@@ -384,14 +430,13 @@ extension AskWorkflowAssistantPanel {
                 Label(L("ask.workflow.assistant.approval.titleNumbered", model.proposalNumber(run.proposalID)),
                       systemImage: "exclamationmark.triangle")
                     .font(.system(size: 12, weight: .semibold)).foregroundStyle(StudioTheme.warning)
+                    .help(L("ask.workflow.assistant.approval.body"))
                 Spacer()
                 Text(L("ask.workflow.assistant.approval.paused")).font(.system(size: 11))
                     .foregroundStyle(StudioTheme.textTertiary)
             }
             AskWorkflowRiskChips(risks: model.proposal(run.proposalID)?.risks.sorted() ?? run.risks,
                                  new: Set(run.risks), showsAbsent: false)
-            Text(L("ask.workflow.assistant.approval.body")).font(.system(size: 11.5))
-                .foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()
                 if let fallback = model.fallbackProposal {
@@ -413,28 +458,9 @@ extension AskWorkflowAssistantPanel {
         .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(StudioTheme.warning.opacity(0.5)))
     }
 
-    /// What the assistant gets with each message: the open files and the last test run.
-    private var context: [String] {
-        guard let draft = model.draft else { return [] }
-        var chips = Array(draft.files.keys.sorted().filter { !$0.lowercased().hasSuffix(".md") }.prefix(2))
-        chips.append(AskWorkflowManifest.fileName)
-        if let last = model.results.last {
-            chips.append(L("ask.workflow.assistant.context.lastTest") + (last.succeeded ? " ✓" : " ✕"))
-        }
-        return chips
-    }
-
     private var composer: some View {
         VStack(alignment: .leading, spacing: 6) {
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 4) {
-                    ForEach(context, id: \.self) { chip in
-                        Text(chip).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textSecondary)
-                            .padding(.horizontal, 6).frame(height: 18)
-                            .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 5))
-                            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(StudioTheme.border))
-                    }
-                }
                 TextEditor(text: $text).font(.system(size: 12.5)).frame(height: 44)
                     .scrollContentBackground(.hidden)
                     .overlay(alignment: .topLeading) {
@@ -459,6 +485,8 @@ extension AskWorkflowAssistantPanel {
                     Text("·").foregroundStyle(StudioTheme.textTertiary)
                     Text(assistant.keepsLocally ? L("ask.workflow.assistant.local") : L("ask.workflow.assistant.cloud"))
                         .foregroundStyle(StudioTheme.textTertiary)
+                    Image(systemName: "info.circle").foregroundStyle(StudioTheme.textTertiary)
+                        .help(L("ask.workflow.assistant.privacy"))
                     Spacer()
                     if assistant.isBusy {
                         Button { assistant.stop() } label: {
@@ -487,13 +515,6 @@ extension AskWorkflowAssistantPanel {
             .padding(10)
             .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(StudioTheme.border))
-            HStack {
-                Toggle(L("ask.workflow.assistant.autoTest"), isOn: $model.autoTest).toggleStyle(.checkbox)
-                    .font(.system(size: 11)).help(L("ask.workflow.assistant.autoTest.help"))
-                Spacer()
-            }
-            Text(L("ask.workflow.assistant.privacy")).font(.system(size: 10.5))
-                .foregroundStyle(StudioTheme.textTertiary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
     }

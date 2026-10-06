@@ -83,7 +83,7 @@ struct AskWorkflowCodeView: NSViewRepresentable {
         if textView.string != text {
             let selection = textView.selectedRanges
             textView.string = text
-            textView.selectedRanges = selection.filter { $0.rangeValue.upperBound <= (text as NSString).length }
+            textView.selectedRanges = Self.keptSelection(selection, length: (text as NSString).length)
             coordinator.highlight(all: true)
         } else if coordinator.language != language {
             coordinator.highlight(all: true)
@@ -106,6 +106,13 @@ struct AskWorkflowCodeView: NSViewRepresentable {
             coordinator.reveal(line: reveal)
             DispatchQueue.main.async { onRevealed() }
         }
+    }
+
+    /// The selection that still fits after the text changed; AppKit refuses an empty
+    /// list, so a selection past the new end becomes a caret at the end.
+    static func keptSelection(_ selection: [NSValue], length: Int) -> [NSValue] {
+        let kept = selection.filter { $0.rangeValue.upperBound <= length }
+        return kept.isEmpty ? [NSValue(range: NSRange(location: length, length: 0))] : kept
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {

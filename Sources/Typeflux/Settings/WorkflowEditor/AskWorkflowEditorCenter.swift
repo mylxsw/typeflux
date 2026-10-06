@@ -4,6 +4,8 @@ import SwiftUI
 /// for keywords, input and output (or `workflow.json` itself), the code view for scripts.
 struct AskWorkflowEditorCenter: View {
     @ObservedObject var model: AskWorkflowEditorModel
+    @State private var addingFile = false
+    @State private var newFile = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -32,7 +34,14 @@ struct AskWorkflowEditorCenter: View {
             } else {
                 configArea
             }
-            AskWorkflowStatusBar(model: model)
+            if AskWorkflowStatusBar.hasNews(model) {
+                AskWorkflowStatusBar(model: model)
+            }
+        }
+        .alert(L("ask.workflow.editor.addFile"), isPresented: $addingFile) {
+            TextField("helper.py", text: $newFile)
+            Button(L("ask.workflow.editor.add")) { model.addFile(newFile); newFile = "" }
+            Button(L("ask.workflow.cancel"), role: .cancel) { newFile = "" }
         }
     }
 
@@ -44,19 +53,18 @@ struct AskWorkflowEditorCenter: View {
                 ForEach(model.draft?.files.keys.sorted() ?? [], id: \.self) { path in
                     AskWorkflowFileTab(title: path, selected: model.selectedFile == path,
                                        dirty: model.draft?.isDirty(path) == true) { model.selectedFile = path }
+                        .contextMenu {
+                            Button(L("ask.workflow.editor.removeFile"), role: .destructive) { model.removeFile(path) }
+                        }
                 }
+                Button { addingFile = true } label: { Image(systemName: "plus") }
+                    .buttonStyle(.borderless).foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 8)
+                    .help(L("ask.workflow.editor.addFile"))
                 Spacer()
-                Button { model.findRequest += 1 } label: { Label(
-                    L("ask.workflow.editor.find"),
-                    systemImage: "magnifyingglass"
-                ) }
-                .buttonStyle(.borderless).keyboardShortcut("f", modifiers: .command)
-                Button(L("ask.workflow.editor.openExternal")) {
-                    if let folder = model.folder, let path = model.selectedFile {
-                        AskWorkflowEditorView.openInTextEditor(folder.appendingPathComponent(path))
-                    }
-                }
-                .buttonStyle(.borderless).padding(.horizontal, 10)
+                // ⌘F opens the find bar; the button itself stays out of sight.
+                Button("") { model.findRequest += 1 }
+                    .keyboardShortcut("f", modifiers: .command).opacity(0).frame(width: 0)
+                    .accessibilityHidden(true)
             }
             .font(.system(size: 12))
             .frame(height: 34)
@@ -98,9 +106,6 @@ struct AskWorkflowEditorCenter: View {
                 if model.configMode == .json || model.draft?.isFormEditable != true {
                     Button(L("ask.workflow.editor.format")) { model.formatManifest() }
                         .disabled(model.draft?.isFormEditable != true)
-                } else {
-                    Text(L("ask.workflow.editor.synced")).font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textTertiary)
                 }
             }
             .padding(.horizontal, 14).frame(height: 40)
@@ -164,10 +169,16 @@ struct AskWorkflowFileTab: View {
     }
 }
 
-/// Problems, the interpreter, the caret and the file format; during an outside
-/// change, what changed and what was last trusted.
+/// Problems or a failed test run, with the caret; during an outside change, what
+/// changed and what was last trusted.
 struct AskWorkflowStatusBar: View {
     @ObservedObject var model: AskWorkflowEditorModel
+
+    /// The bar only shows up with something to say: problems, a failed run or an outside change.
+    @MainActor static func hasNews(_ model: AskWorkflowEditorModel) -> Bool {
+        model.outsideChange != nil || !model.problems.isEmpty
+            || (model.step == .script && model.results.last.map { !$0.succeeded } == true)
+    }
 
     var body: some View {
         HStack(spacing: 14) {
@@ -200,12 +211,6 @@ struct AskWorkflowStatusBar: View {
         } else if let last = model.results.last, !last.succeeded, model.step == .script {
             Label(L("ask.workflow.editor.status.testFailed", last.summary), systemImage: "xmark.circle")
                 .foregroundStyle(StudioTheme.danger)
-        } else {
-            Label(L("ask.workflow.editor.noProblems"), systemImage: "checkmark.circle")
-                .foregroundStyle(StudioTheme.success)
-            if model.step == .script, let runtime = model.runtimeInfo {
-                Text(runtime).foregroundStyle(StudioTheme.textTertiary).lineLimit(1).truncationMode(.middle)
-            }
         }
     }
 
@@ -214,17 +219,9 @@ struct AskWorkflowStatusBar: View {
             if let hash = model.trustedHashLabel {
                 Text(L("ask.workflow.editor.status.trusted", hash)).foregroundStyle(StudioTheme.textTertiary)
             }
-        } else if model.step == .script || model.configMode == .json || model.draft?.isFormEditable != true {
-            if let cursor = model.cursor {
-                Text(L("ask.workflow.editor.status.cursor", cursor.line, cursor.column))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-            if let format = model.formatLabel {
-                Text(format).foregroundStyle(StudioTheme.textTertiary)
-            }
-        } else if let folder = model.folder {
-            Text(folder.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
-                .lineLimit(1).truncationMode(.middle).foregroundStyle(StudioTheme.textTertiary)
+        } else if let cursor = model.cursor {
+            Text(L("ask.workflow.editor.status.cursor", cursor.line, cursor.column))
+                .foregroundStyle(StudioTheme.textTertiary)
         }
     }
 }
@@ -253,14 +250,10 @@ struct AskWorkflowFlowStrip: View {
             }
             arrow
             node(.script, symbol: "play", title: L("ask.workflow.editor.step.script")) {
-                HStack(spacing: 4) {
-                    Text(manifest?.command.script ?? L("ask.workflow.trust.inline"))
-                        .font(.system(size: 11.5, design: .monospaced))
-                    ForEach(Array((manifest?.argumentTemplate ?? []).enumerated()), id: \.offset) { _, argument in
-                        AskWorkflowChip(text: argument, style: argument.contains("{") ? .token : .plain)
-                    }
-                }
+                Text([manifest?.command.runtime.title, manifest?.command.script ?? L("ask.workflow.trust.inline")]
+                    .compactMap(\.self).joined(separator: " · "))
             }
+            .help(model.runtimeInfo ?? "")
             arrow
             node(.output, symbol: "arrow.right.to.line", title: L("ask.workflow.editor.step.output")) {
                 Text(manifest.map {

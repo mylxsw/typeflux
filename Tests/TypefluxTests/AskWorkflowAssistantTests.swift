@@ -814,8 +814,11 @@ struct AskWorkflowEditorModelTests {
         model.apply(second.id)
         #expect(model.draft?.files["main.sh"] == "curl https://new.example.com\n" && model.canUndoProposal && model
             .isDirty)
+        #expect(model.lastAppliedProposal == second.id)
         model.undoProposal()
         #expect(model.draft?.files["main.sh"] != "curl https://new.example.com\n" && !model.canUndoProposal)
+        #expect(model.proposal(second.id)?.state == .pending && model.lastAppliedProposal == nil,
+                "an undone proposal can be applied again")
         let third = model.submit(AskWorkflowProposal(summary: "c", manifestText: nil, files: [:], deletes: []))
         model.previewingProposal = third.id
         model.discard(third.id)
@@ -935,6 +938,25 @@ struct AskWorkflowEditorModelTests {
         #expect(model.generation == nil && model.workflowID == "local.gen" && model.workflow?.status == .ready)
         #expect(model.draft?.files["main.sh"]?.contains("gen") == true)
         #expect(!model.generate(description: "again", name: "", keyword: "gg", id: "local.gen2", runtime: nil))
+    }
+
+    @Test func withoutAKeywordTheAssistantPicksOne() async throws {
+        let fixture = try AskWorkflowFixture()
+        let api = AskWorkflowScriptedAPI([.reply("Which keyword?")])
+        let model = model(fixture, api: api)
+        #expect(model.generate(description: "Count words", name: "", keyword: "", id: "local.workflow",
+                               runtime: nil))
+        await waitFor("reply") { !model.assistant.isBusy }
+        let sends = await api.sends
+        #expect(model.assistant.items.first == .user(id: sends.first?.id ?? "", text: "Count words"),
+                "the conversation shows what the user typed")
+        #expect(sends.first?.text.contains("workflow_check_keyword") == true)
+        #expect(sends.first?.text.contains("local.workflow") == true)
+        #expect(model.draft?.manifest?.keywords.isEmpty == true && model.draft?.manifest?.name == "local.workflow")
+        #expect(!model.canSaveGenerated, "nothing to save before a proposal")
+        model.discardGeneration()
+        #expect(!model.generate(description: "x", name: "", keyword: "a b", id: "local.w2", runtime: nil),
+                "a keyword that was given must be valid")
     }
 
     @Test func outsideRequestsNeverDropUnsavedEdits() throws {
@@ -1076,18 +1098,14 @@ struct AskWorkflowEditorPresentationTests {
         return model
     }
 
-    @Test func unsavedAndFormatLabels() throws {
+    @Test func unsavedLabelsAndIndentation() throws {
         let fixture = try AskWorkflowFixture()
         let model = try open(fixture, id: "local.labels")
         #expect(model.unsavedLabel == nil)
-        #expect(model.formatLabel == "UTF-8 · LF · " + L("ask.workflow.editor.spaces", 2))
         model.setText("#!/bin/zsh\r\nif true; then\n\tprint hi\nfi\n", of: "main.sh")
         #expect(model.unsavedLabel == L("ask.workflow.editor.unsavedFile", "main.sh"))
-        #expect(model.formatLabel == "UTF-8 · CRLF · " + L("ask.workflow.editor.tabs"))
         model.set("Other", at: ["name"])
         #expect(model.unsavedLabel == L("ask.workflow.editor.unsavedFiles", 2))
-        model.selectedFile = nil
-        #expect(model.formatLabel == nil)
         let config = try open(fixture, id: "local.config")
         config.set("Other", at: ["name"])
         #expect(config.unsavedLabel == L("ask.workflow.editor.unsavedFile", L("ask.workflow.editor.config")))
@@ -1174,5 +1192,63 @@ struct AskWorkflowEditorPresentationTests {
         let model = try open(fixture, id: "local.runtime")
         await waitFor("runtime info") { model.runtimeInfo != nil }
         #expect(model.runtimeInfo?.contains("zsh") == true)
+    }
+}
+
+@Suite("Ask workflow editor simplification")
+@MainActor
+struct AskWorkflowEditorSimplificationTests {
+    @Test func toolStepsFoldIntoOneLineBetweenMessages() {
+        let first = UUID(), second = UUID(), third = UUID(), proposal = UUID()
+        let entries = AskWorkflowAssistantPanel.entries([
+            .user(id: "u", text: "hi"),
+            .tool(id: first, summary: "read", failed: false),
+            .tool(id: second, summary: "wrote", failed: false),
+            .proposal(proposal),
+            .tool(id: third, summary: "tested", failed: true),
+            .reply(id: "r", text: "done")
+        ])
+        #expect(entries == [
+            .item(.user(id: "u", text: "hi")),
+            .steps(id: "steps-" + first.uuidString, summaries: ["read", "wrote"]),
+            .item(.proposal(proposal)),
+            .steps(id: "steps-" + third.uuidString, summaries: ["tested"]),
+            .item(.reply(id: "r", text: "done"))
+        ])
+        #expect(entries.map(\.id) == ["u", "steps-" + first.uuidString, "proposal-" + proposal.uuidString,
+                                      "steps-" + third.uuidString, "r"])
+        #expect(AskWorkflowAssistantPanel.entries([]).isEmpty)
+    }
+
+    @Test func theStatusBarOnlyShowsWithSomethingToSay() throws {
+        let fixture = try AskWorkflowFixture()
+        try fixture.write("local.s", manifest: AskWorkflowFixture.inline("local.s", keyword: "ss", script: "print hi"))
+        fixture.store.reload()
+        fixture.store.trust("local.s")
+        let model = AskWorkflowEditorModel(store: fixture.store, settings: fixture.settings,
+                                           assistant: makeAssistant(AskWorkflowScriptedAPI([])),
+                                           tester: AskWorkflowTester(home: fixture.home.path))
+        model.watchInterval = 0
+        model.open("local.s")
+        #expect(!AskWorkflowStatusBar.hasNews(model))
+        model.results = [AskWorkflowTestResult(input: .init(query: ""), exitCode: 1, stdout: "", stderr: "x",
+                                               duration: 0.1)]
+        model.step = .script
+        #expect(AskWorkflowStatusBar.hasNews(model))
+        model.step = .keywords
+        #expect(!AskWorkflowStatusBar.hasNews(model))
+        model.set("bad id", at: ["id"])
+        #expect(AskWorkflowStatusBar.hasNews(model))
+    }
+}
+
+@Suite("Ask workflow code view selection")
+struct AskWorkflowCodeViewSelectionTests {
+    @Test func aSelectionPastTheNewEndBecomesACaretAtTheEnd() {
+        let past = [NSValue(range: NSRange(location: 40, length: 2))]
+        #expect(AskWorkflowCodeView.keptSelection(past, length: 10).map(\.rangeValue) == [NSRange(location: 10, length: 0)])
+        let inside = [NSValue(range: NSRange(location: 2, length: 3)), NSValue(range: NSRange(location: 9, length: 5))]
+        #expect(AskWorkflowCodeView.keptSelection(inside, length: 10).map(\.rangeValue) == [NSRange(location: 2, length: 3)])
+        #expect(AskWorkflowCodeView.keptSelection([], length: 0).map(\.rangeValue) == [NSRange(location: 0, length: 0)])
     }
 }

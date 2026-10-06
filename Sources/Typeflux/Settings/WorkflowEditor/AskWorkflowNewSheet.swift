@@ -23,11 +23,15 @@ struct AskWorkflowNewSheet: View {
     @State private var template: AskWorkflowTemplate = .pythonText
     @State private var runtime: AskWorkflowRuntime?
     @State private var generating: Bool
+    @State private var showsOptions = false
+    @State private var showsSteps = false
 
-    init(model: AskWorkflowEditorModel, mode: Mode, generating: Bool = false, done: @escaping () -> Void) {
+    init(model: AskWorkflowEditorModel, mode: Mode, generating: Bool = false, showsOptions: Bool = false,
+         done: @escaping () -> Void) {
         self.model = model
         _mode = State(initialValue: mode)
         _generating = State(initialValue: generating)
+        _showsOptions = State(initialValue: showsOptions)
         self.done = done
     }
 
@@ -52,7 +56,7 @@ struct AskWorkflowNewSheet: View {
             footer
         }
         .padding(22)
-        .frame(width: 720)
+        .frame(width: 640)
         .onChange(of: name) { newValue in
             if !editedID {
                 id = model.store.suggestedID(for: newValue.isEmpty ? keyword : newValue)
@@ -77,8 +81,6 @@ struct AskWorkflowNewSheet: View {
             if model.workflow != nil {
                 modeButton(.duplicate, title: L("ask.workflow.editor.new.duplicateShort"))
             }
-            Text(L("ask.workflow.editor.import")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .padding(.horizontal, 12).frame(height: 26).help(L("ask.workflow.editor.importLater"))
         }
         .padding(2)
         .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 9))
@@ -102,20 +104,35 @@ struct AskWorkflowNewSheet: View {
 
     // MARK: - With the assistant
 
+    /// Describe it; the language and keyword are optional and tucked away.
     @ViewBuilder private var assistantFields: some View {
-        TextEditor(text: $description).font(.system(size: 13)).frame(height: 84)
-            .scrollContentBackground(.hidden).padding(6)
-            .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 11))
-            .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(AskWorkflowEditorStyle.assistant.opacity(0.55)))
-            .overlay(alignment: .topLeading) {
-                if description.isEmpty {
-                    Text(L("ask.workflow.editor.new.aiPlaceholder")).font(.system(size: 13))
-                        .foregroundStyle(StudioTheme.textTertiary).padding(11).allowsHitTesting(false)
+        if generating, !description.isEmpty {
+            Text(description).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary).lineLimit(2)
+                .padding(.leading, 10)
+                .overlay(alignment: .leading) {
+                    Rectangle().fill(AskWorkflowEditorStyle.assistant.opacity(0.6)).frame(width: 2)
                 }
+        }
+        if generating {
+            if model.assistant.isBusy || model.pendingRun != nil || model.assistant.error != nil
+                || model.latestProposal == nil {
+                progress
+            } else {
+                result
             }
-            .disabled(generating)
-            .accessibilityIdentifier("ask.workflow.editor.new.description")
-        if !generating {
+        } else {
+            TextEditor(text: $description).font(.system(size: 13)).frame(height: 96)
+                .scrollContentBackground(.hidden).padding(6)
+                .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 11))
+                .overlay(RoundedRectangle(cornerRadius: 11)
+                    .strokeBorder(AskWorkflowEditorStyle.assistant.opacity(0.55)))
+                .overlay(alignment: .topLeading) {
+                    if description.isEmpty {
+                        Text(L("ask.workflow.editor.new.aiPlaceholder")).font(.system(size: 13))
+                            .foregroundStyle(StudioTheme.textTertiary).padding(11).allowsHitTesting(false)
+                    }
+                }
+                .accessibilityIdentifier("ask.workflow.editor.new.description")
             HStack(spacing: 6) {
                 Text(L("ask.workflow.editor.new.examples")).foregroundStyle(StudioTheme.textTertiary)
                 ForEach(["markdown", "ip", "code"], id: \.self) { example in
@@ -124,61 +141,151 @@ struct AskWorkflowNewSheet: View {
                     }
                     .buttonStyle(.bordered).controlSize(.small)
                 }
+                Spacer()
+                Button {
+                    withAnimation(.easeOut(duration: 0.15)) { showsOptions.toggle() }
+                } label: {
+                    Label(L("ask.workflow.editor.new.options"),
+                          systemImage: showsOptions ? "chevron.down" : "chevron.right")
+                }
+                .buttonStyle(.borderless).foregroundStyle(StudioTheme.textSecondary)
             }
             .font(.system(size: 11.5))
-            HStack(spacing: 16) {
-                HStack(spacing: 6) {
-                    Text(L("ask.workflow.editor.new.language")).foregroundStyle(StudioTheme.textSecondary)
-                    Picker("", selection: $runtime) {
-                        Text(L("ask.workflow.editor.new.languageAuto")).tag(AskWorkflowRuntime?.none)
-                        ForEach([AskWorkflowRuntime.python3, .node, .zsh], id: \.self) {
-                            Text($0.title).tag(Optional($0))
-                        }
-                    }
-                    .labelsHidden().fixedSize()
-                }
-                HStack(spacing: 6) {
-                    Text(L("ask.workflow.trust.keywords")).foregroundStyle(StudioTheme.textSecondary)
-                    TextField("fx", text: $keyword).textFieldStyle(.roundedBorder)
-                        .font(.system(size: 12.5, design: .monospaced)).frame(width: 90)
-                    keywordStatus
-                }
-                Toggle(L("ask.workflow.editor.new.autoTest"), isOn: $model.autoTest).toggleStyle(.checkbox)
+            if showsOptions {
+                options
             }
-            .font(.system(size: 12))
-        } else {
-            progress
         }
     }
 
-    /// What the assistant has done so far, with a spinner on what it is doing.
-    private var progress: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(model.assistant.items) { item in
-                if case let .tool(_, summary, failed) = item {
-                    Label(summary, systemImage: failed ? "xmark.circle" : "checkmark.circle")
-                        .foregroundStyle(failed ? StudioTheme.warning : StudioTheme.success)
-                }
+    private var options: some View {
+        HStack(spacing: 16) {
+            HStack(spacing: 6) {
+                Text(L("ask.workflow.trust.keywords")).foregroundStyle(StudioTheme.textSecondary)
+                TextField(L("ask.workflow.editor.new.keywordAuto"), text: $keyword).textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12.5, design: .monospaced)).frame(width: 90)
+                keywordStatus
             }
-            if model.pendingRun != nil {
-                Label(L("ask.workflow.editor.new.waitingApproval"), systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(StudioTheme.warning)
-            } else if model.assistant.isBusy {
-                HStack(spacing: 6) {
-                    ProgressView().controlSize(.small)
-                    Text(model.assistant.preview.isEmpty ? L("ask.workflow.assistant.working") : model.assistant
-                        .preview)
-                        .lineLimit(2).foregroundStyle(StudioTheme.textSecondary)
+            HStack(spacing: 6) {
+                Text(L("ask.workflow.editor.new.language")).foregroundStyle(StudioTheme.textSecondary)
+                Picker("", selection: $runtime) {
+                    Text(L("ask.workflow.editor.new.languageAuto")).tag(AskWorkflowRuntime?.none)
+                    ForEach([AskWorkflowRuntime.python3, .node, .zsh], id: \.self) {
+                        Text($0.title).tag(Optional($0))
+                    }
                 }
-            } else if let error = model.assistant.error {
-                Label(error, systemImage: "xmark.octagon").foregroundStyle(StudioTheme.danger)
-            } else if let reply = lastReply {
-                Text(reply).foregroundStyle(StudioTheme.textSecondary).lineLimit(4)
+                .labelsHidden().fixedSize()
             }
+            Spacer()
         }
         .font(.system(size: 12))
+    }
+
+}
+
+extension AskWorkflowNewSheet {
+    /// One line on what the assistant is doing; the steps behind "Details".
+    private var progress: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                if let error = model.assistant.error {
+                    Image(systemName: "xmark.octagon").foregroundStyle(StudioTheme.danger)
+                    Text(error).foregroundStyle(StudioTheme.danger).lineLimit(3)
+                } else if model.pendingRun != nil {
+                    Image(systemName: "exclamationmark.triangle").foregroundStyle(StudioTheme.warning)
+                    Text(L("ask.workflow.editor.new.askRun"))
+                } else {
+                    ProgressView().controlSize(.small)
+                    Text(currentStep).lineLimit(1)
+                }
+                Spacer()
+                if let proposal = model.latestProposal {
+                    Text(versionText(proposal)).foregroundStyle(StudioTheme.textTertiary)
+                }
+            }
+            .font(.system(size: 12.5))
+            if let run = model.pendingRun {
+                AskWorkflowRiskChips(risks: run.risks, new: Set(run.risks), showsAbsent: false)
+                HStack {
+                    Spacer()
+                    Button(L("ask.workflow.assistant.approval.decline")) { model.resolvePendingRun(false) }
+                    Button(L("ask.workflow.assistant.approval.allow")) { model.resolvePendingRun(true) }
+                        .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
+                }
+                .controlSize(.small)
+            }
+            DisclosureGroup(isExpanded: $showsSteps) {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(steps.enumerated()), id: \.offset) { _, step in
+                        Label(step, systemImage: "checkmark.circle").foregroundStyle(StudioTheme.textSecondary)
+                    }
+                }
+                .font(.system(size: 11.5)).padding(.top, 4).frame(maxWidth: .infinity, alignment: .leading)
+            } label: {
+                Text(L("ask.workflow.editor.new.details", steps.count)).font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
+        }
         .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(StudioTheme.border))
+        .background(StudioTheme.controlSurface.opacity(0.5), in: RoundedRectangle(cornerRadius: 11))
+    }
+
+    /// The finished workflow: what to type, what the assistant said, how a test run
+    /// looks in the launcher and what the code may do.
+    private var result: some View {
+        let candidate = model.draft.map { model.latestProposal?.applied(to: $0) ?? $0 }
+        let manifest = candidate?.manifest
+        let keyword = manifest?.keywords.first?.keyword ?? ""
+        // A passing run with input shows best what the workflow does.
+        let tests = model.latestProposal?.tests ?? []
+        let test = tests.last { $0.succeeded && !$0.input.query.isEmpty } ?? tests.last { $0.succeeded } ?? tests.last
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(StudioTheme.success)
+                Text(L("ask.workflow.editor.new.doneTitle", manifest?.name ?? keyword))
+                    .font(.system(size: 13.5, weight: .semibold))
+                Spacer()
+                if let proposal = model.latestProposal {
+                    Text(versionText(proposal)).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                }
+            }
+            if !keyword.isEmpty {
+                HStack(spacing: 4) {
+                    Text(L("ask.workflow.editor.new.usage.before"))
+                    AskWorkflowChip(text: keyword, style: .token)
+                    Text(L("ask.workflow.editor.new.usage.after"))
+                }
+                .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+            }
+            if let test, let manifest {
+                AskWorkflowLauncherPreview(name: manifest.name, keyword: keyword, query: test.input.query,
+                                           result: test, output: manifest.output, timeout: manifest.timeout)
+            } else if let reply = lastReply {
+                Text(reply).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(5)
+            }
+            if let risks = model.latestProposal?.risks, !risks.isEmpty {
+                AskWorkflowRiskChips(risks: risks.sorted(), new: [], showsAbsent: false)
+            }
+        }
+    }
+
+    /// The latest thing the assistant did, as a sentence.
+    private var currentStep: String {
+        steps.last.map { L("ask.workflow.editor.new.after", $0) } ?? L("ask.workflow.assistant.working")
+    }
+
+    private var steps: [String] {
+        model.assistant.items.compactMap { item -> String? in
+            guard case let .tool(_, summary, _) = item else { return nil }
+            return summary
+        }
+    }
+
+    /// "Version 2 · 4/5 passed".
+    private func versionText(_ proposal: AskWorkflowProposal) -> String {
+        let version = L("ask.workflow.editor.new.version", model.proposalNumber(proposal.id))
+        guard !proposal.tests.isEmpty else { return version }
+        return version + " · " + L("ask.workflow.editor.new.passed",
+                                   proposal.tests.filter(\.succeeded).count, proposal.tests.count)
     }
 
     private var lastReply: String? {
@@ -293,22 +400,28 @@ extension AskWorkflowNewSheet {
 
     private var footer: some View {
         HStack(alignment: .center) {
-            Text(footnote).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
+            if !generating {
+                Text(footnote).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Spacer()
             if generating {
                 if model.assistant.isBusy {
                     Button(L("ask.workflow.assistant.stop")) { model.assistant.stop() }
+                } else if model.canSaveGenerated {
+                    Button(L("ask.workflow.editor.new.adjust")) { done() }
+                        .accessibilityIdentifier("ask.workflow.editor.new.review")
+                    Button(L("ask.workflow.editor.new.save")) {
+                        if model.saveGenerated() {
+                            done()
+                        }
+                    }
+                    .keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
+                    .tint(AskWorkflowEditorStyle.assistant)
+                    .accessibilityIdentifier("ask.workflow.editor.new.save")
                 } else {
                     Button(L("ask.workflow.editor.close")) { done() }
                 }
-                Button(L("ask.workflow.editor.saveGenerated")) {
-                    model.previewingProposal = model.latestProposal?.id
-                    done()
-                }
-                .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
-                .disabled(model.assistant.isBusy || model.latestProposal == nil)
-                .accessibilityIdentifier("ask.workflow.editor.new.review")
             } else {
                 Button(L("ask.workflow.cancel"), action: done).keyboardShortcut(.cancelAction)
                 Button(mode == .assistant ? L("ask.workflow.editor.new.generate") :
@@ -344,14 +457,16 @@ extension AskWorkflowNewSheet {
     }
 
     private var generatedID: String {
-        model.store.suggestedID(for: keyword)
+        model.store.suggestedID(for: keyword.isEmpty ? "workflow" : keyword)
     }
 
     private var canCreate: Bool {
-        guard !keyword.isEmpty, keywordProblem == nil else { return false }
         if mode == .assistant {
-            return !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            // The assistant picks a keyword when none is given.
+            return (keyword.isEmpty || keywordProblem == nil)
+                && !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
+        guard !keyword.isEmpty, keywordProblem == nil else { return false }
         return AskWorkflowManifest.isValidID(id)
     }
 

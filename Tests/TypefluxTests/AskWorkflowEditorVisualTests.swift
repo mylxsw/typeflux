@@ -239,6 +239,36 @@ struct AskWorkflowEditorVisualTests {
         }
     }
 
+    @Test func generationAsksBeforeRunningRiskyCodeAndShowsErrors() async throws {
+        try await chinese {
+            var manifest = manifest
+            manifest["id"] = "local.workflow"
+            manifest["keywords"] = [["keyword": "clean"]]
+            let api = AskWorkflowScriptedAPI([
+                .tool("workflow_propose", ["summary": "清理", "manifest": manifest,
+                                           "files": [["path": "main.sh", "content": "#!/bin/zsh\nrm -rf /tmp/old\n"]]]),
+                .tool("workflow_test", ["inputs": [["query": "x"]]]),
+                .reply("好了。")
+            ])
+            let fixture = try AskWorkflowFixture()
+            let model = try editor(fixture, api: api)
+            let size = NSSize(width: 640, height: 420)
+            try await render(AskWorkflowNewSheet(model: model, mode: .assistant, showsOptions: true) {}, size: size,
+                             name: "extra-new-options.png")
+            #expect(model.generate(description: "清理临时文件", name: "", keyword: "", id: "local.workflow",
+                                   runtime: nil))
+            await waitFor { model.pendingRun != nil }
+            #expect(model.pendingRun != nil)
+            try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {}, size: size,
+                             name: "extra-new-approval.png")
+            model.resolvePendingRun(false)
+            await waitFor { !model.assistant.isBusy }
+            model.assistant.error = "网络断开了"
+            try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {}, size: size,
+                             name: "extra-new-error.png")
+        }
+    }
+
     @Test func bannersAndEmptyStates() async throws {
         try await chinese {
             let fixture = try AskWorkflowFixture()
