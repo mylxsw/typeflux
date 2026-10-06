@@ -1,6 +1,6 @@
 # 启动器关键字 & 工作流编辑器：UI 重构方案
 
-> 状态：设计稿，等确认后实现（GUL-229）。配套可交互设计稿：`docs/design/launcher-keywords-workflow-editor.html`（`?solo=<id>` 只显示一屏，`?light=1` 浅色）。截图在 `docs/design/launcher-keywords-workflow-editor/`：`kw-list` `kw-edit` `kw-add` `ed-keywords` `ed-input` `ed-script` `ed-output` `ed-test` `ed-ai`，以及 `light-*`；改版前的截图是 `before-*.png`。
+> 状态：已按本方案实现（GUL-229），实现说明和截图对照见第 6 节。配套可交互设计稿：`docs/design/launcher-keywords-workflow-editor.html`（`?solo=<id>` 只显示一屏，`?light=1` 浅色）。截图在 `docs/design/launcher-keywords-workflow-editor/`：`kw-list` `kw-edit` `kw-add` `ed-keywords` `ed-input` `ed-script` `ed-output` `ed-test` `ed-ai`，以及 `light-*`；改版前的截图是 `before-*.png`。
 > 只改 UI 和交互，不改数据：`AskKeyword`、`settings.askLauncherKeywords`、`workflow.json`、运行器和信任规则都不变。
 
 ## 0. 一页结论
@@ -145,8 +145,44 @@
 - 新的纯逻辑类型都写单元测试（筛选、搜索、摘要、冲突说明、草稿校验和保存、预设比较），覆盖率按项目要求；本地化字符串中英文同步。
 - 每一步都附截图，深色和浅色各一张。
 
-## 5. 需要确认的地方
+## 5. 已确认
 
-1. 关键字编辑用**对话框**（本方案）还是**在列表里展开**？对话框更适合长提示词，保存方式也清楚；展开不用离开列表，但会回到「一页摊开」的问题。
-2. 工作流的关键字是否在关键字页**只读显示**（本方案），还是不显示？
-3. 编辑器的启用开关留在顶部（本方案），还是挪进「···」，只用状态徽标表示？
+按本方案执行：关键字用对话框编辑；工作流的关键字在关键字页只读显示；编辑器的启用开关留在顶部。
+
+## 6. 实现说明
+
+### 6.1 关键字页
+
+- `AskKeywordListPresentation`（纯逻辑）：把内置关键字和工作流关键字变成列表行（名称、一行摘要、是否被内置关键字占用），按功能筛选、搜索、计数。
+- `AskKeywordDraft`（纯逻辑）：对话框的草稿。预设提示词直接填进输入框；保存时和预设、内置引擎相同的值不写进 `options`，对话框不认识的选项原样保留；查重时写明被谁占用（内置关键字或工作流）。
+- `AskLauncherPluginSettingsView`：列表、筛选、搜索、「添加关键字」菜单、「第二语言」卡片、恢复默认（二次确认）。窄窗口（设置窗口默认 1100pt 宽）时筛选在第一行，搜索和添加按钮在第二行。
+- `AskKeywordEditorSheet`：按功能显示字段，⌘↩ 保存，Esc 取消，有问题时保存不可用。
+
+### 6.2 工作流编辑器
+
+- 窗口：`fullSizeContentView` + 透明标题栏，红绿灯落在左栏顶部，顶部一行就是标题栏。
+- 顶部：名称 ▾ 弹出名称、说明、图标；「已信任」等状态徽标；保存（次要）、运行测试（唯一的主按钮）、启用开关、更多、右栏开关。
+- 编号步骤条（`AskWorkflowFlowStrip`）；`workflow.json` 切换在步骤条右侧。
+- `AskWorkflowRadioList` 取代并排的选项卡片；`AskWorkflowActionStyle` 统一按钮（28pt 高、8pt 圆角，小号 24pt）；`AskWorkflowTabs` 改成分段控件。
+- 运行设置（运行时、解释器、脚本、超时、环境变量键值表）从「输出」挪到「脚本」的「运行设置」面板；`run.timeoutSeconds`、`env` 的校验问题随之归到「脚本」步骤（`AskWorkflowDraft.step(for:)`），`run.mode` 仍属于「输出」。
+- 代码区是一张圆角卡片，行号栏和代码同色，底部状态栏：问题、解释器、光标、编码。
+
+### 6.3 截图对照
+
+截图由 `LauncherRedesignVisualTests` 渲染（`TYPEFLUX_ASK_SNAPSHOTS=<目录> swift test --filter LauncherRedesignVisualTests`），`implemented-window-*` 是真实的编辑器窗口（`AskWorkflowEditorWindowController` 打开的 `NSWindow`，含标题栏和红绿灯），`implemented-studio-kw-list` 是设置窗口默认尺寸下的整页。
+
+| 设计稿 | 实现 | 对照结果 |
+|---|---|---|
+| ① `kw-list` | `implemented-studio-kw-list`、`implemented-kw-list`、`implemented-kw-list-light` | 已还原：四列行、分组标题、筛选计数、搜索、添加按钮、工作流行（↗，停用变淡）、翻译卡片、恢复默认 |
+| — | `implemented-kw-filter`、`implemented-kw-empty` | 筛选「网页搜索」；搜索无结果 |
+| ② `kw-edit` | `implemented-kw-edit-prompt`、`-translate`、`-web` | 已还原：按功能变化的字段、`{input}`、恢复预设、引擎快捷填入、效果预览、删除 / 启用 / 取消 / 保存 |
+| ③ `kw-add` | `implemented-kw-add-menu`、`implemented-kw-add-problems` | 已还原：先选功能的菜单；冲突和网址问题标在字段下，添加不可用 |
+| ④ `ed-keywords` | `implemented-window-ed-keywords` | 已还原：无独立标题栏、编号步骤、关键字表、预设参数标签 |
+| ⑤ `ed-input` | `implemented-window-ed-input`、`implemented-ed-input-light` | 已还原：两列单选列表（标题和说明同一行）、参数构造器、插入、试一下、argv / stdin |
+| ⑥ `ed-script` | `implemented-window-ed-script` | 已还原：文件胶囊标签、运行设置面板、代码卡片、状态栏 |
+| ⑦ `ed-output` | `implemented-window-ed-output` | 已还原：输出单选列表（条目列表「即将支持」）、运行时机分段、启动器预览 |
+| ⑧ `ed-test` | `implemented-ed-test`、`implemented-ed-test-ok` | 已还原：步骤条红点、出错行和原因、失败条 + 让 AI 修复、结果分段、最近运行 |
+| ⑨ `ed-ai` | `implemented-ed-ai` | 已还原：提案卡片（文件增删行数、查看差异 / 放弃 / 应用） |
+| — | `implemented-ed-json` | `workflow.json` 视图 |
+
+和设计稿的差异：开关用系统 `Toggle`（窗口激活时是系统强调色，截图里的离屏窗口不是激活状态，所以显示为灰色）；测试结果卡片沿用启动器真实的卡片样式。

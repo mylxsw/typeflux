@@ -76,45 +76,136 @@ struct AskWorkflowBadge: View {
     }
 }
 
-/// A choice drawn as a card with a radio dot, a title and what it means; disabled
-/// choices say which version brings them.
-struct AskWorkflowOptionCard: View {
+/// A choice in a radio list: what it is, one line on what it means, and whether
+/// it can be picked yet.
+struct AskWorkflowChoice<Value: Hashable>: Identifiable {
+    var value: Value
     var title: String
-    var detail: String
-    var selected: Bool
-    var comingIn: String?
-    var action: () -> Void
+    var detail: String?
+    var comingSoon = false
+
+    var id: String {
+        title
+    }
+}
+
+/// Mutually exclusive choices as rows in a card: a radio dot, the title and its
+/// meaning. Titles never wrap into the detail, unlike cards squeezed side by side.
+struct AskWorkflowRadioList<Value: Hashable>: View {
+    var choices: [AskWorkflowChoice<Value>]
+    var selection: Value
+    /// Details below the title instead of after it, for longer explanations.
+    var stacked = false
+    var select: (Value) -> Void
 
     var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 7) {
-                    Circle()
-                        .strokeBorder(
-                            selected ? AskTheme.accent : StudioTheme.textTertiary,
-                            lineWidth: selected ? 4 : 1
-                        )
-                        .frame(width: 14, height: 14)
-                    Text(title).font(.system(size: 12.5, weight: .semibold))
-                    if let comingIn {
-                        Text(comingIn).font(.system(size: 9.5, weight: .bold)).foregroundStyle(.black)
-                            .padding(.horizontal, 4).background(Color.yellow, in: RoundedRectangle(cornerRadius: 3))
+        VStack(spacing: 0) {
+            ForEach(Array(choices.enumerated()), id: \.element.id) { index, choice in
+                if index > 0 {
+                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                }
+                row(choice)
+            }
+        }
+        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func row(_ choice: AskWorkflowChoice<Value>) -> some View {
+        let selected = choice.value == selection && !choice.comingSoon
+        return Button { select(choice.value) } label: {
+            HStack(alignment: stacked ? .top : .center, spacing: 11) {
+                Circle()
+                    .strokeBorder(selected ? AskTheme.accent : StudioTheme.textTertiary, lineWidth: selected ? 5 : 1.5)
+                    .frame(width: 16, height: 16)
+                    .padding(.top, stacked ? 1 : 0)
+                if stacked {
+                    VStack(alignment: .leading, spacing: 2) {
+                        title(choice)
+                        if let detail = choice.detail, !detail.isEmpty {
+                            Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                } else {
+                    title(choice)
+                    if let detail = choice.detail, !detail.isEmpty {
+                        Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
                     }
                 }
-                Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 12).padding(.vertical, 10)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(selected ? StudioTheme.accentSoft : StudioTheme.controlSurface,
-                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(selected ? AskTheme.accent.opacity(0.75) : StudioTheme.border))
+            .padding(.horizontal, 14).padding(.vertical, stacked ? 10 : 0)
+            .frame(minHeight: 40)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(comingIn != nil)
-        .opacity(comingIn != nil ? 0.5 : 1)
+        .disabled(choice.comingSoon)
+        .opacity(choice.comingSoon ? 0.45 : 1)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func title(_ choice: AskWorkflowChoice<Value>) -> some View {
+        HStack(spacing: 6) {
+            Text(choice.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1).fixedSize()
+            if choice.comingSoon {
+                Text(L("ask.workflow.editor.comingSoon")).font(.system(size: 10.5))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .padding(.horizontal, 6).frame(height: 17)
+                    .background(StudioTheme.textSecondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
+            }
+        }
+    }
+}
+
+/// The editor's buttons: one height and radius everywhere. `primary` is the single
+/// main action, `assistant` the AI's, `ghost` a quiet one in a toolbar.
+struct AskWorkflowActionStyle: ButtonStyle {
+    enum Kind { case secondary, primary, assistant, ghost }
+
+    var kind: Kind = .secondary
+    var small = false
+    @Environment(\.isEnabled) private var enabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: small ? 12 : 12.5, weight: .medium))
+            .lineLimit(1)
+            .padding(.horizontal, small ? 9 : 12).frame(height: small ? 24 : 28)
+            .foregroundStyle(foreground)
+            .background(background, in: RoundedRectangle(cornerRadius: small ? 7 : 8, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: small ? 7 : 8, style: .continuous)
+                .strokeBorder(kind == .secondary ? ModelVisualStyle.border : .clear))
+            .contentShape(Rectangle())
+            .opacity(enabled ? (configuration.isPressed ? 0.75 : 1) : 0.45)
+    }
+
+    private var foreground: Color {
+        switch kind {
+        case .primary, .assistant: .white
+        case .secondary: StudioTheme.textPrimary
+        case .ghost: StudioTheme.textSecondary
+        }
+    }
+
+    private var background: Color {
+        switch kind {
+        case .primary: AskTheme.accent
+        case .assistant: AskWorkflowEditorStyle.assistant
+        case .secondary: ModelVisualStyle.control
+        case .ghost: .clear
+        }
+    }
+}
+
+/// A shortcut after a button's title: "⌘S".
+struct AskWorkflowShortcutHint: View {
+    var text: String
+
+    var body: some View {
+        Text(text).font(.system(size: 11, design: .monospaced)).opacity(0.7)
     }
 }
 
@@ -137,7 +228,8 @@ struct AskWorkflowActionChip: View {
     }
 }
 
-/// Underlined tabs, as the side panel and the test results use them.
+/// Segmented tabs, as the side panel and the test results use them: a track
+/// with the selected tab raised.
 struct AskWorkflowTabs<Tab: Hashable>: View {
     struct Item {
         var tab: Tab
@@ -150,6 +242,8 @@ struct AskWorkflowTabs<Tab: Hashable>: View {
     var items: [Item]
     @Binding var selection: Tab
     var size: CGFloat = 12
+    /// Tabs share the width evenly instead of hugging their titles.
+    var fills = false
 
     var body: some View {
         HStack(spacing: 2) {
@@ -162,24 +256,31 @@ struct AskWorkflowTabs<Tab: Hashable>: View {
                             Image(systemName: symbol).font(.system(size: size - 2, weight: .semibold))
                                 .foregroundStyle(selected ? item.tint : StudioTheme.textTertiary)
                         }
-                        Text(item.title).font(.system(size: size))
+                        Text(item.title).font(.system(size: size, weight: selected ? .semibold : .regular))
+                            .lineLimit(1)
                         if let badge = item.badge {
                             Text(badge).font(.system(size: 9.5, weight: .bold)).foregroundStyle(StudioTheme.danger)
                                 .padding(.horizontal, 4)
                                 .background(StudioTheme.danger.opacity(0.14), in: RoundedRectangle(cornerRadius: 4))
                         }
                     }
-                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textTertiary)
-                    .padding(.horizontal, 9).padding(.bottom, 6).padding(.top, 2)
-                    .overlay(alignment: .bottom) {
-                        Rectangle().fill(selected ? item.tint : .clear).frame(height: 2)
-                    }
+                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .padding(.horizontal, 10).frame(height: size + 13)
+                    .frame(maxWidth: fills ? .infinity : nil)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(selected ? StudioTheme.selectionSurfaceRaised : Color.clear)
+                            .shadow(color: .black.opacity(selected ? 0.18 : 0), radius: 1, y: 1)
+                    )
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
+        .padding(2)
+        .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(ModelVisualStyle.border))
     }
 }
 
