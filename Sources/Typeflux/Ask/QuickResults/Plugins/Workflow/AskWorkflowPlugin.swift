@@ -210,8 +210,9 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
     /// ⌘E opens the workflow in the editor, at the line stderr points to; after a
     /// failed run the assistant can also be asked to fix it.
     func editActions(query: String? = nil, stderr: String = "", reason: String = "") -> [AskPluginAction] {
-        let files = Set([manifest?.command.script].compactMap { $0 })
-        let location = AskWorkflowStderrLocator.locate(stderr, folder: workflow.folder, files: files)
+        let location = stderr.isEmpty ? nil : AskWorkflowStderrLocator.locate(
+            stderr, folder: workflow.folder, files: AskWorkflowStderrLocator.files(in: workflow.folder)
+        )
         var actions = [AskPluginAction(kind: .editWorkflow(id: workflow.id, path: location?.path, line: location?.line),
                                        title: L("ask.workflow.action.edit"), symbol: "pencil", shortcut: .commandE)]
         if let query {
@@ -254,7 +255,9 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
 
     func invocation(for request: AskPluginRequest, input: Input, manifest: AskWorkflowManifest,
                     source: (app: String?, bundleID: String?), path: String) throws -> AskWorkflowInvocation {
-        let script = manifest.command.script.flatMap { AskWorkflowManifest.scriptURL($0, in: workflow.folder) }
+        // Each keyword may have its own entry; the rest run the workflow's.
+        let script = manifest.script(forKeyword: request.keyword.keyword)
+            .flatMap { AskWorkflowManifest.scriptURL($0, in: workflow.folder) }
         let options = request.options.filter { $0.key != Self.titleOption }
         let arguments = AskWorkflowManifest.arguments(manifest.argumentTemplate, query: input.query,
                                                       selection: input.selection, options: options)

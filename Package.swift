@@ -43,7 +43,9 @@ let package = Package(
                 "Resources/Info.plist"
             ],
             resources: [
-                .process("Resources")
+                .process("Resources"),
+                // Gallery examples are workflow folders: copied as they are, not flattened.
+                .copy("WorkflowGallery")
             ],
             linkerSettings: [
                 .linkedLibrary("sqlite3")

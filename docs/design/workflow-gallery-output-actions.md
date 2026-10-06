@@ -1,6 +1,6 @@
 # 工作流：示例库、每个关键字的入口、输出与动作
 
-> 状态：设计稿（GUL-229 后续），等确认后拆子任务实现。
+> 状态：O1（GUL-230）、O2（GUL-231）已实现，见第 6、7 节。
 > 可交互设计稿：`docs/design/workflow-gallery-output-actions.html`（`?solo=<id>` 单独看一屏，`?light=1` 浅色），截图在 `docs/design/workflow-gallery-output-actions/`。
 > 基于已经上线的工作流 W1（`ask-launcher-workflows.md`）和编辑器（`ask-workflow-editor.md`、`launcher-keywords-workflow-editor.md`）。
 
@@ -42,7 +42,7 @@
 
 ### 1.4 打包
 
-- 示例放在应用资源里：`Sources/Typeflux/Resources/WorkflowGallery/<id>/`（`workflow.json`、脚本、`README.md`、可选 `preview.json`）。
+- 示例放在应用资源里：`Sources/Typeflux/WorkflowGallery/<id>/`（`workflow.json`、脚本、`README.md`），整个文件夹原样复制进资源包（O2 实现时从 `Resources/` 挪出来：`Resources` 按 `.process` 处理会把子目录拍平）。
 - 新增 `gallery.json` 索引：id、类别、排序、示例输出（详情页的预览用，不需要运行）。
 - 加载走 `Bundle.appResources`；示例本身也用 `AskWorkflowManifest.problems` 校验，单测保证每个示例都是有效的清单、关键字互不冲突、脚本能跑通（见第 6 节）。
 
@@ -264,3 +264,49 @@ stdout 是下面这样的 JSON 时，启动器把 `text` 当作显示内容，�
 | — | `implemented-ed-output-none.png` | 「不显示，只做事」：「执行完关闭启动器」锁定为开，预览显示「已完成，启动器关闭」，失败动作里的无效地址标在状态栏。 |
 
 和设计稿的差异：测试面板保留了原有的「传入了什么」分段，所以是五个分段；显示方式列表多一个「自动判断」（O1 范围内）。
+
+## 7. O2 实现说明（GUL-231）
+
+**已实现**：第 1 节（示例库，首批 6 个示例）、第 2 节（每个关键字的入口、文件卡片、出错定位支持所有文件）。「本机 IP」「在编辑器打开项目」需要条目列表，等 O3。
+
+| 部分 | 代码 |
+|---|---|
+| 示例和索引 | `Sources/Typeflux/WorkflowGallery/`：`gallery.json` + `fx`、`ts`、`json`、`codec`、`uuid`、`wc` 六个文件夹 |
+| 读取示例、本地化、生成要写的文件、版本比较、联网地址 | `AskWorkflowGallery.swift` |
+| 添加（改名、信任、`origin`）、查看更新、覆盖 | `AskWorkflowStore+Gallery.swift` |
+| 示例库对话框、详情、更新差异；设置页空状态 | `AskWorkflowGallerySheet.swift`（`AskWorkflowGalleryStarter`） |
+| `keywords[].script`：选入口、校验 | `AskWorkflowManifest`（`script(forKeyword:)`、`entryScripts`、`keywordScriptProblems`）、`AskWorkflowPlugin.invocation` |
+| 入口列、文件卡片、文件标签上的入口标记 | `AskWorkflowKeywordsForm.entryPicker`、`AskWorkflowFilesCard`、`AskWorkflowFileReferences`、`AskWorkflowEditorModel+Files` |
+| 出错定位支持所有文件 | `AskWorkflowStderrLocator.files(in:)`，`AskWorkflowPlugin.editActions` 改用它（编辑器原本就传全部文件） |
+
+**实现细节**：
+
+- **打包**：示例放在 `Sources/Typeflux/WorkflowGallery/`，用 `.copy` 原样进资源包。放在 `Resources/` 下不行：`Resources` 是 `.process`，会把子目录拍平，而且 SwiftPM 不允许在它里面再套一条 `.copy` 规则。
+- **多语言**：示例清单里要翻译的文字写成 `"@L:fx.name"`，读取和添加时换成当前界面语言的文案（键在 `ask.workflow.gallery.*`）。所以添加后的名称、关键字显示名称、通知标题是用户当时的语言。脚本和 `README.md` 是英文。
+- **添加**：id 用清单里的 `local.<id>`，被占用时加 `-2`、`-3`；关键字和内置关键字、其他工作流重名时加数字（`fx` → `fx2`），对话框左下角说明改了哪些。写入后按内容哈希记为已信任，清单里写 `origin`，同时把每个文件的哈希记在设置里（`ask.workflows.galleryBaseline`），用来判断用户改过哪些文件。
+- **更新**：示例库里的版本比 `origin.version` 新时，卡片显示「查看更新」。差异视图对比「我的版本 / 新版本」，新版本沿用用户现在的 id 和关键字（数量变了才用示例的），用户改过的文件在标签上标橙点，并在上方写出来。点「覆盖为新版本」才写入：旧版本有、新版本没有的文件删掉，用户自己加的文件保留，覆盖后仍是已信任。
+- **复制**一个来自示例库的工作流时去掉 `origin`：复制出来的是用户自己的工作流。删除、改 id 时同步清掉 / 迁移文件哈希记录。
+- **入口**：`keywords[].script` 覆盖 `command.script`；运行时、参数模板、解释器仍是工作流级别的。校验：文件要存在、在文件夹里、不是 `workflow.json`，`exec` 运行时还要可执行；用了 `command.inline` 时不能指定。编辑器里还没保存的文件算存在。保存时所有入口脚本都会设为可执行。
+- **入口下拉**：第一项「默认（main.py）」，其余是文件夹里同一种语言的脚本（`exec` 运行时列出所有文件）。选回默认入口时，清单里的 `script` 字段会删掉。
+- **文件卡片**：入口标「入口 · 关键字」；其他文件用简单扫描写出被谁引用：Python 的 `import x` / `from x import`，Node 的 `require('./x')` / `import … from './x'`，shell 的 `source ./x` / `. ./x`。扫不到就不写，`.md` 写「说明文件」。
+- **出错定位**：启动器出错时，⌘E 能跳到工作流里任何文件的那一行（例如 `rates.py:12`），不再只认默认入口。只在 stderr 不为空时扫描文件夹。
+- **示例的运行时**：Node 不一定装了：示例库在后台查一次 PATH，没有时卡片显示「需要 Node」，详情页写出安装命令（`brew install node`）。
+- AI 生成工作流时用的说明（`AskWorkflowAuthorSkill`）也加上了 `keywords[].script`。
+
+### 逐屏对照
+
+截图由 `WorkflowGalleryVisualTests` 用真实视图渲染（`TYPEFLUX_ASK_SNAPSHOTS=<目录> swift test --filter WorkflowGalleryVisualTests`）。
+
+| 设计稿 | 实现 | 对照结果 |
+|---|---|---|
+| ① `g-list.png` | `implemented-g-list(-light).png` | 一致：左侧类别（带数量）和搜索，右侧三列卡片：图标、名称、一句话说明、关键字、运行时、「联网」橙色标签，「添加」/「已添加」。只显示有示例的类别（「系统」等 O3 才有示例）。 |
+| ② `g-detail.png` | `implemented-g-detail(-light).png` | 一致：返回链接、大图标和说明、「已添加」+「在编辑器中打开」；基本信息（关键字和改名说明、运行时、会做什么、演示了、文件）、用法、启动器里的样子、入口脚本前 20 行（不含 `#!` 行，不自动换行）。 |
+| ③ `ed-entry.png` | `implemented-ed-entry(-light).png` | 一致：关键字表多了「入口」列，「文件」卡片标出入口和引用关系，标题下「来自示例库」。 |
+| — | `implemented-g-update.png`、`implemented-g-list-update.png` | 查看更新：版本号、用户改过的文件、差异视图和「覆盖为新版本」。 |
+| — | `implemented-g-detail-node.png`、`implemented-g-list-node.png` | 没有 Node 时的标签和安装说明。 |
+| — | `implemented-ed-entry-tabs.png`、`implemented-ed-entry-problem.png` | 脚本步骤的文件标签：入口排在前面并带标记；入口文件不存在时标在那一行。 |
+| — | `implemented-settings-empty(-light).png` | 设置页没有工作流时，直接展示前 3 个示例，可以一键添加。 |
+
+对照时发现并修了这些问题：对话框背景半透明（截图里透出编辑器）；卡片底部放不下，「Python」被折成两行，「联网」「已添加」被截断；名称「URL / Base64 编解码」被截断（左栏比设计稿宽，改为 230pt）；入口脚本预览自动换行；「入口」下拉没有边框；文件卡片说明的句号落到下一行开头；更新页的按钮挤压了文件标签；没有动作的示例「会做什么」是空的。
+
+和设计稿的差异：详情页「用法」来自 `gallery.json` 里多语言的用法列表，不是直接显示 `README.md`（`README.md` 是英文，仍随示例一起复制）；编辑器左上角工作流图标的颜色仍按 id 计算，不用示例的颜色。

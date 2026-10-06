@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "local.fx",
+  "name": "@L:fx.name",
+  "description": "@L:fx.summary",
+  "icon": "sf:dollarsign",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    { "keyword": "fx", "title": "@L:fx.keyword.fx" },
+    { "keyword": "rate", "title": "@L:fx.keyword.rate", "script": "table.py", "options": { "to": "usd,eur,jpy" } }
+  ],
+  "input": { "argument": "optional", "selection": "ifEmpty" },
+  "run": { "mode": "onSubmit", "timeoutSeconds": 15 },
+  "command": { "runtime": "python3", "script": "main.py", "args": ["{query}"] },
+  "output": {
+    "display": "text",
+    "onSuccess": [
+      { "action": "copy", "value": "{output.line1}" },
+      { "action": "notify", "title": "@L:fx.name", "body": "{output.line1}" }
+    ]
+  }
+}

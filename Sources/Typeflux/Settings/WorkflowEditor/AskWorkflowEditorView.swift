@@ -14,6 +14,7 @@ struct AskWorkflowEditorView: View {
     @State private var panel: Panel
     @State private var showsPanel = true
     @State private var editingInfo = false
+    @State private var showingGallery = false
 
     enum Panel: String { case assistant, test }
 
@@ -33,7 +34,8 @@ struct AskWorkflowEditorView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            AskWorkflowEditorSidebar(model: model, store: store, create: { creating = $0 })
+            AskWorkflowEditorSidebar(model: model, store: store, create: { creating = $0 },
+                                     gallery: { showingGallery = true })
                 .frame(width: 220)
             Rectangle().fill(ModelVisualStyle.border).frame(width: 1)
             VStack(spacing: 0) {
@@ -61,6 +63,12 @@ struct AskWorkflowEditorView: View {
         .ignoresSafeArea(.container, edges: .top)
         .sheet(item: $creating) { mode in
             AskWorkflowNewSheet(model: model, mode: mode) { creating = nil }
+        }
+        .sheet(isPresented: $showingGallery) {
+            AskWorkflowGallerySheet(store: store, builtIn: model.builtInKeywords, open: { id in
+                showingGallery = false
+                model.navigate(to: id)
+            }, done: { showingGallery = false })
         }
         .sheet(item: $reviewing) { workflow in
             AskWorkflowTrustSheet(workflow: workflow, summary: AskWorkflowTrustSummary(workflow),
@@ -107,7 +115,9 @@ struct AskWorkflowEditorView: View {
                             Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
                                 .foregroundStyle(StudioTheme.textTertiary)
                         }
-                        Text([draft.manifest?.id, draft.manifest?.version].compactMap(\.self).joined(separator: " · "))
+                        Text([draft.manifest?.id, draft.manifest?.version,
+                              draft.manifest?.origin.map { _ in L("ask.workflow.gallery.fromGallery") }]
+                                .compactMap(\.self).joined(separator: " · "))
                             .font(.system(size: 11, design: .monospaced)).foregroundStyle(StudioTheme.textTertiary)
                             .lineLimit(1)
                     }
@@ -326,6 +336,8 @@ extension AskWorkflowEditorView {
                     Label(L("ask.workflow.editor.new.ai"), systemImage: "sparkles")
                 }
                 .buttonStyle(AskWorkflowActionStyle(kind: .assistant))
+                Button(L("ask.workflow.gallery.fromGalleryMenu")) { showingGallery = true }
+                    .buttonStyle(AskWorkflowActionStyle())
                 Button(L("ask.workflow.editor.new.template")) { creating = .template }
                     .buttonStyle(AskWorkflowActionStyle())
             }
@@ -357,6 +369,7 @@ struct AskWorkflowEditorSidebar: View {
     @ObservedObject var model: AskWorkflowEditorModel
     @ObservedObject var store: AskWorkflowStore
     var create: (AskWorkflowNewSheet.Mode) -> Void
+    var gallery: () -> Void = {}
     @State private var switching: String?
 
     var body: some View {
@@ -401,6 +414,9 @@ struct AskWorkflowEditorSidebar: View {
                 Menu {
                     Button { create(.assistant) } label: {
                         Label(L("ask.workflow.editor.new.ai"), systemImage: "sparkles")
+                    }
+                    Button { gallery() } label: {
+                        Label(L("ask.workflow.gallery.fromGalleryMenu"), systemImage: "square.grid.2x2")
                     }
                     Button(L("ask.workflow.editor.new.template")) { create(.template) }
                     if model.workflow != nil {

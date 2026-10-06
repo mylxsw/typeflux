@@ -1,0 +1,149 @@
+{
+  "schema": 1,
+  "items": [
+    {
+      "id": "fx",
+      "category": "network",
+      "order": 1,
+      "color": "orange",
+      "preview": {
+        "keyword": "fx",
+        "query": "100 usd jpy",
+        "output": "100 USD = 14,912.30 JPY\n1 USD = 149.123 JPY"
+      },
+      "usage": [
+        {
+          "example": "fx 100 usd jpy",
+          "text": "fx.usage.1"
+        },
+        {
+          "example": "fx 50 eur",
+          "text": "fx.usage.2"
+        },
+        {
+          "example": "rate",
+          "text": "fx.usage.3"
+        }
+      ]
+    },
+    {
+      "id": "ts",
+      "category": "dev",
+      "order": 2,
+      "color": "blue",
+      "preview": {
+        "keyword": "ts",
+        "query": "1700000000",
+        "output": "2023-11-14 22:13:20 UTC\n2023-11-15 06:13:20 +0800 (local)\n1700000000 (seconds)"
+      },
+      "usage": [
+        {
+          "example": "ts 1700000000",
+          "text": "ts.usage.1"
+        },
+        {
+          "example": "ts 2024-05-01 12:00",
+          "text": "ts.usage.2"
+        },
+        {
+          "example": "ts",
+          "text": "ts.usage.3"
+        }
+      ]
+    },
+    {
+      "id": "json",
+      "category": "dev",
+      "order": 3,
+      "color": "green",
+      "preview": {
+        "keyword": "json",
+        "query": "",
+        "selection": "{\"a\":1,\"b\":[true,null]}",
+        "output": "{\n  \"a\": 1,\n  \"b\": [\n    true,\n    null\n  ]\n}"
+      },
+      "usage": [
+        {
+          "example": "json",
+          "text": "json.usage.1"
+        },
+        {
+          "example": "json min",
+          "text": "json.usage.2"
+        }
+      ]
+    },
+    {
+      "id": "codec",
+      "category": "dev",
+      "order": 4,
+      "color": "purple",
+      "preview": {
+        "keyword": "url",
+        "query": "a b&c=d",
+        "output": "a%20b%26c%3Dd"
+      },
+      "usage": [
+        {
+          "example": "url a b&c",
+          "text": "codec.usage.1"
+        },
+        {
+          "example": "b64 hello",
+          "text": "codec.usage.2"
+        },
+        {
+          "example": "b64 -d aGVsbG8=",
+          "text": "codec.usage.3"
+        }
+      ]
+    },
+    {
+      "id": "uuid",
+      "category": "dev",
+      "order": 5,
+      "color": "gray",
+      "preview": {
+        "keyword": "uuid",
+        "query": "",
+        "output": "3f2c9a8e-7b1d-4c55-9e0a-6d4b2f1c8e73"
+      },
+      "usage": [
+        {
+          "example": "uuid",
+          "text": "uuid.usage.1"
+        },
+        {
+          "example": "pwd",
+          "text": "uuid.usage.2"
+        },
+        {
+          "example": "pwd 32",
+          "text": "uuid.usage.3"
+        }
+      ]
+    },
+    {
+      "id": "wc",
+      "category": "text",
+      "order": 6,
+      "color": "pink",
+      "preview": {
+        "keyword": "wc",
+        "query": "",
+        "selection": "Hello world",
+        "output": "11 characters · 10 without spaces\n2 words · 1 line"
+      },
+      "usage": [
+        {
+          "example": "wc",
+          "text": "wc.usage.1"
+        },
+        {
+          "example": "wc some text",
+          "text": "wc.usage.2"
+        }
+      ]
+    }
+  ]
+}

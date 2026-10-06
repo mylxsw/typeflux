@@ -56,7 +56,10 @@ struct AskWorkflowTrustSummary: Equatable {
 
     init(_ workflow: AskWorkflow, fileManager: FileManager = .default) {
         let manifest = workflow.manifest
-        keywords = manifest?.keywords.map(\.keyword) ?? []
+        // A keyword with its own entry says which file it runs: "rate → table.py".
+        keywords = (manifest?.keywords ?? []).map { keyword in
+            keyword.script.map { keyword.keyword + " → " + $0 } ?? keyword.keyword
+        }
         if let manifest {
             let program = manifest.command.interpreter ?? manifest.command.runtime.interpreterName
             let target = manifest.command.script ?? L("ask.workflow.trust.inline")
@@ -110,11 +113,28 @@ struct AskWorkflowSettingsView: View {
 
     @State private var reviewing: AskWorkflow?
     @State private var failure: String?
+    @State private var showingGallery = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if store.workflows.isEmpty {
-                AgentSettingsEmptyRow(text: L("ask.workflow.empty"))
+                AskWorkflowGalleryStarter(store: store, gallery: .bundled,
+                                          builtIn: settings.effectiveAskLauncherKeywords,
+                                          browse: { showingGallery = true },
+                                          open: { AskWorkflowEditorWindowController.shared.show(workflowID: $0) })
+                ModelRowDivider(leading: 18)
+            } else {
+                HStack(spacing: 10) {
+                    Text(L("ask.workflow.gallery.settingsHint")).font(.system(size: 12))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                    Spacer()
+                    Button { showingGallery = true } label: {
+                        Label(L("ask.workflow.gallery.title"), systemImage: "square.grid.2x2")
+                    }
+                    .accessibilityIdentifier("ask.workflow.gallery")
+                }
+                .font(.system(size: 12.5))
+                .padding(.horizontal, 18).padding(.vertical, 10)
                 ModelRowDivider(leading: 18)
             }
             let builtIn = settings.effectiveAskLauncherKeywords
@@ -153,6 +173,12 @@ struct AskWorkflowSettingsView: View {
             .padding(.horizontal, 18).padding(.vertical, 12)
         }
         .onAppear { store.reload() }
+        .sheet(isPresented: $showingGallery) {
+            AskWorkflowGallerySheet(store: store, builtIn: settings.effectiveAskLauncherKeywords, open: { id in
+                showingGallery = false
+                AskWorkflowEditorWindowController.shared.show(workflowID: id)
+            }, done: { showingGallery = false })
+        }
         .sheet(item: $reviewing) { workflow in
             AskWorkflowTrustSheet(workflow: workflow, summary: AskWorkflowTrustSummary(workflow),
                                   onTrust: { store.trust(workflow.id); reviewing = nil },

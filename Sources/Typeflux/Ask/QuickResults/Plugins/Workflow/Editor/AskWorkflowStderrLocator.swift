@@ -57,6 +57,22 @@ enum AskWorkflowStderrLocator {
         return best
     }
 
+    /// Every file a location can point to: the workflow's files, by path relative to
+    /// its folder, without the manifest, hidden files and Python's bytecode caches.
+    static func files(in folder: URL, fileManager: FileManager = .default) -> Set<String> {
+        let root = folder.standardizedFileURL.path
+        let keys: [URLResourceKey] = [.isRegularFileKey]
+        let enumerator = fileManager.enumerator(at: folder, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles])
+        var files = Set<String>()
+        while let url = enumerator?.nextObject() as? URL {
+            if url.lastPathComponent == "__pycache__" { enumerator?.skipDescendants(); continue }
+            guard (try? url.resourceValues(forKeys: Set(keys)).isRegularFile) == true else { continue }
+            let path = String(url.standardizedFileURL.path.dropFirst(root.count + 1))
+            if path != AskWorkflowManifest.fileName { files.insert(path) }
+        }
+        return files
+    }
+
     /// "/…/main.sh:4: command not found: x" → "command not found: x": the marked line
     /// already says where.
     static func withoutLocation(_ message: String) -> String {
