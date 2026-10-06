@@ -247,7 +247,7 @@ struct AskComposer: View {
         case .tab:
             guard let value = results.value(of: .calculation), !results.stale else { return false }
             draft.wrappedValue.text = value
-        case .escape, .optionEnter, .shiftTab, .commandR, .commandD, .commandC:
+        case .escape, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC:
             return false
         }
         return true
@@ -355,9 +355,16 @@ struct AskComposer: View {
         case .shiftTab: _ = plugins.cycle(-1, selection: selection, text: text, language: language)
         case .enter: if display.asksAI { askAIFromPlugin() } else { runPluginMain() }
         case .commandEnter: askAIFromPlugin()
-        case .optionEnter, .commandR, .commandD:
-            let shortcut: AskPluginAction.Shortcut = key == .optionEnter ? .optionEnter : key == .commandR ? .commandR : .commandD
-            if let action = plugins.output?.action(for: shortcut) { performPluginAction(action) }
+        case .optionEnter, .commandR, .commandD, .shiftCommandC:
+            let shortcut: AskPluginAction.Shortcut = switch key {
+            case .optionEnter: .optionEnter
+            case .commandR: .commandR
+            case .commandD: .commandD
+            default: .shiftCommandC
+            }
+            guard let action = plugins.output?.action(for: shortcut) else { return key != .shiftCommandC }
+            // ⇧⌘C copies and stays, like ⌘C.
+            if shortcut == .shiftCommandC, case let .copy(text) = action.kind { model.copyPluginText(text) } else { performPluginAction(action) }
         case .commandC:
             // With nothing selected in the editor, ⌘C copies the result (or a search's link) and stays.
             let offered: AskPluginAction?
@@ -695,7 +702,7 @@ struct AskComposer: View {
         case .escape:
             dismissedSlash = slash?.range.location
             closePalette()
-        case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC:
+        case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }

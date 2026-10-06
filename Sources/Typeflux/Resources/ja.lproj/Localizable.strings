@@ -2473,6 +2473,15 @@
 "ask.plugin.translate.noModel" = "AI で翻訳するには「設定 → モデル」でテキストモデルを設定してください";
 "ask.plugin.translate.aiFallback" = "この Mac にこの言語のオフラインパックがないため AI で翻訳しました";
 "ask.plugin.translate.askAI" = "この翻訳を確認し、より自然な訳を提案してください。\n\n原文：\n%@\n\n訳文：\n%@";
+"ask.plugin.translate.wordCard" = "単語カード";
+"ask.plugin.action.copyDefinition" = "意味をコピー";
+"ask.plugin.action.copyCard" = "カードをコピー";
+"ask.plugin.action.wordCard" = "AI 単語カード";
+"ask.plugin.translate.cardHint" = "⌘R で AI の単語カードを作成（%@ に送信されます）";
+"ask.plugin.translate.cardUnreadable" = "単語カードにできなかったため、モデルの返答をそのまま表示しています";
+"ask.plugin.translate.askAI.word" = "この単語についてもっと教えてください：使い方、よく使う組み合わせ、混同しやすい語。\n\n%@";
+"ask.plugin.wordCard.examples" = "例文";
+"ask.plugin.wordCard.synonyms" = "類義語";
 "ask.plugin.action.copy" = "コピー";
 "ask.plugin.action.replace" = "選択部分を置換";
 "ask.plugin.action.insert" = "挿入";

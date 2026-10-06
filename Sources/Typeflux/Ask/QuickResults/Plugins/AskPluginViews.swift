@@ -111,7 +111,11 @@ struct AskPluginResultsView: View {
     /// comparing), a note, and the actions.
     static func cardHeight(output: AskPluginOutput?, failure: AskPluginFailure?, comparing: Bool) -> CGFloat {
         var height = cardPadding.top + headerHeight + 8 + cardPadding.bottom
-        if let output {
+        if let output, let card = output.wordCard {
+            height += AskWordCardView.height(card)
+            if output.note != nil { height += 6 + noteHeight }
+            height += 10 + actionsHeight
+        } else if let output {
             if comparing { height += originalHeight(output.original) + 9 }
             height += bodyHeight(output.body)
             if output.note != nil { height += 6 + noteHeight }
@@ -312,7 +316,15 @@ struct AskPluginResultsView: View {
             }
             .frame(height: Self.headerHeight)
             .padding(.bottom, 8)
-            if let output {
+            if let output, let card = output.wordCard {
+                AskWordCardView(card: card, language: Self.spokenLanguage(output) ?? "en", dimmed: running,
+                                onAction: onAction)
+                if let note = output.note {
+                    Text(note).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                        .frame(height: Self.noteHeight).padding(.top, 6)
+                }
+                actions(output.actions, enabled: !running)
+            } else if let output {
                 if display.comparing {
                     ScrollView(.vertical) {
                         Text(output.original).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
@@ -387,6 +399,13 @@ struct AskPluginResultsView: View {
         .opacity(enabled ? 1 : 0.5)
     }
 
+    /// The language the result's read-aloud action uses.
+    static func spokenLanguage(_ output: AskPluginOutput) -> String? {
+        output.actions.lazy.compactMap { action -> String? in
+            if case let .speak(_, language) = action.kind { language } else { nil }
+        }.first
+    }
+
     static func key(_ shortcut: AskPluginAction.Shortcut?) -> String? {
         switch shortcut {
         case .enter: "↩"
@@ -394,6 +413,7 @@ struct AskPluginResultsView: View {
         case .commandR: "⌘R"
         case .commandD: "⌘D"
         case .commandC: "⌘C"
+        case .shiftCommandC: "⇧⌘C"
         case nil: nil
         }
     }

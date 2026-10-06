@@ -369,8 +369,8 @@ enum AskCommandKey: Equatable {
     case commandEnter
     /// Keys a keyword plugin's result answers to: ⌥Return writes it back,
     /// ⇧Tab steps an option back, ⌘R runs again, ⌘D compares with the original,
-    /// ⌘C copies (the editor only offers it when it has nothing selected).
-    case optionEnter, shiftTab, commandR, commandD, commandC
+    /// ⌘C copies (the editor only offers it when it has nothing selected), ⇧⌘C copies all of a word card.
+    case optionEnter, shiftTab, commandR, commandD, commandC, shiftCommandC
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
@@ -381,6 +381,7 @@ enum AskCommandKey: Equatable {
         if modifiers == .command, event.keyCode == 15 { self = .commandR; return }
         if modifiers == .command, event.keyCode == 2 { self = .commandD; return }
         if modifiers == .command, event.keyCode == 8 { self = .commandC; return }
+        if modifiers == [.command, .shift], event.keyCode == 8 { self = .shiftCommandC; return }
         guard modifiers.isEmpty else { return nil }
         switch event.keyCode {
         case 126: self = .up

@@ -46,7 +46,28 @@ final class AskTestLLMService: LLMService, @unchecked Sendable {
         return answer
     }
 
-    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String { "{}" }
+    /// Structured replies, such as word cards.
+    var jsonAnswer = "{}"
+    private(set) var jsonPrompts: [(system: String, user: String, schema: String)] = []
+
+    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
+        jsonPrompts.append((systemPrompt, userPrompt, schema.name))
+        if let failure { throw failure }
+        return jsonAnswer
+    }
+}
+
+/// A dictionary with a fixed answer, recording what it was asked.
+final class AskTestWordLookup: AskWordLookingUp, @unchecked Sendable {
+    var answer: AskWordLookup
+    private(set) var requests: [(text: String, source: String?, target: String, generation: String)] = []
+
+    init(answer: AskWordLookup) { self.answer = answer }
+
+    func lookUp(_ text: String, from source: String?, to target: String, generation: String) async throws -> AskWordLookup {
+        requests.append((text, source, target, generation))
+        return answer
+    }
 }
 
 @Suite("Ask keyword matching")
