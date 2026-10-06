@@ -1,8 +1,8 @@
 import Foundation
 
 /// One installed workflow as a launcher plugin: its keywords start it, its script
-/// runs on Return, and what it prints becomes a text card, a list or a Markdown
-/// card (or the launcher just closes when it prints nothing).
+/// runs on Return, and what it prints becomes a text card, a list, a Markdown card
+/// or an image (or the launcher just closes when it prints nothing).
 struct AskWorkflowPlugin: AskLauncherPlugin {
     static let idPrefix = "workflow."
     /// Option the keyword carries: its title from the manifest, for the chip.
@@ -138,7 +138,9 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
             let reason = L("ask.workflow.timedOut", Int(manifest.timeout))
             throw failure(reason, result: result, request: request, input: input, manifest: manifest)
         }
-        let text = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        // `{"text": …, "actions": …}`: the text is what was printed, the actions come after the configured ones.
+        let script = AskWorkflowScriptOutput.parse(result.stdout)
+        let text = (script?.text ?? result.stdout).trimmingCharacters(in: .whitespacesAndNewlines)
         // A run cut off for printing too much still shows what it printed.
         if result.exitCode != 0, !result.truncated {
             let reason = Self.errorMessage(in: result.stdout) ?? L("ask.workflow.failed", Int(result.exitCode))
@@ -163,6 +165,8 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
             shown = itemsOutput(list, base: shown, input: input)
         case .markdown:
             shown.markdown = true
+        case let .image(name):
+            shown = imageOutput(name, base: shown)
         }
         if result.truncated {
             shown.note = L("ask.workflow.truncated")
@@ -185,19 +189,6 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
         failure.followUp = followUp(manifest.output.onFailure, closes: manifest.output.display == .none,
                                     result: result, request: request, input: input, error: failure.message)
         return failure
-    }
-
-    /// The actions to take after this run, filled in from it; nil when there are none.
-    private func followUp(_ actions: [AskWorkflowAction], closes: Bool, result: AskWorkflowRunResult,
-                          request: AskPluginRequest, input: Input, error: String?) -> AskWorkflowFollowUp? {
-        guard !actions.isEmpty else { return nil }
-        let placeholders = AskWorkflowPlaceholders(
-            output: result.stdout, query: input.query, selection: input.selection, keyword: request.keyword.keyword,
-            options: request.options.filter { $0.key != Self.titleOption }, error: error
-        )
-        let steps = AskWorkflowActionRunner.steps(for: actions, placeholders: placeholders, folder: workflow.folder,
-                                                  name: title, home: home)
-        return AskWorkflowFollowUp(steps: steps, closes: closes)
     }
 
     private func output(_ text: String, request: AskPluginRequest, plan: AskPluginPlan, input: Input,
@@ -347,4 +338,63 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
     }
 
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? { nil }
+}
+
+// MARK: - Actions and images
+
+extension AskWorkflowPlugin {
+    /// The actions to take after this run, filled in from it, then after a success the
+    /// ones the script added (listed, not run, unless the manifest allows them); nil
+    /// when there are none.
+    private func followUp(_ actions: [AskWorkflowAction], closes: Bool, result: AskWorkflowRunResult,
+                          request: AskPluginRequest, input: Input, error: String?) -> AskWorkflowFollowUp? {
+        let script = error == nil ? AskWorkflowScriptOutput.parse(result.stdout) : nil
+        let added = script?.actions ?? []
+        guard !actions.isEmpty || !added.isEmpty else { return nil }
+        let placeholders = AskWorkflowPlaceholders(
+            output: script?.text ?? result.stdout, query: input.query, selection: input.selection,
+            keyword: request.keyword.keyword, options: request.options.filter { $0.key != Self.titleOption },
+            error: error, json: script == nil ? nil : result.stdout
+        )
+        let chain = request.chain + [request.keyword.keyword]
+        let folder = workflow.folder
+        let steps = AskWorkflowActionRunner.steps(for: actions, placeholders: placeholders, folder: folder,
+                                                  name: title, home: home, chain: chain)
+            + AskWorkflowActionRunner.scriptSteps(added, allowed: manifest?.output.scriptActions == true,
+                                                  folder: folder, name: title, home: home, chain: chain,
+                                                  knownHosts: { AskWorkflowScriptOutput.knownHosts(in: folder) })
+        return AskWorkflowFollowUp(steps: steps, closes: closes)
+    }
+
+    /// An image card: ↩ copies the image, ⌥↩ shows its file in Finder. What cannot be
+    /// read as an image stays a text card that says why.
+    private func imageOutput(_ name: String, base: AskPluginOutput) -> AskPluginOutput {
+        var shown = base
+        let cache = AskWorkflow.cacheDirectory(for: workflow.id, home: home)
+        switch AskWorkflowImage.resolve(name, folder: workflow.folder, cache: cache, home: home) {
+        case let .success(image):
+            shown.image = image
+            shown.actions = base.actions.compactMap { action in
+                switch action.kind {
+                case .copy:
+                    AskPluginAction(kind: .copyImage(image.url), title: L("ask.plugin.action.copyImage"),
+                                    symbol: "photo.on.rectangle", shortcut: .enter)
+                case .writeBack:
+                    AskPluginAction(kind: .reveal(image.url), title: L("ask.plugin.action.reveal"), symbol: "folder",
+                                    shortcut: .optionEnter)
+                case .compare: nil
+                default: action
+                }
+            }
+        case let .failure(.notFound(path)):
+            shown.note = L("ask.workflow.image.notFound", AskWorkflowActionRunner.clipped(path, limit: 60))
+        case .failure(.notImage):
+            // A data URL is no use as text; say what it was instead.
+            if name.lowercased().hasPrefix("data:") {
+                shown.body = AskWorkflowActionRunner.clipped(name, limit: 60)
+            }
+            shown.note = L("ask.workflow.image.invalid")
+        }
+        return shown
+    }
 }

@@ -397,6 +397,13 @@ struct AskComposer: View {
         return true
     }
 
+    /// A workflow waits for an answer in the bottom bar: ↩ allows, esc does not.
+    private func approvalKey(_ key: AskCommandKey) -> Bool {
+        guard launcher, !active, model.workflowApproval != nil, key == .enter || key == .escape else { return false }
+        model.answerWorkflowApproval(key == .enter)
+        return true
+    }
+
     /// The arrows move through a list's rows, then on to "Ask AI" and back around.
     private func movePluginHighlight(_ delta: Int) {
         if pluginHighlight == 0, plugins.moveSelection(delta) { return }
@@ -726,7 +733,7 @@ struct AskComposer: View {
     }
 
     private func commandKey(_ key: AskCommandKey) -> Bool {
-        guard paletteOpen else { return pluginKey(key) || quickResultsKey(key) }
+        guard paletteOpen else { return approvalKey(key) || pluginKey(key) || quickResultsKey(key) }
         switch key {
         case .up: palette.move(-1)
         case .down: palette.move(1)
@@ -930,7 +937,9 @@ struct AskComposer: View {
                 .frame(maxHeight: .infinity)
                 .background { if let windowDrag { AskWindowDragArea(handlers: windowDrag) } }
             Group {
-                if let actions = model.currentWorkflowActions, !active {
+                if let approval = model.workflowApproval, !active {
+                    AskWorkflowApprovalView(approval: approval) { model.answerWorkflowApproval($0) }
+                } else if let actions = model.currentWorkflowActions, !active {
                     AskWorkflowActionsSummaryView(state: actions)
                 } else if let feedback = model.capturedContentFeedback(launcher: true), !active {
                     AskCapturedContentFeedbackView(feedback: feedback) {

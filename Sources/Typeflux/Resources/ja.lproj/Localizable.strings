@@ -2953,7 +2953,6 @@
 "ask.workflow.editor.argumentShort.required" = "必須";
 "ask.workflow.editor.argumentShort.optional" = "任意";
 "ask.workflow.editor.argumentShort.none" = "引数なし";
-"ask.workflow.editor.comingSoon" = "近日対応";
 "ask.workflow.editor.done" = "完了";
 "ask.workflow.editor.env.add" = "変数を追加";
 "ask.workflow.editor.env.noSecrets" = "ここに秘密情報を入れないでください。";
@@ -2988,7 +2987,6 @@
 "ask.workflow.editor.outputDetail.image" = "画像のパスか data URL を出力。QR コードなど。";
 "ask.workflow.editor.outputShort.markdown" = "Markdown";
 "ask.workflow.editor.outputShort.image" = "画像";
-"ask.workflow.problem.display" = "「%@」表示は今後のバージョンで対応します。今は text を使ってください";
 "ask.workflow.problem.tooManyActions" = "1 つのリストにアクションは最大 %d 個です";
 "ask.workflow.problem.action.unknown" = "このバージョンの Typeflux はアクション「%@」に対応していません";
 "ask.workflow.problem.action.missing" = "「%@」が空です";
@@ -3055,7 +3053,7 @@
 "ask.workflow.editor.output.close" = "終わったらランチャーを閉じる";
 "ask.workflow.editor.output.closeDetail" = "「コピー」「通知」など結果を見る必要がないワークフロー向け。「表示せず」のときは常にオン。";
 "ask.workflow.editor.output.scriptActions" = "スクリプトによるアクション追加を許可";
-"ask.workflow.editor.output.scriptActionsDetail" = "スクリプトが {\"actions\": […]} を出力すると上のアクションの後に実行します（今後のバージョンで有効）。";
+"ask.workflow.editor.output.scriptActionsDetail" = "スクリプトが {\"text\": …, \"actions\": […]} を出力すると、上のアクションの後に実行します。";
 "ask.workflow.editor.placeholder.menuTitle" = "プレースホルダーを挿入 · 前回のテストの値";
 "ask.workflow.editor.placeholder.output" = "出力全体";
 "ask.workflow.editor.placeholder.output.line1" = "1 行目";
@@ -3219,3 +3217,24 @@
 "ask.workflow.gallery.code.keyword.code" = "プロジェクトを開く";
 "ask.workflow.gallery.code.usage.1" = "最近変更したものから順にプロジェクトを表示";
 "ask.workflow.gallery.code.usage.2" = "名前に「web」を含むプロジェクトだけ";
+
+/* Workflow O4: script actions, image display, run another keyword */
+"ask.workflow.action.kind.runKeyword" = "別のキーワードを実行";
+"ask.workflow.action.field.keyword" = "キーワード";
+"ask.workflow.action.field.argument" = "入力";
+"ask.workflow.problem.action.keyword" = "キーワードは「tr」のような 1 語にしてください";
+"ask.workflow.action.scriptNotAllowed" = "未実行：スクリプトの追加は許可されていません";
+"ask.workflow.action.loop" = "未実行：ループになります（%@）";
+"ask.workflow.action.tooDeep" = "未実行：続けて実行できるキーワードは %d 個までです";
+"ask.workflow.action.noKeyword" = "キーワード「%@」はありません";
+"ask.workflow.action.hostDeclined" = "未実行：%@ は許可されませんでした";
+"ask.workflow.action.done.runKeyword" = "「%@」を実行しました";
+"ask.plugin.action.copyImage" = "画像をコピー";
+"ask.workflow.image.notFound" = "画像「%@」が見つかりません";
+"ask.workflow.image.invalid" = "出力が画像ではありません";
+"ask.workflow.image.copyFailed" = "画像をコピーできませんでした";
+"ask.workflow.approval.question" = "%@ が %@ を開こうとしています。許可しますか？";
+"ask.workflow.approval.allow" = "許可";
+"ask.workflow.approval.deny" = "許可しない";
+"ask.workflow.editor.test.fromScript" = "スクリプトが追加";
+"ask.workflow.trust.scriptActions" = "スクリプトは実行時にアクションを追加できます";

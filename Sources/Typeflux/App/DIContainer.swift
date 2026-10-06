@@ -129,5 +129,13 @@ final class DIContainer {
                          deviceId: model.deviceId, modelLibrary: model.modelLibrary, inference: model.customInference,
                          prefersLocal: { settings.askNewConversationsStayLocal }, defaults: settings.defaults)
         }
+        // A test run's "run another keyword" types it into the launcher.
+        AskWorkflowEditorWindowController.shared.openInLauncher = { [weak self] text in
+            guard let controller = self?.askConversationWindowController else { return false }
+            controller.model.finishPluginResult()
+            controller.model.launcherDraft.text = text
+            controller.showLauncher()
+            return true
+        }
     }
 }

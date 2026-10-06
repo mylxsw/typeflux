@@ -63,7 +63,8 @@ struct AskWorkflowOutputForm: View {
                         query: model.lastRun?.input
                             .query ?? (model.testQuery.isEmpty ? "100 usd jpy" : model.testQuery),
                         result: model.lastRun.flatMap { $0.succeeded ? $0 : nil },
-                        output: output, timeout: manifest?.timeout ?? AskWorkflowManifest.defaultTimeout
+                        output: output, timeout: manifest?.timeout ?? AskWorkflowManifest.defaultTimeout,
+                        folder: model.folder
                     )
                 }
                 AskWorkflowWillRun(
@@ -83,8 +84,7 @@ struct AskWorkflowOutputForm: View {
     static var displayChoices: [AskWorkflowChoice<AskWorkflowManifest.Output.Display>] {
         AskWorkflowManifest.Output.Display.allCases.map { display in
             AskWorkflowChoice(value: display, title: L("ask.workflow.editor.output." + display.rawValue),
-                              detail: L("ask.workflow.editor.outputDetail." + display.rawValue),
-                              comingSoon: !display.isSupported)
+                              detail: L("ask.workflow.editor.outputDetail." + display.rawValue))
         }
     }
 
@@ -276,7 +276,9 @@ struct AskWorkflowActionRow: View {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(kind.fields, id: \.self) { field in
                             HStack(spacing: 8) {
+                                // One line, a little smaller when a name ("Keyword") is wider than the column.
                                 Text(field.title).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                                    .lineLimit(1).minimumScaleFactor(0.75)
                                     .frame(width: 44, alignment: .leading)
                                 AskWorkflowPlaceholderField(
                                     value: row[field.rawValue] as? String ?? "",
@@ -495,7 +497,7 @@ struct AskWorkflowActionTile: View {
         case .writeBack: StudioTheme.success
         case .notify: StudioTheme.warning
         case .open, .askAI: AskWorkflowEditorStyle.assistant
-        case .hud, .reveal, .speak, nil: StudioTheme.textSecondary
+        case .hud, .reveal, .speak, .runKeyword, nil: StudioTheme.textSecondary
         }
     }
 }

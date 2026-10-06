@@ -95,6 +95,7 @@ struct AskPluginResultsView: View {
     /// Longer lists scroll; the launcher does not grow past this many rows.
     static let maximumVisibleItems = 6
     static let maximumMarkdownHeight: CGFloat = 280
+    static let maximumImageHeight: CGFloat = 240
     private static let bodyID = "ask.plugin.body"
 
     /// The width text wraps to inside a card in the launcher.
@@ -166,6 +167,10 @@ struct AskPluginResultsView: View {
             // A list has no button row: the bottom bar says what the keys do.
             height += itemsHeight(output.items.count)
             if output.note != nil { height += 6 + noteHeight }
+        } else if let output, let image = output.image {
+            height += imageSize(image).height
+            if output.note != nil { height += 6 + noteHeight }
+            height += 10 + actionsHeight
         } else if let output {
             if comparing { height += originalHeight(output.original) + 9 }
             height += output.markdown ? markdownHeight(output.body) : bodyHeight(output.body)
@@ -430,6 +435,8 @@ struct AskPluginResultsView: View {
                             onAction: onAction)
         } else if !output.items.isEmpty {
             itemList(output, dimmed: running)
+        } else if let image = output.image {
+            imageCard(image, dimmed: running)
         } else if output.markdown {
             ScrollView(.vertical) {
                 AskTranscriptText(text: streaming ? output.body + Self.caret : output.body)
@@ -575,5 +582,51 @@ struct AskPluginResultsView: View {
         .accessibilityLabel(L("ask.quick.askAI"))
         .accessibilityAddTraits(display.asksAI ? .isSelected : [])
         .accessibilityIdentifier("ask.plugin.askAI")
+    }
+}
+
+/// A workflow's image result (`display: image`).
+extension AskPluginResultsView {
+    /// An image's size in the card: as it is, or scaled down to fit the card's width
+    /// and `maximumImageHeight`; never enlarged.
+    static func imageSize(_ image: AskPluginImage) -> CGSize {
+        let scale = min(1, Double(textWidth) / image.width, Double(maximumImageHeight) / image.height)
+        return CGSize(width: max(1, (image.width * scale).rounded()), height: max(1, (image.height * scale).rounded()))
+    }
+
+    /// Images already read, so redrawing the launcher does not read the file again. A
+    /// script that writes the same file each run gets its new picture: the key has the date.
+    private static let images: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 8
+        return cache
+    }()
+
+    static func loadImage(_ url: URL) -> NSImage? {
+        let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+        let key = (url.path + "|" + String(modified?.timeIntervalSinceReferenceDate ?? 0)) as NSString
+        if let known = images.object(forKey: key) { return known }
+        guard let image = NSImage(contentsOf: url) else { return nil }
+        images.setObject(image, forKey: key)
+        return image
+    }
+
+    /// A workflow's image, at its own size or scaled down to fit, centred.
+    private func imageCard(_ image: AskPluginImage, dimmed: Bool) -> some View {
+        let size = Self.imageSize(image)
+        return Group {
+            if let picture = Self.loadImage(image.url) {
+                Image(nsImage: picture).resizable().interpolation(.high)
+                    .frame(width: size.width, height: size.height)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            } else {
+                Image(systemName: "photo").font(.system(size: 28)).foregroundStyle(StudioTheme.textTertiary)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: size.height, maxHeight: size.height)
+        .opacity(dimmed ? 0.5 : 1)
+        .accessibilityElement()
+        .accessibilityLabel(image.url.lastPathComponent)
+        .accessibilityIdentifier("ask.plugin.image")
     }
 }

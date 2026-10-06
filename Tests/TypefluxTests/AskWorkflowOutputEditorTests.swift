@@ -188,9 +188,9 @@ struct AskWorkflowOutputEditorTests {
         #expect(AskWorkflowPlaceholderText.segments("").isEmpty)
     }
 
-    @Test func displayChoicesOfferOnlyWhatThisVersionShows() {
+    @Test func displayChoicesOfferEveryDisplay() {
         let choices = AskWorkflowOutputForm.displayChoices
-        #expect(choices.filter { !$0.comingSoon }.map(\.value) == [.text, .none, .auto, .items, .markdown])
+        #expect(choices.map(\.value) == [.text, .none, .auto, .items, .markdown, .image])
         #expect(choices.allSatisfy { !$0.title.hasPrefix("ask.workflow") })
     }
 }

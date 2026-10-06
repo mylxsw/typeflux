@@ -181,6 +181,10 @@ final class AskConversationModel: ObservableObject {
     @Published var commandFeedback: String?
     /// What a workflow's actions did after the last run, for the launcher's bottom bar.
     @Published var workflowActions: AskWorkflowActionsState?
+    /// A workflow's question in the launcher: may it open a web host it does not name?
+    @Published var workflowApproval: AskWorkflowApproval?
+    /// Answers `workflowApproval`; set while it is shown.
+    var workflowApprovalReply: ((Bool) -> Void)?
     /// Command names, most recent first, for the palette's "Recent" group.
     var recentCommands: [String] = []
     @Published private(set) var recoveringImages: [String: AskImageRecoveryTarget] = [:]

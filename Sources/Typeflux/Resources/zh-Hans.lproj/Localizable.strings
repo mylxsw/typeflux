@@ -2963,7 +2963,6 @@
 "ask.workflow.editor.argumentShort.required" = "必填";
 "ask.workflow.editor.argumentShort.optional" = "可选";
 "ask.workflow.editor.argumentShort.none" = "无参数";
-"ask.workflow.editor.comingSoon" = "即将支持";
 "ask.workflow.editor.done" = "完成";
 "ask.workflow.editor.env.add" = "添加变量";
 "ask.workflow.editor.env.noSecrets" = "不要在这里放密钥。";
@@ -2998,7 +2997,6 @@
 "ask.workflow.editor.outputDetail.image" = "打印图片路径或 data URL，例如二维码。";
 "ask.workflow.editor.outputShort.markdown" = "Markdown";
 "ask.workflow.editor.outputShort.image" = "图片";
-"ask.workflow.problem.display" = "「%@」显示方式将在之后的版本支持，目前请用 text";
 "ask.workflow.problem.tooManyActions" = "每个列表最多 %d 个动作";
 "ask.workflow.problem.action.unknown" = "这个版本的 Typeflux 不支持动作「%@」";
 "ask.workflow.problem.action.missing" = "「%@」不能为空";
@@ -3065,7 +3063,7 @@
 "ask.workflow.editor.output.close" = "执行完关闭启动器";
 "ask.workflow.editor.output.closeDetail" = "适合「复制」「通知」这类不需要再看结果的工作流；「不显示」时总是关闭。";
 "ask.workflow.editor.output.scriptActions" = "允许脚本追加动作";
-"ask.workflow.editor.output.scriptActionsDetail" = "脚本打印 {\"actions\": […]} 时，追加在上面的动作之后执行（之后的版本生效）。";
+"ask.workflow.editor.output.scriptActionsDetail" = "脚本打印 {\"text\": …, \"actions\": […]} 时，追加在上面的动作之后执行。";
 "ask.workflow.editor.placeholder.menuTitle" = "插入占位符 · 用上次测试运行的值预览";
 "ask.workflow.editor.placeholder.output" = "全部输出";
 "ask.workflow.editor.placeholder.output.line1" = "第一行";
@@ -3229,3 +3227,24 @@
 "ask.workflow.gallery.code.keyword.code" = "打开项目";
 "ask.workflow.gallery.code.usage.1" = "列出项目，最近改过的在前";
 "ask.workflow.gallery.code.usage.2" = "只列出名称包含「web」的项目";
+
+/* Workflow O4: script actions, image display, run another keyword */
+"ask.workflow.action.kind.runKeyword" = "运行另一个关键字";
+"ask.workflow.action.field.keyword" = "关键字";
+"ask.workflow.action.field.argument" = "输入";
+"ask.workflow.problem.action.keyword" = "关键字只能是一个词，例如「tr」";
+"ask.workflow.action.scriptNotAllowed" = "未执行：未允许脚本追加";
+"ask.workflow.action.loop" = "未执行：会形成循环（%@）";
+"ask.workflow.action.tooDeep" = "未执行：最多连续运行 %d 个关键字";
+"ask.workflow.action.noKeyword" = "没有关键字「%@」";
+"ask.workflow.action.hostDeclined" = "未执行：没有允许打开 %@";
+"ask.workflow.action.done.runKeyword" = "已运行「%@」";
+"ask.plugin.action.copyImage" = "复制图片";
+"ask.workflow.image.notFound" = "找不到图片「%@」";
+"ask.workflow.image.invalid" = "输出的不是图片";
+"ask.workflow.image.copyFailed" = "无法复制这张图片";
+"ask.workflow.approval.question" = "%@想打开 %@，允许吗？";
+"ask.workflow.approval.allow" = "允许";
+"ask.workflow.approval.deny" = "不允许";
+"ask.workflow.editor.test.fromScript" = "脚本追加";
+"ask.workflow.trust.scriptActions" = "脚本运行时可以追加动作";

@@ -29,6 +29,14 @@ struct AskWorkflowActionsState: Equatable {
     }
 }
 
+/// A workflow's script wants to open a web host the workflow does not name: the
+/// launcher asks once ("Exchange Rates wants to open xe.com. Allow?").
+struct AskWorkflowApproval: Equatable, Identifiable {
+    var id = UUID()
+    var workflowName: String
+    var host: String
+}
+
 /// Every item on a pasteboard with each of its types, to restore it later.
 struct AskClipboardSnapshot: Equatable {
     var items: [[String: Data]]
@@ -63,12 +71,20 @@ struct AskClipboardSnapshot: Equatable {
 final class AskWorkflowLauncherActionHost: AskWorkflowActionHost {
     private weak var model: AskConversationModel?
     private let dismiss: () -> Void
+    /// The workflow whose actions these are: approvals are remembered for it.
+    private let workflowID: String?
+    private let workflowName: String
     private(set) var closed = false
+    /// A `runKeyword` put another run in the launcher; it is that run's now, not ours to close.
+    private(set) var handedOff = false
     /// The clipboard before this run's first copy.
     private(set) var clipboard: AskClipboardSnapshot?
 
-    init(model: AskConversationModel, dismiss: @escaping () -> Void) {
+    init(model: AskConversationModel, workflowID: String? = nil, workflowName: String = "",
+         dismiss: @escaping () -> Void) {
         self.model = model
+        self.workflowID = workflowID
+        self.workflowName = workflowName
         self.dismiss = dismiss
     }
 
@@ -132,6 +148,28 @@ final class AskWorkflowLauncherActionHost: AskWorkflowActionHost {
         dismiss()
     }
 
+    func runKeyword(_ keyword: String, argument: String, chain: [String]) -> Bool {
+        guard !closed, let model, model.runLauncherKeyword(keyword, argument: argument, chain: chain) else {
+            return false
+        }
+        handedOff = true
+        return true
+    }
+
+    /// Asked in the launcher's bottom bar while it is open; a yes is remembered for this
+    /// workflow. Once the launcher has closed there is no one to ask: no.
+    func approve(host: String) async -> Bool {
+        guard let model, let workflowID else { return false }
+        let settings = model.modelLibrary.settings
+        if settings.askWorkflowAllowedHosts[workflowID]?.contains(host) == true { return true }
+        guard !closed, !handedOff else { return false }
+        let allowed = await model.requestWorkflowApproval(AskWorkflowApproval(workflowName: workflowName, host: host))
+        if allowed {
+            settings.askWorkflowAllowedHosts[workflowID, default: []].append(host)
+        }
+        return allowed
+    }
+
     /// The language a text is most likely in, for the system voice.
     static func language(of text: String) -> String {
         AskLanguageDetector().detect(text, hints: []) ?? Locale.current.identifier
@@ -170,13 +208,16 @@ extension AskConversationModel {
     func performWorkflowFollowUp(_ followUp: AskWorkflowFollowUp, dismiss: @escaping () -> Void) {
         guard workflowActions?.id != followUp.id else { return }
         workflowActions = AskWorkflowActionsState(id: followUp.id, outcomes: [])
-        let host = AskWorkflowLauncherActionHost(model: self, dismiss: dismiss)
+        answerWorkflowApproval(false)
+        let workflow = plugins.plugin as? AskWorkflowPlugin
+        let host = AskWorkflowLauncherActionHost(model: self, workflowID: workflow?.workflow.id,
+                                                 workflowName: workflow?.title ?? "", dismiss: dismiss)
         Task { @MainActor [weak self] in
             let outcomes = await AskWorkflowActionRunner.run(followUp.steps, host: host)
             guard let self, workflowActions?.id == followUp.id else { return }
             workflowActions = AskWorkflowActionsState(id: followUp.id, outcomes: outcomes, clipboard: host.clipboard)
             AskAnnouncer.announce(AskWorkflowActionRunner.summary(outcomes))
-            if followUp.closes {
+            if followUp.closes, !host.handedOff {
                 host.close()
             }
         }
@@ -193,6 +234,26 @@ extension AskConversationModel {
         return shown?.id == state.id ? state : nil
     }
 
+    /// Shows `approval` in the launcher's bottom bar and waits for ↩ (allow) or esc. A
+    /// question still open is answered no first.
+    func requestWorkflowApproval(_ approval: AskWorkflowApproval) async -> Bool {
+        answerWorkflowApproval(false)
+        return await withCheckedContinuation { continuation in
+            workflowApproval = approval
+            workflowApprovalReply = { continuation.resume(returning: $0) }
+        }
+    }
+
+    /// Answers the open question, if there is one; leaving the result answers no.
+    func answerWorkflowApproval(_ allowed: Bool) {
+        let reply = workflowApprovalReply
+        workflowApprovalReply = nil
+        if workflowApproval != nil {
+            workflowApproval = nil
+        }
+        reply?(allowed)
+    }
+
     /// ⌘Z after a workflow copied something: the clipboard as it was. False when there is nothing to undo.
     func undoWorkflowCopy() -> Bool {
         guard var state = currentWorkflowActions, state.canUndo, let clipboard = state.clipboard else { return false }
@@ -201,5 +262,14 @@ extension AskConversationModel {
         workflowActions = state
         AskAnnouncer.announce(L("ask.workflow.action.copyUndone"))
         return true
+    }
+}
+
+extension SettingsStore {
+    /// Web hosts each workflow's script actions may open without asking, by workflow
+    /// id: the ones the user allowed in the launcher.
+    var askWorkflowAllowedHosts: [String: [String]] {
+        get { (defaults.dictionary(forKey: "ask.workflows.allowedHosts") as? [String: [String]]) ?? [:] }
+        set { defaults.set(newValue, forKey: "ask.workflows.allowedHosts") }
     }
 }

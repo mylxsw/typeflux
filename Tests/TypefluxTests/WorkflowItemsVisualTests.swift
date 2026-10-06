@@ -88,7 +88,6 @@ struct WorkflowItemsVisualTests {
             let fixture = try AskWorkflowFixture()
             let model = try editor(fixture, display: "items", script: Self.script)
             #expect(model.problems(for: .output).isEmpty)
-            #expect(AskWorkflowOutputForm.displayChoices.filter(\.comingSoon).map(\.value) == [.image])
             #expect(try AskWorkflowEditorModel.outputSummary(#require(model.draft?.manifest?.output))
                 == L("ask.workflow.editor.outputShort.items") + " · " + L("ask.workflow.editor.actionsCount", 2))
             model.runTest()

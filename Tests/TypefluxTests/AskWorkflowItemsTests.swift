@@ -96,7 +96,7 @@ struct AskWorkflowItemListTests {
         #expect(AskWorkflowDecodedOutput.decode(#"{"text": "card"}"#, display: .auto) == .text("card", note: nil))
         #expect(AskWorkflowDecodedOutput.decode("# Hi\n", display: .markdown) == .markdown("# Hi"))
         #expect(AskWorkflowDecodedOutput.decode("x", display: .none) == .text("x", note: nil))
-        #expect(AskWorkflowDecodedOutput.decode("x", display: .image) == .text("x", note: nil))
+        #expect(AskWorkflowDecodedOutput.decode(" x.png\n", display: .image) == .image("x.png"))
         #expect(!AskWorkflowDecodedOutput.streams("{\"it", display: .items))
         #expect(!AskWorkflowDecodedOutput.streams(" {\"it", display: .auto))
         #expect(AskWorkflowDecodedOutput.streams("line", display: .auto))
