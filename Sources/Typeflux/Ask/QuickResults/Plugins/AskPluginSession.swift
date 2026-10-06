@@ -35,7 +35,7 @@ final class AskPluginSession: ObservableObject {
     /// ⌘D shows the original above the result.
     @Published var comparing = false
 
-    private let plugins: [String: any AskLauncherPlugin]
+    private var plugins: [String: any AskLauncherPlugin]
     private var keywords: () -> [AskKeyword]
     private var overrides: [String: String] = [:]
     /// The request the shown plan was made for; the text may have moved on since.
@@ -50,6 +50,14 @@ final class AskPluginSession: ObservableObject {
     init(plugins: [any AskLauncherPlugin], keywords: @escaping () -> [AskKeyword]) {
         self.plugins = Dictionary(plugins.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         self.keywords = keywords
+    }
+
+    /// Swaps in a new set of plugins (workflows were added or changed). A keyword
+    /// whose plugin is gone leaves keyword mode.
+    func replacePlugins(_ replacement: [any AskLauncherPlugin]) {
+        plugins = Dictionary(replacement.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        if let keyword, plugins[keyword.pluginID] == nil { deactivate() }
+        if let hint, plugins[hint.pluginID] == nil { set(\.hint, nil) }
     }
 
     var plugin: (any AskLauncherPlugin)? { keyword.flatMap(plugin(for:)) }
@@ -126,13 +134,19 @@ final class AskPluginSession: ObservableObject {
     func update(text: String, selection: String?, language: AppLanguage, runWhenPlanned: Bool = false) {
         guard let keyword, let plugin else { return }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let selected = selection?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            ? selection?.trimmingCharacters(in: .whitespacesAndNewlines) : nil
+        let options = keyword.options.merging(overrides) { $1 }
         let next: AskPluginRequest?
         if !trimmed.isEmpty {
-            next = AskPluginRequest(text: trimmed, origin: .argument, keyword: keyword,
-                                    options: keyword.options.merging(overrides) { $1 }, interfaceLanguage: language)
-        } else if let selection = selection?.trimmingCharacters(in: .whitespacesAndNewlines), !selection.isEmpty {
-            next = AskPluginRequest(text: selection, origin: .selection, keyword: keyword,
-                                    options: keyword.options.merging(overrides) { $1 }, interfaceLanguage: language)
+            next = AskPluginRequest(text: trimmed, origin: .argument, keyword: keyword, options: options,
+                                    interfaceLanguage: language, selection: selected)
+        } else if let selected {
+            next = AskPluginRequest(text: selected, origin: .selection, keyword: keyword, options: options,
+                                    interfaceLanguage: language, selection: selected)
+        } else if plugin.runsWithoutInput {
+            next = AskPluginRequest(text: "", origin: .argument, keyword: keyword, options: options,
+                                    interfaceLanguage: language)
         } else {
             next = nil
         }

@@ -18,6 +18,8 @@ final class AskTestPlugin: AskLauncherPlugin, @unchecked Sendable {
     var steps: [String] = []
     var stepDelay: Duration = .milliseconds(20)
     var planActions: [AskPluginAction] = []
+    var noInput = false
+    var runsWithoutInput: Bool { noInput }
     private(set) var runs: [AskPluginRequest] = []
 
     let id = "test"
@@ -228,6 +230,28 @@ extension AskPluginSessionTests {
         try await settle(other) { other.plan != nil }
         try await Task.sleep(for: .milliseconds(50))
         #expect(quiet.runs.isEmpty, "nothing runs on its own")
+    }
+
+    @Test func pluginsThatNeedNoInputPlanAtOnceAndCanBeSwapped() async throws {
+        let plugin = AskTestPlugin()
+        plugin.live = false
+        plugin.noInput = true
+        let session = session(plugin)
+        _ = session.detect(in: "tt ")
+        session.update(text: "", selection: "  ", language: .english)
+        try await settle(session) { session.plan != nil }
+        #expect(session.request?.text == "" && session.request?.origin == .argument)
+        session.update(text: "x", selection: " sel ", language: .english)
+        #expect(session.request?.selection == "sel", "the selection rides along with typed text")
+        session.replacePlugins([plugin])
+        #expect(session.isActive, "the same plugin stays")
+        session.replacePlugins([])
+        #expect(!session.isActive && session.availableKeywords.isEmpty)
+        let other = self.session(plugin)
+        _ = other.detect(in: "tt")
+        #expect(other.hint != nil)
+        other.replacePlugins([])
+        #expect(other.hint == nil)
     }
 
     @Test func thePaletteEntersAKeyword() {
