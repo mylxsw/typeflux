@@ -239,8 +239,6 @@ struct AskPluginRegistryTests {
         settings.saveAskLauncherKeywords(nil)
         #expect(settings.askLauncherKeywords == nil && settings.askLauncherKeywordPlugins == nil)
         #expect(AskPluginRegistry.modelName(nil) == "AI")
-        settings.llmModel = "m-1"
-        #expect(AskPluginRegistry.modelName(settings) == "m-1")
     }
 
     @Test func settingsListSetsOptionsAndChecksURLs() {

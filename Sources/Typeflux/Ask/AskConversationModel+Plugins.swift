@@ -21,9 +21,19 @@ enum AskPluginRegistry {
         }
     }
 
-    /// The display name of a model for result cards.
+    /// The display name of the text-processing model (the one plugins use) for result cards.
     static func modelName(_ settings: SettingsStore?) -> String {
-        settings.map { $0.llmModel.isEmpty ? "AI" : $0.llmModel } ?? "AI"
+        guard let settings else { return "AI" }
+        let configuration = settings.textLLMConfiguration()
+        if configuration.provider == .typefluxCloud { return configuration.provider.displayName }
+        let model = configuration.model.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !model.isEmpty { return model }
+        return settings.llmModel.isEmpty ? "AI" : settings.llmModel
+    }
+
+    /// "AI · model" on a result card, or just "AI" when the model has no name to show.
+    static func sourceLabel(_ modelName: String) -> String {
+        modelName.isEmpty || modelName == "AI" ? "AI" : L("ask.plugin.source.ai", modelName)
     }
 }
 

@@ -342,3 +342,123 @@ struct AskCommandKeyWordCardTests {
         #expect(key("C", code: 8, modifiers: [.command, .shift, .option]) == nil)
     }
 }
+
+/// Providers that ignore the schema answer in their own shape (GUL-221 follow-up).
+@Suite("Ask word card replies without a schema")
+struct AskWordCardLooseReplyTests {
+    @Test func readsTheShapeAModelInventedForHello() {
+        let reply = """
+        ```json
+        {
+          "kind": "word",
+          "phonetics": [
+            {"label": "UK", "value": "/həˈləʊ/"},
+            {"label": "US", "value": "/həˈloʊ/"}
+          ],
+          "parts_of_speech": [
+            {"part_of_speech": "interj.", "definitions": ["你好", "喂（打电话）"]},
+            {"type": "n.", "definitions": [{"meaning": "招呼"}]}
+          ],
+          "example_sentences": [{"sentence": "**Hello**, how are you?", "translation": "你好，最近怎么样？"}],
+          "synonyms": "hi"
+        }
+        ```
+        """
+        let expected = AskWordCard(
+            headword: "hello",
+            phonetics: [.init(label: "UK", text: "/həˈləʊ/"), .init(label: "US", text: "/həˈloʊ/")],
+            senses: [.init(pos: "interj.", meanings: ["你好", "喂（打电话）"]), .init(pos: "n.", meanings: ["招呼"])],
+            examples: [.init(source: "**Hello**, how are you?", target: "你好，最近怎么样？")],
+            synonyms: ["hi"]
+        )
+        #expect(AskWordCard.parse(reply, word: "hello") == .card(expected))
+    }
+
+    @Test func readsOtherCommonShapes() {
+        let byAccent = #"{"word":"run","pronunciation":{"US":"/rʌn/","UK":"/rʌn/"},"meanings":["跑","经营"],"#
+            + #""inflections":{"past":"ran","plural":"runs"},"examples":["I run daily."]}"#
+        #expect(AskWordCard.parse(byAccent) == .card(AskWordCard(
+            headword: "run",
+            phonetics: [.init(label: "UK", text: "/rʌn/"), .init(label: "US", text: "/rʌn/")],
+            senses: [.init(pos: "", meanings: ["跑"]), .init(pos: "", meanings: ["经营"])],
+            forms: [.init(label: "past", value: "ran"), .init(label: "plural", value: "runs")],
+            examples: [.init(source: "I run daily.", target: "")]
+        )))
+        #expect(AskWordCard.parse(#"{"headword":"苹果","pinyin":"píngguǒ","senses":[{"pos":"n.","meaning":"apple"}]}"#)
+            == .card(AskWordCard(headword: "苹果", phonetics: [.init(label: "pinyin", text: "píngguǒ")],
+                                 senses: [.init(pos: "n.", meanings: ["apple"])])))
+        #expect(AskWordCard.parse(#"{"phonetics":["/x/"],"senses":[{"pos":"n.","translations":["x"]}],"forms":[{"type":"pl.","form":"xs"}],"examples":[{"text":"An x."}]}"#, word: "x")
+            == .card(AskWordCard(headword: "x", phonetics: [.init(label: "", text: "/x/")], senses: [.init(pos: "n.", meanings: ["x"])],
+                                 forms: [.init(label: "pl.", value: "xs")], examples: [.init(source: "An x.", target: "")])))
+    }
+
+    @Test func aCardWithoutMeaningsFallsBackToItsTranslation() {
+        #expect(AskWordCard.parse(#"{"kind":"word","headword":"hi","senses":[],"translation":"嗨"}"#) == .translation("嗨"))
+        #expect(AskWordCard.parse(#"{"type":"text","translation":["会议改到周四。"]}"#) == .translation("会议改到周四。"))
+        #expect(AskWordCard.parse("[1, 2]") == .unreadable("[1, 2]"))
+    }
+
+    @Test func structuredRepliesAreRecognised() {
+        #expect(AskWordCard.looksStructured("```json\n{}\n```"))
+        #expect(AskWordCard.looksStructured(#" {"kind": "#))
+        #expect(AskWordCard.looksStructured("[1]"))
+        #expect(AskWordCard.looksStructured(#"Here: {"a": 1}"#))
+        #expect(!AskWordCard.looksStructured("机缘巧合"))
+        #expect(!AskWordCard.looksStructured("hello {friend}"))
+    }
+
+    @Test func theAIIsToldTheExactShape() {
+        let prompt = AskAITranslationEngine.wordCardPrompt(sourceName: "English", targetName: "Chinese")
+        for key in ["\"headword\"", "\"phonetics\"", "\"text\"", "\"senses\"", "\"pos\"", "\"meanings\"", "\"examples\"",
+                    "\"source\"", "\"target\"", "\"synonyms\"", "\"translation\""] {
+            #expect(prompt.contains(key), "\(key) is spelled out")
+        }
+        #expect(prompt.contains("no Markdown code fences"))
+    }
+}
+
+@Suite("Ask translate plugin garbled word cards")
+struct AskTranslatePluginGarbledCardTests {
+    private func request(_ text: String) -> AskPluginRequest {
+        AskPluginRequest(text: text, origin: .argument, keyword: AskTranslatePlugin.keywords[0], options: [:],
+                         interfaceLanguage: .simplifiedChinese)
+    }
+
+    @Test func aGarbledCardBecomesAPlainTranslationNotRawJSON() async throws {
+        let ai = AskTestTranslationEngine()
+        let translate = AskTranslatePlugin(onDevice: AskTestTranslationEngine(available: false), ai: ai,
+                                           dictionary: AskTestWordLookup(answer: .unreadable("```json\n{\"kind\": \"word\"")),
+                                           detector: AskTestLanguageDetector(language: "en"))
+        let output = try await translate.run(request("hello"), plan: await translate.plan(request("hello")))
+        #expect(output.body == "[zh-Hans] hello")
+        #expect(!output.body.contains("{"))
+        #expect(output.note == L("ask.plugin.translate.cardUnreadable"))
+        #expect(ai.requests.map(\.text) == ["hello"])
+        #expect(output.source == "AI", "no model name to show")
+    }
+
+    @Test func plainTextRepliesAreShownWithoutAskingAgain() async throws {
+        let ai = AskTestTranslationEngine()
+        let translate = AskTranslatePlugin(onDevice: AskTestTranslationEngine(available: false), ai: ai,
+                                           dictionary: AskTestWordLookup(answer: .unreadable("你好")),
+                                           aiName: { "MiniMax M3" }, detector: AskTestLanguageDetector(language: "en"))
+        let output = try await translate.run(request("hello"), plan: await translate.plan(request("hello")))
+        #expect(output.body == "你好" && ai.requests.isEmpty)
+        #expect(output.source == L("ask.plugin.source.ai", "MiniMax M3"))
+    }
+
+    @Test func resultCardsNameTheTextModel() throws {
+        #expect(AskPluginRegistry.sourceLabel("AI") == "AI")
+        #expect(AskPluginRegistry.sourceLabel("") == "AI")
+        #expect(AskPluginRegistry.sourceLabel("gpt-x") == L("ask.plugin.source.ai", "gpt-x"))
+        let settings = SettingsStore(defaults: try #require(UserDefaults(suiteName: "plugin-model-\(UUID())")))
+        let configuration = settings.textLLMConfiguration()
+        let name = AskPluginRegistry.modelName(settings)
+        if configuration.provider == .typefluxCloud {
+            #expect(name == LLMRemoteProvider.typefluxCloud.displayName)
+        } else if !configuration.model.isEmpty {
+            #expect(name == configuration.model)
+        }
+        #expect(AskPluginRegistry.modelName(nil) == "AI")
+    }
+}

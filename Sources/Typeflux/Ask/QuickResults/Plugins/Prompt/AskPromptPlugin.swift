@@ -149,7 +149,7 @@ struct AskPromptPlugin: AskLauncherPlugin {
         ]
         // The source badge names the model; the plan's model chip would repeat it.
         return AskPluginOutput(body: text, original: request.text, meta: [],
-                               source: L("ask.plugin.source.ai", modelName()), sourceIsAI: true, actions: actions)
+                               source: AskPluginRegistry.sourceLabel(modelName()), sourceIsAI: true, actions: actions)
     }
 
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? { nil }

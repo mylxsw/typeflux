@@ -69,7 +69,11 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         let usesAI = plan.values["engine"] == "ai"
         if usesAI, let dictionary, AskWordCard.isLookup(request.text) {
             let generation = request.options[Self.generationOption] ?? "0"
-            let lookup = try await dictionary.lookUp(request.text, from: source, to: target, generation: generation)
+            var lookup = try await dictionary.lookUp(request.text, from: source, to: target, generation: generation)
+            // A garbled structured reply is never shown as it came: translate the word plainly instead.
+            if case let .unreadable(raw) = lookup, AskWordCard.looksStructured(raw), let ai {
+                lookup = .unreadable(try await ai.translate(request.text, from: source, to: target))
+            }
             return wordCardOutput(lookup, request: request, plan: plan, target: target, generation: generation)
         }
         let text: String
@@ -102,7 +106,7 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         actions.append(AskPluginAction(kind: .askAI(L("ask.plugin.translate.askAI", request.text, text)),
                                        title: L("ask.quick.askAI"), symbol: "bubble.left", shortcut: nil))
         return AskPluginOutput(body: text, original: request.text, meta: plan.meta,
-                               source: usesAI ? L("ask.plugin.source.ai", aiName()) : L("ask.plugin.source.device"),
+                               source: usesAI ? AskPluginRegistry.sourceLabel(aiName()) : L("ask.plugin.source.device"),
                                sourceIsAI: usesAI, note: note ?? (offersCard ? L("ask.plugin.translate.cardHint", aiName()) : nil),
                                actions: actions)
     }
@@ -114,7 +118,7 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         let writeBackTitle = L(replaces ? "ask.plugin.action.replace" : "ask.plugin.action.insert")
         let writeBackSymbol = replaces ? "arrow.down.to.line" : "text.insert"
         let next = [Self.engineOption: "ai", Self.generationOption: String((Int(generation) ?? 0) + 1)]
-        let source = L("ask.plugin.source.ai", aiName())
+        let source = AskPluginRegistry.sourceLabel(aiName())
         switch lookup {
         case let .card(card):
             var actions = [
