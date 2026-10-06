@@ -61,7 +61,7 @@ struct AskKeywordList: Equatable {
     }
 }
 
-/// Settings → Agent → Built-in Tools → launcher keywords: each plugin's keywords
+/// Settings → Launcher → Keywords: each plugin's keywords
 /// and what they preset (a target language, a prompt, a search URL), and the
 /// language translations go into.
 struct AskLauncherPluginSettingsView: View {

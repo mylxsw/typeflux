@@ -288,7 +288,7 @@ final class AskAgentToolsTests: XCTestCase {
         let notes = AskMemoryNoteStore(fileURL: root.appendingPathComponent("view-notes.json"))
         let note = try notes.add("Prefers dark mode", owner: "o")
         let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes, owner: { "o" },
-                                        tab: .memory)
+                                        pane: .memory)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 900), styleMask: [.titled], backing: .buffered, defer: false)
         // ARC owns the window; closing must not release it a second time.
         window.isReleasedWhenClosed = false
@@ -332,14 +332,14 @@ final class AskAgentToolsTests: XCTestCase {
                                         notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("s.json")), owner: { "o" })
         view.removeFolder("/a")
         XCTAssertEqual(settings.askFileAccessFolders, ["/b"])
-        for tab in AgentConfigurationTab.allCases {
-            var tabView = view
-            tabView.tab = tab
-            let settingsHost = NSHostingView(rootView: tabView.frame(width: 600))
+        for pane in AgentSettingsPane.allCases where pane != .mcpServers {
+            var paneView = view
+            paneView.pane = pane
+            let settingsHost = NSHostingView(rootView: paneView.frame(width: 600))
             settingsHost.layoutSubtreeIfNeeded()
-            XCTAssertGreaterThan(settingsHost.fittingSize.height, 60, "\(tab)")
+            XCTAssertGreaterThan(settingsHost.fittingSize.height, 60, "\(pane)")
         }
-        XCTAssertEqual(AgentConfigurationTab.tools.title, L("agent.section.tools"))
+        XCTAssertEqual(AgentSettingsPane.webSearch.title, L("agent.capability.webSearch.title"))
         XCTAssertEqual(AskToolsSettingsView.searchProviderName(.none), L("ask.settings.search.none"))
         XCTAssertEqual(AskToolsSettingsView.searchProviderName(.tavily), "Tavily")
         XCTAssertEqual(AskToolsSettingsView.searchProviderName(.brave), "Brave Search")
@@ -350,7 +350,7 @@ final class AskAgentToolsTests: XCTestCase {
         for language in AppLanguage.allCases {
             let bundle = try XCTUnwrap(language.bundleLocalizationCandidates.lazy
                 .compactMap { Bundle.appResources.path(forResource: $0, ofType: "lproj") }.first.flatMap(Bundle.init(path:)))
-            for key in ["ask.settings.search.cloudflare.token", "ask.settings.search.cloudflare.help", "ask.settings.search.cloudflare.unavailable", "ask.files.denied", "ask.code.unavailable", "ask.settings.folders.title", "ask.tool.update_plan", "ask.action.inspect", "agent.section.tools",
+            for key in ["ask.settings.search.cloudflare.token", "ask.settings.search.cloudflare.help", "ask.settings.search.cloudflare.unavailable", "ask.files.denied", "ask.code.unavailable", "ask.settings.folders.title", "ask.tool.update_plan", "ask.action.inspect", "agent.rules.title",
                         "agent.section.skills", "agent.section.memory", "ask.settings.skills.install", "ask.skills.install.notFound",
                         "agent.settings.runMode", "agent.settings.web", "agent.settings.code", "agent.settings.mcp"] {
                 XCTAssertNotEqual(bundle.localizedString(forKey: key, value: nil, table: nil), key, "\(key) in \(language.rawValue)")

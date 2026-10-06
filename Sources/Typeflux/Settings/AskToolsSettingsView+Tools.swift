@@ -1,17 +1,35 @@
 import AppKit
 import SwiftUI
 
-/// The Built-in Tools tab: web search, file access, code execution, the launcher's
-/// calculator and application search, and computer and browser control.
+/// The capability panes: web search, file access, code execution, and computer and browser control.
+/// Each follows the same layout: header with state, settings card, rules card.
 extension AskToolsSettingsView {
-    @ViewBuilder var toolSections: some View {
-        ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                AgentSettingsRow(icon: "globe", title: L("agent.capability.webSearch.title"),
-                                 subtitle: L("agent.search.subtitle"), subtitleLineLimit: nil) {
-                    let status = AgentCapabilityStatus.status(of: .webSearch, inputs: capabilityInputs)
-                    AgentStatusBadge(level: status.level, label: status.label)
-                }
+    func status(of capability: AgentCapability) -> AgentCapabilityStatus {
+        AgentCapabilityStatus.status(of: capability, inputs: capabilityInputs)
+    }
+
+    func capabilityHeader(_ capability: AgentCapability, subtitle: String) -> AgentPaneHeader<AgentStatusBadge> {
+        let state = status(of: capability)
+        return AgentPaneHeader(symbol: capability.symbol, title: capability.title, subtitle: subtitle) {
+            AgentStatusBadge(level: state.level, label: state.label)
+        }
+    }
+
+    // MARK: - Web search
+
+    @ViewBuilder var searchPane: some View {
+        let state = status(of: .webSearch)
+        AgentPaneHeader(symbol: AgentCapability.webSearch.symbol, title: AgentCapability.webSearch.title,
+                        subtitle: L("agent.search.subtitle")) {
+            AgentStatusBadge(level: state.level, label: state.label)
+            Toggle("", isOn: Binding(get: { searchProvider != .none }, set: setSearchEnabled))
+                .labelsHidden().toggleStyle(.switch)
+                .accessibilityLabel(AgentCapability.webSearch.title)
+        }
+        if searchProvider == .none {
+            AgentInfoNote(text: L("agent.search.off"))
+        } else {
+            AgentSettingsSection(title: L("agent.search.section")) {
                 AgentSearchForm(
                     provider: Binding(get: { searchProvider }, set: setSearchProvider),
                     apiKey: Binding(get: { searchKey }, set: { searchKey = $0; saveSearchKey() }),
@@ -19,12 +37,17 @@ extension AskToolsSettingsView {
                     missing: missingSearchFields,
                     configuration: searchConfiguration
                 )
-                .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 16)
+                .padding(18)
             }
         }
+    }
 
+    // MARK: - Files
+
+    @ViewBuilder var filesPane: some View {
+        capabilityHeader(.files, subtitle: AgentCapability.files.summary)
         VStack(alignment: .leading, spacing: 8) {
-            AgentSettingsSection(title: L("agent.capability.files.title"),
+            AgentSettingsSection(title: L("ask.settings.folders.title"),
                                  detail: L("agent.status.files.count", folders.count)) {
                 if folders.isEmpty {
                     AgentSettingsEmptyRow(text: L("agent.files.empty"))
@@ -39,99 +62,76 @@ extension AskToolsSettingsView {
                 }
                 AgentSettingsActionRow(icon: "plus", title: L("ask.settings.folders.add")) { addFolder() }
             }
-            AgentFlowLayout {
-                AgentFactChip(text: L("agent.files.rule.scope"), systemImage: "checkmark")
-                AgentFactChip(text: L("agent.files.rule.read"))
-                AgentFactChip(text: L("agent.files.rule.write"))
-            }
             if let removedFolder {
                 AgentUndoBanner(message: L("agent.files.removed", (removedFolder.path as NSString).lastPathComponent),
                                 onUndo: undoRemoveFolder, onDismiss: { self.removedFolder = nil })
             }
         }
+        AgentRulesCard(rules: [(L("agent.files.rule.scope"), nil), (L("agent.files.rule.read"), nil),
+                               (L("agent.files.rule.write"), nil)])
+    }
 
-        ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                AgentSettingsRow(icon: "terminal", title: L("agent.capability.code.title"),
-                                 subtitle: L("agent.code.subtitle"), subtitleLineLimit: nil) {
-                    Toggle("", isOn: Binding(get: { codeEnabled }, set: setCodeExecution))
-                        .labelsHidden().toggleStyle(.switch)
-                        .accessibilityLabel(L("agent.capability.code.title"))
-                }
-                if codeEnabled {
-                    AgentFlowLayout {
-                        AgentFactChip(text: L("agent.code.rule.network"), systemImage: "lock.shield")
-                        AgentFactChip(text: L("agent.code.rule.home"), systemImage: "lock.shield")
-                        AgentFactChip(text: L("agent.code.rule.confirm"), systemImage: "lock.shield")
-                    }
-                    .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 14)
-                }
-            }
+    // MARK: - Code execution
+
+    @ViewBuilder var codePane: some View {
+        let state = status(of: .codeExecution)
+        AgentPaneHeader(symbol: AgentCapability.codeExecution.symbol, title: AgentCapability.codeExecution.title,
+                        subtitle: L("agent.code.subtitle")) {
+            AgentStatusBadge(level: state.level, label: state.label)
+            Toggle("", isOn: Binding(get: { codeEnabled }, set: setCodeExecution))
+                .labelsHidden().toggleStyle(.switch)
+                .accessibilityLabel(AgentCapability.codeExecution.title)
         }
+        AgentRulesCard(rules: [(L("agent.code.rule.network"), nil), (L("agent.code.rule.home"), nil),
+                               (L("agent.code.rule.confirm"), nil)],
+                       dimmed: !codeEnabled)
+    }
 
-        ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                AgentSettingsRow(icon: "plus.forwardslash.minus", title: L("ask.settings.quick.calculator.title"),
-                                 subtitle: L("ask.settings.quick.calculator.subtitle"), subtitleLineLimit: nil) {
-                    Toggle("", isOn: Binding(get: { quickCalculatorEnabled }, set: setQuickCalculator))
-                        .labelsHidden().toggleStyle(.switch)
-                        .accessibilityLabel(L("ask.settings.quick.calculator.title"))
-                }
-                ModelRowDivider(leading: 66)
-                AgentSettingsRow(icon: "square.grid.2x2", title: L("ask.settings.quick.apps.title"),
-                                 subtitle: L("ask.settings.quick.apps.subtitle"), subtitleLineLimit: nil) {
-                    Toggle("", isOn: Binding(get: { quickAppsEnabled }, set: setQuickApps))
-                        .labelsHidden().toggleStyle(.switch)
-                        .accessibilityLabel(L("ask.settings.quick.apps.title"))
-                }
-            }
-        }
+    // MARK: - Computer and browser control
 
-        AgentSettingsSection(title: L("ask.settings.plugins.title"), footnote: L("ask.settings.plugins.footnote")) {
-            AskLauncherPluginSettingsView(settings: settings)
-        }
-
-        AgentSettingsSection(title: L("ask.workflow.section"), footnote: L("ask.workflow.footnote")) {
-            AskWorkflowSettingsView(store: .shared, settings: settings)
-        }
-
-        ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                AgentSettingsRow(icon: "cursorarrow.click.2", title: L("agent.capability.automation.title"),
-                                 subtitle: L("agent.automation.subtitle"), subtitleLineLimit: nil) {
-                    let status = AgentCapabilityStatus.status(of: .automation, inputs: capabilityInputs)
-                    AgentStatusBadge(level: status.level, label: status.label)
-                }
-                ModelRowDivider(leading: 66)
-                permissionRow(title: L("permission.accessibility.title"), detail: L("agent.automation.accessibility"),
-                              granted: accessibilityGranted, request: permissions.requestAccessibility)
-                ModelRowDivider(leading: 66)
-                permissionRow(title: L("agent.automation.screen.title"), detail: L("agent.automation.screen"),
-                              granted: screenRecordingGranted, request: permissions.requestScreenRecording)
-            }
+    @ViewBuilder var automationPane: some View {
+        capabilityHeader(.automation, subtitle: L("agent.automation.subtitle"))
+        AgentSettingsSection(title: L("agent.automation.permissions"), footnote: L("agent.automation.permissions.hint")) {
+            permissionRow(icon: "hand.tap", title: L("permission.accessibility.title"), detail: L("agent.automation.accessibility"),
+                          granted: accessibilityGranted, request: permissions.requestAccessibility)
+            ModelRowDivider(leading: 66)
+            permissionRow(icon: "rectangle.dashed.badge.record", title: L("agent.automation.screen.title"),
+                          detail: L("agent.automation.screen"),
+                          granted: screenRecordingGranted, request: permissions.requestScreenRecording)
         }
         // Permissions change in System Settings; re-read them when the user comes back.
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             accessibilityGranted = permissions.accessibilityGranted()
             screenRecordingGranted = permissions.screenRecordingGranted()
         }
+        AgentRulesCard(rules: [(L("agent.automation.rule.confirm"), nil), (L("agent.automation.rule.stop"), nil)])
     }
 
-    private func permissionRow(title: String, detail: String, granted: Bool,
+    private func permissionRow(icon: String, title: String, detail: String, granted: Bool,
                                request: @escaping @MainActor () -> Void) -> some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
-                Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-            }
-            Spacer()
+        AgentSettingsRow(icon: icon, title: title, subtitle: detail) {
             if granted {
                 AgentStatusBadge(level: .ready, label: L("permission.badge.granted"))
             } else {
                 Button(L("permission.action.openSettings")) { request() }.buttonStyle(ModelActionStyle())
             }
         }
-        .padding(.leading, 66).padding(.trailing, 18).padding(.vertical, 12)
+    }
+}
+
+/// A one-line explanation in an accent-tinted box, e.g. why a pane has nothing to set.
+struct AgentInfoNote: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "info.circle").foregroundStyle(ModelVisualStyle.accent)
+            Text(text).foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.system(size: 12.5))
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(ModelVisualStyle.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 
@@ -146,13 +146,13 @@ struct AgentSearchForm: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Turning search off is the pane's switch, so only real providers are offered here.
             ModelSegmentedControl(
-                options: AskSearchSettings.Provider.allCases.map { (label: AgentCapabilityStatus.searchProviderName($0), value: $0) },
+                options: AskSearchSettings.Provider.allCases.filter { $0 != .none }
+                    .map { (label: AgentCapabilityStatus.searchProviderName($0), value: $0) },
                 selection: $provider
             )
-            if provider == .none {
-                Text(L("agent.search.off")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-            } else {
+            if provider != .none {
                 AgentFormRow(label: AgentSearchField.apiKey.title(for: provider), required: true) {
                     SecureField(provider == .cloudflare ? L("agent.search.cloudflare.tokenPlaceholder") : L("agent.search.keyPlaceholder"),
                                 text: $apiKey)

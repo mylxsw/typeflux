@@ -3,7 +3,7 @@ import SwiftUI
 @testable import Typeflux
 import XCTest
 
-/// The redesigned Agent settings page: view helpers, MCP actions and rendering of every tab.
+/// The redesigned Agent settings page: view helpers, MCP actions and rendering of every pane.
 @MainActor
 final class AgentSettingsRedesignTests: XCTestCase {
     private var root: URL!
@@ -55,7 +55,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
             to: folder.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
         let view = AskToolsSettingsView(settings: settings, skills: library,
                                         notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")),
-                                        owner: { "o" }, tab: .extensions,
+                                        owner: { "o" }, pane: .skills,
                                         permissions: .fixed(accessibility: false, screenRecording: false))
         let local = try XCTUnwrap(library.skills().first { $0.name == "house-style" })
         let builtin = try XCTUnwrap(library.skills().first { $0.directory == nil })
@@ -154,7 +154,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
         XCTAssertNil(viewModel.mcpServerTestResults[server.id], "Editing clears the stale result")
     }
 
-    func testEveryTabRendersInBothAppearances() async throws {
+    func testEveryPaneRendersInBothAppearances() async throws {
         let settings = try settings()
         settings.askFileAccessFolders = ["/Users/me/Documents"]
         settings.askNewConversationsStayLocal = true
@@ -163,10 +163,10 @@ final class AgentSettingsRedesignTests: XCTestCase {
         try notes.add("Prefers concise answers", owner: "o")
         let library = AskSkillLibrary(userDirectory: root.appendingPathComponent("Skills"))
         _ = NSApplication.shared
-        for tab in AgentConfigurationTab.allCases {
+        for tab in AgentSettingsPane.allCases where tab != .mcpServers {
             var reported: [AgentCapabilityStatus] = []
             for granted in [false, true] {
-                let view = AskToolsSettingsView(settings: settings, skills: library, notes: notes, owner: { "o" }, tab: tab,
+                let view = AskToolsSettingsView(settings: settings, skills: library, notes: notes, owner: { "o" }, pane: tab,
                                                 onStatusesChange: { reported = $0 },
                                                 permissions: .fixed(accessibility: granted, screenRecording: granted))
                 for appearance in [NSAppearance.Name.aqua, .darkAqua] {
@@ -188,8 +188,19 @@ final class AgentSettingsRedesignTests: XCTestCase {
 
     func testComponentsRender() async throws {
         let view = VStack(alignment: .leading, spacing: 12) {
-            AgentUnderlineTabs(options: [(label: "A", value: 1, needsAttention: true), (label: "B", value: 2, needsAttention: false)],
-                               selection: .constant(1))
+            SettingsPaneLayout(sections: AgentSettingsPane.sections, selection: .constant(.webSearch),
+                               status: { pane in pane.capability.map { AgentCapabilityStatus(capability: $0, level: .attention, label: "Fix") } }) {
+                Text("Detail")
+            }
+            SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: .constant(.keywords), compact: true) {
+                Text("Detail")
+            }
+            AgentPaneHeader(symbol: "globe", title: "Search", subtitle: "Finds pages") { Toggle("", isOn: .constant(true)) }
+            AgentPaneHeader(symbol: "folder", title: "Files")
+            AgentRulesCard(rules: [(title: "No network", detail: nil), (title: "Asks first", detail: "Every time")])
+            AgentRulesCard(title: "Rules", rules: [(title: "Off", detail: nil)], dimmed: true)
+            AgentInfoNote(text: "Search is off")
+            HStack { ForEach([AgentCapabilityStatus.Level.ready, .attention, .off], id: \.self) { AgentStatusDot(level: $0) } }
             AgentStatusBadge(level: .ready, label: "Ready")
             AgentStatusBadge(level: .attention, label: "Fix")
             AgentStatusBadge(level: .off, label: "Off")
@@ -227,6 +238,63 @@ final class AgentSettingsRedesignTests: XCTestCase {
         XCTAssertEqual(AskCloudflareSearchSettingsView.engineName("ceramic"), "Ceramic.ai")
     }
 
+    func testSearchSwitchPicksTheProviderMostLikelySetUp() throws {
+        XCTAssertEqual(AskToolsSettingsView.providerWhenEnabling(cloudflare: .init()), .tavily)
+        XCTAssertEqual(AskToolsSettingsView.providerWhenEnabling(cloudflare: .init(accountID: "  ")), .tavily)
+        XCTAssertEqual(AskToolsSettingsView.providerWhenEnabling(cloudflare: .init(accountID: String(repeating: "a", count: 32))),
+                       .cloudflare)
+
+        let settings = try settings()
+        let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root),
+                                        notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")),
+                                        owner: { "o" }, pane: .webSearch, permissions: .fixed(accessibility: true, screenRecording: true))
+        view.setSearchEnabled(true)
+        XCTAssertEqual(AskSearchSettings(defaults: settings.defaults).provider, .tavily)
+        view.setSearchEnabled(false)
+        XCTAssertEqual(AskSearchSettings(defaults: settings.defaults).provider, .none)
+    }
+
+    func testLauncherPanesRenderAndPersistSwitches() async throws {
+        let settings = try settings()
+        settings.askQuickCalculatorEnabled = false
+        let workflows = AskWorkflowStore(settings: settings, root: root.appendingPathComponent("Workflows"))
+        _ = NSApplication.shared
+        for pane in LauncherSettingsPane.allCases {
+            let view = LauncherSettingsView(settings: settings, pane: pane, workflows: workflows)
+            for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                let png = try await render(view, appearance: appearance, height: 700)
+                XCTAssertGreaterThan(png.count, 4000, "\(pane)")
+            }
+        }
+        let view = LauncherSettingsView(settings: settings, workflows: workflows)
+        view.setQuickCalculator(true)
+        view.setQuickApps(false)
+        XCTAssertTrue(settings.askQuickCalculatorEnabled)
+        XCTAssertFalse(settings.askQuickAppSearchEnabled)
+    }
+
+    func testAgentAndLauncherPagesShowThePaneList() async throws {
+        let settings = try settings()
+        settings.mcpServers = [MCPServerConfig(name: "notion", transport: .stdio(.init(command: "npx")))]
+        _ = NSApplication.shared
+        for section in [StudioSection.agent, .launcher] {
+            let viewModel = StudioViewModel(settingsStore: settings,
+                                            historyStore: SQLiteHistoryStore(baseDir: root.appendingPathComponent("history")),
+                                            initialSection: section)
+            for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+                let png = try await render(StudioView(viewModel: viewModel), appearance: appearance,
+                                           width: 1240, height: 820, padded: false)
+                XCTAssertGreaterThan(png.count, 4000, "\(section)")
+                if let output = ProcessInfo.processInfo.environment["TYPEFLUX_AGENT_SETTINGS_SNAPSHOTS"] {
+                    let directory = URL(fileURLWithPath: output)
+                    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                    try png.write(to: directory.appendingPathComponent(
+                        "page-\(section.rawValue)-\(appearance == .aqua ? "light" : "dark").png"))
+                }
+            }
+        }
+    }
+
     func testOverviewSummaryDescribesAttention() {
         let ready = AgentCapabilityStatus(capability: .files, level: .ready, label: "")
         let fix = AgentCapabilityStatus(capability: .webSearch, level: .attention, label: "")
@@ -246,7 +314,8 @@ final class AgentSettingsRedesignTests: XCTestCase {
             tables[language] = try XCTUnwrap(NSDictionary(contentsOf: url) as? [String: String])
         }
         let english = try XCTUnwrap(tables[.english])
-        let keys = english.keys.filter { $0.hasPrefix("agent.") } + ["common.done"]
+        let keys = english.keys.filter { $0.hasPrefix("agent.") || $0.hasPrefix("launcher.") || $0.hasSuffix(".launcher") }
+            + ["common.done"]
         XCTAssertGreaterThan(keys.count, 100)
         for (language, table) in tables {
             for key in keys {
@@ -262,12 +331,13 @@ final class AgentSettingsRedesignTests: XCTestCase {
         }
     }
 
-    private func render(_ view: some View, appearance: NSAppearance.Name, height: CGFloat = 1100) async throws -> Data {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: height), styleMask: [.borderless],
+    private func render(_ view: some View, appearance: NSAppearance.Name, width: CGFloat = 860, height: CGFloat = 1100,
+                        padded: Bool = true) async throws -> Data {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: height), styleMask: [.borderless],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: appearance)
-        let hosting = NSHostingView(rootView: view.padding(24).frame(width: 860, height: height, alignment: .top)
+        let hosting = NSHostingView(rootView: view.padding(padded ? 24 : 0).frame(width: width, height: height, alignment: .top)
             .background(StudioTheme.surface))
         window.contentView = hosting
         window.orderFront(nil)

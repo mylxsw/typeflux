@@ -16,10 +16,8 @@ struct MemoryNotesEditorView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            explanation
             HStack(spacing: 10) {
                 AgentSearchBox(placeholder: L("agent.memory.search"), text: $query)
-                Text(L("agent.memory.count", model.notes.count)).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
                 Spacer()
                 Button {
                     query = ""
@@ -61,6 +59,7 @@ struct MemoryNotesEditorView: View {
                                 onDismiss: { model.dismissUndo() })
                     .id(removed.id)
             }
+            AgentRulesCard(title: L("agent.memory.rules.title"), rules: Self.rules).padding(.top, 12)
             Text(L("agent.memory.historyNote")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
                 .padding(.horizontal, 4)
         }
@@ -71,28 +70,11 @@ struct MemoryNotesEditorView: View {
         }
     }
 
-    private var explanation: some View {
-        HStack(alignment: .top, spacing: 16) {
-            explanationItem("brain", "agent.memory.rule.use.title", "agent.memory.rule.use.detail")
-            explanationItem("hand.raised", "agent.memory.rule.ask.title", "agent.memory.rule.ask.detail")
-            explanationItem("trash", "agent.memory.rule.delete.title", "agent.memory.rule.delete.detail")
-        }
-        .padding(.horizontal, 16).padding(.vertical, 14)
-        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous)
-            .strokeBorder(ModelVisualStyle.border))
-    }
-
-    private func explanationItem(_ symbol: String, _ title: String, _ detail: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: symbol).font(.system(size: 13)).foregroundStyle(ModelVisualStyle.accent).frame(width: 16)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L(title)).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                Text(L(detail)).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+    /// How saved notes are used, saved and forgotten.
+    static var rules: [(title: String, detail: String?)] {
+        [(L("agent.memory.rule.use.title"), L("agent.memory.rule.use.detail")),
+         (L("agent.memory.rule.ask.title"), L("agent.memory.rule.ask.detail")),
+         (L("agent.memory.rule.delete.title"), L("agent.memory.rule.delete.detail"))]
     }
 
     private func row(_ note: AskMemoryNote) -> some View {

@@ -1,5 +1,7 @@
 # Agent 配置页重新设计
 
+> **GUL-227 更新：** 页签已改为左侧二级列表（主从布局），启动器功能移到一级导航「启动器」。可交互设计稿：`docs/design/agent-settings-panes.html`。下文第 1–2 节记录的是 GUL-207 的版本，最新结构见文末「GUL-227：二级列表与统一模板」。
+
 > 状态：已按本方案实现（GUL-207）。可交互设计稿：`docs/design/agent-settings.html`（浏览器直接打开，右上角可切换深浅色、开关设计标注）。截图在 `docs/design/agent-settings/`；现状截图见 GUL-207。
 
 ## 1. 现状问题
@@ -113,3 +115,21 @@
 5. **Recent / Soul**：本次不在记忆页加入口。
 6. **删除笔记后撤销**：删除会立即生效，保证内容马上不再被使用。撤销时用原文和原保留期限重新保存一条笔记。
 7. **详情抽屉**：应用最低支持 macOS 13，用不了 `inspector`，技能详情改用 sheet 展示。
+
+## GUL-227：二级列表与统一模板
+
+GUL-207 之后「内置工具」页签又陆续加入了启动器计算器、应用搜索、关键字和工作流，一页里有 7 类设置，其中 4 类与 Agent 无关；「扩展」里还有一层技能 / MCP 分段。本次调整：
+
+| 位置 | 内容 | 实现 |
+|------|------|------|
+| Agent · 概览 | 能力汇总、新对话默认存储、「需要处理」清单（取代 6 张能力卡） | `AskToolsSettingsView+Overview.swift` |
+| Agent · 能力 | 联网搜索 / 文件访问 / 代码执行 / 操作电脑与浏览器，各一页 | `AskToolsSettingsView+Tools.swift` |
+| Agent · 扩展 | 技能 / MCP 服务器，各一页 | `+Skills.swift`、`SettingsView.agentPage` |
+| Agent · 个性化 | 记忆 | `MemoryNotesEditorView` |
+| 启动器（一级导航） | 内置功能（计算器、应用搜索）/ 启动器关键字 / 启动器工作流 | `LauncherSettingsView` |
+
+- **二级列表**：`SettingsPaneLayout` 左侧分组列表 + 右侧详情；每项显示状态点和一行状态（来自 `AgentCapabilityStatus`，MCP 状态直接取服务器列表）。内容宽度小于 720pt 时折叠成详情上方的菜单。
+- **统一模板**：每页都是 `AgentPaneHeader`（图标、标题、一句话说明、状态徽章 / 总开关）→ 设置卡片 → `AgentRulesCard`（安全规则 / 使用规则）→ 脚注。
+- **渐进展开**：联网搜索由页头开关控制，关闭时只显示一条说明；打开时有 Cloudflare 账户则选 Cloudflare，否则选 Tavily。
+- 设置项和存储键均未改变。
+

@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · Agent 设置页优化方案（可交互设计稿）</title>
+<style>
+:root {
+  --bg: #1b1b1d; --sidebar: #161617; --pane: #222224; --card: rgba(255,255,255,.045);
+  --card-hover: rgba(255,255,255,.07); --border: rgba(255,255,255,.115);
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16);
+  --ok: #29c76e; --ok-soft: rgba(41,199,110,.14); --warn: #eb8040; --warn-soft: rgba(235,128,64,.15);
+  --danger: #dc5252; --field: rgba(255,255,255,.06); --tile: rgba(255,255,255,.07); --shadow: 0 30px 80px rgba(0,0,0,.45);
+  --stage: #0e0e10;
+}
+body.light {
+  --bg: #f4f5f7; --sidebar: #eceef1; --pane: #fafafa; --card: rgba(255,255,255,.95); --card-hover: #f2f4f7;
+  --border: rgba(97,115,143,.16); --text: #141414; --text2: #474747; --text3: #85868a; --accent: #1f6fe0;
+  --accent-soft: rgba(31,111,224,.12); --ok: #1fab63; --ok-soft: rgba(31,171,99,.12); --warn: #ed5c2e;
+  --warn-soft: rgba(237,92,46,.12); --field: #fff; --tile: #eef0f3; --shadow: 0 30px 80px rgba(30,40,60,.18); --stage: #d9dde3;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; }
+button, input, select, textarea { font: inherit; color: inherit; }
+svg { flex: none; }
+
+/* ---------- Stage toolbar (outside the app window) ---------- */
+.stagebar { width: 100%; max-width: 1616px; padding-left: 16px; padding-right: 16px; display: flex; align-items: center; gap: 10px; padding: 18px 0 12px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ---------- App window ---------- */
+.window { width: 1240px; max-width: calc(100vw - 32px); height: 800px; display: flex; border-radius: 14px; overflow: hidden;
+  border: 1px solid var(--border); box-shadow: var(--shadow); background: var(--bg); position: relative; }
+.mainnav { width: 212px; background: var(--sidebar); padding: 14px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border); }
+.lights { display: flex; gap: 8px; margin: 2px 4px 22px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin: 0 6px 22px; }
+.brand small { font-size: 10px; color: var(--text3); font-weight: 500; }
+.brand .logo { width: 30px; height: 30px; border-radius: 50%; background: var(--text); color: var(--bg); display: grid; place-items: center; font-weight: 800; }
+.navitem { display: flex; align-items: center; gap: 11px; padding: 8px 12px; border-radius: 9px; color: var(--text2); cursor: pointer; font-weight: 500; position: relative; }
+.navitem:hover { background: var(--card-hover); }
+.navitem.on { background: var(--card-hover); color: var(--text); }
+.navitem .new { margin-left: auto; font-size: 10px; padding: 1px 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+
+.content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.pagehead { padding: 26px 32px 18px; border-bottom: 1px solid var(--border); }
+.pagehead h1 { margin: 0; font-size: 26px; letter-spacing: -.3px; }
+.pagehead p { margin: 4px 0 0; color: var(--text2); }
+
+.split { flex: 1; display: flex; min-height: 0; }
+.subnav { width: 232px; padding: 14px 10px; border-right: 1px solid var(--border); overflow-y: auto; }
+.group { font-size: 11px; color: var(--text3); font-weight: 600; letter-spacing: .4px; padding: 14px 10px 6px; }
+.group:first-child { padding-top: 2px; }
+.subitem { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; cursor: pointer; color: var(--text2); }
+.subitem:hover { background: var(--card-hover); }
+.subitem.on { background: var(--accent-soft); color: var(--text); }
+.subitem.on .ico { color: var(--accent); }
+.subitem .lbl { flex: 1; min-width: 0; }
+.subitem .lbl b { display: block; font-weight: 500; color: inherit; }
+.subitem .lbl span { display: block; font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.dot.ready { background: var(--ok); } .dot.attention { background: var(--warn); } .dot.off { background: var(--text3); opacity: .5; }
+
+.detail { flex: 1; overflow-y: auto; padding: 24px 32px 48px; scroll-behavior: smooth; }
+.detail-inner { max-width: 760px; }
+
+/* ---------- Shared building blocks (one template for every page) ---------- */
+.dh { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
+.tile { width: 40px; height: 40px; border-radius: 10px; background: var(--tile); display: grid; place-items: center; color: var(--text2); flex: none; }
+.tile.accent { background: var(--accent-soft); color: var(--accent); }
+.dh .t { flex: 1; min-width: 0; }
+.dh h2 { margin: 0; font-size: 18px; }
+.dh p { margin: 3px 0 0; color: var(--text2); }
+.dh .r { display: flex; align-items: center; gap: 10px; padding-top: 4px; }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.badge.ready { background: var(--ok-soft); color: var(--ok); }
+.badge.attention { background: var(--warn-soft); color: var(--warn); }
+.badge.off { background: var(--tile); color: var(--text3); }
+
+.section { margin-bottom: 24px; }
+.sl { display: flex; align-items: baseline; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text3); margin: 0 4px 8px; }
+.sl .aux { font-weight: 400; }
+.sl .sp { flex: 1; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; min-height: 52px; }
+.row + .row { border-top: 1px solid var(--border); }
+.row .ri { width: 28px; height: 28px; border-radius: 7px; background: var(--tile); display: grid; place-items: center; color: var(--text2); flex: none; }
+.row .rt { flex: 1; min-width: 0; }
+.row .rt b { display: block; font-weight: 500; }
+.row .rt span { display: block; font-size: 12px; color: var(--text2); }
+.row .rt .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row.clickable { cursor: pointer; }
+.row.clickable:hover { background: var(--card-hover); }
+.row.form .lab { width: 150px; flex: none; color: var(--text2); }
+.row.form .lab em { color: var(--danger); font-style: normal; margin-left: 2px; }
+.row.form .ctl { flex: 1; }
+.row.empty { color: var(--text3); justify-content: center; }
+.row.action { color: var(--accent); cursor: pointer; font-weight: 500; }
+.row.action:hover { background: var(--card-hover); }
+.row.action .ri { background: var(--accent-soft); color: var(--accent); }
+.foot { font-size: 12px; color: var(--text3); margin: 8px 4px 0; }
+.foot a { color: var(--accent); text-decoration: none; }
+.dim { opacity: .45; pointer-events: none; }
+
+.field { width: 100%; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; outline: none; }
+.field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.field.invalid { border-color: var(--warn); }
+.field.mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+
+.btn { border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn:hover { background: var(--card-hover); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .45; cursor: default; }
+.ibtn { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--border); background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text2); }
+.ibtn:hover { background: var(--card-hover); color: var(--danger); }
+
+.switch { width: 34px; height: 20px; border-radius: 999px; background: var(--tile); border: 1px solid var(--border); position: relative; cursor: pointer; flex: none; transition: background .15s; }
+.switch::after { content: ""; position: absolute; top: 1px; left: 1px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: left .15s; }
+.switch.on { background: var(--ok); border-color: var(--ok); }
+.switch.on::after { left: 15px; }
+
+.seg { display: inline-flex; background: var(--tile); border-radius: 8px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 4px 12px; border-radius: 6px; cursor: pointer; color: var(--text2); }
+.seg button.on { background: var(--card-hover); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+body.light .seg button.on { background: #fff; }
+
+.choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.opt { border: 1px solid var(--border); background: var(--card); border-radius: 14px; padding: 14px; cursor: pointer; }
+.opt.on { border: 2px solid var(--accent); padding: 13px; }
+.opt h4 { margin: 0 0 8px; display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.opt h4 .radio { margin-left: auto; width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--text3); }
+.opt.on h4 .radio { border: 5px solid var(--accent); }
+.opt li { list-style: none; display: flex; gap: 6px; font-size: 12px; color: var(--text2); margin: 3px 0; }
+.opt ul { margin: 0; padding: 0; }
+.opt .y { color: var(--ok); } .opt .n { color: var(--text3); }
+
+.hero { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 14px; border: 1px solid var(--border);
+  background: linear-gradient(90deg, var(--accent-soft), var(--card)); margin-bottom: 24px; }
+.hero .t { flex: 1; } .hero b { font-size: 15px; display: block; } .hero span { color: var(--text2); font-size: 12px; }
+
+.callout { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: 10px; font-size: 12px; margin-top: 10px; }
+.callout.ok { background: var(--ok-soft); color: var(--ok); }
+.callout.err { background: rgba(220,82,82,.12); color: var(--danger); }
+.callout.info { background: var(--accent-soft); color: var(--text2); }
+
+.disclosure { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text2); user-select: none; }
+.disclosure svg { transition: transform .15s; }
+.disclosure.open svg { transform: rotate(90deg); }
+
+.toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.searchbox { flex: 1; display: flex; align-items: center; gap: 6px; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; color: var(--text3); }
+.searchbox input { flex: 1; border: 0; background: transparent; outline: none; padding: 6px 0; color: var(--text); }
+.tag { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; background: var(--tile); color: var(--text3); font-family: ui-monospace, Menlo, monospace; margin-left: 6px; vertical-align: 1px; }
+.row .rt span.tag, .row .rt span.kw { display: inline-block; }
+.kw { font-family: ui-monospace, Menlo, monospace; font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--tile); border: 1px solid var(--border); margin-right: 4px; }
+
+.toast { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); opacity: 0; transition: .2s; pointer-events: none;
+  background: #2b2b2e; color: #eee; border-radius: 10px; padding: 9px 12px 9px 16px; display: flex; gap: 14px; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,.35); z-index: 30; }
+.toast.show { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
+.toast button { background: transparent; border: 0; color: #5ea8ff; cursor: pointer; font-weight: 600; }
+
+.modal-bg { position: absolute; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; z-index: 20; }
+.modal-bg.show { display: flex; }
+.modal { width: 480px; background: var(--pane); border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); }
+.modal h3 { margin: 0 0 4px; font-size: 16px; }
+.modal p.sub { margin: 0 0 16px; color: var(--text2); font-size: 12px; }
+.modal .fr { margin-bottom: 12px; } .modal .fr label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+.modal .acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+/* ---------- Design notes panel ---------- */
+.stage { display: flex; gap: 16px; align-items: flex-start; max-width: calc(100vw - 32px); padding-bottom: 24px; }
+.stage .window { max-width: 100%; flex: none; }
+.notes { position: sticky; top: 16px; width: 360px; flex: none; max-height: 800px; overflow-y: auto; background: var(--pane);
+  border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); z-index: 50; display: none; font-size: 12.5px; }
+.notes.show { display: block; }
+.notes h3 { margin: 4px 0 8px; font-size: 14px; }
+.notes h4 { margin: 14px 0 6px; font-size: 12.5px; color: var(--accent); }
+.notes ul, .notes ol { margin: 0; padding-left: 18px; color: var(--text2); }
+.notes li { margin: 3px 0; }
+.notes table { width: 100%; border-collapse: collapse; font-size: 11.5px; color: var(--text2); }
+.notes td, .notes th { border-bottom: 1px solid var(--border); padding: 5px 4px; text-align: left; vertical-align: top; }
+.notes th { color: var(--text); }
+.anno { display: none; }
+body.show-anno .anno { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: #f5b400; color: #222; font-size: 10.5px; font-weight: 700; margin-left: 6px; vertical-align: 1px; cursor: help; }
+</style>
+</head>
+<body>
+
+<div class="stagebar">
+  <b>Agent 设置页 · 优化方案</b><span>可交互设计稿 · 数据为示例</span>
+  <span class="sp"></span>
+  <span class="pill" id="annoBtn" onclick="toggleAnno()">设计标注</span>
+  <span class="pill" id="notesBtn" onclick="toggleNotes()">方案说明</span>
+  <span class="pill" onclick="document.body.classList.toggle('light')">浅色 / 深色</span>
+</div>
+
+<div class="stage">
+<div class="window" id="win">
+  <nav class="mainnav">
+    <div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+    <div class="brand"><span class="logo">∞</span>Typeflux <small>0.4.0</small></div>
+    <div class="navitem" data-main="home">ICON_home 概览</div>
+    <div class="navitem" data-main="vocab">ICON_book 词库</div>
+    <div class="navitem" data-main="history">ICON_clock 历史</div>
+    <div class="navitem" data-main="models">ICON_chip 模型</div>
+    <div class="navitem" data-main="persona">ICON_user 人设</div>
+    <div class="navitem" data-main="agent" onclick="goMain('agent')">ICON_agent Agent</div>
+    <div class="navitem" data-main="launcher" onclick="goMain('launcher')">ICON_command 启动器<span class="new">新</span></div>
+  </nav>
+
+  <main class="content">
+    <header class="pagehead" id="pagehead"></header>
+    <div class="split">
+      <aside class="subnav" id="subnav"></aside>
+      <section class="detail" id="detail"><div class="detail-inner" id="detailInner"></div></section>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo">撤销</button></div>
+  <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"></div></div>
+</div>
+
+<aside class="notes" id="notes">
+  <h3>现状问题</h3>
+  <ol>
+    <li><b>「工具」Tab 是大杂烩</b>：一个滚动页里塞了联网搜索（含完整 Cloudflare 表单）、文件访问、代码执行、启动器计算器 / 应用搜索、启动器关键字、启动器工作流、操作电脑权限，共 7 类，其中 4 类跟 Agent 无关。</li>
+    <li><b>三层导航</b>：一级侧栏 → Tab → 「扩展」里的二级分段控件（技能 / MCP），MCP 还是另一套代码渲染，头部与动作区不一致。</li>
+    <li><b>概览与正文重复</b>：6 张能力卡只做跳转，与 Tab 内容重复；状态只在概览和 Tab 小红点出现。</li>
+    <li><b>样式不统一</b>：有的块是「卡片 + 图标行」，有的是「小标题 + 卡片」；规则有时是卡片内 chip、有时是卡片外 chip；搜索表单缩进 66pt 的独立表单列；权限行没有图标；记忆规则是三张说明卡。</li>
+    <li><b>默认全展开</b>：没配置的 Cloudflare 表单默认占据首屏，真正常用的开关被挤到下面。</li>
+  </ol>
+
+  <h4>方案：主从布局 + 统一页面模板</h4>
+  <ul>
+    <li><b>Tab 改为左侧二级列表</b>：每项能力一页，列表直接显示状态点和一行状态，「需要处理」不必再进概览找。</li>
+    <li><b>按心智分组</b>：概览 / 能力（搜索、文件、代码、操作电脑）/ 扩展（技能、MCP）/ 个性化（记忆）。去掉「扩展」里的二级分段。</li>
+    <li><b>启动器功能迁出</b>：计算器、应用搜索、关键字、工作流移到一级导航「启动器」。它们由启动器触发，不经过 Agent。</li>
+    <li><b>统一页面模板</b>：页头（图标 · 标题 · 一句话说明 · 状态徽章 · 总开关）→ 「设置」卡片 → 「安全规则」卡片 → 脚注。所有行都是「左：标题 / 说明，右：控件」。</li>
+    <li><b>渐进展开</b>：搜索服务关闭时只显示一行；选了服务才出现凭据；Cloudflare 的 BYOK 别名收进「高级选项」。</li>
+    <li><b>概览精简</b>：只保留对话存储选择和「需要处理」清单，不再重复能力卡。</li>
+  </ul>
+
+  <h4>结构对照</h4>
+  <table>
+    <tr><th>现状</th><th>方案</th></tr>
+    <tr><td>概览 · 存储 + 6 张能力卡</td><td>概览 · 存储 + 待处理清单</td></tr>
+    <tr><td>工具 · 搜索/文件/代码/权限</td><td>能力组 · 每项一页</td></tr>
+    <tr><td>工具 · 计算器/应用/关键字/工作流</td><td>一级导航「启动器」</td></tr>
+    <tr><td>扩展 · 分段（技能｜MCP）</td><td>扩展组 · 技能、MCP 各一页</td></tr>
+    <tr><td>记忆 · 3 张规则卡 + 列表</td><td>记忆 · 列表 + 规则卡（统一模板）</td></tr>
+  </table>
+
+  <h4>落地影响（代码）</h4>
+  <ul>
+    <li><code>AgentConfigurationTab</code> 改为按能力的 <code>AgentSettingsPane</code>；<code>AgentCapability.destination</code> 直接映射到 pane。</li>
+    <li><code>AgentUnderlineTabs</code> → 二级列表组件，复用 <code>AgentCapabilityStatus</code> 显示状态点。</li>
+    <li>抽出 <code>AgentPaneHeader</code> / <code>AgentRulesCard</code>，替换现有 chip、规则卡等多种写法。</li>
+    <li><code>AskLauncherPluginSettingsView</code>、<code>AskWorkflowSettingsView</code> 及两个开关移到新的 <code>launcherPage</code>，设置项和存储键都不变。</li>
+    <li>窗口很窄（&lt; 900pt）时，二级列表折叠成页面顶部的下拉菜单。</li>
+  </ul>
+  <p style="color:var(--text3);margin-top:12px">点击右上「设计标注」可在界面上看到对应编号。</p>
+</aside>
+</div>
+
+<script>
+/* ---------- Icons ---------- */
+const P = {
+  home: '<path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/>',
+  book: '<path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM5 18a2 2 0 0 1 2-2h11"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  chip: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  agent: '<rect x="3" y="5" width="13" height="14" rx="3"/><path d="M16 10h5M16 14h5M8 10h.01M11 10h.01"/>',
+  command: '<path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z"/>',
+  overview: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  folder: '<path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  terminal: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/>',
+  cursor: '<path d="m4 4 7 17 2.5-7.5L21 11z"/>',
+  wand: '<path d="m15 4 1 2 2 1-2 1-1 2-1-2-2-1 2-1zM4 20 14 10"/>',
+  server: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+  brain: '<path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 1V5a2 2 0 0 0-3-1zM15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 1"/>',
+  shield: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  chev: '<path d="m9 6 6 6-6 6"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  cloud: '<path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 8z"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  calc: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',
+  grid: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
+  key: '<rect x="2" y="7" width="20" height="11" rx="2"/><path d="M6 11h.01M10 11h.01M14 11h.01M18 11h.01M7 15h10"/>',
+  flow: '<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M6 9v4a2 2 0 0 0 2 2h7"/>',
+  translate: '<path d="M4 5h8M8 3v2M6 5c0 4 3 7 6 8M10 5c-1 4-3 6-6 8M13 21l4-9 4 9M14.5 18h5"/>',
+  eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  hand: '<path d="M8 13V5a1.5 1.5 0 0 1 3 0v6M11 10V4a1.5 1.5 0 0 1 3 0v6M14 10V5a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7h-1a6 6 0 0 1-5-3l-2-4a1.5 1.5 0 0 1 2.5-1.5L8 14"/>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  check: '<path d="m5 12 5 5 9-10"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  warn: '<path d="M12 3 2 20h20zM12 10v4M12 17h.01"/>',
+  stop: '<rect x="5" y="5" width="14" height="14" rx="2"/>',
+  wifi: '<path d="M2 2l20 20M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 5-2.7M12 20h.01"/>',
+};
+const I = (n, s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
+document.querySelectorAll('.navitem').forEach(el => el.innerHTML = el.innerHTML.replace(/ICON_(\w+)/, (_, n) => I(n, 18)));
+const A = (n, tip) => `<span class="anno" title="${tip}">${n}</span>`;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- State (mirrors SettingsStore fields; values are sample data) ---------- */
+const S = {
+  main: 'agent', pane: 'overview',
+  local: false,
+  search: { provider: 'cloudflare', key: '', account: '', gateway: 'default', engine: 'Ceramic.ai', alias: '', advanced: false, test: null },
+  folders: ['/Users/mylxsw/Downloads'],
+  code: true,
+  perms: { ax: true, screen: false },
+  skills: [
+    { name: 'pdf', desc: '读取、拆分、合并 PDF，提取表格和文字', on: true, builtin: true },
+    { name: 'xlsx', desc: '创建和分析电子表格，支持公式与图表', on: true, builtin: true },
+    { name: 'docx', desc: '生成和编辑 Word 文档', on: true, builtin: true },
+    { name: 'frontend-design', desc: '按设计规范产出可运行的前端页面', on: false, builtin: false, repo: 'github.com/acme/skills' },
+    { name: 'meeting-notes', desc: '把会议转写整理成纪要和待办', on: true, builtin: false, repo: 'github.com/mylxsw/my-skills' },
+  ],
+  skillQuery: '', skillFilter: 'all',
+  mcp: [
+    { name: 'filesystem', type: 'stdio', target: 'npx -y @modelcontextprotocol/server-filesystem', on: true, tools: 11 },
+    { name: 'GitHub', type: 'http', target: 'https://api.githubcopilot.com/mcp/', on: false, tools: 0 },
+  ],
+  notes: [
+    { text: '称呼我「老王」，回复默认用简体中文', kind: '你让它记住的' },
+    { text: '写代码时偏好 Go 和 Python，数据库首选 Postgres', kind: '你让它记住的' },
+    { text: '周报使用「本周完成 / 下周计划 / 风险」三段式', kind: '你修改过' },
+  ],
+  noteQuery: '',
+  launcher: { calc: true, apps: true, second: '英语' },
+  keywords: [
+    { plugin: '翻译', icon: 'translate', desc: '优先本机翻译；需要时用「设置 → 模型」里的文本处理模型', words: ['fy', 'tr'] },
+    { plugin: 'AI 指令', icon: 'wand', desc: '用「设置 → 模型」里的文本处理模型执行提示词，结果逐字显示', words: ['ai', 'gx'] },
+    { plugin: '网页搜索', icon: 'search', desc: '在浏览器中打开搜索；⌘C 复制链接', words: ['gg', 'bd'] },
+  ],
+  workflows: [
+    { name: '打开项目', runtime: 'Shell', kw: 'proj', status: 'ready' },
+    { name: '剪贴板转 Markdown 表格', runtime: 'Python', kw: 'mdt', status: 'untrusted' },
+  ],
+};
+
+const providerName = { none: '关闭', tavily: 'Tavily', brave: 'Brave Search', cloudflare: 'Cloudflare Web Search' };
+
+/* Mirrors AgentSearchField.missing(in:) */
+function missingSearch() {
+  const s = S.search, m = [];
+  if (s.provider === 'none') return m;
+  if (!s.key.trim()) m.push(s.provider === 'cloudflare' ? 'Cloudflare API Token' : 'API 密钥');
+  if (s.provider !== 'cloudflare') return m;
+  if (!/^[a-fA-F0-9]{32}$/.test(s.account.trim())) m.push('账户 ID');
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(s.gateway.trim())) m.push('Gateway ID');
+  if (s.alias.trim() && !/^[A-Za-z0-9_-]{1,64}$/.test(s.alias.trim())) m.push('BYOK 别名');
+  return m;
+}
+
+/* Mirrors AgentCapabilityStatus.status(of:inputs:) */
+function status(id) {
+  switch (id) {
+    case 'search':
+      if (S.search.provider === 'none') return S.local ? ['attention', '本机对话无法联网'] : ['off', '未开启'];
+      if (missingSearch().length) return ['attention', '待完成配置'];
+      return ['ready', providerName[S.search.provider]];
+    case 'files': return S.folders.length ? ['ready', `${S.folders.length} 个文件夹`] : ['off', '未授权文件夹'];
+    case 'code': return S.code ? ['ready', '已开启 · 每次确认'] : ['off', '已关闭'];
+    case 'automation': return S.perms.ax && S.perms.screen ? ['ready', '每次操作前询问'] : ['attention', '缺少系统权限'];
+    case 'skills': { const on = S.skills.filter(s => s.on).length; return [on ? 'ready' : 'off', `${on} / ${S.skills.length} 已启用`]; }
+    case 'mcp': { const on = S.mcp.filter(s => s.on).length; return S.mcp.length ? [on ? 'ready' : 'off', `${on} 个已启用`] : ['off', '未添加']; }
+    case 'memory': return [S.notes.length ? 'ready' : 'off', `${S.notes.length} 条笔记`];
+  }
+}
+
+const PANES = [
+  { group: null, items: [{ id: 'overview', icon: 'overview', title: '概览' }] },
+  { group: '能力', items: [
+    { id: 'search', icon: 'globe', title: '联网搜索' },
+    { id: 'files', icon: 'folder', title: '文件访问' },
+    { id: 'code', icon: 'terminal', title: '代码执行' },
+    { id: 'automation', icon: 'cursor', title: '操作电脑与浏览器' },
+  ] },
+  { group: '扩展', items: [
+    { id: 'skills', icon: 'wand', title: '技能' },
+    { id: 'mcp', icon: 'server', title: 'MCP 服务器' },
+  ] },
+  { group: '个性化', items: [{ id: 'memory', icon: 'brain', title: '记忆' }] },
+];
+const LAUNCHER_PANES = [
+  { group: null, items: [
+    { id: 'l-basic', icon: 'grid', title: '内置功能' },
+    { id: 'l-keywords', icon: 'key', title: '关键字' },
+    { id: 'l-workflows', icon: 'flow', title: '工作流' },
+  ] },
+];
+const allItems = () => PANES.flatMap(g => g.items);
+
+/* ---------- Render ---------- */
+function render() {
+  document.querySelectorAll('.navitem').forEach(n => n.classList.toggle('on', n.dataset.main === S.main));
+  const agent = S.main === 'agent';
+  document.getElementById('pagehead').innerHTML = agent
+    ? `<h1>Agent</h1><p>管理「随便问」可以使用的能力、扩展与记忆。</p>`
+    : `<h1>启动器${A(3, '启动器功能从 Agent 页迁出，成为一级导航')}</h1><p>启动器里的计算器、应用搜索、关键字和你自己的工作流。它们由启动器直接触发，不经过 Agent。</p>`;
+  renderSubnav(agent ? PANES : LAUNCHER_PANES);
+  const fn = VIEWS[S.pane];
+  document.getElementById('detailInner').innerHTML = fn ? fn() : '';
+}
+
+function renderSubnav(groups) {
+  document.getElementById('subnav').innerHTML = groups.map((g, gi) =>
+    (g.group ? `<div class="group">${g.group}${gi === 1 ? A(1, '一级 Tab 改成二级列表：每项能力一页，状态直接可见') : ''}</div>` : '') +
+    g.items.map(it => {
+      const st = S.main === 'agent' && it.id !== 'overview' ? status(it.id) : null;
+      return `<div class="subitem ${S.pane === it.id ? 'on' : ''}" onclick="go('${it.id}')">
+        <span class="ico">${I(it.icon)}</span>
+        <span class="lbl"><b>${it.title}</b>${st ? `<span>${esc(st[1])}</span>` : ''}</span>
+        ${st ? `<span class="dot ${st[0]}"></span>` : ''}
+      </div>`;
+    }).join('')
+  ).join('');
+}
+
+function hideToast() { undoFn = null; document.getElementById('toast').classList.remove('show'); }
+function go(id) { hideToast(); S.pane = id; render(); document.getElementById('detail').scrollTop = 0; }
+function goMain(m) { hideToast(); S.main = m; S.pane = m === 'agent' ? 'overview' : 'l-basic'; render(); }
+
+/* Shared template pieces */
+function header(icon, title, desc, right = '', accent = true) {
+  return `<div class="dh"><div class="tile ${accent ? 'accent' : ''}">${I(icon, 20)}</div>
+    <div class="t"><h2>${title}</h2><p>${desc}</p></div><div class="r">${right}</div></div>`;
+}
+const badge = ([lv, label]) => `<span class="badge ${lv}">${esc(label)}</span>`;
+const sw = (on, fn, label) => `<span class="switch ${on ? 'on' : ''}" role="switch" aria-label="${label}" aria-checked="${on}" onclick="${fn}"></span>`;
+const section = (label, body, foot = '', aux = '', right = '') =>
+  `<div class="section"><div class="sl">${label}${aux ? `<span class="aux">${aux}</span>` : ''}<span class="sp"></span>${right}</div>${body}${foot ? `<div class="foot">${foot}</div>` : ''}</div>`;
+const card = rows => `<div class="card">${rows}</div>`;
+const row = (icon, title, sub, ctl = '', extra = '') =>
+  `<div class="row ${extra}">${icon ? `<span class="ri">${I(icon, 15)}</span>` : ''}<div class="rt"><b>${title}</b>${sub ? `<span>${sub}</span>` : ''}</div>${ctl}</div>`;
+const rules = (items, off = false, label = '安全规则') => section(label + A(4, '规则统一放在「安全规则」卡片里，取代卡片内外混用的 chip 和三张说明卡'),
+  card(items.map(([t, d]) => row('shield', t, d)).join('')).replace('class="card"', `class="card ${off ? 'dim' : ''}"`));
+
+const VIEWS = {
+  overview() {
+    const caps = ['search', 'files', 'code', 'automation', 'skills', 'mcp'];
+    const att = caps.filter(c => status(c)[0] === 'attention');
+    const ready = caps.filter(c => status(c)[0] === 'ready').length;
+    const title = id => allItems().find(i => i.id === id).title;
+    const opt = (local, icon, name, pts) => `<div class="opt ${S.local === local ? 'on' : ''}" onclick="S.local=${local};render()">
+      <h4>${I(icon)}${name}<span class="radio"></span></h4><ul>${pts.map(([y, t]) => `<li><span class="${y ? 'y' : 'n'}">${I(y ? 'check' : 'minus', 12)}</span>${t}</li>`).join('')}</ul></div>`;
+    return `
+      <div class="hero"><div class="t"><b>随便问现在可以使用 ${ready} 项能力</b>
+        <span>${att.length ? `还有 ${att.length} 项需要处理` : '一切就绪'}${S.notes.length ? ` · 记住了 ${S.notes.length} 条笔记` : ''}</span></div>
+        ${att.length ? `<button class="btn primary" onclick="go('${att[0]}')">去处理</button>` : ''}</div>
+      ${section('新对话默认保存在' + A(5, '概览只保留存储选择和待处理清单，不再用 6 张卡片重复导航'), `<div class="choice">
+        ${opt(false, 'cloud', '云端同步', [[1, '可用云端模型、识图、深入研究、后台运行'], [1, '多台设备同步对话'], [1, '联网搜索由 Typeflux Cloud 提供'], [0, '云端模型用量计入额度']])}
+        ${opt(true, 'lock', '仅存本机', [[1, '对话不上传到 Typeflux Cloud'], [1, '只使用你在「模型」里配置的模型'], [0, '联网搜索需自备密钥（见「联网搜索」）'], [0, '不能使用深入研究、后台运行和多设备同步']])}
+      </div>`, '每个对话开始前，仍可在新建菜单或输入框里改选。已经开始的对话不能更改存储位置；未登录时，所有对话都只保存在本机。')}
+      ${section('需要处理', card(att.length
+        ? att.map(c => row(allItems().find(i => i.id === c).icon, title(c), esc(status(c)[1]), `<button class="btn" onclick="go('${c}')">去设置 ${I('chev', 12)}</button>`, 'clickable')).join('')
+        : `<div class="row empty">${I('check')} 没有需要处理的事项</div>`), '', att.length ? `${att.length} 项` : '')}
+    `;
+  },
+
+  search() {
+    const s = S.search, on = s.provider !== 'none', miss = missingSearch(), st = status('search');
+    const field = (label, key, ph, req = true, mono = true, type = 'text') => {
+      const bad = req && miss.includes(label);
+      return `<div class="row form"><div class="lab">${label}${req ? '<em>*</em>' : ''}</div><div class="ctl">
+        <input class="field ${mono ? 'mono' : ''} ${bad && s[key] ? 'invalid' : ''}" type="${type}" placeholder="${ph}" value="${esc(s[key])}"
+          oninput="S.search.${key}=this.value;S.search.test=null;refreshSearchStatus()"></div></div>`;
+    };
+    let rows = `<div class="row form"><div class="lab">搜索服务</div><div class="ctl"><div class="seg">
+      ${['tavily', 'brave', 'cloudflare'].map(p => `<button class="${s.provider === p ? 'on' : ''}" onclick="setProvider('${p}')">${providerName[p]}</button>`).join('')}
+      </div></div></div>`;
+    rows += field(s.provider === 'cloudflare' ? 'Cloudflare API Token' : 'API 密钥', 'key',
+      s.provider === 'cloudflare' ? '需要 Workers AI Read、AI Gateway Read 权限' : '保存在钥匙串中', true, false, 'password');
+    if (s.provider === 'cloudflare') {
+      rows += field('账户 ID', 'account', 'Cloudflare 控制台中的 32 位 ID');
+      rows += field('Gateway ID', 'gateway', 'default');
+      rows += `<div class="row form"><div class="lab">搜索引擎</div><div class="ctl"><select class="field" onchange="S.search.engine=this.value">
+        ${['Ceramic.ai', 'Exa', 'Parallel', 'Tavily'].map(e => `<option ${s.engine === e ? 'selected' : ''}>${e}</option>`).join('')}</select></div></div>`;
+      rows += `<div class="row"><div class="disclosure ${s.advanced ? 'open' : ''}" onclick="S.search.advanced=!S.search.advanced;render()">${I('chev', 12)} 高级选项</div></div>`;
+      if (s.advanced) rows += field('BYOK 别名', 'alias', '留空则使用 default 或 Gateway 额度', false);
+    }
+    rows += `<div class="row" id="testRow">${testRow()}</div>`;
+    const foot = s.provider === 'cloudflare'
+      ? '搜索会使用 Gateway 里的服务商密钥，或消耗 AI Gateway 额度；测试会发送一次计费搜索。<a href="#" onclick="return false">配置指南</a>'
+      : `<a href="#" onclick="return false">获取 ${providerName[s.provider]} 密钥</a>`;
+    return header('globe', '联网搜索', '用于本机对话。云端对话由 Typeflux Cloud 提供搜索，无需配置。密钥保存在钥匙串中。',
+        `<span id="searchBadge">${badge(st)}</span>${sw(on, "toggleSearch()", '联网搜索')}`)
+      + (on
+        ? section('服务与凭据' + A(6, '先选服务才出现凭据；不常用的 BYOK 别名收进「高级选项」'), card(rows), foot)
+        : `<div class="callout info">${I('info')}<span>关闭后，本机对话不能联网搜索；云端对话不受影响。打开右上角开关并选择搜索服务即可配置。</span></div>`);
+  },
+
+  files() {
+    const rows = (S.folders.length ? '' : `<div class="row empty">还没有授权文件夹，随便问现在不能读写你的文件。</div>`)
+      + S.folders.map((f, i) => row('folder', esc(f.split('/').pop() || f), `<span class="mono">${esc(f)}</span>`,
+        `<button class="ibtn" title="移除" onclick="removeFolder(${i})">${I('minus', 14)}</button>`)).join('')
+      + `<div class="row action" onclick="addFolder()"><span class="ri">${I('plus', 15)}</span>添加文件夹…</div>`;
+    return header('folder', '文件访问', '读写你授权的文件夹。只能访问列表里的文件夹。', badge(status('files')))
+      + section('已授权的文件夹', card(rows), '', `${S.folders.length} 个`)
+      + rules([['只能访问列表里的文件夹', '列表外的路径一律拒绝'], ['读取：对话内可一次性允许', '同一对话里不会反复询问'], ['写入：每次都要确认', '修改、新建、删除文件前都会请你确认']]);
+  },
+
+  code() {
+    return header('terminal', '代码执行', '在隔离沙箱里运行 Python、JavaScript 和 shell，用于计算、处理表格、画图。',
+        `${badge(status('code'))}${sw(S.code, 'S.code=!S.code;render()', '代码执行')}`)
+      + rules([['无网络', '沙箱内的代码不能访问网络'], ['不能访问个人目录', '只能读写本次运行的临时目录和你授权的文件'], ['每次运行前确认', '你会先看到要执行的代码']], !S.code)
+      + (S.code ? '' : `<div class="foot">关闭后，随便问不会运行任何代码。</div>`);
+  },
+
+  automation() {
+    const perm = (key, icon, t, d) => row(icon, t, d, S.perms[key]
+      ? `<span class="badge ready">${I('check', 11)}已授权</span>`
+      : `<button class="btn" onclick="S.perms.${key}=true;render();toast('（示意）已在系统设置中授权')">打开系统设置</button>`);
+    return header('cursor', '操作电脑与浏览器', '查看屏幕、点击和输入，替你完成网页和应用里的操作。', badge(status('automation')))
+      + section('系统权限' + A(7, '权限行补齐图标，与其它行同一模板'), card(perm('ax', 'hand', '辅助功能', '用于点击和输入') + perm('screen', 'eye', '屏幕录制', '用于查看屏幕内容')),
+        '在系统设置中授权后回到 Typeflux，状态会自动刷新。')
+      + rules([['每一步操作前确认', '点击、输入之前都会请你确认'], ['可以随时停止', '按 Esc 或点击「停止」立即中断']]);
+  },
+
+  skills() {
+    const q = S.skillQuery.trim().toLowerCase();
+    const list = S.skills.filter(s => (!q || s.name.includes(q) || s.desc.includes(q))
+      && (S.skillFilter === 'all' || (S.skillFilter === 'on') === s.on));
+    const rows = list.length ? list.map(s => {
+      const idx = S.skills.indexOf(s);
+      return `<div class="row clickable" onclick="if(!event.target.closest('.switch'))skillDetail(${idx})">
+        <span class="ri">${I('wand', 15)}</span>
+        <div class="rt"><b>${esc(s.name)}${s.builtin ? '<span class="tag">内置</span>' : ''}</b><span>${esc(s.desc)}</span></div>
+        ${sw(s.on, `S.skills[${idx}].on=!S.skills[${idx}].on;render()`, s.name)}</div>`;
+    }).join('') : `<div class="row empty">没有匹配的技能。</div>`;
+    return header('wand', '技能', '特定任务的做事方法，任务需要时自动加载。',
+        `<button class="btn">${I('folder', 14)}打开技能文件夹</button><button class="btn primary" onclick="installSkill()">${I('download', 14)}从 GitHub 安装…</button>`)
+      + `<div class="toolbar">
+          <label class="searchbox">${I('search', 14)}<input placeholder="搜索技能" value="${esc(S.skillQuery)}" oninput="S.skillQuery=this.value;rerenderKeepFocus(this)"></label>
+          <div class="seg">${[['all', '全部'], ['on', '已启用'], ['off', '已停用']].map(([v, l]) => `<button class="${S.skillFilter === v ? 'on' : ''}" onclick="S.skillFilter='${v}';render()">${l}</button>`).join('')}</div>
+        </div>`
+      + card(rows)
+      + `<div class="foot">可在 Skills/&lt;名称&gt;/SKILL.md 中添加自己的技能。点击某个技能可查看来源、版本和声明的权限。</div>`;
+  },
+
+  mcp() {
+    const rows = S.mcp.length ? S.mcp.map((m, i) => `<div class="row">
+        <span class="ri">${I('server', 15)}</span>
+        <div class="rt"><b>${esc(m.name)}<span class="tag">${m.type}</span></b><span class="mono">${esc(m.target)}</span></div>
+        ${m.on ? `<span class="badge ready">${m.tools} 个工具</span>` : `<span class="badge off">已停用</span>`}
+        <button class="btn" onclick="editMCP(${i})">编辑</button>
+        ${sw(m.on, `toggleMCP(${i})`, m.name)}</div>`).join('')
+      : `<div class="row empty">尚未配置 MCP 服务器。添加服务器以通过外部工具扩展 Agent 能力。</div>`;
+    return header('server', 'MCP 服务器', '连接外部工具和数据源。',
+        `<button class="btn" onclick="toast('（示意）打开 JSON 导入面板', false)">${I('download', 14)}导入 JSON</button><button class="btn primary" onclick="editMCP(-1)">${I('plus', 14)}添加 MCP 服务器</button>`)
+      + section('服务器' + A(2, '技能和 MCP 各自一页，头部与操作区和其它页一致，不再需要二级分段'), card(rows), '', `${S.mcp.length} 个`);
+  },
+
+  memory() {
+    const q = S.noteQuery.trim();
+    const list = S.notes.map((n, i) => [n, i]).filter(([n]) => !q || n.text.includes(q));
+    const rows = (S.notes.length === 0
+      ? `<div class="row empty">还没有笔记。在对话里说“记住……”，或在这里手动添加。</div>`
+      : list.length ? list.map(([n, i]) => row('brain', esc(n.text), n.kind,
+        `<button class="ibtn" title="删除" onclick="removeNote(${i})">${I('minus', 14)}</button>`)).join('')
+        : `<div class="row empty">没有匹配的笔记。</div>`)
+      + `<div class="row"><span class="ri" style="background:var(--accent-soft);color:var(--accent)">${I('plus', 15)}</span>
+          <input class="field" id="newNote" placeholder="添加笔记，例如你的称呼、常用语言、工作习惯" onkeydown="if(event.key==='Enter')addNote()">
+          <button class="btn primary" onclick="addNote()">保存</button></div>`;
+    return header('brain', '记忆', '随便问记住的关于你的笔记，会作为背景信息提供给新对话。', badge(status('memory')))
+      + `<div class="toolbar"><label class="searchbox">${I('search', 14)}<input placeholder="搜索笔记" value="${esc(S.noteQuery)}" oninput="S.noteQuery=this.value;rerenderKeepFocus(this)"></label></div>`
+      + card(rows)
+      + `<div style="height:24px"></div>`
+      + rules([['会用在新对话里', '这里的笔记会作为背景信息提供给新开始的对话'], ['保存前先问你', '随便问想记住新内容时，会先请你确认'], ['删除即停止使用', '删除或修改后，之后的对话不再使用旧内容；已有的回复不会改变']], false, '使用规则')
+      + `<div class="foot">删除笔记不会删除对话历史；需要的话，请在「历史」中单独删除。</div>`;
+  },
+
+  'l-basic'() {
+    return header('grid', '内置功能', '在启动器里直接得到结果，不发送给 AI。')
+      + section('功能', card(
+        row('calc', '计算器', '在启动器里输入算式时直接显示结果', sw(S.launcher.calc, 'S.launcher.calc=!S.launcher.calc;render()', '计算器'))
+        + row('grid', '应用搜索', '输入应用名称、首字母或拼音即可打开应用', sw(S.launcher.apps, 'S.launcher.apps=!S.launcher.apps;render()', '应用搜索'))));
+  },
+
+  'l-keywords'() {
+    const blocks = S.keywords.map((k, ki) => card(
+      row(k.icon, k.plugin, k.desc)
+      + `<div class="row form"><div class="lab">关键字</div><div class="ctl">${k.words.map(w => `<span class="kw">${esc(w)}</span>`).join('')}
+          <button class="btn" style="padding:2px 8px" onclick="addKeyword(${ki})">${I('plus', 12)}</button></div></div>`
+      + (k.plugin === '翻译' ? `<div class="row form"><div class="lab">第二语言</div><div class="ctl"><select class="field" style="width:200px" onchange="S.launcher.second=this.value">
+          ${['英语', '日语', '韩语', '法语'].map(l => `<option ${S.launcher.second === l ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>` : '')
+    )).join('<div style="height:12px"></div>');
+    return header('key', '关键字', '在启动器开头输入关键字和空格，例如「fy hello」。关键字后面没有内容时，按 ↩ 处理选中的文字。',
+        `<button class="btn" onclick="toast('（示意）已恢复默认关键字', false)">恢复默认</button>`)
+      + blocks;
+  },
+
+  'l-workflows'() {
+    const st = { ready: ['ready', '已信任'], untrusted: ['attention', '尚未信任'] };
+    const rows = S.workflows.map(w => row('flow', `${esc(w.name)}<span class="tag">${w.runtime}</span>`, `关键字 <span class="kw">${w.kw}</span>`,
+      badge(st[w.status]) + (w.status === 'untrusted' ? `<button class="btn" onclick="trustWF('${w.kw}')">检查并信任</button>` : ''))).join('');
+    return header('flow', '工作流', '用关键字触发你自己的脚本：Python、Node、TypeScript、Shell、AppleScript 或任何程序。',
+        `<button class="btn">${I('folder', 14)}打开文件夹</button><button class="btn primary">${I('plus', 14)}从模板新建</button>`)
+      + section('工作流', card(rows), '它们以你的身份运行，只信任你了解的工作流。', `${S.workflows.length} 个`);
+  },
+};
+
+/* ---------- Actions ---------- */
+function setProvider(p) { S.search.provider = p; S.search.key = ''; S.search.test = null; render(); }
+function toggleSearch() { S.search.provider = S.search.provider === 'none' ? 'tavily' : 'none'; S.search.test = null; render(); }
+function testRow() {
+  const miss = missingSearch(), t = S.search.test;
+  let out = `<button class="btn" ${miss.length || t === 'testing' ? 'disabled' : ''} onclick="runTest()">${t === 'testing' ? '测试中…' : '测试连接'}</button>`;
+  if (miss.length) out += `<span class="foot" style="margin:0">还需填写：${miss.join('、')}</span>`;
+  else if (t === 'ok') out += `<span class="badge ready">${I('check', 11)}连接成功</span>`;
+  return out;
+}
+/* Typing must not re-render the inputs, so only refresh the parts that depend on validity. */
+function refreshSearchStatus() {
+  document.getElementById('testRow').innerHTML = testRow();
+  document.getElementById('searchBadge').innerHTML = badge(status('search'));
+  renderSubnav(PANES);
+}
+function runTest() { S.search.test = 'testing'; refreshSearchStatus(); setTimeout(() => { S.search.test = 'ok'; if (S.pane === 'search') refreshSearchStatus(); }, 900); }
+
+let undoFn = null, toastTimer = null;
+function toast(msg, undo = null) {
+  undoFn = undo;
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toastUndo').style.display = undo ? '' : 'none';
+  const t = document.getElementById('toast'); t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+}
+document.getElementById('toastUndo').onclick = () => { if (undoFn) undoFn(); undoFn = null; document.getElementById('toast').classList.remove('show'); };
+
+function removeFolder(i) {
+  const [path] = S.folders.splice(i, 1); render();
+  toast(`已移除「${path.split('/').pop()}」`, () => { if (!S.folders.includes(path)) S.folders.splice(Math.min(i, S.folders.length), 0, path); render(); });
+}
+function addFolder() {
+  const samples = ['/Users/mylxsw/Documents', '/Users/mylxsw/Desktop', '/Users/mylxsw/Projects/typeflux'];
+  const next = samples.find(p => !S.folders.includes(p));
+  if (next) { S.folders.push(next); render(); toast('（示意）已从访达选择并添加文件夹', false); }
+}
+function removeNote(i) {
+  const [n] = S.notes.splice(i, 1); render();
+  toast('已删除笔记', () => { S.notes.splice(Math.min(i, S.notes.length), 0, n); render(); });
+}
+function addNote() {
+  const el = document.getElementById('newNote'), v = el.value.trim();
+  if (!v) { el.focus(); return; }
+  S.notes.unshift({ text: v, kind: '你让它记住的' }); render();
+}
+function toggleMCP(i) { const m = S.mcp[i]; m.on = !m.on; m.tools = m.on ? (m.tools || 6) : m.tools; render(); }
+function addKeyword(ki) {
+  const k = S.keywords[ki], base = k.words[0]; let n = 2;
+  while (S.keywords.some(x => x.words.includes(base + n))) n++;
+  k.words.push(base + n); render();
+}
+function trustWF(kw) { S.workflows.find(w => w.kw === kw).status = 'ready'; render(); }
+function rerenderKeepFocus(el) {
+  const pos = el.selectionStart, ph = el.placeholder; render();
+  const again = [...document.querySelectorAll('input')].find(i => i.placeholder === ph);
+  if (again) { again.focus(); again.setSelectionRange(pos, pos); }
+}
+
+function openModal(html) { document.getElementById('modal').innerHTML = html; document.getElementById('modalBg').classList.add('show'); }
+function closeModal() { document.getElementById('modalBg').classList.remove('show'); }
+function skillDetail(i) {
+  const s = S.skills[i];
+  openModal(`<h3>${esc(s.name)}</h3><p class="sub">${esc(s.desc)}</p>
+    ${card(row('', '来源', s.builtin ? 'Typeflux 内置，随应用更新' : esc(s.repo)) + row('', '版本', s.builtin ? '随应用' : 'v1.2.0') + row('', '声明需要的权限', '读取文件 · 运行代码（声明只用于提示，不会自动授予访问权限）'))}
+    <div class="acts">${s.builtin ? '' : `<button class="btn" style="color:var(--danger)" onclick="S.skills.splice(${i},1);closeModal();render()">移除</button>`}
+    <span style="flex:1"></span><button class="btn" onclick="closeModal()">完成</button></div>`);
+}
+function installSkill() {
+  openModal(`<h3>从 GitHub 安装技能</h3><p class="sub">粘贴仓库、文件夹或 SKILL.md 的链接。每个包含 SKILL.md 的文件夹会安装为一个技能。</p>
+    <div class="fr"><input class="field" id="skillURL" placeholder="https://github.com/owner/repo/tree/main/skills/name"></div>
+    <div class="callout info">${I('warn')}<span>技能提供指令和沙箱可读文件，请仅从可信来源安装。</span></div>
+    <div class="acts"><button class="btn" onclick="closeModal()">取消</button><button class="btn primary" onclick="doInstall()">安装</button></div>`);
+}
+function doInstall() {
+  const url = document.getElementById('skillURL').value.trim();
+  const m = url.match(/github\.com\/[^/]+\/([^/\s]+)/);
+  if (!m) { document.getElementById('skillURL').classList.add('invalid'); return; }
+  const name = url.replace(/\/$/, '').split('/').pop();
+  S.skills.push({ name, desc: '从 GitHub 安装的技能', on: true, builtin: false, repo: url.replace(/^https?:\/\//, '') });
+  closeModal(); render(); toast(`已安装「${name}」`, false);
+}
+function editMCP(i) {
+  const m = i >= 0 ? S.mcp[i] : { name: '', type: 'stdio', target: '', on: true, tools: 0 };
+  openModal(`<h3>${i >= 0 ? '编辑' : '添加'} MCP 服务器</h3><p class="sub">配置连接信息、传输方式和启动行为，以便 Agent 调用外部工具。</p>
+    <div class="fr"><label>服务器名称</label><input class="field" id="mName" placeholder="我的 MCP 服务器" value="${esc(m.name)}"></div>
+    <div class="fr"><label>传输类型</label><div class="seg" id="mType">${['stdio', 'http'].map(t => `<button class="${m.type === t ? 'on' : ''}" onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on');document.getElementById('mTargetLab').textContent=this.textContent==='stdio'?'命令':'服务器 URL'">${t}</button>`).join('')}</div></div>
+    <div class="fr"><label id="mTargetLab">${m.type === 'stdio' ? '命令' : '服务器 URL'}</label><input class="field mono" id="mTarget" value="${esc(m.target)}"></div>
+    <div class="acts">${i >= 0 ? `<button class="btn" style="color:var(--danger)" onclick="S.mcp.splice(${i},1);closeModal();render()">删除</button>` : ''}<span style="flex:1"></span>
+      <button class="btn" onclick="closeModal()">取消</button><button class="btn primary" onclick="saveMCP(${i})">保存</button></div>`);
+}
+function saveMCP(i) {
+  const name = document.getElementById('mName').value.trim(), target = document.getElementById('mTarget').value.trim();
+  if (!name) { document.getElementById('mName').classList.add('invalid'); return; }
+  if (!target) { document.getElementById('mTarget').classList.add('invalid'); return; }
+  const type = document.querySelector('#mType button.on').textContent;
+  const v = { name, type, target, on: true, tools: i >= 0 ? (S.mcp[i].tools || 6) : 6 };
+  if (i >= 0) S.mcp[i] = v; else S.mcp.push(v);
+  closeModal(); render();
+}
+
+function toggleNotes() { const n = document.getElementById('notes'); n.classList.toggle('show'); document.getElementById('notesBtn').classList.toggle('on', n.classList.contains('show')); }
+function toggleAnno() { document.body.classList.toggle('show-anno'); document.getElementById('annoBtn').classList.toggle('on', document.body.classList.contains('show-anno')); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* Show the notes beside the window only when both fit. */
+if (window.innerWidth >= 1640) toggleNotes();
+render();
+</script>
+</body>
+</html>

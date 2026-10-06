@@ -315,18 +315,18 @@ struct AskHarnessUITests {
         defer { try? FileManager.default.removeItem(at: root) }
         let notes = AskMemoryNoteStore(fileURL: root.appendingPathComponent("notes.json"))
         _ = try notes.add("Prefers short answers", owner: "o")
-        for tab in AgentConfigurationTab.allCases {
+        for tab in AgentSettingsPane.allCases where tab != .mcpServers {
             for localMode in [true, false] {
                 settings.askNewConversationsStayLocal = localMode
                 let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes,
-                                                owner: { "o" }, tab: tab)
+                                                owner: { "o" }, pane: tab)
                 let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 900), styleMask: [.titled], backing: .buffered, defer: false)
                 window.isReleasedWhenClosed = false
                 let hosting = NSHostingView(rootView: view)
                 window.contentView = hosting
                 window.layoutIfNeeded()
                 window.displayIfNeeded()
-                #expect(hosting.fittingSize.height > 100)
+                #expect(hosting.fittingSize.height > 60)
                 window.close()
             }
         }

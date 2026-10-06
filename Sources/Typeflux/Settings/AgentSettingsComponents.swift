@@ -256,39 +256,68 @@ struct AgentSearchBox: View {
     }
 }
 
-/// Page-level tabs with an accent underline; a dot marks tabs with something to fix.
-struct AgentUnderlineTabs<Value: Hashable>: View {
-    let options: [(label: String, value: Value, needsAttention: Bool)]
-    @Binding var selection: Value
+/// Top of every settings pane: icon tile, title, one-line explanation, and the pane's
+/// state or main switch on the right.
+struct AgentPaneHeader<Accessory: View>: View {
+    let symbol: String
+    let title: String
+    var subtitle: String?
+    @ViewBuilder var accessory: Accessory
 
     var body: some View {
-        HStack(spacing: 22) {
-            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
-                let selected = selection == option.value
-                Button {
-                    selection = option.value
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(option.label)
-                            .font(.system(size: 13.5, weight: selected ? .semibold : .regular))
-                            .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                        if option.needsAttention {
-                            Circle().fill(StudioTheme.warning).frame(width: 6, height: 6)
-                                .accessibilityLabel(L("agent.status.needsAttention"))
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: symbol).font(.system(size: 18))
+                .foregroundStyle(ModelVisualStyle.accent)
+                .frame(width: 40, height: 40)
+                .background(ModelVisualStyle.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                if let subtitle {
+                    Text(subtitle).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 12)
+            HStack(spacing: 10) { accessory }.padding(.top, 4)
+        }
+    }
+}
+
+extension AgentPaneHeader where Accessory == EmptyView {
+    init(symbol: String, title: String, subtitle: String? = nil) {
+        self.init(symbol: symbol, title: title, subtitle: subtitle) { EmptyView() }
+    }
+}
+
+/// The rules a capability follows, one per row, in the same card style as settings.
+struct AgentRulesCard: View {
+    var title = L("agent.rules.title")
+    let rules: [(title: String, detail: String?)]
+    /// Dimmed while the capability is off.
+    var dimmed = false
+
+    var body: some View {
+        AgentSettingsSection(title: title) {
+            ForEach(Array(rules.enumerated()), id: \.offset) { index, rule in
+                if index > 0 { ModelRowDivider(leading: 44) }
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Image(systemName: "checkmark.shield").font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(StudioTheme.success)
+                        .frame(width: 16)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(rule.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
+                        if let detail = rule.detail {
+                            Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
                         }
                     }
-                    .padding(.bottom, 9)
-                    .overlay(alignment: .bottom) {
-                        Rectangle().fill(selected ? ModelVisualStyle.accent : .clear).frame(height: 2)
-                    }
-                    .contentShape(Rectangle())
+                    .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
+                .padding(.horizontal, 18).padding(.vertical, 11)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(alignment: .bottom) { Rectangle().fill(ModelVisualStyle.divider).frame(height: 1) }
+        .opacity(dimmed ? 0.5 : 1)
+        .accessibilityElement(children: .contain)
     }
 }
 

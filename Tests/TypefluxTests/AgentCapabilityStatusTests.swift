@@ -57,13 +57,27 @@ final class AgentCapabilityStatusTests: XCTestCase {
             XCTAssertFalse(capability.summary.isEmpty)
             XCTAssertFalse(capability.symbol.isEmpty)
         }
-        XCTAssertEqual(AgentCapability.webSearch.destination.tab, .tools)
-        XCTAssertNil(AgentCapability.automation.destination.extensions)
-        XCTAssertEqual(AgentCapability.skills.destination.extensions, .skills)
-        XCTAssertEqual(AgentCapability.mcpServers.destination.tab, .extensions)
-        XCTAssertEqual(AgentCapability.mcpServers.destination.extensions, .mcpServers)
+        XCTAssertEqual(AgentCapability.webSearch.pane, .webSearch)
+        XCTAssertEqual(AgentCapability.files.pane, .files)
+        XCTAssertEqual(AgentCapability.codeExecution.pane, .codeExecution)
+        XCTAssertEqual(AgentCapability.automation.pane, .automation)
+        XCTAssertEqual(AgentCapability.skills.pane, .skills)
+        XCTAssertEqual(AgentCapability.mcpServers.pane, .mcpServers)
         XCTAssertEqual(AgentCapabilityStatus.searchProviderName(.brave), "Brave Search")
         XCTAssertEqual(AgentCapabilityStatus.searchProviderName(.cloudflare), "Cloudflare Web Search")
+    }
+
+    func testMCPStatusComesFromTheServerList() {
+        XCTAssertEqual(AgentCapabilityStatus.mcpStatus(for: []).level, .off)
+        XCTAssertEqual(AgentCapabilityStatus.mcpStatus(for: []).label, L("agent.status.mcp.none"))
+        let on = MCPServerConfig(name: "a", transport: .stdio(.init(command: "npx")))
+        var off = MCPServerConfig(name: "b", transport: .stdio(.init(command: "npx")))
+        off.enabled = false
+        let mixed = AgentCapabilityStatus.mcpStatus(for: [on, off])
+        XCTAssertEqual(mixed.capability, .mcpServers)
+        XCTAssertEqual(mixed.level, .ready)
+        XCTAssertEqual(mixed.label, L("agent.status.mcp.count", 1))
+        XCTAssertEqual(AgentCapabilityStatus.mcpStatus(for: [off]).level, .off)
     }
 
     func testMissingSearchFields() {

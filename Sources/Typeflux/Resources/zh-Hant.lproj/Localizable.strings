@@ -1118,7 +1118,6 @@
 "settings.advanced.stubbornPasteFallback.subtitle" = "啟用目標應用並以真實按鍵方式傳送 Cmd+V，讓 Alfred、Raycast、Warp、iTerm2 等啟動器或熱鍵懸浮視窗能正常插入文字。若與其他鍵盤工具衝突，可關閉此選項。";
 
 "agent.section.general" = "一般";
-"agent.section.tools" = "工具";
 "agent.section.skills" = "技能";
 "agent.section.memory" = "記憶";
 "agent.settings.runMode" = "對話儲存";
@@ -1819,7 +1818,7 @@
 "ask.usage.externalShort" = "自有 API";
 
 /* GUL-151 Ask tools */
-"ask.files.denied" = "該路徑不在授權給 Ask 的資料夾中。請在 設定 → Agent → Ask 工具 中加入該資料夾。";
+"ask.files.denied" = "該路徑不在授權給 Ask 的資料夾中。請在 設定 → Agent → 檔案存取 中加入該資料夾。";
 "ask.files.tooLarge" = "檔案超過 1 MB。";
 "ask.files.editMissing" = "找不到要取代的文字，請重新讀取檔案。";
 "ask.files.editAmbiguous" = "要取代的文字出現 %d 次，請提供更多上下文。";
@@ -1949,7 +1948,7 @@
 "ask.local.card.readPages" = "讀取網頁";
 "ask.local.card.available" = "可用";
 "ask.local.card.noSearch" = "網頁搜尋未設定";
-"ask.local.card.noSearchHint" = "設定 → Agent → 一般";
+"ask.local.card.noSearchHint" = "設定 → Agent → 網路搜尋";
 "ask.local.card.configure" = "前往設定";
 "ask.local.card.cloudQuestion" = "想用雲端模型？";
 "ask.local.identity" = "未登入";
@@ -2361,7 +2360,6 @@
 "agent.capability.skills.summary" = "特定任務的做法，需要時自動載入。";
 "agent.capability.mcp.summary" = "連接外部工具和資料來源。";
 "agent.status.off" = "未開啟";
-"agent.status.needsAttention" = "需要處理";
 "agent.status.search.localOffline" = "本機對話無法連網";
 "agent.status.search.incomplete" = "待完成設定";
 "agent.status.files.count" = "%d 個資料夾";
@@ -2380,14 +2378,13 @@
 "agent.overview.fix" = "前往處理";
 "agent.overview.storage.hint" = "每個對話開始前，仍可在新增選單或輸入框中改選。";
 "agent.overview.storage.footnote" = "已開始的對話無法變更儲存位置。未登入時，所有對話都只儲存在本機。";
-"agent.overview.capabilities" = "能力";
 "agent.storage.cloud.models" = "可用雲端模型、識圖、深入研究、背景執行";
 "agent.storage.cloud.sync" = "多台裝置同步對話";
 "agent.storage.cloud.search" = "網路搜尋由 Typeflux Cloud 提供";
 "agent.storage.cloud.credits" = "雲端模型用量計入額度";
 "agent.storage.local.private" = "對話不上傳到 Typeflux Cloud";
 "agent.storage.local.models" = "只使用你在「模型」中設定的模型";
-"agent.storage.local.search" = "網路搜尋需自備金鑰（見內建工具）";
+"agent.storage.local.search" = "網路搜尋需自備金鑰（見「網路搜尋」）";
 "agent.storage.local.limits" = "無法使用深入研究、背景執行和多裝置同步";
 "agent.search.subtitle" = "用於本機對話。雲端對話由 Typeflux Cloud 提供搜尋，無需設定。金鑰儲存在鑰匙圈中。";
 "agent.search.off" = "關閉後，本機對話無法連網搜尋；雲端對話不受影響。";
@@ -2551,7 +2548,7 @@
 "ask.workflow.missingRuntime" = "找不到「%@」，請先安裝或將它加入 PATH";
 "ask.workflow.spawnFailed" = "工作流程無法啟動：%@";
 "ask.workflow.invalid" = "無法讀取這個工作流程的清單";
-"ask.workflow.blocked.untrusted" = "請先在「設定 → Agent → 內建工具」中檢查並信任這個工作流程";
+"ask.workflow.blocked.untrusted" = "請先在「設定 → 啟動器 → 啟動器工作流程」中檢查並信任這個工作流程";
 "ask.workflow.blocked.modified" = "這個工作流程的檔案被修改過，請先在設定中重新確認";
 "ask.workflow.blocked.invalid" = "這個工作流程無法執行：%@";
 "ask.workflow.blocked.disabled" = "這個工作流程已停用";
@@ -2603,7 +2600,7 @@
 "ask.plugin.prompt.placeholder.selection" = "要處理的內容 · 留空處理選取的 %d 行";
 "ask.plugin.prompt.selection" = "%1$@選取的 %2$d 行";
 "ask.plugin.prompt.noModel" = "先在「設定 → 模型」中設定文字處理模型，才能使用 AI 指令";
-"ask.plugin.prompt.noPrompt" = "這個關鍵字還沒有提示詞，請到「設定 → Agent → 內建工具」中填寫";
+"ask.plugin.prompt.noPrompt" = "這個關鍵字還沒有提示詞，請到「設定 → 啟動器 → 啟動器關鍵字」中填寫";
 "ask.plugin.prompt.empty" = "模型沒有回傳內容";
 "ask.plugin.prompt.askAI" = "我用「%1$@」處理了一段文字，幫我把結果改得更好。\n\n原文：\n%2$@\n\n結果：\n%3$@";
 "ask.plugin.web.title" = "網頁搜尋";
@@ -2925,3 +2922,26 @@
 "ask.workflow.risk.noPrograms" = "不啟動其他程式";
 "ask.workflow.assistant.defaultModel" = "預設模型";
 "ask.workflow.assistant.tool.proposedFiles" = "寫了 %@";
+
+/* Agent and Launcher settings panes */
+"studio.section.launcher" = "啟動器";
+"studio.eyebrow.launcher" = "啟動器";
+"studio.heading.launcher" = "啟動器";
+"studio.subheading.launcher" = "啟動器裡的計算機、應用程式搜尋、關鍵字和你自己的工作流程。它們由啟動器直接觸發，不經過 Agent。";
+"studio.search.launcher" = "搜尋啟動器設定...";
+"launcher.pane.basics" = "內建功能";
+"launcher.basics.subtitle" = "在啟動器裡直接得到結果，不傳送給 AI。";
+"agent.group.capabilities" = "能力";
+"agent.group.personalization" = "個人化";
+"agent.rules.title" = "安全規則";
+"agent.memory.rules.title" = "使用規則";
+"agent.memory.subtitle" = "隨便問記住的關於你的筆記，會作為背景資訊提供給新對話。";
+"agent.search.section" = "服務與憑證";
+"agent.automation.permissions" = "系統權限";
+"agent.automation.permissions.hint" = "在系統設定中授權後回到 Typeflux，狀態會自動更新。";
+"agent.automation.rule.confirm" = "每一步操作前確認";
+"agent.automation.rule.stop" = "可以隨時停止";
+"agent.overview.attention.title" = "需要處理";
+"agent.overview.attention.count" = "%d 項";
+"agent.overview.attention.none" = "沒有需要處理的事項。";
+"agent.overview.attention.action" = "前往設定";

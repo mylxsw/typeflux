@@ -432,8 +432,8 @@ struct StudioView: View {
     @State private var feedbackImageUploadTasks: [FeedbackImageAttachment.ID: Task<Void, Never>] = [:]
     @State private var isSubmittingFeedback = false
     @State private var feedbackSubmissionError: String?
-    @State private var agentConfigurationTab: AgentConfigurationTab = .overview
-    @State private var agentExtensionsTab: AgentExtensionsTab = .skills
+    @State private var agentPane: AgentSettingsPane = .overview
+    @State private var launcherPane: LauncherSettingsPane = .basics
     @State private var agentStatuses: [AgentCapabilityStatus] = []
     @State private var isMCPImportPresented = false
     @State private var mcpImportText = ""
@@ -975,7 +975,9 @@ struct StudioView: View {
         case .settings:
             settingsPage
         case .agent:
-            agentPage
+            agentPage(compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
+        case .launcher:
+            launcherPage(compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
         case .account:
             AccountView(authState: AuthState.shared) {
                 viewModel.navigate(to: .home)
@@ -2839,19 +2841,12 @@ struct StudioView: View {
 
     // MARK: - Agent Page
 
-    private var agentPage: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            AgentUnderlineTabs(
-                options: AgentConfigurationTab.allCases.map { tab in
-                    (label: tab.title, value: tab, needsAttention: agentStatuses.contains {
-                        $0.level == .attention && $0.capability.destination.tab == tab
-                    })
-                },
-                selection: $agentConfigurationTab
-            )
-
-            if agentConfigurationTab == .extensions, agentExtensionsTab == .mcpServers {
-                AgentExtensionsHeader(selection: $agentExtensionsTab) {
+    private func agentPage(compact: Bool) -> some View {
+        SettingsPaneLayout(sections: AgentSettingsPane.sections, selection: $agentPane, compact: compact,
+                           status: agentPaneStatus) {
+            if agentPane == .mcpServers {
+                AgentPaneHeader(symbol: AgentCapability.mcpServers.symbol, title: AgentCapability.mcpServers.title,
+                                subtitle: AgentCapability.mcpServers.summary) {
                     if !viewModel.mcpServers.isEmpty {
                         Button { beginMCPImport() } label: {
                             Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
@@ -2870,19 +2865,32 @@ struct StudioView: View {
             } else {
                 AskToolsSettingsView(
                     settings: viewModel.askToolSettings,
-                    tab: agentConfigurationTab,
-                    extensionsTab: $agentExtensionsTab,
-                    onNavigate: { tab, extensions in
-                        if let extensions { agentExtensionsTab = extensions }
-                        agentConfigurationTab = tab
-                    },
+                    pane: agentPane,
+                    onNavigate: { agentPane = $0 },
                     onStatusesChange: { agentStatuses = $0 }
                 )
-                // Rebuild per tab so each tab reloads its values when shown.
-                .id(agentConfigurationTab)
+                // Rebuild per pane so each pane reloads its values when shown.
+                .id(agentPane)
             }
         }
         .sheet(isPresented: $isMCPImportPresented) { mcpImportSheet }
+    }
+
+    /// The state shown beside a pane in the list. MCP servers are edited here rather than in
+    /// `AskToolsSettingsView`, so their state comes from the live server list.
+    private func agentPaneStatus(_ pane: AgentSettingsPane) -> AgentCapabilityStatus? {
+        guard let capability = pane.capability else { return nil }
+        if capability == .mcpServers {
+            return AgentCapabilityStatus.mcpStatus(for: viewModel.mcpServers)
+        }
+        return agentStatuses.first { $0.capability == capability }
+    }
+
+    private func launcherPage(compact: Bool) -> some View {
+        SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: $launcherPane, compact: compact) {
+            LauncherSettingsView(settings: viewModel.askToolSettings, pane: launcherPane)
+                .id(launcherPane)
+        }
     }
 
     @ViewBuilder private var agentMCPServersTabContent: some View {

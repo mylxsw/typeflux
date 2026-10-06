@@ -1111,7 +1111,6 @@
 "settings.advanced.stubbornPasteFallback.subtitle" = "対象アプリをアクティブ化し、Cmd+V を実際のキー入力として送信することで、Alfred、Raycast、Warp、iTerm2 などのランチャーやホットキー ウィンドウにもテキストを挿入できるようにします。他のキーボードツールと競合する場合はオフにしてください。";
 
 "agent.section.general" = "一般";
-"agent.section.tools" = "ツール";
 "agent.section.skills" = "スキル";
 "agent.section.memory" = "メモリ";
 "agent.settings.runMode" = "会話の保存先";
@@ -1812,7 +1811,7 @@
 "ask.usage.externalShort" = "独自 API";
 
 /* GUL-151 Ask tools */
-"ask.files.denied" = "このパスは Ask に許可されたフォルダの外にあります。設定 → Agent → Ask ツール でフォルダを追加してください。";
+"ask.files.denied" = "このパスは Ask に許可されたフォルダの外にあります。設定 → Agent → ファイルアクセス でフォルダを追加してください。";
 "ask.files.tooLarge" = "ファイルが 1 MB を超えています。";
 "ask.files.editMissing" = "置き換えるテキストが見つかりません。ファイルを読み直してください。";
 "ask.files.editAmbiguous" = "置き換えるテキストが %d 回出現します。前後の文脈を含めてください。";
@@ -1942,7 +1941,7 @@
 "ask.local.card.readPages" = "ページ読み取り";
 "ask.local.card.available" = "利用可能";
 "ask.local.card.noSearch" = "Web検索が未設定です";
-"ask.local.card.noSearchHint" = "設定 → Agent → 一般";
+"ask.local.card.noSearchHint" = "設定 → Agent → Web 検索";
 "ask.local.card.configure" = "設定する";
 "ask.local.card.cloudQuestion" = "クラウドのモデルを使いますか？";
 "ask.local.identity" = "未サインイン";
@@ -2354,7 +2353,6 @@
 "agent.capability.skills.summary" = "特定の作業の手順。必要なときに読み込まれます。";
 "agent.capability.mcp.summary" = "外部のツールやデータソースに接続します。";
 "agent.status.off" = "オフ";
-"agent.status.needsAttention" = "要対応";
 "agent.status.search.localOffline" = "プライベートな会話で検索不可";
 "agent.status.search.incomplete" = "設定が未完了";
 "agent.status.files.count" = "%d 個のフォルダ";
@@ -2373,14 +2371,13 @@
 "agent.overview.fix" = "対応する";
 "agent.overview.storage.hint" = "会話ごとに、新規メニューや入力欄で変更できます。";
 "agent.overview.storage.footnote" = "開始した会話の保存先は変更できません。サインアウト中は、すべての会話がこの Mac に保存されます。";
-"agent.overview.capabilities" = "機能";
 "agent.storage.cloud.models" = "クラウドモデル、画像認識、ディープリサーチ、バックグラウンド実行";
 "agent.storage.cloud.sync" = "デバイス間で同期";
 "agent.storage.cloud.search" = "Web 検索は Typeflux Cloud が提供";
 "agent.storage.cloud.credits" = "クラウドモデルの利用はクレジットを消費";
 "agent.storage.local.private" = "Typeflux Cloud にアップロードしない";
 "agent.storage.local.models" = "「モデル」で設定したモデルのみ使用";
-"agent.storage.local.search" = "Web 検索には自分のキーが必要（内蔵ツールを参照）";
+"agent.storage.local.search" = "Web 検索には自分のキーが必要（「Web 検索」を参照）";
 "agent.storage.local.limits" = "ディープリサーチ、バックグラウンド実行、同期は使えません";
 "agent.search.subtitle" = "プライベートな会話用です。クラウドの会話は設定不要で Typeflux Cloud が検索します。キーはキーチェーンに保存されます。";
 "agent.search.off" = "オフの場合、プライベートな会話では Web 検索できません。クラウドの会話には影響しません。";
@@ -2544,7 +2541,7 @@
 "ask.workflow.missingRuntime" = "「%@」が見つかりません。インストールするか PATH に追加してください";
 "ask.workflow.spawnFailed" = "ワークフローを開始できません：%@";
 "ask.workflow.invalid" = "このワークフローのマニフェストを読めません";
-"ask.workflow.blocked.untrusted" = "先に「設定 → Agent → 内蔵ツール」で確認して信頼してください";
+"ask.workflow.blocked.untrusted" = "先に「設定 → ランチャー → ランチャーのワークフロー」で確認して信頼してください";
 "ask.workflow.blocked.modified" = "ファイルが変更されました。設定で再確認してください";
 "ask.workflow.blocked.invalid" = "このワークフローは実行できません：%@";
 "ask.workflow.blocked.disabled" = "このワークフローはオフです";
@@ -2596,7 +2593,7 @@
 "ask.plugin.prompt.placeholder.selection" = "処理するテキスト · 空なら選択中の %d 行";
 "ask.plugin.prompt.selection" = "選択中の %2$d 行を%1$@";
 "ask.plugin.prompt.noModel" = "AI プロンプトを使うには「設定 → モデル」でテキストモデルを設定してください";
-"ask.plugin.prompt.noPrompt" = "このキーワードにはまだプロンプトがありません。「設定 → Agent → 内蔵ツール」で入力してください";
+"ask.plugin.prompt.noPrompt" = "このキーワードにはまだプロンプトがありません。「設定 → ランチャー → ランチャーのキーワード」で入力してください";
 "ask.plugin.prompt.empty" = "モデルから何も返ってきませんでした";
 "ask.plugin.prompt.askAI" = "「%1$@」でテキストを処理しました。結果をもっと良くしてください。\n\n原文：\n%2$@\n\n結果：\n%3$@";
 "ask.plugin.web.title" = "Web 検索";
@@ -2918,3 +2915,26 @@
 "ask.workflow.risk.noPrograms" = "他のプログラムを起動しない";
 "ask.workflow.assistant.defaultModel" = "既定のモデル";
 "ask.workflow.assistant.tool.proposedFiles" = "%@ を作成";
+
+/* Agent and Launcher settings panes */
+"studio.section.launcher" = "ランチャー";
+"studio.eyebrow.launcher" = "ランチャー";
+"studio.heading.launcher" = "ランチャー";
+"studio.subheading.launcher" = "ランチャーの計算機、アプリ検索、キーワード、独自のワークフロー。Agent を通さずランチャーから直接実行されます。";
+"studio.search.launcher" = "ランチャー設定を検索...";
+"launcher.pane.basics" = "内蔵機能";
+"launcher.basics.subtitle" = "結果をランチャー内に直接表示し、AI には送信しません。";
+"agent.group.capabilities" = "機能";
+"agent.group.personalization" = "パーソナライズ";
+"agent.rules.title" = "安全ルール";
+"agent.memory.rules.title" = "メモの扱い";
+"agent.memory.subtitle" = "Ask が覚えているあなたについてのメモ。新しい会話に背景情報として渡されます。";
+"agent.search.section" = "サービスと認証情報";
+"agent.automation.permissions" = "システム権限";
+"agent.automation.permissions.hint" = "システム設定で許可したら Typeflux に戻ると状態が更新されます。";
+"agent.automation.rule.confirm" = "操作の前に毎回確認";
+"agent.automation.rule.stop" = "いつでも停止できます";
+"agent.overview.attention.title" = "対応が必要";
+"agent.overview.attention.count" = "%d 件";
+"agent.overview.attention.none" = "対応が必要な項目はありません。";
+"agent.overview.attention.action" = "設定する";

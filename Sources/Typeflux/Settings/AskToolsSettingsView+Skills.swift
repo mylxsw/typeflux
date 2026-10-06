@@ -1,25 +1,23 @@
 import AppKit
 import SwiftUI
 
-/// The Skills half of the Extensions tab: list, search, details, install, rollback and removal.
+/// The Skills pane: list, search, details, install, rollback and removal.
 extension AskToolsSettingsView {
     @ViewBuilder var skillHeaderActions: some View {
-        if extensionsTab.wrappedValue == .skills {
-            Button {
-                openSkillsFolder()
-            } label: {
-                Label(L("ask.settings.skills.open"), systemImage: "folder")
-            }
-            .buttonStyle(ModelActionStyle())
-            Button {
-                installError = nil
-                installURL = ""
-                showingInstall = true
-            } label: {
-                Label(L("ask.settings.skills.install"), systemImage: "arrow.down.circle")
-            }
-            .buttonStyle(ModelActionStyle(primary: true))
+        Button {
+            openSkillsFolder()
+        } label: {
+            Label(L("ask.settings.skills.open"), systemImage: "folder")
         }
+        .buttonStyle(ModelActionStyle())
+        Button {
+            installError = nil
+            installURL = ""
+            showingInstall = true
+        } label: {
+            Label(L("ask.settings.skills.install"), systemImage: "arrow.down.circle")
+        }
+        .buttonStyle(ModelActionStyle(primary: true))
     }
 
     @ViewBuilder var skillSections: some View {

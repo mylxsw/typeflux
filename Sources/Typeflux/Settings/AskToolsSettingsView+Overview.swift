@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The Overview tab: what Ask can use now, what needs fixing, and where new conversations are kept.
+/// The Overview pane: what Ask can use now, what needs fixing, and where new conversations are kept.
 extension AskToolsSettingsView {
     @ViewBuilder var overviewSections: some View {
         let statuses = capabilityStatuses
@@ -28,21 +28,39 @@ extension AskToolsSettingsView {
                 .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
         }
-        VStack(alignment: .leading, spacing: 8) {
-            ModelSectionLabel(title: L("agent.overview.capabilities"))
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .top), count: 3),
-                      alignment: .leading, spacing: 12) {
-                ForEach(statuses) { status in
-                    AgentCapabilityCard(status: status) { navigate(to: status.capability) }
+        let attention = statuses.filter { $0.level == .attention }
+        AgentSettingsSection(title: L("agent.overview.attention.title"),
+                             detail: attention.isEmpty ? nil : L("agent.overview.attention.count", attention.count)) {
+            if attention.isEmpty {
+                AgentSettingsEmptyRow(text: L("agent.overview.attention.none"))
+            }
+            ForEach(Array(attention.enumerated()), id: \.element.id) { index, status in
+                if index > 0 { ModelRowDivider(leading: 66) }
+                AgentSettingsRow(icon: status.capability.symbol, title: status.capability.title, subtitle: status.label) {
+                    Button {
+                        navigate(to: status.capability)
+                    } label: {
+                        Label(L("agent.overview.attention.action"), systemImage: "chevron.right")
+                            .labelStyle(TrailingIconLabelStyle())
+                    }
+                    .buttonStyle(ModelActionStyle())
                 }
             }
         }
     }
 
     func navigate(to capability: AgentCapability) {
-        let destination = capability.destination
-        if let extensions = destination.extensions { extensionsTab.wrappedValue = extensions }
-        onNavigate(destination.tab, destination.extensions)
+        onNavigate(capability.pane)
+    }
+}
+
+/// Title first, icon after it, e.g. "Open ›".
+struct TrailingIconLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 4) {
+            configuration.title
+            configuration.icon.font(.system(size: 10, weight: .semibold))
+        }
     }
 }
 
@@ -131,45 +149,5 @@ struct AgentStorageOption: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-/// Overview card for one capability; opens its settings.
-struct AgentCapabilityCard: View {
-    let status: AgentCapabilityStatus
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 10) {
-                    Image(systemName: status.capability.symbol).font(.system(size: 14))
-                        .foregroundStyle(status.level == .off ? StudioTheme.textTertiary : ModelVisualStyle.accent)
-                        .frame(width: 30, height: 30)
-                        .background(status.level == .off ? StudioTheme.iconTileSurface : ModelVisualStyle.accent.opacity(0.14),
-                                    in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    Text(status.capability.title).font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
-                }
-                Text(status.capability.summary).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, minHeight: 32, alignment: .topLeading)
-                HStack {
-                    AgentStatusBadge(level: status.level, label: status.label)
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .background(ModelVisualStyle.surface,
-                        in: RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous)
-                .strokeBorder(ModelVisualStyle.border))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(status.capability.title), \(status.label)")
     }
 }

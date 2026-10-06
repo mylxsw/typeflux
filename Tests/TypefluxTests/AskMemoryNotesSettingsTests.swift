@@ -112,7 +112,7 @@ final class AskMemoryNotesSettingsTests: XCTestCase {
         let note = try store.add("Prefers concise answers and metric units", owner: "a")
         let model = AskMemoryNotesSettingsModel()
         let settings = SettingsStore(defaults: UserDefaults(suiteName: "ask-notes-render-\(UUID().uuidString)")!)
-        let view = AskToolsSettingsView(settings: settings, notes: store, owner: { "a" }, memoryNotes: model, tab: .memory)
+        let view = AskToolsSettingsView(settings: settings, notes: store, owner: { "a" }, memoryNotes: model, pane: .memory)
         _ = NSApplication.shared
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 300), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
