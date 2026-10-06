@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import SwiftUI
 
 /// Test runs: the input, then what the launcher would show, stdout, stderr and
@@ -489,7 +490,7 @@ extension AskWorkflowAssistantPanel {
                         .help(L("ask.workflow.assistant.privacy"))
                     Spacer()
                     if assistant.isBusy {
-                        Button { assistant.stop() } label: {
+                        Button { model.stopAssistant() } label: {
                             Image(systemName: "stop.fill").font(.system(size: 10)).foregroundStyle(.white)
                                 .frame(width: 24, height: 24)
                                 .background(AskWorkflowEditorStyle.assistant, in: Circle())

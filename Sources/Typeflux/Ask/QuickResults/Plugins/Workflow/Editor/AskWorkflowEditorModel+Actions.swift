@@ -253,14 +253,41 @@ extension AskWorkflowEditorModel {
         canUndoProposal = false
     }
 
+    /// Cancelling an answer also releases any test waiting for the user's decision.
+    func stopAssistant() {
+        assistant.stop()
+        resolvePendingRun(false)
+    }
+
+    /// Cancellation belongs to this wait, never to a later proposal's approval.
+    func waitForRunApproval(_ run: PendingRun) async -> Bool {
+        guard !Task.isCancelled, pendingRun == nil else { return false }
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                guard !Task.isCancelled else {
+                    continuation.resume(returning: false)
+                    return
+                }
+                pendingRunContinuation = continuation
+                pendingRun = run
+            }
+        } onCancel: { [weak self] in
+            Task { @MainActor in
+                guard let self, self.pendingRun?.id == run.id else { return }
+                self.resolvePendingRun(false)
+            }
+        }
+    }
+
     /// Lets the assistant's waiting test run go ahead, or not.
     func resolvePendingRun(_ allowed: Bool) {
         if allowed, let pendingRun, let proposal = proposal(pendingRun.proposalID) {
             approvedRisks = proposal.risks
         }
-        pendingRun = nil
-        pendingRunContinuation?.resume(returning: allowed)
+        let continuation = pendingRunContinuation
         pendingRunContinuation = nil
+        pendingRun = nil
+        continuation?.resume(returning: allowed)
     }
 
     /// The proposal before the one waiting to run, if it already ran: "Use only proposal 1".
@@ -273,8 +300,7 @@ extension AskWorkflowEditorModel {
     /// Stops the assistant, drops the proposal waiting to run and applies the earlier one.
     func useFallbackProposal() {
         guard let fallback = fallbackProposal, let waiting = pendingRun?.proposalID else { return }
-        resolvePendingRun(false)
-        assistant.stop()
+        stopAssistant()
         discard(waiting)
         apply(fallback.id)
     }

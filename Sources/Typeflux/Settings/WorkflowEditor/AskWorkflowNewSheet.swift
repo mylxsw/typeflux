@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import SwiftUI
 
 /// New workflow: describe it and let the assistant write it, start from a template,
@@ -12,6 +13,7 @@ struct AskWorkflowNewSheet: View {
     }
 
     @ObservedObject var model: AskWorkflowEditorModel
+    @ObservedObject var assistant: AskWorkflowAssistant
     @State var mode: Mode
     var done: () -> Void
 
@@ -29,6 +31,7 @@ struct AskWorkflowNewSheet: View {
     init(model: AskWorkflowEditorModel, mode: Mode, generating: Bool = false, showsOptions: Bool = false,
          done: @escaping () -> Void) {
         self.model = model
+        assistant = model.assistant
         _mode = State(initialValue: mode)
         _generating = State(initialValue: generating)
         _showsOptions = State(initialValue: showsOptions)
@@ -114,7 +117,7 @@ struct AskWorkflowNewSheet: View {
                 }
         }
         if generating {
-            if model.assistant.isBusy || model.pendingRun != nil || model.assistant.error != nil
+            if assistant.isBusy || model.pendingRun != nil || assistant.error != nil
                 || model.latestProposal == nil {
                 progress
             } else {
@@ -187,15 +190,18 @@ extension AskWorkflowNewSheet {
     private var progress: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                if let error = model.assistant.error {
+                if let error = assistant.error {
                     Image(systemName: "xmark.octagon").foregroundStyle(StudioTheme.danger)
                     Text(error).foregroundStyle(StudioTheme.danger).lineLimit(3)
                 } else if model.pendingRun != nil {
                     Image(systemName: "exclamationmark.triangle").foregroundStyle(StudioTheme.warning)
                     Text(L("ask.workflow.editor.new.askRun"))
-                } else {
+                } else if assistant.isBusy {
                     ProgressView().controlSize(.small)
+                        .accessibilityIdentifier("ask.workflow.editor.new.progress")
                     Text(currentStep).lineLimit(1)
+                } else {
+                    Text(lastReply ?? L("ask.run.cancelled")).lineLimit(3)
                 }
                 Spacer()
                 if let proposal = model.latestProposal {
@@ -208,8 +214,15 @@ extension AskWorkflowNewSheet {
                 HStack {
                     Spacer()
                     Button(L("ask.workflow.assistant.approval.decline")) { model.resolvePendingRun(false) }
+                        .accessibilityIdentifier("ask.workflow.assistant.decline")
+                    Button(L("ask.workflow.assistant.preview")) {
+                        model.previewingProposal = run.proposalID
+                        done()
+                    }
+                    .accessibilityIdentifier("ask.workflow.assistant.preview")
                     Button(L("ask.workflow.assistant.approval.allow")) { model.resolvePendingRun(true) }
                         .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
+                        .accessibilityIdentifier("ask.workflow.assistant.allow")
                 }
                 .controlSize(.small)
             }
@@ -274,7 +287,7 @@ extension AskWorkflowNewSheet {
     }
 
     private var steps: [String] {
-        model.assistant.items.compactMap { item -> String? in
+        assistant.items.compactMap { item -> String? in
             guard case let .tool(_, summary, _) = item else { return nil }
             return summary
         }
@@ -289,7 +302,7 @@ extension AskWorkflowNewSheet {
     }
 
     private var lastReply: String? {
-        for item in model.assistant.items.reversed() {
+        for item in assistant.items.reversed() {
             if case let .reply(_, text) = item {
                 return text
             }
@@ -406,8 +419,9 @@ extension AskWorkflowNewSheet {
             }
             Spacer()
             if generating {
-                if model.assistant.isBusy {
-                    Button(L("ask.workflow.assistant.stop")) { model.assistant.stop() }
+                if assistant.isBusy {
+                    Button(L("ask.workflow.assistant.stop")) { model.stopAssistant() }
+                        .accessibilityIdentifier("ask.workflow.editor.new.stop")
                 } else if model.canSaveGenerated {
                     Button(L("ask.workflow.editor.new.adjust")) { done() }
                         .accessibilityIdentifier("ask.workflow.editor.new.review")
@@ -421,6 +435,7 @@ extension AskWorkflowNewSheet {
                     .accessibilityIdentifier("ask.workflow.editor.new.save")
                 } else {
                     Button(L("ask.workflow.editor.close")) { done() }
+                        .accessibilityIdentifier("ask.workflow.editor.new.close")
                 }
             } else {
                 Button(L("ask.workflow.cancel"), action: done).keyboardShortcut(.cancelAction)
