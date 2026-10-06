@@ -85,15 +85,6 @@ extension AskWorkflowEditorModel {
         return hash.prefix(4) + "…" + hash.suffix(4)
     }
 
-    /// "LF · Spaces 4" for the open file.
-    var formatLabel: String? {
-        guard let path = selectedFile, let text = draft?.text(of: path) else { return nil }
-        let lineEnding = text.contains("\r\n") ? "CRLF" : "LF"
-        let indent = text.contains("\n\t") ? L("ask.workflow.editor.tabs")
-            : L("ask.workflow.editor.spaces", AskWorkflowCodeIndentation.width(of: text))
-        return "UTF-8 · " + lineEnding + " · " + indent
-    }
-
     /// The 1-based number of a proposal in this conversation, for "Run proposal 2?".
     func proposalNumber(_ id: UUID) -> Int {
         (proposals.firstIndex { $0.id == id } ?? 0) + 1
