@@ -155,6 +155,9 @@ struct AskWorkflow: Equatable, Identifiable, Sendable {
 @MainActor
 final class AskWorkflowLog: ObservableObject {
     struct Entry: Equatable, Sendable {
+        /// Where the run started: the launcher, or the editor's test panel and assistant.
+        enum Source: String, Sendable { case launcher, test }
+
         var workflowID: String
         var keyword: String
         var date: Date
@@ -163,6 +166,7 @@ final class AskWorkflowLog: ObservableObject {
         var timedOut: Bool
         /// The end of stderr, where scripts say what went wrong.
         var stderr: String
+        var source: Source = .launcher
     }
 
     static let shared = AskWorkflowLog()

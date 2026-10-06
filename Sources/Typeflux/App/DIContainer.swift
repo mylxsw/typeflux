@@ -121,5 +121,13 @@ final class DIContainer {
             ),
             autoModelDownloadService: autoModelDownloadService
         )
+        let settings = settingsStore
+        // The workflow assistant's conversations are ordinary Ask conversations.
+        AskWorkflowEditorWindowController.shared.assistantDependencies = { [weak self] in
+            guard let model = self?.askConversationWindowController?.model else { return nil }
+            return .init(api: model.api, session: { model.session() ?? (AskRoutedAPI.localOwner, "") },
+                         deviceId: model.deviceId, modelLibrary: model.modelLibrary, inference: model.customInference,
+                         prefersLocal: { settings.askNewConversationsStayLocal }, defaults: settings.defaults)
+        }
     }
 }

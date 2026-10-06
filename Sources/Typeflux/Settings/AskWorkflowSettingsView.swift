@@ -114,6 +114,10 @@ struct AskWorkflowSettingsView: View {
             }
             HStack(spacing: 10) {
                 Menu {
+                    Button { AskWorkflowEditorWindowController.shared.showNew(.assistant) } label: {
+                        Label(L("ask.workflow.editor.new.ai"), systemImage: "sparkles")
+                    }
+                    Divider()
                     ForEach(AskWorkflowTemplate.allCases) { template in
                         Button(template.title) { create(template) }
                     }
@@ -122,6 +126,8 @@ struct AskWorkflowSettingsView: View {
                 }
                 .menuStyle(.borderlessButton).fixedSize()
                 .accessibilityIdentifier("ask.workflow.new")
+                Button(L("ask.workflow.editor.openWindow")) { AskWorkflowEditorWindowController.shared.show() }
+                    .buttonStyle(.borderless)
                 Button(L("ask.workflow.revealFolder")) { store.revealRoot() }
                     .buttonStyle(.borderless)
                 Button(L("ask.workflow.reload")) { store.reload() }
@@ -154,7 +160,24 @@ struct AskWorkflowSettingsView: View {
                     Button(L("ask.workflow.review")) { reviewing = workflow }
                         .accessibilityIdentifier("ask.workflow.review")
                 }
+                if case let .invalid(problems) = workflow.status {
+                    // Opens `workflow.json` at the first problem; broken JSON can be fixed there too.
+                    Button(L("ask.workflow.editor.fixButton")) {
+                        let line = AskWorkflowDraft.load(folder: workflow.folder).line(for: problems.first?.field ?? "")
+                        AskWorkflowEditorWindowController.shared.show(
+                            workflowID: workflow.id, path: AskWorkflowManifest.fileName, line: line)
+                    }
+                    .accessibilityIdentifier("ask.workflow.fix")
+                } else if !summary.needsTrust {
+                    Button(L("ask.workflow.editor.edit")) {
+                        AskWorkflowEditorWindowController.shared.show(workflowID: workflow.id)
+                    }
+                    .accessibilityIdentifier("ask.workflow.edit")
+                }
                 Menu {
+                    Button(L("ask.workflow.editor.openInEditor")) {
+                        AskWorkflowEditorWindowController.shared.show(workflowID: workflow.id)
+                    }
                     Button(L("ask.workflow.openEditor")) { open(workflow) }
                     Button(L("ask.workflow.reveal")) { NSWorkspace.shared.activateFileViewerSelecting([workflow.folder]) }
                     Divider()
@@ -177,7 +200,7 @@ struct AskWorkflowSettingsView: View {
         do {
             let created = try store.create(template, takenKeywords: settings.effectiveAskLauncherKeywords)
             failure = nil
-            open(created)
+            AskWorkflowEditorWindowController.shared.show(workflowID: created.id)
         } catch {
             failure = error.localizedDescription
         }

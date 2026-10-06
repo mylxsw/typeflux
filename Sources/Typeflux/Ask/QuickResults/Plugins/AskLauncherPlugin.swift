@@ -100,10 +100,14 @@ struct AskPluginAction: Equatable, Sendable {
         case askAI(String)
         /// Opens a link, such as a web search, and closes the launcher.
         case open(URL)
+        /// Opens a workflow in the workflow editor, at a line of a file when known.
+        case editWorkflow(id: String, path: String?, line: Int?)
+        /// Opens the workflow editor and asks its assistant to fix what failed.
+        case fixWorkflow(id: String, query: String, error: String)
     }
 
     enum Shortcut: Equatable, Sendable {
-        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC
+        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE
     }
 
     var kind: Kind
@@ -141,4 +145,10 @@ struct AskPluginOutput: Equatable, Sendable {
 struct AskPluginFailure: Error, Equatable, Sendable {
     var message: String
     var retry: Bool = true
+    /// What the failure card offers besides retrying, such as editing the workflow.
+    var actions: [AskPluginAction] = []
+
+    func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
+        actions.first { $0.shortcut == shortcut }
+    }
 }

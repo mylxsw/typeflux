@@ -10,8 +10,8 @@ final class AskWorkflowStore: ObservableObject {
 
     let root: URL
     let home: String
-    private let settings: SettingsStore
-    private let fileManager: FileManager
+    let settings: SettingsStore
+    let fileManager: FileManager
     private let trash: (URL) throws -> Void
     @Published private(set) var workflows: [AskWorkflow] = []
 
@@ -68,7 +68,7 @@ final class AskWorkflowStore: ObservableObject {
         return loaded
     }
 
-    private nonisolated static func manifestID(in folder: URL) -> String? {
+    nonisolated static func manifestID(in folder: URL) -> String? {
         guard let data = try? Data(contentsOf: folder.appendingPathComponent(AskWorkflowManifest.fileName)),
               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         return object["id"] as? String

@@ -447,8 +447,16 @@ struct AskWorkflowPluginTests {
         return plugin
     }
 
+    /// Runs a request; failures are compared without the editor actions they carry
+    /// (those are covered in `AskWorkflowLauncherActionTests`).
     private func run(_ plugin: AskWorkflowPlugin, _ request: AskPluginRequest) async throws -> AskPluginOutput {
-        try await plugin.run(request, plan: await plugin.plan(request))
+        do {
+            return try await plugin.run(request, plan: await plugin.plan(request))
+        } catch var failure as AskPluginFailure {
+            #expect(failure.action(for: .commandE) != nil)
+            failure.actions = []
+            throw failure
+        }
     }
 
     @Test func textOutputBecomesACardWithTheSharedActions() async throws {
@@ -538,6 +546,9 @@ struct AskWorkflowPluginTests {
         }
         #expect(!FileManager.default.fileExists(atPath: fixture.root.appendingPathComponent("new/ran").path))
         #expect(AskWorkflowPlugin.tail("a\n\nb\nc", lines: 2) == "\nb\nc" && AskWorkflowPlugin.tail("") == "")
+        let folder = URL(fileURLWithPath: "/var/wf/local.a")
+        #expect(AskWorkflowPlugin.tail("/private/var/wf/local.a/main.sh:4: boom\n/var/wf/local.a/lib.sh: x\n/usr/x.sh: y",
+                                       folder: folder) == "\nmain.sh:4: boom\nlib.sh: x\n/usr/x.sh: y")
         #expect(AskWorkflowPlugin.errorMessage(in: "x\n{\"error\": \"\"}") == nil)
         #expect(AskWorkflowPlugin.errorMessage(in: "") == nil)
     }
