@@ -2476,6 +2476,15 @@
 "ask.plugin.translate.noModel" = "Set up a text model in Settings → Models to translate with AI";
 "ask.plugin.translate.aiFallback" = "Translated with AI: this Mac has no offline pack for these languages";
 "ask.plugin.translate.askAI" = "Check this translation and suggest a more natural one.\n\nOriginal:\n%@\n\nTranslation:\n%@";
+"ask.plugin.translate.wordCard" = "Word card";
+"ask.plugin.action.copyDefinition" = "Copy definition";
+"ask.plugin.action.copyCard" = "Copy card";
+"ask.plugin.action.wordCard" = "AI word card";
+"ask.plugin.translate.cardHint" = "Press ⌘R for a word card from AI (sent to %@)";
+"ask.plugin.translate.cardUnreadable" = "Couldn't make a word card; showing the model's reply";
+"ask.plugin.translate.askAI.word" = "Tell me more about this word: how it is used, common collocations and what it is easily confused with.\n\n%@";
+"ask.plugin.wordCard.examples" = "Examples";
+"ask.plugin.wordCard.synonyms" = "Synonyms";
 "ask.plugin.action.copy" = "Copy";
 "ask.plugin.action.replace" = "Replace selection";
 "ask.plugin.action.insert" = "Insert";

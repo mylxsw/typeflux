@@ -206,3 +206,68 @@ private struct SnapshotEngine: AskTranslationEngine {
         return "There is a meeting at 3 p.m. tomorrow; remember to bring the weekly report."
     }
 }
+
+extension AskPluginVisualTests {
+    /// Word cards from the AI, a word translated on this Mac, and a sentence (GUL-221).
+    @Test func renderWordCards() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let run = AskWordCard(
+            headword: "run",
+            phonetics: [.init(label: "UK", text: "/rʌn/"), .init(label: "US", text: "/rʌn/")],
+            senses: [.init(pos: "v.", meanings: ["跑，奔跑", "经营，管理", "运行，运转", "竞选"]),
+                     .init(pos: "n.", meanings: ["跑步", "一段时期", "连续上演"])],
+            forms: [.init(label: "过去式", value: "ran"), .init(label: "过去分词", value: "run"),
+                    .init(label: "现在分词", value: "running")],
+            examples: [.init(source: "She **runs** a small bakery downtown.", target: "她在市中心经营一家小面包店。"),
+                       .init(source: "The script **runs** every night at 2 a.m.", target: "这个脚本每晚凌晨两点运行。")],
+            synonyms: ["sprint", "manage", "operate"]
+        )
+        let apple = AskWordCard(
+            headword: "苹果", phonetics: [.init(label: "拼音", text: "píngguǒ")],
+            senses: [.init(pos: "n.", meanings: ["apple", "apple tree", "Apple (the company)"])],
+            examples: [.init(source: "我每天早上吃一个**苹果**。", target: "I eat an apple every morning.")]
+        )
+        // name, editor text, word card, translated on this Mac, height
+        let cases: [(String, String, AskWordCard?, Bool, CGFloat)] = [
+            ("word-card", "fy run", run, false, 640), ("word-card-chinese", "fy 苹果", apple, false, 470),
+            ("word-device", "fy serendipity", nil, true, 380)
+        ]
+        for (name, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
+            for (file, text, card, local, height) in cases {
+                let fixture = try AskTestFixture()
+                defer { fixture.model.resetSession() }
+                let dictionary = AskTestWordLookup(answer: card.map(AskWordLookup.card) ?? .translation("机缘巧合"))
+                let device = AskTestTranslationEngine(available: local)
+                let plugin = AskTranslatePlugin(onDevice: local ? SnapshotWordEngine() : device, ai: device,
+                                                dictionary: dictionary, aiName: { "Typeflux Cloud" },
+                                                detector: AskTestLanguageDetector(language: card == apple ? "zh-Hans" : "en"))
+                fixture.model.plugins = AskPluginSession(plugins: [plugin]) { AskTranslatePlugin.keywords }
+                fixture.model.plugins.debounce = .milliseconds(1)
+                fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false)
+                let view = AskLauncherView(model: fixture.model, onDismiss: {}).environment(\.askGlassMaterialOverride, .opaque)
+                let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: height),
+                                                styleMask: [.borderless], backing: .buffered, defer: false)
+                window.contentView = NSHostingView(rootView: view)
+                window.orderFront(nil)
+                for _ in 0 ..< 200 where fixture.model.plugins.plan == nil { try await Task.sleep(for: .milliseconds(5)) }
+                if fixture.model.plugins.output == nil { fixture.model.plugins.run() }
+                for _ in 0 ..< 200 where fixture.model.plugins.output == nil { try await Task.sleep(for: .milliseconds(5)) }
+                window.orderOut(nil)
+                try await render(view, size: NSSize(width: AskMetrics.launcherWidth, height: height), appearance: appearance,
+                                 file: root.appendingPathComponent("plugin-\(file)-\(name).png"))
+            }
+        }
+    }
+}
+
+/// A single word translated on this Mac, for the screenshots.
+private struct SnapshotWordEngine: AskTranslationEngine {
+    func canTranslate(from source: String?, to target: String) async -> Bool { true }
+    func translate(_ text: String, from source: String?, to target: String) async throws -> String { "机缘巧合" }
+}

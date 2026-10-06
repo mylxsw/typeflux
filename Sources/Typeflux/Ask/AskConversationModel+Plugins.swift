@@ -68,6 +68,7 @@ extension AskConversationModel {
             AskTranslatePlugin(
                 onDevice: AskOnDeviceTranslationEngine(),
                 ai: translationAI,
+                dictionary: translationAI as? any AskWordLookingUp,
                 aiName: { [weak settings] in AskPluginRegistry.modelName(settings) },
                 secondLanguage: { [weak settings] language in
                     settings?.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)

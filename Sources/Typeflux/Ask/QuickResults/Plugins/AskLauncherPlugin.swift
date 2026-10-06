@@ -103,7 +103,7 @@ struct AskPluginAction: Equatable, Sendable {
     }
 
     enum Shortcut: Equatable, Sendable {
-        case enter, optionEnter, commandR, commandD, commandC
+        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC
     }
 
     var kind: Kind
@@ -124,6 +124,8 @@ struct AskPluginOutput: Equatable, Sendable {
     /// A line under the text, e.g. why the AI was used.
     var note: String?
     var actions: [AskPluginAction]
+    /// A dictionary entry shown in place of `body`, which then holds its one-line summary.
+    var wordCard: AskWordCard?
     /// The run did what it was for (a workflow that opens something): the launcher closes.
     var dismisses = false
 

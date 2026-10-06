@@ -2473,6 +2473,15 @@
 "ask.plugin.translate.noModel" = "在「設定 → 模型」設定文字處理模型後，才能用 AI 翻譯";
 "ask.plugin.translate.aiFallback" = "本機沒有這組語言的離線套件，已用 AI 翻譯";
 "ask.plugin.translate.askAI" = "幫我檢查這段翻譯，並給出更自然的譯法。\n\n原文：\n%@\n\n譯文：\n%@";
+"ask.plugin.translate.wordCard" = "單字卡";
+"ask.plugin.action.copyDefinition" = "複製釋義";
+"ask.plugin.action.copyCard" = "複製整張";
+"ask.plugin.action.wordCard" = "AI 單字卡";
+"ask.plugin.translate.cardHint" = "按 ⌘R 用 AI 產生單字卡（會傳送到 %@）";
+"ask.plugin.translate.cardUnreadable" = "沒能整理成單字卡，先顯示模型給出的文字";
+"ask.plugin.translate.askAI.word" = "幫我更深入地講講這個詞：怎麼用、常見搭配，以及容易和哪些詞混淆。\n\n%@";
+"ask.plugin.wordCard.examples" = "例句";
+"ask.plugin.wordCard.synonyms" = "近義";
 "ask.plugin.action.copy" = "拷貝";
 "ask.plugin.action.replace" = "取代選取";
 "ask.plugin.action.insert" = "插入";
