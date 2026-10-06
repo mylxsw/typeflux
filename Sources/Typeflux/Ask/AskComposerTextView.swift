@@ -174,6 +174,11 @@ struct AskComposerTextView: NSViewRepresentable {
         override func pasteAsPlainText(_ sender: Any?) {
             if !attach(from: .general) { super.pasteAsPlainText(sender) }
         }
+        /// Undo (the Edit menu's ⌘Z) first undoes a workflow's copy while its result shows.
+        @objc func undo(_ sender: Any?) {
+            if onCommandKey?(.commandZ) == true { return }
+            undoManager?.undo()
+        }
         /// Copy with nothing selected goes to the launcher (a plugin's result); otherwise the text's own.
         override func copy(_ sender: Any?) {
             if selectedRange().length == 0, onCommandKey?(.commandC) == true { return }

@@ -30,9 +30,35 @@ struct AskWorkflowTestResult: Equatable, Sendable {
     var environment: [String: String] = [:]
     var stdin = ""
     var date = Date()
+    /// The workflow's actions for this run, filled in: the failure list after a failure.
+    var actionSteps: [AskWorkflowActionStep] = []
+    /// Where each action ended: previewed, or run when the test ran them for real.
+    var actionOutcomes: [AskWorkflowActionOutcome] = []
 
     var succeeded: Bool {
         failure == nil && !timedOut && exitCode == 0
+    }
+
+    /// The launcher would take the failure actions: it timed out, failed, or was cut short.
+    var takesFailureActions: Bool {
+        timedOut || exitCode != 0 || truncated
+    }
+
+    /// Why the run failed, as the launcher says it, with the end of stderr: the `{error}` placeholder.
+    func errorText(timeout: Double, folder: URL?) -> String? {
+        guard failure == nil, takesFailureActions else { return nil }
+        let reason = timedOut ? L("ask.workflow.timedOut", Int(timeout))
+            : exitCode != 0 ? AskWorkflowPlugin.errorMessage(in: stdout) ?? L("ask.workflow.failed", Int(exitCode))
+            : L("ask.workflow.truncated")
+        return reason + AskWorkflowPlugin.tail(stderr, folder: folder)
+    }
+
+    /// The placeholders' values for this run.
+    func placeholders(keyword: String, options: [String: String], timeout: Double,
+                      folder: URL?) -> AskWorkflowPlaceholders {
+        AskWorkflowPlaceholders(output: stdout, query: input.query, selection: input.selection,
+                                keyword: keyword, options: options,
+                                error: errorText(timeout: timeout, folder: folder))
     }
 
     /// One line for lists: "✓ exit 0 · 0.62 s".
@@ -90,6 +116,14 @@ struct AskWorkflowTester: Sendable {
         result.stdin = String(data: invocation.stdin, encoding: .utf8)?.trimmingCharacters(in: .newlines) ?? ""
         await execute(invocation, into: &result)
         guard result.failure == nil else { return result }
+        let output = manifest.output
+        let options = request.options.filter { $0.key != AskWorkflowPlugin.titleOption }
+        let placeholders = result.placeholders(keyword: keyword.keyword, options: options, timeout: manifest.timeout,
+                                               folder: workflow.folder)
+        result.actionSteps = AskWorkflowActionRunner.steps(
+            for: result.takesFailureActions ? output.onFailure : output.onSuccess, placeholders: placeholders,
+            folder: workflow.folder, name: manifest.name, home: home
+        )
         record(AskWorkflowLog.Entry(workflowID: workflow.id, keyword: keyword.keyword, date: Date(),
                                     duration: result.duration, exitCode: result.exitCode, timedOut: result.timedOut,
                                     stderr: String(result.stderr.suffix(4096)), source: .test))

@@ -69,7 +69,7 @@ struct AskWorkflowManifestTests {
 
     @Test func aMinimalManifestGetsTheDefaults() throws {
         let manifest = try manifest(#"{"id": "a.b", "name": "A", "command": {"runtime": "python3", "script": "main.py"}}"#)
-        #expect(manifest.schema == 1 && manifest.keywords.isEmpty && manifest.output == .auto)
+        #expect(manifest.schema == 1 && manifest.keywords.isEmpty && manifest.output == .init(display: .auto))
         #expect(manifest.input == .init(argument: .optional, selection: .ifEmpty))
         #expect(manifest.run.mode == .onSubmit && manifest.timeout == 30)
         #expect(manifest.argumentTemplate == ["{query}"])
@@ -92,6 +92,7 @@ struct AskWorkflowManifestTests {
                                                    options: ["mode": "fast"])
         #expect(filled == ["a b; $(rm -rf ~) {selection}", "--sel=picked", "fast-", "{unknown}", "{unclosed"])
         #expect(AskWorkflowManifest.arguments(["{selection}"], query: "", selection: nil, options: [:]) == [""])
+        #expect(AskWorkflowManifest.arguments(["a {query} x{b"], query: "q", selection: nil, options: [:]) == ["a q x{b"])
     }
 
     @Test func problemsNameTheirFields() throws {
@@ -113,7 +114,7 @@ struct AskWorkflowManifestTests {
         #expect(check { $0.keywords = [] } == ["keywords"])
         #expect(check { $0.keywords = [.init(keyword: "ab"), .init(keyword: "AB"), .init(keyword: "a b")] }
             == ["keywords[1]", "keywords[2]"])
-        #expect(check { $0.output = .items } == ["output"])
+        #expect(check { $0.output = .init(display: .items) } == ["output"])
         #expect(check { $0.run.mode = .live } == ["run.mode"])
         #expect(check { $0.command.script = nil } == ["command.script"])
         #expect(check { $0.command.inline = "echo" } == ["command.inline"])
@@ -409,7 +410,7 @@ struct AskWorkflowStoreTests {
             let script = try #require(made.manifest?.command.script)
             #expect(FileManager.default.isExecutableFile(atPath: made.folder.appendingPathComponent(script).path))
         }
-        #expect(fixture.store.workflow("local.action")?.manifest?.output == AskWorkflowManifest.Output.none)
+        #expect(fixture.store.workflow("local.action")?.manifest?.output == AskWorkflowManifest.Output(display: .none))
         // The launcher's view of them: plugins, keywords, clashes.
         let plugins = fixture.store.plugins { (nil, nil) }
         #expect(plugins.count == 5)

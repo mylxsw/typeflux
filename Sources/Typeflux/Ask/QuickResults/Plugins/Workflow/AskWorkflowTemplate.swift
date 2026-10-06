@@ -43,7 +43,7 @@ enum AskWorkflowTemplate: String, CaseIterable, Identifiable, Sendable {
             input: .init(argument: .optional, selection: .ifEmpty),
             run: .init(mode: .onSubmit, timeoutSeconds: 30),
             command: .init(runtime: runtime, script: fileName, inline: nil, args: ["{query}"], interpreter: nil),
-            output: self == .shellAction ? .none : .text
+            output: .init(display: self == .shellAction ? .none : .text)
         )
     }
 

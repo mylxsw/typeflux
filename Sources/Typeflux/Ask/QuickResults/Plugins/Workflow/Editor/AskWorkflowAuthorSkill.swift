@@ -53,7 +53,15 @@ enum AskWorkflowAuthorSkill {
       command.args: each entry is one argv entry, never parsed by a shell. Only {query}, {selection} and \
     {option:NAME} are replaced. Optional "interpreter" names a specific program (a virtualenv's python).
     - output: "text" (stdout shown line by line; Return copies, Option-Return types it into the app) or \
-    "none" (prints nothing; the launcher closes). Item lists and live mode are not available yet.
+    "none" (prints nothing; the launcher closes). Item lists and live mode are not available yet. \
+    To act after a run, use the object form: {"display": "text", "onSuccess": [...], "onFailure": [...], \
+    "close": false}. Actions, at most 8 per list, run in order: {"action": "copy", "value": …}, \
+    {"action": "writeBack", "value": …}, {"action": "notify", "title": …, "body": …}, \
+    {"action": "hud", "text": …}, {"action": "open", "target": "https://…" | "app:Notes" | "path"}, \
+    {"action": "reveal", "path": …}, {"action": "speak", "text": …}, {"action": "askAI", "prompt": …}. \
+    Fields may use {output}, {output.line1}, {output.lastLine}, {json.a.b} (stdout as JSON), {query}, \
+    {selection}, {keyword}, {option:NAME}, and {error} in onFailure only. Prefer these to calling \
+    pbcopy or osascript from the script.
     - env: fixed, non-secret variables. Never put tokens or passwords in the manifest or the code.
 
     What the script receives:

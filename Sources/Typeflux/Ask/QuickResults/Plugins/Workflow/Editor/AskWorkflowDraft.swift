@@ -115,6 +115,11 @@ struct AskWorkflowDraft: Equatable, Sendable {
         [AskWorkflowManifest.fileName] + files.keys.sorted()
     }
 
+    /// Every text file with `workflow.json`, for the risk scan (actions live in the manifest).
+    var scannedFiles: [String: String] {
+        files.merging([AskWorkflowManifest.fileName: manifestText]) { _, manifest in manifest }
+    }
+
     func text(of path: String) -> String? {
         path == AskWorkflowManifest.fileName ? manifestText : files[path]
     }

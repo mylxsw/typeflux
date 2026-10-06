@@ -354,8 +354,7 @@ struct AskWorkflowFlowStrip: View {
         case .input: return Self.input(manifest)
         case .script: return manifest.command.script ?? L("ask.workflow.trust.inline")
         case .output:
-            return L("ask.workflow.editor.outputShort." + manifest.output.rawValue) + " · "
-                + L("ask.workflow.editor.seconds", Int(manifest.timeout))
+            return AskWorkflowEditorModel.outputSummary(manifest.output)
         }
     }
 
