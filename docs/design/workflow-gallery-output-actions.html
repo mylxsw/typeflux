@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 工作流示例库、多入口、输出与动作（可交互设计稿）</title>
+<style>
+:root {
+  --bg: #1b1b1d; --sidebar: #161617; --pane: #222224; --card: rgba(255,255,255,.045);
+  --card-hover: rgba(255,255,255,.07); --border: rgba(255,255,255,.115); --border-soft: rgba(255,255,255,.07);
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16);
+  --ok: #29c76e; --ok-soft: rgba(41,199,110,.14); --warn: #eb8040; --warn-soft: rgba(235,128,64,.15);
+  --danger: #dc5252; --danger-soft: rgba(220,82,82,.13); --field: rgba(255,255,255,.06); --tile: rgba(255,255,255,.07);
+  --ai: #a970ff; --ai-soft: rgba(169,112,255,.15);
+  --code-bg: #19191b; --code-gutter: #5d5d63; --code-line: rgba(255,255,255,.035);
+  --shadow: 0 30px 80px rgba(0,0,0,.45); --stage: #0e0e10; --pop: #2a2a2d;
+}
+body.light {
+  --bg: #f4f5f7; --sidebar: #eceef1; --pane: #fafafa; --card: rgba(255,255,255,.95); --card-hover: #f2f4f7;
+  --border: rgba(97,115,143,.16); --border-soft: rgba(97,115,143,.10); --text: #141414; --text2: #474747; --text3: #85868a; --accent: #1f6fe0;
+  --accent-soft: rgba(31,111,224,.12); --ok: #1fab63; --ok-soft: rgba(31,171,99,.12); --warn: #ed5c2e;
+  --warn-soft: rgba(237,92,46,.12); --danger-soft: rgba(220,82,82,.10); --field: #fff; --tile: #eef0f3;
+  --ai: #8a4fe8; --ai-soft: rgba(138,79,232,.11);
+  --code-bg: #ffffff; --code-gutter: #a5a8ae; --code-line: rgba(31,111,224,.05);
+  --shadow: 0 30px 80px rgba(30,40,60,.18); --stage: #d9dde3; --pop: #fff;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button, input, select, textarea { font: inherit; color: inherit; }
+svg { flex: none; }
+.mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace; }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1300px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.stagebar .grp { font-size: 11px; color: var(--text3); margin: 0 2px 0 8px; }
+.pill { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1300px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 30px; }
+.caption b { color: var(--text2); font-weight: 600; }
+body.solo .stagebar, body.solo .caption { display: none; }
+body.solo { padding: 28px 0; }
+
+/* ---------- Shared controls (same as agent-settings-panes.html) ---------- */
+.btn { height: 28px; border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 0 12px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 500; font-size: 12.5px; }
+.btn:hover { background: var(--card-hover); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ai { background: var(--ai); border-color: var(--ai); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--text2); }
+.btn.ghost:hover { background: var(--card-hover); color: var(--text); }
+.btn.danger { color: var(--danger); }
+.btn.sm { height: 24px; padding: 0 9px; font-size: 12px; border-radius: 7px; }
+.btn kbd { font: 11px ui-monospace, Menlo, monospace; opacity: .7; }
+.btn:disabled { opacity: .45; cursor: default; }
+.ibtn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid transparent; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text2); }
+.ibtn:hover { background: var(--card-hover); color: var(--text); }
+.field { width: 100%; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; outline: none; min-height: 30px; }
+.field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.field.invalid { border-color: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
+textarea.field { resize: vertical; line-height: 1.55; }
+select.field { appearance: none; padding-right: 26px; background-image: linear-gradient(45deg, transparent 50%, var(--text3) 50%), linear-gradient(135deg, var(--text3) 50%, transparent 50%);
+  background-position: calc(100% - 13px) 13px, calc(100% - 9px) 13px; background-size: 4px 4px; background-repeat: no-repeat; }
+.switch { width: 32px; height: 19px; border-radius: 999px; background: var(--tile); border: 1px solid var(--border); position: relative; cursor: pointer; flex: none; transition: background .15s; }
+.switch::after { content: ""; position: absolute; top: 1px; left: 1px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: left .15s; }
+.switch.on { background: var(--ok); border-color: var(--ok); }
+.switch.on::after { left: 14px; }
+.seg { display: inline-flex; background: var(--tile); border-radius: 8px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 3px 11px; border-radius: 6px; cursor: pointer; color: var(--text2); font-size: 12px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.seg button.on { background: var(--card-hover); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+body.light .seg button.on { background: #fff; }
+.seg button .n { font-size: 10.5px; color: var(--text3); }
+.badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.badge.ready { background: var(--ok-soft); color: var(--ok); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge.off { background: var(--tile); color: var(--text3); }
+.badge.ai { background: var(--ai-soft); color: var(--ai); }
+.kw { font: 12px ui-monospace, Menlo, monospace; padding: 1px 7px; border-radius: 6px; background: var(--tile); border: 1px solid var(--border); white-space: nowrap; }
+.tok { font: 11.5px ui-monospace, Menlo, monospace; padding: 1px 7px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); cursor: pointer; white-space: nowrap; border: 0; }
+.sl { display: flex; align-items: baseline; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text3); margin: 0 4px 8px; }
+.sl .aux { font-weight: 400; }
+.sl .sp { flex: 1; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.foot { font-size: 12px; color: var(--text3); margin: 8px 4px 0; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; display: inline-block; }
+.dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.off { background: var(--text3); opacity: .5; } .dot.bad { background: var(--danger); }
+.tile { width: 28px; height: 28px; border-radius: 7px; background: var(--tile); display: grid; place-items: center; color: var(--text2); flex: none; }
+.tile.t-translate { background: rgba(47,140,255,.16); color: #4c9dff; }
+.tile.t-prompt { background: var(--ai-soft); color: var(--ai); }
+.tile.t-web { background: rgba(41,199,110,.14); color: var(--ok); }
+.tile.t-workflow { background: rgba(235,128,64,.15); color: var(--warn); }
+
+/* ---------- Windows ---------- */
+.window { position: relative; display: flex; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); background: var(--bg); }
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.screen { display: none; }
+.screen.on { display: flex; }
+
+/* Settings window */
+.win-settings { width: 1180px; height: 780px; }
+.mainnav { width: 200px; background: var(--sidebar); padding: 14px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border); }
+.mainnav .lights { margin: 2px 4px 22px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin: 0 6px 22px; }
+.brand small { font-size: 10px; color: var(--text3); font-weight: 500; }
+.brand .logo { width: 28px; height: 28px; border-radius: 50%; background: var(--text); color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+.navitem { display: flex; align-items: center; gap: 11px; padding: 8px 12px; border-radius: 9px; color: var(--text2); font-weight: 500; }
+.navitem.on { background: var(--card-hover); color: var(--text); }
+.content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.pagehead { padding: 26px 32px 18px; border-bottom: 1px solid var(--border); }
+.pagehead h1 { margin: 0; font-size: 24px; letter-spacing: -.3px; }
+.pagehead p { margin: 4px 0 0; color: var(--text2); }
+.split { flex: 1; display: flex; min-height: 0; }
+.subnav { width: 210px; padding: 14px 10px; border-right: 1px solid var(--border); }
+.subitem { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; color: var(--text2); }
+.subitem.on { background: var(--accent-soft); color: var(--text); }
+.subitem.on svg { color: var(--accent); }
+.detail { flex: 1; overflow-y: auto; padding: 22px 32px 40px; }
+.detail-inner { max-width: 780px; }
+.dh { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+.dh .bigtile { width: 40px; height: 40px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.dh .t { flex: 1; }
+.dh h2 { margin: 0; font-size: 18px; }
+.dh p { margin: 3px 0 0; color: var(--text2); }
+.dh p .kw { font-size: 11.5px; }
+
+/* Keyword list */
+.kbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.searchbox { width: 200px; display: flex; align-items: center; gap: 6px; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 0 9px; color: var(--text3); height: 28px; }
+.searchbox input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; color: var(--text); font-size: 12.5px; }
+.kbar .sp { flex: 1; }
+.menuwrap { position: relative; }
+.menu { position: absolute; right: 0; top: 32px; width: 290px; background: var(--pop); border: 1px solid var(--border); border-radius: 10px; padding: 5px; box-shadow: 0 16px 40px rgba(0,0,0,.35); z-index: 40; display: none; }
+.menu.show { display: block; }
+.menu .mi { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 7px; cursor: pointer; }
+.menu .mi:hover { background: var(--accent); color: #fff; }
+.menu .mi:hover .tile { background: rgba(255,255,255,.2); color: #fff; }
+.menu .mi div span { display: block; font-size: 11px; color: var(--text3); }
+.menu .mi:hover div span { color: rgba(255,255,255,.8); }
+.menu .tile { width: 24px; height: 24px; border-radius: 6px; }
+.menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px 6px; }
+.kgroup { display: flex; align-items: center; gap: 8px; padding: 9px 16px 7px; font-size: 11px; font-weight: 600; color: var(--text3); background: var(--card); border-top: 1px solid var(--border-soft); }
+.kgroup:first-child { border-top: 0; }
+.kgroup .aux { font-weight: 400; }
+.krow { display: grid; grid-template-columns: 96px 150px 1fr 40px 18px; align-items: center; gap: 12px; padding: 0 14px 0 16px; height: 46px; border-top: 1px solid var(--border-soft); cursor: pointer; }
+.krow:hover { background: var(--card-hover); }
+.krow .what { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.krow .what .tile { width: 24px; height: 24px; border-radius: 6px; }
+.krow .what b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.krow .sum { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.krow .sum.mono { font-size: 11.5px; }
+.krow .chev { color: var(--text3); opacity: 0; }
+.krow:hover .chev { opacity: 1; }
+.krow.disabled .kw, .krow.disabled .what, .krow.disabled .sum { opacity: .45; }
+.krow .ext { font-size: 11px; color: var(--text3); }
+.kempty { padding: 28px; text-align: center; color: var(--text3); }
+.srow { display: flex; align-items: center; gap: 14px; padding: 11px 16px; min-height: 50px; }
+.srow + .srow { border-top: 1px solid var(--border-soft); }
+.srow .rt { flex: 1; }
+.srow .rt b { display: block; font-weight: 500; }
+.srow .rt span { display: block; font-size: 12px; color: var(--text2); }
+.linkbtn { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; font-size: 12px; }
+
+/* Sheet (dialog) */
+.sheet-bg { position: absolute; inset: 0; background: rgba(0,0,0,.42); display: none; align-items: flex-start; justify-content: center; z-index: 30; padding-top: 70px; }
+body.light .sheet-bg { background: rgba(40,50,70,.22); }
+.sheet-bg.show { display: flex; }
+.sheet { width: 540px; background: var(--pane); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+.sheet-h { display: flex; align-items: center; gap: 12px; padding: 18px 20px 6px; }
+.sheet-h h3 { margin: 0; font-size: 15px; }
+.sheet-h p { margin: 2px 0 0; font-size: 12px; color: var(--text2); }
+.sheet-b { padding: 12px 20px 4px; }
+.fr { display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: start; margin-bottom: 12px; }
+.fr > label { color: var(--text2); padding-top: 6px; font-size: 12.5px; }
+.fr .hint { font-size: 11.5px; color: var(--text3); margin-top: 5px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.fr .err { font-size: 11.5px; color: var(--warn); margin-top: 5px; }
+.preview { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 10px; background: var(--field); border: 1px solid var(--border); color: var(--text3); }
+.preview .chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 12px; }
+.preview .typed { color: var(--text); }
+.sheet-f { display: flex; align-items: center; gap: 8px; padding: 14px 20px 18px; margin-top: 8px; }
+.sheet-f .sp { flex: 1; }
+.enginechips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.enginechips button { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 1px 9px; font-size: 11.5px; cursor: pointer; color: var(--text2); }
+.enginechips button:hover { color: var(--text); background: var(--card-hover); }
+
+/* ---------- Workflow editor window ---------- */
+.win-editor { width: 1280px; height: 780px; }
+.ed-side { width: 220px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+.ed-side .lights { padding: 16px 16px 0; height: 44px; }
+.ed-side .search { margin: 4px 12px 8px; display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-radius: 8px; background: var(--field); border: 1px solid var(--border); color: var(--text3); font-size: 12.5px; }
+.ed-side .grouplbl { font-size: 11px; font-weight: 600; color: var(--text3); padding: 8px 18px 4px; }
+.wfitem { display: flex; align-items: center; gap: 10px; margin: 1px 8px; padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+.wfitem:hover { background: var(--card-hover); }
+.wfitem.on { background: var(--accent-soft); }
+.wfitem .wt { flex: 1; min-width: 0; }
+.wfitem .wt b { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wfitem .wt span { display: block; font: 11px ui-monospace, Menlo, monospace; color: var(--text3); }
+.appicon { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: #fff; flex: none; }
+.ed-side .bottom { margin-top: auto; padding: 12px; border-top: 1px solid var(--border-soft); display: flex; gap: 6px; }
+.ed-side .bottom .btn { flex: 1; justify-content: center; }
+
+.ed-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+.ed-head { height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 20px; }
+.ed-head .appicon { width: 30px; height: 30px; border-radius: 8px; }
+.ed-title { display: flex; flex-direction: column; min-width: 0; cursor: pointer; border-radius: 7px; padding: 2px 6px; margin-left: -6px; }
+.ed-title:hover { background: var(--card-hover); }
+.ed-title b { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.ed-title > span { font: 11px ui-monospace, Menlo, monospace; color: var(--text3); }
+.ed-head .sp { flex: 1; }
+.unsaved { display: none; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+.unsaved.show { display: inline-flex; }
+.vsep { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
+.enable { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); }
+
+.ed-body { flex: 1; display: flex; min-height: 0; border-top: 1px solid var(--border-soft); }
+.ed-center { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+/* Stepper */
+.stepper { display: flex; align-items: center; gap: 0; padding: 12px 20px; }
+.step { display: flex; align-items: center; gap: 10px; padding: 7px 12px 7px 8px; border-radius: 10px; cursor: pointer; min-width: 0; flex: 1 1 0; border: 1px solid transparent; }
+.step:hover { background: var(--card-hover); }
+.step.on { background: var(--card); border-color: var(--border); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+.step .num { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11.5px; font-weight: 700; background: var(--tile); color: var(--text2); flex: none; position: relative; }
+.step.on .num { background: var(--accent); color: #fff; }
+.step .num .pdot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 2px solid var(--bg); }
+.step .st { min-width: 0; flex: 1; }
+.step .st b { white-space: nowrap; }
+.step .st b { display: block; font-size: 12.5px; font-weight: 600; line-height: 1.2; }
+.step .st span { display: block; font-size: 11.5px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
+.step .st span .kw { font-size: 10.5px; padding: 0 5px; }
+.connector { flex: 0 0 14px; height: 1px; background: var(--border); }
+.stepper .sp { flex: 1; }
+.stage-area { flex: 1; overflow-y: auto; padding: 4px 20px 24px; }
+.stage-inner { max-width: 760px; }
+.sec { margin-bottom: 22px; }
+.sec h4 { margin: 0 4px 3px; font-size: 13px; }
+.sec .desc { margin: 0 4px 10px; color: var(--text3); font-size: 12px; }
+/* Radio list (replaces cramped option cards) */
+.rlist .ropt { display: flex; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; border-top: 1px solid var(--border-soft); }
+.rlist .ropt:first-child { border-top: 0; }
+.rlist .ropt:hover { background: var(--card-hover); }
+.radio { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--text3); flex: none; }
+.ropt.on .radio { border: 5px solid var(--accent); }
+.ropt .ot { flex: 1; min-width: 0; }
+.ropt .ot b { font-weight: 500; }
+.ropt .ot span { color: var(--text3); font-size: 12px; margin-left: 8px; }
+.ropt.dis { opacity: .45; cursor: default; }
+.ropt.dis:hover { background: transparent; }
+.later { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; background: var(--tile); color: var(--text3); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+/* Keyword table in editor */
+.ktable .kh, .ktable .kr { display: grid; grid-template-columns: 110px 1fr 1.3fr 28px; gap: 10px; align-items: center; padding: 0 12px; }
+.ktable .kh { height: 32px; font-size: 11px; font-weight: 600; color: var(--text3); border-bottom: 1px solid var(--border-soft); }
+.ktable .kr { min-height: 46px; padding-top: 7px; padding-bottom: 7px; border-top: 1px solid var(--border-soft); }
+.ktable .kh + .kr { border-top: 0; }
+.ktable .field { min-height: 28px; padding: 4px 9px; }
+.optchips { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.optchip { display: inline-flex; align-items: center; gap: 4px; font: 11.5px ui-monospace, Menlo, monospace; padding: 2px 4px 2px 8px; border-radius: 6px; background: var(--tile); border: 1px solid var(--border); }
+.optchip i { font-style: normal; color: var(--text3); cursor: pointer; padding: 0 3px; }
+.addopt { font-size: 11.5px; color: var(--text3); border: 1px dashed var(--border); background: transparent; border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+.addrow { display: flex; align-items: center; gap: 8px; padding: 10px 12px; color: var(--accent); cursor: pointer; border-top: 1px solid var(--border-soft); font-weight: 500; }
+.addrow:hover { background: var(--card-hover); }
+/* argv builder */
+.argv { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 9px 12px; min-height: 44px; }
+.argv .fixed { font: 12.5px ui-monospace, Menlo, monospace; color: var(--text2); }
+.argv .slot { display: inline-flex; align-items: center; gap: 5px; padding: 3px 4px 3px 7px; border-radius: 7px; background: var(--field); border: 1px solid var(--border); font: 12.5px ui-monospace, Menlo, monospace; }
+.argv .slot small { color: var(--text3); font-size: 10.5px; }
+.argv .slot i { font-style: normal; color: var(--text3); cursor: pointer; padding: 0 3px; }
+.argv .plus { width: 24px; height: 24px; border-radius: 7px; border: 1px dashed var(--border); display: grid; place-items: center; color: var(--text3); cursor: pointer; }
+.argv-foot { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text3); }
+.argv-foot .sp { flex: 1; }
+.sample { display: grid; grid-template-columns: 56px 1fr; gap: 4px 10px; padding: 10px 12px; font: 12px/1.6 ui-monospace, Menlo, monospace; border-top: 1px solid var(--border-soft); background: var(--code-bg); }
+.sample .k { color: var(--text3); }
+.sample .s { color: #e6a26b; } body.light .sample .s { color: #b45a14; }
+/* Code editor */
+.codebar { display: flex; align-items: center; gap: 4px; padding: 0 20px 8px; }
+.ftab { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 7px; cursor: pointer; color: var(--text2); font: 12px ui-monospace, Menlo, monospace; }
+.ftab:hover { background: var(--card-hover); }
+.ftab.on { background: var(--card); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+.codebar .sp { flex: 1; }
+.codewrap { flex: 1; margin: 0 20px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: var(--code-bg); min-height: 0; }
+.runbar { display: none; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); background: var(--card); gap: 10px 14px; grid-template-columns: 64px 1fr 64px 1fr; align-items: center; font-size: 12.5px; }
+.runbar.show { display: grid; }
+.runbar label { color: var(--text2); }
+.runbar .field { min-height: 28px; padding: 4px 9px; }
+.runbar .wide { grid-column: 2 / 5; }
+.timeout { display: flex; align-items: center; gap: 8px; }
+.timeout input[type=range] { flex: 1; accent-color: var(--accent); }
+.envrow { display: flex; gap: 6px; margin-bottom: 6px; }
+.code { flex: 1; overflow: auto; font: 12.5px/1.7 ui-monospace, "SF Mono", Menlo, monospace; padding: 10px 0; }
+.code .ln { display: flex; }
+.code .ln.cur { background: var(--code-line); }
+.code .ln.errl { background: var(--danger-soft); }
+.code .g { width: 46px; text-align: right; padding-right: 16px; color: var(--code-gutter); user-select: none; flex: none; position: relative; }
+.code .ln.errl .g::before { content: ""; position: absolute; left: 10px; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
+.code .c { white-space: pre; padding-right: 16px; }
+.errnote { margin: 0 0 2px 46px; padding: 3px 10px; font: 11.5px ui-sans-serif, -apple-system, sans-serif; color: var(--danger); }
+.cm { color: #7f848e; font-style: italic; } .kwd { color: #c678dd; } .str { color: #98c379; } .num { color: #d19a66; } .fn { color: #61afef; }
+body.light .cm { color: #8b8f97; } body.light .kwd { color: #a626a4; } body.light .str { color: #50a14f; } body.light .num { color: #986801; } body.light .fn { color: #4078f2; }
+.statusbar { height: 28px; display: flex; align-items: center; gap: 14px; padding: 0 14px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border-soft); background: var(--card); }
+.statusbar .sp { flex: 1; }
+.statusbar .bad { color: var(--danger); }
+/* Launcher preview */
+.launcher { border-radius: 14px; border: 1px solid var(--border); background: var(--pane); box-shadow: 0 10px 30px rgba(0,0,0,.25); overflow: hidden; }
+.launcher .lin { display: flex; align-items: center; gap: 8px; padding: 11px 14px; font-size: 15px; border-bottom: 1px solid var(--border-soft); }
+.launcher .lin .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 7px; background: var(--warn-soft); color: var(--warn); font-weight: 600; font-size: 12.5px; }
+.launcher .lcard { margin: 10px; border-radius: 10px; border: 1px solid var(--accent); background: var(--accent-soft); padding: 11px 13px; }
+.launcher .lcard .h { display: flex; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+.launcher .lcard .h .sp { flex: 1; }
+.launcher .lcard .out { font-size: 15px; }
+.launcher .lcard .out2 { font-size: 12.5px; color: var(--text2); }
+.launcher .acts { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.launcher .acts span { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--tile); color: var(--text2); }
+.launcher .acts span.p { background: var(--accent); color: #fff; }
+.launcher .closed { margin: 10px; padding: 22px; text-align: center; color: var(--text3); font-size: 12.5px; }
+/* Right panel */
+.ed-right { width: 340px; border-left: 1px solid var(--border-soft); display: flex; flex-direction: column; background: var(--bg); }
+.ed-right .tabs { padding: 12px 14px 10px; display: flex; }
+.ed-right .tabs .seg { width: 100%; }
+.ed-right .tabs .seg button { flex: 1; justify-content: center; }
+.panel { flex: 1; display: none; flex-direction: column; min-height: 0; }
+.panel.on { display: flex; }
+.ai-empty { padding: 18px 16px; color: var(--text2); font-size: 12.5px; }
+.ai-empty .spark { width: 34px; height: 34px; border-radius: 10px; background: var(--ai-soft); color: var(--ai); display: grid; place-items: center; margin-bottom: 10px; }
+.sugg { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.sugg button { text-align: left; border: 1px solid var(--border); background: var(--card); border-radius: 9px; padding: 7px 10px; cursor: pointer; color: var(--text2); font-size: 12px; }
+.sugg button:hover { background: var(--card-hover); color: var(--text); }
+.composer { margin: auto 12px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); padding: 10px 12px 8px; }
+.composer textarea { width: 100%; border: 0; background: transparent; outline: none; resize: none; height: 44px; }
+.composer .cf { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text3); }
+.composer .cf .sp { flex: 1; }
+.composer .send { width: 26px; height: 26px; border-radius: 50%; border: 0; background: var(--ai); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.msg { margin: 6px 14px; padding: 9px 12px; border-radius: 10px; font-size: 12.5px; }
+.msg.me { background: var(--accent-soft); margin-left: 50px; }
+.proposal { margin: 6px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); overflow: hidden; }
+.proposal .ph { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; }
+.proposal .ph b { flex: 1; font-size: 12.5px; }
+.proposal .pb { padding: 0 12px 8px; font-size: 12px; color: var(--text2); }
+.proposal .pb .add { color: var(--ok); } .proposal .pb .del { color: var(--danger); }
+.proposal .pf { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--border-soft); justify-content: flex-end; }
+.test-in { padding: 0 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+.test-in .q { display: flex; align-items: center; gap: 6px; background: var(--field); border: 1px solid var(--border); border-radius: 9px; padding: 0 6px 0 8px; height: 34px; }
+.test-in .q input { flex: 1; border: 0; background: transparent; outline: none; font: 13px ui-monospace, Menlo, monospace; min-width: 0; }
+.test-in .opt { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.result { flex: 1; overflow-y: auto; padding: 0 14px 14px; }
+.rhead { display: flex; align-items: center; gap: 8px; margin: 2px 0 8px; font-size: 12px; color: var(--text3); }
+.rhead .sp { flex: 1; }
+.rtabs { margin-bottom: 10px; }
+.logbox { border-radius: 10px; border: 1px solid var(--border); background: var(--code-bg); padding: 10px 12px; font: 11.5px/1.6 ui-monospace, Menlo, monospace; white-space: pre-wrap; color: var(--text2); }
+.logbox .e { color: var(--danger); }
+.logbox a { color: var(--accent); text-decoration: underline; cursor: pointer; }
+.fixbar { display: flex; gap: 8px; align-items: center; margin-top: 10px; padding: 9px 11px; border-radius: 10px; background: var(--danger-soft); color: var(--danger); font-size: 12px; }
+.fixbar .sp { flex: 1; }
+.runs { margin-top: 14px; }
+.runs .r { display: flex; align-items: center; gap: 8px; padding: 6px 2px; font-size: 12px; color: var(--text2); border-top: 1px solid var(--border-soft); }
+.runs .r .sp { flex: 1; }
+.runs .r span.m { color: var(--text3); font: 11px ui-monospace, Menlo, monospace; }
+/* popover */
+.pop { position: absolute; top: 52px; left: 252px; width: 330px; background: var(--pop); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 18px 50px rgba(0,0,0,.4); padding: 14px; z-index: 25; display: none; }
+.pop.show { display: block; }
+.pop .fr { grid-template-columns: 52px 1fr; margin-bottom: 9px; }
+.pop .icons { display: flex; gap: 6px; flex-wrap: wrap; }
+.pop .icons span { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: #fff; cursor: pointer; }
+.pop .icons span.on { box-shadow: 0 0 0 2px var(--pop), 0 0 0 4px var(--accent); }
+.toast { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(16px); opacity: 0; transition: .2s; pointer-events: none;
+  background: #2b2b2e; color: #eee; border-radius: 10px; padding: 8px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.35); z-index: 60; font-size: 12.5px; }
+.toast.show { opacity: 1; transform: translateX(-50%); }
+.hide { display: none !important; }
+
+/* ---------- GUL-229 follow-up: gallery, entries, outputs ---------- */
+.win-editor { width: 1320px; height: 820px; }
+.ktable.k5 .kh, .ktable.k5 .kr { grid-template-columns: 96px 1fr 150px 1.2fr 28px; }
+.entry-tag { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.frow { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--border-soft); }
+.frow:first-child { border-top: 0; }
+.frow .fn { font: 12.5px ui-monospace, Menlo, monospace; }
+.frow .fd { flex: 1; color: var(--text3); font-size: 12px; }
+.fsel { font: 12px ui-monospace, Menlo, monospace; height: 28px; min-height: 28px; padding: 3px 24px 3px 8px; }
+.out-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; }
+.sechead { display: flex; align-items: baseline; gap: 8px; margin: 0 4px 3px; }
+.sechead h4 { margin: 0; }
+.count { font-size: 11.5px; color: var(--text3); }
+.sticky { position: sticky; top: 0; }
+.actlist .arow { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px 10px 10px; border-top: 1px solid var(--border-soft); }
+.actlist .arow:first-child { border-top: 0; }
+.actlist .arow .grip { color: var(--text3); cursor: grab; padding-top: 5px; font-size: 12px; }
+.actlist .arow .tile { width: 26px; height: 26px; border-radius: 7px; }
+.actlist .arow .ab { flex: 1; min-width: 0; }
+.actlist .arow .ab b { display: block; font-weight: 500; font-size: 12.5px; margin-bottom: 6px; }
+.af { display: grid; grid-template-columns: 44px 1fr; gap: 6px 8px; align-items: center; font-size: 12px; color: var(--text2); }
+.tfield { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; min-height: 28px; padding: 3px 6px 3px 8px; border-radius: 8px; background: var(--field); border: 1px solid var(--border); cursor: text; font-size: 12.5px; color: var(--text); }
+.tfield .tk { font: 11.5px ui-monospace, Menlo, monospace; padding: 1px 6px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); }
+.tfield .plus { margin-left: auto; font-size: 11px; color: var(--text3); border: 1px dashed var(--border); border-radius: 5px; padding: 0 6px; cursor: pointer; }
+.tfield .plus:hover { color: var(--accent); border-color: var(--accent); }
+.addrow2 { display: flex; align-items: center; gap: 8px; padding: 10px 12px; color: var(--accent); cursor: pointer; border-top: 1px solid var(--border-soft); font-weight: 500; font-size: 12.5px; }
+.addrow2:first-child { border-top: 0; }
+.addrow2:hover { background: var(--card-hover); }
+.empty-act { padding: 12px 14px; color: var(--text3); font-size: 12px; }
+.chipnote { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; background: var(--warn-soft); color: var(--warn); margin-left: 6px; font-weight: 500; }
+.willrun { margin-top: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); padding: 10px 12px; font-size: 12px; }
+.willrun h5 { margin: 0 0 6px; font-size: 11.5px; color: var(--text3); font-weight: 600; }
+.willrun .wr { display: flex; gap: 8px; align-items: center; padding: 3px 0; color: var(--text2); white-space: nowrap; }
+.willrun .wr .n { width: 16px; height: 16px; border-radius: 50%; background: var(--tile); display: grid; place-items: center; font-size: 10px; color: var(--text3); flex: none; }
+.willrun .wr .v { font: 11.5px ui-monospace, Menlo, monospace; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pop2 { position: absolute; z-index: 45; width: 300px; background: var(--pop); border: 1px solid var(--border); border-radius: 12px; padding: 6px; box-shadow: 0 18px 50px rgba(0,0,0,.4); display: none; }
+.pop2.show { display: block; }
+.pop2 .grp2 { font-size: 10.5px; color: var(--text3); font-weight: 600; padding: 6px 8px 3px; }
+.pop2 .mi { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 7px; cursor: pointer; }
+.pop2 .mi:hover { background: var(--accent); color: #fff; }
+.pop2 .mi:hover span, .pop2 .mi:hover .tok { color: rgba(255,255,255,.85); }
+.pop2 .mi .tile { width: 24px; height: 24px; border-radius: 6px; font-size: 12px; }
+.pop2 .mi div span { display: block; font-size: 11px; color: var(--text3); }
+.pop2 .mi .tok { background: transparent; padding: 0; }
+.pop2 .mi .ex { margin-left: auto; font: 11px ui-monospace, Menlo, monospace; color: var(--text3); }
+.t-copy { background: rgba(47,140,255,.16); color: #4c9dff; }
+.t-notify { background: rgba(235,128,64,.15); color: var(--warn); }
+.t-write { background: rgba(41,199,110,.14); color: var(--ok); }
+.t-open { background: rgba(169,112,255,.15); color: var(--ai); }
+.t-gray { background: var(--tile); color: var(--text2); }
+/* gallery */
+.gsheet { position: relative; width: 980px; height: 640px; background: var(--pane); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); display: flex; overflow: hidden; }
+.g-side { width: 220px; padding: 20px 14px; border-right: 1px solid var(--border-soft); background: var(--sidebar); }
+.g-title { font-size: 16px; font-weight: 700; }
+.g-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.gcat { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; cursor: pointer; color: var(--text2); font-size: 12.5px; }
+.gcat:hover { background: var(--card-hover); }
+.gcat.on { background: var(--accent-soft); color: var(--text); }
+.gcat .n { margin-left: auto; font-size: 11px; color: var(--text3); }
+.g-main { flex: 1; overflow-y: auto; padding: 20px 22px; }
+.g-close { position: absolute; top: 12px; right: 12px; }
+.ggrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.gcard { border: 1px solid var(--border); border-radius: 12px; background: var(--card); padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; min-height: 150px; }
+.gcard:hover { background: var(--card-hover); }
+.gcard .gh { display: flex; align-items: center; gap: 10px; }
+.gcard .gh b { font-size: 13.5px; }
+.gcard .gd { font-size: 12px; color: var(--text2); flex: 1; }
+.gcard .gf { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.gcard .gf .sp { flex: 1; }
+.meta { font-size: 11px; color: var(--text3); }
+.permchip { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; background: var(--tile); color: var(--text2); }
+.permchip.net { background: var(--warn-soft); color: var(--warn); }
+.gdet .back { color: var(--accent); cursor: pointer; font-size: 12.5px; margin-bottom: 12px; display: inline-block; }
+.gdet .dh2 { display: flex; gap: 14px; align-items: center; margin-bottom: 16px; }
+.gdet .dh2 h3 { margin: 0; font-size: 18px; }
+.gdet .dh2 p { margin: 3px 0 0; color: var(--text2); }
+.gdet .cols { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; }
+.kvs .srow { min-height: 42px; padding: 9px 14px; }
+.kvs .srow .k { width: 74px; color: var(--text3); font-size: 12px; flex: none; }
+.kvs .srow .v { flex: 1; font-size: 12.5px; }
+.codeprev { font: 11.5px/1.6 ui-monospace, Menlo, monospace; background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; white-space: pre; overflow: hidden; color: var(--text2); max-height: 210px; }
+.codeprev .cm { font-style: italic; }
+/* launcher stage */
+.launcher-stage { position: absolute; inset: 0; background: linear-gradient(135deg, #23324a, #392844); display: none; align-items: flex-start; justify-content: center; padding-top: 140px; z-index: 50; }
+body.light .launcher-stage { background: linear-gradient(135deg, #c9d6ea, #e4d4ec); }
+.launcher-stage.show { display: flex; }
+.lwin { width: 640px; border-radius: 16px; background: var(--pane); border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,.45); overflow: hidden; }
+.lwin .lin { display: flex; align-items: center; gap: 10px; padding: 14px 16px; font-size: 17px; border-bottom: 1px solid var(--border-soft); }
+.lchip { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 7px; background: var(--warn-soft); color: var(--warn); font-weight: 600; font-size: 13px; }
+.lcard2 { margin: 10px; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent-soft); padding: 12px 14px; }
+.lcard2 .h { display: flex; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+.lcard2 .h .sp { flex: 1; }
+.lcard2 .o1 { font-size: 16px; }
+.lcard2 .o2 { font-size: 13px; color: var(--text2); }
+.lcard2 .acts { display: flex; gap: 6px; margin-top: 10px; }
+.lcard2 .acts span { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--tile); color: var(--text2); }
+.lcard2 .acts span.p { background: var(--accent); color: #fff; }
+.lfoot { display: flex; align-items: center; gap: 8px; padding: 9px 16px; border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text3); }
+.lfoot .done { color: var(--ok); }
+.notif { position: absolute; top: 18px; right: 18px; width: 340px; display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: rgba(40,40,44,.92); color: #eee; box-shadow: 0 10px 30px rgba(0,0,0,.35); font-size: 12.5px; }
+body.light .notif { background: rgba(255,255,255,.95); color: #222; }
+.notif .ni { width: 30px; height: 30px; border-radius: 8px; background: #111; color: #fff; display: grid; place-items: center; font-weight: 800; flex: none; }
+.notif b { display: block; }
+.notif small { margin-left: auto; color: #999; }
+.itemlist .it { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 9px; }
+.itemlist .it.on { background: var(--accent); color: #fff; }
+.itemlist .it.on span { color: rgba(255,255,255,.8); }
+.itemlist .it .ic { width: 26px; height: 26px; border-radius: 6px; background: var(--tile); display: grid; place-items: center; font-size: 12px; flex: none; }
+.itemlist .it b { display: block; font-weight: 500; font-size: 13px; }
+.itemlist .it span { font-size: 11.5px; color: var(--text3); }
+.itemlist .it kbd { margin-left: auto; font: 11px ui-monospace, Menlo, monospace; opacity: .8; }
+.tr-act { display: flex; align-items: center; gap: 8px; padding: 6px 2px; font-size: 12px; border-top: 1px solid var(--border-soft); white-space: nowrap; }
+.tr-act .st { white-space: normal; text-align: right; max-width: 120px; }
+.tr-act .v { font: 11.5px ui-monospace, Menlo, monospace; color: var(--text2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-act .st { font-size: 11px; color: var(--text3); }
+.tr-act .st.ok { color: var(--ok); }
+.tr-act .st.skip { color: var(--warn); }
+</style>
+</head>
+<body>
+<div class="stagebar">
+  <b>工作流示例库 · 多入口 · 输出与动作</b>
+  <span class="grp">示例库</span>
+  <span class="pill" data-go="g-list">① 示例库</span>
+  <span class="pill" data-go="g-detail">② 示例详情</span>
+  <span class="grp">多入口</span>
+  <span class="pill" data-go="ed-entry">③ 关键字入口</span>
+  <span class="grp">输出</span>
+  <span class="pill" data-go="ed-output">④ 输出配置</span>
+  <span class="pill" data-go="ed-add">⑤ 添加动作</span>
+  <span class="pill" data-go="ed-token">⑥ 占位符</span>
+  <span class="pill" data-go="ed-items">⑦ 条目列表</span>
+  <span class="pill" data-go="ed-test">⑧ 测试运行</span>
+  <span class="pill" data-go="launcher">⑨ 启动器里</span>
+  <span class="sp"></span>
+  <span class="pill" id="themeBtn">浅色</span>
+</div>
+<div class="caption" id="caption"></div>
+
+<!-- ======================= Editor window ======================= -->
+<div class="window win-editor screen" id="win-editor">
+  <aside class="ed-side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="search"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>搜索工作流</div>
+    <div class="grouplbl">我的工作流 · 3</div>
+    <div id="wfList"></div>
+    <div class="bottom" style="position:relative">
+      <button class="btn" id="newBtn" style="flex:1;justify-content:center">＋ 新建工作流</button>
+      <button class="ibtn" title="在 Finder 中显示"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 4.5a1 1 0 0 1 1-1h3.5l1.5 1.5h6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg></button>
+      <div class="menu" id="newMenu" style="left:12px;right:auto;top:auto;bottom:46px">
+        <div class="mi" data-n="ai"><span class="tile t-prompt">✦</span><div>用 AI 生成<span>描述一句话，AI 写好并试跑</span></div></div>
+        <div class="mi" data-n="gallery"><span class="tile t-workflow">▦</span><div>从示例库添加<span>汇率换算、时间戳、JSON 格式化…</span></div></div>
+        <div class="mi" data-n="tpl"><span class="tile">{}</span><div>从模板开始<span>Python / Node / zsh 空白模板</span></div></div>
+      </div>
+    </div>
+  </aside>
+  <div class="ed-main">
+    <header class="ed-head">
+      <span class="appicon" style="background:#eb8040;font-weight:700">$</span>
+      <div class="ed-title"><b>汇率换算 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text3)"><path d="m2.5 4 2.5 2.5L7.5 4"/></svg></b><span>local.fx · 1.0.0 · 来自示例库</span></div>
+      <span class="badge ready"><span class="dot ok"></span>已信任</span>
+      <span class="sp"></span>
+      <span class="unsaved" id="unsaved"><span class="dot warn"></span>未保存</span>
+      <button class="btn" id="saveBtn">保存 <kbd>⌘S</kbd></button>
+      <button class="btn primary" id="runBtn">▶ 运行测试 <kbd>⌘R</kbd></button>
+      <span class="vsep"></span>
+      <span class="enable"><span class="switch on"></span>启用</span>
+      <button class="ibtn">···</button>
+    </header>
+    <div class="ed-body">
+      <div class="ed-center">
+        <div class="stepper" id="stepper"></div>
+
+        <!-- keywords with entry column -->
+        <div class="stage-area hide" id="v-keywords"><div class="stage-inner">
+          <div class="sec">
+            <h4>关键字</h4>
+            <p class="desc">每个关键字可以有自己的入口脚本；不选时用默认入口。预设参数在脚本里用 <span class="kw">{option:名字}</span> 读取。</p>
+            <div class="card ktable k5" id="kwTable"></div>
+          </div>
+          <div class="sec">
+            <h4>文件</h4>
+            <p class="desc">入口脚本标 <span class="entry-tag">入口</span>。其他文件可以被入口脚本引用：Python <span class="kw">import helper</span>、Node <span class="kw">require('./helper')</span>、zsh <span class="kw">source ./lib.sh</span>。运行时的工作目录就是工作流文件夹。</p>
+            <div class="card" id="fileList"></div>
+          </div>
+        </div></div>
+
+        <!-- output -->
+        <div class="stage-area hide" id="v-output"><div class="stage-inner" style="max-width:none">
+          <div class="out-grid">
+            <div>
+              <div class="sec">
+                <h4>怎么显示</h4><p class="desc">脚本打印到 stdout 的内容在启动器里的样子。</p>
+                <div class="card rlist" id="displayList"></div>
+              </div>
+              <div class="sec">
+                <div class="sechead"><h4>运行成功后</h4><span class="sp"></span><span class="count" id="okCount"></span></div>
+                <p class="desc">按顺序执行。内容里可以用占位符，例如 <span class="tok">{output}</span>。</p>
+                <div class="card actlist" id="okList"></div>
+              </div>
+              <div class="sec">
+                <div class="sechead"><h4>运行失败后</h4><span class="sp"></span><span class="count" id="failCount"></span></div>
+                <p class="desc">不配置时显示错误卡片。</p>
+                <div class="card actlist" id="failList"></div>
+              </div>
+              <div class="sec">
+                <div class="card">
+                  <div class="srow"><div class="rt"><b>执行完关闭启动器</b><span>适合「复制」「通知」这类不需要再看结果的工作流</span></div><span class="switch" id="closeSw"></span></div>
+                  <div class="srow"><div class="rt"><b>允许脚本追加动作</b><span>脚本打印 <span class="mono">{"actions": […]}</span> 时，追加在上面的动作之后执行</span></div><span class="switch" id="scriptSw"></span></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="sec sticky">
+                <h4>启动器里的样子</h4><p class="desc">用上次测试运行的输出：<span class="mono">100 usd jpy</span></p>
+                <div id="preview"></div>
+                <div class="willrun" id="willRun"></div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+      <aside class="ed-right" id="edRight">
+        <div class="tabs"><div class="seg" id="rtabs"><button data-p="ai"><span style="color:var(--ai)">✦</span> AI 助手</button><button data-p="test" class="on">▶ 测试运行</button></div></div>
+        <div class="panel" id="p-ai"><div class="ai-empty"><div class="spark">✦</div>告诉助手要改什么，例如「复制结果后发一个通知」。</div></div>
+        <div class="panel on" id="p-test">
+          <div class="test-in">
+            <div class="q"><span class="kw">fx</span><input value="100 usd jpy"><button class="btn sm primary" id="runBtn2">▶ 运行</button></div>
+            <label class="opt"><input type="checkbox" checked id="dryRun"> 只预览动作，不真的执行</label>
+          </div>
+          <div class="result" id="testResult"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- add action popover -->
+  <div class="pop2" id="addPop"></div>
+  <!-- token menu -->
+  <div class="pop2" id="tokPop"></div>
+
+  <!-- gallery sheet -->
+  <div class="sheet-bg" id="galBg">
+    <div class="gsheet">
+      <div class="g-side">
+        <div class="g-title">示例库</div>
+        <div class="g-sub">随 Typeflux 提供，添加后是你自己的一份，可以随便改。</div>
+        <div class="searchbox" style="width:auto;margin:12px 0 10px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><input id="gq" placeholder="搜索示例"></div>
+        <div id="gcats"></div>
+      </div>
+      <div class="g-main" id="gmain"></div>
+      <button class="ibtn g-close" id="galClose">✕</button>
+    </div>
+  </div>
+
+  <!-- launcher overlay -->
+  <div class="launcher-stage" id="launcherStage">
+    <div class="lwin">
+      <div class="lin"><span class="lchip">fx · 汇率换算</span><span>100 usd jpy</span></div>
+      <div class="lcard2" id="lcard"></div>
+      <div class="lfoot" id="lfoot"></div>
+    </div>
+    <div class="notif" id="notif"><div class="ni">T</div><div><b>汇率换算</b><span>100 USD = 14,912.30 JPY · 已复制</span></div><small>现在</small></div>
+  </div>
+  <div class="toast" id="toastE"></div>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const params = new URLSearchParams(location.search);
+if (params.get('light') === '1') document.body.classList.add('light');
+$('#themeBtn').onclick = () => { document.body.classList.toggle('light'); $('#themeBtn').textContent = document.body.classList.contains('light') ? '深色' : '浅色'; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function toast(t) { const e = $('#toastE'); e.textContent = t; e.classList.add('show'); clearTimeout(e._h); e._h = setTimeout(() => e.classList.remove('show'), 1800); }
+function markDirty() { $('#unsaved').classList.add('show'); }
+$('#saveBtn').onclick = () => { $('#unsaved').classList.remove('show'); toast('已保存 · workflow.json 已更新'); };
+
+/* ---------------- sidebar ---------------- */
+const wfs = [
+  { name: '汇率换算', kw: 'fx · rate', dot: 'ok', bg: '#eb8040', ic: '$', on: true },
+  { name: 'Python · 输出文本', kw: 'wf', dot: 'ok', bg: 'linear-gradient(135deg,#2bc2d6,#2f8cff)', ic: '&lt;/&gt;' },
+  { name: '本机 IP', kw: 'ip', dot: 'off', bg: '#6b7280', ic: '⌘' },
+];
+$('#wfList').innerHTML = wfs.map(w => `<div class="wfitem ${w.on ? 'on' : ''}"><span class="appicon" style="background:${w.bg};font-size:11px;font-weight:700">${w.ic}</span><div class="wt"><b>${w.name}</b><span>${w.kw}</span></div><span class="dot ${w.dot}"></span></div>`).join('');
+$('#newBtn').onclick = e => { e.stopPropagation(); $('#newMenu').classList.toggle('show'); };
+document.addEventListener('click', () => { $('#newMenu').classList.remove('show'); $('#addPop').classList.remove('show'); $('#tokPop').classList.remove('show'); });
+$$('#newMenu .mi').forEach(m => m.onclick = () => { $('#newMenu').classList.remove('show'); if (m.dataset.n === 'gallery') openGallery(); else toast(m.textContent.trim().split('\n')[0]); });
+
+/* ---------------- stepper ---------------- */
+let step = 'output';
+const STEPS = [['keywords', '关键字', 'fx · rate'], ['input', '输入', '可选 · 或选中'], ['script', '脚本', 'main.py'], ['output', '输出', '']];
+function outSummary() {
+  const d = { text: '文本', none: '不显示', items: '列表', markdown: 'Markdown' }[state.display];
+  return d + (state.ok.length ? ` · ${state.ok.length} 个动作` : '');
+}
+function renderStepper() {
+  $('#stepper').innerHTML = STEPS.map(([s, l, sum], i) => `${i ? '<span class="connector"></span>' : ''}<div class="step ${step === s ? 'on' : ''}" data-s="${s}"><span class="num">${i + 1}</span><div class="st"><b>${l}</b><span>${s === 'output' ? outSummary() : sum}</span></div></div>`).join('')
+    + `<span class="connector" style="background:transparent"></span><button class="btn sm ghost mono" style="font-size:11.5px">{ } JSON</button>`;
+  $$('#stepper .step').forEach(el => el.onclick = () => setStep(el.dataset.s));
+}
+function setStep(s) {
+  if (s === 'input' || s === 'script') { toast('本稿只涉及「关键字」和「输出」两步'); return; }
+  step = s; renderStepper();
+  $('#v-keywords').classList.toggle('hide', s !== 'keywords');
+  $('#v-output').classList.toggle('hide', s !== 'output');
+}
+
+/* ---------------- keywords with entries ---------------- */
+const files = ['main.py', 'rates.py', 'table.py', 'README.md'];
+const kws = [
+  { k: 'fx', title: '汇率', entry: '', opts: [] },
+  { k: 'rate', title: '汇率表', entry: 'table.py', opts: ['to=usd,eur,jpy'] },
+];
+function renderKw() {
+  $('#kwTable').innerHTML = `<div class="kh"><span>关键字</span><span>显示名称</span><span>入口</span><span>预设参数</span><span></span></div>`
+    + kws.map((k, i) => `<div class="kr"><input class="field mono" value="${k.k}"><input class="field" value="${k.title}">
+      <select class="field fsel" data-i="${i}">${['', ...files.filter(f => f.endsWith('.py'))].map(f => `<option value="${f}" ${f === k.entry ? 'selected' : ''}>${f ? f : '默认（main.py）'}</option>`).join('')}</select>
+      <div class="optchips">${k.opts.map(o => `<span class="optchip">${o}<i>×</i></span>`).join('')}<button class="addopt">＋ 参数</button></div>
+      <button class="ibtn">×</button></div>`).join('')
+    + `<div class="addrow">＋ 添加关键字</div>`;
+  $$('#kwTable select').forEach(s => s.onchange = () => { kws[s.dataset.i].entry = s.value; renderFiles(); markDirty(); toast(`「${kws[s.dataset.i].k}」的入口改为 ${s.value || 'main.py'}`); });
+  renderFiles();
+}
+function renderFiles() {
+  const uses = f => kws.filter(k => (k.entry || 'main.py') === f).map(k => k.k);
+  const desc = { 'main.py': '默认入口', 'rates.py': '被 main.py、table.py 引用（import rates）', 'table.py': '', 'README.md': '说明，示例库详情页会显示' };
+  $('#fileList').innerHTML = files.map(f => {
+    const u = uses(f);
+    return `<div class="frow"><span class="fn">${f}</span>${u.length ? `<span class="entry-tag">入口 · ${u.join(' ')}</span>` : ''}<span class="fd">${desc[f] || (u.length ? '' : '没有关键字用它作入口')}</span><button class="btn sm ghost">打开</button></div>`;
+  }).join('');
+}
+
+/* ---------------- output ---------------- */
+const ACTIONS = {
+  copy: { t: '复制到剪切板', ic: '⧉', cls: 't-copy', fields: [['内容', ['{output.line1}']]] },
+  write: { t: '写回 / 替换选中文字', ic: '↧', cls: 't-write', fields: [['内容', ['{output}']]] },
+  notify: { t: '发送通知', ic: '🔔', cls: 't-notify', fields: [['标题', ['汇率换算']], ['内容', ['{output}']]], note: '首次使用时请求通知权限' },
+  hud: { t: '底栏提示', ic: '▭', cls: 't-gray', fields: [['文字', ['已复制 ', '{output.line1}']]] },
+  open: { t: '打开链接 / 文件 / 应用', ic: '↗', cls: 't-open', fields: [['地址', ['https://www.xe.com/currencyconverter/convert/?Amount=', '{json.amount}']]] },
+  reveal: { t: '在 Finder 中显示', ic: '⌂', cls: 't-gray', fields: [['路径', ['{output.line1}']]] },
+  speak: { t: '朗读', ic: '♪', cls: 't-gray', fields: [['内容', ['{output.line1}']]] },
+  ai: { t: '交给 AI 继续处理', ic: '✦', cls: 't-open', fields: [['提示词', ['解释这个汇率的变化：', '{output}']]] },
+  run: { t: '运行另一个关键字', ic: '⇥', cls: 't-gray', fields: [['关键字', ['tr ', '{output.line1}']]] },
+};
+const ADD_GROUPS = [['常用', ['copy', 'write', 'notify', 'hud']], ['打开', ['open', 'reveal']], ['更多', ['speak', 'ai', 'run']]];
+const state = { display: 'text', ok: [{ a: 'copy', f: [['{output.line1}']] }, { a: 'notify', f: [['汇率换算'], ['{output}']] }], fail: [], close: false, script: false };
+const DISPLAY = [
+  ['text', '文本卡片', '打印的内容逐行显示；↩ 复制，⌥↩ 写回'],
+  ['none', '不显示，只做事', '运行完关闭启动器，只执行下面的动作'],
+  ['items', '条目列表', '打印 {"items": […]}，可上下选择；兼容 Alfred Script Filter'],
+  ['markdown', 'Markdown 卡片', '标题、列表、表格、代码块'],
+  ['image', '图片', '打印图片路径或 data URL，例如二维码', true],
+];
+function renderDisplay() {
+  $('#displayList').innerHTML = DISPLAY.map(([v, t, d, later]) => `<div class="ropt ${state.display === v ? 'on' : ''} ${later ? 'dis' : ''}" data-v="${v}"><span class="radio"></span><div class="ot"><b>${t}</b>${later ? ' <span class="later">之后</span>' : ''}<br><span style="margin:0">${esc(d)}</span></div></div>`).join('');
+  $$('#displayList .ropt').forEach(o => o.onclick = () => { if (o.classList.contains('dis')) return; state.display = o.dataset.v; if (state.display === 'none') state.close = true; renderOutput(); markDirty(); });
+}
+function tfield(parts, where, i, j) {
+  return `<div class="tfield">${parts.map(p => p.startsWith('{') ? `<span class="tk">${esc(p)}</span>` : esc(p)).join('')}<span class="plus" data-w="${where}" data-i="${i}" data-j="${j}">{ } 插入</span></div>`;
+}
+function renderActs(where) {
+  const list = state[where];
+  const box = where === 'ok' ? '#okList' : '#failList';
+  $(box).innerHTML = list.map((x, i) => {
+    const A = ACTIONS[x.a];
+    return `<div class="arow"><span class="grip">⋮⋮</span><span class="tile ${A.cls}">${A.ic}</span><div class="ab"><b>${A.t}${A.note ? `<span class="chipnote">${A.note}</span>` : ''}</b><div class="af">${A.fields.map(([l], j) => `<span>${l}</span>${tfield(x.f[j] || A.fields[j][1], where, i, j)}`).join('')}</div></div><button class="ibtn" data-del="${where}:${i}">×</button></div>`;
+  }).join('') + (list.length ? '' : `<div class="empty-act">${where === 'ok' ? '只显示结果，不做别的。' : '显示错误卡片（默认）。'}</div>`)
+    + `<div class="addrow2" data-add="${where}">＋ 添加动作</div>`;
+  $$(`${box} [data-del]`).forEach(b => b.onclick = () => { list.splice(+b.dataset.del.split(':')[1], 1); renderOutput(); markDirty(); });
+  $$(`${box} [data-add]`).forEach(b => b.onclick = e => { e.stopPropagation(); openAdd(b, where); });
+  $$(`${box} .plus`).forEach(b => b.onclick = e => { e.stopPropagation(); openTok(b); });
+}
+function place(pop, anchor, dy = 6) {
+  const w = $('#win-editor').getBoundingClientRect(), r = anchor.getBoundingClientRect();
+  pop.style.left = Math.min(r.left - w.left, w.width - 320) + 'px';
+  pop.style.top = Math.min(r.bottom - w.top + dy, w.height - pop.offsetHeight - 10) + 'px';
+}
+function openAdd(anchor, where) {
+  const p = $('#addPop');
+  p.innerHTML = ADD_GROUPS.map(([g, ids]) => `<div class="grp2">${g}</div>` + ids.map(id => `<div class="mi" data-a="${id}"><span class="tile ${ACTIONS[id].cls}">${ACTIONS[id].ic}</span><div>${ACTIONS[id].t}<span>${ACTIONS[id].fields.map(f => f[0]).join('、')}</span></div></div>`).join('')).join('');
+  p.classList.add('show'); place(p, anchor);
+  $$('#addPop .mi').forEach(m => m.onclick = () => { state[where].push({ a: m.dataset.a, f: ACTIONS[m.dataset.a].fields.map(f => [...f[1]]) }); p.classList.remove('show'); renderOutput(); markDirty(); });
+}
+const TOKENS = [['{output}', '全部输出', '100 USD = 14,912.30 JPY…'], ['{output.line1}', '第一行', '100 USD = 14,912.30 JPY'], ['{output.lastLine}', '最后一行', '1 USD = 149.123 JPY'], ['{json.amount}', 'JSON 字段（输出是 JSON 时）', '14912.3'], ['{query}', '关键字后面的输入', '100 usd jpy'], ['{selection}', '选中的文字', '（空）'], ['{option:to}', '预设参数', 'usd,eur,jpy'], ['{keyword}', '关键字', 'fx']];
+function openTok(anchor) {
+  const p = $('#tokPop');
+  p.innerHTML = '<div class="grp2">插入占位符 · 用上次测试运行的值预览</div>' + TOKENS.map(([t, d, ex]) => `<div class="mi" data-t="${t}"><div><span class="tok">${t}</span><span>${d}</span></div><span class="ex">${esc(ex)}</span></div>`).join('');
+  p.classList.add('show'); place(p, anchor);
+  $$('#tokPop .mi').forEach(m => m.onclick = () => { const { w, i, j } = anchor.dataset; const x = state[w][+i]; if (!x.f[j]) x.f[j] = []; x.f[j].push(m.dataset.t); p.classList.remove('show'); renderOutput(); markDirty(); });
+}
+const SAMPLE = { 'output': '100 USD = 14,912.30 JPY\n1 USD = 149.123 JPY', 'output.line1': '100 USD = 14,912.30 JPY', 'output.lastLine': '1 USD = 149.123 JPY', 'json.amount': '14912.3', 'query': '100 usd jpy', 'selection': '', 'option:to': 'usd,eur,jpy', 'keyword': 'fx' };
+const fill = parts => parts.map(p => p.startsWith('{') ? (SAMPLE[p.slice(1, -1)] ?? '') : p).join('').replace(/\n/g, ' ⏎ ');
+function previewCard() {
+  if (state.display === 'none') return `<div class="launcher"><div class="lin"><span class="chip">fx · 汇率换算</span><span>100 usd jpy</span></div><div class="closed">运行完启动器关闭${state.ok.length ? '，执行下面的动作' : ''}</div></div>`;
+  if (state.display === 'items') return `<div class="launcher"><div class="lin"><span class="chip">fx · 汇率换算</span><span>100 usd</span></div><div class="itemlist" style="padding:6px">
+      <div class="it on"><span class="ic">¥</span><div><b>14,912.30 JPY</b><span>1 USD = 149.123 JPY</span></div><kbd>↩ 复制</kbd></div>
+      <div class="it"><span class="ic">€</span><div><b>92.18 EUR</b><span>1 USD = 0.9218 EUR</span></div></div>
+      <div class="it"><span class="ic">¥</span><div><b>718.40 CNY</b><span>1 USD = 7.184 CNY</span></div></div></div></div>`;
+  if (state.display === 'markdown') return `<div class="launcher"><div class="lin"><span class="chip">fx · 汇率换算</span><span>100 usd jpy</span></div><div class="lcard"><div class="h">汇率换算<span class="sp"></span>工作流</div><div class="out"><b>100 USD = 14,912.30 JPY</b></div><div class="out2">| 币种 | 汇率 |<br>| JPY | 149.123 |</div></div></div>`;
+  return `<div class="launcher"><div class="lin"><span class="chip">fx · 汇率换算</span><span>100 usd jpy</span></div><div class="lcard"><div class="h">汇率换算<span class="sp"></span>工作流</div><div class="out">100 USD = 14,912.30 JPY</div><div class="out2">1 USD = 149.123 JPY</div><div class="acts"><span class="p">↩ 复制</span><span>⌥↩ 写回</span><span>⌘R 重新运行</span></div></div></div>`;
+}
+function renderOutput() {
+  renderDisplay(); renderActs('ok'); renderActs('fail');
+  $('#okCount').textContent = state.ok.length ? `${state.ok.length} 个动作` : '';
+  $('#failCount').textContent = state.fail.length ? `${state.fail.length} 个动作` : '';
+  $('#closeSw').classList.toggle('on', state.close); $('#scriptSw').classList.toggle('on', state.script);
+  $('#preview').innerHTML = previewCard();
+  $('#willRun').innerHTML = `<h5>这次运行成功后会执行</h5>` + (state.ok.length ? state.ok.map((x, i) => `<div class="wr"><span class="n">${i + 1}</span>${ACTIONS[x.a].t}<span class="v">${esc(x.f.map(fill).join(' · '))}</span></div>`).join('') : '<div class="wr">只显示结果</div>')
+    + (state.close ? '<div class="wr"><span class="n">→</span>关闭启动器</div>' : '') + (state.script ? '<div class="wr"><span class="n">+</span>脚本追加的动作（如果有）</div>' : '');
+  renderStepper();
+}
+$('#closeSw').onclick = () => { state.close = !state.close; renderOutput(); markDirty(); };
+$('#scriptSw').onclick = () => { state.script = !state.script; renderOutput(); markDirty(); };
+
+/* ---------------- test panel ---------------- */
+$$('#rtabs button').forEach(b => b.onclick = () => { $$('#rtabs button').forEach(x => x.classList.toggle('on', x === b)); $('#p-ai').classList.toggle('on', b.dataset.p === 'ai'); $('#p-test').classList.toggle('on', b.dataset.p === 'test'); });
+function renderTest(ran) {
+  if (!ran) { $('#testResult').innerHTML = '<div style="color:var(--text3);font-size:12px;padding:6px 2px">按 ⌘R 运行。勾选「只预览动作」时，动作只列出来不执行。</div>'; return; }
+  const dry = $('#dryRun').checked;
+  const scriptActs = state.script ? [{ t: '打开链接', v: 'https://www.xe.com/…', st: dry ? '预览' : '已执行' }] : [{ t: '打开链接', v: 'xe.com/…', st: '未执行：未允许脚本追加', skip: true }];
+  $('#testResult').innerHTML = `<div class="rhead"><span class="dot ok"></span>成功<span class="sp"></span><span class="mono">0.42 秒</span></div>
+    <div class="seg rtabs"><button class="on">预览</button><button>stdout</button><button>stderr</button><button>动作 ${state.ok.length + 1}</button></div>
+    <div class="launcher" style="margin-bottom:12px"><div class="lcard" style="margin:0;border:0;border-radius:0"><div class="h">汇率换算<span class="sp"></span>工作流</div><div class="out">100 USD = 14,912.30 JPY</div><div class="out2">1 USD = 149.123 JPY</div></div></div>
+    <div class="sl" style="margin:0 0 4px">动作</div>
+    ${state.ok.map(x => `<div class="tr-act"><span class="tile ${ACTIONS[x.a].cls}" style="width:20px;height:20px;border-radius:5px;font-size:10px">${ACTIONS[x.a].ic}</span>${ACTIONS[x.a].t}<span class="v">${esc(x.f.map(fill).join(' · '))}</span><span class="st ${dry ? '' : 'ok'}">${dry ? '预览' : '✓ 已执行'}</span></div>`).join('')}
+    ${scriptActs.map(a => `<div class="tr-act"><span class="tile t-open" style="width:20px;height:20px;border-radius:5px;font-size:10px">↗</span>${a.t}<span class="chipnote" style="margin:0">脚本追加</span><span class="v">${a.v}</span><span class="st ${a.skip ? 'skip' : ''}">${a.st}</span></div>`).join('')}
+    <div class="callout info" style="display:block;margin-top:10px;padding:9px 12px;border-radius:10px;background:var(--accent-soft);color:var(--text2);font-size:12px">stdout 是 <span class="mono">{"text": …, "actions": [{"type": "open", …}]}</span>：文本显示在卡片里，动作按上面的规则处理。</div>`;
+}
+$('#runBtn').onclick = $('#runBtn2').onclick = () => { renderTest(true); toast($('#dryRun').checked ? '已运行 · 动作只预览' : '已运行 · 动作已执行'); };
+$('#dryRun').onchange = () => renderTest(true);
+
+/* ---------------- gallery ---------------- */
+const CATS = [['all', '全部'], ['text', '文本处理'], ['dev', '开发'], ['web', '网络'], ['sys', '系统']];
+const GAL = [
+  { id: 'fx', name: '汇率换算', ic: '$', bg: '#eb8040', cat: 'web', kw: ['fx', 'rate'], rt: 'Python', net: true, d: '输入「100 usd jpy」查实时汇率；rate 列出常用币种。', shows: '联网请求、参数解析、两个关键字两个入口、复制 + 通知', added: true },
+  { id: 'ts', name: '时间戳转换', ic: '⏱', bg: '#2f8cff', cat: 'dev', kw: ['ts'], rt: 'Python', d: '时间戳和日期互相转换；没参数时用选中的文字。', shows: '没参数时用选中的文字、多行输出' },
+  { id: 'json', name: 'JSON 格式化', ic: '{}', bg: '#29c76e', cat: 'dev', kw: ['json'], rt: 'Python', d: '格式化或压缩选中的 JSON，⌥↩ 写回原处。', shows: '处理选中的文字、写回动作' },
+  { id: 'enc', name: 'URL / Base64 编解码', ic: '%', bg: '#a970ff', cat: 'dev', kw: ['url', 'b64'], rt: 'Node', d: '一个工作流两个关键字，用预设参数区分编码和解码。', shows: '多个关键字 + 预设参数' },
+  { id: 'uuid', name: '生成 UUID / 密码', ic: '#', bg: '#6b7280', cat: 'dev', kw: ['uuid', 'pwd'], rt: 'zsh', d: '直接复制到剪切板，底栏提示「已复制」。', shows: '不显示，只做事 + 复制' },
+  { id: 'ip', name: '本机 IP', ic: '⌘', bg: '#0ea5a4', cat: 'sys', kw: ['ip'], rt: 'zsh', net: true, d: '列出局域网和公网 IP，选一条复制。', shows: '条目列表' },
+  { id: 'wc', name: '字数统计', ic: 'Aa', bg: '#d9468a', cat: 'text', kw: ['wc'], rt: 'Python', d: '统计选中文字的字数、词数、行数。', shows: '最简单的入门示例' },
+  { id: 'code', name: '在编辑器打开项目', ic: '›_', bg: '#334155', cat: 'sys', kw: ['code'], rt: 'zsh', d: '在常用目录里找项目，用 VS Code 打开。', shows: '条目列表 + 打开动作' },
+];
+let gcat = 'all', gq = '';
+function openGallery(detail) { $('#galBg').classList.add('show'); detail ? renderDetail(GAL[0]) : renderGallery(); }
+$('#galClose').onclick = () => $('#galBg').classList.remove('show');
+$('#gq').oninput = e => { gq = e.target.value; renderGallery(); };
+function renderGallery() {
+  $('#gcats').innerHTML = CATS.map(([c, l]) => `<div class="gcat ${gcat === c ? 'on' : ''}" data-c="${c}">${l}<span class="n">${GAL.filter(g => c === 'all' || g.cat === c).length}</span></div>`).join('');
+  $$('#gcats .gcat').forEach(e => e.onclick = () => { gcat = e.dataset.c; renderGallery(); });
+  const list = GAL.filter(g => (gcat === 'all' || g.cat === gcat) && (!gq || (g.name + g.d + g.kw.join(' ')).toLowerCase().includes(gq.toLowerCase())));
+  $('#gmain').innerHTML = `<div class="ggrid">${list.map(g => `<div class="gcard" data-id="${g.id}">
+      <div class="gh"><span class="appicon" style="background:${g.bg};font-size:11px;font-weight:700">${g.ic}</span><b>${g.name}</b></div>
+      <div class="gd">${g.d}</div>
+      <div class="gf">${g.kw.map(k => `<span class="kw">${k}</span>`).join('')}<span class="meta">${g.rt}</span>${g.net ? '<span class="permchip net">联网</span>' : ''}<span class="sp"></span>
+      ${g.added ? '<span class="badge ready">已添加</span>' : `<button class="btn sm" data-add="${g.id}">添加</button>`}</div></div>`).join('')}</div>`;
+  $$('#gmain .gcard').forEach(c => c.onclick = e => { if (e.target.dataset.add) { const g = GAL.find(x => x.id === e.target.dataset.add); g.added = true; renderGallery(); toast(`已添加「${g.name}」· 关键字 ${g.kw.join(' ')}`); return; } renderDetail(GAL.find(x => x.id === c.dataset.id)); });
+}
+function renderDetail(g) {
+  $('#gmain').innerHTML = `<div class="gdet"><span class="back" id="gback">‹ 示例库</span>
+    <div class="dh2"><span class="appicon" style="width:44px;height:44px;border-radius:11px;background:${g.bg};font-weight:700">${g.ic}</span><div style="flex:1"><h3>${g.name}</h3><p>${g.d}</p></div>
+      ${g.added ? '<span class="badge ready">已添加</span> <button class="btn">在编辑器中打开</button>' : `<button class="btn primary" id="gAdd">添加到我的工作流</button>`}</div>
+    <div class="cols"><div>
+      <div class="sl">基本信息</div>
+      <div class="card kvs">
+        <div class="srow"><span class="k">关键字</span><span class="v">${g.kw.map(k => `<span class="kw">${k}</span>`).join(' ')}　冲突时自动改名，例如 fx2</span></div>
+        <div class="srow"><span class="k">运行时</span><span class="v">${g.rt} 3（系统自带，不需要安装依赖）</span></div>
+        <div class="srow"><span class="k">会做什么</span><span class="v">${g.net ? '<span class="permchip net">访问 open.er-api.com</span> ' : ''}<span class="permchip">复制到剪切板</span> <span class="permchip">发送通知</span></span></div>
+        <div class="srow"><span class="k">演示了</span><span class="v">${g.shows}</span></div>
+        <div class="srow"><span class="k">文件</span><span class="v mono" style="font-size:12px">main.py · table.py · rates.py · README.md</span></div>
+      </div>
+      <div class="sl" style="margin-top:16px">用法（README.md）</div>
+      <div class="card" style="padding:12px 14px;font-size:12.5px;color:var(--text2);line-height:1.7">
+        <span class="kw">fx 100 usd jpy</span>　100 美元换成日元<br><span class="kw">fx 50 eur</span>　换成默认币种（预设参数 <span class="mono">to</span>）<br><span class="kw">rate</span>　列出常用币种的汇率</div>
+    </div><div>
+      <div class="sl">在启动器里</div>
+      <div class="launcher"><div class="lin"><span class="chip">fx · 汇率换算</span><span>100 usd jpy</span></div><div class="lcard"><div class="h">汇率换算<span class="sp"></span>工作流</div><div class="out">100 USD = 14,912.30 JPY</div><div class="out2">1 USD = 149.123 JPY</div></div></div>
+      <div class="sl" style="margin-top:16px">main.py</div>
+      <div class="codeprev"><span class="cm"># fx: 100 usd jpy → 实时汇率</span>
+import json, sys
+from rates import fetch_rates, parse
+
+amount, src, dst = parse(sys.argv[1:] or ["1", "usd"])
+rate = fetch_rates(src)[dst]
+print(f"{amount:g} {src} = {amount * rate:,.2f} {dst}")
+print(f"1 {src} = {rate:.3f} {dst}")</div>
+    </div></div></div>`;
+  $('#gback').onclick = renderGallery;
+  $('#gAdd') && ($('#gAdd').onclick = () => { g.added = true; renderDetail(g); toast(`已添加「${g.name}」`); });
+}
+
+/* ---------------- launcher ---------------- */
+function showLauncher() {
+  $('#launcherStage').classList.add('show');
+  $('#lcard').innerHTML = `<div class="h">汇率换算<span class="sp"></span>工作流 · Python · 0.42 秒</div><div class="o1">100 USD = 14,912.30 JPY</div><div class="o2">1 USD = 149.123 JPY</div><div class="acts"><span class="p">↩ 复制</span><span>⌥↩ 写回</span><span>⌘R 重新运行</span><span>⌘E 编辑</span></div>`;
+  $('#lfoot').innerHTML = `<span class="done">✓ 已复制「100 USD = 14,912.30 JPY」</span>·<span class="done">✓ 已发送通知</span><span style="flex:1"></span>按 ⌘Z 撤销复制`;
+}
+$('#launcherStage').onclick = () => $('#launcherStage').classList.remove('show');
+
+/* ---------------- screens ---------------- */
+const SCREENS = {
+  'g-list': '<b>① 示例库。</b>「＋ 新建工作流」→「从示例库添加」，或设置里「启动器工作流」页的「示例库」。按类别浏览、搜索，卡片上有关键字、运行时、是否联网。点「添加」复制一份到你的工作流目录，记为已信任。',
+  'g-detail': '<b>② 示例详情。</b>点卡片看详情：会做什么（联网地址、复制、通知等）、演示了哪些用法、README、启动器里的样子和入口脚本。添加后按钮变成「在编辑器中打开」。',
+  'ed-entry': '<b>③ 关键字入口。</b>关键字表多一列「入口」，每个关键字可以指定自己的脚本（rate → table.py），不选就用默认入口。文件列表标出哪些文件是入口，以及其他文件怎么被引用。',
+  'ed-output': '<b>④ 输出配置。</b>上面选怎么显示，下面是运行成功后 / 失败后的动作列表，可以拖动排序；内容字段是占位符输入框。右边是启动器里的样子和「这次会执行」。',
+  'ed-add': '<b>⑤ 添加动作。</b>按常用 / 打开 / 更多分组。每种动作只有一两个字段，加进来就带好合适的默认值。',
+  'ed-token': '<b>⑥ 占位符。</b>点字段右侧「{ } 插入」，列出可用的占位符和用上次测试运行算出的值。',
+  'ed-items': '<b>⑦ 条目列表。</b>显示方式选「条目列表」时，预览变成可上下选择的列表；每一条的 ↩ / ⌥↩ 由脚本输出的 JSON 决定。',
+  'ed-test': '<b>⑧ 测试运行。</b>结果多一个「动作」标签：配置的动作和脚本追加的动作都列出来。默认只预览不执行；没有允许脚本追加时，脚本的动作标为「未执行」。',
+  'launcher': '<b>⑨ 启动器里。</b>结果卡片照常显示；动作执行后底栏汇总「✓ 已复制 · ✓ 已发送通知」，复制可以 ⌘Z 撤销；右上角是系统通知。',
+};
+function go(id) {
+  $$('.pill[data-go]').forEach(p => p.classList.toggle('on', p.dataset.go === id));
+  $('#caption').innerHTML = SCREENS[id];
+  $('#galBg').classList.remove('show'); $('#launcherStage').classList.remove('show');
+  $('#addPop').classList.remove('show'); $('#tokPop').classList.remove('show');
+  state.display = 'text'; renderTest(false);
+  if (id === 'g-list') { setStep('output'); openGallery(); }
+  if (id === 'g-detail') { setStep('output'); openGallery(true); }
+  if (id === 'ed-entry') setStep('keywords');
+  if (['ed-output', 'ed-add', 'ed-token', 'ed-items', 'ed-test'].includes(id)) { setStep('output'); }
+  if (id === 'ed-items') state.display = 'items';
+  renderOutput();
+  if (id === 'ed-add') setTimeout(() => openAdd($('#okList [data-add]'), 'ok'), 0);
+  if (id === 'ed-token') setTimeout(() => openTok($('#okList .plus')), 0);
+  if (id === 'ed-test') renderTest(true);
+  if (id === 'launcher') showLauncher();
+}
+$$('.pill[data-go]').forEach(p => p.onclick = e => { e.stopPropagation(); go(p.dataset.go); });
+renderKw(); renderOutput(); renderStepper(); renderTest(false);
+if (params.get('solo')) document.body.classList.add('solo');
+$('#win-editor').classList.add('on');
+go(params.get('solo') || 'g-list');
+</script>
+</body>
+</html>
