@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · 随便问 启动器位置与单词卡 设计稿</title>
+<style>
+  :root {
+    --canvas: #0c0c0d; --desk: #1b1c1f;
+    --glass: rgba(58,58,62,.86);
+    --hair: rgba(255,255,255,.10);
+    --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: rgba(10,132,255,.16); --accent-text: #8ebdff;
+    --hover: rgba(255,255,255,.08); --ctl: rgba(255,255,255,.08);
+    --violet: #bf5af2; --violet-soft: rgba(191,90,242,.18); --violet-text: #d6a1f7;
+    --danger: #ff6961; --warn: #ffb340; --ok: #34c759;
+    --win: #232325; --wall-a: #2c3442; --wall-b: #3b2f45;
+  }
+  body.light {
+    --canvas: #eceef1; --desk: #dfe3e8;
+    --glass: rgba(250,250,252,.90);
+    --hair: rgba(0,0,0,.09);
+    --text: #1d1d1f; --text-2: #5f5f64; --text-3: #8e8e93;
+    --accent-soft: rgba(10,132,255,.12); --accent-text: #0a6cdb;
+    --hover: rgba(0,0,0,.05); --ctl: rgba(0,0,0,.05);
+    --violet-soft: rgba(175,82,222,.12); --violet-text: #8e3fc0;
+    --win: #f7f7f8; --wall-a: #b9c7dc; --wall-b: #d9c8e4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 56px; background: var(--canvas); color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans SC", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 18px; max-width: 1260px; }
+  h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+  h3 { font-size: 17px; margin: 36px 0 14px; font-weight: 650; }
+  code { font-size: 11.5px; color: var(--text-2); font-family: ui-monospace, Menlo, monospace; }
+  .topbar { display: flex; gap: 10px; align-items: center; margin-bottom: 22px; }
+  .pill { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--ctl); border: 1px solid var(--hair); }
+  .pill button { border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; height: 26px; padding: 0 12px; border-radius: 7px; cursor: pointer; }
+  .pill button.on { background: var(--accent); color: #fff; }
+  .btn { border: 1px solid var(--hair); background: var(--ctl); color: var(--text); font: inherit; font-size: 12px; height: 28px; padding: 0 12px; border-radius: 8px; cursor: pointer; }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 10px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  .grid2 { display: grid; grid-template-columns: 1040px 1fr; gap: 28px 36px; align-items: start; }
+  .grid3 { display: grid; grid-template-columns: 780px 1fr; gap: 28px 36px; align-items: start; }
+
+  /* ===== desktop simulation ===== */
+  .screen { position: relative; width: 1040px; height: 640px; border-radius: 14px; overflow: hidden; border: 1px solid var(--hair);
+    background: radial-gradient(900px 500px at 20% 0%, var(--wall-a), transparent 60%), radial-gradient(900px 500px at 90% 100%, var(--wall-b), transparent 60%), var(--desk);
+    user-select: none; }
+  .menubar { position: absolute; left: 0; right: 0; top: 0; height: 24px; background: rgba(0,0,0,.28); backdrop-filter: blur(10px);
+    display: flex; align-items: center; gap: 16px; padding: 0 14px; font-size: 12px; color: rgba(255,255,255,.9); }
+  body.light .menubar { background: rgba(255,255,255,.55); color: #222; }
+  .menubar .r { margin-left: auto; display: flex; gap: 14px; }
+  .dock { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); height: 50px; width: 380px; border-radius: 16px;
+    background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .dock i { width: 34px; height: 34px; border-radius: 9px; display: inline-block; background: linear-gradient(135deg,#6b7fa8,#3f4a63); }
+  .dock i:nth-child(2) { background: linear-gradient(135deg,#ff7a59,#c2412d); } .dock i:nth-child(3) { background: linear-gradient(135deg,#34c759,#1f8a3c); }
+  .dock i:nth-child(4) { background: linear-gradient(135deg,#0a84ff,#0050b3); } .dock i:nth-child(5) { background: linear-gradient(135deg,#ffd60a,#c99a00); }
+  .appwin { position: absolute; left: 60px; top: 70px; width: 560px; height: 380px; border-radius: 12px; background: var(--win); border: 1px solid var(--hair);
+    box-shadow: 0 18px 40px rgba(0,0,0,.35); padding: 40px 26px 20px; color: var(--text-2); font-size: 12.5px; }
+  .appwin::before { content: ""; position: absolute; left: 14px; top: 13px; width: 10px; height: 10px; border-radius: 50%; background: #ff5f57; box-shadow: 16px 0 0 #febc2e, 32px 0 0 #28c840; }
+  .appwin .ln { height: 10px; border-radius: 5px; background: var(--hover); margin: 12px 0; }
+  .appwin .ln.s { width: 60%; } .appwin .ln.m { width: 82%; }
+  .appwin .hl { background: rgba(10,132,255,.35); border-radius: 3px; padding: 0 2px; color: var(--text); }
+  .guide { position: absolute; top: 24px; bottom: 0; width: 0; border-left: 1px dashed rgba(10,132,255,.9); display: none; pointer-events: none; }
+  .ghost { position: absolute; border: 1.5px dashed rgba(10,132,255,.65); border-radius: 20px; pointer-events: none; display: none; }
+  .ghost span { position: absolute; left: 50%; top: -22px; transform: translateX(-50%); font-size: 11px; color: #cfe3ff; background: rgba(10,132,255,.75); padding: 1px 8px; border-radius: 6px; white-space: nowrap; }
+
+  /* ===== launcher card ===== */
+  .card { width: 680px; border-radius: 24px; background: var(--glass); border: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(24px);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 24px 60px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.25); overflow: hidden; position: relative; }
+  body.light .card { border-color: rgba(0,0,0,.10); }
+  .launcher { position: absolute; width: 560px; transition: opacity .12s ease, transform .12s ease; }
+  .launcher.anim { transition: left .22s cubic-bezier(.2,.8,.2,1), top .22s cubic-bezier(.2,.8,.2,1), opacity .12s; }
+  .launcher.closed { opacity: 0; transform: scale(.98); pointer-events: none; }
+  .launcher.dragging { cursor: grabbing !important; box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 34px 80px rgba(0,0,0,.55); }
+  .launcher .drag-zone { cursor: grab; }
+  .grip { pointer-events: none; position: absolute; left: 50%; top: 5px; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: var(--text-3); opacity: 0; transition: opacity .15s; }
+  .launcher:hover .grip, .launcher.dragging .grip { opacity: .55; }
+  .gripzone { position: absolute; left: 0; right: 0; top: 0; height: 12px; cursor: grab; z-index: 2; }
+
+  .inrow { display: flex; align-items: center; gap: 10px; height: 58px; padding: 0 12px; }
+  .launcher .inrow { height: 52px; }
+  .q { flex: 1; min-width: 0; font-size: 17px; line-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .launcher .q { font-size: 15.5px; }
+  .q .ph { color: var(--text-3); }
+  .caret { display: inline-block; width: 1.5px; height: 20px; background: var(--accent); vertical-align: -4px; margin-left: 1px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .qin { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 17px; }
+  .round { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); font-size: 15px; flex: none; }
+  .send { width: 32px; height: 32px; border-radius: 50%; background: var(--ctl); color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex: none; }
+  .send.on { background: var(--accent); color: #fff; }
+  .tok { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px; border-radius: 9px; flex: none;
+    background: var(--ctl); border: 1px solid var(--hair); font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
+  .tok .sep { width: 1px; height: 16px; background: var(--hair); }
+  .tok .chev { color: var(--text-3); font-size: 9px; }
+  .ico { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: none;
+    background: conic-gradient(#ea4335 0 33%, #fbbc05 0 66%, #34a853 0); }
+  .ico::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #4285f4; border: 1.5px solid #fff; }
+  .kw { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; flex: none; font-size: 13px; font-weight: 600; white-space: nowrap;
+    background: var(--accent-soft); color: var(--accent-text); }
+  .kw .g { width: 20px; height: 20px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; background: var(--accent); color: #fff; }
+  .hair { height: 1px; background: var(--hair); }
+  .qr { padding: 6px; }
+  .grp { font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--text-3); padding: 6px 12px 4px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 0 12px; height: 40px; border-radius: 12px; font-size: 13.5px; }
+  .row.hl { background: var(--hover); box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); }
+  .row .cap { margin-left: auto; color: var(--text-3); font-size: 11.5px; white-space: nowrap; }
+  .row .qt { color: var(--text-2); }
+  .tile { width: 26px; height: 26px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent); font-size: 13px; flex: none; }
+  .tile.ai { background: var(--violet-soft); color: var(--violet-text); }
+  .kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 18px; padding: 0 5px; border-radius: 5px; background: var(--ctl); border: 1px solid var(--hair); font-size: 10.5px; font-weight: 600; color: var(--text-2); }
+  .bar { display: flex; align-items: center; gap: 4px; height: 38px; padding: 0 8px; border-top: 1px solid var(--hair); background: rgba(0,0,0,.06); font-size: 12px; color: var(--text-2); }
+  .bar .mini { width: 26px; height: 26px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); font-size: 13px; }
+  .bar .model { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; border-radius: 7px; color: var(--text); font-weight: 600; font-size: 12px; }
+  .bar .model i { width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg,#ff5f6d,#ffc371); display: inline-block; }
+  .bar .vsep { width: 1px; height: 16px; background: var(--hair); margin: 0 3px; }
+  .bar .spacer { flex: 1; align-self: stretch; }
+  .bar .keys { color: var(--text-3); font-size: 11px; white-space: nowrap; }
+  .bar .keys b { color: var(--text-2); font-weight: 600; }
+  .answer { padding: 4px 18px 12px; color: var(--text); font-size: 13.5px; line-height: 1.65; }
+  .answer p { margin: 0 0 8px; }
+
+  /* ===== settings mock ===== */
+  .win { width: 100%; border-radius: 14px; background: var(--win); border: 1px solid var(--hair); overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+  .win .tb { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--hair); color: var(--text-2); font-size: 12px; }
+  .win .tb i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .sec { padding: 14px 18px 4px; font-size: 12px; font-weight: 600; color: var(--text-3); }
+  .srow { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--hair); font-size: 13px; }
+  .srow .t { min-width: 0; }
+  .srow .d { color: var(--text-3); font-size: 11.5px; margin-top: 2px; }
+  .srow .r { margin-left: auto; display: flex; gap: 8px; align-items: center; flex: none; }
+  .hk { display: inline-flex; gap: 3px; } .hk span { min-width: 24px; height: 24px; padding: 0 6px; border-radius: 6px; background: var(--ctl); border: 1px solid var(--hair); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .seg { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--ctl); border: 1px solid var(--hair); }
+  .seg button { border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; height: 24px; padding: 0 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .seg button.on { background: var(--glass); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.25); font-weight: 600; }
+  .link { color: var(--accent-text); font-size: 12px; cursor: pointer; background: none; border: 0; font: inherit; padding: 0; }
+  .link:disabled { color: var(--text-3); cursor: default; }
+  .readout { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--ctl); border: 1px solid var(--hair); font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--text-2); line-height: 1.7; }
+  .readout b { color: var(--text); font-weight: 600; }
+  .log { margin-top: 10px; font-size: 12px; color: var(--text-2); min-height: 20px; }
+  .ctrls { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+
+  /* ===== word card ===== */
+  .rc { margin: 2px 0 4px; border-radius: 14px; padding: 12px 14px 10px; background: var(--hover); box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); }
+  .rh { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); margin-bottom: 8px; }
+  .rh .name { color: var(--text); font-size: 13px; font-weight: 600; }
+  .lang { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--ctl); color: var(--text); font-size: 12px; }
+  .lang.to { background: var(--accent-soft); color: var(--accent-text); }
+  .badge2 { margin-left: auto; font-size: 11px; color: var(--text-3); border: 1px solid var(--hair); border-radius: 5px; padding: 0 6px; }
+  .badge2.ai { color: var(--violet-text); border-color: rgba(191,90,242,.35); }
+  .body { font-size: 15px; line-height: 1.6; color: var(--text); }
+  .acts { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .act { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border-radius: 7px; background: var(--ctl); color: var(--text-2); font-size: 11.5px; cursor: pointer; border: 0; font-family: inherit; }
+  .act:hover { color: var(--text); }
+  .act .s { color: var(--text-3); font-size: 10.5px; }
+  .act.p { background: rgba(10,132,255,.22); color: var(--accent-text); }
+  .hw { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .hw .w { font-size: 24px; font-weight: 650; letter-spacing: .2px; }
+  .ph2 { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--text-2); }
+  .ph2 .k { font-size: 10.5px; color: var(--text-3); }
+  .ph2 .ipa { font-family: "Lucida Grande", "Noto Sans", sans-serif; }
+  .spk { width: 20px; height: 20px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; background: var(--ctl); font-size: 10px; cursor: pointer; }
+  .spk.playing { background: var(--accent); color: #fff; }
+  .senses { margin: 10px 0 2px; display: grid; grid-template-columns: 44px 1fr; gap: 6px 10px; align-items: baseline; }
+  .pos { font-size: 11.5px; font-weight: 700; color: var(--accent-text); font-style: italic; text-align: right; }
+  .means { display: flex; flex-wrap: wrap; gap: 4px 2px; font-size: 14.5px; line-height: 1.55; }
+  .mean { padding: 0 4px; border-radius: 5px; cursor: pointer; }
+  .mean:hover { background: var(--accent-soft); }
+  .mean.first { font-weight: 600; }
+  .mean + .mean::before { content: "；"; color: var(--text-3); margin: 0 2px 0 -4px; font-weight: 400; }
+  .gloss { font-size: 11.5px; color: var(--text-3); margin-left: 2px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; font-size: 11.5px; color: var(--text-3); align-items: center; }
+  .chip { height: 20px; padding: 0 7px; border-radius: 6px; background: var(--ctl); color: var(--text-2); display: inline-flex; align-items: center; }
+  .ex { margin-top: 10px; border-top: 1px solid var(--hair); padding-top: 8px; }
+  .ex .lb { font-size: 11px; font-weight: 600; color: var(--text-3); margin-bottom: 4px; }
+  .ex .it { padding: 4px 0 4px 10px; border-left: 2px solid var(--hair); margin: 4px 0; }
+  .ex .src { font-size: 13px; color: var(--text); } .ex .src b { color: var(--accent-text); font-weight: 600; }
+  .ex .dst { font-size: 12.5px; color: var(--text-2); }
+  .note2 { margin-top: 8px; font-size: 12px; color: var(--text-2); background: var(--ctl); border-radius: 8px; padding: 6px 9px; }
+  .note2.warn { color: var(--warn); }
+  .sk { height: 12px; border-radius: 6px; background: var(--ctl); margin: 8px 0; position: relative; overflow: hidden; }
+  .sk::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent); animation: shim 1.2s infinite; }
+  @keyframes shim { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  .progress { height: 2px; border-radius: 2px; background: var(--ctl); margin-top: 10px; overflow: hidden; }
+  .progress::after { content: ""; display: block; height: 100%; width: 40%; background: var(--violet); animation: prog 1.1s ease-in-out infinite; }
+  @keyframes prog { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+  .opts { display: flex; flex-direction: column; gap: 12px; }
+  .opts .ln2 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .opts .k2 { width: 70px; color: var(--text-3); font-size: 12px; }
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; }
+  .samples button { border: 1px solid var(--hair); background: var(--ctl); color: var(--text); font: inherit; font-size: 12px; height: 26px; padding: 0 10px; border-radius: 7px; cursor: pointer; }
+  .samples button.on { border-color: var(--accent); color: var(--accent-text); }
+  .kind { font-size: 11.5px; color: var(--text-2); }
+  .kind b { color: var(--text); }
+  table.t { border-collapse: collapse; width: 100%; font-size: 12px; color: var(--text-2); margin-top: 8px; }
+  table.t td, table.t th { border-top: 1px solid var(--hair); padding: 6px 8px; text-align: left; vertical-align: top; }
+  table.t th { color: var(--text-3); font-weight: 600; font-size: 11px; }
+  table.t td:first-child { color: var(--text); white-space: nowrap; }
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: rgba(30,30,32,.92); color: #fff; padding: 7px 14px; border-radius: 9px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+</style></head><body>
+<h1>随便问 · 启动器位置 + AI 单词卡</h1>
+<p class="sub">两处改动：① 启动器（⌥Space 弹出的悬浮窗）可以拖到任意位置，设置里可选「始终居中」或「记住上次位置」；② 翻译插件用 AI 时，单词 / 短语返回单词卡（释义、词性、音标、例句），句子仍然直接给译文。本页可交互：拖动启动器、切换设置、关闭再打开；在单词卡里换示例、换引擎和状态。样式沿用 GUL-210 / GUL-214 的启动器。说明文档见 <code>docs/design/ask-launcher-position-word-card.md</code>。</p>
+<div class="topbar"><span class="label" style="margin:0">外观</span><div class="pill" id="theme"><button class="on" data-v="dark">深色</button><button data-v="light">浅色</button></div></div>
+
+<h3>一、启动器位置</h3>
+<div class="grid2">
+  <div>
+    <div class="label">① 桌面演示 · 拖动启动器空白处或顶部把手；Esc 关闭，点「⌥Space」重新打开</div>
+    <div class="screen" id="screen">
+      <div class="menubar"><b></b><b>Safari</b><span>文件</span><span>编辑</span><span>显示</span><span class="r"><span>文A</span><span>🔋</span><span>10月6日 周二 09:41</span></span></div>
+      <div class="appwin"><div style="color:var(--text);font-weight:600;font-size:14px;margin-bottom:8px">Release notes · 3.8</div>
+        <div>This update fixes an issue where the launcher drifted on external displays, and makes voice input <span class="hl">more reliable</span> during meetings.</div>
+        <div class="ln m"></div><div class="ln"></div><div class="ln s"></div><div class="ln m"></div><div class="ln"></div><div class="ln s"></div><div class="ln m"></div></div>
+      <div class="guide" id="guide"></div>
+      <div class="ghost" id="ghost"><span>上次位置</span></div>
+      <div class="card launcher" id="launcher">
+        <div class="gripzone drag-zone"></div><div class="grip"></div>
+        <div class="inrow drag-zone"><span class="tok nodrag"><span class="ico"></span><span class="sep"></span>Release notes<span class="chev">⌄</span></span><span class="q nodrag"><span class="ph">输入问题，/ 调用命令</span><span class="caret"></span></span><span class="round nodrag">🎙</span><span class="send nodrag">↑</span></div>
+        <div class="hair"></div>
+        <div class="qr drag-zone" id="lres">
+          <div class="grp">建议</div>
+          <div class="row hl nodrag"><span class="tile">✦</span>讲讲这一屏在做什么<span class="cap">带当前截图</span></div>
+          <div class="row nodrag"><span class="tile">文A</span>翻译我选中的文字<span class="cap"><span class="kbd">fy</span></span></div>
+          <div class="row nodrag"><span class="tile">✎</span>润色选中的文字</div>
+        </div>
+        <div class="answer drag-zone" id="lans" style="display:none">
+          <p><b>这一屏是 Safari 中的「Release notes 3.8」。</b></p>
+          <p>主要说了两件事：修复了启动器在外接显示器上位置偏移的问题；让语音输入在会议中更可靠。</p>
+          <p>你选中的是 “more reliable”，意思是「更可靠」。</p>
+          <p>如果你想了解具体改了什么：启动器现在按屏幕的可见区域计算位置，不再受外接显示器缩放影响；语音输入在会议软件占用麦克风时会自动重试，不会直接失败。</p>
+        </div>
+        <div class="bar drag-zone"><span class="mini nodrag">＋</span><span class="model nodrag"><i></i>Typeflux Cloud ⌄</span><span class="vsep"></span><span class="mini nodrag">◎</span><span class="spacer"></span><span class="keys"><b>↩</b> 发送 · <b>esc</b> 关闭</span></div>
+      </div>
+      <div class="dock"><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="ctrls">
+      <button class="btn primary" id="toggle">⌥Space 打开 / 关闭</button>
+      <button class="btn" id="grow">模拟：内容变高（有回答）</button>
+      <span class="log" id="log"></span>
+    </div>
+  </div>
+  <div>
+    <div class="label">② 设置 · 快捷键 · 随便问</div>
+    <div class="win">
+      <div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span style="margin-left:8px">设置 · 快捷键</span></div>
+      <div class="sec">随便问</div>
+      <div class="srow"><div class="t">快捷键<div class="d">打开随便问启动器</div></div><div class="r"><span class="hk"><span>⌥</span><span>Space</span></span></div></div>
+      <div class="srow"><div class="t">打开位置<div class="d" id="posdesc">每次都在鼠标所在屏幕的正中打开。拖动只影响这一次。</div></div>
+        <div class="r"><div class="seg" id="mode"><button class="on" data-v="center">始终居中</button><button data-v="last">记住上次位置</button></div></div></div>
+      <div class="srow"><div class="t">恢复默认位置<div class="d">清除记住的位置；也可以双击启动器顶部把手</div></div><div class="r"><button class="link" id="reset" disabled>恢复居中</button></div></div>
+    </div>
+    <div class="readout" id="readout"></div>
+    <div class="notes" style="margin-top:16px"><h2>规则</h2><ul>
+      <li><b>始终居中（默认）</b>：保持现状，在鼠标所在屏幕居中打开。本次打开后仍可拖动，下次打开回到中间。</li>
+      <li><b>记住上次位置</b>：松手时记下位置，下次在那里打开。按屏幕分别记：外接屏和内建屏各有各的位置；当前屏幕没记过就居中。</li>
+      <li><b>拖动</b>：按住输入框以外的空白处、底栏空白处或顶部把手（悬停时出现）。文字、按钮、菜单照常响应，不会误拖。</li>
+      <li><b>贴齐</b>：拖到水平中线附近（±8pt）自动吸附，并显示参考线，方便放回正中。</li>
+      <li><b>不出界</b>：始终留在可见区域内（距边缘 12pt，避开菜单栏和程序坞）。分辨率变了或屏幕拔掉了，记住的位置先夹回屏内，屏幕不存在就居中。</li>
+      <li><b>向下生长</b>：顶边固定在打开时的位置，有了回答或结果列表向下展开；放在屏幕底部时临时上移，内容变短后回到原处。</li>
+    </ul></div>
+  </div>
+</div>
+
+<h3>二、AI 单词卡</h3>
+<div class="grid3">
+  <div>
+    <div class="label">③ 翻译插件 · 单词 / 短语 → 单词卡，句子 → 译文</div>
+    <div class="card" id="wcard">
+      <div class="inrow"><span class="tok"><span class="ico"></span><span class="sep"></span>Release notes<span class="chev">⌄</span></span><span class="kw"><span class="g">文A</span>翻译</span><input class="qin" id="qin" value="serendipity" spellcheck="false"><span class="round">🎙</span><span class="send on">↑</span></div>
+      <div class="hair"></div>
+      <div class="qr"><div class="grp">翻译</div><div id="result"></div>
+        <div class="grp">AI</div><div class="row"><span class="tile ai">✦</span>问 AI <span class="qt" id="askq"></span><span class="cap"><span class="kbd">⌘↩</span></span></div></div>
+      <div class="bar"><span class="mini">＋</span><span class="model"><i></i>Typeflux Cloud ⌄</span><span class="vsep"></span><span class="mini">◎</span><span class="spacer"></span><span class="keys" id="keys"></span></div>
+    </div>
+  </div>
+  <div>
+    <div class="label">演示控制</div>
+    <div class="opts">
+      <div class="ln2"><span class="k2">示例</span><div class="samples" id="samples"></div></div>
+      <div class="ln2"><span class="k2">引擎</span><div class="seg" id="engine"><button class="on" data-v="ai">AI</button><button data-v="device">本机</button></div></div>
+      <div class="ln2"><span class="k2">状态</span><div class="seg" id="state"><button class="on" data-v="done">完成</button><button data-v="loading">加载中</button><button data-v="fallback">解析失败回退</button></div></div>
+      <div class="ln2"><span class="k2">识别</span><span class="kind" id="kind"></span></div>
+    </div>
+    <div class="notes" style="margin-top:18px"><h2>单词卡</h2><ul>
+      <li><b>什么时候出单词卡</b>：在本机先判断——一个词，或 2–4 个词且没有句末标点的短语（<code>take off</code>、<code>by and large</code>）；中文 1–6 个字且没有标点。其余都是句子，走现在的直接翻译。</li>
+      <li><b>内容</b>：词头、音标（英语给英 / 美两种；中文给拼音）、按词性分组的释义（每组最多 4 条）、词形变化、2 条例句（原文 + 译文，词头加粗）、近义词。字段缺了就不显示那一块。</li>
+      <li><b>操作</b>：↩ 复制释义（一行：词 + 音标 + 词性释义）；⌥↩ 用第一条释义替换选中 / 插入；点任意一条释义单独复制；🔊 朗读（英 / 美嗓音）；⇧⌘C 复制整张卡（Markdown）；⌘R 重新生成；⇥ 换目标语言。</li>
+      <li><b>本机引擎</b>：Apple 翻译只能给一个译法，卡片显示简短译文，并提示「⌘R 用 AI 生成单词卡」。选中即译、自动识别仍然只用本机，不会自动把文字发出去。</li>
+      <li><b>加载与失败</b>：先出骨架屏和进度条，不跳高度；模型返回的不是合法结构时，把原始文本当译文显示，不报错。</li>
+      <li><b>高度</b>：卡片最多约 360pt，超出部分在卡片内滚动，启动器不会顶出屏幕。</li>
+    </ul></div>
+  </div>
+</div>
+
+<h3>三、实现要点（定稿后开发）</h3>
+<div class="notes"><table class="t">
+  <tr><th>改动</th><th>位置</th><th>说明</th></tr>
+  <tr><td>位置设置</td><td><code>SettingsStore</code> + 设置 · 快捷键 · 随便问</td><td>新增 <code>askLauncherPlacement</code>：<code>center</code>（默认）/ <code>lastPosition</code>；位置按屏幕（<code>NSScreenNumber</code> → 显示器 UUID）存左上角相对可见区域的偏移。</td></tr>
+  <tr><td>打开位置</td><td><code>AskLauncherPlacement.frame(…)</code></td><td>多一个可选的「记住的顶点」：有就夹回屏内用它，没有就照旧居中。纯函数，单测覆盖居中、记住、出界、换屏。</td></tr>
+  <tr><td>拖动</td><td><code>AskConversationWindowController</code> + <code>AskLauncherView</code></td><td>空白区和把手挂一个 <code>NSView</code> 背景，在 <code>mouseDown</code> 里调 <code>window.performDrag(with:)</code>；不开 <code>isMovableByWindowBackground</code>，避免抢走文本选择。拖完更新 <code>launcherTop</code>，保持向下生长。监听 <code>windowDidMove</code> 保存位置；双击把手回到中间。</td></tr>
+  <tr><td>单词卡</td><td><code>AskTranslatePlugin</code> + <code>AskAITranslationEngine</code></td><td>本机判断是不是词；是词且用 AI 时换成单词卡提示词，用现有的 <code>LLMService.completeJSON(schema:)</code> 要求返回结构化 JSON（结构见 md 文档）；<code>AskPluginOutput</code> 加一个可选的 <code>wordCard</code>，视图按它渲染。解析失败回退为纯文本。按「词 + 目标语言 + 模型」在内存缓存，同一个词不重复花钱。</td></tr>
+</table></div>
+
+<div class="toast" id="toast"></div>
+<script>
+/* ---------- shared ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const toast = (t) => { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 1400); };
+function segment(el, onChange) {
+  el.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    el.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    onChange(b.dataset.v);
+  });
+}
+segment($('#theme'), v => document.body.classList.toggle('light', v === 'light'));
+
+/* ---------- section 1: launcher placement ---------- */
+const screen = $('#screen'), L = $('#launcher'), guide = $('#guide'), ghost = $('#ghost');
+const MENU = 24, DOCK = 62, MARGIN = 12, SNAP = 8, W = 560;
+const vis = () => ({ minX: 0, maxX: screen.clientWidth, minY: MENU, maxY: screen.clientHeight - DOCK });
+let mode = 'center', saved = null, open = true, grown = false, top0 = 0, resting = 0;
+const pos = { x: 0, y: 0 };
+
+function clamp(x, y, h) {
+  const v = vis();
+  x = Math.min(Math.max(x, v.minX + MARGIN), v.maxX - MARGIN - W);
+  y = Math.min(Math.max(y, v.minY + MARGIN), v.maxY - MARGIN - h);
+  return { x: Math.round(x), y: Math.round(y) };
+}
+function centerTop() { const v = vis(); return Math.round(v.minY + (v.maxY - v.minY) / 2 - resting / 2); }
+function centerX() { return Math.round((screen.clientWidth - W) / 2); }
+function place(x, y, animate) {
+  L.classList.toggle('anim', !!animate);
+  const c = clamp(x, y, L.offsetHeight);
+  pos.x = c.x; pos.y = c.y;
+  L.style.left = c.x + 'px'; L.style.top = c.y + 'px';
+  render();
+}
+function openLauncher() {
+  const want = mode === 'last' && saved ? saved : { x: centerX(), y: centerTop() };
+  top0 = want.y;
+  place(want.x, want.y, false);
+  open = true; L.classList.remove('closed');
+  log(mode === 'last' && saved ? '在上次的位置打开' : '在屏幕中间打开');
+}
+function closeLauncher() { open = false; L.classList.add('closed'); log('已关闭'); render(); }
+function log(t) { $('#log').textContent = t; }
+function render() {
+  const centered = Math.abs(pos.x - centerX()) <= 1 && Math.abs(pos.y - centerTop()) <= 1;
+  $('#readout').innerHTML =
+    `打开位置　<b>${mode === 'center' ? '始终居中' : '记住上次位置'}</b><br>` +
+    `当前左上角 <b>(${pos.x}, ${pos.y})</b>${centered ? '　· 居中' : ''}<br>` +
+    `记住的位置 <b>${saved ? `(${saved.x}, ${saved.y}) · 内建显示器` : '无'}</b>`;
+  $('#reset').disabled = !saved;
+  ghost.style.display = mode === 'last' && saved && !open ? 'block' : 'none';
+  if (saved) Object.assign(ghost.style, { left: saved.x + 'px', top: saved.y + 'px', width: W + 'px', height: resting + 'px' });
+}
+function resize() {
+  // Grows downward from the edge it opened with; moves up only while it would leave the screen.
+  const h = L.offsetHeight;
+  const c = clamp(pos.x, top0, h);
+  place(c.x, c.y, true);
+}
+
+// Drag: any .drag-zone not inside a .nodrag control. Pointer math is in screen coordinates.
+let drag = null;
+const local = (e) => { const r = screen.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+let downOnGrip = false;
+L.addEventListener('pointerdown', (e) => {
+  downOnGrip = !!e.target.closest('.gripzone');
+  if (!e.target.closest('.drag-zone') || e.target.closest('.nodrag') || e.button !== 0) return;
+  const p = local(e);
+  drag = { dx: p.x - pos.x, dy: p.y - pos.y };
+  L.setPointerCapture(e.pointerId); L.classList.add('dragging'); L.classList.remove('anim');
+  e.preventDefault();
+});
+L.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const p = local(e);
+  let x = p.x - drag.dx;
+  const snap = Math.abs(x - centerX()) <= SNAP;
+  if (snap) x = centerX();
+  guide.style.display = snap ? 'block' : 'none';
+  guide.style.left = (screen.clientWidth / 2) + 'px';
+  const c = clamp(x, p.y - drag.dy, L.offsetHeight);
+  pos.x = c.x; pos.y = c.y; L.style.left = c.x + 'px'; L.style.top = c.y + 'px';
+  render();
+});
+const endDrag = () => {
+  if (!drag) return;
+  drag = null; L.classList.remove('dragging'); guide.style.display = 'none';
+  top0 = pos.y;
+  if (mode === 'last') { saved = { x: pos.x, y: pos.y }; log('已记住这个位置，下次在这里打开'); }
+  else log('这次挪到这里；下次打开仍在中间');
+  render();
+};
+L.addEventListener('pointerup', endDrag);
+L.addEventListener('pointercancel', endDrag);
+// Pointer capture retargets dblclick to the panel, so remember where the press began.
+L.addEventListener('dblclick', () => { if (downOnGrip) recenter(); });
+function recenter() { saved = null; top0 = centerTop(); place(centerX(), centerTop(), true); log('已回到中间，记住的位置已清除'); }
+
+$('#toggle').onclick = () => open ? closeLauncher() : openLauncher();
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && open) closeLauncher();
+  if (e.code === 'Space' && e.altKey) { e.preventDefault(); open ? closeLauncher() : openLauncher(); }
+});
+$('#grow').onclick = () => {
+  grown = !grown;
+  $('#lres').style.display = grown ? 'none' : 'block';
+  $('#lans').style.display = grown ? 'block' : 'none';
+  $('#grow').textContent = grown ? '模拟：内容变短（回到建议）' : '模拟：内容变高（有回答）';
+  if (!open) return;
+  requestAnimationFrame(resize);
+};
+segment($('#mode'), (v) => {
+  mode = v;
+  $('#posdesc').textContent = v === 'center'
+    ? '每次都在鼠标所在屏幕的正中打开。拖动只影响这一次。'
+    : '松手时记下位置，下次在同一块屏幕的这个位置打开。';
+  if (v === 'last' && !saved && (pos.x !== centerX() || pos.y !== centerTop())) saved = { x: pos.x, y: pos.y };
+  if (v === 'center') saved = null;
+  render();
+});
+$('#reset').onclick = () => { saved = null; render(); toast('已恢复居中'); };
+
+function init() {
+  resting = L.offsetHeight;
+  top0 = centerTop();
+  place(centerX(), centerTop(), false);
+}
+init();
+
+/* ---------- section 2: word card ---------- */
+const DATA = {
+  serendipity: { lang: '英语', target: '简体中文', ipa: [['英', '/ˌserənˈdɪpəti/', 'en-GB'], ['美', '/ˌserənˈdɪpəti/', 'en-US']],
+    senses: [['n.', ['机缘巧合', '意外发现珍奇事物的运气', '偶然的好运']]],
+    forms: [['复数', 'serendipities'], ['形容词', 'serendipitous']],
+    ex: [['Meeting my co-founder at that conference was pure <b>serendipity</b>.', '在那次会议上遇到我的联合创始人，纯属机缘巧合。'],
+         ['Many scientific discoveries owe a lot to <b>serendipity</b>.', '许多科学发现很大程度上要归功于意外的好运。']],
+    syn: ['chance', 'fluke', 'happy accident'], device: '机缘巧合' },
+  run: { lang: '英语', target: '简体中文', ipa: [['英', '/rʌn/', 'en-GB'], ['美', '/rʌn/', 'en-US']],
+    senses: [['v.', ['跑，奔跑', '经营，管理', '运行，运转', '竞选']], ['n.', ['跑步', '一段时期，连续', '（演出的）连续上演']]],
+    forms: [['过去式', 'ran'], ['过去分词', 'run'], ['现在分词', 'running']],
+    ex: [['She <b>runs</b> a small bakery downtown.', '她在市中心经营一家小面包店。'], ['The script <b>runs</b> every night at 2 a.m.', '这个脚本每晚凌晨两点运行。']],
+    syn: ['sprint', 'manage', 'operate'], device: '跑' },
+  'take off': { lang: '英语', target: '简体中文', ipa: [['英', '/teɪk ɒf/', 'en-GB'], ['美', '/teɪk ɔːf/', 'en-US']],
+    senses: [['phr. v.', ['（飞机）起飞', '脱下（衣物）', '（事业、产品）迅速走红', '休假，请假']]],
+    forms: [['过去式', 'took off'], ['名词', 'takeoff']],
+    ex: [['Our flight <b>took off</b> an hour late.', '我们的航班晚点一小时起飞。'], ['Sales really <b>took off</b> after the update.', '更新之后销量真的一下子起来了。']],
+    syn: ['depart', 'remove', 'boom'], device: '起飞' },
+  '苹果': { lang: '简体中文', target: '英语', ipa: [['拼音', 'píngguǒ', 'zh-CN']],
+    senses: [['n.', ['apple', 'apple tree <span class="gloss">（苹果树）</span>', 'Apple <span class="gloss">（苹果公司）</span>']]],
+    forms: [],
+    ex: [['我每天早上吃一个<b>苹果</b>。', 'I eat an apple every morning.'], ['<b>苹果</b>今天发布了新的 Mac。', 'Apple released a new Mac today.']],
+    syn: [], device: 'Apple' },
+};
+const SENTENCES = {
+  'The meeting has been moved to Thursday, please update your calendar.': { lang: '英语', target: '简体中文', text: '会议改到周四了，请更新你的日历。' },
+  '这个功能下周上线，记得提前通知用户。': { lang: '简体中文', target: '英语', text: 'This feature goes live next week. Remember to notify users in advance.' },
+};
+const SAMPLES = ['serendipity', 'run', 'take off', '苹果', 'The meeting has been moved to Thursday, please update your calendar.', '这个功能下周上线，记得提前通知用户。'];
+let engine = 'ai', state = 'done';
+
+function classify(t) {
+  const s = t.trim();
+  if (!s) return 'empty';
+  if (/[\u4e00-\u9fff]/.test(s)) return /[，。！？；、,.!?;\s]/.test(s) || s.length > 6 ? 'sentence' : 'word';
+  if (/[.!?;:,]$/.test(s) || /[.!?;]\s/.test(s)) return 'sentence';
+  const n = s.split(/\s+/).length;
+  return n === 1 ? 'word' : n <= 4 ? 'phrase' : 'sentence';
+}
+const head = (d, ai, name) => `<div class="rh"><span class="name">${name}</span><span class="lang">${d.lang}</span>→<span class="lang to">${d.target} ⌄</span><span class="badge2 ${ai ? 'ai' : ''}">${ai ? 'AI · Typeflux Cloud' : '本机'}</span></div>`;
+const act = (label, key, primary, attr = '') => `<button class="act ${primary ? 'p' : ''}" ${attr}>${label}${key ? ` <span class="s">${key}</span>` : ''}</button>`;
+
+function renderCard() {
+  const q = $('#qin').value, kind = classify(q), key = q.trim();
+  const isWord = kind === 'word' || kind === 'phrase';
+  $('#kind').innerHTML = { empty: '—', word: '<b>单词</b> → 单词卡', phrase: '<b>短语</b> → 单词卡', sentence: '<b>句子</b> → 直接翻译' }[kind];
+  $('#askq').textContent = key ? `“${key.length > 26 ? key.slice(0, 26) + '…' : key}”` : '';
+  document.querySelectorAll('#samples button').forEach(b => b.classList.toggle('on', b.dataset.v === key));
+  const out = $('#result');
+  if (kind === 'empty') { out.innerHTML = `<div class="row hl"><span class="tile">文A</span><span class="qt">输入要翻译的单词或句子</span></div>`; $('#keys').innerHTML = '<b>⇥</b> 换语言 · <b>esc</b> 关闭'; return; }
+  const ai = engine === 'ai';
+  if (state === 'loading') {
+    const d = DATA[key] || SENTENCES[key] || { lang: '英语', target: '简体中文' };
+    out.innerHTML = `<div class="rc">${head(d, ai, isWord && ai ? '单词卡' : '翻译')}` +
+      (isWord && ai ? `<div class="hw"><span class="w">${escapeHtml(key)}</span></div><div class="sk" style="width:38%"></div><div class="sk" style="width:82%"></div><div class="sk" style="width:64%"></div><div class="sk" style="width:90%;margin-top:16px"></div><div class="sk" style="width:55%"></div>`
+                    : `<div class="sk" style="width:86%"></div><div class="sk" style="width:52%"></div>`) +
+      `<div class="progress"></div></div>`;
+    $('#keys').innerHTML = '<b>esc</b> 停止 · <b>⇥</b> 换语言';
+    return;
+  }
+  if (!isWord) {
+    const d = SENTENCES[key] || { lang: '英语', target: '简体中文', text: '（演示数据只包含示例句子；实际会显示译文。）' };
+    out.innerHTML = `<div class="rc">${head(d, ai, '翻译')}<div class="body">${d.text}</div><div class="acts">${act('⧉ 复制', '↩', true)}${act('↧ 插入', '⌥↩')}${act('🔊 朗读', '')}${act('▭ 对照', '⌘D')}${ai ? '' : act('✦ AI 重译', '⌘R')}</div></div>`;
+    $('#keys').innerHTML = '<b>↩</b> 复制 · <b>⌥↩</b> 插入 · <b>⇥</b> 换语言 · <b>⌘↩</b> 问 AI';
+    return;
+  }
+  const d = DATA[key.toLowerCase()] || DATA[key];
+  if (!d) {
+    out.innerHTML = `<div class="rc">${head({ lang: '英语', target: '简体中文' }, ai, ai ? '单词卡' : '翻译')}<div class="hw"><span class="w">${escapeHtml(key)}</span></div><div class="note2">演示数据只包含示例词：serendipity、run、take off、苹果。实际会请求模型生成。</div></div>`;
+    $('#keys').innerHTML = '<b>⇥</b> 换语言 · <b>esc</b> 关闭';
+    return;
+  }
+  if (!ai) {
+    out.innerHTML = `<div class="rc">${head(d, false, '翻译')}<div class="body">${d.device}</div><div class="note2">想看词性、音标和例句？按 <b>⌘R</b> 用 AI 生成单词卡（会发送到 Typeflux Cloud）。</div><div class="acts">${act('⧉ 复制', '↩', true)}${act('↧ 插入', '⌥↩')}${act('🔊 朗读', '')}${act('✦ AI 单词卡', '⌘R', false, 'data-go="ai"')}</div></div>`;
+    $('#keys').innerHTML = '<b>↩</b> 复制 · <b>⌘R</b> AI 单词卡 · <b>⇥</b> 换语言';
+    return;
+  }
+  if (state === 'fallback') {
+    out.innerHTML = `<div class="rc">${head(d, true, '翻译')}<div class="body">${d.senses[0][1].map(m => m.replace(/<[^>]+>/g, '')).join('；')}</div><div class="note2 warn">没能整理成单词卡，先显示模型给出的文字。⌘R 重试。</div><div class="acts">${act('⧉ 复制', '↩', true)}${act('↧ 插入', '⌥↩')}${act('↻ 重试', '⌘R')}</div></div>`;
+    $('#keys').innerHTML = '<b>↩</b> 复制 · <b>⌘R</b> 重试 · <b>⌘↩</b> 问 AI';
+    return;
+  }
+  const ipa = d.ipa.map(([k, v, voice]) => `<span class="ph2"><span class="k">${k}</span><span class="ipa">${v}</span><span class="spk" data-say="${voice}">🔊</span></span>`).join('');
+  const senses = d.senses.map(([p, ms]) => `<span class="pos">${p}</span><span class="means">${ms.map((m, i) => `<span class="mean ${i === 0 && p === d.senses[0][0] ? 'first' : ''}" title="点击复制">${m}</span>`).join('')}</span>`).join('');
+  const forms = d.forms.length ? `<div class="chips">${d.forms.map(([k, v]) => `<span>${k}</span><span class="chip">${v}</span>`).join('')}</div>` : '';
+  const ex = `<div class="ex"><div class="lb">例句</div>${d.ex.map(([s, t]) => `<div class="it"><div class="src">${s}</div><div class="dst">${t}</div></div>`).join('')}</div>`;
+  const syn = d.syn.length ? `<div class="chips"><span>近义</span>${d.syn.map(s => `<span class="chip">${s}</span>`).join('')}</div>` : '';
+  out.innerHTML = `<div class="rc">${head(d, true, '单词卡')}<div class="hw"><span class="w">${escapeHtml(key)}</span>${ipa}</div><div class="senses">${senses}</div>${forms}${ex}${syn}` +
+    `<div class="acts">${act('⧉ 复制释义', '↩', true)}${act('↧ 替换选中', '⌥↩')}${act('⎘ 复制整张', '⇧⌘C')}${act('↻ 重新生成', '⌘R')}</div></div>`;
+  $('#keys').innerHTML = '<b>↩</b> 复制释义 · <b>⌥↩</b> 替换选中 · <b>⇥</b> 换语言 · <b>⌘↩</b> 问 AI';
+}
+function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+$('#samples').innerHTML = SAMPLES.map(s => `<button data-v="${s}">${s.length > 18 ? s.slice(0, 18) + '…' : s}</button>`).join('');
+$('#samples').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; $('#qin').value = b.dataset.v; renderCard(); });
+$('#qin').addEventListener('input', renderCard);
+segment($('#engine'), v => { engine = v; renderCard(); });
+segment($('#state'), v => { state = v; renderCard(); });
+$('#result').addEventListener('click', (e) => {
+  const m = e.target.closest('.mean'); if (m) { toast(`已复制「${m.textContent.trim()}」`); return; }
+  const s = e.target.closest('.spk');
+  if (s) {
+    s.classList.add('playing'); setTimeout(() => s.classList.remove('playing'), 900);
+    try { const u = new SpeechSynthesisUtterance($('#qin').value.trim()); u.lang = s.dataset.say; speechSynthesis.speak(u); } catch (_) {}
+    return;
+  }
+  const go = e.target.closest('[data-go="ai"]');
+  if (go) { $('#engine').querySelector('[data-v="ai"]').click(); return; }
+  const a = e.target.closest('.act'); if (a) toast(a.textContent.replace(/\s+/g, ' ').trim());
+});
+renderCard();
+</script>
+</body></html>
