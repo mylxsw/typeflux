@@ -239,6 +239,36 @@ struct AskWorkflowEditorVisualTests {
         }
     }
 
+    @Test func generationAsksBeforeRunningRiskyCodeAndShowsErrors() async throws {
+        try await chinese {
+            var manifest = manifest
+            manifest["id"] = "local.workflow"
+            manifest["keywords"] = [["keyword": "clean"]]
+            let api = AskWorkflowScriptedAPI([
+                .tool("workflow_propose", ["summary": "清理", "manifest": manifest,
+                                           "files": [["path": "main.sh", "content": "#!/bin/zsh\nrm -rf /tmp/old\n"]]]),
+                .tool("workflow_test", ["inputs": [["query": "x"]]]),
+                .reply("好了。")
+            ])
+            let fixture = try AskWorkflowFixture()
+            let model = try editor(fixture, api: api)
+            let size = NSSize(width: 640, height: 420)
+            try await render(AskWorkflowNewSheet(model: model, mode: .assistant, showsOptions: true) {}, size: size,
+                             name: "extra-new-options.png")
+            #expect(model.generate(description: "清理临时文件", name: "", keyword: "", id: "local.workflow",
+                                   runtime: nil))
+            await waitFor { model.pendingRun != nil }
+            #expect(model.pendingRun != nil)
+            try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {}, size: size,
+                             name: "extra-new-approval.png")
+            model.resolvePendingRun(false)
+            await waitFor { !model.assistant.isBusy }
+            model.assistant.error = "网络断开了"
+            try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {}, size: size,
+                             name: "extra-new-error.png")
+        }
+    }
+
     @Test func bannersAndEmptyStates() async throws {
         try await chinese {
             let fixture = try AskWorkflowFixture()
@@ -432,23 +462,24 @@ extension AskWorkflowEditorVisualTests {
         defer { window.close() }
         try await Task.sleep(for: .milliseconds(300))
         #expect(sheetElement("ask.workflow.editor.new.stop", in: window) != nil)
-        #expect(sheetEnabled("ask.workflow.editor.new.review", in: window) == false)
+        #expect(sheetElement("ask.workflow.editor.new.review", in: window) == nil)
         await api.releaseRunning()
         await waitFor { !model.assistant.isBusy }
         try await Task.sleep(for: .milliseconds(200))
         #expect(sheetElement("ask.workflow.editor.new.stop", in: window) == nil)
-        #expect(sheetElement("ask.workflow.editor.new.close", in: window) != nil)
+        #expect(sheetEnabled("ask.workflow.editor.new.save", in: window) == true)
         #expect(sheetEnabled("ask.workflow.editor.new.review", in: window) == true)
         #expect(sheetText(in: window).contains(failed ? "Generation failed" : "Ready to review"))
     }
 
-    @Test func stopInAnOpenSheetRefreshesControlsAndKeepsTheProposal() async throws {
+    @Test(arguments: [false, true])
+    func stopInAnOpenSheetRefreshesControlsAndKeepsTheProposal(hasProposal: Bool) async throws {
         let api = AskWorkflowScriptedAPI([.running], holdRunning: true)
         let fixture = try AskWorkflowFixture()
         let model = try editor(fixture, api: api)
         #expect(model.generate(description: "Count words", name: "", keyword: "wc", id: "local.wc", runtime: .zsh))
-        let proposal = model.submit(AskWorkflowProposal(summary: "Words", manifestText: nil,
-                                                        files: ["main.sh": "print hello"], deletes: []))
+        let proposal = hasProposal ? model.submit(AskWorkflowProposal(summary: "Words", manifestText: nil,
+                                                                      files: ["main.sh": "print hello"], deletes: [])) : nil
         let accessibility = AskWorkspaceTestAccessibility()
         defer { accessibility.restore(); model.close() }
         let window = generationWindow(model)
@@ -457,12 +488,18 @@ extension AskWorkflowEditorVisualTests {
         try clickSheet("ask.workflow.editor.new.stop", in: window)
         try await Task.sleep(for: .milliseconds(200))
         #expect(!model.assistant.isBusy)
-        #expect(model.latestProposal?.id == proposal.id)
-        #expect(sheetElement("ask.workflow.editor.new.close", in: window) != nil)
-        #expect(sheetEnabled("ask.workflow.editor.new.review", in: window) == true)
+        #expect(model.latestProposal?.id == proposal?.id)
+        if hasProposal {
+            #expect(sheetEnabled("ask.workflow.editor.new.save", in: window) == true)
+            #expect(sheetEnabled("ask.workflow.editor.new.review", in: window) == true)
+        } else {
+            #expect(sheetElement("ask.workflow.editor.new.close", in: window) != nil)
+            #expect(sheetElement("ask.workflow.editor.new.progress", in: window) == nil)
+            #expect(sheetText(in: window).contains(L("ask.run.cancelled")))
+        }
         #expect(await api.cancels == 1)
         try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {},
-                         size: NSSize(width: 720, height: 420), name: "gul-228-stopped.png")
+                         size: NSSize(width: 640, height: 420), name: hasProposal ? "gul-228-stopped.png" : "gul-228-stopped-empty.png")
     }
 
     @Test(arguments: ["allow", "decline", "stop", "preview"])
@@ -491,7 +528,7 @@ extension AskWorkflowEditorVisualTests {
         #expect(sheetEnabled("ask.workflow.assistant.decline", in: window) == true)
         if action == "allow" {
             try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {},
-                             size: NSSize(width: 720, height: 540), name: "gul-228-approval.png")
+                             size: NSSize(width: 640, height: 420), name: "gul-228-approval.png")
         }
         let identifier = action == "stop" ? "ask.workflow.editor.new.stop" : "ask.workflow.assistant." + action
         try clickSheet(identifier, in: window)
@@ -510,7 +547,7 @@ extension AskWorkflowEditorVisualTests {
 
     private func generationWindow(_ model: AskWorkflowEditorModel, done: @escaping () -> Void = {}) -> NSWindow {
         _ = NSApplication.shared
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 720, height: 540),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 480),
                               styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: AskWorkflowNewSheet(model: model, mode: .assistant,

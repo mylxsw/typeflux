@@ -87,7 +87,9 @@ final class AskWorkflowAssistant: ObservableObject {
         conversationID == nil ? (dependencies.session().token.isEmpty || dependencies.prefersLocal()) : isLocal
     }
 
-    func send(_ text: String) {
+    /// Sends `text`; the conversation shows `shown` instead when the message carries
+    /// instructions the user did not type.
+    func send(_ text: String, shown: String? = nil) {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isBusy else { return }
         error = nil
@@ -107,7 +109,7 @@ final class AskWorkflowAssistant: ObservableObject {
         }
         let messageID = UUID().uuidString.lowercased()
         seenMessages.insert(messageID)
-        items.append(.user(id: messageID, text: text))
+        items.append(.user(id: messageID, text: shown ?? text))
         remember()
         let request = AskSendRequest(
             id: messageID,
