@@ -53,8 +53,23 @@ enum AskWorkflowStderrLocator {
         guard var best else { return nil }
         let message = stderr.split(separator: "\n").last { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
             .map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
-        best.message = String(message.prefix(200))
+        best.message = String(withoutLocation(message).prefix(200))
         return best
+    }
+
+    /// "/…/main.sh:4: command not found: x" → "command not found: x": the marked line
+    /// already says where.
+    static func withoutLocation(_ message: String) -> String {
+        let range = NSRange(message.startIndex..., in: message)
+        for pattern in patterns {
+            guard let match = pattern.firstMatch(in: message, range: range), match.range.location == 0,
+                  let end = Range(match.range, in: message)?.upperBound else { continue }
+            let rest = message[end...].drop { $0 == ":" || $0 == " " }
+            if !rest.isEmpty {
+                return String(rest)
+            }
+        }
+        return message
     }
 
     private static func unprivate(_ path: String) -> String {

@@ -110,9 +110,29 @@ extension AskWorkflowStore {
     /// uses, against built-in keywords and every other workflow's.
     func keywordProblem(_ keyword: String, builtIn: [AskKeyword], excluding workflowID: String? = nil) -> String? {
         let others = builtIn + workflows.filter { $0.id != workflowID }.flatMap { workflow in
-            (workflow.manifest?.keywords ?? []).map { AskKeyword(keyword: $0.keyword, pluginID: workflow.id) }
+            (workflow.manifest?.keywords ?? []).map {
+                AskKeyword(keyword: $0.keyword, pluginID: AskWorkflowPlugin.idPrefix + workflow.id)
+            }
         }
-        return AskKeywordMatcher.problem(with: keyword, among: others).map(AskKeywordList.message(for:))
+        guard let problem = AskKeywordMatcher.problem(with: keyword, among: others) else { return nil }
+        let word = keyword.trimmingCharacters(in: .whitespaces).lowercased()
+        // Say who has it: a built-in plugin or another workflow.
+        guard problem == .duplicate, let owner = others.first(where: { $0.keyword.lowercased() == word }),
+              let name = ownerName(owner.pluginID) else { return AskKeywordList.message(for: problem) }
+        return L("ask.workflow.editor.keywordTakenBy", keyword, name)
+    }
+
+    /// The display name of what owns a keyword: a built-in plugin or a workflow.
+    func ownerName(_ pluginID: String) -> String? {
+        switch pluginID {
+        case AskTranslatePlugin.id: return L("ask.plugin.translate.title")
+        case AskPromptPlugin.id: return L("ask.plugin.prompt.title")
+        case AskWebSearchPlugin.id: return L("ask.plugin.web.title")
+        default:
+            guard pluginID.hasPrefix(AskWorkflowPlugin.idPrefix) else { return nil }
+            let id = String(pluginID.dropFirst(AskWorkflowPlugin.idPrefix.count))
+            return workflow(id).map { $0.manifest?.name ?? $0.id }
+        }
     }
 
     /// Creates a workflow from a template with the name, keyword and id the user chose.

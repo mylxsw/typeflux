@@ -12,6 +12,13 @@ final class AskWorkflowEditorModel: ObservableObject {
     struct OutsideChange: Equatable {
         var hash: String
         var disk: AskWorkflowDraft
+        var detectedAt = Date()
+    }
+
+    /// Where the caret is in the code view, for the status bar.
+    struct Cursor: Equatable {
+        var line: Int
+        var column: Int
     }
 
     /// A generated workflow waiting in its staging folder until the user saves it.
@@ -45,6 +52,12 @@ final class AskWorkflowEditorModel: ObservableObject {
     @Published var message: String?
     @Published private(set) var outsideChange: OutsideChange?
     @Published var showingDiff = false
+    @Published var cursor: Cursor?
+    /// "Python 3.12.1 · /opt/homebrew/bin/python3" for the status bar, once looked up.
+    @Published var runtimeInfo: String?
+    /// The run the user asked to find something in; the code view shows its find bar.
+    @Published var findRequest = 0
+    var runtimeProbe = AskWorkflowEnvironmentProbe()
 
     // Test runs.
     @Published var testQuery = ""
@@ -52,6 +65,8 @@ final class AskWorkflowEditorModel: ObservableObject {
     @Published var testUsesSelection = false
     @Published var testKeyword: String?
     @Published var isTesting = false
+    /// When the running test started, for "Running · 1.2 s".
+    @Published var testStartedAt: Date?
     @Published var results: [AskWorkflowTestResult] = []
 
     // Assistant.
@@ -175,6 +190,8 @@ final class AskWorkflowEditorModel: ObservableObject {
         selectedFile = script.flatMap { loaded.files[$0] != nil ? $0 : nil } ?? loaded.files.keys.sorted().first
             ?? AskWorkflowManifest.fileName
         testKeyword = loaded.manifest?.keywords.first?.keyword
+        cursor = nil
+        refreshRuntimeInfo()
     }
 
     /// Closes the editor's workflow (the window closed).

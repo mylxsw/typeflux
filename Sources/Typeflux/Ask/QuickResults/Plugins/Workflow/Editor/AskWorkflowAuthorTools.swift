@@ -202,10 +202,13 @@ struct AskWorkflowAuthorTools {
             let list = problems.map { ["field": $0.field, "message": $0.message] }
             return Output(content: Self.json(["accepted": false, "problems": list]), isError: true, summary: failed)
         }
+        // Before submitting: a new workflow's draft already is the proposal afterwards.
+        let paths = proposal.changes(against: host.authoringDraft).map(\.path).joined(separator: ", ")
         proposal = host.submit(proposal)
         let risks = proposal.risks.sorted().map { ["kind": $0.kind.rawValue, "detail": $0.detail] }
         return Output(content: Self.json(["accepted": true, "risks": risks]), isError: false,
-                      summary: L("ask.workflow.assistant.tool.proposed"), proposalID: proposal.id)
+                      summary: L("ask.workflow.assistant.tool.proposedFiles", paths),
+                      proposalID: proposal.id)
     }
 
     private func test(_ arguments: [String: Any], host: AskWorkflowAuthoringHost) async -> Output {

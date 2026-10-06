@@ -176,6 +176,55 @@ struct AskWorkflowEditorVisualTests {
         }
     }
 
+    @Test func failingTestRunPointsAtTheLine() async throws {
+        try await chinese {
+            let fixture = try AskWorkflowFixture()
+            let model = try editor(fixture)
+            model.setText(
+                Self.script.replacingOccurrences(
+                    of: "amount=${1%% *}",
+                    with: "amount=${1%% *}\nlookup_rate \"$1\" || exit 1"
+                ),
+                of: "main.sh"
+            )
+            _ = model.save()
+            model.testQuery = "100 usd xyz"
+            model.runTest()
+            await waitFor { !model.isTesting && !model.results.isEmpty }
+            #expect(model.failureLocation?.line == 4)
+            try await render(AskWorkflowEditorView(model: model, store: fixture.store, panel: .test),
+                             size: NSSize(width: 1220, height: 720), name: "implemented-4-failure.png")
+        }
+    }
+
+    @Test func generationShowsItsProgressInTheSheet() async throws {
+        try await chinese {
+            var manifest = manifest
+            manifest["id"] = "local.wc"
+            manifest["name"] = "单词计数"
+            manifest["keywords"] = [["keyword": "wc"]]
+            let api = AskWorkflowScriptedAPI([
+                .tool("workflow_environment", ["commands": ["wc"]]),
+                .tool("workflow_propose", ["summary": "统计字数", "manifest": manifest,
+                                           "files": [[
+                                               "path": "main.sh",
+                                               "content": "#!/bin/zsh\nprint -r -- \"${#1} chars\"\n"
+                                           ]]]),
+                .tool("workflow_test", ["inputs": [["query": "hello"], ["query": ""]]]),
+                .reply("好了：输入 wc 加文字就能统计字数。")
+            ])
+            let fixture = try AskWorkflowFixture()
+            let model = try editor(fixture, api: api)
+            #expect(model.generate(description: "输入 wc 加一段文字时，统计字数", name: "", keyword: "wc", id: "local.wc",
+                                   runtime: .zsh))
+            await waitFor { !model.assistant.isBusy }
+            try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {},
+                             size: NSSize(width: 720, height: 420), name: "implemented-10-generating.png")
+            try await render(AskWorkflowEditorView(model: model, store: fixture.store),
+                             size: NSSize(width: 1220, height: 720), name: "implemented-10-generated-editor.png")
+        }
+    }
+
     @Test func outsideChangeAndNewSheet() async throws {
         try await chinese {
             let fixture = try AskWorkflowFixture()
@@ -188,9 +237,9 @@ struct AskWorkflowEditorVisualTests {
             try await render(AskWorkflowEditorView(model: model, store: fixture.store),
                              size: NSSize(width: 1220, height: 720), name: "implemented-6-outside.png")
             try await render(AskWorkflowNewSheet(model: model, mode: .assistant) {},
-                             size: NSSize(width: 640, height: 470), name: "implemented-10-new-ai.png")
+                             size: NSSize(width: 720, height: 360), name: "implemented-10-new-ai.png")
             try await render(AskWorkflowNewSheet(model: model, mode: .template) {},
-                             size: NSSize(width: 640, height: 420), name: "implemented-7-new-template.png")
+                             size: NSSize(width: 720, height: 520), name: "implemented-7-new-template.png")
         }
     }
 }

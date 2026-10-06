@@ -134,14 +134,14 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
                         manifest: AskWorkflowManifest) throws -> AskPluginOutput {
         if result.timedOut {
             let reason = L("ask.workflow.timedOut", Int(manifest.timeout))
-            throw AskPluginFailure(message: reason + Self.tail(result.stderr),
+            throw AskPluginFailure(message: reason + Self.tail(result.stderr, folder: workflow.folder),
                                    actions: editActions(query: input.query, stderr: result.stderr, reason: reason))
         }
         let text = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
         // A run cut off for printing too much still shows what it printed.
         if result.exitCode != 0, !result.truncated {
             let reason = Self.errorMessage(in: result.stdout) ?? L("ask.workflow.failed", Int(result.exitCode))
-            throw AskPluginFailure(message: reason + Self.tail(result.stderr),
+            throw AskPluginFailure(message: reason + Self.tail(result.stderr, folder: workflow.folder),
                                    actions: editActions(query: input.query, stderr: result.stderr, reason: reason))
         }
         if manifest.output == .none || text.isEmpty {
@@ -184,16 +184,29 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
                                        title: L("ask.workflow.action.edit"), symbol: "pencil", shortcut: .commandE)]
         if let query {
             let error = (reason + Self.tail(stderr, lines: 20)).trimmingCharacters(in: .whitespacesAndNewlines)
+            actions.append(AskPluginAction(kind: .copy(error), title: L("ask.workflow.action.copyError"),
+                                           symbol: "doc.on.doc", shortcut: .commandC))
             actions.append(AskPluginAction(kind: .fixWorkflow(id: workflow.id, query: query, error: error),
                                            title: L("ask.workflow.action.fix"), symbol: "sparkles", shortcut: nil))
         }
         return actions
     }
 
-    /// The last lines a failed script wrote to stderr, to show under the reason.
-    static func tail(_ stderr: String, lines: Int = 6) -> String {
+    /// The last lines a failed script wrote to stderr, to show under the reason. Paths
+    /// inside `folder` are shown relative to it: "main.sh:4: …".
+    static func tail(_ stderr: String, lines: Int = 6, folder: URL? = nil) -> String {
         let kept = stderr.split(separator: "\n", omittingEmptySubsequences: true).suffix(lines)
-        return kept.isEmpty ? "" : "\n" + kept.joined(separator: "\n")
+        guard !kept.isEmpty else { return "" }
+        var text = "\n" + kept.joined(separator: "\n")
+        if let folder {
+            // Temporary folders appear both as /var/… and /private/var/….
+            let path = folder.standardizedFileURL.path
+            let plain = path.hasPrefix("/private/") ? String(path.dropFirst("/private".count)) : path
+            for prefix in ["/private" + plain + "/", plain + "/"] {
+                text = text.replacingOccurrences(of: prefix, with: "")
+            }
+        }
+        return text
     }
 
     /// A script may explain its failure itself by printing `{"error": "…"}` as its last line.

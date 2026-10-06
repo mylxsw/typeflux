@@ -332,3 +332,27 @@ AI 写的代码会在用户的 Mac 上试跑，而且可能在用户读代码之
 - 启动器：失败卡片带 ⌘E 和「让 AI 修复」、⌘E 按键、动作打开编辑器。
 - 渲染：编辑器的主要状态（截图 `implemented-*.png`）。
 
+
+## 16. 设计稿还原核对
+
+逐张对照设计稿（左）和实现截图（`implemented-*.png`，由 `AskWorkflowEditorVisualTests` 渲染，`TYPEFLUX_ASK_SNAPSHOTS=<目录>` 时写出）。
+
+| 设计稿 | 实现截图 | 状态 |
+|---|---|---|
+| 1 总览 | `implemented-1-overview` | 已还原：工具栏（色块图标、运行时、状态徽标、「main.sh 未保存」、保存 ⌘S、测试运行 ⌘R、更多、开关）、侧栏搜索和文件徽标、流程条 token、查找 / 外部编辑器、状态栏（运行时版本、光标、编码和缩进、信任哈希） |
+| 2 关键字 / 输入 | `implemented-2-keywords`、`implemented-2-input` | 已还原：关键字表（拖动排序、冲突时写明被谁占用）、选项卡片、`$1` 参数槽、argv / stdin 预览 |
+| 3 输出 | `implemented-3-output` | 已还原：2×2 输出卡片、运行时机卡片、启动器预览；条目列表、边打边出标 W2 未开放 |
+| 4 测试失败 | `implemented-4-failure` | 已还原：出错行红底 + 行尾错误提示、stderr 角标、可点击的出错位置、启动器错误卡片（路径显示为相对路径）、最近运行 |
+| 5 JSON | `implemented-5-json` | 已还原：行内问题、「改成 main.sh」快速修复 |
+| 6 外部修改 | `implemented-6-outside` | 已还原：时间、增删行数、三个按钮、旧 / 差异 / 新 三种视图 |
+| 7 新建 | `implemented-7-new-template` | 已还原：模式切换、模板卡片（运行时、代码片段）、复制现有 |
+| 8 入口 | `implemented-8-settings` | 已还原 |
+| 9 浅色 | `implemented-9-light` | 已还原 |
+| 10 AI 生成 | `implemented-10-new-ai`、`implemented-10-generating`、`implemented-10-generated-editor` | 已还原：描述、示例、语言、关键字检查、自动试跑；生成中面板显示每一步，完成后「检查并保存」 |
+| 11 修改提案 | `implemented-11-proposal` | 已还原：文件增删、试跑结果、风险标签（含「不写文件 / 不启动其他程序」） |
+| 12 AI 修复 / 审批 | `implemented-12-assistant-approval` | 已还原：「要试跑提案 N 吗？」、自动修复暂停、上下文标签、默认模型 |
+
+**还有的差别**
+- 提案改了 `workflow.json` 时，如果原文件的键顺序和格式化方式不同，差异会显示为整段重写（JSON 无法保留原来的键顺序）。
+- 审批卡片没有「只用提案 1」这一项；可以先应用提案再测试。
+- 导入（`.alfredworkflow` / 文件夹）按钮是占位，属于 W2。

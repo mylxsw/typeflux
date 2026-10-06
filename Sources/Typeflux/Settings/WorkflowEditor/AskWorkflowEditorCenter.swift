@@ -7,17 +7,24 @@ struct AskWorkflowEditorCenter: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            AskWorkflowFlowStrip(model: model)
-            Divider()
+            if !(model.showingDiff && model.outsideChange != nil) {
+                AskWorkflowFlowStrip(model: model)
+                Divider()
+            }
             if let id = model.previewingProposal, let proposal = model.proposal(id), let draft = model.draft {
-                AskWorkflowDiffView(title: L("ask.workflow.editor.proposalPreview"), old: draft,
-                                    new: proposal.applied(to: draft)) {
-                    Button(L("ask.workflow.assistant.discard")) { model.discard(id) }
-                    Button(L("ask.workflow.assistant.apply")) { model.apply(id) }.buttonStyle(.borderedProminent)
+                AskWorkflowDiffView(old: draft, new: proposal.applied(to: draft), labels: (
+                    L("ask.workflow.editor.diff.current"), L("ask.workflow.editor.diff.proposed")
+                ), suffix: L("ask.workflow.editor.diff.proposalSuffix")) {
                     Button(L("ask.workflow.editor.close")) { model.previewingProposal = nil }
                 }
             } else if model.showingDiff, let change = model.outsideChange, let draft = model.draft {
-                AskWorkflowDiffView(title: L("ask.workflow.editor.outside.diffTitle"), old: draft, new: change.disk) {
+                AskWorkflowDiffView(old: draft, new: change.disk, labels: (
+                    L("ask.workflow.editor.diff.mine"), L("ask.workflow.editor.diff.theirs")
+                ), suffix: L("ask.workflow.editor.diff.diffSuffix")) {
+                    Button(L("ask.workflow.editor.outside.trustTheirs")) {
+                        model.loadTheirs()
+                        NotificationCenter.default.post(name: .askWorkflowEditorReviewTrust, object: nil)
+                    }
                     Button(L("ask.workflow.editor.close")) { model.showingDiff = false }
                 }
             } else if model.step == .script {
@@ -25,7 +32,7 @@ struct AskWorkflowEditorCenter: View {
             } else {
                 configArea
             }
-            statusBar
+            AskWorkflowStatusBar(model: model)
         }
     }
 
@@ -33,16 +40,26 @@ struct AskWorkflowEditorCenter: View {
 
     private var scriptArea: some View {
         VStack(spacing: 0) {
-            let paths = (model.draft?.files.keys.sorted() ?? [])
             HStack(spacing: 0) {
-                ForEach(paths, id: \.self) { path in
-                    tab(path, selected: model.selectedFile == path, dirty: model.draft?.isDirty(path) == true) {
-                        model.selectedFile = path
-                    }
+                ForEach(model.draft?.files.keys.sorted() ?? [], id: \.self) { path in
+                    AskWorkflowFileTab(title: path, selected: model.selectedFile == path,
+                                       dirty: model.draft?.isDirty(path) == true) { model.selectedFile = path }
                 }
                 Spacer()
+                Button { model.findRequest += 1 } label: { Label(
+                    L("ask.workflow.editor.find"),
+                    systemImage: "magnifyingglass"
+                ) }
+                .buttonStyle(.borderless).keyboardShortcut("f", modifiers: .command)
+                Button(L("ask.workflow.editor.openExternal")) {
+                    if let folder = model.folder, let path = model.selectedFile {
+                        AskWorkflowEditorView.openInTextEditor(folder.appendingPathComponent(path))
+                    }
+                }
+                .buttonStyle(.borderless).padding(.horizontal, 10)
             }
-            .frame(height: 32)
+            .font(.system(size: 12))
+            .frame(height: 34)
             Divider()
             if let path = model.selectedFile, path != AskWorkflowManifest.fileName, model.draft?.files[path] != nil {
                 code(path)
@@ -54,24 +71,79 @@ struct AskWorkflowEditorCenter: View {
     }
 
     private func code(_ path: String) -> some View {
-        let markers = model.markers(for: path)
-        return VStack(spacing: 0) {
-            AskWorkflowCodeView(
-                text: Binding(get: { model.draft?.text(of: path) ?? "" }, set: { model.setText($0, of: path) }),
-                language: .detect(path: path, runtime: model.draft?.manifest?.command.runtime),
-                markers: markers,
-                reveal: model.reveal?.path == path ? model.reveal?.line : nil,
-                onRevealed: { model.reveal = nil }
-            )
-            .id(path)
-            .clipped()
-            if !markers.isEmpty {
-                AskWorkflowMarkerList(markers: markers) { line in model.reveal = (path, line) }
+        AskWorkflowCodeView(
+            text: Binding(get: { model.draft?.text(of: path) ?? "" }, set: { model.setText($0, of: path) }),
+            language: .detect(path: path, runtime: model.draft?.manifest?.command.runtime),
+            markers: model.markers(for: path),
+            reveal: model.reveal?.path == path ? model.reveal?.line : nil,
+            findRequest: model.findRequest,
+            onRevealed: { model.reveal = nil },
+            onCursor: { model.cursor = $0 }
+        )
+        .id(path)
+        .clipped()
+    }
+
+    // MARK: - Config
+
+    private var configArea: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Picker("", selection: $model.configMode) {
+                    Text(L("ask.workflow.editor.form")).tag(AskWorkflowEditorModel.ConfigMode.form)
+                    Text("workflow.json").tag(AskWorkflowEditorModel.ConfigMode.json)
+                }
+                .pickerStyle(.segmented).labelsHidden().fixedSize()
+                Spacer()
+                if model.configMode == .json || model.draft?.isFormEditable != true {
+                    Button(L("ask.workflow.editor.format")) { model.formatManifest() }
+                        .disabled(model.draft?.isFormEditable != true)
+                } else {
+                    Text(L("ask.workflow.editor.synced")).font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
+            }
+            .padding(.horizontal, 14).frame(height: 40)
+            Divider()
+            if model.configMode == .json || model.draft?.isFormEditable != true {
+                code(AskWorkflowManifest.fileName)
+                if let suggestion = model.scriptSuggestion {
+                    HStack(spacing: 8) {
+                        Image(systemName: "wand.and.stars").foregroundStyle(StudioTheme.warning)
+                        Text(L("ask.workflow.editor.quickFix.script", model.draft?.manifest?.command.script ?? "",
+                               suggestion))
+                        Spacer()
+                        Button(L("ask.workflow.editor.quickFix.apply", suggestion)) { model.applyScriptSuggestion() }
+                            .accessibilityIdentifier("ask.workflow.editor.quickFix")
+                    }
+                    .font(.system(size: 11.5)).padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(StudioTheme.warning.opacity(0.10))
+                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        switch model.step {
+                        case .keywords: AskWorkflowKeywordsForm(model: model)
+                        case .input: AskWorkflowInputForm(model: model)
+                        case .output, .script: AskWorkflowOutputForm(model: model)
+                        }
+                    }
+                    .padding(.horizontal, 22).padding(.vertical, 16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
     }
+}
 
-    private func tab(_ title: String, selected: Bool, dirty: Bool, action: @escaping () -> Void) -> some View {
+/// A file tab: underlined when selected, an orange dot when changed.
+struct AskWorkflowFileTab: View {
+    var title: String
+    var selected: Bool
+    var dirty: Bool
+    var action: () -> Void
+
+    var body: some View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Text(title).font(.system(size: 12))
@@ -90,108 +162,70 @@ struct AskWorkflowEditorCenter: View {
         }
         .buttonStyle(.plain)
     }
+}
 
-    // MARK: - Config
+/// Problems, the interpreter, the caret and the file format; during an outside
+/// change, what changed and what was last trusted.
+struct AskWorkflowStatusBar: View {
+    @ObservedObject var model: AskWorkflowEditorModel
 
-    private var configArea: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Picker("", selection: $model.configMode) {
-                    Text(L("ask.workflow.editor.form")).tag(AskWorkflowEditorModel.ConfigMode.form)
-                    Text("workflow.json").tag(AskWorkflowEditorModel.ConfigMode.json)
-                }
-                .pickerStyle(.segmented).labelsHidden().fixedSize()
-                Spacer()
-                if model.configMode == .json {
-                    Button(L("ask.workflow.editor.format")) { model.formatManifest() }
-                        .disabled(model.draft?.isFormEditable != true)
-                } else {
-                    Text(L("ask.workflow.editor.synced")).font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-            }
-            .padding(.horizontal, 14).frame(height: 38)
-            Divider()
-            if model.configMode == .json || model.draft?.isFormEditable != true {
-                code(AskWorkflowManifest.fileName)
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        switch model.step {
-                        case .keywords: AskWorkflowKeywordsForm(model: model)
-                        case .input: AskWorkflowInputForm(model: model)
-                        case .output, .script: AskWorkflowOutputForm(model: model)
-                        }
-                    }
-                    .padding(18)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-        }
-    }
-
-    // MARK: - Status bar
-
-    private var statusBar: some View {
+    var body: some View {
         HStack(spacing: 14) {
-            let problems = model.problems
-            if problems.isEmpty {
-                Label(L("ask.workflow.editor.noProblems"), systemImage: "checkmark.circle")
-                    .foregroundStyle(StudioTheme.success)
-            } else {
-                Button {
-                    if let first = problems.first {
-                        model.step = AskWorkflowDraft.step(for: first.field) ?? .keywords
-                        model.configMode = .json
-                        if let line = model.draft?.line(for: first.field) {
-                            model.reveal = (AskWorkflowManifest.fileName, line)
-                        }
-                    }
-                } label: {
-                    Label(
-                        L(
-                            "ask.workflow.editor.problemSummary",
-                            problems.count,
-                            problems[0].field + ": " + problems[0].message
-                        ),
-                        systemImage: "xmark.circle"
-                    )
-                    .lineLimit(1)
-                }
-                .buttonStyle(.plain).foregroundStyle(StudioTheme.danger)
-            }
-            Spacer()
-            if let folder = model.folder {
-                Text(folder.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
-                    .lineLimit(1).truncationMode(.middle).foregroundStyle(StudioTheme.textTertiary)
-            }
+            leading
+            Spacer(minLength: 8)
+            trailing
         }
         .font(.system(size: 11)).padding(.horizontal, 12).frame(height: 26)
         .background(StudioTheme.surfaceMuted)
     }
-}
 
-/// Problems listed under the code, each a link to its line.
-struct AskWorkflowMarkerList: View {
-    var markers: [Int: String]
-    var select: (Int) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            ForEach(markers.keys.sorted(), id: \.self) { line in
-                Button { select(line) } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "xmark.octagon.fill").foregroundStyle(StudioTheme.danger)
-                        Text(L("ask.workflow.editor.lineMessage", line, markers[line] ?? "")).lineLimit(2)
-                        Spacer()
-                    }
-                    .font(.system(size: 11.5)).contentShape(Rectangle())
+    @ViewBuilder private var leading: some View {
+        let problems = model.problems
+        if let stats = model.outsideStats {
+            Label(
+                L("ask.workflow.editor.status.outside", stats.added, stats.removed),
+                systemImage: "exclamationmark.triangle"
+            )
+            .foregroundStyle(StudioTheme.warning)
+        } else if !problems.isEmpty {
+            ForEach(Array(problems.prefix(2).enumerated()), id: \.offset) { _, problem in
+                Button { model.revealProblem(problem) } label: {
+                    Label(problem.field + ": " + problem.message, systemImage: "xmark.circle").lineLimit(1)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.plain).foregroundStyle(StudioTheme.danger)
+            }
+            if problems.count > 2 {
+                Text(L("ask.workflow.editor.status.more", problems.count - 2)).foregroundStyle(StudioTheme.danger)
+            }
+        } else if let last = model.results.last, !last.succeeded, model.step == .script {
+            Label(L("ask.workflow.editor.status.testFailed", last.summary), systemImage: "xmark.circle")
+                .foregroundStyle(StudioTheme.danger)
+        } else {
+            Label(L("ask.workflow.editor.noProblems"), systemImage: "checkmark.circle")
+                .foregroundStyle(StudioTheme.success)
+            if model.step == .script, let runtime = model.runtimeInfo {
+                Text(runtime).foregroundStyle(StudioTheme.textTertiary).lineLimit(1).truncationMode(.middle)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(StudioTheme.danger.opacity(0.08))
+    }
+
+    @ViewBuilder private var trailing: some View {
+        if model.outsideChange != nil {
+            if let hash = model.trustedHashLabel {
+                Text(L("ask.workflow.editor.status.trusted", hash)).foregroundStyle(StudioTheme.textTertiary)
+            }
+        } else if model.step == .script || model.configMode == .json || model.draft?.isFormEditable != true {
+            if let cursor = model.cursor {
+                Text(L("ask.workflow.editor.status.cursor", cursor.line, cursor.column))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
+            if let format = model.formatLabel {
+                Text(format).foregroundStyle(StudioTheme.textTertiary)
+            }
+        } else if let folder = model.folder {
+            Text(folder.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+                .lineLimit(1).truncationMode(.middle).foregroundStyle(StudioTheme.textTertiary)
+        }
     }
 }
 
@@ -202,36 +236,45 @@ struct AskWorkflowFlowStrip: View {
     var body: some View {
         let manifest = model.draft?.manifest
         HStack(spacing: 0) {
-            node(.keywords, symbol: "keyboard", title: L("ask.workflow.editor.step.keywords"),
-                 summary: (manifest?.keywords ?? []).map(\.keyword).joined(separator: "  "), mono: true)
+            node(.keywords, symbol: "keyboard", title: L("ask.workflow.editor.step.keywords")) {
+                HStack(spacing: 4) {
+                    ForEach(Array((manifest?.keywords ?? []).enumerated()), id: \.offset) { index, keyword in
+                        let bad = model.problems.contains { $0.field == "keywords[\(index)]" }
+                        AskWorkflowChip(text: keyword.keyword, style: bad ? .problem : .plain)
+                    }
+                    if let title = manifest?.keywords.first?.title, (manifest?.keywords.count ?? 0) == 1 {
+                        Text(title).foregroundStyle(StudioTheme.textTertiary)
+                    }
+                }
+            }
             arrow
-            node(
-                .input,
-                symbol: "text.quote",
-                title: L("ask.workflow.editor.step.input"),
-                summary: manifest.map(Self.input) ?? ""
-            )
+            node(.input, symbol: "text.quote", title: L("ask.workflow.editor.step.input")) {
+                Text(manifest.map(Self.input) ?? "—")
+            }
             arrow
-            node(.script, symbol: "play", title: L("ask.workflow.editor.step.script"),
-                 summary: manifest
-                     .map {
-                         ($0.command.script ?? L("ask.workflow.trust.inline")) + " " + $0.argumentTemplate
-                             .joined(separator: " ")
-                     } ?? "",
-                 mono: true)
+            node(.script, symbol: "play", title: L("ask.workflow.editor.step.script")) {
+                HStack(spacing: 4) {
+                    Text(manifest?.command.script ?? L("ask.workflow.trust.inline"))
+                        .font(.system(size: 11.5, design: .monospaced))
+                    ForEach(Array((manifest?.argumentTemplate ?? []).enumerated()), id: \.offset) { _, argument in
+                        AskWorkflowChip(text: argument, style: argument.contains("{") ? .token : .plain)
+                    }
+                }
+            }
             arrow
-            node(.output, symbol: "arrow.right.to.line", title: L("ask.workflow.editor.step.output"),
-                 summary: manifest.map { L("ask.workflow.editor.output." + $0.output.rawValue) + " · " + L(
-                     "ask.workflow.editor.seconds",
-                     Int($0.timeout)
-                 ) } ?? "")
+            node(.output, symbol: "arrow.right.to.line", title: L("ask.workflow.editor.step.output")) {
+                Text(manifest.map {
+                    L("ask.workflow.editor.output." + $0.output.rawValue) + " · "
+                        + L("ask.workflow.editor.seconds", Int($0.timeout))
+                } ?? "—")
+            }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
     }
 
     static func input(_ manifest: AskWorkflowManifest) -> String {
         L("ask.workflow.editor.argument." + manifest.input.argument.rawValue) + " · "
-            + L("ask.workflow.editor.selection." + manifest.input.selection.rawValue)
+            + L("ask.workflow.editor.selectionShort." + manifest.input.selection.rawValue)
     }
 
     private var arrow: some View {
@@ -239,8 +282,8 @@ struct AskWorkflowFlowStrip: View {
             .frame(width: 20)
     }
 
-    private func node(_ step: AskWorkflowDraft.Step, symbol: String, title: String, summary: String,
-                      mono: Bool = false) -> some View {
+    private func node(_ step: AskWorkflowDraft.Step, symbol: String, title: String,
+                      @ViewBuilder summary: () -> some View) -> some View {
         let selected = model.step == step && model.previewingProposal == nil
         let hasProblems = !model.problems(for: step).isEmpty
         return Button {
@@ -251,7 +294,7 @@ struct AskWorkflowFlowStrip: View {
                 model.selectedFile = script
             }
         } label: {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
                     Image(systemName: symbol).font(.system(size: 9.5))
                     Text(title).font(.system(size: 10.5, weight: .semibold))
@@ -261,17 +304,16 @@ struct AskWorkflowFlowStrip: View {
                     }
                 }
                 .foregroundStyle(StudioTheme.textTertiary)
-                Text(summary.isEmpty ? "—" : summary)
-                    .font(mono ? .system(size: 11.5, design: .monospaced) : .system(size: 12))
-                    .lineLimit(1).truncationMode(.tail)
+                summary().font(.system(size: 12)).lineLimit(1).truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading).clipped()
             }
             .padding(.horizontal, 10).padding(.vertical, 7)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(selected ? StudioTheme.accentSoft : StudioTheme.controlSurface,
                         in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .strokeBorder(hasProblems ? StudioTheme.danger.opacity(0.6) : selected ? AskTheme.accent : StudioTheme
-                    .border))
+                .strokeBorder(hasProblems ? StudioTheme.danger.opacity(0.6)
+                    : selected ? AskTheme.accent : StudioTheme.border))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -279,48 +321,55 @@ struct AskWorkflowFlowStrip: View {
     }
 }
 
-/// Two versions of a workflow, file by file, line by line.
+/// Two versions of a workflow: a tab per changed file, and the old version, the
+/// line differences or the new version.
 struct AskWorkflowDiffView<Actions: View>: View {
-    var title: String
+    enum Mode: Hashable { case old, diff, new }
+
     var old: AskWorkflowDraft
     var new: AskWorkflowDraft
+    /// What the two versions are called: "Current" / "Proposal", "Mine" / "On disk".
+    var labels: (String, String)
+    /// After the file name in its tab: "· Proposal", "· Differences".
+    var suffix: String
     @ViewBuilder var actions: () -> Actions
+    @State private var mode: Mode = .diff
+    @State private var path: String?
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text(title).font(.system(size: 12.5, weight: .semibold))
+            HStack(spacing: 0) {
+                ForEach(changedPaths, id: \.self) { file in
+                    AskWorkflowFileTab(title: file + " · " + suffix, selected: file == current, dirty: false) {
+                        path = file
+                    }
+                }
                 Spacer()
-                actions()
+                Picker("", selection: $mode) {
+                    Text(labels.0).tag(Mode.old)
+                    Text(L("ask.workflow.editor.diff.differences")).tag(Mode.diff)
+                    Text(labels.1).tag(Mode.new)
+                }
+                .pickerStyle(.segmented).labelsHidden().fixedSize()
+                actions().padding(.leading, 8)
             }
-            .padding(.horizontal, 14).frame(height: 40)
+            .padding(.trailing, 12).frame(height: 38)
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(changedPaths, id: \.self) { path in
-                        Text(path).font(.system(size: 11.5, weight: .semibold)).padding(.horizontal, 12).padding(
-                            .top,
-                            10
-                        ).padding(.bottom, 4)
-                        ForEach(
-                            Array(AskWorkflowDiff.lines(old: old.text(of: path) ?? "", new: new.text(of: path) ?? "")
-                                .enumerated()),
-                            id: \.offset
-                        ) { _, line in
-                            HStack(spacing: 8) {
-                                Text(line.kind == .added ? "+" : line.kind == .removed ? "−" : " ").frame(width: 10)
-                                Text(line.text.isEmpty ? " " : line.text).frame(
-                                    maxWidth: .infinity,
-                                    alignment: .leading
-                                )
-                            }
-                            .font(.system(size: 12, design: .monospaced))
-                            .padding(.horizontal, 12).padding(.vertical, 1)
-                            .background(line.kind == .added ? Color.green.opacity(0.14)
-                                : line.kind == .removed ? Color.red.opacity(0.14) : .clear)
+                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                        HStack(spacing: 8) {
+                            Text(line.kind == .added ? "+" : line.kind == .removed ? "−" : " ").frame(width: 10)
+                            Text(line.text.isEmpty ? " " : line.text).frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .font(.system(size: 12, design: .monospaced))
+                        .strikethrough(line.kind == .removed, color: StudioTheme.danger.opacity(0.5))
+                        .padding(.horizontal, 12).padding(.vertical, 1)
+                        .background(line.kind == .added ? Color.green.opacity(0.14)
+                            : line.kind == .removed ? Color.red.opacity(0.14) : .clear)
                     }
                 }
+                .padding(.vertical, 8)
                 .textSelection(.enabled)
             }
             .background(Color(nsColor: .textBackgroundColor))
@@ -329,5 +378,27 @@ struct AskWorkflowDiffView<Actions: View>: View {
 
     private var changedPaths: [String] {
         Set(old.paths + new.paths).sorted().filter { old.text(of: $0) != new.text(of: $0) }
+    }
+
+    private var current: String? {
+        path.flatMap { changedPaths.contains($0) ? $0 : nil } ?? changedPaths.first
+    }
+
+    private var lines: [AskWorkflowDiff.Line] {
+        guard let current else { return [] }
+        let before = old.text(of: current) ?? "", after = new.text(of: current) ?? ""
+        switch mode {
+        case .diff: return AskWorkflowDiff.lines(old: before, new: after)
+        case .old: return before.components(separatedBy: "\n").enumerated().map { .init(
+                kind: .same,
+                text: $1,
+                number: $0 + 1
+            ) }
+        case .new: return after.components(separatedBy: "\n").enumerated().map { .init(
+                kind: .same,
+                text: $1,
+                number: $0 + 1
+            ) }
+        }
     }
 }

@@ -12,72 +12,24 @@ struct AskWorkflowTestPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                let keywords = model.draft?.manifest?.keywords.map(\.keyword) ?? []
-                HStack {
-                    Text(L("ask.workflow.editor.test.input")).font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                    Spacer()
-                    if keywords.count > 1 {
-                        Picker(
-                            "",
-                            selection: Binding(
-                                get: { model.testKeyword ?? keywords[0] },
-                                set: { model.testKeyword = $0 }
-                            )
-                        ) {
-                            ForEach(keywords, id: \.self) { Text($0).tag($0) }
-                        }
-                        .labelsHidden().fixedSize().controlSize(.small)
-                    }
-                }
-                TextField(L("ask.workflow.editor.test.placeholder"), text: $model.testQuery)
-                    .textFieldStyle(.roundedBorder).onSubmit { model.runTest() }
-                    .accessibilityIdentifier("ask.workflow.editor.test.query")
-                Toggle(L("ask.workflow.editor.test.withSelection"), isOn: $model.testUsesSelection)
-                    .toggleStyle(.checkbox).font(.system(size: 12))
-                if model.testUsesSelection {
-                    TextEditor(text: $model.testSelection).font(.system(size: 12)).frame(height: 54)
-                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(StudioTheme.border))
-                }
-                HStack {
-                    if model.isTesting {
-                        ProgressView().controlSize(.small)
-                        Button(L("ask.workflow.editor.test.stop")) { model.stopTest() }
-                    } else {
-                        Button { model.runTest() } label: { Label(
-                            L("ask.workflow.editor.test.run"),
-                            systemImage: "play.fill"
-                        ) }
-                        .buttonStyle(.borderedProminent).disabled(model.generation != nil)
-                    }
-                    Spacer()
-                }
-            }
-            .padding(12)
+            input
             Divider()
             if let result = model.results.last {
-                Picker("", selection: $tab) {
-                    ForEach(Tab.allCases, id: \.self) { Text(L("ask.workflow.editor.test.tab." + $0.rawValue)).tag($0) }
-                }
-                .pickerStyle(.segmented).labelsHidden().padding(.horizontal, 12).padding(.top, 10)
-                HStack(spacing: 6) {
-                    Image(systemName: result.succeeded ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .foregroundStyle(result.succeeded ? StudioTheme.success : StudioTheme.danger)
-                    Text(result.summary).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                HStack {
+                    AskWorkflowTabs(items: Tab.allCases.map { tab in
+                        .init(tab: tab, title: L("ask.workflow.editor.test.tab." + tab.rawValue),
+                              badge: tab == .stderr && !result.succeeded && !result.stderr.isEmpty
+                                  ? "\(result.stderr.split(separator: "\n").count)" : nil)
+                    }, selection: $tab, size: 11.5)
                     Spacer()
-                    if !result.succeeded {
-                        Button { fix() } label: { Label(L("ask.workflow.assistant.fix"), systemImage: "sparkles") }
-                            .controlSize(.small)
-                            .accessibilityIdentifier("ask.workflow.editor.fix")
-                    }
                 }
-                .padding(.horizontal, 12).padding(.vertical, 8)
+                .padding(.horizontal, 8).padding(.top, 10)
+                Divider()
+                meta(result)
                 ScrollView { detail(result).padding(.horizontal, 12).padding(.bottom, 12) }
             } else {
                 Text(L("ask.workflow.editor.test.empty")).font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .padding(12)
+                    .foregroundStyle(StudioTheme.textTertiary).padding(12)
                 Spacer()
             }
             Divider()
@@ -85,16 +37,142 @@ struct AskWorkflowTestPanel: View {
         }
     }
 
+    // MARK: - Input
+
+    private var input: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(L("ask.workflow.editor.test.title")).font(.system(size: 12.5, weight: .semibold))
+                Spacer()
+                AskWorkflowBadge(text: L("ask.workflow.editor.test.sameRunner"), color: StudioTheme.textSecondary)
+            }
+            let keywords = model.draft?.manifest?.keywords.map(\.keyword) ?? []
+            HStack(spacing: 5) {
+                Text(L("ask.workflow.editor.test.inputBefore"))
+                if keywords.count > 1 {
+                    Menu {
+                        ForEach(keywords, id: \.self) { keyword in Button(keyword) { model.testKeyword = keyword } }
+                    } label: {
+                        AskWorkflowChip(text: (model.testKeyword ?? keywords[0]) + " ▾")
+                    }
+                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                } else if let keyword = keywords.first {
+                    AskWorkflowChip(text: keyword)
+                }
+                Text(L("ask.workflow.editor.test.inputAfter"))
+            }
+            .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+            TextField(L("ask.workflow.editor.test.placeholder"), text: $model.testQuery)
+                .textFieldStyle(.roundedBorder).onSubmit { model.runTest() }
+                .accessibilityIdentifier("ask.workflow.editor.test.query")
+            Toggle(L("ask.workflow.editor.test.withSelection"), isOn: $model.testUsesSelection)
+                .toggleStyle(.checkbox).font(.system(size: 12))
+            if model.testUsesSelection {
+                TextEditor(text: $model.testSelection).font(.system(size: 12)).frame(height: 54)
+                    .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(StudioTheme.border))
+            }
+            if model.isTesting {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.small)
+                    TimelineView(.periodic(from: .now, by: 0.1)) { context in
+                        Text(L("ask.workflow.editor.test.running",
+                               context.date.timeIntervalSince(model.testStartedAt ?? context.date)))
+                            .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                            .monospacedDigit()
+                    }
+                    Spacer()
+                    Button(L("ask.workflow.editor.test.stop")) { model.stopTest() }.controlSize(.small)
+                }
+            }
+        }
+        .padding(12)
+    }
+
+    // MARK: - Result
+
+    private func meta(_ result: AskWorkflowTestResult) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: result.succeeded ? "checkmark" : "xmark").font(.system(size: 10, weight: .bold))
+            Text(result.summary)
+            if result.succeeded, !result.stdout.isEmpty {
+                Text("· " + L("ask.workflow.editor.test.lines",
+                              result.stdout.trimmingCharacters(in: .newlines).split(separator: "\n").count))
+            }
+            Spacer()
+            if !result.succeeded {
+                Button { fix() } label: { Label(L("ask.workflow.assistant.fix"), systemImage: "sparkles") }
+                    .controlSize(.small).tint(AskWorkflowEditorStyle.assistant)
+                    .accessibilityIdentifier("ask.workflow.editor.fix")
+            }
+            Text(AskWorkflowEditorModel.relative(result.date)).foregroundStyle(StudioTheme.textTertiary)
+        }
+        .font(.system(size: 11.5))
+        .foregroundStyle(result.succeeded ? StudioTheme.success : StudioTheme.danger)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+    }
+
     @ViewBuilder private func detail(_ result: AskWorkflowTestResult) -> some View {
+        let manifest = model.draft?.manifest
         switch tab {
-        case .preview: AskWorkflowResultPreview(result: result, manifest: model.draft?.manifest)
-        case .stdout: mono(result.stdout.isEmpty ? L("ask.workflow.editor.test.nothing") : result.stdout)
-        case .stderr: mono(result.stderr.isEmpty ? L("ask.workflow.editor.test.nothing") : result.stderr)
+        case .preview:
+            preview(result, input: true)
+        case .stdout:
+            mono(result.stdout.isEmpty ? L("ask.workflow.editor.test.nothing") : result.stdout)
+        case .stderr:
+            VStack(alignment: .leading, spacing: 10) {
+                stderrLog(result.stderr)
+                if !result.succeeded, manifest != nil {
+                    Text(L("ask.workflow.editor.test.launcherShows")).font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                    preview(result, input: false)
+                }
+            }
         case .received:
             mono("argv  " + AskWorkflowAuthorTools.json(result.arguments) + "\n\nstdin " + result.stdin + "\n\n"
                 + result.environment.keys.sorted().map { "\($0)=\(result.environment[$0] ?? "")" }
                 .joined(separator: "\n"))
         }
+    }
+
+    private func preview(_ result: AskWorkflowTestResult, input: Bool) -> some View {
+        let manifest = model.draft?.manifest
+        return AskWorkflowLauncherPreview(
+            name: manifest?.name ?? "", keyword: result.input.keyword ?? manifest?.keywords.first?.keyword ?? "",
+            query: result.input.query, result: result, output: manifest?.output ?? .text,
+            timeout: manifest?.timeout ?? AskWorkflowManifest.defaultTimeout, showsInput: input, folder: model.folder
+        )
+    }
+
+    /// stderr, with each line that points into the workflow a link to that line.
+    private func stderrLog(_ stderr: String) -> some View {
+        let files = Set(model.draft?.files.keys.map(\.self) ?? [])
+        let folder = model.folder ?? model.draft?.folder ?? URL(fileURLWithPath: "/")
+        return VStack(alignment: .leading, spacing: 0) {
+            if stderr.isEmpty {
+                Text(L("ask.workflow.editor.test.nothing"))
+            }
+            ForEach(Array(stderr.components(separatedBy: "\n").enumerated()), id: \.offset) { _, line in
+                if let location = AskWorkflowStderrLocator.locate(line, folder: folder, files: files) {
+                    Button {
+                        model.step = .script
+                        model.selectedFile = location.path
+                        model.reveal = (location.path, location.line)
+                    } label: {
+                        Text(line).underline().foregroundStyle(AskTheme.accent)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text(line.isEmpty ? " " : line)
+                        .foregroundStyle(line.contains("Error") || line.contains("error")
+                            ? StudioTheme.danger : StudioTheme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+        .font(.system(size: 11.5, design: .monospaced)).textSelection(.enabled)
+        .padding(10)
+        .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
     }
 
     private func mono(_ text: String) -> some View {
@@ -103,75 +181,33 @@ struct AskWorkflowTestPanel: View {
             .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
     }
 
+    // MARK: - History
+
     private var history: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(L("ask.workflow.editor.test.recent")).font(.system(size: 10.5, weight: .semibold))
                 .foregroundStyle(StudioTheme.textTertiary)
-            let entries = Array((log.entries[model.workflowID ?? ""] ?? []).prefix(5))
-            if entries.isEmpty {
+            let items = model.history
+            if items.isEmpty {
                 Text("—").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             }
-            ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
-                HStack(spacing: 6) {
-                    Image(systemName: entry.exitCode == 0 && !entry.timedOut ? "checkmark" : "xmark")
-                        .foregroundStyle(entry.exitCode == 0 && !entry.timedOut ? StudioTheme.success : StudioTheme
-                            .danger)
-                    Text(L(
-                        entry
-                            .source == .test ? "ask.workflow.editor.test.sourceTest" :
-                            "ask.workflow.editor.test.sourceLauncher",
-                        entry.keyword
-                    )).lineLimit(1)
+            ForEach(items) { item in
+                HStack(spacing: 8) {
+                    Image(systemName: item.succeeded ? "checkmark" : "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(item.succeeded ? StudioTheme.success : StudioTheme.danger)
+                        .frame(width: 12)
+                    Text(item.title).lineLimit(1)
                     Spacer()
-                    Text(String(format: "%.2f s", entry.duration)).foregroundStyle(StudioTheme.textTertiary)
-                    Text(entry.date, style: .time).foregroundStyle(StudioTheme.textTertiary)
+                    Text(String(format: "%.2f s", item.duration)).foregroundStyle(StudioTheme.textTertiary)
+                        .monospacedDigit()
+                    Text(AskWorkflowEditorModel.relative(item.date)).foregroundStyle(StudioTheme.textTertiary)
                 }
                 .font(.system(size: 11.5))
             }
         }
         .padding(12)
-    }
-}
-
-/// A result as the launcher would show it: a text card, "the launcher closes", or the error.
-struct AskWorkflowResultPreview: View {
-    var result: AskWorkflowTestResult
-    var manifest: AskWorkflowManifest?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(manifest?.name ?? "").font(.system(size: 12, weight: .semibold))
-                Spacer()
-                Text(L("ask.workflow.editor.test.card")).font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-            if let failure = result.failure {
-                Text(failure).foregroundStyle(StudioTheme.danger).font(.system(size: 12.5))
-            } else if result.timedOut {
-                Text(L("ask.workflow.timedOut", Int(manifest?.timeout ?? 0))).foregroundStyle(StudioTheme.danger)
-            } else if result.exitCode != 0 {
-                Text(AskWorkflowPlugin.errorMessage(in: result.stdout) ?? L(
-                    "ask.workflow.failed",
-                    Int(result.exitCode)
-                ))
-                .foregroundStyle(StudioTheme.danger).font(.system(size: 12.5))
-                Text(AskWorkflowPlugin.tail(result.stderr).trimmingCharacters(in: .newlines))
-                    .font(.system(size: 11, design: .monospaced)).foregroundStyle(StudioTheme.textSecondary)
-            } else if manifest?.output == AskWorkflowManifest.Output.none
-                || result.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Label(L("ask.workflow.editor.test.dismisses"), systemImage: "checkmark.circle")
-                    .foregroundStyle(StudioTheme.success)
-            } else {
-                Text(result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 13.5))
-                    .textSelection(.enabled)
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12)
-            .strokeBorder(result.succeeded ? AskTheme.accent.opacity(0.5) : StudioTheme.danger.opacity(0.5)))
+        .id(log.entries.count)
     }
 }
 
@@ -211,7 +247,10 @@ struct AskWorkflowAssistantPanel: View {
                     .padding(12)
                 }
                 .onChange(of: assistant.items.count) { _ in withAnimation { reader.scrollTo("bottom") } }
-                .onChange(of: model.pendingRun) { _ in withAnimation { reader.scrollTo("bottom") } }
+                .onChange(of: model.pendingRun) { _ in
+                    // After the card is laid out, so all of it comes into view.
+                    DispatchQueue.main.async { withAnimation { reader.scrollTo("bottom") } }
+                }
             }
             Divider()
             composer
@@ -223,18 +262,20 @@ struct AskWorkflowAssistantPanel: View {
         case let .user(_, text):
             HStack {
                 Spacer(minLength: 30)
-                Text(text).font(.system(size: 12.5)).textSelection(.enabled).padding(.horizontal, 10).padding(
-                    .vertical,
-                    7
-                )
-                .background(StudioTheme.accentSoft, in: RoundedRectangle(cornerRadius: 12))
+                Text(text).font(.system(size: 12.5)).textSelection(.enabled)
+                    .padding(.horizontal, 10).padding(.vertical, 7)
+                    .background(StudioTheme.accentSoft, in: RoundedRectangle(cornerRadius: 12))
             }
         case let .reply(_, text):
-            Text((try? AttributedString(
-                markdown: text,
-                options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-            )) ?? AttributedString(text))
-                .font(.system(size: 12.5)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 3) {
+                Label(L("ask.workflow.assistant.title"), systemImage: "sparkles")
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                Text((try? AttributedString(markdown: text,
+                                            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                        ?? AttributedString(text))
+                    .font(.system(size: 12.5)).textSelection(.enabled)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         case let .tool(_, summary, failed):
             Label(summary, systemImage: failed ? "xmark.circle" : "checkmark.circle")
                 .font(.system(size: 11.5)).foregroundStyle(failed ? StudioTheme.warning : StudioTheme.textSecondary)
@@ -251,44 +292,45 @@ struct AskWorkflowAssistantPanel: View {
         let changes = model.draft.map { proposal.changes(against: $0) } ?? []
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
-                Image(systemName: "sparkles").foregroundStyle(.purple)
+                Image(systemName: "sparkles").foregroundStyle(AskWorkflowEditorStyle.assistant)
                 Text(L("ask.workflow.assistant.proposal")).font(.system(size: 12, weight: .semibold))
                 Spacer()
-                Text(stateText(proposal)).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                Text(stateText(proposal, files: changes.count)).font(.system(size: 11))
+                    .foregroundStyle(StudioTheme.textTertiary)
             }
             .padding(10)
             Divider()
             if !proposal.summary.isEmpty {
                 Text(proposal.summary).font(.system(size: 12)).padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 Divider()
             }
-            if proposal.state == .pending {
+            if proposal.state == .pending, !changes.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(changes, id: \.path) { change in
                         HStack(spacing: 6) {
-                            Text(change.path).font(.system(size: 11.5, design: .monospaced))
+                            Text(change.path)
                             Text("+\(change.added)").foregroundStyle(StudioTheme.success)
                             if change.removed > 0 {
                                 Text("−\(change.removed)").foregroundStyle(StudioTheme.danger)
                             }
                         }
-                        .font(.system(size: 11.5))
+                        .font(.system(size: 11.5, design: .monospaced))
                     }
                 }
                 .padding(10)
                 Divider()
             }
-            if !proposal.risks.isEmpty {
-                FlowChips(risks: proposal.risks.sorted(), new: proposal.newRisks).padding(10)
-                Divider()
-            }
+            AskWorkflowRiskChips(risks: proposal.risks.sorted(), new: proposal.newRisks, showsAbsent: true)
+                .padding(10)
             if proposal.state == .pending {
+                Divider()
                 HStack {
                     Spacer()
                     Button(L("ask.workflow.assistant.discard")) { model.discard(proposal.id) }
                     Button(L("ask.workflow.assistant.preview")) { model.previewingProposal = proposal.id }
                     Button(L("ask.workflow.assistant.apply")) { model.apply(proposal.id) }
-                        .buttonStyle(.borderedProminent).tint(.purple)
+                        .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
                         .accessibilityIdentifier("ask.workflow.assistant.apply")
                 }
                 .controlSize(.small).padding(10)
@@ -296,38 +338,41 @@ struct AskWorkflowAssistantPanel: View {
         }
         .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 11))
         .overlay(RoundedRectangle(cornerRadius: 11)
-            .strokeBorder(Color.purple.opacity(proposal.state == .pending ? 0.5 : 0.15)))
+            .strokeBorder(AskWorkflowEditorStyle.assistant.opacity(proposal.state == .pending ? 0.5 : 0.15)))
     }
 
-    private func stateText(_ proposal: AskWorkflowProposal) -> String {
+    private func stateText(_ proposal: AskWorkflowProposal, files: Int) -> String {
         switch proposal.state {
         case .applied: return L("ask.workflow.assistant.applied")
         case .discarded: return L("ask.workflow.assistant.discarded")
         case .pending:
-            guard !proposal.tests.isEmpty else { return L("ask.workflow.assistant.untested") }
-            return L(
-                "ask.workflow.assistant.testedSummary",
-                proposal.tests.filter(\.succeeded).count,
-                proposal.tests.count
-            )
+            let count = L("ask.workflow.assistant.files", files)
+            guard !proposal.tests.isEmpty else { return count + " · " + L("ask.workflow.assistant.untested") }
+            return count + " · " + L("ask.workflow.assistant.testedSummary",
+                                     proposal.tests.filter(\.succeeded).count, proposal.tests.count)
         }
     }
 
     private func approval(_ run: AskWorkflowEditorModel.PendingRun) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(L("ask.workflow.assistant.approval.title"), systemImage: "exclamationmark.triangle")
-                .font(.system(size: 12, weight: .semibold)).foregroundStyle(StudioTheme.warning)
-            if !run.risks.isEmpty {
-                FlowChips(risks: run.risks, new: Set(run.risks))
+            HStack {
+                Label(L("ask.workflow.assistant.approval.titleNumbered", model.proposalNumber(run.proposalID)),
+                      systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(StudioTheme.warning)
+                Spacer()
+                Text(L("ask.workflow.assistant.approval.paused")).font(.system(size: 11))
+                    .foregroundStyle(StudioTheme.textTertiary)
             }
+            AskWorkflowRiskChips(risks: model.proposal(run.proposalID)?.risks.sorted() ?? run.risks,
+                                 new: Set(run.risks), showsAbsent: false)
             Text(L("ask.workflow.assistant.approval.body")).font(.system(size: 11.5))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()
                 Button(L("ask.workflow.assistant.preview")) { model.previewingProposal = run.proposalID }
                 Button(L("ask.workflow.assistant.approval.decline")) { model.resolvePendingRun(false) }
                 Button(L("ask.workflow.assistant.approval.allow")) { model.resolvePendingRun(true) }
-                    .buttonStyle(.borderedProminent).tint(.purple)
+                    .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
                     .accessibilityIdentifier("ask.workflow.assistant.allow")
             }
             .controlSize(.small)
@@ -337,66 +382,136 @@ struct AskWorkflowAssistantPanel: View {
         .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(StudioTheme.warning.opacity(0.5)))
     }
 
+    /// What the assistant gets with each message: the open files and the last test run.
+    private var context: [String] {
+        guard let draft = model.draft else { return [] }
+        var chips = Array(draft.files.keys.sorted().filter { !$0.lowercased().hasSuffix(".md") }.prefix(2))
+        chips.append(AskWorkflowManifest.fileName)
+        if let last = model.results.last {
+            chips.append(L("ask.workflow.assistant.context.lastTest") + (last.succeeded ? " ✓" : " ✕"))
+        }
+        return chips
+    }
+
     private var composer: some View {
         VStack(alignment: .leading, spacing: 6) {
-            TextEditor(text: $text).font(.system(size: 12.5)).frame(height: 54)
-                .overlay(alignment: .topLeading) {
-                    if text.isEmpty {
-                        Text(L("ask.workflow.assistant.placeholder")).font(.system(size: 12.5))
-                            .foregroundStyle(StudioTheme.textTertiary).padding(.leading, 5).padding(.top, 1)
-                            .allowsHitTesting(false)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 4) {
+                    ForEach(context, id: \.self) { chip in
+                        Text(chip).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textSecondary)
+                            .padding(.horizontal, 6).frame(height: 18)
+                            .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 5))
+                            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(StudioTheme.border))
                     }
                 }
-                .accessibilityIdentifier("ask.workflow.assistant.input")
-            HStack(spacing: 8) {
-                Toggle(L("ask.workflow.assistant.autoTest"), isOn: $model.autoTest).toggleStyle(.checkbox)
-                    .font(.system(size: 11))
-                    .help(L("ask.workflow.assistant.autoTest.help"))
-                Spacer()
-                Text(assistant.isLocal ? L("ask.workflow.assistant.local") : L("ask.workflow.assistant.cloud"))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-                if assistant.isBusy {
-                    Button { assistant.stop() } label: { Image(systemName: "stop.fill") }
-                        .help(L("ask.workflow.assistant.stop"))
-                } else {
-                    Button {
-                        assistant.send(text)
-                        text = ""
-                    } label: { Image(systemName: "arrow.up") }
+                TextEditor(text: $text).font(.system(size: 12.5)).frame(height: 44)
+                    .scrollContentBackground(.hidden)
+                    .overlay(alignment: .topLeading) {
+                        if text.isEmpty {
+                            Text(L("ask.workflow.assistant.placeholder")).font(.system(size: 12.5))
+                                .foregroundStyle(StudioTheme.textTertiary).padding(.leading, 5).padding(.top, 1)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .accessibilityIdentifier("ask.workflow.assistant.input")
+                HStack(spacing: 6) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(LinearGradient(
+                            colors: [.pink, .orange],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                        .frame(width: 12, height: 12)
+                    Text(assistant
+                        .modelName == L("ask.workflow.assistant.cloud") ? L("ask.workflow.assistant.defaultModel")
+                        : assistant.modelName).font(.system(size: 11, weight: .semibold))
+                    Text("·").foregroundStyle(StudioTheme.textTertiary)
+                    Text(assistant.keepsLocally ? L("ask.workflow.assistant.local") : L("ask.workflow.assistant.cloud"))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                    Spacer()
+                    if assistant.isBusy {
+                        Button { assistant.stop() } label: {
+                            Image(systemName: "stop.fill").font(.system(size: 10)).foregroundStyle(.white)
+                                .frame(width: 24, height: 24)
+                                .background(AskWorkflowEditorStyle.assistant, in: Circle())
+                        }
+                        .buttonStyle(.plain).help(L("ask.workflow.assistant.stop"))
+                    } else {
+                        Button {
+                            assistant.send(text)
+                            text = ""
+                        } label: {
+                            Image(systemName: "arrow.up").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
+                                .frame(width: 24, height: 24)
+                                .background(AskWorkflowEditorStyle.assistant.opacity(sendable ? 1 : 0.35), in: Circle())
+                        }
+                        .buttonStyle(.plain)
                         .keyboardShortcut(.return, modifiers: .command)
-                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(!sendable)
                         .help(L("ask.workflow.assistant.send"))
+                    }
                 }
+                .font(.system(size: 11))
+            }
+            .padding(10)
+            .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(StudioTheme.border))
+            HStack {
+                Toggle(L("ask.workflow.assistant.autoTest"), isOn: $model.autoTest).toggleStyle(.checkbox)
+                    .font(.system(size: 11)).help(L("ask.workflow.assistant.autoTest.help"))
+                Spacer()
             }
             Text(L("ask.workflow.assistant.privacy")).font(.system(size: 10.5))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(StudioTheme.textTertiary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
     }
+
+    private var sendable: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 }
 
-/// Risk tags, new ones highlighted.
-struct FlowChips: View {
+/// Risk tags, new ones highlighted; optionally also what the code does not do.
+struct AskWorkflowRiskChips: View {
     var risks: [AskWorkflowRisk]
     var new: Set<AskWorkflowRisk>
+    var showsAbsent: Bool
 
     var body: some View {
+        let kinds = Set(risks.map(\.kind))
         VStack(alignment: .leading, spacing: 4) {
             ForEach(risks, id: \.self) { risk in
-                let isNew = new.contains(risk)
-                Label(
-                    risk.title,
-                    systemImage: risk.kind == .network ? "network" : risk.isHigh ? "exclamationmark.shield" : "doc"
-                )
-                .font(.system(size: 11))
-                .foregroundStyle(isNew ? Color.orange : StudioTheme.textSecondary)
-                .padding(.horizontal, 7).padding(.vertical, 2)
-                .background(
-                    (isNew ? Color.orange : Color.gray).opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: 6)
-                )
+                chip(new.contains(risk) || !showsAbsent ? risk.title : risk.title + L("ask.workflow.risk.existing"),
+                     symbol: risk.kind == .network ? "network" : risk.isHigh ? "exclamationmark.shield" : "doc",
+                     highlighted: new.contains(risk))
+            }
+            if showsAbsent {
+                HStack(spacing: 4) {
+                    if !kinds.contains(.writesFiles), !kinds.contains(.deletes) {
+                        chip(L("ask.workflow.risk.noWrites"), symbol: nil, highlighted: false)
+                    }
+                    if !kinds.contains(.runsPrograms) {
+                        chip(L("ask.workflow.risk.noPrograms"), symbol: nil, highlighted: false)
+                    }
+                }
             }
         }
+    }
+
+    private func chip(_ text: String, symbol: String?, highlighted: Bool) -> some View {
+        HStack(spacing: 4) {
+            if let symbol {
+                Image(systemName: symbol)
+            }
+            Text(text)
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(highlighted ? Color.orange : StudioTheme.textSecondary)
+        .padding(.horizontal, 7).padding(.vertical, 2)
+        .background((highlighted ? Color.orange : Color.gray).opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+        .overlay(RoundedRectangle(cornerRadius: 6)
+            .strokeBorder(highlighted ? Color.orange.opacity(0.35) : StudioTheme.border))
+        .fixedSize()
     }
 }

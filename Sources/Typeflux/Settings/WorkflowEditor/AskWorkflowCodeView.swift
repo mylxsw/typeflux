@@ -12,15 +12,25 @@ struct AskWorkflowCodeView: NSViewRepresentable {
     /// Scrolls to and selects this line once.
     var reveal: Int?
     var isEditable = true
+    /// Changes when the user asks to find: the find bar opens.
+    var findRequest = 0
     var onRevealed: () -> Void = {}
+    var onCursor: (AskWorkflowEditorModel.Cursor) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let scrollView = NSTextView.scrollableTextView()
-        guard let textView = scrollView.documentView as? NSTextView else { return scrollView }
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = true
+        scrollView.borderType = .noBorder
+        let textView = AskWorkflowTextView(frame: .zero)
+        textView.minSize = .zero
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.isVerticallyResizable = true
+        textView.autoresizingMask = [.width]
+        scrollView.documentView = textView
         textView.delegate = context.coordinator
         textView.isRichText = false
         textView.allowsUndo = true
@@ -52,6 +62,7 @@ struct AskWorkflowCodeView: NSViewRepresentable {
         scrollView.rulersVisible = true
         context.coordinator.textView = textView
         context.coordinator.ruler = ruler
+        context.coordinator.findRequest = findRequest
         textView.string = text
         context.coordinator.highlight(all: true)
         // Scrolling colors what comes into view; edits only recolor around what is visible.
@@ -79,6 +90,17 @@ struct AskWorkflowCodeView: NSViewRepresentable {
         }
         coordinator.ruler?.problems = markers
         coordinator.ruler?.needsDisplay = true
+        if let codeView = textView as? AskWorkflowTextView, codeView.problems != markers {
+            codeView.problems = markers
+            codeView.needsDisplay = true
+        }
+        if findRequest != coordinator.findRequest {
+            coordinator.findRequest = findRequest
+            textView.window?.makeFirstResponder(textView)
+            let item = NSMenuItem()
+            item.tag = NSTextFinder.Action.showFindInterface.rawValue
+            textView.performTextFinderAction(item)
+        }
         if let reveal, coordinator.revealed != reveal {
             coordinator.revealed = reveal
             coordinator.reveal(line: reveal)
@@ -93,6 +115,7 @@ struct AskWorkflowCodeView: NSViewRepresentable {
         weak var ruler: AskWorkflowLineRuler?
         var language: AskWorkflowSyntaxHighlighter.Language?
         var revealed: Int?
+        var findRequest = 0
         var scrollObserver: NSObjectProtocol?
 
         init(_ parent: AskWorkflowCodeView) {
@@ -103,6 +126,17 @@ struct AskWorkflowCodeView: NSViewRepresentable {
             if let scrollObserver {
                 NotificationCenter.default.removeObserver(scrollObserver)
             }
+        }
+
+        /// Reports the caret's line and column (1-based) for the status bar.
+        func textViewDidChangeSelection(_: Notification) {
+            guard let textView else { return }
+            let content = textView.string as NSString
+            let caret = min(textView.selectedRange().location, content.length)
+            let before = content.substring(to: caret)
+            let line = before.reduce(1) { $1 == "\n" ? $0 + 1 : $0 }
+            let column = (before.components(separatedBy: "\n").last?.count ?? 0) + 1
+            parent.onCursor(.init(line: line, column: column))
         }
 
         func textDidChange(_: Notification) {
@@ -132,12 +166,7 @@ struct AskWorkflowCodeView: NSViewRepresentable {
 
         /// Two spaces when the file mostly indents by two, else four.
         static func indentWidth(_ text: String) -> Int {
-            let indents = text.components(separatedBy: "\n").compactMap { line -> Int? in
-                let count = line.prefix { $0 == " " }.count
-                return count > 0 ? count : nil
-            }
-            guard let smallest = indents.min() else { return 4 }
-            return smallest == 2 ? 2 : 4
+            AskWorkflowCodeIndentation.width(of: text)
         }
 
         func highlight(all: Bool) {
@@ -265,5 +294,58 @@ final class AskWorkflowLineRuler: NSRulerView {
             index = NSMaxRange(lineRange)
             line += 1
         } while index < content.length && index <= characters.upperBound
+    }
+}
+
+/// The code view's text view: lines with a problem get a red tint and the message
+/// at the right edge, where the eye already is.
+final class AskWorkflowTextView: NSTextView {
+    var problems: [Int: String] = [:]
+
+    override func drawBackground(in rect: NSRect) {
+        super.drawBackground(in: rect)
+        guard !problems.isEmpty, let layout = layoutManager, let container = textContainer else { return }
+        let content = string as NSString
+        let origin = textContainerOrigin
+        let font = NSFont.systemFont(ofSize: 11)
+        for (line, message) in problems {
+            guard let range = Self.range(ofLine: line, in: content) else { continue }
+            let glyphs = layout.glyphRange(forCharacterRange: NSRange(location: range.location, length: 0),
+                                           actualCharacterRange: nil)
+            var lineRect = content.length == 0 ? NSRect(x: 0, y: 0, width: 0, height: 18)
+                : layout.lineFragmentRect(forGlyphAt: min(glyphs.location, max(0, layout.numberOfGlyphs - 1)),
+                                          effectiveRange: nil, withoutAdditionalLayout: true)
+            lineRect.origin.y += origin.y
+            lineRect.origin.x = bounds.minX
+            lineRect.size.width = bounds.width
+            guard lineRect.intersects(rect) else { continue }
+            NSColor.systemRed.withAlphaComponent(0.12).setFill()
+            lineRect.fill()
+            _ = container
+            let label = "↳ " + message as NSString
+            let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.systemRed]
+            let size = label.size(withAttributes: attributes)
+            let maxWidth = min(size.width, visibleRect.width * 0.55)
+            let pill = NSRect(x: visibleRect.maxX - maxWidth - 22, y: lineRect.minY + 1,
+                              width: maxWidth + 14, height: lineRect.height - 2)
+            NSColor.systemRed.withAlphaComponent(0.18).setFill()
+            NSBezierPath(roundedRect: pill, xRadius: 5, yRadius: 5).fill()
+            label.draw(with: NSRect(x: pill.minX + 7, y: pill.minY + (pill.height - size.height) / 2,
+                                    width: maxWidth, height: size.height),
+                       options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: attributes)
+        }
+    }
+
+    /// The character range of a 1-based line.
+    static func range(ofLine line: Int, in content: NSString) -> NSRange? {
+        var location = 0
+        var current = 1
+        while current < line {
+            guard location < content.length else { return nil }
+            location = NSMaxRange(content.lineRange(for: NSRange(location: location, length: 0)))
+            current += 1
+        }
+        guard location <= content.length else { return nil }
+        return content.lineRange(for: NSRange(location: location, length: 0))
     }
 }

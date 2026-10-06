@@ -75,6 +75,18 @@ final class AskWorkflowAssistant: ObservableObject {
         )
     }
 
+    /// The model a message would go to, by name: "Typeflux Cloud", "gpt-4.1".
+    var modelName: String {
+        let local = conversationID == nil ? (dependencies.session().token.isEmpty || dependencies.prefersLocal()) :
+            isLocal
+        return modelReference(local: local).map { dependencies.modelLibrary.name(for: $0) } ?? ""
+    }
+
+    /// Where the conversation is kept: on this Mac, or in Typeflux Cloud.
+    var keepsLocally: Bool {
+        conversationID == nil ? (dependencies.session().token.isEmpty || dependencies.prefersLocal()) : isLocal
+    }
+
     func send(_ text: String) {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isBusy else { return }

@@ -150,6 +150,7 @@ extension AskWorkflowEditorModel {
             keyword: testKeyword
         )
         isTesting = true
+        testStartedAt = Date()
         let tester = tester
         testTask = Task { [weak self] in
             let result = await tester.run(workflow, input: input)
@@ -159,6 +160,7 @@ extension AskWorkflowEditorModel {
                 results.removeFirst(results.count - 20)
             }
             isTesting = false
+            testStartedAt = nil
             if let location = failureLocation {
                 selectedFile = location.path
                 step = .script
@@ -171,6 +173,7 @@ extension AskWorkflowEditorModel {
         testTask?.cancel()
         testTask = nil
         isTesting = false
+        testStartedAt = nil
     }
 
     /// Asks the assistant to fix the last failed run.
@@ -236,5 +239,27 @@ extension AskWorkflowEditorModel {
         pendingRun = nil
         pendingRunContinuation?.resume(returning: allowed)
         pendingRunContinuation = nil
+    }
+}
+
+extension AskWorkflowEditorModel {
+    /// A generated workflow can be saved once the assistant proposed something that
+    /// has no problems (applied already, or about to be).
+    var canSaveGenerated: Bool {
+        guard generation != nil, let draft else { return false }
+        guard latestProposal != nil || proposals.contains(where: { $0.state == .applied }) else { return false }
+        let candidate = latestProposal?.applied(to: draft) ?? draft
+        return candidate.problems(fileManager: store.fileManager).isEmpty
+    }
+
+    /// "Review and save" for a generated workflow: the latest proposal goes into the
+    /// draft, then the workflow is installed and trusted.
+    @discardableResult
+    func saveGenerated() -> Bool {
+        guard generation != nil else { return false }
+        if let latest = latestProposal {
+            apply(latest.id)
+        }
+        return save()
     }
 }

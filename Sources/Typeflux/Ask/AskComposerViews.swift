@@ -380,6 +380,7 @@ struct AskComposer: View {
             switch plugins.phase {
             case let .ready(plan): offered = plugins.isPlanCurrent ? plan.action(for: .commandC) : nil
             case let .done(_, output): offered = output.action(for: .commandC)
+            case let .failed(_, failure): offered = failure.action(for: .commandC)
             default: offered = nil
             }
             guard let action = offered else { return false }

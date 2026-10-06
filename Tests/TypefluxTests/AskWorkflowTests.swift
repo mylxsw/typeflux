@@ -546,6 +546,9 @@ struct AskWorkflowPluginTests {
         }
         #expect(!FileManager.default.fileExists(atPath: fixture.root.appendingPathComponent("new/ran").path))
         #expect(AskWorkflowPlugin.tail("a\n\nb\nc", lines: 2) == "\nb\nc" && AskWorkflowPlugin.tail("") == "")
+        let folder = URL(fileURLWithPath: "/var/wf/local.a")
+        #expect(AskWorkflowPlugin.tail("/private/var/wf/local.a/main.sh:4: boom\n/var/wf/local.a/lib.sh: x\n/usr/x.sh: y",
+                                       folder: folder) == "\nmain.sh:4: boom\nlib.sh: x\n/usr/x.sh: y")
         #expect(AskWorkflowPlugin.errorMessage(in: "x\n{\"error\": \"\"}") == nil)
         #expect(AskWorkflowPlugin.errorMessage(in: "") == nil)
     }

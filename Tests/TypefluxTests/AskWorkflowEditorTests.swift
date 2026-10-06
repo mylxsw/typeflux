@@ -278,9 +278,13 @@ struct AskWorkflowStoreEditorTests {
     @Test func keywordProblemsCoverBuiltInsOtherWorkflowsAndItself() throws {
         let fixture = try AskWorkflowFixture()
         _ = try readyWorkflow(fixture)
-        let builtIn = [AskKeyword(keyword: "tr", pluginID: "translate")]
-        #expect(fixture.store.keywordProblem("tr", builtIn: builtIn) != nil)
-        #expect(fixture.store.keywordProblem("aa", builtIn: builtIn) != nil)
+        let builtIn = [AskKeyword(keyword: "tr", pluginID: AskTranslatePlugin.id)]
+        #expect(fixture.store.keywordProblem("tr", builtIn: builtIn)?.contains(L("ask.plugin.translate.title")) == true)
+        let owner = try #require(fixture.store.workflow("local.a")?.manifest?.name)
+        #expect(fixture.store.keywordProblem("aa", builtIn: builtIn)?.contains(owner) == true)
+        #expect(fixture.store.ownerName(AskPromptPlugin.id) == L("ask.plugin.prompt.title"))
+        #expect(fixture.store.ownerName(AskWebSearchPlugin.id) == L("ask.plugin.web.title"))
+        #expect(fixture.store.ownerName("something.else") == nil)
         #expect(fixture.store.keywordProblem("aa", builtIn: builtIn, excluding: "local.a") == nil)
         #expect(fixture.store.keywordProblem("a b", builtIn: builtIn) != nil)
         #expect(fixture.store.keywordProblem("new", builtIn: builtIn) == nil)
@@ -362,6 +366,16 @@ struct AskWorkflowStderrLocatorTests {
                                                 folder: folder, files: ["main.applescript"])?.line == 120)
         #expect(AskWorkflowStderrLocator.locate("./main.ts:5:1 - error", folder: folder, files: ["main.ts"])?
             .path == "main.ts")
+    }
+
+    @Test func theMessageDropsTheLocationTheMarkerAlreadyShows() {
+        #expect(AskWorkflowStderrLocator.locate("/tmp/wf/main.sh:4: command not found: nope",
+                                                folder: folder, files: ["main.sh"])?
+                .message == "command not found: nope")
+        #expect(AskWorkflowStderrLocator.locate("/private/tmp/wf/main.sh: line 9: x: unbound variable",
+                                                folder: folder, files: ["main.sh"])?.message == "x: unbound variable")
+        #expect(AskWorkflowStderrLocator.withoutLocation("/tmp/wf/main.sh:4:") == "/tmp/wf/main.sh:4:")
+        #expect(AskWorkflowStderrLocator.withoutLocation("ValueError: x") == "ValueError: x")
     }
 
     @Test func filesOutsideTheWorkflowAreIgnored() {

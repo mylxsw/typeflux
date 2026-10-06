@@ -897,8 +897,16 @@ struct AskWorkflowEditorModelTests {
         #expect(model.store.workflow("local.gen") == nil, "nothing is installed before saving")
         model.runTest()
         #expect(model.message != nil)
-        try model.apply(#require(model.latestProposal?.id))
-        #expect(model.save())
+        #expect(model.assistant.items.contains {
+            if case let .tool(_, summary, _) = $0 {
+                summary.hasSuffix("workflow.json, main.sh")
+            } else {
+                false
+            }
+        })
+        #expect(model.canSaveGenerated)
+        #expect(model.saveGenerated())
+        #expect(!model.saveGenerated() && !model.canSaveGenerated, "a saved workflow is no longer generated")
         #expect(model.generation == nil && model.workflowID == "local.gen" && model.workflow?.status == .ready)
         #expect(model.draft?.files["main.sh"]?.contains("gen") == true)
         #expect(!model.generate(description: "again", name: "", keyword: "gg", id: "local.gen2", runtime: nil))
@@ -983,7 +991,11 @@ struct AskWorkflowLauncherActionTests {
         let blockedPlan = await blocked.plan(request)
         await #expect(throws: AskPluginFailure.self) { try await blocked.run(request, plan: blockedPlan) { _ in } }
         #expect(blocked.editActions().count == 1)
-        #expect(blocked.editActions(query: "q", stderr: "e", reason: "r").count == 2)
+        #expect(blocked.editActions(query: "q", stderr: "e", reason: "r").map(\.shortcut) == [
+            .commandE,
+            .commandC,
+            nil
+        ])
     }
 
     @Test func commandEIsAKeyAndActionsOpenTheEditor() throws {
@@ -1019,5 +1031,123 @@ struct AskWorkflowLauncherActionTests {
             actions: [AskPluginAction(kind: .compare, title: "", symbol: "", shortcut: .commandE)]
         )
         #expect(failure.action(for: .commandE) != nil && failure.action(for: .commandR) == nil)
+    }
+}
+
+@Suite("Ask workflow editor presentation")
+@MainActor
+struct AskWorkflowEditorPresentationTests {
+    private func open(_ fixture: AskWorkflowFixture, id: String,
+                      script: String = "#!/bin/zsh\nif true; then\n  print hi\nfi\n") throws -> AskWorkflowEditorModel {
+        try fixture.write(id, manifest: echoManifest.merging(["id": id]) { $1 }, files: ["main.sh": script],
+                          executable: ["main.sh"])
+        fixture.store.reload()
+        fixture.store.trust(id)
+        let model = AskWorkflowEditorModel(store: fixture.store, settings: fixture.settings,
+                                           assistant: makeAssistant(AskWorkflowScriptedAPI([])),
+                                           tester: AskWorkflowTester(home: fixture.home.path))
+        model.watchInterval = 0
+        model.open(id)
+        return model
+    }
+
+    @Test func unsavedAndFormatLabels() throws {
+        let fixture = try AskWorkflowFixture()
+        let model = try open(fixture, id: "local.labels")
+        #expect(model.unsavedLabel == nil)
+        #expect(model.formatLabel == "UTF-8 · LF · " + L("ask.workflow.editor.spaces", 2))
+        model.setText("#!/bin/zsh\r\nif true; then\n\tprint hi\nfi\n", of: "main.sh")
+        #expect(model.unsavedLabel == L("ask.workflow.editor.unsavedFile", "main.sh"))
+        #expect(model.formatLabel == "UTF-8 · CRLF · " + L("ask.workflow.editor.tabs"))
+        model.set("Other", at: ["name"])
+        #expect(model.unsavedLabel == L("ask.workflow.editor.unsavedFiles", 2))
+        model.selectedFile = nil
+        #expect(model.formatLabel == nil)
+        let config = try open(fixture, id: "local.config")
+        config.set("Other", at: ["name"])
+        #expect(config.unsavedLabel == L("ask.workflow.editor.unsavedFile", L("ask.workflow.editor.config")))
+        #expect(AskWorkflowCodeIndentation.width(of: "x") == 4)
+        #expect(AskWorkflowCodeIndentation.width(of: "a\n  b\n    c") == 2)
+        #expect(AskWorkflowCodeIndentation.width(of: "a\n    b\n   c") == 4)
+    }
+
+    @Test func historyMergesTestRunsAndLauncherRunsNewestFirst() throws {
+        let fixture = try AskWorkflowFixture()
+        let model = try open(fixture, id: "local.history")
+        defer { AskWorkflowLog.shared.clear("local.history") }
+        let now = Date()
+        model.results = [
+            AskWorkflowTestResult(input: .init(query: "a"), exitCode: 0, stdout: "", stderr: "", duration: 0.1,
+                                  date: now.addingTimeInterval(-30)),
+            AskWorkflowTestResult(input: .init(query: ""), exitCode: 2, stdout: "", stderr: "", duration: 0.2,
+                                  date: now.addingTimeInterval(-90))
+        ]
+        AskWorkflowLog.shared.add(.init(workflowID: "local.history", keyword: "ec", date: now, duration: 0.3,
+                                        exitCode: 0, timedOut: true, stderr: ""))
+        AskWorkflowLog.shared.add(.init(workflowID: "local.history", keyword: "ec", date: now, duration: 0.3,
+                                        exitCode: 0, timedOut: false, stderr: "", source: .test))
+        let history = model.history
+        #expect(history.map(\.title) == [
+            L("ask.workflow.editor.test.sourceLauncher", "ec"),
+            L("ask.workflow.editor.test.sourceTest", "a"),
+            L("ask.workflow.editor.test.sourceTest", "—")
+        ])
+        #expect(history.map(\.succeeded) == [false, true, false])
+        #expect(AskWorkflowEditorModel
+            .relative(now.addingTimeInterval(-5), now: now) == L("ask.workflow.editor.justNow"))
+        let hourAgo = AskWorkflowEditorModel.relative(now.addingTimeInterval(-3600), now: now)
+        #expect(!hourAgo.isEmpty && hourAgo != L("ask.workflow.editor.justNow"))
+    }
+
+    @Test func outsideStatsAndTrustedHash() async throws {
+        let fixture = try AskWorkflowFixture()
+        let model = try open(fixture, id: "local.outside")
+        let label = try #require(model.trustedHashLabel)
+        #expect(label.count == 9 && label.contains("…"))
+        #expect(model.outsideStats == nil)
+        model.setText("#!/bin/zsh\nprint mine\n", of: "main.sh")
+        let folder = try #require(model.folder)
+        try Data("#!/bin/zsh\nprint theirs\nprint more\n".utf8).write(to: folder.appendingPathComponent("main.sh"))
+        await model.checkOutside()
+        let stats = try #require(model.outsideStats)
+        #expect(stats.paths == ["main.sh"] && stats.added == 2 && stats.removed == 1)
+        fixture.settings.askWorkflowTrust = [:]
+        #expect(model.trustedHashLabel == nil)
+    }
+
+    @Test func problemsAndScriptSuggestions() throws {
+        let fixture = try AskWorkflowFixture()
+        let model = try open(fixture, id: "local.fix")
+        #expect(model.scriptSuggestion == nil)
+        #expect(model.proposalNumber(UUID()) == 1)
+        model.set("run.sh", at: ["command", "script"])
+        #expect(model.scriptSuggestion == "main.sh")
+        let problem = try #require(model.problems.first { $0.field == "command.script" })
+        model.step = .keywords
+        model.revealProblem(problem)
+        #expect(model.step == .output && model.configMode == .json)
+        #expect(model.reveal?.path == AskWorkflowManifest.fileName && model.reveal?.line == model.draft?
+            .line(for: "command.script"))
+        model.revealProblem(.init(field: "keywords[0]", message: "x"))
+        #expect(model.step == .keywords)
+        model.applyScriptSuggestion()
+        #expect(model.draft?.manifest?.command.script == "main.sh" && model.scriptSuggestion == nil)
+        model.applyScriptSuggestion()
+        model.set("tool.py", at: ["command", "script"])
+        #expect(model.scriptSuggestion == nil, "nothing else runs as python")
+    }
+
+    @Test func runtimeDescriptionsComeFromTheProbe() async throws {
+        let report = #"{"runtimes": {"zsh": "zsh 5.9 · /bin/zsh"}, "commands": {"jq": "/usr/bin/jq", "nope": null}}"#
+        #expect(AskWorkflowEditorModel.runtimeDescription(report, name: "zsh", title: "Zsh") == "zsh 5.9 · /bin/zsh")
+        #expect(AskWorkflowEditorModel.runtimeDescription(report, name: "jq", title: "JQ") == "JQ · /usr/bin/jq")
+        #expect(AskWorkflowEditorModel.runtimeDescription(report, name: "nope", title: "X")
+            == L("ask.workflow.missingRuntime", "nope"))
+        #expect(AskWorkflowEditorModel.runtimeDescription(report, name: nil, title: "Exec") == "Exec")
+        #expect(AskWorkflowEditorModel.runtimeDescription("not json", name: "zsh", title: "Zsh") == "Zsh")
+        let fixture = try AskWorkflowFixture()
+        let model = try open(fixture, id: "local.runtime")
+        await waitFor("runtime info") { model.runtimeInfo != nil }
+        #expect(model.runtimeInfo?.contains("zsh") == true)
     }
 }
