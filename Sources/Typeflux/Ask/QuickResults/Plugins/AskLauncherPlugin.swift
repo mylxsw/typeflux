@@ -132,6 +132,8 @@ struct AskPluginOutput: Equatable, Sendable {
     var wordCard: AskWordCard?
     /// The run did what it was for (a workflow that opens something): the launcher closes.
     var dismisses = false
+    /// What a workflow does after the run: copy, notify, open… (`AskWorkflowActionRunner`).
+    var followUp: AskWorkflowFollowUp?
 
     func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
         actions.first { $0.shortcut == shortcut }
@@ -147,6 +149,8 @@ struct AskPluginFailure: Error, Equatable, Sendable {
     var retry: Bool = true
     /// What the failure card offers besides retrying, such as editing the workflow.
     var actions: [AskPluginAction] = []
+    /// What a workflow does after a failed run, such as a notification.
+    var followUp: AskWorkflowFollowUp?
 
     func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
         actions.first { $0.shortcut == shortcut }

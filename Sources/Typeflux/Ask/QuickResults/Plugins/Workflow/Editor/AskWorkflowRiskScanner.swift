@@ -4,7 +4,7 @@ import Foundation
 /// See `docs/design/ask-workflow-editor.md` §10.5.
 struct AskWorkflowRisk: Hashable, Comparable, Sendable {
     enum Kind: String, CaseIterable, Comparable, Sendable {
-        case network, writesFiles, runsPrograms, deletes, sensitive, elevated
+        case network, writesFiles, writesApps, runsPrograms, deletes, sensitive, elevated
 
         static func < (lhs: Kind, rhs: Kind) -> Bool {
             allCases.firstIndex(of: lhs)! < allCases.firstIndex(of: rhs)!
@@ -32,6 +32,7 @@ struct AskWorkflowRisk: Hashable, Comparable, Sendable {
         switch kind {
         case .network: L(detail.isEmpty ? "ask.workflow.risk.networkUnknown" : "ask.workflow.risk.network", detail)
         case .writesFiles: L("ask.workflow.risk.writes")
+        case .writesApps: L("ask.workflow.risk.writesApps")
         case .runsPrograms: L("ask.workflow.risk.programs", detail)
         case .deletes: L("ask.workflow.risk.deletes", detail)
         case .sensitive: L("ask.workflow.risk.sensitive", detail)
@@ -88,9 +89,12 @@ enum AskWorkflowRiskScanner {
     private typealias Kind = AskWorkflowRisk.Kind
 
     /// Every risk in the given files (path → contents). Comment lines are skipped, so
-    /// a URL in a comment is not a network access.
+    /// a URL in a comment is not a network access. `workflow.json`'s actions count too.
     static func scan(_ files: [String: String]) -> Set<AskWorkflowRisk> {
         var risks = Set<AskWorkflowRisk>()
+        if let text = files[AskWorkflowManifest.fileName] {
+            risks.formUnion(scanActions(manifest: text))
+        }
         for (path, text) in files where path != AskWorkflowManifest.fileName && !path.lowercased().hasSuffix(".md") {
             let code = text.split(separator: "\n", omittingEmptySubsequences: false).filter { line in
                 let trimmed = line.trimmingCharacters(in: .whitespaces)
@@ -120,6 +124,30 @@ enum AskWorkflowRiskScanner {
                         String(code[found].trimmingCharacters(in: .whitespaces).prefix(40))
                     risks.insert(AskWorkflowRisk(kind: kind, detail: detail))
                 }
+            }
+        }
+        return risks
+    }
+
+    /// What the manifest's actions do: `open` with a web link goes on the network,
+    /// `writeBack` writes into another app.
+    static func scanActions(manifest text: String) -> Set<AskWorkflowRisk> {
+        guard let data = text.data(using: .utf8),
+              let manifest = try? JSONDecoder().decode(AskWorkflowManifest.self, from: data) else { return [] }
+        var risks = Set<AskWorkflowRisk>()
+        for action in manifest.output.onSuccess + manifest.output.onFailure {
+            switch action.kind {
+            case .writeBack:
+                risks.insert(AskWorkflowRisk(kind: .writesApps, detail: ""))
+            case .open:
+                let target = action.target ?? ""
+                let range = NSRange(target.startIndex..., in: target)
+                if let match = url.firstMatch(in: target, range: range), match.range.location == 0,
+                   let host = Range(match.range(at: 1), in: target) {
+                    risks.insert(AskWorkflowRisk(kind: .network, detail: target[host].lowercased()))
+                }
+            default:
+                break
             }
         }
         return risks

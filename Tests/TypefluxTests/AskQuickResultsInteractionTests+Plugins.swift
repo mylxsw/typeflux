@@ -298,4 +298,94 @@ extension AskQuickResultsInteractionTests {
             #expect(!model.plugins.isActive && model.launcherDraft.text.isEmpty)
         }
     }
+
+    @Test func aWorkflowsActionsRunAfterItAndCopyingCanBeUndone() async throws {
+        try await withPasteboard { pasteboard in
+            let workflows = try AskWorkflowFixture()
+            try workflows.write("fx", manifest: AskWorkflowFixture.inline("fx", keyword: "fx", script: "print -r -- \"$1 ok\"\nprint second",
+                                                                          extra: ["output": [
+                "display": "text",
+                "onSuccess": [["action": "copy", "value": "{output.line1}"],
+                              ["action": "notify", "title": "FX", "body": "{output.lastLine}"],
+                              ["action": "hud", "text": "Saved"]]
+            ]]))
+            workflows.store.reload()
+            workflows.store.trust("fx")
+            var notified: [String] = []
+            let launcher = try await Launcher(text: "") { model in
+                model.workflows = workflows.store
+                model.notifyUser = { title, body in notified.append(title + "|" + body); return true }
+            }
+            defer { launcher.close() }
+            let model = launcher.fixture.model
+            _ = await AskWorkflowPath.searchPath()
+            await model.refreshLauncherWorkflows()
+            pasteboard.clearContents()
+            pasteboard.setString("before", forType: .string)
+            try await type("fx 100", into: launcher)
+            try await settle { model.plugins.isPlanCurrent }
+            try await launcher.press(Self.returnKey)
+            try await settle { model.currentWorkflowActions != nil }
+            #expect(model.plugins.output?.body == "100 ok\nsecond")
+            #expect(pasteboard.string(forType: .string) == "100 ok")
+            #expect(notified == ["FX|second"])
+            let state = try #require(model.currentWorkflowActions)
+            #expect(state.outcomes.count == 3 && state.canUndo && !state.failed)
+            #expect(state.summary.contains("Saved"), "the bottom-bar note is part of the summary")
+            #expect(launcher.dismissed == 0, "the result stays")
+            try await launcher.press(6, .command)
+            #expect(pasteboard.string(forType: .string) == "before", "⌘Z put the clipboard back")
+            #expect(model.currentWorkflowActions?.undone == true && model.currentWorkflowActions?.canUndo == false)
+            #expect(!model.undoWorkflowCopy(), "only once")
+        }
+    }
+
+    @Test func aWorkflowThatClosesRunsItsActionsFirstAndFailuresRunTheirOwn() async throws {
+        try await withPasteboard { pasteboard in
+            let workflows = try AskWorkflowFixture()
+            try workflows.write("uuid", manifest: AskWorkflowFixture.inline("uuid", keyword: "uu", script: "print -r -- abc",
+                                                                            extra: ["output": [
+                "display": "none", "onSuccess": [["action": "copy", "value": "{output}"],
+                                                 ["action": "writeBack", "value": "{output}"],
+                                                 ["action": "hud", "text": "after"]]
+            ]]))
+            try workflows.write("bad", manifest: AskWorkflowFixture.inline("bad", keyword: "zf", script: "print -u2 oops; exit 3",
+                                                                           extra: ["output": [
+                "display": "text", "onFailure": [["action": "notify", "body": "{error}"]]
+            ]]))
+            workflows.store.reload()
+            workflows.store.trust("uuid")
+            workflows.store.trust("bad")
+            var notices: [String] = []
+            var notified: [String] = []
+            var delivered: [String] = []
+            let launcher = try await Launcher(text: "") { model in
+                model.workflows = workflows.store
+                model.passiveNotice = { notices.append($0) }
+                model.notifyUser = { _, body in notified.append(body); return false }
+                model.deliverText = { delivered.append($0) }
+            }
+            defer { launcher.close() }
+            let model = launcher.fixture.model
+            _ = await AskWorkflowPath.searchPath()
+            await model.refreshLauncherWorkflows()
+            try await type("uu go", into: launcher)
+            try await settle { model.plugins.isPlanCurrent }
+            try await launcher.press(Self.returnKey)
+            try await settle { launcher.dismissed == 1 && notices == ["after"] }
+            #expect(pasteboard.string(forType: .string) == "abc")
+            try await settle { delivered == ["abc"] }
+            #expect(launcher.dismissed == 1, "closed once, by writing back")
+            #expect(!model.plugins.isActive)
+            try await type("zf go", into: launcher)
+            try await settle { model.plugins.isPlanCurrent }
+            try await launcher.press(Self.returnKey)
+            try await settle { model.currentWorkflowActions != nil }
+            if case .failed = model.plugins.phase {} else { Issue.record("the error card shows") }
+            #expect(notified.first?.contains("oops") == true && notified.first?.contains("3") == true)
+            let state = try #require(model.currentWorkflowActions)
+            #expect(state.outcomes.first?.status == .fellBack(L("ask.workflow.action.notifyDenied")))
+            #expect(!state.canUndo && launcher.dismissed == 1)
+        }
+    }
 }

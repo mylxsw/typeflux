@@ -110,7 +110,7 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
         do {
             for try await event in runner.run(invocation) {
                 switch event {
-                case let .output(text) where manifest.output != .none:
+                case let .output(text) where manifest.output.display != .none:
                     await progress(output(text, request: request, plan: plan, input: input, duration: nil))
                 case .output:
                     break
@@ -134,24 +134,56 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
                         manifest: AskWorkflowManifest) throws -> AskPluginOutput {
         if result.timedOut {
             let reason = L("ask.workflow.timedOut", Int(manifest.timeout))
-            throw AskPluginFailure(message: reason + Self.tail(result.stderr, folder: workflow.folder),
-                                   actions: editActions(query: input.query, stderr: result.stderr, reason: reason))
+            throw failure(reason, result: result, request: request, input: input, manifest: manifest)
         }
         let text = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
         // A run cut off for printing too much still shows what it printed.
         if result.exitCode != 0, !result.truncated {
             let reason = Self.errorMessage(in: result.stdout) ?? L("ask.workflow.failed", Int(result.exitCode))
-            throw AskPluginFailure(message: reason + Self.tail(result.stderr, folder: workflow.folder),
-                                   actions: editActions(query: input.query, stderr: result.stderr, reason: reason))
+            throw failure(reason, result: result, request: request, input: input, manifest: manifest)
         }
-        if manifest.output == .none || text.isEmpty {
+        if manifest.output.display == .none || text.isEmpty {
             var done = output("", request: request, plan: plan, input: input, duration: result.duration)
             done.dismisses = true
+            done.followUp = followUp(manifest.output.onSuccess, closes: true, result: result, request: request,
+                                     input: input, error: nil)
             return done
         }
         var shown = output(text, request: request, plan: plan, input: input, duration: result.duration)
-        if result.truncated { shown.note = L("ask.workflow.truncated") }
+        if result.truncated {
+            shown.note = L("ask.workflow.truncated")
+            // Cut short is a failure for the actions: the output they would use is incomplete.
+            shown.followUp = followUp(manifest.output.onFailure, closes: false, result: result, request: request,
+                                      input: input, error: L("ask.workflow.truncated"))
+        } else {
+            shown.followUp = followUp(manifest.output.onSuccess, closes: manifest.output.closes, result: result,
+                                      request: request, input: input, error: nil)
+        }
         return shown
+    }
+
+    /// The failure card for `reason`, with the failure actions. A workflow that shows
+    /// nothing closes instead of showing the card when it has failure actions.
+    private func failure(_ reason: String, result: AskWorkflowRunResult, request: AskPluginRequest, input: Input,
+                         manifest: AskWorkflowManifest) -> AskPluginFailure {
+        var failure = AskPluginFailure(message: reason + Self.tail(result.stderr, folder: workflow.folder),
+                                       actions: editActions(query: input.query, stderr: result.stderr, reason: reason))
+        failure.followUp = followUp(manifest.output.onFailure, closes: manifest.output.display == .none,
+                                    result: result, request: request, input: input, error: failure.message)
+        return failure
+    }
+
+    /// The actions to take after this run, filled in from it; nil when there are none.
+    private func followUp(_ actions: [AskWorkflowAction], closes: Bool, result: AskWorkflowRunResult,
+                          request: AskPluginRequest, input: Input, error: String?) -> AskWorkflowFollowUp? {
+        guard !actions.isEmpty else { return nil }
+        let placeholders = AskWorkflowPlaceholders(
+            output: result.stdout, query: input.query, selection: input.selection, keyword: request.keyword.keyword,
+            options: request.options.filter { $0.key != Self.titleOption }, error: error
+        )
+        let steps = AskWorkflowActionRunner.steps(for: actions, placeholders: placeholders, folder: workflow.folder,
+                                                  name: title, home: home)
+        return AskWorkflowFollowUp(steps: steps, closes: closes)
     }
 
     private func output(_ text: String, request: AskPluginRequest, plan: AskPluginPlan, input: Input,

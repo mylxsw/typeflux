@@ -54,6 +54,20 @@ final class AskConversationModel: ObservableObject {
     var deliverText: ((String) async throws -> Void)?
     /// Reads text aloud in a language; tests record it instead.
     var speak: @MainActor (String, String) -> Void = { text, language in AskSpeaker.shared.speak(text, language: language) }
+    /// Sends a workflow's notification; false when notifications are not allowed. Tests record it instead.
+    var notifyUser: @MainActor (String, String) async -> Bool = { title, body in
+        await SystemLocalNotificationService.shared.deliverLocalNotification(
+            title: title, body: body, identifier: "workflow." + UUID().uuidString
+        )
+    }
+    /// A short note once the launcher has closed (a workflow's bottom-bar note); tests record it instead.
+    var passiveNotice: @MainActor (String) -> Void = { text in AskWorkflowNoticePanel.shared.show(text) }
+    /// Shows a file in Finder; tests record it instead.
+    var revealFile: @MainActor (URL) -> Void = { url in NSWorkspace.shared.activateFileViewerSelecting([url]) }
+    /// Opens an application by name or bundle id; false when there is none. Tests record it instead.
+    var openApplicationNamed: @MainActor (String) -> Bool = { name in
+        AskWorkflowLauncherActionHost.openApplication(name)
+    }
     @Published var reasoningEffort: AskReasoningEffort = .providerDefault
     let modelLibrary: AskModelLibrary
     private var inferenceUsage: [String: AskTokenUsage] = [:]
@@ -160,6 +174,8 @@ final class AskConversationModel: ObservableObject {
     @Published var searchRequest = 0
     /// A short confirmation after a slash command, cleared after a moment.
     @Published var commandFeedback: String?
+    /// What a workflow's actions did after the last run, for the launcher's bottom bar.
+    @Published var workflowActions: AskWorkflowActionsState?
     /// Command names, most recent first, for the palette's "Recent" group.
     var recentCommands: [String] = []
     @Published private(set) var recoveringImages: [String: AskImageRecoveryTarget] = [:]

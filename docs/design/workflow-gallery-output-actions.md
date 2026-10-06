@@ -222,3 +222,45 @@ stdout 是下面这样的 JSON 时，启动器把 `text` 当作显示内容，�
 2. 测试运行默认「只预览动作」，你是否希望默认真的执行？
 3. 示例库首批 8 个是否合适，要不要加别的（例如「翻译到剪切板」「Markdown 转 HTML」「二维码」）？
 4. 示例更新只提示、不自动覆盖，可以吗？
+
+## 6. O1 实现说明（GUL-230）
+
+**已实现**：3.1–3.5、3.7、3.8。显示方式只开放 `text` / `none` / `auto`，`items` / `markdown` / `image` 在单选列表里显示为「即将支持」，写进清单时是校验问题；`scriptActions` 字段能读写，开关可用，但要到 O4 才生效。
+
+| 部分 | 代码 |
+|---|---|
+| `output` 对象写法和兼容解码、校验 | `AskWorkflowOutput.swift`、`AskWorkflowAction.swift` |
+| 占位符（含 JSON 路径、链接里的 URL 编码） | `AskWorkflowPlaceholders.swift` |
+| 动作的填值、执行顺序、权限回退、汇总 | `AskWorkflowActionRunner.swift` |
+| 运行后带上成功 / 失败动作 | `AskWorkflowPlugin.finish` |
+| 启动器执行动作、底栏汇总、⌘Z 撤销复制、关闭后的小浮层 | `AskConversationModel+WorkflowActions.swift`、`AskWorkflowActionsSummaryView`、`AskWorkflowNoticePanel` |
+| 编辑器「输出」步骤 | `AskWorkflowOutputForm.swift`、`AskWorkflowEditorModel+Output.swift` |
+| 测试运行的「动作」分段和只预览 | `AskWorkflowTester`、`AskWorkflowTestActions` |
+| 风险扫描、信任面板 | `AskWorkflowRiskScanner.scanActions`（`open` 网址算联网，`writeBack` 算「写入其他应用」）、`AskWorkflowTrustSummary.actions` |
+
+**实现细节**：
+
+- 编辑器改动 `output` 时：原来是字符串、只改显示方式，仍写字符串；加了动作或打开开关才换成对象；原来就是对象的保持对象。空的动作列表和关掉的开关不写进清单。
+- 占位符一次替换，替换进来的文字不会再被展开。`open` 只对 http(s) 链接里、固定前缀之后的值做 URL 编码；整个地址就是一个占位符时（`{output}` 本身是链接）不编码。
+- 校验只检查能静态判断的部分：`open` 的固定部分只能是 http(s)、`app:`、`file:` 或路径；`reveal` 的路径要在工作流文件夹里或以 `~` 开头；`{error}` 只能用在失败动作里。占位符替换后的值在运行时再检查，不符合的那一步记为失败，后面的照常执行。
+- 输出被截断也执行失败动作，`{error}` 是「输出过长被截断」；显示方式为 `none` 且配置了失败动作时，失败后不显示错误卡片，执行完关闭。
+- 通知权限被拒或发送失败时，内容改用底栏提示，汇总写「✓ 标题 · 内容（通知未开启，改为底栏提示）」。
+- 写回、打开、交给 AI 会关闭启动器；之后的底栏提示改用屏幕下方 2 秒的小浮层。
+- ⌘Z 撤销复制：恢复复制前剪切板的全部内容（所有类型），只在这次结果还显示着时有效，只能撤销一次；其余时候 ⌘Z 仍是输入框自己的撤销。
+- 测试运行里「交给 AI」不执行（标「测试运行不执行」）；写回没有目标应用，确认后改为复制到剪切板并在编辑器顶部说明。
+- 顺手修了一个旧问题：参数模板里有未闭合的 `{` 时，它前面那段文字会重复一遍（`"a {query} x{b"` 得到 `"a q x x{b"`，应为 `"a q x{b"`）。
+
+### 逐屏对照
+
+截图由 `WorkflowOutputActionsVisualTests` 用真实视图渲染（`TYPEFLUX_ASK_SNAPSHOTS=<目录> swift test --filter WorkflowOutputActionsVisualTests`），在 `workflow-gallery-output-actions/implemented-*`。
+
+| 设计稿 | 实现 | 对照结果 |
+|---|---|---|
+| ④ `ed-output.png` | `implemented-ed-output(-light).png` | 一致：显示方式单选、成功 / 失败两个列表、拖动手柄、通知的权限提示、占位符小标签和「{ } 插入」、两个开关、启动器预览、「这次运行成功后会执行」、步骤条「文本 · 2 个动作」。 |
+| ⑤ `ed-add.png` | `implemented-ed-add(-light).png` | 一致：常用 / 打开 / 更多三组，每项写出要填的字段。没有「运行另一个关键字」（O4）。 |
+| ⑥ `ed-token.png` | `implemented-ed-token(-light).png` | 一致：标题、每个占位符的说明和上次测试运行的值。菜单向上展开，避免靠下的行被滚动区域裁掉。 |
+| ⑧ `ed-test.png` | `implemented-ed-test(-light).png` | 一致：「只预览动作，不真的执行」默认勾选，分段里有「动作 2」，每个动作标「预览」。没有「脚本追加」那一行（O4）。 |
+| ⑨ `launcher.png` | `implemented-launcher(-light).png` | 一致：卡片照常显示，底栏「✓ 已复制「…」 · ✓ 已发送通知」，右侧「按 ⌘Z 撤销复制」。 |
+| — | `implemented-ed-output-none.png` | 「不显示，只做事」：「执行完关闭启动器」锁定为开，预览显示「已完成，启动器关闭」，失败动作里的无效地址标在状态栏。 |
+
+和设计稿的差异：测试面板保留了原有的「传入了什么」分段，所以是五个分段；显示方式列表多一个「自动判断」（O1 范围内）。

@@ -21,6 +21,14 @@ struct AskPluginDisplay: Equatable {
 
     var output: AskPluginOutput? { if case let .done(_, output) = phase { output } else { nil } }
     var asksAI: Bool { highlighted == 1 }
+    /// A workflow's actions after this run, success or failure.
+    var followUp: AskWorkflowFollowUp? {
+        switch phase {
+        case let .done(_, output): output.followUp
+        case let .failed(_, failure): failure.followUp
+        default: nil
+        }
+    }
 }
 
 /// The keyword as a chip at the start of the launcher's editor: "文A 翻译 → 日语".

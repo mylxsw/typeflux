@@ -22,9 +22,15 @@ final class SystemLocalNotificationService: NSObject, LocalNotificationSending, 
     }
 
     func sendLocalNotification(title: String, body: String, identifier: String) async {
+        _ = await deliverLocalNotification(title: title, body: body, identifier: identifier)
+    }
+
+    /// Sends a notification, asking for permission the first time. False when
+    /// notifications are not allowed or the system did not take it.
+    func deliverLocalNotification(title: String, body: String, identifier: String) async -> Bool {
         do {
             let granted = try await requestAuthorizationIfNeeded()
-            guard granted else { return }
+            guard granted else { return false }
 
             let content = UNMutableNotificationContent()
             content.title = title
@@ -37,8 +43,10 @@ final class SystemLocalNotificationService: NSObject, LocalNotificationSending, 
                 trigger: nil
             )
             try await add(request)
+            return true
         } catch {
             NetworkDebugLogger.logError(context: "Local notification failed", error: error)
+            return false
         }
     }
 

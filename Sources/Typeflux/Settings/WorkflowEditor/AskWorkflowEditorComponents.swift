@@ -363,7 +363,8 @@ struct AskWorkflowLauncherPreview: View {
                     .frame(maxWidth: .infinity, alignment: .leading).padding(8)
                     .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 7))
             }
-        } else if output == .none || (result?.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? false) {
+        } else if output.display == .none
+            || (result?.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? false) {
             Label(L("ask.workflow.editor.test.dismisses"), systemImage: "checkmark.circle")
                 .font(.system(size: 12.5)).foregroundStyle(StudioTheme.success)
         } else {
@@ -384,7 +385,7 @@ struct AskWorkflowLauncherPreview: View {
         if failed {
             return [("⌘E", L("ask.workflow.action.edit")), ("⌘R", L("ask.workflow.action.rerun"))]
         }
-        if output == .none {
+        if output.display == .none {
             return []
         }
         return [("↩", L("ask.plugin.action.copy")), ("⌥↩", L("ask.plugin.action.insert")),

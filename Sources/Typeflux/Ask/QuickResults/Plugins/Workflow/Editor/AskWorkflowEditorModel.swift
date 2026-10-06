@@ -70,6 +70,10 @@ final class AskWorkflowEditorModel: ObservableObject {
     /// When the running test started, for "Running · 1.2 s".
     @Published var testStartedAt: Date?
     @Published var results: [AskWorkflowTestResult] = []
+    /// Test runs list the workflow's actions without doing them (§3.7).
+    @Published var previewActionsOnly = true
+    /// The Output step's open menu, if any.
+    @Published var outputMenu: AskWorkflowOutputMenu?
 
     // Assistant.
     @Published var proposals: [AskWorkflowProposal] = []
@@ -130,10 +134,11 @@ final class AskWorkflowEditorModel: ObservableObject {
         endSession()
         workflowID = id
         load(workflow.folder)
-        approvedRisks = AskWorkflowRiskScanner.scan(draft?.files ?? [:])
+        approvedRisks = AskWorkflowRiskScanner.scan(draft?.scannedFiles ?? [:])
         proposals = []
         previewingProposal = nil
         results = []
+        outputMenu = nil
         assistant.bind(workflowID: id)
         if let path, draft?.text(of: path) != nil {
             selectedFile = path
@@ -292,7 +297,7 @@ extension AskWorkflowEditorModel {
         loadedHash = hash
         draft?.markSaved()
         // The saved version is what the user approved.
-        approvedRisks = AskWorkflowRiskScanner.scan(draft?.files ?? [:])
+        approvedRisks = AskWorkflowRiskScanner.scan(draft?.scannedFiles ?? [:])
         let newID = draft?.manifest?.id
         if let newID, newID != workflowID, store.workflow(newID) != nil {
             AskWorkflowAssistant.forget(workflowID: workflowID ?? "")
@@ -453,10 +458,10 @@ extension AskWorkflowEditorModel: AskWorkflowAuthoringHost {
             proposal = proposal.following(earlier)
         }
         let result = proposal.applied(to: draft ?? authoringDraft)
-        proposal.risks = AskWorkflowRiskScanner.scan(result.files)
+        proposal.risks = AskWorkflowRiskScanner.scan(result.scannedFiles)
         proposal.newRisks = AskWorkflowRiskScanner.newRisks(proposal.risks,
                                                             since: approvedRisks ?? AskWorkflowRiskScanner
-                                                                .scan(draft?.files ?? [:]))
+                                                                .scan(draft?.scannedFiles ?? [:]))
         for index in proposals.indices where proposals[index].state == .pending {
             proposals[index].state = .superseded
         }

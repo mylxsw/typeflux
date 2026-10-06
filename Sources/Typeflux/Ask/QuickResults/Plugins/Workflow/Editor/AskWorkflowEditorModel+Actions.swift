@@ -114,7 +114,7 @@ extension AskWorkflowEditorModel {
             assistant.rebind(to: installed.id)
             workflowID = installed.id
             load(installed.folder)
-            approvedRisks = AskWorkflowRiskScanner.scan(self.draft?.files ?? [:])
+            approvedRisks = AskWorkflowRiskScanner.scan(self.draft?.scannedFiles ?? [:])
             startWatching()
             return true
         } catch {
@@ -166,8 +166,10 @@ extension AskWorkflowEditorModel {
         testStartedAt = Date()
         let tester = tester
         testTask = Task { [weak self] in
-            let result = await tester.run(workflow, input: input)
+            var result = await tester.run(workflow, input: input)
             guard let self, !Task.isCancelled else { return }
+            result.actionOutcomes = await runTestActions(of: result)
+            guard !Task.isCancelled else { return }
             results.append(result)
             if results.count > 20 {
                 results.removeFirst(results.count - 20)

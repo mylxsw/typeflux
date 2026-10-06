@@ -9,7 +9,7 @@ struct AskWorkflowTestPanel: View {
     var fix: () -> Void
     @State private var tab: Tab = .preview
 
-    enum Tab: String, CaseIterable { case preview, stdout, stderr, received }
+    enum Tab: String, CaseIterable { case preview, stdout, stderr, actions, received }
 
     init(model: AskWorkflowEditorModel, tab: Tab = .preview, fix: @escaping () -> Void) {
         self.model = model
@@ -23,10 +23,9 @@ struct AskWorkflowTestPanel: View {
             if let result = model.results.last {
                 meta(result)
                 AskWorkflowTabs(items: Tab.allCases.map { tab in
-                    .init(tab: tab, title: L("ask.workflow.editor.test.tab." + tab.rawValue),
-                          badge: tab == .stderr && !result.succeeded && !result.stderr.isEmpty
-                              ? "\(result.stderr.split(separator: "\n").count)" : nil)
-                }, selection: $tab, size: 11.5, fills: true)
+                    .init(tab: tab, title: title(tab, result), badge: badge(tab, result))
+                }, selection: $tab, size: 11.5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 12).padding(.bottom, 10)
                 ScrollView { detail(result).padding(.horizontal, 12).padding(.bottom, 12) }
             } else {
@@ -74,6 +73,9 @@ struct AskWorkflowTestPanel: View {
             .padding(.leading, 8).padding(.trailing, 4).frame(height: 34)
             .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            Toggle(L("ask.workflow.editor.test.previewActions"), isOn: $model.previewActionsOnly)
+                .toggleStyle(.checkbox).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                .accessibilityIdentifier("ask.workflow.editor.test.previewActions")
             Toggle(L("ask.workflow.editor.test.withSelection"), isOn: $model.testUsesSelection)
                 .toggleStyle(.checkbox).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
             if model.testUsesSelection {
@@ -128,7 +130,14 @@ struct AskWorkflowTestPanel: View {
         let manifest = model.draft?.manifest
         switch tab {
         case .preview:
-            preview(result, input: true)
+            VStack(alignment: .leading, spacing: 12) {
+                preview(result, input: true)
+                if !result.actionSteps.isEmpty {
+                    AskWorkflowTestActions(result: result)
+                }
+            }
+        case .actions:
+            AskWorkflowTestActions(result: result)
         case .stdout:
             mono(result.stdout.isEmpty ? L("ask.workflow.editor.test.nothing") : result.stdout)
         case .stderr:
@@ -151,7 +160,7 @@ struct AskWorkflowTestPanel: View {
         let manifest = model.draft?.manifest
         return AskWorkflowLauncherPreview(
             name: manifest?.name ?? "", keyword: result.input.keyword ?? manifest?.keywords.first?.keyword ?? "",
-            query: result.input.query, result: result, output: manifest?.output ?? .text,
+            query: result.input.query, result: result, output: manifest?.output ?? .init(display: .text),
             timeout: manifest?.timeout ?? AskWorkflowManifest.defaultTimeout, showsInput: input, folder: model.folder
         )
     }
@@ -196,6 +205,18 @@ struct AskWorkflowTestPanel: View {
             .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(ModelVisualStyle.border))
     }
 
+    /// "Actions 2": how many actions this run has.
+    private func title(_ tab: Tab, _ result: AskWorkflowTestResult) -> String {
+        let title = L("ask.workflow.editor.test.tab." + tab.rawValue)
+        return tab == .actions && !result.actionSteps.isEmpty ? title + " \(result.actionSteps.count)" : title
+    }
+
+    /// stderr's line count after a failure.
+    private func badge(_ tab: Tab, _ result: AskWorkflowTestResult) -> String? {
+        tab == .stderr && !result.succeeded && !result.stderr.isEmpty
+            ? "\(result.stderr.split(separator: "\n").count)" : nil
+    }
+
     // MARK: - History
 
     private var history: some View {
@@ -223,6 +244,61 @@ struct AskWorkflowTestPanel: View {
         }
         .padding(12)
         .id(log.entries.count)
+    }
+}
+
+/// A test run's actions: each with its filled-in value and where it ended
+/// (previewed, done, skipped, failed), and `{json.…}` placeholders that found nothing.
+struct AskWorkflowTestActions: View {
+    var result: AskWorkflowTestResult
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(L(result.takesFailureActions ? "ask.workflow.editor.test.failureActions"
+                : "ask.workflow.editor.test.actions"))
+                .font(.system(size: 11, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
+                .padding(.bottom, 4)
+            if result.actionSteps.isEmpty {
+                Text(L("ask.workflow.editor.test.noActions")).font(.system(size: 12))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
+            ForEach(Array(result.actionSteps.enumerated()), id: \.offset) { index, step in
+                if index > 0 { Rectangle().fill(ModelVisualStyle.divider).frame(height: 1) }
+                row(step, outcome: result.actionOutcomes.indices.contains(index) ? result.actionOutcomes[index] : nil)
+            }
+            let missing = Array(Set(result.actionSteps.flatMap(\.missing))).sorted()
+            if !missing.isEmpty {
+                Text(L("ask.workflow.editor.test.missingJSON", missing.joined(separator: " ")))
+                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning).padding(.top, 6)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func row(_ step: AskWorkflowActionStep, outcome: AskWorkflowActionOutcome?) -> some View {
+        let (status, color) = Self.status(step, outcome)
+        return HStack(spacing: 8) {
+            AskWorkflowActionTile(kind: step.action.kind, size: 20)
+            Text(step.title).font(.system(size: 12)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1).fixedSize()
+            Text(step.detail.replacingOccurrences(of: "\n", with: " ⏎ ")).font(.system(size: 11.5, design: .monospaced))
+                .foregroundStyle(StudioTheme.textSecondary).lineLimit(1).truncationMode(.tail)
+            Spacer(minLength: 6)
+            Text(status).font(.system(size: 11)).foregroundStyle(color).lineLimit(2).multilineTextAlignment(.trailing)
+                .frame(maxWidth: 130, alignment: .trailing)
+        }
+        .padding(.vertical, 7)
+    }
+
+    /// "Preview", "✓ Done", "Skipped: …", "✕ …".
+    static func status(_ step: AskWorkflowActionStep, _ outcome: AskWorkflowActionOutcome?) -> (String, Color) {
+        if let problem = step.problem { return ("✕ " + problem, StudioTheme.danger) }
+        switch outcome?.status {
+        case nil, .skipped(nil): return (L("ask.workflow.editor.test.actionPreview"), StudioTheme.textTertiary)
+        case let .skipped(reason?): return (reason, StudioTheme.warning)
+        case .done: return (L("ask.workflow.editor.test.actionDone"), StudioTheme.success)
+        case let .fellBack(reason): return ("✓ " + reason, StudioTheme.warning)
+        case let .failed(reason): return ("✕ " + reason, StudioTheme.danger)
+        }
     }
 }
 

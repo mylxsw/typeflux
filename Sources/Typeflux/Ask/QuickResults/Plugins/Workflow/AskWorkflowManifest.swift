@@ -58,17 +58,6 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
         var interpreter: String?
     }
 
-    enum Output: String, Codable, Sendable {
-        /// Printed text, shown as it arrives.
-        case text
-        /// Nothing to show: the script does something and the launcher closes.
-        case none
-        /// `{"items": [...]}` lists; they come with W2.
-        case items
-        /// Text, until item lists arrive.
-        case auto
-    }
-
     var schema: Int
     var id: String
     var name: String
@@ -81,7 +70,7 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
     var input: Input = .init()
     var run: Run = .init()
     var command: Command
-    var output: Output = .auto
+    var output: Output = .init()
     var env: [String: String]?
 
     static let currentSchema = 1
@@ -91,7 +80,7 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
 
     init(schema: Int = currentSchema, id: String, name: String, description: String? = nil, icon: String? = nil,
          version: String? = nil, author: String? = nil, keywords: [Keyword], input: Input = .init(),
-         run: Run = .init(), command: Command, output: Output = .auto, env: [String: String]? = nil) {
+         run: Run = .init(), command: Command, output: Output = .init(), env: [String: String]? = nil) {
         self.schema = schema
         self.id = id
         self.name = name
@@ -120,7 +109,7 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
         input = try container.decodeIfPresent(Input.self, forKey: .input) ?? .init()
         run = try container.decodeIfPresent(Run.self, forKey: .run) ?? .init()
         command = try container.decode(Command.self, forKey: .command)
-        output = try container.decodeIfPresent(Output.self, forKey: .output) ?? .auto
+        output = try container.decodeIfPresent(Output.self, forKey: .output) ?? .init()
         env = try container.decodeIfPresent([String: String].self, forKey: .env)
     }
 
@@ -140,7 +129,7 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
             var rest = Substring(entry)
             while let open = rest.firstIndex(of: "{") {
                 result += rest[..<open]
-                guard let close = rest[open...].firstIndex(of: "}") else { break }
+                guard let close = rest[open...].firstIndex(of: "}") else { rest = rest[open...]; break }
                 let name = rest[rest.index(after: open) ..< close]
                 switch name {
                 case "query": result += query
@@ -181,7 +170,7 @@ struct AskWorkflowManifest: Codable, Equatable, Sendable {
                                         message: keyword.keyword + ": " + AskKeywordList.message(for: problem)))
             }
         }
-        if output == .items { problems.append(Problem(field: "output", message: L("ask.workflow.problem.items"))) }
+        problems += output.problems(folder: folder)
         if run.mode == .live { problems.append(Problem(field: "run.mode", message: L("ask.workflow.problem.live"))) }
         problems += commandProblems(in: folder, fileManager: fileManager)
         return problems

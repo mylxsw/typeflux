@@ -247,7 +247,7 @@ struct AskComposer: View {
         case .tab:
             guard let value = results.value(of: .calculation), !results.stale else { return false }
             draft.wrappedValue.text = value
-        case .escape, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE:
+        case .escape, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE, .commandZ:
             return false
         }
         return true
@@ -385,6 +385,7 @@ struct AskComposer: View {
             }
             guard let action = offered else { return false }
             if case let .copy(text) = action.kind { model.copyPluginText(text) } else { performPluginAction(action) }
+        case .commandZ: return model.undoWorkflowCopy()
         case .escape: return plugins.cancelRun()
         }
         return true
@@ -467,8 +468,14 @@ struct AskComposer: View {
             .onChange(of: draft.wrappedValue.text) { _ in refreshQuickResults() }
             .onChange(of: pluginDisplay) { display in
                 guard launcher else { return }
-                // A workflow that only does something closes the launcher when it is done.
-                if display?.output?.dismisses == true { model.finishPluginResult(); onDismiss(); return }
+                if let followUp = display?.followUp {
+                    // A workflow's actions run once per run; they close the launcher when they say so.
+                    model.performWorkflowFollowUp(followUp, dismiss: onDismiss)
+                    if followUp.closes { return }
+                } else if display?.output?.dismisses == true {
+                    // A workflow that only does something closes the launcher when it is done.
+                    model.finishPluginResult(); onDismiss(); return
+                }
                 let reserve = display.map { max(pluginReserve, AskPluginResultsView.height(for: $0)) } ?? 0
                 if reserve != pluginReserve { pluginReserve = reserve }
                 reportHeight()
@@ -712,7 +719,8 @@ struct AskComposer: View {
         case .escape:
             dismissedSlash = slash?.range.location
             closePalette()
-        case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE:
+        case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE,
+             .commandZ:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }
@@ -906,7 +914,9 @@ struct AskComposer: View {
                 .frame(maxHeight: .infinity)
                 .background { if let windowDrag { AskWindowDragArea(handlers: windowDrag) } }
             Group {
-                if let feedback = model.capturedContentFeedback(launcher: true), !active {
+                if let actions = model.currentWorkflowActions, !active {
+                    AskWorkflowActionsSummaryView(state: actions)
+                } else if let feedback = model.capturedContentFeedback(launcher: true), !active {
                     AskCapturedContentFeedbackView(feedback: feedback) {
                         model.undoCapturedContent(launcher: true)
                     }

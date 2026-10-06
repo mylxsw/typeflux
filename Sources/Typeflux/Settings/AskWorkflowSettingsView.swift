@@ -47,6 +47,8 @@ struct AskWorkflowTrustSummary: Equatable {
     var keywords: [String]
     var command: String
     var selection: String
+    /// What runs after a run: "Copy to clipboard: {output.line1}"; empty when nothing does.
+    var actions: [String]
     var files: [String]
     var preview: String
 
@@ -69,6 +71,7 @@ struct AskWorkflowTrustSummary: Equatable {
             command = ""
             selection = ""
         }
+        actions = Self.actions(manifest?.output)
         let root = workflow.folder.standardizedFileURL.path
         let enumerator = fileManager.enumerator(at: workflow.folder, includingPropertiesForKeys: [.isRegularFileKey])
         var files: [String] = []
@@ -83,6 +86,18 @@ struct AskWorkflowTrustSummary: Equatable {
             .flatMap { try? String(contentsOf: $0, encoding: .utf8) } ?? ""
         preview = script.split(separator: "\n", omittingEmptySubsequences: false).prefix(Self.previewLines)
             .joined(separator: "\n")
+    }
+
+    /// Each configured action as one line, success ones first, failure ones marked.
+    static func actions(_ output: AskWorkflowManifest.Output?) -> [String] {
+        guard let output else { return [] }
+        func line(_ action: AskWorkflowAction) -> String {
+            let main = action.kind.flatMap { action[$0.requiredField] } ?? ""
+            let title = action.kind?.title ?? action.action
+            return main.isEmpty ? title : title + ": " + main
+        }
+        return output.onSuccess.map(line)
+            + output.onFailure.map { L("ask.workflow.trust.onFailure", line($0)) }
     }
 }
 
@@ -251,6 +266,9 @@ struct AskWorkflowTrustSheet: View {
                 fact("keyboard", L("ask.workflow.trust.keywords"), summary.keywords.joined(separator: "  "))
                 fact("play", L("ask.workflow.trust.command"), summary.command, monospaced: true)
                 fact("text.quote", L("ask.workflow.trust.selection"), summary.selection)
+                if !summary.actions.isEmpty {
+                    fact("bolt", L("ask.workflow.trust.actions"), summary.actions.joined(separator: "\n"))
+                }
                 fact("doc.on.doc", L("ask.workflow.trust.files"), summary.files.joined(separator: " · "))
             }
             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(StudioTheme.border))

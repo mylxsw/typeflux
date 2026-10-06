@@ -19,12 +19,15 @@ struct AskWorkflowEditorView: View {
 
     /// Opens the script step's run settings, for snapshots.
     private let showsRunSettings: Bool
+    /// The test panel's first tab, for snapshots.
+    private let testTab: AskWorkflowTestPanel.Tab
 
     init(model: AskWorkflowEditorModel, store: AskWorkflowStore, panel: Panel = .assistant,
-         showsRunSettings: Bool = false) {
+         showsRunSettings: Bool = false, testTab: AskWorkflowTestPanel.Tab = .preview) {
         self.model = model
         self.store = store
         self.showsRunSettings = showsRunSettings
+        self.testTab = testTab
         _panel = State(initialValue: panel)
     }
 
@@ -307,7 +310,8 @@ extension AskWorkflowEditorView {
                 .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 10)
             switch panel {
             case .assistant: AskWorkflowAssistantPanel(model: model, assistant: model.assistant)
-            case .test: AskWorkflowTestPanel(model: model) { panel = .assistant; model.fixWithAssistant() }
+            case .test:
+                AskWorkflowTestPanel(model: model, tab: testTab) { panel = .assistant; model.fixWithAssistant() }
             }
         }
         .background(StudioTheme.windowBackground)
