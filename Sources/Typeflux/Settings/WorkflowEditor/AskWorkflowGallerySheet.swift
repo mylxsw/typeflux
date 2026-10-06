@@ -327,10 +327,12 @@ extension AskWorkflowGallerySheet {
         return L("ask.workflow.gallery.runtime." + item.runtime.rawValue)
     }
 
-    /// What the example does after a run, from its actions: "Copy to clipboard", "Send notification".
+    /// What the example does after a run, from its actions: "Copy to clipboard", "Send notification";
+    /// a list says it is one, since its rows do the rest.
     static func actions(_ item: AskWorkflowGallery.Item) -> [String] {
         var seen = Set<String>()
-        return (item.manifest.output.onSuccess + item.manifest.output.onFailure).compactMap(\.kind?.title)
+        let list = item.manifest.output.display == .items ? [L("ask.workflow.gallery.list")] : []
+        return list + (item.manifest.output.onSuccess + item.manifest.output.onFailure).compactMap(\.kind?.title)
             .filter { seen.insert($0).inserted }
     }
 
@@ -355,10 +357,17 @@ extension AskWorkflowGallerySheet {
         let result = AskWorkflowTestResult(input: input, exitCode: 0, stdout: preview.output, stderr: "", duration: 0)
         return AskWorkflowLauncherPreview(
             name: item.name, keyword: preview.keyword, query: preview.query, result: result,
-            output: AskWorkflowManifest.Output(display: .text), timeout: item.manifest.timeout, folder: item.folder
+            output: AskWorkflowManifest.Output(display: Self.previewDisplay(item)), timeout: item.manifest.timeout,
+            folder: item.folder
         )
         .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+    }
+
+    /// How the sample output shows: as the example shows it, and as text for one that shows
+    /// nothing (its sample is what it copies).
+    static func previewDisplay(_ item: AskWorkflowGallery.Item) -> AskWorkflowManifest.Output.Display {
+        item.manifest.output.display == .none ? .text : item.manifest.output.display
     }
 
     /// The entry script's first lines, without its `#!` line, unwrapped.
@@ -481,6 +490,7 @@ struct AskWorkflowGalleryTile: View {
         case "gray": .gray
         case "pink": .pink
         case "teal": .teal
+        case "indigo": .indigo
         default: AskWorkflowEditorStyle.tileColor(for: item.id)
         }
     }

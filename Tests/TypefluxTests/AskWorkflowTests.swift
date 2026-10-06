@@ -114,7 +114,8 @@ struct AskWorkflowManifestTests {
         #expect(check { $0.keywords = [] } == ["keywords"])
         #expect(check { $0.keywords = [.init(keyword: "ab"), .init(keyword: "AB"), .init(keyword: "a b")] }
             == ["keywords[1]", "keywords[2]"])
-        #expect(check { $0.output = .init(display: .items) } == ["output"])
+        #expect(check { $0.output = .init(display: .items) }.isEmpty)
+        #expect(check { $0.output = .init(display: .image) } == ["output"])
         #expect(check { $0.run.mode = .live } == ["run.mode"])
         #expect(check { $0.command.script = nil } == ["command.script"])
         #expect(check { $0.command.inline = "echo" } == ["command.inline"])

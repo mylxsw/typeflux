@@ -2549,7 +2549,6 @@
 "ask.workflow.problem.id" = "문자, 숫자, 점, 하이픈, 밑줄만 쓸 수 있습니다";
 "ask.workflow.problem.name" = "이름을 입력하세요";
 "ask.workflow.problem.noKeywords" = "키워드를 하나 이상 추가하세요";
-"ask.workflow.problem.items" = "항목 목록은 다음 버전에서 지원합니다. 지금은 text를 쓰세요";
 "ask.workflow.problem.live" = "입력 중 실행은 다음 버전에서 지원합니다. 지금은 onSubmit을 쓰세요";
 "ask.workflow.problem.noScript" = "command.script(zsh, bash는 command.inline도 가능)를 설정하세요";
 "ask.workflow.problem.scriptAndInline" = "command.script와 command.inline 중 하나만 쓰세요";
@@ -2772,7 +2771,6 @@
 "ask.workflow.editor.output.none" = "표시하지 않고 실행만";
 "ask.workflow.editor.output.auto" = "자동 판단";
 "ask.workflow.editor.output.items" = "항목 목록";
-"ask.workflow.editor.output.later" = "항목 목록과 입력 중 결과 표시는 이후 버전에서 지원됩니다.";
 "ask.workflow.editor.limits" = "실행";
 "ask.workflow.editor.timeout" = "시간 제한";
 "ask.workflow.editor.seconds" = "%d초";
@@ -3196,3 +3194,28 @@
 "ask.workflow.gallery.wc.keyword.wc" = "글자 수";
 "ask.workflow.gallery.wc.usage.1" = "선택한 텍스트 세기";
 "ask.workflow.gallery.wc.usage.2" = "입력한 텍스트 세기";
+
+/* Workflow item lists and Markdown (O3) */
+"ask.plugin.action.openIn" = "%@에서 열기";
+"ask.plugin.action.reveal" = "Finder에서 보기";
+"ask.plugin.action.run" = "실행";
+"ask.plugin.action.complete" = "들어가기";
+"ask.plugin.hint.option.enter" = "⌥↩ %@";
+"ask.plugin.hint.complete" = "⇥ 들어가기";
+"ask.workflow.items.empty" = "결과 없음";
+"ask.workflow.items.invalid" = "항목 목록({\"items\": […]})이 아니어서 텍스트로 표시합니다";
+"ask.workflow.editor.preview.sampleMarkdown" = "### 100 미국 달러\n\n| 통화 | 금액 |\n|---|---:|\n| 엔 | 14,912.30 |\n| 유로 | 92.18 |\n\n환율 출처: **open.er-api.com**.";
+"ask.workflow.editor.preview.moreItems" = "런처에 %d개 더 있음";
+"ask.workflow.gallery.list" = "선택할 목록 표시";
+"ask.workflow.gallery.ip.name" = "로컬 IP";
+"ask.workflow.gallery.ip.summary" = "이 Mac의 네트워크 주소를 나열하고 선택한 주소를 복사합니다.";
+"ask.workflow.gallery.ip.demonstrates" = "항목 목록: 화살표로 선택, ↩ 복사, ⌥↩ 되쓰기";
+"ask.workflow.gallery.ip.keyword.ip" = "로컬 IP";
+"ask.workflow.gallery.ip.usage.1" = "모든 주소와 로컬 호스트 이름 표시";
+"ask.workflow.gallery.ip.usage.2" = "일치하는 주소만 표시";
+"ask.workflow.gallery.code.name" = "프로젝트 열기";
+"ask.workflow.gallery.code.summary" = "프로젝트 폴더를 찾아 편집기에서 엽니다.";
+"ask.workflow.gallery.code.demonstrates" = "목록 + 앱으로 열기: ↩ 편집기에서 열기, ⌥↩ Finder에서 보기, 파일 아이콘, 프리셋 옵션";
+"ask.workflow.gallery.code.keyword.code" = "프로젝트 열기";
+"ask.workflow.gallery.code.usage.1" = "최근에 바뀐 순서로 프로젝트 표시";
+"ask.workflow.gallery.code.usage.2" = "이름에 “web”이 들어간 프로젝트만";

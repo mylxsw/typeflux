@@ -45,7 +45,7 @@ private final class GalleryFixture {
 struct AskWorkflowGalleryIndexTests {
     @Test func `the bundled examples are valid and keep their keywords apart`() throws {
         let gallery = AskWorkflowGallery.bundled
-        #expect(gallery.items.map(\.id) == ["fx", "ts", "json", "codec", "uuid", "wc"])
+        #expect(gallery.items.map(\.id) == ["fx", "ts", "json", "codec", "uuid", "wc", "ip", "code"])
         var keywords = Set<String>()
         for item in gallery.items {
             #expect(
@@ -76,8 +76,9 @@ struct AskWorkflowGalleryIndexTests {
 
     @Test func `categories and search narrow the cards`() {
         let gallery = AskWorkflowGallery.bundled
-        #expect(gallery.categoryCounts.map(\.category) == [.text, .dev, .network])
-        #expect(gallery.categoryCounts.map(\.count) == [1, 4, 1])
+        #expect(gallery.categoryCounts.map(\.category) == [.text, .dev, .network, .system])
+        #expect(gallery.categoryCounts.map(\.count) == [1, 4, 1, 2])
+        #expect(gallery.filtered(category: .system, query: "").map(\.id) == ["ip", "code"])
         #expect(gallery.filtered(category: .dev, query: "").map(\.id) == ["ts", "json", "codec", "uuid"])
         #expect(gallery.filtered(category: nil, query: "B64").map(\.id) == ["codec"])
         #expect(gallery.filtered(category: .text, query: "json").isEmpty)
@@ -330,6 +331,45 @@ struct AskWorkflowGalleryExampleTests {
         #expect(lines(latin) == ["11 characters · 10 without spaces", "2 words · 1 line"])
         let mixed = try #require(try await run(fixture, "wc", query: "你好 world\nok"))
         #expect(lines(mixed) == ["11 characters · 9 without spaces", "4 words · 2 lines"])
+    }
+
+    @Test func `local IP lists addresses to copy and filters them`() async throws {
+        let fixture = try AskWorkflowFixture()
+        guard let all = try await run(fixture, "ip", query: "") else { return }
+        #expect(all.succeeded, "\(all.stderr)")
+        let list = try #require(AskWorkflowItemList.parse(all.stdout), "\(all.stdout)")
+        #expect(!list.items.isEmpty)
+        for item in list.items where item.valid {
+            #expect(item.arg == item.title && item.action == .copy && item.uid != nil && !item.subtitle.isEmpty)
+        }
+        let none = try #require(try await run(fixture, "ip", query: "no-such-address"))
+        let empty = try #require(AskWorkflowItemList.parse(none.stdout))
+        #expect(empty.items.count == 1 && empty.items[0].valid == false)
+    }
+
+    @Test func `open project lists folders newest first and escapes their names`() async throws {
+        let fixture = try AskWorkflowFixture()
+        let projects = fixture.home.appendingPathComponent("Projects")
+        for (index, name) in ["older", "web \"app\"", "website"].enumerated() {
+            let folder = projects.appendingPathComponent(name)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSince1970: Double(1000 + index))],
+                                                  ofItemAtPath: folder.path)
+        }
+        try Data().write(to: projects.appendingPathComponent("notes.txt"))
+        guard let all = try await run(fixture, "code", query: "") else { return }
+        #expect(all.succeeded, "\(all.stderr)")
+        let list = try #require(AskWorkflowItemList.parse(all.stdout), "\(all.stdout)")
+        #expect(list.items.map(\.title) == ["website", "web \"app\"", "older"], "folders only, newest first")
+        let first = try #require(list.items.first)
+        #expect(first.arg == projects.appendingPathComponent("website").path && first.action == .open)
+        #expect(first.subtitle == "~/Projects/website" && first.alt?.action == .reveal)
+        #expect(first.icon == .fileIcon(projects.appendingPathComponent("website").path))
+        let web = try #require(try await run(fixture, "code", query: "WEB"))
+        #expect(AskWorkflowItemList.parse(web.stdout)?.items.map(\.title) == ["website", "web \"app\""])
+        let none = try #require(try await run(fixture, "code", query: "nothing"))
+        let empty = try #require(AskWorkflowItemList.parse(none.stdout))
+        #expect(empty.items.count == 1 && !empty.items[0].valid && empty.items[0].subtitle.contains("~/Projects"))
     }
 }
 

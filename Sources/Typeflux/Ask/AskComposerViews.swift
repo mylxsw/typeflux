@@ -328,7 +328,7 @@ struct AskComposer: View {
     }
 
     private func askAIFromPlugin() {
-        if let output = plugins.output, let action = output.actions.first(where: { if case .askAI = $0.kind { true } else { false } }) {
+        if let action = plugins.output?.askAIAction {
             performPluginAction(action)
         } else {
             model.askAIFromPlugin()
@@ -350,8 +350,14 @@ struct AskComposer: View {
             return true
         }
         switch key {
-        case .up, .down: pluginHighlight = pluginHighlight == 0 ? 1 : 0
-        case .tab: _ = plugins.cycle(1, selection: selection, text: text, language: language)
+        case .up, .down: movePluginHighlight(key == .up ? -1 : 1)
+        case .tab:
+            // ⇥ on a row that completes goes one level deeper; elsewhere it changes the option.
+            if let completion = plugins.output?.selected?.autocomplete {
+                performPluginAction(AskPluginAction(kind: .runWith(completion), title: "", symbol: "", shortcut: nil))
+            } else {
+                _ = plugins.cycle(1, selection: selection, text: text, language: language)
+            }
         case .shiftTab: _ = plugins.cycle(-1, selection: selection, text: text, language: language)
         case .enter: if display.asksAI { askAIFromPlugin() } else { runPluginMain() }
         case .commandEnter: askAIFromPlugin()
@@ -389,6 +395,15 @@ struct AskComposer: View {
         case .escape: return plugins.cancelRun()
         }
         return true
+    }
+
+    /// The arrows move through a list's rows, then on to "Ask AI" and back around.
+    private func movePluginHighlight(_ delta: Int) {
+        if pluginHighlight == 0, plugins.moveSelection(delta) { return }
+        pluginHighlight = pluginHighlight == 0 ? 1 : 0
+        if pluginHighlight == 0, let count = plugins.output?.items.count, count > 0 {
+            plugins.selectItem(delta < 0 ? count - 1 : 0)
+        }
     }
 
     /// ⌫ in an empty editor in keyword mode turns the chip back into text.
@@ -536,7 +551,8 @@ struct AskComposer: View {
                                      minimumHeight: pluginReserve,
                                      onMain: runPluginMain, onAction: performPluginAction,
                                      onAskAI: askAIFromPlugin,
-                                     onHighlight: { pluginHighlight = $0 })
+                                     onHighlight: { pluginHighlight = $0 },
+                                     onSelectItem: { plugins.selectItem($0) })
             } else if showsQuickResults, let quickResults {
                 AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
                                     minimumHeight: quickReserve, onRun: runQuickResult,

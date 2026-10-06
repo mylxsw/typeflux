@@ -146,6 +146,15 @@ final class AskWorkflowLauncherActionHost: AskWorkflowActionHost {
         return true
     }
 
+    /// Opens a file or folder with an application found as `openApplication` finds it.
+    static func open(_ url: URL, inApplication name: String) -> Bool {
+        let workspace = NSWorkspace.shared
+        guard let application = workspace.urlForApplication(withBundleIdentifier: name) ?? applicationURL(named: name)
+        else { return false }
+        workspace.open([url], withApplicationAt: application, configuration: NSWorkspace.OpenConfiguration())
+        return true
+    }
+
     static func applicationURL(named name: String, fileManager: FileManager = .default) -> URL? {
         let file = name.hasSuffix(".app") ? name : name + ".app"
         let folders = ["/Applications", "/System/Applications", "/System/Applications/Utilities",

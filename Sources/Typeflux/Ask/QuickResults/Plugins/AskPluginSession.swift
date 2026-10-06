@@ -240,15 +240,22 @@ final class AskPluginSession: ObservableObject {
     }
 
     private func execute(_ plan: AskPluginPlan, request: AskPluginRequest, generation current: Int,
-                         plugin: any AskLauncherPlugin) async {
+                         plugin: any AskLauncherPlugin, shown: AskPluginOutput? = nil) async {
         do {
-            let output = try await plugin.run(request, plan: plan) { [weak self] partial in
+            var output = try await plugin.run(request, plan: plan) { [weak self] partial in
                 guard let self, current == self.generation, self.isRunning else { return }
                 self.set(\.partial, partial)
             }
             guard !Task.isCancelled, current == generation else { return }
+            if let shown {
+                // A timed rerun keeps the chosen row, and its actions already ran for the first result.
+                output.followUp = shown.followUp
+                output.selectedItem = Self.selection(keeping: shown, in: output)
+            }
             set(\.previous, nil)
+            adopt(output.variables)
             set(\.phase, .done(plan, output))
+            scheduleRerun(of: output, plan: plan, generation: current, plugin: plugin)
         } catch is CancellationError {
             return
         } catch {
@@ -256,6 +263,57 @@ final class AskPluginSession: ObservableObject {
             let failure = error as? AskPluginFailure ?? AskPluginFailure(message: error.localizedDescription)
             set(\.previous, nil)
             set(\.phase, .failed(plan, failure))
+        }
+    }
+
+    // MARK: - Lists
+
+    /// Moves the chosen row of a list by `delta`. False at either end, or without a
+    /// list, so the arrows can move on to "Ask AI".
+    func moveSelection(_ delta: Int) -> Bool {
+        guard case let .done(plan, output) = phase, !output.items.isEmpty else { return false }
+        let next = output.selectedItem + delta
+        guard output.items.indices.contains(next) else { return false }
+        var moved = output
+        moved.selectedItem = next
+        set(\.phase, .done(plan, moved))
+        return true
+    }
+
+    /// Chooses a row (a click, or the arrows coming back from "Ask AI").
+    func selectItem(_ index: Int) {
+        guard case let .done(plan, output) = phase, !output.items.isEmpty else { return }
+        var chosen = output
+        chosen.selectedItem = min(max(0, index), output.items.count - 1)
+        set(\.phase, .done(plan, chosen))
+    }
+
+    /// The row that was chosen before, found by its id in the new list; else the same place.
+    static func selection(keeping shown: AskPluginOutput, in output: AskPluginOutput) -> Int {
+        guard !output.items.isEmpty else { return 0 }
+        if let id = shown.selected?.id, let index = output.items.firstIndex(where: { $0.id == id }) { return index }
+        return min(shown.selectedItem, output.items.count - 1)
+    }
+
+    /// A workflow's `variables` become options for every later run in this keyword
+    /// mode. The current request takes them too, so it still counts as the one shown.
+    private func adopt(_ variables: [String: String]) {
+        guard !variables.isEmpty else { return }
+        overrides.merge(variables) { $1 }
+        request?.options.merge(variables) { $1 }
+        plannedFor?.options.merge(variables) { $1 }
+    }
+
+    /// A list that asks to run again (`rerun`) does, quietly, while it is shown.
+    /// Anything that changes the request or leaves keyword mode cancels it.
+    private func scheduleRerun(of output: AskPluginOutput, plan: AskPluginPlan, generation current: Int,
+                               plugin: any AskLauncherPlugin) {
+        guard let seconds = output.rerunAfter else { return }
+        task = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(max(AskWorkflowItemList.minimumRerun, seconds)))
+            guard let self, !Task.isCancelled, current == self.generation, let request = self.request,
+                  case let .done(_, shown) = self.phase else { return }
+            await self.execute(plan, request: request, generation: current, plugin: plugin, shown: shown)
         }
     }
 

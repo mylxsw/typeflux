@@ -118,10 +118,10 @@ struct AskWorkflowOutputTests {
             output.problems(folder: folder).map(\.field)
         }
         #expect(fields(.init(display: .text)).isEmpty && fields(.init(display: .none)).isEmpty)
-        #expect(fields(.init(display: .items)) == ["output"])
-        #expect(fields(.init(display: .markdown)) == ["output"] && fields(.init(display: .image)) == ["output"])
-        #expect(AskWorkflowManifest.Output(display: .markdown).problems(folder: folder).first?.message
-            == L("ask.workflow.problem.display", "markdown"))
+        #expect(fields(.init(display: .items)).isEmpty && fields(.init(display: .markdown)).isEmpty)
+        #expect(fields(.init(display: .image)) == ["output"])
+        #expect(AskWorkflowManifest.Output(display: .image).problems(folder: folder).first?.message
+            == L("ask.workflow.problem.display", "image"))
         let copy = AskWorkflowAction(action: "copy", value: "{output}")
         #expect(fields(.init(onSuccess: Array(repeating: copy, count: 9))) == ["output.onSuccess"])
         #expect(fields(.init(onSuccess: Array(repeating: copy, count: 8))).isEmpty)

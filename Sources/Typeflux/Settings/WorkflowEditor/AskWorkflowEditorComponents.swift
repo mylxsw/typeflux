@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import SwiftUI
 
 /// Small pieces the editor's screens share, drawn like the design
@@ -296,6 +297,8 @@ struct AskWorkflowLauncherPreview: View {
     var showsInput = true
     /// Where the run happened, so stderr shows paths relative to it as the launcher does.
     var folder: URL?
+    /// The chosen row of a list; a click moves it, as in the launcher.
+    @State private var selectedItem = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -335,10 +338,10 @@ struct AskWorkflowLauncherPreview: View {
                     .foregroundStyle(StudioTheme.textTertiary)
             }
             content
-            HStack(spacing: 5) {
-                Spacer(minLength: 0)
-                ForEach(Array(actions.enumerated()), id: \.offset) { index, action in
-                    AskWorkflowActionChip(key: action.0, title: action.1, primary: index == 0 && !failed)
+            // Long action names ("Open in Visual Studio Code") leave out the last chips rather than overflow.
+            ViewThatFits(in: .horizontal) {
+                ForEach(Array(stride(from: actions.count, through: 1, by: -1)), id: \.self) { count in
+                    chips(Array(actions.prefix(count)))
                 }
             }
             .padding(.top, 2)
@@ -347,6 +350,15 @@ struct AskWorkflowLauncherPreview: View {
         .background(StudioTheme.controlSurface.opacity(0.6), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
             .strokeBorder(failed ? StudioTheme.danger.opacity(0.55) : AskTheme.accent.opacity(0.55)))
+    }
+
+    private func chips(_ actions: [(String, String)]) -> some View {
+        HStack(spacing: 5) {
+            Spacer(minLength: 0)
+            ForEach(Array(actions.enumerated()), id: \.offset) { index, action in
+                AskWorkflowActionChip(key: action.0, title: action.1, primary: index == 0 && !failed)
+            }
+        }
     }
 
     @ViewBuilder private var content: some View {
@@ -368,17 +380,77 @@ struct AskWorkflowLauncherPreview: View {
             Label(L("ask.workflow.editor.test.dismisses"), systemImage: "checkmark.circle")
                 .font(.system(size: 12.5)).foregroundStyle(StudioTheme.success)
         } else {
-            let lines = (result?.stdout ?? L("ask.workflow.editor.preview.sample"))
-                .trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n")
-            VStack(alignment: .leading, spacing: 2) {
-                Text(lines.first ?? "").font(.system(size: 14))
-                if lines.count > 1 {
-                    Text(lines.dropFirst().joined(separator: "\n")).font(.system(size: 12.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
+            switch decoded {
+            case let .items(list):
+                itemList(list)
+            case let .markdown(text):
+                AskTranscriptText(text: text)
+                    .frame(maxHeight: AskPluginResultsView.maximumMarkdownHeight, alignment: .top)
+                    .clipped()
+            case let .text(text, note):
+                textLines(text)
+                if let note {
+                    Text(note).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
                 }
             }
-            .textSelection(.enabled)
         }
+    }
+
+    /// What the last run printed, or a sample in the chosen display, decoded as the launcher would.
+    var decoded: AskWorkflowDecodedOutput {
+        AskWorkflowDecodedOutput.decode(result?.stdout ?? Self.sample(for: output.display), display: output.display)
+    }
+
+    static func sample(for display: AskWorkflowManifest.Output.Display) -> String {
+        switch display {
+        case .items: sampleItems
+        case .markdown: L("ask.workflow.editor.preview.sampleMarkdown")
+        default: L("ask.workflow.editor.preview.sample")
+        }
+    }
+
+    /// The design's screen ⑦: three conversions, the first copied on Return.
+    static let sampleItems = #"""
+    {"items": [
+      {"title": "14,912.30 JPY", "subtitle": "1 USD = 149.123 JPY", "arg": "14912.30", "icon": "sf:yensign"},
+      {"title": "92.18 EUR", "subtitle": "1 USD = 0.9218 EUR", "arg": "92.18", "icon": "sf:eurosign"},
+      {"title": "718.40 CNY", "subtitle": "1 USD = 7.184 CNY", "arg": "718.40", "icon": "sf:yensign"}
+    ]}
+    """#
+
+    private var rows: AskWorkflowItemRows {
+        AskWorkflowItemRows(folder: folder ?? FileManager.default.temporaryDirectory, name: name)
+    }
+
+    /// The rows, one chosen; the launcher shows at most this many before it scrolls.
+    private func itemList(_ list: AskWorkflowItemList) -> some View {
+        let items = rows.items(list, replaces: false, original: query)
+        let shown = Array(items.prefix(AskPluginResultsView.maximumVisibleItems).enumerated())
+        return VStack(spacing: AskPluginResultsView.itemSpacing) {
+            ForEach(shown, id: \.element.id) { index, item in
+                AskPluginItemRow(item: item, symbol: "terminal", selected: index == min(selectedItem, items.count - 1),
+                                 emphasized: true, height: AskPluginResultsView.itemHeight) {
+                    selectedItem = index
+                }
+            }
+            if items.count > shown.count {
+                Text(L("ask.workflow.editor.preview.moreItems", items.count - shown.count))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func textLines(_ text: String) -> some View {
+        let lines = text.components(separatedBy: "\n")
+        return VStack(alignment: .leading, spacing: 2) {
+            Text(lines.first ?? "").font(.system(size: 14))
+            if lines.count > 1 {
+                Text(lines.dropFirst().joined(separator: "\n")).font(.system(size: 12.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+        }
+        .textSelection(.enabled)
     }
 
     private var actions: [(String, String)] {
@@ -387,6 +459,15 @@ struct AskWorkflowLauncherPreview: View {
         }
         if output.display == .none {
             return []
+        }
+        if case let .items(list) = decoded {
+            // The chosen row's keys, as the launcher's bottom bar names them.
+            let items = rows.items(list, replaces: false, original: query)
+            let item = items[min(selectedItem, items.count - 1)]
+            let keys: [(AskPluginAction.Shortcut, String)] = [(.enter, "↩"), (.optionEnter, "⌥↩"), (.commandC, "⌘C")]
+            return keys.compactMap { shortcut, key in
+                item.actions.first { $0.shortcut == shortcut }.map { (key, $0.title) }
+            } + [("⌘↩", L("ask.quick.askAI"))]
         }
         return [("↩", L("ask.plugin.action.copy")), ("⌥↩", L("ask.plugin.action.insert")),
                 ("⌘R", L("ask.workflow.action.rerun")), ("⌘↩", L("ask.quick.askAI"))]

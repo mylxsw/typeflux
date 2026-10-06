@@ -100,6 +100,12 @@ struct AskPluginAction: Equatable, Sendable {
         case askAI(String)
         /// Opens a link, such as a web search, and closes the launcher.
         case open(URL)
+        /// Opens a file or folder in an application (by name or bundle id), like a project in an editor.
+        case openIn(URL, application: String)
+        /// Shows a file in Finder.
+        case reveal(URL)
+        /// Puts this text after the keyword and runs again: ⇥ on an item, or its `run` action.
+        case runWith(String)
         /// Opens a workflow in the workflow editor, at a line of a file when known.
         case editWorkflow(id: String, path: String?, line: Int?)
         /// Opens the workflow editor and asks its assistant to fix what failed.
@@ -114,6 +120,29 @@ struct AskPluginAction: Equatable, Sendable {
     var title: String
     var symbol: String
     var shortcut: Shortcut?
+}
+
+/// One row of a result list (a workflow's `{"items": …}`), with what its keys do.
+struct AskPluginItem: Equatable, Sendable, Identifiable {
+    enum Icon: Equatable, Sendable {
+        case symbol(String)
+        case image(URL)
+        /// The Finder icon of a file or folder.
+        case fileIcon(URL)
+        /// The icon of a type, such as `public.folder`.
+        case fileType(String)
+    }
+
+    var id: String
+    var title: String
+    var subtitle = ""
+    var icon: Icon?
+    /// False: shown, never acted on.
+    var valid = true
+    /// What ⇥ completes to.
+    var autocomplete: String?
+    /// Return, ⌥↩ and ⌘C for this row, and asking the AI about it.
+    var actions: [AskPluginAction] = []
 }
 
 /// A plugin's result, shown as a text card. Plugins that only act (open a search)
@@ -134,12 +163,39 @@ struct AskPluginOutput: Equatable, Sendable {
     var dismisses = false
     /// What a workflow does after the run: copy, notify, open… (`AskWorkflowActionRunner`).
     var followUp: AskWorkflowFollowUp?
+    /// `body` is Markdown, drawn as Ask draws answers.
+    var markdown = false
+    /// A list to choose from instead of text; `body` then holds the titles.
+    var items: [AskPluginItem] = []
+    /// The chosen row; the arrows move it.
+    var selectedItem = 0
+    /// Run again after this many seconds while the result is shown.
+    var rerunAfter: Double?
+    /// Options for the next run (a workflow's `variables`).
+    var variables: [String: String] = [:]
 
+    var selected: AskPluginItem? {
+        items.indices.contains(selectedItem) ? items[selectedItem] : nil
+    }
+
+    /// What a key does. With a list it is the chosen row's (Return, ⌥↩, ⌘C), and
+    /// the result's for the rest (⌘R, ⌘E).
     func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
-        actions.first { $0.shortcut == shortcut }
+        if !items.isEmpty {
+            if let action = selected?.actions.first(where: { $0.shortcut == shortcut }) { return action }
+            return [.enter, .optionEnter, .commandC].contains(shortcut) ? nil
+                : actions.first { $0.shortcut == shortcut }
+        }
+        return actions.first { $0.shortcut == shortcut }
             // ⌘C copies the result without closing, unless the plugin says otherwise.
             ?? (shortcut == .commandC ? AskPluginAction(kind: .copy(body), title: L("ask.plugin.action.copy"),
                                                         symbol: "doc.on.doc", shortcut: .commandC) : nil)
+    }
+
+    /// What ⌘↩ asks the AI: about the chosen row, or the whole result.
+    var askAIAction: AskPluginAction? {
+        let isAsk: (AskPluginAction) -> Bool = { if case .askAI = $0.kind { true } else { false } }
+        return selected?.actions.first(where: isAsk) ?? actions.first(where: isAsk)
     }
 }
 

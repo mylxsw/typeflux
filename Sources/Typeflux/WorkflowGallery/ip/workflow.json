@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "local.ip",
+  "name": "@L:ip.name",
+  "description": "@L:ip.summary",
+  "icon": "sf:network",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    { "keyword": "ip", "title": "@L:ip.keyword.ip" }
+  ],
+  "input": { "argument": "optional", "selection": "never" },
+  "run": { "mode": "onSubmit", "timeoutSeconds": 5 },
+  "command": { "runtime": "zsh", "script": "main.sh", "args": ["{query}"] },
+  "output": "items"
+}

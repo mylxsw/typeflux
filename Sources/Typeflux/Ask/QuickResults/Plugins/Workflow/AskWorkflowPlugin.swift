@@ -1,8 +1,8 @@
 import Foundation
 
 /// One installed workflow as a launcher plugin: its keywords start it, its script
-/// runs on Return, and what it prints becomes a text card (or the launcher just
-/// closes when it prints nothing).
+/// runs on Return, and what it prints becomes a text card, a list or a Markdown
+/// card (or the launcher just closes when it prints nothing).
 struct AskWorkflowPlugin: AskLauncherPlugin {
     static let idPrefix = "workflow."
     /// Option the keyword carries: its title from the manifest, for the chip.
@@ -110,8 +110,10 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
         do {
             for try await event in runner.run(invocation) {
                 switch event {
-                case let .output(text) where manifest.output.display != .none:
-                    await progress(output(text, request: request, plan: plan, input: input, duration: nil))
+                case let .output(text) where AskWorkflowDecodedOutput.streams(text, display: manifest.output.display):
+                    var partial = output(text, request: request, plan: plan, input: input, duration: nil)
+                    partial.markdown = manifest.output.display == .markdown
+                    await progress(partial)
                 case .output:
                     break
                 case let .finished(finished):
@@ -150,6 +152,18 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
             return done
         }
         var shown = output(text, request: request, plan: plan, input: input, duration: result.duration)
+        // A cut-off list is not valid JSON; it shows as text with the truncation note.
+        switch AskWorkflowDecodedOutput.decode(text, display: manifest.output.display) {
+        case let .text(card, note):
+            if card != text {
+                shown = output(card, request: request, plan: plan, input: input, duration: result.duration)
+            }
+            shown.note = note
+        case let .items(list):
+            shown = itemsOutput(list, base: shown, input: input)
+        case .markdown:
+            shown.markdown = true
+        }
         if result.truncated {
             shown.note = L("ask.workflow.truncated")
             // Cut short is a failure for the actions: the output they would use is incomplete.

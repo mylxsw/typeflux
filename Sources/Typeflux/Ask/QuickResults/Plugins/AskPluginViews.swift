@@ -70,6 +70,8 @@ struct AskPluginResultsView: View {
     var onAction: (AskPluginAction) -> Void
     var onAskAI: () -> Void
     var onHighlight: (Int) -> Void
+    /// A click on a list's row chooses it (then Return's action runs).
+    var onSelectItem: (Int) -> Void = { _ in }
 
     // Shared with the quick results, so both lists line up.
     static let listPadding = AskQuickResultsView.listPadding
@@ -88,6 +90,11 @@ struct AskPluginResultsView: View {
     static let noteHeight: CGFloat = 16
     static let skeletonHeight: CGFloat = 44
     static let caret = " ▍"
+    static let itemHeight: CGFloat = 44
+    static let itemSpacing: CGFloat = 2
+    /// Longer lists scroll; the launcher does not grow past this many rows.
+    static let maximumVisibleItems = 6
+    static let maximumMarkdownHeight: CGFloat = 280
     private static let bodyID = "ask.plugin.body"
 
     /// The width text wraps to inside a card in the launcher.
@@ -115,6 +122,38 @@ struct AskPluginResultsView: View {
         min(maximumOriginalHeight, textHeight(text, font: originalFont))
     }
 
+    /// The rows a list shows at once, and their spacing.
+    static func itemsHeight(_ count: Int) -> CGFloat {
+        let visible = CGFloat(min(max(count, 1), maximumVisibleItems))
+        return visible * itemHeight + (visible - 1) * itemSpacing
+    }
+
+    /// Heights already measured: the launcher asks for the same text's height several times per update.
+    private static let markdownHeights: NSCache<NSString, NSNumber> = {
+        let cache = NSCache<NSString, NSNumber>()
+        cache.countLimit = 16
+        return cache
+    }()
+
+    /// Markdown drawn as Ask draws answers, measured at the card's width.
+    static func markdownHeight(_ text: String) -> CGFloat {
+        if let known = markdownHeights.object(forKey: text as NSString) { return CGFloat(known.doubleValue) }
+        let height = measureMarkdown(text)
+        markdownHeights.setObject(NSNumber(value: Double(height)), forKey: text as NSString)
+        return height
+    }
+
+    private static func measureMarkdown(_ text: String) -> CGFloat {
+        let storage = NSTextStorage(attributedString: AskMarkdownText.render(text))
+        let layout = NSLayoutManager()
+        let container = NSTextContainer(size: CGSize(width: textWidth, height: .greatestFiniteMagnitude))
+        container.lineFragmentPadding = 0
+        layout.addTextContainer(container)
+        storage.addLayoutManager(layout)
+        layout.ensureLayout(for: container)
+        return min(maximumMarkdownHeight, max(22, ceil(layout.usedRect(for: container).height)))
+    }
+
     /// The card's height for a result: header, the text (and the original when
     /// comparing), a note, and the actions.
     static func cardHeight(output: AskPluginOutput?, failure: AskPluginFailure?, comparing: Bool) -> CGFloat {
@@ -123,9 +162,13 @@ struct AskPluginResultsView: View {
             height += AskWordCardView.height(card)
             if output.note != nil { height += 6 + noteHeight }
             height += 10 + actionsHeight
+        } else if let output, !output.items.isEmpty {
+            // A list has no button row: the bottom bar says what the keys do.
+            height += itemsHeight(output.items.count)
+            if output.note != nil { height += 6 + noteHeight }
         } else if let output {
             if comparing { height += originalHeight(output.original) + 9 }
-            height += bodyHeight(output.body)
+            height += output.markdown ? markdownHeight(output.body) : bodyHeight(output.body)
             if output.note != nil { height += 6 + noteHeight }
             height += 10 + actionsHeight
         } else if let failure {
@@ -170,6 +213,12 @@ struct AskPluginResultsView: View {
                 parts = [L("ask.plugin.hint.ready"), option, L("ask.plugin.hint.waiting")]
             }
         case .running: return L("ask.plugin.hint.running")
+        case let .done(_, output) where !output.items.isEmpty:
+            // A list: what the chosen row's keys do.
+            parts = [output.action(for: .enter).map { L("ask.plugin.hint.action", $0.title) },
+                     output.action(for: .optionEnter).map { L("ask.plugin.hint.option.enter", $0.title) },
+                     output.selected?.autocomplete.map { _ in L("ask.plugin.hint.complete") },
+                     L("ask.plugin.hint.askAI")]
         case let .done(_, output):
             let main = output.action(for: .enter)?.title ?? ""
             parts = [output.action(for: .optionEnter).map { L("ask.plugin.hint.done", main, $0.title) }
@@ -325,43 +374,16 @@ struct AskPluginResultsView: View {
             }
             .frame(height: Self.headerHeight)
             .padding(.bottom, 8)
-            if let output, let card = output.wordCard {
-                AskWordCardView(card: card, language: Self.spokenLanguage(output) ?? "en", dimmed: running,
-                                onAction: onAction)
+            if let output {
+                result(output, running: running, streaming: streaming)
                 if let note = output.note {
                     Text(note).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
                         .frame(height: Self.noteHeight).padding(.top, 6)
                 }
-                actions(output.actions, enabled: !running)
-            } else if let output {
-                if display.comparing {
-                    ScrollView(.vertical) {
-                        Text(output.original).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .textSelection(.enabled)
-                    }
-                    .frame(height: Self.originalHeight(output.original))
-                    Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 4)
+                // A list has no button row: the bottom bar says what the chosen row's keys do.
+                if output.items.isEmpty {
+                    actions(output.actions, enabled: !running)
                 }
-                ScrollViewReader { reader in
-                    ScrollView(.vertical) {
-                        // A streaming result is bright with a caret; an old one waiting for its successor is dim.
-                        Text(streaming ? output.body + Self.caret : output.body)
-                            .font(Font(Self.bodyFont)).lineSpacing(Self.bodyLineSpacing)
-                            .foregroundStyle(running && !streaming ? StudioTheme.textTertiary : StudioTheme.textPrimary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .textSelection(.enabled)
-                            .id(Self.bodyID)
-                    }
-                    // Long streams keep their newest line in view.
-                    .onChange(of: output.body) { _ in if streaming { reader.scrollTo(Self.bodyID, anchor: .bottom) } }
-                }
-                .frame(height: Self.bodyHeight(output.body))
-                if let note = output.note {
-                    Text(note).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-                        .frame(height: Self.noteHeight).padding(.top, 6)
-                }
-                actions(output.actions, enabled: !running)
             } else if let failure {
                 Text(failure.message).font(.system(size: 13.5)).foregroundStyle(StudioTheme.danger)
                     .fixedSize(horizontal: false, vertical: true)
@@ -398,6 +420,74 @@ struct AskPluginResultsView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.plugin.card")
+    }
+
+    /// The result itself: a word card, a list, Markdown, or text (under the original when comparing).
+    @ViewBuilder
+    private func result(_ output: AskPluginOutput, running: Bool, streaming: Bool) -> some View {
+        if let card = output.wordCard {
+            AskWordCardView(card: card, language: Self.spokenLanguage(output) ?? "en", dimmed: running,
+                            onAction: onAction)
+        } else if !output.items.isEmpty {
+            itemList(output, dimmed: running)
+        } else if output.markdown {
+            ScrollView(.vertical) {
+                AskTranscriptText(text: streaming ? output.body + Self.caret : output.body)
+                    .opacity(running && !streaming ? 0.5 : 1)
+            }
+            .frame(height: Self.markdownHeight(output.body))
+        } else {
+            if display.comparing {
+                ScrollView(.vertical) {
+                    Text(output.original).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+                .frame(height: Self.originalHeight(output.original))
+                Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 4)
+            }
+            ScrollViewReader { reader in
+                ScrollView(.vertical) {
+                    // A streaming result is bright with a caret; an old one waiting for its successor is dim.
+                    Text(streaming ? output.body + Self.caret : output.body)
+                        .font(Font(Self.bodyFont)).lineSpacing(Self.bodyLineSpacing)
+                        .foregroundStyle(running && !streaming ? StudioTheme.textTertiary : StudioTheme.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                        .id(Self.bodyID)
+                }
+                // Long streams keep their newest line in view.
+                .onChange(of: output.body) { _ in if streaming { reader.scrollTo(Self.bodyID, anchor: .bottom) } }
+            }
+            .frame(height: Self.bodyHeight(output.body))
+        }
+    }
+
+    /// A workflow's rows: icon, title and subtitle; the chosen one says what Return does.
+    private func itemList(_ output: AskPluginOutput, dimmed: Bool) -> some View {
+        ScrollViewReader { reader in
+            ScrollView(.vertical) {
+                VStack(spacing: Self.itemSpacing) {
+                    ForEach(Array(output.items.enumerated()), id: \.element.id) { index, item in
+                        AskPluginItemRow(item: item, symbol: display.symbol, selected: index == output.selectedItem,
+                                         emphasized: highlighted, height: Self.itemHeight) {
+                            onSelectItem(index)
+                            onMain()
+                        }
+                        .id(item.id)
+                    }
+                }
+            }
+            .scrollDisabled(output.items.count <= Self.maximumVisibleItems)
+            .onChange(of: output.selectedItem) { index in
+                if output.items.indices.contains(index) { reader.scrollTo(output.items[index].id) }
+            }
+        }
+        .frame(height: Self.itemsHeight(output.items.count))
+        .opacity(dimmed ? 0.5 : 1)
+        .disabled(dimmed)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.plugin.items")
     }
 
     private func actions(_ actions: [AskPluginAction], enabled: Bool) -> some View {

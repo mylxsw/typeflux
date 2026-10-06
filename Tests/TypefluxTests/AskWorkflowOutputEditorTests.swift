@@ -190,7 +190,7 @@ struct AskWorkflowOutputEditorTests {
 
     @Test func displayChoicesOfferOnlyWhatThisVersionShows() {
         let choices = AskWorkflowOutputForm.displayChoices
-        #expect(choices.filter { !$0.comingSoon }.map(\.value) == [.text, .none, .auto])
+        #expect(choices.filter { !$0.comingSoon }.map(\.value) == [.text, .none, .auto, .items, .markdown])
         #expect(choices.allSatisfy { !$0.title.hasPrefix("ask.workflow") })
     }
 }

@@ -16,16 +16,16 @@ extension AskWorkflowManifest {
             case none
             /// `{"items": [...]}` lists as a list, anything else as text.
             case auto
-            /// `{"items": [...]}` lists; they come with O3.
+            /// `{"items": [...]}` as a list to choose from (`AskWorkflowItemList`).
             case items
-            /// A Markdown card (O3).
+            /// A Markdown card, drawn as Ask draws answers.
             case markdown
             /// An image path or data URL (O4).
             case image
 
             /// Shown by this version of the launcher.
             var isSupported: Bool {
-                self == .text || self == .none || self == .auto
+                self != .image
             }
         }
 
@@ -110,11 +110,8 @@ extension AskWorkflowManifest {
         /// row: `output.onSuccess[1]`.
         func problems(folder: URL) -> [Problem] {
             var problems: [Problem] = []
-            switch display {
-            case .items: problems.append(Problem(field: "output", message: L("ask.workflow.problem.items")))
-            case .markdown, .image:
+            if !display.isSupported {
                 problems.append(Problem(field: "output", message: L("ask.workflow.problem.display", display.rawValue)))
-            case .text, .none, .auto: break
             }
             for (list, actions) in [("onSuccess", onSuccess), ("onFailure", onFailure)] {
                 if actions.count > Self.maximumActions {

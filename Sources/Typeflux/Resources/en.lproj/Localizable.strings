@@ -2559,7 +2559,6 @@
 "ask.workflow.problem.id" = "Use letters, digits, dots, dashes or underscores";
 "ask.workflow.problem.name" = "Give the workflow a name";
 "ask.workflow.problem.noKeywords" = "Add at least one keyword";
-"ask.workflow.problem.items" = "Item lists come in the next version; use “text” for now";
 "ask.workflow.problem.live" = "Running while typing comes in the next version; use “onSubmit” for now";
 "ask.workflow.problem.noScript" = "Set command.script, or command.inline for zsh and bash";
 "ask.workflow.problem.scriptAndInline" = "Use either command.script or command.inline, not both";
@@ -2782,7 +2781,6 @@
 "ask.workflow.editor.output.none" = "Show nothing, just do it";
 "ask.workflow.editor.output.auto" = "Decide automatically";
 "ask.workflow.editor.output.items" = "Item list";
-"ask.workflow.editor.output.later" = "Item lists and results as you type come in a later version.";
 "ask.workflow.editor.limits" = "Running";
 "ask.workflow.editor.timeout" = "Timeout";
 "ask.workflow.editor.seconds" = "%d s";
@@ -3206,3 +3204,28 @@
 "ask.workflow.gallery.wc.keyword.wc" = "Word count";
 "ask.workflow.gallery.wc.usage.1" = "Counts the selection";
 "ask.workflow.gallery.wc.usage.2" = "Counts the typed text";
+
+/* Workflow item lists and Markdown (O3) */
+"ask.plugin.action.openIn" = "Open in %@";
+"ask.plugin.action.reveal" = "Show in Finder";
+"ask.plugin.action.run" = "Run";
+"ask.plugin.action.complete" = "Go deeper";
+"ask.plugin.hint.option.enter" = "⌥↩ %@";
+"ask.plugin.hint.complete" = "⇥ Go deeper";
+"ask.workflow.items.empty" = "No results";
+"ask.workflow.items.invalid" = "Not an item list ({\"items\": […]}), shown as text";
+"ask.workflow.editor.preview.sampleMarkdown" = "### 100 USD\n\n| Currency | Amount |\n|---|---:|\n| JPY | 14,912.30 |\n| EUR | 92.18 |\n\nRates from **open.er-api.com**.";
+"ask.workflow.editor.preview.moreItems" = "%d more in the launcher";
+"ask.workflow.gallery.list" = "Shows a list to choose from";
+"ask.workflow.gallery.ip.name" = "Local IP";
+"ask.workflow.gallery.ip.summary" = "Lists this Mac's network addresses; pick one to copy it.";
+"ask.workflow.gallery.ip.demonstrates" = "An item list: choose with the arrows, Return copies, Option-Return writes back";
+"ask.workflow.gallery.ip.keyword.ip" = "Local IP";
+"ask.workflow.gallery.ip.usage.1" = "Lists every address and the local host name";
+"ask.workflow.gallery.ip.usage.2" = "Only the addresses that match";
+"ask.workflow.gallery.code.name" = "Open Project";
+"ask.workflow.gallery.code.summary" = "Finds a project folder and opens it in your editor.";
+"ask.workflow.gallery.code.demonstrates" = "A list that opens an app: Return opens in the editor, Option-Return shows in Finder, file icons, options";
+"ask.workflow.gallery.code.keyword.code" = "Open project";
+"ask.workflow.gallery.code.usage.1" = "Your projects, most recently changed first";
+"ask.workflow.gallery.code.usage.2" = "Only the projects whose name contains “web”";

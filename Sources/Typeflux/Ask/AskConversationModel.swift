@@ -68,6 +68,11 @@ final class AskConversationModel: ObservableObject {
     var openApplicationNamed: @MainActor (String) -> Bool = { name in
         AskWorkflowLauncherActionHost.openApplication(name)
     }
+    /// Opens a file or folder in an application by name or bundle id; false when there is no
+    /// such application. Tests record it instead.
+    var openFileInApplication: @MainActor (URL, String) -> Bool = { url, name in
+        AskWorkflowLauncherActionHost.open(url, inApplication: name)
+    }
     @Published var reasoningEffort: AskReasoningEffort = .providerDefault
     let modelLibrary: AskModelLibrary
     private var inferenceUsage: [String: AskTokenUsage] = [:]
