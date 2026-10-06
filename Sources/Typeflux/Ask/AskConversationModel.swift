@@ -36,6 +36,8 @@ final class AskConversationModel: ObservableObject {
     var translationAI: (any AskTranslationEngine)?
     /// AI prompts (`rw`, `sum`) with the text-processing model; the window controller supplies it.
     var promptAI: (any AskTextGenerating)?
+    /// The user's workflows (`docs/design/ask-launcher-workflows.md`); the window controller supplies them.
+    var workflows: AskWorkflowStore?
     /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.
     lazy var plugins = AskPluginSession(plugins: makeLauncherPlugins()) { [weak self] in
         self?.launcherKeywords ?? AskPluginRegistry.defaultKeywords

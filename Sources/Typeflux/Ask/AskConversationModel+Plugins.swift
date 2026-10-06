@@ -41,8 +41,26 @@ extension SettingsStore {
 }
 
 extension AskConversationModel {
-    /// The user's keywords, or each plugin's defaults until they change them.
-    var launcherKeywords: [AskKeyword] { modelLibrary.settings.effectiveAskLauncherKeywords }
+    /// The user's keywords (or each plugin's defaults until they change them), then
+    /// the workflows' keywords that do not clash with them.
+    var launcherKeywords: [AskKeyword] {
+        let builtIn = modelLibrary.settings.effectiveAskLauncherKeywords
+        return builtIn + AskWorkflowStore.keywords(of: workflowPlugins(), excluding: builtIn).keywords
+    }
+
+    /// The installed workflows as launcher plugins.
+    func workflowPlugins() -> [AskWorkflowPlugin] {
+        workflows?.plugins { [weak self] in
+            (self?.launcherDraft.source, self?.launcherDraft.sourceBundleID)
+        } ?? []
+    }
+
+    /// Reads the workflows folder again and gives the launcher the result.
+    func refreshLauncherWorkflows() async {
+        guard let workflows else { return }
+        await workflows.refresh()
+        plugins.replacePlugins(makeLauncherPlugins())
+    }
 
     func makeLauncherPlugins() -> [any AskLauncherPlugin] {
         let settings = modelLibrary.settings
@@ -57,7 +75,7 @@ extension AskConversationModel {
             ),
             AskPromptPlugin(generator: promptAI, modelName: { [weak settings] in AskPluginRegistry.modelName(settings) }),
             AskWebSearchPlugin()
-        ]
+        ] + workflowPlugins()
     }
 
     /// What a plugin result's action needs from the launcher afterwards.

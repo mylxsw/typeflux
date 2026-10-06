@@ -1,6 +1,6 @@
 # 随便问：自定义工作流（脚本插件）设计方案
 
-> 状态：设计，未实现。配套设计稿：`docs/design/ask-launcher-workflows.html`，截图在 `docs/design/ask-launcher-workflows/`。截图：`1-list.png` 条目列表、`2-text.png` 文本结果、`3-error.png` 出错、`4-settings.png` 工作流列表、`5-editor.png` 编辑和测试运行、`6-trust.png` 信任确认。
+> 状态：W1 已实现（实现说明见第 12 节），W2、W3 仍是设计。配套设计稿：`docs/design/ask-launcher-workflows.html`，截图在 `docs/design/ask-launcher-workflows/`。截图：`1-list.png` 条目列表、`2-text.png` 文本结果、`3-error.png` 出错、`4-settings.png` 工作流列表、`5-editor.png` 编辑和测试运行、`6-trust.png` 信任确认。
 > 基于已经上线的关键字插件框架（`docs/design/ask-launcher-keyword-plugins.md`，P1 翻译、P2 AI 指令和网页搜索）。工作流就是那份文档 P3 里预留的「脚本插件」。
 
 ## 0. 一页结论
@@ -300,3 +300,38 @@ flowchart LR
 3. 边打边出对脚本是否开放？我的建议是开放，但只给清单声明了的工作流，并且只传参数、限时 3 秒。
 4. TypeScript 默认用 Bun、Deno 还是 tsx？我建议按「Bun → Deno → tsx」顺序自动找，设置里可以固定。
 5. 「受限运行」放在 W3 作为可选项可以吗？默认的安全边界是信任对话框、哈希校验和干净环境。
+
+## 12. W1 实现说明
+
+确认的默认值（第 11 节）：工作流放在 `~/Library/Application Support/Typeflux/Workflows/`；兼容 Alfred Script Filter（W2）；边打边出只对声明了的工作流开放、只传参数、限时 3 秒（W2）；TypeScript 按 Bun → Deno → tsx 自动查找；受限运行放在 W3。
+
+**代码位置**（`Ask/QuickResults/Plugins/Workflow/`）
+- `AskWorkflowManifest.swift`：清单、默认值、按字段的校验，以及 `{query}` / `{selection}` / `{option:名字}` 的单遍替换（输入里的占位符不会被再次展开）。
+- `AskWorkflowRuntime.swift`：各运行时的启动方式；`AskWorkflowPath` 读一次登录 shell 的 PATH（2 秒超时）并补上常见目录。
+- `AskWorkflowRunner.swift`：用 `posix_spawn` 启动，带新进程组、`POSIX_SPAWN_CLOEXEC_DEFAULT`（不泄漏文件描述符）和默认信号设置。环境变量只用传进来的那一份，stdin 写入时不会因 SIGPIPE 影响 App。stdout 按行推送，stdout 上限 1 MB、stderr 上限 256 KB。超时或取消时先给整个进程组发 SIGTERM，1 秒后发 SIGKILL；脚本退出后，组里残留的进程也会被结束。
+- `AskWorkflow.swift`：读取一个工作流文件夹，算出状态（就绪 / 未信任 / 已修改 / 清单有误 / 已停用）和内容哈希（SHA-256，忽略 `.DS_Store` 和 `__pycache__`，符号链接按目标计入）；运行记录 `AskWorkflowLog` 每个工作流保留 20 条，不记录输入输出。
+- `AskWorkflowStore.swift`：扫描目录（启动器打开时在后台进行），保存信任和开关，用模板新建，移到废纸篓。
+- `AskWorkflowPlugin.swift`：把工作流接进关键字插件框架。输入规则：参数 / 选中文字 / 两者都要。会准备干净的环境变量和 stdin JSON，退出码、超时、`{"error": …}` 都会变成具体的错误说明，没有输出时关闭启动器。
+- `AskWorkflowTemplate.swift`：四个模板（Python / Node / zsh 输出文本，zsh 只执行动作）。
+- `Settings/AskWorkflowSettingsView.swift`：设置 → Agent → 内置工具 →「启动器工作流」。列表显示状态、关键字冲突和上次运行情况，可以新建、打开文件夹、在编辑器中打开（用纯文本编辑器，不会误运行脚本）、删除，并提供信任确认面板。
+
+**框架改动**：插件可以声明不需要输入也能运行（`runsWithoutInput`）；请求里带上选中文字（插件仍然只在 ↩ 之后使用）；结果可以要求关闭启动器（`dismisses`）；会话可以替换插件表（工作流增删时）。
+
+**安全上比设计多做的一点**：信任检查在启动器打开时做一次，**按 ↩ 运行前再核对一次文件哈希**，避免打开启动器后脚本被改。
+
+**W1 没做、在 W2 做的**：条目列表（清单里写 `items` 时提示下个版本支持）、边打边出（写 `live` 时同样提示）、钥匙串密钥、设置里的表单编辑和测试运行面板（W1 用外部编辑器改文件）、`.typefluxworkflow` 导入导出。
+
+**测试**（`AskWorkflowTests.swift`）
+- 清单：默认值、按字段的校验、参数单遍替换。
+- 运行时和 PATH。
+- 运行器（真实进程）：
+  - 带空格、引号、`$()`、`;` 的参数原样到达；
+  - 环境变量只有给定的那些；
+  - stdin 能传进去，输出按行流式；
+  - 退出码、stderr、被信号结束都能正确报告，启动失败也会报错；
+  - 超时、取消和脚本退出后，后台子进程都会被结束；
+  - 输出超过上限会截断。
+- 存储：信任、修改、停用、删除，坏掉的文件夹，重复 id，模板，关键字冲突。
+- 插件：文本卡片和统一操作，选中文字规则，失败、超时、缺少运行时、未信任、信任后被修改，只执行动作的工作流，干净环境和 stdin JSON。
+- 设置摘要和信任面板。
+- 用真实启动器按键跑一个工作流（`rv hello` → ↩ → ↩ 复制），以及一个只执行动作的工作流关闭启动器。

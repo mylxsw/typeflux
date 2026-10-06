@@ -263,4 +263,39 @@ extension AskQuickResultsInteractionTests {
             #expect(launcher.dismissed == 1)
         }
     }
+
+    // MARK: - Workflows
+
+    @Test func aWorkflowRunsOnReturnAndOneThatOnlyActsClosesTheLauncher() async throws {
+        try await withPasteboard { pasteboard in
+            let workflows = try AskWorkflowFixture()
+            try workflows.write("rev", manifest: AskWorkflowFixture.inline("rev", keyword: "rv", script: "print -r -- \"$1\" | rev"))
+            try workflows.write("touch", manifest: AskWorkflowFixture.inline("touch", keyword: "tc", script: "touch done",
+                                                                             output: "none"))
+            workflows.store.reload()
+            workflows.store.trust("rev")
+            workflows.store.trust("touch")
+            let launcher = try await Launcher(text: "") { model in model.workflows = workflows.store }
+            defer { launcher.close() }
+            let model = launcher.fixture.model
+            // Read the login shell's PATH up front, so the runs below only time the scripts.
+            _ = await AskWorkflowPath.searchPath()
+            await model.refreshLauncherWorkflows()
+            #expect(model.launcherKeywords.contains { $0.keyword == "rv" })
+            try await type("rv hello", into: launcher)
+            try await settle { model.plugins.isPlanCurrent }
+            try await launcher.press(Self.returnKey)
+            for _ in 0 ..< 1000 where model.plugins.output == nil { try await Task.sleep(for: .milliseconds(10)) }
+            #expect(model.plugins.output?.body == "olleh")
+            try await launcher.press(Self.returnKey)
+            #expect(pasteboard.string(forType: .string) == "olleh" && launcher.dismissed == 1)
+            try await type("tc go", into: launcher)
+            try await settle { model.plugins.isPlanCurrent }
+            try await launcher.press(Self.returnKey)
+            for _ in 0 ..< 1000 where launcher.dismissed < 2 { try await Task.sleep(for: .milliseconds(10)) }
+            #expect(launcher.dismissed == 2)
+            #expect(FileManager.default.fileExists(atPath: workflows.root.appendingPathComponent("touch/done").path))
+            #expect(!model.plugins.isActive && model.launcherDraft.text.isEmpty)
+        }
+    }
 }

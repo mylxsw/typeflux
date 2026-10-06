@@ -420,6 +420,8 @@ struct AskComposer: View {
             .onChange(of: draft.wrappedValue.text) { _ in refreshQuickResults() }
             .onChange(of: pluginDisplay) { display in
                 guard launcher else { return }
+                // A workflow that only does something closes the launcher when it is done.
+                if display?.output?.dismisses == true { model.finishPluginResult(); onDismiss(); return }
                 let reserve = display.map { max(pluginReserve, AskPluginResultsView.height(for: $0)) } ?? 0
                 if reserve != pluginReserve { pluginReserve = reserve }
                 reportHeight()

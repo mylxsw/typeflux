@@ -68,6 +68,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
             model.promptAI = AskLLMTextGenerator(service: llmService)
         }
+        model.workflows = AskWorkflowStore.shared
         model.deliverText = { text in
             let result = try await injector.deliver(text: text, to: .currentInput)
             if case .notApplied = result { throw TextDeliveryError.noInput }
@@ -113,6 +114,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         if launcher?.isVisible == true { launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher); return }
         guard launchTask == nil else { return }
         model.refreshQuickApps()
+        Task { [model] in await model.refreshLauncherWorkflows() }
         if NSWorkspace.shared.frontmostApplication?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             tools?.targetApplication = NSWorkspace.shared.frontmostApplication
         }
@@ -162,6 +164,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     /// Builds the launcher panel and lays out its view while the app is idle.
     func prewarmLauncher() {
         model.refreshQuickApps()
+        Task { [model] in await model.refreshLauncherWorkflows() }
         let panel = launcherPanel()
         panel.contentView?.layoutSubtreeIfNeeded()
     }

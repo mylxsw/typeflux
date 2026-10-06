@@ -11,6 +11,8 @@ protocol AskLauncherPlugin: Sendable {
     var defaultKeywords: [AskKeyword] { get }
     /// What ⇥ changes, for the bottom bar ("Language"); nil when it changes nothing.
     var optionName: String? { get }
+    /// Runs with nothing typed and nothing selected, like a workflow that shows the IP address.
+    var runsWithoutInput: Bool { get }
     /// What the editor says while the keyword is active.
     func placeholder(selectionLines: Int?) -> String
     /// A keyword's preset for its chip, e.g. "Japanese" for `fyja`; nil for none.
@@ -26,6 +28,7 @@ protocol AskLauncherPlugin: Sendable {
 
 extension AskLauncherPlugin {
     var optionName: String? { nil }
+    var runsWithoutInput: Bool { false }
 }
 
 /// Receives a result as it grows, on the main actor and in order.
@@ -46,6 +49,9 @@ struct AskPluginRequest: Equatable, Sendable {
     /// The keyword's presets with the user's changes in this launcher (⇥, ⌘R) on top.
     var options: [String: String]
     var interfaceLanguage: AppLanguage
+    /// The captured selection, whichever text the request works on. Plugins only
+    /// hand it on after Return, as they do the selection itself.
+    var selection: String?
 
     /// Lines of selected text, for "translate the 2 selected lines".
     var lines: Int { text.split(separator: "\n", omittingEmptySubsequences: true).count }
@@ -118,6 +124,8 @@ struct AskPluginOutput: Equatable, Sendable {
     /// A line under the text, e.g. why the AI was used.
     var note: String?
     var actions: [AskPluginAction]
+    /// The run did what it was for (a workflow that opens something): the launcher closes.
+    var dismisses = false
 
     func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
         actions.first { $0.shortcut == shortcut }

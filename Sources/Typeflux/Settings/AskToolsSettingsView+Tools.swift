@@ -91,6 +91,10 @@ extension AskToolsSettingsView {
             AskLauncherPluginSettingsView(settings: settings)
         }
 
+        AgentSettingsSection(title: L("ask.workflow.section"), footnote: L("ask.workflow.footnote")) {
+            AskWorkflowSettingsView(store: .shared, settings: settings)
+        }
+
         ModelSurface {
             VStack(alignment: .leading, spacing: 0) {
                 AgentSettingsRow(icon: "cursorarrow.click.2", title: L("agent.capability.automation.title"),
