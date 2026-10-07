@@ -1238,11 +1238,15 @@ final class AskConversationModel: ObservableObject {
                             controllingConversationId = value.id; onControlChanged?(true)
                         }
                         // Claiming and fetching can suspend. Re-resolve local evidence at dispatch.
-                        let bindingNow = try await preparedToolBinding(call, conversationId: value.id, cloudDefinition: cloudDefinition)
+                        let currentCloudDefinition = snapshots[value.id]?.run?.approvalTool(for: call)
+                        guard (currentCloudDefinition == nil) == (cloudDefinition == nil) else {
+                            throw AskLocalError.message(L("ask.approval.changed"))
+                        }
+                        let bindingNow = try await preparedToolBinding(call, conversationId: value.id,
+                                                                      cloudDefinition: currentCloudDefinition)
                         try Task.checkCancellation()
                         guard session()?.owner == current.account else { throw CancellationError() }
-                        guard snapshots[value.id]?.run?.approvalTool(for: call) == cloudDefinition,
-                              bindingNow == request.binding,
+                        guard bindingNow == request.binding,
                               approvalStore.consume(grantID, for: request) else {
                             throw AskLocalError.message(L("ask.approval.changed"))
                         }

@@ -1,16 +1,17 @@
 # GUL-249 validation
 
-The final focused run passed 16 XCTest cases and 135 Swift Testing cases.
+The final focused run passed 16 XCTest cases and 140 Swift Testing cases.
 The suites cover permission modes, commands, busy-composer keyboard handling,
 responsive controls, read/write/MCP policy, screenshots, revocation, conversation
 storage, local-engine reentrancy, cloud HTTP contracts, recovery, and preparation
 failures. LLVM coverage for `AskPermissionMode.swift`: 100% lines/functions,
-92.31% regions. All five localization files pass `plutil -lint`.
+92.31% regions. All five localization files pass `plutil -lint`. The final regression run
+includes the merge of main at `c9ba49c6` and canonical cloud-schema revalidation.
 
 Run the focused checks with:
 
 ```sh
-swift test --enable-code-coverage --no-parallel --filter 'Ask(PermissionModeTests|PermissionModeUITests|CommandRenderTests|CommandCatalogTests|SendQueueTests|ScopedApprovalTests|ScreenshotApprovalTests|ConversationTests|ConversationStorageTests|ComposerResponsiveTests|LocalEngineTests|LocalEngineReentrancyTests|APIClientTests|RecoveryInteractionTests|RecoveryNoticeInteractionTests|ToolPreparationTests)'
+swift test --enable-code-coverage --no-parallel --filter 'Ask(PermissionModeTests|PermissionModeUITests|CommandRenderTests|CommandCatalogTests|SendQueueTests|ScopedApprovalTests|ScreenshotApprovalTests|ConversationTests|ConversationStorageTests|ComposerResponsiveTests|LocalEngineTests|LocalEngineReentrancyTests|APIClientTests|RecoveryInteractionTests|RecoveryNoticeInteractionTests|ToolPreparationTests|FloatingPanelStyleTests)'
 ```
 
 `permission-mode.png` is rendered from the actual composer after entering
@@ -22,7 +23,7 @@ one tool execution, one user message, and no command in chat history.
 `make coverage` and a serial full run were attempted (3,016 XCTest cases and
 1,668 Swift Testing cases). The full suite is not green. These five UI tests
 also fail when `AskComposerViews.swift` is temporarily restored verbatim from
-base commit `4235d7e8`; the feature implementation is restored afterward:
+initial base commit `4235d7e8`; the feature implementation is restored afterward:
 
 - `voiceButtonClickAndHoldWorkInBothComposers`: voice button position changes.
 - `sourceChipPreviewsMetadataAndRemovalCanBeUndoneWithoutAScreenshot`: old source chip expectations.

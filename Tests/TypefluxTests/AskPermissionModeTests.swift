@@ -162,6 +162,31 @@ struct AskPermissionModeTests {
         #expect(f.model.cloudApprovals.isEmpty)
     }
 
+    @Test(arguments: [false, true])
+    func cloudSchemaReorderingIsSafeButChangedDefinitionsRevokeApproval(changed: Bool) async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        let definition = AskToolDefinition(name: "web_search", description: "Search",
+            parameters: JSONValue(data: Data(#"{"type":"object","properties":{}}"#.utf8)))
+        await f.api.setCloudTools([definition])
+        await f.api.setTool(call("web_search"))
+        f.model.setPermissionMode(.strict, launcher: true)
+        f.model.launcherDraft = AskDraft(text: "Search", includeScreenshot: false)
+        f.model.submitLauncher()
+        try await f.wait { !f.model.pendingApprovals.isEmpty }
+        var latest = try #require(f.model.selected)
+        var refreshed = definition
+        refreshed.parameters = JSONValue(data: Data(#"{"properties":{},"type":"object"}"#.utf8))
+        if changed { refreshed.description = "Changed tool contract" }
+        latest.run?.cloudTools = [refreshed]
+        latest.revision += 1
+        await f.api.seed(latest)
+        f.model.approve(conversationId: latest.id, allowed: true)
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(await f.api.results.first?.approveExecution == !changed)
+        #expect(f.tools.executions == 0)
+    }
+
     @Test func accountSwitchRevokesModes() throws {
         let f = try AskTestFixture()
         f.model.setPermissionMode(.yolo, launcher: true)
