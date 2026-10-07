@@ -356,10 +356,16 @@ extension AskPluginSession {
         recordWordBook?(lookup)
     }
 
-    /// Shows the word as starred or not without running again.
+    /// Shows the word as starred or not without running again: the result, or its row in a list.
     func showStarred(_ starred: Bool, key: String) {
-        guard case let .done(plan, output) = phase, output.wordBook?.key == key else { return }
-        set(\.phase, .done(plan, output.starring(starred)))
+        guard case let .done(plan, output) = phase else { return }
+        if output.wordBook?.key == key {
+            set(\.phase, .done(plan, output.starring(starred)))
+        } else if let index = output.items.firstIndex(where: { $0.id == key }) {
+            var listed = output
+            listed.items[index] = output.items[index].starring(starred)
+            set(\.phase, .done(plan, listed))
+        }
     }
 }
 

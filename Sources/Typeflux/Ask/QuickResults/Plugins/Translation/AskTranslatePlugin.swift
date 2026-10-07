@@ -10,6 +10,10 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     static let engineOption = "engine"
     /// Bumped by ⌘R on a word card so the AI writes a new one instead of reusing it.
     static let generationOption = "generation"
+    /// With nothing typed: the recent words, or `starred` ones only (⇥).
+    static let listOption = "list"
+    /// How many words `fy` alone lists.
+    static let listedWords = 8
 
     var onDevice: any AskTranslationEngine
     var ai: (any AskTranslationEngine)?
@@ -30,6 +34,8 @@ struct AskTranslatePlugin: AskLauncherPlugin {
 
     static let keywords = ["fy", "tr", "翻译"].map { AskKeyword(keyword: $0, pluginID: id) }
     var defaultKeywords: [AskKeyword] { Self.keywords }
+    /// `fy` alone lists the words looked up lately.
+    var runsWithoutInput: Bool { wordBook != nil }
 
     func placeholder(selectionLines: Int?) -> String {
         guard let selectionLines, selectionLines > 0 else { return L("ask.plugin.translate.placeholder") }
@@ -41,6 +47,11 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     }
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
+        if request.text.isEmpty {
+            let starred = request.options[Self.listOption] == "starred"
+            return AskPluginPlan(mode: .live, title: L(starred ? "ask.wordBook.list.starred" : "ask.wordBook.list.recent"),
+                                 values: [Self.listOption: starred ? "starred" : "recent"])
+        }
         let primary = AskTranslationLanguages.code(for: request.interfaceLanguage)
         let second = secondLanguage(request.interfaceLanguage)
         let source = detector.detect(request.text, hints: [primary, second])
@@ -69,7 +80,7 @@ struct AskTranslatePlugin: AskLauncherPlugin {
 
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
              progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
-        var output = try await translate(request, plan: plan)
+        var output = request.text.isEmpty ? recentWords(plan: plan) : try await translate(request, plan: plan)
         // Every translation leads to the word book, on its word when it looked one up.
         if wordBook != nil { output.actions.append(Self.openWordBookAction(key: output.wordBook?.key)) }
         return output
@@ -219,12 +230,28 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     }
 
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? {
+        if request.text.isEmpty {
+            return [Self.listOption: plan.values[Self.listOption] == "starred" ? "recent" : "starred"]
+        }
         let primary = AskTranslationLanguages.code(for: request.interfaceLanguage)
         let second = secondLanguage(request.interfaceLanguage)
         let current = plan.values["target"] ?? primary
         let next = AskTranslationLanguages.step(from: current, by: step, primary: primary, second: second,
                                                 skipping: plan.values["source"])
         return next == current ? nil : [Self.targetOption: next]
+    }
+}
+
+extension AskPluginItem {
+    /// A recent word's row, starred or not.
+    func starring(_ starred: Bool) -> AskPluginItem {
+        var item = self
+        item.icon = .symbol(starred ? "star.fill" : "character.book.closed")
+        item.actions = actions.map { action in
+            if case let .toggleStar(lookup) = action.kind { return AskTranslatePlugin.starAction(lookup, starred: starred) }
+            return action
+        }
+        return item
     }
 }
 
@@ -239,5 +266,46 @@ extension AskPluginOutput {
             return action
         }
         return output
+    }
+}
+
+// MARK: - Recent words
+
+extension AskTranslatePlugin {
+    /// `fy` alone: the words looked up lately (or the starred ones), and a way into the word book.
+    /// Return looks a word up again, which shows its card from the word book without asking the AI.
+    func recentWords(plan: AskPluginPlan) -> AskPluginOutput {
+        let starred = plan.values[Self.listOption] == "starred"
+        let entries = wordBook?.list(AskWordBookQuery(scope: starred ? .starred : .all,
+                                                      sort: starred ? .starred : .recent, limit: Self.listedWords)) ?? []
+        let items = entries.map(Self.item) + [AskPluginItem(
+            id: Self.openAllItem, title: L("ask.wordBook.list.openAll"), subtitle: L("ask.wordBook.list.openAll.detail"),
+            icon: .symbol("character.book.closed"), autocomplete: nil,
+            actions: [AskPluginAction(kind: .openWordBook(key: nil), title: L("ask.wordBook.open"),
+                                      symbol: "character.book.closed", shortcut: .enter)]
+        )]
+        let empty = L(starred ? "ask.wordBook.list.emptyStarred" : "ask.wordBook.list.empty")
+        return AskPluginOutput(body: items.map(\.title).joined(separator: "\n"), original: "", meta: [],
+                               source: L("ask.plugin.source.wordBook"), note: entries.isEmpty ? empty : nil,
+                               actions: [], items: items)
+    }
+
+    static let openAllItem = "wordbook.open"
+
+    static func item(_ entry: AskWordBookEntry) -> AskPluginItem {
+        var actions = [
+            AskPluginAction(kind: .runWith(entry.headword), title: L("ask.plugin.action.open"), symbol: "arrow.right",
+                            shortcut: .enter)
+        ]
+        if let meaning = entry.lookup.firstMeaning {
+            actions.append(AskPluginAction(kind: .writeBack(meaning), title: L("ask.plugin.action.insert"),
+                                           symbol: "text.insert", shortcut: .optionEnter))
+        }
+        actions += [
+            starAction(entry.lookup, starred: entry.isStarred),
+            openWordBookAction(key: entry.key)
+        ]
+        return AskPluginItem(id: entry.key, title: entry.headword, subtitle: entry.lookup.summary,
+                             icon: .symbol(entry.isStarred ? "star.fill" : "character.book.closed"), actions: actions)
     }
 }
