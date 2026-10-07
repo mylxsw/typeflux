@@ -218,10 +218,16 @@ struct AskPluginRegistryTests {
         let fyja = AskKeyword(keyword: "fyja", pluginID: "translate", options: ["target": "ja"])
         #expect(AskPluginRegistry.keywords(saved: nil, known: nil) == AskPluginRegistry.defaultKeywords)
         // Saved before the prompt and web plugins existed: they join with their defaults.
+        let dict = AskTranslatePlugin.keywords.filter { AskTranslatePlugin.opensWordBook($0.options) }
+        #expect(dict.map(\.keyword) == ["dict", "词典"])
         let merged = AskPluginRegistry.keywords(saved: [fyja], known: nil)
-        #expect(merged == [fyja] + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords)
+        #expect(merged == [fyja] + dict + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords)
+        // Saved before `dict` existed: it joins, and nothing else does.
+        #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.pluginIDs) == [fyja] + dict)
         // Saved since: what the user removed stays removed.
-        #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.pluginIDs) == [fyja])
+        #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.coveredGroups) == [fyja])
+        #expect(AskPluginRegistry.group(of: dict[0]) == "translate.wordbook")
+        #expect(AskPluginRegistry.group(of: fyja) == "translate")
         // A saved keyword already using a default's word wins.
         let mine = AskKeyword(keyword: "G", pluginID: "translate")
         #expect(!AskPluginRegistry.keywords(saved: [mine], known: ["translate"]).contains { $0.pluginID == "web" && $0.keyword == "g" })
@@ -232,9 +238,9 @@ struct AskPluginRegistryTests {
         let settings = SettingsStore(defaults: defaults)
         #expect(settings.effectiveAskLauncherKeywords == AskPluginRegistry.defaultKeywords)
         settings.askLauncherKeywords = [fyja]
-        #expect(settings.effectiveAskLauncherKeywords.count == 7, "an old list gains the new plugins")
+        #expect(settings.effectiveAskLauncherKeywords.count == 9, "an old list gains the new plugins and dict")
         settings.saveAskLauncherKeywords([fyja])
-        #expect(settings.askLauncherKeywordPlugins == AskPluginRegistry.pluginIDs)
+        #expect(settings.askLauncherKeywordPlugins == AskPluginRegistry.coveredGroups)
         #expect(settings.effectiveAskLauncherKeywords == [fyja])
         settings.saveAskLauncherKeywords(nil)
         #expect(settings.askLauncherKeywords == nil && settings.askLauncherKeywordPlugins == nil)

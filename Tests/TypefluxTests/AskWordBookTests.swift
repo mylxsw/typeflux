@@ -206,6 +206,23 @@ struct AskWordBookStoreTests {
         #expect(store.count(.all) == 0 && store.lookups(since: day(0)) == 0 && store.languagePairs().isEmpty)
     }
 
+    @Test func datesLimitListsAndCountsFollowQueries() {
+        let store = makeTestWordBook()
+        for (word, when) in [("old", 0.0), ("mid", 5.0), ("new", 9.0)] {
+            store.record(AskWordBookLookup(headword: word, source: "en", target: "zh-Hans", translation: word),
+                         at: day(when), counts: true)
+        }
+        store.record(AskWordBookLookup(headword: "mid", source: "en", target: "zh-Hans", translation: "mid"),
+                     at: day(8), counts: true)
+        #expect(store.list(AskWordBookQuery(since: day(6))).map(\.headword) == ["new", "mid"])
+        #expect(store.count(matching: AskWordBookQuery(since: day(6))) == 2)
+        #expect(store.count(matching: AskWordBookQuery(text: "ol")) == 1)
+        #expect(store.count(matching: AskWordBookQuery(scope: .starred)) == 0)
+        #expect(store.activity(since: day(6)).count == 3, "first and last lookups of recent words, from the date on")
+        #expect(Set(store.activity(since: day(6))) == [day(8), day(9)])
+        #expect(Set(store.activity(since: day(0))) == [day(0), day(5), day(8), day(9)])
+    }
+
     @Test func likePatternsAreEscaped() {
         #expect(SQLiteAskWordBookStore.escapeLike(#"a%b_c\d"#) == #"a\%b\_c\\d"#)
     }

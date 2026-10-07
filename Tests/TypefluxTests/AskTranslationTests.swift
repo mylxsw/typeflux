@@ -68,7 +68,7 @@ struct AskTranslatePluginTests {
         let (translate, _) = plugin()
         #expect(translate.id == "translate")
         #expect(!translate.title.isEmpty && translate.symbol == "translate")
-        #expect(translate.defaultKeywords.map(\.keyword) == ["fy", "tr", "翻译"])
+        #expect(translate.defaultKeywords.map(\.keyword) == ["fy", "tr", "翻译", "dict", "词典"])
         #expect(translate.placeholder(selectionLines: nil) == L("ask.plugin.translate.placeholder"))
         #expect(translate.placeholder(selectionLines: 0) == L("ask.plugin.translate.placeholder"))
         #expect(translate.placeholder(selectionLines: 2) == L("ask.plugin.translate.placeholder.selection", 2))

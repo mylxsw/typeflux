@@ -1,6 +1,6 @@
 # 单词本改版与 dict 关键字 设计方案
 
-> 状态：设计稿，待确认后开发（GUL-237 第三轮）。可交互设计稿：`docs/design/word-book-redesign.html`，截图见 `docs/design/word-book-redesign/`。前置：单词本已上线（#342–#344，`docs/design/translation-word-book.md`）。
+> 状态：已实现（GUL-237），`dict` / `词典` 关键字与 Liquid Glass 单词本窗口合在一个 PR 中交付。可交互设计稿：`docs/design/word-book-redesign.html`，截图见 `docs/design/word-book-redesign/`。前置：单词本已上线（#342–#344，`docs/design/translation-word-book.md`）。
 
 ## 0. 一页结论
 

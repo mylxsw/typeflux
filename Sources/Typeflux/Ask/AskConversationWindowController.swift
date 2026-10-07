@@ -79,7 +79,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             settings?.askWordBookRecordsHistory ?? true
         }
         AskWordBookWindowController.shared.configure(
-            store: wordBook, dictionary: model.translationAI as? any AskWordLookingUp, settings: settings
+            store: wordBook, dictionary: model.translationAI as? any AskWordLookingUp, settings: settings,
+            askAI: { [weak model] prompt in
+                // A new conversation about the word, without the launcher's selection or screenshot.
+                model?.launcherDraft = AskDraft(text: prompt, includeScreenshot: false, selection: nil)
+                model?.submitLauncher()
+            }
         ) { [weak settings] in AskPluginRegistry.modelName(settings) }
         model.deliverText = { text in
             let result = try await injector.deliver(text: text, to: .currentInput)

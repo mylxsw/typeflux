@@ -65,23 +65,38 @@ struct AskKeywordEditorSheet: View {
         }
     }
 
+    private var translateTargetField: some View {
+        field(L("ask.settings.keywords.sheet.target")) {
+            Picker("", selection: $draft.target) {
+                Text(L("ask.settings.plugins.translate.auto")).tag("")
+                ForEach(AskTranslationLanguages.common, id: \.self) { code in
+                    Text(L(
+                        "ask.settings.plugins.translate.into",
+                        AskTranslationLanguages.name(code, in: interface)
+                    ))
+                    .tag(code)
+                }
+            }
+            .labelsHidden().frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityLabel(L("ask.settings.plugins.translate.target"))
+            hint(L("ask.settings.keywords.sheet.autoHint"))
+        }
+    }
+
     @ViewBuilder private var kindFields: some View {
         switch draft.kind {
         case .translate:
-            field(L("ask.settings.keywords.sheet.target")) {
-                Picker("", selection: $draft.target) {
-                    Text(L("ask.settings.plugins.translate.auto")).tag("")
-                    ForEach(AskTranslationLanguages.common, id: \.self) { code in
-                        Text(L(
-                            "ask.settings.plugins.translate.into",
-                            AskTranslationLanguages.name(code, in: interface)
-                        ))
-                        .tag(code)
-                    }
+            field(L("ask.settings.keywords.sheet.action")) {
+                Picker("", selection: $draft.opensWordBook) {
+                    Text(L("ask.settings.keywords.sheet.action.translate")).tag(false)
+                    Text(L("ask.settings.keywords.sheet.action.wordBook")).tag(true)
                 }
-                .labelsHidden().frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityLabel(L("ask.settings.plugins.translate.target"))
-                hint(L("ask.settings.keywords.sheet.autoHint"))
+                .pickerStyle(.segmented).labelsHidden().fixedSize()
+                .accessibilityIdentifier("ask.settings.keywords.sheet.action")
+                if draft.opensWordBook { hint(L("ask.settings.keywords.sheet.action.wordBookHint")) }
+            }
+            if !draft.opensWordBook {
+                translateTargetField
             }
         case .prompt:
             field(L("ask.settings.keywords.name")) {
