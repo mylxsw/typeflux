@@ -186,6 +186,8 @@ struct AskComposer: View {
     /// that height while typing, so the panel does not shrink and grow with every
     /// keystroke as matches come and go; it resets when the results go away.
     @State private var quickReserve: CGFloat = 0
+    /// The highlighted result's actions, open after →.
+    @State private var quickActions: AskQuickActionPanel?
     /// Quick results show while the launcher's text is all there is to send:
     /// quotes, files or chosen tools mean the text is written for the AI.
     private var showsQuickResults: Bool {
@@ -200,28 +202,40 @@ struct AskComposer: View {
     private func refreshQuickResults() {
         guard launcher else { return }
         if refreshPlugins() { return }
-        let calculator = model.quickCalculatorEnabled, apps = model.quickAppsEnabled
-        let next = calculator || apps
+        let calculator = model.quickCalculatorEnabled, apps = model.quickAppsEnabled, files = model.quickFilesEnabled
+        let sources = AskQuickResults.Sources(apps: apps ? model.appIndex : nil, files: files ? model.fileIndex : nil,
+                                              settings: model.launcherSearchSettings)
+        let next = calculator || apps || files
             ? AskQuickResults.resolve(text: draft.wrappedValue.text, previous: quickResults,
                                       chinese: AppLocalization.shared.language == .simplifiedChinese,
-                                      calculator: calculator, apps: apps ? model.appIndex : nil)
+                                      calculator: calculator, sources: sources)
             : nil
         guard next != quickResults else { return }
         quickResults = next
+        quickActions = nil
         let reserve = next.map { max(quickReserve, AskQuickResultsView.height(for: $0)) } ?? 0
         if reserve != quickReserve { quickReserve = reserve }
         reportHeight()
     }
 
     /// Copies a quick result, closing the launcher when asked to, opens an
-    /// application, or sends the text to the AI.
+    /// application or file, or sends the text to the AI.
     private func runQuickResult(_ row: AskQuickResults.Row, close: Bool) {
         guard let results = quickResults else { return }
-        if row == .askAI { model.submitLauncher(); return }
-        if let app = results.app(at: row) {
-            model.openQuickApp(app)
-            onDismiss()
+        quickActions = nil
+        switch row {
+        case .askAI: model.submitLauncher(); return
+        case .showAllFiles: showAllFiles(); return
+        case .app, .pane:
+            if let app = results.app(at: row) {
+                model.openQuickApp(app)
+                onDismiss()
+            }
             return
+        case .file:
+            if let file = results.file(at: row) { runFileAction(.open, file) }
+            return
+        case .calculation, .format: break
         }
         guard results.isEnabled(row), let value = results.value(of: row) else { return }
         AskQuickResults.copy(value)
@@ -231,11 +245,89 @@ struct AskComposer: View {
         }
     }
 
-    /// Return runs the highlighted row (copy, or open an application), ⌘Return
+    /// File mode with the same text: every file that matches, with filters.
+    private func showAllFiles() {
+        guard let keyword = plugins.availableKeywords.first(where: { $0.enabled && $0.pluginID == AskFileSearchPlugin.id })
+        else { return }
+        draft.wrappedValue.text = keyword.keyword + " " + draft.wrappedValue.text
+    }
+
+    /// Carries out an action on a found file; closes the launcher unless it says otherwise.
+    private func runFileAction(_ action: AskQuickAction, _ file: AskFileHit) {
+        switch model.performQuickFileAction(action, file) {
+        case .close: onDismiss()
+        case .stay: break
+        case let .panel(panel):
+            quickActions = panel
+        case let .text(text): draft.wrappedValue.text = text
+        }
+    }
+
+    private func runAppAction(_ action: AskQuickAction, _ app: AskAppEntry) {
+        if model.performQuickAppAction(action, app) == .close { onDismiss() }
+    }
+
+    /// Runs the action chosen in the panel, asking again before moving to the trash.
+    private func runPanelAction(_ action: AskQuickAction) {
+        guard var panel = quickActions else { return }
+        if action == .trash, !panel.confirming {
+            panel.highlighted = panel.actions.firstIndex(of: .trash) ?? panel.highlighted
+            panel.confirming = true
+            quickActions = panel
+            return
+        }
+        switch panel.target {
+        case let .app(app): quickActions = nil; runAppAction(action, app)
+        case let .file(file): runFileAction(action, file)
+        }
+    }
+
+    /// Opens the actions of the highlighted row; false when it has none.
+    private func openQuickActions(_ results: AskQuickResults) -> Bool {
+        let row = results.highlightedRow
+        let target: AskQuickActionPanel.Target
+        if let file = results.file(at: row) {
+            target = .file(file)
+        } else if let app = results.app(at: row) {
+            target = .app(app)
+        } else {
+            return false
+        }
+        guard let panel = AskQuickActionPanel.make(for: target) else { return false }
+        quickActions = panel
+        return true
+    }
+
+    /// The panel has the keys while it is open: arrows choose, Return runs, ← and esc close.
+    private func quickActionsKey(_ key: AskCommandKey) -> Bool {
+        guard var panel = quickActions else { return false }
+        switch key {
+        case .up, .down:
+            panel.move(key == .up ? -1 : 1)
+            quickActions = panel
+        case .enter:
+            if let action = panel.highlightedAction { runPanelAction(action) }
+        case .escape:
+            quickActions = nil
+        default:
+            return false
+        }
+        return true
+    }
+
+    /// Return runs the highlighted row (copy, or open an application or file), ⌘Return
     /// asks the AI, Tab writes a calculation's result into the editor to keep
-    /// calculating, and the arrows move.
+    /// calculating, the arrows move, → opens a found item's actions, and the
+    /// actions' own shortcuts work on the highlighted file.
     private func quickResultsKey(_ key: AskCommandKey) -> Bool {
         guard showsQuickResults, !active, var results = quickResults else { return false }
+        if quickActionsKey(key) { return true }
+        let file = results.file(at: results.highlightedRow)
+        let app = results.app(at: results.highlightedRow)
+        if AskQuickLook.shared.isVisible, key == .escape || key == .commandY {
+            AskQuickLook.shared.close()
+            return true
+        }
         switch key {
         case .up, .down:
             results.move(key == .up ? -1 : 1)
@@ -247,8 +339,28 @@ struct AskComposer: View {
         case .tab:
             guard let value = results.value(of: .calculation), !results.stale else { return false }
             draft.wrappedValue.text = value
-        case .escape, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE, .commandZ,
-             .commandS, .commandB:
+        case .right:
+            return openQuickActions(results)
+        case .commandDown:
+            guard results.moreFiles || !results.files.isEmpty else { return false }
+            showAllFiles()
+        case .commandY:
+            guard let file, file.kind != .folder else { return false }
+            AskQuickLook.shared.toggle(file.url)
+        case .commandR:
+            if let file { runFileAction(.reveal, file) } else if let app { runAppAction(.reveal, app) } else { return false }
+        case .shiftCommandC:
+            if let file { runFileAction(.copyPath, file) } else if let app { runAppAction(.copyPath, app) } else { return false }
+        case .optionCommandC:
+            guard let file, file.kind != .folder else { return false }
+            runFileAction(.copyFile, file)
+        case .shiftCommandEnter:
+            guard let file else { return false }
+            runFileAction(.askAI, file)
+        case .optionEnter:
+            guard let file, file.kind != .folder else { return false }
+            runFileAction(.openWith, file)
+        case .escape, .shiftTab, .commandD, .commandC, .commandE, .commandZ, .commandS, .commandB:
             return false
         }
         return true
@@ -401,7 +513,18 @@ struct AskComposer: View {
             guard let action = offered else { return false }
             if case let .copy(text) = action.kind { model.copyPluginText(text) } else { performPluginAction(action) }
         case .commandZ: return model.undoWorkflowCopy()
-        case .escape: return plugins.cancelRun()
+        case .escape:
+            if AskQuickLook.shared.isVisible { AskQuickLook.shared.close(); return true }
+            return plugins.cancelRun()
+        case .commandY:
+            // A list of files (file mode) previews the chosen one.
+            guard case let .fileIcon(url)? = plugins.output?.selected?.icon else { return false }
+            AskQuickLook.shared.toggle(url)
+        case .shiftCommandEnter:
+            // Ask the AI about the chosen file: it becomes an attachment of a new question.
+            guard case let .fileIcon(url)? = plugins.output?.selected?.icon else { return false }
+            model.attachFileToLauncher(url)
+        case .right, .optionCommandC, .commandDown: return false
         }
         return true
     }
@@ -565,8 +688,11 @@ struct AskComposer: View {
                                      onSelectItem: { plugins.selectItem($0) })
             } else if showsQuickResults, let quickResults {
                 AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
-                                    minimumHeight: quickReserve, onRun: runQuickResult,
-                                    onHighlight: { index in self.quickResults?.highlight(index) })
+                                    minimumHeight: quickReserve, actions: quickActions,
+                                    thumbnails: model.launcherSearchSettings.fileIcons == .thumbnails,
+                                    onRun: runQuickResult,
+                                    onHighlight: { index in self.quickResults?.highlight(index) },
+                                    onAction: runPanelAction)
                     .disabled(active)
             }
             if launcher {
@@ -746,7 +872,7 @@ struct AskComposer: View {
             dismissedSlash = slash?.range.location
             closePalette()
         case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE,
-             .commandZ, .commandS, .commandB:
+             .commandZ, .commandS, .commandB, .right, .commandY, .optionCommandC, .shiftCommandEnter, .commandDown:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }

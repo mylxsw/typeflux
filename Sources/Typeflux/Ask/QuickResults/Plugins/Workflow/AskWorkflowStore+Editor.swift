@@ -134,6 +134,7 @@ extension AskWorkflowStore {
         case AskTranslatePlugin.id: return L("ask.plugin.translate.title")
         case AskPromptPlugin.id: return L("ask.plugin.prompt.title")
         case AskWebSearchPlugin.id: return L("ask.plugin.web.title")
+        case AskFileSearchPlugin.id: return L("ask.plugin.files.title")
         default:
             guard pluginID.hasPrefix(AskWorkflowPlugin.idPrefix) else { return nil }
             let id = String(pluginID.dropFirst(AskWorkflowPlugin.idPrefix.count))

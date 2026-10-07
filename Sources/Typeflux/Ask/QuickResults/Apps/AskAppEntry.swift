@@ -3,10 +3,17 @@ import Foundation
 /// One application the launcher can open, with every name it answers to and
 /// the keys those names are matched by. Built once per scan, off the main thread.
 struct AskAppEntry: Equatable, Identifiable, Sendable {
+    enum Kind: Equatable, Sendable {
+        case application
+        /// A pane of System Settings, such as Network; it opens with `settingsURL`.
+        case settingsPane
+    }
+
     /// The name shown in the list: the one Finder shows on this Mac.
     var name: String
     var url: URL
     var bundleID: String?
+    var kind: Kind = .application
     /// Lowercased names in every language found: Finder's, the bundle's own,
     /// its Chinese name and the file name.
     var names: [String]
@@ -16,17 +23,28 @@ struct AskAppEntry: Equatable, Identifiable, Sendable {
     var pinyin: [String]
     /// Han names by the first letter of each syllable ("微信" → "wx").
     var pinyinInitials: [String]
+    /// Every name prepared for `AskFuzzyMatcher`; the first is `name`, whose matches are highlighted.
+    var keys: [AskSearchKey]
 
     var id: String { bundleID ?? url.path }
 
-    init(name: String, url: URL, bundleID: String?, names: [String]) {
+    /// Where a settings pane opens: `x-apple.systempreferences:` with its identifier.
+    var settingsURL: URL? {
+        guard kind == .settingsPane, let bundleID else { return nil }
+        return URL(string: "x-apple.systempreferences:" + bundleID)
+    }
+
+    init(name: String, url: URL, bundleID: String?, names: [String], kind: Kind = .application) {
         self.name = name
         self.url = url
         self.bundleID = bundleID
+        self.kind = kind
         var seen = Set<String>()
-        let lowered = ([name] + names)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-            .filter { !$0.isEmpty && seen.insert($0).inserted }
+        let trimmed = ([name] + names)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && seen.insert($0.lowercased()).inserted }
+        keys = trimmed.map { AskSearchKey($0) }
+        let lowered = trimmed.map { $0.lowercased() }
         self.names = lowered
         initials = Self.unique(([name] + names).compactMap { Self.initials(of: $0) })
         let han = lowered.filter(Self.containsHan)
@@ -93,4 +111,6 @@ struct AskAppEntry: Equatable, Identifiable, Sendable {
 struct AskAppMatch: Equatable, Sendable {
     var entry: AskAppEntry
     var score: Double
+    /// Characters of `entry.name` that matched, for bold; empty when another of its names did.
+    var highlights: [Range<Int>] = []
 }

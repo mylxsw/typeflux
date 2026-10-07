@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · 启动器内容搜索（应用 + 文件）设计稿</title>
+<style>
+  :root {
+    --canvas: #0c0c0d; --desk: #1b1c1f;
+    --glass: rgba(50,50,54,.90);
+    --hair: rgba(255,255,255,.10);
+    --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: rgba(10,132,255,.16); --accent-text: #8ebdff;
+    --hover: rgba(255,255,255,.08); --ctl: rgba(255,255,255,.08);
+    --violet: #bf5af2; --violet-soft: rgba(191,90,242,.18); --violet-text: #d6a1f7;
+    --danger: #ff6961; --warn: #ffb340; --ok: #34c759;
+    --win: #232325; --side: #1d1d1f; --wall-a: #2c3442; --wall-b: #3b2f45;
+    --mark: #8ebdff;
+  }
+  body.light {
+    --canvas: #eceef1; --desk: #dfe3e8;
+    --glass: rgba(250,250,252,.94);
+    --hair: rgba(0,0,0,.09);
+    --text: #1d1d1f; --text-2: #5f5f64; --text-3: #8e8e93;
+    --accent-soft: rgba(10,132,255,.12); --accent-text: #0a6cdb;
+    --hover: rgba(0,0,0,.05); --ctl: rgba(0,0,0,.05);
+    --violet-soft: rgba(175,82,222,.12); --violet-text: #8e3fc0;
+    --win: #f7f7f8; --side: #eeeef0; --wall-a: #b9c7dc; --wall-b: #d9c8e4;
+    --mark: #0a6cdb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 64px; background: var(--canvas); color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans SC", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 18px; max-width: 1260px; }
+  h3 { font-size: 17px; margin: 40px 0 14px; font-weight: 650; }
+  code { font-size: 11.5px; color: var(--text-2); font-family: ui-monospace, Menlo, monospace; }
+  .topbar { display: flex; gap: 10px; align-items: center; margin-bottom: 22px; }
+  .pill { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--ctl); border: 1px solid var(--hair); }
+  .pill button { border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; height: 26px; padding: 0 12px; border-radius: 7px; cursor: pointer; }
+  .pill button.on { background: var(--accent); color: #fff; }
+  .btn { border: 1px solid var(--hair); background: var(--ctl); color: var(--text); font: inherit; font-size: 12px; height: 26px; padding: 0 10px; border-radius: 7px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn.sm { height: 22px; padding: 0 8px; font-size: 11.5px; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 10px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  .grid2 { display: grid; grid-template-columns: 860px 1fr; gap: 28px 36px; align-items: start; }
+  .gallery { display: grid; grid-template-columns: repeat(2, 740px); gap: 28px 40px; }
+  .gallery .cap { font-size: 12px; color: var(--text-2); margin: 0 0 8px; }
+  .gallery .cap b { color: var(--text); }
+
+  /* ===== stage ===== */
+  .stage { position: relative; border-radius: 14px; padding: 36px 30px; border: 1px solid var(--hair);
+    background: radial-gradient(900px 500px at 20% 0%, var(--wall-a), transparent 60%), radial-gradient(900px 500px at 90% 100%, var(--wall-b), transparent 60%), var(--desk); }
+  .stage.tight { padding: 26px 30px; }
+
+  /* ===== launcher card ===== */
+  .card { width: 680px; border-radius: 26px; background: var(--glass); border: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(24px);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 24px 60px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.25); position: relative; overflow: hidden; }
+  body.light .card { border-color: rgba(0,0,0,.10); }
+  .editor { display: flex; align-items: center; gap: 8px; padding: 14px 18px 6px; min-height: 48px; }
+  .editor input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 16px; caret-color: var(--accent); }
+  .editor .static { flex: 1; font-size: 16px; white-space: nowrap; overflow: hidden; }
+  .editor .ph { color: var(--text-3); }
+  .caret { display: inline-block; width: 1.5px; height: 19px; background: var(--accent); vertical-align: -4px; margin-left: 1px; }
+  .kw { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 5px; border-radius: 9px; flex: none; font-size: 13px; font-weight: 600; white-space: nowrap;
+    background: var(--accent-soft); color: var(--accent-text); }
+  .kw .g { width: 20px; height: 20px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; background: var(--accent); color: #fff; }
+  .foot { display: flex; align-items: center; gap: 6px; height: 50px; padding: 0 10px; }
+  .round { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); font-size: 16px; flex: none; }
+  .menu { font-size: 13.5px; font-weight: 600; padding: 0 6px; white-space: nowrap; }
+  .vsep { width: 1px; height: 20px; background: var(--hair); margin: 0 4px; }
+  .spacer { flex: 1; }
+  .send { width: 32px; height: 32px; border-radius: 50%; background: var(--ctl); color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; }
+  .send.on { background: var(--accent); color: #fff; }
+  .hair { height: 1px; background: var(--hair); margin: 0 12px; }
+
+  .qr { padding: 4px 6px 6px; max-height: 420px; overflow-y: auto; scrollbar-width: thin; }
+  .grp { display: flex; align-items: flex-end; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--text-3); padding: 0 10px 3px; height: 22px; }
+  .grp .n { font-weight: 500; }
+  .row { display: flex; align-items: center; gap: 11px; padding: 0 10px; height: 42px; border-radius: 13px; font-size: 13.5px; cursor: default; position: relative; }
+  .row.hl { background: var(--hover); }
+  .row.hl.lead { box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); }
+  .row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; flex: none; }
+  .row .nm mark { background: none; color: var(--mark); font-weight: 650; }
+  .row .loc { font-size: 11.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1 1 auto; direction: ltr; }
+  .row .alt { font-size: 11.5px; color: var(--text-3); white-space: nowrap; }
+  .row .right { margin-left: auto; font-size: 11.5px; color: var(--text-3); white-space: nowrap; flex: none; padding-left: 8px; }
+  .row .badge { font-size: 10.5px; color: var(--violet-text); border: 1px solid rgba(191,90,242,.35); border-radius: 5px; padding: 0 5px; flex: none; }
+  .row .cloud { font-size: 11px; color: var(--text-3); flex: none; }
+  .row.two { height: 52px; }
+  .row .stack { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+  .row .stack .l1 { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+  .row .snip { font-size: 11.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .snip mark { background: rgba(255,214,10,.22); color: var(--text); border-radius: 3px; padding: 0 1px; }
+  .row.more { height: 32px; color: var(--text-2); font-size: 12.5px; padding-left: 50px; }
+  .row.notice { height: auto; min-height: 36px; padding-top: 7px; padding-bottom: 7px; font-size: 12.5px; color: var(--text-2); }
+  .row.notice .bar2 { flex: 1; height: 4px; border-radius: 2px; background: var(--ctl); overflow: hidden; max-width: 160px; }
+  .row.notice .bar2 i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+  .row.notice a { color: var(--accent-text); cursor: pointer; }
+
+  .ic { width: 28px; height: 28px; border-radius: 7px; flex: none; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; position: relative; }
+  .ic.app { border-radius: 7px; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .ic.pane { border-radius: 50%; width: 26px; height: 26px; margin: 0 1px; font-size: 13px; }
+  .ic.doc { width: 22px; height: 28px; margin: 0 3px; border-radius: 3px 8px 3px 3px; background: #f4f4f6; color: #555; font-size: 7.5px; font-weight: 800; align-items: flex-end; padding-bottom: 4px; letter-spacing: .2px; box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .ic.doc::before { content: ""; position: absolute; left: 4px; right: 4px; top: 6px; height: 2px; background: #d6d6da; box-shadow: 0 4px 0 #d6d6da, 0 8px 0 #d6d6da; }
+  .ic.doc span { position: relative; padding: 0 2px; border-radius: 2px; color: #fff; }
+  .ic.thumb { width: 28px; height: 28px; border-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .ic.folder { width: 28px; height: 22px; margin: 3px 0; border-radius: 3px 5px 5px 5px; background: linear-gradient(#6cc4ff, #2e9bf0); }
+  .ic.folder::before { content: ""; position: absolute; left: 0; top: -3px; width: 12px; height: 5px; border-radius: 3px 3px 0 0; background: #57b4f7; }
+  .tile { width: 28px; height: 28px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent); font-size: 13px; flex: none; }
+  .hint { display: flex; justify-content: flex-end; gap: 4px; padding: 2px 16px 10px; font-size: 11.5px; color: var(--text-3); }
+  .hint b { color: var(--text-2); font-weight: 600; }
+  .filters { display: flex; gap: 6px; align-items: center; padding: 8px 14px 4px; flex-wrap: wrap; }
+  .chip { height: 24px; padding: 0 10px; border-radius: 999px; background: var(--ctl); color: var(--text-2); display: inline-flex; align-items: center; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
+  .chip.on { background: var(--accent-soft); color: var(--accent-text); border-color: rgba(10,132,255,.4); }
+  .filters .sp { flex: 1; }
+  .tog { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-2); cursor: pointer; }
+  .tog i { width: 24px; height: 14px; border-radius: 7px; background: var(--ctl); border: 1px solid var(--hair); position: relative; display: inline-block; }
+  .tog i::after { content: ""; position: absolute; top: 1px; left: 1px; width: 10px; height: 10px; border-radius: 50%; background: var(--text-3); transition: left .12s; }
+  .tog.on i { background: var(--accent); border-color: transparent; } .tog.on i::after { left: 11px; background: #fff; }
+
+  /* action panel */
+  .panel { position: absolute; right: 14px; width: 270px; border-radius: 14px; background: var(--win); border: 1px solid var(--hair);
+    box-shadow: 0 18px 40px rgba(0,0,0,.45); padding: 5px; z-index: 5; }
+  .panel .ph2 { font-size: 11px; color: var(--text-3); padding: 4px 8px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .panel .it { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; border-radius: 8px; font-size: 12.5px; cursor: default; }
+  .panel .it.on { background: var(--accent); color: #fff; }
+  .panel .it .k { margin-left: auto; font-size: 11px; color: var(--text-3); }
+  .panel .it.on .k { color: rgba(255,255,255,.8); }
+  .panel .it .s { width: 16px; text-align: center; opacity: .85; }
+  .panel .it.danger { color: var(--danger); } .panel .it.danger.on { color: #fff; background: var(--danger); }
+  .panel .sep { height: 1px; background: var(--hair); margin: 4px 6px; }
+  .ql { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 420px; border-radius: 16px; background: var(--win); border: 1px solid var(--hair); box-shadow: 0 30px 70px rgba(0,0,0,.55); z-index: 6; overflow: hidden; }
+  .ql .qh { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--hair); font-size: 12.5px; }
+  .ql .qh .x { margin-left: auto; color: var(--text-3); }
+  .ql .qb { height: 220px; display: flex; align-items: center; justify-content: center; background: var(--ctl); }
+  .ql .qm { padding: 10px 12px; font-size: 11.5px; color: var(--text-2); }
+  .toast { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); background: rgba(0,0,0,.75); color: #fff; font-size: 12px; padding: 5px 12px; border-radius: 8px; white-space: nowrap; z-index: 7; }
+  body.light .toast { background: rgba(30,30,30,.85); }
+
+  /* ===== settings ===== */
+  .win { border-radius: 14px; background: var(--win); border: 1px solid var(--hair); overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,.35); display: grid; grid-template-columns: 210px 1fr; min-height: 640px; }
+  .win .side { background: var(--side); border-right: 1px solid var(--hair); padding: 14px 10px; }
+  .win .side .dots { display: flex; gap: 7px; padding: 0 6px 18px; } .win .side .dots i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .win .side .st { font-size: 11px; color: var(--text-3); font-weight: 600; padding: 10px 8px 4px; }
+  .win .side .ni { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; border-radius: 8px; color: var(--text-2); font-size: 13px; }
+  .win .side .ni.on { background: var(--accent); color: #fff; }
+  .win .side .ni .new { margin-left: auto; font-size: 10px; background: var(--violet-soft); color: var(--violet-text); padding: 0 5px; border-radius: 4px; }
+  .win .side .ni.on .new { background: rgba(255,255,255,.25); color: #fff; }
+  .win .main { padding: 22px 26px; overflow-y: auto; }
+  .ph3 { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .ph3 .sym { width: 36px; height: 36px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; font-size: 17px; }
+  .ph3 .t { font-size: 17px; font-weight: 650; } .ph3 .d { font-size: 12px; color: var(--text-3); }
+  .tabs { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--ctl); border: 1px solid var(--hair); margin-bottom: 14px; }
+  .tabs button { border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 12.5px; height: 26px; padding: 0 14px; border-radius: 6px; cursor: pointer; }
+  .tabs button.on { background: var(--glass); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .surf { border-radius: 12px; border: 1px solid var(--hair); background: rgba(255,255,255,.02); margin-bottom: 16px; }
+  body.light .surf { background: #fff; }
+  .surf .sh { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 12.5px; font-weight: 600; border-bottom: 1px solid var(--hair); }
+  .surf .sh .r { margin-left: auto; display: flex; gap: 6px; }
+  .srow { display: flex; align-items: center; gap: 12px; padding: 11px 14px; font-size: 13px; }
+  .srow + .srow { border-top: 1px solid var(--hair); }
+  .srow .t { min-width: 0; } .srow .d { color: var(--text-3); font-size: 11.5px; margin-top: 2px; }
+  .srow .r { margin-left: auto; display: flex; gap: 8px; align-items: center; flex: none; }
+  .seg { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--ctl); border: 1px solid var(--hair); }
+  .seg button { border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; height: 24px; padding: 0 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .seg button.on { background: var(--glass); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.25); font-weight: 600; }
+  .sw { width: 32px; height: 19px; border-radius: 10px; background: var(--ctl); border: 1px solid var(--hair); position: relative; cursor: pointer; flex: none; }
+  .sw::after { content: ""; position: absolute; top: 1px; left: 1px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: left .12s; }
+  .sw.on { background: var(--ok); border-color: transparent; } .sw.on::after { left: 14px; }
+  select.sel { background: var(--ctl); color: var(--text); border: 1px solid var(--hair); border-radius: 6px; height: 24px; font: inherit; font-size: 12px; padding: 0 6px; }
+  .path { display: flex; align-items: center; gap: 10px; padding: 6px 14px; font-size: 12.5px; }
+  .path:nth-child(even) { background: var(--hover); }
+  .path .fi { width: 18px; height: 14px; border-radius: 2px 3px 3px 3px; background: linear-gradient(#6cc4ff, #2e9bf0); flex: none; }
+  .path .fi.file { width: 13px; height: 16px; background: #e8e8ec; border-radius: 2px 5px 2px 2px; margin: 0 2.5px; }
+  .path .p { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .path .n { color: var(--text-3); font-size: 11.5px; white-space: nowrap; }
+  .path .del { color: var(--text-3); cursor: pointer; padding: 0 4px; }
+  .path .del:hover { color: var(--danger); }
+  .status { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--hair); border-top: 1px solid var(--hair); }
+  .status div { background: var(--win); padding: 10px 14px; } body.light .status div { background: #fff; }
+  .status .k { font-size: 11px; color: var(--text-3); } .status .v { font-size: 15px; font-weight: 600; margin-top: 2px; }
+  .status .v .live { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); margin-right: 5px; vertical-align: 1px; box-shadow: 0 0 0 3px rgba(52,199,89,.2); }
+  .status .v .live.busy { background: var(--warn); box-shadow: 0 0 0 3px rgba(255,179,64,.2); }
+  .pbar { height: 3px; background: var(--ctl); } .pbar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+  .tip { font-size: 11.5px; color: var(--text-3); padding: 9px 14px; border-top: 1px solid var(--hair); }
+  .exg { border-top: 1px solid var(--hair); }
+  .exg:first-of-type { border-top: 0; }
+  .exg .eh { display: flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 12.5px; cursor: pointer; }
+  .exg .eh .r { margin-left: auto; }
+  .exg .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 12px 34px; }
+  .exg .tag { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 4px 0 8px; border-radius: 6px; background: var(--ctl); font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+  .exg .tag b { font-weight: 400; color: var(--text-3); cursor: pointer; padding: 0 3px; } .exg .tag b:hover { color: var(--danger); }
+  .perm { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+  .perm i { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); display: inline-block; }
+  .perm.ok i { background: var(--ok); }
+
+  /* ===== architecture ===== */
+  .arch { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; align-items: stretch; }
+  .box { border: 1px solid var(--hair); border-radius: 12px; padding: 12px; background: var(--ctl); font-size: 12px; color: var(--text-2); }
+  .box .bt { font-size: 13px; font-weight: 650; color: var(--text); margin-bottom: 6px; }
+  .box.hot { border-color: rgba(10,132,255,.55); background: var(--accent-soft); }
+  table.t { border-collapse: collapse; width: 100%; font-size: 12px; color: var(--text-2); }
+  table.t td, table.t th { border-top: 1px solid var(--hair); padding: 6px 8px; text-align: left; vertical-align: top; }
+  table.t th { color: var(--text-3); font-weight: 600; font-size: 11px; }
+  table.t td b { color: var(--text); }
+  .kbdlist { display: grid; grid-template-columns: 70px 1fr; gap: 4px 10px; font-size: 12px; }
+  .kbdlist span:nth-child(odd) { color: var(--text); font-weight: 600; }
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+  .samples button { border: 1px solid var(--hair); background: var(--ctl); color: var(--text); font: inherit; font-size: 12px; height: 26px; padding: 0 10px; border-radius: 7px; cursor: pointer; }
+  .samples button small { color: var(--text-3); margin-left: 4px; }
+  .ctlrow { display: flex; gap: 10px; align-items: center; margin: 8px 0; flex-wrap: wrap; }
+  .ctlrow .k2 { width: 64px; color: var(--text-3); font-size: 12px; }
+  .log { margin-top: 10px; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--text-2); background: var(--ctl); border: 1px solid var(--hair); border-radius: 8px; padding: 8px 10px; min-height: 52px; white-space: pre-wrap; }
+</style></head>
+<body>
+<h1>启动器内容搜索 · 应用 + 文件</h1>
+<p class="sub">GUL-239 设计稿。一个输入框同时搜应用、系统设置、文件和文件夹：自建文件名索引（内存查询 &lt; 15 ms，FSEvents 增量更新），应用与文件共用一套模糊 / 拼音匹配，↩ 打开、→ 更多操作；新增「设置 · 启动器 · 搜索」页。下方第一块可以直接输入试用，设置页的改动会实时影响搜索结果。配套方案：<code>docs/design/launcher-content-search.md</code>。</p>
+<div class="topbar">
+  <div class="pill" id="theme"><button class="on" data-v="dark">深色</button><button data-v="light">浅色</button></div>
+</div>
+
+<h3>1 · 交互演示</h3>
+<div class="grid2">
+  <div class="stage" id="demoStage"><div id="demo"></div></div>
+  <div class="notes">
+    <div class="label">试试这些输入</div>
+    <div class="samples" id="samples"></div>
+    <div class="ctlrow"><span class="k2">搜索模式</span><div class="seg" id="ctlMode"></div></div>
+    <div class="ctlrow"><span class="k2">索引状态</span><div class="seg" id="ctlIndex"></div></div>
+    <div class="label" style="margin-top:16px">键盘（点进输入框后）</div>
+    <div class="kbdlist">
+      <span>↑ ↓</span><span>移动高亮</span>
+      <span>↩</span><span>打开高亮项（「问 AI」行则发送）</span>
+      <span>⌘↩</span><span>无论高亮在哪都问 AI</span>
+      <span>→</span><span>操作面板（↑↓ 选择，↩ 执行，esc 关闭）</span>
+      <span>⌘R</span><span>在访达中显示</span>
+      <span>⌘Y</span><span>快速查看</span>
+      <span>⇧⌘C</span><span>拷贝路径</span>
+      <span>⇧⌘↩</span><span>带上此文件问 AI</span>
+      <span>⌘↓</span><span>显示全部文件（进入 <code>f</code> 文件模式）</span>
+      <span>⇥ ⇧⇥</span><span>文件模式里切换筛选</span>
+      <span>esc</span><span>关面板 → 清空</span>
+    </div>
+    <div class="log" id="log">操作记录会显示在这里。</div>
+    <ul style="margin-top:14px">
+      <li><b>最佳匹配</b>：短查询且第一名明确命中时单独置顶并占回车，「问 AI」移到最后；否则「问 AI」在第一位。文件的门槛比应用高（≥ 0.88 且领先第二名）。</li>
+      <li><b>拼音可以从中间开始</b>：<code>ht</code>、<code>hetong</code> 都能找到「2026 年度采购合同.pdf」，命中的字会高亮。</li>
+      <li><b>多词</b>：每个词命中名字或所在路径即可，<code>typeflux md</code>、<code>合同 .pdf</code>。</li>
+      <li><b>文件模式</b>：输入 <code>f </code> 或 ⌘↓。可以筛选类型、按最近修改排序、打开「搜内容」（聚焦）。</li>
+    </ul>
+  </div>
+</div>
+
+<h3>2 · 状态一览</h3>
+<div class="gallery" id="gallery"></div>
+
+<h3>3 · 设置 · 启动器 · 搜索（新页面，可交互，改动会影响上方演示）</h3>
+<div class="grid2">
+  <div class="win" id="settings"></div>
+  <div class="notes">
+    <ul>
+      <li><b>常规</b>：搜索模式（参考产品的 Hybrid / APP First / DOC First）、模糊匹配（对应 App Fuzzy Search，现在应用和文件共用）、结果数量、图标样式。</li>
+      <li><b>应用范围</b>：默认就是现在 <code>AskAppIndex.defaultRoots</code> 的 5 处；可以增删、恢复默认；「搜索系统设置」把 网络、显示器 等面板作为结果。</li>
+      <li><b>文件范围</b>：默认 <code>~</code>。状态卡显示条目数、内存、最近更新、是否实时监控；可以重建或清除索引。快捷添加 iCloud 云盘和网盘目录。</li>
+      <li><b>排除</b>：按路径 / 文件类型 / 文件夹名，和参考产品一致；默认排除开发与缓存目录。修改后只重扫受影响的部分。</li>
+      <li><b>权限</b>：桌面、文稿、下载受 macOS 隐私保护。没有完全磁盘访问权限时，这三个目录的条目会在启动器里提示授权（演示：把右侧「索引状态」切到「未授权」）。</li>
+      <li>试试：在「排除 · 文件夹名」里删掉 <code>node_modules</code>，再搜 <code>readme</code>；或在文件范围里删掉 <code>~</code>，只保留 iCloud。</li>
+    </ul>
+  </div>
+</div>
+
+<h3>4 · 索引与检索</h3>
+<div class="arch">
+  <div class="box"><div class="bt">① 范围 + 排除规则</div>设置里的目录列表；按路径 / 类型 / 文件夹名排除；隐藏文件、包内部默认不进。</div>
+  <div class="box"><div class="bt">② 首次扫描</div><code>getattrlistbulk</code> 批量读目录项（名字、类型、修改时间），后台 utility 优先级，低电量暂停；被排除的目录整个跳过。</div>
+  <div class="box hot"><div class="bt">③ 内存索引</div>目录树 + 连续名字缓冲 + 32 字节条目；字符掩码预筛，16K 一段并行扫描；拼音键只给含汉字的名字。50 万条 ≈ 31 MB。</div>
+  <div class="box"><div class="bt">④ 增量与快照</div>FSEvents 文件级事件（0.5 s）→ 增 / 删 / 改名；退出时写快照并记 <code>lastEventId</code>，下次启动加载快照后补齐离线变化，不重扫。</div>
+  <div class="box"><div class="bt">⑤ 聚焦（辅助）</div>首次建索引期间顶上文件名搜索；文件模式「搜内容」用 <code>kMDItemTextContent</code>。异步、防抖 150 ms、可取消。</div>
+</div>
+<div class="grid2" style="margin-top:20px; grid-template-columns: 1fr 1fr;">
+  <div>
+    <div class="label">匹配规则（应用与文件共用 · AskFuzzyMatcher）</div>
+    <table class="t">
+      <tr><th>命中方式</th><th>得分</th><th>例子</th></tr>
+      <tr><td>全名（文件不含扩展名也算）</td><td>1.0</td><td><code>readme</code> → README.md</td></tr>
+      <tr><td>拼音全拼完全相同</td><td>0.95</td><td><code>weixin</code> → 微信</td></tr>
+      <tr><td>名称前缀</td><td>0.9</td><td><code>calc</code> → Calculator</td></tr>
+      <tr><td>首字母 / 拼音首字母完全相同</td><td>0.88</td><td><code>vsc</code>、<code>wx</code></td></tr>
+      <tr><td>拼音全拼前缀</td><td>0.86</td><td><code>weix</code></td></tr>
+      <tr><td>词首前缀</td><td>0.82</td><td><code>studio</code></td></tr>
+      <tr><td>首字母前缀</td><td>0.8</td><td><code>vs</code></td></tr>
+      <tr><td><b>新</b> 拼音从中间开始（全拼 / 首字母）</td><td>0.7 / 0.66</td><td><code>ht</code> → 采购<b>合同</b></td></tr>
+      <tr><td>包含</td><td>0.6</td><td><code>hat</code> → WeChat</td></tr>
+      <tr><td>按顺序出现（模糊匹配开关）</td><td>0.45–0.55</td><td><code>tbpls</code> → TablePlus</td></tr>
+      <tr><td><b>新</b> 只出现在路径中（多词）</td><td>0.4</td><td><code>typeflux md</code></td></tr>
+    </table>
+    <p class="notes" style="margin-top:8px">最终分 = 匹配分 + 使用次数（每次 +0.005，≤ 0.05）+ 最近修改 <code>0.06·e^(−天/14)</code> − 路径深度（每层 0.004，≤ 0.04）。</p>
+  </div>
+  <div>
+    <div class="label">性能目标</div>
+    <table class="t">
+      <tr><th>指标</th><th>目标</th></tr>
+      <tr><td>按键到出结果（50 万条，M1）</td><td><b>p50 &lt; 5 ms · p95 &lt; 15 ms</b></td></tr>
+      <tr><td>应用搜索</td><td>&lt; 1 ms</td></tr>
+      <tr><td>首次建索引（30 万文件）</td><td>&lt; 30 s，CPU ≤ 1 核</td></tr>
+      <tr><td>改动到能搜到</td><td>&lt; 2 s</td></tr>
+      <tr><td>冷启动加载快照（50 万条）</td><td>&lt; 200 ms，不在主线程</td></tr>
+      <tr><td>内存（50 万条）</td><td>&lt; 40 MB</td></tr>
+    </table>
+    <p class="notes" style="margin-top:8px">索引只含文件名、路径、类型和修改时间，只存在本机，不上传、不进对话；不读取文件内容。</p>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------- data
+const PY = {微:'wei',信:'xin',计:'ji',算:'suan',器:'qi',系:'xi',统:'tong',设:'she',置:'zhi',访:'fang',达:'da',备:'bei',忘:'wang',录:'lu',
+  音:'yin',乐:'yue',飞:'fei',书:'shu',预:'yu',览:'lan',终:'zhong',端:'duan',网:'wang',络:'luo',显:'xian',示:'shi',蓝:'lan',牙:'ya',键:'jian',盘:'pan',
+  合:'he',同:'tong',年:'nian',度:'du',采:'cai',购:'gou',内:'nei',容:'rong',搜:'sou',索:'suo',方:'fang',案:'an',截:'jie',图:'tu',周:'zhou',报:'bao',
+  第:'di',会:'hui',议:'yi',纪:'ji',要:'yao',团:'tuan',建:'jian',简:'jian',历:'li',台:'tai',账:'zhang',发:'fa',票:'piao',需:'xu',求:'qiu',文:'wen',档:'dang',
+  照:'zhao',片:'pian',屏:'ping',幕:'mu',共:'gong',享:'xiang',通:'tong',知:'zhi',用:'yong',户:'hu',访:'fang',谈:'tan',评:'ping',审:'shen',产:'chan',品:'pin',
+  规:'gui',划:'hua',季:'ji',数:'shu',据:'ju'};
+const NOW_DAYS = 0;
+const APPS = [
+  { name: '微信', alt: ['WeChat'], loc: '/Applications', c: ['#2dc100','#1aa100'], g: '💬', launches: 9 },
+  { name: '计算器', alt: ['Calculator'], loc: '系统', c: ['#8e8e93','#3a3a3c'], g: '🧮' },
+  { name: 'Visual Studio Code', alt: [], loc: '/Applications', c: ['#2fa8f4','#0065a9'], g: '⟨⟩', launches: 6 },
+  { name: 'Safari', alt: ['Safari 浏览器'], loc: '系统', c: ['#5ac8fa','#0a84ff'], g: '🧭' },
+  { name: '访达', alt: ['Finder'], loc: '系统', c: ['#6ac4ff','#1d7ff0'], g: '☺' },
+  { name: '备忘录', alt: ['Notes'], loc: '系统', c: ['#ffe36a','#f5c400'], g: '✎' },
+  { name: 'QQ音乐', alt: ['QQ Music'], loc: '/Applications', c: ['#31c27c','#11a05c'], g: '♪' },
+  { name: 'TablePlus', alt: [], loc: '/Applications', c: ['#ffcc33','#e8a400'], g: '⛁' },
+  { name: '飞书', alt: ['Lark', 'Feishu'], loc: '/Applications', c: ['#3370ff','#00d6b9'], g: '✈', launches: 4 },
+  { name: 'Google Chrome', alt: [], loc: '/Applications', c: ['#fbbc05','#ea4335'], g: '◉', launches: 8 },
+  { name: 'Figma', alt: [], loc: '/Applications', c: ['#a259ff','#f24e1e'], g: '✦' },
+  { name: '预览', alt: ['Preview'], loc: '系统', c: ['#9fd3ff','#4a90e2'], g: '🖼' },
+  { name: 'Typeflux', alt: [], loc: '/Applications', c: ['#5e5ce6','#bf5af2'], g: '◎', launches: 3 },
+  { name: '终端', alt: ['Terminal'], loc: '系统', c: ['#3a3a3c','#000'], g: '>_' },
+  { name: 'Xcode', alt: [], loc: '/Applications', c: ['#5ac8fa','#147efb'], g: '⚒' },
+  { name: '系统设置', alt: ['System Settings'], loc: '系统', c: ['#a1a1a6','#636366'], g: '⚙' },
+].map(a => ({ ...a, kind: 'app' }));
+const PANES = [
+  { name: '网络', alt: ['Network'], c: ['#0a84ff','#0a84ff'], g: '🌐' },
+  { name: '显示器', alt: ['Displays'], c: ['#0a84ff','#0a84ff'], g: '🖥' },
+  { name: '蓝牙', alt: ['Bluetooth'], c: ['#0a84ff','#0a84ff'], g: 'ᛒ' },
+  { name: '键盘', alt: ['Keyboard'], c: ['#8e8e93','#8e8e93'], g: '⌨' },
+  { name: '屏幕共享', alt: ['Screen Sharing'], c: ['#30d158','#30d158'], g: '⧉' },
+  { name: '通知', alt: ['Notifications'], c: ['#ff453a','#ff453a'], g: '🔔' },
+].map(p => ({ ...p, kind: 'pane', loc: '系统设置' }));
+const H = '~';
+const FILES = [
+  ['~/Documents/合同/2026 年度采购合同.pdf', 2, 'file', 3],
+  ['~/Documents/合同/合同台账.xlsx', 3],
+  ['~/Documents/合同/框架合同-飞书.docx', 40],
+  ['~/Documents/合同', 1, 'folder'],
+  ['~/Documents/Typeflux/设计/内容搜索方案.md', 0, 'file', 2],
+  ['~/Documents/Typeflux/设计/search-index-benchmark.numbers', 1],
+  ['~/Documents/Typeflux/设计/启动器截图.png', 1],
+  ['~/Documents/Typeflux/用户访谈纪要.docx', 12],
+  ['~/Documents/周报/周报-第40周.docx', 4],
+  ['~/Documents/周报/周报-第39周.docx', 11],
+  ['~/Documents/会议纪要', 6, 'folder'],
+  ['~/Documents/会议纪要/产品评审会议纪要 10-02.md', 5],
+  ['~/Documents/Q3 Roadmap.key', 30],
+  ['~/Documents/budget-2026.xlsx', 15],
+  ['~/Documents/发票/invoice-2026-09.pdf', 20],
+  ['~/Downloads/invoice-2026-08.pdf', 48],
+  ['~/Downloads/WeChat_20261003.mp4', 4],
+  ['~/Downloads/Figma-agent-1.12.dmg', 9],
+  ['~/Desktop/截图 2026-10-06 21.14.png', 1],
+  ['~/Desktop/屏幕录制 2026-10-05.mov', 2],
+  ['~/Pictures/团建/IMG_2041.HEIC', 60],
+  ['~/Pictures/团建', 60, 'folder'],
+  ['~/Projects/typeflux', 0, 'folder'],
+  ['~/Projects/typeflux/README.md', 3],
+  ['~/Projects/typeflux/docs/design/launcher-content-search.md', 0],
+  ['~/Projects/typeflux/Sources/Typeflux/Ask/QuickResults/Apps/AskAppIndex.swift', 1],
+  ['~/Projects/typeflux/Sources/Typeflux/Ask/QuickResults/Apps/AskAppMatcher.swift', 1],
+  ['~/Projects/typeflux/Package.swift', 6],
+  ['~/Projects/typeflux/node_modules/typescript/README.md', 80],
+  ['~/Projects/typeflux/node_modules/vite/README.md', 80],
+  ['~/Projects/typeflux/.build/debug/Typeflux', 0],
+  ['~/Projects/typeflux/.env', 7],
+  ['~/Projects/realtime-asr', 5, 'folder'],
+  ['~/Projects/realtime-asr/README.md', 5],
+  ['~/Projects/typeflux-docs/docs/usage.md', 8],
+  ['~/Library/Caches/com.tinyspeck.slackmacgap/cache.db', 0],
+  ['~/Library/Mobile Documents/com~apple~CloudDocs/简历-2026.pdf', 25, 'file', 0, true],
+  ['~/Library/Mobile Documents/com~apple~CloudDocs/数据规划 Q4.numbers', 6, 'file', 0, true],
+  ['~/Library/CloudStorage/GoogleDrive-me/Shared/合同模板.docx', 70, 'file', 0, true],
+].map(([path, days, kind = 'file', opens = 0, cloud = false]) => {
+  const parts = path.split('/');
+  const name = parts[parts.length - 1];
+  const dot = kind === 'file' ? name.lastIndexOf('.') : -1;
+  const ext = dot > 0 ? name.slice(dot + 1).toLowerCase() : '';
+  return { kind, name, path, dir: parts.slice(0, -1).join('/'), ext, days, opens, cloud, alt: [] };
+});
+const CONTENT = { // what Spotlight's content search would add in file mode
+  '索引': [['~/Documents/Typeflux/设计/内容搜索方案.md', '…自建文件名<mark>索引</mark>放在内存里，按键时直接查…'],
+           ['~/Documents/会议纪要/产品评审会议纪要 10-02.md', '…文件搜索要有独立的<mark>索引</mark>，不能逐键查聚焦…']],
+  '付款': [['~/Documents/合同/2026 年度采购合同.pdf', '…第五条 <mark>付款</mark>方式：验收合格后 30 日内…'],
+           ['~/Documents/发票/invoice-2026-09.pdf', '…<mark>付款</mark>账户：招商银行…']],
+  'roadmap': [['~/Documents/budget-2026.xlsx', '…Q3 <mark>roadmap</mark> items: launcher search, word card…']],
+};
+const TYPE = { pdf: ['PDF', '#e5252a', 'pdf'], doc: ['DOC', '#2b5797', 'doc'], docx: ['DOC', '#2b5797', 'doc'], md: ['MD', '#5e5ce6', 'code'], swift: ['SWIFT', '#f05138', 'code'],
+  xlsx: ['XLS', '#1d6f42', 'sheet'], numbers: ['NUM', '#30a14e', 'sheet'], key: ['KEY', '#0a84ff', 'sheet'], png: ['', '', 'image'], heic: ['', '', 'image'],
+  mov: ['MOV', '#8e8e93', 'other'], mp4: ['MP4', '#8e8e93', 'other'], dmg: ['DMG', '#8e8e93', 'other'], db: ['DB', '#8e8e93', 'other'], '': ['', '#8e8e93', 'other'] };
+const GROUPS = { doc: '文档', image: '图片', pdf: 'PDF', sheet: '表格与演示', code: '代码' };
+function typeOf(f) { if (f.kind === 'folder') return 'folder'; if (f.ext === 'pdf') return 'pdf'; const t = TYPE[f.ext]; return t ? t[2] : 'other'; }
+
+// ---------------------------------------------------------------- settings
+const DEFAULT_APP_SCOPES = ['/Applications', '~/Applications', '/System/Applications', '/System/Library/CoreServices/Applications', '/System/Library/CoreServices/Finder.app'];
+const S = {
+  mode: 'hybrid', fuzzy: true, limit: 30, icons: 'thumb', panes: true, files: true,
+  appScopes: [...DEFAULT_APP_SCOPES],
+  fileScopes: ['~', '~/Library/Mobile Documents'],
+  exPaths: ['~/Library'], exTypes: [], exNames: ['node_modules', '.git', '.build', 'DerivedData', 'Pods', '__pycache__', '.venv'],
+  hidden: false, index: 'ready', fda: true, tab: 'general',
+};
+function under(path, root) { return path === root || path.startsWith(root.endsWith('/') ? root : root + '/'); }
+function fileVisible(f) {
+  if (!S.files) return false;
+  const inScope = S.fileScopes.some(r => under(f.path, r));
+  if (!inScope) return false;
+  // An explicitly added scope beats a broader excluded path (~/Library vs ~/Library/Mobile Documents).
+  const deepest = S.fileScopes.filter(r => under(f.path, r)).sort((a, b) => b.length - a.length)[0];
+  if (S.exPaths.some(p => under(f.path, p) && !under(deepest, p))) return false;
+  const comps = f.path.split('/');
+  if (comps.some(c => S.exNames.includes(c))) return false;
+  if (!S.hidden && comps.some(c => c.startsWith('.') && c !== '~')) return false;
+  if (S.exTypes.includes(f.ext)) return false;
+  return true;
+}
+
+// ---------------------------------------------------------------- matching
+function segs(name) {
+  const out = []; let buf = '', start = 0, i = 0;
+  for (const ch of name) {
+    if (PY[ch]) { if (buf) out.push({ t: buf, py: buf.toLowerCase().replace(/[^a-z0-9]/g, ''), at: start }); buf = ''; out.push({ t: ch, py: PY[ch], at: i, han: true }); start = i + 1; }
+    else { if (!buf) start = i; buf += ch; }
+    i++;
+  }
+  if (buf) out.push({ t: buf, py: buf.toLowerCase().replace(/[^a-z0-9]/g, ''), at: start });
+  return out.filter(s => s.py);
+}
+function wordStarts(name) {
+  const s = [0]; const a = [...name];
+  for (let i = 1; i < a.length; i++) {
+    const p = a[i - 1], c = a[i];
+    if (/[\s\-_.·&+()]/.test(p) && !/[\s\-_.]/.test(c)) s.push(i);
+    else if (/[a-z]/.test(p) && /[A-Z]/.test(c)) s.push(i);
+    else if (/[^0-9]/.test(p) && /[0-9]/.test(c) && !/[0-9]/.test(p)) s.push(i);
+  }
+  return s;
+}
+function initials(name) {
+  const st = wordStarts(name); if (st.length < 2) return null;
+  const a = [...name]; return { s: st.map(i => a[i].toLowerCase()).join(''), at: st };
+}
+function stem(f) { return f.kind === 'file' && f.ext ? f.name.slice(0, f.name.length - f.ext.length - 1) : f.name; }
+function matchText(q, name, display) {
+  // q: lowercase trimmed token; returns {s, hl:[[from,to]]} with indices into `name` (display only if display)
+  const n = name.toLowerCase(); const qc = q.replace(/\s/g, ''); const flat = n.replace(/\s/g, '');
+  if (n === q || flat === qc) return { s: 1, hl: [[0, name.length]] };
+  if (n.startsWith(q)) return { s: .9, hl: [[0, q.length]] };
+  for (const i of wordStarts(name)) if (i > 0 && n.startsWith(q, i)) return { s: .82, hl: [[i, i + q.length]] };
+  if (qc.length >= 2) {
+    const ini = initials(name);
+    if (ini && /^[a-z0-9]+$/.test(qc)) {
+      if (ini.s === qc) return { s: .88, hl: ini.at.map(i => [i, i + 1]) };
+      if (ini.s.startsWith(qc)) return { s: .8, hl: ini.at.slice(0, qc.length).map(i => [i, i + 1]) };
+    }
+  }
+  if (qc.length >= 2) { const i = n.indexOf(q); if (i >= 0) return { s: .6, hl: [[i, i + q.length]] }; }
+  if (S.fuzzy && qc.length >= 3) {
+    const hl = []; let k = 0; const a = [...n];
+    for (let i = 0; i < a.length && k < qc.length; i++) if (a[i] === qc[k]) { hl.push([i, i + 1]); k++; }
+    if (k === qc.length) { const span = hl[hl.length - 1][1] - hl[0][0]; return { s: .45 + .1 * (qc.length / span), hl }; }
+  }
+  return null;
+}
+function matchPinyin(q, name) {
+  if (!/^[a-z]+$/.test(q) || q.length < 2) return null;
+  const sg = segs(name); if (!sg.some(s => s.han)) return null;
+  let best = null;
+  const take = (s, from, to) => { if (!best || s > best.s) best = { s, hl: sg.slice(from, to).map(x => [x.at, x.at + [...x.t].length]) }; };
+  for (let st = 0; st < sg.length; st++) {
+    if (!sg[st].han && st > 0) continue;
+    let rest = q, k = st;
+    while (rest && k < sg.length) { const p = sg[k].py; if (rest.startsWith(p)) { rest = rest.slice(p.length); k++; } else if (p.startsWith(rest) && sg[k].han) { rest = ''; k++; } else break; }
+    if (!rest && k > st && sg.slice(st, k).some(x => x.han)) take(st === 0 ? (k === sg.length ? .95 : .86) : .7, st, k);
+    let j = 0, k2 = st; while (j < q.length && k2 < sg.length && sg[k2].py[0] === q[j]) { j++; k2++; }
+    if (j === q.length && sg.slice(st, k2).some(x => x.han)) take(st === 0 ? (k2 === sg.length ? .88 : .8) : .66, st, k2);
+  }
+  return best;
+}
+function matchEntry(token, e) {
+  let best = null;
+  const consider = (m, own) => { if (m && (!best || m.s > best.s)) best = { s: m.s, hl: own ? m.hl : [] }; };
+  const names = e.kind === 'file' ? [stem(e), e.name] : [e.name];
+  for (const nm of names) { consider(matchText(token, nm), true); consider(matchPinyin(token.replace(/\s/g, ''), nm), true); }
+  for (const a of e.alt) { consider(matchText(token, a), false); consider(matchPinyin(token.replace(/\s/g, ''), a), false); }
+  if (best && best.s === 1 && e.kind === 'file') best.hl = [[0, stem(e).length]];
+  return best;
+}
+function parseQuery(text) {
+  const tokens = []; let ext = null, inDir = null;
+  for (const raw of text.trim().split(/\s+/).filter(Boolean)) {
+    const t = raw.toLowerCase();
+    if (/^\.[a-z0-9]{1,6}$/.test(t)) ext = t.slice(1);
+    else if (t.startsWith('ext:') && t.length > 4) ext = t.slice(4);
+    else if (t.startsWith('in:') && t.length > 3) inDir = t.slice(3);
+    else tokens.push(t);
+  }
+  return { tokens, ext, inDir };
+}
+function scoreFile(f, pq) {
+  if (pq.ext && f.ext !== pq.ext) return null;
+  if (pq.inDir && !f.dir.toLowerCase().split('/').some(c => c.includes(pq.inDir))) return null;
+  if (!pq.tokens.length) return (pq.ext || pq.inDir) ? { s: .5, hl: [] } : null;
+  let sum = 0; const hl = [];
+  const single = pq.tokens.length === 1;
+  for (const t of pq.tokens) {
+    const m = matchEntry(t, f);
+    if (m) { sum += m.s; hl.push(...m.hl); continue; }
+    if (single) return null;
+    if (f.dir.toLowerCase().split('/').some(c => c.includes(t) || (matchPinyin(t, c) || {}).s)) { sum += .4; continue; }
+    return null;
+  }
+  return { s: sum / pq.tokens.length, hl };
+}
+function rankFile(f, m) {
+  const depth = f.path.split('/').length - 2;
+  return m.s + .06 * Math.exp(-f.days / 14) + Math.min(f.opens, 10) * .005 - Math.min(depth * .004, .04);
+}
+function searchAll(text) {
+  const pq = parseQuery(text);
+  const q = pq.tokens.join(' ');
+  const apps = [], panes = [], files = [], folders = [];
+  if (q && !pq.ext && !pq.inDir && q.length <= 40) {
+    for (const a of APPS.filter(a => S.appScopes.some(r => a.loc === '系统' ? r.startsWith('/System') : r === a.loc))) {
+      const m = matchEntry(q, a); if (!m || (q.replace(/\s/g, '').length === 1 && m.s < .82)) continue;
+      apps.push({ e: a, m, score: m.s + Math.min(a.launches || 0, 10) * .005 });
+    }
+    if (S.panes) for (const p of PANES) { const m = matchEntry(q, p); if (m && !(q.length === 1 && m.s < .82)) panes.push({ e: p, m, score: m.s - .01 }); }
+  }
+  if (S.index !== 'off') for (const f of FILES.filter(fileVisible)) {
+    if (S.index === 'noaccess' && /^~\/(Documents|Desktop|Downloads)\b/.test(f.path)) continue;
+    const m = scoreFile(f, pq); if (!m) continue;
+    if (q.replace(/\s/g, '').length === 1 && m.s < .82) continue;
+    (f.kind === 'folder' ? folders : files).push({ e: f, m, score: rankFile(f, m) });
+  }
+  const by = (a, b) => b.score - a.score || a.e.name.length - b.e.name.length || a.e.name.localeCompare(b.e.name);
+  [apps, panes, files, folders].forEach(l => l.sort(by));
+  return { apps, panes, files, folders, pq };
+}
+function shortQuery(text) {
+  const t = text.trim(); return t.length >= 2 && t.split(/\s+/).length <= 3 && !/[?？。，,!！:：;；]/.test(t);
+}
+
+// ---------------------------------------------------------------- results model
+function buildRows(state) {
+  const text = state.query;
+  const fileMode = /^f[ :：]/i.test(text);
+  const q = fileMode ? text.slice(2) : text;
+  const rows = [];
+  if (!q.trim() && !fileMode) return { rows, fileMode, q };
+  const r = searchAll(q);
+  const notices = [];
+  if (S.files && S.index === 'building') notices.push({ type: 'notice', kind: 'building' });
+  if (S.files && S.index === 'noaccess') notices.push({ type: 'notice', kind: 'noaccess' });
+  if (fileMode) {
+    const recent = !q.trim();
+    let list = recent
+      ? FILES.filter(x => fileVisible(x) && !(S.index === 'noaccess' && /^~\/(Documents|Desktop|Downloads)\b/.test(x.path)))
+          .map(e => ({ e, m: { s: 0, hl: [] }, score: -e.days }))
+      : [...r.files, ...r.folders];
+    const f = state.filter;
+    if (f !== 'all') list = list.filter(x => typeOf(x.e) === f || (f === 'doc' && typeOf(x.e) === 'doc'));
+    if (state.sort === 'recent' || recent) list.sort((a, b) => a.e.days - b.e.days); else list.sort((a, b) => b.score - a.score);
+    if (state.content) {
+      const key = Object.keys(CONTENT).find(k => q.trim().toLowerCase().includes(k));
+      if (key) for (const [p, snip] of CONTENT[key]) {
+        const e = FILES.find(x => x.path === p);
+        if (e && fileVisible(e) && !list.some(x => x.e === e)) list.push({ e, m: { s: .3, hl: [] }, score: .3, snip });
+      }
+    }
+    list = list.slice(0, S.limit);
+    notices.forEach(n => rows.push(n));
+    if (list.length) { rows.push({ type: 'group', title: recent ? '最近修改' : '文件', n: list.length }); list.forEach((x, i) => rows.push({ type: 'item', x, lead: i === 0 })); }
+    else if (q.trim()) rows.push({ type: 'empty', text: '没有找到文件' + (state.content ? '' : ' · ⌘F 也搜文件内容') });
+    if (q.trim()) { rows.push({ type: 'group', title: '问 AI' }); rows.push({ type: 'ask' }); }
+    return { rows, fileMode, q, lead: list.length > 0 };
+  }
+  const groups = [
+    { key: 'apps', title: '应用', list: r.apps.slice(0, 5), total: r.apps.length },
+    { key: 'panes', title: '系统设置', list: r.panes.slice(0, 3), total: r.panes.length },
+    { key: 'files', title: '文件', list: r.files.slice(0, 6), total: r.files.length },
+    { key: 'folders', title: '文件夹', list: r.folders.slice(0, 3), total: r.folders.length },
+  ].filter(g => g.list.length);
+  const top = (g) => g.list[0].score;
+  if (S.mode === 'hybrid') groups.sort((a, b) => top(b) - top(a));
+  else {
+    const fileKinds = ['files', 'folders'];
+    const rank = g => S.mode === 'apps' ? (fileKinds.includes(g.key) ? 1 : 0) : (fileKinds.includes(g.key) ? 0 : 1);
+    groups.sort((a, b) => rank(a) - rank(b) || top(b) - top(a));
+  }
+  // Best match: short query and a clear winner. Files need more than apps.
+  let best = null;
+  if (shortQuery(q) && groups.length) {
+    const all = groups.flatMap(g => g.list.map(x => ({ x, g })));
+    all.sort((a, b) => b.x.score - a.x.score || (a.g.key === 'apps' ? -1 : 1));
+    const first = all[0], second = all[1];
+    const isApp = first.g.key === 'apps' || first.g.key === 'panes';
+    const ok = isApp ? first.x.m.s >= .8 : (first.x.m.s >= .88 && (!second || first.x.score - second.x.score >= .05));
+    const pref = S.mode === 'apps' ? groups[0] : S.mode === 'files' ? groups[0] : null;
+    if (ok && (!pref || pref === first.g || S.mode === 'hybrid')) best = first;
+    else if (ok && pref) { const p = pref.list[0]; const pApp = pref.key === 'apps' || pref.key === 'panes'; if (pApp ? p.m.s >= .8 : p.m.s >= .88) best = { x: p, g: pref }; }
+  }
+  if (best) { rows.push({ type: 'group', title: '最佳匹配' }); rows.push({ type: 'item', x: best.x, lead: true }); }
+  else if (groups.length || notices.length) { rows.push({ type: 'group', title: '问 AI' }); rows.push({ type: 'ask' }); }
+  notices.forEach(n => rows.push(n));
+  for (const g of groups) {
+    const list = g.list.filter(x => !best || x !== best.x);
+    if (!list.length) continue;
+    rows.push({ type: 'group', title: g.title, n: g.total > g.list.length ? g.total : null });
+    list.forEach(x => rows.push({ type: 'item', x }));
+    if (g.key === 'files' && g.total > g.list.length) rows.push({ type: 'more', total: g.total });
+  }
+  if (best) { rows.push({ type: 'group', title: '问 AI' }); rows.push({ type: 'ask' }); }
+  if (!rows.length) return { rows, fileMode, q };
+  return { rows, fileMode, q, lead: !!best };
+}
+const selectable = r => r.type === 'item' || r.type === 'ask' || r.type === 'more';
+
+// ---------------------------------------------------------------- rendering
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function marked(name, hl) {
+  const a = [...name]; const on = new Array(a.length).fill(false);
+  for (const [f, t] of hl) for (let i = f; i < t && i < a.length; i++) on[i] = true;
+  let out = '', open = false;
+  a.forEach((c, i) => { if (on[i] && !open) { out += '<mark>'; open = true; } if (!on[i] && open) { out += '</mark>'; open = false; } out += esc(c); });
+  return out + (open ? '</mark>' : '');
+}
+function icon(e) {
+  if (e.kind === 'app') return `<span class="ic app" style="background:linear-gradient(135deg,${e.c[0]},${e.c[1]})">${e.g}</span>`;
+  if (e.kind === 'pane') return `<span class="ic pane" style="background:${e.c[0]}">${e.g}</span>`;
+  if (e.kind === 'folder') return '<span class="ic folder"></span>';
+  const t = TYPE[e.ext] || TYPE[''];
+  if (t[2] === 'image' && S.icons === 'thumb') {
+    const h = [...e.name].reduce((s, c) => s + c.charCodeAt(0), 0) % 360;
+    return `<span class="ic thumb" style="background:linear-gradient(135deg,hsl(${h},60%,62%),hsl(${(h + 60) % 360},55%,40%))"></span>`;
+  }
+  if (t[2] === 'image') return '<span class="ic doc"><span style="background:#8e8e93">IMG</span></span>';
+  return `<span class="ic doc">${t[0] ? `<span style="background:${t[1]}">${t[0]}</span>` : ''}</span>`;
+}
+function ago(d) { return d === 0 ? '今天' : d === 1 ? '昨天' : d < 7 ? `${d} 天前` : d < 30 ? `${Math.round(d / 7)} 周前` : `${Math.round(d / 30)} 个月前`; }
+function rowHTML(r, i, state) {
+  const hl = i === state.hl;
+  if (r.type === 'group') return `<div class="grp">${esc(r.title)}${r.n ? `<span class="n">· ${r.n}</span>` : ''}</div>`;
+  if (r.type === 'empty') return `<div class="row notice">${esc(r.text)}</div>`;
+  if (r.type === 'notice') {
+    if (r.kind === 'building') return `<div class="row notice"><span class="tile" style="width:22px;height:22px;font-size:11px">⟳</span>正在建立文件索引 · 已收录 ${(state.progress * 2483).toLocaleString()} 项<div class="bar2"><i style="width:${state.progress}%"></i></div><span style="color:var(--text-3)">${state.progress}% · 期间结果来自聚焦</span></div>`;
+    return `<div class="row notice"><span class="tile" style="width:22px;height:22px;font-size:11px;background:rgba(255,179,64,.18);color:var(--warn)">!</span>授权后可以搜索 文稿 · 桌面 · 下载 <a data-act="fda">打开系统设置 ›</a></div>`;
+  }
+  if (r.type === 'more') return `<div class="row more ${hl ? 'hl' : ''}" data-i="${i}">显示全部 ${r.total} 个文件<span class="right">⌘↓</span></div>`;
+  if (r.type === 'ask') return `<div class="row ${hl ? 'hl' : ''}" data-i="${i}"><span class="tile">✦</span><span class="nm">问 AI</span><span class="loc" style="color:var(--text-2);font-size:13px">“${esc(state.fileModeQ ?? state.query)}”</span><span class="right">⌘↩</span></div>`;
+  const { e, m } = r.x;
+  const right = hl ? `${e.kind === 'app' || e.kind === 'pane' ? '打开' : '打开'} ↩ <span style="opacity:.7">· → 更多</span>` : (e.kind === 'file' || e.kind === 'folder') ? ago(e.days) : '';
+  const alt = e.alt && e.alt.length && !m.hl.length ? `<span class="alt">${esc(e.alt[0])}</span>` : '';
+  const loc = e.kind === 'file' || e.kind === 'folder' ? e.dir.replace('~/Library/Mobile Documents/com~apple~CloudDocs', 'iCloud 云盘') : e.loc;
+  const cloud = e.cloud ? '<span class="cloud">☁</span>' : '';
+  if (r.x.snip) return `<div class="row two ${hl ? 'hl' : ''} ${hl && r.lead ? 'lead' : ''}" data-i="${i}">${icon(e)}<div class="stack"><div class="l1"><span class="nm">${esc(e.name)}</span><span class="badge">内容匹配</span><span class="loc">${esc(loc)}</span></div><div class="snip">${r.x.snip}</div></div><span class="right">${right}</span></div>`;
+  return `<div class="row ${hl ? 'hl' : ''} ${hl && r.lead ? 'lead' : ''}" data-i="${i}">${icon(e)}<span class="nm">${marked(e.name, m.hl)}</span>${alt}${cloud}<span class="loc">${esc(loc)}</span><span class="right">${right}</span></div>`;
+}
+function hintFor(row) {
+  if (!row) return '<b>↩</b> 发送 · <b>esc</b> 关闭';
+  if (row.type === 'ask') return '<b>↩</b> 发送 · <b>esc</b> 关闭';
+  if (row.type === 'more') return '<b>↩</b> 显示全部文件 · <b>⌘↩</b> 问 AI · <b>esc</b> 关闭';
+  const k = row.x.e.kind;
+  if (k !== 'file') return '<b>↩</b> 打开 · <b>→</b> 更多操作 · <b>⌘↩</b> 问 AI · <b>esc</b> 关闭';
+  return '<b>↩</b> 打开 · <b>⌘Y</b> 快速查看 · <b>→</b> 更多操作 · <b>⌘↩</b> 问 AI';
+}
+function actionsFor(e) {
+  if (e.kind === 'app') return [['↗', '打开', '↩'], ['⌕', '在访达中显示', '⌘R'], ['⧉', '拷贝路径', '⇧⌘C'], ['ⓘ', '显示简介', '⌘I'], 'sep', ['⏻', '退出', '⌘Q']];
+  if (e.kind === 'pane') return [['↗', '打开', '↩']];
+  if (e.kind === 'folder') return [['↗', '打开', '↩'], ['⌕', '在访达中显示', '⌘R'], ['>_', '在终端中打开', '⌥⌘T'], ['⧉', '拷贝路径', '⇧⌘C'], ['⌕', '在此文件夹中搜索', '⇥']];
+  return [['↗', '打开', '↩'], ['▤', '打开方式…', '⌥↩'], ['⌕', '在访达中显示', '⌘R'], ['◉', '快速查看', '⌘Y'], 'sep',
+    ['⧉', '拷贝路径', '⇧⌘C'], ['⎘', '拷贝文件', '⌥⌘C'], ['✦', '带上此文件问 AI', '⇧⌘↩'], 'sep', ['⌫', '移到废纸篓', '⌘⌫', 'danger']];
+}
+function cardHTML(state, interactive) {
+  const model = buildRows(state); state.model = model;
+  const fileMode = model.fileMode;
+  state.fileModeQ = fileMode ? model.q : null;
+  const shown = fileMode ? model.q : state.query;
+  const editor = interactive
+    ? `${fileMode ? '<span class="kw"><span class="g">⌕</span>文件</span>' : ''}<input id="q" autocomplete="off" spellcheck="false" placeholder="${fileMode ? '搜索文件名，.pdf 限定类型，in:文件夹' : '问任何问题，或搜索应用和文件'}" value="${esc(shown)}">`
+    : `${fileMode ? '<span class="kw"><span class="g">⌕</span>文件</span>' : ''}<div class="static">${shown ? esc(shown) : `<span class="ph">${fileMode ? '搜索文件名，.pdf 限定类型，in:文件夹' : '问任何问题，或搜索应用和文件'}</span>`}<span class="caret"></span></div>`;
+  const filters = fileMode ? `<div class="filters">${[['all', '全部'], ['folder', '文件夹'], ['doc', '文档'], ['image', '图片'], ['pdf', 'PDF'], ['sheet', '表格与演示'], ['code', '代码']]
+    .map(([k, t]) => `<span class="chip ${state.filter === k ? 'on' : ''}" data-filter="${k}">${t}</span>`).join('')}<span class="sp"></span>
+    <span class="tog ${state.content ? 'on' : ''}" data-act="content"><i></i>搜内容 ⌘F</span>
+    <div class="seg" style="margin-left:6px"><button class="${state.sort === 'rel' ? 'on' : ''}" data-sort="rel">相关度</button><button class="${state.sort === 'recent' ? 'on' : ''}" data-sort="recent">最近修改</button></div></div>` : '';
+  const rows = model.rows;
+  if (state.hl == null || !rows[state.hl] || !selectable(rows[state.hl])) state.hl = rows.findIndex(selectable);
+  const list = rows.length ? `<div class="hair"></div>${filters}<div class="qr" style="${state.panel ? 'min-height:340px' : ''}">${rows.map((r, i) => rowHTML({ ...r, lead: r.lead }, i, state)).join('')}</div>` : (fileMode ? `<div class="hair"></div>${filters}` : '');
+  const cur = rows[state.hl];
+  let panel = '';
+  if (state.panel && cur && cur.type === 'item') {
+    const acts = actionsFor(cur.x.e); let n = -1;
+    panel = `<div class="panel" style="top:60px"><div class="ph2">${esc(cur.x.e.name)}</div>${acts.map(a => a === 'sep' ? '<div class="sep"></div>' : (n++, `<div class="it ${a[3] || ''} ${n === state.panelHl ? 'on' : ''}" data-pa="${n}"><span class="s">${a[0]}</span>${a[1]}<span class="k">${a[2]}</span></div>`)).join('')}</div>`;
+  }
+  let ql = '';
+  if (state.ql && cur && cur.type === 'item' && cur.x.e.kind === 'file') {
+    const e = cur.x.e;
+    ql = `<div class="ql"><div class="qh">${icon(e)}<b>${esc(e.name)}</b><span class="x">⌘Y / esc 关闭</span></div><div class="qb">${icon(e).replace('class="ic', 'style="transform:scale(3.2)" class="ic')}</div><div class="qm">${esc(e.dir)} · 修改于 ${ago(e.days)} · ${(e.name.length * 37 % 900 + 40)} KB</div></div>`;
+  }
+  const toast = state.toast ? `<div class="toast">${esc(state.toast)}</div>` : '';
+  return `<div class="card">
+    <div class="editor">${editor}</div>
+    <div class="foot"><span class="round">＋</span><span class="round">☁</span><span class="menu">Typeflux Cloud ▾</span><span class="vsep"></span><span class="round">⌾</span><span class="spacer"></span><span class="round">🎙</span><span class="send ${shown.trim() ? 'on' : ''}">↑</span></div>
+    ${list}
+    <div class="hint">${hintFor(cur)}</div>
+    ${panel}${ql}${toast}
+  </div>`;
+}
+
+// ---------------------------------------------------------------- interactive demo
+const D = { query: 'ht', hl: null, panel: false, panelHl: 0, ql: false, filter: 'all', sort: 'rel', content: false, progress: 46, toast: '' };
+const logEl = document.getElementById('log');
+function log(s) { logEl.textContent = s + '\n' + logEl.textContent.split('\n').slice(0, 3).join('\n'); }
+let toastTimer;
+function toast(s) { D.toast = s; clearTimeout(toastTimer); toastTimer = setTimeout(() => { D.toast = ''; renderDemo(false); }, 1400); }
+function renderDemo(focus = true) {
+  const host = document.getElementById('demo');
+  const prev = document.getElementById('q');
+  const caret = prev ? prev.selectionStart : null;
+  host.innerHTML = cardHTML(D, true);
+  placePanels(host);
+  const input = document.getElementById('q');
+  if (focus) { input.focus(); const p = caret == null ? input.value.length : Math.min(caret, input.value.length); input.setSelectionRange(p, p); }
+  input.addEventListener('input', () => { const fm = D.model.fileMode; D.query = (fm ? 'f ' : '') + input.value; D.hl = null; D.panel = false; D.ql = false; renderDemo(); });
+  input.addEventListener('keydown', onKey);
+  host.querySelectorAll('[data-i]').forEach(el => {
+    el.addEventListener('mousemove', () => { const i = +el.dataset.i; if (D.hl !== i && !D.panel) { D.hl = i; renderDemo(); } });
+    el.addEventListener('click', () => { D.hl = +el.dataset.i; run(); });
+  });
+  host.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('click', () => { D.filter = el.dataset.filter; D.hl = null; renderDemo(); }));
+  host.querySelectorAll('[data-sort]').forEach(el => el.addEventListener('click', () => { D.sort = el.dataset.sort; D.hl = null; renderDemo(); }));
+  host.querySelectorAll('[data-act="content"]').forEach(el => el.addEventListener('click', () => { D.content = !D.content; renderDemo(); }));
+  host.querySelectorAll('[data-act="fda"]').forEach(el => el.addEventListener('click', () => { log('打开 系统设置 › 隐私与安全性 › 完全磁盘访问权限'); }));
+  host.querySelectorAll('[data-pa]').forEach(el => el.addEventListener('click', () => { D.panelHl = +el.dataset.pa; runAction(); }));
+}
+function move(delta) {
+  const rows = D.model.rows; const n = rows.length; if (!n) return;
+  let i = D.hl;
+  for (let k = 0; k < n; k++) { i = ((i + delta) % n + n) % n; if (selectable(rows[i])) { D.hl = i; return; } }
+}
+function cur() { return D.model.rows[D.hl]; }
+function enterFileMode() { const q = D.model.fileMode ? D.model.q : D.query; D.query = 'f ' + q; D.hl = null; D.filter = 'all'; log('进入文件模式（f）'); }
+function run() {
+  const r = cur();
+  if (!r) { if (D.query.trim()) log(`问 AI：“${D.query}”`); return; }
+  if (r.type === 'ask') { log(`问 AI：“${D.model.fileMode ? D.model.q : D.query}”（新对话，关闭启动器）`); return; }
+  if (r.type === 'more') { enterFileMode(); renderDemo(); return; }
+  const e = r.x.e;
+  if (e.kind === 'file' || e.kind === 'folder') e.opens++;
+  if (e.kind === 'app') e.launches = (e.launches || 0) + 1;
+  log(`打开 ${e.kind === 'app' ? '应用' : e.kind === 'pane' ? '系统设置' : e.kind === 'folder' ? '文件夹' : '文件'}：${e.path || e.name}（关闭启动器，使用次数 +1）`);
+}
+function runAction() {
+  const r = cur(); if (!r || r.type !== 'item') return;
+  const acts = actionsFor(r.x.e).filter(a => a !== 'sep'); const a = acts[D.panelHl];
+  D.panel = false;
+  if (a[1] === '打开') return run(), renderDemo();
+  if (a[1] === '快速查看') { D.ql = true; renderDemo(); return; }
+  if (a[1] === '在此文件夹中搜索') { D.query = `f in:${r.x.e.name} `; D.hl = null; renderDemo(); return; }
+  const msg = { '拷贝路径': '已拷贝路径', '拷贝文件': '已拷贝文件', '在访达中显示': '已在访达中显示', '带上此文件问 AI': '已带上文件，打开新对话', '移到废纸篓': '已移到废纸篓（可在访达中撤销）' }[a[1]] || a[1];
+  log(`${a[1]}：${r.x.e.path || r.x.e.name}`); toast(msg); renderDemo();
+}
+function onKey(ev) {
+  const input = ev.target;
+  const panelOpen = D.panel;
+  if (D.ql && (ev.key === 'Escape' || (ev.metaKey && ev.key.toLowerCase() === 'y'))) { ev.preventDefault(); D.ql = false; renderDemo(); return; }
+  if (panelOpen) {
+    const n = actionsFor(cur().x.e).filter(a => a !== 'sep').length;
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); D.panelHl = (D.panelHl + (ev.key === 'ArrowDown' ? 1 : -1) + n) % n; renderDemo(); return; }
+    if (ev.key === 'Enter') { ev.preventDefault(); runAction(); return; }
+    if (ev.key === 'Escape' || ev.key === 'ArrowLeft') { ev.preventDefault(); D.panel = false; renderDemo(); return; }
+  }
+  const r = cur();
+  const isItem = r && r.type === 'item';
+  const isFile = isItem && (r.x.e.kind === 'file' || r.x.e.kind === 'folder');
+  if (ev.key === 'ArrowDown' && ev.metaKey) { ev.preventDefault(); enterFileMode(); renderDemo(); return; }
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); move(ev.key === 'ArrowDown' ? 1 : -1); renderDemo(); return; }
+  if (ev.key === 'Enter' && ev.metaKey && ev.shiftKey) { ev.preventDefault(); if (isFile) { log(`带上此文件问 AI：${r.x.e.path}，问题“${D.model.q || ''}”`); toast('已带上文件，打开新对话'); renderDemo(); } return; }
+  if (ev.key === 'Enter' && ev.metaKey) { ev.preventDefault(); log(`问 AI：“${D.model.fileMode ? D.model.q : D.query}”`); return; }
+  if (ev.key === 'Enter') { ev.preventDefault(); run(); renderDemo(); return; }
+  if ((ev.key === 'ArrowRight' && input.selectionStart === input.value.length)) {
+    if (isItem) { ev.preventDefault(); D.panel = true; D.panelHl = 0; renderDemo(); } return;
+  }
+  if (ev.metaKey && ev.key.toLowerCase() === 'y') { ev.preventDefault(); if (isFile && r.x.e.kind === 'file') { D.ql = true; renderDemo(); } return; }
+  if (ev.metaKey && ev.key.toLowerCase() === 'r') { ev.preventDefault(); if (isItem) { log(`在访达中显示：${r.x.e.path || r.x.e.name}`); toast('已在访达中显示'); renderDemo(); } return; }
+  if (ev.metaKey && ev.shiftKey && ev.key.toLowerCase() === 'c') { ev.preventDefault(); if (isItem) { log(`拷贝路径：${r.x.e.path || r.x.e.loc}`); toast('已拷贝路径'); renderDemo(); } return; }
+  if (ev.metaKey && ev.key.toLowerCase() === 'f' && D.model.fileMode) { ev.preventDefault(); D.content = !D.content; renderDemo(); return; }
+  if (ev.key === 'Tab' && D.model.fileMode) {
+    ev.preventDefault(); const ks = ['all', 'folder', 'doc', 'image', 'pdf', 'sheet', 'code'];
+    D.filter = ks[(ks.indexOf(D.filter) + (ev.shiftKey ? -1 : 1) + ks.length) % ks.length]; D.hl = null; renderDemo(); return;
+  }
+  if (ev.key === 'Backspace' && D.model.fileMode && input.value === '' ) { ev.preventDefault(); D.query = ''; D.hl = null; renderDemo(); return; }
+  if (ev.key === 'Escape') { ev.preventDefault(); if (D.query) { D.query = ''; D.hl = null; renderDemo(); log('清空'); } else log('关闭启动器'); }
+}
+const SAMPLES = [['ht', '拼音首字母，中间匹配'], ['wx', '应用首字母'], ['hetong', '拼音全拼'], ['readme', '文件全名'], ['typeflux md', '多词 + 路径'], ['合同 .pdf', '类型过滤'],
+  ['tbpls', '按顺序出现'], ['网络', '系统设置'], ['invoice', '多个相近文件'], ['今天天气怎么样？', '问句不抢回车'], ['f 索引', '文件模式']];
+document.getElementById('samples').innerHTML = SAMPLES.map(([q, d]) => `<button data-q="${esc(q)}">${esc(q)}<small>${d}</small></button>`).join('');
+document.getElementById('samples').addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; D.query = b.dataset.q; D.hl = null; D.panel = false; D.ql = false; D.content = b.dataset.q === 'f 索引'; renderDemo(); });
+function seg(id, items, get, set) {
+  const el = document.getElementById(id);
+  const draw = () => { el.innerHTML = items.map(([v, t]) => `<button class="${get() === v ? 'on' : ''}" data-v="${v}">${t}</button>`).join(''); };
+  el.addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; set(b.dataset.v); draw(); });
+  draw(); return draw;
+}
+const MODES = [['hybrid', '混合'], ['apps', '应用优先'], ['files', '文件优先']];
+const drawMode = seg('ctlMode', MODES, () => S.mode, v => { S.mode = v; refreshAll(); });
+const drawIndex = seg('ctlIndex', [['ready', '就绪'], ['building', '建立中'], ['noaccess', '未授权']], () => S.index, v => { S.index = v; S.fda = v !== 'noaccess'; refreshAll(); });
+
+// ---------------------------------------------------------------- gallery
+const SHOTS = [
+  ['<b>最佳匹配 · 文件夹</b>：<code>ht</code> → 合同（拼音首字母）；「2026 年度采购<b>合同</b>.pdf」从名字中间命中', { query: 'ht' }],
+  ['<b>最佳匹配 · 应用</b>：<code>wx</code> → 微信；系统设置、文件按组列在下面', { query: 'wx' }],
+  ['<b>不抢回车</b>：多个相近文件分数接近，「问 AI」保持第一，↓ 选择', { query: 'invoice' }],
+  ['<b>多词 + 路径</b>：<code>typeflux md</code>，<code>typeflux</code> 命中路径、<code>md</code> 命中扩展名', { query: 'typeflux md', hl: 4 }],
+  ['<b>文件模式</b>：<code>f</code> 关键词，筛选、排序与「搜内容」（聚焦，带摘要）', { query: 'f 索引', content: true }],
+  ['<b>操作面板</b>：→；带上此文件问 AI、拷贝文件、移到废纸篓', { query: 'invoice', hl: 3, panel: true, panelHl: 6 }],
+  ['<b>首次建立索引</b>：顶部显示进度，这期间文件结果来自聚焦', { query: '周报', index: 'building' }],
+  ['<b>没有授权</b>：文稿 / 桌面 / 下载的结果缺失时提示授权，其它目录照常', { query: 'readme', index: 'noaccess' }],
+];
+function renderGallery() {
+  const saved = S.index;
+  document.getElementById('gallery').innerHTML = SHOTS.map(([cap, st], n) => {
+    S.index = st.index || 'ready';
+    const state = { hl: null, panel: false, panelHl: 0, ql: false, filter: 'all', sort: 'rel', content: false, progress: 46, toast: '', ...st };
+    if (st.hl != null) { buildRows(state); }
+    return `<div id="shot-${n + 1}"><p class="cap">${n + 1} · ${cap}</p><div class="stage tight">${cardHTML(state, false)}</div></div>`;
+  }).join('');
+  S.index = saved;
+  placePanels(document.getElementById('gallery'));
+}
+// The action panel opens beside the highlighted row, kept inside the card.
+function placePanels(root) {
+  root.querySelectorAll('.card').forEach(card => {
+    const panel = card.querySelector('.panel'), row = card.querySelector('.row.hl');
+    if (!panel || !row) return;
+    const c = card.getBoundingClientRect(), r = row.getBoundingClientRect();
+    const top = Math.min(r.bottom - c.top + 4, c.height - panel.offsetHeight - 40);
+    panel.style.top = Math.max(r.top - c.top - panel.offsetHeight - 4 > 8 && top < r.bottom - c.top ? r.top - c.top - panel.offsetHeight - 4 : top, 8) + 'px';
+  });
+}
+
+// ---------------------------------------------------------------- settings
+const SCOPE_COUNTS = { '~': 236480, '~/Library/Mobile Documents': 11832, '~/Library/CloudStorage': 4210 };
+let rebuildTimer = null;
+function settingsHTML() {
+  const total = S.fileScopes.reduce((s, p) => s + (SCOPE_COUNTS[p] ?? 1200), 0) - S.exNames.length * 0 - (S.hidden ? 0 : 0);
+  const fileCount = S.files ? total : 0;
+  const swi = (k, on) => `<span class="sw ${on ? 'on' : ''}" data-sw="${k}"></span>`;
+  const sideItem = (t, on, extra = '') => `<div class="ni ${on ? 'on' : ''}">${t}${extra}</div>`;
+  const tabs = [['general', '常规'], ['apps', '应用'], ['files', '文件'], ['exclude', '排除']];
+  let body = '';
+  if (S.tab === 'general') body = `
+    <div class="surf">
+      <div class="srow"><div class="t">搜索模式<div class="d">混合：最佳匹配在前，再按类型分组。应用 / 文件优先：对应的组固定在前</div></div><div class="r"><div class="seg" data-seg="mode">${MODES.map(([v, t]) => `<button class="${S.mode === v ? 'on' : ''}" data-v="${v}">${t}</button>`).join('')}</div></div></div>
+      <div class="srow"><div class="t">模糊匹配<div class="d">字母按顺序出现也算命中（<code>tbpls</code> → TablePlus），应用和文件都适用</div></div><div class="r">${swi('fuzzy', S.fuzzy)}</div></div>
+      <div class="srow"><div class="t">结果数量<div class="d">文件模式最多显示的条数；混合结果每组固定 3–6 条</div></div><div class="r"><select class="sel" data-sel="limit">${[10, 20, 30, 50].map(n => `<option ${S.limit === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div></div>
+      <div class="srow"><div class="t">文件图标<div class="d">缩略图：图片和 PDF 显示内容预览</div></div><div class="r"><div class="seg" data-seg="icons"><button class="${S.icons === 'thumb' ? 'on' : ''}" data-v="thumb">缩略图</button><button class="${S.icons === 'icon' ? 'on' : ''}" data-v="icon">图标</button></div></div></div>
+    </div>
+    <div class="surf">
+      <div class="srow"><div class="t">搜索应用<div class="d">也可以在「基础」页关闭</div></div><div class="r">${swi('apps', true)}</div></div>
+      <div class="srow"><div class="t">搜索文件<div class="d">关闭后立即释放内存并删除索引</div></div><div class="r">${swi('files', S.files)}</div></div>
+      <div class="srow"><div class="t">完全磁盘访问权限<div class="d">搜索 桌面、文稿、下载 需要授权；只读取文件名，不读取内容</div></div><div class="r"><span class="perm ${S.fda ? 'ok' : ''}"><i></i>${S.fda ? '已授权' : '未授权'}</span>${S.fda ? '' : '<button class="btn sm" data-act="grant">前往授权</button>'}</div></div>
+    </div>`;
+  if (S.tab === 'apps') body = `
+    <div class="surf">
+      <div class="sh">应用搜索范围<div class="r"><button class="btn sm" data-act="resetApps">恢复默认</button><button class="btn sm" data-act="addApp">＋</button></div></div>
+      ${S.appScopes.map((p, i) => `<div class="path"><span class="fi ${p.endsWith('.app') ? 'file' : ''}"></span><span class="p">${esc(p)}</span><span class="del" data-del-app="${i}">🗑</span></div>`).join('')}
+      <div class="tip">只往下找一层（例如 /Applications/Utilities）。安装、删除应用后 2 秒内生效。</div>
+    </div>
+    <div class="surf"><div class="srow"><div class="t">搜索系统设置<div class="d">把 网络、显示器、蓝牙 等设置面板作为结果</div></div><div class="r">${swi('panes', S.panes)}</div></div></div>`;
+  if (S.tab === 'files') {
+    const building = !!rebuildTimer;
+    body = `
+    <div class="surf">
+      <div class="sh">文件搜索范围<div class="r"><button class="btn sm" data-act="addCloud">＋ iCloud 云盘</button><button class="btn sm" data-act="addDrive">＋ 网盘</button><button class="btn sm" data-act="resetFiles">恢复默认</button><button class="btn sm" data-act="addFile">＋</button></div></div>
+      ${S.fileScopes.map((p, i) => `<div class="path"><span class="fi"></span><span class="p">${esc(p)}</span><span class="n">${(SCOPE_COUNTS[p] ?? 1200).toLocaleString()} 项</span><span class="del" data-del-file="${i}">🗑</span></div>`).join('') || '<div class="path"><span class="p" style="color:var(--text-3)">没有范围，文件搜索不会出现</span></div>'}
+      <div class="pbar"><i id="pbar" style="width:${building ? S.progress : 0}%"></i></div>
+      <div class="status">
+        <div><div class="k">已索引</div><div class="v">${building ? Math.round(fileCount * S.progress / 100).toLocaleString() : fileCount.toLocaleString()}</div></div>
+        <div><div class="k">占用内存</div><div class="v">${Math.max(1, Math.round(fileCount * 62 / 1e6))} MB</div></div>
+        <div><div class="k">最近更新</div><div class="v">${building ? '—' : '刚刚'}</div></div>
+        <div><div class="k">状态</div><div class="v"><span class="live ${building ? 'busy' : ''}"></span>${building ? `建立中 ${S.progress}%` : '实时监控中'}</div></div>
+      </div>
+      <div class="tip">💡 不要加入系统目录，范围过大会白白占用资源。可以加入外接磁盘（APFS、Mac OS 扩展格式）；iCloud 云盘和网盘只记录文件名，不会下载文件。
+        <span style="float:right"><button class="btn sm" data-act="rebuild" ${building ? 'disabled' : ''}>重建索引</button> <button class="btn sm" data-act="clear">清除索引</button></span></div>
+    </div>`;
+  }
+  if (S.tab === 'exclude') {
+    const grp = (key, title, list, hint) => `<div class="exg"><div class="eh">▾ ${title} (${list.length})<span class="r"><button class="btn sm" data-add="${key}">＋</button></span></div>
+      <div class="chips">${list.map((v, i) => `<span class="tag">${esc(v)}<b data-rm="${key}:${i}">✕</b></span>`).join('') || `<span style="color:var(--text-3);font-size:12px">${hint}</span>`}</div></div>`;
+    body = `
+    <div class="surf">
+      <div class="sh">搜索排除<div class="r"><button class="btn sm" data-act="resetEx">恢复默认</button></div></div>
+      ${grp('exPaths', '按路径', S.exPaths, '例如 ~/Projects/archive')}
+      ${grp('exTypes', '按文件类型', S.exTypes, '例如 log、tmp、dmg')}
+      ${grp('exNames', '按文件夹名', S.exNames, '例如 node_modules')}
+    </div>
+    <div class="surf"><div class="srow"><div class="t">包含隐藏文件<div class="d">以 . 开头的文件和文件夹，例如 .env</div></div><div class="r">${swi('hidden', S.hidden)}</div></div></div>
+    <p class="notes">修改后只重扫受影响的部分：新加的排除立即从索引移除，删掉的排除只扫那些目录。</p>`;
+  }
+  return `<div class="side"><div class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+      <div class="st">启动器</div>${sideItem('▦ 基础', false)}${sideItem('⌕ 搜索', true, '<span class="new">新</span>')}${sideItem('⌨ 关键词', false)}${sideItem('⇢ 工作流', false)}</div>
+    <div class="main">
+      <div class="ph3"><span class="sym">⌕</span><div><div class="t">搜索</div><div class="d">启动器里的应用和文件搜索。索引只保存在这台 Mac 上。</div></div></div>
+      <div class="tabs">${tabs.map(([k, t]) => `<button class="${S.tab === k ? 'on' : ''}" data-tab="${k}">${t}</button>`).join('')}</div>
+      ${body}
+    </div>`;
+}
+function renderSettings() {
+  const el = document.getElementById('settings');
+  el.innerHTML = settingsHTML();
+  el.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { S.tab = b.dataset.tab; renderSettings(); });
+  el.querySelectorAll('[data-seg]').forEach(s => s.querySelectorAll('button').forEach(b => b.onclick = () => { S[s.dataset.seg] = b.dataset.v; refreshAll(); }));
+  el.querySelectorAll('[data-sel]').forEach(s => s.onchange = () => { S[s.dataset.sel] = +s.value; refreshAll(); });
+  el.querySelectorAll('[data-sw]').forEach(s => s.onclick = () => { const k = s.dataset.sw; if (k === 'apps') return; S[k] = !S[k]; refreshAll(); });
+  el.querySelectorAll('[data-del-app]').forEach(b => b.onclick = () => { S.appScopes.splice(+b.dataset.delApp, 1); refreshAll(); });
+  el.querySelectorAll('[data-del-file]').forEach(b => b.onclick = () => { S.fileScopes.splice(+b.dataset.delFile, 1); refreshAll(); });
+  el.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { const [k, i] = b.dataset.rm.split(':'); S[k].splice(+i, 1); refreshAll(); });
+  el.querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
+    const k = b.dataset.add; const v = prompt({ exPaths: '排除的路径', exTypes: '排除的扩展名（不带点）', exNames: '排除的文件夹名' }[k]);
+    const val = v ? (k === 'exTypes' ? v.trim().replace(/^\./, '').toLowerCase() : v.trim()) : '';
+    if (val && !S[k].includes(val)) { S[k].push(val); refreshAll(); }
+  });
+  const act = (name, fn) => el.querySelectorAll(`[data-act="${name}"]`).forEach(b => b.onclick = fn);
+  act('resetApps', () => { S.appScopes = [...DEFAULT_APP_SCOPES]; refreshAll(); });
+  act('addApp', () => { const v = prompt('应用目录', '~/Applications/Setapp'); if (v && !S.appScopes.includes(v)) { S.appScopes.push(v); refreshAll(); } });
+  act('addFile', () => { const v = prompt('文件搜索目录', '/Volumes/Work'); if (v && !S.fileScopes.includes(v)) { S.fileScopes.push(v); startRebuild(); } });
+  act('addCloud', () => { if (!S.fileScopes.includes('~/Library/Mobile Documents')) { S.fileScopes.push('~/Library/Mobile Documents'); startRebuild(); } });
+  act('addDrive', () => { if (!S.fileScopes.includes('~/Library/CloudStorage')) { S.fileScopes.push('~/Library/CloudStorage'); startRebuild(); } });
+  act('resetFiles', () => { S.fileScopes = ['~', '~/Library/Mobile Documents']; startRebuild(); });
+  act('resetEx', () => { S.exPaths = ['~/Library']; S.exTypes = []; S.exNames = ['node_modules', '.git', '.build', 'DerivedData', 'Pods', '__pycache__', '.venv']; refreshAll(); });
+  act('rebuild', startRebuild);
+  act('clear', () => { log('清除索引：释放内存，删除快照'); S.index = 'building'; startRebuild(); });
+  act('grant', () => { S.fda = true; S.index = 'ready'; refreshAll(); });
+}
+function startRebuild() {
+  clearInterval(rebuildTimer); S.progress = 0; S.index = 'building'; D.progress = 0; refreshAll();
+  rebuildTimer = setInterval(() => {
+    S.progress = Math.min(100, S.progress + 7); D.progress = S.progress;
+    if (S.progress >= 100) { clearInterval(rebuildTimer); rebuildTimer = null; S.index = 'ready'; }
+    refreshAll(false);
+  }, 160);
+}
+function refreshAll(focus = false) {
+  drawMode(); drawIndex(); renderSettings(); renderDemo(focus); renderGallery();
+}
+
+// ---------------------------------------------------------------- theme
+document.getElementById('theme').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#theme button').forEach(x => x.classList.toggle('on', x === b));
+  document.body.classList.toggle('light', b.dataset.v === 'light');
+});
+if (location.hash.includes('light')) { document.body.classList.add('light'); document.querySelectorAll('#theme button').forEach(x => x.classList.toggle('on', x.dataset.v === 'light')); }
+const tabHash = location.hash.match(/tab=(\w+)/); if (tabHash) S.tab = tabHash[1];
+refreshAll(false);
+</script>
+</body></html>

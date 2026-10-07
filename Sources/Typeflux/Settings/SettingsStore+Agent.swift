@@ -45,6 +45,25 @@ extension SettingsStore {
         set { defaults.set(newValue, forKey: "ask.quickResults.apps") }
     }
 
+    /// Whether the Ask launcher lists files and folders matching what is typed into it.
+    var askQuickFileSearchEnabled: Bool {
+        get { defaults.object(forKey: "ask.quickResults.files") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "ask.quickResults.files") }
+    }
+
+    /// How the launcher searches applications and files (Settings › Launcher › Search).
+    var askLauncherSearchSettings: AskLauncherSearchSettings {
+        get {
+            guard let data = defaults.data(forKey: "ask.search.settings"),
+                  let settings = try? JSONDecoder().decode(AskLauncherSearchSettings.self, from: data) else { return AskLauncherSearchSettings() }
+            return settings
+        }
+        set {
+            if let data = try? JSONEncoder().encode(newValue) { defaults.set(data, forKey: "ask.search.settings") }
+            NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)
+        }
+    }
+
     /// The launcher's keywords (`fy` → translate). Nil until the user edits them,
     /// so new plugins' default keywords keep arriving.
     var askLauncherKeywords: [AskKeyword]? {

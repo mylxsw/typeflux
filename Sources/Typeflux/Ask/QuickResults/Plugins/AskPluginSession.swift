@@ -181,7 +181,7 @@ final class AskPluginSession: ObservableObject {
             if plan.mode == .live || runNow {
                 self.set(\.phase, .running(plan))
                 if plan.mode == .live, !runNow {
-                    try? await Task.sleep(for: self.debounce)
+                    try? await Task.sleep(for: plan.debounce ?? self.debounce)
                     guard !Task.isCancelled, current == self.generation else { return }
                 }
                 await self.execute(plan, request: next, generation: current, plugin: plugin)

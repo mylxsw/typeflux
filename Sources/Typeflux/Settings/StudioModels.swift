@@ -233,6 +233,7 @@ enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
 /// Panes of the Launcher settings page, in display order.
 enum LauncherSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
     case basics
+    case search
     case keywords
     case workflows
 
@@ -243,6 +244,7 @@ enum LauncherSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem 
     var title: String {
         switch self {
         case .basics: L("launcher.pane.basics")
+        case .search: L("launcher.pane.search")
         case .keywords: L("ask.settings.plugins.title")
         case .workflows: L("ask.workflow.section")
         }
@@ -251,6 +253,7 @@ enum LauncherSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem 
     var symbol: String {
         switch self {
         case .basics: "square.grid.2x2"
+        case .search: "magnifyingglass"
         case .keywords: "keyboard"
         case .workflows: "point.3.connected.trianglepath.dotted"
         }

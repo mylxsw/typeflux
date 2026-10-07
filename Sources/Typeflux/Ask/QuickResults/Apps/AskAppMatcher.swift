@@ -10,48 +10,40 @@ enum AskAppMatcher {
     static let maximumQueryLength = 40
 
     /// How well `query` names `entry`, or nil when it does not.
-    static func score(_ query: String, _ entry: AskAppEntry) -> Double? {
-        guard query.count <= maximumQueryLength, !query.contains(where: \.isNewline) else { return nil }
+    static func score(_ query: String, _ entry: AskAppEntry, fuzzy: Bool = true) -> Double? {
+        match(AskSearchQuery(query), entry, fuzzy: fuzzy)?.score
+    }
+
+    /// The best of `entry`'s names for `query`, with the characters of its shown name that matched.
+    static func match(_ query: AskSearchQuery, _ entry: AskAppEntry, fuzzy: Bool = true,
+                      highlights: Bool = false) -> AskAppMatch? {
         // "wechat?" still lists WeChat; `isStrong` decides whether a question takes Return.
-        let text = query.filter { !$0.isPunctuation }.trimmingCharacters(in: .whitespaces).lowercased()
-        let compact = text.filter { !$0.isWhitespace }
-        guard !compact.isEmpty else { return nil }
-        var best = 0.0
-        for name in entry.names {
-            let flat = name.filter { !$0.isWhitespace }
-            if name == text || flat == compact {
-                best = max(best, 1)
-            } else if flat.hasPrefix(compact) {
-                best = max(best, 0.9)
-            } else if words(of: name).contains(where: { $0.hasPrefix(compact) }) {
-                best = max(best, 0.82)
-            } else if compact.count >= 2, flat.contains(compact) {
-                best = max(best, 0.6)
-            } else if compact.count >= 3, isSubsequence(compact, of: flat) {
-                best = max(best, 0.45)
-            }
+        guard query.isSearchable, query.text.count <= maximumQueryLength else { return nil }
+        var best: (score: Double, ranges: [Range<Int>], shown: Bool)?
+        for (index, key) in entry.keys.enumerated() {
+            guard let found = AskFuzzyMatcher.match(query.compact, key, fuzzy: fuzzy, ranges: highlights && index == 0),
+                  found.score > (best?.score ?? 0) else { continue }
+            best = (found.score, found.ranges, index == 0)
+            if found.score == AskFuzzyMatcher.exact { break }
         }
-        if compact.count >= 2 {
-            for initials in entry.initials + entry.pinyinInitials {
-                if initials == compact { best = max(best, 0.88) } else if initials.hasPrefix(compact) { best = max(best, 0.8) }
-            }
-            for spelling in entry.pinyin {
-                if spelling == compact { best = max(best, 0.95) } else if spelling.hasPrefix(compact) { best = max(best, 0.86) }
-            }
-        }
+        guard let best else { return nil }
         // A single letter only lists names that start with it.
-        if compact.count == 1, best < 0.82 { return nil }
-        return best >= minimumScore ? best : nil
+        if query.compact.count == 1, best.score < AskFuzzyMatcher.wordPrefix { return nil }
+        guard best.score >= minimumScore else { return nil }
+        let ranges = best.shown && highlights ? AskSearchText.characterRanges(best.ranges, in: entry.name) : []
+        return AskAppMatch(entry: entry, score: best.score, highlights: ranges)
     }
 
     /// The best `limit` matches, with launch counts from the launcher nudging
     /// the ones the user opens most. Ties go to the shorter name.
     static func search(_ query: String, in entries: [AskAppEntry], launches: [String: Int] = [:],
-                       limit: Int = 5) -> [AskAppMatch] {
-        entries.compactMap { entry -> AskAppMatch? in
-            guard let score = score(query, entry) else { return nil }
-            let boost = Double(min(launches[entry.id] ?? 0, 10)) * 0.005
-            return AskAppMatch(entry: entry, score: score + boost)
+                       limit: Int = 5, fuzzy: Bool = true) -> [AskAppMatch] {
+        let parsed = AskSearchQuery(query)
+        guard parsed.isSearchable else { return [] }
+        return entries.compactMap { entry -> AskAppMatch? in
+            guard var found = match(parsed, entry, fuzzy: fuzzy, highlights: true) else { return nil }
+            found.score += Double(min(launches[entry.id] ?? 0, 10)) * 0.005
+            return found
         }
         .sorted {
             if $0.score != $1.score { return $0.score > $1.score }
@@ -69,18 +61,5 @@ enum AskAppMatcher {
         let text = query.trimmingCharacters(in: .whitespaces)
         guard text.count >= 2, text.split(separator: " ").count <= 3 else { return false }
         return !text.contains { "?？。，,!！:：;；".contains($0) }
-    }
-
-    private static func words(of name: String) -> [String] {
-        name.components(separatedBy: CharacterSet.alphanumerics.inverted).filter { !$0.isEmpty }
-    }
-
-    private static func isSubsequence(_ needle: String, of haystack: String) -> Bool {
-        var remaining = needle[...]
-        for char in haystack where char == remaining.first {
-            remaining = remaining.dropFirst()
-            if remaining.isEmpty { return true }
-        }
-        return remaining.isEmpty
     }
 }
