@@ -12,7 +12,8 @@ import UniformTypeIdentifiers
 struct AskLauncherHeaderTests {
     private final class Reported { var height: CGFloat = 0 }
 
-    private func host(_ fixture: AskTestFixture) -> (NSWindow, Reported) {
+    private func host(_ fixture: AskTestFixture, launcher: Bool = true,
+                      onDismiss: @escaping () -> Void = {}) -> (NSWindow, Reported) {
         _ = NSApplication.shared
         // SwiftUI builds its accessibility tree only for assistive clients. It is a
         // process-wide flag other suites also set, so it is never switched off here:
@@ -24,8 +25,11 @@ struct AskLauncherHeaderTests {
                                         styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: .darkAqua)
-        let hosting = NSHostingView(rootView: AskLauncherView(model: fixture.model, onDismiss: {},
-                                                              onHeightChange: { reported.height = $0 })
+        let view = launcher
+            ? AnyView(AskLauncherView(model: fixture.model, onDismiss: onDismiss,
+                                     onHeightChange: { reported.height = $0 }))
+            : AnyView(AskComposer(model: fixture.model, launcher: false, onDismiss: onDismiss))
+        let hosting = NSHostingView(rootView: view
             .environment(\.askGlassMaterialOverride, .opaque))
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
@@ -193,6 +197,81 @@ struct AskLauncherHeaderTests {
         try await fixture.wait { !NSApp.windows.contains { $0.isVisible && find("ask.context.panel", in: $0) != nil } }
     }
 
+    @Test(arguments: ["/", "、"])
+    func slashTokensSendAsOrdinaryLauncherText(_ separator: String) async throws {
+        let fixture = try AskTestFixture()
+        captured(fixture)
+        let (window, _) = host(fixture)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(300))
+        let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
+        window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(editor)
+        editor.keyDown(with: try key(separator, code: 44, in: window))
+        editor.insertText("memory", replacementRange: NSRange(location: NSNotFound, length: 0))
+        try await Task.sleep(for: .milliseconds(200))
+        let text = separator + "memory"
+        #expect(fixture.model.launcherDraft.text == text)
+        #expect(find("ask.command.palette", in: window) == nil)
+        #expect(fixture.model.launcherDraft.memoryOff == nil)
+        editor.keyDown(with: try key("\r", code: 36, in: window))
+        try await fixture.wait { fixture.model.selected?.messages.contains { $0.role == "assistant" } == true }
+        let sent = try #require(await fixture.api.sends.first)
+        #expect(sent.text == text, "a former command is sent as the user's question")
+        #expect(fixture.model.commandFeedback == nil)
+    }
+
+    @Test func launcherCommandSlashDoesNotEditTheDraftAndEscapeStillDismisses() async throws {
+        let fixture = try AskTestFixture()
+        fixture.model.launcherDraft.text = "an ordinary question"
+        var dismissed = false
+        let (window, _) = host(fixture, onDismiss: { dismissed = true })
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(300))
+        let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
+        window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(editor)
+        #expect(!window.performKeyEquivalent(with: try key("/", code: 44, modifiers: .command, in: window)))
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(fixture.model.launcherDraft.text == "an ordinary question")
+        #expect(find("ask.command.palette", in: window) == nil)
+        editor.keyDown(with: try key("\u{1b}", code: 53, in: window))
+        #expect(dismissed)
+    }
+
+    @Test func workspaceStillOpensAndExecutesSlashCommands() async throws {
+        let fixture = try AskTestFixture()
+        fixture.model.draft.memory = AskMemory(global: "Prefers short answers.", app: nil)
+        let (window, _) = host(fixture, launcher: false)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(300))
+        let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
+        window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(editor)
+        // Let each edit render, like the existing command keyboard tests.
+        for character in "/memory" {
+            editor.keyDown(with: try key(String(character), code: character == "/" ? 44 : 0, in: window))
+            try await Task.sleep(for: .milliseconds(120))
+        }
+        try await fixture.wait { find("ask.command.palette", in: window) != nil }
+        editor.keyDown(with: try key("\r", code: 36, in: window))
+        try await fixture.wait { fixture.model.draft.memoryOff == true }
+        #expect(fixture.model.draft.text.isEmpty)
+        #expect(find("ask.command.palette", in: window) == nil)
+        #expect(await fixture.api.sends.isEmpty)
+    }
+
+    @Test func everyLauncherLocalizationOmitsTheCommandHint() {
+        let previousLanguage = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        for language in AppLanguage.allCases {
+            AppLocalization.shared.setLanguage(language)
+            #expect(!L("ask.launcher.placeholder").contains("/"))
+            #expect(L("ask.input.placeholder").contains("/"))
+            #expect(L("ask.followup.placeholder").contains("/"))
+        }
+    }
+
     @Test func hoverUsesTheCaptureThatArrivesDuringItsDelay() async throws {
         let fixture = try AskTestFixture()
         captured(fixture)
@@ -241,6 +320,13 @@ struct AskLauncherHeaderTests {
         view.cacheDisplay(in: view.bounds, to: bitmap)
         try #require(bitmap.representation(using: .png, properties: [:]))
             .write(to: root.appendingPathComponent("gul235-\(name).png"))
+    }
+
+    private func key(_ characters: String, code: UInt16, modifiers: NSEvent.ModifierFlags = [],
+                     in window: NSWindow) throws -> NSEvent {
+        try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
+            timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
+            characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code))
     }
 
     private func click(_ element: Element, in window: NSWindow) throws {

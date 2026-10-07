@@ -1542,7 +1542,7 @@
 "ask.quick.section.calculation" = "计算";
 "ask.quick.section.apps" = "应用";
 "ask.quick.section.ai" = "AI";
-"ask.launcher.placeholder" = "搜索应用、计算，或直接提问 · / 命令";
+"ask.launcher.placeholder" = "搜索应用、计算，或直接提问";
 "ask.launcher.hint.context" = "↩ 发送 · ⌘K 上下文 · esc 关闭";
 "ask.launcher.hint.voice" = "↩ 结束并填入 · esc 取消";
 "ask.launcher.hint.transcribing" = "esc 取消";

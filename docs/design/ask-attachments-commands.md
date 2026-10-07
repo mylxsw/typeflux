@@ -2,6 +2,8 @@
 
 > 状态：设计稿，待确认后再进入开发。配套可交互设计稿：`docs/design/ask-attachments-commands.html`（浏览器直接打开）。
 
+> GUL-235 后续更新：下文保留原始方案；`/` 命令与 ⌘/ 入口现在只用于聊天窗口，悬浮启动器已移除命令支持及占位提示。
+
 ## 1. 背景与现状
 
 当前「随便问」输入框（`AskComposer`，`Sources/Typeflux/Ask/AskComposerViews.swift`）分两层：

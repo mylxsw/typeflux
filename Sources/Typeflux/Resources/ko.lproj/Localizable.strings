@@ -1532,7 +1532,7 @@
 "ask.quick.section.calculation" = "계산";
 "ask.quick.section.apps" = "앱";
 "ask.quick.section.ai" = "AI";
-"ask.launcher.placeholder" = "앱 검색, 계산 또는 질문 · / 로 명령";
+"ask.launcher.placeholder" = "앱 검색, 계산 또는 질문";
 "ask.launcher.hint.context" = "↩ 보내기 · ⌘K 컨텍스트 · esc 닫기";
 "ask.launcher.hint.voice" = "↩ 종료 후 입력 · esc 취소";
 "ask.launcher.hint.transcribing" = "esc 취소";

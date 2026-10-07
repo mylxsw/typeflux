@@ -540,12 +540,6 @@ struct AskComposer: View {
                 editorRow
                 footer
             }
-            if launcher, paletteOpen {
-                paletteView
-                    .frame(height: AskCommandPaletteView.height(for: palette))
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 10)
-            }
             if launcher, active {
                 // Recording takes the results' place at their height, so the panel stays put.
                 AskVoicePanel(live: voice.live, listening: listening, height: voicePanelHeight, token: contextToken)
@@ -840,7 +834,7 @@ struct AskComposer: View {
                 onHeightChange: { editorHeight = $0 },
                 onAttach: { model.addAttachments($0, launcher: launcher) },
                 onDropTargetChange: { editorDropTargeted = $0 },
-                onSlashQuery: slashChanged,
+                onSlashQuery: launcher ? nil : slashChanged,
                 onCommandKey: commandKey,
                 onEmptyBackspace: launcher ? { removeKeyword() || removeLastContext() } : nil,
                 onContextShortcut: launcher ? toggleContextPanel : nil
@@ -961,9 +955,6 @@ struct AskComposer: View {
         .frame(maxWidth: .infinity)
         .overlay(alignment: .top) {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
-        }
-        .background {
-            AskSlashShortcut(disabled: active, action: startCommand)
         }
     }
 

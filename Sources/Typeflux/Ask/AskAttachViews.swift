@@ -66,7 +66,7 @@ struct AskAttachButton: View {
     }
 }
 
-/// ⌘/ starts a slash command, like typing "/". The composer has no visible
+/// ⌘/ starts a slash command in the workspace, like typing "/". It has no visible
 /// "/" control: its placeholder names the command key instead.
 struct AskSlashShortcut: View {
     var disabled = false

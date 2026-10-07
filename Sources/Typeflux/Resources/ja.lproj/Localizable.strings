@@ -1532,7 +1532,7 @@
 "ask.quick.section.calculation" = "計算";
 "ask.quick.section.apps" = "アプリ";
 "ask.quick.section.ai" = "AI";
-"ask.launcher.placeholder" = "アプリ検索、計算、または質問 · / でコマンド";
+"ask.launcher.placeholder" = "アプリ検索、計算、または質問";
 "ask.launcher.hint.context" = "↩ 送信 · ⌘K コンテキスト · esc 閉じる";
 "ask.launcher.hint.voice" = "↩ 終了して入力 · esc キャンセル";
 "ask.launcher.hint.transcribing" = "esc キャンセル";

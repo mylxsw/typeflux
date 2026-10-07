@@ -155,24 +155,31 @@ struct AskCommandRenderTests {
         #expect(f.model.searchRequest == 1)
     }
 
-    @Test func theLauncherPaletteSitsUnderItsCard() async throws {
+    @Test func launcherSlashTextDoesNotGrowTheCard() async throws {
         let (f, _) = try fixture()
         var heights: [CGFloat] = []
+        var dismissed = false
         f.model.launcherDraft = AskDraft(includeScreenshot: false)
         f.model.launcherDraft.append([AskAttachment(kind: .file, name: "a.txt", text: "x")])
-        let host = Host(VStack { AskLauncherView(model: f.model, onDismiss: {}, onHeightChange: { heights.append($0) }); Spacer() },
-                        size: NSSize(width: 720, height: 640))
+        let host = Host(VStack {
+            AskLauncherView(model: f.model, onDismiss: { dismissed = true }, onHeightChange: { heights.append($0) })
+            Spacer()
+        }, size: NSSize(width: 720, height: 640))
         defer { host.close(); f.model.resetSession() }
         try await settle(400)
         let editor = try #require(host.editor)
         host.window.makeFirstResponder(editor)
-        let closed = heights.last ?? 0
+        let closed = try #require(heights.last)
+        #expect(closed > 0, "the native launcher has reported its height")
         try await type("/me", in: editor)
         host.draw()
-        #expect((heights.last ?? 0) > closed, "the panel grows to fit the palette")
+        #expect((heights.last ?? 0) == closed, "ordinary slash text does not add a command palette")
+        #expect(f.model.launcherDraft.text == "/me")
         try await press("\u{1b}", keyCode: 53, in: editor)
         try await settle()
         #expect((heights.last ?? 0) == closed)
+        #expect(dismissed, "Escape closes the launcher directly")
+        #expect(f.model.launcherDraft.text == "/me")
     }
 
     @Test func standaloneViewsDrawEveryState() async throws {
