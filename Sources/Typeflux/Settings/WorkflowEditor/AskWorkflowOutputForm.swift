@@ -17,65 +17,69 @@ struct AskWorkflowOutputForm: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 20) {
-            VStack(alignment: .leading, spacing: 22) {
-                AskWorkflowFormSection(title: L("ask.workflow.editor.output"),
-                                       hint: L("ask.workflow.editor.output.hint")) {
-                    AskWorkflowRadioList(choices: Self.displayChoices, selection: output.display, stacked: true) {
-                        model.setDisplay($0)
-                    }
-                }
-                actionSection(.onSuccess)
-                actionSection(.onFailure)
-                AskWorkflowFormSection(title: L("ask.workflow.editor.output.after"), hint: nil) {
-                    VStack(spacing: 0) {
-                        toggleRow(
-                            L("ask.workflow.editor.output.close"),
-                            detail: L("ask.workflow.editor.output.closeDetail"),
-                            isOn: output.closes,
-                            locked: output.display == .none
-                        ) {
-                            model.setOutputFlag("close", $0)
-                        }
-                        Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
-                        toggleRow(L("ask.workflow.editor.output.scriptActions"),
-                                  detail: L("ask.workflow.editor.output.scriptActionsDetail"),
-                                  isOn: output.scriptActions, locked: false) {
-                            model.setOutputFlag("scriptActions", $0)
-                        }
-                    }
-                    .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(ModelVisualStyle.border))
-                }
-                askWorkflowProblemsText(model.problems(for: .output).filter { !$0.field.hasPrefix("output.on") })
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            VStack(alignment: .leading, spacing: 12) {
-                AskWorkflowFormSection(title: L("ask.workflow.editor.preview.title"),
-                                       hint: L("ask.workflow.editor.preview.hint")) {
-                    AskWorkflowLauncherPreview(
-                        name: manifest?.name ?? "", keyword: manifest?.keywords.first?.keyword ?? "",
-                        query: model.lastRun?.input
-                            .query ?? (model.testQuery.isEmpty ? "100 usd jpy" : model.testQuery),
-                        result: model.lastRun.flatMap { $0.succeeded ? $0 : nil },
-                        output: output, timeout: manifest?.timeout ?? AskWorkflowManifest.defaultTimeout,
-                        folder: model.folder
-                    )
-                }
-                AskWorkflowWillRun(
-                    steps: model.successPreview,
-                    closes: output.closes,
-                    scriptActions: output.scriptActions
-                )
-            }
-            // The design's 1.25 : 1 split at the editor's usual width; the form takes what is left.
-            .frame(width: Self.previewWidth, alignment: .leading)
+        AskWorkflowOutputLayout {
+            settings
+            preview
         }
         .onExitCommand { model.outputMenu = nil }
     }
 
-    static let previewWidth: CGFloat = 330
+    private var settings: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            AskWorkflowFormSection(title: L("ask.workflow.editor.output"),
+                                   hint: L("ask.workflow.editor.output.hint")) {
+                AskWorkflowRadioList(choices: Self.displayChoices, selection: output.display, stacked: true) {
+                    model.setDisplay($0)
+                }
+            }
+            actionSection(.onSuccess)
+            actionSection(.onFailure)
+            AskWorkflowFormSection(title: L("ask.workflow.editor.output.after"), hint: nil) {
+                VStack(spacing: 0) {
+                    toggleRow(
+                        L("ask.workflow.editor.output.close"),
+                        detail: L("ask.workflow.editor.output.closeDetail"),
+                        isOn: output.closes,
+                        locked: output.display == .none
+                    ) {
+                        model.setOutputFlag("close", $0)
+                    }
+                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                    toggleRow(L("ask.workflow.editor.output.scriptActions"),
+                              detail: L("ask.workflow.editor.output.scriptActionsDetail"),
+                              isOn: output.scriptActions, locked: false) {
+                        model.setOutputFlag("scriptActions", $0)
+                    }
+                }
+                .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(ModelVisualStyle.border))
+            }
+            askWorkflowProblemsText(model.problems(for: .output).filter { !$0.field.hasPrefix("output.on") })
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var preview: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            AskWorkflowFormSection(title: L("ask.workflow.editor.preview.title"),
+                                   hint: L("ask.workflow.editor.preview.hint")) {
+                AskWorkflowLauncherPreview(
+                    name: manifest?.name ?? "", keyword: manifest?.keywords.first?.keyword ?? "",
+                    query: model.lastRun?.input
+                        .query ?? (model.testQuery.isEmpty ? "100 usd jpy" : model.testQuery),
+                    result: model.lastRun.flatMap { $0.succeeded ? $0 : nil },
+                    output: output, timeout: manifest?.timeout ?? AskWorkflowManifest.defaultTimeout,
+                    folder: model.folder
+                )
+            }
+            AskWorkflowWillRun(
+                steps: model.successPreview,
+                closes: output.closes,
+                scriptActions: output.scriptActions
+            )
+        }
+    }
 
     static var displayChoices: [AskWorkflowChoice<AskWorkflowManifest.Output.Display>] {
         AskWorkflowManifest.Output.Display.allCases.map { display in
