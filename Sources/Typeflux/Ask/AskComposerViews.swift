@@ -50,7 +50,7 @@ struct AskLauncherView: View {
 
 /// Included content sits above the editor; switches and actions sit below it.
 /// The launcher and the workspace share the same composer. The launcher reads
-/// as a search field: the editor is its first row, led by one context token,
+/// as a search field: the editor is its first row,
 /// and its switches sit in a bottom bar under the results.
 struct AskComposer: View {
     @ObservedObject var model: AskConversationModel
@@ -119,7 +119,7 @@ struct AskComposer: View {
     /// Read once when the palette opens; running a command closes it.
     @State private var commandContext: AskCommandContext?
     /// The workspace shows the content that is sent above the editor; the
-    /// launcher shows it in its context token.
+    /// launcher inspects it from the bottom bar.
     private var attachedItems: [AskContextItem] {
         guard !launcher else { return [] }
         return AskAttachmentStrip.contentItems(draft: draft.wrappedValue, screenshotState: screenshotState,
@@ -822,7 +822,7 @@ struct AskComposer: View {
                 Text(placeholder)
                     .font(.system(size: chrome.editorFontSize))
                     .foregroundStyle(StudioTheme.textTertiary)
-                    // Beside the launcher's token a long placeholder truncates rather than wraps.
+                    // The launcher's single-row placeholder truncates rather than wraps.
                     .lineLimit(launcher ? 1 : nil)
                     .padding(.leading, AskComposerTextView.lineFragmentPadding)
                     .padding(.top, 4)
@@ -862,20 +862,14 @@ struct AskComposer: View {
 
     // MARK: - Launcher
 
-    /// The launcher's first row: the context token (the recording dot while
-    /// dictating), the editor (the words being recognised), then the microphone
+    /// The launcher's first row: the recording dot while dictating,
+    /// the editor (the words being recognised), then the microphone
     /// and send buttons, or the elapsed time, cancel and stop while recording.
     private var launcherHeader: some View {
         HStack(alignment: .top, spacing: 10) {
             if active {
                 AskVoiceOrb(live: voice.live, listening: listening)
                     .padding(.vertical, 2)
-            } else if let token = contextToken {
-                AskLauncherContextTokenView(token: token, thumbnail: screenshotThumbnail) {
-                    contextPanelOpen.toggle()
-                }
-                .padding(.vertical, 2)
-                .popover(isPresented: $contextPanelOpen, arrowEdge: .bottom) { contextPanel }
             }
             if !active, let keyword = plugins.keyword, let plugin = plugins.plugin {
                 AskKeywordChip(title: plugin.title, symbol: plugin.symbol,
@@ -932,6 +926,22 @@ struct AskComposer: View {
             contextChips
                 .disabled(active)
                 .opacity(Self.recordingDim(active))
+            if contextToken != nil {
+                Button { contextPanelOpen.toggle() } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 15))
+                        .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(StudioTheme.textSecondary)
+                .help(L("ask.context.token.help"))
+                .accessibilityLabel(L("ask.context"))
+                .accessibilityIdentifier("ask.context.settings")
+                .disabled(active)
+                .opacity(Self.recordingDim(active))
+                .popover(isPresented: $contextPanelOpen, arrowEdge: .bottom) { contextPanel }
+            }
             // In the launcher the empty space moves the panel; it lays out exactly like the spacer.
             Spacer(minLength: 8)
                 .frame(maxHeight: .infinity)
@@ -1200,18 +1210,28 @@ struct AskComposer: View {
         return value.includeScreenshot ? .attached : .off
     }
 
-    /// The footer holds only switches. Included content lives in the strip.
+    /// The footer holds switches; the launcher previews its screenshot on hover.
     private var contextChips: some View {
         HStack(spacing: AskContextChips.spacing) {
             ForEach(contextItems.filter { $0.kind == .screenshot || $0.kind == .memory }) { item in
                 if item.kind == .screenshot {
-                    AskIconChip(item: screenshotSwitch(item), action: screenshotToggleAction)
+                    AskIconChip(item: screenshotSwitch(item), action: screenshotToggleAction,
+                                screenshot: screenshotHoverPreview)
+                        .accessibilityIdentifier("ask.context.screenshot.toggle")
                 } else {
                     AskIconChip(item: item, action: memoryToggle)
                 }
             }
         }
         .fixedSize()
+    }
+
+    private var screenshotHoverPreview: NSImage? {
+        guard launcher, !active, !model.capturingScreenshot else { return nil }
+        switch screenshotState {
+        case .attached, .off: return screenshotThumbnail
+        case .failed, .unavailable: return nil
+        }
     }
 
     private func screenshotSwitch(_ item: AskContextItem) -> AskContextItem {
