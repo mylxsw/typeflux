@@ -47,7 +47,7 @@ actor AskLocalEngine: AskAPI {
     private var loaded = false
 
     init(directory: URL = AskLocalEngine.defaultDirectory, webTools: AskLocalWebTools = AskLocalWebTools(),
-         now: @escaping @Sendable () -> Date = Date.init, typedContentEnabled: Bool = false,
+         now: @escaping @Sendable () -> Date = { Date() }, typedContentEnabled: Bool = false,
          budgetEnabled: Bool = false, budgetLimits: AskBudgetResources = .standard,
          contextLimits: @escaping @Sendable (String) -> AskContextLimits = { _ in .init() }) {
         self.budgetEnabled = budgetEnabled

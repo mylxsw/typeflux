@@ -35,9 +35,10 @@ struct AskConversationView: View {
     @State private var previousResponder: NSResponder?
     @ObservedObject private var auth: AuthState
 
-    init(model: AskConversationModel, showsUsage: Bool = false, auth: AuthState = .shared) {
+    @MainActor
+    init(model: AskConversationModel, showsUsage: Bool = false, auth: AuthState? = nil) {
         self.model = model
-        self.auth = auth
+        self.auth = auth ?? .shared
         _showsUsage = State(initialValue: showsUsage)
         _usageRunId = State(initialValue: model.selected?.run?.id)
     }

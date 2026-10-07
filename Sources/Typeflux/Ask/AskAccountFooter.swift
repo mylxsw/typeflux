@@ -7,8 +7,8 @@ import SwiftUI
 /// a second click, a click outside or Esc (the glass presenter handles those).
 @MainActor
 final class AskAccountCardHover: ObservableObject {
-    static let openDelay: Duration = .milliseconds(400)
-    static let pollInterval: Duration = .milliseconds(120)
+    nonisolated static let openDelay: Duration = .milliseconds(400)
+    nonisolated static let pollInterval: Duration = .milliseconds(120)
 
     @Published var isPresented = false {
         didSet {

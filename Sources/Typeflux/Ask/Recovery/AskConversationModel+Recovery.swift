@@ -7,7 +7,7 @@ extension AskConversationModel {
 
     func recoveryBlocksResume(_ value: AskConversation) -> Bool {
         value.run?.needsRecoveryInspection == true || (recoveryEntries[value.id] ?? []).contains {
-            ($0.audit?.identity.runId == value.run?.id || $0.audit == nil) && ($0.unknown || $0.audit == nil)
+            ($0.audit?.identity.runId == value.run?.id || $0.audit == nil) && $0.needsInspection(run: value.run)
         }
     }
 

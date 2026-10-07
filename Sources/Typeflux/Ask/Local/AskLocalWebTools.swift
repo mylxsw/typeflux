@@ -8,7 +8,7 @@ struct AskLocalWebTools: Sendable {
     var session: URLSession = .init(configuration: .ephemeral, delegate: AskPublicRedirectPolicy(), delegateQueue: nil)
     var searchProvider: @Sendable () -> AskSearchConfiguration = { .init() }
     /// Resolves a host to its IP addresses; injectable for tests.
-    var resolve: @Sendable (String) -> [String] = AskLocalWebTools.addresses(of:)
+    var resolve: @Sendable (String) -> [String] = { AskLocalWebTools.addresses(of: $0) }
     var searchEndpoints: [AskSearchSettings.Provider: String] = [
         .tavily: "https://api.tavily.com/search", .brave: "https://api.search.brave.com/res/v1/web/search"
     ]

@@ -12,7 +12,7 @@ struct AskRecoveryPresentation: Equatable {
         // Keep historical evidence in the journal without treating an earlier
         // task's outcome as a problem with the user's current request.
         let currentEntries = entries.filter { $0.audit == nil || $0.audit?.identity.runId == run?.id }
-        unknown = run?.needsRecoveryInspection == true || currentEntries.contains { $0.unknown || $0.audit == nil }
+        unknown = run?.needsRecoveryInspection == true || currentEntries.contains { $0.needsInspection(run: run) }
         otherDevice = run.map { $0.deviceId != deviceId } ?? false
         active = run?.isActive == true
         savedReceipts = currentEntries.filter { !$0.deleted && $0.receipt != nil && !$0.acknowledged }.count

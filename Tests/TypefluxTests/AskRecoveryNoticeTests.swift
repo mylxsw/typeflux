@@ -96,6 +96,24 @@ struct AskRecoveryNoticePresentationTests {
         #expect(!presentation.canContinue)
     }
 
+    @Test(arguments: ["completed", "failed", "cancelled", "waiting_tool"])
+    func `delivered uncertain attempt only interrupts an active run`(status: String) {
+        var value = AskRecoveryFixture.conversation()
+        value.run?.status = status
+        var audit = AskRecoveryFixture.audit(value)
+        audit.record(.acknowledged)
+        let receipt = AskExecutionReceipt.tool(.init(
+            runId: value.run!.id, deviceId: "device", toolCallId: "call",
+            content: "Screenshot failed before a later successful attempt", isError: true
+        ))
+        let entry = AskExecutionEntry(id: audit.identity.key, audit: audit, receipt: receipt)
+        let presentation = AskRecoveryPresentation(run: value.run, entries: [entry], deviceId: "device", local: false)
+        #expect(entry.unknown)
+        #expect(presentation.isVisible == (status == "waiting_tool"))
+        value.run?.recovery = .init(state: "unknown_outcome", sequence: 2)
+        #expect(AskRecoveryPresentation(run: value.run, entries: [entry], deviceId: "device", local: false).unknown)
+    }
+
     @Test func `unfinished current execution cannot offer to continue before inspection or sync`() {
         let value = AskRecoveryFixture.conversation()
         let audit = AskRecoveryFixture.audit(value)
@@ -135,6 +153,28 @@ struct AskRecoveryNoticePresentationTests {
 @Suite("Ask recovery notice interactions", .serialized)
 @MainActor
 struct AskRecoveryNoticeInteractionTests {
+    @Test func `completed retry with delivered failure stays quiet after reopening`() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        var value = AskRecoveryFixture.conversation()
+        let audit = AskRecoveryFixture.audit(value)
+        #expect(try await fixture.cache.claimExecution(audit, owner: "owner"))
+        let receipt = AskExecutionReceipt.tool(.init(
+            runId: value.run!.id, deviceId: "device", toolCallId: "call", content: "Failed first attempt", isError: true
+        ))
+        try await fixture.cache.saveReceipt(receipt, identity: audit.identity, owner: "owner")
+        try await fixture.cache.recordExecution(id: audit.identity.key, event: .acknowledged, owner: "owner")
+        value.run?.status = "completed"
+        value.run?.pending = []
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        #expect(!fixture.model.hasRecoveryNotice)
+        #expect(!fixture.model.recoveryBlocksResume(value))
+        #expect(fixture.model.selectedRecoveryEntries.first?.unknown == true)
+        #expect(fixture.model.selectedRecoveryEntries.first?.acknowledged == true)
+        #expect(fixture.tools.executions == 0)
+    }
+
     @Test func `successful tool completion and reopening stay quiet without removing receipts`() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }

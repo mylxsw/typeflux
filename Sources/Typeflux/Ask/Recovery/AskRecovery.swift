@@ -120,6 +120,16 @@ struct AskExecutionEntry: Equatable, Sendable, Identifiable {
         audit?.deliveryConfirmed == true || audit?.events.contains(.acknowledged) == true
     }
 
+    /// A settled run may contain an earlier failed attempt that the model already
+    /// received and handled. Preserve its outcome without reopening recovery.
+    func needsInspection(run: AskRun?) -> Bool {
+        guard unknown || audit == nil else { return false }
+        if let run, !run.isActive, acknowledged, receipt != nil, audit != nil {
+            return false
+        }
+        return true
+    }
+
     /// Only allow a bound record to travel with its original account and device.
     /// Legacy receipts remain readable, but missing identity is never invented.
     func permits(_ identity: AskExecutionIdentity) -> Bool {

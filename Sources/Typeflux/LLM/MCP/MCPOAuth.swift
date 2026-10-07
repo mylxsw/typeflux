@@ -80,7 +80,7 @@ actor MCPOAuthAuthorizer {
     private let now: @Sendable () -> Date
 
     init(resource: URL, interactive: Bool, store: MCPOAuthTokenStore = MCPKeychainTokenStore(), session: URLSession = .shared,
-         callbackTimeout: Duration = .seconds(300), now: @escaping @Sendable () -> Date = Date.init,
+         callbackTimeout: Duration = .seconds(300), now: @escaping @Sendable () -> Date = { Date() },
          openBrowser: @escaping @Sendable (URL) async -> Void = { url in await MainActor.run { _ = NSWorkspace.shared.open(url) } }) {
         self.resource = resource
         self.interactive = interactive

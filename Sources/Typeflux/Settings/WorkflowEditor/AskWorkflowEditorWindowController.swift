@@ -20,8 +20,8 @@ final class AskWorkflowEditorWindowController: NSObject, NSWindowDelegate {
     private(set) var window: NSWindow?
     private(set) var model: AskWorkflowEditorModel?
 
-    init(store: AskWorkflowStore = .shared, settings: SettingsStore = SettingsStore()) {
-        self.store = store
+    init(store: AskWorkflowStore? = nil, settings: SettingsStore = SettingsStore()) {
+        self.store = store ?? .shared
         self.settings = settings
     }
 

@@ -321,7 +321,7 @@ enum AskMarkdownText {
                 append("\n", attributes)
             }
         }
-        visit(Document(parsing: text), base)
+        visit(Document(parsing: AskMarkdownFences.normalize(text)), base)
         // TextKit requires the final cell's paragraph terminator to lay out a table.
         if result.string.hasSuffix("\n"),
            (result.attribute(.paragraphStyle, at: result.length - 1, effectiveRange: nil) as? NSParagraphStyle)?
@@ -349,9 +349,18 @@ final class AskCodeBlock: NSTextBlock {
 
     required init?(coder: NSCoder) { super.init(coder: coder) }
 
+    /// TextKit's bounds include margins. Painting them makes the panel touch
+    /// the next paragraph even though the text layout reserved a gap.
+    func panelRect(in bounds: NSRect) -> NSRect {
+        let top = width(for: .margin, edge: .minY)
+        let bottom = width(for: .margin, edge: .maxY)
+        return NSRect(x: bounds.minX, y: bounds.minY + top,
+                      width: bounds.width, height: max(0, bounds.height - top - bottom))
+    }
+
     override func drawBackground(withFrame frameRect: NSRect, in controlView: NSView?,
                                  characterRange charRange: NSRange, layoutManager: NSLayoutManager) {
-        let path = NSBezierPath(roundedRect: frameRect.insetBy(dx: 0.25, dy: 0.25),
+        let path = NSBezierPath(roundedRect: panelRect(in: frameRect).insetBy(dx: 0.25, dy: 0.25),
                                 xRadius: Self.corner, yRadius: Self.corner)
         AskMarkdownText.codeFill.setFill()
         path.fill()

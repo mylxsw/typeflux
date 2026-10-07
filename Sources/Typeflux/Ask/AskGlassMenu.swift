@@ -11,7 +11,7 @@ import SwiftUI
 @MainActor
 final class AskGlassMenuPresenter {
     static let shared = AskGlassMenuPresenter()
-    static let gap: CGFloat = 8
+    nonisolated static let gap: CGFloat = 8
     static let screenMargin: CGFloat = 8
     /// Lines the menu's rows up with the button's text.
     static let leadingOffset: CGFloat = 6
