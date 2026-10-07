@@ -204,7 +204,10 @@ struct AskPluginResultsView: View {
 
     /// What Return and the other keys do now, for the bottom bar.
     static func hint(for display: AskPluginDisplay) -> String {
-        if display.hint?.pluginID == AskOpenChatPlugin.id { return L("ask.plugin.hint.action", display.title) }
+        // The chat button already names this action in the bottom bar.
+        if display.hint?.pluginID == AskOpenChatPlugin.id {
+            return display.asksAI ? L("ask.launcher.hint") : ""
+        }
         if display.hint != nil { return L("ask.plugin.hint.keyword") }
         if display.asksAI { return L("ask.launcher.hint") }
         let option = display.optionName.map { L("ask.plugin.hint.option", $0) }
@@ -213,6 +216,7 @@ struct AskPluginResultsView: View {
         case .waiting: return L("ask.plugin.hint.waiting")
         case let .ready(plan):
             if let action = plan.action(for: .enter) {
+                if case .openChat = action.kind { return "" }
                 parts = [L("ask.plugin.hint.action", action.title),
                          plan.action(for: .commandC).map { L("ask.plugin.hint.copy", $0.title) },
                          option, L("ask.plugin.hint.askAI")]
@@ -312,6 +316,11 @@ struct AskPluginResultsView: View {
         .fixedSize()
     }
 
+    static func rowHint(for action: AskPluginAction?) -> String {
+        if case .openChat? = action?.kind { return "↩" }
+        return action.map { $0.title + "  ↩" } ?? "↩"
+    }
+
     /// Waiting for input, or ready to run on Return.
     private func row(title: String, meta: [AskPluginMeta], enabled: Bool, action: AskPluginAction? = nil) -> some View {
         Button(action: onMain) {
@@ -323,7 +332,7 @@ struct AskPluginResultsView: View {
                 metaChips(meta)
                 Spacer(minLength: 8)
                 if enabled {
-                    Text(action.map { $0.title + "  ↩" } ?? "↩").font(.system(size: 11.5))
+                    Text(Self.rowHint(for: action)).font(.system(size: 11.5))
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
             }
@@ -353,7 +362,8 @@ struct AskPluginResultsView: View {
                 Text(hint.keyword).font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer(minLength: 8)
-                Text(hint.pluginID == AskOpenChatPlugin.id ? L("ask.plugin.hint.action", display.title) : L("ask.plugin.enter")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text(hint.pluginID == AskOpenChatPlugin.id ? "↩" : L("ask.plugin.enter"))
+                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             }
             .padding(.horizontal, 10)
             .frame(height: Self.askHeight)
