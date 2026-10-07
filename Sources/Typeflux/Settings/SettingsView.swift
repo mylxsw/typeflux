@@ -1847,6 +1847,22 @@ struct StudioView: View {
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                     StudioSettingRow(
+                        title: L("history.clipboard.title"),
+                        subtitle: L("history.clipboard.subtitle")
+                    ) {
+                        Toggle(
+                            "",
+                            isOn: Binding(
+                                get: { viewModel.clipboardHistoryEnabled },
+                                set: viewModel.setClipboardHistoryEnabled
+                            )
+                        )
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                    StudioSettingRow(
                         title: L("history.privacy.title"),
                         subtitle: L("history.privacy.subtitle")
                     ) {

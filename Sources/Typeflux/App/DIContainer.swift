@@ -17,6 +17,9 @@ final class DIContainer {
     let clipboard: ClipboardService
     let textInjector: AXTextInjector
     let historyStore: HistoryStore
+    let clipboardHistoryStore: ClipboardHistoryStore
+    let clipboardMonitor: ClipboardMonitor
+    let clipboardPanelController: ClipboardPanelController
     let llmService: LLMService
     let llmAgentService: LLMAgentService
     let sttRouter: STTRouter
@@ -67,6 +70,13 @@ final class DIContainer {
         Logger(subsystem: "ai.gulu.app.typeflux", category: "DIContainer")
             .debug("DIContainer initialized — Logger test message")
         historyStore = SQLiteHistoryStore()
+        clipboardHistoryStore = SQLiteClipboardHistoryStore()
+        let settingsForClipboard = settingsStore
+        clipboardMonitor = ClipboardMonitor(
+            store: clipboardHistoryStore,
+            isEnabled: { settingsForClipboard.clipboardHistoryEnabled }
+        )
+        clipboardPanelController = ClipboardPanelController(settingsStore: settingsStore)
         mcpRegistry = MCPRegistry()
         analyticsReporter = SettingsAwareAnalyticsEventReporter(settingsStore: settingsStore)
         permissionStatusAnalyticsMonitor = PermissionStatusAnalyticsMonitor(

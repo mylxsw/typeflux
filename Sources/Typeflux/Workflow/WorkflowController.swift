@@ -200,8 +200,12 @@ final class WorkflowController {
     var personaPickerSelectedIndex = 0
     var personaPickerMode: PersonaPickerMode = .switchDefault
     var isHistoryPickerPresented = false
-    var historyPickerItems: [HistoryPickerEntry] = []
-    var historyPickerSelectedIndex = 0
+    /// The clipboard panel's state; the panel opens from the history hotkey.
+    let historyPanelModel = ClipboardPanelModel()
+    var clipboardHistoryStore: ClipboardHistoryStore?
+    var clipboardPanelPresenter: ClipboardPanelPresenting?
+    var clipboardContentActions: ClipboardContentActing = SystemClipboardContentActions()
+    var clipboardHistoryObserver: NSObjectProtocol?
     var lastPaidCreditExhaustedPromptPresentedAt: Date?
     let analyticsLock = NSLock()
     var pendingDictationAnalyticsContext: DictationAnalyticsContext?
@@ -211,14 +215,6 @@ final class WorkflowController {
         let id: UUID?
         let title: String
         let subtitle: String
-    }
-
-    struct HistoryPickerEntry {
-        let id: UUID
-        let title: String
-        let subtitle: String
-        let text: String
-        let record: HistoryRecord
     }
 
     struct PersonaSelectionContext {
@@ -308,11 +304,13 @@ final class WorkflowController {
             onConfirm: { [weak self] in self?.confirmOverlayPickerSelection() },
             onCancel: { [weak self] in self?.dismissOverlayPicker() }
         )
-        self.overlayController.setHistoryPickerActionHandlers(
-            onCopy: { [weak self] index in self?.copyHistorySelection(at: index) },
-            onInsert: { [weak self] index in self?.insertHistorySelection(at: index) },
-            onRetry: { [weak self] index in self?.retryHistorySelection(at: index) }
-        )
+        configureHistoryPanel()
+    }
+
+    deinit {
+        if let clipboardHistoryObserver {
+            NotificationCenter.default.removeObserver(clipboardHistoryObserver)
+        }
     }
 
     func presentAskAnswer(question: String, selectedText: String?, answerMarkdown: String) {
