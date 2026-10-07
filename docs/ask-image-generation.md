@@ -18,6 +18,8 @@ available. The selected model must support the adapter's image API.
 
 ![Bailian settings with region shortcuts](ask-image-generation-bailian.png)
 
+![OpenRouter advanced options in dark mode](ask-image-generation-openrouter-dark.png)
+
 | Provider | Generation API relative to base URL | Suggestions |
 | --- | --- | --- |
 | Volcengine Ark | `images/generations` with base64 output | Built-in Seedream IDs; manual model or endpoint ID |
@@ -32,8 +34,12 @@ uses presets; it does not require separate cloud-management credentials.
 
 Bailian has Beijing/Singapore shortcuts and editable workspace-specific base URLs.
 Keys are scoped to the provider and endpoint in Keychain; changing the endpoint
-loads that endpoint's key. Save is explicit. No keys are written to UserDefaults,
-conversation receipts, image metadata, or logs.
+loads that endpoint's key. Connection and model edits use the same explicit Save
+button as Models settings; it is active only when values have changed. The capability
+switch takes effect immediately, without saving pending connection edits. The header
+shows the saved capability's readiness. Key visibility, advanced-option disclosure,
+field styling and save/error feedback follow the existing settings controls. No keys
+are written to UserDefaults, conversation receipts, image metadata, or logs.
 
 Blank advanced options defer to provider defaults. An explicit width/height
 overrides the tool's layout; Gemini's resolution combines with its aspect ratio.

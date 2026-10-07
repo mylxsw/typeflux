@@ -10,8 +10,11 @@ CI=true swift test --no-parallel --enable-code-coverage \
   --filter 'AskImage|AskArtifact|AskScopedApproval|AskRecoveryWire|AskRecoveryProcess|StudioModels|AgentCapabilityStatus'
 ```
 
-Passed: **83 XCTest tests + 49 Swift Testing tests**, no failures. This run was
-performed after the final provider/discovery helper refactor.
+Passed: **86 XCTest tests + 49 Swift Testing tests**, no failures. This run was
+performed after aligning the image settings with the existing Agent and Models UI.
+The revision adds tests for immediate capability toggles without saving drafts,
+change detection, failed saves retaining drafts, and light/dark rendering of advanced
+options, success/error feedback and loading states for all five providers.
 
 The four new suites cover all five providers, manual future model IDs, discovery,
 stale refresh results, Keychain persistence, HTTP bounds/redirects/cancellation,
@@ -19,7 +22,7 @@ single paid POST semantics, download-only retries, task deadlines, approval
 fingerprints, cloud/local receipts, cross-account storage and conversation deletion.
 
 LLVM coverage for the six new `Ask/ImageGeneration/` files plus
-`Settings/AskImageSettingsView.swift`:
+`Settings/AskImageSettingsView.swift` and `Settings/AskImageSettingsModel.swift`:
 
 | Scope | Line coverage |
 | --- | ---: |
@@ -29,16 +32,18 @@ LLVM coverage for the six new `Ask/ImageGeneration/` files plus
 | Model discovery | 95.40% |
 | Settings and Keychain | 95.52% |
 | Tool integration | 94.85% |
-| Settings view/model | 95.32% |
-| Combined new module | **96.39% (1147 / 1190)** |
+| Settings view | 94.80% |
+| Settings model | 97.52% |
+| Combined new module | **96.34% (1210 / 1256)** |
 
-Combined region coverage: **90.26%**. These figures are scoped to the new module,
+Combined region coverage: **90.59%**. These figures are scoped to the new module,
 not the entire repository. Strict SwiftLint for the new production files,
 SwiftFormat lint for the new production/test files, and `git diff --check` passed.
-The five settings panes were rendered; Gemini and Bailian screenshots are included
+The five provider forms and their feedback states were rendered in light/dark mode;
+Gemini, Bailian and OpenRouter screenshots are included
 in the [feature documentation](../ask-image-generation.md).
 
-## Full-suite limitation
+## Full-suite limitation from the initial implementation
 
 `make coverage` was attempted. A second attempt used
 `CI=true swift test --no-parallel --enable-code-coverage`.

@@ -80,7 +80,7 @@ final class AskImageSettingsTests: XCTestCase {
         XCTAssertFalse(model.loading)
         XCTAssertTrue(model.models.contains("new-image-model"))
         XCTAssertEqual(model.configuration.model, "manual-next-generation")
-        model.enabled = true; model.save()
+        model.setEnabled(true); model.save()
         XCTAssertTrue(store.isReady)
         XCTAssertEqual(store.configuration.model, "manual-next-generation")
         model.configuration.model = ""
@@ -89,7 +89,9 @@ final class AskImageSettingsTests: XCTestCase {
         model.select(.bailian)
         XCTAssertEqual(model.configuration, .preset(.bailian))
         model.key = "not-saved"
-        model.endpointChanged()
+        model.setEndpoint(model.configuration.baseURL)
+        XCTAssertEqual(model.key, "not-saved")
+        model.setEndpoint("https://another.example/v1")
         XCTAssertEqual(model.key, "")
         let failed = AskImageSettingsModel(store: store) { _, _ in throw URLError(.notConnectedToInternet) }
         failed.refresh()
@@ -124,6 +126,67 @@ final class AskImageSettingsTests: XCTestCase {
         XCTAssertFalse(model.models.contains("late-result"))
     }
 
+    func testSwitchAppliesImmediatelyWithoutSavingConnectionDraft() throws {
+        let config = AskImageConfiguration.preset(.google)
+        try store.save(config, key: "saved-key")
+        let model = AskImageSettingsModel(store: store)
+        XCTAssertFalse(model.hasChanges)
+        XCTAssertEqual(model.status.level, .off)
+        model.configuration.model = "unsaved-future-model"
+        model.key = "unsaved-key"
+        model.setEnabled(true)
+        XCTAssertTrue(store.enabled)
+        XCTAssertEqual(model.status.level, .ready)
+        XCTAssertEqual(store.configuration, config)
+        XCTAssertEqual(store.key(for: config), "saved-key")
+        model.setEnabled(false)
+        XCTAssertFalse(store.enabled)
+        XCTAssertFalse(store.isReady)
+        XCTAssertEqual(model.status.level, .off)
+        XCTAssertTrue(model.hasChanges)
+        model.save()
+        XCTAssertFalse(store.enabled)
+        XCTAssertFalse(model.hasChanges)
+        XCTAssertEqual(store.configuration.model, "unsaved-future-model")
+        XCTAssertEqual(store.key(for: config), "unsaved-key")
+        XCTAssertFalse(model.noticeIsError)
+    }
+
+    func testSaveFailureRetainsDraftAndProviderSelectionRequiresSave() {
+        let model = AskImageSettingsModel(store: store)
+        model.setEnabled(true)
+        XCTAssertEqual(model.status.level, .attention)
+        model.key = "test-key"
+        failWrites = true
+        model.save()
+        XCTAssertTrue(model.noticeIsError)
+        XCTAssertTrue(model.hasChanges)
+        XCTAssertEqual(model.status.level, .attention)
+        XCTAssertEqual(model.key, "test-key")
+        failWrites = false
+        model.save()
+        XCTAssertFalse(model.hasChanges)
+        XCTAssertFalse(model.noticeIsError)
+        XCTAssertEqual(model.status.level, .ready)
+        model.select(.google)
+        XCTAssertTrue(model.hasChanges)
+        XCTAssertEqual(store.provider, .volcengine)
+        model.key = "google-key"
+        model.configuration.model = "future-banana-model"
+        model.save()
+        XCTAssertFalse(model.hasChanges)
+        XCTAssertEqual(store.provider, .google)
+        XCTAssertEqual(store.configuration.model, "future-banana-model")
+        model.configuration.model = ""
+        model.save()
+        XCTAssertTrue(model.noticeIsError)
+        XCTAssertTrue(model.hasChanges)
+        XCTAssertEqual(store.configuration.model, "future-banana-model")
+        model.clearNotice()
+        XCTAssertNil(model.notice)
+        XCTAssertFalse(model.noticeIsError)
+    }
+
     func testImageCapabilityStatesAndSettingsRender() throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
@@ -138,26 +201,54 @@ final class AskImageSettingsTests: XCTestCase {
         XCTAssertEqual(AgentCapability.imageGeneration.pane, .imageGeneration)
         for provider in AskImageProvider.allCases {
             store.provider = provider
-            let view = NSHostingView(rootView: AskImageSettingsView(store: store).padding(24)
-                .frame(width: 880, height: 760, alignment: .topLeading).background(Color.white)
-                .environment(\.colorScheme, .light))
-            view.appearance = NSAppearance(named: .aqua)
-            view.frame = CGRect(x: 0, y: 0, width: 880, height: 760)
-            let window = NSWindow(contentRect: view.frame, styleMask: [.borderless], backing: .buffered, defer: false)
-            window.isReleasedWhenClosed = false
-            window.contentView = view
-            window.appearance = view.appearance
-            defer { window.close() }
-            view.layoutSubtreeIfNeeded()
-            view.displayIfNeeded()
-            let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
-            view.cacheDisplay(in: view.bounds, to: bitmap)
-            XCTAssertGreaterThan(bitmap.pixelsWide, 0)
-            if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_IMAGEGEN_SCREENSHOTS"] {
-                try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
-                try bitmap.representation(using: .png, properties: [:])?
-                    .write(to: URL(fileURLWithPath: directory).appendingPathComponent(provider.rawValue + ".png"))
-            }
+            store.enabled = true
+            try render(AskImageSettingsView(store: store), name: provider.rawValue)
+        }
+    }
+
+    func testAdvancedOptionsAndFeedbackRenderInBothAppearances() throws {
+        for provider in AskImageProvider.allCases {
+            let model = AskImageSettingsModel(store: store)
+            model.select(provider)
+            model.configuration.size = provider == .google ? "2K" : "1024x1024"
+            model.configuration.quality = "high"
+            model.configuration.routingProvider = "example-provider"
+            model.key = "test-key"
+            model.save()
+            XCTAssertFalse(model.noticeIsError)
+            try render(AskImageSettingsView(model: model), name: provider.rawValue + "-advanced", dark: true)
+            model.setEnabled(true)
+            model.configuration.model = ""
+            model.save()
+            XCTAssertTrue(model.noticeIsError)
+            try render(AskImageSettingsView(model: model), name: provider.rawValue + "-error")
+            model.clearNotice()
+            model.loading = true
+            try render(AskImageSettingsView(model: model), name: provider.rawValue + "-loading")
+        }
+    }
+
+    private func render(_ content: AskImageSettingsView, name: String, dark: Bool = false) throws {
+        let view = NSHostingView(rootView: content.padding(24)
+            .frame(width: 880, height: 900, alignment: .topLeading)
+            .background(dark ? Color.black : Color.white)
+            .environment(\.colorScheme, dark ? .dark : .light))
+        view.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        view.frame = CGRect(x: 0, y: 0, width: 880, height: 900)
+        let window = NSWindow(contentRect: view.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = view
+        window.appearance = view.appearance
+        defer { window.close() }
+        view.layoutSubtreeIfNeeded()
+        view.displayIfNeeded()
+        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        XCTAssertGreaterThan(bitmap.pixelsWide, 0)
+        if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_IMAGEGEN_SCREENSHOTS"] {
+            try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+            try bitmap.representation(using: .png, properties: [:])?
+                .write(to: URL(fileURLWithPath: directory).appendingPathComponent(name + ".png"))
         }
     }
 }

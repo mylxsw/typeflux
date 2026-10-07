@@ -1,178 +1,199 @@
 import SwiftUI
 
-@MainActor
-final class AskImageSettingsModel: ObservableObject {
-    @Published var configuration = AskImageConfiguration()
-    @Published var key = ""
-    @Published var enabled = false
-    @Published var models: [String] = []
-    @Published var loading = false
-    @Published var notice: String?
-    let store: AskImageSettings
-    private let discover: (AskImageConfiguration, String) async throws -> [String]
-    private var task: Task<Void, Never>?
-    private var generation = UUID()
-
-    init(store: AskImageSettings, discover: @escaping (AskImageConfiguration, String) async throws -> [String] = {
-        try await AskImageModelDiscovery().models(configuration: $0, key: $1)
-    }) {
-        self.store = store; self.discover = discover
-        enabled = store.enabled
-        select(store.provider)
-    }
-
-    func select(_ provider: AskImageProvider) {
-        cancelDiscovery()
-        configuration = store.configuration(for: provider)
-        key = store.key(for: configuration)
-        models = provider.suggestedModels
-        notice = nil
-    }
-
-    func endpointChanged() {
-        cancelDiscovery()
-        key = store.key(for: configuration)
-        models = configuration.provider.suggestedModels
-        notice = nil
-    }
-
-    func save() {
-        do {
-            if enabled {
-                try configuration.validate(key: key)
-            }
-            try store.save(configuration, key: key)
-            store.enabled = enabled
-            notice = L("imagegen.saved")
-        } catch { notice = error.localizedDescription }
-    }
-
-    func refresh() {
-        cancelDiscovery()
-        let snapshot = configuration, secret = key, id = generation
-        loading = true; notice = nil
-        task = Task {
-            defer {
-                if generation == id {
-                    loading = false; task = nil
-                }
-            }
-            do {
-                let found = try await discover(snapshot, secret)
-                guard !Task.isCancelled, generation == id, configuration == snapshot, key == secret else { return }
-                models = Array(Set(found + snapshot.provider.suggestedModels)).sorted {
-                    let lhs = AskImageModelDiscovery.imageLike($0), rhs = AskImageModelDiscovery.imageLike($1)
-                    return lhs == rhs ? $0 < $1 : lhs
-                }
-                notice = L("imagegen.models.loaded", found.count)
-            } catch {
-                guard !Task.isCancelled, generation == id, configuration == snapshot, key == secret else { return }
-                notice = L("imagegen.models.failed")
-            }
-        }
-    }
-
-    func cancelDiscovery() {
-        generation = UUID(); task?.cancel(); task = nil; loading = false
-    }
-}
-
+/// Uses the same pane, connection card, field and action styles as Agent and Models settings.
 struct AskImageSettingsView: View {
     @StateObject private var model: AskImageSettingsModel
+    @State private var showsKey = false
+    @State private var showsAdvanced = false
     var onSaved: (Bool, Bool) -> Void
 
     init(store: AskImageSettings, onSaved: @escaping (Bool, Bool) -> Void = { _, _ in }) {
-        _model = StateObject(wrappedValue: AskImageSettingsModel(store: store))
+        self.init(model: AskImageSettingsModel(store: store), onSaved: onSaved)
+    }
+
+    init(model: AskImageSettingsModel, onSaved: @escaping (Bool, Bool) -> Void = { _, _ in }) {
+        _model = StateObject(wrappedValue: model)
         self.onSaved = onSaved
+        let config = model.configuration
+        _showsAdvanced = State(initialValue: !config.size.isEmpty || !config.quality.isEmpty || !config.routingProvider
+            .isEmpty)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             AgentPaneHeader(symbol: "photo.badge.plus", title: L("imagegen.title"), subtitle: L("imagegen.summary")) {
-                Toggle("", isOn: $model.enabled).labelsHidden().toggleStyle(.switch)
-                    .accessibilityLabel(L("imagegen.title"))
+                AgentStatusBadge(level: model.status.level, label: model.status.label)
+                Toggle("", isOn: Binding(get: { model.enabled }, set: {
+                    model.setEnabled($0)
+                    onSaved(model.store.enabled, model.store.isReady)
+                }))
+                .labelsHidden().toggleStyle(.switch)
+                .accessibilityLabel(L("imagegen.title"))
             }
             AgentSettingsSection(title: L("imagegen.connection"), footnote: L("imagegen.billing")) {
-                VStack(alignment: .leading, spacing: 14) {
-                    AgentFormRow(label: L("imagegen.provider"), required: true) {
-                        Picker("", selection: Binding(get: { model.configuration.provider }, set: model.select)) {
-                            ForEach(AskImageProvider.allCases, id: \.self) { Text($0.title).tag($0) }
-                        }.labelsHidden()
-                    }
-                    AgentFormRow(label: L("imagegen.endpoint"), required: true) {
-                        TextField("https://", text: $model.configuration.baseURL).textFieldStyle(ModelFieldStyle())
-                    }
-                    if model.configuration.provider == .bailian {
-                        HStack {
-                            Button(L("imagegen.beijing")) {
-                                model.configuration.baseURL = "https://dashscope.aliyuncs.com/api/v1"
-                            }
-                            Button(L("imagegen.singapore")) {
-                                model.configuration.baseURL = "https://dashscope-intl.aliyuncs.com/api/v1"
-                            }
-                        }.buttonStyle(ModelActionStyle())
-                        Text(L("imagegen.bailian.help")).font(.caption).foregroundStyle(StudioTheme.textSecondary)
-                    }
-                    AgentFormRow(label: "API Key", required: true) {
-                        SecureField("API Key", text: $model.key).textFieldStyle(ModelFieldStyle())
-                    }
-                    AgentFormRow(label: L("imagegen.model"), required: true) {
-                        HStack {
-                            TextField(L("imagegen.model.placeholder"), text: $model.configuration.model)
-                                .textFieldStyle(ModelFieldStyle()).accessibilityIdentifier("imagegen-model")
-                            Menu {
-                                ForEach(model.models, id: \.self) { name in
-                                    Button(name) { model.configuration.model = name }
-                                }
-                            } label: { Image(systemName: "list.bullet") }
-                                .help(L("imagegen.models.suggestions"))
-                        }
-                    }
-                    Text(L("imagegen.models.help")).font(.caption).foregroundStyle(StudioTheme.textSecondary)
-                    if model.configuration.provider.supportsDiscovery {
-                        HStack {
-                            Button(L("imagegen.models.refresh")) { model.refresh() }.buttonStyle(ModelActionStyle())
-                                .disabled(model.loading || model.key.isEmpty)
-                            if model.loading {
-                                ProgressView().controlSize(.small)
-                            }
-                        }
-                    } else {
-                        Text(L("imagegen.models.builtin")).font(.caption).foregroundStyle(StudioTheme.textSecondary)
-                    }
-                    DisclosureGroup(L("imagegen.advanced")) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            AgentFormRow(label: L("imagegen.size")) {
-                                TextField(L("imagegen.providerDefault"), text: $model.configuration.size)
-                                    .textFieldStyle(ModelFieldStyle())
-                            }
-                            if [.openAI, .openRouter].contains(model.configuration.provider) {
-                                AgentFormRow(label: L("imagegen.quality")) {
-                                    TextField(L("imagegen.providerDefault"), text: $model.configuration.quality)
-                                        .textFieldStyle(ModelFieldStyle())
-                                }
-                            }
-                            if model.configuration.provider == .openRouter {
-                                AgentFormRow(label: L("imagegen.routing")) {
-                                    TextField(L("imagegen.routing.auto"), text: $model.configuration.routingProvider)
-                                        .textFieldStyle(ModelFieldStyle())
-                                }
-                            }
-                            Text(L("imagegen.options.help")).font(.caption).foregroundStyle(StudioTheme.textSecondary)
-                        }.padding(.top, 12)
-                    }
-                    Button(L("imagegen.save")) {
-                        model.save()
-                        onSaved(model.store.enabled, model.store.isReady)
-                    }.buttonStyle(ModelActionStyle())
-                    if let notice = model.notice {
-                        Text(notice).font(.caption).foregroundStyle(StudioTheme.textSecondary).textSelection(.enabled)
-                    }
-                }.padding(18)
+                connectionFields
+                ModelRowDivider(leading: 18)
+                modelField
+                ModelRowDivider(leading: 18)
+                advancedOptions
+                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                actions
             }
             AgentInfoNote(text: L("imagegen.retention"))
         }
-        .onChange(of: model.configuration.baseURL) { _ in model.endpointChanged() }
+        .onChange(of: model.configuration) { _ in model.clearNotice() }
+        .onChange(of: model.key) { _ in model.clearNotice() }
         .onDisappear { model.cancelDiscovery() }
+    }
+
+    private var endpoint: String {
+        model.configuration.baseURL
+    }
+
+    private var connectionFields: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            formRow(L("imagegen.provider"), required: true) {
+                Picker(L("imagegen.provider"), selection: Binding(get: { model.configuration.provider }, set: {
+                    showsKey = false
+                    model.select($0)
+                })) {
+                    ForEach(AskImageProvider.allCases, id: \.self) { Text($0.title).tag($0) }
+                }.labelsHidden()
+            }
+            ModelRowDivider(leading: 18)
+            formRow(L("imagegen.endpoint"), required: true) {
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("https://", text: Binding(get: { endpoint }, set: model.setEndpoint))
+                        .textFieldStyle(ModelFieldStyle())
+                    if model.configuration.provider == .bailian {
+                        HStack(spacing: 8) {
+                            regionButton("imagegen.beijing", endpoint: "https://dashscope.aliyuncs.com/api/v1")
+                            regionButton("imagegen.singapore", endpoint: "https://dashscope-intl.aliyuncs.com/api/v1")
+                        }
+                        hint("imagegen.bailian.help")
+                    }
+                }
+            }
+            ModelRowDivider(leading: 18)
+            formRow("API Key", required: true) { keyField }
+        }
+    }
+
+    private var keyField: some View {
+        Group {
+            if showsKey {
+                TextField("API Key", text: $model.key)
+            } else {
+                SecureField("API Key", text: $model.key)
+            }
+        }
+        .textFieldStyle(ModelFieldStyle(trailingAccessoryWidth: 24))
+        .overlay(alignment: .trailing) {
+            Button { showsKey.toggle() } label: {
+                Image(systemName: showsKey ? "eye.slash" : "eye")
+                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 26, height: 26).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).padding(.trailing, 3)
+            .help(L(showsKey ? "models.hideKey" : "models.showKey"))
+            .accessibilityLabel(L(showsKey ? "models.hideKey" : "models.showKey"))
+        }
+    }
+
+    private var modelField: some View {
+        formRow(L("imagegen.model"), required: true) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    TextField(L("imagegen.model.placeholder"), text: $model.configuration.model)
+                        .textFieldStyle(ModelFieldStyle()).accessibilityIdentifier("imagegen-model")
+                    Menu {
+                        ForEach(model.models, id: \.self) { name in
+                            Button(name) { model.configuration.model = name }
+                        }
+                    } label: { Image(systemName: "list.bullet") }
+                        .menuStyle(.borderlessButton).fixedSize()
+                        .help(L("imagegen.models.suggestions"))
+                        .accessibilityLabel(L("imagegen.models.suggestions"))
+                }
+                hint("imagegen.models.help")
+                if !model.configuration.provider.supportsDiscovery {
+                    hint("imagegen.models.builtin")
+                }
+            }
+        }
+    }
+
+    private var advancedOptions: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            AgentDisclosureButton(title: L("imagegen.advanced"), expanded: $showsAdvanced)
+            if showsAdvanced {
+                AgentFormRow(label: L("imagegen.size")) {
+                    TextField(L("imagegen.providerDefault"), text: $model.configuration.size)
+                        .textFieldStyle(ModelFieldStyle())
+                }
+                if [.openAI, .openRouter].contains(model.configuration.provider) {
+                    AgentFormRow(label: L("imagegen.quality")) {
+                        TextField(L("imagegen.providerDefault"), text: $model.configuration.quality)
+                            .textFieldStyle(ModelFieldStyle())
+                    }
+                }
+                if model.configuration.provider == .openRouter {
+                    AgentFormRow(label: L("imagegen.routing")) {
+                        TextField(L("imagegen.routing.auto"), text: $model.configuration.routingProvider)
+                            .textFieldStyle(ModelFieldStyle())
+                    }
+                }
+                hint("imagegen.options.help")
+            }
+        }.padding(.horizontal, 18).padding(.vertical, 12)
+    }
+
+    private var actions: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                if model.configuration.provider.supportsDiscovery {
+                    Button { model.refresh() } label: {
+                        HStack(spacing: 6) {
+                            if model.loading {
+                                ProgressView().controlSize(.small)
+                            }
+                            Text(L("imagegen.models.refresh"))
+                        }
+                    }
+                    .buttonStyle(ModelActionStyle()).disabled(model.loading || model.key.isEmpty)
+                }
+                Spacer(minLength: 8)
+                Button(L("ask.models.save")) {
+                    model.save()
+                    onSaved(model.store.enabled, model.store.isReady)
+                }
+                .buttonStyle(ModelActionStyle(primary: true))
+                .disabled(model.loading || !model.hasChanges)
+            }
+            if let notice = model.notice {
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: model.noticeIsError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                    Text(notice).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+                }
+                .font(.system(size: 12))
+                .foregroundStyle(model.noticeIsError ? StudioTheme.danger : StudioTheme.success)
+            }
+        }.padding(.horizontal, 18).padding(.vertical, 12)
+    }
+
+    private func formRow(_ label: String, required: Bool = false, @ViewBuilder field: () -> some View) -> some View {
+        AgentFormRow(label: label, required: required, field: field)
+            .padding(.horizontal, 18).padding(.vertical, 12)
+    }
+
+    private func regionButton(_ title: String, endpoint: String) -> some View {
+        Button(L(title)) {
+            model.setEndpoint(endpoint)
+        }.buttonStyle(ModelActionStyle())
+    }
+
+    private func hint(_ key: String) -> some View {
+        Text(L(key)).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
