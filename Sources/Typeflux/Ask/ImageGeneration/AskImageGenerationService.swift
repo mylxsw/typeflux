@@ -2,7 +2,8 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-struct AskGeneratedImage: Sendable {
+/// Validated local image bytes, distinct from the server-backed AskGeneratedImage record.
+struct AskGeneratedImageData: Sendable {
     let data: Data
     let mediaType: String
     let width: Int
@@ -36,7 +37,7 @@ struct AskGeneratedImage: Sendable {
 }
 
 struct AskImageGenerationResult: Sendable {
-    var images: [AskGeneratedImage]
+    var images: [AskGeneratedImageData]
     var requestID: String?
     var usage: JSONValue?
     var responseModel: String?
@@ -60,7 +61,7 @@ struct AskImageGenerationService: AskImageGenerating {
         let sources = try Self.sources(body, provider: configuration.provider)
         guard !sources.isEmpty else { throw AskImageError.noImage }
         guard sources.count <= 8 else { throw AskImageError.tooLarge }
-        var images: [AskGeneratedImage] = [], total = 0
+        var images: [AskGeneratedImageData] = [], total = 0
         for source in sources {
             try Task.checkCancellation()
             let bytes: Data
@@ -75,7 +76,7 @@ struct AskImageGenerationService: AskImageGenerating {
             }
             total += bytes.count
             guard total <= AskArtifactStore.maximumBundleBytes - 64 * 1024 else { throw AskImageError.tooLarge }
-            try images.append(AskGeneratedImage(data: bytes))
+            try images.append(AskGeneratedImageData(data: bytes))
         }
         return .init(images: images, requestID: (body["request_id"] ?? body["id"]) as? String,
                      usage: (body["usage"] as? [String: Any]).map(AskTypedContent.json),

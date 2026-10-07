@@ -31,6 +31,23 @@ final class AskImageGenerationTests: XCTestCase {
         try .init(arguments: ["prompt": "A small blue bird", "layout": layout])
     }
 
+    func testLocalImageDataCoexistsWithPersistedConversationImage() throws {
+        let bytes = try Self.picture()
+        let local = try AskGeneratedImageData(data: bytes)
+        let generated = AskImageGenerationResult(images: [local])
+        XCTAssertEqual(generated.images.first?.data, bytes)
+        XCTAssertEqual(generated.images.first?.mediaType, "image/png")
+
+        let remote = AskGeneratedImage(assetId: "asset-id", url: "https://cdn.example/image.png")
+        let message = AskMessage(id: "result", role: "tool", text: "Created", createdAt: Date(), generatedImage: remote)
+        let restored = try AskCoding.decoder().decode(AskMessage.self, from: AskCoding.encoder().encode(message))
+        XCTAssertEqual(restored.generatedImage, remote)
+        XCTAssertEqual(restored.generatedImage?.safeURL?.absoluteString, remote.url)
+        let outputs = AskRunOutputs(generatedImages: [remote])
+        XCTAssertEqual(outputs, AskRunOutputs(generatedImages: [remote]))
+        XCTAssertFalse(outputs.isEmpty)
+    }
+
     func testGenerationAndDownloadShareRemainingTaskDeadline() async throws {
         var request = try input()
         request.deadline = Date().addingTimeInterval(10)
@@ -208,7 +225,7 @@ final class AskImageGenerationTests: XCTestCase {
                 XCTAssertNil(requests[1].value(forHTTPHeaderField: "x-goog-api-key"))
             }
         }
-        let jpeg = try AskGeneratedImage(data: Self.picture(.jpeg))
+        let jpeg = try AskGeneratedImageData(data: Self.picture(.jpeg))
         XCTAssertEqual(jpeg.mediaType, "image/jpeg")
         XCTAssertEqual(jpeg.fileExtension, "jpg")
     }
@@ -240,8 +257,8 @@ final class AskImageGenerationTests: XCTestCase {
         ); XCTFail() } catch {}
         let count = await transport.requests.count
         XCTAssertEqual(count, 1)
-        XCTAssertThrowsError(try AskGeneratedImage(data: Data()))
-        XCTAssertThrowsError(try AskGeneratedImage(data: Data(
+        XCTAssertThrowsError(try AskGeneratedImageData(data: Data()))
+        XCTAssertThrowsError(try AskGeneratedImageData(data: Data(
             repeating: 0,
             count: AskArtifactStore.maximumFileBytes + 1
         )))
