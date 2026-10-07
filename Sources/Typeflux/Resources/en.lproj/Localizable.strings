@@ -3277,7 +3277,6 @@
 "imagegen.save" = "Save configuration";
 "imagegen.saved" = "Configuration saved.";
 "imagegen.billing" = "Each generation requires approval and is billed by your provider. Fetching the model list does not generate an image.";
-"imagegen.retention" = "Originals stay on the Mac that generated them for 30 days. Save a copy to keep them. Deleting the conversation removes its local images.";
 "imagegen.beijing" = "Beijing";
 "imagegen.singapore" = "Singapore";
 "imagegen.bailian.help" = "Use a key from the selected region. Workspace-specific base URLs are supported. This adapter uses the Qwen Image synchronous API.";

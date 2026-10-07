@@ -123,6 +123,69 @@ final class AskArtifactStoreTests: XCTestCase {
         XCTAssertEqual(try root.readFile("unrelated", limit: 10), Data("keep".utf8))
     }
 
+    func testImagesSurviveCleanupAndReopenUntilConversationDeletion() throws {
+        for entry in ["image.png", "image.jpg", "image.gif"] {
+            let ref = try publish(entry: entry)
+            XCTAssertEqual(ref.cleanup, "device_persistent")
+            XCTAssertNil(ref.expiresAt)
+            XCTAssertNil(AskArtifactStore.expirationDate(for: ref))
+            let reopened = try AskCoding.decoder().decode(AskArtifactRef.self, from: AskCoding.encoder().encode(ref))
+            let future = AskArtifactStore(
+                storageURL: store.storageURL,
+                now: { Date(timeIntervalSince1970: 2_000_000_000) }
+            )
+            XCTAssertEqual(try future.cleanupExpired(), 0)
+            let bundle = try future.load(reopened, scope: scope)
+            XCTAssertEqual(bundle.files[entry], Data("hello".utf8))
+            try future.validate(reopened, scope: scope) { _ in XCTFail("Unexpected workspace") }
+            let exported = base.appendingPathComponent(entry)
+            try AskArtifactExport.write(bundle, to: exported)
+            XCTAssertEqual(try Data(contentsOf: exported), Data("hello".utf8))
+            try future.delete(ownerId: "other", conversationId: scope.conversationId)
+            XCTAssertNoThrow(try future.load(ref, scope: scope))
+            try future.delete(ownerId: scope.ownerId, conversationId: scope.conversationId)
+            XCTAssertThrowsError(try future.load(ref, scope: scope))
+        }
+    }
+
+    func testLegacyImagesRemainReadableAfterTheirOriginalExpiry() throws {
+        var ref = try publish(entry: "generated-1.png")
+        var manifest = try store.load(ref, scope: scope).manifest
+        ref.cleanup = "device_30_days"
+        ref.expiresAt = Date(timeIntervalSince1970: 100 + AskArtifactStore.retention)
+        manifest.ref = ref
+        let manifestURL = store.storageURL.appendingPathComponent(ref.id + "/manifest.json")
+        try JSONEncoder().encode(manifest).write(to: manifestURL)
+        let originalManifest = try Data(contentsOf: manifestURL)
+        let oldRef = try AskCoding.decoder().decode(AskArtifactRef.self, from: AskCoding.encoder().encode(ref))
+        let expiredText = try publish()
+        store.now = { Date(timeIntervalSince1970: 2_000_000_000) }
+        XCTAssertNil(AskArtifactStore.expirationDate(for: oldRef))
+        XCTAssertNoThrow(try store.load(oldRef, scope: scope))
+        XCTAssertEqual(try store.cleanupExpired(), 1)
+        XCTAssertEqual(try store.cleanupExpired(), 0)
+        XCTAssertEqual(try store.load(oldRef, scope: scope).manifest.ref, oldRef)
+        XCTAssertEqual(try Data(contentsOf: manifestURL), originalManifest)
+        XCTAssertThrowsError(try store.load(expiredText, scope: scope))
+    }
+
+    func testPersistentPolicyCannotBypassReferenceIntegrity() throws {
+        let text = try publish()
+        var forged = text
+        forged.cleanup = "device_persistent"
+        forged.expiresAt = nil
+        XCTAssertThrowsError(try store.load(forged, scope: scope))
+        forged.mediaType = "image/png"
+        XCTAssertThrowsError(try store.load(forged, scope: scope))
+        let image = try publish(entry: "image.png")
+        forged = image
+        forged.expiresAt = Date()
+        XCTAssertThrowsError(try store.load(forged, scope: scope))
+        forged = image
+        forged.sha256 = "forged"
+        XCTAssertThrowsError(try store.load(forged, scope: scope))
+    }
+
     func testTamperingSymlinksAndHardlinksAreRejected() throws {
         let ref = try publish()
         let file = store.storageURL.appendingPathComponent(ref.id + "/0")
@@ -151,6 +214,7 @@ final class AskArtifactStoreTests: XCTestCase {
         var wrong = workspace; wrong.runId = "wrong"
         XCTAssertThrowsError(try store.publish(files: ["x": Data()], entry: "x", scope: scope, workspace: wrong))
     }
+
     func testWireDatePrecisionDoesNotInvalidateReopenedReferences() throws {
         store.now = { Date(timeIntervalSince1970: 100.987654321) }
         let ref = try publish()
@@ -158,5 +222,4 @@ final class AskArtifactStoreTests: XCTestCase {
         XCTAssertEqual(reopened, ref)
         XCTAssertNoThrow(try store.load(reopened, scope: scope))
     }
-
 }
