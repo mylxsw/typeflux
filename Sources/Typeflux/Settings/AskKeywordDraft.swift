@@ -10,6 +10,8 @@ struct AskKeywordDraft: Equatable {
     var enabled: Bool
     /// Translation: a language code, empty for "detect the direction".
     var target: String
+    /// Translation: the keyword opens the word book (`dict`) instead of translating in place.
+    var opensWordBook: Bool
     /// AI prompt and web search: the name on the chip; empty shows the preset's.
     var title: String
     /// AI prompt: the prompt, with the preset's filled in so the user sees what runs.
@@ -25,6 +27,7 @@ struct AskKeywordDraft: Equatable {
         self.keyword = keyword.keyword
         enabled = keyword.enabled
         target = keyword.options[AskTranslatePlugin.targetOption] ?? ""
+        opensWordBook = AskTranslatePlugin.opensWordBook(keyword.options)
         title = keyword.options[AskPromptPlugin.titleOption] ?? ""
         prompt = AskPromptPlugin.template(of: keyword.options) ?? ""
         let custom = keyword.options[AskWebSearchPlugin.urlOption]?.trimmingCharacters(in: .whitespaces) ?? ""
@@ -39,6 +42,7 @@ struct AskKeywordDraft: Equatable {
         keyword = ""
         enabled = true
         target = ""
+        opensWordBook = false
         title = ""
         prompt = ""
         engine = kind == .web ? .google : nil
@@ -77,7 +81,9 @@ struct AskKeywordDraft: Equatable {
     var displayName: String {
         switch kind {
         case .translate:
-            if target.isEmpty {
+            if opensWordBook {
+                L("ask.wordBook.title")
+            } else if target.isEmpty {
                 L("ask.plugin.translate.title")
             } else {
                 L("ask.plugin.translate.title") + " · "
@@ -144,7 +150,8 @@ struct AskKeywordDraft: Equatable {
         }
         switch kind {
         case .translate:
-            set(AskTranslatePlugin.targetOption, target)
+            set(AskTranslatePlugin.targetOption, opensWordBook ? nil : target)
+            options[AskTranslatePlugin.actionOption] = opensWordBook ? AskTranslatePlugin.wordBookAction : nil
         case .prompt:
             set(AskPromptPlugin.titleOption, title.trimmingCharacters(in: .whitespaces))
             set(AskPromptPlugin.promptOption, prompt == presetPrompt ? nil : prompt)

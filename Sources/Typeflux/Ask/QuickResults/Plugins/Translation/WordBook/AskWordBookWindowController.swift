@@ -1,36 +1,51 @@
 import AppKit
 import SwiftUI
 
-/// The one word book dialog. Translation results open it (⌘B), on the word they show;
-/// see `docs/design/translation-word-book.md` §5.
+/// The one word book window. Translation results open it (⌘B) on the word they show,
+/// and `dict word` opens it looking the word up; see `docs/design/word-book-redesign.md`.
 @MainActor
 final class AskWordBookWindowController: NSObject, NSWindowDelegate {
     static let shared = AskWordBookWindowController()
+    static let defaultSize = NSSize(width: 1120, height: 720)
+    static let minimumSize = NSSize(width: 900, height: 560)
 
     private var store: (any AskWordBookStoring)?
     private var dictionary: (any AskWordLookingUp)?
     private var modelName: () -> String = { "AI" }
+    private var askAI: (@MainActor (String) -> Void)?
     private var settings = SettingsStore()
     private(set) var window: NSWindow?
     private(set) var model: AskWordBookViewModel?
 
-    /// The launcher's word book and the model that writes cards; `AskConversationWindowController` supplies them.
+    /// The launcher's word book, the model that writes cards, and how to ask the AI about a
+    /// word; `AskConversationWindowController` supplies them.
     func configure(store: any AskWordBookStoring, dictionary: (any AskWordLookingUp)?, settings: SettingsStore,
-                   modelName: @escaping () -> String) {
+                   askAI: (@MainActor (String) -> Void)? = nil, modelName: @escaping () -> String) {
         self.store = store
         self.dictionary = dictionary
         self.settings = settings
+        self.askAI = askAI
         self.modelName = modelName
         model?.dictionary = dictionary
         model?.modelName = modelName
+        model?.askAI = askAI
     }
 
-    /// Opens the dialog, or brings it forward, showing `key` when it is a word in the book.
+    /// Opens the window, or brings it forward, showing `key` when it is a word in the book.
     func show(selecting key: String? = nil) {
         guard let model = ensureModel() else { return }
         model.reload()
         model.reveal(key)
         present(model)
+    }
+
+    /// Opens the window and looks `text` up in it (`dict word`).
+    func show(lookingUp text: String) {
+        guard let model = ensureModel() else { return }
+        model.reload()
+        model.lookupText = text
+        present(model)
+        Task { await model.lookUp(text) }
     }
 
     private func ensureModel() -> AskWordBookViewModel? {
@@ -39,6 +54,7 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         let model = AskWordBookViewModel(store: store, settings: settings)
         model.dictionary = dictionary
         model.modelName = modelName
+        model.askAI = askAI
         self.model = model
         return model
     }
@@ -50,15 +66,28 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
             NSApp.activate(ignoringOtherApps: true)
             return
         }
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 640),
-                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: Self.defaultSize),
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
+        // Translucent like the Ask workspace: the sidebar floats on the window as glass.
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.title = L("ask.wordBook.title")
-        window.contentView = NSHostingView(rootView: AskWordBookView(model: model) { [weak window] in
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        // An empty unified toolbar gives the title bar the workspace's height, so the
+        // traffic lights sit in the sidebar's top strip and level with the lookup bar.
+        window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.word-book.toolbar")
+        window.toolbarStyle = .unified
+        window.titlebarSeparatorStyle = .none
+        let hosting = TransparentAskHostingView(rootView: AskWordBookView(model: model) { [weak window] in
             window?.performClose(nil)
         })
-        window.minSize = NSSize(width: 940, height: 520)
+        hosting.sizingOptions = []
+        window.contentView = hosting
+        window.minSize = Self.minimumSize
         window.setFrameAutosaveName("AskWordBook")
+        if window.frame.width < Self.minimumSize.width { window.setContentSize(Self.defaultSize) }
         if window.frame.origin == .zero { window.center() }
         window.isReleasedWhenClosed = false
         window.delegate = self

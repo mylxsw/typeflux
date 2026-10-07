@@ -30,15 +30,15 @@ struct AskKeywordListPresentationTests {
 
     @Test func `rows list built in keywords by plugin then workflows`() {
         let rows = rows()
-        #expect(rows.map(\.keyword) == ["fy", "tr", "翻译", "rw", "sum", "ex", "g", "bd", "gh", "wf", "FY"])
-        #expect(rows.map(\.kind) == [.translate, .translate, .translate, .prompt, .prompt, .prompt, .web, .web, .web,
-                                     .workflow, .workflow])
+        #expect(rows.map(\.keyword) == ["fy", "tr", "翻译", "dict", "词典", "rw", "sum", "ex", "g", "bd", "gh", "wf", "FY"])
+        #expect(rows.map(\.kind) == [.translate, .translate, .translate, .translate, .translate, .prompt, .prompt, .prompt,
+                                     .web, .web, .web, .workflow, .workflow])
         #expect(Set(rows.map(\.id)).count == rows.count, "row ids are unique")
-        let workflow = rows[9]
+        let workflow = rows[11]
         #expect(workflow.workflowID == "local.python" && workflow.source == nil && workflow.enabled && !workflow
             .shadowed)
         #expect(workflow.summary == L("ask.settings.keywords.summary.workflow"))
-        let clash = rows[10]
+        let clash = rows[12]
         #expect(clash.shadowed && !clash.enabled, "a built-in keyword wins over a workflow's")
         #expect(clash.summary == L("ask.settings.keywords.summary.shadowed"))
     }
@@ -49,11 +49,13 @@ struct AskKeywordListPresentationTests {
         #expect(rows[0].summary == L("ask.settings.keywords.summary.auto",
                                      AskTranslationLanguages.name("en", in: .english),
                                      AskTranslationLanguages.name("ja", in: .english)))
-        #expect(rows[3].name == AskPromptPlugin.Preset.polish.title)
-        #expect(rows[3].summary.hasPrefix("Polish the following text"))
-        #expect(!rows[3].summary.contains("\n"), "only the prompt's first line")
-        #expect(rows[6].name == "Google" && rows[6].monospacedSummary)
-        #expect(rows[6].summary == "www.google.com/search?q={query}")
+        #expect(rows[3].name == L("ask.wordBook.title"))
+        #expect(rows[3].summary == L("ask.settings.keywords.summary.wordBook"))
+        #expect(rows[5].name == AskPromptPlugin.Preset.polish.title)
+        #expect(rows[5].summary.hasPrefix("Polish the following text"))
+        #expect(!rows[5].summary.contains("\n"), "only the prompt's first line")
+        #expect(rows[8].name == "Google" && rows[8].monospacedSummary)
+        #expect(rows[8].summary == "www.google.com/search?q={query}")
 
         let japanese = AskKeyword(keyword: "fyja", pluginID: AskTranslatePlugin.id, options: ["target": "ja"])
         #expect(AskKeywordListPresentation.summary(of: japanese, interface: .english, secondLanguage: "en")
@@ -93,7 +95,7 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "summarize").map(\.keyword) == ["sum"])
         #expect(AskKeywordListPresentation.filter(rows, kind: .prompt, query: "google").isEmpty)
         let counts = AskKeywordListPresentation.counts(rows)
-        #expect(counts[nil] == 11 && counts[.translate] == 3 && counts[.workflow] == 2)
+        #expect(counts[nil] == 13 && counts[.translate] == 5 && counts[.workflow] == 2)
     }
 
     @MainActor
@@ -243,10 +245,10 @@ struct AskKeywordDraftTests {
         var edited = polish
         edited.keyword = "pol"
         list.save(edited, replacing: polish)
-        #expect(list.keywords[3].keyword == "pol")
+        #expect(list.keywords[5].keyword == "pol")
         let fyja = AskKeyword(keyword: "fyja", pluginID: AskTranslatePlugin.id, options: ["target": "ja"])
         list.save(fyja, replacing: nil)
-        #expect(list.keywords[3] == fyja, "added after the last translation keyword")
+        #expect(list.keywords[5] == fyja, "added after the last translation keyword")
         var empty = AskKeywordList(keywords: [])
         empty.save(fyja, replacing: nil)
         #expect(empty.keywords == [fyja])

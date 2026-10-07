@@ -320,7 +320,10 @@ struct AskComposer: View {
             }
         case .failed: plugins.run()
         case let .done(_, output): if let action = output.action(for: .enter) { performPluginAction(action) }
-        case .waiting, .running: break
+        case let .running(plan):
+            // A plan that acts (`dict` opening the word book) need not wait for its preview.
+            if let action = plan.action(for: .enter), plugins.isPlanCurrent { performPluginAction(action) }
+        case .waiting: break
         }
     }
 

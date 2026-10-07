@@ -10,14 +10,25 @@ enum AskPluginRegistry {
         AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords
     }
 
-    /// The keywords in use: the saved ones, plus the defaults of plugins that came
-    /// after they were saved (`known` lists the plugins the saved list covers; lists
-    /// saved before it existed only knew translation).
+    /// Default keywords that came after their plugin: `dict` and `词典` joined translation later.
+    static let wordBookKeywords = AskTranslatePlugin.id + "." + AskTranslatePlugin.wordBookAction
+
+    /// What a saved list records as covered: every plugin, and every later group of keywords.
+    static let coveredGroups = pluginIDs + [wordBookKeywords]
+
+    /// The group a default keyword belongs to for `keywords(saved:known:)`.
+    static func group(of keyword: AskKeyword) -> String {
+        AskTranslatePlugin.opensWordBook(keyword.options) ? wordBookKeywords : keyword.pluginID
+    }
+
+    /// The keywords in use: the saved ones, plus the defaults of plugins (or later groups
+    /// of a plugin's keywords) that came after they were saved. `known` lists what the
+    /// saved list covers; lists saved before it existed only knew translation.
     static func keywords(saved: [AskKeyword]?, known: [String]?) -> [AskKeyword] {
         guard let saved else { return defaultKeywords }
         let covered = Set(known ?? [AskTranslatePlugin.id])
         return saved + defaultKeywords.filter { keyword in
-            !covered.contains(keyword.pluginID) && !saved.contains { $0.id == keyword.id }
+            !covered.contains(group(of: keyword)) && !saved.contains { $0.id == keyword.id }
         }
     }
 
@@ -46,7 +57,7 @@ extension SettingsStore {
     /// Saves the keywords as covering every plugin there is now.
     func saveAskLauncherKeywords(_ keywords: [AskKeyword]?) {
         askLauncherKeywords = keywords
-        askLauncherKeywordPlugins = keywords == nil ? nil : AskPluginRegistry.pluginIDs
+        askLauncherKeywordPlugins = keywords == nil ? nil : AskPluginRegistry.coveredGroups
     }
 }
 
@@ -163,6 +174,10 @@ extension AskConversationModel {
         case let .openWordBook(key):
             finishPluginResult()
             openWordBook(key)
+            return .close
+        case let .lookUpInWordBook(text):
+            finishPluginResult()
+            lookUpInWordBook(text)
             return .close
         }
     }

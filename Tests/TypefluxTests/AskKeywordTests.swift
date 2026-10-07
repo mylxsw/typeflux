@@ -120,7 +120,7 @@ struct AskKeywordMatcherTests {
 struct AskKeywordListTests {
     @Test func renamesAddsAndRemoves() {
         var list = AskKeywordList(keywords: AskTranslatePlugin.keywords)
-        #expect(list.keywords(for: AskTranslatePlugin.id).map(\.keyword) == ["fy", "tr", "翻译"])
+        #expect(list.keywords(for: AskTranslatePlugin.id).map(\.keyword) == ["fy", "tr", "翻译", "dict", "词典"])
         let tr = list.keywords[1]
         #expect(list.rename(tr, to: "fy") == .duplicate)
         #expect(list.rename(tr, to: "t r") == .whitespace)
@@ -155,6 +155,7 @@ struct AskKeywordListTests {
         #expect(settings.askLauncherKeywords == nil)
         settings.askTranslationSecondLanguage = "ja"
         #expect(settings.askTranslationSecondLanguage == "ja")
-        #expect(AskPluginRegistry.defaultKeywords.map(\.keyword) == ["fy", "tr", "翻译", "rw", "sum", "ex", "g", "bd", "gh"])
+        #expect(AskPluginRegistry.defaultKeywords.map(\.keyword)
+            == ["fy", "tr", "翻译", "dict", "词典", "rw", "sum", "ex", "g", "bd", "gh"])
     }
 }

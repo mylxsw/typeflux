@@ -113,7 +113,7 @@ enum AskKeywordListPresentation {
     static func name(of keyword: AskKeyword) -> String {
         switch AskKeywordKind(pluginID: keyword.pluginID) {
         case .translate:
-            L("ask.plugin.translate.title")
+            AskTranslatePlugin.opensWordBook(keyword.options) ? L("ask.wordBook.title") : L("ask.plugin.translate.title")
         case .prompt:
             AskPromptPlugin.name(of: keyword.options)
         case .web:
@@ -128,6 +128,7 @@ enum AskKeywordListPresentation {
     static func summary(of keyword: AskKeyword, interface: AppLanguage, secondLanguage: String) -> String {
         switch AskKeywordKind(pluginID: keyword.pluginID) {
         case .translate:
+            if AskTranslatePlugin.opensWordBook(keyword.options) { return L("ask.settings.keywords.summary.wordBook") }
             if let target = keyword.options[AskTranslatePlugin.targetOption], !target.isEmpty {
                 return L("ask.settings.plugins.translate.into", AskTranslationLanguages.name(target, in: interface))
             }

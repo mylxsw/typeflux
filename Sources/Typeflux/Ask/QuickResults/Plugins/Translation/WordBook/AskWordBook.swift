@@ -75,6 +75,8 @@ struct AskWordBookQuery: Equatable, Sendable {
     /// Matches the word or its meanings.
     var text = ""
     var pair: AskWordBookLanguagePair?
+    /// Only words last looked up since then (today, this week).
+    var since: Date?
     var sort: Sort = .recent
     var limit = 100
     var offset = 0
@@ -120,6 +122,10 @@ protocol AskWordBookStoring: AnyObject, Sendable {
     func setStarred(_ starred: Bool, lookup: AskWordBookLookup, at date: Date) -> AskWordBookEntry?
     func list(_ query: AskWordBookQuery) -> [AskWordBookEntry]
     func count(_ scope: AskWordBookQuery.Scope) -> Int
+    /// How many entries `query` matches, ignoring its sort and paging.
+    func count(matching query: AskWordBookQuery) -> Int
+    /// When words were first and last looked up, for those last looked up since `date`.
+    func activity(since date: Date) -> [Date]
     /// Words last looked up since `date`.
     func lookups(since date: Date) -> Int
     func languagePairs() -> [AskWordBookLanguagePair]

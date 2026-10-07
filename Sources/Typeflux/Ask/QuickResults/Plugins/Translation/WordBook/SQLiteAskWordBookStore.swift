@@ -95,25 +95,8 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
 
     func list(_ query: AskWordBookQuery) -> [AskWordBookEntry] {
         read("list") {
-            var conditions: [String] = []
-            var values: [Value] = []
-            if query.scope == .starred { conditions.append("starred_at IS NOT NULL") }
-            let text = query.text.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !text.isEmpty {
-                conditions.append("(headword LIKE ? ESCAPE '\\' OR summary LIKE ? ESCAPE '\\')")
-                let pattern = "%" + Self.escapeLike(text) + "%"
-                values += [.text(pattern), .text(pattern)]
-            }
-            if let pair = query.pair {
-                if let source = pair.source {
-                    conditions.append("source_language = ?")
-                    values.append(.text(source))
-                } else {
-                    conditions.append("source_language IS NULL")
-                }
-                conditions.append("target_language = ?")
-                values.append(.text(pair.target))
-            }
+            let (condition, filters) = Self.conditions(query)
+            var values = filters
             let order = switch query.sort {
             case .recent: "last_looked_up_at DESC"
             case .count: "lookup_count DESC, last_looked_up_at DESC"
@@ -121,9 +104,55 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
             case .starred: "starred_at IS NULL, starred_at DESC, last_looked_up_at DESC"
             }
             values += [.integer(Int64(max(0, query.limit))), .integer(Int64(max(0, query.offset)))]
-            return try fetch(where: conditions.isEmpty ? "1" : conditions.joined(separator: " AND "), values,
-                             suffix: "ORDER BY \(order) LIMIT ? OFFSET ?")
+            return try fetch(where: condition, values, suffix: "ORDER BY \(order) LIMIT ? OFFSET ?")
         } ?? []
+    }
+
+    func count(matching query: AskWordBookQuery) -> Int {
+        read("count") {
+            let (condition, values) = Self.conditions(query)
+            return try integer("SELECT COUNT(*) FROM word_book_entries WHERE \(condition)", values)
+        } ?? 0
+    }
+
+    func activity(since date: Date) -> [Date] {
+        read("activity") {
+            var dates: [Date] = []
+            try query("SELECT first_looked_up_at, last_looked_up_at FROM word_book_entries WHERE last_looked_up_at >= ?",
+                      [.double(date.timeIntervalSince1970)]) { statement in
+                dates.append(Date(timeIntervalSince1970: sqlite3_column_double(statement, 0)))
+                dates.append(Date(timeIntervalSince1970: sqlite3_column_double(statement, 1)))
+            }
+            return dates.filter { $0 >= date }
+        } ?? []
+    }
+
+    /// The WHERE clause and its values for a query's filters.
+    private static func conditions(_ query: AskWordBookQuery) -> (String, [Value]) {
+        var conditions: [String] = []
+        var values: [Value] = []
+        if query.scope == .starred { conditions.append("starred_at IS NOT NULL") }
+        let text = query.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty {
+            conditions.append("(headword LIKE ? ESCAPE '\\' OR summary LIKE ? ESCAPE '\\')")
+            let pattern = "%" + Self.escapeLike(text) + "%"
+            values += [.text(pattern), .text(pattern)]
+        }
+        if let pair = query.pair {
+            if let source = pair.source {
+                conditions.append("source_language = ?")
+                values.append(.text(source))
+            } else {
+                conditions.append("source_language IS NULL")
+            }
+            conditions.append("target_language = ?")
+            values.append(.text(pair.target))
+        }
+        if let since = query.since {
+            conditions.append("last_looked_up_at >= ?")
+            values.append(.double(since.timeIntervalSince1970))
+        }
+        return (conditions.isEmpty ? "1" : conditions.joined(separator: " AND "), values)
     }
 
     func count(_ scope: AskWordBookQuery.Scope) -> Int {

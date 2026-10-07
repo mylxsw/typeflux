@@ -119,6 +119,8 @@ struct AskPluginAction: Equatable, Sendable {
         case toggleStar(AskWordBookLookup)
         /// Opens the word book dialog, on this word when there is one (⌘B).
         case openWordBook(key: String?)
+        /// Opens the word book and looks this word up there (`dict`).
+        case lookUpInWordBook(String)
     }
 
     enum Shortcut: Equatable, Sendable {
