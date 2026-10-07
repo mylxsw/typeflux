@@ -48,7 +48,6 @@ struct AskScreenshotApprovalTests {
         ("computer", "{\"action\":\"type\",\"text\":\"hello\"}"),
         ("computer", "{\"action\":\"key\",\"key\":\"return\"}"),
         ("computer", "{\"action\":\"scroll\",\"amount\":1}"),
-        ("browser", "{\"action\":\"read\"}"),
         ("mcp_screenshot", "{\"action\":\"screenshot\"}"),
         ("computer", "not json"),
         ("computer", "{}")

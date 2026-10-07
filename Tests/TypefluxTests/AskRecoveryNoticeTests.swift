@@ -180,6 +180,7 @@ struct AskRecoveryNoticeInteractionTests {
         defer { fixture.model.resetSession() }
         await fixture.api.setTool(.init(id: "call", function: .init(name: "browser", arguments: #"{"action":"read"}"#)))
         fixture.model.launcherDraft.text = "Read this page"
+        fixture.model.setPermissionMode(.strict, launcher: true)
         fixture.model.submitLauncher()
         try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }
         let id = try #require(fixture.model.selectedId)

@@ -17,6 +17,8 @@ actor AskTestAPI: AskAPI {
     var results: [AskToolResultRequest] = []
     var inferenceResults: [AskInferenceResult] = []
     var nextTool: AskToolCall?
+    var cloudToolDefinitions: [AskToolDefinition] = []
+    func setCloudTools(_ tools: [AskToolDefinition]) { cloudToolDefinitions = tools }
     var failReceipts = false
     func setFailReceipts(_ value: Bool) { failReceipts = value }
     var failSend = false
@@ -68,6 +70,8 @@ actor AskTestAPI: AskAPI {
                                     attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
         value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: nextTool == nil ? "This is the answer." : "I can inspect the current page.", toolCalls: nextTool.map { [$0] }, createdAt: Date()))
         value.run = .init(id: UUID().uuidString, deviceId: request.deviceId, status: nextTool == nil ? "completed" : "waiting_tool", steps: 1, updatedAt: Date(), tools: request.tools, pending: nextTool.map { [$0] } ?? [])
+        value.run?.clientToolApproval = request.clientToolApproval
+        value.run?.cloudTools = cloudToolDefinitions
         value.modelRef = request.modelRef
         if value.messages.count == 2 { value.memory = request.memory }
         // Mirrors the server: the latest question decides, and only pinned memory can be off.
@@ -331,6 +335,7 @@ struct AskConversationTests {
     @Test(arguments: [true, false])
     func toolRequiresApprovalAndKeepsResults(allow: Bool) async throws {
         let f = try AskTestFixture()
+        f.model.setPermissionMode(.strict, launcher: true)
         let call = AskToolCall(id: "tool-1", type: "function", function: .init(name: "browser", arguments: "{\"action\":\"read\"}"))
         await f.api.setTool(call)
         f.model.launcherDraft.text = "Read page"; f.model.submitLauncher()
@@ -369,7 +374,7 @@ struct AskConversationTests {
         #expect(f.model.controllingConversationId == nil)
     }
 
-    @Test func conversationGrantsCoverOnlyExactReadActions() async throws {
+    @Test func standardReadsAutomaticallyButEveryMutationStillRequiresApproval() async throws {
         let f = try AskTestFixture(approvalReuseEnabled: true)
         defer { f.model.resetSession() }
         func browser(_ id: String, _ action: String) -> AskToolCall {
@@ -381,11 +386,10 @@ struct AskConversationTests {
         f.model.launcherDraft.text = "Fill the form"; f.model.submitLauncher()
         try await f.wait { !f.model.pendingApprovals.isEmpty }
         let id = try #require(f.model.selected?.id)
-        #expect(f.model.canAllowForConversation(id))
-        f.model.approveForConversation(id)
+        #expect(!f.model.canAllowForConversation(id))
         try await f.wait { f.model.pendingApprovals[id]?.id == "fill-1" }
         #expect(f.tools.executions == 2)
-        #expect(await f.model.isGranted(browser("x", "read"), conversationId: id))
+        #expect(!(await f.model.isGranted(browser("x", "read"), conversationId: id)), "Automatic reads mint single-use grants")
         #expect(!(await f.model.isGranted(browser("x", "fill"), conversationId: id)))
         #expect(!f.model.canAllowForConversation(id))
         f.model.approveForConversation(id)
@@ -504,6 +508,7 @@ struct AskConversationTests {
 
     @Test func expiredApprovalCannotExecuteTool() async throws {
         let f = try AskTestFixture()
+        f.model.setPermissionMode(.strict, launcher: true)
         await f.api.setTool(.init(id: "read", type: "function", function: .init(name: "browser", arguments: #"{"action":"read"}"#)))
         f.model.launcherDraft.text = "Read page"; f.model.submitLauncher()
         try await f.wait { !f.model.pendingApprovals.isEmpty }
@@ -689,6 +694,7 @@ struct AskNavigationTests {
 
     @Test func backgroundToolCompletionKeepsOtherConversationAndListPosition() async throws {
         let f = try AskTestFixture()
+        f.model.setPermissionMode(.strict, launcher: true)
         await f.api.setTool(.init(id: "read", function: .init(name: "browser", arguments: #"{"action":"read"}"#)))
         f.model.launcherDraft.text = "A"; f.model.submitLauncher()
         try await f.wait { !f.model.pendingApprovals.isEmpty }

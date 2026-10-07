@@ -170,6 +170,7 @@ struct AskComposer: View {
         chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency) : nil
     }
     private func submit() {
+        if model.consumeModeCommand(launcher: launcher) { closePalette(); return }
         // The send button in keyword mode asks the AI, like ⌘Return.
         if launcher, plugins.isActive, !active { askAIFromPlugin(); return }
         if launcher, showsLauncherSuggestions, !active, let item = highlightedHomeItem {
@@ -931,6 +932,13 @@ struct AskComposer: View {
     }
 
     private func commandKey(_ key: AskCommandKey) -> Bool {
+        if (key == .enter || key == .commandEnter),
+           AskPermissionMode.command(draft.wrappedValue.text).recognized,
+           AskPermissionMode.command(draft.wrappedValue.text).mode != nil || !paletteOpen {
+            _ = model.consumeModeCommand(launcher: launcher)
+            closePalette()
+            return true
+        }
         // Return can arrive before SwiftUI has refreshed the keyword hint.
         if launcher, key == .enter, !plugins.isActive,
            plugins.hint?.pluginID != AskOpenChatPlugin.id || pluginHighlight == 0 {
@@ -1133,6 +1141,7 @@ struct AskComposer: View {
     private var launcherBar: some View {
         HStack(spacing: 4) {
             composerTools
+            permissionModeMenu
             Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
             contextChips
                 .disabled(active)
@@ -1262,6 +1271,7 @@ struct AskComposer: View {
     private var footer: some View {
         HStack(spacing: 4) {
             composerTools
+            permissionModeMenu
             // "How to ask" and "what rides along" are separated by a rule.
             if layout.condensedFooter {
                 contextMenu
@@ -1329,6 +1339,35 @@ struct AskComposer: View {
         .background {
             AskSlashShortcut(disabled: active || (!launcher && model.isLoadingSelection), action: startCommand)
         }
+    }
+
+    private var permissionModeMenu: some View {
+        Menu {
+            ForEach(AskPermissionMode.allCases, id: \.self) { mode in
+                Button { model.setPermissionMode(mode, launcher: launcher) } label: {
+                    Label(mode.title + " — " + mode.detail,
+                          systemImage: model.permissionMode(launcher: launcher) == mode ? "checkmark" : mode.symbol)
+                }
+            }
+        } label: {
+            Group {
+                if (launcher || layout.width < 800), model.permissionMode(launcher: launcher) != .yolo {
+                    Image(systemName: model.permissionMode(launcher: launcher).symbol)
+                } else {
+                    Label(model.permissionMode(launcher: launcher) == .yolo ? "YOLO" : model.permissionMode(launcher: launcher).title,
+                          systemImage: model.permissionMode(launcher: launcher).symbol)
+                }
+            }
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(model.permissionMode(launcher: launcher) == .yolo ? StudioTheme.danger : StudioTheme.textSecondary)
+                .fixedSize()
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help(model.permissionMode(launcher: launcher).detail + " /mode [yolo|strict|standard]")
+        .accessibilityLabel(L("ask.mode.title") + ": " + model.permissionMode(launcher: launcher).title)
+        .accessibilityIdentifier("ask.composer.permissionMode")
+        .disabled(active || (!launcher && model.isLoadingSelection))
     }
 
     /// Attach, where the conversation is kept, and the model: the same in both composers.

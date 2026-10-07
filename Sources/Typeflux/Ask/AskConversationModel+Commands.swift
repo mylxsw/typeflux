@@ -40,6 +40,7 @@ extension AskConversationModel {
         let capability = screenshotCapability(launcher: launcher)
         let builtins = commandSources.builtinSkillNames()
         var context = AskCommandContext()
+        context.permissionMode = permissionMode(launcher: launcher)
         context.launcher = launcher
         context.busy = !launcher && (isBusy || isLoadingSelection)
         context.hasAnswer = !launcher && latestAnswer != nil
@@ -102,7 +103,9 @@ extension AskConversationModel {
                 commandSources.copy(answer.text)
                 confirm(L("ask.command.copied"))
             }
-        case .model, .reasoning:
+        case .pickPermissionMode(let mode):
+            setPermissionMode(mode, launcher: launcher)
+        case .model, .reasoning, .permissionMode:
             break // The palette opens their choices.
         case let .pickModel(reference):
             selectModel(reference, launcher: launcher)

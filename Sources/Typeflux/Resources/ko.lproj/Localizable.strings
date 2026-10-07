@@ -2436,13 +2436,13 @@
 "agent.search.getKey" = "%@ 키 받기";
 "agent.files.empty" = "아직 폴더가 없습니다. Ask가 파일을 읽거나 수정할 수 없습니다.";
 "agent.files.rule.scope" = "목록의 폴더만";
-"agent.files.rule.read" = "읽기: 대화마다 한 번 허용";
-"agent.files.rule.write" = "수정: 매번 확인";
+"agent.files.rule.read" = "읽기: 허용된 폴더 내에서 자동 실행";
+"agent.files.rule.write" = "쓰기: 표준 모드에서 실행 전 확인";
 "agent.files.removed" = "'%@' 제거됨";
 "agent.code.subtitle" = "계산, 표 처리, 차트를 위해 격리된 샌드박스에서 Python, JavaScript, 셸을 실행합니다.";
 "agent.code.rule.network" = "네트워크 없음";
 "agent.code.rule.home" = "홈 폴더 접근 불가";
-"agent.code.rule.confirm" = "실행마다 확인";
+"agent.code.rule.confirm" = "표준 모드에서 실행 전 확인";
 "agent.automation.subtitle" = "화면을 보고 클릭하고 입력합니다. 모든 단계마다 먼저 확인하며 언제든 멈출 수 있습니다.";
 "agent.automation.accessibility" = "클릭과 입력에 사용";
 "agent.automation.screen.title" = "화면 기록";
@@ -3597,3 +3597,15 @@
 "ask.settings.keywords.kind.chat.hint" = "메시지를 보내지 않고 채팅 창 열기";
 "ask.drafts.saved" = "저장된 초안";
 "ask.drafts.untitled" = "제목 없는 초안";
+
+// Tool permission modes
+"ask.mode.title" = "도구 권한";
+"ask.mode.strict" = "엄격";
+"ask.mode.standard" = "표준";
+"ask.mode.yolo" = "YOLO · 전체 허용";
+"ask.mode.strict.detail" = "도구 호출마다 확인";
+"ask.mode.standard.detail" = "읽기는 자동 실행, 변경은 확인";
+"ask.mode.yolo.detail" = "쓰기, 삭제, 전송 및 유료 작업을 포함한 활성 도구를 자동 실행";
+"ask.mode.changed" = "권한 모드: %@";
+"ask.mode.usage" = "사용법: /mode yolo, /mode strict 또는 /mode standard";
+"ask.mode.serverUpgrade" = "도구 권한 모드를 사용하려면 클라우드 서비스를 업데이트하세요.";

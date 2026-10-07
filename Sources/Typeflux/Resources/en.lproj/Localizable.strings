@@ -2446,13 +2446,13 @@
 "agent.search.getKey" = "Get a %@ key";
 "agent.files.empty" = "No folders yet. Ask can't read or edit your files.";
 "agent.files.rule.scope" = "Only these folders";
-"agent.files.rule.read" = "Reading: allow once per conversation";
-"agent.files.rule.write" = "Editing: confirmed every time";
+"agent.files.rule.read" = "Reads: automatic within allowed folders";
+"agent.files.rule.write" = "Writes: confirm in Standard mode";
 "agent.files.removed" = "Removed “%@”";
 "agent.code.subtitle" = "Runs Python, JavaScript and shell in an isolated sandbox for calculations, spreadsheets and charts.";
 "agent.code.rule.network" = "No network";
 "agent.code.rule.home" = "No access to your home folder";
-"agent.code.rule.confirm" = "Confirmed before each run";
+"agent.code.rule.confirm" = "Confirm before running in Standard mode";
 "agent.automation.subtitle" = "Sees the screen, clicks and types. Every step asks you first, and you can stop at any time.";
 "agent.automation.accessibility" = "To click and type";
 "agent.automation.screen.title" = "Screen Recording";
@@ -3607,3 +3607,15 @@
 "ask.settings.keywords.kind.chat.hint" = "Open the chat window without sending a message";
 "ask.drafts.saved" = "Saved drafts";
 "ask.drafts.untitled" = "Untitled draft";
+
+// Tool permission modes
+"ask.mode.title" = "Tool permissions";
+"ask.mode.strict" = "Strict";
+"ask.mode.standard" = "Standard";
+"ask.mode.yolo" = "YOLO · Full access";
+"ask.mode.strict.detail" = "Confirm every tool call";
+"ask.mode.standard.detail" = "Read automatically; confirm changes";
+"ask.mode.yolo.detail" = "Automatically run all enabled tools, including writes, deletes, sends and paid actions";
+"ask.mode.changed" = "Permission mode: %@";
+"ask.mode.usage" = "Use /mode yolo, /mode strict or /mode standard";
+"ask.mode.serverUpgrade" = "Update Typeflux Cloud to use tool permission modes.";

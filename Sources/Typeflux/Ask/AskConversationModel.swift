@@ -207,6 +207,9 @@ final class AskConversationModel: ObservableObject {
     @Published var searchRequest = 0
     /// A short confirmation after a slash command, cleared after a moment.
     @Published var commandFeedback: String?
+    @Published var permissionModes: [String: AskPermissionMode] = [:]
+    @Published var launcherPermissionMode: AskPermissionMode = .standard
+    @Published var draftPermissionMode: AskPermissionMode = .standard
     /// What a workflow's actions did after the last run, for the launcher's bottom bar.
     @Published var workflowActions: AskWorkflowActionsState?
     /// A workflow's question in the launcher: may it open a web host it does not name?
@@ -262,7 +265,7 @@ final class AskConversationModel: ObservableObject {
 
     let api: any AskAPI
     let cache: any AskCaching
-    private let tools: any AskToolExecuting
+    let tools: any AskToolExecuting
     private let capture: any AskContextCapturing
     let session: () -> (owner: String, token: String)?
     let deviceId: String
@@ -272,6 +275,7 @@ final class AskConversationModel: ObservableObject {
     private var approvals: [String: CheckedContinuation<String?, Never>] = [:]
     private var approvalRequests: [String: (id: UUID, request: AskApprovalRequest)] = [:]
     let approvalStore = AskApprovalStore()
+    var cloudApprovals: [String: (id: String, request: AskApprovalRequest)] = [:]
     private let approvalReuseEnabled: Bool
     private var operationErrors: [String: String] = [:]
     private var pendingSends: [String: AskSendRequest] = [:]
@@ -425,6 +429,8 @@ final class AskConversationModel: ObservableObject {
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
         sendQueue = AskSendQueue(); steeringIds = []
         screenshotConsent = [:]
+        cloudApprovals = [:]
+        permissionModes = [:]; launcherPermissionMode = .standard; draftPermissionMode = .standard
         draftSave?.cancel(); draftSaveConversationID = nil; deletedConversationIDs = []; captureGeneration = UUID(); selectionGeneration = UUID()
         selectionObservation?.cancel(); selectionObservation = nil
         inferenceProgress = [:]; progressInferenceIDs = [:]
@@ -738,6 +744,7 @@ final class AskConversationModel: ObservableObject {
     /// `storesLocally` starts a conversation kept on this Mac (true) or in Typeflux Cloud
     /// (false); nil follows the default from settings.
     func newConversation(storesLocally: Bool? = nil) {
+        draftPermissionMode = .standard
         clearCapturedContentFeedback(launcher: false)
         selectionObservation?.cancel(); selectionObservation = nil
         voiceInput.cancel()
@@ -754,9 +761,10 @@ final class AskConversationModel: ObservableObject {
     }
 
     func submitLauncher() {
+        if consumeModeCommand(launcher: true) { return }
         normalizeScreenshotChoices()
         guard canSendLauncher else { return }
-        submit(launcherDraft, newConversation: true)
+        submit(launcherDraft, newConversation: true, launcher: true)
     }
     func addReference(_ reference: AskReference) {
         var updated = draft
@@ -766,6 +774,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func submitDraft() {
+        if consumeModeCommand(launcher: false) { return }
         normalizeScreenshotChoices()
         guard !isLoadingAttachments(launcher: false) else { return }
         if isEditingQueued { saveQueuedEdit(); return }
@@ -781,7 +790,7 @@ final class AskConversationModel: ObservableObject {
 
     /// `messageId` keeps a queued message's ID; `clearsDraft` is false when the queue
     /// sends on its own, so whatever the user is typing stays in the composer.
-    private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil, clearsDraft: Bool = true) {
+    private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil, clearsDraft: Bool = true, launcher: Bool = false) {
         guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000,
               (submitted.sentSelection?.utf8.count ?? 0) <= 64000,
               (submitted.sentSource?.utf8.count ?? 0) <= 1000,
@@ -798,12 +807,17 @@ final class AskConversationModel: ObservableObject {
         if newConversation, local { localConversationIds.insert(id) }
         let current = local ? account.local : account
         error = nil; operationErrors[id] = nil; busyIds.insert(id)
-        if newConversation { tools.bindConversation(id) }
+        if newConversation {
+            permissionModes[id] = permissionMode(launcher: launcher)
+            if launcher { launcherPermissionMode = .standard } else { draftPermissionMode = .standard }
+            tools.bindConversation(id)
+        }
         let folders = (submitted.attachments ?? []).compactMap { $0.kind == .folder ? $0.path : nil }
         if !folders.isEmpty { tools.grantFolders(folders, conversationId: id) }
         var value = newConversation ? AskConversation(id: id, title: String(submitted.title.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = queuedId ?? UUID().uuidString
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
+        request.clientToolApproval = true
         request.skills = skillUses(submitted.skills)
         request.modelRef = localFallback(submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default")),
                                          hasImage: request.sendsImage || value.messages.contains { $0.hasImage },
@@ -941,7 +955,7 @@ final class AskConversationModel: ObservableObject {
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                     pendingSends[id] = nil
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
-                    let request = AskSendRequest(id: message.id, deviceId: deviceId, text: message.text,
+                    let request = AskSendRequest(clientToolApproval: true, id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
                                                  tools: await tools.definitions(conversationId: id), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
                                                  attachments: message.attachments)
@@ -1001,7 +1015,7 @@ final class AskConversationModel: ObservableObject {
                     modelRef, token: current.token,
                     hasImage: value.messages.contains(where: { $0.hasImage })
                 )
-                let request = AskRegenerateRequest(messageId: messageId, deviceId: deviceId,
+                let request = AskRegenerateRequest(clientToolApproval: true, messageId: messageId, deviceId: deviceId,
                                                    modelRef: modelRef, tools: definitions)
                 let response = try await api.regenerate(conversationId: id, request: request, token: current.token)
                 try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
@@ -1165,11 +1179,10 @@ final class AskConversationModel: ObservableObject {
                 // not to the cache partition a private conversation uses.
                 tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id)
                 // Consent comes from the submitted draft, never from historical images or live UI state.
-                let isScreenshot = call.function.name == "computer"
-                    && (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot"
+                let cloudDefinition = run.approvalTool(for: call)
                 let binding: AskToolBinding
                 do {
-                    binding = try await tools.preparedBinding(for: call, conversationId: value.id)
+                    binding = try await preparedToolBinding(call, conversationId: value.id, cloudDefinition: cloudDefinition)
                 } catch let failure as AskToolPreparationFailure {
                     guard let rejected = try await rejectToolPreparation(failure, call: call, value: value,
                                                                          identity: identity, current: current) else { return }
@@ -1180,15 +1193,11 @@ final class AskConversationModel: ObservableObject {
                 guard session()?.owner == current.account else { throw CancellationError() }
                 let request = AskToolPolicy.request(call: call, owner: current.account, conversation: value.id,
                                                     run: run.id, step: String(run.steps), binding: binding,
-                                                    risk: tools.risk(of: call), reuseEnabled: approvalReuseEnabled,
+                                                    risk: toolRisk(call, cloudDefinition: cloudDefinition), reuseEnabled: false,
                                                     now: approvalStore.now())
                 let grantID: String?
-                let screenshotApproved = screenshotConsentMessageID != nil
-                    && value.messages.last(where: { $0.role == "user" })?.id == screenshotConsentMessageID
-                if (screenshotApproved && isScreenshot) || tools.risk(of: call) == .none {
+                if automaticallyApproves(call, risk: request.risk, conversationId: value.id) {
                     grantID = approvalStore.issue(request)
-                } else if let reusable = approvalStore.reusableGrant(for: request) {
-                    grantID = reusable
                 } else {
                     let approvalID = UUID()
                     approvalRequests[value.id] = (approvalID, request)
@@ -1207,6 +1216,7 @@ final class AskConversationModel: ObservableObject {
                                               harness: .init(version: 1, context: context,
                                                              approval: grantID.flatMap { approvalStore.auditScope($0) },
                                                              outcome: .init(status: "denied")))
+                if cloudDefinition != nil { result?.approveExecution = false }
                 let latest = try await api.conversation(id: value.id, token: current.token)
                 try await accept(latest, route: current)
                 guard snapshots[value.id]?.run?.id == run.id, snapshots[value.id]?.run?.status == "waiting_tool",
@@ -1228,15 +1238,16 @@ final class AskConversationModel: ObservableObject {
                             controllingConversationId = value.id; onControlChanged?(true)
                         }
                         // Claiming and fetching can suspend. Re-resolve local evidence at dispatch.
-                        let bindingNow = try await tools.preparedBinding(for: call, conversationId: value.id)
+                        let bindingNow = try await preparedToolBinding(call, conversationId: value.id, cloudDefinition: cloudDefinition)
                         try Task.checkCancellation()
                         guard session()?.owner == current.account else { throw CancellationError() }
-                        guard bindingNow == request.binding,
+                        guard snapshots[value.id]?.run?.approvalTool(for: call) == cloudDefinition,
+                              bindingNow == request.binding,
                               approvalStore.consume(grantID, for: request) else {
                             throw AskLocalError.message(L("ask.approval.changed"))
                         }
                         tools.setExecutionDeadline(run.budgetEnabled == true ? run.budgetDeadline : nil, conversationId: value.id)
-                        let output = try await tools.executeApproved(call, conversationId: value.id, binding: bindingNow) {
+                        let authorize = { [self] in
                             try Task.checkCancellation()
                             if run.budgetEnabled == true, let deadline = run.budgetDeadline, Date() >= deadline {
                                 throw AskLocalError.message(L("ask.budget.stopped", L("ask.budget.reason.duration")))
@@ -1249,7 +1260,18 @@ final class AskConversationModel: ObservableObject {
                                 throw AskLocalError.message(L("ask.approval.changed"))
                             }
                         }
-                        result?.record(output)
+                        if cloudDefinition != nil {
+                            try authorize()
+                            cloudApprovals[identity.key] = (grantID, request)
+                            result?.approveExecution = true
+                            result?.content = "Tool execution authorized."
+                            result?.isError = false
+                            result?.harness?.outcome?.status = "ok"
+                        } else {
+                            let output = try await tools.executeApproved(call, conversationId: value.id,
+                                                                        binding: bindingNow, authorize: authorize)
+                            result?.record(output)
+                        }
                     } catch is CancellationError { throw CancellationError() }
                     catch {
                         result?.content = error.localizedDescription
@@ -1333,6 +1355,24 @@ final class AskConversationModel: ObservableObject {
         return approvalStore.reusableGrant(for: request) != nil
     }
 
+    /// Screen capture needs an opened data scope in standard mode, just like files need a root.
+    func automaticallyApproves(_ call: AskToolCall, risk: AskToolRisk, conversationId: String) -> Bool {
+        let mode = permissionMode(conversationId: conversationId)
+        if mode == .standard, call.function.name == "computer",
+           (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot" {
+            guard let messageID = screenshotConsent[conversationId],
+                  snapshots[conversationId]?.messages.last(where: { $0.role == "user" })?.id == messageID else { return false }
+        }
+        return mode.automaticallyAllows(risk)
+    }
+
+    func resumeAutomaticallyApprovedTool(_ id: String) {
+        guard let pending = approvalRequests[id],
+              let call = pendingApprovals[id],
+              automaticallyApproves(call, risk: pending.request.risk, conversationId: id) else { return }
+        approve(conversationId: id, allowed: true, expectedApprovalID: pending.id)
+    }
+
     func approvalRisk(_ conversationId: String) -> AskToolRisk? {
         approvalRequests[conversationId]?.request.risk
     }
@@ -1365,6 +1405,7 @@ final class AskConversationModel: ObservableObject {
 
     func stop(id: String? = nil) {
         guard let id = id ?? selected?.id, let current = credentials(for: id) else { return }
+        permissionModes[id] = .standard
         tools.cancelProjects(conversationId: id)
         operations[id]?.cancel()
         approvalStore.revoke(conversation: id)
@@ -1408,7 +1449,7 @@ final class AskConversationModel: ObservableObject {
             conversations.removeAll { $0.id == id }; localConversationIds.remove(id)
             drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
             sendQueue.clear(id)
-            screenshotConsent[id] = nil; approvalStore.revoke(conversation: id)
+            screenshotConsent[id] = nil; permissionModes[id] = nil; approvalStore.revoke(conversation: id)
             if selectedId == id { selectedId = nil; newConversation() }
             else { persistDrafts() }
         } catch { self.error = error.localizedDescription }

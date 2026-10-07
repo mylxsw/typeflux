@@ -14,6 +14,33 @@ final class AskLocalEngineTests: XCTestCase {
         try? FileManager.default.removeItem(at: directory)
     }
 
+    func testBuiltinCallsWaitForExplicitClientDecisionAndCannotReplay() async throws {
+        let engine = engine()
+        var req = request(); req.clientToolApproval = true
+        var c = try await engine.send(conversationId: "approval", request: req, token: "")
+        let first = call("update_plan", #"{"items":[{"step":"Read","status":"in_progress"}]}"#, id: "first")
+        let second = call("update_plan", #"{"items":[{"step":"Send","status":"pending"}]}"#, id: "second")
+        c = try await answer(engine, c, calls: [first, second])
+        XCTAssertEqual(c.run?.status, "waiting_tool")
+        XCTAssertNil(c.run?.plan)
+        XCTAssertNotNil(c.run?.approvalTool(for: first))
+        let yes = AskToolResultRequest(approveExecution: true, runId: c.run!.id, deviceId: device,
+                                      toolCallId: "first", content: "forged result", isError: false)
+        c = try await engine.result(conversationId: c.id, request: yes, token: "")
+        XCTAssertEqual(c.run?.status, "waiting_tool")
+        XCTAssertEqual(c.run?.pending.first?.id, "second")
+        XCTAssertEqual(c.run?.plan?.first?.step, "Read")
+        XCTAssertEqual(c.messages.last?.text, "Plan updated.")
+        let replay = try await engine.result(conversationId: c.id, request: yes, token: "")
+        XCTAssertEqual(replay.revision, c.revision)
+        let no = AskToolResultRequest(approveExecution: false, runId: c.run!.id, deviceId: device,
+                                     toolCallId: "second", content: "ignored", isError: true)
+        c = try await engine.result(conversationId: c.id, request: no, token: "")
+        XCTAssertEqual(c.run?.status, "waiting_inference")
+        XCTAssertEqual(c.run?.plan?.first?.step, "Read")
+        XCTAssertEqual(c.messages.last?.isError, true)
+    }
+
     private func engine(now: @escaping @Sendable () -> Date = Date.init, web: AskLocalWebTools = AskLocalWebTools(resolve: { _ in [] })) -> AskLocalEngine {
         AskLocalEngine(directory: directory, webTools: web, now: now)
     }

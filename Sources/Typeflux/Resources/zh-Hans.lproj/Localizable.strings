@@ -2446,13 +2446,13 @@
 "agent.search.getKey" = "获取 %@ 密钥";
 "agent.files.empty" = "还没有授权文件夹，随便问现在不能读写你的文件。";
 "agent.files.rule.scope" = "只能访问列表里的文件夹";
-"agent.files.rule.read" = "读取：对话内可一次性允许";
-"agent.files.rule.write" = "写入：每次都要确认";
+"agent.files.rule.read" = "读取：已开放文件夹内自动执行";
+"agent.files.rule.write" = "写入：标准模式下执行前确认";
 "agent.files.removed" = "已移除「%@」";
 "agent.code.subtitle" = "在隔离沙箱里运行 Python、JavaScript 和 shell，用于计算、处理表格、画图。";
 "agent.code.rule.network" = "无网络";
 "agent.code.rule.home" = "不能访问个人目录";
-"agent.code.rule.confirm" = "每次运行前确认";
+"agent.code.rule.confirm" = "标准模式下运行前确认";
 "agent.automation.subtitle" = "查看屏幕、点击和输入。每一步操作执行前都会请你确认，可以随时停止。";
 "agent.automation.accessibility" = "用于点击和输入";
 "agent.automation.screen.title" = "屏幕录制";
@@ -3607,3 +3607,15 @@
 "ask.settings.keywords.kind.chat.hint" = "打开聊天窗口，不发送消息";
 "ask.drafts.saved" = "暂存草稿";
 "ask.drafts.untitled" = "未命名草稿";
+
+// Tool permission modes
+"ask.mode.title" = "工具权限";
+"ask.mode.strict" = "严格";
+"ask.mode.standard" = "标准";
+"ask.mode.yolo" = "YOLO · 完全授权";
+"ask.mode.strict.detail" = "每次工具调用都确认";
+"ask.mode.standard.detail" = "只读自动执行，修改前确认";
+"ask.mode.yolo.detail" = "自动执行所有已启用工具，包括修改、删除、发送及付费操作";
+"ask.mode.changed" = "权限模式：%@";
+"ask.mode.usage" = "用法：/mode yolo、/mode strict 或 /mode standard";
+"ask.mode.serverUpgrade" = "请升级 Typeflux 云端服务以使用工具权限模式。";

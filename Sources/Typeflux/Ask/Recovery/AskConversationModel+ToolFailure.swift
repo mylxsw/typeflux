@@ -32,9 +32,16 @@ extension AskConversationModel {
                            current: AskRoute) async throws -> AskConversation {
         try Task.checkCancellation()
         guard session()?.owner == current.account else { throw CancellationError() }
+        if result.approveExecution == true {
+            guard let approval = cloudApprovals[identity.key],
+                  approvalStore.validateDispatch(approval.id, for: approval.request) else {
+                throw AskLocalError.message(L("ask.approval.changed"))
+            }
+        }
         let response = try await api.result(conversationId: identity.conversationId,
                                             request: result, token: current.token)
         try await cache.recordExecution(id: identity.key, event: .acknowledged, owner: current.owner)
+        cloudApprovals[identity.key] = nil
         return response
     }
 }
