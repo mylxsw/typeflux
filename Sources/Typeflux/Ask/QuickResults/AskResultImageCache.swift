@@ -1,0 +1,77 @@
+import AppKit
+import QuickLookThumbnailing
+
+/// Quick Look supplies icons asynchronously as well as thumbnails. View bodies
+/// only read this cache; they never ask Finder for an uncached file icon.
+@MainActor
+final class AskResultImageCache {
+    struct Key: Hashable {
+        var url: URL
+        var thumbnail: Bool
+        var modified: Date?
+        var scale: CGFloat = 2
+    }
+
+    typealias Loader = @MainActor (Key) async -> NSImage?
+    static let shared = AskResultImageCache()
+    private let cache = NSCache<NSString, NSImage>()
+    private var pending: [Key: (task: Task<NSImage?, Never>, clients: Set<UUID>)] = [:]
+    private let loader: Loader
+
+    init(loader: @escaping Loader = AskResultImageCache.generate) {
+        self.loader = loader
+        cache.countLimit = 256
+    }
+
+    private func cacheKey(_ key: Key) -> NSString {
+        "\(key.url.absoluteString)|\(key.thumbnail)|\(key.modified?.timeIntervalSinceReferenceDate ?? 0)|\(key.scale)" as NSString
+    }
+
+    func cached(_ key: Key) -> NSImage? { cache.object(forKey: cacheKey(key)) }
+
+    func image(_ key: Key) async -> NSImage? {
+        guard !Task.isCancelled else { return nil }
+        if let image = cached(key) { return image }
+        let client = UUID()
+        let task: Task<NSImage?, Never>
+        if var entry = pending[key] {
+            entry.clients.insert(client)
+            pending[key] = entry
+            task = entry.task
+        } else {
+            task = Task { await loader(key) }
+            pending[key] = (task, [client])
+        }
+        return await withTaskCancellationHandler {
+            let image = await task.value
+            if !Task.isCancelled, let image { cache.setObject(image, forKey: cacheKey(key)) }
+            release(key, client: client)
+            return Task.isCancelled ? nil : image
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.release(key, client: client) }
+        }
+    }
+
+    private func release(_ key: Key, client: UUID) {
+        guard var entry = pending[key], entry.clients.remove(client) != nil else { return }
+        if entry.clients.isEmpty {
+            pending[key] = nil
+            entry.task.cancel()
+        } else {
+            pending[key] = entry
+        }
+    }
+
+    private static func generate(_ key: Key) async -> NSImage? {
+        let request = QLThumbnailGenerator.Request(fileAt: key.url, size: CGSize(width: 56, height: 56),
+                                                   scale: key.scale, representationTypes: key.thumbnail ? .all : .icon)
+        return await withTaskCancellationHandler {
+            guard !Task.isCancelled,
+                  let representation = try? await QLThumbnailGenerator.shared.generateBestRepresentation(for: request),
+                  !Task.isCancelled else { return nil }
+            return representation.nsImage
+        } onCancel: {
+            QLThumbnailGenerator.shared.cancel(request)
+        }
+    }
+}

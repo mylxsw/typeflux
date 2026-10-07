@@ -3509,7 +3509,7 @@
 "launcher.search.general" = "General";
 "launcher.search.mode" = "Search mode";
 "launcher.search.mode.subtitle" = "Mixed puts the best match first, then each kind by its best result.";
-"launcher.search.mode.mixed" = "Mixed";
+"launcher.search.mode.mixed" = "Mixed (applications first)";
 "launcher.search.mode.appsFirst" = "Apps First";
 "launcher.search.mode.filesFirst" = "Files First";
 "launcher.search.fuzzy" = "Fuzzy matching";

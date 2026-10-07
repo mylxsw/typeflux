@@ -1,0 +1,42 @@
+apps=500 query=r p50=0.388ms p95=0.566ms max=0.591ms checksum=372
+apps=500 query=report p50=0.161ms p95=0.248ms max=0.279ms checksum=372
+apps=500 query=ht p50=0.085ms p95=0.086ms max=0.111ms checksum=372
+entries=100000 build=1.06s
+files=100000 query=r p50=4.381ms p95=6.411ms max=7.934ms checksum=744
+files=100000 query=re p50=4.417ms p95=6.159ms max=6.405ms checksum=744
+files=100000 query=report p50=3.886ms p95=6.732ms max=6.814ms checksum=744
+files=100000 query=ht p50=3.131ms p95=5.430ms max=7.854ms checksum=744
+files=100000 query=hetong p50=4.626ms p95=8.597ms max=9.840ms checksum=744
+files=100000 query=会议 p50=1.981ms p95=2.628ms max=3.952ms checksum=744
+files=100000 query=budget final p50=1.256ms p95=5.298ms max=6.275ms checksum=744
+files=100000 query=img .png p50=2.545ms p95=4.102ms max=5.483ms checksum=744
+files=100000 query=summary in:project p50=1.301ms p95=1.833ms max=2.590ms checksum=744
+files=100000 query=xyzzy p50=0.104ms p95=0.182ms max=0.183ms checksum=0
+files=100000 recent p50=1.793ms p95=3.957ms max=6.425ms checksum=744
+entries=500000 build=4.96s
+files=500000 query=r p50=9.508ms p95=13.948ms max=19.720ms checksum=744
+files=500000 query=re p50=10.959ms p95=17.090ms max=18.641ms checksum=744
+files=500000 query=report p50=7.805ms p95=17.094ms max=20.173ms checksum=744
+files=500000 query=ht p50=6.381ms p95=9.493ms max=11.388ms checksum=744
+files=500000 query=hetong p50=5.515ms p95=7.320ms max=7.399ms checksum=744
+files=500000 query=会议 p50=3.537ms p95=4.768ms max=4.816ms checksum=744
+files=500000 query=budget final p50=7.096ms p95=8.687ms max=25.724ms checksum=744
+files=500000 query=img .png p50=2.361ms p95=7.913ms max=13.927ms checksum=744
+files=500000 query=summary in:project p50=3.290ms p95=3.763ms max=4.226ms checksum=744
+files=500000 query=xyzzy p50=0.353ms p95=0.532ms max=0.559ms checksum=0
+files=500000 recent p50=7.977ms p95=9.991ms max=10.369ms checksum=744
+entries=1000000 build=14.66s
+files=1000000 query=r p50=38.048ms p95=53.937ms max=65.947ms checksum=744
+files=1000000 query=re p50=42.353ms p95=57.302ms max=63.202ms checksum=744
+files=1000000 query=report p50=22.959ms p95=51.146ms max=55.050ms checksum=744
+files=1000000 query=ht p50=29.164ms p95=46.038ms max=49.154ms checksum=744
+files=1000000 query=hetong p50=29.770ms p95=72.636ms max=78.051ms checksum=744
+files=1000000 query=会议 p50=27.896ms p95=50.618ms max=57.384ms checksum=744
+files=1000000 query=budget final p50=29.269ms p95=44.420ms max=73.587ms checksum=744
+files=1000000 query=img .png p50=9.695ms p95=16.716ms max=18.461ms checksum=744
+files=1000000 query=summary in:project p50=13.215ms p95=25.211ms max=26.149ms checksum=744
+files=1000000 query=xyzzy p50=1.399ms p95=2.640ms max=2.704ms checksum=0
+files=1000000 recent p50=18.415ms p95=24.150ms max=28.894ms checksum=744
+PIPELINE input p50=0.058ms p95=0.126ms max=0.230ms
+PIPELINE apps p50=0.232ms p95=0.477ms max=0.558ms
+PIPELINE files_with_debounce p50=74.558ms p95=78.129ms max=78.461ms

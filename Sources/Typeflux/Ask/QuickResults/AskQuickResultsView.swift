@@ -21,6 +21,7 @@ struct AskQuickResultsView: View {
     var onHighlight: (Int) -> Void
     var onAction: (AskQuickAction) -> Void = { _ in }
 
+    @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
     @State private var copied: Int?
     @State private var copiedReset: Task<Void, Never>?
 
@@ -59,20 +60,26 @@ struct AskQuickResultsView: View {
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: Self.contentHeight(for: results) > Self.maximumHeight) {
                     VStack(spacing: Self.rowSpacing) {
-                        ForEach(Array(results.rows.enumerated()), id: \.offset) { index, row in
+                        ForEach(results.rows.map { (id: results.identity(of: $0), row: $0) }, id: \.id) { item in
+                            let row = item.row
+                            let index = results.rows.firstIndex(of: row) ?? 0
                             if let section = Self.sectionStart(at: index, in: results.rows, results: results) {
                                 sectionTitle(section)
                             }
                             content(row, index: index, highlighted: index == results.highlighted)
-                                .onHover { if $0, actions == nil { onHighlight(index) } }
-                                .id(index)
+                                .onContinuousHover { phase in
+                                    if case .active = phase, actions == nil, pointer.moved(to: NSEvent.mouseLocation) {
+                                        onHighlight(index)
+                                    }
+                                }
+                                .id(item.id)
                         }
                         if let notice = results.notice { noticeRow(notice) }
                     }
                     .padding(Self.listPadding)
                 }
                 .scrollDisabled(Self.contentHeight(for: results) <= Self.maximumHeight)
-                .onChange(of: results.highlighted) { index in proxy.scrollTo(index) }
+                .onChange(of: results.highlighted) { index in proxy.scrollTo(results.identity(of: results.rows[index])) }
             }
             Spacer(minLength: 0)
         }
@@ -82,6 +89,7 @@ struct AskQuickResultsView: View {
                 AskQuickActionPanelView(panel: actions, onAction: onAction).padding(.top, 8).padding(.trailing, 14)
             }
         }
+        .onAppear { pointer.position = NSEvent.mouseLocation }
         .onDisappear { copiedReset?.cancel() }
     }
 
@@ -170,8 +178,7 @@ struct AskQuickResultsView: View {
         let app = match.entry
         return Button { onRun(row, true) } label: {
             HStack(spacing: 12) {
-                Image(nsImage: AskAppIcon.image(for: app.url))
-                    .resizable().interpolation(.high)
+                AskFileIconView(url: app.url, thumbnail: false)
                     .frame(width: 28, height: 28)
                     .accessibilityHidden(true)
                 Self.marked(app.name, match.highlights).font(.system(size: 13.5))
@@ -211,7 +218,7 @@ struct AskQuickResultsView: View {
     private func fileRow(_ file: AskFileHit, row: AskQuickResults.Row, highlighted: Bool) -> some View {
         Button { onRun(row, true) } label: {
             HStack(spacing: 12) {
-                AskFileIconView(url: file.url, thumbnail: thumbnails && file.kind == .file)
+                AskFileIconView(url: file.url, thumbnail: thumbnails && file.kind == .file, modified: file.modified)
                     .frame(width: 28, height: 28)
                 Self.marked(file.name, file.highlights).font(.system(size: 13.5))
                     .foregroundStyle(StudioTheme.textPrimary)

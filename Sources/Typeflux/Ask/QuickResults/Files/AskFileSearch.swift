@@ -15,6 +15,7 @@ struct AskFileSearchOptions: Equatable, Sendable {
     /// How often each path was opened from the launcher.
     var usage: [String: Int] = [:]
     var now = Date()
+    var cancellation: AskSearchCancellation?
 }
 
 /// Ranking and searching the index. `final score = match + recently changed +
@@ -35,16 +36,26 @@ extension AskFileIndexState {
 
     /// The best files for `query`, best first.
     func search(_ query: AskSearchQuery, options: AskFileSearchOptions) -> [AskFileHit] {
-        guard options.limit > 0, !query.isEmpty, !records.isEmpty else { return [] }
+        guard options.limit > 0, !query.isEmpty, !records.isEmpty, options.cancellation?.isCancelled != true else { return [] }
         let extensionBytes = query.fileExtension.map { Array($0.lowercased().utf8) }
         let mask = query.mask
         let oneWord = query.words.count <= 1
-        let keep = options.order == .recent ? Int.max : options.limit * 4
+        // Group usage by directory once. Looking up each used path with
+        // record(at:) would repeatedly scan large directories. Names are only
+        // decoded for matching entries in directories with recorded usage.
+        var usage: [UInt32: [String: Double]] = [:]
+        for (path, count) in options.usage {
+            guard options.cancellation?.isCancelled != true else { return [] }
+            let folder = (path as NSString).deletingLastPathComponent
+            if let directory = directoryIndex[folder] {
+                usage[directory, default: [:]][(path as NSString).lastPathComponent] = Self.usageBoost(count)
+            }
+        }
         let chunks = (records.count + Self.chunkSize - 1) / Self.chunkSize
         var found = [[(score: Double, index: UInt32)]](repeating: [], count: chunks)
         let lock = NSLock()
         let context = ScanContext(query: query, mask: mask, wordMasks: query.words.prefix(64).map { AskSearchText.mask($0) },
-                                  oneWord: oneWord, extensionBytes: extensionBytes, options: options)
+                                  oneWord: oneWord, extensionBytes: extensionBytes, options: options, usage: usage)
         records.withUnsafeBufferPointer { records in
             keys.withUnsafeBufferPointer { keys in
                 starts.withUnsafeBufferPointer { starts in
@@ -54,13 +65,14 @@ extension AskFileIndexState {
                                 let tables = ScanTables(records: records, keys: keys, starts: starts,
                                                         directoryMasks: directoryMasks,
                                                         directoryDepths: directoryDepths, compact: compact)
-                                DispatchQueue.concurrentPerform(iterations: chunks) { chunk in
-                                    var local = scan(chunk: chunk, tables, context)
-                                    if local.count > keep {
-                                        local.sort { $0.score > $1.score }
-                                        local.removeLast(local.count - keep)
+                                // Leave CPU headroom for drawing and the independent app query.
+                                let workers = min(4, chunks)
+                                DispatchQueue.concurrentPerform(iterations: workers) { worker in
+                                    for chunk in stride(from: worker, to: chunks, by: workers) {
+                                        guard options.cancellation?.isCancelled != true else { return }
+                                        let local = scan(chunk: chunk, tables, context)
+                                        lock.withLock { found[chunk] = local }
                                     }
-                                    lock.withLock { found[chunk] = local }
                                 }
                             }
                         }
@@ -68,17 +80,10 @@ extension AskFileIndexState {
                 }
             }
         }
-        var matched = Array(found.joined())
-        if options.order == .relevance, matched.count > options.limit {
-            // Use adds at most `usageBoost(10)`: only entries that close to the cut can still make it,
-            // so only they need their path built.
-            matched.sort { $0.score > $1.score }
-            let cut = matched[options.limit - 1].score - Self.usageBoost(10)
-            matched = Array(matched.prefix { $0.score >= cut })
-        }
-        var candidates = matched.map { candidate -> (score: Double, index: UInt32, path: String) in
-            let path = self.path(of: candidate.index)
-            return (candidate.score + Self.usageBoost(options.usage[path] ?? 0), candidate.index, path)
+        guard options.cancellation?.isCancelled != true else { return [] }
+        let matched = Array(found.joined())
+        var candidates = matched.map { candidate in
+            (score: candidate.score, index: candidate.index, path: self.path(of: candidate.index))
         }
         switch options.order {
         case .relevance:
@@ -88,23 +93,32 @@ extension AskFileIndexState {
                 return left != right ? left < right : lhs.path < rhs.path
             }
         case .recent:
-            candidates.sort { records[Int($0.index)].modified > records[Int($1.index)].modified }
+            candidates.sort { lhs, rhs in
+                let left = records[Int(lhs.index)].modified, right = records[Int(rhs.index)].modified
+                return left != right ? left > right : lhs.index < rhs.index
+            }
         }
+        guard options.cancellation?.isCancelled != true else { return [] }
         return candidates.prefix(options.limit).map { hit(for: $0.index, path: $0.path, score: $0.score, query: query) }
     }
 
     /// The most recently changed entries, for file mode with nothing typed.
     func recent(options: AskFileSearchOptions) -> [AskFileHit] {
-        var best: [(modified: UInt32, index: UInt32)] = []
+        guard options.limit > 0, options.cancellation?.isCancelled != true else { return [] }
+        var best = AskSearchTopK<(modified: UInt32, index: UInt32)>(limit: options.limit) { lhs, rhs in
+            lhs.modified != rhs.modified ? lhs.modified > rhs.modified : lhs.index < rhs.index
+        }
         keys.withUnsafeBufferPointer { keys in
-            for (position, record) in records.enumerated() where !record.isRemoved && record.recordKind != .folder {
+            for (position, record) in records.enumerated() {
+                if position % 256 == 0, options.cancellation?.isCancelled == true { return }
+                guard !record.isRemoved, record.recordKind != .folder else { continue }
                 if options.type != .all,
                    !options.type.matches(kind: record.recordKind, extension: Self.fileExtension(record, keys)) { continue }
-                best.append((record.modified, UInt32(position)))
+                best.insert((record.modified, UInt32(position)))
             }
         }
-        best.sort { $0.modified > $1.modified }
-        return best.prefix(options.limit).map { candidate in
+        guard options.cancellation?.isCancelled != true else { return [] }
+        return best.sorted.map { candidate in
             let record = records[Int(candidate.index)]
             return AskFileHit(path: path(of: candidate.index), name: name(of: record), kind: record.recordKind,
                               modified: Date(timeIntervalSinceReferenceDate: TimeInterval(record.modified)), score: 0)
@@ -121,6 +135,7 @@ extension AskFileIndexState {
         var oneWord: Bool
         var extensionBytes: [UInt8]?
         var options: AskFileSearchOptions
+        var usage: [UInt32: [String: Double]]
     }
 
     private struct ScanTables {
@@ -136,7 +151,15 @@ extension AskFileIndexState {
     /// Entries sit in the order they were found, so neighbours share a folder:
     /// what the folder's path matches is worked out once per run of them.
     private func scan(chunk: Int, _ tables: ScanTables, _ context: ScanContext) -> [(score: Double, index: UInt32)] {
-        var local: [(score: Double, index: UInt32)] = []
+        var local = AskSearchTopK<(score: Double, index: UInt32)>(limit: context.options.limit) { lhs, rhs in
+            let left = tables.records[Int(lhs.index)], right = tables.records[Int(rhs.index)]
+            if context.options.order == .recent {
+                return left.modified != right.modified ? left.modified > right.modified : lhs.index < rhs.index
+            }
+            if lhs.score != rhs.score { return lhs.score > rhs.score }
+            if left.nameLength != right.nameLength { return left.nameLength < right.nameLength }
+            return path(of: lhs.index) < path(of: rhs.index)
+        }
         let end = min(tables.records.count, (chunk + 1) * Self.chunkSize)
         let type = context.options.type
         var folderDirectory = -1
@@ -145,6 +168,7 @@ extension AskFileIndexState {
         var wordsInPath: UInt64 = 0
         let needsPathWords = context.query.words.count > 1
         for position in chunk * Self.chunkSize ..< end {
+            if position % 256 == 0, context.options.cancellation?.isCancelled == true { return [] }
             let record = tables.records[position]
             if record.isRemoved { continue }
             let directory = Int(record.directory)
@@ -177,10 +201,10 @@ extension AskFileIndexState {
             }
             guard let base = score(record, UInt32(position), tables, context, wordsInPath: wordsInPath) else { continue }
             let ranked = base + Self.recencyBoost(modified: record.modified, now: context.options.now)
-                - Self.depthPenalty(tables.directoryDepths[directory])
-            local.append((ranked, UInt32(position)))
+                - Self.depthPenalty(tables.directoryDepths[directory]) + (context.usage[record.directory]?[name(of: record)] ?? 0)
+            local.insert((ranked, UInt32(position)))
         }
-        return local
+        return local.items
     }
 
     /// Which of the words (by bit, the first 64) the folder's path contains.

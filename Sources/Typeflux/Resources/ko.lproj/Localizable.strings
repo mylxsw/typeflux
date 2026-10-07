@@ -3499,7 +3499,7 @@
 "launcher.search.general" = "일반";
 "launcher.search.mode" = "검색 모드";
 "launcher.search.mode.subtitle" = "혼합: 최상의 결과를 먼저, 나머지는 종류별로 표시합니다.";
-"launcher.search.mode.mixed" = "혼합";
+"launcher.search.mode.mixed" = "혼합 (앱 우선)";
 "launcher.search.mode.appsFirst" = "앱 우선";
 "launcher.search.mode.filesFirst" = "파일 우선";
 "launcher.search.fuzzy" = "퍼지 검색";

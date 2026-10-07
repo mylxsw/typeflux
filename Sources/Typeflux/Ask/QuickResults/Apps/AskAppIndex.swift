@@ -16,6 +16,7 @@ protocol AskAppSearching: AnyObject, Sendable {
 /// `maximumAge` is the fallback when no change was seen.
 final class AskAppIndex: AskAppSearching, @unchecked Sendable {
     static let shared = AskAppIndex(watch: true)
+    static let didChange = Notification.Name("AskAppIndex.didChange")
     static let maximumAge: TimeInterval = 300
     private static let launchesKey = "ask.quickResults.appLaunches"
     /// Where macOS 13 and later keep the System Settings panes.
@@ -100,6 +101,7 @@ final class AskAppIndex: AskAppSearching, @unchecked Sendable {
             scanning = false
         }
         if watches { watch(roots) }
+        DispatchQueue.main.async { NotificationCenter.default.post(name: Self.didChange, object: self) }
     }
 
     /// Rescans soon after anything changes in the application folders.

@@ -87,6 +87,7 @@ struct AskComposer: View {
         self.onToggleUsage = onToggleUsage
         self.voice = model.voiceInput
         self.plugins = model.plugins
+        self._quickSearch = StateObject(wrappedValue: launcher ? model.quickSearch : AskQuickSearchSession())
         self._voiceShortcut = State(initialValue: model.modelLibrary.settings.activationHotkey)
     }
 
@@ -181,7 +182,12 @@ struct AskComposer: View {
     }
     @State private var suggestionIndex = 0
     /// A local answer for the launcher's text, such as a calculation.
-    @State private var quickResults: AskQuickResults?
+    @State private var searchVisible = false
+    @StateObject private var quickSearch: AskQuickSearchSession
+    private var quickResults: AskQuickResults? {
+        get { quickSearch.results }
+        nonmutating set { quickSearch.results = newValue }
+    }
     /// The tallest the quick results have been since they appeared. The list keeps
     /// that height while typing, so the panel does not shrink and grow with every
     /// keystroke as matches come and go; it resets when the results go away.
@@ -191,7 +197,8 @@ struct AskComposer: View {
     /// Quick results show while the launcher's text is all there is to send:
     /// quotes, files or chosen tools mean the text is written for the AI.
     private var showsQuickResults: Bool {
-        guard launcher, quickResults != nil, !paletteOpen, pluginDisplay == nil else { return false }
+        guard launcher, quickSearch.isCurrent(text: draft.wrappedValue.text),
+              quickResults != nil, !paletteOpen, pluginDisplay == nil else { return false }
         let value = draft.wrappedValue
         return (value.references ?? []).isEmpty && (value.attachments ?? []).isEmpty
             && (value.skills ?? []).isEmpty && (value.mcpServers ?? []).isEmpty
@@ -199,20 +206,30 @@ struct AskComposer: View {
 
     /// Writes state only when the results change: the workspace composer and
     /// ordinary questions must not re-render on every keystroke for this.
-    private func refreshQuickResults() {
-        guard launcher else { return }
-        if refreshPlugins() { return }
-        let calculator = model.quickCalculatorEnabled, apps = model.quickAppsEnabled, files = model.quickFilesEnabled
-        let sources = AskQuickResults.Sources(apps: apps ? model.appIndex : nil, files: files ? model.fileIndex : nil,
+    private func refreshQuickResults(resetActions: Bool = true) {
+        guard launcher, searchVisible, quickSearch.isVisible else { return }
+        if refreshPlugins() { quickSearch.cancel(); quickResults = nil; return }
+        let sources = AskQuickResults.Sources(apps: model.quickAppsEnabled ? model.appIndex : nil,
+                                              files: model.quickFilesEnabled ? model.fileIndex : nil,
                                               settings: model.launcherSearchSettings)
-        let next = calculator || apps || files
-            ? AskQuickResults.resolve(text: draft.wrappedValue.text, previous: quickResults,
-                                      chinese: AppLocalization.shared.language == .simplifiedChinese,
-                                      calculator: calculator, sources: sources)
-            : nil
-        guard next != quickResults else { return }
-        quickResults = next
-        quickActions = nil
+        if resetActions { quickActions = nil }
+        quickSearch.update(text: draft.wrappedValue.text,
+                           chinese: AppLocalization.shared.language == .simplifiedChinese,
+                           calculator: model.quickCalculatorEnabled, sources: sources)
+    }
+
+    private func refreshSearchIndex(resetActions: Bool = false) {
+        guard launcher, searchVisible, quickSearch.isVisible else { return }
+        if plugins.keyword?.pluginID == AskFileSearchPlugin.id {
+            plugins.refreshLiveResults(text: draft.wrappedValue.text, selection: draft.wrappedValue.sentSelection,
+                                       language: AppLocalization.shared.language)
+        } else {
+            refreshQuickResults(resetActions: resetActions)
+        }
+    }
+
+    private func quickResultsChanged() {
+        let next = quickResults
         let reserve = next.map { max(quickReserve, AskQuickResultsView.height(for: $0)) } ?? 0
         if reserve != quickReserve { quickReserve = reserve }
         reportHeight()
@@ -221,7 +238,7 @@ struct AskComposer: View {
     /// Copies a quick result, closing the launcher when asked to, opens an
     /// application or file, or sends the text to the AI.
     private func runQuickResult(_ row: AskQuickResults.Row, close: Bool) {
-        guard let results = quickResults else { return }
+        guard quickSearch.isCurrent(text: draft.wrappedValue.text), let results = quickResults else { return }
         quickActions = nil
         switch row {
         case .askAI: model.submitLauncher(); return
@@ -620,6 +637,7 @@ struct AskComposer: View {
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
             .onChange(of: draft.wrappedValue.text) { _ in refreshQuickResults() }
+            .onChange(of: quickResults) { _ in quickResultsChanged() }
             .onChange(of: pluginDisplay) { display in
                 guard launcher else { return }
                 if let followUp = display?.followUp {
@@ -647,7 +665,21 @@ struct AskComposer: View {
                 if recording { closePalette(); contextPanelOpen = false }
                 reportHeight()
             }
-            .onAppear { refreshQuickResults(); reportHeight() }
+            .onAppear { searchVisible = true; refreshQuickResults(); reportHeight() }
+            .onDisappear { if launcher { searchVisible = false; quickSearch.cancel() } }
+            .onChange(of: quickSearch.isVisible) { visible in if visible { refreshQuickResults() } }
+            .onReceive(NotificationCenter.default.publisher(for: AskAppIndex.didChange)) { notification in
+                if (notification.object as AnyObject?) === model.appIndex { refreshQuickResults(resetActions: false) }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AskFileIndex.didChange)
+                .debounce(for: .milliseconds(80), scheduler: RunLoop.main)) { notification in
+                if (notification.object as AnyObject?) === model.fileIndex { refreshSearchIndex() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .askLauncherSearchSettingsDidChange)) { notification in
+                if let store = notification.object as? SettingsStore, store.defaults === model.modelLibrary.settings.defaults {
+                    refreshSearchIndex(resetActions: true)
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: .hotkeySettingsDidChange)) { _ in
                 voiceShortcut = model.modelLibrary.settings.activationHotkey
             }

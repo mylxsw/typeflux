@@ -3509,7 +3509,7 @@
 "launcher.search.general" = "常规";
 "launcher.search.mode" = "搜索模式";
 "launcher.search.mode.subtitle" = "混合：最佳匹配在前，其余按类型分组；应用 / 文件优先：对应的组固定在前。";
-"launcher.search.mode.mixed" = "混合";
+"launcher.search.mode.mixed" = "混合（应用优先）";
 "launcher.search.mode.appsFirst" = "应用优先";
 "launcher.search.mode.filesFirst" = "文件优先";
 "launcher.search.fuzzy" = "模糊匹配";

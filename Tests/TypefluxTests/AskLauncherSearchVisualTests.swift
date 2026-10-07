@@ -34,6 +34,7 @@ struct AskLauncherSearchVisualTests {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-search-shots-\(UUID().uuidString)")
             .resolvingSymlinksInPath()
         let files: [(String, AskFileRecord.Kind, Double)] = [
+            ("Documents/notes.md", .file, 0),
             ("Documents/合同/2026 年度采购合同.pdf", .file, 2), ("Documents/合同/合同台账.xlsx", .file, 3),
             ("Documents/合同/框架合同-飞书.docx", .file, 40), ("Documents/合同", .folder, 1),
             ("Documents/发票/invoice-2026-09.pdf", .file, 20), ("Downloads/invoice-2026-08.pdf", .file, 48),
@@ -79,6 +80,7 @@ struct AskLauncherSearchVisualTests {
         let apps = AskTestAppIndex([system("Calculator", "计算器", "Calculator"), system("Notes", "备忘录", "Notes"),
                                     system("Preview", "预览", "Preview")])
         let cases: [(name: String, text: String, height: CGFloat)] = [
+            ("apps-before-files", "note", 420),
             ("best-folder", "hetong", 470), ("files-below-ai", "invoice", 330), ("words-and-path", "typeflux md", 330),
             ("pinyin-middle", "ht", 470), ("file-mode", "f 合同", 420)
         ]

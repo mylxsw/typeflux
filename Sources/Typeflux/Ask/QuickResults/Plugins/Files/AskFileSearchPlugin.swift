@@ -7,6 +7,7 @@ import Foundation
 struct AskFileSearchPlugin: AskLauncherPlugin {
     static let id = "files"
     static let typeOption = "type"
+    private let queue = DispatchQueue(label: "typeflux.ask.search.filePlugin", qos: .userInitiated)
     static let keywords = [AskKeyword(keyword: "f", pluginID: id)]
 
     /// The index to search; read when a run starts, so tests can swap it.
@@ -46,11 +47,19 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
         let type = Self.type(of: request.options) ?? .all
         let text = request.origin == .selection ? request.text.replacingOccurrences(of: "\n", with: " ") : request.text
         let query = AskSearchQuery(text)
-        var options = AskFileSearchOptions(limit: settings.limit, fuzzy: settings.fuzzy, type: type)
-        let hits = query.isEmpty ? index.recent(options: options) : {
-            options.order = .relevance
-            return index.search(query, options: options)
-        }()
+        let token = AskSearchCancellation()
+        let options = AskFileSearchOptions(limit: settings.limit, fuzzy: settings.fuzzy, type: type, cancellation: token)
+        let hits: [AskFileHit] = try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                queue.async {
+                    guard !token.isCancelled else { continuation.resume(throwing: CancellationError()); return }
+                    let hits = query.isEmpty ? index.recent(options: options) : index.search(query, options: options)
+                    if token.isCancelled { continuation.resume(throwing: CancellationError()) }
+                    else { continuation.resume(returning: hits) }
+                }
+            }
+        } onCancel: { token.cancel() }
+        try Task.checkCancellation()
         var items = hits.map(Self.item)
         if items.isEmpty {
             items.append(Self.notice(L(query.isEmpty ? "ask.plugin.files.none.recent" : "ask.plugin.files.none"),

@@ -130,6 +130,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // Already open (its context may still be arriving): just bring the editor back.
         if launcher?.isVisible == true { launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher); return }
         guard launchTask == nil else { return }
+        model.quickSearch.setVisible(true)
         model.refreshQuickApps()
         Task { [model] in await model.refreshLauncherWorkflows() }
         if NSWorkspace.shared.frontmostApplication?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
@@ -187,6 +188,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     /// Builds the launcher panel and lays out its view while the app is idle.
     func prewarmLauncher() {
+        model.quickSearch.setVisible(launcher?.isVisible == true)
         model.refreshQuickApps()
         Task { [model] in await model.refreshLauncherWorkflows() }
         let panel = launcherPanel()
@@ -254,6 +256,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         launchTask = nil
         model.foldLauncherKeyword()
         model.persistDrafts()
+        model.quickSearch.setVisible(false)
         launcher?.orderOut(nil)
         if let clickMonitor { NSEvent.removeMonitor(clickMonitor); self.clickMonitor = nil }
         if let localClickMonitor { NSEvent.removeMonitor(localClickMonitor); self.localClickMonitor = nil }
