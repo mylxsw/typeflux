@@ -458,7 +458,8 @@ sheets: `docs/images/ask-liquid-glass-compare-*.png`.
   conversation" is the primary button unless the step is destructive.
 - Model menu: text capability badges, a credit-multiplier column, "My models"
   group, "Manage models…" row; rows highlight with the accent like system menus.
-- The ⌥Space launcher lists the three suggestions while empty (↑/↓, Return).
+- The ⌥Space launcher shows its home while empty (↑/↓, Return, ⌘1…⌘9); since GUL-240 it is built
+  from the captured context, see `docs/design/ask-launcher-home.md`.
 
 ### Shadows and motion (GUL-159, round 3)
 
@@ -483,7 +484,7 @@ Reduce Transparency aware:
 ### Launcher placement (GUL-159)
 
 The ⌥Space launcher opens centred on the screen like Spotlight
-(`AskLauncherPlacement`): the empty launcher, suggestions included, is centred,
+(`AskLauncherPlacement`): the empty launcher, with a typical home under it, is centred,
 and it grows downward from a fixed top edge while typing, staying 12pt inside
 the usable screen. It no longer sits on the recording capsule's bottom inset.
 

@@ -70,8 +70,11 @@ final class AskConversationModel: ObservableObject {
             self?.launcherKeywords ?? AskPluginRegistry.defaultKeywords
         }
         connectWordBook(to: session)
+        session.onActivate = { [weak self] keyword in self?.keywordUsage.record(keyword) }
         return session
     }()
+    /// How often each launcher keyword is used, for the launcher's home.
+    lazy var keywordUsage = AskKeywordUsageStore(defaults: defaults)
     /// Types text into the app the launcher came from; the window controller supplies it.
     var deliverText: ((String) async throws -> Void)?
     /// Reads text aloud in a language; tests record it instead.
@@ -578,6 +581,19 @@ final class AskConversationModel: ObservableObject {
                 self?.historyRefreshError = nil
             }
         }
+    }
+
+    /// The launcher's home offers recent conversations before the workspace has
+    /// listed them: read them from this Mac's cache, never the network, so the
+    /// launcher neither waits nor shows an error for it.
+    func loadCachedHistoryIfNeeded() async {
+        // Signed out there is nothing to list; `credentials()` would also report that as an error.
+        guard conversations.isEmpty, session() != nil, let current = credentials() else { return }
+        let cached = (try? await cache.list(owner: current.owner)) ?? []
+        let cachedLocal = current.token.isEmpty ? [] : (try? await cache.list(owner: AskRoutedAPI.localOwner)) ?? []
+        guard owner == current.account, conversations.isEmpty else { return }
+        localConversationIds.formUnion(cachedLocal.map(\.id))
+        conversations = Self.unique(Self.insertingByDate(cachedLocal, into: Self.unique(cached)))
     }
 
     func refreshHistory(loadMore: Bool = false, inlineError: Bool = false) async {

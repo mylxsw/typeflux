@@ -52,6 +52,8 @@ final class AskPluginSession: ObservableObject {
     var recordWordBook: (@MainActor (AskWordBookLookup) -> Void)?
     /// A new keyword mode began: the word book counts every word again.
     var beginWordBookSession: (@MainActor () -> Void)?
+    /// A keyword was entered, typed or chosen: the launcher counts it to offer it later.
+    var onActivate: (@MainActor (AskKeyword) -> Void)?
     /// A result shown this long counts as looked up when keyword mode ends.
     var settleDelay: TimeInterval = 1.5
     var clock: () -> Date = Date.init
@@ -119,6 +121,7 @@ final class AskPluginSession: ObservableObject {
         overrides = [:]
         chained = nil
         beginWordBookSession?()
+        onActivate?(found)
         set(\.keyword, found)
         set(\.phase, .waiting)
     }

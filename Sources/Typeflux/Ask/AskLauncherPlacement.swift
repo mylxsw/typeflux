@@ -18,12 +18,13 @@ enum AskLauncherPlacement {
         var fromTop: CGFloat
     }
 
-    /// The empty launcher, suggestions included, is centred on the screen.
+    /// An empty launcher with a typical home under it is centred on the screen; the
+    /// home's height follows the captured context, so the top edge stays fixed instead.
     static var restingHeight: CGFloat {
-        AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true)
+        AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: AskLauncherSuggestions.typicalHeight)
     }
 
-    /// The top edge every launcher on `screen` shares: the empty one's, centred,
+    /// The top edge every launcher on `screen` shares: the resting one's, centred,
     /// or the remembered one's.
     static func top(on screen: NSRect, anchor: Anchor? = nil) -> CGFloat {
         guard let anchor else { return (screen.midY + restingHeight / 2).rounded() }

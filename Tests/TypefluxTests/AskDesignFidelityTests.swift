@@ -197,6 +197,5 @@ struct AskDesignFidelityTests {
         #expect(AskSuggestion.step(2, by: 1) == 0)
         #expect(AskSuggestion.step(1, by: 1) == 2)
         #expect(AskSuggestion.step(0, by: 1, count: 0) == 0)
-        #expect(AskLauncherSuggestions.height > 3 * AskLauncherSuggestions.rowHeight)
     }
 }

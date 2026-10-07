@@ -75,9 +75,10 @@ struct AskPresentationTests {
         #expect(AskMetrics.launcherHeight(editor: 148, banners: 0) == 226)
         #expect(AskMetrics.launcherHeight(editor: 32, banners: 1) == resting + 38)
         #expect(AskMetrics.launcherHeight(editor: 32, banners: 2) == resting + 76)
-        // The empty launcher lists its suggestions under the controls.
-        #expect(AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true)
-            == resting + AskLauncherSuggestions.height)
+        // The empty launcher lists its home under the controls.
+        #expect(AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: AskLauncherSuggestions.typicalHeight)
+            == resting + AskLauncherSuggestions.typicalHeight)
+        #expect(AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: -5) == resting)
     }
 
     @Test func focusAloneKeepsTheNeutralBorder() {
@@ -119,14 +120,15 @@ struct AskRedesignLayoutTests {
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
         try await Task.sleep(for: .milliseconds(300))
-        // Empty, the launcher offers its suggestions under the controls.
-        let suggested = AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true)
+        // Empty, the launcher offers its home under the controls.
+        let suggested = AskMetrics.launcherHeight(editor: 32, banners: 0,
+                                                  suggestions: AskLauncherSuggestions.height(for: fixture.model.launcherHome()))
         #expect(reported >= suggested - 4)
         #expect(reported <= suggested + 4)
         let empty = reported
         fixture.model.launcherDraft.text = String(repeating: "Line of text\n", count: 30)
         // Wait for the typed height rather than a fixed delay, which flaked under load. The
-        // empty height (with suggestions) is already above 200, so wait for it to change.
+        // empty height (with the home) may already be above 200, so wait for it to change.
         for _ in 0 ..< 100 where reported == empty || reported < 200 { try await Task.sleep(for: .milliseconds(20)) }
         #expect(reported >= 200)
         #expect(reported <= AskMetrics.launcherHeight(editor: 148, banners: 0))

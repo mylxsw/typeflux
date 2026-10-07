@@ -132,6 +132,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         guard launchTask == nil else { return }
         model.refreshQuickApps()
         Task { [model] in await model.refreshLauncherWorkflows() }
+        Task { [model] in await model.loadCachedHistoryIfNeeded() }
         if NSWorkspace.shared.frontmostApplication?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             tools?.targetApplication = NSWorkspace.shared.frontmostApplication
         }
@@ -189,6 +190,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     func prewarmLauncher() {
         model.refreshQuickApps()
         Task { [model] in await model.refreshLauncherWorkflows() }
+        Task { [model] in await model.loadCachedHistoryIfNeeded() }
         let panel = launcherPanel()
         panel.contentView?.layoutSubtreeIfNeeded()
     }

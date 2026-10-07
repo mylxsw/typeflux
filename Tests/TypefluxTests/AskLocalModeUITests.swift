@@ -127,10 +127,8 @@ struct AskLocalModeUITests {
 
     // MARK: - Launcher suggestions
 
-    @Test func launcherSkipsSuggestionsThatCannotRun() {
-        let blocked = AskLauncherSuggestions.disabled(screenshot: .needsVisionModel)
-        #expect(blocked == [0])
-        #expect(AskLauncherSuggestions.disabled(screenshot: .switches(model: "m")).isEmpty)
+    @Test func suggestionsStepPastTheOnesThatCannotRun() {
+        let blocked: Set<Int> = [0]
         #expect(AskSuggestion.step(1, by: 1, skipping: blocked) == 2)
         #expect(AskSuggestion.step(2, by: 1, skipping: blocked) == 1)
         #expect(AskSuggestion.step(1, by: -1, skipping: blocked) == 2)
@@ -140,13 +138,32 @@ struct AskLocalModeUITests {
         #expect(AskSuggestion.available(2, skipping: blocked) == 2)
     }
 
-    @Test func launcherSuggestionsRenderEveryScreenshotState() {
-        for state in [AskScreenshotSuggestion.ready, .switches(model: "llama3.2-vision"), .needsVisionModel,
-                      .unavailable(reason: "No")] {
-            let size = fits(AskLauncherSuggestions(highlighted: .constant(0), screenshot: state, onPick: { _ in }),
+    @Test func launcherHomeRendersAtItsComputedHeight() {
+        let translate = AskKeyword(keyword: "fy", pluginID: AskTranslatePlugin.id)
+        let row = AskLauncherHome.Row(id: "t", title: "Translate", detail: "Keeps the formatting", symbol: "character.bubble",
+                                      tint: .accent, keyword: "fy", action: .keyword(translate))
+        let recent = AskLauncherHome.Row(id: "c", title: "Pricing", symbol: "arrow.uturn.backward", tint: .neutral,
+                                         date: Date().addingTimeInterval(-600), action: .conversation(id: "c"))
+        var second = row
+        second.id = "t2"
+        let chip = AskLauncherHome.Chip(keyword: translate, title: "Translate", symbol: "character.bubble")
+        let search = AskLauncherHome.Chip(keyword: AskKeyword(keyword: "g", pluginID: AskWebSearchPlugin.id),
+                                          title: "Google", symbol: "magnifyingglass")
+        var older = recent, oldest = recent
+        older.id = "c2"
+        oldest.id = "c3"
+        let layouts: [[AskLauncherHome.Section]] = [
+            [.context(title: "For the 2 selected lines", subtitle: "“a b”", rows: [row, second]), .recent(rows: [recent]),
+             .keywords(chips: [chip], teaching: false)],
+            [.recent(rows: [recent, older, oldest])],
+            [.keywords(chips: [chip, search], teaching: true)]
+        ]
+        for sections in layouts {
+            let size = fits(AskLauncherSuggestions(sections: sections, highlighted: .constant(0), onPick: { _ in }),
                             width: 640)
-            #expect(abs(size.height - AskLauncherSuggestions.height) < 1)
+            #expect(abs(size.height - AskLauncherSuggestions.height(for: sections)) < 1)
         }
+        #expect(AskLauncherSuggestions.height(for: []) == 0)
     }
 
     // MARK: - Status card, sidebar and promo

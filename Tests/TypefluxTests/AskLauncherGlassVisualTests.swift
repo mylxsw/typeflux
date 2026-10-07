@@ -20,7 +20,8 @@ struct AskLauncherGlassVisualTests {
 
         let size = NSSize(width: AskMetrics.launcherWidth + 36,
                           height: AskMetrics.launcherHeight(editor: AskMetrics.composerControlHeight,
-                                                            banners: 0, suggestions: true) + 36)
+                                                            banners: 0,
+                                                            suggestions: AskLauncherSuggestions.typicalHeight) + 36)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for (surface, material) in [("system", AskGlassMaterial.resolve(reduceTransparency: false)),
                                         ("fallback", .visualEffect), ("opaque", .opaque)] {
