@@ -39,6 +39,7 @@ struct AskLauncherHeaderVisualTests {
         draft.sourceBundleID = "com.google.Chrome"
         draft.screenshot = "data:image/png;base64," + png.base64EncodedString()
         draft.capturedAt = Date()
+        draft.memory = AskMemory(global: "Prefers short answers.", app: nil)
         fixture.model.launcherDraft = draft
     }
 
@@ -87,7 +88,7 @@ struct AskLauncherHeaderVisualTests {
         let apps = AskTestAppIndex([system("Calculator", "计算器", "Calculator"), system("Calendar", "日历", "Calendar"),
                                     system("Weather", "天气", "Weather")])
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
-            // Idle: the context token leads the editor; suggestions; the bottom bar.
+            // Idle: a clear editor; suggestions; context switches in the bottom bar.
             do {
                 let fixture = try AskTestFixture()
                 defer { fixture.model.resetSession() }
@@ -95,7 +96,7 @@ struct AskLauncherHeaderVisualTests {
                 try await render(launcher(fixture), size: NSSize(width: AskMetrics.launcherWidth, height: 270),
                                  appearance: appearance, file: root.appendingPathComponent("header-idle-\(name).png"))
             }
-            // Typing: the token keeps only its icons; quick results with headings.
+            // Typing: the full editor width; quick results with headings.
             for (item, text, height) in [("apps", "cal", CGFloat(300)), ("calculator", "1+1", 350)] {
                 let fixture = try AskTestFixture()
                 defer { fixture.model.resetSession() }
@@ -128,7 +129,7 @@ struct AskLauncherHeaderVisualTests {
                 try await render(composer, size: NSSize(width: 760, height: 180), appearance: appearance,
                                  file: root.appendingPathComponent("header-workspace-composer-\(name).png"))
             }
-            // The context panel the token opens.
+            // The context panel opened with Command-K.
             do {
                 let fixture = try AskTestFixture()
                 defer { fixture.model.resetSession() }

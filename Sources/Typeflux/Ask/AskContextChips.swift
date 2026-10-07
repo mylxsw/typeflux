@@ -176,10 +176,21 @@ struct AskIconChip: View {
     let item: AskContextItem
     var action: (() -> Void)?
     var onRemove: (() -> Void)?
+    /// Captured screenshot preview, supplied by the launcher only.
+    var screenshot: NSImage?
+    @Environment(\.isEnabled) private var enabled
     @State private var hovering = false
+    @State private var showingCard = false
     @State private var hoverTask: Task<Void, Never>?
     @State private var anchor = AskHoverAnchor.Holder()
     @State private var cardID = UUID()
+
+    private struct CardContent: Equatable {
+        let item: AskContextItem
+        let screenshot: NSImage?
+    }
+
+    private var cardContent: CardContent { CardContent(item: item, screenshot: screenshot) }
 
     var body: some View {
         Button {
@@ -211,6 +222,10 @@ struct AskIconChip: View {
         }
         .onHover(perform: hover)
         .onDisappear(perform: dismissCard)
+        .onChange(of: cardContent) { content in
+            if showingCard { showCard(content) } else if hovering { scheduleCard(content) }
+        }
+        .onChange(of: enabled) { if !$0 { hovering = false; dismissCard() } }
         // The card is a click-through panel, not a popover: a popover swallowed
         // the click meant for the chip. See AskHoverCardPresenter.
         .background(AskHoverAnchor(holder: anchor))
@@ -219,25 +234,33 @@ struct AskIconChip: View {
         .accessibilityLabel(item.title)
         .accessibilityHint([item.sourceAppName.map { L("ask.context.selection.source", $0) },
                             item.detail, item.hint].compactMap { $0 }.joined(separator: ", "))
-        .accessibilityAction { action?() }
+        .accessibilityAction {
+            dismissCard()
+            if let action { action() } else { explain() }
+        }
         .accessibilityAction(named: L("ask.remove")) { if item.removable { onRemove?() } }
     }
 
     private func hover(_ inside: Bool) {
-        hovering = inside
+        hovering = inside && enabled
         hoverTask?.cancel()
-        guard inside else { AskHoverCardPresenter.shared.hide(owner: cardID); return }
+        guard hovering else { dismissCard(); return }
+        scheduleCard(cardContent)
+    }
+
+    private func scheduleCard(_ content: CardContent) {
+        hoverTask?.cancel()
         hoverTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: AskContextChips.hoverDelay)
             guard !Task.isCancelled, hovering else { return }
-            showCard()
+            showCard(content)
         }
     }
 
     /// Shows the card for a click. Leaving the chip hides it as usual; opened
     /// without the pointer on the chip (keyboard, VoiceOver) it closes by itself.
     private func explain() {
-        showCard()
+        showCard(cardContent)
         hoverTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: AskContextChips.explainDuration)
             guard !Task.isCancelled, !hovering else { return }
@@ -245,13 +268,16 @@ struct AskIconChip: View {
         }
     }
 
-    private func showCard() {
-        guard let view = anchor.view else { return }
-        AskHoverCardPresenter.shared.show(AskContextCard(items: [item]), owner: cardID, anchor: view)
+    private func showCard(_ content: CardContent) {
+        guard enabled, let view = anchor.view else { return }
+        AskHoverCardPresenter.shared.show(AskContextCard(items: [content.item], screenshot: content.screenshot),
+                                         owner: cardID, anchor: view)
+        showingCard = true
     }
 
     private func dismissCard() {
         hoverTask?.cancel()
+        showingCard = false
         AskHoverCardPresenter.shared.hide(owner: cardID)
     }
 }
@@ -400,6 +426,7 @@ struct AskOverflowChip: View {
 /// The hover card: name, details, then what a click does.
 struct AskContextCard: View {
     let items: [AskContextItem]
+    var screenshot: NSImage?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -407,6 +434,17 @@ struct AskContextCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.title).font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
+                    if item.kind == .screenshot, let screenshot {
+                        Image(nsImage: screenshot)
+                            .resizable().interpolation(.high).scaledToFit()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 200)
+                            .background(Color.black.opacity(0.15))
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .padding(.vertical, 6)
+                            .accessibilityLabel(L("ask.context.screen.full"))
+                            .accessibilityIdentifier("ask.context.screenshot.hoverPreview")
+                    }
                     if let source = item.sourceAppName {
                         Text(L("ask.context.selection.source", source))
                             .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
@@ -422,7 +460,7 @@ struct AskContextCard: View {
                 }
             }
         }
-        .frame(width: AskContextChips.cardWidth, alignment: .leading)
+        .frame(width: screenshot == nil ? AskContextChips.cardWidth : 320, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, 13)
         .padding(.vertical, 11)
