@@ -28,10 +28,10 @@ struct AskGlassTests {
         #expect(!AskGlassMaterial.opaque.drawsOwnEdge)
     }
 
-    @Test func glassDropsTheIdleBorderUnlessContrastIsIncreased() {
+    @Test func glassSoftensTheIdleBorderUnlessContrastIsIncreased() {
         let border = AskTheme.floatingBorder
-        #expect(AskGlassMaterial.liquidGlass.idleBorder(border, increasedContrast: false) == .clear)
-        #expect(AskGlassMaterial.visualEffect.idleBorder(border, increasedContrast: false) == .clear)
+        #expect(AskGlassMaterial.liquidGlass.idleBorder(border, increasedContrast: false) == AskTheme.floatingGlassEdge)
+        #expect(AskGlassMaterial.visualEffect.idleBorder(border, increasedContrast: false) == AskTheme.floatingGlassEdge)
         #expect(AskGlassMaterial.liquidGlass.idleBorder(border, increasedContrast: true) == border)
         #expect(AskGlassMaterial.opaque.idleBorder(border, increasedContrast: false) == border)
     }

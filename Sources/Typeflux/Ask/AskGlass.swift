@@ -31,10 +31,11 @@ enum AskGlassMaterial: Equatable {
     /// card's border to separate it from the window behind.
     var drawsOwnEdge: Bool { self != .opaque }
 
-    /// The card's idle outline: none on glass, except with Increase Contrast,
-    /// where a firm edge matters more than the material's soft rim.
+    /// The card's idle outline. Glass keeps only a faint hairline
+    /// (`AskTheme.floatingGlassEdge`, light mode only) so the clearer light card
+    /// still parts from a white window; Increase Contrast gets the firm edge.
     func idleBorder(_ border: Color, increasedContrast: Bool) -> Color {
-        drawsOwnEdge && !increasedContrast ? .clear : border
+        drawsOwnEdge && !increasedContrast ? AskTheme.floatingGlassEdge : border
     }
 }
 
@@ -54,11 +55,12 @@ enum AskGlassPlacement: Equatable {
     var blending: NSVisualEffectView.BlendingMode { self == .inWindow ? .withinWindow : .behindWindow }
     /// How much of the surface's own fill frosts the glass. Clear glass over the
     /// transcript let black text show through the composer and made the header
-    /// pills vanish on a white window. Floating panels and menus need a stable
-    /// light backplate over busy windows while retaining a little translucency.
+    /// pills vanish on a white window. Menus need a stable light backplate over
+    /// busy windows; floating panels keep enough frost for primary text and let
+    /// the backdrop show through, so the light card no longer reads as paper.
     func frost(dark: Bool) -> Double {
         switch self {
-        case .floating: return dark ? 0.78 : 0.88
+        case .floating: return dark ? 0.78 : 0.70
         case .inWindow: return 0.45
         case .menu: return dark ? 0.6 : 0.90
         }

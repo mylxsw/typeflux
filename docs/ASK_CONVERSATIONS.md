@@ -488,6 +488,28 @@ The ⌥Space launcher opens centred on the screen like Spotlight
 and it grows downward from a fixed top edge while typing, staying 12pt inside
 the usable screen. It no longer sits on the recording capsule's bottom inset.
 
+### Launcher light palette and footer states (GUL-252)
+
+In light mode the launcher read as an opaque white sheet with muddy grey
+tiles, and three blue footer icons of which only one meant "on":
+
+- Floating glass is frosted at 70% (was 88%) with a cool off-white
+  `launcherSurface`, plus a black 8% hairline (`floatingGlassEdge`) so the card
+  still parts from a white window. Reduce Transparency keeps the opaque fill;
+  the clipboard panel shares the floating glass. Dark mode keeps 78%.
+- Inside the launcher, light-mode washes are translucent (`launcher*` tokens):
+  black 7% rules, accent 13% selection with an accent 18% edge, white tiles
+  behind neutral row icons, a faint well behind ⌘ badges, and tertiary grey for
+  times and the key hint. Dark mode resolves to the shared tokens it had.
+- Footer controls fall into three kinds. Switches (screenshot, memory) show
+  "on" with an accent well (`switchOnFill`/`switchOnEdge`) and the filled
+  symbol when there is one (`brain.fill`), in both appearances. Menus
+  (permission, model, storage, attach) never use the accent: the permission
+  menu sets its own tint, because a borderless menu drew its label in the
+  launcher's accent and looked like an on switch. Only states that need
+  attention are coloured: YOLO red, kept on this Mac purple, a failed
+  screenshot amber.
+
 ### Model chooser in conversations with images (GUL-159)
 
 A conversation that already holds a screenshot can only continue on a model

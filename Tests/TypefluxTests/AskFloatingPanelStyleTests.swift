@@ -10,15 +10,21 @@ struct AskFloatingPanelStyleTests {
     @Test func `light panels shield text from dark and saturated backdrops`() async throws {
         let size = NSSize(width: 160, height: 100)
         for placement in [AskGlassPlacement.floating, .menu] {
+            // Menus keep a near-opaque backplate. The launcher's clearer light glass
+            // keeps the frost's share of it; its text contrast over a black window is
+            // checked in `AskLauncherLightPaletteTests`.
+            let frost = placement.frost(dark: false)
+            let floor = placement == .menu ? 0.84 : frost * 0.96 - 0.02
+            let cast = placement == .menu ? 0.14 : 1 - frost + 0.04
             for material in [AskGlassMaterial.visualEffect, .liquidGlass, .opaque] {
                 let panel = AskGlassBackground(material: material, corner: 16,
                                                opaqueFill: AskTheme.launcherSurface, placement: placement)
                 let black = try await render(panel.background(Color.black), size: size, appearance: .aqua)
                 let blue = try await render(panel.background(Color.blue), size: size, appearance: .aqua)
                 let darkFill = try pixel(black, x: 80, y: 50), blueFill = try pixel(blue, x: 80, y: 50)
-                #expect(darkFill.redComponent > 0.84 && darkFill.greenComponent > 0.84 && darkFill.blueComponent > 0.84)
-                #expect(abs(darkFill.blueComponent - blueFill.blueComponent) < 0.14)
-                #expect(abs(blueFill.blueComponent - blueFill.redComponent) < 0.14)
+                #expect(darkFill.redComponent > floor && darkFill.greenComponent > floor && darkFill.blueComponent > floor)
+                #expect(abs(darkFill.blueComponent - blueFill.blueComponent) < cast)
+                #expect(abs(blueFill.blueComponent - blueFill.redComponent) < cast)
             }
         }
     }

@@ -120,7 +120,7 @@ struct AskLauncherSuggestions: View {
             .map { ($0.element.id, $0.offset + 1) })
         let current = items.indices.contains(highlighted) ? items[highlighted].id : nil
         VStack(spacing: 0) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
+            Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
                     sectionView(section, items: items, numbers: numbers, current: current)
@@ -215,14 +215,20 @@ struct AskLauncherSuggestions: View {
         }
     }
 
+    /// A row icon's tile: coloured actions keep a wash of their tint; neutral
+    /// rows sit on a raised launcher tile instead of a grey wash.
+    static func tileFill(_ tint: AskLauncherHome.Tint) -> Color {
+        tint == .neutral ? AskTheme.launcherTile : Self.tint(tint).opacity(0.14)
+    }
+
+    static func tileEdge(_ tint: AskLauncherHome.Tint) -> Color {
+        tint == .neutral ? AskTheme.launcherTileEdge : .clear
+    }
+
     private func rowView(_ row: AskLauncherHome.Row, number: Int?, highlighted: Bool) -> some View {
-        let tint = Self.tint(row.tint)
-        return Button { onPick(.row(row)) } label: {
+        Button { onPick(.row(row)) } label: {
             HStack(spacing: 12) {
-                Image(systemName: row.symbol).font(.system(size: 12.5))
-                    .foregroundStyle(tint)
-                    .frame(width: 28, height: 28)
-                    .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                tile(row)
                 Text(row.title).font(.system(size: 13.5))
                     .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
@@ -236,21 +242,20 @@ struct AskLauncherSuggestions: View {
                 if let keyword = row.keyword { keywordLabel(keyword) }
                 if let date = row.date {
                     Text(Self.relative(date, now: now)).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(AskTheme.launcherMetaText)
                         .lineLimit(1)
                 }
-                if let number {
-                    Text("⌘\(number)").font(.system(size: 10.5, design: .rounded))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .padding(.horizontal, 5)
-                        .frame(height: 18)
-                        .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.separator))
-                }
+                if let number { shortcutBadge(number) }
             }
             .padding(.horizontal, Self.contentInset)
             .frame(height: Self.rowHeight)
-            .background(highlighted ? AskTheme.accentSoft : Color.clear,
+            .background(highlighted ? AskTheme.launcherSelection : Color.clear,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                if highlighted {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(AskTheme.launcherSelectionEdge)
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -259,12 +264,30 @@ struct AskLauncherSuggestions: View {
         .accessibilityAddTraits(highlighted ? .isSelected : [])
     }
 
+    private func tile(_ row: AskLauncherHome.Row) -> some View {
+        Image(systemName: row.symbol).font(.system(size: 12.5))
+            .foregroundStyle(Self.tint(row.tint))
+            .frame(width: 28, height: 28)
+            .background(Self.tileFill(row.tint), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(Self.tileEdge(row.tint), lineWidth: 0.5))
+    }
+
+    private func shortcutBadge(_ number: Int) -> some View {
+        Text("⌘\(number)").font(.system(size: 10.5, design: .rounded))
+            .foregroundStyle(AskTheme.launcherMetaText)
+            .padding(.horizontal, 5)
+            .frame(height: 18)
+            .background(AskTheme.launcherShortcutFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.launcherShortcutEdge))
+    }
+
     private func keywordLabel(_ keyword: String) -> some View {
         Text(keyword).font(.system(size: 10.5, design: .monospaced))
             .foregroundStyle(AskTheme.accentText)
             .padding(.horizontal, 5)
             .frame(height: 18)
-            .background(AskTheme.accentSoft, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .background(AskTheme.launcherKeyword, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
     }
 
     private func chipView(_ chip: AskLauncherHome.Chip, highlighted: Bool) -> some View {
@@ -278,9 +301,14 @@ struct AskLauncherSuggestions: View {
             .padding(.leading, 5)
             .padding(.trailing, 9)
             .frame(height: Self.chipHeight)
-            .background(highlighted ? AskTheme.accentSoft : Color.clear,
+            .background(highlighted ? AskTheme.launcherSelection : AskTheme.launcherChipFill,
                         in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.separator))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.launcherChipEdge))
+            .overlay {
+                if highlighted {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.launcherSelectionEdge)
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

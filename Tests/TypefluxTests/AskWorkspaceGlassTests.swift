@@ -19,7 +19,8 @@ struct AskWorkspaceGlassTests {
         let dark = AskGlassPlacement.floating.frost(dark: true)
         let light = AskGlassPlacement.floating.frost(dark: false)
         #expect(dark >= 0.75 && dark < 1)
-        #expect(light >= 0.85 && light < 1)
+        // Light glass stays clear enough to show the backdrop (GUL-252).
+        #expect(light >= 0.65 && light <= 0.75)
     }
 
     @Test(arguments: [false, true]) func inWindowChromeAndMenusRemainFrosted(dark: Bool) {
@@ -38,8 +39,8 @@ struct AskWorkspaceGlassTests {
             #expect(workspace.idleBorder(on: material, increasedContrast: false) == AskTheme.border)
         }
         #expect(workspace.idleBorder(on: nil, increasedContrast: false) == AskTheme.border)
-        // The launcher keeps the glass's own edge.
-        #expect(launcher.idleBorder(on: .liquidGlass, increasedContrast: false) == .clear)
+        // The launcher keeps the glass's own edge, plus a faint light-mode hairline.
+        #expect(launcher.idleBorder(on: .liquidGlass, increasedContrast: false) == AskTheme.floatingGlassEdge)
         #expect(launcher.idleBorder(on: .liquidGlass, increasedContrast: true) == AskTheme.floatingBorder)
         #expect(launcher.idleBorder(on: .opaque, increasedContrast: false) == AskTheme.floatingBorder)
         #expect(launcher.idleBorder(on: nil, increasedContrast: false) == AskTheme.floatingBorder)

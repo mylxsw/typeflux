@@ -294,7 +294,17 @@ struct AskIconChipFace: View {
     var body: some View {
         icon
             .frame(width: AskContextChips.chipSize, height: AskContextChips.chipSize)
-            // Borderless like every composer control: switching on lights the icon itself.
+            // A switch that is on sits in a tinted well, so "on" reads by shape as
+            // well as colour next to the borderless menus beside it.
+            .background {
+                if appImage == nil {
+                    RoundedRectangle(cornerRadius: Self.wellCorner, style: .continuous)
+                        .fill(Self.wellFill(item.style, hovering: hovering))
+                        .overlay(RoundedRectangle(cornerRadius: Self.wellCorner, style: .continuous)
+                            .strokeBorder(Self.wellEdge(item.style)))
+                        .padding(Self.wellInset)
+                }
+            }
             .animation(.easeOut(duration: 0.15), value: item.style)
             .animation(.easeOut(duration: 0.12), value: hovering)
             .overlay(alignment: .topTrailing) {
@@ -330,7 +340,7 @@ struct AskIconChipFace: View {
                 .opacity(hovering ? 0.85 : 1)
         } else {
             ZStack {
-                Image(systemName: item.systemImage).font(.system(size: 15, weight: .regular))
+                Image(systemName: Self.symbol(item)).font(.system(size: 15, weight: .regular))
                 if item.style == .unavailable {
                     Rectangle().frame(width: 20, height: 1.5).rotationEffect(.degrees(-45))
                 }
@@ -339,7 +349,7 @@ struct AskIconChipFace: View {
         }
     }
 
-    /// The icon is the whole control: on is the accent, hover brightens an off icon.
+    /// On is the accent, hover brightens an off icon.
     static func iconColor(_ style: AskChip.Style, hovering: Bool) -> Color {
         switch style {
         case .active: return AskTheme.accent

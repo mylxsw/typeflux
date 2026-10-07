@@ -1142,7 +1142,7 @@ struct AskComposer: View {
         HStack(spacing: 4) {
             composerTools
             permissionModeMenu
-            Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
+            Rectangle().fill(AskTheme.launcherSeparator).frame(width: 1, height: 18).padding(.horizontal, 4)
             contextChips
                 .disabled(active)
                 .opacity(Self.recordingDim(active))
@@ -1167,7 +1167,7 @@ struct AskComposer: View {
                 } else {
                     Text(launcherHint)
                         .font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(AskTheme.launcherMetaText)
                         .lineLimit(1)
                         .accessibilityHidden(true)
                         // Passive hints share the empty bar's drag behavior.
@@ -1195,7 +1195,7 @@ struct AskComposer: View {
         .frame(height: layout.footerHeight)
         .frame(maxWidth: .infinity)
         .overlay(alignment: .top) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
+            Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
         }
     }
 
@@ -1342,31 +1342,10 @@ struct AskComposer: View {
     }
 
     private var permissionModeMenu: some View {
-        Menu {
-            ForEach(AskPermissionMode.allCases, id: \.self) { mode in
-                Button { model.setPermissionMode(mode, launcher: launcher) } label: {
-                    Label(mode.title + " — " + mode.detail,
-                          systemImage: model.permissionMode(launcher: launcher) == mode ? "checkmark" : mode.symbol)
-                }
-            }
-        } label: {
-            Group {
-                if (launcher || layout.width < 800), model.permissionMode(launcher: launcher) != .yolo {
-                    Image(systemName: model.permissionMode(launcher: launcher).symbol)
-                } else {
-                    Label(model.permissionMode(launcher: launcher) == .yolo ? "YOLO" : model.permissionMode(launcher: launcher).title,
-                          systemImage: model.permissionMode(launcher: launcher).symbol)
-                }
-            }
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(model.permissionMode(launcher: launcher) == .yolo ? StudioTheme.danger : StudioTheme.textSecondary)
-                .fixedSize()
+        AskPermissionModeMenu(mode: model.permissionMode(launcher: launcher),
+                              compact: launcher || layout.width < 800) { mode in
+            model.setPermissionMode(mode, launcher: launcher)
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .help(model.permissionMode(launcher: launcher).detail + " /mode [yolo|strict|standard]")
-        .accessibilityLabel(L("ask.mode.title") + ": " + model.permissionMode(launcher: launcher).title)
-        .accessibilityIdentifier("ask.composer.permissionMode")
         .disabled(active || (!launcher && model.isLoadingSelection))
     }
 
