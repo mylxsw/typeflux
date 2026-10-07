@@ -3,8 +3,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// One row of a result list: icon, title, subtitle, and on the chosen row what
-/// Return does ("↩ Copy"). The chosen row is filled with the accent while the
-/// list has the keyboard, as the design's screen ⑦ shows.
+/// Return does ("↩ Copy"). A soft accent wash marks keyboard focus without
+/// competing with the title or the list's section heading.
 struct AskPluginItemRow: View {
     var item: AskPluginItem
     /// The plugin's symbol, for rows without an icon of their own.
@@ -25,11 +25,10 @@ struct AskPluginItemRow: View {
                 AskPluginItemIcon(icon: item.icon, symbol: symbol, filled: filled)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(item.title).font(.system(size: 13.5, weight: .semibold)).lineLimit(1)
-                        .foregroundStyle(filled ? Color.white
-                            : item.valid ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                        .foregroundStyle(item.valid ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                     if !item.subtitle.isEmpty {
                         Text(item.subtitle).font(.system(size: 11.5)).lineLimit(1)
-                            .foregroundStyle(filled ? Color.white.opacity(0.82) : StudioTheme.textTertiary)
+                            .foregroundStyle(StudioTheme.textSecondary)
                     }
                 }
                 // The title keeps its room; a long action ("Open in Visual Studio Code") is cut short instead.
@@ -37,12 +36,12 @@ struct AskPluginItemRow: View {
                 Spacer(minLength: 8)
                 if selected, let action = item.actions.first(where: { $0.shortcut == .enter }) {
                     Text("↩ " + action.title).font(.system(size: 11.5)).lineLimit(1).truncationMode(.tail)
-                        .foregroundStyle(filled ? Color.white.opacity(0.9) : StudioTheme.textTertiary)
+                        .foregroundStyle(filled ? AskTheme.accentText : StudioTheme.textSecondary)
                 }
             }
             .padding(.horizontal, 8)
             .frame(height: height)
-            .background(filled ? AskTheme.accent : selected ? AskTheme.hoverFill : Color.clear,
+            .background(filled ? AskTheme.accentSoft : selected ? AskTheme.hoverFill : Color.clear,
                         in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .contentShape(Rectangle())
         }
@@ -69,9 +68,9 @@ struct AskPluginItemIcon: View {
             } else {
                 Image(systemName: Self.symbolName(icon) ?? symbol)
                     .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(filled ? Color.white : StudioTheme.textSecondary)
+                    .foregroundStyle(filled ? AskTheme.accentText : StudioTheme.textSecondary)
                     .frame(width: 28, height: 28)
-                    .background(filled ? Color.white.opacity(0.2) : AskTheme.hoverFill,
+                    .background(filled ? Color.clear : AskTheme.hoverFill,
                                 in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
         }

@@ -7,7 +7,7 @@ import Testing
 struct AskWorkspaceGlassTests {
     @Test func floatingGlassBlursWhatIsBehindThePanel() {
         #expect(AskGlassPlacement.floating.blending == .behindWindow)
-        #expect(AskGlassPlacement.floating.fallbackMaterial == .hudWindow)
+        #expect(AskGlassPlacement.floating.fallbackMaterial == .popover)
     }
 
     @Test func inWindowGlassBlursTheWindowsOwnContent() {
@@ -15,15 +15,14 @@ struct AskWorkspaceGlassTests {
         #expect(AskGlassPlacement.inWindow.fallbackMaterial == .popover)
     }
 
-    @Test func floatingGlassUsesStrongerFrostInDarkMode() {
+    @Test func floatingGlassKeepsBothAppearancesLegible() {
         let dark = AskGlassPlacement.floating.frost(dark: true)
         let light = AskGlassPlacement.floating.frost(dark: false)
         #expect(dark >= 0.75 && dark < 1)
-        #expect(light > 0 && light <= 0.25)
-        #expect(dark > light)
+        #expect(light >= 0.85 && light < 1)
     }
 
-    @Test(arguments: [false, true]) func inWindowAndMenuGlassKeepTheirExistingFrost(dark: Bool) {
+    @Test(arguments: [false, true]) func inWindowChromeAndMenusRemainFrosted(dark: Bool) {
         // Frosted enough to keep text legible, clear enough for the backdrop's glows.
         #expect(AskGlassPlacement.inWindow.frost(dark: dark) >= 0.4)
         #expect(AskGlassPlacement.inWindow.frost(dark: dark) <= 0.6)
