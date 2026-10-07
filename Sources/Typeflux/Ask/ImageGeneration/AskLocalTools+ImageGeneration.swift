@@ -90,7 +90,7 @@ extension AskLocalTools {
         let receipt = AskGeneratedImageReceipt(generatedImages: refs, provider: configuration.provider.rawValue,
                                                model: configuration.model,
                                                notice: """
-                                               Generated images are available on this Mac for 30 days. Save originals to keep them.
+                                               Generated images are saved on this Mac until the conversation is deleted.
                                                """)
         guard let text = try String(data: JSONEncoder().encode(receipt), encoding: .utf8) else {
             throw AskImageError.invalidResponse

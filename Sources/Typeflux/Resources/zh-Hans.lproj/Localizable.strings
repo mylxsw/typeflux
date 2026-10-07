@@ -3277,7 +3277,6 @@
 "imagegen.save" = "保存配置";
 "imagegen.saved" = "配置已保存。";
 "imagegen.billing" = "每次生成都需要确认，费用由服务商收取。获取模型列表不会生成图片。";
-"imagegen.retention" = "原图在生成它的 Mac 上保留 30 天，请另存以长期保留。删除会话会清理其本地图片。";
 "imagegen.beijing" = "北京";
 "imagegen.singapore" = "新加坡";
 "imagegen.bailian.help" = "请使用对应地域的密钥，支持填写业务空间专属地址。此适配器使用千问图像同步接口。";

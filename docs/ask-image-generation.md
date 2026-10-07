@@ -64,9 +64,10 @@ OpenRouter supports an optional upstream provider slug and disables fallbacks.
   at most 8 returned images, 8192 pixels per edge and 16,777,216 pixels per image.
   The request asks for a single image where the protocol provides that option.
 - Cards show an image preview, full preview, Save, and Copy image. References survive
-  conversation reload and legacy text-only receipts. Images expire after 30 days;
-  artifact access/generation cleans up expired bundles. Deleting a conversation
-  removes its local bundles. Save originals to retain them independently.
+  conversation reload and legacy text-only receipts. Local images do not expire,
+  including images saved by earlier versions with a 30-day expiration date.
+  Deleting a conversation removes its local bundles. Save originals to retain them
+  independently. Non-image artifacts keep their existing 30-day retention.
 - Metadata records the prompt, provider, model, layout, requested size, actual image
   dimensions, request ID, tool call ID, any reported model/provider, and usage. Image bytes are not
   inserted into the conversation model's vision context or uploaded to Typeflux.

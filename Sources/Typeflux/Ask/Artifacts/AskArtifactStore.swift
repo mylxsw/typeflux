@@ -30,7 +30,7 @@ struct AskArtifactBundle {
     var files: [String: Data]
 }
 
-/// Immutable, device-only copies. Only this private store is subject to retention.
+/// Immutable, device-only copies. Images persist until deletion; other artifacts expire.
 final class AskArtifactStore {
     static let maximumFileBytes = 16 * 1024 * 1024
     static let maximumBundleBytes = 32 * 1024 * 1024
@@ -61,6 +61,14 @@ final class AskArtifactStore {
         case "gif": "image/gif"
         default: "application/octet-stream"
         }
+    }
+
+    /// Older image references keep their original wire metadata, but no longer expire locally.
+    static func expirationDate(for ref: AskArtifactRef) -> Date? {
+        if ref.mediaType.hasPrefix("image/"), ["device_30_days", "device_persistent"].contains(ref.cleanup) {
+            return nil
+        }
+        return ref.expiresAt
     }
 
     static func validatePath(_ path: String) throws {
@@ -94,12 +102,14 @@ final class AskArtifactStore {
         }
         // Wire/cache dates use ISO-8601 seconds; preserve exact reference equality after reopening.
         let created = Date(timeIntervalSince1970: now().timeIntervalSince1970.rounded(.down))
+        let persistent = Self.mediaType(entry).hasPrefix("image/")
         let ref = try AskArtifactRef(id: UUID().uuidString.lowercased(), ownerId: scope.ownerId,
                                      conversationId: scope.conversationId, runId: scope.runId,
                                      version: AskToolPolicy.digest(JSONEncoder.sorted.encode(resources)),
                                      mediaType: Self.mediaType(entry), sizeBytes: Int64(data.count),
-                                     sha256: AskToolPolicy.digest(data), cleanup: "device_30_days",
-                                     expiresAt: created.addingTimeInterval(Self.retention))
+                                     sha256: AskToolPolicy.digest(data),
+                                     cleanup: persistent ? "device_persistent" : "device_30_days",
+                                     expiresAt: persistent ? nil : created.addingTimeInterval(Self.retention))
         let manifest = AskArtifactManifest(ref: ref, workspace: workspace, createdAt: created,
                                            entry: entry, resources: resources)
         let root = try AskSecureDirectory.openRoot(storageURL)
@@ -147,8 +157,12 @@ final class AskArtifactStore {
         guard UUID(uuidString: ref.id)?.uuidString.lowercased() == ref.id,
               ref.ownerId == scope.ownerId, ref.conversationId == scope.conversationId,
               ref.runId == scope.runId else { throw AskArtifactError.denied }
-        guard ref.cleanup == "device_30_days", let expires = ref.expiresAt else { throw AskArtifactError.invalid }
-        guard now() < expires else { throw AskArtifactError.expired }
+        let timed = ref.cleanup == "device_30_days" && ref.expiresAt != nil
+        let persistent = ref.cleanup == "device_persistent" && ref.expiresAt == nil && ref.mediaType.hasPrefix("image/")
+        guard timed || persistent else { throw AskArtifactError.invalid }
+        if let expires = Self.expirationDate(for: ref), now() >= expires {
+            throw AskArtifactError.expired
+        }
         let root: AskSecureDirectory
         let directory: AskSecureDirectory
         do {
@@ -210,7 +224,7 @@ final class AskArtifactStore {
                   let data = try? directory.readFile("manifest.json", limit: 256 * 1024),
                   let manifest = try? JSONDecoder().decode(AskArtifactManifest.self, from: data),
                   manifest.ref.id == id, manifest.ref.cleanup == "device_30_days",
-                  let expiry = manifest.ref.expiresAt, expiry <= now() else { continue }
+                  let expiry = Self.expirationDate(for: manifest.ref), expiry <= now() else { continue }
             try root.remove(id)
             removed += 1
         }

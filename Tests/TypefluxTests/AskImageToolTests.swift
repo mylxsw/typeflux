@@ -90,6 +90,10 @@ final class AskImageToolTests: XCTestCase {
             authorize: {}
         )
         let ref = try XCTUnwrap(output.outcome?.artifacts?.first)
+        XCTAssertEqual(ref.cleanup, "device_persistent")
+        XCTAssertNil(ref.expiresAt)
+        XCTAssertFalse(output.content.contains("30 days"))
+        store.now = { Date(timeIntervalSince1970: 4_000_000_000) }
         XCTAssertNil(output.image, "Generating images must not make a text model require vision")
         XCTAssertFalse(output.isError)
         XCTAssertFalse(output.content.contains("base64"))

@@ -39,7 +39,6 @@ struct AskImageSettingsView: View {
                 Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
                 actions
             }
-            AgentInfoNote(text: L("imagegen.retention"))
         }
         .onChange(of: model.configuration) { _ in model.clearNotice() }
         .onChange(of: model.key) { _ in model.clearNotice() }

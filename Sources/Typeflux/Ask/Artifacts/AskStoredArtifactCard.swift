@@ -34,7 +34,7 @@ struct AskStoredArtifactCard: View {
                 countStyle: .file
             ))
             .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-            if let expiry = ref.expiresAt {
+            if let expiry = AskArtifactStore.expirationDate(for: ref) {
                 Text(L("ask.artifact.expires", expiry.formatted(date: .abbreviated, time: .omitted)))
                     .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
             }
@@ -161,7 +161,9 @@ private struct AskArtifactWebView: NSViewRepresentable {
         var loading: Task<Void, Never>?
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
 
     func makeNSView(context: Context) -> NSView {
         let container = NSView()

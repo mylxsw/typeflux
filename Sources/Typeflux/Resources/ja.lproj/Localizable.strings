@@ -3267,7 +3267,6 @@
 "imagegen.save" = "設定を保存";
 "imagegen.saved" = "設定を保存しました。";
 "imagegen.billing" = "生成ごとに承認が必要で、料金はプロバイダーが請求します。モデル取得では画像を生成しません。";
-"imagegen.retention" = "元画像は生成した Mac に 30 日間保存されます。長期保存にはコピーを保存してください。会話削除時に画像も削除されます。";
 "imagegen.beijing" = "北京";
 "imagegen.singapore" = "シンガポール";
 "imagegen.bailian.help" = "同じリージョンのキーを使用してください。ワークスペース専用 URL と Qwen Image 同期 API を使用できます。";

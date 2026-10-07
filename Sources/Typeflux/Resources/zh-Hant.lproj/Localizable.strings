@@ -3274,7 +3274,6 @@
 "imagegen.save" = "儲存設定";
 "imagegen.saved" = "設定已儲存。";
 "imagegen.billing" = "每次生成都需要確認，費用由服務商收取。取得模型清單不會生成圖片。";
-"imagegen.retention" = "原圖在生成它的 Mac 上保留 30 天，請另存以長期保留。刪除對話會清理其本機圖片。";
 "imagegen.beijing" = "北京";
 "imagegen.singapore" = "新加坡";
 "imagegen.bailian.help" = "請使用對應地域的金鑰，支援填寫業務空間專屬網址。此適配器使用千問圖像同步介面。";

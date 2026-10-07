@@ -13,7 +13,8 @@ extension AskLocalTools {
         return .init(name: "artifact", description: """
         After approval, preserve an immutable device-only artifact from a project workspace. Uses staged edits.
         Supply the current workspace version and EVERY required resource, including the entry. No directory
-        traversal or automatic resource discovery. 128 files, 16 MiB each, 32 MiB total; retained for 30 days.
+        traversal or automatic resource discovery. 128 files, 16 MiB each, 32 MiB total.
+        Image artifacts persist until deletion; other artifacts are retained for 30 days.
         HTML uses isolated offline preview; unsupported types remain downloadable. Never uploads files.
         Return the artifact ID to the user, never an internal path. Images and logs can be entry files.
         """, parameters: AskTypedContent.json([
@@ -60,7 +61,10 @@ extension AskLocalTools {
             workspace: workspace, entry: entry, paths: paths, scope: projectScope(conversationId),
             authorizedRoots: { self.fileTools(conversationId: conversationId).roots }
         )
-        let receipt = AskArtifactReceipt(artifact: ref, notice: "Device only; no upload. Retained for 30 days.")
+        let notice = AskArtifactStore.expirationDate(for: ref) == nil
+            ? "Device only; no upload. Saved until the conversation is deleted."
+            : "Device only; no upload. Retained for 30 days."
+        let receipt = AskArtifactReceipt(artifact: ref, notice: notice)
         guard let text = try String(data: JSONEncoder().encode(receipt), encoding: .utf8) else {
             throw AskArtifactError.invalid
         }
