@@ -190,7 +190,7 @@ struct AskComposer: View {
     /// that height while typing, so the panel does not shrink and grow with every
     /// keystroke as matches come and go; it resets when the results go away.
     @State private var quickReserve: CGFloat = 0
-    /// The highlighted result's actions, open after →.
+    /// The highlighted result's actions, open after → or a context click.
     @State private var quickActions: AskQuickActionPanel?
     /// Quick results show while the launcher's text is all there is to send:
     /// quotes, files or chosen tools mean the text is written for the AI.
@@ -311,6 +311,16 @@ struct AskComposer: View {
         guard let panel = AskQuickActionPanel.make(for: target) else { return false }
         quickActions = panel
         return true
+    }
+
+    /// Selects the clicked file by path, so a search update cannot redirect its actions.
+    private func showQuickFileActions(_ file: AskFileHit) {
+        guard showsQuickResults, !active, var results = quickResults,
+              let fileIndex = results.files.firstIndex(where: { $0.path == file.path }),
+              let rowIndex = results.rows.firstIndex(of: .file(fileIndex)) else { return }
+        results.highlight(rowIndex)
+        quickResults = results
+        _ = openQuickActions(results)
     }
 
     /// The panel has the keys while it is open: arrows choose, Return runs, ← and esc close.
@@ -747,7 +757,7 @@ struct AskComposer: View {
                                     thumbnails: model.launcherSearchSettings.fileIcons == .thumbnails,
                                     onRun: runQuickResult,
                                     onHighlight: { index in self.quickResults?.highlight(index) },
-                                    onAction: runPanelAction)
+                                    onAction: runPanelAction, onShowFileActions: showQuickFileActions)
                     .disabled(active)
             }
             if launcher {
