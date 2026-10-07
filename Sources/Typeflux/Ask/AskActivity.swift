@@ -111,6 +111,9 @@ enum AskActivity {
                 ) {
                     refs.append(receipt.artifact)
                 }
+                if let receipt = try? JSONDecoder().decode(AskGeneratedImageReceipt.self, from: Data(result.resultText.utf8)) {
+                    refs += receipt.generatedImages
+                }
                 for ref in refs where !value.storedArtifacts.contains(where: { $0.id == ref.id }) {
                     value.storedArtifacts.append(ref)
                 }

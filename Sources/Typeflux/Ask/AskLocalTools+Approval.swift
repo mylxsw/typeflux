@@ -14,6 +14,7 @@ extension AskLocalTools {
         var summary: String
         var reusable = false
         switch call.function.name {
+        case "generate_image": return try imageGenerationBinding(args)
         case "project_terminal": return try terminalBinding(call, conversationId: conversationId)
         case "artifact":
             target = try artifactBinding(args, conversationId: conversationId)
@@ -97,6 +98,8 @@ extension AskLocalTools {
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
+        case "generate_image":
+            return try await executeImageGeneration(call, conversationId: conversationId, binding: binding, authorize: authorize)
         case "project_terminal":
             return try await executeTerminal(call, conversationId: conversationId, authorize: authorize)
         case "artifact", "project_files":

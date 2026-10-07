@@ -126,6 +126,7 @@ enum AskTheme {
         }
         let args = (try? AskLocalTools.jsonArguments(call.function.arguments)) ?? [:]
         switch name {
+        case "generate_image": return L("imagegen.title")
         case "artifact": return L("ask.artifact.title")
         case "project_files": return L("ask.project.title") + " · " + (args["action"] as? String ?? "")
         case "update_plan": return L("ask.tool.update_plan")
@@ -1039,6 +1040,7 @@ enum AskPresentation {
 
     static func toolSymbol(_ call: AskToolCall) -> String {
         switch call.function.name {
+        case "generate_image": return "photo.badge.plus"
         case "computer": return "desktopcomputer"
         case "browser": return "globe"
         case "web_search": return "magnifyingglass"

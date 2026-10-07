@@ -102,9 +102,9 @@ final class StudioModelsTests: XCTestCase {
 
     func testAgentSettingsPanesInDisplayOrder() {
         XCTAssertEqual(AgentSettingsPane.allCases,
-                       [.overview, .webSearch, .files, .codeExecution, .automation, .skills, .mcpServers, .memory])
+                       [.overview, .webSearch, .imageGeneration, .files, .codeExecution, .automation, .skills, .mcpServers, .memory])
         XCTAssertEqual(AgentSettingsPane.sections.map { $0.panes }, [
-            [.overview], [.webSearch, .files, .codeExecution, .automation], [.skills, .mcpServers], [.memory],
+            [.overview], [.webSearch, .imageGeneration, .files, .codeExecution, .automation], [.skills, .mcpServers], [.memory],
         ])
         XCTAssertNil(AgentSettingsPane.sections.first?.title, "The overview needs no caption")
         XCTAssertEqual(AgentSettingsPane.sections.map { $0.title }.dropFirst().map { $0 ?? "" },

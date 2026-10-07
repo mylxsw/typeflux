@@ -18,9 +18,14 @@ struct AskStoredArtifactCard: View {
     @Environment(\.askArtifactAccess) private var access
     @State private var error: String?
     @State private var preview: AskArtifactBundle?
+    @State private var thumbnail: NSImage?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
+            if let thumbnail {
+                Image(nsImage: thumbnail).resizable().scaledToFit().frame(maxHeight: 260)
+                    .accessibilityLabel(L("imagegen.preview"))
+            }
             Label(ref.mediaType, systemImage: "doc.richtext")
                 .font(.system(size: 13, weight: .semibold))
             Text(ref.id).font(.system(size: 11, design: .monospaced)).textSelection(.enabled)
@@ -38,6 +43,9 @@ struct AskStoredArtifactCard: View {
                     do { preview = try access.load(ref); error = nil } catch { self.error = error.localizedDescription }
                 }
                 Button(L("ask.artifact.save")) { save() }
+                if ref.mediaType.hasPrefix("image/") {
+                    Button(L("imagegen.copy")) { copyImage() }
+                }
             }
             if let error {
                 Text(error).foregroundStyle(StudioTheme.danger).font(.system(size: 12))
@@ -46,6 +54,12 @@ struct AskStoredArtifactCard: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 10))
+        .task(id: ref.id) {
+            guard ref.mediaType.hasPrefix("image/") else { return }
+            if let bundle = try? access.load(ref), let data = bundle.files[bundle.manifest.entry] {
+                thumbnail = AskArtifactPresentation.image(data)
+            }
+        }
         .sheet(isPresented: Binding(get: { preview != nil }, set: {
             if !$0 {
                 preview = nil
@@ -65,6 +79,18 @@ struct AskStoredArtifactCard: View {
             guard panel.runModal() == .OK, let url = panel.url else { return }
             // A dialog may outlive account/grant changes. Revalidate immediately before export.
             try AskArtifactExport.write(access.load(ref), to: url)
+            error = nil
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func copyImage() {
+        do {
+            let bundle = try access.load(ref)
+            guard let data = bundle.files[bundle.manifest.entry], let image = NSImage(data: data) else {
+                throw AskArtifactError.corrupt
+            }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.writeObjects([image])
             error = nil
         } catch { self.error = error.localizedDescription }
     }

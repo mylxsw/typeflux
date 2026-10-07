@@ -171,6 +171,7 @@ enum AgentSettingsPaneGroup: String, CaseIterable {
 enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
     case overview
     case webSearch
+    case imageGeneration
     case files
     case codeExecution
     case automation
@@ -185,7 +186,7 @@ enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
     var group: AgentSettingsPaneGroup {
         switch self {
         case .overview: .general
-        case .webSearch, .files, .codeExecution, .automation: .capabilities
+        case .webSearch, .imageGeneration, .files, .codeExecution, .automation: .capabilities
         case .skills, .mcpServers: .extensions
         case .memory: .personalization
         }
@@ -196,6 +197,7 @@ enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
         switch self {
         case .overview, .memory: nil
         case .webSearch: .webSearch
+        case .imageGeneration: .imageGeneration
         case .files: .files
         case .codeExecution: .codeExecution
         case .automation: .automation

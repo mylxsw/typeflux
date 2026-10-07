@@ -1192,6 +1192,7 @@ final class AskConversationModel: ObservableObject {
                               approvalStore.consume(grantID, for: request) else {
                             throw AskLocalError.message(L("ask.approval.changed"))
                         }
+                        tools.setExecutionDeadline(run.budgetEnabled == true ? run.budgetDeadline : nil, conversationId: value.id)
                         let output = try await tools.executeApproved(call, conversationId: value.id, binding: bindingNow) {
                             try Task.checkCancellation()
                             if run.budgetEnabled == true, let deadline = run.budgetDeadline, Date() >= deadline {
@@ -1350,6 +1351,7 @@ final class AskConversationModel: ObservableObject {
         do {
             try await api.delete(conversationId: id, token: current.token)
             guard owner == current.account else { return }
+            try tools.deleteArtifacts(ownerId: current.account, conversationId: id)
             deletedConversationIDs.insert(id)
             // Drain a writer already inside the cache before deleting its draft.
             // New writers check the tombstone immediately before saving.

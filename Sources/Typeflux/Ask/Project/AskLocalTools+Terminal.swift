@@ -251,6 +251,9 @@ extension AskLocalTools {
         }
         if conversationId == nil {
             projectScopes = [:]; projectOutputBuffers = [:]
+            executionDeadlines = [:]
+        } else if let conversationId {
+            executionDeadlines[conversationId] = nil
         }
     }
 
