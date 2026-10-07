@@ -144,6 +144,58 @@ struct WorkflowOutputActionsVisualTests {
         }
     }
 
+    @Test(arguments: [1042.0, 1220.0, 1450.0])
+    func `output form keeps the same insets as other steps`(width: Double) async throws {
+        try await chinese {
+            let fixture = try AskWorkflowFixture()
+            let model = try editor(fixture)
+            defer { model.close() }
+            let accessibility = AskWorkspaceTestAccessibility()
+            defer { accessibility.restore() }
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: 900),
+                                  styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.appearance = NSAppearance(named: .darkAqua)
+            let hosting = NSHostingView(rootView: AskWorkflowEditorView(model: model, store: fixture.store))
+            window.contentView = hosting
+            window.orderFront(nil)
+            defer { window.orderOut(nil); window.close() }
+            try await Task.sleep(for: .milliseconds(300))
+            hosting.layoutSubtreeIfNeeded()
+            let frame = try controlFrame(
+                identifier: "ask.workflow.editor.output.add.onSuccess", in: window
+            )
+            // The center column starts after the 220-point sidebar and divider;
+            // the 340-point assistant panel and its divider bound its right side.
+            #expect(abs(frame.minX - 241) < 0.5)
+            #expect(frame.maxX <= width - 361 + 0.5)
+            try await render(AskWorkflowEditorView(model: model, store: fixture.store),
+                             size: NSSize(width: width, height: 900),
+                             name: "implemented-output-insets-\(Int(width)).png")
+        }
+    }
+
+    private func controlFrame(identifier: String, in window: NSWindow) throws -> NSRect {
+        var seen = Set<ObjectIdentifier>()
+        func value(_ node: NSObject, _ key: String) -> Any? {
+            node.responds(to: NSSelectorFromString(key)) ? node.value(forKey: key) : nil
+        }
+        func find(_ node: NSObject) -> NSRect? {
+            guard seen.insert(ObjectIdentifier(node)).inserted else { return nil }
+            if value(node, "accessibilityIdentifier") as? String == identifier,
+               let frame = value(node, "accessibilityFrame") as? NSValue {
+                return frame.rectValue
+            }
+            for child in value(node, "accessibilityChildren") as? [NSObject] ?? [] {
+                if let frame = find(child) {
+                    return frame
+                }
+            }
+            return nil
+        }
+        return try window.convertFromScreen(#require(find(window) ?? window.contentView.flatMap(find)))
+    }
+
     /// The menus open in popovers, so nothing in the window (the step bar, the scroll
     /// view's edge) can cover them. Opens each one in a real window, checks a popover
     /// window appears beside its control and inside the editor's screen area, and
@@ -173,7 +225,8 @@ struct WorkflowOutputActionsVisualTests {
                 for _ in 0 ..< 40 where popover == nil {
                     try await Task.sleep(for: .milliseconds(50))
                     popover = NSApp.windows.first { $0 !== window && $0.isVisible && $0.parent === window }
-                        ?? NSApp.windows.first { $0 !== window && $0.isVisible && "\(type(of: $0))".contains("Popover") }
+                        ?? NSApp.windows
+                        .first { $0 !== window && $0.isVisible && "\(type(of: $0))".contains("Popover") }
                 }
                 let shown = try #require(popover, "the \(name) menu opens in a popover window")
                 #expect(shown.frame.height > 120, "the \(name) menu is laid out")
