@@ -117,10 +117,12 @@ struct AskPluginAction: Equatable, Sendable {
         case fixWorkflow(id: String, query: String, error: String)
         /// Stars or unstars a looked-up word in the word book (⌘S).
         case toggleStar(AskWordBookLookup)
+        /// Opens the word book dialog, on this word when there is one (⌘B).
+        case openWordBook(key: String?)
     }
 
     enum Shortcut: Equatable, Sendable {
-        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE, commandS
+        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE, commandS, commandB
     }
 
     var kind: Kind

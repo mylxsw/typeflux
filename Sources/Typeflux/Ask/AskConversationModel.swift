@@ -48,6 +48,8 @@ final class AskConversationModel: ObservableObject {
     var workflows: AskWorkflowStore?
     /// Keeps what the translation plugin looked up; the window controller supplies it.
     var wordBook: AskWordBookRecorder?
+    /// Opens the word book dialog on a word; tests record it instead.
+    var openWordBook: @MainActor (String?) -> Void = { key in AskWordBookWindowController.shared.show(selecting: key) }
     /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.
     lazy var plugins: AskPluginSession = {
         let session = AskPluginSession(plugins: makeLauncherPlugins()) { [weak self] in

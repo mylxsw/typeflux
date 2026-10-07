@@ -377,6 +377,8 @@ enum AskCommandKey: Equatable {
     case commandZ
     /// ⌘S: star the word a translation looked up.
     case commandS
+    /// ⌘B: open the word book from a translation.
+    case commandB
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
@@ -389,6 +391,7 @@ enum AskCommandKey: Equatable {
         if modifiers == .command, event.keyCode == 14 { self = .commandE; return }
         if modifiers == .command, event.keyCode == 6 { self = .commandZ; return }
         if modifiers == .command, event.keyCode == 1 { self = .commandS; return }
+        if modifiers == .command, event.keyCode == 11 { self = .commandB; return }
         if modifiers == .command, event.keyCode == 8 { self = .commandC; return }
         if modifiers == [.command, .shift], event.keyCode == 8 { self = .shiftCommandC; return }
         guard modifiers.isEmpty else { return nil }

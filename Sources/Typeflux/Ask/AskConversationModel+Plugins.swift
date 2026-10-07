@@ -160,6 +160,10 @@ extension AskConversationModel {
         case let .toggleStar(lookup):
             toggleWordBookStar(lookup)
             return .stay
+        case let .openWordBook(key):
+            finishPluginResult()
+            openWordBook(key)
+            return .close
         }
     }
 

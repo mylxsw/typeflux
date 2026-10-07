@@ -78,6 +78,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.wordBook = AskWordBookRecorder(store: wordBook) { [weak settings] in
             settings?.askWordBookRecordsHistory ?? true
         }
+        AskWordBookWindowController.shared.configure(
+            store: wordBook, dictionary: model.translationAI as? any AskWordLookingUp, settings: settings
+        ) { [weak settings] in AskPluginRegistry.modelName(settings) }
         model.deliverText = { text in
             let result = try await injector.deliver(text: text, to: .currentInput)
             if case .notApplied = result { throw TextDeliveryError.noInput }

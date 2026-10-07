@@ -508,7 +508,7 @@ struct AskPluginResultsView: View {
             // the star sits in the header.
             ForEach(Array(actions.filter {
                 switch $0.kind {
-                case .askAI, .editWorkflow, .toggleStar: false
+                case .askAI, .editWorkflow, .toggleStar, .openWordBook: false
                 default: true
                 }
             }.enumerated()),
@@ -523,9 +523,23 @@ struct AskPluginResultsView: View {
         .opacity(enabled ? 1 : 0.5)
     }
 
-    /// Small buttons beside the source label: the word book's star (⌘S).
+    /// Small buttons beside the source label: the word book's star (⌘S) and the word book itself (⌘B).
     @ViewBuilder
     private func headerButtons(_ output: AskPluginOutput, enabled: Bool) -> some View {
+        if let book = output.actions.first(where: { if case .openWordBook = $0.kind { true } else { false } }) {
+            Button { onAction(book) } label: {
+                Image(systemName: "character.book.closed").font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 22, height: 20)
+                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(book.title + " ⌘B")
+            .accessibilityLabel(book.title)
+            .accessibilityIdentifier("ask.plugin.wordBook")
+            .disabled(!enabled)
+        }
         if let star = output.actions.first(where: { if case .toggleStar = $0.kind { true } else { false } }) {
             let starred = output.starred == true
             Button { onAction(star) } label: {
@@ -561,6 +575,7 @@ struct AskPluginResultsView: View {
         case .shiftCommandC: "⇧⌘C"
         case .commandE: "⌘E"
         case .commandS: "⌘S"
+        case .commandB: "⌘B"
         case nil: nil
         }
     }
