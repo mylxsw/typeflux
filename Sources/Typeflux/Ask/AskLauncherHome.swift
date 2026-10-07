@@ -89,7 +89,8 @@ enum AskLauncherHome {
             sections.append(contextSection)
             contextRows = rows.count
         }
-        let recent = recentRows(context, budget: recentBudget(contextRows: contextRows))
+        // Selected text is what the user came for; older conversations would only crowd it.
+        let recent = hasSelection(context) ? [] : recentRows(context, budget: recentBudget(contextRows: contextRows))
         if !recent.isEmpty { sections.append(.recent(rows: recent)) }
         let (chips, teaching) = self.chips(context)
         if !chips.isEmpty { sections.append(.keywords(chips: chips, teaching: teaching)) }
@@ -107,8 +108,14 @@ enum AskLauncherHome {
 
     // MARK: - Context
 
+    private static func trimmedSelection(_ context: Context) -> String {
+        context.selection?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    static func hasSelection(_ context: Context) -> Bool { !trimmedSelection(context).isEmpty }
+
     private static func contextSection(_ context: Context) -> Section? {
-        let selection = context.selection?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let selection = trimmedSelection(context)
         if !selection.isEmpty { return selectionSection(selection, context: context) }
         if AskLocalTools.isSupportedBrowser(context.sourceBundleID) {
             let rows = [Row(id: "page.summary", title: L("ask.home.page.summary"),
