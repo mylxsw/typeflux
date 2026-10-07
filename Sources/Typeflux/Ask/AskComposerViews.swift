@@ -248,7 +248,7 @@ struct AskComposer: View {
             guard let value = results.value(of: .calculation), !results.stale else { return false }
             draft.wrappedValue.text = value
         case .escape, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE, .commandZ,
-             .commandS:
+             .commandS, .commandB:
             return false
         }
         return true
@@ -362,16 +362,19 @@ struct AskComposer: View {
         case .shiftTab: _ = plugins.cycle(-1, selection: selection, text: text, language: language)
         case .enter: if display.asksAI { askAIFromPlugin() } else { runPluginMain() }
         case .commandEnter: askAIFromPlugin()
-        case .optionEnter, .commandR, .commandD, .shiftCommandC, .commandS:
+        case .optionEnter, .commandR, .commandD, .shiftCommandC, .commandS, .commandB:
             let shortcut: AskPluginAction.Shortcut = switch key {
             case .optionEnter: .optionEnter
             case .commandR: .commandR
             case .commandD: .commandD
             case .commandS: .commandS
+            case .commandB: .commandB
             default: .shiftCommandC
             }
-            // ⇧⌘C and ⌘S fall through to the editor when the result offers nothing for them.
-            guard let action = plugins.output?.action(for: shortcut) else { return key != .shiftCommandC && key != .commandS }
+            // ⇧⌘C, ⌘S and ⌘B fall through to the editor when the result offers nothing for them.
+            guard let action = plugins.output?.action(for: shortcut) else {
+                return ![.shiftCommandC, .commandS, .commandB].contains(key)
+            }
             // ⇧⌘C copies and stays, like ⌘C.
             if shortcut == .shiftCommandC, case let .copy(text) = action.kind { model.copyPluginText(text) } else { performPluginAction(action) }
         case .commandE:
@@ -740,7 +743,7 @@ struct AskComposer: View {
             dismissedSlash = slash?.range.location
             closePalette()
         case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE,
-             .commandZ, .commandS:
+             .commandZ, .commandS, .commandB:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }

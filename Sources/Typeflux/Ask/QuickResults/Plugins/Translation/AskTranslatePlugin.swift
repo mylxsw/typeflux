@@ -69,6 +69,18 @@ struct AskTranslatePlugin: AskLauncherPlugin {
 
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
              progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
+        var output = try await translate(request, plan: plan)
+        // Every translation leads to the word book, on its word when it looked one up.
+        if wordBook != nil { output.actions.append(Self.openWordBookAction(key: output.wordBook?.key)) }
+        return output
+    }
+
+    static func openWordBookAction(key: String?) -> AskPluginAction {
+        AskPluginAction(kind: .openWordBook(key: key), title: L("ask.wordBook.open"), symbol: "character.book.closed",
+                        shortcut: .commandB)
+    }
+
+    private func translate(_ request: AskPluginRequest, plan: AskPluginPlan) async throws -> AskPluginOutput {
         let source = plan.values["source"]
         let target = plan.values["target"] ?? AskTranslationLanguages.code(for: request.interfaceLanguage)
         let usesAI = plan.values["engine"] == "ai"
