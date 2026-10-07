@@ -148,7 +148,23 @@
   table.t td b { color: var(--text); font-weight: 600; }
 
   /* ===== studio window ===== */
-  .studio { width: 1500px; height: 780px; border-radius: 14px; background: var(--win); border: 1px solid var(--hair); overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,.35); display: grid; grid-template-columns: 220px 1fr; position: relative; }
+  .desk3 { position: relative; width: 1500px; height: 760px; border-radius: 14px; overflow: hidden; border: 1px solid var(--hair);
+    background: radial-gradient(900px 500px at 20% 0%, var(--wall-a), transparent 60%), radial-gradient(900px 500px at 90% 100%, var(--wall-b), transparent 60%), var(--desk); }
+  .desk3 .reopen { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none; }
+  .desk3.closed .reopen { display: inline-block; }
+  .studio { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 900px; height: 620px; border-radius: 12px; background: var(--win); border: 1px solid var(--hair); overflow: hidden;
+    box-shadow: 0 24px 70px rgba(0,0,0,.5); display: flex; flex-direction: column; transition: opacity .15s, transform .15s; }
+  .desk3.closed .studio { opacity: 0; transform: translate(-50%, -48%) scale(.97); pointer-events: none; }
+  .wtitle { height: 38px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--hair); font-size: 13px; font-weight: 600; position: relative; }
+  .wtitle .tl { display: flex; gap: 8px; }
+  .wtitle .tl i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; background: #ff5f57; cursor: pointer; }
+  .wtitle .tl i:nth-child(2) { background: #febc2e; cursor: default; } .wtitle .tl i:nth-child(3) { background: #28c840; cursor: default; }
+  .wtitle .tt { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; }
+  .wtitle .tt .c { color: var(--text-3); font-weight: 500; font-size: 12px; }
+  .wtitle .more { margin-left: auto; }
+  .bookbtn { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; border-radius: 7px; border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; cursor: pointer; }
+  .bookbtn:hover { background: var(--hover); color: var(--text); }
+  .bookbtn .s { color: var(--text-3); font-size: 10.5px; }
   .side { background: var(--side); border-right: 1px solid var(--hair); padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; }
   .side .tl { display: flex; gap: 8px; padding: 2px 6px 18px; }
   .side .tl i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; background: #ff5f57; }
@@ -166,16 +182,18 @@
   .stats { display: flex; gap: 10px; margin-left: auto; }
   .stat { padding: 8px 12px; border-radius: 10px; background: var(--ctl); border: 1px solid var(--hair); min-width: 104px; }
   .stat .n { font-size: 18px; font-weight: 700; } .stat .l { font-size: 11px; color: var(--text-3); }
-  .tools { display: flex; gap: 8px; align-items: center; padding: 0 28px 12px; }
+  .tools { display: flex; gap: 8px; align-items: center; padding: 10px 14px; flex: none; }
   .seg { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--ctl); border: 1px solid var(--hair); }
   .seg button { border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; height: 26px; padding: 0 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
   .seg button.on { background: var(--glass); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.25); font-weight: 600; }
   .seg button .c { color: var(--text-3); font-weight: 500; margin-left: 4px; }
-  .search { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; background: var(--ctl); border: 1px solid var(--hair); width: 260px; color: var(--text-3); }
+  .search { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; background: var(--ctl); border: 1px solid var(--hair); flex: 1; min-width: 0; color: var(--text-3); }
   .search input { border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 12.5px; flex: 1; min-width: 0; }
   select.sel { height: 30px; border-radius: 8px; background: var(--ctl); border: 1px solid var(--hair); color: var(--text); font: inherit; font-size: 12px; padding: 0 8px; }
   .tools .sp { flex: 1; }
-  .panes { flex: 1; min-height: 0; display: grid; grid-template-columns: 470px 1fr; border-top: 1px solid var(--hair); }
+  .panes { flex: 1; min-height: 0; display: grid; grid-template-columns: 330px 1fr; border-top: 1px solid var(--hair); }
+  .wfoot { height: 30px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 14px; border-top: 1px solid var(--hair); font-size: 11.5px; color: var(--text-3); }
+  .wfoot b { color: var(--text-2); font-weight: 600; }
   .list { overflow: auto; border-right: 1px solid var(--hair); padding: 6px 8px; }
   .day { font-size: 11px; font-weight: 600; color: var(--text-3); padding: 10px 10px 4px; }
   .item { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
@@ -189,7 +207,7 @@
   .item .stb.on { color: var(--star); }
   .tag { font-size: 10.5px; color: var(--text-3); border: 1px solid var(--hair); border-radius: 4px; padding: 0 4px; }
   .tag.plain { color: var(--ok); border-color: rgba(52,199,89,.35); }
-  .detail { overflow: auto; padding: 22px 30px; }
+  .detail { overflow: auto; padding: 18px 22px; }
   .dhead { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; color: var(--text-3); font-size: 12px; flex-wrap: wrap; }
   .dcard { border-radius: 14px; border: 1px solid var(--hair); padding: 16px 18px 12px; background: var(--hover); }
   .dmeta { margin-top: 14px; display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; font-size: 12px; color: var(--text-2); }
@@ -225,11 +243,11 @@
 </style></head>
 <body>
 <h1>翻译：查词记录与单词收藏</h1>
-<p class="sub">GUL-237 设计稿。查过的单词与短语自动记进「单词本」，在启动器里按 <span class="kbd">⌘S</span> 收藏；输入 <code>fy</code> 不带内容时列出最近查过的词；工作台新增「单词本」页面，用来复习、搜索、整理和导出。下面四块都可以操作，并且共用同一份数据：在 ① 里收藏的词，③ 里立刻能看到。</p>
+<p class="sub">GUL-237 设计稿。查过的单词与短语自动记进「单词本」，在启动器里按 <span class="kbd">⌘S</span> 收藏；输入 <code>fy</code> 不带内容时列出最近查过的词；单词本是一个<b>独立的对话框</b>，只从翻译里打开（<span class="kbd">⌘B</span>），用来复习、搜索、整理和导出；不在工作台侧栏加页面。下面四块都可以操作，并且共用同一份数据：在 ① 里收藏的词，③ 里立刻能看到；在 ① ② 里按 ⌘B 会打开 ③。</p>
 <div class="topbar">
   <div class="pill" id="theme"><button class="on" data-t="dark">深色</button><button data-t="light">浅色</button></div>
   <button class="btn" id="reset">重置示例数据</button>
-  <span class="notes">键盘：先点一下 ① 或 ② 的桌面区域让它获得焦点。⌘S / Ctrl+S 收藏，↑↓ 选择，↩ 打开。</span>
+  <span class="notes">键盘：先点一下 ① 或 ② 的桌面区域让它获得焦点。⌘S / Ctrl+S 收藏，⌘B / Ctrl+B 打开单词本，↑↓ 选择，↩ 打开。</span>
 </div>
 
 <!-- ============ ① launcher word card ============ -->
@@ -244,7 +262,7 @@
       </div>
       <div class="hair"></div>
       <div class="qr"><div class="grp" id="grp1"></div><div id="res1"></div></div>
-      <div class="bar"><span class="src" id="src1"></span><span class="spacer"></span><span class="keys" id="keys1"></span></div>
+      <div class="bar"><span class="src" id="src1"></span><span class="spacer"></span><span class="keys" id="keys1"></span><button class="bookbtn" data-book="1">📖 单词本 <span class="s">⌘B</span></button></div>
       <div class="toast" id="toast1"></div>
     </div>
   </div>
@@ -259,6 +277,7 @@
       <li><b>再次查同一个词</b>：不新增行，「查过 N 次」+1，最近时间更新。同一次打开启动器里反复出现只算一次。</li>
       <li><b>省钱</b>：单词本里已有 AI 单词卡的词，再查直接显示存下来的卡（右下角写「来自单词本」），不再请求模型；<span class="kbd">⌘R</span> 才重新生成并覆盖。</li>
       <li><b>本机译文也能收藏</b>：保存的是简短译文；之后按 ⌘R 生成单词卡，会升级同一条记录，收藏状态不变。</li>
+      <li><b>入口</b>：翻译结果的底栏右侧固定一个「📖 单词本 ⌘B」，任何翻译结果（包括句子）都能打开；打开时选中当前这个词。</li>
       <li>收藏 / 取消的反馈出现在底栏左侧（短暂替换来源文字），不遮挡卡片；<span class="kbd">⌘S</span> 再按一次即撤销。</li>
     </ul></div>
   </div>
@@ -276,7 +295,7 @@
       </div>
       <div class="hair"></div>
       <div class="qr" id="res2"></div>
-      <div class="bar"><span class="src" id="src2"><span class="dot wb"></span>单词本</span><span class="spacer"></span><span class="keys" id="keys2"></span></div>
+      <div class="bar"><span class="src" id="src2"><span class="dot wb"></span>单词本</span><span class="spacer"></span><span class="keys" id="keys2"></span><button class="bookbtn" data-book="2">📖 单词本 <span class="s">⌘B</span></button></div>
       <div class="toast" id="toast2"></div>
     </div>
   </div>
@@ -287,56 +306,39 @@
     <div class="notes"><ul>
       <li>只有 <b>输入框里只有关键词、且没有选中文字</b> 时出现；有选中文字时仍是「翻译选中的 N 行」，不受影响。</li>
       <li>最多 8 行，按最近查询时间排序；收藏的词前面有 ★。<span class="kbd">⇥</span> 在「最近 / 只看收藏」间切换（留空时 ⇥ 换语言没有意义，借来用）。</li>
-      <li><span class="kbd">↩</span> 打开这个词的卡片（从单词本读取，不请求 AI），<span class="kbd">⌥↩</span> 插入第一条释义，<span class="kbd">⌘S</span> 收藏 / 取消，<span class="kbd">⌘E</span> 在工作台的单词本里打开。</li>
+      <li><span class="kbd">↩</span> 打开这个词的卡片（从单词本读取，不请求 AI），<span class="kbd">⌥↩</span> 插入第一条释义，<span class="kbd">⌘S</span> 收藏 / 取消，<span class="kbd">⌘B</span> 打开单词本对话框并选中这个词。列表最后一行「打开单词本…」，鼠标用户也能找到入口。</li>
       <li>一开始输入，列表就让位给翻译结果，与现在一致。</li>
       <li>沿用工作流已经有的结果列表（<code>AskPluginOutput.items</code>），不新建视图。</li>
     </ul></div>
   </div>
 </div>
 
-<!-- ============ ③ studio word book ============ -->
-<h3>③ 工作台 · 单词本</h3>
+<!-- ============ ③ word book dialog ============ -->
+<h3>③ 单词本对话框（独立窗口）</h3>
+<div class="desk3" id="desk3">
+<button class="btn reopen" id="reopen3">📖 打开单词本（⌘B）</button>
 <div class="studio" id="studio">
-  <div class="side">
-    <div class="tl"><i></i><i></i><i></i></div>
-    <div class="nav"><span class="ic">⌂</span>概览</div>
-    <div class="nav"><span class="ic">▤</span>词库</div>
-    <div class="nav"><span class="ic">↺</span>历史</div>
-    <div class="nav on"><span class="ic">★</span>单词本<span class="new">新</span></div>
-    <div class="nav"><span class="ic">▣</span>模型</div>
-    <div class="nav"><span class="ic">◫</span>人设</div>
-    <div class="nav"><span class="ic">✦</span>Agent</div>
-    <div class="nav"><span class="ic">⌘</span>启动器</div>
-    <div class="sp"></div>
-    <div class="nav"><span class="ic">⚙</span>设置</div>
+  <div class="wtitle">
+    <div class="tl"><i id="close3" title="关闭（esc）"></i><i></i><i></i></div>
+    <div class="tt">单词本 <span class="c" id="ttc"></span></div>
+    <button class="bookbtn more" id="exportBtn">⋯</button>
   </div>
-  <div class="main">
-    <div class="mhead">
-      <div><div class="eb">翻译</div><h2>单词本</h2></div>
-      <div class="stats">
-        <div class="stat"><div class="n" id="stStar">0</div><div class="l">收藏</div></div>
-        <div class="stat"><div class="n" id="stWeek">0</div><div class="l">近 7 天查词</div></div>
-        <div class="stat"><div class="n" id="stTotal">0</div><div class="l">全部记录</div></div>
-      </div>
-    </div>
-    <div class="tools">
-      <div class="seg" id="seg3"><button class="on" data-f="starred">收藏<span class="c" id="c3s"></span></button><button data-f="all">查词记录<span class="c" id="c3a"></span></button></div>
-      <div class="search">⌕<input id="search3" placeholder="搜索单词或释义"></div>
-      <select class="sel" id="lang3"></select>
-      <select class="sel" id="sort3"><option value="recent">最近查询</option><option value="count">查询次数</option><option value="alpha">字母顺序</option><option value="starred">收藏时间</option></select>
-      <span class="sp"></span>
-      <button class="btn" id="exportBtn">导出 ▾</button>
-      <button class="btn" id="settingsBtn">⚙ 记录设置</button>
-    </div>
-    <div class="panes">
-      <div class="list" id="list3"></div>
-      <div class="detail" id="detail3"></div>
-    </div>
+  <div class="tools">
+    <div class="seg" id="seg3"><button class="on" data-f="starred">收藏<span class="c" id="c3s"></span></button><button data-f="all">查词记录<span class="c" id="c3a"></span></button></div>
+    <div class="search">⌕<input id="search3" placeholder="搜索单词或释义  ⌘F"></div>
+    <select class="sel" id="lang3"></select>
+    <select class="sel" id="sort3"><option value="recent">最近查询</option><option value="count">查询次数</option><option value="alpha">字母顺序</option><option value="starred">收藏时间</option></select>
   </div>
+  <div class="panes">
+    <div class="list" id="list3"></div>
+    <div class="detail" id="detail3"></div>
+  </div>
+  <div class="wfoot"><span><b>↑↓</b> 选择</span><span><b>⌘S</b> 收藏</span><span><b>⌘C</b> 复制释义</span><span><b>⌫</b> 删除</span><span><b>esc</b> 关闭</span><span style="margin-left:auto" id="stWeekLine"></span></div>
   <div class="menu" id="exportMenu">
-    <div data-x="csv">CSV<span>Excel / Numbers</span></div>
-    <div data-x="md">Markdown<span>笔记软件</span></div>
-    <div data-x="anki">Anki（TSV）<span>正面单词 · 背面释义</span></div>
+    <div data-x="csv">导出 CSV<span>Excel / Numbers</span></div>
+    <div data-x="md">导出 Markdown<span>笔记软件</span></div>
+    <div data-x="anki">导出 Anki（TSV）<span>正面单词 · 背面释义</span></div>
+    <div data-x="settings">记录设置…<span></span></div>
   </div>
   <div class="overlay" id="settings3"><div class="sheet">
     <div class="st">单词本记录设置</div>
@@ -347,16 +349,18 @@
   </div></div>
   <div class="stoast" id="stoast"></div>
 </div>
+</div>
 <div class="grid2" style="margin-top:20px; grid-template-columns: 1fr 1fr;">
   <div class="notes"><ul>
-    <li><b>入口</b>：侧栏「历史」之后新增「单词本」。命名刻意避开已有的「词库」（语音识别的自定义词汇），两者无关。</li>
+    <li><b>独立对话框，不进工作台</b>：轻量的普通窗口（约 900×620，可缩放，记住大小和位置），只有一个实例；再次打开时前置并选中传入的词。不在工作台侧栏加页面。</li>
+    <li><b>入口只在翻译里</b>：翻译结果底栏「📖 单词本 ⌘B」；<code>fy</code> 留空列表里的「打开单词本…」；收藏提示里的 ⌘B。打开对话框时启动器关闭。</li>
     <li><b>两个视图</b>：「收藏」默认，用于复习；「查词记录」是全部记录（含收藏），按天分组。搜索同时匹配单词和释义；可按语言方向筛选；四种排序。</li>
-    <li><b>详情</b>：直接复用启动器的单词卡视图（<code>AskWordCardView</code>），点击释义复制、可朗读。本机译文的记录显示译文，并提供「用 AI 生成单词卡」。</li>
+    <li><b>详情</b>：左侧列表、右侧详情，直接复用启动器的单词卡视图（<code>AskWordCardView</code>），点击释义复制、可朗读。本机译文的记录显示译文，并提供「用 AI 生成单词卡」。</li>
     <li><b>整理</b>：☆ 收藏 / 取消；删除记录带撤销；「重新生成」调用 AI 覆盖卡片（明确标出会发送到哪个模型）。</li>
   </ul></div>
   <div class="notes"><ul>
-    <li><b>导出</b>：CSV / Markdown / Anki TSV，导出当前视图（受搜索、筛选影响）。</li>
-    <li><b>记录设置</b>：可关闭记录；保留期只清未收藏的；一键清空查词记录，收藏保留。</li>
+    <li><b>导出与设置</b>收进标题栏右侧的「⋯」菜单，保持界面简单：CSV / Markdown / Anki TSV 导出当前视图（受搜索、筛选影响），「记录设置…」打开设置面板。</li>
+    <li><b>记录设置</b>：可关闭记录；保留期只清未收藏的；一键清空查词记录，收藏保留。键盘：⌘F 搜索、⌘S 收藏、⌫ 删除（可撤销）、esc 关闭。</li>
     <li><b>空状态</b>：没有收藏时提示「在启动器的单词卡上按 ⌘S 收藏」；关闭记录时，「查词记录」顶部提示已暂停。</li>
     <li>数据只在本机（<code>word-book.sqlite</code>）。云同步收藏放到后续阶段，见方案文档 §6。</li>
   </ul></div>
@@ -491,7 +495,7 @@ function render1() {
     <button class="act ${starOn ? 'starred' : ''}" data-star="${esc(e.key)}">${starOn ? '★ 已收藏' : '☆ 收藏'} <span class="s">⌘S</span></button>
     ${e.kind === 'card' ? '<span class="act">复制整张 <span class="s">⇧⌘C</span></span><span class="act">重新生成 <span class="s">⌘R</span></span>' : '<span class="act">AI 单词卡 <span class="s">⌘R</span></span>'}</div></div>`;
   src.innerHTML = cur1.engine === 'book' ? '<span class="dot wb"></span>单词本 · 未请求模型' : cur1.engine === 'device' ? '<span class="dot dev"></span>本机翻译' : '<span class="dot"></span>AI · GPT-5 mini';
-  keys.innerHTML = '<b>↩</b> 复制 <b>⌥↩</b> 插入 <b>⌘S</b> 收藏 <b>⌘R</b> ' + (e.kind === 'card' ? '重新生成' : '单词卡');
+  keys.innerHTML = '<b>↩</b> 复制 <b>⌘S</b> 收藏 <b>⌘R</b> ' + (e.kind === 'card' ? '重新生成' : '单词卡');
   const r = find(cur1.key);
   document.getElementById('readout1').innerHTML = r
     ? `key           <b>${esc(r.key.replace(/\|/g, ' · '))}</b>\nkind          <b>${r.kind}</b>\nlookup_count  <b>${r.count}</b>\nlast_looked   <b>${rel(r.last || r.first)}</b>\nstarred_at    <b>${r.starred ? rel(r.starred) : 'NULL'}</b>`
@@ -503,14 +507,15 @@ function toggleStar(key, toastEl) {
   if (!e) { const s = samples.find(x => x.key === key); if (!s || !s.fresh) return; e = { key, ...JSON.parse(JSON.stringify(s.fresh)), count: 1, first: TODAY.getTime(), last: TODAY.getTime(), starred: null }; db.unshift(e); }
   e.starred = e.starred ? null : Date.now();
   if (cur1.engine === 'device' && cur1.key === key) record(cur1); // starring settles a live result
-  toast(toastEl, e.starred ? `<b>★</b> 已收藏「${esc(e.hw)}」到单词本 · ⌘S 撤销` : `已取消收藏「${esc(e.hw)}」 · ⌘S 撤销`);
+  toast(toastEl, e.starred ? `<b>★</b> 已收藏「${esc(e.hw)}」 · ⌘B 打开单词本` : `已取消收藏「${esc(e.hw)}」 · ⌘S 撤销`);
   renderAll();
   document.querySelectorAll(`[data-star="${CSS.escape(key)}"].starbtn`).forEach(b => { b.classList.add('pop'); setTimeout(() => b.classList.remove('pop'), 160); });
 }
 document.getElementById('samples1').addEventListener('click', ev => { const b = ev.target.closest('button[data-s]'); if (b) pick1(b.dataset.s); });
-document.getElementById('stage1').addEventListener('click', ev => { const b = ev.target.closest('[data-star]'); if (b) toggleStar(b.dataset.star, document.getElementById('toast1')); });
+document.getElementById('stage1').addEventListener('click', ev => { if (ev.target.closest('[data-book]')) { openBook(cur1.key && find(cur1.key) ? cur1.key : null); return; } const b = ev.target.closest('[data-star]'); if (b) toggleStar(b.dataset.star, document.getElementById('toast1')); });
 document.getElementById('stage1').addEventListener('keydown', ev => {
   if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 's') { ev.preventDefault(); if (cur1.key) toggleStar(cur1.key, document.getElementById('toast1')); }
+  if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'b') { ev.preventDefault(); openBook(cur1.key && find(cur1.key) ? cur1.key : null); }
   if (ev.key === 'Enter' && cur1.engine === 'device') { record(cur1); toast(document.getElementById('toast1'), '已复制 · 已记入查词记录'); renderAll(); }
 });
 
@@ -529,25 +534,28 @@ function render2() {
   if (open2) {
     const e = find(open2);
     res.innerHTML = `<div class="grp">单词卡<span class="r"><span class="seen">查过 ${e.count} 次</span></span></div><div class="rc"><div class="rh"><span class="lang">${LANG[e.src]}</span>→<span class="lang to">${LANG[e.tgt]}</span><span class="badge2 wb">来自单词本</span></div>${cardHTML(e)}</div>`;
-    keys.innerHTML = '<b>esc</b> 返回列表 <b>⌘S</b> 收藏 <b>⌘E</b> 在单词本中打开'; return;
+    keys.innerHTML = '<b>esc</b> 返回列表 <b>⌘S</b> 收藏'; return;
   }
-  const rows = rows2(); sel2 = Math.min(sel2, Math.max(0, rows.length - 1));
+  const rows = rows2(); sel2 = Math.min(sel2, rows.length);
   res.innerHTML = `<div class="grp">${filter2 === 'starred' ? '收藏的词' : '最近查过'}<span class="r">⇥ ${filter2 === 'starred' ? '最近' : '只看收藏'}</span></div>` + (rows.length ? rows.map((e, i) =>
     `<div class="lrow ${i === sel2 ? 'hl' : ''}" data-i="${i}"><span class="tile ${e.starred ? 'st' : ''}">${e.starred ? '★' : '译'}</span><span class="hwd">${esc(e.hw)}</span><span class="sm">${esc(summary(e))}</span><span class="cap">${rel(e.last || e.first)}</span></div>`).join('')
     : `<div class="empty">${filter2 === 'starred' ? '还没有收藏。查词后按 ⌘S 收藏。' : '还没有查过词。输入单词试试。'}</div>`);
-  keys.innerHTML = '<b>↩</b> 打开 <b>⌥↩</b> 插入释义 <b>⌘S</b> 收藏 <b>⌘E</b> 单词本';
+  if (rows.length) res.innerHTML += `<div class="lrow ${sel2 === rows.length ? 'hl' : ''}" data-i="${rows.length}" data-book="row"><span class="tile">📖</span><span class="hwd">打开单词本…</span><span class="sm">全部收藏与查词记录</span><span class="cap">⌘B</span></div>`;
+  keys.innerHTML = '<b>↩</b> 打开 <b>⌥↩</b> 插入释义 <b>⌘S</b> 收藏';
 }
 const stage2 = document.getElementById('stage2');
 stage2.addEventListener('click', ev => {
+  if (ev.target.closest('[data-book]')) { const rows = rows2(); openBook(open2 || (rows[sel2] && rows[sel2].key) || null); return; }
   const r = ev.target.closest('.lrow'); if (r) { sel2 = +r.dataset.i; if (ev.detail === 2) open2 = rows2()[sel2].key; render2(); return; }
   const b = ev.target.closest('[data-star]'); if (b) toggleStar(b.dataset.star, document.getElementById('toast2'));
 });
 stage2.addEventListener('keydown', ev => {
   const rows = rows2();
   if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 's') { ev.preventDefault(); const k = open2 || (rows[sel2] && rows[sel2].key); if (k) toggleStar(k, document.getElementById('toast2')); return; }
-  if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'e') { ev.preventDefault(); const k = open2 || (rows[sel2] && rows[sel2].key); if (k) { sel3 = k; seg3 = find(k).starred ? 'starred' : 'all'; renderAll(); document.getElementById('studio').scrollIntoView({ behavior: 'smooth' }); } return; }
-  if (ev.key === 'ArrowDown') { ev.preventDefault(); sel2 = Math.min(rows.length - 1, sel2 + 1); render2(); }
+  if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'b') { ev.preventDefault(); openBook(open2 || (rows[sel2] && rows[sel2].key) || null); return; }
+  if (ev.key === 'ArrowDown') { ev.preventDefault(); sel2 = Math.min(rows.length, sel2 + 1); render2(); }
   else if (ev.key === 'ArrowUp') { ev.preventDefault(); sel2 = Math.max(0, sel2 - 1); render2(); }
+  else if (ev.key === 'Enter' && !open2 && sel2 === rows.length && rows.length) { openBook(null); }
   else if (ev.key === 'Enter' && rows[sel2] && !open2) { open2 = rows[sel2].key; render2(); }
   else if (ev.key === 'Escape') { open2 = null; render2(); }
   else if (ev.key === 'Tab') { ev.preventDefault(); filter2 = filter2 === 'recent' ? 'starred' : 'recent'; sel2 = 0; open2 = null; render2(); }
@@ -566,9 +574,8 @@ function rows3() {
 }
 function render3() {
   const all = db.filter(e => e.count > 0 || e.starred);
-  document.getElementById('stStar').textContent = db.filter(e => e.starred).length;
-  document.getElementById('stWeek').textContent = db.filter(e => e.last && TODAY - e.last < 7 * 864e5 + 864e5).length;
-  document.getElementById('stTotal').textContent = all.length;
+  document.getElementById('ttc').textContent = `${db.filter(e => e.starred).length} 个收藏`;
+  document.getElementById('stWeekLine').textContent = `近 7 天查了 ${db.filter(e => e.last && TODAY - e.last < 8 * 864e5).length} 个词`;
   document.getElementById('c3s').textContent = db.filter(e => e.starred).length;
   document.getElementById('c3a').textContent = all.length;
   document.querySelectorAll('#seg3 button').forEach(b => b.classList.toggle('on', b.dataset.f === seg3));
@@ -579,7 +586,7 @@ function render3() {
   if (!rows.find(e => e.key === sel3)) sel3 = rows[0] ? rows[0].key : null;
   let html = '';
   if (!recordOn && seg3 === 'all') html += `<div class="note2" style="margin:6px 4px 4px">查词记录已暂停，在「记录设置」中开启。</div>`;
-  if (!rows.length) html += seg3 === 'starred' && !q3 ? `<div class="lempty"><div class="big">☆</div>还没有收藏的词<br>在启动器的单词卡上按 ⌘S 收藏</div>` : `<div class="lempty">没有匹配的词</div>`;
+  if (!rows.length) html += seg3 === 'starred' && !q3 ? `<div class="lempty"><div class="big">☆</div>还没有收藏的词<br>在翻译结果上按 ⌘S 收藏</div>` : `<div class="lempty">没有匹配的词</div>`;
   let lastDay = null;
   rows.forEach(e => {
     if (seg3 === 'all' && sort3 === 'recent') { const d = dayLabel(e.last || e.first); if (d !== lastDay) { html += `<div class="day">${d}</div>`; lastDay = d; } }
@@ -619,11 +626,11 @@ studio.addEventListener('click', ev => {
     if (e.kind === 'text') { e.kind = 'card'; e.card = { ph: [], senses: [['adj.', e.text.split('；')]], forms: [], ex: [], syn: [] }; }
     renderAll(); stoast(`已更新「${esc(e.hw)}」的单词卡`); return;
   }
+  if (ev.target.id === 'close3') { document.getElementById('desk3').classList.add('closed'); return; }
   if (ev.target.id === 'exportBtn') { const m = document.getElementById('exportMenu'), r = ev.target.getBoundingClientRect(), s = studio.getBoundingClientRect(); m.style.left = (r.left - s.left) + 'px'; m.style.top = (r.bottom - s.top + 4) + 'px'; m.classList.toggle('show'); return; }
   const x = ev.target.closest('#exportMenu div');
-  if (x) { document.getElementById('exportMenu').classList.remove('show'); stoast(`已导出 ${rows3().length} 个词（${x.firstChild.textContent}）`); return; }
+  if (x) { document.getElementById('exportMenu').classList.remove('show'); if (x.dataset.x === 'settings') { document.getElementById('settings3').classList.add('show'); return; } stoast(`已导出 ${rows3().length} 个词（${x.firstChild.textContent.replace('导出 ', '')}）`); return; }
   document.getElementById('exportMenu').classList.remove('show');
-  if (ev.target.id === 'settingsBtn') document.getElementById('settings3').classList.add('show');
   if (ev.target.id === 'closeSettings') document.getElementById('settings3').classList.remove('show');
   if (ev.target.id === 'swRecord') { recordOn = !recordOn; ev.target.classList.toggle('on', recordOn); renderAll(); }
   if (ev.target.id === 'clearHist') {
@@ -638,10 +645,27 @@ document.getElementById('lang3').addEventListener('change', ev => { lang3 = ev.t
 document.getElementById('sort3').addEventListener('change', ev => { sort3 = ev.target.value; render3(); });
 
 function renderAll() { render1(); render2(); render3(); }
+function openBook(key) {
+  if (key) { sel3 = key; seg3 = find(key).starred ? 'starred' : 'all'; q3 = ''; lang3 = 'all'; document.getElementById('search3').value = ''; }
+  document.getElementById('desk3').classList.remove('closed'); renderAll();
+  document.getElementById('desk3').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+document.getElementById('reopen3').addEventListener('click', () => openBook(null));
+document.getElementById('desk3').tabIndex = 0;
+document.getElementById('desk3').addEventListener('keydown', ev => {
+  if (ev.target.tagName === 'INPUT' && ev.key !== 'Escape') return;
+  const rows = rows3(), i = rows.findIndex(e => e.key === sel3);
+  if (ev.key === 'Escape') { document.getElementById('desk3').classList.add('closed'); }
+  else if (ev.key === 'ArrowDown' && rows[i + 1]) { ev.preventDefault(); sel3 = rows[i + 1].key; render3(); }
+  else if (ev.key === 'ArrowUp' && i > 0) { ev.preventDefault(); sel3 = rows[i - 1].key; render3(); }
+  else if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 's' && sel3) { ev.preventDefault(); const e = find(sel3); e.starred = e.starred ? null : Date.now(); renderAll(); }
+  else if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'f') { ev.preventDefault(); document.getElementById('search3').focus(); }
+  else if (ev.key === 'Backspace' && sel3) { document.getElementById('del3').click(); }
+});
 document.getElementById('theme').addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; document.body.classList.toggle('light', b.dataset.t === 'light'); document.querySelectorAll('#theme button').forEach(x => x.classList.toggle('on', x === b)); });
 document.getElementById('reset').addEventListener('click', () => { db = seed(); recordOn = true; session1 = new Set(); document.getElementById('swRecord').classList.add('on'); cur1 = samples[0]; open2 = null; renderAll(); });
 
-/* screenshot helper: ?theme=light&shot=<element id>&s1=<sample>&f2=starred&open2=<key>&seg3=all&sel3=<key>&settings=1 */
+/* screenshot helper: ?theme=light&shot=<element id>&menu3=1&s1=<sample>&f2=starred&open2=<key>&seg3=all&sel3=<key>&settings=1 */
 const P = new URLSearchParams(location.search);
 if (P.get('theme') === 'light') document.querySelector('#theme [data-t="light"]').click();
 if (P.get('s1')) cur1 = samples.find(s => s.id === P.get('s1')) || cur1;
@@ -653,7 +677,9 @@ if (P.get('sel2')) sel2 = +P.get('sel2');
 if (P.get('star1')) { const e = find(P.get('star1')); if (e) e.starred = e.starred ? null : TODAY.getTime(); }
 renderAll();
 if (P.get('settings')) document.getElementById('settings3').classList.add('show');
-if (P.get('toast1')) toast(document.getElementById('toast1'), `<b>★</b> 已收藏「${esc(find(cur1.key).hw)}」到单词本 · ⌘S 撤销`), clearTimeout(document.getElementById('toast1')._t);
+if (P.get('toast1')) toast(document.getElementById('toast1'), `<b>★</b> 已收藏「${esc(find(cur1.key).hw)}」 · ⌘B 打开单词本`), clearTimeout(document.getElementById('toast1')._t);
+if (P.get('closed3')) document.getElementById('desk3').classList.add('closed');
+if (P.get('menu3')) { const m = document.getElementById('exportMenu'); m.style.right = '10px'; m.style.top = '40px'; m.classList.add('show'); }
 if (P.get('shot')) { const t = document.getElementById(P.get('shot')); t.classList.add('shot-target'); document.body.appendChild(t); document.body.classList.add('shot'); }
 </script>
 </body></html>
