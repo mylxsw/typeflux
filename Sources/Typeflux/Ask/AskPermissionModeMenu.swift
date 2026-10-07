@@ -8,6 +8,8 @@ struct AskPermissionModeMenu: View {
     var mode: AskPermissionMode
     /// The symbol alone; YOLO always spells itself out.
     var compact: Bool
+    /// The launcher's bar: the symbol alone for every mode, YOLO included, and no chevron.
+    var bare = false
     var onSelect: (AskPermissionMode) -> Void
 
     static func labelColor(_ mode: AskPermissionMode) -> Color {
@@ -28,7 +30,7 @@ struct AskPermissionModeMenu: View {
             }
         } label: {
             Group {
-                if compact, mode != .yolo {
+                if bare || (compact && mode != .yolo) {
                     Image(systemName: mode.symbol)
                 } else {
                     Label(mode == .yolo ? "YOLO" : mode.title, systemImage: mode.symbol)
@@ -39,6 +41,7 @@ struct AskPermissionModeMenu: View {
             .fixedSize()
         }
         .menuStyle(.borderlessButton)
+        .menuIndicator(bare ? .hidden : .visible)
         // Overrides the composer's accent so the label and its indicator keep this colour.
         .tint(Self.labelColor(mode))
         .fixedSize()

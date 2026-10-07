@@ -1578,17 +1578,17 @@
 "ask.search.actions" = "Actions";
 "ask.search.conversations" = "Conversations";
 "ask.search.placeholder" = "Search conversations or actions";
-"ask.launcher.hint" = "↩ Send · esc Close";
+"ask.launcher.hint" = "↩ Send";
 "ask.launcher.drag" = "Drag to move · double-click to center";
 "ask.quick.calculator" = "Calculator";
 "ask.quick.askAI" = "Ask AI";
-"ask.quick.hint" = "↩ Copy result · ⌘↩ Ask AI · esc Close";
-"ask.quick.hint.app" = "↩ Open · ⌘↩ Ask AI · esc Close";
+"ask.quick.hint" = "↩ Copy result · ⌘↩ Ask AI";
+"ask.quick.hint.app" = "↩ Open · ⌘↩ Ask AI";
 "ask.quick.section.calculation" = "Calculator";
 "ask.quick.section.apps" = "Applications";
 "ask.quick.section.ai" = "AI";
 "ask.launcher.placeholder" = "Search apps, calculate, or ask";
-"ask.launcher.hint.context" = "↩ Send · ⌘K Context · esc Close";
+"ask.launcher.hint.context" = "↩ Send · ⌘K Context";
 "ask.launcher.hint.voice" = "↩ Finish and insert · esc Cancel";
 "ask.launcher.hint.transcribing" = "esc Cancel";
 "ask.voice.waiting" = "Listening…";
@@ -2545,12 +2545,11 @@
 "ask.plugin.source.device" = "On this Mac";
 "ask.plugin.askAI.selection" = "%@ the selected text";
 "ask.plugin.writeBack.failed" = "Couldn't type into the app; the result is on the clipboard";
-"ask.plugin.hint.keyword" = "↩ Send · ⇥ Use keyword · esc Close";
-"ask.plugin.hint.waiting" = "esc Close";
+"ask.plugin.hint.keyword" = "↩ Send · ⇥ Use keyword";
 "ask.plugin.hint.ready" = "↩ Run";
 "ask.plugin.hint.running" = "esc Cancel";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
-"ask.plugin.hint.failed" = "↩ Retry · esc Close";
+"ask.plugin.hint.failed" = "↩ Retry";
 "ask.plugin.section" = "Keywords";
 "ask.plugin.waiting" = "Type the text to work on";
 "ask.plugin.enter" = "Space or ⇥ to use";
@@ -3459,8 +3458,8 @@
 "ask.quick.section.files" = "Files";
 "ask.quick.section.folders" = "Folders";
 "ask.quick.pane.location" = "System Settings";
-"ask.quick.hint.file" = "↩ Open · → More · ⌘↩ Ask AI · esc Close";
-"ask.quick.hint.showAll" = "↩ Show all files · ⌘↩ Ask AI · esc Close";
+"ask.quick.hint.file" = "↩ Open · → More · ⌘↩ Ask AI";
+"ask.quick.hint.showAll" = "↩ Show all files · ⌘↩ Ask AI";
 "ask.quick.file.actions" = "Open ↩ · → More";
 "ask.quick.file.showAll" = "Show all matching files";
 "ask.quick.file.indexing" = "Building the file index · %@ items so far";
@@ -3598,7 +3597,6 @@
 "ask.home.hint.open" = "↩ Open conversation";
 "ask.home.hint.chip" = "↩ Use keyword · ←→ Switch";
 "ask.home.hint.context" = "⌘K Context";
-"ask.home.hint.close" = "esc Close";
 "ask.home.justNow" = "just now";
 
 // Launcher chat entry and preserved drafts.

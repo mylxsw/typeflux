@@ -1568,17 +1568,17 @@
 "ask.search.actions" = "작업";
 "ask.search.conversations" = "대화";
 "ask.search.placeholder" = "Search conversations or actions";
-"ask.launcher.hint" = "↩ Send · esc Close";
+"ask.launcher.hint" = "↩ Send";
 "ask.launcher.drag" = "드래그해 이동 · 더블클릭하면 가운데로";
 "ask.quick.calculator" = "계산기";
 "ask.quick.askAI" = "AI에게 질문";
-"ask.quick.hint" = "↩ 결과 복사 · ⌘↩ AI에게 질문 · esc 닫기";
-"ask.quick.hint.app" = "↩ 열기 · ⌘↩ AI에게 질문 · esc 닫기";
+"ask.quick.hint" = "↩ 결과 복사 · ⌘↩ AI에게 질문";
+"ask.quick.hint.app" = "↩ 열기 · ⌘↩ AI에게 질문";
 "ask.quick.section.calculation" = "계산";
 "ask.quick.section.apps" = "앱";
 "ask.quick.section.ai" = "AI";
 "ask.launcher.placeholder" = "앱 검색, 계산 또는 질문";
-"ask.launcher.hint.context" = "↩ 보내기 · ⌘K 컨텍스트 · esc 닫기";
+"ask.launcher.hint.context" = "↩ 보내기 · ⌘K 컨텍스트";
 "ask.launcher.hint.voice" = "↩ 종료 후 입력 · esc 취소";
 "ask.launcher.hint.transcribing" = "esc 취소";
 "ask.voice.waiting" = "듣는 중…";
@@ -2535,12 +2535,11 @@
 "ask.plugin.source.device" = "이 Mac";
 "ask.plugin.askAI.selection" = "선택한 텍스트 %@";
 "ask.plugin.writeBack.failed" = "앱에 입력하지 못했습니다. 결과는 클립보드에 있습니다";
-"ask.plugin.hint.keyword" = "↩ 보내기 · ⇥ 키워드 사용 · esc 닫기";
-"ask.plugin.hint.waiting" = "esc 닫기";
+"ask.plugin.hint.keyword" = "↩ 보내기 · ⇥ 키워드 사용";
 "ask.plugin.hint.ready" = "↩ 실행";
 "ask.plugin.hint.running" = "esc 취소";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
-"ask.plugin.hint.failed" = "↩ 다시 시도 · esc 닫기";
+"ask.plugin.hint.failed" = "↩ 다시 시도";
 "ask.plugin.section" = "키워드";
 "ask.plugin.waiting" = "처리할 텍스트를 입력하세요";
 "ask.plugin.enter" = "스페이스 또는 ⇥로 사용";
@@ -3449,8 +3448,8 @@
 "ask.quick.section.files" = "파일";
 "ask.quick.section.folders" = "폴더";
 "ask.quick.pane.location" = "시스템 설정";
-"ask.quick.hint.file" = "↩ 열기 · → 더 보기 · ⌘↩ AI에게 질문 · esc 닫기";
-"ask.quick.hint.showAll" = "↩ 모든 파일 보기 · ⌘↩ AI에게 질문 · esc 닫기";
+"ask.quick.hint.file" = "↩ 열기 · → 더 보기 · ⌘↩ AI에게 질문";
+"ask.quick.hint.showAll" = "↩ 모든 파일 보기 · ⌘↩ AI에게 질문";
 "ask.quick.file.actions" = "열기 ↩ · → 더 보기";
 "ask.quick.file.showAll" = "일치하는 파일 모두 보기";
 "ask.quick.file.indexing" = "파일 색인 생성 중 · %@개 수록";
@@ -3588,7 +3587,6 @@
 "ask.home.hint.open" = "↩ 대화 열기";
 "ask.home.hint.chip" = "↩ 키워드 사용 · ←→ 전환";
 "ask.home.hint.context" = "⌘K 컨텍스트";
-"ask.home.hint.close" = "esc 닫기";
 "ask.home.justNow" = "방금";
 
 // Launcher chat entry and preserved drafts.

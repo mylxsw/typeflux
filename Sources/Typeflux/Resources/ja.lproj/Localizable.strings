@@ -1568,17 +1568,17 @@
 "ask.search.actions" = "アクション";
 "ask.search.conversations" = "会話";
 "ask.search.placeholder" = "Search conversations or actions";
-"ask.launcher.hint" = "↩ Send · esc Close";
+"ask.launcher.hint" = "↩ Send";
 "ask.launcher.drag" = "ドラッグで移動 · ダブルクリックで中央へ";
 "ask.quick.calculator" = "計算機";
 "ask.quick.askAI" = "AI に質問";
-"ask.quick.hint" = "↩ 結果をコピー · ⌘↩ AI に質問 · esc 閉じる";
-"ask.quick.hint.app" = "↩ 開く · ⌘↩ AI に質問 · esc 閉じる";
+"ask.quick.hint" = "↩ 結果をコピー · ⌘↩ AI に質問";
+"ask.quick.hint.app" = "↩ 開く · ⌘↩ AI に質問";
 "ask.quick.section.calculation" = "計算";
 "ask.quick.section.apps" = "アプリ";
 "ask.quick.section.ai" = "AI";
 "ask.launcher.placeholder" = "アプリ検索、計算、または質問";
-"ask.launcher.hint.context" = "↩ 送信 · ⌘K コンテキスト · esc 閉じる";
+"ask.launcher.hint.context" = "↩ 送信 · ⌘K コンテキスト";
 "ask.launcher.hint.voice" = "↩ 終了して入力 · esc キャンセル";
 "ask.launcher.hint.transcribing" = "esc キャンセル";
 "ask.voice.waiting" = "聞いています…";
@@ -2535,12 +2535,11 @@
 "ask.plugin.source.device" = "この Mac";
 "ask.plugin.askAI.selection" = "選択したテキストを%@";
 "ask.plugin.writeBack.failed" = "アプリに書き戻せませんでした。結果はクリップボードにあります";
-"ask.plugin.hint.keyword" = "↩ 送信 · ⇥ キーワードを使う · esc 閉じる";
-"ask.plugin.hint.waiting" = "esc 閉じる";
+"ask.plugin.hint.keyword" = "↩ 送信 · ⇥ キーワードを使う";
 "ask.plugin.hint.ready" = "↩ 実行";
 "ask.plugin.hint.running" = "esc キャンセル";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
-"ask.plugin.hint.failed" = "↩ 再試行 · esc 閉じる";
+"ask.plugin.hint.failed" = "↩ 再試行";
 "ask.plugin.section" = "キーワード";
 "ask.plugin.waiting" = "処理するテキストを入力";
 "ask.plugin.enter" = "スペースまたは ⇥ で使う";
@@ -3449,8 +3448,8 @@
 "ask.quick.section.files" = "ファイル";
 "ask.quick.section.folders" = "フォルダ";
 "ask.quick.pane.location" = "システム設定";
-"ask.quick.hint.file" = "↩ 開く · → その他 · ⌘↩ AI に質問 · esc 閉じる";
-"ask.quick.hint.showAll" = "↩ すべてのファイル · ⌘↩ AI に質問 · esc 閉じる";
+"ask.quick.hint.file" = "↩ 開く · → その他 · ⌘↩ AI に質問";
+"ask.quick.hint.showAll" = "↩ すべてのファイル · ⌘↩ AI に質問";
 "ask.quick.file.actions" = "開く ↩ · → その他";
 "ask.quick.file.showAll" = "一致するファイルをすべて表示";
 "ask.quick.file.indexing" = "ファイルのインデックスを作成中 · %@ 件";
@@ -3588,7 +3587,6 @@
 "ask.home.hint.open" = "↩ 会話を開く";
 "ask.home.hint.chip" = "↩ キーワードを使う · ←→ 切り替え";
 "ask.home.hint.context" = "⌘K コンテキスト";
-"ask.home.hint.close" = "esc 閉じる";
 "ask.home.justNow" = "たった今";
 
 // Launcher chat entry and preserved drafts.

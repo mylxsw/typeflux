@@ -212,7 +212,8 @@ struct AskPluginResultsView: View {
         let option = display.optionName.map { L("ask.plugin.hint.option", $0) }
         let parts: [String?]
         switch display.phase {
-        case .waiting: return L("ask.plugin.hint.waiting")
+        // Esc always closes the launcher; the bar spends its room on other keys.
+        case .waiting: return ""
         case let .ready(plan):
             if let action = plan.action(for: .enter) {
                 if case .openChat = action.kind { return "" }
@@ -220,7 +221,7 @@ struct AskPluginResultsView: View {
                          plan.action(for: .commandC).map { L("ask.plugin.hint.copy", $0.title) },
                          option, L("ask.plugin.hint.askAI")]
             } else {
-                parts = [L("ask.plugin.hint.ready"), option, L("ask.plugin.hint.waiting")]
+                parts = [L("ask.plugin.hint.ready"), option]
             }
         case .running: return L("ask.plugin.hint.running")
         case let .done(_, output) where !output.items.isEmpty:
@@ -233,7 +234,7 @@ struct AskPluginResultsView: View {
             let main = output.action(for: .enter)?.title ?? ""
             parts = [output.action(for: .optionEnter).map { L("ask.plugin.hint.done", main, $0.title) }
                 ?? L("ask.plugin.hint.action", main), option, L("ask.plugin.hint.askAI")]
-        case let .failed(_, failure): return L(failure.retry ? "ask.plugin.hint.failed" : "ask.plugin.hint.waiting")
+        case let .failed(_, failure): return failure.retry ? L("ask.plugin.hint.failed") : ""
         }
         return parts.compactMap { $0 }.joined(separator: " · ")
     }

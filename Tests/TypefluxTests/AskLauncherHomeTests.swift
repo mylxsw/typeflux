@@ -244,14 +244,13 @@ struct AskLauncherHomeTests {
         let row = { (action: Home.Action) in
             Home.Item.row(Home.Row(id: "r", title: "", symbol: "", tint: .accent, action: action))
         }
-        let close = " · " + L("ask.home.hint.close")
         #expect(AskLauncherSuggestions.hint(for: row(.keyword(Self.translate)), hasContext: false)
-            == L("ask.home.hint.run") + close)
-        #expect(AskLauncherSuggestions.hint(for: row(.ask("q")), hasContext: false) == L("ask.home.hint.ask") + close)
+            == L("ask.home.hint.run"))
+        #expect(AskLauncherSuggestions.hint(for: row(.ask("q")), hasContext: false) == L("ask.home.hint.ask"))
         #expect(AskLauncherSuggestions.hint(for: row(.conversation(id: "c")), hasContext: true)
-            == L("ask.home.hint.open") + " · " + L("ask.home.hint.context") + close)
+            == L("ask.home.hint.open") + " · " + L("ask.home.hint.context"))
         #expect(AskLauncherSuggestions.hint(for: .chip(Home.Chip(keyword: Self.translate, title: "", symbol: "")),
-                                            hasContext: false) == L("ask.home.hint.chip") + close)
+                                            hasContext: false) == L("ask.home.hint.chip"))
         #expect(AskLauncherSuggestions.hint(for: nil, hasContext: false) == L("ask.launcher.hint"))
         #expect(AskLauncherSuggestions.hint(for: nil, hasContext: true) == L("ask.launcher.hint.context"))
         #expect(AskLauncherSuggestions.relative(Self.now.addingTimeInterval(-10), now: Self.now) == L("ask.home.justNow"))

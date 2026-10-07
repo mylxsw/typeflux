@@ -102,6 +102,19 @@ enum AskLauncherContext {
         }
     }
 
+    /// The bottom bar's hint from longest to shortest: everything, then the main key
+    /// with ⌘K, then the main key alone. The bar shows the first that fits.
+    static func hintTiers(_ hint: String) -> [String] {
+        let clauses = hint.components(separatedBy: " · ")
+        guard clauses.count > 1, let main = clauses.first else { return hint.isEmpty ? [] : [hint] }
+        let candidates = [hint,
+                          ([main] + clauses.dropFirst().filter { $0.hasPrefix("⌘K") }).joined(separator: " · "),
+                          main]
+        return candidates.reduce(into: []) { tiers, tier in
+            if !tiers.contains(tier) { tiers.append(tier) }
+        }
+    }
+
     /// The send button is lit only when Return asks the AI, not while it would
     /// copy a calculation or open an application.
     static func sendIsProminent(quickResults: AskQuickResults?) -> Bool {
