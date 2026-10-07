@@ -11,6 +11,8 @@ struct AskToolsSettingsView: View {
 
     @State var folders: [String] = []
     @State var codeEnabled = true
+    @State var imageEnabled = false
+    @State var imageReady = false
     @State var newConversationsStayLocal = false
     @State var searchProvider = AskSearchSettings.Provider.none
     @State var searchKey = ""
@@ -63,6 +65,10 @@ struct AskToolsSettingsView: View {
                 overviewSections
             case .webSearch:
                 searchPane
+            case .imageGeneration:
+                AskImageSettingsView(store: AskImageSettings(defaults: settings.defaults)) { enabled, ready in
+                    imageEnabled = enabled; imageReady = ready
+                }
             case .files:
                 filesPane
             case .codeExecution:
@@ -109,7 +115,9 @@ struct AskToolsSettingsView: View {
             skillCount: skillList.count,
             enabledSkillCount: skillList.filter { !disabledSkills.contains($0.name) }.count,
             mcpServerCount: mcpServerCount,
-            enabledMCPServerCount: enabledMCPServerCount
+            enabledMCPServerCount: enabledMCPServerCount,
+            imageGenerationEnabled: imageEnabled,
+            imageGenerationReady: imageReady
         )
     }
 
@@ -128,6 +136,8 @@ struct AskToolsSettingsView: View {
     func reload() {
         folders = settings.askFileAccessFolders
         codeEnabled = settings.askCodeExecutionEnabled
+        let images = AskImageSettings(defaults: settings.defaults)
+        imageEnabled = images.enabled; imageReady = images.isReady
         newConversationsStayLocal = settings.askNewConversationsStayLocal
         searchProvider = search.provider
         searchKey = search.apiKey

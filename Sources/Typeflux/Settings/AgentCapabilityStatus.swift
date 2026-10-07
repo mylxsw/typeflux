@@ -3,6 +3,7 @@ import Foundation
 /// What Ask can use, as summarized on the Agent overview.
 enum AgentCapability: String, CaseIterable, Identifiable {
     case webSearch
+    case imageGeneration
     case files
     case codeExecution
     case automation
@@ -16,6 +17,7 @@ enum AgentCapability: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .webSearch: L("agent.capability.webSearch.title")
+        case .imageGeneration: L("imagegen.title")
         case .files: L("agent.capability.files.title")
         case .codeExecution: L("agent.capability.code.title")
         case .automation: L("agent.capability.automation.title")
@@ -27,6 +29,7 @@ enum AgentCapability: String, CaseIterable, Identifiable {
     var summary: String {
         switch self {
         case .webSearch: L("agent.capability.webSearch.summary")
+        case .imageGeneration: L("imagegen.summary")
         case .files: L("agent.capability.files.summary")
         case .codeExecution: L("agent.capability.code.summary")
         case .automation: L("agent.capability.automation.summary")
@@ -38,6 +41,7 @@ enum AgentCapability: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .webSearch: "globe"
+        case .imageGeneration: "photo.badge.plus"
         case .files: "folder"
         case .codeExecution: "terminal"
         case .automation: "cursorarrow.click.2"
@@ -50,6 +54,7 @@ enum AgentCapability: String, CaseIterable, Identifiable {
     var pane: AgentSettingsPane {
         switch self {
         case .webSearch: .webSearch
+        case .imageGeneration: .imageGeneration
         case .files: .files
         case .codeExecution: .codeExecution
         case .automation: .automation
@@ -107,6 +112,8 @@ struct AgentCapabilityInputs: Equatable {
     var enabledSkillCount = 0
     var mcpServerCount = 0
     var enabledMCPServerCount = 0
+    var imageGenerationEnabled = false
+    var imageGenerationReady = false
 }
 
 struct AgentCapabilityStatus: Equatable, Identifiable {
@@ -148,6 +155,9 @@ struct AgentCapabilityStatus: Equatable, Identifiable {
 
     static func status(of capability: AgentCapability, inputs: AgentCapabilityInputs) -> AgentCapabilityStatus {
         let (level, label): (Level, String) = switch capability {
+        case .imageGeneration:
+            !inputs.imageGenerationEnabled ? (.off, L("agent.status.off"))
+                : (inputs.imageGenerationReady ? (.ready, L("imagegen.ready")) : (.attention, L("imagegen.incomplete")))
         case .webSearch:
             if inputs.searchProvider == .none {
                 // Private conversations have no other way to reach the web.

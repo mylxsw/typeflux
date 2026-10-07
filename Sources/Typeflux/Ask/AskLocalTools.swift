@@ -23,6 +23,7 @@ enum AskToolRisk: Int, Comparable, Sendable {
 protocol AskToolExecuting {
     func bindConversation(_ id: String)
     func bindExecution(ownerId: String, conversationId: String, runId: String)
+    func setExecutionDeadline(_ deadline: Date?, conversationId: String)
     func cancelProjects(conversationId: String?)
     func cancelProjectRun(_ scope: AskProjectScope)
     func terminalStatus(_ ref: AskProcessRef) throws -> AskProjectTerminalReceipt
@@ -43,9 +44,12 @@ protocol AskToolExecuting {
     func mcpServerName(of call: AskToolCall) -> String?
     /// Opens folders the user attached to the `files` tool for one conversation.
     func grantFolders(_ paths: [String], conversationId: String)
+    func deleteArtifacts(ownerId: String, conversationId: String) throws
 }
 
 extension AskToolExecuting {
+    func setExecutionDeadline(_: Date?, conversationId _: String) {}
+    func deleteArtifacts(ownerId _: String, conversationId _: String) throws {}
     func cancelProjects(conversationId _: String?) {}
     func cancelProjectRun(_: AskProjectScope) {}
     func terminalStatus(_: AskProcessRef) throws -> AskProjectTerminalReceipt { throw AskProjectRuntimeError.disabled }
@@ -90,6 +94,10 @@ final class AskLocalTools: AskToolExecuting {
     private let notes: AskMemoryNoteStore
     let folderGrants: AskFolderGrants
     let artifactStore: AskArtifactStore
+    var imageGenerator: any AskImageGenerating = AskImageGenerationService()
+    var executionDeadlines: [String: Date] = [:]
+    /// Injectable configuration for tests; production reads the user's settings and Keychain.
+    var imageConfigurationOverride: (() -> (AskImageConfiguration, String)?)?
     let artifactCreationEnabled: Bool
     let artifactPreviewEnabled: Bool
     let projects: AskProjectWorkspace
@@ -180,6 +188,7 @@ final class AskLocalTools: AskToolExecuting {
         if settings?.askCodeExecutionEnabled == true, let code = sandbox.definition() { result.append(code) }
         if let skill = skills.definition(enabledSkills) { result.append(skill) }
         result.append(AskMemoryNoteStore.definition)
+        if imageConfiguration != nil { result.append(Self.imageGenerationDefinition) }
         mcpTools = [:]
         mcpServers = [:]
         mcpIdentities = [:]
@@ -215,7 +224,7 @@ final class AskLocalTools: AskToolExecuting {
         case ("computer", "screenshot"), ("computer", "inspect"), ("computer", "wait"),
              ("browser", "read"), ("browser", "snapshot"), ("memory", "list"): return .read
         case ("files", _): return AskFileTools.risk(action: action)
-        case ("artifact", _): return .write
+        case ("artifact", _), ("generate_image", _): return .write
         case ("project_terminal", _): return ["status", "output"].contains(action) ? .read : .write
         case ("project_files", _): return ["list", "read", "review", "export"].contains(action) ? .read : .write
         case ("computer", _), ("browser", _), ("run_code", _), ("memory", _): return .write
@@ -318,7 +327,7 @@ final class AskLocalTools: AskToolExecuting {
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
-        case "artifact", "project_files", "project_terminal": throw AskProjectError.denied // Requires the approved dispatch entry point.
+        case "artifact", "project_files", "project_terminal", "generate_image": throw AskProjectError.denied // Requires the approved dispatch entry point.
         case "computer", "browser":
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId)
         case "files":

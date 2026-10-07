@@ -188,6 +188,19 @@ final class AskArtifactStore {
     }
 
     /// No workspace paths are ever used for deletion. Corrupt/unknown records are retained.
+    func delete(ownerId: String, conversationId: String) throws {
+        let root = try AskSecureDirectory.openRoot(storageURL)
+        try root.lock()
+        for id in root.entries() where UUID(uuidString: id)?.uuidString.lowercased() == id {
+            guard let directory = try? root.child(id, privateDirectory: true),
+                  let data = try? directory.readFile("manifest.json", limit: 256 * 1024),
+                  let manifest = try? JSONDecoder().decode(AskArtifactManifest.self, from: data),
+                  manifest.ref.id == id, manifest.ref.ownerId == ownerId,
+                  manifest.ref.conversationId == conversationId else { continue }
+            try root.remove(id)
+        }
+    }
+
     @discardableResult func cleanupExpired() throws -> Int {
         let root = try AskSecureDirectory.openRoot(storageURL)
         try root.lock()
