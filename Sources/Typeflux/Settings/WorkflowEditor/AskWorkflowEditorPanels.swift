@@ -280,17 +280,23 @@ struct AskWorkflowTestActions: View {
         return HStack(spacing: 8) {
             AskWorkflowActionTile(kind: step.action.kind, size: 20)
             Text(step.title).font(.system(size: 12)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1).fixedSize()
+            if step.fromScript {
+                AskWorkflowNoteChip(text: L("ask.workflow.editor.test.fromScript"))
+            }
             Text(step.detail.replacingOccurrences(of: "\n", with: " ⏎ ")).font(.system(size: 11.5, design: .monospaced))
                 .foregroundStyle(StudioTheme.textSecondary).lineLimit(1).truncationMode(.tail)
             Spacer(minLength: 6)
+            // The value gives way first: where the action ended matters more.
             Text(status).font(.system(size: 11)).foregroundStyle(color).lineLimit(2).multilineTextAlignment(.trailing)
-                .frame(maxWidth: 130, alignment: .trailing)
+                .frame(maxWidth: 130, alignment: .trailing).layoutPriority(1)
         }
         .padding(.vertical, 7)
     }
 
     /// "Preview", "✓ Done", "Skipped: …", "✕ …".
     static func status(_ step: AskWorkflowActionStep, _ outcome: AskWorkflowActionOutcome?) -> (String, Color) {
+        // A script action that is not allowed never runs, whatever else is wrong with it.
+        if let reason = step.notRun { return (reason, StudioTheme.warning) }
         if let problem = step.problem { return ("✕ " + problem, StudioTheme.danger) }
         switch outcome?.status {
         case nil, .skipped(nil): return (L("ask.workflow.editor.test.actionPreview"), StudioTheme.textTertiary)

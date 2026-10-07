@@ -119,8 +119,9 @@ extension AskWorkflowEditorModel {
         guard let manifest = draft?.manifest, let folder = folder ?? draft?.folder else { return [] }
         var values = placeholderValues
         values.error = nil
+        let keyword = manifest.keywords.first { $0.keyword == testKeyword } ?? manifest.keywords.first
         return AskWorkflowActionRunner.steps(for: manifest.output.onSuccess, placeholders: values, folder: folder,
-                                             name: manifest.name)
+                                             name: manifest.name, chain: keyword.map { [$0.keyword] } ?? [])
     }
 
     /// "Text · 2 actions" for the step strip.
@@ -160,6 +161,10 @@ final class AskWorkflowEditorActionHost: AskWorkflowActionHost {
 
     /// The system side of each action; tests record them instead.
     var openURL: (URL) -> Bool = { NSWorkspace.shared.open($0) }
+    /// Puts "keyword argument" in the launcher, where Return runs it; false when there is no launcher.
+    var openInLauncher: (String) -> Bool = { text in
+        AskWorkflowEditorWindowController.shared.openInLauncher?(text) ?? false
+    }
     var openApplication: (String) -> Bool = { AskWorkflowLauncherActionHost.openApplication($0) }
     var revealFile: (URL) -> Void = { NSWorkspace.shared.activateFileViewerSelecting([$0]) }
     var speakText: (String, String) -> Void = { AskSpeaker.shared.speak($0, language: $1) }
@@ -210,4 +215,15 @@ final class AskWorkflowEditorActionHost: AskWorkflowActionHost {
     }
 
     func askAI(_: String) {}
+
+    /// A test run has no launcher session to chain in: after the question (as for
+    /// writing back), the launcher opens with the keyword and argument typed in.
+    func runKeyword(_ keyword: String, argument: String, chain _: [String]) -> Bool {
+        openInLauncher(argument.isEmpty ? keyword + " " : keyword + " " + argument)
+    }
+
+    /// The test run already asked before opening the link.
+    func approve(host _: String) async -> Bool {
+        true
+    }
 }

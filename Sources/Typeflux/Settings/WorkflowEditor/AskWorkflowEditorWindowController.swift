@@ -10,6 +10,9 @@ final class AskWorkflowEditorWindowController: NSObject, NSWindowDelegate {
     /// The Ask workspace's API, session and models, so the assistant's conversations
     /// are ordinary Ask conversations. `DIContainer` supplies it.
     var assistantDependencies: (() -> AskWorkflowAssistant.Dependencies?)?
+    /// Opens the launcher with this text typed in (a test run's `runKeyword`); false
+    /// without a launcher. `DIContainer` supplies it.
+    var openInLauncher: ((String) -> Bool)?
     private let settings: SettingsStore
     private let store: AskWorkflowStore
     /// Asks what to do with unsaved edits when the window closes; tests answer it.

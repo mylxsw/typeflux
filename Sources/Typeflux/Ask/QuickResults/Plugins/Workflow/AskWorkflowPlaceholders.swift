@@ -15,10 +15,14 @@ struct AskWorkflowPlaceholders: Equatable, Sendable {
     var options: [String: String]
     /// Why the run failed and the end of stderr; nil after a success.
     var error: String?
+    /// What `{json.…}` reads when it is not `output`: the whole stdout of a script that
+    /// printed `{"text": …, "actions": …}`, whose `output` is only the text.
+    var json: String?
 
     init(output: String, query: String = "", selection: String? = nil, keyword: String = "",
-         options: [String: String] = [:], error: String? = nil) {
+         options: [String: String] = [:], error: String? = nil, json: String? = nil) {
         self.output = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.json = json
         self.query = query
         self.selection = selection
         self.keyword = keyword
@@ -63,7 +67,7 @@ struct AskWorkflowPlaceholders: Equatable, Sendable {
         case "keyword": return keyword
         case "error": return error ?? ""
         case _ where name.hasPrefix("option:"): return options[String(name.dropFirst(7))] ?? ""
-        case _ where name.hasPrefix("json."): return Self.json(at: name.dropFirst(5), in: output) ?? ""
+        case _ where name.hasPrefix("json."): return Self.json(at: name.dropFirst(5), in: json ?? output) ?? ""
         default: return nil
         }
     }
@@ -71,7 +75,7 @@ struct AskWorkflowPlaceholders: Equatable, Sendable {
     /// `{json.…}` placeholders in `template` that find nothing in this output, for the test panel.
     func missingJSON(in template: String) -> [String] {
         Self.names(in: template).filter { name in
-            name.hasPrefix("json.") && Self.json(at: name.dropFirst(5), in: output) == nil
+            name.hasPrefix("json.") && Self.json(at: name.dropFirst(5), in: json ?? output) == nil
         }.map { "{" + $0 + "}" }
     }
 

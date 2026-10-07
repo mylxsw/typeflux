@@ -2960,7 +2960,6 @@
 "ask.workflow.editor.argumentShort.required" = "必填";
 "ask.workflow.editor.argumentShort.optional" = "可選";
 "ask.workflow.editor.argumentShort.none" = "無參數";
-"ask.workflow.editor.comingSoon" = "即將支援";
 "ask.workflow.editor.done" = "完成";
 "ask.workflow.editor.env.add" = "新增變數";
 "ask.workflow.editor.env.noSecrets" = "不要在這裡放金鑰。";
@@ -2995,7 +2994,6 @@
 "ask.workflow.editor.outputDetail.image" = "印出圖片路徑或 data URL，例如 QR 碼。";
 "ask.workflow.editor.outputShort.markdown" = "Markdown";
 "ask.workflow.editor.outputShort.image" = "圖片";
-"ask.workflow.problem.display" = "「%@」顯示方式將在之後的版本支援，目前請用 text";
 "ask.workflow.problem.tooManyActions" = "每個清單最多 %d 個動作";
 "ask.workflow.problem.action.unknown" = "這個版本的 Typeflux 不支援動作「%@」";
 "ask.workflow.problem.action.missing" = "「%@」不能為空";
@@ -3062,7 +3060,7 @@
 "ask.workflow.editor.output.close" = "執行完關閉啟動器";
 "ask.workflow.editor.output.closeDetail" = "適合「複製」「通知」這類不需要再看結果的工作流程；「不顯示」時總是關閉。";
 "ask.workflow.editor.output.scriptActions" = "允許腳本追加動作";
-"ask.workflow.editor.output.scriptActionsDetail" = "腳本印出 {\"actions\": […]} 時，追加在上面的動作之後執行（之後的版本生效）。";
+"ask.workflow.editor.output.scriptActionsDetail" = "腳本印出 {\"text\": …, \"actions\": […]} 時，追加在上面的動作之後執行。";
 "ask.workflow.editor.placeholder.menuTitle" = "插入預留位置 · 以上次測試執行的值預覽";
 "ask.workflow.editor.placeholder.output" = "全部輸出";
 "ask.workflow.editor.placeholder.output.line1" = "第一行";
@@ -3226,3 +3224,24 @@
 "ask.workflow.gallery.code.keyword.code" = "開啟專案";
 "ask.workflow.gallery.code.usage.1" = "列出專案，最近改過的在前";
 "ask.workflow.gallery.code.usage.2" = "只列出名稱包含「web」的專案";
+
+/* Workflow O4: script actions, image display, run another keyword */
+"ask.workflow.action.kind.runKeyword" = "執行另一個關鍵字";
+"ask.workflow.action.field.keyword" = "關鍵字";
+"ask.workflow.action.field.argument" = "輸入";
+"ask.workflow.problem.action.keyword" = "關鍵字只能是一個詞，例如「tr」";
+"ask.workflow.action.scriptNotAllowed" = "未執行：未允許腳本追加";
+"ask.workflow.action.loop" = "未執行：會形成循環（%@）";
+"ask.workflow.action.tooDeep" = "未執行：最多連續執行 %d 個關鍵字";
+"ask.workflow.action.noKeyword" = "沒有關鍵字「%@」";
+"ask.workflow.action.hostDeclined" = "未執行：沒有允許開啟 %@";
+"ask.workflow.action.done.runKeyword" = "已執行「%@」";
+"ask.plugin.action.copyImage" = "拷貝圖片";
+"ask.workflow.image.notFound" = "找不到圖片「%@」";
+"ask.workflow.image.invalid" = "輸出的不是圖片";
+"ask.workflow.image.copyFailed" = "無法拷貝這張圖片";
+"ask.workflow.approval.question" = "%@想開啟 %@，允許嗎？";
+"ask.workflow.approval.allow" = "允許";
+"ask.workflow.approval.deny" = "不允許";
+"ask.workflow.editor.test.fromScript" = "腳本追加";
+"ask.workflow.trust.scriptActions" = "腳本執行時可以追加動作";

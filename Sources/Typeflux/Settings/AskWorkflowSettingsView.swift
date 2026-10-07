@@ -99,8 +99,10 @@ struct AskWorkflowTrustSummary: Equatable {
             let title = action.kind?.title ?? action.action
             return main.isEmpty ? title : title + ": " + main
         }
+        // Actions the script adds are not in the manifest: say that it may add them.
         return output.onSuccess.map(line)
             + output.onFailure.map { L("ask.workflow.trust.onFailure", line($0)) }
+            + (output.scriptActions ? [L("ask.workflow.trust.scriptActions")] : [])
     }
 }
 

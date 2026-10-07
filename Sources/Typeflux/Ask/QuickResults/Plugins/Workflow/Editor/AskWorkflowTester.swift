@@ -53,12 +53,15 @@ struct AskWorkflowTestResult: Equatable, Sendable {
         return reason + AskWorkflowPlugin.tail(stderr, folder: folder)
     }
 
-    /// The placeholders' values for this run.
+    /// The placeholders' values for this run. A script that printed `{"text": …,
+    /// "actions": …}` has its text as `{output}`, as in the launcher.
     func placeholders(keyword: String, options: [String: String], timeout: Double,
                       folder: URL?) -> AskWorkflowPlaceholders {
-        AskWorkflowPlaceholders(output: stdout, query: input.query, selection: input.selection,
-                                keyword: keyword, options: options,
-                                error: errorText(timeout: timeout, folder: folder))
+        let script = AskWorkflowScriptOutput.parse(stdout)
+        return AskWorkflowPlaceholders(output: script?.text ?? stdout, query: input.query, selection: input.selection,
+                                       keyword: keyword, options: options,
+                                       error: errorText(timeout: timeout, folder: folder),
+                                       json: script == nil ? nil : stdout)
     }
 
     /// One line for lists: "✓ exit 0 · 0.62 s".
@@ -116,18 +119,34 @@ struct AskWorkflowTester: Sendable {
         result.stdin = String(data: invocation.stdin, encoding: .utf8)?.trimmingCharacters(in: .newlines) ?? ""
         await execute(invocation, into: &result)
         guard result.failure == nil else { return result }
-        let output = manifest.output
         let options = request.options.filter { $0.key != AskWorkflowPlugin.titleOption }
-        let placeholders = result.placeholders(keyword: keyword.keyword, options: options, timeout: manifest.timeout,
-                                               folder: workflow.folder)
-        result.actionSteps = AskWorkflowActionRunner.steps(
-            for: result.takesFailureActions ? output.onFailure : output.onSuccess, placeholders: placeholders,
-            folder: workflow.folder, name: manifest.name, home: home
-        )
+        result.actionSteps = actionSteps(of: result, manifest: manifest, folder: workflow.folder,
+                                         keyword: keyword.keyword, options: options)
         record(AskWorkflowLog.Entry(workflowID: workflow.id, keyword: keyword.keyword, date: Date(),
                                     duration: result.duration, exitCode: result.exitCode, timedOut: result.timedOut,
                                     stderr: String(result.stderr.suffix(4096)), source: .test))
         return result
+    }
+
+    /// The run's actions filled in, as the launcher would take them: the failure list
+    /// after a failure; after a success, the configured ones and then what the script
+    /// added (run only when the manifest allows it).
+    private func actionSteps(of result: AskWorkflowTestResult, manifest: AskWorkflowManifest, folder: URL,
+                             keyword: String, options: [String: String]) -> [AskWorkflowActionStep] {
+        let output = manifest.output
+        let placeholders = result.placeholders(keyword: keyword, options: options, timeout: manifest.timeout,
+                                               folder: folder)
+        var steps = AskWorkflowActionRunner.steps(
+            for: result.takesFailureActions ? output.onFailure : output.onSuccess, placeholders: placeholders,
+            folder: folder, name: manifest.name, home: home, chain: [keyword]
+        )
+        if !result.takesFailureActions, let script = AskWorkflowScriptOutput.parse(result.stdout) {
+            steps += AskWorkflowActionRunner.scriptSteps(
+                script.actions, allowed: output.scriptActions, folder: folder, name: manifest.name, home: home,
+                chain: [keyword], knownHosts: { AskWorkflowScriptOutput.knownHosts(in: folder) }
+            )
+        }
+        return steps
     }
 
     /// Runs the process and copies how it ended into `result`.

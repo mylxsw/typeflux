@@ -77,13 +77,11 @@ struct AskWorkflowBadge: View {
     }
 }
 
-/// A choice in a radio list: what it is, one line on what it means, and whether
-/// it can be picked yet.
+/// A choice in a radio list: what it is and one line on what it means.
 struct AskWorkflowChoice<Value: Hashable>: Identifiable {
     var value: Value
     var title: String
     var detail: String?
-    var comingSoon = false
 
     var id: String {
         title
@@ -114,7 +112,7 @@ struct AskWorkflowRadioList<Value: Hashable>: View {
     }
 
     private func row(_ choice: AskWorkflowChoice<Value>) -> some View {
-        let selected = choice.value == selection && !choice.comingSoon
+        let selected = choice.value == selection
         return Button { select(choice.value) } label: {
             HStack(alignment: stacked ? .top : .center, spacing: 11) {
                 Circle()
@@ -142,22 +140,12 @@ struct AskWorkflowRadioList<Value: Hashable>: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(choice.comingSoon)
-        .opacity(choice.comingSoon ? 0.45 : 1)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private func title(_ choice: AskWorkflowChoice<Value>) -> some View {
-        HStack(spacing: 6) {
-            Text(choice.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1).fixedSize()
-            if choice.comingSoon {
-                Text(L("ask.workflow.editor.comingSoon")).font(.system(size: 10.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .padding(.horizontal, 6).frame(height: 17)
-                    .background(StudioTheme.textSecondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
-            }
-        }
+        Text(choice.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
+            .lineLimit(1).fixedSize()
     }
 }
 
@@ -387,6 +375,8 @@ struct AskWorkflowLauncherPreview: View {
                 AskTranscriptText(text: text)
                     .frame(maxHeight: AskPluginResultsView.maximumMarkdownHeight, alignment: .top)
                     .clipped()
+            case let .image(name):
+                imageView(name)
             case let .text(text, note):
                 textLines(text)
                 if let note {
@@ -417,6 +407,45 @@ struct AskWorkflowLauncherPreview: View {
       {"title": "718.40 CNY", "subtitle": "1 USD = 7.184 CNY", "arg": "718.40", "icon": "sf:yensign"}
     ]}
     """#
+
+    /// The image a test run named, as the launcher shows it; before any run, a sample.
+    @ViewBuilder private func imageView(_ name: String) -> some View {
+        switch image(name) {
+        case let .success(image):
+            let size = Self.previewSize(image)
+            if let picture = AskPluginResultsView.loadImage(image.url) {
+                Image(nsImage: picture).resizable().interpolation(.high)
+                    .frame(width: size.width, height: size.height)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .frame(maxWidth: .infinity)
+            }
+        case let .failure(failure):
+            if result == nil {
+                // No run yet: what an image result looks like.
+                Image(systemName: "qrcode").font(.system(size: 64, weight: .light))
+                    .foregroundStyle(StudioTheme.textPrimary).frame(maxWidth: .infinity).padding(.vertical, 6)
+            } else {
+                let isData = name.lowercased().hasPrefix("data:")
+                textLines(isData ? AskWorkflowActionRunner.clipped(name, limit: 40) : name)
+                Text(failure == .notImage ? L("ask.workflow.image.invalid")
+                    : L("ask.workflow.image.notFound", AskWorkflowActionRunner.clipped(name, limit: 40)))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+            }
+        }
+    }
+
+    private func image(_ name: String) -> Result<AskPluginImage, AskWorkflowImage.Failure> {
+        guard result != nil, let folder else { return .failure(.notImage) }
+        let cache = FileManager.default.temporaryDirectory.appendingPathComponent("typeflux-workflow-preview")
+        return AskWorkflowImage.resolve(name, folder: folder, cache: cache, home: NSHomeDirectory())
+    }
+
+    /// The launcher's size for the image, smaller still if the preview is narrower.
+    static func previewSize(_ image: AskPluginImage) -> CGSize {
+        let size = AskPluginResultsView.imageSize(image)
+        let scale = min(1, 280 / size.width, 180 / size.height)
+        return CGSize(width: size.width * scale, height: size.height * scale)
+    }
 
     private var rows: AskWorkflowItemRows {
         AskWorkflowItemRows(folder: folder ?? FileManager.default.temporaryDirectory, name: name)
@@ -459,6 +488,10 @@ struct AskWorkflowLauncherPreview: View {
         }
         if output.display == .none {
             return []
+        }
+        if case .image = decoded {
+            return [("↩", L("ask.plugin.action.copyImage")), ("⌥↩", L("ask.plugin.action.reveal")),
+                    ("⌘R", L("ask.workflow.action.rerun")), ("⌘↩", L("ask.quick.askAI"))]
         }
         if case let .items(list) = decoded {
             // The chosen row's keys, as the launcher's bottom bar names them.

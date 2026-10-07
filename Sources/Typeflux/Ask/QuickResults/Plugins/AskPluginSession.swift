@@ -44,6 +44,8 @@ final class AskPluginSession: ObservableObject {
     private var pendingRun = false
     private var generation = 0
     private var task: Task<Void, Never>?
+    /// The keywords that led here with `runKeyword`, and the text the last one put in.
+    private var chained: (keywords: [String], text: String)?
     /// How long a live plugin waits after the last keystroke.
     var debounce: Duration = .milliseconds(250)
 
@@ -106,6 +108,7 @@ final class AskPluginSession: ObservableObject {
 
     private func activate(_ found: AskKeyword) {
         overrides = [:]
+        chained = nil
         set(\.keyword, found)
         set(\.phase, .waiting)
     }
@@ -137,7 +140,7 @@ final class AskPluginSession: ObservableObject {
         let selected = selection?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
             ? selection?.trimmingCharacters(in: .whitespacesAndNewlines) : nil
         let options = keyword.options.merging(overrides) { $1 }
-        let next: AskPluginRequest?
+        var next: AskPluginRequest?
         if !trimmed.isEmpty {
             next = AskPluginRequest(text: trimmed, origin: .argument, keyword: keyword, options: options,
                                     interfaceLanguage: language, selection: selected)
@@ -150,6 +153,7 @@ final class AskPluginSession: ObservableObject {
         } else {
             next = nil
         }
+        next?.chain = chain(for: trimmed)
         guard next != request else { return }
         request = next
         if let output { set(\.previous, output) }
@@ -325,5 +329,29 @@ final class AskPluginSession: ObservableObject {
 
     private func set<Value: Equatable>(_ path: ReferenceWritableKeyPath<AskPluginSession, Value>, _ value: Value) {
         if self[keyPath: path] != value { self[keyPath: path] = value }
+    }
+}
+
+// MARK: - runKeyword
+
+extension AskPluginSession {
+    /// A workflow's `runKeyword`: enters `found` with `text` after it and runs it at
+    /// once, remembering `chain` (the keywords so far) for the run's own actions.
+    func chain(to found: AskKeyword, text: String, chain: [String], selection: String?, language: AppLanguage) {
+        guard plugin(for: found) != nil else { return }
+        deactivate()
+        set(\.hint, nil)
+        activate(found)
+        chained = (chain, text.trimmingCharacters(in: .whitespacesAndNewlines))
+        update(text: text, selection: selection, language: language, runWhenPlanned: true)
+    }
+
+    /// The chain a request for `text` carries: the one `runKeyword` started while the
+    /// text is still what it put in; typing something else starts a chain of its own.
+    private func chain(for text: String) -> [String] {
+        if chained?.text != text {
+            chained = nil
+        }
+        return chained?.keywords ?? []
     }
 }

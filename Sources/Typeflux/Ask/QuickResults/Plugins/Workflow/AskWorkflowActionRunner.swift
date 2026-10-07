@@ -19,11 +19,14 @@ enum AskWorkflowEffect: Equatable, Sendable {
     case reveal(URL)
     case speak(String, language: String?)
     case askAI(String)
+    /// Puts `keyword argument` in the launcher and runs it. `chain` is every keyword in
+    /// this chain so far, this run's last, for the next run to carry on.
+    case runKeyword(String, argument: String, chain: [String])
 
     /// Affects another app or leaves the launcher: a test run asks before it does it.
     var needsConfirmationInTest: Bool {
         switch self {
-        case .writeBack, .open: true
+        case .writeBack, .open, .runKeyword: true
         default: false
         }
     }
@@ -47,6 +50,12 @@ struct AskWorkflowActionStep: Equatable, Sendable {
     var detail: String
     /// `{json.…}` placeholders that found nothing in this output.
     var missing: [String] = []
+    /// The script added it (`AskWorkflowScriptOutput`) rather than the manifest.
+    var fromScript = false
+    /// Listed but never run, and why: script actions the manifest does not allow.
+    var notRun: String?
+    /// A web host the workflow does not name anywhere: the user allows it first.
+    var confirmHost: String?
 
     var title: String {
         action.kind?.title ?? action.action
@@ -100,25 +109,63 @@ protocol AskWorkflowActionHost: AnyObject {
     func reveal(_ url: URL) -> Bool
     func speak(_ text: String, language: String?)
     func askAI(_ prompt: String)
+    /// False when there is no such keyword, or nowhere to run it.
+    func runKeyword(_ keyword: String, argument: String, chain: [String]) -> Bool
+    /// Whether this workflow may open `host`, which it does not name itself; asked once
+    /// and remembered per workflow. False when the user says no or cannot be asked.
+    func approve(host: String) async -> Bool
 }
 
 /// Fills in a workflow's actions and runs them in order. One that fails does not
 /// stop the ones after it. See `docs/design/workflow-gallery-output-actions.md` §3.3.
 enum AskWorkflowActionRunner {
-    /// Each action with its placeholders filled in, in the configured order.
+    /// Each action with its placeholders filled in, in the configured order. `chain`
+    /// is the keywords that led to this run, this run's last (`runKeyword` refuses loops).
     static func steps(for actions: [AskWorkflowAction], placeholders: AskWorkflowPlaceholders, folder: URL,
-                      name: String, home: String = NSHomeDirectory(),
+                      name: String, home: String = NSHomeDirectory(), chain: [String] = [],
                       fileManager: FileManager = .default) -> [AskWorkflowActionStep] {
         actions.prefix(AskWorkflowManifest.Output.maximumActions).map { action in
-            step(for: action, placeholders: placeholders, folder: folder, name: name, home: home,
+            step(for: action, placeholders: placeholders, folder: folder, name: name, home: home, chain: chain,
                  fileManager: fileManager)
         }
+    }
+
+    /// The actions a script printed, after the configured ones. Their values are used
+    /// as written (no placeholders). Without `allowed` they are only listed. A web link
+    /// to a host the workflow does not name is asked about before it opens.
+    static func scriptSteps(_ actions: [AskWorkflowAction], allowed: Bool, folder: URL, name: String,
+                            home: String = NSHomeDirectory(), chain: [String] = [],
+                            knownHosts: () -> Set<String>,
+                            fileManager: FileManager = .default) -> [AskWorkflowActionStep] {
+        var known: Set<String>?
+        return actions.prefix(AskWorkflowManifest.Output.maximumActions).map { action in
+            var step = step(for: action, placeholders: AskWorkflowPlaceholders(output: ""), folder: folder,
+                            name: name, home: home, chain: chain, expands: false, fileManager: fileManager)
+            step.fromScript = true
+            if !allowed {
+                step.notRun = L("ask.workflow.action.scriptNotAllowed")
+            } else if case let .open(.link(url)) = step.effect, let host = AskWorkflowScriptOutput.host(of: url) {
+                // Read the folder only when a link needs it, and once per run.
+                let names = known ?? knownHosts()
+                known = names
+                if !isKnown(host, in: names) {
+                    step.confirmHost = host
+                }
+            }
+            return step
+        }
+    }
+
+    /// `host` is one of `known`, or under one (`www.xe.com` under `xe.com`).
+    static func isKnown(_ host: String, in known: Set<String>) -> Bool {
+        known.contains { host == $0 || host.hasSuffix("." + $0) }
     }
 
     // One case per kind of action; splitting it would only scatter them.
     // swiftlint:disable:next cyclomatic_complexity
     static func step(for action: AskWorkflowAction, placeholders: AskWorkflowPlaceholders, folder: URL, name: String,
-                     home: String = NSHomeDirectory(), fileManager: FileManager = .default) -> AskWorkflowActionStep {
+                     home: String = NSHomeDirectory(), chain: [String] = [], expands: Bool = true,
+                     fileManager: FileManager = .default) -> AskWorkflowActionStep {
         var step = AskWorkflowActionStep(action: action, detail: "")
         guard let kind = action.kind else {
             step.problem = L("ask.workflow.problem.action.unknown", action.action)
@@ -126,6 +173,7 @@ enum AskWorkflowActionRunner {
         }
         func fill(_ field: AskWorkflowAction.Field, urlEncoded: Bool = false) -> String {
             let template = action[field] ?? ""
+            guard expands else { return template.trimmingCharacters(in: .whitespacesAndNewlines) }
             step.missing += placeholders.missingJSON(in: template)
             return placeholders.expand(template, urlEncoded: urlEncoded).trimmingCharacters(in: .whitespacesAndNewlines)
         }
@@ -159,8 +207,30 @@ enum AskWorkflowActionRunner {
             } else {
                 step.problem = L("ask.workflow.action.notFound", required)
             }
+        case .runKeyword:
+            let argument = fill(.argument)
+            step.detail = argument.isEmpty ? required : required + " " + argument
+            step.problem = chainProblem(required, chain: chain)
+            if step.problem == nil {
+                step.effect = .runKeyword(required, argument: argument, chain: chain)
+            }
         }
         return step
+    }
+
+    /// Why `keyword` cannot run after `chain`: not one word, already in the chain (a
+    /// loop), or one run too many.
+    static func chainProblem(_ keyword: String, chain: [String]) -> String? {
+        guard AskWorkflowAction.isKeyword(template: keyword), !keyword.hasPrefix("{") else {
+            return L("ask.workflow.problem.action.keyword")
+        }
+        if chain.contains(where: { $0.lowercased() == keyword.lowercased() }) {
+            return L("ask.workflow.action.loop", (chain + [keyword]).joined(separator: " → "))
+        }
+        if chain.count > AskWorkflowAction.maximumChain {
+            return L("ask.workflow.action.tooDeep", AskWorkflowAction.maximumChain)
+        }
+        return nil
     }
 
     /// An http(s) link, `app:` and a name or bundle id, or an existing file. Other
@@ -205,8 +275,9 @@ enum AskWorkflowActionRunner {
 
     /// Runs the steps in order. With `perform` false nothing runs and every step is
     /// listed as previewed. `confirm` makes it a test run: it is asked before a step
-    /// that needs it (writeBack, open), answering no skips that step only, and
-    /// `askAI` is not run.
+    /// that needs it (writeBack, open, runKeyword), answering no skips that step only,
+    /// and `askAI` is not run. Script actions that are not allowed are never run; a
+    /// link to a host the workflow does not name runs once the host approves it.
     @MainActor
     static func run(_ steps: [AskWorkflowActionStep], host: any AskWorkflowActionHost, perform: Bool = true,
                     confirm: ((AskWorkflowActionStep) async -> Bool)? = nil) async -> [AskWorkflowActionOutcome] {
@@ -221,6 +292,9 @@ enum AskWorkflowActionRunner {
     // swiftlint:disable:next cyclomatic_complexity
     private static func run(_ step: AskWorkflowActionStep, host: any AskWorkflowActionHost, perform: Bool,
                             confirm: ((AskWorkflowActionStep) async -> Bool)?) async -> AskWorkflowActionOutcome {
+        if let reason = step.notRun {
+            return AskWorkflowActionOutcome(step: step, status: .skipped(reason))
+        }
         guard let effect = step.effect else {
             return AskWorkflowActionOutcome(step: step, status: .failed(step.problem ?? ""))
         }
@@ -231,6 +305,11 @@ enum AskWorkflowActionRunner {
         }
         if effect.needsConfirmationInTest, let confirm, !(await confirm(step)) {
             return AskWorkflowActionOutcome(step: step, status: .skipped(L("ask.workflow.action.declined")))
+        }
+        // A test run's question above already covered the link; the launcher asks the host.
+        if confirm == nil, let unknown = step.confirmHost, !(await host.approve(host: unknown)) {
+            return AskWorkflowActionOutcome(step: step, status: .skipped(L("ask.workflow.action.hostDeclined",
+                                                                           unknown)))
         }
         switch effect {
         case let .copy(text): host.copy(text)
@@ -254,6 +333,11 @@ enum AskWorkflowActionRunner {
                     step: step,
                     status: .failed(L("ask.workflow.action.notFound", url.path))
                 )
+            }
+        case let .runKeyword(keyword, argument, chain):
+            guard host.runKeyword(keyword, argument: argument, chain: chain) else {
+                return AskWorkflowActionOutcome(step: step, status: .failed(L("ask.workflow.action.noKeyword",
+                                                                              keyword)))
             }
         }
         return AskWorkflowActionOutcome(step: step, status: .done)
@@ -281,6 +365,7 @@ enum AskWorkflowActionRunner {
         case .copy: return L("ask.workflow.action.done.copy", clipped(step.detail))
         // The note itself is what the bar shows.
         case .hud: return clipped(step.detail, limit: 60)
+        case .runKeyword: return L("ask.workflow.action.done.runKeyword", clipped(step.detail))
         default: return L("ask.workflow.action.done." + kind.rawValue)
         }
     }

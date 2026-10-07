@@ -49,6 +49,9 @@ extension AskWorkflowStore {
             if let baseline = settings.askWorkflowGalleryBaseline.removeValue(forKey: id) {
                 settings.askWorkflowGalleryBaseline[newID] = baseline
             }
+            if let hosts = settings.askWorkflowAllowedHosts.removeValue(forKey: id) {
+                settings.askWorkflowAllowedHosts[newID] = hosts
+            }
             if settings.askDisabledWorkflows.remove(id) != nil {
                 settings.askDisabledWorkflows.insert(newID)
             }

@@ -186,14 +186,25 @@ enum AskWorkflowDecodedOutput: Equatable, Sendable {
     case text(String, note: String?)
     case items(AskWorkflowItemList)
     case markdown(String)
+    /// What names the image (a path or a data URL); `AskWorkflowImage` reads it.
+    case image(String)
 
     /// `auto` lists `{"items": …}` and shows the rest as text; `items` says so when
-    /// the output is not a list. `{"text": …}` is a text card in both.
+    /// the output is not a list. `{"text": …}` is a text card in both. A script that
+    /// adds actions (`{"text": …, "actions": …}`) is shown as if it printed only `text`.
     static func decode(_ stdout: String, display: AskWorkflowManifest.Output.Display) -> AskWorkflowDecodedOutput {
-        let text = stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        let script = AskWorkflowScriptOutput.parse(stdout)
+        let text = script?.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        // A script that printed its text on purpose did not mean to print a list.
+        if script != nil, display == .items || display == .auto {
+            return .text(text, note: nil)
+        }
         switch display {
         case .markdown:
             return .markdown(text)
+        case .image:
+            return .image(text)
         case .items, .auto:
             if let list = AskWorkflowItemList.parse(text) {
                 return .items(list)
@@ -202,18 +213,19 @@ enum AskWorkflowDecodedOutput: Equatable, Sendable {
                 return .text(card, note: nil)
             }
             return .text(text, note: display == .items ? L("ask.workflow.items.invalid") : nil)
-        case .text, .none, .image:
+        case .text, .none:
             return .text(text, note: nil)
         }
     }
 
     /// While the script still prints: lists only make sense once complete, so they
-    /// are not shown growing (nor is anything that starts like one).
+    /// are not shown growing (nor is anything that starts like one, or that may be
+    /// `{"text": …, "actions": …}`); an image only once its path is complete.
     static func streams(_ partial: String, display: AskWorkflowManifest.Output.Display) -> Bool {
+        let object = partial.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{")
         switch display {
-        case .none, .items: false
-        case .auto: !partial.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{")
-        case .text, .markdown, .image: true
+        case .none, .items, .image: return false
+        case .auto, .text, .markdown: return !object
         }
     }
 }

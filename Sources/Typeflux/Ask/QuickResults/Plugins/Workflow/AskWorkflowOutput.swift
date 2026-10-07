@@ -20,13 +20,8 @@ extension AskWorkflowManifest {
             case items
             /// A Markdown card, drawn as Ask draws answers.
             case markdown
-            /// An image path or data URL (O4).
+            /// An image card: stdout is an image file's path or a `data:image/…;base64,` URL.
             case image
-
-            /// Shown by this version of the launcher.
-            var isSupported: Bool {
-                self != .image
-            }
         }
 
         /// The most actions one list may have.
@@ -37,7 +32,8 @@ extension AskWorkflowManifest {
         var onFailure: [AskWorkflowAction] = []
         /// Close the launcher once the actions ran. A workflow that shows nothing always closes.
         var close = false
-        /// Let the script add actions at run time (O4); kept, not yet used.
+        /// Let the script add actions at run time by printing `{"text": …, "actions": […]}`
+        /// (`AskWorkflowScriptOutput`). Off: they are listed in the test panel, never run.
         var scriptActions = false
 
         init(display: Display = .auto, onSuccess: [AskWorkflowAction] = [], onFailure: [AskWorkflowAction] = [],
@@ -110,9 +106,6 @@ extension AskWorkflowManifest {
         /// row: `output.onSuccess[1]`.
         func problems(folder: URL) -> [Problem] {
             var problems: [Problem] = []
-            if !display.isSupported {
-                problems.append(Problem(field: "output", message: L("ask.workflow.problem.display", display.rawValue)))
-            }
             for (list, actions) in [("onSuccess", onSuccess), ("onFailure", onFailure)] {
                 if actions.count > Self.maximumActions {
                     problems.append(Problem(field: "output." + list,

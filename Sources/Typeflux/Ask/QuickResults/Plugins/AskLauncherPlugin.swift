@@ -52,6 +52,9 @@ struct AskPluginRequest: Equatable, Sendable {
     /// The captured selection, whichever text the request works on. Plugins only
     /// hand it on after Return, as they do the selection itself.
     var selection: String?
+    /// The keywords whose workflows started this run with `runKeyword`, first one
+    /// first; empty when the user started it. Stops loops and deep chains.
+    var chain: [String] = []
 
     /// Lines of selected text, for "translate the 2 selected lines".
     var lines: Int { text.split(separator: "\n", omittingEmptySubsequences: true).count }
@@ -104,6 +107,8 @@ struct AskPluginAction: Equatable, Sendable {
         case openIn(URL, application: String)
         /// Shows a file in Finder.
         case reveal(URL)
+        /// Puts an image file on the clipboard, as an image.
+        case copyImage(URL)
         /// Puts this text after the keyword and runs again: ⇥ on an item, or its `run` action.
         case runWith(String)
         /// Opens a workflow in the workflow editor, at a line of a file when known.
@@ -145,6 +150,13 @@ struct AskPluginItem: Equatable, Sendable, Identifiable {
     var actions: [AskPluginAction] = []
 }
 
+/// An image to show as a result: a file on this Mac and its size in points.
+struct AskPluginImage: Equatable, Sendable {
+    var url: URL
+    var width: Double
+    var height: Double
+}
+
 /// A plugin's result, shown as a text card. Plugins that only act (open a search)
 /// put their actions on the plan instead and never produce one.
 struct AskPluginOutput: Equatable, Sendable {
@@ -165,6 +177,8 @@ struct AskPluginOutput: Equatable, Sendable {
     var followUp: AskWorkflowFollowUp?
     /// `body` is Markdown, drawn as Ask draws answers.
     var markdown = false
+    /// An image shown in place of `body`, which then holds what the script printed (its path).
+    var image: AskPluginImage?
     /// A list to choose from instead of text; `body` then holds the titles.
     var items: [AskPluginItem] = []
     /// The chosen row; the arrows move it.

@@ -44,6 +44,19 @@ final class RecordingActionHost: AskWorkflowActionHost {
     func askAI(_ prompt: String) {
         calls.append("askAI:" + prompt)
     }
+
+    var keywords: Set<String> = ["tr", "fx"]
+    var allowedHosts: Set<String> = []
+
+    func runKeyword(_ keyword: String, argument: String, chain: [String]) -> Bool {
+        calls.append("runKeyword:\(keyword)|\(argument)|\(chain.joined(separator: ">"))")
+        return keywords.contains(keyword)
+    }
+
+    func approve(host: String) async -> Bool {
+        calls.append("approve:" + host)
+        return allowedHosts.contains(host)
+    }
 }
 
 @Suite("Ask workflow output")
@@ -83,8 +96,11 @@ struct AskWorkflowOutputTests {
     }
 
     @Test func unknownActionsStillDecode() throws {
-        let output = try decode(#"{"onSuccess": [{"action": "runKeyword", "keyword": "tr"}]}"#)
-        #expect(output.onSuccess.first?.action == "runKeyword" && output.onSuccess.first?.kind == nil)
+        let output = try decode(#"{"onSuccess": [{"action": "teleport", "keyword": "tr"}]}"#)
+        #expect(output.onSuccess.first?.action == "teleport" && output.onSuccess.first?.kind == nil)
+        let run = try decode(#"{"onSuccess": [{"action": "runKeyword", "keyword": "tr", "argument": "{output}"}]}"#)
+        #expect(run.onSuccess.first == AskWorkflowAction(action: "runKeyword", keyword: "tr", argument: "{output}"))
+        #expect(run.onSuccess.first?.kind == .runKeyword)
     }
 
     @Test func aPlainOutputIsWrittenInTheShortForm() throws {
@@ -119,9 +135,7 @@ struct AskWorkflowOutputTests {
         }
         #expect(fields(.init(display: .text)).isEmpty && fields(.init(display: .none)).isEmpty)
         #expect(fields(.init(display: .items)).isEmpty && fields(.init(display: .markdown)).isEmpty)
-        #expect(fields(.init(display: .image)) == ["output"])
-        #expect(AskWorkflowManifest.Output(display: .image).problems(folder: folder).first?.message
-            == L("ask.workflow.problem.display", "image"))
+        #expect(fields(.init(display: .image)).isEmpty, "images are shown since O4")
         let copy = AskWorkflowAction(action: "copy", value: "{output}")
         #expect(fields(.init(onSuccess: Array(repeating: copy, count: 9))) == ["output.onSuccess"])
         #expect(fields(.init(onSuccess: Array(repeating: copy, count: 8))).isEmpty)

@@ -97,7 +97,8 @@ extension AskConversationModel {
     }
 
     /// Carries out a result's action.
-    // swiftlint:disable:next cyclomatic_complexity
+    // One case per kind of action; splitting it would only scatter them.
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     func performPluginAction(_ action: AskPluginAction) -> PluginActionOutcome {
         switch action.kind {
         case let .copy(text):
@@ -136,6 +137,10 @@ extension AskConversationModel {
             finishPluginResult()
             revealFile(url)
             return .close
+        case let .copyImage(url):
+            guard AskQuickResults.copyImage(url) else { confirm(L("ask.workflow.image.copyFailed")); return .stay }
+            finishPluginResult()
+            return .close
         case let .runWith(text):
             launcherDraft.text = text
             plugins.rerun(with: [:], selection: launcherDraft.sentSelection, text: text,
@@ -150,6 +155,17 @@ extension AskConversationModel {
             fixWorkflow(id, query, error)
             return .close
         }
+    }
+
+    /// A workflow's `runKeyword`: puts `keyword argument` in the launcher and runs it,
+    /// as if typed. False when no enabled keyword is called that.
+    func runLauncherKeyword(_ keyword: String, argument: String, chain: [String]) -> Bool {
+        guard let found = plugins.availableKeywords.first(where: { $0.enabled && $0.id == keyword.lowercased() })
+        else { return false }
+        launcherDraft.text = argument
+        plugins.chain(to: found, text: argument, chain: chain, selection: launcherDraft.sentSelection,
+                      language: AppLocalization.shared.language)
+        return true
     }
 
     /// ⌘C: copies and keeps the launcher open, saying so in the bottom bar.
@@ -170,6 +186,7 @@ extension AskConversationModel {
 
     /// The result was used: the next launch starts empty, out of keyword mode.
     func finishPluginResult() {
+        answerWorkflowApproval(false)
         plugins.deactivate()
         finishQuickResult()
     }
@@ -177,6 +194,7 @@ extension AskConversationModel {
     /// Closing the launcher in keyword mode puts the keyword back in front of
     /// its text, so the saved draft opens in the same mode next time.
     func foldLauncherKeyword() {
+        answerWorkflowApproval(false)
         guard plugins.isActive else { return }
         if let text = plugins.deactivate(argument: launcherDraft.text) { launcherDraft.text = text }
     }

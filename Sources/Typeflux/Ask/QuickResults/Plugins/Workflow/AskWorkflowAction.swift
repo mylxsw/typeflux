@@ -7,7 +7,7 @@ import Foundation
 /// See `docs/design/workflow-gallery-output-actions.md` §3.3.
 struct AskWorkflowAction: Codable, Equatable, Sendable {
     enum Kind: String, CaseIterable, Sendable {
-        case copy, writeBack, notify, hud, open, reveal, speak, askAI
+        case copy, writeBack, notify, hud, open, reveal, speak, askAI, runKeyword
 
         /// The fields the action takes, in the order the editor shows them.
         var fields: [Field] {
@@ -19,6 +19,7 @@ struct AskWorkflowAction: Codable, Equatable, Sendable {
             case .reveal: [.path]
             case .speak: [.text, .language]
             case .askAI: [.prompt]
+            case .runKeyword: [.keyword, .argument]
             }
         }
 
@@ -31,6 +32,7 @@ struct AskWorkflowAction: Codable, Equatable, Sendable {
             case .open: .target
             case .reveal: .path
             case .askAI: .prompt
+            case .runKeyword: .keyword
             }
         }
 
@@ -48,11 +50,13 @@ struct AskWorkflowAction: Codable, Equatable, Sendable {
             case .reveal: "folder"
             case .speak: "speaker.wave.2"
             case .askAI: "sparkles"
+            case .runKeyword: "arrow.right.to.line"
             }
         }
 
         /// The groups of the "Add action" menu: common, open, more.
-        static let groups: [[Kind]] = [[.copy, .writeBack, .notify, .hud], [.open, .reveal], [.speak, .askAI]]
+        static let groups: [[Kind]] = [[.copy, .writeBack, .notify, .hud], [.open, .reveal],
+                                       [.speak, .askAI, .runKeyword]]
 
         /// What a new action of this kind starts with.
         var template: AskWorkflowAction {
@@ -64,13 +68,14 @@ struct AskWorkflowAction: Codable, Equatable, Sendable {
             case .open: action.target = "https://"
             case .reveal: action.path = "{output}"
             case .askAI: action.prompt = "{output}"
+            case .runKeyword: action.keyword = ""; action.argument = "{output}"
             }
             return action
         }
     }
 
     enum Field: String, CaseIterable, Sendable {
-        case value, title, body, text, target, path, language, prompt
+        case value, title, body, text, target, path, language, prompt, keyword, argument
 
         var title: String {
             L("ask.workflow.action.field." + rawValue)
@@ -86,9 +91,17 @@ struct AskWorkflowAction: Codable, Equatable, Sendable {
     var path: String?
     var language: String?
     var prompt: String?
+    /// `runKeyword`: the launcher keyword to run, and what follows it.
+    var keyword: String?
+    var argument: String?
+
+    /// How many times one run may start another with `runKeyword`, one after the other
+    /// (`a` → `b` → `c` → `d`). Deeper, or back to a keyword already in the chain, is refused.
+    static let maximumChain = 3
 
     init(action: String, value: String? = nil, title: String? = nil, body: String? = nil, text: String? = nil,
-         target: String? = nil, path: String? = nil, language: String? = nil, prompt: String? = nil) {
+         target: String? = nil, path: String? = nil, language: String? = nil, prompt: String? = nil,
+         keyword: String? = nil, argument: String? = nil) {
         self.action = action
         self.value = value
         self.title = title
@@ -98,6 +111,8 @@ struct AskWorkflowAction: Codable, Equatable, Sendable {
         self.path = path
         self.language = language
         self.prompt = prompt
+        self.keyword = keyword
+        self.argument = argument
     }
 
     var kind: Kind? {
@@ -115,6 +130,8 @@ struct AskWorkflowAction: Codable, Equatable, Sendable {
             case .path: path
             case .language: language
             case .prompt: prompt
+            case .keyword: keyword
+            case .argument: argument
             }
         }
         set {
@@ -127,6 +144,8 @@ struct AskWorkflowAction: Codable, Equatable, Sendable {
             case .path: path = newValue
             case .language: language = newValue
             case .prompt: prompt = newValue
+            case .keyword: keyword = newValue
+            case .argument: argument = newValue
             }
         }
     }
@@ -165,6 +184,10 @@ struct AskWorkflowAction: Codable, Equatable, Sendable {
                 .isRevealable(template: path ?? "", folder: folder) {
                 return L("ask.workflow.problem.action.reveal")
             }
+        case .runKeyword:
+            if !Self.isKeyword(template: keyword ?? "") {
+                return L("ask.workflow.problem.action.keyword")
+            }
         default:
             break
         }
@@ -189,6 +212,15 @@ struct AskWorkflowAction: Codable, Equatable, Sendable {
             return true
         }
         return AskWorkflowManifest.scriptURL(fixed, in: folder) != nil
+    }
+
+    /// A `runKeyword` keyword: one word, as the launcher matches it, or one a placeholder fills in.
+    static func isKeyword(template: String) -> Bool {
+        let word = template.trimmingCharacters(in: .whitespaces)
+        if word.hasPrefix("{") {
+            return true
+        }
+        return !word.isEmpty && !word.contains { $0.isWhitespace || AskKeywordMatcher.separators.contains($0) }
     }
 
     /// The lower-cased scheme of `text` ("https" in "https://…", "app" in "app:Notes"); nil without one.

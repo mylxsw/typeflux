@@ -1,6 +1,6 @@
 # 工作流：示例库、每个关键字的入口、输出与动作
 
-> 状态：O1（GUL-230）、O2（GUL-231）已实现，见第 6、7 节。
+> 状态：O1（GUL-230）、O2（GUL-231）、O3（GUL-232）、O4（GUL-233）已实现，见第 6–9 节。
 > 可交互设计稿：`docs/design/workflow-gallery-output-actions.html`（`?solo=<id>` 单独看一屏，`?light=1` 浅色），截图在 `docs/design/workflow-gallery-output-actions/`。
 > 基于已经上线的工作流 W1（`ask-launcher-workflows.md`）和编辑器（`ask-workflow-editor.md`、`launcher-keywords-workflow-editor.md`）。
 
@@ -366,3 +366,57 @@ stdout 是下面这样的 JSON 时，启动器把 `text` 当作显示内容，�
 对照时发现并修了：选中行写「↩ 用 Visual Studio Code 打开」这类长动作名时，行被撑宽、溢出示例库对话框（改为标题优先，动作名截断）；预览下面的按键提示放不下时整行溢出（改为放不下就少显示几个）。
 
 和设计稿的差异：设计稿 ⑦ 里列表的按键提示只有「↩ 复制」，实现里按选中行列出 ↩ / ⌥↩ / ⌘C / ⌘↩。
+
+## 9. O4 实现说明（GUL-233）
+
+**已实现**：3.2 里的 `image`；3.3 里的 `runKeyword`；3.6 脚本追加动作和新地址确认；3.7 里脚本追加动作在测试面板的显示。至此显示方式全部可选，「即将支持」标签和对应的校验问题已删除。
+
+| 部分 | 代码 |
+|---|---|
+| 解析 `{"text": …, "actions": […]}`、读出工作流已经写到的网址 | `AskWorkflowScriptOutput.swift` |
+| 脚本追加的步骤（不展开占位符、未允许时只列出、新地址要确认）、`runKeyword` 的填值和环 / 深度检查 | `AskWorkflowActionRunner`（`scriptSteps`、`chainProblem`） |
+| 图片：路径或 data URL → 图片文件和尺寸 | `AskWorkflowImage.swift` |
+| 运行后带上脚本动作、图片卡片、关键字链 | `AskWorkflowPlugin.finish` / `followUp` / `imageOutput` |
+| 关键字链跟着请求走，改了输入就清空 | `AskPluginRequest.chain`、`AskPluginSession.chain(to:…)` |
+| 启动器里运行另一个关键字、确认新地址、记住确认结果 | `AskConversationModel.runLauncherKeyword`、`AskWorkflowLauncherActionHost.runKeyword` / `approve`、`AskWorkflowApprovalView`、设置项 `ask.workflows.allowedHosts` |
+| 图片卡片、复制图片 | `AskPluginViews.imageCard` / `imageSize`、`AskQuickResults.copyImage` |
+| 编辑器：添加菜单、预览图片、测试面板「脚本追加」 | `AskWorkflowAction.Kind.runKeyword`、`AskWorkflowLauncherPreview.imageView`、`AskWorkflowTester`、`AskWorkflowTestActions` |
+
+**脚本追加动作**：
+
+- 只认「只有 `actions` 数组，最多再加一个字符串 `text`」的对象。其他 JSON（例如格式化出来的文档里正好有 `actions` 键、条目列表）原样显示，不会被吞掉。
+- 显示的是 `text`；`{output}` 也是 `text`，`{json.…}` 读整个 stdout。打印中的输出以 `{` 开头时不逐行显示，避免先闪出一段 JSON。
+- 追加动作排在配置的动作后面，最多 8 个，多的丢掉。不认识的动作照样列出，标「这个版本不支持」。脚本写的值原样使用，不展开占位符。
+- 没打开「允许脚本追加动作」：启动器和测试面板都列出来，标「未执行：未允许脚本追加」，预览模式也一样。
+- 打开后，追加的 `open` 是网页链接、而域名（含子域名）不在清单的动作、脚本文件、`command.inline` 里时，第一次执行前在启动器底栏问「汇率换算想打开 www.xe.com，允许吗？」，↩ 允许、esc 不允许。允许按「工作流 id + 域名」记在设置里，工作流改 id 时跟着迁移、删除时清掉；不允许不记，下次还会问。启动器已经关闭（前面有写回 / 打开）或已经交给别的关键字时没法问，按不允许处理。离开结果或开始下一次运行时，没回答的问题按不允许处理。
+- 信任面板多一行「脚本运行时可以追加动作」。写回不额外确认：清单打开这个开关时已经在信任面板里说明。
+
+**运行另一个关键字**：
+
+- 字段是 `keyword` 和 `argument`（设计稿 ⑤ 里写在一个字段，改成两个字段，和 3.3 的表一致）。关键字可以用占位符，替换后必须是一个词。
+- 执行时把参数填进输入框、进入那个关键字并立即运行，和用户自己输入一样；能运行任何启用的关键字（包括内置的翻译等）。
+- 「最多串 3 层」：一次运行最多再由 `runKeyword` 接力 3 次（`a → b → c → d`），第 4 次标「最多连续运行 3 个关键字」；回到链里已有的关键字（不分大小写）标「会形成循环（a → b → a）」。链跟着请求走，用户改了输入就重新开始。
+- 交给别的关键字之后，这次运行的「执行完关闭启动器」不再生效，底栏显示新结果的动作汇总。
+- 测试面板：执行前确认（和写回、打开一样），然后打开启动器并填好「关键字 参数」，按 ↩ 运行；测试面板里没有启动器会话可以接力。
+
+**图片**：
+
+- stdout 第一行是路径（相对工作流文件夹、`~`、绝对路径或 `file://`），或者整段是 `data:image/…;base64,…`（最大 20 MB）。data URL 解出来存到工作流缓存目录 `images/<哈希>.png`，同样的图片只存一份，所以也能在 Finder 中显示。
+- 卡片里按原尺寸显示，放不下时等比缩小到卡片宽度和 240pt 高，不放大；144 dpi 的图按一半显示。同一路径的文件被重写时会重新读取。
+- ↩ 复制图片（同一个剪切板条目里有 PNG、TIFF 和文件），⌥↩ 在 Finder 中显示，⌘R 重新运行。路径不存在或不是图片时按文本卡片显示并说明原因。
+
+### 逐屏对照
+
+截图由 `WorkflowScriptActionsVisualTests` 用真实视图渲染（`TYPEFLUX_ASK_SNAPSHOTS=<目录> swift test --filter WorkflowScriptActionsVisualTests`）。
+
+| 设计稿 | 实现 | 对照结果 |
+|---|---|---|
+| ⑧ `ed-test.png`（脚本追加那一行） | `implemented-ed-test-script(-light).png`、`implemented-ed-test-script-allowed.png` | 一致：配置的动作之后是脚本追加的「打开」，带橙色「脚本追加」标签；没打开开关时标「未执行：未允许脚本追加」，打开后和其他动作一样标「预览」。分段标题「动作 3」把脚本的也算上。 |
+| ⑤ `ed-add.png` | `implemented-ed-add-o4(-light).png` | 一致：「更多」组里多了「运行另一个关键字」，写出「关键字、输入」两个字段。 |
+| ④ `ed-output.png`（动作行） | `implemented-ed-runkeyword(-light).png` | 「运行另一个关键字」一行：关键字 `tr`、输入 `{output}`；右侧「这次运行成功后会执行」写出 `tr 100 USD = …`，下面是「脚本追加的动作（如果有）」。 |
+| ④ 显示方式「图片」 | `implemented-ed-image(-light).png`、`implemented-ed-image-sample.png` | 「图片」可选，不再标「之后」；预览显示上次测试运行的图片和 ↩ 复制图片 / ⌥↩ 在 Finder 中显示；没运行过时用二维码图标示意。 |
+| — | `implemented-launcher-image(-light).png` | 启动器里的图片卡片：二维码按原尺寸居中，按钮是复制图片、在 Finder 中显示、重新运行。 |
+| — | `implemented-launcher-approval(-light).png` | 启动器底栏的确认：「汇率换算想打开 www.xe.com，允许吗？」，「不允许 esc」「允许 ↩」。 |
+
+和设计稿的差异：`runKeyword` 拆成两个字段（见上）；确认放在启动器底栏而不是弹窗，避免抢走焦点、关掉启动器。
+

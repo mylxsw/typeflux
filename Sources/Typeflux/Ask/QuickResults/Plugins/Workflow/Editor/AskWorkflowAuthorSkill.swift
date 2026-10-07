@@ -65,12 +65,18 @@ enum AskWorkflowAuthorSkill {
     Return does `action` with `arg` (default: open links and paths, copy the rest), Option-Return pastes \
     unless mods.alt says otherwise, Tab runs again with `autocomplete`, `run` runs again with `arg`, \
     `variables` come back as options. "auto" lists {"items": …} and shows anything else as text. \
+    "image" shows an image: print its path (relative to the folder, absolute or under ~) or a \
+    data:image/png;base64,… URL; Return copies the image, Option-Return shows it in Finder. \
     Live mode is not available yet. \
     To act after a run, use the object form: {"display": "text", "onSuccess": [...], "onFailure": [...], \
     "close": false}. Actions, at most 8 per list, run in order: {"action": "copy", "value": …}, \
     {"action": "writeBack", "value": …}, {"action": "notify", "title": …, "body": …}, \
     {"action": "hud", "text": …}, {"action": "open", "target": "https://…" | "app:Notes" | "path"}, \
-    {"action": "reveal", "path": …}, {"action": "speak", "text": …}, {"action": "askAI", "prompt": …}. \
+    {"action": "reveal", "path": …}, {"action": "speak", "text": …}, {"action": "askAI", "prompt": …}, \
+    {"action": "runKeyword", "keyword": "tr", "argument": "{output}"} (runs another launcher keyword; at \
+    most 3 in a row, never back to one already in the chain). With "scriptActions": true the script may \
+    print {"text": …, "actions": [...]} to show `text` and add actions after these (a web link to a host \
+    the workflow does not name is asked about first). \
     Fields may use {output}, {output.line1}, {output.lastLine}, {json.a.b} (stdout as JSON), {query}, \
     {selection}, {keyword}, {option:NAME}, and {error} in onFailure only. Prefer these to calling \
     pbcopy or osascript from the script.
