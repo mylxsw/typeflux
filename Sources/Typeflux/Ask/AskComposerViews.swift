@@ -190,7 +190,7 @@ struct AskComposer: View {
     /// that height while typing, so the panel does not shrink and grow with every
     /// keystroke as matches come and go; it resets when the results go away.
     @State private var quickReserve: CGFloat = 0
-    /// The highlighted result's actions, open after →.
+    /// The highlighted result's actions, open after → or a context click.
     @State private var quickActions: AskQuickActionPanel?
     /// Quick results show while the launcher's text is all there is to send:
     /// quotes, files or chosen tools mean the text is written for the AI.
@@ -313,6 +313,16 @@ struct AskComposer: View {
         return true
     }
 
+    /// Selects the clicked file by path, so a search update cannot redirect its actions.
+    private func showQuickFileActions(_ file: AskFileHit) {
+        guard showsQuickResults, !active, var results = quickResults,
+              let fileIndex = results.files.firstIndex(where: { $0.path == file.path }),
+              let rowIndex = results.rows.firstIndex(of: .file(fileIndex)) else { return }
+        results.highlight(rowIndex)
+        quickResults = results
+        _ = openQuickActions(results)
+    }
+
     /// The panel has the keys while it is open: arrows choose, Return runs, ← and esc close.
     private func quickActionsKey(_ key: AskCommandKey) -> Bool {
         guard var panel = quickActions else { return false }
@@ -406,7 +416,7 @@ struct AskComposer: View {
     /// a keyword became a chip (the editor now holds only its argument) or is active.
     private func refreshPlugins() -> Bool {
         let text = draft.wrappedValue.text
-        let hadHint = plugins.hint != nil
+        let previousHint = plugins.hint
         if let argument = plugins.detect(in: text) {
             pluginHighlight = 0
             pluginReserve = 0
@@ -419,8 +429,8 @@ struct AskComposer: View {
             reportHeight()
             return true
         }
-        // A keyword alone is offered, but Return still asks the AI.
-        if plugins.hint != nil, !hadHint, pluginHighlight != 1 { pluginHighlight = 1 }
+        // Chat opens on Return; other lone keywords keep the existing Ask AI default.
+        if plugins.hint != nil, plugins.hint != previousHint { pluginHighlight = plugins.hint?.pluginID == AskOpenChatPlugin.id ? 0 : 1 }
         return false
     }
 
@@ -436,6 +446,10 @@ struct AskComposer: View {
     /// Return on the plugin's row: run it (or do what its plan offers, like opening
     /// a search), or use its result.
     private func runPluginMain() {
+        if pluginDisplay?.hint?.pluginID == AskOpenChatPlugin.id || plugins.keyword?.pluginID == AskOpenChatPlugin.id {
+            openChat()
+            return
+        }
         if pluginDisplay?.hint != nil { _ = acceptPluginHint(); return }
         switch plugins.phase {
         case let .ready(plan):
@@ -475,7 +489,7 @@ struct AskComposer: View {
             switch key {
             case .up, .down: pluginHighlight = pluginHighlight == 0 ? 1 : 0
             case .tab: return acceptPluginHint()
-            case .enter: if pluginHighlight == 0 { return acceptPluginHint() } else { return false }
+            case .enter: if pluginHighlight == 0 { runPluginMain(); return true } else { return false }
             default: return false
             }
             return true
@@ -743,7 +757,7 @@ struct AskComposer: View {
                                     thumbnails: model.launcherSearchSettings.fileIcons == .thumbnails,
                                     onRun: runQuickResult,
                                     onHighlight: { index in self.quickResults?.highlight(index) },
-                                    onAction: runPanelAction)
+                                    onAction: runPanelAction, onShowFileActions: showQuickFileActions)
                     .disabled(active)
             }
             if launcher {
@@ -912,7 +926,23 @@ struct AskComposer: View {
         withAnimation(.easeOut(duration: 0.12)) { paletteOpen = false }
     }
 
+    private func openChat() {
+        Task { await model.openChatFromLauncher() }
+    }
+
     private func commandKey(_ key: AskCommandKey) -> Bool {
+        // Return can arrive before SwiftUI has refreshed the keyword hint.
+        if launcher, key == .enter, !plugins.isActive,
+           plugins.hint?.pluginID != AskOpenChatPlugin.id || pluginHighlight == 0 {
+            let match = AskKeywordMatcher.match(draft.wrappedValue.text, keywords: model.launcherKeywords)
+            switch match {
+            case let .hint(keyword) where keyword.pluginID == AskOpenChatPlugin.id,
+                 let .active(keyword, _) where keyword.pluginID == AskOpenChatPlugin.id:
+                openChat()
+                return true
+            default: break
+            }
+        }
         guard paletteOpen else { return approvalKey(key) || pluginKey(key) || quickResultsKey(key) }
         switch key {
         case .up: palette.move(-1)
@@ -1001,7 +1031,7 @@ struct AskComposer: View {
             if draft.wrappedValue.text.isEmpty {
                 Text(placeholder)
                     .font(.system(size: chrome.editorFontSize))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(StudioTheme.textSecondary)
                     // The launcher's single-row placeholder truncates rather than wraps.
                     .lineLimit(launcher ? 1 : nil)
                     .padding(.leading, AskComposerTextView.lineFragmentPadding)
@@ -1023,10 +1053,11 @@ struct AskComposer: View {
                 onSlashQuery: launcher ? nil : slashChanged,
                 onCommandKey: commandKey,
                 onEmptyBackspace: launcher ? { removeKeyword() || removeLastContext() } : nil,
+                onOpenChat: launcher ? openChat : nil,
                 onContextShortcut: launcher ? toggleContextPanel : nil
             )
             .frame(height: min(editorHeight, layout.editorMaximumHeight))
-            .disabled(!launcher && model.isLoadingSelection)
+            .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection))
         }
     }
 
@@ -1127,12 +1158,27 @@ struct AskComposer: View {
                 } else {
                     Text(launcherHint)
                         .font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(1)
                         .accessibilityHidden(true)
+                        // Passive hints share the empty bar's drag behavior.
+                        .overlay { if let windowDrag { AskWindowDragArea(handlers: windowDrag) } }
                 }
             }
             .layoutPriority(1)
+            Button(action: openChat) {
+                ViewThatFits(in: .horizontal) {
+                    Label(L("ask.openChat"), systemImage: "macwindow")
+                    Image(systemName: "macwindow")
+                }
+                .font(.system(size: 11))
+            }
+            .buttonStyle(.plain)
+            .padding(5)
+            .disabled(!model.canOpenChatFromLauncher)
+            .help(model.canOpenChatFromLauncher ? L("ask.openChat.hint") : L("ask.openChat.wait"))
+            .accessibilityLabel(L("ask.openChat"))
+            .accessibilityIdentifier("ask.launcher.openChat")
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: model.commandFeedback)
         .padding(.leading, chrome.footerLeadingInset)

@@ -3595,3 +3595,12 @@
 "ask.home.hint.context" = "⌘K 上下文";
 "ask.home.hint.close" = "esc 關閉";
 "ask.home.justNow" = "剛剛";
+
+// Launcher chat entry and preserved drafts.
+"ask.openChat" = "開啟聊天";
+"ask.openChat.hint" = "開啟聊天視窗 ⌘O";
+"ask.openChat.wait" = "請先完成錄音或等待附件載入完成";
+"ask.openChat.placeholder" = "可輸入正文，開啟後作為草稿";
+"ask.settings.keywords.kind.chat.hint" = "開啟聊天視窗，不傳送訊息";
+"ask.drafts.saved" = "暫存草稿";
+"ask.drafts.untitled" = "未命名草稿";

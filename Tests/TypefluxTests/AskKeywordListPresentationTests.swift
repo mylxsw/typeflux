@@ -13,6 +13,8 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordKind(pluginID: AskPromptPlugin.id) == .prompt)
         #expect(AskKeywordKind(pluginID: AskWebSearchPlugin.id) == .web)
         #expect(AskKeywordKind(pluginID: AskFileSearchPlugin.id) == .files)
+        #expect(AskKeywordKind(pluginID: AskOpenChatPlugin.id) == .chat)
+        #expect(AskKeywordKind.chat.pluginID == AskOpenChatPlugin.id)
         #expect(AskKeywordKind.files.pluginID == AskFileSearchPlugin.id)
         #expect(AskKeywordKind(pluginID: AskWorkflowPlugin.idPrefix + "local.x") == .workflow)
         #expect(AskKeywordKind(pluginID: "unknown") == nil)
@@ -45,13 +47,17 @@ struct AskKeywordListPresentationTests {
             "g",
             "bd",
             "gh",
-            "f"
+            "f",
+            "chat"
         ])
         #expect(rows.allSatisfy { $0.kind != .workflow })
         #expect(Set(rows.map(\.id)).count == rows.count)
-        #expect(rows.last?.summary == L("ask.settings.keywords.kind.files.hint"))
+        #expect(rows.first { $0.kind == .files }?.summary == L("ask.settings.keywords.kind.files.hint"))
+        #expect(rows.last?.source.pluginID == AskOpenChatPlugin.id)
+        #expect(rows.last?.summary == L("ask.settings.keywords.kind.chat.hint"))
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "wf").isEmpty)
-        #expect(AskKeywordListPresentation.counts(rows)[nil] == 13)
+        #expect(AskKeywordListPresentation.counts(rows)[nil] == 14)
+        #expect(AskKeywordListPresentation.filter(rows, kind: .chat, query: "chat").map(\.keyword) == ["chat"])
         #expect(!AskKeywordKind.editableKinds.contains(.workflow))
         #expect(self.rows([]).isEmpty)
     }
@@ -104,7 +110,8 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "summarize").map(\.keyword) == ["sum"])
         #expect(AskKeywordListPresentation.filter(rows, kind: .prompt, query: "google").isEmpty)
         let counts = AskKeywordListPresentation.counts(rows)
-        #expect(counts[nil] == 12 && counts[.translate] == 5 && counts[.files] == 1 && counts[.workflow] == nil)
+        #expect(counts[nil] == 13 && counts[.translate] == 5 && counts[.files] == 1 && counts[.workflow] == nil)
+        #expect(counts[.chat] == 1)
     }
 
     @MainActor

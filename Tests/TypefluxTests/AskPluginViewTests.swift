@@ -58,6 +58,20 @@ struct AskPluginViewTests {
         #expect(display(.waiting).output == nil && display(.waiting, highlighted: 1).asksAI)
     }
 
+    @Test func chatHintsAvoidRepeatingTheActionButStillExplainAskAI() {
+        let action = AskPluginAction(kind: .openChat, title: "Open chat", symbol: "macwindow", shortcut: .enter)
+        let chat = AskPluginPlan(mode: .onSubmit, title: "Open chat", actions: [action])
+        let hints: [AskKeyword?] = [AskOpenChatPlugin.keywords[0], nil]
+        for hint in hints {
+            #expect(AskPluginResultsView.hint(for: display(.ready(chat), hint: hint)).isEmpty)
+            #expect(AskPluginResultsView.hint(for: display(.ready(chat), hint: hint, highlighted: 1))
+                == L("ask.launcher.hint"))
+        }
+        #expect(AskPluginResultsView.rowHint(for: action) == "↩")
+        #expect(AskPluginResultsView.rowHint(for: nil) == "↩")
+        #expect(AskPluginResultsView.rowHint(for: output().action(for: .enter)) == "Copy  ↩")
+    }
+
     @Test func hintsFollowThePluginsKeysAndActions() throws {
         let url = try #require(URL(string: "https://example.com/?q=x"))
         let search = AskPluginPlan(mode: .onSubmit, title: "Search", actions: [

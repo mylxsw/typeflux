@@ -37,6 +37,7 @@ struct AskWordBookDictTests {
         #expect(output.items.map(\.id) == [AskTranslatePlugin.openAllItem, saved.key])
         #expect(output.items[0].actions.first?.kind == .openWordBook(key: nil))
         #expect(output.items[1].actions.first { $0.shortcut == .enter }?.kind == .openWordBook(key: saved.key))
+        #expect(output.items.allSatisfy { $0.actions.first { $0.shortcut == .enter }?.title == L("ask.plugin.action.open") })
         #expect(output.items[1].actions.contains { $0.shortcut == .commandS })
     }
 

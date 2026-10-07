@@ -43,11 +43,7 @@ struct ClipboardPanelRow: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.primary.opacity(isSelected ? 0.085 : (isHovered ? 0.04 : 0)))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Color.primary.opacity(isSelected ? 0.08 : 0), lineWidth: 0.5)
+                .fill(isSelected ? AskTheme.accentSoft : isHovered ? AskTheme.hoverFill : Color.clear)
         )
         .contentShape(Rectangle())
         .onTapGesture(count: 2) { model.perform(.paste, at: index) }
@@ -69,7 +65,7 @@ struct ClipboardPanelRow: View {
             }
         }
         .font(.system(size: 11.5))
-        .foregroundStyle(.tertiary)
+        .foregroundStyle(StudioTheme.textSecondary)
         .lineLimit(1)
     }
 
@@ -187,7 +183,7 @@ struct ClipboardThumbnailView: View {
 
     var body: some View {
         ZStack {
-            Color.primary.opacity(0.06)
+            AskTheme.raisedSurface
             if let image {
                 Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode)
             } else {

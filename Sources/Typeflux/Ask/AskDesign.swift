@@ -1228,37 +1228,37 @@ struct AskPopoverRow<Accessory: View>: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(hovering ? Color.white : AskTheme.accent)
+                    .foregroundStyle(AskTheme.accentText)
                     .frame(width: 14)
                     .opacity(selected ? 1 : 0)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
                         Text(title).font(.system(size: 13))
-                            .foregroundStyle(hovering ? Color.white : StudioTheme.textPrimary)
+                            .foregroundStyle(StudioTheme.textPrimary)
                             .lineLimit(1).truncationMode(.middle)
                         if let note {
                             Text(verbatim: "· " + note).font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(hovering ? Color.white.opacity(0.8) : StudioTheme.textTertiary)
+                                .foregroundStyle(StudioTheme.textSecondary)
                                 .lineLimit(1).fixedSize()
                         }
                     }
                     if let caption, !caption.isEmpty {
                         Text(caption).font(.system(size: 11))
-                            .foregroundStyle(hovering ? Color.white.opacity(0.8) : StudioTheme.textTertiary)
+                            .foregroundStyle(StudioTheme.textSecondary)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 Spacer(minLength: 8)
                 accessory()
-                    .foregroundStyle(hovering ? Color.white.opacity(0.85) : StudioTheme.textTertiary)
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
             .padding(.horizontal, 10)
             .frame(minHeight: 32)
             .padding(.vertical, 5)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // Menus highlight like the system's: the row under the pointer fills with the accent.
-            .background(hovering ? AskTheme.accent : Color.clear,
+            // A soft hover wash matches the launcher and keeps text colours stable.
+            .background(hovering ? AskTheme.accentSoft : Color.clear,
                         in: RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
         }

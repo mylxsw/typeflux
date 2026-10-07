@@ -182,7 +182,7 @@ struct AskLauncherSuggestions: View {
 
     private func header(_ title: String, subtitle: String?) -> some View {
         HStack(spacing: 6) {
-            Text(title).foregroundStyle(StudioTheme.textTertiary)
+            Text(title).foregroundStyle(StudioTheme.textSecondary)
             if let subtitle {
                 Text(subtitle).foregroundStyle(StudioTheme.textSecondary).lineLimit(1).truncationMode(.tail)
             }
@@ -229,19 +229,19 @@ struct AskLauncherSuggestions: View {
                     .layoutPriority(1)
                 if let detail = row.detail {
                     Text(detail).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
                 if let keyword = row.keyword { keywordLabel(keyword) }
                 if let date = row.date {
                     Text(Self.relative(date, now: now)).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(1)
                 }
                 if let number {
                     Text("⌘\(number)").font(.system(size: 10.5, design: .rounded))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                         .padding(.horizontal, 5)
                         .frame(height: 18)
                         .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.separator))
@@ -249,7 +249,7 @@ struct AskLauncherSuggestions: View {
             }
             .padding(.horizontal, Self.contentInset)
             .frame(height: Self.rowHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
+            .background(highlighted ? AskTheme.accentSoft : Color.clear,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .contentShape(Rectangle())
         }
@@ -278,7 +278,7 @@ struct AskLauncherSuggestions: View {
             .padding(.leading, 5)
             .padding(.trailing, 9)
             .frame(height: Self.chipHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
+            .background(highlighted ? AskTheme.accentSoft : Color.clear,
                         in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.separator))
             .contentShape(Rectangle())

@@ -164,7 +164,7 @@ struct AskLauncherPositionTests {
         func top(_ distance: CGFloat) -> CGFloat { content.isFlipped ? distance : size.height - distance }
         func bottom(_ distance: CGFloat) -> CGFloat { top(size.height - distance) }
         #expect(grabs(NSPoint(x: size.width / 2, y: top(gutter + 4))), "the top edge of the card")
-        #expect(grabs(NSPoint(x: size.width / 2 + 40, y: bottom(gutter + 21))), "the bottom bar between its tools and hint")
+        #expect(grabs(NSPoint(x: size.width / 2 + 40, y: bottom(gutter + 21))), "the bottom bar between its tools and hint: \(String(describing: hit(NSPoint(x: size.width / 2 + 40, y: bottom(gutter + 21)))))")
         #expect(!grabs(NSPoint(x: size.width / 2, y: top(gutter + 30))), "the editor row stays typeable")
         #expect(!grabs(NSPoint(x: 20, y: bottom(gutter + 21))), "the bar's own buttons still click")
     }

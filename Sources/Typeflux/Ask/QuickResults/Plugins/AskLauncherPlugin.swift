@@ -95,6 +95,7 @@ struct AskPluginPlan: Equatable, Sendable {
 /// Something done with a result. The same key means the same thing in every plugin.
 struct AskPluginAction: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
+        case openChat
         case copy(String)
         /// Writes into the app the launcher came from, over its selection when there is one.
         case writeBack(String)

@@ -60,7 +60,7 @@ struct AskKeywordChip: View {
     }
 }
 
-/// The results area in keyword mode: the plugin's row or result card, then "Ask AI".
+/// The results area in keyword mode: a plugin row, flat list or result card, then "Ask AI".
 struct AskPluginResultsView: View {
     @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
     var display: AskPluginDisplay
@@ -156,18 +156,17 @@ struct AskPluginResultsView: View {
         return min(maximumMarkdownHeight, max(22, ceil(layout.usedRect(for: container).height)))
     }
 
-    /// The card's height for a result: header, the text (and the original when
-    /// comparing), a note, and the actions.
+    /// The result's height: a flat list, or a card with header, text (and the
+    /// original when comparing), a note and actions.
     static func cardHeight(output: AskPluginOutput?, failure: AskPluginFailure?, comparing: Bool) -> CGFloat {
+        if let output, output.wordCard == nil, !output.items.isEmpty {
+            return itemsHeight(output.items.count) + (output.note != nil ? 12 + noteHeight : 0)
+        }
         var height = cardPadding.top + headerHeight + 8 + cardPadding.bottom
         if let output, let card = output.wordCard {
             height += AskWordCardView.height(card)
             if output.note != nil { height += 6 + noteHeight }
             height += 10 + actionsHeight
-        } else if let output, !output.items.isEmpty {
-            // A list has no button row: the bottom bar says what the keys do.
-            height += itemsHeight(output.items.count)
-            if output.note != nil { height += 6 + noteHeight }
         } else if let output, let image = output.image {
             height += imageSize(image).height
             if output.note != nil { height += 6 + noteHeight }
@@ -204,6 +203,10 @@ struct AskPluginResultsView: View {
 
     /// What Return and the other keys do now, for the bottom bar.
     static func hint(for display: AskPluginDisplay) -> String {
+        // The chat button already names this action in the bottom bar.
+        if display.hint?.pluginID == AskOpenChatPlugin.id {
+            return display.asksAI ? L("ask.launcher.hint") : ""
+        }
         if display.hint != nil { return L("ask.plugin.hint.keyword") }
         if display.asksAI { return L("ask.launcher.hint") }
         let option = display.optionName.map { L("ask.plugin.hint.option", $0) }
@@ -212,6 +215,7 @@ struct AskPluginResultsView: View {
         case .waiting: return L("ask.plugin.hint.waiting")
         case let .ready(plan):
             if let action = plan.action(for: .enter) {
+                if case .openChat = action.kind { return "" }
                 parts = [L("ask.plugin.hint.action", action.title),
                          plan.action(for: .commandC).map { L("ask.plugin.hint.copy", $0.title) },
                          option, L("ask.plugin.hint.askAI")]
@@ -238,7 +242,7 @@ struct AskPluginResultsView: View {
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
             VStack(spacing: Self.rowSpacing) {
-                section(display.hint != nil ? L("ask.plugin.section") : display.title)
+                section(Self.sectionTitle(for: display))
                 main
                     .onContinuousHover { phase in
                         if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(0) }
@@ -258,11 +262,26 @@ struct AskPluginResultsView: View {
     private func section(_ title: String) -> some View {
         Text(title)
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(StudioTheme.textTertiary)
+            .foregroundStyle(StudioTheme.textSecondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 10)
             .frame(height: Self.sectionHeight, alignment: .bottom)
             .accessibilityAddTraits(.isHeader)
+    }
+
+    /// Lists use their plan's heading once, without repeating the plugin and source.
+    static func sectionTitle(for display: AskPluginDisplay) -> String {
+        if display.hint != nil { return L("ask.plugin.section") }
+        switch display.phase {
+        case let .done(plan, output) where output.wordCard == nil && !output.items.isEmpty:
+            return plan.title
+        case let .running(plan):
+            if let output = display.partial ?? display.previous, output.wordCard == nil, !output.items.isEmpty {
+                return plan.title
+            }
+        default: break
+        }
+        return display.title
     }
 
     @ViewBuilder private var main: some View {
@@ -311,6 +330,11 @@ struct AskPluginResultsView: View {
         .fixedSize()
     }
 
+    static func rowHint(for action: AskPluginAction?) -> String {
+        if case .openChat? = action?.kind { return "↩" }
+        return action.map { $0.title + "  ↩" } ?? "↩"
+    }
+
     /// Waiting for input, or ready to run on Return.
     private func row(title: String, meta: [AskPluginMeta], enabled: Bool, action: AskPluginAction? = nil) -> some View {
         Button(action: onMain) {
@@ -322,7 +346,7 @@ struct AskPluginResultsView: View {
                 metaChips(meta)
                 Spacer(minLength: 8)
                 if enabled {
-                    Text(action.map { $0.title + "  ↩" } ?? "↩").font(.system(size: 11.5))
+                    Text(Self.rowHint(for: action)).font(.system(size: 11.5))
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
             }
@@ -352,7 +376,8 @@ struct AskPluginResultsView: View {
                 Text(hint.keyword).font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer(minLength: 8)
-                Text(L("ask.plugin.enter")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text(hint.pluginID == AskOpenChatPlugin.id ? "↩" : L("ask.plugin.enter"))
+                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             }
             .padding(.horizontal, 10)
             .frame(height: Self.askHeight)
@@ -362,13 +387,32 @@ struct AskPluginResultsView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(display.title)
-        .accessibilityHint(L("ask.plugin.enter"))
+        .accessibilityHint(hint.pluginID == AskOpenChatPlugin.id ? L("ask.plugin.hint.action", display.title) : L("ask.plugin.enter"))
         .accessibilityIdentifier("ask.plugin.hint")
     }
 
     /// A result, the previous one dimmed while the next runs, or what went wrong.
+    @ViewBuilder
     private func card(plan: AskPluginPlan, output: AskPluginOutput?, failure: AskPluginFailure?, running: Bool,
                       streaming: Bool = false) -> some View {
+        if let output, output.wordCard == nil, !output.items.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                itemList(output, dimmed: running)
+                if let note = output.note {
+                    Text(note).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: Self.noteHeight)
+                        .padding(.horizontal, 10).padding(.top, 12)
+                }
+            }
+        } else {
+            resultCard(plan: plan, output: output, failure: failure, running: running, streaming: streaming)
+        }
+    }
+
+    private func resultCard(plan: AskPluginPlan, output: AskPluginOutput?, failure: AskPluginFailure?, running: Bool,
+                            streaming: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
                 Text(plan.title).font(.system(size: 13, weight: .semibold))
@@ -479,7 +523,7 @@ struct AskPluginResultsView: View {
         }
     }
 
-    /// A workflow's rows: icon, title and subtitle; the chosen one says what Return does.
+    /// Result rows: icon, title and subtitle; the chosen one says what Return does.
     private func itemList(_ output: AskPluginOutput, dimmed: Bool) -> some View {
         ScrollViewReader { reader in
             ScrollView(.vertical) {

@@ -3588,3 +3588,12 @@
 "ask.home.hint.context" = "⌘K 컨텍스트";
 "ask.home.hint.close" = "esc 닫기";
 "ask.home.justNow" = "방금";
+
+// Launcher chat entry and preserved drafts.
+"ask.openChat" = "채팅 열기";
+"ask.openChat.hint" = "채팅 창 열기 ⌘O";
+"ask.openChat.wait" = "녹음 또는 첨부 파일 로딩이 끝날 때까지 기다려 주세요.";
+"ask.openChat.placeholder" = "입력한 내용을 초안으로 엽니다";
+"ask.settings.keywords.kind.chat.hint" = "메시지를 보내지 않고 채팅 창 열기";
+"ask.drafts.saved" = "저장된 초안";
+"ask.drafts.untitled" = "제목 없는 초안";

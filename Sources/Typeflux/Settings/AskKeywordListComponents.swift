@@ -8,6 +8,7 @@ extension AskKeywordKind {
         case .prompt: Color.purple
         case .web: StudioTheme.success
         case .files: Color.teal
+        case .chat: Color.blue
         case .workflow: Color.orange
         }
     }

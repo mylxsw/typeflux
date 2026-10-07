@@ -226,6 +226,7 @@ struct AskConversationView: View {
                     .frame(height: AskMetrics.headerCapsuleHeight)
                     .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             } else {
+                savedDraftMenu
                 composeButton
                 sidebarToggle
             }
@@ -276,12 +277,32 @@ struct AskConversationView: View {
                 titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
                     .keyboardShortcut("k", modifiers: .command)
             }
+            savedDraftMenu
             composeButton
         }
     }
 
-    /// The window's one "new chat" entry: a compose icon instead of a coloured
-    /// row competing with the history list.
+    @ViewBuilder
+    private var savedDraftMenu: some View {
+        if !model.savedChatDrafts.isEmpty {
+            Menu {
+                ForEach(model.savedChatDrafts) { saved in
+                    Button(saved.draft.title.isEmpty ? L("ask.drafts.untitled") : String(saved.draft.title.prefix(60))) {
+                        Task { await model.restoreChatDraft(saved) }
+                    }
+                }
+            } label: {
+                Image(systemName: "tray.full")
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .help(L("ask.drafts.saved"))
+            .accessibilityLabel(L("ask.drafts.saved"))
+            .disabled(model.isOpeningChat)
+        }
+    }
+
+    /// The window's one "new chat" entry.
     private var composeButton: some View {
         titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: "⌘N") { model.newConversation() }
             .keyboardShortcut("n", modifiers: .command)

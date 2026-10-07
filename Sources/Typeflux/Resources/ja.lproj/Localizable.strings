@@ -3588,3 +3588,12 @@
 "ask.home.hint.context" = "⌘K コンテキスト";
 "ask.home.hint.close" = "esc 閉じる";
 "ask.home.justNow" = "たった今";
+
+// Launcher chat entry and preserved drafts.
+"ask.openChat" = "チャットを開く";
+"ask.openChat.hint" = "チャットウインドウを開く ⌘O";
+"ask.openChat.wait" = "録音や添付ファイルの読み込みが終わるまでお待ちください。";
+"ask.openChat.placeholder" = "入力した内容を下書きとして開きます";
+"ask.settings.keywords.kind.chat.hint" = "メッセージを送信せずにチャットを開く";
+"ask.drafts.saved" = "保存した下書き";
+"ask.drafts.untitled" = "無題の下書き";
