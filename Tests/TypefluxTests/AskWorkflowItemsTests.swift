@@ -273,6 +273,27 @@ struct AskPluginListViewTests {
         #expect(AskPluginResultsView.itemsHeight(0) == AskPluginResultsView.itemHeight)
     }
 
+    @Test func `flat lists have one heading and reserve space for an empty state`() {
+        var shown = display(rows(1))
+        guard case let .done(plan, original) = shown.phase else { return }
+        #expect(AskPluginResultsView.sectionTitle(for: shown) == plan.title)
+        #expect(AskPluginResultsView.mainHeight(shown) == AskPluginResultsView.itemHeight)
+        var empty = original
+        empty.note = "No recent words"
+        shown.phase = .done(plan, empty)
+        let height = AskPluginResultsView.mainHeight(shown)
+        #expect(height >= AskPluginResultsView.itemHeight + AskPluginResultsView.noteHeight + 10)
+        shown.phase = .running(plan)
+        shown.previous = empty
+        #expect(AskPluginResultsView.mainHeight(shown) == height)
+        #expect(AskPluginResultsView.sectionTitle(for: shown) == plan.title)
+        shown.previous = nil
+        shown.partial = original
+        #expect(AskPluginResultsView.mainHeight(shown) == AskPluginResultsView.itemHeight)
+        shown.phase = .waiting
+        #expect(AskPluginResultsView.sectionTitle(for: shown) == shown.title)
+    }
+
     @Test func `the bottom bar names the chosen row's keys`() {
         let copy = AskPluginAction(kind: .copy("x"), title: "Copy", symbol: "doc", shortcut: .enter)
         let paste = AskPluginAction(

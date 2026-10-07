@@ -1593,7 +1593,7 @@
 "ask.context.panel.useApp" = "現在のアプリを使う（%@）";
 "ask.quick.app.open" = "開く";
 "ask.quick.app.system" = "システム";
-"ask.settings.quick.apps.title" = "ランチャーのアプリ検索";
+"ask.settings.quick.apps.title" = "アプリ検索";
 "ask.settings.quick.apps.subtitle" = "ランチャーにアプリ名の一部、頭文字、ピンインを入力して開きます。";
 "ask.quick.copy" = "コピー";
 "ask.quick.format.chineseAmount" = "中国語の大写金額";
@@ -1604,7 +1604,7 @@
 "ask.quick.error.divisionByZero" = "0 で割ることはできません";
 "ask.quick.error.domain" = "この値では定義されていません";
 "ask.quick.error.outOfRange" = "大きすぎて計算できません";
-"ask.settings.quick.calculator.title" = "ランチャーの計算機";
+"ask.settings.quick.calculator.title" = "計算機";
 "ask.settings.quick.calculator.subtitle" = "ランチャーに入力した数式の結果を、AI に送らずその場で表示します。";
 "ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
@@ -1696,7 +1696,7 @@
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
 "models.askDefault" = "Ask · Default model";
 "models.defaultHint" = "New chats start here. Switch models at any time in a conversation.";
-"models.configured" = "AVAILABLE · CONFIGURED";
+"models.configured" = "設定済み";
 "models.unconfigured" = "NOT CONFIGURED · UNAVAILABLE";
 "models.addEndpoint" = "Add custom provider";
 "models.connected" = "Connected";
@@ -2545,7 +2545,7 @@
 "ask.plugin.waiting" = "処理するテキストを入力";
 "ask.plugin.enter" = "スペースまたは ⇥ で使う";
 "ask.plugin.running" = "処理中…";
-"ask.workflow.section" = "ランチャーのワークフロー";
+"ask.workflow.section" = "ワークフロー";
 "ask.workflow.footnote" = "キーワードで自分のスクリプト（Python、Node、TypeScript、シェル、AppleScript、任意のプログラム）を実行します。あなたの権限で動くので、理解できるものだけを信頼してください。";
 "ask.workflow.empty" = "ワークフローはまだありません。テンプレートから作成できます。";
 "ask.workflow.new" = "新規ワークフロー";
@@ -2768,7 +2768,7 @@
 "ask.settings.keywords.save" = "保存";
 "ask.settings.keywords.restore" = "デフォルトのキーワードに戻す";
 "ask.command.group.plugins" = "プラグイン";
-"ask.settings.plugins.title" = "ランチャーのキーワード";
+"ask.settings.plugins.title" = "キーワード";
 "ask.settings.plugins.footnote" = "ランチャーの先頭にキーワードとスペースを入力します（例：「fy hello」）。後ろが空なら ↩ で選択中のテキストを処理します。";
 "ask.settings.plugins.translate.subtitle" = "デバイス上の翻訳を優先し、必要なら「設定 → モデル」のテキストモデルを使用";
 "ask.settings.plugins.translate.second" = "第2言語";
@@ -3082,7 +3082,7 @@
 "ask.settings.keywords.kind.prompt.hint" = "テキストモデルでプロンプトを実行";
 "ask.settings.keywords.kind.web.hint" = "ブラウザで検索結果を開く";
 "ask.settings.keywords.kind.workflow.hint" = "自分のスクリプトを実行";
-"ask.settings.keywords.listFootnote" = "行をクリックして編集します。キーワードはワークフローと名前空間を共有し、重複時は組み込みキーワードが優先されます。";
+"ask.settings.keywords.listFootnote" = "行をクリックして編集します。ワークフローのキーワードは「ワークフロー」で管理し、ここでも名前の重複を確認します。";
 "ask.settings.keywords.newWorkflow" = "新規ワークフロー…";
 "ask.settings.keywords.noMatch" = "「%@」に一致するキーワードはありません";
 "ask.settings.keywords.restoreTitle" = "デフォルトのキーワードに戻しますか？";
@@ -3488,9 +3488,9 @@
 "ask.plugin.files.source" = "この Mac のファイル名";
 "ask.plugin.files.separator" = "、";
 "ask.settings.keywords.kind.files.hint" = "名前でファイルとフォルダを探す";
-"ask.settings.quick.files.title" = "ランチャーのファイル検索";
+"ask.settings.quick.files.title" = "ファイル検索";
 "ask.settings.quick.files.subtitle" = "入力に名前が一致するファイルとフォルダを表示します。インデックスはこの Mac にだけ保存されます。";
-"launcher.pane.search" = "検索";
+"launcher.pane.search" = "組み込み検索";
 "launcher.search.subtitle" = "ランチャーがアプリとファイルを探す方法。ファイルのインデックスは名前だけを記録し、この Mac にのみ保存されます。";
 "launcher.search.tab.general" = "一般";
 "launcher.search.tab.apps" = "アプリ";
@@ -3609,3 +3609,7 @@
 "ask.mode.changed" = "権限モード：%@";
 "ask.mode.usage" = "使い方：/mode yolo、/mode strict、/mode standard";
 "ask.mode.serverUpgrade" = "ツール権限モードを使用するにはクラウドサービスを更新してください。";
+
+// Settings draft state and MCP row fields.
+"imagegen.unsaved" = "未保存";
+"agent.mcp.kv.key" = "キー";

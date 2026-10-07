@@ -326,7 +326,9 @@ struct AskHarnessUITests {
                 window.contentView = hosting
                 window.layoutIfNeeded()
                 window.displayIfNeeded()
-                #expect(hosting.fittingSize.height > 60)
+                // The code execution pane now contains only its header and switch.
+                let minimumHeight: CGFloat = tab == .codeExecution ? 40 : 60
+                #expect(hosting.fittingSize.height >= minimumHeight)
                 window.close()
             }
         }

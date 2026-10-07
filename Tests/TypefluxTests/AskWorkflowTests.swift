@@ -614,19 +614,21 @@ struct AskWorkflowSettingsTests {
         let one = try #require(fixture.store.workflow("one"))
         var summary = AskWorkflowSummary(one)
         #expect(summary.status == L("ask.workflow.status.untrusted") && summary.needsTrust && summary.level == .attention)
-        #expect(summary.subtitle == "Says hi" && summary.keywords == ["fy"] && summary.runtime == "zsh")
+        #expect(summary.description == "Says hi" && summary.keywords == ["fy"] && summary.runtime == "zsh")
         let conflicts = AskWorkflowStore.keywords(of: fixture.store.plugins { (nil, nil) }, excluding: AskTranslatePlugin.keywords)
             .conflicts
         summary = AskWorkflowSummary(one, conflicts: conflicts,
                                      lastRun: .init(workflowID: "one", keyword: "fy", date: Date(), duration: 1.25, exitCode: 2,
                                                     timedOut: false, stderr: ""))
-        #expect(summary.subtitle.contains(L("ask.workflow.conflicts", "fy")))
-        #expect(summary.subtitle.contains(L("ask.workflow.lastRun", 2, 1.25)))
+        #expect(summary.description == "Says hi")
+        #expect(summary.notices == [L("ask.workflow.conflicts", "fy")])
+        #expect(summary.lastRun == L("ask.workflow.lastRun", 2, 1.25))
         let timedOut = AskWorkflowSummary(one, lastRun: .init(workflowID: "one", keyword: "fy", date: Date(), duration: 30,
                                                               exitCode: 143, timedOut: true, stderr: ""))
-        #expect(timedOut.subtitle.contains(L("ask.workflow.lastRun.timedOut", 30.0)))
+        #expect(timedOut.lastRun == L("ask.workflow.lastRun.timedOut", 30.0))
         let broken = AskWorkflowSummary(try #require(fixture.store.workflow("broken")))
-        #expect(broken.status == L("ask.workflow.status.invalid") && broken.subtitle.hasPrefix("command.script: "))
+        #expect(broken.status == L("ask.workflow.status.invalid"))
+        #expect(broken.notices.first?.hasPrefix("command.script: ") == true)
         fixture.store.trust("one")
         #expect(AskWorkflowSummary(try #require(fixture.store.workflow("one"))).level == .ready)
         fixture.store.setEnabled("one", false)
@@ -634,6 +636,23 @@ struct AskWorkflowSettingsTests {
         try Data("x".utf8).write(to: one.folder.appendingPathComponent("new"))
         fixture.store.setEnabled("one", true)
         #expect(AskWorkflowSummary(try #require(fixture.store.workflow("one"))).status == L("ask.workflow.status.modified"))
+    }
+
+    @Test func invalidMetadataKeepsAFallbackTitleAndEveryProblem() throws {
+        let fixture = try AskWorkflowFixture()
+        try fixture.write("invalid-metadata", manifest: AskWorkflowFixture.inline("invalid-metadata", script: "echo", extra: [
+            "name": "", "description": "Description stays separate from diagnostics",
+            "keywords": [["keyword": "url"], ["keyword": "url"], ["keyword": "abcdefghijklm"]]
+        ]))
+        fixture.store.reload()
+        let workflow = try #require(fixture.store.workflow("invalid-metadata"))
+        guard case let .invalid(problems) = workflow.status else { Issue.record("Expected invalid metadata"); return }
+        let summary = AskWorkflowSummary(workflow)
+        #expect(summary.title == "invalid-metadata")
+        #expect(summary.keywords == ["url", "url", "abcdefghijklm"])
+        #expect(summary.notices == problems.map { "\($0.field): \($0.message)" })
+        #expect(summary.description == "Description stays separate from diagnostics")
+        #expect(problems.count >= 3, "errors beyond the first two stay visible")
     }
 
     @Test func theTrustSheetShowsTheCommandFilesAndCode() throws {

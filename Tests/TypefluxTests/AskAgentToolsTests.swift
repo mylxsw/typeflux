@@ -337,7 +337,9 @@ final class AskAgentToolsTests: XCTestCase {
             paneView.pane = pane
             let settingsHost = NSHostingView(rootView: paneView.frame(width: 600))
             settingsHost.layoutSubtreeIfNeeded()
-            XCTAssertGreaterThan(settingsHost.fittingSize.height, 60, "\(pane)")
+            // Code execution now consists of its 40-point header and switch.
+            let minimumHeight: CGFloat = pane == .codeExecution ? 40 : 60
+            XCTAssertGreaterThanOrEqual(settingsHost.fittingSize.height, minimumHeight, "\(pane)")
         }
         XCTAssertEqual(AgentSettingsPane.webSearch.title, L("agent.capability.webSearch.title"))
         XCTAssertEqual(AskToolsSettingsView.searchProviderName(.none), L("ask.settings.search.none"))

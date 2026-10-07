@@ -1603,7 +1603,7 @@
 "ask.context.panel.useApp" = "使用当前应用（%@）";
 "ask.quick.app.open" = "打开";
 "ask.quick.app.system" = "系统";
-"ask.settings.quick.apps.title" = "启动器应用搜索";
+"ask.settings.quick.apps.title" = "应用搜索";
 "ask.settings.quick.apps.subtitle" = "在启动器里输入应用名称、首字母或拼音即可打开应用。";
 "ask.quick.copy" = "复制";
 "ask.quick.format.chineseAmount" = "中文大写";
@@ -1614,7 +1614,7 @@
 "ask.quick.error.divisionByZero" = "除数不能为 0";
 "ask.quick.error.domain" = "超出定义域";
 "ask.quick.error.outOfRange" = "超出可计算范围";
-"ask.settings.quick.calculator.title" = "启动器计算器";
+"ask.settings.quick.calculator.title" = "计算器";
 "ask.settings.quick.calculator.subtitle" = "在启动器里输入算式时直接显示结果，不发送给 AI。";
 "ask.models.multiplierColumn" = "积分倍率";
 "ask.models.ownAPI" = "自有 API";
@@ -1706,7 +1706,7 @@
 "models.fixedRewrite" = "改写、翻译与指令 · 固定使用一个模型";
 "models.askDefault" = "随便问 · 默认模型";
 "models.defaultHint" = "新对话从此模型开始，对话里可随时切换。";
-"models.configured" = "可用 · 已配置";
+"models.configured" = "已配置";
 "models.unconfigured" = "未配置 · 暂不可用";
 "models.addEndpoint" = "添加自定义服务商";
 "models.connected" = "已连接";
@@ -2555,7 +2555,7 @@
 "ask.plugin.waiting" = "输入要处理的内容";
 "ask.plugin.enter" = "空格或 ⇥ 进入";
 "ask.plugin.running" = "处理中…";
-"ask.workflow.section" = "启动器工作流";
+"ask.workflow.section" = "工作流";
 "ask.workflow.footnote" = "用关键字触发你自己的脚本：Python、Node、TypeScript、Shell、AppleScript 或任何程序。它们以你的身份运行，只信任你了解的工作流。";
 "ask.workflow.empty" = "还没有工作流，可以从模板新建一个。";
 "ask.workflow.new" = "新建工作流";
@@ -2778,7 +2778,7 @@
 "ask.settings.keywords.save" = "保存";
 "ask.settings.keywords.restore" = "恢复默认关键字";
 "ask.command.group.plugins" = "插件";
-"ask.settings.plugins.title" = "启动器关键字";
+"ask.settings.plugins.title" = "关键字";
 "ask.settings.plugins.footnote" = "在启动器开头输入关键字和空格，例如「fy hello」。关键字后面没有内容时，按 ↩ 处理选中的文字。";
 "ask.settings.plugins.translate.subtitle" = "优先本机翻译；需要时用「设置 → 模型」里的文本处理模型";
 "ask.settings.plugins.translate.second" = "第二语言";
@@ -3092,7 +3092,7 @@
 "ask.settings.keywords.kind.prompt.hint" = "用文本处理模型执行一段提示词";
 "ask.settings.keywords.kind.web.hint" = "在浏览器里打开搜索结果";
 "ask.settings.keywords.kind.workflow.hint" = "运行你自己的脚本";
-"ask.settings.keywords.listFootnote" = "点一行编辑。关键字和工作流共用一个命名空间，重名时内置关键字优先。";
+"ask.settings.keywords.listFootnote" = "点一行编辑。工作流关键字在“工作流”中管理，保存时仍检查重名。";
 "ask.settings.keywords.newWorkflow" = "新建工作流…";
 "ask.settings.keywords.noMatch" = "没有匹配「%@」的关键字";
 "ask.settings.keywords.restoreTitle" = "恢复默认关键字？";
@@ -3498,9 +3498,9 @@
 "ask.plugin.files.source" = "本机文件名";
 "ask.plugin.files.separator" = "、";
 "ask.settings.keywords.kind.files.hint" = "按名称查找文件和文件夹";
-"ask.settings.quick.files.title" = "启动器文件搜索";
+"ask.settings.quick.files.title" = "文件搜索";
 "ask.settings.quick.files.subtitle" = "输入时列出名称匹配的文件和文件夹。索引只保存在本机。";
-"launcher.pane.search" = "搜索";
+"launcher.pane.search" = "内置搜索";
 "launcher.search.subtitle" = "启动器如何查找应用和文件。文件索引只记录名称，只保存在本机。";
 "launcher.search.tab.general" = "常规";
 "launcher.search.tab.apps" = "应用";
@@ -3619,3 +3619,7 @@
 "ask.mode.changed" = "权限模式：%@";
 "ask.mode.usage" = "用法：/mode yolo、/mode strict 或 /mode standard";
 "ask.mode.serverUpgrade" = "请升级 Typeflux 云端服务以使用工具权限模式。";
+
+// Settings draft state and MCP row fields.
+"imagegen.unsaved" = "未保存";
+"agent.mcp.kv.key" = "键";

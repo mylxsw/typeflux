@@ -11,6 +11,9 @@ struct ClipboardPanelView: View {
     @FocusState private var searchFocused: Bool
     @Namespace private var tabNamespace
     @State private var hoveredIndex: Int?
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.askGlassMaterialOverride) private var materialOverride
 
     var body: some View {
         VStack(spacing: 0) {
@@ -21,11 +24,15 @@ struct ClipboardPanelView: View {
             footer
         }
         .frame(width: Self.width, height: Self.height)
-        .background(ClipboardPanelBackground())
+        .foregroundStyle(StudioTheme.textPrimary)
+        .background(AskGlassBackground(
+            material: materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency),
+            corner: 16, opaqueFill: AskTheme.launcherSurface
+        ))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
+                .strokeBorder(AskTheme.floatingBorder, lineWidth: contrast == .increased ? 1 : 0.5)
         )
         .overlay(alignment: .bottom) { noticeToast }
         .onAppear { searchFocused = true }
@@ -38,7 +45,7 @@ struct ClipboardPanelView: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(StudioTheme.textSecondary)
             TextField(L("clipboard.search.placeholder"), text: $model.query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 17))
@@ -50,7 +57,7 @@ struct ClipboardPanelView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                 }
                 .buttonStyle(.plain)
                 .help(L("clipboard.search.clear"))
@@ -68,7 +75,7 @@ struct ClipboardPanelView: View {
                 let selected = model.category == category
                 Text(category.title)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(selected ? Color.primary : Color.secondary)
+                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background {
@@ -101,7 +108,7 @@ struct ClipboardPanelView: View {
                         if let header = row.header {
                             Text(header.title)
                                 .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(StudioTheme.textSecondary)
                                 .padding(.horizontal, 10)
                                 .padding(.top, 10)
                                 .padding(.bottom, 4)
@@ -153,7 +160,7 @@ struct ClipboardPanelView: View {
             Text(model.query.isEmpty ? L("clipboard.empty") : L("clipboard.search.noResults", model.query))
                 .font(.system(size: 12.5))
         }
-        .foregroundStyle(.tertiary)
+        .foregroundStyle(StudioTheme.textSecondary)
     }
 
     // MARK: - Footer
@@ -162,7 +169,7 @@ struct ClipboardPanelView: View {
         HStack(spacing: 2) {
             Text(L("clipboard.footer.count", model.visibleEntries.count))
                 .font(.system(size: 11.5))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(StudioTheme.textSecondary)
             Spacer()
             if let entry = model.selectedEntry {
                 if entry.kind.isTextual == false {
@@ -189,7 +196,7 @@ struct ClipboardPanelView: View {
                 }
             }
             .font(.system(size: 12))
-            .foregroundStyle(primary ? Color.primary : Color.secondary)
+            .foregroundStyle(primary ? StudioTheme.textPrimary : StudioTheme.textSecondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
             .contentShape(Rectangle())
@@ -221,22 +228,9 @@ struct ClipboardKeycap: View {
     var body: some View {
         Text(text)
             .font(.system(size: 10.5, weight: .medium))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(StudioTheme.textSecondary)
             .padding(.horizontal, 5)
             .frame(minWidth: 18, minHeight: 18)
             .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(Color.primary.opacity(0.1)))
     }
-}
-
-/// The frosted panel material behind the content.
-private struct ClipboardPanelBackground: NSViewRepresentable {
-    func makeNSView(context _: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = .popover
-        view.blendingMode = .behindWindow
-        view.state = .active
-        return view
-    }
-
-    func updateNSView(_: NSVisualEffectView, context _: Context) {}
 }

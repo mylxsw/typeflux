@@ -49,7 +49,8 @@ struct MCPKeyValueEditor: View {
             ForEach($rows) { $row in
                 HStack(spacing: 6) {
                     TextField(keyPlaceholder, text: $row.key).textFieldStyle(ModelFieldStyle())
-                        .frame(width: 170)
+                        .accessibilityLabel(L("agent.mcp.kv.key"))
+                        .frame(maxWidth: 170)
                     Group {
                         if row.isSecret {
                             SecureField(valuePlaceholder, text: $row.value)
@@ -58,6 +59,7 @@ struct MCPKeyValueEditor: View {
                         }
                     }
                     .textFieldStyle(ModelFieldStyle())
+                    .accessibilityLabel(valuePlaceholder)
                     AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove")) {
                         rows.removeAll { $0.id == row.id }
                         if rows.isEmpty { rows = [MCPKeyValueRow()] }

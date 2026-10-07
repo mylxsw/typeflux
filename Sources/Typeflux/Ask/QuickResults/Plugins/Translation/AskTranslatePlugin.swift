@@ -297,7 +297,7 @@ extension AskTranslatePlugin {
         let openAll = AskPluginItem(
             id: Self.openAllItem, title: L("ask.wordBook.list.openAll"), subtitle: L("ask.wordBook.list.openAll.detail"),
             icon: .symbol("character.book.closed"), autocomplete: nil,
-            actions: [AskPluginAction(kind: .openWordBook(key: nil), title: L("ask.wordBook.open"),
+            actions: [AskPluginAction(kind: .openWordBook(key: nil), title: L("ask.plugin.action.open"),
                                       symbol: "character.book.closed", shortcut: .enter)]
         )
         let rows = entries.map { Self.item($0, opensWordBook: opensWordBook) }
@@ -313,7 +313,7 @@ extension AskTranslatePlugin {
     static func item(_ entry: AskWordBookEntry, opensWordBook: Bool = false) -> AskPluginItem {
         var actions = [
             opensWordBook
-                ? AskPluginAction(kind: .openWordBook(key: entry.key), title: L("ask.wordBook.open"),
+                ? AskPluginAction(kind: .openWordBook(key: entry.key), title: L("ask.plugin.action.open"),
                                   symbol: "character.book.closed", shortcut: .enter)
                 : AskPluginAction(kind: .runWith(entry.headword), title: L("ask.plugin.action.open"),
                                   symbol: "arrow.right", shortcut: .enter)

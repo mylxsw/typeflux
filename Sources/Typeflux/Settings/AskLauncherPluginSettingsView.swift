@@ -73,15 +73,11 @@ struct AskKeywordList: Equatable {
     }
 }
 
-/// Settings → Launcher → Keywords: every keyword in one list (keyword, what it
-/// reaches, what it does, on/off), edited one at a time in a sheet. The workflows'
-/// keywords are listed too, read-only, since they share the namespace.
-/// See `docs/design/launcher-keywords-workflow-editor.md` §3.1.
+/// Settings → Launcher → Keywords: built-in and custom plugin keywords.
+/// Workflow keywords stay on the workflow page, but still reserve their names when saving.
 struct AskLauncherPluginSettingsView: View {
     let settings: SettingsStore
     @ObservedObject var workflows: AskWorkflowStore
-    /// Opens the workflow editor at a workflow, or its new-workflow sheet for nil.
-    let openWorkflow: @MainActor (String?) -> Void
 
     @State private var list = AskKeywordList(keywords: [])
     @State private var secondLanguage = "en"
@@ -92,20 +88,11 @@ struct AskLauncherPluginSettingsView: View {
     @State private var confirmingRestore = false
 
     init(settings: SettingsStore, workflows: AskWorkflowStore, initialFilter: AskKeywordKind? = nil,
-         initialQuery: String = "", openWorkflow: @escaping @MainActor (String?) -> Void = Self.openInEditor) {
+         initialQuery: String = "") {
         self.settings = settings
         self.workflows = workflows
-        self.openWorkflow = openWorkflow
-        _filter = State(initialValue: initialFilter)
+        _filter = State(initialValue: initialFilter == .workflow ? nil : initialFilter)
         _query = State(initialValue: initialQuery)
-    }
-
-    @MainActor static func openInEditor(_ workflowID: String?) {
-        if let workflowID {
-            AskWorkflowEditorWindowController.shared.show(workflowID: workflowID)
-        } else {
-            AskWorkflowEditorWindowController.shared.showNew(.assistant)
-        }
     }
 
     private var interface: AppLanguage {
@@ -117,7 +104,7 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     private var rows: [AskKeywordListRow] {
-        AskKeywordListPresentation.rows(keywords: list.keywords, workflows: workflowEntries,
+        AskKeywordListPresentation.rows(keywords: list.keywords,
                                         interface: interface, secondLanguage: secondLanguage)
     }
 
@@ -131,13 +118,13 @@ struct AskLauncherPluginSettingsView: View {
             ModelSurface {
                 AgentSettingsRow(icon: "globe", title: L("ask.settings.plugins.translate.second"),
                                  subtitle: L("ask.settings.plugins.translate.secondSubtitle"), subtitleLineLimit: nil) {
-                    Picker("", selection: Binding(get: { secondLanguage }, set: setSecondLanguage)) {
-                        ForEach(AskTranslationLanguages.common, id: \.self) { code in
-                            Text(AskTranslationLanguages.name(code, in: interface)).tag(code)
-                        }
-                    }
-                    .labelsHidden().frame(width: 150)
-                    .accessibilityLabel(L("ask.settings.plugins.translate.second"))
+                    SettingsMenuPicker(title: L("ask.settings.plugins.translate.second"),
+                                       options: AskTranslationLanguages.common.map { (
+                                           label: AskTranslationLanguages.name($0, in: interface),
+                                           value: $0
+                                       ) },
+                                       selection: Binding(get: { secondLanguage }, set: setSecondLanguage))
+                        .frame(width: 150)
                 }
             }
             Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
@@ -173,7 +160,10 @@ struct AskLauncherPluginSettingsView: View {
                 searchAndAdd
             }
             VStack(alignment: .leading, spacing: 8) {
-                filterBar
+                ViewThatFits(in: .horizontal) {
+                    filterBar
+                    ScrollView(.horizontal, showsIndicators: false) { filterBar }.frame(height: 30)
+                }
                 HStack(spacing: 8) {
                     searchAndAdd
                 }
@@ -187,7 +177,7 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     @ViewBuilder private var searchAndAdd: some View {
-        AgentSearchBox(placeholder: L("ask.settings.keywords.search"), text: $query, width: 200)
+        SettingsSearchBox(placeholder: L("ask.settings.keywords.search"), text: $query, width: 200)
         Button { adding = true } label: {
             Label(L("ask.settings.keywords.add"), systemImage: "plus")
         }
@@ -203,11 +193,6 @@ struct AskLauncherPluginSettingsView: View {
                     adding = false
                     editing = AskKeywordSheetItem(draft: AskKeywordDraft(adding: kind))
                 }
-            }
-            Divider().padding(.vertical, 3)
-            addItem(.workflow, title: L("ask.settings.keywords.newWorkflow")) {
-                adding = false
-                openWorkflow(nil)
             }
         }
         .padding(6).frame(width: 300)
@@ -226,7 +211,7 @@ struct AskLauncherPluginSettingsView: View {
                 if shown.isEmpty {
                     AgentSettingsEmptyRow(text: L("ask.settings.keywords.noMatch", query))
                 }
-                ForEach(AskKeywordKind.allCases, id: \.self) { kind in
+                ForEach(AskKeywordKind.editableKinds, id: \.self) { kind in
                     let group = shown.filter { $0.kind == kind }
                     if !group.isEmpty {
                         if filter == nil {
@@ -247,16 +232,11 @@ struct AskLauncherPluginSettingsView: View {
     // MARK: - Actions
 
     private func open(_ row: AskKeywordListRow) {
-        if let workflowID = row.workflowID {
-            openWorkflow(workflowID)
-        } else if let source = row.source {
-            editing = AskKeywordSheetItem(draft: AskKeywordDraft(editing: source))
-        }
+        editing = AskKeywordSheetItem(draft: AskKeywordDraft(editing: row.source))
     }
 
     private func toggle(_ row: AskKeywordListRow) {
-        guard let source = row.source else { return }
-        list.update(source) { $0.enabled.toggle() }
+        list.update(row.source) { $0.enabled.toggle() }
         persist()
     }
 

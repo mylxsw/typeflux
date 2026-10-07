@@ -1600,7 +1600,7 @@
 "ask.context.panel.useApp" = "使用目前的應用程式（%@）";
 "ask.quick.app.open" = "打開";
 "ask.quick.app.system" = "系統";
-"ask.settings.quick.apps.title" = "啟動器 App 搜尋";
+"ask.settings.quick.apps.title" = "App 搜尋";
 "ask.settings.quick.apps.subtitle" = "在啟動器中輸入 App 名稱、首字母或拼音即可打開 App。";
 "ask.quick.copy" = "拷貝";
 "ask.quick.format.chineseAmount" = "中文大寫";
@@ -1611,7 +1611,7 @@
 "ask.quick.error.divisionByZero" = "除數不能為 0";
 "ask.quick.error.domain" = "超出定義域";
 "ask.quick.error.outOfRange" = "超出可計算範圍";
-"ask.settings.quick.calculator.title" = "啟動器計算機";
+"ask.settings.quick.calculator.title" = "計算機";
 "ask.settings.quick.calculator.subtitle" = "在啟動器中輸入算式時直接顯示結果，不傳送給 AI。";
 "ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
@@ -1703,7 +1703,7 @@
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
 "models.askDefault" = "Ask · Default model";
 "models.defaultHint" = "New chats start here. Switch models at any time in a conversation.";
-"models.configured" = "AVAILABLE · CONFIGURED";
+"models.configured" = "已設定";
 "models.unconfigured" = "NOT CONFIGURED · UNAVAILABLE";
 "models.addEndpoint" = "Add custom provider";
 "models.connected" = "Connected";
@@ -2552,7 +2552,7 @@
 "ask.plugin.waiting" = "輸入要處理的內容";
 "ask.plugin.enter" = "空白鍵或 ⇥ 進入";
 "ask.plugin.running" = "處理中…";
-"ask.workflow.section" = "啟動器工作流程";
+"ask.workflow.section" = "工作流程";
 "ask.workflow.footnote" = "用關鍵字觸發你自己的腳本：Python、Node、TypeScript、Shell、AppleScript 或任何程式。它們以你的身分執行，只信任你了解的工作流程。";
 "ask.workflow.empty" = "還沒有工作流程，可以從範本新增一個。";
 "ask.workflow.new" = "新增工作流程";
@@ -2775,7 +2775,7 @@
 "ask.settings.keywords.save" = "儲存";
 "ask.settings.keywords.restore" = "恢復預設關鍵字";
 "ask.command.group.plugins" = "外掛";
-"ask.settings.plugins.title" = "啟動器關鍵字";
+"ask.settings.plugins.title" = "關鍵字";
 "ask.settings.plugins.footnote" = "在啟動器開頭輸入關鍵字和空白，例如「fy hello」。關鍵字後面沒有內容時，按 ↩ 處理選取的文字。";
 "ask.settings.plugins.translate.subtitle" = "優先本機翻譯；需要時用「設定 → 模型」中的文字處理模型";
 "ask.settings.plugins.translate.second" = "第二語言";
@@ -3089,7 +3089,7 @@
 "ask.settings.keywords.kind.prompt.hint" = "用文字處理模型執行一段提示詞";
 "ask.settings.keywords.kind.web.hint" = "在瀏覽器中開啟搜尋結果";
 "ask.settings.keywords.kind.workflow.hint" = "執行你自己的腳本";
-"ask.settings.keywords.listFootnote" = "點一列即可編輯。關鍵字和工作流程共用同一個命名空間，重名時內建關鍵字優先。";
+"ask.settings.keywords.listFootnote" = "點一列編輯。工作流程關鍵字在「工作流程」中管理，儲存時仍會檢查重名。";
 "ask.settings.keywords.newWorkflow" = "新增工作流程…";
 "ask.settings.keywords.noMatch" = "沒有符合「%@」的關鍵字";
 "ask.settings.keywords.restoreTitle" = "還原預設關鍵字？";
@@ -3495,9 +3495,9 @@
 "ask.plugin.files.source" = "本機檔案名稱";
 "ask.plugin.files.separator" = "、";
 "ask.settings.keywords.kind.files.hint" = "依名稱尋找檔案與檔案夾";
-"ask.settings.quick.files.title" = "啟動器檔案搜尋";
+"ask.settings.quick.files.title" = "檔案搜尋";
 "ask.settings.quick.files.subtitle" = "輸入時列出名稱符合的檔案與檔案夾。索引只儲存在本機。";
-"launcher.pane.search" = "搜尋";
+"launcher.pane.search" = "內建搜尋";
 "launcher.search.subtitle" = "啟動器如何尋找 App 與檔案。檔案索引只記錄名稱，只儲存在本機。";
 "launcher.search.tab.general" = "一般";
 "launcher.search.tab.apps" = "App";
@@ -3616,3 +3616,7 @@
 "ask.mode.changed" = "權限模式：%@";
 "ask.mode.usage" = "用法：/mode yolo、/mode strict 或 /mode standard";
 "ask.mode.serverUpgrade" = "請升級 Typeflux 雲端服務以使用工具權限模式。";
+
+// Settings draft state and MCP row fields.
+"imagegen.unsaved" = "未儲存";
+"agent.mcp.kv.key" = "鍵";

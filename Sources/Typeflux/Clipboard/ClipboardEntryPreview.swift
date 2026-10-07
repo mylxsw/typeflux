@@ -73,7 +73,7 @@ struct ClipboardEntryPreview: View {
                         Spacer()
                         Text(Self.fileSize(path))
                             .font(.system(size: 11))
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(StudioTheme.textSecondary)
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -111,7 +111,7 @@ private struct ClipboardDocumentPreview: View {
                     .foregroundStyle(.secondary)
                 Text(url.path)
                     .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(3)
                     .textSelection(.enabled)
             }

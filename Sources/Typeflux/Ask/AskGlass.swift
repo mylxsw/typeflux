@@ -2,12 +2,12 @@ import AppKit
 import SwiftUI
 
 /// What the launcher card is made of. Liquid Glass exists only on macOS 26, so
-/// earlier systems fall back to the system HUD blur, and Reduce Transparency
+/// earlier systems fall back to the adaptive popover blur, and Reduce Transparency
 /// restores the opaque surface on every version.
 enum AskGlassMaterial: Equatable {
     /// macOS 26+: system Liquid Glass with its own refraction and highlights.
     case liquidGlass
-    /// macOS 13–15: `NSVisualEffectView(.hudWindow)` blending with the desktop behind the panel.
+    /// macOS 13–15: `NSVisualEffectView(.popover)` blending with the desktop behind the panel.
     case visualEffect
     /// Reduce Transparency: the surface's opaque fill.
     case opaque
@@ -54,20 +54,19 @@ enum AskGlassPlacement: Equatable {
     var blending: NSVisualEffectView.BlendingMode { self == .inWindow ? .withinWindow : .behindWindow }
     /// How much of the surface's own fill frosts the glass. Clear glass over the
     /// transcript let black text show through the composer and made the header
-    /// pills vanish on a white window. Floating glass gets a stronger dark frost
-    /// to stay legible over bright windows, and a lighter white wash in light mode.
+    /// pills vanish on a white window. Floating panels and menus need a stable
+    /// light backplate over busy windows while retaining a little translucency.
     func frost(dark: Bool) -> Double {
         switch self {
-        case .floating: return dark ? 0.78 : 0.18
+        case .floating: return dark ? 0.78 : 0.88
         case .inWindow: return 0.45
-        case .menu: return 0.6
+        case .menu: return dark ? 0.6 : 0.90
         }
     }
-    /// The HUD material reads as a dark sheet over the light window, so in-window
-    /// chrome uses the adaptive popover material instead.
+    /// Adaptive popover material avoids the HUD's grey cast in light mode.
     var fallbackMaterial: NSVisualEffectView.Material {
         switch self {
-        case .floating: return .hudWindow
+        case .floating: return .popover
         case .inWindow: return .popover
         case .menu: return .menu
         }
@@ -110,7 +109,7 @@ struct AskGlassBackground: View {
         }
         .clipShape(shape)
         .overlay {
-            // macOS 26 glass lights its own edge; the HUD blur gets a drawn specular rim instead.
+            // macOS 26 glass lights its own edge; the fallback blur gets a drawn specular rim instead.
             if material == .visualEffect { rim }
         }
         .allowsHitTesting(false)
@@ -176,7 +175,7 @@ struct AskGlassBackground: View {
 #endif
 
 /// A floating glass card: the chips' hover cards and the composer's menus.
-/// Glass on macOS 26 and the HUD blur before it; with Reduce Transparency an
+/// Glass on macOS 26 and the adaptive popover blur before it; with Reduce Transparency an
 /// opaque popover surface with a hairline border.
 struct AskGlassCardSurface<Content: View>: View {
     static var hoverCardCorner: CGFloat { 14 }
@@ -186,6 +185,7 @@ struct AskGlassCardSurface<Content: View>: View {
     var corner: CGFloat
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var materialOverride
+    @Environment(\.colorSchemeContrast) private var contrast
     let content: Content
 
     init(corner: CGFloat = Self.hoverCardCorner, @ViewBuilder content: () -> Content) {
@@ -200,7 +200,7 @@ struct AskGlassCardSurface<Content: View>: View {
             .background(AskGlassBackground(material: material, corner: corner, opaqueFill: AskTheme.popoverSurface,
                                            placement: .menu))
             .overlay {
-                if !material.drawsOwnEdge {
+                if !material.drawsOwnEdge || contrast == .increased {
                     RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(AskTheme.border)
                 }
             }

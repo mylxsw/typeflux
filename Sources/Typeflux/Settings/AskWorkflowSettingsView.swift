@@ -6,7 +6,9 @@ import UniformTypeIdentifiers
 struct AskWorkflowSummary: Equatable {
     var title: String
     var runtime: String?
-    var subtitle: String
+    var description: String
+    var notices: [String]
+    var lastRun: String?
     var keywords: [String]
     var status: String
     var level: AgentCapabilityStatus.Level
@@ -14,7 +16,8 @@ struct AskWorkflowSummary: Equatable {
     var needsTrust: Bool
 
     init(_ workflow: AskWorkflow, conflicts: [AskKeyword] = [], lastRun: AskWorkflowLog.Entry? = nil) {
-        title = workflow.manifest?.name ?? workflow.id
+        let name = workflow.manifest?.name ?? ""
+        title = name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? workflow.id : name
         runtime = workflow.manifest?.command.runtime.title
         keywords = workflow.manifest?.keywords.map(\.keyword) ?? []
         needsTrust = workflow.status == .untrusted || workflow.status == .modified
@@ -25,19 +28,19 @@ struct AskWorkflowSummary: Equatable {
         case .invalid: (status, level) = (L("ask.workflow.status.invalid"), .attention)
         case .disabled: (status, level) = (L("ask.workflow.status.disabled"), .off)
         }
-        var lines: [String] = []
+        description = workflow.manifest?.description ?? ""
+        notices = []
         if case let .invalid(problems) = workflow.status {
-            lines += problems.prefix(2).map { "\($0.field): \($0.message)" }
-        } else if let description = workflow.manifest?.description, !description.isEmpty {
-            lines.append(description)
+            notices = problems.map { "\($0.field): \($0.message)" }
         }
         let clashing = conflicts.filter { $0.pluginID == AskWorkflowPlugin.idPrefix + workflow.id }.map(\.keyword)
-        if !clashing.isEmpty { lines.append(L("ask.workflow.conflicts", clashing.joined(separator: ", "))) }
-        if let lastRun {
-            lines.append(lastRun.timedOut ? L("ask.workflow.lastRun.timedOut", lastRun.duration)
-                : L("ask.workflow.lastRun", Int(lastRun.exitCode), lastRun.duration))
+        if !clashing.isEmpty {
+            notices.append(L("ask.workflow.conflicts", clashing.joined(separator: ", ")))
         }
-        subtitle = lines.joined(separator: "\n")
+        self.lastRun = lastRun.map {
+            $0.timedOut ? L("ask.workflow.lastRun.timedOut", $0.duration)
+                : L("ask.workflow.lastRun", Int($0.exitCode), $0.duration)
+        }
     }
 }
 
@@ -63,7 +66,7 @@ struct AskWorkflowTrustSummary: Equatable {
         if let manifest {
             let program = manifest.command.interpreter ?? manifest.command.runtime.interpreterName
             let target = manifest.command.script ?? L("ask.workflow.trust.inline")
-            command = ([program, target].compactMap { $0 } + manifest.argumentTemplate).joined(separator: " ")
+            command = ([program, target].compactMap(\.self) + manifest.argumentTemplate).joined(separator: " ")
                 + " · " + L("ask.workflow.trust.timeout", Int(manifest.timeout))
             switch manifest.input.selection {
             case .never: selection = L("ask.workflow.trust.selection.never")
@@ -79,7 +82,8 @@ struct AskWorkflowTrustSummary: Equatable {
         let enumerator = fileManager.enumerator(at: workflow.folder, includingPropertiesForKeys: [.isRegularFileKey])
         var files: [String] = []
         while let url = enumerator?.nextObject() as? URL {
-            if (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true, url.lastPathComponent != ".DS_Store" {
+            if (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true,
+               url.lastPathComponent != ".DS_Store" {
                 files.append(String(url.standardizedFileURL.path.dropFirst(root.count + 1)))
             }
         }
@@ -106,8 +110,7 @@ struct AskWorkflowTrustSummary: Equatable {
     }
 }
 
-/// Settings → Launcher → Workflows: the installed
-/// workflows, their state and switches, new ones from templates, and the trust sheet.
+/// Settings → Launcher → Workflows: installed workflows, creation tools and the trust sheet.
 struct AskWorkflowSettingsView: View {
     @ObservedObject var store: AskWorkflowStore
     @ObservedObject var log: AskWorkflowLog = .shared
@@ -119,60 +122,28 @@ struct AskWorkflowSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            toolbar
+            ModelRowDivider(leading: 18)
             if store.workflows.isEmpty {
                 AskWorkflowGalleryStarter(store: store, gallery: .bundled,
                                           builtIn: settings.effectiveAskLauncherKeywords,
                                           browse: { showingGallery = true },
                                           open: { AskWorkflowEditorWindowController.shared.show(workflowID: $0) })
                 ModelRowDivider(leading: 18)
-            } else {
-                HStack(spacing: 10) {
-                    Text(L("ask.workflow.gallery.settingsHint")).font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                    Spacer()
-                    Button { showingGallery = true } label: {
-                        Label(L("ask.workflow.gallery.title"), systemImage: "square.grid.2x2")
-                    }
-                    .accessibilityIdentifier("ask.workflow.gallery")
-                }
-                .font(.system(size: 12.5))
-                .padding(.horizontal, 18).padding(.vertical, 10)
-                ModelRowDivider(leading: 18)
             }
             let builtIn = settings.effectiveAskLauncherKeywords
             let conflicts = AskWorkflowStore.keywords(of: store.plugins { (nil, nil) }, excluding: builtIn).conflicts
             ForEach(store.workflows) { workflow in
-                row(workflow, summary: AskWorkflowSummary(workflow, conflicts: conflicts, lastRun: log.last(for: workflow.id)))
+                row(
+                    workflow,
+                    summary: AskWorkflowSummary(workflow, conflicts: conflicts, lastRun: log.last(for: workflow.id))
+                )
                 ModelRowDivider(leading: 66)
             }
             if let failure {
                 Text(failure).font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning)
                     .padding(.horizontal, 18).padding(.vertical, 6)
             }
-            HStack(spacing: 10) {
-                Menu {
-                    Button { AskWorkflowEditorWindowController.shared.showNew(.assistant) } label: {
-                        Label(L("ask.workflow.editor.new.ai"), systemImage: "sparkles")
-                    }
-                    Divider()
-                    ForEach(AskWorkflowTemplate.allCases) { template in
-                        Button(template.title) { create(template) }
-                    }
-                } label: {
-                    Label(L("ask.workflow.new"), systemImage: "plus")
-                }
-                .menuStyle(.borderlessButton).fixedSize()
-                .accessibilityIdentifier("ask.workflow.new")
-                Button(L("ask.workflow.editor.openWindow")) { AskWorkflowEditorWindowController.shared.show() }
-                    .buttonStyle(.borderless)
-                Button(L("ask.workflow.revealFolder")) { store.revealRoot() }
-                    .buttonStyle(.borderless)
-                Button(L("ask.workflow.reload")) { store.reload() }
-                    .buttonStyle(.borderless)
-                Spacer()
-            }
-            .font(.system(size: 12.5))
-            .padding(.horizontal, 18).padding(.vertical, 12)
         }
         .onAppear { store.reload() }
         .sheet(isPresented: $showingGallery) {
@@ -189,53 +160,99 @@ struct AskWorkflowSettingsView: View {
         }
     }
 
-    private func row(_ workflow: AskWorkflow, summary: AskWorkflowSummary) -> some View {
-        AgentSettingsRow(icon: workflow.symbol, title: summary.title, subtitle: summary.subtitle,
-                         badge: summary.runtime, subtitleLineLimit: 3) {
-            HStack(spacing: 8) {
-                ForEach(summary.keywords, id: \.self) { keyword in
-                    Text(keyword).font(.system(size: 11.5, design: .monospaced))
-                        .padding(.horizontal, 6).padding(.vertical, 1)
-                        .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(StudioTheme.border))
-                }
-                AgentStatusBadge(level: summary.level, label: summary.status)
-                if summary.needsTrust {
-                    Button(L("ask.workflow.review")) { reviewing = workflow }
-                        .accessibilityIdentifier("ask.workflow.review")
-                }
-                if case let .invalid(problems) = workflow.status {
-                    // Opens `workflow.json` at the first problem; broken JSON can be fixed there too.
-                    Button(L("ask.workflow.editor.fixButton")) {
-                        let line = AskWorkflowDraft.load(folder: workflow.folder).line(for: problems.first?.field ?? "")
-                        AskWorkflowEditorWindowController.shared.show(
-                            workflowID: workflow.id, path: AskWorkflowManifest.fileName, line: line)
-                    }
-                    .accessibilityIdentifier("ask.workflow.fix")
-                } else if !summary.needsTrust {
-                    Button(L("ask.workflow.editor.edit")) {
-                        AskWorkflowEditorWindowController.shared.show(workflowID: workflow.id)
-                    }
-                    .accessibilityIdentifier("ask.workflow.edit")
-                }
-                Menu {
-                    Button(L("ask.workflow.editor.openInEditor")) {
-                        AskWorkflowEditorWindowController.shared.show(workflowID: workflow.id)
-                    }
-                    Button(L("ask.workflow.openEditor")) { open(workflow) }
-                    Button(L("ask.workflow.reveal")) { NSWorkspace.shared.activateFileViewerSelecting([workflow.folder]) }
-                    Divider()
-                    Button(L("ask.workflow.delete"), role: .destructive) { delete(workflow) }
-                } label: {
-                    Image(systemName: "ellipsis")
-                }
-                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-                .accessibilityLabel(L("ask.workflow.more"))
-                Toggle("", isOn: Binding(get: { store.isEnabled(workflow.id) },
-                                         set: { store.setEnabled(workflow.id, $0) }))
-                    .labelsHidden().toggleStyle(.switch)
-                    .disabled(workflow.manifest == nil)
-                    .accessibilityLabel(L("ask.settings.keywords.enabled"))
+    /// Creation actions stay above the list; secondary maintenance actions live in one menu.
+    private var toolbar: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                galleryButton
+                creationMenu
+                editorButton
+                Spacer(minLength: 0)
+                maintenanceMenu
             }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) { galleryButton; creationMenu }
+                HStack(spacing: 10) { editorButton; Spacer(minLength: 0); maintenanceMenu }
+            }
+        }
+        .font(.system(size: 12.5))
+        .padding(.horizontal, 18).padding(.vertical, 12)
+    }
+
+    private var galleryButton: some View {
+        Button { showingGallery = true } label: {
+            Label(L("ask.workflow.gallery.title"), systemImage: "square.grid.2x2")
+        }
+        .accessibilityIdentifier("ask.workflow.gallery")
+    }
+
+    private var creationMenu: some View {
+        Menu {
+            Button { AskWorkflowEditorWindowController.shared.showNew(.assistant) } label: {
+                Label(L("ask.workflow.editor.new.ai"), systemImage: "sparkles")
+            }
+            Divider()
+            ForEach(AskWorkflowTemplate.allCases) { template in
+                Button(template.title) { create(template) }
+            }
+        } label: {
+            Label(L("ask.workflow.new"), systemImage: "plus")
+        }
+        .menuStyle(.borderlessButton).fixedSize()
+        .accessibilityIdentifier("ask.workflow.new")
+    }
+
+    private var editorButton: some View {
+        Button(L("ask.workflow.editor.openWindow")) { AskWorkflowEditorWindowController.shared.show() }
+            .buttonStyle(.borderless)
+    }
+
+    private var maintenanceMenu: some View {
+        Menu {
+            Button(L("ask.workflow.revealFolder")) { store.revealRoot() }
+            Button(L("ask.workflow.reload")) { store.reload() }
+        } label: {
+            Image(systemName: "ellipsis")
+        }
+        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+        .accessibilityLabel(L("ask.workflow.more"))
+    }
+
+    private func row(_ workflow: AskWorkflow, summary: AskWorkflowSummary) -> some View {
+        AskWorkflowSettingsRow(symbol: workflow.symbol, summary: summary,
+                               edit: { AskWorkflowEditorWindowController.shared.show(workflowID: workflow.id) },
+                               review: summary.needsTrust ? { reviewing = workflow } : nil,
+                               fix: repairAction(workflow), controls: {
+                                   Menu {
+                                       Button(L("ask.workflow.editor.openInEditor")) {
+                                           AskWorkflowEditorWindowController.shared.show(workflowID: workflow.id)
+                                       }
+                                       Button(L("ask.workflow.openEditor")) { open(workflow) }
+                                       Button(L("ask.workflow.reveal")) {
+                                           NSWorkspace.shared.activateFileViewerSelecting([workflow.folder])
+                                       }
+                                       Divider()
+                                       Button(L("ask.workflow.delete"), role: .destructive) { delete(workflow) }
+                                   } label: {
+                                       Image(systemName: "ellipsis")
+                                   }
+                                   .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                                   .accessibilityLabel(L("ask.workflow.more"))
+                                   Toggle("", isOn: Binding(get: { store.isEnabled(workflow.id) },
+                                                            set: { store.setEnabled(workflow.id, $0) }))
+                                       .labelsHidden().toggleStyle(.switch)
+                                       .disabled(workflow.manifest == nil)
+                                       .accessibilityLabel(L("ask.settings.keywords.enabled"))
+                               })
+    }
+
+    private func repairAction(_ workflow: AskWorkflow) -> (() -> Void)? {
+        guard case let .invalid(problems) = workflow.status else { return nil }
+        return {
+            let line = AskWorkflowDraft.load(folder: workflow.folder).line(for: problems.first?.field ?? "")
+            AskWorkflowEditorWindowController.shared.show(
+                workflowID: workflow.id, path: AskWorkflowManifest.fileName, line: line
+            )
         }
     }
 
@@ -251,7 +268,8 @@ struct AskWorkflowSettingsView: View {
 
     /// Opens the script (or the manifest) in the app the user edits it with.
     private func open(_ workflow: AskWorkflow) {
-        let script = workflow.manifest?.command.script.flatMap { AskWorkflowManifest.scriptURL($0, in: workflow.folder) }
+        let script = workflow.manifest?.command.script
+            .flatMap { AskWorkflowManifest.scriptURL($0, in: workflow.folder) }
         let file = script ?? workflow.folder.appendingPathComponent(AskWorkflowManifest.fileName)
         // Scripts are executable: open them in the text editor, never in whatever would run them.
         let editor = NSWorkspace.shared.urlForApplication(toOpen: UTType.plainText)
@@ -283,9 +301,11 @@ struct AskWorkflowTrustSheet: View {
                     .foregroundStyle(.white).frame(width: 44, height: 44)
                     .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(L(workflow.status == .modified ? "ask.workflow.trust.modifiedTitle" : "ask.workflow.trust.title",
-                           workflow.manifest?.name ?? workflow.id))
-                        .font(.system(size: 15, weight: .semibold))
+                    Text(L(
+                        workflow.status == .modified ? "ask.workflow.trust.modifiedTitle" : "ask.workflow.trust.title",
+                        workflow.manifest?.name ?? workflow.id
+                    ))
+                    .font(.system(size: 15, weight: .semibold))
                     Text(L("ask.workflow.trust.warning")).font(.system(size: 12))
                         .foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
                 }

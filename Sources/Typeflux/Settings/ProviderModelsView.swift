@@ -104,9 +104,12 @@ struct ProviderModelsView: View {
             VStack(alignment: .leading, spacing: 0) {
                 if provider.supportsProtocolSelection {
                     formRow(L("models.protocol")) {
-                        Picker(L("models.protocol"), selection: $apiStyle) {
-                            ForEach(LLMRemoteAPIStyle.customChoices, id: \.self) { Text($0.displayName).tag($0) }
-                        }.labelsHidden()
+                        SettingsMenuPicker(title: L("models.protocol"),
+                                           options: LLMRemoteAPIStyle.customChoices.map { (
+                                               label: $0.displayName,
+                                               value: $0
+                                           ) },
+                                           selection: $apiStyle)
                     }
                     ModelRowDivider()
                 }
@@ -156,6 +159,7 @@ struct ProviderModelsView: View {
             .buttonStyle(.plain)
             .padding(.trailing, 3)
             .help(L(showsKey ? "models.hideKey" : "models.showKey"))
+            .accessibilityLabel(L(showsKey ? "models.hideKey" : "models.showKey"))
         }
     }
 

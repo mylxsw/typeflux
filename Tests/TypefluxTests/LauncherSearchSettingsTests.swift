@@ -65,8 +65,63 @@ struct LauncherSearchSettingsViewTests {
         #expect(posted == 1)
         view.update { _ in }
         #expect(posted == 1, "no change, no save")
-        view.update { $0.fileRoots = LauncherSearchSettingsView.adding([NSHomeDirectory() + "/Work", "/Volumes/X"], to: $0.fileRoots) }
+        view.update { $0.fileRoots = LauncherSearchSettingsView.adding(
+            [NSHomeDirectory() + "/Work", "/Volumes/X"],
+            to: $0.fileRoots
+        ) }
         #expect(settings.askLauncherSearchSettings.fileRoots == ["~", "~/Work", "/Volumes/X"])
+    }
+
+    @Test func `moved switches save existing preferences and follow the index lifecycle`() throws {
+        let (settings, defaults, suite) = try store()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let index = AskTestFileIndex()
+        let view = LauncherSearchSettingsView(settings: settings, index: index)
+        for enabled in [false, true] {
+            view.setAppsEnabled(enabled)
+            #expect(settings.askQuickAppSearchEnabled == enabled)
+            #expect(SettingsStore(defaults: defaults).askQuickAppSearchEnabled == enabled)
+            view.setFilesEnabled(enabled)
+            #expect(settings.askQuickFileSearchEnabled == enabled)
+            #expect(SettingsStore(defaults: defaults).askQuickFileSearchEnabled == enabled)
+        }
+        #expect(index.starts == 2, "both off and on notify the injected index")
+        #expect(settings.askQuickCalculatorEnabled, "search switches do not change the calculator")
+    }
+
+    @Test func `moved file switch clears and rebuilds A real index`() throws {
+        let (settings, defaults, suite) = try store()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("launcher-index-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data("fixture".utf8).write(to: root.appendingPathComponent("Report.txt"))
+        var search = AskLauncherSearchSettings()
+        search.fileRoots = [root.path]
+        settings.askLauncherSearchSettings = search
+        let snapshot = root.appendingPathComponent("index.bin")
+        let index = AskFileIndex(
+            configuration: { (settings.askQuickFileSearchEnabled, settings.askLauncherSearchSettings) },
+            fullDiskAccess: { true },
+            snapshotURL: snapshot,
+            defaults: defaults,
+            home: root.path,
+            makeWatcher: { AskTestFileWatcher() }
+        )
+        let view = LauncherSearchSettingsView(settings: settings, index: index)
+        view.setFilesEnabled(true)
+        index.waitUntilIdle()
+        #expect(index.status.phase == .ready && index.status.count > 0)
+        #expect(FileManager.default.fileExists(atPath: snapshot.path))
+        view.setFilesEnabled(false)
+        index.waitUntilIdle()
+        #expect(index.status.phase == .off && index.status.count == 0)
+        #expect(!FileManager.default.fileExists(atPath: snapshot.path))
+        view.setFilesEnabled(true)
+        index.waitUntilIdle()
+        #expect(index.search(AskSearchQuery("Report"), options: AskFileSearchOptions()).first?.name == "Report.txt")
+        view.setFilesEnabled(false)
+        index.waitUntilIdle()
     }
 
     @Test func pathsAreAddedOnceWithTheHomeShortened() {

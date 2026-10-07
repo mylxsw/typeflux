@@ -123,7 +123,7 @@ struct AgentSettingsIconButton: View {
             Image(systemName: systemImage)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
-                .frame(width: 28, height: 28)
+                .frame(width: SettingsControlMetrics.height, height: SettingsControlMetrics.height)
                 .background(
                     ModelVisualStyle.control,
                     in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
@@ -231,33 +231,7 @@ struct AgentFlowLayout: Layout {
     }
 }
 
-/// Search box styled like the Models page fields, with a leading magnifier.
-struct AgentSearchBox: View {
-    let placeholder: String
-    @Binding var text: String
-    var width: CGFloat = 240
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass").font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-            TextField(placeholder, text: $text).textFieldStyle(.plain).font(.system(size: 13))
-            if !text.isEmpty {
-                Button { text = "" } label: {
-                    Image(systemName: "xmark.circle.fill").font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L("common.clear"))
-            }
-        }
-        .padding(.horizontal, 10).frame(width: width, height: 30)
-        .background(ModelVisualStyle.control,
-                    in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-            .strokeBorder(ModelVisualStyle.border))
-    }
-}
-
-/// Top of every settings pane: icon tile, title, one-line explanation, and the pane's
+/// Top of every settings pane: icon tile, title and the pane's
 /// state or main switch on the right.
 struct AgentPaneHeader<Accessory: View>: View {
     let symbol: String
@@ -266,7 +240,7 @@ struct AgentPaneHeader<Accessory: View>: View {
     @ViewBuilder var accessory: Accessory
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .center, spacing: 14) {
             Image(systemName: symbol).font(.system(size: 18))
                 .foregroundStyle(ModelVisualStyle.accent)
                 .frame(width: 40, height: 40)
@@ -279,7 +253,7 @@ struct AgentPaneHeader<Accessory: View>: View {
                 }
             }
             Spacer(minLength: 12)
-            HStack(spacing: 10) { accessory }.padding(.top, 4)
+            HStack(spacing: 10) { accessory }
         }
     }
 }
