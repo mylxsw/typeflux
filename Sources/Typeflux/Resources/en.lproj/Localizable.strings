@@ -1542,7 +1542,7 @@
 "ask.quick.section.calculation" = "Calculator";
 "ask.quick.section.apps" = "Applications";
 "ask.quick.section.ai" = "AI";
-"ask.launcher.placeholder" = "Search apps, calculate, or ask · / for commands";
+"ask.launcher.placeholder" = "Search apps, calculate, or ask";
 "ask.launcher.hint.context" = "↩ Send · ⌘K Context · esc Close";
 "ask.launcher.hint.voice" = "↩ Finish and insert · esc Cancel";
 "ask.launcher.hint.transcribing" = "esc Cancel";

@@ -145,6 +145,6 @@ struct AskLauncherContextTests {
 
     @Test func launcherPlaceholderSaysWhatItDoes() {
         #expect(L("ask.launcher.placeholder") != "ask.launcher.placeholder")
-        #expect(L("ask.launcher.placeholder").contains("/"))
+        #expect(!L("ask.launcher.placeholder").contains("/"))
     }
 }
