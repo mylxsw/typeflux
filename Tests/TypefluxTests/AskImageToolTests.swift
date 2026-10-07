@@ -5,7 +5,7 @@ import XCTest
 actor ImageGeneratorStub: AskImageGenerating {
     var calls = 0
     var result: AskImageGenerationResult
-    init(_ images: [AskGeneratedImage]) {
+    init(_ images: [AskGeneratedImageData]) {
         result = .init(images: images)
     }
 
@@ -35,7 +35,7 @@ final class AskImageToolTests: XCTestCase {
         let defaults = UserDefaults(suiteName: UUID().uuidString)!
         tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)), artifactStore: store)
         tools.imageConfigurationOverride = { self.config.map { ($0, self.key) } }
-        generator = try ImageGeneratorStub([AskGeneratedImage(data: AskImageGenerationTests.picture())])
+        generator = try ImageGeneratorStub([AskGeneratedImageData(data: AskImageGenerationTests.picture())])
         tools.imageGenerator = generator
         tools.bindExecution(ownerId: "owner", conversationId: "conversation", runId: "run")
     }
