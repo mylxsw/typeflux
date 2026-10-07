@@ -395,11 +395,12 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private func publish(phase: AskFileIndexStatus.Phase, updatedAt: Date? = nil) {
         let state = working
         let blocked = scope?.blockedInScope ?? []
+        let bytes = Self.bytes(of: state)
         lock.withLock {
             published = state
             currentStatus.phase = phase
             currentStatus.count = state.count
-            currentStatus.bytes = Self.bytes(of: state)
+            currentStatus.bytes = bytes
             currentStatus.blocked = blocked
             if let updatedAt { currentStatus.updatedAt = updatedAt }
             if phase == .off { currentStatus = AskFileIndexStatus() }

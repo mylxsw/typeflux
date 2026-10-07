@@ -61,7 +61,9 @@ struct AskPluginItemIcon: View {
 
     var body: some View {
         Group {
-            if let image = icon.flatMap(Self.image) {
+            if case let .fileIcon(url) = icon {
+                AskFileIconView(url: url, thumbnail: false).frame(width: 26, height: 26)
+            } else if let image = icon.flatMap(Self.image) {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
                     .frame(width: 26, height: 26)
             } else {

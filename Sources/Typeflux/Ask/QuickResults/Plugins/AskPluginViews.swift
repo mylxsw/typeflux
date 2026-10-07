@@ -62,6 +62,7 @@ struct AskKeywordChip: View {
 
 /// The results area in keyword mode: the plugin's row or result card, then "Ask AI".
 struct AskPluginResultsView: View {
+    @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
     var display: AskPluginDisplay
     var question: String
     var minimumHeight: CGFloat = 0
@@ -239,10 +240,14 @@ struct AskPluginResultsView: View {
             VStack(spacing: Self.rowSpacing) {
                 section(display.hint != nil ? L("ask.plugin.section") : display.title)
                 main
-                    .onHover { if $0 { onHighlight(0) } }
+                    .onContinuousHover { phase in
+                        if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(0) }
+                    }
                 section(L("ask.quick.section.ai"))
                 askRow
-                    .onHover { if $0 { onHighlight(1) } }
+                    .onContinuousHover { phase in
+                        if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(1) }
+                    }
             }
             .padding(Self.listPadding)
             Spacer(minLength: 0)

@@ -3506,7 +3506,7 @@
 "launcher.search.general" = "一般";
 "launcher.search.mode" = "搜尋模式";
 "launcher.search.mode.subtitle" = "混合：最佳符合在前，其餘依類型分組；App / 檔案優先：對應的組固定在前。";
-"launcher.search.mode.mixed" = "混合";
+"launcher.search.mode.mixed" = "混合（應用程式優先）";
 "launcher.search.mode.appsFirst" = "App 優先";
 "launcher.search.mode.filesFirst" = "檔案優先";
 "launcher.search.fuzzy" = "模糊比對";

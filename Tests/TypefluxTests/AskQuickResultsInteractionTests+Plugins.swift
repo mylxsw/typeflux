@@ -141,7 +141,7 @@ extension AskQuickResultsInteractionTests {
             defer { launcher.close() }
             let model = launcher.fixture.model
             try await type("fy hello", into: launcher)
-            try await settle { model.plugins.output != nil }
+            try await settle { model.plugins.output?.body.contains("[zh-Hans] hello") == true }
             try await launcher.press(Self.returnKey, .command)
             #expect(try await launcher.sentCount() == 1)
             #expect(await launcher.fixture.api.sends.first?.text.contains("[zh-Hans] hello") == true)

@@ -36,19 +36,28 @@ extension SettingsStore {
     /// Whether the Ask launcher shows the result of arithmetic typed into it.
     var askQuickCalculatorEnabled: Bool {
         get { defaults.object(forKey: "ask.quickResults.calculator") as? Bool ?? true }
-        set { defaults.set(newValue, forKey: "ask.quickResults.calculator") }
+        set {
+            defaults.set(newValue, forKey: "ask.quickResults.calculator")
+            NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)
+        }
     }
 
     /// Whether the Ask launcher lists applications matching what is typed into it.
     var askQuickAppSearchEnabled: Bool {
         get { defaults.object(forKey: "ask.quickResults.apps") as? Bool ?? true }
-        set { defaults.set(newValue, forKey: "ask.quickResults.apps") }
+        set {
+            defaults.set(newValue, forKey: "ask.quickResults.apps")
+            NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)
+        }
     }
 
     /// Whether the Ask launcher lists files and folders matching what is typed into it.
     var askQuickFileSearchEnabled: Bool {
         get { defaults.object(forKey: "ask.quickResults.files") as? Bool ?? true }
-        set { defaults.set(newValue, forKey: "ask.quickResults.files") }
+        set {
+            defaults.set(newValue, forKey: "ask.quickResults.files")
+            NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)
+        }
     }
 
     /// How the launcher searches applications and files (Settings › Launcher › Search).

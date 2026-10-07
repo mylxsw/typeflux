@@ -4,7 +4,7 @@ import Foundation
 /// Paths are kept as typed, with `~` for the home folder.
 struct AskLauncherSearchSettings: Codable, Equatable, Sendable {
     enum Mode: String, Codable, CaseIterable, Sendable {
-        /// The best match first, then each kind by its best.
+        /// Applications first, with files added as their search completes.
         case mixed
         case appsFirst
         case filesFirst

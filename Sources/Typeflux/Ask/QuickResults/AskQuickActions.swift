@@ -170,7 +170,7 @@ struct AskQuickActionPanelView: View {
         return HStack(spacing: 8) {
             Group {
                 if case let .openIn(url) = action {
-                    Image(nsImage: AskAppIcon.image(for: url)).resizable().interpolation(.high)
+                    AskFileIconView(url: url, thumbnail: false)
                 } else {
                     Image(systemName: action.symbol).font(.system(size: 11.5, weight: .medium))
                 }
@@ -195,44 +195,31 @@ struct AskQuickActionPanelView: View {
 struct AskFileIconView: View {
     var url: URL
     var thumbnail: Bool
+    var modified: Date?
     @State private var image: NSImage?
 
+    private var key: AskResultImageCache.Key {
+        .init(url: url, thumbnail: thumbnail && AskFileType.hasThumbnail(url.pathExtension.lowercased()),
+              modified: modified, scale: NSScreen.main?.backingScaleFactor ?? 2)
+    }
+
     var body: some View {
-        Image(nsImage: image ?? AskFileThumbnails.icon(for: url))
-            .resizable().interpolation(.high).scaledToFit()
-            .clipShape(RoundedRectangle(cornerRadius: image == nil ? 0 : 4, style: .continuous))
-            .accessibilityHidden(true)
-            .task(id: url.path) {
-                image = nil
-                guard thumbnail, AskFileType.hasThumbnail(url.pathExtension.lowercased()) else { return }
-                image = await AskFileThumbnails.thumbnail(for: url)
+        Group {
+            if let shown = image ?? AskResultImageCache.shared.cached(key) {
+                Image(nsImage: shown).resizable().interpolation(.high).scaledToFit()
+            } else {
+                Image(systemName: url.hasDirectoryPath ? "folder" : "doc")
+                    .resizable().scaledToFit().padding(3).foregroundStyle(StudioTheme.textTertiary)
             }
-    }
-}
-
-/// Icons and thumbnails for result rows, cached by path.
-@MainActor
-enum AskFileThumbnails {
-    private static let icons = NSCache<NSString, NSImage>()
-    private static let thumbnails = NSCache<NSString, NSImage>()
-
-    static func icon(for url: URL) -> NSImage {
-        if let cached = icons.object(forKey: url.path as NSString) { return cached }
-        let icon = NSWorkspace.shared.icon(forFile: url.path)
-        icons.setObject(icon, forKey: url.path as NSString)
-        return icon
-    }
-
-    static func thumbnail(for url: URL) async -> NSImage? {
-        if let cached = thumbnails.object(forKey: url.path as NSString) { return cached }
-        let request = QLThumbnailGenerator.Request(fileAt: url, size: CGSize(width: 56, height: 56),
-                                                   scale: NSScreen.main?.backingScaleFactor ?? 2,
-                                                   representationTypes: .thumbnail)
-        guard let representation = try? await QLThumbnailGenerator.shared.generateBestRepresentation(for: request)
-        else { return nil }
-        let image = representation.nsImage
-        thumbnails.setObject(image, forKey: url.path as NSString)
-        return image
+        }
+        .clipShape(RoundedRectangle(cornerRadius: thumbnail ? 4 : 0, style: .continuous))
+        .accessibilityHidden(true)
+        .task(id: key) {
+            image = nil
+            let loaded = await AskResultImageCache.shared.image(key)
+            guard !Task.isCancelled else { return }
+            image = loaded
+        }
     }
 }
 

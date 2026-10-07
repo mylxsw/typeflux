@@ -3499,7 +3499,7 @@
 "launcher.search.general" = "一般";
 "launcher.search.mode" = "検索モード";
 "launcher.search.mode.subtitle" = "ミックス：トップヒットを先頭に、残りを種類ごとに表示します。";
-"launcher.search.mode.mixed" = "ミックス";
+"launcher.search.mode.mixed" = "混合（アプリ優先）";
 "launcher.search.mode.appsFirst" = "アプリ優先";
 "launcher.search.mode.filesFirst" = "ファイル優先";
 "launcher.search.fuzzy" = "あいまい検索";

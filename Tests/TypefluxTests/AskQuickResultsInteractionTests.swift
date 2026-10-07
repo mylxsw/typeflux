@@ -16,7 +16,7 @@ struct AskQuickResultsInteractionTests {
         var dismissed = 0
         var opened: [URL] = []
 
-        init(text: String, apps: AskTestAppIndex = AskTestAppIndex([]), selection: String? = nil,
+        init(text: String, apps: AskTestAppIndex = AskTestAppIndex([]), selection: String? = nil, waitForSearch: Bool = true,
              prepare: (AskConversationModel) -> Void = { _ in }) async throws {
             fixture = try AskTestFixture()
             fixture.model.appIndex = apps
@@ -39,6 +39,10 @@ struct AskQuickResultsInteractionTests {
             dismiss = { [unowned self] in dismissed += 1 }
             fixture.model.openApplication = { [unowned self] url in opened.append(url) }
             try await Task.sleep(for: .milliseconds(100))
+            if waitForSearch {
+                try await AskQuickSearchSessionTests.wait { !fixture.model.quickSearch.isSearching }
+                try await Task.sleep(for: .milliseconds(20))
+            }
         }
 
         private static func editor(in view: NSView) -> AskComposerTextView.Editor? {

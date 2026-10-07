@@ -25,6 +25,7 @@ final class AskConversationModel: ObservableObject {
 
     let voiceInput = AskVoiceInput()
     /// Applications the launcher can open; tests supply their own list.
+    let quickSearch = AskQuickSearchSession()
     var appIndex: any AskAppSearching = AskAppIndex.shared
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
@@ -402,6 +403,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        quickSearch.cancel()
+        quickSearch.results = nil
         recoveryGeneration = UUID(); recoveryWorking = false; inspectingRecovery = false
         recoveryEntries = [:]
         capturedContentFeedbackTasks.values.forEach { $0.cancel() }

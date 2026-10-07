@@ -36,7 +36,7 @@ struct AskQuickResults: Equatable {
     var files: [AskFileHit] = []
     /// More files matched than are listed: "Show all" offers them.
     var moreFiles = false
-    /// Which group comes first; mixed orders them by their best result.
+    /// Applications precede files unless file-first mode was explicitly selected.
     var groups: [Group] = []
     /// The clear winner, listed first and taking Return. Without one "Ask AI" leads.
     var best: Row?
@@ -89,6 +89,18 @@ struct AskQuickResults: Equatable {
         }
         guard let best else { return [.askAI] + listed }
         return [best] + listed.filter { $0 != best } + [.askAI]
+    }
+
+    func identity(of row: Row) -> String {
+        switch row {
+        case let .app(index): return "app:" + apps[index].entry.id
+        case let .pane(index): return "pane:" + panes[index].entry.id
+        case let .file(index): return "file:" + files[index].path
+        case let .format(index): return "format:\(index)"
+        case .calculation: return "calculation"
+        case .showAllFiles: return "showAllFiles"
+        case .askAI: return "askAI"
+        }
     }
 
     var highlightedRow: Row { rows[min(max(0, highlighted), rows.count - 1)] }
@@ -198,26 +210,27 @@ struct AskQuickResults: Equatable {
     /// Applications, panes, files and folders for `text`, grouped and with the best one picked.
     static func search(_ text: String, sources: Sources) -> AskQuickResults? {
         let query = AskSearchQuery(text)
-        guard query.isSearchable || (query.hasFilters && !query.compact.isEmpty) else { return nil }
-        let settings = sources.settings
-        var apps: [AskAppMatch] = [], panes: [AskAppMatch] = []
-        if let index = sources.apps, !query.hasFilters {
-            let found = index.search(text, limit: appLimit + paneLimit + 4)
-            apps = Array(found.filter { $0.entry.kind == .application }.prefix(appLimit))
-            panes = Array(found.filter { $0.entry.kind == .settingsPane }.prefix(paneLimit))
-        }
-        var files: [AskFileHit] = [], folders: [AskFileHit] = [], moreFiles = false
+        guard query.isSearchable || query.hasFilters else { return nil }
+        let matches = !query.hasFilters ? sources.apps?.search(text, limit: appLimit + paneLimit + 4) ?? [] : []
+        let hits = sources.files?.search(query, options: .init(limit: 24, fuzzy: sources.settings.fuzzy)) ?? []
+        return assemble(text, matches: matches, hits: hits, status: sources.files?.status, settings: sources.settings)
+    }
+
+    /// Pure presentation policy shared by synchronous callers and staged search.
+    static func assemble(_ text: String, matches: [AskAppMatch], hits: [AskFileHit],
+                         status: AskFileIndexStatus?, settings: AskLauncherSearchSettings) -> AskQuickResults? {
+        let apps = Array(matches.filter { $0.entry.kind == .application }.prefix(appLimit))
+        let panes = Array(matches.filter { $0.entry.kind == .settingsPane }.prefix(paneLimit))
+        let plain = hits.filter { !$0.isFolder }
+        let files = Array(plain.prefix(fileLimit))
+        let folders = Array(hits.filter(\.isFolder).prefix(folderLimit))
+        let moreFiles = plain.count > fileLimit
         var notice: Notice?
-        if let index = sources.files {
-            let hits = index.search(query, options: AskFileSearchOptions(limit: 24, fuzzy: settings.fuzzy))
-            let plain = hits.filter { !$0.isFolder }
-            files = Array(plain.prefix(fileLimit))
-            moreFiles = plain.count > fileLimit
-            folders = Array(hits.filter(\.isFolder).prefix(folderLimit))
-            let status = index.status
-            if case let .building(found, _) = status.phase { notice = .indexing(found: found, progress: status.progress) }
+        if let status, case let .building(found, _) = status.phase {
+            notice = .indexing(found: found, progress: status.progress)
         }
-        guard !apps.isEmpty || !panes.isEmpty || !files.isEmpty || !folders.isEmpty else { return nil }
+        if status?.phase == .loading { notice = .indexing(found: 0, progress: nil) }
+        guard !apps.isEmpty || !panes.isEmpty || !files.isEmpty || !folders.isEmpty || notice != nil else { return nil }
         var groups: [(group: Group, top: Double)] = []
         if let top = apps.first?.score { groups.append((.apps, top)) }
         if let top = panes.first?.score { groups.append((.panes, top)) }
@@ -226,8 +239,8 @@ struct AskQuickResults: Equatable {
         let order: (Group) -> Int = { group in
             let fileGroup = group == .files || group == .folders
             switch settings.mode {
-            case .mixed: return 0
-            case .appsFirst: return fileGroup ? 1 : 0
+            case .mixed, .appsFirst:
+                return group == .apps ? 0 : (group == .panes ? 1 : 2)
             case .filesFirst: return fileGroup ? 0 : 1
             }
         }
@@ -235,7 +248,12 @@ struct AskQuickResults: Equatable {
             order(lhs.group) != order(rhs.group) ? order(lhs.group) < order(rhs.group) : lhs.top > rhs.top
         }
         let listed = files + folders
-        let best = bestRow(text, apps: apps, panes: panes, files: listed)
+        let best: Row?
+        if settings.mode != .filesFirst, !apps.isEmpty || !panes.isEmpty {
+            best = bestRow(text, apps: apps, panes: apps.isEmpty ? panes : [], files: [])
+        } else {
+            best = bestRow(text, apps: apps, panes: panes, files: listed)
+        }
         return AskQuickResults(apps: apps, panes: panes, files: listed, moreFiles: moreFiles, groups: groups.map(\.group),
                                best: best, notice: notice)
     }
@@ -262,7 +280,7 @@ struct AskQuickResults: Equatable {
 
     /// Highlights the row the user chose in `previous`, if it is still here:
     /// the same spelling, application, file, or "Ask AI".
-    private mutating func keepChoice(from previous: AskQuickResults?) {
+    mutating func keepChoice(from previous: AskQuickResults?) {
         guard let previous, previous.chosen else { return }
         let target: Row?
         switch previous.highlightedRow {

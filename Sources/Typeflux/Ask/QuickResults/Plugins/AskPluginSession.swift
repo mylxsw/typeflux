@@ -226,6 +226,14 @@ final class AskPluginSession: ObservableObject {
         update(text: text, selection: selection, language: language, runWhenPlanned: ranBefore)
     }
 
+    /// An index or search setting changed without an edit. Keep live refreshes
+    /// debounced so publishing a growing index cannot flood the search worker.
+    func refreshLiveResults(text: String, selection: String?, language: AppLanguage) {
+        guard plan?.mode == .live else { return }
+        request = nil
+        update(text: text, selection: selection, language: language)
+    }
+
     /// ⇥ / ⇧⇥: the plugin's next option, applied.
     func cycle(_ step: Int, selection: String?, text: String, language: AppLanguage) -> Bool {
         guard let plugin, let request, let plan else { return false }
