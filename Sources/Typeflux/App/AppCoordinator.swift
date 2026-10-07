@@ -113,6 +113,10 @@ final class AppCoordinator {
             analyticsReporter: di.analyticsReporter
         )
         self.workflowController = workflowController
+        workflowController.clipboardHistoryStore = di.clipboardHistoryStore
+        workflowController.clipboardPanelPresenter = di.clipboardPanelController
+        workflowController.enforceClipboardRetentionPolicy()
+        di.clipboardMonitor.start()
         if let ask = di.askConversationWindowController {
             workflowController.onAskRequested = { [weak ask] in ask?.toggleLauncher() }
             // Build the launcher while the app is idle, so the first ⌥Space shows it at once.
@@ -215,6 +219,7 @@ final class AppCoordinator {
         cloudEndpointProbeScheduler.stop()
         asrPublicConfigRefreshScheduler.stop()
         Task { await TypefluxOfficialASRRouteCache.shared.invalidate() }
+        di.clipboardMonitor.stop()
         workflowController?.stop()
         mouseVoiceInputController?.stop()
         statusBarController?.stop()

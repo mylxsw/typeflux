@@ -31,6 +31,9 @@ extension AXTextInjector {
         pasteboard: NSPasteboard,
         sendCopy: () -> Void
     ) -> String? {
+        // The copied selection is not something the user copied: keep it out of clipboard history.
+        ClipboardCaptureSuppression.shared.begin()
+        defer { ClipboardCaptureSuppression.shared.end() }
         guard let previousSnapshot = capturePasteboardSnapshotWithTimeout(from: pasteboard) else {
             NetworkDebugLogger.logMessage(
                 "[Text Selection] clipboard-copy skipped because the clipboard could not be preserved"

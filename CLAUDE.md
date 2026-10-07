@@ -86,6 +86,7 @@ make format
 | Store | Implementation | Persistence |
 |-------|---------------|-------------|
 | History records | `SQLiteHistoryStore` (WAL mode) at `~/Library/Application Support/Typeflux/history.sqlite` | Persistent |
+| Clipboard history | `SQLiteClipboardHistoryStore` at `~/Library/Application Support/Typeflux/clipboard.sqlite`; copied images as PNGs in `clipboard-images/` | Persistent |
 | Settings | `SettingsStore` via `UserDefaults` (`com.typeflux.plist`) | Persistent |
 | Vocabulary | `VocabularyStore` via `UserDefaults` | Persistent |
 | Usage stats | `UsageStatsStore` via `UserDefaults` | Persistent |
@@ -109,7 +110,7 @@ History changes are broadcast via `NotificationCenter` using `.historyStoreDidCh
 - `Hotkey/` — global hotkey capture via `EventTapHotkeyService` (CGEventTap)
 - `Audio/` — `AVFoundationAudioRecorder`, `AudioDeviceManager`, audio format handling
 - `TextInjection/` — `AXTextInjector` uses Accessibility API; falls back to clipboard paste
-- `Clipboard/` — system clipboard read/write
+- `Clipboard/` — system clipboard read/write, plus the clipboard panel opened by the history hotkey: `ClipboardMonitor` records copies into `ClipboardHistoryStore`, `ClipboardFeed` merges them with voice history, and `ClipboardPanelController` shows `ClipboardPanelModel` in a non-activating key panel. `ClipboardCaptureSuppression` keeps Typeflux's own selection probes out of the history.
 - `Settings/` — `SettingsStore` plus settings UI views
 - `History/` — history models, stores, export
 - `Stats/` — `UsageStatsStore` with backfill logic

@@ -897,7 +897,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         controller.handleHistoryPickerRequested()
         XCTAssertTrue(controller.isHistoryPickerPresented)
-        XCTAssertEqual(controller.historyPickerItems.map(\.text), ["new result", "old result"])
+        XCTAssertEqual(controller.historyPickerItems.map(\.title), ["new result", "old result"])
 
         controller.confirmHistorySelection()
 
@@ -921,7 +921,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         )
 
         controller.handleHistoryPickerRequested()
-        controller.copyHistorySelection(at: 0)
+        controller.historyPanelModel.perform(.copy, at: 0)
 
         XCTAssertFalse(controller.isHistoryPickerPresented)
         XCTAssertEqual(clipboard.storedText, "copy only")
@@ -929,10 +929,10 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertTrue(textInjector.replacedTexts.isEmpty)
     }
 
-    func testHistoryPickerShowsMostRecentTwentyRecords() {
+    func testHistoryPickerShowsMostRecentVoiceRecords() {
         let historyStore = MockProcessingHistoryStore()
         let baseDate = Date(timeIntervalSince1970: 1000)
-        for index in 0 ..< 25 {
+        for index in 0 ..< WorkflowController.historyPanelVoiceLimit + 5 {
             historyStore.save(record: HistoryRecord(
                 date: baseDate.addingTimeInterval(TimeInterval(index)),
                 transcriptText: "result \(index)"
@@ -943,8 +943,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         controller.handleHistoryPickerRequested()
 
-        XCTAssertEqual(controller.historyPickerItems.count, 20)
-        XCTAssertEqual(controller.historyPickerItems.first?.text, "result 24")
+        XCTAssertEqual(controller.historyPickerItems.count, WorkflowController.historyPanelVoiceLimit)
+        XCTAssertEqual(controller.historyPickerItems.first?.text, "result \(WorkflowController.historyPanelVoiceLimit + 4)")
         XCTAssertEqual(controller.historyPickerItems.last?.text, "result 5")
     }
 
@@ -957,7 +957,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let controller = makeWorkflowController(historyStore: historyStore)
 
         controller.handleHistoryPickerRequested()
-        controller.retryHistorySelection(at: 0)
+        controller.historyPanelModel.perform(.retryTranscription, at: 0)
 
         XCTAssertFalse(controller.isHistoryPickerPresented)
         XCTAssertNotNil(controller.processingTask)
@@ -4578,5 +4578,313 @@ private final class ComposerLiveSessionFactory: RealtimeTranscriptionSessionFact
         let session = ComposerLiveSession(onUpdate: onUpdate, result: result)
         lock.withLock { made = session }
         return session
+    }
+}
+
+// MARK: - Clipboard panel
+
+private final class MockClipboardPanelPresenter: ClipboardPanelPresenting {
+    private(set) var presentCount = 0
+    private(set) var dismissCount = 0
+    private(set) var quickLookURLs: [[URL]] = []
+    private(set) var isPresented = false
+
+    func present(_: ClipboardPanelModel) {
+        presentCount += 1
+        isPresented = true
+    }
+
+    func dismiss() {
+        dismissCount += 1
+        isPresented = false
+    }
+
+    func toggleQuickLook(urls: [URL]) {
+        quickLookURLs.append(urls)
+    }
+}
+
+private final class MockClipboardContentActions: ClipboardContentActing, @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedWrites: [(title: String, plainText: Bool)] = []
+    private var storedPasteShortcutCount = 0
+    var writeSucceeds = true
+    var revealed: [[URL]] = []
+    var savedURL: URL?
+    var recognizedText: String?
+
+    var writes: [(title: String, plainText: Bool)] { lock.withLock { storedWrites } }
+    var pasteShortcutCount: Int { lock.withLock { storedPasteShortcutCount } }
+
+    func writeToPasteboard(_ entry: ClipboardEntry, asPlainText: Bool) -> Bool {
+        lock.withLock { storedWrites.append((entry.title, asPlainText)) }
+        return writeSucceeds
+    }
+
+    func sendPasteShortcut() {
+        lock.withLock { storedPasteShortcutCount += 1 }
+    }
+
+    func revealInFinder(_ urls: [URL]) {
+        revealed.append(urls)
+    }
+
+    func saveToDownloads(_: URL) -> URL? {
+        savedURL
+    }
+
+    func recognizeText(in _: URL) async -> String? {
+        recognizedText
+    }
+}
+
+extension WorkflowControllerProcessingTests {
+    private struct ClipboardPanelHarness {
+        let controller: WorkflowController
+        let store: InMemoryClipboardHistoryStore
+        let presenter: MockClipboardPanelPresenter
+        let actions: MockClipboardContentActions
+        let historyStore: MockProcessingHistoryStore
+        let clipboard: MockClipboardService
+        let textInjector: MockProcessingTextInjector
+
+        var model: ClipboardPanelModel { controller.historyPanelModel }
+
+        func index(of title: String) -> Int {
+            model.visibleEntries.firstIndex { $0.title == title } ?? -1
+        }
+    }
+
+    private func makeClipboardPanelHarness(
+        voiceTexts: [String] = [],
+        configure: (InMemoryClipboardHistoryStore) -> Void = { _ in }
+    ) -> ClipboardPanelHarness {
+        let historyStore = MockProcessingHistoryStore()
+        for (offset, text) in voiceTexts.enumerated() {
+            historyStore.save(record: HistoryRecord(date: Date(timeIntervalSince1970: 1000 + Double(offset)), transcriptText: text))
+        }
+        let clipboard = MockClipboardService()
+        let textInjector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: textInjector, historyStore: historyStore, clipboard: clipboard)
+        let store = InMemoryClipboardHistoryStore()
+        configure(store)
+        let presenter = MockClipboardPanelPresenter()
+        let actions = MockClipboardContentActions()
+        controller.clipboardHistoryStore = store
+        controller.clipboardPanelPresenter = presenter
+        controller.clipboardContentActions = actions
+        controller.historyPanelModel.fileExists = { _ in true }
+        return ClipboardPanelHarness(
+            controller: controller, store: store, presenter: presenter, actions: actions,
+            historyStore: historyStore, clipboard: clipboard, textInjector: textInjector
+        )
+    }
+
+    /// Clipboard items copied in the last minute, so retention never purges them.
+    private func seed(_ store: InMemoryClipboardHistoryStore) {
+        let now = Date()
+        store.record(.text("copied text"), source: nil, at: now.addingTimeInterval(-30))
+        store.record(.image(png: Data([1]), pixelWidth: 2, pixelHeight: 2), source: nil, at: now.addingTimeInterval(-20))
+        store.record(.files([URL(fileURLWithPath: "/tmp/report.pdf")]), source: nil, at: now.addingTimeInterval(-10))
+        if let index = store.storedItems.firstIndex(where: { $0.payload == .image }) {
+            store.storedItems[index].imagePath = "/tmp/shot.png"
+        }
+    }
+
+    func testHistoryPanelPresentsClipboardAndVoiceEntriesAndTogglesClosed() {
+        let harness = makeClipboardPanelHarness(voiceTexts: ["spoken"], configure: seed)
+
+        harness.controller.handleHistoryPickerRequested()
+
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.presenter.presentCount, 1)
+        XCTAssertEqual(
+            harness.controller.historyPickerItems.map(\.kind),
+            [.pdf, .image, .text, .voice]
+        )
+
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.presenter.dismissCount, 1)
+
+        harness.controller.dismissHistoryPicker()
+        XCTAssertEqual(harness.presenter.dismissCount, 1)
+    }
+
+    func testHistoryPanelDoesNotOpenWhenEmpty() {
+        let harness = makeClipboardPanelHarness()
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.presenter.presentCount, 0)
+    }
+
+    func testPanelEscapeDismissesThroughTheController() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+        harness.model.cancel()
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.presenter.dismissCount, 1)
+    }
+
+    func testPastingFilesWritesThePasteboardThenSendsPaste() async {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+
+        harness.model.perform(.paste, at: harness.index(of: "report.pdf"))
+
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.actions.writes.map(\.plainText), [false])
+        await waitUntil { harness.actions.pasteShortcutCount == 1 }
+        XCTAssertEqual(harness.actions.pasteShortcutCount, 1)
+        XCTAssertTrue(harness.textInjector.insertedTexts.isEmpty)
+    }
+
+    func testPastingFilePathsAsPlainText() async {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+        harness.model.perform(.pastePlainText, at: harness.index(of: "report.pdf"))
+        XCTAssertEqual(harness.actions.writes.map(\.plainText), [true])
+        await waitUntil { harness.actions.pasteShortcutCount == 1 }
+    }
+
+    func testFailedPasteboardWriteDoesNotSendPaste() async {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.actions.writeSucceeds = false
+        harness.controller.handleHistoryPickerRequested()
+        harness.model.perform(.paste, at: harness.index(of: "report.pdf"))
+        try? await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(harness.actions.pasteShortcutCount, 0)
+    }
+
+    func testPastingCopiedTextInsertsIt() async {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+        harness.model.perform(.paste, at: harness.index(of: "copied text"))
+        XCTAssertEqual(harness.clipboard.storedText, "copied text")
+        await waitUntil { harness.textInjector.insertedTexts == ["copied text"] }
+        XCTAssertEqual(harness.textInjector.insertedTexts, ["copied text"])
+    }
+
+    func testCopyingAnImageWritesThePasteboardWithoutPasting() async {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+        harness.model.perform(.copy, at: harness.index(of: L("clipboard.entry.image")))
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.actions.writes.count, 1)
+        try? await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(harness.actions.pasteShortcutCount, 0)
+    }
+
+    func testFailedImageCopyKeepsThePanelOpen() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.actions.writeSucceeds = false
+        harness.controller.handleHistoryPickerRequested()
+        harness.model.perform(.copy, at: harness.index(of: L("clipboard.entry.image")))
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+    }
+
+    func testPinningMovesEntriesToTheTopForClipboardAndVoice() {
+        let harness = makeClipboardPanelHarness(voiceTexts: ["spoken"], configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+
+        harness.model.perform(.togglePin, at: harness.index(of: "spoken"))
+        XCTAssertEqual(harness.model.visibleEntries.first?.title, "spoken")
+        XCTAssertEqual(harness.store.pinnedVoiceIDs.count, 1)
+        XCTAssertEqual(harness.model.selectedEntry?.title, "spoken")
+
+        harness.model.perform(.togglePin, at: harness.index(of: "copied text"))
+        XCTAssertTrue(harness.store.storedItems.first { $0.text == "copied text" }?.isPinned ?? false)
+
+        harness.model.perform(.togglePin, at: harness.index(of: "spoken"))
+        XCTAssertTrue(harness.store.pinnedVoiceIDs.isEmpty)
+    }
+
+    func testDeletingEntriesRemovesThemAndClosesWhenEmpty() {
+        let harness = makeClipboardPanelHarness(voiceTexts: ["spoken"]) { store in
+            store.record(.text("copied"), source: nil, at: Date())
+        }
+        harness.controller.handleHistoryPickerRequested()
+
+        harness.model.perform(.delete, at: harness.index(of: "copied"))
+        XCTAssertTrue(harness.store.storedItems.isEmpty)
+        XCTAssertEqual(harness.model.visibleEntries.map(\.title), ["spoken"])
+
+        harness.model.perform(.delete, at: 0)
+        XCTAssertTrue(harness.historyStore.list().isEmpty)
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+    }
+
+    func testRevealQuickLookAndSaveActions() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+
+        harness.model.perform(.quickLook, at: harness.index(of: "report.pdf"))
+        XCTAssertEqual(harness.presenter.quickLookURLs, [[URL(fileURLWithPath: "/tmp/report.pdf")]])
+
+        harness.model.perform(.saveToDownloads, at: harness.index(of: L("clipboard.entry.image")))
+        XCTAssertEqual(harness.model.notice, L("clipboard.notice.saveFailed"))
+        harness.actions.savedURL = URL(fileURLWithPath: "/Downloads/Typeflux.png")
+        harness.model.perform(.saveToDownloads)
+        XCTAssertEqual(harness.model.notice, L("clipboard.notice.savedToDownloads", "Typeflux.png"))
+
+        harness.model.perform(.revealInFinder, at: harness.index(of: "report.pdf"))
+        XCTAssertEqual(harness.actions.revealed, [[URL(fileURLWithPath: "/tmp/report.pdf")]])
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+    }
+
+    func testCopyImageTextCopiesRecognizedText() async {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+        let image = harness.index(of: L("clipboard.entry.image"))
+
+        harness.model.perform(.copyImageText, at: image)
+        await waitUntil { harness.model.notice != nil }
+        XCTAssertEqual(harness.model.notice, L("clipboard.notice.noImageText"))
+        XCTAssertNil(harness.clipboard.storedText)
+
+        harness.actions.recognizedText = "Hello"
+        harness.model.perform(.copyImageText, at: image)
+        await waitUntil { harness.clipboard.storedText == "Hello" }
+        XCTAssertEqual(harness.model.notice, L("clipboard.notice.imageTextCopied"))
+    }
+
+    func testRetryIgnoresClipboardEntries() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+        harness.controller.performHistoryAction(.retryTranscription, on: harness.model.visibleEntries[0])
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+        XCTAssertNil(harness.controller.processingTask)
+    }
+
+    func testClipboardChangesReloadTheOpenPanel() async {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+        harness.store.record(.text("fresh copy"), source: nil, at: Date().addingTimeInterval(60))
+
+        NotificationCenter.default.post(name: .clipboardHistoryDidChange, object: nil)
+        await waitUntil { harness.model.visibleEntries.first?.title == "fresh copy" }
+        XCTAssertEqual(harness.model.visibleEntries.first?.title, "fresh copy")
+    }
+
+    func testClipboardRetentionFollowsHistorySettings() {
+        let harness = makeClipboardPanelHarness()
+        let now = Date(timeIntervalSince1970: 10 * 86400)
+
+        harness.controller.settingsStore.historyRetentionPolicy = .oneWeek
+        harness.controller.enforceClipboardRetentionPolicy(now: now)
+        XCTAssertEqual(harness.store.purgeCutoffs.last, Date(timeIntervalSince1970: 3 * 86400))
+
+        harness.controller.settingsStore.historyRetentionPolicy = .never
+        harness.controller.enforceClipboardRetentionPolicy(now: now)
+        XCTAssertEqual(harness.store.purgeCutoffs.last, Date(timeIntervalSince1970: 9 * 86400))
+
+        harness.controller.settingsStore.historyRetentionPolicy = .forever
+        harness.controller.enforceClipboardRetentionPolicy(now: now)
+        XCTAssertEqual(harness.store.purgeCutoffs.count, 2)
+        XCTAssertEqual(harness.store.trimCounts, Array(repeating: ClipboardMonitor.maximumItemCount, count: 3))
+
+        harness.controller.clipboardHistoryStore = nil
+        harness.controller.enforceClipboardRetentionPolicy(now: now)
+        XCTAssertEqual(harness.store.trimCounts.count, 3)
     }
 }

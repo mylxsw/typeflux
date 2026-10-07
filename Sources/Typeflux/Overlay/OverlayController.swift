@@ -300,11 +300,6 @@ final class OverlayController {
         let subtitle: String
     }
 
-    enum PickerStyle {
-        case persona
-        case history
-    }
-
     enum PersonaPickerIcon: Equatable {
         case none
         case global
@@ -444,16 +439,6 @@ final class OverlayController {
         model.onPersonaSelectRequested = onSelect
         model.onPersonaConfirmRequested = onConfirm
         model.onPersonaCancelRequested = onCancel
-    }
-
-    func setHistoryPickerActionHandlers(
-        onCopy: ((Int) -> Void)?,
-        onInsert: ((Int) -> Void)?,
-        onRetry: ((Int) -> Void)?
-    ) {
-        model.onHistoryCopyRequested = onCopy
-        model.onHistoryInsertRequested = onInsert
-        model.onHistoryRetryRequested = onRetry
     }
 
     func setResultDialogHandler(onCopy: (() -> Void)?) {
@@ -821,14 +806,13 @@ final class OverlayController {
         selectedIndex: Int,
         title: String,
         instructions: String,
-        icon: PersonaPickerIcon,
-        style: PickerStyle = .persona
+        icon: PersonaPickerIcon
     ) {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in
                 self?.showPersonaPicker(
                     items: items, selectedIndex: selectedIndex, title: title,
-                    instructions: instructions, icon: icon, style: style
+                    instructions: instructions, icon: icon
                 )
             }
             return
@@ -844,7 +828,6 @@ final class OverlayController {
         model.statusText = title
         model.detailText = instructions
         model.personaPickerIcon = icon
-        model.pickerStyle = style
         refreshWindow()
     }
 
@@ -1578,7 +1561,6 @@ final class OverlayViewModel: ObservableObject {
     @Published var personaSelectedIndex: Int = 0
     @Published var personaViewportHeight: CGFloat = 240
     @Published var personaPickerIcon: OverlayController.PersonaPickerIcon = .none
-    @Published var pickerStyle: OverlayController.PickerStyle = .persona
     @Published var failureActions: [OverlayFailureAction] = []
     @Published var failureTone: OverlayFailureTone = .error
     @Published var noticeDismissible = true
@@ -1593,9 +1575,6 @@ final class OverlayViewModel: ObservableObject {
     var onPersonaSelectRequested: ((Int) -> Void)?
     var onPersonaConfirmRequested: (() -> Void)?
     var onPersonaCancelRequested: (() -> Void)?
-    var onHistoryCopyRequested: ((Int) -> Void)?
-    var onHistoryInsertRequested: ((Int) -> Void)?
-    var onHistoryRetryRequested: ((Int) -> Void)?
     var onResultCopyRequested: (() -> Void)?
     var onFailureRetryHandler: (() -> Void)?
 
@@ -1639,18 +1618,6 @@ final class OverlayViewModel: ObservableObject {
 
     func requestPersonaCancel() {
         onPersonaCancelRequested?()
-    }
-
-    func requestHistoryCopy(at index: Int) {
-        onHistoryCopyRequested?(index)
-    }
-
-    func requestHistoryInsert(at index: Int) {
-        onHistoryInsertRequested?(index)
-    }
-
-    func requestHistoryRetry(at index: Int) {
-        onHistoryRetryRequested?(index)
     }
 
     func requestResultCopy() {
@@ -2125,8 +2092,7 @@ private struct OverlayView: View {
             model: model,
             item: item,
             index: index,
-            isSelected: isSelected,
-            isHistory: model.pickerStyle == .history
+            isSelected: isSelected
         )
     }
 
@@ -2142,30 +2108,20 @@ private struct OverlayView: View {
         let item: OverlayController.PersonaPickerItem
         let index: Int
         let isSelected: Bool
-        let isHistory: Bool
-
-        @State private var isHovered = false
 
         var body: some View {
             rowContent
-                .contextMenu {
-                    if isHistory {
-                        historyActions
-                    }
-                }
         }
 
         private var rowContent: some View {
             HStack(spacing: 12) {
-                if !isHistory {
-                    personaAvatar
-                }
+                personaAvatar
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.title)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.white.opacity(isSelected ? 0.98 : 0.94))
-                        .lineLimit(isHistory ? 2 : 1)
+                        .lineLimit(1)
                         .shadow(color: Color.black.opacity(0.34), radius: 2, x: 0, y: 1)
                     Text(item.subtitle)
                         .font(.system(size: 11.5, weight: .medium))
@@ -2176,22 +2132,17 @@ private struct OverlayView: View {
 
                 Spacer(minLength: 0)
 
-                if isHistory {
-                    historyCopyButton
-                        .opacity(isHovered ? 1 : 0)
-                        .accessibilityHidden(!isHovered)
-                } else if isSelected {
+                if isSelected {
                     selectedCheckmark
                 }
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, isHistory ? 12 : 10)
+            .padding(.vertical, 10)
             .background(rowBackground)
             .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .onTapGesture {
                 model.requestPersonaSelection(at: index)
             }
-            .onHover { isHovered = $0 }
         }
 
         private var personaAvatar: some View {
@@ -2222,33 +2173,6 @@ private struct OverlayView: View {
                     .foregroundStyle(Color.white)
             }
             .frame(width: 21, height: 21)
-        }
-
-        private var historyCopyButton: some View {
-            Button {
-                model.requestHistoryCopy(at: index)
-            } label: {
-                Image(systemName: "doc.on.doc")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.white)
-                    .frame(width: 18, height: 18)
-            }
-            .buttonStyle(.plain)
-            .fixedSize()
-            .help(L("common.copy"))
-        }
-
-        @ViewBuilder
-        private var historyActions: some View {
-            Button(L("common.copy")) {
-                model.requestHistoryCopy(at: index)
-            }
-            Button(L("overlay.historyPicker.insertAtCursor")) {
-                model.requestHistoryInsert(at: index)
-            }
-            Button(L("overlay.historyPicker.retryTranscription")) {
-                model.requestHistoryRetry(at: index)
-            }
         }
 
         private var rowBackground: some View {

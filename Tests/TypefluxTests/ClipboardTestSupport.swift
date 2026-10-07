@@ -1,0 +1,141 @@
+import AppKit
+@testable import Typeflux
+
+/// Shared fixtures for clipboard history tests.
+enum ClipboardTestSupport {
+    static func temporaryDirectory(_ name: String = "ClipboardTests") -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(name)-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
+    /// A solid-color bitmap, optionally with text drawn on it.
+    static func imageData(
+        width: Int = 4,
+        height: Int = 3,
+        type: NSBitmapImageRep.FileType = .png,
+        text: String? = nil
+    ) -> Data {
+        let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8,
+            samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
+            bytesPerRow: 0, bitsPerPixel: 0
+        )!
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        NSColor.white.setFill()
+        NSRect(x: 0, y: 0, width: width, height: height).fill()
+        if let text {
+            (text as NSString).draw(at: NSPoint(x: 20, y: CGFloat(height) / 3), withAttributes: [
+                .font: NSFont.systemFont(ofSize: CGFloat(height) / 3, weight: .bold),
+                .foregroundColor: NSColor.black
+            ])
+        }
+        NSGraphicsContext.restoreGraphicsState()
+        return rep.representation(using: type, properties: [:])!
+    }
+
+    static func makeFile(named name: String, in directory: URL, bytes: Int = 16) -> URL {
+        let url = directory.appendingPathComponent(name)
+        FileManager.default.createFile(atPath: url.path, contents: Data(repeating: 7, count: bytes))
+        return url
+    }
+
+    static func entry(
+        _ kind: ClipboardEntryKind,
+        id: UUID = UUID(),
+        date: Date = Date(),
+        text: String? = nil,
+        filePaths: [String] = [],
+        imagePath: String? = nil,
+        imagePixelSize: CGSize? = nil,
+        byteSize: Int64 = 0,
+        sourceAppName: String? = nil,
+        isPinned: Bool = false
+    ) -> ClipboardEntry {
+        ClipboardEntry(
+            origin: kind == .voice ? .voice(id) : .clipboard(id),
+            kind: kind,
+            date: date,
+            text: text ?? (kind.isTextual ? "text" : nil),
+            filePaths: filePaths,
+            imagePath: imagePath,
+            imagePixelSize: imagePixelSize,
+            byteSize: byteSize,
+            sourceAppName: sourceAppName,
+            isPinned: isPinned
+        )
+    }
+}
+
+/// An in-memory `ClipboardHistoryStore` that records calls.
+final class InMemoryClipboardHistoryStore: ClipboardHistoryStore {
+    var storedItems: [ClipboardItem] = []
+    var pinnedVoiceIDs: Set<UUID> = []
+    var purgeCutoffs: [Date] = []
+    var trimCounts: [Int] = []
+    private let lock = NSLock()
+
+    @discardableResult
+    func record(_ capture: ClipboardCapture, source: ClipboardSource?, at date: Date) -> ClipboardItem? {
+        lock.lock()
+        defer { lock.unlock() }
+        if let index = storedItems.firstIndex(where: { $0.contentHash == capture.contentHash }) {
+            storedItems[index].date = date
+            return storedItems[index]
+        }
+        var item = ClipboardItem(
+            id: UUID(), payload: .text, date: date, text: nil, filePaths: [], imagePath: nil,
+            imagePixelWidth: nil, imagePixelHeight: nil, byteSize: 0, contentHash: capture.contentHash,
+            sourceBundleID: source?.bundleID, sourceAppName: source?.appName, isPinned: false
+        )
+        switch capture {
+        case let .text(text):
+            item.text = text
+        case let .image(_, width, height):
+            item.payload = .image
+            item.imagePixelWidth = width
+            item.imagePixelHeight = height
+        case let .files(urls):
+            item.payload = .files
+            item.filePaths = urls.map(\.path)
+        }
+        storedItems.append(item)
+        return item
+    }
+
+    func items(limit: Int) -> [ClipboardItem] {
+        lock.lock()
+        defer { lock.unlock() }
+        return Array(storedItems.sorted { $0.date > $1.date }.prefix(limit))
+    }
+
+    func setPinned(_ pinned: Bool, id: UUID) {
+        guard let index = storedItems.firstIndex(where: { $0.id == id }) else { return }
+        storedItems[index].isPinned = pinned
+    }
+
+    func delete(id: UUID) {
+        storedItems.removeAll { $0.id == id }
+    }
+
+    func purge(olderThan cutoff: Date) {
+        purgeCutoffs.append(cutoff)
+        storedItems.removeAll { !$0.isPinned && $0.date < cutoff }
+    }
+
+    func trim(toMaxCount maxCount: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        trimCounts.append(maxCount)
+    }
+
+    func pinnedVoiceRecordIDs() -> Set<UUID> {
+        pinnedVoiceIDs
+    }
+
+    func setVoiceRecordPinned(_ pinned: Bool, recordID: UUID) {
+        if pinned { pinnedVoiceIDs.insert(recordID) } else { pinnedVoiceIDs.remove(recordID) }
+    }
+}
