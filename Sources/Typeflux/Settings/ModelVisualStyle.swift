@@ -42,7 +42,7 @@ struct ModelSurface<Content: View>: View {
     }
 }
 
-/// Small grey section caption shown above a card, e.g. "Connected 4".
+/// Small grey section caption shown above a card, e.g. "Configured 4".
 struct ModelSectionLabel: View {
     let title: String
     var detail: String?
@@ -69,7 +69,7 @@ struct ModelRowDivider: View {
     }
 }
 
-/// Dot plus label connection state; hollow when the provider is not configured.
+/// Dot plus label configuration state; hollow when the provider is not configured.
 struct ModelConnectionStatus: View {
     let connected: Bool
 
@@ -82,7 +82,7 @@ struct ModelConnectionStatus: View {
                     Circle().strokeBorder(StudioTheme.textTertiary, lineWidth: 1.5)
                 }
             }.frame(width: 7, height: 7)
-            Text(L(connected ? "models.connected" : "models.notConfigured"))
+            Text(L(connected ? "models.configured" : "models.notConfigured"))
                 .font(.system(size: 12))
                 .foregroundStyle(connected ? StudioTheme.textSecondary : StudioTheme.textTertiary)
                 .lineLimit(1)
@@ -185,7 +185,7 @@ struct ModelActionStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 13, weight: .medium))
-            .padding(.horizontal, 12).frame(height: 28)
+            .padding(.horizontal, 12).frame(height: SettingsControlMetrics.height)
             .foregroundStyle(primary ? .white : StudioTheme.textPrimary)
             .background(
                 primary ? ModelVisualStyle.accent : ModelVisualStyle.control,
@@ -204,21 +204,17 @@ struct ModelFieldStyle: TextFieldStyle {
     var trailingAccessoryWidth: CGFloat = 0
     /// Endpoints, keys and model IDs read best monospaced; free-form names do not.
     var monospaced = true
+    @Environment(\.isFocused) private var focused
 
     // TextFieldStyle requires this underscored protocol method.
     // swiftlint:disable:next identifier_name
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration.textFieldStyle(.plain)
-            .font(.system(size: 13, design: monospaced ? .monospaced : .default))
-            .padding(.leading, 10).padding(.trailing, 10 + trailingAccessoryWidth).frame(height: 30)
-            .background(
-                ModelVisualStyle.control,
-                in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                    .strokeBorder(ModelVisualStyle.border)
-            )
+            .font(.system(size: SettingsControlMetrics.fontSize, design: monospaced ? .monospaced : .default))
+            .padding(.leading, SettingsControlMetrics.horizontalPadding)
+            .padding(.trailing, SettingsControlMetrics.horizontalPadding + trailingAccessoryWidth)
+            .frame(height: SettingsControlMetrics.height)
+            .modifier(SettingsControlChrome(focused: focused))
     }
 }
 

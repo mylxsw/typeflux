@@ -1443,22 +1443,9 @@ struct StudioTextInputCard<LabelTrailing: View>: View {
                     TextField(placeholder, text: $text)
                 }
             }
-            .textFieldStyle(.plain)
-            .font(.studioBody(StudioTheme.Typography.bodyLarge))
+            .textFieldStyle(ModelFieldStyle(monospaced: secure))
             .foregroundStyle(StudioTheme.textPrimary)
-            .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
-            .padding(.vertical, StudioTheme.Insets.textFieldVertical)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .fill(StudioTheme.controlSurface.opacity(StudioTheme.Opacity.textFieldFill))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .stroke(
-                        StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                        lineWidth: StudioTheme.BorderWidth.thin
-                    )
-            )
+            .accessibilityLabel(label)
         }
     }
 }
@@ -1507,12 +1494,9 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
 
             ZStack(alignment: .trailing) {
                 TextField(placeholder, text: $text)
-                    .textFieldStyle(.plain)
-                    .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                    .textFieldStyle(ModelFieldStyle(trailingAccessoryWidth: normalizedSuggestions.isEmpty ? 0 : 24))
                     .foregroundStyle(StudioTheme.textPrimary)
-                    .padding(.leading, StudioTheme.Insets.textFieldHorizontal)
-                    .padding(.trailing, normalizedSuggestions.isEmpty ? StudioTheme.Insets.textFieldHorizontal : 58)
-                    .padding(.vertical, StudioTheme.Insets.textFieldVertical)
+                    .accessibilityLabel(label)
 
                 if !normalizedSuggestions.isEmpty {
                     HStack(spacing: StudioTheme.Spacing.xSmall) {
@@ -1524,29 +1508,21 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                                     }
                                 }
                             } label: {
-                                Color.clear
-                                    .frame(width: 12, height: 12)
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(StudioTheme.textSecondary)
+                                    .frame(width: 24, height: SettingsControlMetrics.height)
                             }
-                            .menuStyle(.borderlessButton)
+                            .menuStyle(.borderlessButton).menuIndicator(.hidden)
+                            .accessibilityLabel(L("common.selectSuggestedValue"))
                         }
-                        .frame(width: 24, height: 24)
+                        .frame(width: 24, height: SettingsControlMetrics.height)
                         .studioTooltip(L("common.selectSuggestedValue"), yOffset: 28)
                     }
-                    .padding(.trailing, 12)
+                    .padding(.trailing, 3)
                 }
             }
-            .frame(minHeight: 46)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .fill(StudioTheme.controlSurface.opacity(StudioTheme.Opacity.textFieldFill))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .stroke(
-                        StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                        lineWidth: StudioTheme.BorderWidth.thin
-                    )
-            )
+            .frame(height: SettingsControlMetrics.height)
         }
     }
 }
@@ -1899,39 +1875,8 @@ struct StudioMenuPicker<T: Hashable>: View {
     }
 
     var body: some View {
-        Menu {
-            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
-                Button(option.label) {
-                    selection = option.value
-                }
-            }
-        } label: {
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                Text(selectedLabel)
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
-            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
-            .padding(.vertical, StudioTheme.Insets.buttonVertical)
-            .frame(width: width, height: height)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .fill(StudioTheme.controlSurface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
+        SettingsMenuPicker(title: selectedLabel, options: options, selection: $selection)
+            .frame(width: width, height: height ?? SettingsControlMetrics.height)
+            .fixedSize()
     }
 }

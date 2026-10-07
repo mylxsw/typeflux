@@ -187,6 +187,86 @@ final class AskImageSettingsTests: XCTestCase {
         XCTAssertFalse(model.noticeIsError)
     }
 
+    func testProviderSwitchRestoresUnsavedConfigurationAndSecretWithoutPersisting() {
+        let model = AskImageSettingsModel(store: store)
+        let original = model.configuration
+        model.configuration.model = "draft-custom-model"
+        model.configuration.size = "2048x2048"
+        model.key = "draft-first-key"
+        model.select(.google)
+        model.configuration.model = "draft-google-model"
+        model.key = "draft-google-key"
+        model.select(original.provider)
+        XCTAssertEqual(model.configuration.model, "draft-custom-model")
+        XCTAssertEqual(model.configuration.size, "2048x2048")
+        XCTAssertEqual(model.key, "draft-first-key")
+        XCTAssertTrue(model.hasChanges)
+        XCTAssertEqual(store.configuration, original)
+        XCTAssertEqual(store.key(for: original), "")
+        model.select(.google)
+        XCTAssertEqual(model.configuration.model, "draft-google-model")
+        XCTAssertEqual(model.key, "draft-google-key")
+        XCTAssertFalse(String(describing: defaults.dictionaryRepresentation()).contains("draft-"))
+    }
+
+    func testSavingOneProviderKeepsOtherDraftAndRestoresSavedBaseline() {
+        let model = AskImageSettingsModel(store: store)
+        let first = model.configuration.provider
+        model.key = "first-key"
+        model.configuration.model = "first-draft-model"
+        model.select(.google)
+        model.key = "google-key"
+        model.save()
+        XCTAssertFalse(model.hasChanges)
+        model.select(first)
+        XCTAssertEqual(model.configuration.model, "first-draft-model")
+        XCTAssertTrue(model.hasChanges)
+        model.select(.google)
+        XCTAssertFalse(model.hasChanges)
+        XCTAssertEqual(model.key, "google-key")
+        model.select(first)
+        model.save()
+        XCTAssertFalse(model.hasChanges)
+        model.select(.google)
+        XCTAssertTrue(model.hasChanges, "Switching the active provider still needs Save")
+        model.save()
+        XCTAssertFalse(model.hasChanges)
+    }
+
+    func testFailedSaveDraftSurvivesSwitchButNewWindowLoadsOnlySavedValues() {
+        let model = AskImageSettingsModel(store: store)
+        let first = model.configuration.provider
+        model.key = "unsaved-key"
+        model.configuration.baseURL = "https://draft.example/v1"
+        failWrites = true
+        model.save()
+        XCTAssertTrue(model.noticeIsError)
+        model.select(.google)
+        model.select(first)
+        XCTAssertEqual(model.key, "unsaved-key")
+        XCTAssertEqual(model.configuration.baseURL, "https://draft.example/v1")
+        XCTAssertTrue(model.hasChanges)
+        let nextWindow = AskImageSettingsModel(store: store)
+        XCTAssertEqual(nextWindow.configuration, .preset(first))
+        XCTAssertEqual(nextWindow.key, "")
+        XCTAssertFalse(nextWindow.hasChanges)
+    }
+
+    func testSelectingSameProviderKeepsDraftAndDiscoveryResults() async {
+        let model = AskImageSettingsModel(store: store) { _, _ in ["discovered-image"] }
+        model.key = "draft-key"
+        model.refresh()
+        for _ in 0 ..< 100 where model.loading {
+            await Task.yield()
+        }
+        model.select(model.configuration.provider)
+        XCTAssertEqual(model.key, "draft-key")
+        XCTAssertTrue(model.models.contains("discovered-image"))
+        model.select(.google)
+        model.select(.volcengine)
+        XCTAssertTrue(model.models.contains("discovered-image"))
+    }
+
     func testImageCapabilityStatesAndSettingsRender() throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)

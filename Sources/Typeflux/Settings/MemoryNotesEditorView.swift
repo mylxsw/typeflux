@@ -17,7 +17,7 @@ struct MemoryNotesEditorView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                AgentSearchBox(placeholder: L("agent.memory.search"), text: $query)
+                SettingsSearchBox(placeholder: L("agent.memory.search"), text: $query)
                 Spacer()
                 Button {
                     query = ""
@@ -77,6 +77,21 @@ struct MemoryNotesEditorView: View {
          (L("agent.memory.rule.delete.title"), L("agent.memory.rule.delete.detail"))]
     }
 
+    private func retentionOptions(isNew: Bool, currentExpiry: Date?) -> [(
+        label: String,
+        value: AskMemoryNotesSettingsModel.Retention
+    )] {
+        var options: [(label: String, value: AskMemoryNotesSettingsModel.Retention)] = []
+        if !isNew {
+            options.append((L(currentExpiry == nil ? "memory.forever" : "memory.keepRetention"), .keep))
+        }
+        if isNew || currentExpiry != nil {
+            options.append((L("memory.forever"), .forever))
+        }
+        options += [(L("memory.days7"), .days(7)), (L("memory.days30"), .days(30))]
+        return options
+    }
+
     private func row(_ note: AskMemoryNote) -> some View {
         AgentSettingsRow(icon: "brain", title: note.text, subtitle: Self.provenance(note), titleLineLimit: nil) {
             HStack(spacing: 8) {
@@ -113,20 +128,15 @@ struct MemoryNotesEditorView: View {
                     .accessibilityLabel(L(isNew ? "agent.memory.add" : "memory.correct"))
                 HStack(spacing: 8) {
                     Text(L("memory.retention")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                    Picker(L("memory.retention"), selection: Binding(
-                        get: { model.draft?.retention ?? .keep }, set: { model.draft?.retention = $0 }
-                    )) {
-                        if !isNew {
-                            Text(L(currentExpiry == nil ? "memory.forever" : "memory.keepRetention"))
-                                .tag(AskMemoryNotesSettingsModel.Retention.keep)
-                        }
-                        if isNew || currentExpiry != nil {
-                            Text(L("memory.forever")).tag(AskMemoryNotesSettingsModel.Retention.forever)
-                        }
-                        Text(L("memory.days7")).tag(AskMemoryNotesSettingsModel.Retention.days(7))
-                        Text(L("memory.days30")).tag(AskMemoryNotesSettingsModel.Retention.days(30))
-                    }
-                    .labelsHidden().frame(width: 150)
+                    SettingsMenuPicker(
+                        title: L("memory.retention"),
+                        options: retentionOptions(isNew: isNew, currentExpiry: currentExpiry),
+                        selection: Binding(
+                            get: { model.draft?.retention ?? .keep },
+                            set: { model.draft?.retention = $0 }
+                        )
+                    )
+                    .frame(width: 150)
                     Spacer()
                     Button(L("memory.cancel")) { model.cancelEditing() }.buttonStyle(ModelActionStyle())
                         .keyboardShortcut(.cancelAction)

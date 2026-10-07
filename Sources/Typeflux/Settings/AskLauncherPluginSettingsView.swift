@@ -131,13 +131,13 @@ struct AskLauncherPluginSettingsView: View {
             ModelSurface {
                 AgentSettingsRow(icon: "globe", title: L("ask.settings.plugins.translate.second"),
                                  subtitle: L("ask.settings.plugins.translate.secondSubtitle"), subtitleLineLimit: nil) {
-                    Picker("", selection: Binding(get: { secondLanguage }, set: setSecondLanguage)) {
-                        ForEach(AskTranslationLanguages.common, id: \.self) { code in
-                            Text(AskTranslationLanguages.name(code, in: interface)).tag(code)
-                        }
-                    }
-                    .labelsHidden().frame(width: 150)
-                    .accessibilityLabel(L("ask.settings.plugins.translate.second"))
+                    SettingsMenuPicker(title: L("ask.settings.plugins.translate.second"),
+                                       options: AskTranslationLanguages.common.map { (
+                                           label: AskTranslationLanguages.name($0, in: interface),
+                                           value: $0
+                                       ) },
+                                       selection: Binding(get: { secondLanguage }, set: setSecondLanguage))
+                        .frame(width: 150)
                 }
             }
             Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
@@ -187,7 +187,7 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     @ViewBuilder private var searchAndAdd: some View {
-        AgentSearchBox(placeholder: L("ask.settings.keywords.search"), text: $query, width: 200)
+        SettingsSearchBox(placeholder: L("ask.settings.keywords.search"), text: $query, width: 200)
         Button { adding = true } label: {
             Label(L("ask.settings.keywords.add"), systemImage: "plus")
         }

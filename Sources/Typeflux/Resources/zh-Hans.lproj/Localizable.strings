@@ -1706,7 +1706,7 @@
 "models.fixedRewrite" = "改写、翻译与指令 · 固定使用一个模型";
 "models.askDefault" = "随便问 · 默认模型";
 "models.defaultHint" = "新对话从此模型开始，对话里可随时切换。";
-"models.configured" = "可用 · 已配置";
+"models.configured" = "已配置";
 "models.unconfigured" = "未配置 · 暂不可用";
 "models.addEndpoint" = "添加自定义服务商";
 "models.connected" = "已连接";
@@ -3607,3 +3607,7 @@
 "ask.settings.keywords.kind.chat.hint" = "打开聊天窗口，不发送消息";
 "ask.drafts.saved" = "暂存草稿";
 "ask.drafts.untitled" = "未命名草稿";
+
+// Settings draft state and MCP row fields.
+"imagegen.unsaved" = "未保存";
+"agent.mcp.kv.key" = "键";

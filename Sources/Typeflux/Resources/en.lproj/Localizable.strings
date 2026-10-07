@@ -1706,7 +1706,7 @@
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
 "models.askDefault" = "Ask · Default model";
 "models.defaultHint" = "New chats start here. Switch models at any time in a conversation.";
-"models.configured" = "AVAILABLE · CONFIGURED";
+"models.configured" = "Configured";
 "models.unconfigured" = "NOT CONFIGURED · UNAVAILABLE";
 "models.addEndpoint" = "Add custom provider";
 "models.connected" = "Connected";
@@ -3607,3 +3607,7 @@
 "ask.settings.keywords.kind.chat.hint" = "Open the chat window without sending a message";
 "ask.drafts.saved" = "Saved drafts";
 "ask.drafts.untitled" = "Untitled draft";
+
+// Settings draft state and MCP row fields.
+"imagegen.unsaved" = "Unsaved";
+"agent.mcp.kv.key" = "Key";

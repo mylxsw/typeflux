@@ -40,9 +40,12 @@ struct AddModelEndpointView: View {
                     }
                     ModelRowDivider()
                     formRow(L("models.protocol")) {
-                        Picker(L("models.protocol"), selection: $apiStyle) {
-                            ForEach(LLMRemoteAPIStyle.customChoices, id: \.self) { Text($0.displayName).tag($0) }
-                        }.labelsHidden()
+                        SettingsMenuPicker(title: L("models.protocol"),
+                                           options: LLMRemoteAPIStyle.customChoices.map { (
+                                               label: $0.displayName,
+                                               value: $0
+                                           ) },
+                                           selection: $apiStyle)
                     }
                     ModelRowDivider()
                     formRow(L("ask.models.url")) {
@@ -53,7 +56,7 @@ struct AddModelEndpointView: View {
                     formRow("API Key") { keyField }
                     ModelRowDivider()
                     formRow(L("ask.models.modelID")) {
-                        TextField("gpt-4.1-mini", text: $model)
+                        TextField("gpt-5-sol", text: $model)
                             .textFieldStyle(ModelFieldStyle())
                     }
                 }
@@ -100,6 +103,7 @@ struct AddModelEndpointView: View {
             .buttonStyle(.plain)
             .padding(.trailing, 3)
             .help(L(showsKey ? "models.hideKey" : "models.showKey"))
+            .accessibilityLabel(L(showsKey ? "models.hideKey" : "models.showKey"))
         }
     }
 

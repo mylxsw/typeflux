@@ -11,6 +11,16 @@ final class AskImageSettingsModel: ObservableObject {
     @Published private(set) var noticeIsError = false
     private var savedConfiguration = AskImageConfiguration()
     private var savedKey = ""
+    private struct Draft {
+        let configuration: AskImageConfiguration
+        let key: String
+        let savedConfiguration: AskImageConfiguration
+        let savedKey: String
+        let models: [String]
+    }
+
+    private var drafts: [AskImageProvider: Draft] = [:]
+    private var selectedProvider: AskImageProvider?
     let store: AskImageSettings
     private let discover: (AskImageConfiguration, String) async throws -> [String]
     private var task: Task<Void, Never>?
@@ -25,11 +35,24 @@ final class AskImageSettingsModel: ObservableObject {
     }
 
     func select(_ provider: AskImageProvider) {
+        guard selectedProvider != provider else { return }
         cancelDiscovery()
-        configuration = store.configuration(for: provider)
-        key = store.key(for: configuration)
-        savedConfiguration = configuration; savedKey = key
-        models = provider.suggestedModels
+        if let selectedProvider {
+            // Draft secrets stay in memory for the lifetime of the settings window.
+            drafts[selectedProvider] = Draft(configuration: configuration, key: key,
+                                             savedConfiguration: savedConfiguration, savedKey: savedKey, models: models)
+        }
+        selectedProvider = provider
+        if let draft = drafts[provider] {
+            configuration = draft.configuration; key = draft.key
+            savedConfiguration = draft.savedConfiguration; savedKey = draft.savedKey
+            models = draft.models
+        } else {
+            configuration = store.configuration(for: provider)
+            key = store.key(for: configuration)
+            savedConfiguration = configuration; savedKey = key
+            models = provider.suggestedModels
+        }
         clearNotice()
     }
 

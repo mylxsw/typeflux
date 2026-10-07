@@ -24,7 +24,7 @@ extension AskToolsSettingsView {
         let visible = Self.filteredSkills(skillList, disabled: disabledSkills, query: skillQuery, filter: skillFilter)
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                AgentSearchBox(placeholder: L("agent.skills.search"), text: $skillQuery)
+                SettingsSearchBox(placeholder: L("agent.skills.search"), text: $skillQuery)
                 ModelSegmentedControl(
                     options: [(label: L("agent.filter.all"), value: SkillFilter.all),
                               (label: L("agent.filter.enabled"), value: SkillFilter.enabled),
@@ -174,9 +174,6 @@ extension AskToolsSettingsView {
             Text(L("ask.settings.skills.installTitle"))
                 .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
-            Text(L("ask.settings.skills.installHint"))
-                .font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
             TextField("https://github.com/owner/repo/tree/main/skills/name", text: $installURL)
                 .textFieldStyle(ModelFieldStyle())
                 .disabled(installing)
@@ -214,7 +211,7 @@ extension AskToolsSettingsView {
                 .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(22)
+        .padding(24)
         .frame(width: 480)
         .background(ModelVisualStyle.canvas)
     }
@@ -329,7 +326,7 @@ struct AgentSkillDetailView: View {
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(22)
+        .padding(24)
         .frame(width: 460)
         .background(ModelVisualStyle.canvas)
     }

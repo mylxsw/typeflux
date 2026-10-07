@@ -15,12 +15,12 @@ struct AskCloudflareSearchSettingsView: View {
                 TextField("default", text: $configuration.gatewayID).textFieldStyle(ModelFieldStyle())
             }
             AgentFormRow(label: L("ask.settings.search.cloudflare.provider")) {
-                Picker(L("ask.settings.search.cloudflare.provider"), selection: $configuration.provider) {
-                    ForEach(AskCloudflareSearchConfiguration.providers, id: \.self) { provider in
-                        Text(Self.engineName(provider)).tag(provider)
-                    }
-                }
-                .labelsHidden()
+                SettingsMenuPicker(title: L("ask.settings.search.cloudflare.provider"),
+                                   options: AskCloudflareSearchConfiguration.providers.map { (
+                                       label: Self.engineName($0),
+                                       value: $0
+                                   ) },
+                                   selection: $configuration.provider)
             }
             AgentDisclosureButton(title: L("agent.search.advanced"), expanded: $showsAdvanced)
             if showsAdvanced || !configuration.byokAlias.isEmpty {
