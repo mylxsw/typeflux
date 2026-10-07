@@ -92,7 +92,7 @@ struct AskAppMatcherTests {
         #expect(AskAppMatcher.score("weixin", wechat) == 0.95)
         #expect(AskAppMatcher.score("wx", wechat) == 0.88)
         #expect(AskAppMatcher.score("hat", wechat) == 0.6)
-        #expect(AskAppMatcher.score("wct", wechat) == 0.45)
+        #expect(AskAppMatcher.score("wct", wechat) == 0.5, "letters in order: 0.45, plus up to 0.1 the closer they are")
         #expect(AskAppMatcher.score("w", wechat) == 0.9, "one letter still finds a name it starts")
         #expect(AskAppMatcher.score("h", wechat) == nil, "but not one it merely contains")
         let code = AskTestAppIndex.sample.entries[1]

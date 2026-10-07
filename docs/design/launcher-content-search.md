@@ -1,6 +1,6 @@
 # 启动器内容搜索（应用 + 文件）设计方案
 
-> 状态：设计稿，待确认后开发（GUL-239）。可交互设计稿：`docs/design/launcher-content-search.html`（浏览器直接打开，可以输入、用方向键选择，也可以改设置看效果），截图见 `docs/design/launcher-content-search/`。
+> 状态：已实现（GUL-239）。按确认的意见，文件只按名称检索，**不做文件内容搜索**。可交互设计稿：`docs/design/launcher-content-search.html`，截图见 `docs/design/launcher-content-search/`。实现与本稿的差异见第 9 节。
 > 参考：HapiGo 的搜索设置（应用搜索范围、文档搜索范围、按路径 / 类型 / 文件夹名排除、默认搜索模式、应用模糊搜索）。
 
 ## 0. 一页结论
@@ -8,7 +8,7 @@
 1. **一个输入框同时搜应用和文件**。默认「混合」：最佳匹配排在最前，下面按类型分组（应用 · 系统设置 · 文件 · 文件夹）。另有「应用优先」「文件优先」两种模式，和参考产品一致。
 2. **文件用自己的文件名索引，不依赖聚焦（Spotlight）**。索引放在内存里，按键时直接查，p95 < 15 ms；`FSEvents` 实时增量更新，退出前保存快照，下次启动不需要重新扫描。聚焦只用在两处：首次建索引期间先顶上，以及「搜文件内容」。
 3. **匹配统一用一套模糊匹配器**，应用和文件共用：全名、前缀、词首、首字母、拼音全拼与首字母（可以从名字中间开始，`ht` 也能找到「2026 年度采购**合同**.pdf」）、包含、按顺序出现（`tbpls` → TablePlus）。多个词分别匹配文件名或所在路径（`typeflux md` → typeflux 项目里的 Markdown）。
-4. **↩ 打开；→ 或 ⌘K 打开操作面板**：在访达中显示（⌘R）、快速查看（⌘Y）、拷贝路径（⇧⌘C）、拷贝文件（⌥⌘C）、**带上此文件问 AI（⇧⌘↩）**。⌘↩ 仍然把文字发给 AI，和现在一样。
+4. **↩ 打开；→ 打开操作面板**：在访达中显示（⌘R）、快速查看（⌘Y）、拷贝路径（⇧⌘C）、拷贝文件（⌥⌘C）、**带上此文件问 AI（⇧⌘↩）**。⌘↩ 仍然把文字发给 AI，和现在一样。
 5. **新增「设置 · 启动器 · 搜索」页**：搜索模式、模糊匹配、结果数量、图标样式；应用搜索范围；文件搜索范围（带索引状态、重建索引）；排除规则（路径 / 文件类型 / 文件夹名，默认排除 `node_modules`、`.git` 等）。
 6. 分 4 个 PR：S1 共用匹配器 + 应用范围 + 搜索设置页 → S2 文件索引与启动器结果 → S3 操作面板、快速查看、缩略图、`f` 关键词与筛选 → S4 内容搜索、带文件问 AI。
 
@@ -93,7 +93,7 @@
 | ↩ | 执行高亮行：打开应用 / 文件 / 文件夹；「问 AI」行则发送 |
 | ⌘↩ | 无论高亮在哪，都把文字发给 AI（现状） |
 | ↑ / ↓ | 移动高亮 |
-| → / ⌘K | 打开高亮行的操作面板（→ 只在光标位于末尾时生效，不影响编辑） |
+| → | 打开高亮行的操作面板（→ 只在光标位于末尾时生效，不影响编辑） |
 | ⌘R | 在访达中显示 |
 | ⌘Y | 快速查看（Quick Look 面板，再按 ⌘Y 或 esc 关闭） |
 | ⇧⌘C / ⌥⌘C | 拷贝路径 / 拷贝文件（可以直接粘贴到访达、聊天软件） |
@@ -146,7 +146,7 @@ Alfred、Raycast 的做法类似：文件名自己索引，内容交给聚焦。
 directories: [DirectoryNode]      // 目录树：parent + name，路径不重复存
 names:       [UInt8]              // 所有文件名（小写、去声调、全角转半角）的 UTF-8，首尾相接
 entries:     ContiguousArray<Entry>
-Entry (32 B) {
+Entry (40 B) {
   nameOffset: UInt32, nameLength: UInt16, displayOffset: UInt32   // 原始大小写的名字另存
   directory: UInt32                 // 所在目录
   kind: UInt8                       // file / folder / package / alias
@@ -160,7 +160,7 @@ pinyin: [UInt32: PinyinKeys]       // 只有含汉字的名字才有：全拼音
 
 - **字符掩码预筛**：查询也算一个掩码，`entry.charMask & q == q` 不成立就跳过，常见查询能直接排除 90% 以上的条目，剩下的才做字符串比较。
 - **并行**：条目按 16K 一段，`DispatchQueue.concurrentPerform` 分段扫描，每段保留自己的前 K 名，最后合并。
-- **内存估算**：50 万条 ≈ 条目 16 MB + 名字 10 MB + 目录 3 MB + 拼音 2 MB ≈ 31 MB。默认上限 100 万条，超过时设置页提示缩小范围。
+- **内存估算**：50 万条 ≈ 条目 20 MB + 名字和索引键 ≈ 25 MB + 目录 ≈ 48 MB（实测见 9.2）。默认上限 100 万条，超过时设置页提示缩小范围。
 - **线程模型**：索引由一个串行队列持有和修改；查询拿到不可变快照（写时复制的段），所以搜索永远不等扫描，也不需要在热路径上加锁。
 
 ### 3.3 匹配（`AskFuzzyMatcher`，应用与文件共用）
@@ -279,7 +279,7 @@ flowchart LR
 - `AskQuickResults.resolve` 仍然同步调用应用和文件索引（都是内存查询）。聚焦结果通过快捷结果框架的异步档（翻译插件已经用上的 generation + 取消机制）合并进来。
 - `AskAppIndex`：范围来自设置；FSEvents 代替定时重扫；新增系统设置来源。`AskAppMatcher` 改为调用 `AskFuzzyMatcher`，现有测试保持通过。
 - `AskQuickResultsView`：新的文件行、组标题、「显示全部」行、提示行、高亮区间渲染；`height(for:)` 同步更新。
-- `AskComposer` 按键：→、⌘K、⌘R、⌘Y、⇧⌘C、⌥⌘C、⇧⌘↩、⌥↩、⌘↓（`AskCommandKey` 新增对应项）。
+- `AskComposer` 按键：→、⌘R、⌘Y、⇧⌘C、⌥⌘C、⇧⌘↩、⌥↩、⌘↓（`AskCommandKey` 新增对应项）。
 - 关键词：新增内置插件「文件」，默认关键词 `f`。
 - `LauncherSettingsPane` 新增 `.search`；`SettingsStore+Agent` 新增 `askQuickFileSearchEnabled` 与 `askSearchSettings`。
 - 本地化：五种界面语言补齐新增文案。
@@ -312,3 +312,43 @@ flowchart LR
 3. 「带上此文件问 AI」用 ⇧⌘↩ 是否合适。
 4. 是否需要「文件优先」以外更细的模式（例如只搜应用，完全不出文件）？本稿只做参考产品里的三种。
 5. 是否要做历史对话搜索（路线图 M3 的另一半）。本稿不包括，可以作为同一框架下的第三个来源接入。
+
+## 9. 实现说明（与设计稿的差异）
+
+| 设计稿 | 实现 | 原因 |
+|--------|------|------|
+| 文件模式「搜内容」（聚焦 `kMDItemTextContent`），S4 | 不做 | 已确认先只做文件名匹配 |
+| 首次建索引期间用聚焦顶上 | 不用聚焦。索引边建边发布（每 2 万条一次），建索引期间的结果来自已扫描的部分，启动器显示「正在建立文件索引 · 已收录 N 项」 | 只按文件名检索时，结果和最终索引一致，不会出现两套排序 |
+| `getattrlistbulk` 扫描 | `fts(3)`（`FTS_PHYSICAL`，一次读出目录项和修改时间） | 同样一次读整个目录，代码更少；排除的目录在进入前跳过 |
+| → 或 ⌘K 打开操作面板 | 只用 →（光标在末尾时） | ⌘K 在启动器里已经是「上下文」快捷键 |
+| 没授权时在启动器结果里提示 | 桌面、文稿、下载、iCloud 云盘、网盘、外接卷在没有「完全磁盘访问权限」时**不扫描**（避免启动时弹出系统授权框）；提示放在文件模式（`f`）列表末尾和设置页，可一键打开系统设置 | 混合结果里每次输入都提示会打扰不想授权的用户 |
+| 文件模式的筛选标签与 ⌘S 排序 | 文件模式是一个关键词插件（`f`，可在 设置 · 启动器 · 关键词 改）。⇥ / ⇧⇥ 切换类型（全部 · 文件夹 · 文档 · 图片 · PDF · 表格与演示 · 代码），类型显示在关键词标签上；空查询列出最近修改的文件 | 复用现有插件框架（列表、↩ / ⌘R / ⇧⌘C 操作、⌘↩ 问 AI） |
+| 应用 5 分钟定时重扫 | FSEvents 监听应用目录，有 `.app` 变化 1 秒后重扫；5 分钟仍是兜底 | — |
+
+### 9.1 代码位置
+
+| 文件 | 内容 |
+|------|------|
+| `Ask/QuickResults/Search/AskFuzzyMatcher.swift` | 共用匹配器（字节级，不分配内存），返回分数和命中的字节区间 |
+| `Ask/QuickResults/Search/AskSearchKey.swift` / `AskSearchText.swift` / `AskSearchQuery.swift` | 规范化（大小写、变音、全角）、词首、字符掩码、拼音键、查询解析（`.pdf`、`ext:`、`in:`） |
+| `Ask/QuickResults/Search/AskLauncherSearchSettings.swift` | 搜索设置（存 `SettingsStore.askLauncherSearchSettings`，修改时发 `.askLauncherSearchSettingsDidChange`） |
+| `Ask/QuickResults/Files/AskFileIndexState.swift` / `AskFileSearch.swift` | 索引表（40 字节条目 + 连续的名字缓冲 + 目录表）与并行检索、排序 |
+| `Ask/QuickResults/Files/AskFileIndex.swift` | 生命周期：读快照 / 建索引 / FSEvents 增量 / 保存；`AskFileSearching` 协议 |
+| `Ask/QuickResults/Files/AskFileCrawler.swift` / `AskFileWatcher.swift` / `AskFileSnapshot.swift` / `AskFileScope.swift` | 扫描、FSEvents、快照格式、范围与排除规则（含完全磁盘访问权限检测） |
+| `Ask/QuickResults/AskQuickResults.swift` / `AskQuickResultsView.swift` / `AskQuickActions.swift` | 分组、最佳匹配、模式；结果行、高亮、操作面板、缩略图、快速查看 |
+| `Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift` | 文件模式 `f` |
+| `Settings/LauncherSearchSettingsView.swift` | 设置 · 启动器 · 搜索 |
+
+### 9.2 实测
+
+Apple M4（10 核），50 万条合成文件名（含中文名、数字、12 种扩展名），`swiftc -O` 编译的检索代码，每个查询 29 轮：
+
+| 指标 | 目标（3.7） | 实测 |
+|------|-------------|------|
+| 按键到出结果 p50 | < 5 ms | **2.9 ms** |
+| 按键到出结果 p95 | < 15 ms | **17.9 ms**（慢的都是多词且两个词都很常见的查询，如 `notes 12`：24 ms；单词查询 1–6 ms） |
+| 内存（50 万条） | < 40 MB | **约 48 MB** |
+| 快照写入 / 读取 | 读取 < 200 ms | 写 5 ms / **读 0.6 s**（读取时重建拼音键和每个目录的子项表，在后台队列，不阻塞界面） |
+| 建表（50 万条，不含磁盘扫描） | — | 2.8 s |
+
+p95、内存和快照读取三项没有达到 3.7 的目标，差距见上表；都不影响逐键输入的体验（单词查询都在 6 ms 内），后续可以把拼音键写进快照、把多词查询的整串匹配推迟到逐词匹配之后来继续优化。

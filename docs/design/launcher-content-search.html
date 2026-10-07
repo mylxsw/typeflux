@@ -233,7 +233,7 @@
       <span>↑ ↓</span><span>移动高亮</span>
       <span>↩</span><span>打开高亮项（「问 AI」行则发送）</span>
       <span>⌘↩</span><span>无论高亮在哪都问 AI</span>
-      <span>→ / ⌘K</span><span>操作面板（↑↓ 选择，↩ 执行，esc 关闭）</span>
+      <span>→</span><span>操作面板（↑↓ 选择，↩ 执行，esc 关闭）</span>
       <span>⌘R</span><span>在访达中显示</span>
       <span>⌘Y</span><span>快速查看</span>
       <span>⇧⌘C</span><span>拷贝路径</span>
@@ -795,7 +795,7 @@ function onKey(ev) {
   if (ev.key === 'Enter' && ev.metaKey && ev.shiftKey) { ev.preventDefault(); if (isFile) { log(`带上此文件问 AI：${r.x.e.path}，问题“${D.model.q || ''}”`); toast('已带上文件，打开新对话'); renderDemo(); } return; }
   if (ev.key === 'Enter' && ev.metaKey) { ev.preventDefault(); log(`问 AI：“${D.model.fileMode ? D.model.q : D.query}”`); return; }
   if (ev.key === 'Enter') { ev.preventDefault(); run(); renderDemo(); return; }
-  if ((ev.key === 'ArrowRight' && input.selectionStart === input.value.length) || (ev.metaKey && ev.key.toLowerCase() === 'k')) {
+  if ((ev.key === 'ArrowRight' && input.selectionStart === input.value.length)) {
     if (isItem) { ev.preventDefault(); D.panel = true; D.panelHl = 0; renderDemo(); } return;
   }
   if (ev.metaKey && ev.key.toLowerCase() === 'y') { ev.preventDefault(); if (isFile && r.x.e.kind === 'file') { D.ql = true; renderDemo(); } return; }
@@ -830,7 +830,7 @@ const SHOTS = [
   ['<b>不抢回车</b>：多个相近文件分数接近，「问 AI」保持第一，↓ 选择', { query: 'invoice' }],
   ['<b>多词 + 路径</b>：<code>typeflux md</code>，<code>typeflux</code> 命中路径、<code>md</code> 命中扩展名', { query: 'typeflux md', hl: 4 }],
   ['<b>文件模式</b>：<code>f</code> 关键词，筛选、排序与「搜内容」（聚焦，带摘要）', { query: 'f 索引', content: true }],
-  ['<b>操作面板</b>：→ 或 ⌘K；带上此文件问 AI、拷贝文件、移到废纸篓', { query: 'invoice', hl: 3, panel: true, panelHl: 6 }],
+  ['<b>操作面板</b>：→；带上此文件问 AI、拷贝文件、移到废纸篓', { query: 'invoice', hl: 3, panel: true, panelHl: 6 }],
   ['<b>首次建立索引</b>：顶部显示进度，这期间文件结果来自聚焦', { query: '周报', index: 'building' }],
   ['<b>没有授权</b>：文稿 / 桌面 / 下载的结果缺失时提示授权，其它目录照常', { query: 'readme', index: 'noaccess' }],
 ];

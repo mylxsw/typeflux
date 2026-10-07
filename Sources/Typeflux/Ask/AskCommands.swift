@@ -379,11 +379,19 @@ enum AskCommandKey: Equatable {
     case commandS
     /// ⌘B: open the word book from a translation.
     case commandB
+    /// Keys for a found file or application: → opens its actions (the editor only offers it
+    /// with the caret at the end), ⌘Y Quick Look, ⌥⌘C copies the file, ⇧⌘Return asks the AI
+    /// about it, ⌘↓ shows all the files.
+    case right, commandY, optionCommandC, shiftCommandEnter, commandDown
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
         let isReturn = event.keyCode == 36 || event.keyCode == 76
         if modifiers == .command, isReturn { self = .commandEnter; return }
+        if modifiers == [.command, .shift], isReturn { self = .shiftCommandEnter; return }
+        if modifiers == .command, event.keyCode == 16 { self = .commandY; return }
+        if modifiers == .command, event.keyCode == 125 { self = .commandDown; return }
+        if modifiers == [.command, .option], event.keyCode == 8 { self = .optionCommandC; return }
         if modifiers == .option, isReturn { self = .optionEnter; return }
         if modifiers == .shift, event.keyCode == 48 { self = .shiftTab; return }
         if modifiers == .command, event.keyCode == 15 { self = .commandR; return }
@@ -401,6 +409,7 @@ enum AskCommandKey: Equatable {
         case 36, 76: self = .enter
         case 48: self = .tab
         case 53: self = .escape
+        case 124: self = .right
         default: return nil
         }
     }

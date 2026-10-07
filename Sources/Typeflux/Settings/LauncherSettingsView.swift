@@ -9,12 +9,15 @@ struct LauncherSettingsView: View {
 
     @State var quickCalculatorEnabled = true
     @State var quickAppsEnabled = true
+    @State var quickFilesEnabled = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             switch pane {
             case .basics:
                 basicsPane
+            case .search:
+                LauncherSearchSettingsView(settings: settings)
             case .keywords:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title, subtitle: L("ask.settings.plugins.footnote"))
                 AskLauncherPluginSettingsView(settings: settings, workflows: workflows)
@@ -45,6 +48,13 @@ struct LauncherSettingsView: View {
                         .labelsHidden().toggleStyle(.switch)
                         .accessibilityLabel(L("ask.settings.quick.apps.title"))
                 }
+                ModelRowDivider(leading: 66)
+                AgentSettingsRow(icon: "doc.text.magnifyingglass", title: L("ask.settings.quick.files.title"),
+                                 subtitle: L("ask.settings.quick.files.subtitle"), subtitleLineLimit: nil) {
+                    Toggle("", isOn: Binding(get: { quickFilesEnabled }, set: { setQuickFiles($0) }))
+                        .labelsHidden().toggleStyle(.switch)
+                        .accessibilityLabel(L("ask.settings.quick.files.title"))
+                }
             }
         }
     }
@@ -52,6 +62,7 @@ struct LauncherSettingsView: View {
     func reload() {
         quickCalculatorEnabled = settings.askQuickCalculatorEnabled
         quickAppsEnabled = settings.askQuickAppSearchEnabled
+        quickFilesEnabled = settings.askQuickFileSearchEnabled
     }
 
     func setQuickCalculator(_ enabled: Bool) {
@@ -62,5 +73,12 @@ struct LauncherSettingsView: View {
     func setQuickApps(_ enabled: Bool) {
         quickAppsEnabled = enabled
         settings.askQuickAppSearchEnabled = enabled
+    }
+
+    /// Turning file search off frees the index and deletes it from disk; on builds it again.
+    func setQuickFiles(_ enabled: Bool, index: any AskFileSearching = AskFileIndex.shared) {
+        quickFilesEnabled = enabled
+        settings.askQuickFileSearchEnabled = enabled
+        index.start()
     }
 }

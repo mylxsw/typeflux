@@ -18,6 +18,8 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordKind(pluginID: AskTranslatePlugin.id) == .translate)
         #expect(AskKeywordKind(pluginID: AskPromptPlugin.id) == .prompt)
         #expect(AskKeywordKind(pluginID: AskWebSearchPlugin.id) == .web)
+        #expect(AskKeywordKind(pluginID: AskFileSearchPlugin.id) == .files)
+        #expect(AskKeywordKind.files.pluginID == AskFileSearchPlugin.id)
         #expect(AskKeywordKind(pluginID: AskWorkflowPlugin.idPrefix + "local.x") == .workflow)
         #expect(AskKeywordKind(pluginID: "unknown") == nil)
         #expect(AskKeywordKind.workflow.pluginID == nil)
@@ -30,15 +32,17 @@ struct AskKeywordListPresentationTests {
 
     @Test func `rows list built in keywords by plugin then workflows`() {
         let rows = rows()
-        #expect(rows.map(\.keyword) == ["fy", "tr", "翻译", "dict", "词典", "rw", "sum", "ex", "g", "bd", "gh", "wf", "FY"])
+        #expect(rows.map(\.keyword)
+            == ["fy", "tr", "翻译", "dict", "词典", "rw", "sum", "ex", "g", "bd", "gh", "f", "wf", "FY"])
         #expect(rows.map(\.kind) == [.translate, .translate, .translate, .translate, .translate, .prompt, .prompt, .prompt,
-                                     .web, .web, .web, .workflow, .workflow])
+                                     .web, .web, .web, .files, .workflow, .workflow])
         #expect(Set(rows.map(\.id)).count == rows.count, "row ids are unique")
-        let workflow = rows[11]
+        #expect(rows[11].summary == L("ask.settings.keywords.kind.files.hint"))
+        let workflow = rows[12]
         #expect(workflow.workflowID == "local.python" && workflow.source == nil && workflow.enabled && !workflow
             .shadowed)
         #expect(workflow.summary == L("ask.settings.keywords.summary.workflow"))
-        let clash = rows[12]
+        let clash = rows[13]
         #expect(clash.shadowed && !clash.enabled, "a built-in keyword wins over a workflow's")
         #expect(clash.summary == L("ask.settings.keywords.summary.shadowed"))
     }
@@ -95,7 +99,7 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "summarize").map(\.keyword) == ["sum"])
         #expect(AskKeywordListPresentation.filter(rows, kind: .prompt, query: "google").isEmpty)
         let counts = AskKeywordListPresentation.counts(rows)
-        #expect(counts[nil] == 13 && counts[.translate] == 5 && counts[.workflow] == 2)
+        #expect(counts[nil] == 14 && counts[.translate] == 5 && counts[.files] == 1 && counts[.workflow] == 2)
     }
 
     @MainActor

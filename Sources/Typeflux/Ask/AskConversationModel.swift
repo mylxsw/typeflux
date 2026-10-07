@@ -26,6 +26,16 @@ final class AskConversationModel: ObservableObject {
     let voiceInput = AskVoiceInput()
     /// Applications the launcher can open; tests supply their own list.
     var appIndex: any AskAppSearching = AskAppIndex.shared
+    /// Files and folders the launcher can open; tests supply their own.
+    var fileIndex: any AskFileSearching = AskFileIndex.shared
+    /// Whether a found file is still there; tests decide instead.
+    var fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
+    /// Opens a file in a given application; tests record it instead.
+    var openFileWith: (URL, URL) -> Void = { file, application in
+        NSWorkspace.shared.open([file], withApplicationAt: application, configuration: NSWorkspace.OpenConfiguration())
+    }
+    /// Moves a file to the Trash; false when it could not. Tests record it instead.
+    var trashFile: (URL) -> Bool = { url in (try? FileManager.default.trashItem(at: url, resultingItemURL: nil)) != nil }
     /// Opens an application chosen in the launcher; tests record it instead.
     var openApplication: (URL) -> Void = { url in
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())

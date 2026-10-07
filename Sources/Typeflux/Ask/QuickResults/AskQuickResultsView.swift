@@ -1,19 +1,25 @@
+import QuickLookThumbnailing
 import SwiftUI
 
 /// The launcher's quick results in place of its starting points: the
 /// calculation with its expression and large value and a few other spellings
-/// that copy on their own, or the applications to open; then the way back to
-/// the AI. Each kind of result starts with a small heading, so the list reads
-/// as search results; the keyboard hint for the highlighted row sits in the bottom bar.
+/// that copy on their own, or the applications, settings, files and folders to
+/// open; then the way back to the AI. Each kind of result starts with a small
+/// heading, so the list reads as search results; the keyboard hint for the
+/// highlighted row sits in the bottom bar.
 struct AskQuickResultsView: View {
     var results: AskQuickResults
     /// The launcher's text, which "Ask AI" sends as it is.
     var question: String
     /// Height held while typing; rows stay at the top.
     var minimumHeight: CGFloat = 0
+    /// The highlighted file's actions, open with →.
+    var actions: AskQuickActionPanel?
+    var thumbnails = true
     /// Runs a row. `close` is true for Return and for the calculation row.
     var onRun: (AskQuickResults.Row, _ close: Bool) -> Void
     var onHighlight: (Int) -> Void
+    var onAction: (AskQuickAction) -> Void = { _ in }
 
     @State private var copied: Int?
     @State private var copiedReset: Task<Void, Never>?
@@ -22,92 +28,81 @@ struct AskQuickResultsView: View {
     static let formatHeight: CGFloat = 32
     static let askHeight: CGFloat = 42
     static let appHeight: CGFloat = 42
+    static let fileHeight: CGFloat = 42
+    static let moreHeight: CGFloat = 30
+    static let noticeHeight: CGFloat = 30
     static let rowSpacing: CGFloat = 2
     static let listPadding: CGFloat = 6
     static let sectionHeight: CGFloat = 20
+    /// Taller lists scroll; the launcher does not grow past this for results.
+    static let maximumHeight: CGFloat = 430
 
     enum Section: Equatable {
-        case calculation, apps, ai
+        case calculation, best, apps, panes, files, folders, ai
 
         var title: String {
             switch self {
             case .calculation: L("ask.quick.section.calculation")
+            case .best: L("ask.quick.section.best")
             case .apps: L("ask.quick.section.apps")
+            case .panes: L("ask.quick.section.panes")
+            case .files: L("ask.quick.section.files")
+            case .folders: L("ask.quick.section.folders")
             case .ai: L("ask.quick.section.ai")
             }
-        }
-    }
-
-    static func section(of row: AskQuickResults.Row) -> Section {
-        switch row {
-        case .calculation, .format: .calculation
-        case .app: .apps
-        case .askAI: .ai
-        }
-    }
-
-    /// The heading shown above the row at `index`: where a new kind of result begins.
-    static func sectionStart(at index: Int, in rows: [AskQuickResults.Row]) -> Section? {
-        guard rows.indices.contains(index) else { return nil }
-        let section = section(of: rows[index])
-        return index == 0 || Self.section(of: rows[index - 1]) != section ? section : nil
-    }
-
-    /// Everything this list adds to the launcher card.
-    static func height(for results: AskQuickResults) -> CGFloat {
-        let rows = results.rows
-        let content = rows.reduce(CGFloat(0)) { total, row in
-            switch row {
-            case .calculation: total + calculationHeight
-            case .format: total + formatHeight
-            case .app: total + appHeight
-            case .askAI: total + askHeight
-            }
-        }
-        let sections = CGFloat(rows.indices.filter { sectionStart(at: $0, in: rows) != nil }.count)
-        return 1 + listPadding * 2 + content + CGFloat(max(0, rows.count - 1)) * rowSpacing
-            + sections * (sectionHeight + rowSpacing)
-    }
-
-    /// Return copies a calculation, opens an application, or sends to the AI.
-    static func hint(for results: AskQuickResults) -> String {
-        switch results.highlightedRow {
-        case .askAI: L("ask.launcher.hint")
-        case .app: L("ask.quick.hint.app")
-        case .calculation, .format: L("ask.quick.hint")
         }
     }
 
     var body: some View {
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
-            VStack(spacing: Self.rowSpacing) {
-                ForEach(Array(results.rows.enumerated()), id: \.offset) { index, row in
-                    if let section = Self.sectionStart(at: index, in: results.rows) {
-                        Text(section.title)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 10)
-                            .frame(height: Self.sectionHeight, alignment: .bottom)
-                            .accessibilityAddTraits(.isHeader)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: Self.contentHeight(for: results) > Self.maximumHeight) {
+                    VStack(spacing: Self.rowSpacing) {
+                        ForEach(Array(results.rows.enumerated()), id: \.offset) { index, row in
+                            if let section = Self.sectionStart(at: index, in: results.rows, results: results) {
+                                sectionTitle(section)
+                            }
+                            content(row, index: index, highlighted: index == results.highlighted)
+                                .onHover { if $0, actions == nil { onHighlight(index) } }
+                                .id(index)
+                        }
+                        if let notice = results.notice { noticeRow(notice) }
                     }
-                    content(row, index: index, highlighted: index == results.highlighted)
-                        .onHover { if $0 { onHighlight(index) } }
+                    .padding(Self.listPadding)
                 }
+                .scrollDisabled(Self.contentHeight(for: results) <= Self.maximumHeight)
+                .onChange(of: results.highlighted) { index in proxy.scrollTo(index) }
             }
-            .padding(Self.listPadding)
             Spacer(minLength: 0)
         }
         .frame(height: max(minimumHeight, Self.height(for: results)), alignment: .top)
+        .overlay(alignment: .topTrailing) {
+            if let actions {
+                AskQuickActionPanelView(panel: actions, onAction: onAction).padding(.top, 8).padding(.trailing, 14)
+            }
+        }
         .onDisappear { copiedReset?.cancel() }
+    }
+
+    private func sectionTitle(_ section: Section) -> some View {
+        Text(section.title)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(StudioTheme.textTertiary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .frame(height: Self.sectionHeight, alignment: .bottom)
+            .accessibilityAddTraits(.isHeader)
     }
 
     @ViewBuilder private func content(_ row: AskQuickResults.Row, index: Int, highlighted: Bool) -> some View {
         switch row {
         case .calculation: calculationRow(highlighted: highlighted)
         case let .format(formatIndex): formatRow(results.formats[formatIndex], index: index, highlighted: highlighted)
-        case let .app(appIndex): appRow(results.apps[appIndex].entry, row: row, highlighted: highlighted)
+        case let .app(appIndex): appRow(results.apps[appIndex], row: row, highlighted: highlighted)
+        case let .pane(paneIndex): appRow(results.panes[paneIndex], row: row, highlighted: highlighted)
+        case let .file(fileIndex): fileRow(results.files[fileIndex], row: row, highlighted: highlighted)
+        case .showAllFiles: moreRow(highlighted: highlighted)
         case .askAI: askRow(highlighted: highlighted)
         }
     }
@@ -171,17 +166,19 @@ struct AskQuickResultsView: View {
     }
 
     /// The application's icon and name, where it lives, and "Open" when highlighted.
-    private func appRow(_ app: AskAppEntry, row: AskQuickResults.Row, highlighted: Bool) -> some View {
-        Button { onRun(row, true) } label: {
+    private func appRow(_ match: AskAppMatch, row: AskQuickResults.Row, highlighted: Bool) -> some View {
+        let app = match.entry
+        return Button { onRun(row, true) } label: {
             HStack(spacing: 12) {
                 Image(nsImage: AskAppIcon.image(for: app.url))
                     .resizable().interpolation(.high)
                     .frame(width: 28, height: 28)
                     .accessibilityHidden(true)
-                Text(app.name).font(.system(size: 13.5))
+                Self.marked(app.name, match.highlights).font(.system(size: 13.5))
                     .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
-                Text(Self.location(of: app.url)).font(.system(size: 11.5))
+                Text(app.kind == .settingsPane ? L("ask.quick.pane.location") : Self.location(of: app.url))
+                    .font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textTertiary)
                     .lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 8)
@@ -195,7 +192,7 @@ struct AskQuickResultsView: View {
             .background(highlighted ? AskTheme.hoverFill : Color.clear,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay {
-                if highlighted, results.appsLead, row == results.rows.first {
+                if highlighted, results.best == row, row == results.rows.first {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .strokeBorder(AskTheme.accent.opacity(0.55), lineWidth: 1)
                 }
@@ -206,15 +203,89 @@ struct AskQuickResultsView: View {
         .accessibilityLabel(app.name)
         .accessibilityHint(L("ask.quick.app.open"))
         .accessibilityAddTraits(highlighted ? .isSelected : [])
-        .accessibilityIdentifier("ask.quick.app")
+        .accessibilityIdentifier(app.kind == .settingsPane ? "ask.quick.pane" : "ask.quick.app")
     }
 
-    /// "/Applications", "~/Applications/Chrome Apps" or "System": where the application is installed.
-    static func location(of url: URL) -> String {
-        let folder = url.deletingLastPathComponent().path
-        if folder.hasPrefix("/System/") { return L("ask.quick.app.system") }
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-        return folder.hasPrefix(home) ? "~" + folder.dropFirst(home.count) : folder
+    /// A file or folder: its icon or thumbnail, name with the matched letters marked,
+    /// the folder it is in, and when it changed (or what Return and → do, when highlighted).
+    private func fileRow(_ file: AskFileHit, row: AskQuickResults.Row, highlighted: Bool) -> some View {
+        Button { onRun(row, true) } label: {
+            HStack(spacing: 12) {
+                AskFileIconView(url: file.url, thumbnail: thumbnails && file.kind == .file)
+                    .frame(width: 28, height: 28)
+                Self.marked(file.name, file.highlights).font(.system(size: 13.5))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(1).truncationMode(.middle)
+                    .layoutPriority(1)
+                Text(AskLauncherSearchSettings.abbreviate(file.folder)).font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1).truncationMode(.middle)
+                Spacer(minLength: 8)
+                Text(highlighted ? L("ask.quick.file.actions") : Self.relative(file.modified))
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            .padding(.horizontal, 10)
+            .frame(height: Self.fileHeight)
+            .background(highlighted ? AskTheme.hoverFill : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                if highlighted, results.best == row, row == results.rows.first {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(AskTheme.accent.opacity(0.55), lineWidth: 1)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(AskLauncherSearchSettings.abbreviate(file.path))
+        .accessibilityLabel(file.name)
+        .accessibilityValue(AskLauncherSearchSettings.abbreviate(file.folder))
+        .accessibilityHint(L("ask.quick.app.open"))
+        .accessibilityAddTraits(highlighted ? .isSelected : [])
+        .accessibilityIdentifier(file.isFolder ? "ask.quick.folder" : "ask.quick.file")
+    }
+
+    private func moreRow(highlighted: Bool) -> some View {
+        Button { onRun(.showAllFiles, false) } label: {
+            HStack(spacing: 8) {
+                Text(L("ask.quick.file.showAll")).font(.system(size: 12.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Spacer(minLength: 8)
+                Text("⌘↓").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+            }
+            .padding(.leading, 50)
+            .padding(.trailing, 10)
+            .frame(height: Self.moreHeight)
+            .background(highlighted ? AskTheme.hoverFill : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(highlighted ? .isSelected : [])
+        .accessibilityIdentifier("ask.quick.showAll")
+    }
+
+    @ViewBuilder private func noticeRow(_ notice: AskQuickResults.Notice) -> some View {
+        switch notice {
+        case let .indexing(found, progress):
+            HStack(spacing: 10) {
+                ProgressView().controlSize(.small).scaleEffect(0.7).frame(width: 28)
+                Text(L("ask.quick.file.indexing", found.formatted())).font(.system(size: 12))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .lineLimit(1)
+                if let progress {
+                    ProgressView(value: progress).frame(maxWidth: 120)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .frame(height: Self.noticeHeight)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("ask.quick.indexing")
+        }
     }
 
     private func formatRow(_ format: AskCalculatorFormat, index: Int, highlighted: Bool) -> some View {

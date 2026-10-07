@@ -369,6 +369,11 @@ struct AskComposerTextView: NSViewRepresentable {
             event.type == .keyDown && event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command
                 && event.charactersIgnoringModifiers?.lowercased() == "k"
         }
+        /// → belongs to the editor unless the caret is past the last character.
+        private var caretAtEnd: Bool {
+            selectedRange().length == 0 && selectedRange().location >= (string as NSString).length
+        }
+
         override func keyDown(with event: NSEvent) {
             if event.keyCode == 53, mouseDownEvent != nil { cancelInteraction(); return }
             if voice?.isActive == true {
@@ -382,7 +387,7 @@ struct AskComposerTextView: NSViewRepresentable {
                event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
                onEmptyBackspace?() == true { return }
             if !hasMarkedText(), let key = AskCommandKey(event), key != .commandC || selectedRange().length == 0,
-               onCommandKey?(key) == true { return }
+               key != .right || caretAtEnd, onCommandKey?(key) == true { return }
             if event.keyCode == 36, !event.modifierFlags.contains(.shift), !hasMarkedText() {
                 onSubmit(); return
             }

@@ -4,10 +4,10 @@ import Foundation
 /// The plugins the launcher knows and the keywords they start with.
 enum AskPluginRegistry {
     /// Every built-in plugin, in the order settings and the `/` palette list them.
-    static let pluginIDs = [AskTranslatePlugin.id, AskPromptPlugin.id, AskWebSearchPlugin.id]
+    static let pluginIDs = [AskTranslatePlugin.id, AskPromptPlugin.id, AskWebSearchPlugin.id, AskFileSearchPlugin.id]
 
     static var defaultKeywords: [AskKeyword] {
-        AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords
+        AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords + AskFileSearchPlugin.keywords
     }
 
     /// Default keywords that came after their plugin: `dict` and `词典` joined translation later.
@@ -97,7 +97,11 @@ extension AskConversationModel {
                 }
             ),
             AskPromptPlugin(generator: promptAI, modelName: { [weak settings] in AskPluginRegistry.modelName(settings) }),
-            AskWebSearchPlugin()
+            AskWebSearchPlugin(),
+            AskFileSearchPlugin(
+                index: { [weak self] in self.flatMap { $0.quickFilesEnabled ? $0.fileIndex : nil } },
+                settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() }
+            )
         ] + workflowPlugins()
     }
 
@@ -138,6 +142,7 @@ extension AskConversationModel {
             return .close
         case let .open(url):
             finishPluginResult()
+            if url.isFileURL { fileIndex.recordOpen(url.path) }
             openURL(url)
             return .close
         case let .openIn(url, application):

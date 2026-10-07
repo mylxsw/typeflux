@@ -84,6 +84,8 @@ struct AskPluginPlan: Equatable, Sendable {
     /// What the keys do before anything runs. A plan with a Return action (open a
     /// search) does that instead of running; ⌘C may copy something (its link).
     var actions: [AskPluginAction] = []
+    /// How long a live plan waits after the last keystroke; nil for the session's default.
+    var debounce: Duration?
 
     func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
         actions.first { $0.shortcut == shortcut }

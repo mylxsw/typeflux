@@ -246,6 +246,8 @@ struct AskTestFixture {
                                          if localOnly { return (AskRoutedAPI.localOwner, "") }
                                          return authenticated ? (sessionState.owner, "token") : nil
                                      })
+        // Never index this Mac's files from a test.
+        model.fileIndex = AskTestFileIndex()
     }
     func wait(_ predicate: () -> Bool) async throws {
         for _ in 0 ..< 1000 {

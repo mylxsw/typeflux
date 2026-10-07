@@ -2,13 +2,14 @@ import Foundation
 
 /// What a launcher keyword reaches: one of the built-in plugins or a workflow.
 enum AskKeywordKind: String, CaseIterable, Sendable {
-    case translate, prompt, web, workflow
+    case translate, prompt, web, files, workflow
 
     init?(pluginID: String) {
         switch pluginID {
         case AskTranslatePlugin.id: self = .translate
         case AskPromptPlugin.id: self = .prompt
         case AskWebSearchPlugin.id: self = .web
+        case AskFileSearchPlugin.id: self = .files
         default:
             guard pluginID.hasPrefix(AskWorkflowPlugin.idPrefix) else { return nil }
             self = .workflow
@@ -21,6 +22,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .translate: AskTranslatePlugin.id
         case .prompt: AskPromptPlugin.id
         case .web: AskWebSearchPlugin.id
+        case .files: AskFileSearchPlugin.id
         case .workflow: nil
         }
     }
@@ -30,6 +32,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .translate: L("ask.plugin.translate.title")
         case .prompt: L("ask.plugin.prompt.title")
         case .web: L("ask.plugin.web.title")
+        case .files: L("ask.plugin.files.title")
         case .workflow: L("ask.settings.keywords.kind.workflow")
         }
     }
@@ -44,6 +47,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .translate: "translate"
         case .prompt: "wand.and.stars"
         case .web: "magnifyingglass"
+        case .files: "doc.text.magnifyingglass"
         case .workflow: "point.3.connected.trianglepath.dotted"
         }
     }
@@ -118,6 +122,8 @@ enum AskKeywordListPresentation {
             AskPromptPlugin.name(of: keyword.options)
         case .web:
             AskWebSearchPlugin.engine(of: keyword.options).title
+        case .files:
+            L("ask.plugin.files.title")
         case .workflow, nil:
             keyword.keyword
         }
@@ -143,6 +149,8 @@ enum AskKeywordListPresentation {
                 .first { !$0.isEmpty } ?? L("ask.settings.plugins.prompt.placeholder")
         case .web:
             return withoutScheme(AskWebSearchPlugin.engine(of: keyword.options).template)
+        case .files:
+            return L("ask.settings.keywords.kind.files.hint")
         case .workflow, nil:
             return ""
         }

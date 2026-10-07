@@ -221,9 +221,13 @@ struct AskPluginRegistryTests {
         let dict = AskTranslatePlugin.keywords.filter { AskTranslatePlugin.opensWordBook($0.options) }
         #expect(dict.map(\.keyword) == ["dict", "词典"])
         let merged = AskPluginRegistry.keywords(saved: [fyja], known: nil)
-        #expect(merged == [fyja] + dict + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords)
+        #expect(merged == [fyja] + dict + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords
+            + AskFileSearchPlugin.keywords)
         // Saved before `dict` existed: it joins, and nothing else does.
         #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.pluginIDs) == [fyja] + dict)
+        // Saved with every group but files: only `f` joins.
+        let beforeFiles = AskPluginRegistry.coveredGroups.filter { $0 != AskFileSearchPlugin.id }
+        #expect(AskPluginRegistry.keywords(saved: [fyja], known: beforeFiles) == [fyja] + AskFileSearchPlugin.keywords)
         // Saved since: what the user removed stays removed.
         #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.coveredGroups) == [fyja])
         #expect(AskPluginRegistry.group(of: dict[0]) == "translate.wordbook")
@@ -238,7 +242,7 @@ struct AskPluginRegistryTests {
         let settings = SettingsStore(defaults: defaults)
         #expect(settings.effectiveAskLauncherKeywords == AskPluginRegistry.defaultKeywords)
         settings.askLauncherKeywords = [fyja]
-        #expect(settings.effectiveAskLauncherKeywords.count == 9, "an old list gains the new plugins and dict")
+        #expect(settings.effectiveAskLauncherKeywords.count == 10, "an old list gains the new plugins, dict and f")
         settings.saveAskLauncherKeywords([fyja])
         #expect(settings.askLauncherKeywordPlugins == AskPluginRegistry.coveredGroups)
         #expect(settings.effectiveAskLauncherKeywords == [fyja])
