@@ -220,6 +220,11 @@ final class AskWordBookViewModel: ObservableObject {
     /// Words in the book looked up this week.
     var weekTotal: Int { counts[.week] ?? 0 }
 
+    /// Today's place in `week` (Monday is 0), so the bars can mark it.
+    var todayIndex: Int {
+        calendar.dateComponents([.day], from: weekStart, to: calendar.startOfDay(for: now())).day ?? 0
+    }
+
     /// The list reached its end: show the next page.
     func loadMore() {
         guard entries.count >= limit else { return }

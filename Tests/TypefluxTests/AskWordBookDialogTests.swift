@@ -419,14 +419,28 @@ struct AskWordBookViewModelTests {
             == "→ Japanese")
     }
 
+    @Test func marksTodayInTheWeekAndFoldsTheSidebarWhenNarrow() throws {
+        let (model, _, _, suite) = try fixture()
+        defer { UserDefaults().removePersistentDomain(forName: suite) }
+        // Friday: the week starts on Monday.
+        #expect(model.todayIndex == 4)
+        model.now = { Self.now.addingTimeInterval(3 * 86400) }
+        #expect(model.todayIndex == 0, "Monday starts a new week")
+        #expect(AskWordBookView.isCompact(AskWordBookWindowController.minimumSize.width))
+        #expect(!AskWordBookView.isCompact(AskWordBookWindowController.defaultSize.width))
+        #expect(AskWordBookView.sidebarWidth == StudioTheme.sidebarWidth)
+    }
+
     @Test func theViewDrawsEveryState() async throws {
         let (model, _, _, suite) = try fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         func draw() {
-            let hosting = NSHostingView(rootView: AskWordBookView(model: model) {})
-            hosting.frame = NSRect(x: 0, y: 0, width: 1120, height: 720)
-            hosting.layoutSubtreeIfNeeded()
-            _ = hosting.fittingSize
+            for width in [1120.0, 900.0] {
+                let hosting = NSHostingView(rootView: AskWordBookView(model: model) {})
+                hosting.frame = NSRect(x: 0, y: 0, width: width, height: 720)
+                hosting.layoutSubtreeIfNeeded()
+                _ = hosting.fittingSize
+            }
         }
         draw()
         model.shelf = .starred
@@ -452,6 +466,12 @@ struct AskWordBookViewModelTests {
                                                                           card: wordBookCard),
                                      lookupCount: 3, firstLookedUpAt: Self.now, lastLookedUpAt: Self.now, starredAt: Self.now)
         for view in [AnyView(AskWordBookRow(entry: entry, selected: true, select: {}, star: {})),
+                     AnyView(AskWordBookRow(entry: entry, selected: false, separated: true, select: {}, star: {})),
+                     AnyView(AskWordBookSectionTitle(text: "t", hint: "h")),
+                     AnyView(AskWordBookKeyHint(key: "⌘L")),
+                     AnyView(Text("f").askWordBookField(focused: true, corner: 8)),
+                     AnyView(Text("p").askWordBookPopover(corner: 10)),
+                     AnyView(Button("z") {}.buttonStyle(AskWordBookHoverStyle()).disabled(true)),
                      AnyView(AskWordBookFlow { Text("a"); Text("b"); Text("c") }.frame(width: 20)),
                      AnyView(Button("x") {}.buttonStyle(AskWordBookPressStyle())),
                      AnyView(Button("y") {}.buttonStyle(AskWordBookChipStyle()))] {
@@ -486,6 +506,7 @@ struct AskWordBookWindowTests {
         let window = try #require(controller.window)
         #expect(window.title == L("ask.wordBook.title"))
         #expect(window.styleMask.contains(.fullSizeContentView) && window.titleVisibility == .hidden)
+        #expect(window.toolbar == nil, "a plain title bar like the main window")
         #expect(controller.model?.selectedKey == lookup.key)
         controller.show()
         #expect(controller.window === window, "one window")
@@ -500,5 +521,72 @@ struct AskWordBookWindowTests {
         #expect(dictionary.requests.first?.text == "serendipity")
         window.close()
         #expect(controller.window == nil && controller.model == nil)
+    }
+}
+
+/// Draws the word book window; writes PNGs when TYPEFLUX_ASK_SNAPSHOTS is set
+/// (compare with `docs/design/word-book-studio/`).
+@Suite("Ask word book rendering", .serialized)
+@MainActor
+struct AskWordBookRenderTests {
+    private func render(_ model: AskWordBookViewModel, size: NSSize, dark: Bool, name: String) async throws {
+        let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
+                                        backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        window.backgroundColor = dark ? NSColor(white: 0.1, alpha: 1) : NSColor(white: 0.93, alpha: 1)
+        let hosting = NSHostingView(rootView: AskWordBookView(model: model) {}.frame(width: size.width, height: size.height))
+        hosting.frame = NSRect(origin: .zero, size: size)
+        window.contentView = hosting
+        window.orderFront(nil)
+        defer { window.orderOut(nil); window.close() }
+        try await Task.sleep(for: .milliseconds(300))
+        hosting.layoutSubtreeIfNeeded()
+        #expect(hosting.fittingSize.height > 0)
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+        let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+        hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+        try #require(bitmap.representation(using: .png, properties: [:]))
+            .write(to: URL(fileURLWithPath: directory).appendingPathComponent(name))
+    }
+
+    @Test func wordBookStates() async throws {
+        _ = NSApplication.shared
+        // Screenshots are in Chinese; plain runs keep the language, which other suites read while they wait.
+        let previous = AppLocalization.shared.language
+        let snapshots = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] != nil
+        if snapshots { AppLocalization.shared.setLanguage(.simplifiedChinese) }
+        defer { if snapshots { AppLocalization.shared.setLanguage(previous) } }
+        let store = makeTestWordBook()
+        let suite = "wordbook-render-\(UUID().uuidString)"
+        defer { UserDefaults().removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: try #require(UserDefaults(suiteName: suite)))
+        let now = Date()
+        let card = AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: wordBookCard,
+                                     model: "gpt-5-mini")
+        for _ in 0 ..< 3 { store.record(card, at: now, counts: true) }
+        store.setStarred(true, lookup: card, at: now)
+        let words: [(String, String, Double)] = [("resilient", "有弹性的；适应力强的", 0), ("ubiquitous", "无处不在的", 1),
+                                                 ("meticulous", "一丝不苟的", 3), ("leverage", "杠杆作用；利用", 9)]
+        for (word, meaning, daysAgo) in words {
+            store.record(AskWordBookLookup(headword: word, source: "en", target: "zh-Hans", translation: meaning),
+                         at: now.addingTimeInterval(-daysAgo * 86400 - 60), counts: true)
+        }
+        let model = AskWordBookViewModel(store: store, settings: settings)
+        model.dictionary = AskTestWordLookup(answer: .card(wordBookCard))
+        model.askAI = { _ in }
+        model.modelName = { "gpt-5-mini" }
+        model.reload()
+        model.reveal(card.key)
+        try await render(model, size: NSSize(width: 1120, height: 720), dark: true, name: "word-book-dark.png")
+        try await render(model, size: NSSize(width: 1120, height: 720), dark: false, name: "word-book-light.png")
+        try await render(model, size: NSSize(width: 900, height: 600), dark: true, name: "word-book-narrow.png")
+        model.selectedKey = AskWordBookEntry.key(headword: "resilient", source: "en", target: "zh-Hans")
+        try await render(model, size: NSSize(width: 1120, height: 720), dark: false, name: "word-book-plain-light.png")
+        model.clearHistory()
+        for entry in model.entries { model.delete(entry) }
+        model.notice = nil
+        try await render(model, size: NSSize(width: 1120, height: 720), dark: true, name: "word-book-empty.png")
     }
 }
