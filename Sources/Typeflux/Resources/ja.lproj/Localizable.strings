@@ -1696,7 +1696,7 @@
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
 "models.askDefault" = "Ask · Default model";
 "models.defaultHint" = "New chats start here. Switch models at any time in a conversation.";
-"models.configured" = "AVAILABLE · CONFIGURED";
+"models.configured" = "設定済み";
 "models.unconfigured" = "NOT CONFIGURED · UNAVAILABLE";
 "models.addEndpoint" = "Add custom provider";
 "models.connected" = "Connected";
@@ -3597,3 +3597,7 @@
 "ask.settings.keywords.kind.chat.hint" = "メッセージを送信せずにチャットを開く";
 "ask.drafts.saved" = "保存した下書き";
 "ask.drafts.untitled" = "無題の下書き";
+
+// Settings draft state and MCP row fields.
+"imagegen.unsaved" = "未保存";
+"agent.mcp.kv.key" = "キー";

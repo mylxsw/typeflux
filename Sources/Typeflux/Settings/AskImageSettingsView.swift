@@ -21,7 +21,7 @@ struct AskImageSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            AgentPaneHeader(symbol: "photo.badge.plus", title: L("imagegen.title"), subtitle: L("imagegen.summary")) {
+            AgentPaneHeader(symbol: "photo.badge.plus", title: L("imagegen.title")) {
                 AgentStatusBadge(level: model.status.level, label: model.status.label)
                 Toggle("", isOn: Binding(get: { model.enabled }, set: {
                     model.setEnabled($0)
@@ -30,7 +30,7 @@ struct AskImageSettingsView: View {
                 .labelsHidden().toggleStyle(.switch)
                 .accessibilityLabel(L("imagegen.title"))
             }
-            AgentSettingsSection(title: L("imagegen.connection"), footnote: L("imagegen.billing")) {
+            AgentSettingsSection(title: L("imagegen.connection")) {
                 connectionFields
                 ModelRowDivider(leading: 18)
                 modelField
@@ -52,12 +52,12 @@ struct AskImageSettingsView: View {
     private var connectionFields: some View {
         VStack(alignment: .leading, spacing: 0) {
             formRow(L("imagegen.provider"), required: true) {
-                Picker(L("imagegen.provider"), selection: Binding(get: { model.configuration.provider }, set: {
-                    showsKey = false
-                    model.select($0)
-                })) {
-                    ForEach(AskImageProvider.allCases, id: \.self) { Text($0.title).tag($0) }
-                }.labelsHidden()
+                SettingsMenuPicker(title: L("imagegen.provider"),
+                                   options: AskImageProvider.allCases.map { (label: $0.title, value: $0) },
+                                   selection: Binding(get: { model.configuration.provider }, set: {
+                                       showsKey = false
+                                       model.select($0)
+                                   }))
             }
             ModelRowDivider(leading: 18)
             formRow(L("imagegen.endpoint"), required: true) {
@@ -101,23 +101,22 @@ struct AskImageSettingsView: View {
 
     private var modelField: some View {
         formRow(L("imagegen.model"), required: true) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    TextField(L("imagegen.model.placeholder"), text: $model.configuration.model)
-                        .textFieldStyle(ModelFieldStyle()).accessibilityIdentifier("imagegen-model")
-                    Menu {
-                        ForEach(model.models, id: \.self) { name in
-                            Button(name) { model.configuration.model = name }
-                        }
-                    } label: { Image(systemName: "list.bullet") }
-                        .menuStyle(.borderlessButton).fixedSize()
-                        .help(L("imagegen.models.suggestions"))
-                        .accessibilityLabel(L("imagegen.models.suggestions"))
+            HStack(spacing: 8) {
+                TextField(L("imagegen.model.placeholder"), text: $model.configuration.model)
+                    .textFieldStyle(ModelFieldStyle()).accessibilityIdentifier("imagegen-model")
+                Menu {
+                    ForEach(model.models, id: \.self) { name in
+                        Button(name) { model.configuration.model = name }
+                    }
+                } label: {
+                    Image(systemName: "list.bullet").font(.system(size: SettingsControlMetrics.fontSize))
+                        .foregroundStyle(StudioTheme.textSecondary)
                 }
-                hint("imagegen.models.help")
-                if !model.configuration.provider.supportsDiscovery {
-                    hint("imagegen.models.builtin")
-                }
+                .menuStyle(.borderlessButton).menuIndicator(.hidden)
+                .frame(width: SettingsControlMetrics.height, height: SettingsControlMetrics.height)
+                .modifier(SettingsControlChrome())
+                .help(L("imagegen.models.suggestions"))
+                .accessibilityLabel(L("imagegen.models.suggestions"))
             }
         }
     }
@@ -154,7 +153,7 @@ struct AskImageSettingsView: View {
                     Button { model.refresh() } label: {
                         HStack(spacing: 6) {
                             if model.loading {
-                                ProgressView().controlSize(.small)
+                                ProgressView().controlSize(.small).accessibilityHidden(true)
                             }
                             Text(L("imagegen.models.refresh"))
                         }
@@ -162,6 +161,9 @@ struct AskImageSettingsView: View {
                     .buttonStyle(ModelActionStyle()).disabled(model.loading || model.key.isEmpty)
                 }
                 Spacer(minLength: 8)
+                if model.hasChanges {
+                    Text(L("imagegen.unsaved")).font(.system(size: 12)).foregroundStyle(StudioTheme.warning)
+                }
                 Button(L("ask.models.save")) {
                     model.save()
                     onSaved(model.store.enabled, model.store.isReady)

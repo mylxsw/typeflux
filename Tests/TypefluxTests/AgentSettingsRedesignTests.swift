@@ -206,7 +206,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
             AgentStatusBadge(level: .off, label: "Off")
             AgentFlowLayout { ForEach(0 ..< 12) { AgentFactChip(text: "Rule \($0)", systemImage: $0 == 0 ? "lock" : nil) } }
                 .frame(width: 300)
-            AgentSearchBox(placeholder: "Search", text: .constant("query"))
+            SettingsSearchBox(placeholder: "Search", text: .constant("query"))
             AgentEmptyState(symbol: "server.rack", title: "Empty", message: "Nothing yet") { Button("Add") {} }
             AgentUndoBanner(message: "Removed", onUndo: {}, onDismiss: {})
             AgentFormRow(label: "Token", required: true) { TextField("", text: .constant("")) }

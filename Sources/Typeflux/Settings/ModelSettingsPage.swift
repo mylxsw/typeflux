@@ -11,7 +11,6 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
 
     @State private var speechDetailVisible = false
     @State private var search = ""
-    @FocusState private var searchFocused: Bool
     let speechDetail: () -> SpeechDetail
 
     var body: some View {
@@ -23,8 +22,6 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                 } else if let id = selectedProvider, let provider = library.providers.first(where: { $0.id == id }) {
                     ProviderModelsView(library: library, providerID: provider.id) { selectedProvider = nil }
                 } else {
-                    ModelSectionLabel(title: L("ask.models.byPurpose"), detail: "· " + L("models.sceneHint"))
-                        .padding(.bottom, 8)
                     scenes
                     toolbar.padding(.top, 28).padding(.bottom, 4)
                     if viewModel.modelDomain == .stt {
@@ -37,10 +34,6 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                     }
                 }
             }.padding(2).padding(.bottom, StudioTheme.Layout.shellContentBottomInset)
-        }
-        .onAppear {
-            // macOS makes the first text field key on appear; keep the search field idle until clicked.
-            DispatchQueue.main.async { searchFocused = false }
         }
         .task(id: auth.accessToken) {
             library.adoptLegacySelectionIfNeeded()
@@ -71,25 +64,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                 selection: Binding(get: { viewModel.modelDomain }, set: { viewModel.setModelDomain($0) })
             )
             Spacer()
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass").foregroundStyle(StudioTheme.textTertiary)
-                TextField(L("models.search"), text: $search).textFieldStyle(.plain)
-                    .focused($searchFocused)
-                if !search.isEmpty {
-                    Button { search = "" } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(StudioTheme.textTertiary)
-                    }.buttonStyle(.plain)
-                }
-            }
-            .font(.system(size: 12.5)).padding(.horizontal, 9).frame(width: 210, height: 28)
-            .background(
-                ModelVisualStyle.control,
-                in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                    .strokeBorder(ModelVisualStyle.border)
-            )
+            SettingsSearchBox(placeholder: L("models.search"), text: $search, width: 240)
         }
     }
 
@@ -291,7 +266,7 @@ extension ModelSettingsPage {
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             if !connected.isEmpty || showsAddRow {
-                ModelSectionLabel(title: L("models.connected"), detail: "\(connected.count)")
+                ModelSectionLabel(title: L("models.configured"), detail: "\(connected.count)")
                     .padding(.top, 22).padding(.bottom, 8)
                 ModelSurface {
                     VStack(spacing: 0) {

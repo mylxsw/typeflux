@@ -274,6 +274,7 @@ final class StudioViewModel: ObservableObject {
     private var llmTestTask: Task<Void, Never>?
     private var sttTestTask: Task<Void, Never>?
     private var mcpTestTask: Task<Void, Never>?
+    private var mcpTestServerID: UUID?
     private var historyRefreshTask: Task<Void, Never>?
     private var localSTTPreparationTask: Task<Void, Never>?
     private var cloudServerTestTask: Task<Void, Never>?
@@ -1777,6 +1778,14 @@ final class StudioViewModel: ObservableObject {
         return copy
     }
 
+    /// Closing or editing a draft cancels its test without disturbing tests of saved servers.
+    func resetMCPDraftConnectionTest() {
+        guard mcpTestServerID == nil else { return }
+        mcpTestTask?.cancel()
+        mcpTestTask = nil
+        mcpConnectionTestState = .idle
+    }
+
     func testMCPDraftConnection() {
         mcpConnectionTestTargetServerID = nil
         let transport: MCPTransportConfig
@@ -1813,7 +1822,9 @@ final class StudioViewModel: ObservableObject {
             mcpServerTestResults[id] = nil
         }
         mcpConnectionTestState = .testing
+        mcpTestServerID = serverID
         mcpTestTask = Task {
+            var testClient: (any MCPClient)?
             do {
                 let client: any MCPClient
                 switch transport {
@@ -1832,6 +1843,7 @@ final class StudioViewModel: ObservableObject {
                     client = HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: config.headers,
                                                                  authorizer: MCPOAuthAuthorizer(resource: url, interactive: true)))
                 }
+                testClient = client
                 try await client.connect()
                 let tools = try await client.listTools()
                 await client.disconnect()
@@ -1847,6 +1859,7 @@ final class StudioViewModel: ObservableObject {
                     finishMCPTest(.success(tools: discoveredTools), serverID: serverID)
                 }
             } catch {
+                await testClient?.disconnect()
                 if !Task.isCancelled {
                     finishMCPTest(.failure(message: error.localizedDescription), serverID: serverID)
                 }
@@ -1855,7 +1868,10 @@ final class StudioViewModel: ObservableObject {
     }
 
     private func finishMCPTest(_ state: MCPConnectionTestState, serverID: UUID?) {
-        mcpConnectionTestState = state
+        mcpTestTask = nil
+        mcpTestServerID = nil
+        // A saved server's test may finish after the user opens an unrelated draft.
+        if mcpConnectionTestTargetServerID == serverID { mcpConnectionTestState = state }
         if let serverID, mcpServers.contains(where: { $0.id == serverID }) {
             mcpServerTestResults[serverID] = state
         }

@@ -2,15 +2,15 @@ import AppKit
 import SwiftUI
 
 /// The capability panes: web search, file access, code execution, and computer and browser control.
-/// Each follows the same layout: header with state, settings card, rules card.
+/// Each has a header with state and the configuration needed by that capability.
 extension AskToolsSettingsView {
     func status(of capability: AgentCapability) -> AgentCapabilityStatus {
         AgentCapabilityStatus.status(of: capability, inputs: capabilityInputs)
     }
 
-    func capabilityHeader(_ capability: AgentCapability, subtitle: String) -> AgentPaneHeader<AgentStatusBadge> {
+    func capabilityHeader(_ capability: AgentCapability) -> AgentPaneHeader<AgentStatusBadge> {
         let state = status(of: capability)
-        return AgentPaneHeader(symbol: capability.symbol, title: capability.title, subtitle: subtitle) {
+        return AgentPaneHeader(symbol: capability.symbol, title: capability.title) {
             AgentStatusBadge(level: state.level, label: state.label)
         }
     }
@@ -19,8 +19,7 @@ extension AskToolsSettingsView {
 
     @ViewBuilder var searchPane: some View {
         let state = status(of: .webSearch)
-        AgentPaneHeader(symbol: AgentCapability.webSearch.symbol, title: AgentCapability.webSearch.title,
-                        subtitle: L("agent.search.subtitle")) {
+        AgentPaneHeader(symbol: AgentCapability.webSearch.symbol, title: AgentCapability.webSearch.title) {
             AgentStatusBadge(level: state.level, label: state.label)
             Toggle("", isOn: Binding(get: { searchProvider != .none }, set: setSearchEnabled))
                 .labelsHidden().toggleStyle(.switch)
@@ -45,7 +44,7 @@ extension AskToolsSettingsView {
     // MARK: - Files
 
     @ViewBuilder var filesPane: some View {
-        capabilityHeader(.files, subtitle: AgentCapability.files.summary)
+        capabilityHeader(.files)
         VStack(alignment: .leading, spacing: 8) {
             AgentSettingsSection(title: L("ask.settings.folders.title"),
                                  detail: L("agent.status.files.count", folders.count)) {
@@ -67,30 +66,24 @@ extension AskToolsSettingsView {
                                 onUndo: undoRemoveFolder, onDismiss: { self.removedFolder = nil })
             }
         }
-        AgentRulesCard(rules: [(L("agent.files.rule.scope"), nil), (L("agent.files.rule.read"), nil),
-                               (L("agent.files.rule.write"), nil)])
     }
 
     // MARK: - Code execution
 
     @ViewBuilder var codePane: some View {
         let state = status(of: .codeExecution)
-        AgentPaneHeader(symbol: AgentCapability.codeExecution.symbol, title: AgentCapability.codeExecution.title,
-                        subtitle: L("agent.code.subtitle")) {
+        AgentPaneHeader(symbol: AgentCapability.codeExecution.symbol, title: AgentCapability.codeExecution.title) {
             AgentStatusBadge(level: state.level, label: state.label)
             Toggle("", isOn: Binding(get: { codeEnabled }, set: setCodeExecution))
                 .labelsHidden().toggleStyle(.switch)
                 .accessibilityLabel(AgentCapability.codeExecution.title)
         }
-        AgentRulesCard(rules: [(L("agent.code.rule.network"), nil), (L("agent.code.rule.home"), nil),
-                               (L("agent.code.rule.confirm"), nil)],
-                       dimmed: !codeEnabled)
     }
 
     // MARK: - Computer and browser control
 
     @ViewBuilder var automationPane: some View {
-        capabilityHeader(.automation, subtitle: L("agent.automation.subtitle"))
+        capabilityHeader(.automation)
         AgentSettingsSection(title: L("agent.automation.permissions"), footnote: L("agent.automation.permissions.hint")) {
             permissionRow(icon: "hand.tap", title: L("permission.accessibility.title"), detail: L("agent.automation.accessibility"),
                           granted: accessibilityGranted, request: permissions.requestAccessibility)
@@ -104,7 +97,6 @@ extension AskToolsSettingsView {
             accessibilityGranted = permissions.accessibilityGranted()
             screenRecordingGranted = permissions.screenRecordingGranted()
         }
-        AgentRulesCard(rules: [(L("agent.automation.rule.confirm"), nil), (L("agent.automation.rule.stop"), nil)])
     }
 
     private func permissionRow(icon: String, title: String, detail: String, granted: Bool,

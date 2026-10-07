@@ -66,11 +66,10 @@ struct LauncherSearchSettingsView: View {
             ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "list.number", title: L("launcher.search.limit"),
                              subtitle: L("launcher.search.limit.subtitle"), subtitleLineLimit: nil) {
-                Picker("", selection: binding(\.limit)) {
-                    ForEach(AskLauncherSearchSettings.limits, id: \.self) { Text("\($0)").tag($0) }
-                }
-                .labelsHidden().fixedSize()
-                .accessibilityLabel(L("launcher.search.limit"))
+                SettingsMenuPicker(title: L("launcher.search.limit"),
+                                   options: AskLauncherSearchSettings.limits.map { (label: "\($0)", value: $0) },
+                                   selection: binding(\.limit))
+                    .frame(width: 90)
             }
             ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "photo", title: L("launcher.search.icons"),
@@ -88,7 +87,8 @@ struct LauncherSearchSettingsView: View {
             AgentSettingsRow(icon: "lock.shield", title: L("launcher.search.fda"),
                              subtitle: L("launcher.search.fda.subtitle"), subtitleLineLimit: nil) {
                 HStack(spacing: 10) {
-                    ModelConnectionStatus(connected: hasFullDiskAccess)
+                    Circle().fill(hasFullDiskAccess ? StudioTheme.success : StudioTheme.textTertiary)
+                        .frame(width: 7, height: 7).accessibilityHidden(true)
                     Text(L(hasFullDiskAccess ? "launcher.search.fda.granted" : "launcher.search.fda.missing"))
                         .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
                     if !hasFullDiskAccess {

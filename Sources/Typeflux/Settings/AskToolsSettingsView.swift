@@ -8,6 +8,7 @@ struct AskToolsSettingsView: View {
     var skills = AskSkillLibrary()
     var notes: AskMemoryNoteStore = .shared
     var owner: () -> String = { GlobalSoulOwner.currentID }
+    var imageSettingsModel: AskImageSettingsModel?
 
     @State var folders: [String] = []
     @State var codeEnabled = true
@@ -66,7 +67,8 @@ struct AskToolsSettingsView: View {
             case .webSearch:
                 searchPane
             case .imageGeneration:
-                AskImageSettingsView(store: AskImageSettings(defaults: settings.defaults)) { enabled, ready in
+                AskImageSettingsView(model: imageSettingsModel ??
+                    AskImageSettingsModel(store: AskImageSettings(defaults: settings.defaults))) { enabled, ready in
                     imageEnabled = enabled; imageReady = ready
                 }
             case .files:
@@ -76,8 +78,7 @@ struct AskToolsSettingsView: View {
             case .automation:
                 automationPane
             case .skills:
-                AgentPaneHeader(symbol: AgentCapability.skills.symbol, title: AgentCapability.skills.title,
-                                subtitle: AgentCapability.skills.summary) {
+                AgentPaneHeader(symbol: AgentCapability.skills.symbol, title: AgentCapability.skills.title) {
                     skillHeaderActions
                 }
                 skillSections
@@ -229,8 +230,7 @@ struct AskToolsSettingsView: View {
     }
 
     @ViewBuilder var memorySections: some View {
-        AgentPaneHeader(symbol: AgentSettingsPane.memory.symbol, title: AgentSettingsPane.memory.title,
-                        subtitle: L("agent.memory.subtitle")) {
+        AgentPaneHeader(symbol: AgentSettingsPane.memory.symbol, title: AgentSettingsPane.memory.title) {
             AgentStatusBadge(level: memoryNotes.notes.isEmpty ? .off : .ready,
                              label: L("agent.memory.count", memoryNotes.notes.count))
         }

@@ -23,18 +23,7 @@ struct ModelCatalogView: View {
                     .buttonStyle(ModelActionStyle(primary: true))
                     .disabled(addedCount == 0).keyboardShortcut(.defaultAction)
             }
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass").foregroundStyle(StudioTheme.textSecondary)
-                TextField(L("models.search"), text: $search).textFieldStyle(.plain)
-            }.font(.system(size: 13)).padding(.horizontal, 10).frame(height: 30)
-                .background(
-                    ModelVisualStyle.control,
-                    in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                        .strokeBorder(ModelVisualStyle.border)
-                )
+            SettingsSearchBox(placeholder: L("models.search"), text: $search, width: nil)
             ModelSurface {
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -50,7 +39,7 @@ struct ModelCatalogView: View {
                     }
                 }
             }
-        }.padding(20).frame(width: 580, height: 470).background(ModelVisualStyle.canvas)
+        }.padding(24).frame(width: 580, height: 470).background(ModelVisualStyle.canvas)
             .buttonStyle(ModelActionStyle())
     }
 

@@ -397,6 +397,7 @@ struct StudioView: View {
 
     @ObservedObject var viewModel: StudioViewModel
     @StateObject private var recorder = HotkeyRecorder()
+    @StateObject private var imageSettings: AskImageSettingsModel
     @State private var recordingTarget: ShortcutRecordingTarget?
     @State private var vocabularyFilter: VocabularyFilter = .all
     @State private var isVocabularySearchExpanded = false
@@ -438,6 +439,9 @@ struct StudioView: View {
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
     init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics) {
         self.viewModel = viewModel
+        _imageSettings = StateObject(wrappedValue: AskImageSettingsModel(
+            store: AskImageSettings(defaults: viewModel.askToolSettings.defaults)
+        ))
         _launcherPane = State(initialValue: launcherPane)
     }
     @State private var agentStatuses: [AgentCapabilityStatus] = []
@@ -866,7 +870,7 @@ struct StudioView: View {
             StudioHeroHeader(
                 eyebrow: viewModel.currentSection.eyebrow,
                 title: viewModel.currentSection.heading,
-                subtitle: viewModel.currentSection.subheading
+                subtitle: viewModel.currentSection == .agent ? nil : viewModel.currentSection.subheading
             )
 
             if viewModel.currentSection == .vocabulary {
@@ -2867,8 +2871,7 @@ struct StudioView: View {
         SettingsPaneLayout(sections: AgentSettingsPane.sections, selection: $agentPane, compact: compact,
                            status: agentPaneStatus) {
             if agentPane == .mcpServers {
-                AgentPaneHeader(symbol: AgentCapability.mcpServers.symbol, title: AgentCapability.mcpServers.title,
-                                subtitle: AgentCapability.mcpServers.summary) {
+                AgentPaneHeader(symbol: AgentCapability.mcpServers.symbol, title: AgentCapability.mcpServers.title) {
                     if !viewModel.mcpServers.isEmpty {
                         Button { beginMCPImport() } label: {
                             Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
@@ -2887,6 +2890,7 @@ struct StudioView: View {
             } else {
                 AskToolsSettingsView(
                     settings: viewModel.askToolSettings,
+                    imageSettingsModel: imageSettings,
                     pane: agentPane,
                     onNavigate: { agentPane = $0 },
                     onStatusesChange: { agentStatuses = $0 }
@@ -3078,214 +3082,13 @@ struct StudioView: View {
                 .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(22)
+        .padding(24)
         .frame(width: 520)
         .background(ModelVisualStyle.canvas)
     }
 
     private var mcpServerDialog: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-            Text(viewModel.mcpDraftEditingServerID == nil
-                ? L("agent.mcp.dialog.addTitle")
-                : L("agent.mcp.dialog.editTitle"))
-                .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-
-            Text(L("agent.mcp.dialog.subtitle"))
-                .font(.studioBody(StudioTheme.Typography.body))
-                .foregroundStyle(StudioTheme.textSecondary)
-
-            StudioCard(padding: StudioTheme.Insets.cardDense) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioTextInputCard(
-                        label: L("agent.mcp.name"),
-                        placeholder: L("agent.mcp.namePlaceholder"),
-                        text: $viewModel.mcpDraftName
-                    )
-
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        Text(L("agent.mcp.transportType"))
-                            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textSecondary)
-
-                        StudioSegmentedPicker(
-                            options: [
-                                (label: L("agent.mcp.transport.stdio"), value: MCPTransportType.stdio),
-                                (label: L("agent.mcp.transport.http"), value: MCPTransportType.http)
-                            ],
-                            selection: $viewModel.mcpDraftTransportType
-                        )
-                    }
-
-                    if viewModel.mcpDraftTransportType == .stdio {
-                        StudioTextInputCard(
-                            label: L("agent.mcp.stdio.command"),
-                            placeholder: "/usr/local/bin/my-mcp-server",
-                            text: $viewModel.mcpDraftStdioCommand
-                        )
-                        StudioTextInputCard(
-                            label: L("agent.mcp.stdio.args"),
-                            placeholder: "--port 3000 --verbose",
-                            text: $viewModel.mcpDraftStdioArgs
-                        )
-                        mcpKeyValueEditor(
-                            label: L("agent.mcp.stdio.env"),
-                            keyPlaceholder: "NODE_ENV",
-                            text: $viewModel.mcpDraftStdioEnv
-                        )
-                    } else {
-                        StudioTextInputCard(
-                            label: L("agent.mcp.http.url"),
-                            placeholder: "https://mcp.example.com/sse",
-                            text: $viewModel.mcpDraftHTTPURL
-                        )
-                        mcpKeyValueEditor(
-                            label: L("agent.mcp.http.headers"),
-                            keyPlaceholder: "Authorization",
-                            text: $viewModel.mcpDraftHTTPHeaders
-                        )
-                    }
-                }
-            }
-
-            StudioCard(padding: StudioTheme.Insets.cardDense) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("agent.mcp.enabled.title"),
-                        subtitle: L("agent.mcp.enabled.subtitle")
-                    ) {
-                        Toggle("", isOn: $viewModel.mcpDraftEnabled)
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("agent.mcp.autoConnect.title"),
-                        subtitle: L("agent.mcp.autoConnect.subtitle")
-                    ) {
-                        Toggle("", isOn: $viewModel.mcpDraftAutoConnect)
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                    }
-                }
-            }
-
-            mcpConnectionTestResultView
-
-            HStack {
-                StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
-                    isMCPServerDialogPresented = false
-                }
-
-                Spacer()
-
-                StudioButton(
-                    title: viewModel.mcpConnectionTestState == .testing
-                        ? L("agent.mcp.testing") : L("agent.mcp.testConnection"),
-                    systemImage: viewModel.mcpConnectionTestState == .testing ? nil : "network",
-                    variant: .secondary,
-                    isDisabled: viewModel.mcpConnectionTestState == .testing,
-                    isLoading: viewModel.mcpConnectionTestState == .testing
-                ) {
-                    viewModel.testMCPDraftConnection()
-                }
-                StudioButton(
-                    title: L("common.save"),
-                    systemImage: nil,
-                    variant: .primary,
-                    isDisabled: !viewModel.canSaveMCPDraft
-                ) {
-                    viewModel.saveMCPDraft()
-                    isMCPServerDialogPresented = false
-                }
-            }
-        }
-        .padding(StudioTheme.Insets.cardDefault)
-        .frame(width: 520)
-        .background(
-            ZStack {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                StudioTheme.modalSurface
-            }
-        )
-    }
-
-    private func mcpKeyValueEditor(label: String, keyPlaceholder: String, text: Binding<String>) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            Text(label)
-                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
-            MCPKeyValueEditor(text: text, keyPlaceholder: keyPlaceholder, valuePlaceholder: L("agent.mcp.kv.value"))
-        }
-    }
-
-    @ViewBuilder
-    private var mcpConnectionTestResultView: some View {
-        switch viewModel.mcpConnectionTestState {
-        case .idle:
-            EmptyView()
-        case .testing:
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                ProgressView().controlSize(.small)
-                Text(L("agent.mcp.testing"))
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
-        case let .success(tools):
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                HStack(spacing: StudioTheme.Spacing.xSmall) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(StudioTheme.success)
-                    Text(L("agent.mcp.testSuccess", tools.count))
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                }
-                if !tools.isEmpty {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                        ForEach(tools) { tool in
-                            HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
-                                Image(systemName: "wrench.and.screwdriver")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundStyle(StudioTheme.textTertiary)
-                                    .frame(width: 14, alignment: .center)
-                                    .padding(.top, 2)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(tool.name)
-                                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                                        .foregroundStyle(StudioTheme.textPrimary)
-                                    if !tool.description.isEmpty {
-                                        Text(tool.description)
-                                            .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
-                                            .foregroundStyle(StudioTheme.textSecondary)
-                                            .lineLimit(2)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding(StudioTheme.Spacing.small)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                            .fill(StudioTheme.controlSurface)
-                    )
-                }
-            }
-        case let .failure(message):
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.danger)
-                Text(message)
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
+        MCPServerEditorView(viewModel: viewModel) { isMCPServerDialogPresented = false }
     }
 
     private func mcpTransportLabel(for server: MCPServerConfig) -> String {
@@ -3850,23 +3653,8 @@ struct StudioView: View {
                 .foregroundStyle(StudioTheme.textSecondary)
 
             TextField(L("vocabulary.sheet.placeholder"), text: $newVocabularyTerm)
-                .textFieldStyle(.plain)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                .textFieldStyle(ModelFieldStyle(monospaced: false))
                 .foregroundStyle(StudioTheme.textPrimary)
-                .padding(.horizontal, StudioTheme.Insets.textFieldHorizontal)
-                .padding(.vertical, StudioTheme.Insets.textFieldVertical)
-                .background(
-                    RoundedRectangle(
-                        cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous
-                    )
-                    .fill(StudioTheme.controlSurface.opacity(StudioTheme.Opacity.textFieldFill))
-                )
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous
-                    )
-                    .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
-                )
                 .onSubmit {
                     submitVocabularyTerm()
                 }

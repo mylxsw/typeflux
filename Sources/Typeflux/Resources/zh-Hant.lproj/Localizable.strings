@@ -1703,7 +1703,7 @@
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
 "models.askDefault" = "Ask · Default model";
 "models.defaultHint" = "New chats start here. Switch models at any time in a conversation.";
-"models.configured" = "AVAILABLE · CONFIGURED";
+"models.configured" = "已設定";
 "models.unconfigured" = "NOT CONFIGURED · UNAVAILABLE";
 "models.addEndpoint" = "Add custom provider";
 "models.connected" = "Connected";
@@ -3604,3 +3604,7 @@
 "ask.settings.keywords.kind.chat.hint" = "開啟聊天視窗，不傳送訊息";
 "ask.drafts.saved" = "暫存草稿";
 "ask.drafts.untitled" = "未命名草稿";
+
+// Settings draft state and MCP row fields.
+"imagegen.unsaved" = "未儲存";
+"agent.mcp.kv.key" = "鍵";
