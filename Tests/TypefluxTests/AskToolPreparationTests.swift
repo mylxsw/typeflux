@@ -142,6 +142,7 @@ struct AskToolPreparationTests {
         defer { f.model.resetSession() }
         await f.api.setTool(.init(id: "call", function: .init(name: "browser", arguments: #"{"action":"read"}"#)))
         f.model.launcherDraft.text = "Read the page"
+        f.model.setPermissionMode(.strict, launcher: true)
         f.model.submitLauncher()
         try await f.wait { !f.model.pendingApprovals.isEmpty }
         var checks = 1
@@ -188,18 +189,24 @@ struct AskToolPreparationTests {
         #expect(try await f.cache.executions(conversationId: original.id, owner: "owner").isEmpty)
     }
 
-    @Test func `unknown execution still requires inspection`() async throws {
+    @Test func `unacknowledged unknown execution still requires inspection`() async throws {
         let f = try AskTestFixture()
         defer { f.model.resetSession() }
         f.tools.fail = true
+        await f.api.setFailReceipts(true)
         await f.api.setTool(.init(id: "call", function: .init(name: "browser", arguments: #"{"action":"read"}"#)))
         f.model.launcherDraft.text = "Read"
+        f.model.setPermissionMode(.strict, launcher: true)
         f.model.submitLauncher()
         try await f.wait { !f.model.pendingApprovals.isEmpty }
         try f.model.approve(conversationId: #require(f.model.selectedId), allowed: true)
         try await f.wait { f.model.busyIds.isEmpty }
-        #expect(await f.api.results.first?.harness?.outcome?.status == "unknown")
+        #expect(await f.api.results.isEmpty)
+        #expect(f.model.selectedRecoveryEntries.first?.receipt?.status == "unknown")
         #expect(f.model.recoveryPresentation.unknown && !f.model.recoveryPresentation.canContinue)
+        f.model.resume()
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.tools.executions == 1, "An uncertain execution must not run again")
     }
 
     @Test func `preparation classification keeps refusals distinct from invalid input`() {

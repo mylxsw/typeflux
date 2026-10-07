@@ -4,11 +4,17 @@ import Testing
 
 private actor AskHTTPStub: CloudHTTPSession {
     var requests: [URLRequest] = []
+    var capabilityVersion: Int? = 1
+    func capability(_ version: Int?) { capabilityVersion = version }
     var status = 200
     var payload: Data = Data()
     func configure(status: Int = 200, payload: Data) { self.status = status; self.payload = payload }
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         requests.append(request)
+        if request.url?.lastPathComponent == "tool-approval", let capabilityVersion {
+            return (Data("{\"code\":\"OK\",\"data\":{\"version\":\(capabilityVersion)}}".utf8),
+                    HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        }
         return (payload, HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
     }
 }
@@ -21,6 +27,38 @@ private struct AskHTTPProber: CloudEndpointProbing {
 
 @Suite("Ask HTTP contract")
 struct AskAPIClientTests {
+    @Test(arguments: [0, 1, 2]) func approvalCapabilityIsCheckedBeforeSending(version: Int) async throws {
+        let stub = AskHTTPStub(), api = client(stub)
+        let conversation = AskConversation(id: "c", title: "Q", revision: 1, updatedAt: Date(), messages: [])
+        try await stub.configure(payload: Data("{\"code\":\"OK\",\"data\":".utf8)
+            + AskCoding.encoder().encode(conversation) + Data("}".utf8))
+        await stub.capability(version > 0 ? version : nil)
+        let request = AskSendRequest(clientToolApproval: true, id: "m", deviceId: "d", text: "Q", tools: [])
+        if version == 1 {
+            _ = try await api.send(conversationId: "c", request: request, token: "t")
+            #expect(await stub.requests.map { $0.url!.lastPathComponent } == ["tool-approval", "messages"])
+        } else {
+            await #expect(throws: (any Error).self) { try await api.send(conversationId: "c", request: request, token: "t") }
+            #expect(await stub.requests.allSatisfy { $0.httpMethod == "GET" })
+        }
+    }
+
+    @Test func approvalReceiptCannotOverwriteEngineFailure() async throws {
+        let stub = AskHTTPStub(), api = client(stub)
+        let message = AskMessage(id: "result", role: "tool", text: "Search failed", toolCallId: "call", isError: true, createdAt: Date())
+        let conversation = AskConversation(id: "c", title: "Q", revision: 2, updatedAt: Date(), messages: [message])
+        try await stub.configure(payload: Data("{\"code\":\"OK\",\"data\":".utf8)
+            + AskCoding.encoder().encode(conversation) + Data("}".utf8))
+        var receipt = AskToolResultRequest(runId: "run", deviceId: "d", toolCallId: "call", content: "Authorized", isError: false,
+            harness: .init(version: 1, outcome: .init(status: "ok")))
+        receipt.approveExecution = true
+        let result = try await api.result(conversationId: "c", request: receipt, token: "t")
+        #expect(result.messages[0].isError == true)
+        #expect(result.messages[0].harness == nil)
+        let wire = try #require(await stub.requests.last?.httpBody)
+        #expect(try AskCoding.decoder().decode(AskToolResultRequest.self, from: wire).approveExecution == true)
+    }
+
     @Test(arguments: [false, true]) func streamingTransportDecodesSnapshotsAndCompactUpdates(recovery: Bool) async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [AskEventsURLProtocol.self]
@@ -81,8 +119,8 @@ struct AskAPIClientTests {
         await stub.configure(payload: Data(#"{"code":"OK","data":{"deleted":true}}"#.utf8))
         try await api.delete(conversationId: "c", token: "t")
         let requests = await stub.requests
-        #expect(requests.map { $0.url!.lastPathComponent } == ["c", "messages", "tool-results", "cancel", "retry", "c"])
-        #expect(requests.map(\.httpMethod) == ["GET", "POST", "POST", "POST", "POST", "DELETE"])
+        #expect(requests.map { $0.url!.lastPathComponent } == ["c", "messages", "tool-results", "cancel", "tool-approval", "retry", "c"])
+        #expect(requests.map(\.httpMethod) == ["GET", "POST", "POST", "POST", "GET", "POST", "DELETE"])
         let body = try #require(requests[1].httpBody)
         #expect(try AskCoding.decoder().decode(AskSendRequest.self, from: body) == send)
         #expect(try AskCoding.decoder().decode(AskToolResultRequest.self, from: requests[2].httpBody!) == result)
@@ -179,13 +217,14 @@ struct AskAPIClientTests {
         await stub.configure(payload: Data("{\"code\":\"OK\",\"data\":".utf8) + (try AskCoding.encoder().encode(value)) + Data("}".utf8))
         let api: any AskAPI = client(stub)
         _ = try await api.retry(conversationId: "c", runId: "run", deviceId: "device", modelRef: reference, token: "t")
-        let request = try #require(await stub.requests.first)
+        let request = try #require(await stub.requests.last)
         let data = try #require(request.httpBody)
-        let body = try #require(JSONSerialization.jsonObject(with: data) as? [String: String])
+        let body = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(body["client_tool_approval"] as? Bool == true)
         #expect(request.url?.path == "/api/v1/ask/conversations/c/retry")
-        #expect(body["run_id"] == "run")
-        #expect(body["device_id"] == "device")
-        #expect(body["model_ref"] == reference)
+        #expect(body["run_id"] as? String == "run")
+        #expect(body["device_id"] as? String == "device")
+        #expect(body["model_ref"] as? String == reference)
     }
 
     @Test(arguments: [401, 409, 413])

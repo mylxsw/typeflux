@@ -14,6 +14,7 @@ struct AskLocalRecord: Codable, Equatable, Sendable {
     var builtinTools: [AskToolDefinition] = []
     var lastInferenceId: String?
     var cloudCalls = 0
+    var approvedCloudCallId: String?
     /// Messages sent into the running run that the model has not read yet.
     var steering: [AskMessage]?
 }
@@ -189,6 +190,7 @@ actor AskLocalEngine: AskAPI {
         c.modelRef = modelRef
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
                        tools: request.tools, pending: [], modelRef: modelRef, reasoningEffort: request.reasoningEffort)
+        c.run?.clientToolApproval = request.clientToolApproval
         record.conversation = c
         prepareRun(&record)
         return try await step(&record)
@@ -199,6 +201,17 @@ actor AskLocalEngine: AskAPI {
         guard let run = record.conversation.run, run.id == request.runId, run.deviceId == request.deviceId else { throw conflict() }
         if record.conversation.messages.contains(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }) { return record.conversation }
         guard run.status == "waiting_tool", run.pending.first?.id == request.toolCallId else { throw conflict() }
+        if run.clientToolApproval == true, let call = run.pending.first, isBuiltin(call, record) {
+            guard request.approveExecution != nil else { throw conflict() }
+            if request.approveExecution == true && !request.isError {
+                record.approvedCloudCallId = call.id
+                return try await continueTools(&record)
+            }
+            record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool",
+                text: "User denied this tool call. Do not repeat it.", toolCallId: call.id, isError: true, createdAt: now()))
+            record.conversation.run?.pending.removeFirst()
+            return try await continueTools(&record)
+        }
         try settleBudgetTool(record, callId: request.toolCallId)
         record.conversation.messages.append(request.message(step: run.steps, now: now()))
         record.conversation.run?.pending.removeFirst()
@@ -298,6 +311,7 @@ actor AskLocalEngine: AskAPI {
                                          tools: run.tools, pending: [], modelRef: model,
                                          reasoningEffort: model == run.modelRef ? run.reasoningEffort : nil,
                                          budgetEnabled: run.budgetEnabled, budgetRootId: run.budgetRootId, budgetDeadline: run.budgetDeadline, budgetLimits: run.budgetLimits)
+        record.conversation.run?.clientToolApproval = true
         prepareRun(&record)
         return try await step(&record)
     }
@@ -318,6 +332,7 @@ actor AskLocalEngine: AskAPI {
         c.modelRef = model
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
                        tools: request.tools ?? c.run?.tools ?? [], pending: [], modelRef: model, reasoningEffort: prompt.reasoningEffort)
+        c.run?.clientToolApproval = request.clientToolApproval
         record.conversation = c
         prepareRun(&record)
         return try await step(&record)
@@ -356,6 +371,9 @@ actor AskLocalEngine: AskAPI {
         // Messages left from an earlier run were taken back by the device.
         record.steering = nil
         record.builtinTools = [Self.planTool] + webTools.definitions()
+        let deviceNames = Set(record.conversation.run?.tools.map(\.name) ?? [])
+        record.conversation.run?.cloudTools = record.builtinTools.filter { !deviceNames.contains($0.name) }
+        record.approvedCloudCallId = nil
         record.cloudCalls = 0
         let zone = record.timeZone.flatMap(TimeZone.init(identifier:)) ?? TimeZone(identifier: "UTC")!
         let formatter = DateFormatter()
@@ -460,6 +478,12 @@ actor AskLocalEngine: AskAPI {
     /// Runs leading built-in calls here, then hands device calls to the device or starts the next step.
     private func continueTools(_ record: inout AskLocalRecord) async throws -> AskConversation {
         while let call = record.conversation.run?.pending.first, isBuiltin(call, record) {
+            if record.conversation.run?.clientToolApproval == true, record.approvedCloudCallId != call.id {
+                record.conversation.run?.status = "waiting_tool"
+                try save(&record)
+                return record.conversation
+            }
+            record.approvedCloudCallId = nil
             record.conversation.run?.status = "running"
             do { try reserveBudgetTool(record, call: call) } catch { return try stopBudget(&record, error: error) }
             try save(&record)

@@ -51,6 +51,14 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
 }
 
 struct AskRun: Codable, Equatable, Sendable {
+    var clientToolApproval: Bool? = nil
+    var cloudTools: [AskToolDefinition]? = nil
+
+    func approvalTool(for call: AskToolCall) -> AskToolDefinition? {
+        guard clientToolApproval == true else { return nil }
+        return cloudTools?.first { $0.name == call.function.name }
+    }
+
     var id: String
     var deviceId: String
     var status: String
@@ -116,6 +124,7 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
 typealias AskConversationSummary = ChatConversationSummary
 
 struct AskSendRequest: Codable, Equatable, Sendable {
+    var clientToolApproval: Bool? = nil
     var imageResults: Bool? = true
     var id: String
     var deviceId: String
@@ -153,6 +162,7 @@ extension AskSendRequest {
 /// The model and tools are optional: the server falls back to the conversation's
 /// current model and the previous run's toolset.
 struct AskRegenerateRequest: Codable, Equatable, Sendable {
+    var clientToolApproval: Bool? = nil
     var messageId: String
     var deviceId: String
     var modelRef: String? = nil
@@ -181,6 +191,7 @@ struct AskSteerRequest: Codable, Equatable, Sendable {
 }
 
 struct AskToolResultRequest: Codable, Equatable, Sendable {
+    var approveExecution: Bool? = nil
     var runId: String
     var deviceId: String
     var toolCallId: String

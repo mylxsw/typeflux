@@ -3,7 +3,7 @@ import AppKit
 /// What a slash command does once it is chosen.
 enum AskCommandAction: Equatable, Hashable, Sendable {
     case newConversation, search, regenerate, copyAnswer
-    case model, reasoning, localMode
+    case model, reasoning, localMode, permissionMode
     case attachFiles, attachFolder, screenshot, selection, memory, remember
     /// One of the launcher's starting points, by `AskSuggestion.key`.
     case suggestion(String)
@@ -13,6 +13,7 @@ enum AskCommandAction: Equatable, Hashable, Sendable {
     case keyword(String)
     case help, settings
     /// Rows of a submenu.
+    case pickPermissionMode(AskPermissionMode)
     case pickModel(String)
     case pickReasoning(AskReasoningEffort)
 }
@@ -69,6 +70,7 @@ struct AskCommandContext: Equatable, Sendable {
         var vision: Bool
     }
 
+    var permissionMode: AskPermissionMode = .standard
     var launcher = false
     var busy = false
     var hasAnswer = false
@@ -133,6 +135,8 @@ enum AskCommandCatalog {
             AskCommand(action: .copyAnswer, name: "copy", title: L("ask.command.copy"), symbol: "doc.on.doc",
                        group: .conversation,
                        disabledReason: context.launcher || !context.hasAnswer ? L("ask.command.disabled.noAnswer") : nil),
+            AskCommand(action: .permissionMode, name: "mode", title: L("ask.mode.title"), symbol: "checkmark.shield",
+                       group: .conversation, kind: .submenu, trailing: context.permissionMode.title),
             AskCommand(action: .model, name: "model", title: L("ask.command.model"), symbol: "cpu", group: .model,
                        kind: .submenu, disabledReason: busy,
                        trailing: context.models.first { $0.reference == context.currentModel }?.name, aliases: ["moxing", "switch"])
@@ -218,6 +222,12 @@ enum AskCommandCatalog {
     /// The choices behind a submenu command.
     static func submenu(_ action: AskCommandAction, context: AskCommandContext) -> [AskCommand] {
         switch action {
+        case .permissionMode:
+            return AskPermissionMode.allCases.map { mode in
+                AskCommand(action: .pickPermissionMode(mode), name: mode.rawValue, title: mode.title,
+                           detail: mode.detail, symbol: mode.symbol, group: .conversation,
+                           selected: mode == context.permissionMode, plain: true)
+            }
         case .model:
             return context.models.map { model in
                 AskCommand(action: .pickModel(model.reference), name: model.name, title: "",

@@ -81,13 +81,14 @@ struct AskAPIClient: AskAPI {
         try await execute(path: "/\(id)", token: token)
     }
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
-        try await execute(path: "/\(conversationId)/messages", method: "POST", body: AskCoding.encoder().encode(request), token: token)
+        if request.clientToolApproval == true { try await requireToolApproval(token: token) }
+        return try await execute(path: "/\(conversationId)/messages", method: "POST", body: AskCoding.encoder().encode(request), token: token)
     }
     func result(conversationId: String, request: AskToolResultRequest, token: String) async throws -> AskConversation {
         let wire = request.forPeer(trustedPeer, enabled: enabledCapabilities)
         var response: AskConversation = try await execute(path: "/\(conversationId)/tool-results", method: "POST", body: AskCoding.encoder().encode(wire), token: token)
         // Keep the local receipt visible even when an old server only echoes legacy fields.
-        if let index = response.messages.firstIndex(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }),
+        if request.approveExecution == nil, let index = response.messages.firstIndex(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }),
            response.messages[index].harness == nil {
             response.messages[index].harness = request.harness
             response.messages[index].runId = request.runId
@@ -102,11 +103,13 @@ struct AskAPIClient: AskAPI {
         return try await execute(path: "/\(conversationId)/cancel", method: "POST", body: AskCoding.encoder().encode(Request(runId: runId, partial: partial)), token: token)
     }
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String? = nil, token: String) async throws -> AskConversation {
-        struct Request: Encodable { var runId: String; var deviceId: String; var modelRef: String? }
+        try await requireToolApproval(token: token)
+        struct Request: Encodable { var runId: String; var deviceId: String; var modelRef: String?; var clientToolApproval = true }
         return try await execute(path: "/\(conversationId)/retry", method: "POST", body: AskCoding.encoder().encode(Request(runId: runId, deviceId: deviceId, modelRef: modelRef)), token: token)
     }
     func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation {
-        try await execute(path: "/\(conversationId)/regenerate", method: "POST", body: AskCoding.encoder().encode(request), token: token)
+        if request.clientToolApproval == true { try await requireToolApproval(token: token) }
+        return try await execute(path: "/\(conversationId)/regenerate", method: "POST", body: AskCoding.encoder().encode(request), token: token)
     }
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
         try await execute(path: "/\(conversationId)/steer", method: "POST", body: AskCoding.encoder().encode(request), token: token)
@@ -118,6 +121,12 @@ struct AskAPIClient: AskAPI {
     func purgeMemory(token: String) async throws {
         struct Purged: Decodable { let purged: Int }
         let _: Purged = try await execute(path: "/memory", method: "DELETE", token: token)
+    }
+
+    private func requireToolApproval(token: String) async throws {
+        struct Capability: Decodable { var version: Int }
+        let capability: Capability = try await execute(path: "/tool-approval", token: token)
+        guard capability.version == 1 else { throw AskLocalError.message(L("ask.mode.serverUpgrade")) }
     }
 
     private func execute<T: Decodable>(path: String, method: String = "GET", body: Data? = nil, token: String) async throws -> T {

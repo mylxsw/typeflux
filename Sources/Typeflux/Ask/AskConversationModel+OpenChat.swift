@@ -45,7 +45,9 @@ extension AskConversationModel {
                   !recordingIsActive(), !voiceInput.isOccupied, !capturing,
                   !isLoadingAttachments(launcher: true), !isLoadingAttachments(launcher: false) else { return false }
             if transfers {
+                let mode = launcherPermissionMode
                 newConversation()
+                draftPermissionMode = mode; launcherPermissionMode = .standard
                 draft = incoming
                 clearCapturedContentFeedback(launcher: true)
                 launcherDraft = AskDraft()

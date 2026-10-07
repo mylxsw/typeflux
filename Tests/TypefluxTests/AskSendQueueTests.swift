@@ -101,6 +101,7 @@ struct AskSendQueueTests {
 
     /// Sends a question whose run then waits for a tool approval, so the conversation stays busy.
     private func busyConversation(_ f: AskTestFixture) async throws -> String {
+        f.model.setPermissionMode(.strict, launcher: false)
         await f.api.setTool(toolCall())
         f.model.draft.text = "Question"
         f.model.submitDraft()

@@ -1,3 +1,8 @@
+> GUL-249 update: the chat UI now uses Strict, Standard (default), and YOLO
+> permission modes. The exact-call store below remains the dispatch boundary;
+> Standard and YOLO mint fresh single-use grants instead of reusing a prior call.
+> See [tool-permission-modes.md](tool-permission-modes.md) for current behavior.
+
 # Scoped device-tool approvals (GUL-168 / P02)
 
 The previous conversation permission authorized a tool name up to a risk tier.

@@ -103,7 +103,7 @@ struct AskCommandRenderTests {
         try await settle()
 
         // Tab opens a submenu; Return picks the highlighted model and clears the token.
-        try await type("/mod", in: editor)
+        try await type("/model", in: editor)
         host.draw()
         try await press("\t", keyCode: 48, in: editor)
         #expect(f.model.draft.text == "/model ")

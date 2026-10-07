@@ -54,6 +54,7 @@ struct AskConversationStorageTests {
         // Project and artifact scopes are read back with the account, so tools bind to it too.
         await fixture.localAPI.setTool(.init(id: "call", function: .init(name: "browser", arguments: #"{"action":"read"}"#)))
         fixture.model.newConversation(storesLocally: true)
+        fixture.model.setPermissionMode(.strict, launcher: false)
         fixture.model.draft.text = "Read this page"
         fixture.model.draft.modelRef = own
         fixture.model.submitDraft()

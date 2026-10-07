@@ -45,7 +45,15 @@ final class AskLocalEngineReentrancyTests: XCTestCase {
         let request = AskInferenceResult(runId: run.id, deviceId: device, inferenceId: try XCTUnwrap(run.inference?.id),
                                          content: "", toolCalls: before + [call] + after)
         let task = Task {
-            try await engine.inferenceResult(conversationId: conversation.id, request: request, token: "")
+            var result = try await engine.inferenceResult(conversationId: conversation.id, request: request, token: "")
+            while result.run?.status == "waiting_tool", let pending = result.run?.pending.first,
+                  result.run?.approvalTool(for: pending) != nil {
+                var approval = AskToolResultRequest(runId: run.id, deviceId: device, toolCallId: pending.id,
+                                                    content: "Authorized", isError: false)
+                approval.approveExecution = true
+                result = try await engine.result(conversationId: conversation.id, request: approval, token: "")
+            }
+            return result
         }
         await fulfillment(of: [fixture.started], timeout: 5)
         do {

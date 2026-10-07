@@ -16,6 +16,7 @@ struct AskScopedApprovalTests {
     }
 
     func start(_ f: AskTestFixture, call: AskToolCall) async throws -> String {
+        f.model.setPermissionMode(.strict, launcher: true)
         await f.api.setTool(call)
         f.model.launcherDraft.text = "Perform the requested action"
         f.model.launcherDraft.includeScreenshot = false

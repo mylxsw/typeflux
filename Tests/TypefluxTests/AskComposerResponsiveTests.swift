@@ -182,6 +182,7 @@ struct AskComposerResponsiveTests {
         let call = AskToolCall(id: "responsive-edit", type: "function",
                                function: .init(name: "browser", arguments: #"{"action":"read"}"#))
         await fixture.api.setTool(call)
+        fixture.model.setPermissionMode(.strict, launcher: false)
         fixture.model.draft.text = "Initial request"
         fixture.model.submitDraft()
         try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }

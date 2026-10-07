@@ -2436,13 +2436,13 @@
 "agent.search.getKey" = "%@ のキーを取得";
 "agent.files.empty" = "フォルダがまだありません。Ask はファイルを読み書きできません。";
 "agent.files.rule.scope" = "このリストのフォルダのみ";
-"agent.files.rule.read" = "読み取り：会話ごとに一度許可";
-"agent.files.rule.write" = "書き込み：毎回確認";
+"agent.files.rule.read" = "読み取り：許可済みフォルダ内で自動実行";
+"agent.files.rule.write" = "書き込み：標準モードでは実行前に確認";
 "agent.files.removed" = "「%@」を削除しました";
 "agent.code.subtitle" = "計算、表の処理、グラフ作成のために、隔離されたサンドボックスで Python、JavaScript、シェルを実行します。";
 "agent.code.rule.network" = "ネットワークなし";
 "agent.code.rule.home" = "ホームフォルダにアクセス不可";
-"agent.code.rule.confirm" = "実行ごとに確認";
+"agent.code.rule.confirm" = "標準モードでは実行前に確認";
 "agent.automation.subtitle" = "画面を見て、クリックや入力を行います。各操作の前に確認し、いつでも停止できます。";
 "agent.automation.accessibility" = "クリックと入力に使用";
 "agent.automation.screen.title" = "画面収録";
@@ -3597,6 +3597,18 @@
 "ask.settings.keywords.kind.chat.hint" = "メッセージを送信せずにチャットを開く";
 "ask.drafts.saved" = "保存した下書き";
 "ask.drafts.untitled" = "無題の下書き";
+
+// Tool permission modes
+"ask.mode.title" = "ツールの権限";
+"ask.mode.strict" = "厳格";
+"ask.mode.standard" = "標準";
+"ask.mode.yolo" = "YOLO · 完全許可";
+"ask.mode.strict.detail" = "ツール呼び出しごとに確認";
+"ask.mode.standard.detail" = "読み取りは自動、変更は確認";
+"ask.mode.yolo.detail" = "書き込み、削除、送信、有料操作を含む有効なツールをすべて自動実行";
+"ask.mode.changed" = "権限モード：%@";
+"ask.mode.usage" = "使い方：/mode yolo、/mode strict、/mode standard";
+"ask.mode.serverUpgrade" = "ツール権限モードを使用するにはクラウドサービスを更新してください。";
 
 // Settings draft state and MCP row fields.
 "imagegen.unsaved" = "未保存";

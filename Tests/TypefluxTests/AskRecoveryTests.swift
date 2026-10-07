@@ -347,7 +347,8 @@ struct AskRecoveryInteractionTests {
         let fixture = try AskTestFixture()
         await fixture.api.setTool(.init(id: "call", function: .init(name: "browser", arguments: #"{"action":"read"}"#)))
         await fixture.api.setFailReceipts(true)
-        fixture.model.launcherDraft.text = "Read this page"; fixture.model.submitLauncher()
+        fixture.model.launcherDraft.text = "Read this page"; fixture.model.setPermissionMode(.strict, launcher: true)
+        fixture.model.submitLauncher()
         try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }
         let id = try #require(fixture.model.selectedId)
         fixture.model.approve(conversationId: id, allowed: true)
