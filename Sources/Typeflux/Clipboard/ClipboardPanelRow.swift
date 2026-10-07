@@ -98,14 +98,8 @@ struct ClipboardEntryTile: View {
     var body: some View {
         switch entry.kind {
         case .voice:
-            symbol("mic.fill", foreground: .white)
-                .background(
-                    LinearGradient(
-                        colors: [Color(red: 0.61, green: 0.48, blue: 1), Color(red: 0.44, green: 0.55, blue: 1)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    ),
-                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                )
+            // Same neutral tile as the other text kinds; the waveform alone marks a voice result.
+            symbol("waveform")
         case .text:
             symbol("doc.text")
         case .link:
@@ -136,10 +130,10 @@ struct ClipboardEntryTile: View {
         }
     }
 
-    private func symbol(_ name: String, foreground: Color = .secondary) -> some View {
+    private func symbol(_ name: String) -> some View {
         Image(systemName: name)
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(foreground)
+            .foregroundStyle(.secondary)
             .frame(width: size, height: size)
             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
