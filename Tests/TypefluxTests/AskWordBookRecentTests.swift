@@ -49,6 +49,7 @@ struct AskTranslateRecentWordsTests {
         #expect(!output.items[6].actions.contains { $0.shortcut == .optionEnter }, "no meaning to insert")
         let openAll = try #require(output.items.last)
         #expect(openAll.actions.first?.kind == .openWordBook(key: nil))
+        #expect(openAll.actions.first?.title == L("ask.plugin.action.open"))
     }
 
     @Test func tabSwitchesToTheStarredWords() async throws {

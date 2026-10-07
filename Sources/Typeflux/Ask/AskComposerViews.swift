@@ -1031,7 +1031,7 @@ struct AskComposer: View {
             if draft.wrappedValue.text.isEmpty {
                 Text(placeholder)
                     .font(.system(size: chrome.editorFontSize))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(StudioTheme.textSecondary)
                     // The launcher's single-row placeholder truncates rather than wraps.
                     .lineLimit(launcher ? 1 : nil)
                     .padding(.leading, AskComposerTextView.lineFragmentPadding)
@@ -1158,7 +1158,7 @@ struct AskComposer: View {
                 } else {
                     Text(launcherHint)
                         .font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(1)
                         .accessibilityHidden(true)
                         // Passive hints share the empty bar's drag behavior.
