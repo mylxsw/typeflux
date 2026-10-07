@@ -15,10 +15,14 @@ struct AskResultImageCacheTests {
         }
         let key = AskResultImageCache.Key(url: URL(fileURLWithPath: "/synthetic.pdf"), thumbnail: true)
         #expect(cache.cached(key) == nil)
-        let first = Task { await cache.image(key) }
-        let second = Task { await cache.image(key) }
-        #expect(await first.value === expected)
-        #expect(await second.value === expected)
+        var firstImage: NSImage?
+        var secondImage: NSImage?
+        let first = Task { firstImage = await cache.image(key) }
+        let second = Task { secondImage = await cache.image(key) }
+        await first.value
+        await second.value
+        #expect(firstImage === expected)
+        #expect(secondImage === expected)
         #expect(calls == 1)
         #expect(cache.cached(key) === expected)
         #expect(await cache.image(key) === expected)
@@ -38,18 +42,24 @@ struct AskResultImageCacheTests {
             return NSImage(size: .init(width: 28, height: 28))
         }
         let key = AskResultImageCache.Key(url: URL(fileURLWithPath: "/synthetic.pdf"), thumbnail: false)
-        let first = Task { await cache.image(key) }
-        let second = Task { await cache.image(key) }
+        var firstImage: NSImage?
+        var secondImage: NSImage?
+        let first = Task { firstImage = await cache.image(key) }
+        let second = Task { secondImage = await cache.image(key) }
         try await Task.sleep(for: .milliseconds(10))
         first.cancel()
-        #expect(await second.value != nil)
-        #expect(await first.value == nil)
+        await second.value
+        await first.value
+        #expect(secondImage != nil)
+        #expect(firstImage == nil)
         #expect(!cancelled && calls == 1)
         let other = AskResultImageCache.Key(url: URL(fileURLWithPath: "/other.pdf"), thumbnail: false)
-        let last = Task { await cache.image(other) }
+        var lastImage: NSImage?
+        let last = Task { lastImage = await cache.image(other) }
         try await Task.sleep(for: .milliseconds(10))
         last.cancel()
-        #expect(await last.value == nil)
+        await last.value
+        #expect(lastImage == nil)
         #expect(cancelled)
         #expect(cache.cached(other) == nil)
     }
@@ -57,11 +67,28 @@ struct AskResultImageCacheTests {
     @Test func aCancelledRequestDoesNotStartLoading() async {
         var calls = 0
         let cache = AskResultImageCache { _ in calls += 1; return nil }
+        var image: NSImage?
         let task = Task {
             withUnsafeCurrentTask { $0?.cancel() }
-            return await cache.image(.init(url: URL(fileURLWithPath: "/cancelled"), thumbnail: false))
+            image = await cache.image(.init(url: URL(fileURLWithPath: "/cancelled"), thumbnail: false))
         }
-        #expect(await task.value == nil)
+        await task.value
+        #expect(image == nil)
         #expect(calls == 0)
+    }
+
+    @Test func aMissingImageIsNotCachedAndTheNextRequestCanRetry() async {
+        var calls = 0
+        let expected = NSImage(size: .init(width: 28, height: 28))
+        let cache = AskResultImageCache { _ in
+            calls += 1
+            return calls == 1 ? nil : expected
+        }
+        let key = AskResultImageCache.Key(url: URL(fileURLWithPath: "/retry.pdf"), thumbnail: true)
+        #expect(await cache.image(key) == nil)
+        #expect(cache.cached(key) == nil)
+        #expect(await cache.image(key) === expected)
+        #expect(cache.cached(key) === expected)
+        #expect(calls == 2)
     }
 }

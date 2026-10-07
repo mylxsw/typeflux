@@ -12,10 +12,18 @@ final class AskResultImageCache {
         var scale: CGFloat = 2
     }
 
+    /// Keep NSImage on MainActor; its Sendable conformance requires macOS 14.
+    @MainActor
+    private final class LoadedImage {
+        let image: NSImage?
+
+        init(_ image: NSImage?) { self.image = image }
+    }
+
     typealias Loader = @MainActor (Key) async -> NSImage?
     static let shared = AskResultImageCache()
     private let cache = NSCache<NSString, NSImage>()
-    private var pending: [Key: (task: Task<NSImage?, Never>, clients: Set<UUID>)] = [:]
+    private var pending: [Key: (task: Task<LoadedImage, Never>, clients: Set<UUID>)] = [:]
     private let loader: Loader
 
     init(loader: @escaping Loader = AskResultImageCache.generate) {
@@ -33,17 +41,17 @@ final class AskResultImageCache {
         guard !Task.isCancelled else { return nil }
         if let image = cached(key) { return image }
         let client = UUID()
-        let task: Task<NSImage?, Never>
+        let task: Task<LoadedImage, Never>
         if var entry = pending[key] {
             entry.clients.insert(client)
             pending[key] = entry
             task = entry.task
         } else {
-            task = Task { await loader(key) }
+            task = Task { LoadedImage(await loader(key)) }
             pending[key] = (task, [client])
         }
         return await withTaskCancellationHandler {
-            let image = await task.value
+            let image = await task.value.image
             if !Task.isCancelled, let image { cache.setObject(image, forKey: cacheKey(key)) }
             release(key, client: client)
             return Task.isCancelled ? nil : image
