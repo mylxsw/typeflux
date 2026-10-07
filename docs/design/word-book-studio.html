@@ -90,8 +90,6 @@ table.t th { color: var(--text-3); font-weight: 600; }
 .lights { display: flex; gap: 8px; padding: 18px 18px 0; height: 52px; }
 .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
 .lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
-.brand { display: flex; align-items: center; gap: 9px; padding: 0 22px 14px; font-size: 15px; font-weight: 700; white-space: nowrap; }
-.brand .lg { width: 24px; height: 24px; border-radius: 7px; background: var(--text); color: var(--side); display: grid; place-items: center; flex: none; }
 .nav-scroll { flex: 1; overflow: auto; padding: 0 12px; }
 .group-h { font-size: 11px; font-weight: 600; color: var(--text-3); padding: 14px 10px 5px; white-space: nowrap; }
 .nav { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-radius: 8px; color: var(--text-2); cursor: pointer; margin-bottom: 2px; white-space: nowrap; }
@@ -114,8 +112,7 @@ table.t th { color: var(--text-3); font-weight: 600; }
 .foot-row .sp { flex: 1; display: flex; align-items: center; gap: 5px; }
 .ibtn { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; color: var(--text-2); position: relative; }
 .ibtn:hover { background: var(--hover); color: var(--text); }
-.window.narrow .brand span, .window.narrow .group-h, .window.narrow .nav .t, .window.narrow .nav .n, .window.narrow .side-foot { display: none; }
-.window.narrow .brand { padding: 0 0 14px; justify-content: center; }
+.window.narrow .group-h, .window.narrow .nav .t, .window.narrow .nav .n, .window.narrow .side-foot { display: none; }
 .window.narrow .nav { justify-content: center; padding: 0; }
 .window.narrow .nav-scroll { padding: 6px 10px; }
 .window.narrow .lights { padding: 18px 0 0 12px; gap: 6px; }
@@ -328,7 +325,6 @@ body.shot > :not(.window):not(svg) { display: none; }
 <div class="window" id="win">
   <aside class="side">
     <div class="lights"><i></i><i></i><i></i></div>
-    <div class="brand"><span class="lg"><svg class="i sm"><use href="#book"/></svg></span><span>单词本</span></div>
     <div class="nav-scroll" id="nav"></div>
     <div class="side-foot" id="sideFoot">
       <div class="streak"><b id="streak">0</b><span>天连续查词</span><span class="wk" id="weekN"></span></div>
@@ -401,7 +397,7 @@ body.shot > :not(.window):not(svg) { display: none; }
 <table class="t">
   <tr><th style="width:150px">部位</th><th style="width:430px">现在（GUL-237 Liquid Glass）</th><th>改为（与主窗口一致）</th></tr>
   <tr><td>窗口背景</td><td>毛玻璃底 + 左上蓝色、左下紫色两团径向渐变</td><td>平铺 <code>StudioTheme.windowBackground</code>，无渐变、无光晕</td></tr>
-  <tr><td>侧栏</td><td>悬浮圆角玻璃面板，与窗口边缘留缝</td><td>贴边平铺侧栏（210pt，与主窗口同宽），右侧 1px 分隔线；顶部图标 + 「单词本」</td></tr>
+  <tr><td>侧栏</td><td>悬浮圆角玻璃面板，与窗口边缘留缝</td><td>贴边平铺侧栏（210pt，与主窗口同宽），右侧 1px 分隔线；红绿灯下方直接是分类，不再放图标和「单词本」标题（页面标题已说明当前位置）</td></tr>
   <tr><td>侧栏选中</td><td>蓝色半透明底 + 蓝色图标</td><td>中性灰 <code>sidebarSelection</code> + 加粗文字，与主窗口导航一致；收藏仍保留黄色星</td></tr>
   <tr><td>标题</td><td>列表顶部 15pt 小标题</td><td>页面级 23pt 标题 + 词数，位置和主窗口各页面相同（顶部 52pt 区域）</td></tr>
   <tr><td>查词栏</td><td>居中的发光胶囊，聚焦时蓝色光圈</td><td>标题右侧的普通输入框（8pt 圆角、细边框），和模型页搜索框同一形态；方向切换是框内的小按钮</td></tr>

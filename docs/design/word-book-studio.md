@@ -26,7 +26,7 @@
 | 部位 | 现在 | 改为 | SwiftUI 落点 |
 |---|---|---|---|
 | 窗口背景 | `AskWindowBackdrop` + 两个 `RadialGradient` | `StudioTheme.windowBackground` 平铺 | 删除 `AskWordBookView.backdrop` |
-| 侧栏 | `askInWindowGlass` 悬浮面板 | 贴边 `StudioTheme.sidebar` + 右侧 1px `border`；顶部图标 + 「单词本」 | `sidebar` |
+| 侧栏 | `askInWindowGlass` 悬浮面板 | 贴边 `StudioTheme.sidebar` + 右侧 1px `border`；红绿灯下方直接是分类，不放图标和「单词本」标题 | `sidebar` |
 | 导航选中 | `AskTheme.accentSoft` 蓝底 + 蓝图标 | `StudioTheme.sidebarSelection` + semibold，34pt 行高、8pt 圆角 | `shelfRow` |
 | 底部统计 | 裸放 | 包进小卡片（同账户卡）；柱条中性灰，仅今天用 `accent` | `sidebarFooter` / `weekBars` |
 | 标题 | 列表顶部 15pt | 内容区顶部 23pt 页面标题 + 词数（`shellContentTopInset` 区域） | 新 `pageHeader` |
