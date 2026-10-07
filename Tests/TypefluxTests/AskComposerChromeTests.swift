@@ -20,18 +20,20 @@ struct AskComposerChromeTests {
         #expect(workspace.horizontalInset == 20)
         #expect(workspace.footerHeight == 48)
         #expect(workspace.fill == AskTheme.glassFill)
-        #expect(launcher.fill == AskTheme.composerSurface)
-        // Only what the glass samples differs: other windows vs. the transcript.
+        #expect(launcher.fill == AskTheme.launcherSurface)
+        // The launcher uses a deeper frost and samples other windows; the
+        // workspace samples its own transcript with the in-window tint.
         #expect(launcher.placement == .floating)
         #expect(workspace.placement == .inWindow)
     }
 
-    @Test func launcherCornerIsConcentricWithTheHeaderControls() {
+    @Test func launcherUsesCompactCornersWithoutChangingHeaderLayout() {
         let launcher = AskComposerChrome.launcher
-        // The send button sits 12pt from the trailing and top edges; the corner wraps it at the same centre.
+        // Compact card corners keep the existing editor and control spacing.
         #expect(launcher.horizontalInset == 12)
         #expect(launcher.editorTopInset == 12)
-        #expect(launcher.corner == 12 + AskMetrics.composerControlHeight / 2)
+        #expect(launcher.corner == 16)
+        #expect(launcher.corner == AskMetrics.launcherCardCorner)
         // One line of text keeps the header at 58pt, with the buttons centred in it.
         #expect(AskMetrics.launcherHeaderHeight(editor: 32) == 58)
         #expect(AskMetrics.launcherHeaderHeight(editor: 33) == 58)

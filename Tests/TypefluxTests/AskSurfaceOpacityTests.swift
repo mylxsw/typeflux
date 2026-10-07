@@ -46,6 +46,38 @@ struct AskSurfaceOpacityTests {
         fixture.model.resetSession()
     }
 
+    @Test func opaqueLauncherUsesWhiteInLightAndDeepGreyInDark() async throws {
+        let launcher = AskComposerChrome.launcher.glassBackground(.opaque)
+        let cardSize = NSSize(width: 100, height: 80)
+        // Native bitmap color conversion varies by the display profile; check
+        // the visual brightness and neutrality rather than an exact sRGB token.
+        for (appearance, brightness) in [(NSAppearance.Name.aqua, 0.95 ... 1.0), (.darkAqua, 0.05 ... 0.18)] {
+            let bitmap = try await render(launcher, size: cardSize, appearance: appearance)
+            let fill = try pixel(bitmap, x: 50, y: 40)
+            #expect(brightness.contains(fill.redComponent))
+            #expect(abs(fill.greenComponent - fill.redComponent) < 0.01)
+            #expect(abs(fill.blueComponent - fill.redComponent) < 0.01)
+            #expect(fill.alphaComponent > 0.999)
+        }
+    }
+
+    @Test func glassFrostStaysDarkOverWhiteInBothMaterialPaths() async throws {
+        for material in [AskGlassMaterial.liquidGlass, .visualEffect] {
+            let glass = AskComposerChrome.launcher.glassBackground(material).background(Color.white)
+            let cardSize = NSSize(width: 100, height: 80)
+            let light = try await render(glass, size: cardSize, appearance: .aqua)
+            let dark = try await render(glass, size: cardSize, appearance: .darkAqua)
+            // This checks the SwiftUI frost against white. Window-server
+            // backdrop sampling is outside the scope of bitmap captures.
+            let lightFill = try pixel(light, x: 50, y: 40)
+            let darkFill = try pixel(dark, x: 50, y: 40)
+            #expect(lightFill.redComponent > 0.65)
+            #expect(darkFill.redComponent < 0.4)
+            #expect(darkFill.greenComponent < 0.4)
+            #expect(darkFill.blueComponent < 0.4)
+        }
+    }
+
     private func pixel(_ bitmap: NSBitmapImageRep, x: Int, y: Int) throws -> NSColor {
         // Normalize sample coordinates for Retina and non-Retina test hosts.
         let scale = CGFloat(bitmap.pixelsWide) / bitmap.size.width

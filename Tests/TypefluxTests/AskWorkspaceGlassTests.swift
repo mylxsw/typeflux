@@ -15,13 +15,20 @@ struct AskWorkspaceGlassTests {
         #expect(AskGlassPlacement.inWindow.fallbackMaterial == .popover)
     }
 
-    @Test func onlyInWindowGlassIsFrostedForLegibility() {
-        #expect(AskGlassPlacement.floating.frost == 0)
+    @Test func floatingGlassUsesStrongerFrostInDarkMode() {
+        let dark = AskGlassPlacement.floating.frost(dark: true)
+        let light = AskGlassPlacement.floating.frost(dark: false)
+        #expect(dark >= 0.75 && dark < 1)
+        #expect(light > 0 && light <= 0.25)
+        #expect(dark > light)
+    }
+
+    @Test(arguments: [false, true]) func inWindowAndMenuGlassKeepTheirExistingFrost(dark: Bool) {
         // Frosted enough to keep text legible, clear enough for the backdrop's glows.
-        #expect(AskGlassPlacement.inWindow.frost >= 0.4)
-        #expect(AskGlassPlacement.inWindow.frost <= 0.6)
+        #expect(AskGlassPlacement.inWindow.frost(dark: dark) >= 0.4)
+        #expect(AskGlassPlacement.inWindow.frost(dark: dark) <= 0.6)
         // Menus sit over the transcript and need more frost than the window chrome.
-        #expect(AskGlassPlacement.menu.frost > AskGlassPlacement.inWindow.frost)
+        #expect(AskGlassPlacement.menu.frost(dark: dark) > AskGlassPlacement.inWindow.frost(dark: dark))
         #expect(AskGlassPlacement.menu.blending == .behindWindow)
         #expect(AskGlassPlacement.menu.fallbackMaterial == .menu)
     }
@@ -61,11 +68,13 @@ struct AskWorkspaceGlassTests {
 
     @Test func composerGlassCarriesItsChromesGeometryAndPlacement() {
         for chrome in [AskComposerChrome.launcher, .workspace] {
-            let background = chrome.glassBackground(.opaque)
-            #expect(background.corner == chrome.corner)
-            #expect(background.opaqueFill == chrome.fill)
-            #expect(background.placement == chrome.placement)
-            #expect(background.material == .opaque)
+            for material in [AskGlassMaterial.liquidGlass, .visualEffect, .opaque] {
+                let background = chrome.glassBackground(material)
+                #expect(background.corner == chrome.corner)
+                #expect(background.opaqueFill == chrome.fill)
+                #expect(background.placement == chrome.placement)
+                #expect(background.material == material)
+            }
         }
     }
 

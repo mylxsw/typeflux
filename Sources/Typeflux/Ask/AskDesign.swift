@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// The workspace is a standalone window placed directly over the desktop, so its
 /// backplates are opaque. The launcher card is the one exception: it is glass
-/// (`AskGlassBackground`), and falls back to `composerSurface` when the user
+/// (`AskGlassBackground`), and falls back to `launcherSurface` when the user
 /// turns on Reduce Transparency.
 enum AskTheme {
     static let accent = StudioTheme.accent
@@ -69,6 +69,12 @@ enum AskTheme {
         light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
         dark: NSColor(srgbRed: 0.180, green: 0.180, blue: 0.180, alpha: 1)
     )
+    /// The floating launcher's frost and opaque fallback. A deeper neutral in
+    /// dark mode keeps bright windows behind the panel from washing out its text.
+    static let launcherSurface = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
+        dark: NSColor(srgbRed: 0.110, green: 0.110, blue: 0.110, alpha: 1)
+    )
     /// Popovers opened from the composer (model and reasoning choosers).
     static let popoverSurface = StudioTheme.dynamic(
         light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
@@ -92,7 +98,7 @@ enum AskTheme {
     )
     /// The design board's glass tint for in-window panels (sidebar, header
     /// pills, composer): a cool graphite in dark, white in light. Frosted at
-    /// `AskGlassPlacement.inWindow.frost`, so the backdrop's glows show through.
+    /// `AskGlassPlacement.inWindow.frost(dark:)`, so the backdrop's glows show through.
     static let glassFill = StudioTheme.dynamic(
         light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
         dark: NSColor(srgbRed: 0.173, green: 0.173, blue: 0.204, alpha: 1)
@@ -164,9 +170,8 @@ enum AskMetrics {
     static let launcherWidth: CGFloat = 680
     /// Breathing room around the launcher card.
     static let launcherGutter: CGFloat = 6
-    /// The launcher's glass card: 29 = the header's 12pt inset + the 34pt controls'
-    /// radius 17, so the corner stays concentric with the microphone and send buttons.
-    static let launcherCardCorner: CGFloat = 29
+    /// Compact corners for the floating launcher, shared by its glass and content clip.
+    static let launcherCardCorner: CGFloat = 16
     /// Height of every footer control: menus, context chips, microphone and send.
     static let composerControlHeight: CGFloat = 34
     /// Horizontal padding inside the footer's text menus (model, reasoning).
@@ -274,7 +279,7 @@ struct AskComposerChrome: Equatable {
     /// The launcher reads as a search field first: its editor is the first row,
     /// in larger text, and the model and switches sit in a quieter bottom bar.
     static let launcher = AskComposerChrome(
-        fill: AskTheme.composerSurface,
+        fill: AskTheme.launcherSurface,
         corner: AskMetrics.launcherCardCorner,
         editorFontSize: 17,
         horizontalInset: 12,
