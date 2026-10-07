@@ -172,10 +172,8 @@ struct AskComposer: View {
     private func submit() {
         // The send button in keyword mode asks the AI, like ⌘Return.
         if launcher, plugins.isActive, !active { askAIFromPlugin(); return }
-        if launcher, showsLauncherSuggestions, !active {
-            let disabled = AskLauncherSuggestions.disabled(screenshot: model.screenshotSuggestion(launcher: true))
-            let index = AskSuggestion.available(min(suggestionIndex, AskSuggestion.all.count - 1), skipping: disabled)
-            if !disabled.contains(index) { pick(AskSuggestion.all[index]) }
+        if launcher, showsLauncherSuggestions, !active, let item = highlightedHomeItem {
+            pick(item)
             return
         }
         if launcher { model.submitLauncher() } else { model.submitDraft() }
@@ -581,13 +579,33 @@ struct AskComposer: View {
             && (draft.wrappedValue.attachments ?? []).isEmpty && !model.isLoadingAttachments(launcher: true) && !paletteOpen
     }
 
-    /// Sends a suggestion as the question, with the screenshot when it asks for one.
-    private func pick(_ suggestion: AskSuggestion) {
-        // A local draft moves to a vision model first; without one the row cannot be picked.
-        if suggestion.screenshot, !model.screenshotSuggestion(launcher: launcher).enabled { return }
-        draft.wrappedValue.text = suggestion.title
-        if suggestion.screenshot { model.attachScreenshotForSuggestion(launcher: launcher) }
-        model.submitLauncher()
+    /// What the launcher's home offers for its context; empty outside the launcher.
+    private var home: [AskLauncherHome.Section] { launcher ? model.launcherHome() : [] }
+
+    private var homeHeight: CGFloat { AskLauncherSuggestions.height(for: home) }
+
+    private var highlightedHomeItem: AskLauncherHome.Item? {
+        let items = AskLauncherHome.items(home)
+        return items.indices.contains(suggestionIndex) ? items[suggestionIndex] : items.first
+    }
+
+    /// Runs a home row: a keyword on the selection, a question, or a conversation.
+    /// A chip enters its keyword and waits, as typing it and a space would.
+    private func pick(_ item: AskLauncherHome.Item) {
+        let keyword: AskKeyword, run: Bool
+        switch item {
+        case let .row(row):
+            switch row.action {
+            case let .keyword(chosen): keyword = chosen; run = true
+            case let .ask(question): model.askFromLauncherHome(question); return
+            case let .conversation(id): model.openConversationFromLauncher(id); return
+            }
+        case let .chip(chip): keyword = chip.keyword; run = false
+        }
+        pluginHighlight = 0
+        pluginReserve = 0
+        model.enterLauncherKeyword(keyword, run: run)
+        reportHeight()
     }
     private var sendControl: AskSendControl {
         guard !launcher else { return .send(enabled: canSend) }
@@ -636,6 +654,8 @@ struct AskComposer: View {
             .onPreferenceChange(AskComposerHeight.self) { cardHeight = $0 }
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
+            // The home fills in as the context arrives after the panel shows.
+            .onChange(of: homeHeight) { _ in reportHeight() }
             .onChange(of: draft.wrappedValue.text) { _ in refreshQuickResults() }
             .onChange(of: quickResults) { _ in quickResultsChanged() }
             .onChange(of: pluginDisplay) { display in
@@ -708,8 +728,7 @@ struct AskComposer: View {
                 // Recording takes the results' place at their height, so the panel stays put.
                 AskVoicePanel(live: voice.live, listening: listening, height: voicePanelHeight, token: contextToken)
             } else if showsLauncherSuggestions {
-                AskLauncherSuggestions(highlighted: $suggestionIndex,
-                                       screenshot: model.screenshotSuggestion(launcher: true), onPick: pick)
+                AskLauncherSuggestions(sections: home, highlighted: $suggestionIndex, onPick: pick)
                     .disabled(active)
             } else if let pluginDisplay {
                 AskPluginResultsView(display: pluginDisplay, question: draft.wrappedValue.text,
@@ -1127,6 +1146,9 @@ struct AskComposer: View {
 
     private var launcherHint: String {
         if !active, let pluginDisplay { return AskPluginResultsView.hint(for: pluginDisplay) }
+        if !active, showsLauncherSuggestions, let item = highlightedHomeItem {
+            return AskLauncherSuggestions.hint(for: item, hasContext: contextToken != nil)
+        }
         return AskLauncherContext.hint(voice: active ? voice.phase : .idle,
                                 quickResults: showsQuickResults && !showsLauncherSuggestions ? quickResults : nil,
                                 hasContext: contextToken != nil)
@@ -1134,7 +1156,7 @@ struct AskComposer: View {
 
     /// The launcher's results area: its starting points or quick results.
     private var resultsHeight: CGFloat {
-        if showsLauncherSuggestions { return AskLauncherSuggestions.height }
+        if showsLauncherSuggestions { return homeHeight }
         if pluginDisplay != nil { return pluginHeight }
         if showsQuickResults, let quickResults {
             return max(quickReserve, AskQuickResultsView.height(for: quickResults))
@@ -1461,7 +1483,7 @@ struct AskComposer: View {
         let panel = recording ? voicePanelHeight : 0
         let keyword = !recording ? pluginHeight : 0
         onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
-                                                 suggestions: !recording && showsLauncherSuggestions,
+                                                 suggestions: !recording && showsLauncherSuggestions ? homeHeight : 0,
                                                  attachments: showsStrip,
                                                  attachmentHeight: attachmentHeight) + commands + quick + panel + keyword)
     }

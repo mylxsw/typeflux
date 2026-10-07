@@ -237,12 +237,13 @@ enum AskMetrics {
 
     /// Height of the launcher panel, including its transparent gutter.
     /// `banners` counts the notice rows inside the card; each adds its height plus the gap above it.
-    static func launcherHeight(editor: CGFloat, banners: Int, suggestions: Bool = false, attachments: Bool = false,
+    /// `suggestions` is the height of the launcher's home under the editor (`AskLauncherSuggestions`).
+    static func launcherHeight(editor: CGFloat, banners: Int, suggestions: CGFloat = 0, attachments: Bool = false,
                                attachmentHeight: CGFloat? = nil) -> CGFloat {
         let chrome = AskComposerChrome.launcher
         return launcherHeaderHeight(editor: editor) + chrome.footerHeight + launcherGutter * 2
             + CGFloat(banners) * (bannerHeight + bannerSpacing)
-            + (suggestions ? AskLauncherSuggestions.height : 0)
+            + max(0, suggestions)
             + (attachments ? attachmentHeight.map { max(0, $0) + 10 } ?? attachmentStripHeight : 0)
     }
 

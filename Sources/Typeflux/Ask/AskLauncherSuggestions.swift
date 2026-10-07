@@ -1,7 +1,9 @@
+import AppKit
 import SwiftUI
 
-/// A starting point offered while a composer is empty: the same three as the
-/// workspace's empty state.
+/// A starting point the workspace offers while its composer is empty, and the
+/// `/` palette's prompts. The launcher builds its own from what the user is
+/// looking at (`AskLauncherHome`).
 struct AskSuggestion: Equatable, Identifiable {
     var key: String
     var systemImage: String
@@ -36,71 +38,209 @@ struct AskSuggestion: Equatable, Identifiable {
     }
 }
 
-/// The launcher's suggestion list under its editor: a hairline and three rows
-/// with an accent icon tile and a trailing caption. The keyboard hint sits in
-/// the launcher's bottom bar. ↑/↓ move the highlight and Return sends it.
+/// The launcher's home under its editor: a hairline, then the sections of
+/// `AskLauncherHome` — actions for what the user is looking at, conversations
+/// to continue, and keyword chips. ↑/↓ move between rows (the chip row is one
+/// stop, ←/→ move along it), Return runs the highlight and ⌘1…⌘9 run a row.
 struct AskLauncherSuggestions: View {
+    var sections: [AskLauncherHome.Section]
     @Binding var highlighted: Int
-    /// What the screenshot suggestion can do with the launcher's model.
-    var screenshot: AskScreenshotSuggestion = .ready
-    var onPick: (AskSuggestion) -> Void
-
-    /// Rows that cannot run: the screenshot one when no model here can read images.
-    static func disabled(screenshot: AskScreenshotSuggestion) -> Set<Int> {
-        guard !screenshot.enabled else { return [] }
-        return Set(AskSuggestion.all.indices.filter { AskSuggestion.all[$0].screenshot })
-    }
+    var onPick: (AskLauncherHome.Item) -> Void
+    var now = Date()
 
     static let rowHeight: CGFloat = 42
     static let rowSpacing: CGFloat = 2
     static let listPadding: CGFloat = 6
-    /// Everything this list adds to the launcher card.
-    static var height: CGFloat {
-        let rows = CGFloat(AskSuggestion.all.count)
-        return 1 + listPadding * 2 + rows * rowHeight + (rows - 1) * rowSpacing
+    static let headerHeight: CGFloat = 26
+    static let chipRowHeight: CGFloat = 40
+    static let chipHeight: CGFloat = 28
+
+    /// Everything the home adds to the launcher card; nothing when it is empty.
+    static func height(for sections: [AskLauncherHome.Section]) -> CGFloat {
+        guard !sections.isEmpty else { return 0 }
+        let content = sections.reduce(CGFloat(0)) { total, section in
+            switch section {
+            case let .context(_, _, rows), let .recent(rows):
+                let count = CGFloat(rows.count)
+                return total + headerHeight + count * rowHeight + max(0, count - 1) * rowSpacing
+            case .keywords:
+                return total + headerHeight + chipRowHeight
+            }
+        }
+        return 1 + listPadding * 2 + content
     }
 
+    /// A typical home (three actions, a conversation and the chips), for placing
+    /// the panel before its context has arrived.
+    static let typicalHeight: CGFloat = {
+        let rows = (0 ..< 3).map {
+            AskLauncherHome.Row(id: "\($0)", title: "", symbol: "", tint: .accent, action: .ask(""))
+        }
+        return height(for: [.context(title: "", subtitle: nil, rows: rows), .recent(rows: [rows[0]]),
+                            .keywords(chips: [], teaching: true)])
+    }()
+
+    /// What the bottom bar says Return does for the highlighted item, with ⌘K
+    /// when there is captured context to open.
+    static func hint(for item: AskLauncherHome.Item?, hasContext: Bool) -> String {
+        let action: String
+        switch item {
+        case let .row(row):
+            switch row.action {
+            case .keyword: action = L("ask.home.hint.run")
+            case .ask: action = L("ask.home.hint.ask")
+            case .conversation: action = L("ask.home.hint.open")
+            }
+        case .chip: action = L("ask.home.hint.chip")
+        case nil: return L(hasContext ? "ask.launcher.hint.context" : "ask.launcher.hint")
+        }
+        return ([action] + (hasContext ? [L("ask.home.hint.context")] : []) + [L("ask.home.hint.close")])
+            .joined(separator: " · ")
+    }
+
+    /// "just now", "12 min. ago": when a conversation was last active.
+    static func relative(_ date: Date, now: Date) -> String {
+        if now.timeIntervalSince(date) < 60 { return L("ask.home.justNow") }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = AppLocalization.shared.locale
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: now)
+    }
+
+    private var items: [AskLauncherHome.Item] { AskLauncherHome.items(sections) }
+
     var body: some View {
+        let items = self.items
+        let numbers = Dictionary(uniqueKeysWithValues: AskLauncherHome.numberedRows(sections).enumerated()
+            .map { ($0.element.id, $0.offset + 1) })
+        let current = items.indices.contains(highlighted) ? items[highlighted].id : nil
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
-            VStack(spacing: Self.rowSpacing) {
-                ForEach(Array(AskSuggestion.all.enumerated()), id: \.element.id) { index, suggestion in
-                    let enabled = !disabled.contains(index)
-                    row(suggestion, highlighted: enabled && index == highlighted, enabled: enabled)
-                        .onHover { if $0, enabled { highlighted = index } }
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
+                    sectionView(section, items: items, numbers: numbers, current: current)
                 }
             }
             .padding(Self.listPadding)
         }
-        .background(AskArrowKeyMonitor { delta in
-            highlighted = AskSuggestion.step(highlighted, by: delta, skipping: disabled)
-        })
-        .onAppear { highlighted = AskSuggestion.available(highlighted, skipping: disabled) }
-        .onChange(of: screenshot) { _ in highlighted = AskSuggestion.available(highlighted, skipping: disabled) }
+        .background(AskLauncherHomeKeyMonitor { key in handle(key, items: items) })
+        .onAppear { clampHighlight(items.count) }
+        .onChange(of: items.count) { clampHighlight($0) }
     }
 
-    private var disabled: Set<Int> { Self.disabled(screenshot: screenshot) }
-
-    private func caption(_ suggestion: AskSuggestion) -> String {
-        suggestion.screenshot ? screenshot.caption(default: suggestion.caption) : suggestion.caption
+    private func clampHighlight(_ count: Int) {
+        if highlighted >= count || highlighted < 0 { highlighted = 0 }
     }
 
-    private func row(_ suggestion: AskSuggestion, highlighted: Bool, enabled: Bool) -> some View {
-        let tint = enabled ? AskTheme.accent : StudioTheme.textTertiary
-        return Button { onPick(suggestion) } label: {
+    private func handle(_ key: AskLauncherHomeKeyMonitor.Key, items: [AskLauncherHome.Item]) -> Bool {
+        guard !items.isEmpty else { return false }
+        switch key {
+        case let .vertical(delta):
+            highlighted = AskLauncherHome.move(highlighted, by: delta, in: items)
+        case let .horizontal(delta):
+            // ←/→ stay with the editor unless a chip is highlighted.
+            guard items.indices.contains(highlighted), case .chip = items[highlighted] else { return false }
+            highlighted = AskLauncherHome.move(highlighted, by: delta, in: items, horizontal: true)
+        case let .number(number):
+            let rows = AskLauncherHome.numberedRows(sections)
+            guard rows.indices.contains(number - 1) else { return false }
+            onPick(.row(rows[number - 1]))
+        }
+        return true
+    }
+
+    @ViewBuilder
+    private func sectionView(_ section: AskLauncherHome.Section, items: [AskLauncherHome.Item],
+                             numbers: [String: Int], current: String?) -> some View {
+        switch section {
+        case let .context(title, subtitle, rows):
+            header(title, subtitle: subtitle)
+            rowList(rows, items: items, numbers: numbers, current: current)
+        case let .recent(rows):
+            header(L("ask.home.section.recent"), subtitle: nil)
+            rowList(rows, items: items, numbers: numbers, current: current)
+        case let .keywords(chips, teaching):
+            header(L(teaching ? "ask.home.section.tryKeywords" : "ask.home.section.keywords"), subtitle: nil)
+            HStack(spacing: 6) {
+                ForEach(chips) { chip in
+                    let item = AskLauncherHome.Item.chip(chip)
+                    chipView(chip, highlighted: item.id == current)
+                        .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 6)
+            .frame(height: Self.chipRowHeight, alignment: .top)
+            .clipped()
+        }
+    }
+
+    private func header(_ title: String, subtitle: String?) -> some View {
+        HStack(spacing: 6) {
+            Text(title).foregroundStyle(StudioTheme.textTertiary)
+            if let subtitle {
+                Text(subtitle).foregroundStyle(StudioTheme.textSecondary).lineLimit(1).truncationMode(.tail)
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.system(size: 11.5, weight: .medium))
+        .padding(.horizontal, 10)
+        .padding(.top, 6)
+        .frame(height: Self.headerHeight, alignment: .leading)
+    }
+
+    private func rowList(_ rows: [AskLauncherHome.Row], items: [AskLauncherHome.Item],
+                         numbers: [String: Int], current: String?) -> some View {
+        VStack(spacing: Self.rowSpacing) {
+            ForEach(rows) { row in
+                let item = AskLauncherHome.Item.row(row)
+                rowView(row, number: numbers[row.id], highlighted: item.id == current)
+                    .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
+            }
+        }
+    }
+
+    static func tint(_ tint: AskLauncherHome.Tint) -> Color {
+        switch tint {
+        case .accent: return AskTheme.accent
+        case .orange: return .orange
+        case .purple: return .purple
+        case .green: return .green
+        case .neutral: return StudioTheme.textSecondary
+        }
+    }
+
+    private func rowView(_ row: AskLauncherHome.Row, number: Int?, highlighted: Bool) -> some View {
+        let tint = Self.tint(row.tint)
+        return Button { onPick(.row(row)) } label: {
             HStack(spacing: 12) {
-                Image(systemName: suggestion.systemImage).font(.system(size: 12.5))
+                Image(systemName: row.symbol).font(.system(size: 12.5))
                     .foregroundStyle(tint)
                     .frame(width: 28, height: 28)
-                    .background(tint.opacity(0.14),
-                                in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                Text(suggestion.title).font(.system(size: 13.5))
-                    .foregroundStyle(enabled ? StudioTheme.textPrimary : StudioTheme.textTertiary)
+                    .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                Text(row.title).font(.system(size: 13.5))
+                    .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
+                    .layoutPriority(1)
+                if let detail = row.detail {
+                    Text(detail).font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .lineLimit(1)
+                }
                 Spacer(minLength: 8)
-                Text(caption(suggestion)).font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .lineLimit(1)
+                if let keyword = row.keyword { keywordLabel(keyword) }
+                if let date = row.date {
+                    Text(Self.relative(date, now: now)).font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .lineLimit(1)
+                }
+                if let number {
+                    Text("⌘\(number)").font(.system(size: 10.5, design: .rounded))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .padding(.horizontal, 5)
+                        .frame(height: 18)
+                        .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.separator))
+                }
             }
             .padding(.horizontal, 10)
             .frame(height: Self.rowHeight)
@@ -109,9 +249,114 @@ struct AskLauncherSuggestions: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(!enabled)
-        .accessibilityLabel(suggestion.title)
-        .accessibilityHint(caption(suggestion))
+        .accessibilityLabel(row.title)
+        .accessibilityHint(row.detail ?? "")
         .accessibilityAddTraits(highlighted ? .isSelected : [])
+    }
+
+    private func keywordLabel(_ keyword: String) -> some View {
+        Text(keyword).font(.system(size: 10.5, design: .monospaced))
+            .foregroundStyle(AskTheme.accentText)
+            .padding(.horizontal, 5)
+            .frame(height: 18)
+            .background(AskTheme.accentSoft, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+    }
+
+    private func chipView(_ chip: AskLauncherHome.Chip, highlighted: Bool) -> some View {
+        Button { onPick(.chip(chip)) } label: {
+            HStack(spacing: 6) {
+                keywordLabel(chip.keyword.keyword)
+                Text(chip.title).font(.system(size: 12.5))
+                    .foregroundStyle(highlighted ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .lineLimit(1)
+            }
+            .padding(.leading, 5)
+            .padding(.trailing, 9)
+            .frame(height: Self.chipHeight)
+            .background(highlighted ? AskTheme.hoverFill : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.separator))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(chip.keyword.keyword + " " + chip.title)
+        .accessibilityAddTraits(highlighted ? .isSelected : [])
+    }
+}
+
+/// The home's keys, read before the editor sees them: ↑/↓, ←/→ and ⌘1…⌘9.
+/// The handler returns false to let a key through to the editor.
+struct AskLauncherHomeKeyMonitor: NSViewRepresentable {
+    enum Key: Equatable {
+        case vertical(Int)
+        case horizontal(Int)
+        case number(Int)
+    }
+
+    var onKey: (Key) -> Bool
+
+    static let leftKeyCode: UInt16 = 123
+    static let rightKeyCode: UInt16 = 124
+
+    /// The key an event stands for, or nil for every other key.
+    static func key(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, characters: String?) -> Key? {
+        let modifiers = modifiers.intersection([.command, .option, .control, .shift])
+        if modifiers == .command, let characters, characters.count == 1,
+           let digit = Int(characters), (1 ... 9).contains(digit) {
+            return .number(digit)
+        }
+        guard modifiers.isEmpty else { return nil }
+        if let delta = AskArrowKeyMonitor.delta(keyCode: keyCode, modifiers: []) { return .vertical(delta) }
+        switch keyCode {
+        case leftKeyCode: return .horizontal(-1)
+        case rightKeyCode: return .horizontal(1)
+        default: return nil
+        }
+    }
+
+    final class MonitorView: NSView {
+        var onKey: (Key) -> Bool = { _ in false }
+        private var monitor: Any?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            removeMonitor()
+            guard window != nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                guard let self, event.window === self.window,
+                      let key = AskLauncherHomeKeyMonitor.key(keyCode: event.keyCode, modifiers: event.modifierFlags,
+                                                              characters: event.charactersIgnoringModifiers)
+                else { return event }
+                return self.onKey(key) ? nil : event
+            }
+        }
+
+        override func removeFromSuperview() {
+            removeMonitor()
+            super.removeFromSuperview()
+        }
+
+        private func removeMonitor() {
+            if let monitor { NSEvent.removeMonitor(monitor) }
+            monitor = nil
+        }
+
+        deinit {
+            if let monitor { NSEvent.removeMonitor(monitor) }
+        }
+    }
+
+    func makeNSView(context _: Context) -> MonitorView {
+        let view = MonitorView()
+        view.onKey = onKey
+        return view
+    }
+
+    func updateNSView(_ view: MonitorView, context _: Context) {
+        view.onKey = onKey
+    }
+
+    static func dismantleNSView(_ view: MonitorView, coordinator _: ()) {
+        view.removeFromSuperview()
     }
 }

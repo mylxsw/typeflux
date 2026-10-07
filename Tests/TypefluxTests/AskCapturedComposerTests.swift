@@ -6,14 +6,14 @@ import Testing
 @MainActor
 struct AskCapturedComposerTests {
     @Test func measuredRowsGrowTheLauncherAndDisappearWithTheStrip() {
-        let base = AskMetrics.launcherHeight(editor: 32, banners: 1, suggestions: true)
-        #expect(AskMetrics.launcherHeight(editor: 32, banners: 1, suggestions: true,
+        let base = AskMetrics.launcherHeight(editor: 32, banners: 1, suggestions: AskLauncherSuggestions.typicalHeight)
+        #expect(AskMetrics.launcherHeight(editor: 32, banners: 1, suggestions: AskLauncherSuggestions.typicalHeight,
                                           attachments: true, attachmentHeight: 30) == base + 40)
-        #expect(AskMetrics.launcherHeight(editor: 32, banners: 1, suggestions: true,
+        #expect(AskMetrics.launcherHeight(editor: 32, banners: 1, suggestions: AskLauncherSuggestions.typicalHeight,
                                           attachments: true, attachmentHeight: 66) == base + 76)
-        #expect(AskMetrics.launcherHeight(editor: 32, banners: 1, suggestions: true,
+        #expect(AskMetrics.launcherHeight(editor: 32, banners: 1, suggestions: AskLauncherSuggestions.typicalHeight,
                                           attachments: false, attachmentHeight: 66) == base)
-        #expect(AskMetrics.launcherHeight(editor: 32, banners: 1, suggestions: true,
+        #expect(AskMetrics.launcherHeight(editor: 32, banners: 1, suggestions: AskLauncherSuggestions.typicalHeight,
                                           attachments: true, attachmentHeight: -1) == base + 10)
     }
 

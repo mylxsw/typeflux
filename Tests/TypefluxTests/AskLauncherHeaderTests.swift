@@ -20,7 +20,8 @@ struct AskLauncherHeaderTests {
         // doing so mid-run would hide their controls from them.
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         let reported = Reported()
-        let size = NSSize(width: AskMetrics.launcherWidth, height: 360)
+        // Tall enough for a captured selection's home (actions and keyword chips) under the editor.
+        let size = NSSize(width: AskMetrics.launcherWidth, height: 480)
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size),
                                         styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -62,7 +63,9 @@ struct AskLauncherHeaderTests {
         #expect(find("ask.content.selection.preview", in: window) == nil)
         // The model menu sits in the bottom bar, below the suggestions.
         let model = try element("ask.composer.model", in: window)
-        #expect(model.frame.maxY < editorFrame.minY - AskLauncherSuggestions.height + 8)
+        let home = AskLauncherSuggestions.height(for: fixture.model.launcherHome())
+        #expect(home > 0)
+        #expect(model.frame.maxY < editorFrame.minY - home + 8)
         let screenshot = try element("ask.context.screenshot.toggle", in: window)
         let memory = try #require(find(L("ask.memory"), attribute: "accessibilityLabel", in: window))
         #expect(find("ask.context.settings", in: window) == nil)
@@ -73,7 +76,7 @@ struct AskLauncherHeaderTests {
         let request = fixture.model.launcherDraft.request(deviceId: "device", tools: [])
         #expect(request.source == fixture.model.launcherDraft.source)
         #expect(request.selection == "first line\nsecond line")
-        let expected = AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true)
+        let expected = AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: home)
         #expect(abs(reported.height - expected) <= 4, "reported \(reported.height), expected \(expected)")
         try click(memory, in: window)
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == true }
@@ -91,7 +94,7 @@ struct AskLauncherHeaderTests {
         defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
         try await Task.sleep(for: .milliseconds(300))
         let resting = reported.height
-        #expect(AskVoicePanel.minimumHeight <= AskLauncherSuggestions.height)
+        #expect(AskVoicePanel.minimumHeight <= AskLauncherSuggestions.height(for: fixture.model.launcherHome()))
         let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
         window.makeFirstResponder(editor)
         #expect(fixture.model.voiceInput.begin(in: editor))
