@@ -97,10 +97,10 @@ struct WorkflowScriptActionsVisualTests {
             #expect(model.results.last?.actionSteps.last?.confirmHost == "www.xe.com")
             try await visual.render(tab(), size: size, name: "implemented-ed-test-script-allowed.png")
             let view = { AskWorkflowEditorView(model: model, store: fixture.store, panel: .test) }
-            model.outputMenu = .add(.onSuccess)
-            try await visual.render(view(), size: size, name: "implemented-ed-add-o4.png")
-            try await visual.render(view(), size: size, name: "implemented-ed-add-o4-light.png", light: true)
-            model.outputMenu = nil
+            let menu = AskWorkflowAddActionMenu { _ in }.padding(12)
+            try await visual.render(menu, size: NSSize(width: 330, height: 600), name: "implemented-ed-add-o4.png")
+            try await visual.render(menu, size: NSSize(width: 330, height: 600),
+                                    name: "implemented-ed-add-o4-light.png", light: true)
             model.addAction(.runKeyword, to: .onSuccess)
             model.setActionField(.keyword, to: "tr", at: 2, in: .onSuccess)
             #expect(model.problems(for: .output).isEmpty)

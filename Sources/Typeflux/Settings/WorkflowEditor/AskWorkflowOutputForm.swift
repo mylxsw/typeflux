@@ -8,10 +8,6 @@ import UniformTypeIdentifiers
 struct AskWorkflowOutputForm: View {
     @ObservedObject var model: AskWorkflowEditorModel
 
-    private var menu: AskWorkflowOutputMenu? {
-        model.outputMenu
-    }
-
     private var manifest: AskWorkflowManifest? {
         model.draft?.manifest
     }
@@ -105,13 +101,6 @@ struct AskWorkflowOutputForm: View {
             AskWorkflowActionHint(list: list).padding(.horizontal, 4).padding(.top, 3)
             AskWorkflowActionList(model: model, list: list, menu: $model.outputMenu).padding(.top, 10)
         }
-        .zIndex(menu.map { Self.list(of: $0) == list } == true ? 1 : 0)
-    }
-
-    private static func list(of menu: AskWorkflowOutputMenu) -> AskWorkflowEditorModel.ActionList {
-        switch menu {
-        case let .add(list), let .placeholder(list, _, _): list
-        }
     }
 
     private func toggleRow(_ title: String, detail: String, isOn: Bool, locked: Bool,
@@ -178,7 +167,6 @@ struct AskWorkflowActionList: View {
                     dragging = index
                     return NSItemProvider(object: "\(index)" as NSString)
                 }
-                .zIndex(menuIsOn(index) ? 1 : 0)
                 .onDrop(of: [UTType.text], delegate: ActionDrop(target: index, dragging: $dragging) { source, target in
                     model.moveAction(from: source, to: target, in: list)
                 })
@@ -195,6 +183,12 @@ struct AskWorkflowActionList: View {
                     .padding(.horizontal, 14).frame(height: 40).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .askWorkflowMenuPopover($menu, item: .add(list)) {
+                AskWorkflowAddActionMenu { kind in
+                    model.addAction(kind, to: list)
+                    menu = nil
+                }
+            }
             .disabled(rows.count >= AskWorkflowManifest.Output.maximumActions)
             .help(rows.count >= AskWorkflowManifest.Output.maximumActions
                 ? L("ask.workflow.problem.tooManyActions", AskWorkflowManifest.Output.maximumActions) : "")
@@ -202,24 +196,6 @@ struct AskWorkflowActionList: View {
         }
         .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
-        .overlay(alignment: .bottomLeading) {
-            if menu == .add(list) {
-                AskWorkflowAddActionMenu { kind in
-                    model.addAction(kind, to: list)
-                    menu = nil
-                }
-                .offset(x: 2, y: -44)
-            }
-        }
-    }
-
-    /// The placeholder menu is open on a field of this row, so the row draws above the next ones.
-    private func menuIsOn(_ index: Int) -> Bool {
-        if case let .placeholder(menuList, menuIndex, _) = menu {
-            menuList == list && menuIndex == index
-        } else {
-            false
-        }
     }
 
     /// Moves the dragged row onto the row it is dropped on.
@@ -288,18 +264,13 @@ struct AskWorkflowActionRow: View {
                                     commit: { model.setActionField(field, to: $0, at: index, in: list) },
                                     insert: { toggleMenu(field) }
                                 )
-                                // Opens upwards, like "+ Add action", so a row near the bottom keeps it on screen.
-                                .overlay(alignment: .bottomTrailing) {
-                                    if menu == .placeholder(list, index: index, field: field) {
-                                        AskWorkflowPlaceholderMenu(values: model.placeholderValues,
-                                                                   failure: list == .onFailure) { token in
-                                            insert(token, into: field)
-                                        }
-                                        .offset(y: -34)
+                                .askWorkflowMenuPopover($menu, item: .placeholder(list, index: index, field: field)) {
+                                    AskWorkflowPlaceholderMenu(values: model.placeholderValues,
+                                                               failure: list == .onFailure) { token in
+                                        insert(token, into: field)
                                     }
                                 }
                             }
-                            .zIndex(menu == .placeholder(list, index: index, field: field) ? 1 : 0)
                         }
                     }
                 }
@@ -506,15 +477,60 @@ struct AskWorkflowActionTile: View {
 private struct AskWorkflowMenuCard<Content: View>: View {
     var width: CGFloat
     @ViewBuilder var content: () -> Content
+    @Environment(\.askWorkflowMenuInPopover) private var inPopover
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0, content: content)
+        let card = VStack(alignment: .leading, spacing: 0, content: content)
             .padding(6)
             .frame(width: width, alignment: .leading)
-            .background(StudioTheme.modalSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
-            .shadow(color: .black.opacity(0.3), radius: 18, y: 10)
             .fixedSize(horizontal: false, vertical: true)
+        if inPopover {
+            // The popover draws the surface, the border and the shadow.
+            card
+        } else {
+            card
+                .background(StudioTheme.modalSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+                .shadow(color: .black.opacity(0.3), radius: 18, y: 10)
+        }
+    }
+}
+
+private struct AskWorkflowMenuInPopoverKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Menus shown in a popover leave the chrome to it.
+    var askWorkflowMenuInPopover: Bool {
+        get { self[AskWorkflowMenuInPopoverKey.self] }
+        set { self[AskWorkflowMenuInPopoverKey.self] = newValue }
+    }
+}
+
+extension View {
+    /// Shows `content` in a popover while `menu` is `item`. A popover is its own window,
+    /// so the scrolling form and the step bar above it never clip the menu, and AppKit
+    /// flips it above or below the control to keep it on screen.
+    func askWorkflowMenuPopover(_ menu: Binding<AskWorkflowOutputMenu?>, item: AskWorkflowOutputMenu,
+                                @ViewBuilder content: @escaping () -> some View) -> some View {
+        popover(isPresented: AskWorkflowOutputMenu.presented(item, in: menu), arrowEdge: .bottom) {
+            content().environment(\.askWorkflowMenuInPopover, true)
+        }
+    }
+}
+
+extension AskWorkflowOutputMenu {
+    /// Whether `item`'s popover is up. Closing it (a click outside, esc) clears the
+    /// menu only if it is still this one, so a menu just opened elsewhere stays open.
+    static func presented(_ item: AskWorkflowOutputMenu, in menu: Binding<AskWorkflowOutputMenu?>) -> Binding<Bool> {
+        Binding(get: { menu.wrappedValue == item }, set: { shown in
+            if shown {
+                menu.wrappedValue = item
+            } else if menu.wrappedValue == item {
+                menu.wrappedValue = nil
+            }
+        })
     }
 }
 
