@@ -13,13 +13,14 @@ struct AskQuickResultsView: View {
     var question: String
     /// Height held while typing; rows stay at the top.
     var minimumHeight: CGFloat = 0
-    /// The highlighted file's actions, open with →.
+    /// The highlighted file's actions, open with → or a context click.
     var actions: AskQuickActionPanel?
     var thumbnails = true
     /// Runs a row. `close` is true for Return and for the calculation row.
     var onRun: (AskQuickResults.Row, _ close: Bool) -> Void
     var onHighlight: (Int) -> Void
     var onAction: (AskQuickAction) -> Void = { _ in }
+    var onShowFileActions: (AskFileHit) -> Void = { _ in }
 
     @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
     @State private var copied: Int?
@@ -257,6 +258,10 @@ struct AskQuickResultsView: View {
         .accessibilityHint(L("ask.quick.app.open"))
         .accessibilityAddTraits(highlighted ? .isSelected : [])
         .accessibilityIdentifier(file.isFolder ? "ask.quick.folder" : "ask.quick.file")
+        .overlay {
+            AskQuickResultSecondaryClick { onShowFileActions(file) }
+                .accessibilityHidden(true)
+        }
     }
 
     private func moreRow(highlighted: Bool) -> some View {
