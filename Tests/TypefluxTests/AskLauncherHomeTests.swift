@@ -150,10 +150,14 @@ struct AskLauncherHomeTests {
         #expect(alone.map(\.id) == ["conversation.a", "conversation.b", "conversation.c"])
         #expect(alone[0].action == .conversation(id: "a"))
         #expect(alone[0].date == Self.now.addingTimeInterval(-60))
-        let beside = recentRows(Home.build(context(selection: "one\ntwo", conversations: conversations)))
+        // Beside a page's actions there is room for two.
+        let beside = recentRows(Home.build(context(bundle: "com.google.Chrome", conversations: conversations)))
         #expect(beside.map(\.id) == ["conversation.a", "conversation.b"])
-        let long = Array(repeating: "Line", count: 5).joined(separator: "\n")
-        #expect(recentRows(Home.build(context(selection: long, conversations: conversations))).count == 1)
+        // Selected text leaves them out, even when no keyword can act on it.
+        #expect(recentRows(Home.build(context(selection: "one\ntwo", conversations: conversations))).isEmpty)
+        #expect(recentRows(Home.build(context(selection: "one", keywords: [], conversations: conversations))).isEmpty)
+        // A blank selection is no selection.
+        #expect(recentRows(Home.build(context(selection: "  \n", conversations: conversations))).count == 3)
         #expect(recentRows(Home.build(context())).isEmpty)
         #expect(Home.recentBudget(contextRows: 0) == 3)
         #expect(Home.recentBudget(contextRows: 3) == 2)
@@ -188,7 +192,13 @@ struct AskLauncherHomeTests {
     // MARK: - Navigation
 
     @Test func theArrowsMoveThroughRowsAndTheChipRowIsOneStop() {
-        let sections = Home.build(context(selection: "one\ntwo", conversations: [conversation("a", ago: 60)]))
+        // A selection's actions with a conversation between them and the chips, which `build`
+        // never puts together (a selection leaves conversations out), to walk every kind of stop.
+        let selection = Home.build(context(selection: "one\ntwo"))
+        let recent = Home.build(context(conversations: [conversation("a", ago: 60)])).filter {
+            if case .recent = $0 { true } else { false }
+        }
+        let sections = [selection[0]] + recent + selection.dropFirst()
         let items = Home.items(sections)
         // Three actions, a conversation, four chips.
         #expect(items.count == 8)

@@ -48,12 +48,18 @@ struct AskLauncherSuggestions: View {
     var onPick: (AskLauncherHome.Item) -> Void
     var now = Date()
 
-    static let rowHeight: CGFloat = 42
+    static let rowHeight: CGFloat = 44
     static let rowSpacing: CGFloat = 2
     static let listPadding: CGFloat = 6
-    static let headerHeight: CGFloat = 26
-    static let chipRowHeight: CGFloat = 40
+    /// A section title sits at the bottom of its band: the space above it parts it
+    /// from the previous section, the space below from its own rows.
+    static let headerHeight: CGFloat = 34
+    static let headerBottomGap: CGFloat = 6
+    /// Keeps the chips as far below their title as a row's icon sits below its title.
+    static let chipRowHeight: CGFloat = 44
     static let chipHeight: CGFloat = 28
+    /// Rows, chips and titles all start their content this far in.
+    static let contentInset: CGFloat = 10
 
     /// Everything the home adds to the launcher card; nothing when it is empty.
     static func height(for sections: [AskLauncherHome.Section]) -> CGFloat {
@@ -70,14 +76,13 @@ struct AskLauncherSuggestions: View {
         return 1 + listPadding * 2 + content
     }
 
-    /// A typical home (three actions, a conversation and the chips), for placing
-    /// the panel before its context has arrived.
+    /// A typical home (three rows — a selection's actions or the recent conversations —
+    /// and the chips), for placing the panel before its context has arrived.
     static let typicalHeight: CGFloat = {
         let rows = (0 ..< 3).map {
             AskLauncherHome.Row(id: "\($0)", title: "", symbol: "", tint: .accent, action: .ask(""))
         }
-        return height(for: [.context(title: "", subtitle: nil, rows: rows), .recent(rows: [rows[0]]),
-                            .keywords(chips: [], teaching: true)])
+        return height(for: [.context(title: "", subtitle: nil, rows: rows), .keywords(chips: [], teaching: true)])
     }()
 
     /// What the bottom bar says Return does for the highlighted item, with ⌘K
@@ -169,8 +174,8 @@ struct AskLauncherSuggestions: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 6)
-            .frame(height: Self.chipRowHeight, alignment: .top)
+            .padding(.horizontal, Self.contentInset)
+            .frame(height: Self.chipRowHeight)
             .clipped()
         }
     }
@@ -184,9 +189,9 @@ struct AskLauncherSuggestions: View {
             Spacer(minLength: 0)
         }
         .font(.system(size: 11.5, weight: .medium))
-        .padding(.horizontal, 10)
-        .padding(.top, 6)
-        .frame(height: Self.headerHeight, alignment: .leading)
+        .padding(.horizontal, Self.contentInset)
+        .padding(.bottom, Self.headerBottomGap)
+        .frame(height: Self.headerHeight, alignment: .bottomLeading)
     }
 
     private func rowList(_ rows: [AskLauncherHome.Row], items: [AskLauncherHome.Item],
@@ -242,7 +247,7 @@ struct AskLauncherSuggestions: View {
                         .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.separator))
                 }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, Self.contentInset)
             .frame(height: Self.rowHeight)
             .background(highlighted ? AskTheme.hoverFill : Color.clear,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
