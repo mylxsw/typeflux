@@ -120,13 +120,16 @@ struct WorkflowOutputActionsVisualTests {
             let view = { AskWorkflowEditorView(model: model, store: fixture.store, panel: .test) }
             try await render(view(), size: size, name: "implemented-ed-output.png")
             try await render(view(), size: size, name: "implemented-ed-output-light.png", light: true)
-            model.outputMenu = .add(.onSuccess)
-            try await render(view(), size: size, name: "implemented-ed-add.png")
-            try await render(view(), size: size, name: "implemented-ed-add-light.png", light: true)
-            model.outputMenu = .placeholder(.onSuccess, index: 0, field: .value)
-            try await render(view(), size: size, name: "implemented-ed-token.png")
-            try await render(view(), size: size, name: "implemented-ed-token-light.png", light: true)
-            model.outputMenu = nil
+            // The menus open in popovers, their own windows, so they are rendered on their own.
+            let addMenu = AskWorkflowAddActionMenu { _ in }.padding(12)
+            try await render(addMenu, size: NSSize(width: 330, height: 560), name: "implemented-ed-add.png")
+            try await render(addMenu, size: NSSize(width: 330, height: 560), name: "implemented-ed-add-light.png",
+                             light: true)
+            let tokenMenu = AskWorkflowPlaceholderMenu(values: model.placeholderValues, failure: false) { _ in }
+                .padding(12)
+            try await render(tokenMenu, size: NSSize(width: 380, height: 420), name: "implemented-ed-token.png")
+            try await render(tokenMenu, size: NSSize(width: 380, height: 420), name: "implemented-ed-token-light.png",
+                             light: true)
             try await render(AskWorkflowEditorView(model: model, store: fixture.store, panel: .test,
                                                    testTab: .actions),
                              size: size, name: "implemented-ed-test.png")
@@ -139,5 +142,66 @@ struct WorkflowOutputActionsVisualTests {
             model.setDisplay(.none)
             try await render(view(), size: size, name: "implemented-ed-output-none.png")
         }
+    }
+
+    /// The menus open in popovers, so nothing in the window (the step bar, the scroll
+    /// view's edge) can cover them. Opens each one in a real window, checks a popover
+    /// window appears beside its control and inside the editor's screen area, and
+    /// writes the window with the popover drawn where it appeared.
+    @Test func `menus open in popovers that nothing covers`() async throws {
+        try await chinese {
+            _ = NSApplication.shared
+            let fixture = try AskWorkflowFixture()
+            let model = try editor(fixture)
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 780),
+                                  styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+                                  backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.titlebarAppearsTransparent = true
+            window.titleVisibility = .hidden
+            window.appearance = NSAppearance(named: .darkAqua)
+            let hosting = NSHostingView(rootView: AskWorkflowEditorView(model: model, store: fixture.store))
+            window.contentView = hosting
+            window.setFrameOrigin(NSPoint(x: 80, y: 80))
+            window.makeKeyAndOrderFront(nil)
+            defer { window.orderOut(nil); window.close() }
+            try await Task.sleep(for: .milliseconds(600))
+            for (menu, name) in [(AskWorkflowOutputMenu.add(.onSuccess), "add"),
+                                 (.placeholder(.onSuccess, index: 0, field: .value), "token")] {
+                model.outputMenu = menu
+                var popover: NSWindow?
+                for _ in 0 ..< 40 where popover == nil {
+                    try await Task.sleep(for: .milliseconds(50))
+                    popover = NSApp.windows.first { $0 !== window && $0.isVisible && $0.parent === window }
+                        ?? NSApp.windows.first { $0 !== window && $0.isVisible && "\(type(of: $0))".contains("Popover") }
+                }
+                let shown = try #require(popover, "the \(name) menu opens in a popover window")
+                #expect(shown.frame.height > 120, "the \(name) menu is laid out")
+                try snapshot(window: window, popover: shown, name: "implemented-ed-\(name)-popover.png")
+                model.outputMenu = nil
+                try await Task.sleep(for: .milliseconds(300))
+            }
+        }
+    }
+
+    /// The window and its popover in one image, the popover where it appeared on screen.
+    private func snapshot(window: NSWindow, popover: NSWindow, name: String) throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"],
+              let content = window.contentView, let frame = content.superview,
+              let popoverFrame = popover.contentView?.superview ?? popover.contentView else { return }
+        let base = try #require(frame.bitmapImageRepForCachingDisplay(in: frame.bounds))
+        frame.cacheDisplay(in: frame.bounds, to: base)
+        let overlay = try #require(popoverFrame.bitmapImageRepForCachingDisplay(in: popoverFrame.bounds))
+        popoverFrame.cacheDisplay(in: popoverFrame.bounds, to: overlay)
+        let image = NSImage(size: frame.bounds.size)
+        image.lockFocus()
+        base.draw(in: frame.bounds)
+        let origin = NSPoint(x: popover.frame.minX - window.frame.minX, y: popover.frame.minY - window.frame.minY)
+        overlay.draw(in: NSRect(origin: origin, size: popover.frame.size))
+        image.unlockFocus()
+        let rep = try #require(image.tiffRepresentation.flatMap(NSBitmapImageRep.init(data:)))
+        try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+        try #require(rep.representation(using: .png, properties: [:]))
+            .write(to: URL(fileURLWithPath: directory).appendingPathComponent(name))
     }
 }

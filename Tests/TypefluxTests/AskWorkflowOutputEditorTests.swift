@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import AppKit
 import Foundation
 import SwiftUI
@@ -29,6 +30,24 @@ struct AskWorkflowOutputEditorTests {
         let model = model(fixture)
         model.open("local.fx")
         return model
+    }
+
+    @Test func menusOpenInPopoversThatOnlyCloseThemselves() {
+        var menu: AskWorkflowOutputMenu?
+        let binding = Binding(get: { menu }, set: { menu = $0 })
+        let add = AskWorkflowOutputMenu.presented(.add(.onSuccess), in: binding)
+        let token = AskWorkflowOutputMenu.presented(.placeholder(.onSuccess, index: 0, field: .value), in: binding)
+        #expect(!add.wrappedValue && !token.wrappedValue)
+        add.wrappedValue = true
+        #expect(menu == .add(.onSuccess) && add.wrappedValue && !token.wrappedValue)
+        token.wrappedValue = false
+        #expect(menu == .add(.onSuccess), "closing another menu's popover leaves this one open")
+        token.wrappedValue = true
+        #expect(menu == .placeholder(.onSuccess, index: 0, field: .value) && !add.wrappedValue)
+        add.wrappedValue = false
+        #expect(menu == .placeholder(.onSuccess, index: 0, field: .value))
+        token.wrappedValue = false
+        #expect(menu == nil)
     }
 
     @Test func theShortFormStaysUntilSomethingElseIsSet() throws {
