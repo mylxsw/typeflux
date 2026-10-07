@@ -8,7 +8,7 @@ struct AskRunRecovery: Codable, Equatable, Sendable {
 
     var blocksExecution: Bool {
         version != 1 || sequence == nil || sequence! < 0 || ![
-            "queued", "running", "waiting_device", "waiting_inference",
+            "queued", "running", "waiting_image", "waiting_device", "waiting_inference",
             "budget_stopped", "completed", "failed", "cancelled"
         ].contains(state ?? "")
     }

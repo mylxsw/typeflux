@@ -331,6 +331,23 @@ struct AskRunOutputsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            ForEach(outputs.generatedImages, id: \.assetId) { image in
+                if let url = image.safeURL {
+                    Link(destination: url) {
+                        AsyncImage(url: url) { phase in
+                            if let loaded = phase.image {
+                                loaded.resizable().scaledToFit().frame(maxWidth: 480, maxHeight: 360)
+                            } else if phase.error != nil {
+                                Label(L("ask.preview"), systemImage: "photo")
+                            } else {
+                                ProgressView().frame(width: 240, height: 160)
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    .accessibilityLabel(L("ask.preview"))
+                }
+            }
             ForEach(outputs.storedArtifacts, id: \.id) { ref in
                 AskStoredArtifactCard(ref: ref)
             }
