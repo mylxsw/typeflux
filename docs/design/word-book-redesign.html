@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Typeflux · 单词本改版 + dict 关键字 — 交互设计稿</title>
+<style>
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Noto Sans CJK SC", "Helvetica Neue", sans-serif;
+  --spring: cubic-bezier(.34, 1.56, .64, 1);
+  --ease: cubic-bezier(.22, .9, .3, 1);
+  --accent: #0a84ff; --accent-rgb: 10,132,255;
+  --star: #ffcc00; --star-rgb: 255,204,0;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0b0b10;
+  --win-bg: #18181c;
+  --text: rgba(255,255,255,.92); --text-2: rgba(235,235,245,.62); --text-3: rgba(235,235,245,.38);
+  --sep: rgba(255,255,255,.08); --hover: rgba(255,255,255,.07); --press: rgba(255,255,255,.12);
+  --glass-fill: rgba(44,44,52,.40); --glass-strong: rgba(34,34,40,.70);
+  --glass-rim-a: rgba(255,255,255,.42); --glass-rim-b: rgba(255,255,255,.14); --glass-hi: rgba(255,255,255,.14);
+  --glass-shadow: 0 12px 34px rgba(0,0,0,.38), 0 1px 2px rgba(0,0,0,.35);
+  --ambient-a: rgba(var(--accent-rgb), .20); --ambient-b: rgba(124,58,237,.15); --ambient-c: rgba(249,115,22,.08);
+  --win-border: rgba(255,255,255,.12);
+  --card: rgba(255,255,255,.035);
+  --success: #32d74b; --danger: #ff453a;
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --page: #e9ebf0;
+  --win-bg: #f7f7f9;
+  --text: rgba(0,0,0,.86); --text-2: rgba(60,60,67,.66); --text-3: rgba(60,60,67,.42);
+  --sep: rgba(0,0,0,.07); --hover: rgba(0,0,0,.05); --press: rgba(0,0,0,.09);
+  --glass-fill: rgba(255,255,255,.50); --glass-strong: rgba(255,255,255,.80);
+  --glass-rim-a: rgba(255,255,255,.95); --glass-rim-b: rgba(255,255,255,.55); --glass-hi: rgba(255,255,255,.7);
+  --glass-shadow: 0 10px 30px rgba(30,30,60,.14), 0 1px 2px rgba(30,30,60,.12);
+  --ambient-a: rgba(var(--accent-rgb), .14); --ambient-b: rgba(168,85,247,.10); --ambient-c: rgba(251,146,60,.10);
+  --win-border: rgba(0,0,0,.10);
+  --card: rgba(255,255,255,.75);
+  --star: #e0a800; --star-rgb: 224,168,0;
+  --success: #28a745; --danger: #ff3b30;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--text); font: 13px/1.45 var(--font); -webkit-font-smoothing: antialiased; padding: 36px 44px 60px; width: 1600px; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+input, select { font: inherit; color: inherit; }
+svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+svg.i.sm { width: 13px; height: 13px; } svg.i.lg { width: 19px; height: 19px; }
+svg.i.fill { fill: currentColor; }
+h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+.sub { color: var(--text-2); margin: 0 0 18px; max-width: 1280px; }
+h3 { font-size: 17px; margin: 40px 0 14px; font-weight: 650; }
+.notes { color: var(--text-2); font-size: 12.5px; }
+.notes b { color: var(--text); font-weight: 600; }
+.notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+code { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--text-2); }
+kbd { font-family: var(--font); font-size: 11px; color: var(--text-3); padding: 1px 6px; border-radius: 6px; box-shadow: inset 0 0 0 .5px var(--sep); background: var(--hover); white-space: nowrap; }
+.topbar { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+.pill { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--hover); box-shadow: inset 0 0 0 .5px var(--sep); }
+.pill button { height: 26px; padding: 0 12px; border-radius: 999px; color: var(--text-2); font-size: 12px; }
+.pill button.on { background: var(--accent); color: #fff; }
+.row2 { display: grid; grid-template-columns: 1fr 360px; gap: 32px; align-items: start; }
+
+/* ---------- Liquid glass ---------- */
+.glass { position: relative; background: var(--glass-fill); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi); isolation: isolate; }
+.glass::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(155deg, var(--glass-rim-a) 0%, rgba(255,255,255,0) 34%, rgba(255,255,255,0) 64%, var(--glass-rim-b) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; z-index: 2; }
+.glass > * { position: relative; z-index: 3; }
+.glass.strong { background: var(--glass-strong); }
+.gbtn { height: 30px; min-width: 30px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; color: var(--text);
+  transition: transform .35s var(--spring), background .2s, color .2s; font-size: 12.5px; white-space: nowrap; }
+.gbtn:hover { background: var(--hover); } .gbtn:active { transform: scale(.93); background: var(--press); }
+.gbtn.on { color: var(--accent); background: rgba(var(--accent-rgb), .16); box-shadow: inset 0 0 0 .5px rgba(var(--accent-rgb), .45); }
+.gbtn.star.on { color: var(--star); background: rgba(var(--star-rgb), .16); box-shadow: inset 0 0 0 .5px rgba(var(--star-rgb), .5); }
+.gbtn.danger:hover { color: var(--danger); }
+.gbtn .k { color: var(--text-3); font-size: 11px; }
+
+/* ---------- Desktop stage ---------- */
+.desk { position: relative; border-radius: 18px; overflow: hidden; box-shadow: inset 0 0 0 .5px var(--sep);
+  background: radial-gradient(60% 50% at 18% 78%, #ff7a3d 0%, transparent 60%), radial-gradient(55% 55% at 82% 20%, #3b5bff 0%, transparent 62%),
+    radial-gradient(45% 45% at 55% 55%, #b146ff 0%, transparent 65%), linear-gradient(160deg, #0b1a4a 0%, #281058 45%, #5b1d3f 75%, #b8461f 100%); }
+[data-theme="light"] .desk { background: radial-gradient(55% 50% at 20% 25%, #a5d8ff 0%, transparent 62%), radial-gradient(50% 55% at 85% 30%, #ffc6e4 0%, transparent 60%),
+    radial-gradient(60% 50% at 60% 90%, #b8f2d4 0%, transparent 62%), linear-gradient(150deg, #dfe9ff 0%, #f6e7ff 50%, #fff1df 100%); }
+
+/* ---------- Launcher replica ---------- */
+.desk.launch { height: 470px; display: grid; place-items: start center; padding-top: 48px; }
+.launcher { width: 680px; border-radius: 26px; }
+.l-in { height: 58px; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 14px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border-radius: 999px; font-weight: 600; font-size: 13px;
+  background: rgba(var(--accent-rgb), .16); color: var(--accent); box-shadow: inset 0 0 0 .5px rgba(var(--accent-rgb), .4); }
+.chip .ic { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; }
+.l-q { flex: 1; font-size: 16px; outline: 0; border: 0; background: transparent; }
+.l-q::placeholder { color: var(--text-3); }
+.l-sec { font-size: 11px; font-weight: 600; color: var(--text-3); padding: 8px 18px 4px; display: flex; }
+.l-sec .r { margin-left: auto; font-weight: 500; }
+.l-body { padding: 0 8px 8px; }
+.lrow { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 14px; }
+.lrow.hl { background: var(--hover); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), .5); }
+.lrow .tile { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: rgba(var(--accent-rgb), .14); color: var(--accent); flex: none; }
+.lrow .tile.st { background: rgba(var(--star-rgb), .16); color: var(--star); }
+.lrow .h { font-weight: 600; } .lrow .s { color: var(--text-2); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lrow .cap { color: var(--text-3); font-size: 11.5px; }
+.lcard { margin: 2px 0 4px; border-radius: 16px; padding: 12px 14px; background: var(--hover); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), .5); }
+.lcard .hd { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); margin-bottom: 6px; }
+.lcard .hd b { color: var(--text); font-size: 13px; }
+.lcard .hd .src { margin-left: auto; font-size: 11px; color: var(--text-3); border: 1px solid var(--sep); border-radius: 5px; padding: 0 6px; }
+.lcard .w { font-size: 22px; font-weight: 650; } .lcard .m { font-size: 14.5px; margin-top: 2px; }
+.lcard .acts { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+.lact { height: 24px; padding: 0 9px; border-radius: 8px; background: var(--hover); font-size: 11.5px; color: var(--text-2); display: inline-flex; align-items: center; gap: 5px; }
+.lact.p { background: rgba(var(--accent-rgb), .18); color: var(--accent); }
+.lbar { height: 38px; border-top: .5px solid var(--sep); display: flex; align-items: center; padding: 0 16px; font-size: 11.5px; color: var(--text-3); gap: 10px; }
+.lbar .sp { flex: 1; }
+.lstate { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+
+/* ---------- Settings replica ---------- */
+.set { border-radius: 16px; background: var(--win-bg); box-shadow: 0 0 0 .5px var(--win-border), 0 18px 50px rgba(0,0,0,.3); overflow: hidden; }
+.set .t { padding: 14px 18px 8px; font-weight: 650; }
+.set .g { font-size: 11px; font-weight: 600; color: var(--text-3); padding: 10px 18px 4px; }
+.krow { display: grid; grid-template-columns: 90px 1fr 150px 44px; align-items: center; gap: 12px; padding: 9px 18px; border-top: .5px solid var(--sep); }
+.krow .kw { font-family: ui-monospace, Menlo, monospace; font-weight: 600; background: var(--hover); border-radius: 7px; padding: 2px 8px; justify-self: start; }
+.krow .d { color: var(--text-2); }
+.krow .act { font-size: 12px; color: var(--text-2); }
+.krow.new { background: rgba(var(--accent-rgb), .06); }
+.tag-new { font-size: 10px; color: #fff; background: var(--accent); border-radius: 5px; padding: 0 5px; margin-left: 6px; }
+.switch { width: 34px; height: 20px; border-radius: 10px; background: var(--press); position: relative; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.switch.on { background: var(--success); } .switch.on::after { left: 16px; }
+
+/* ---------- Word book window ---------- */
+.desk.wb { height: 800px; display: grid; place-items: center; }
+.window { width: 1120px; height: 720px; border-radius: 26px; background: var(--win-bg); position: relative; overflow: hidden;
+  box-shadow: 0 40px 120px rgba(0,0,0,.55), 0 0 0 .5px var(--win-border), inset 0 0 0 .5px rgba(255,255,255,.06); outline: none; }
+.ambient { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(520px 420px at 8% 18%, var(--ambient-a), transparent 70%), radial-gradient(460px 520px at 18% 92%, var(--ambient-b), transparent 70%),
+    radial-gradient(600px 400px at 96% 102%, var(--ambient-c), transparent 70%); }
+.traffic { position: absolute; top: 21px; left: 22px; display: flex; gap: 8px; z-index: 30; }
+.traffic i { width: 12px; height: 12px; border-radius: 50%; display: block; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.25); }
+.traffic i:nth-child(1) { background: #ff5f57; } .traffic i:nth-child(2) { background: #febc2e; } .traffic i:nth-child(3) { background: #28c840; }
+
+.sidebar { position: absolute; top: 8px; left: 8px; bottom: 8px; width: 232px; border-radius: 20px; z-index: 20; display: flex; flex-direction: column; }
+.side-head { height: 48px; flex: none; }
+.side-list { flex: 1; overflow-y: auto; padding: 2px 8px 8px; scrollbar-width: none; }
+.group-h { padding: 12px 8px 6px; font-size: 11px; font-weight: 600; color: var(--text-3); letter-spacing: .02em; }
+.nav { height: 34px; border-radius: 11px; display: flex; align-items: center; gap: 9px; padding: 0 10px; transition: background .18s, transform .3s var(--spring); cursor: pointer; }
+.nav:hover { background: var(--hover); } .nav:active { transform: scale(.98); }
+.nav .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav .n { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.nav .ic { color: var(--text-2); display: inline-flex; }
+.nav.active { background: rgba(var(--accent-rgb), .18); box-shadow: inset 0 0 0 .5px rgba(var(--accent-rgb), .4), inset 0 1px 0 rgba(255,255,255,.08); }
+.nav.active .t { font-weight: 600; } .nav.active .ic { color: var(--accent); }
+.nav .ic.st { color: var(--star); }
+.side-foot { flex: none; border-top: .5px solid var(--sep); padding: 10px 12px 12px; }
+.streak { display: flex; align-items: center; gap: 10px; }
+.streak .big { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.streak .lb { font-size: 11px; color: var(--text-3); line-height: 1.3; }
+.week { display: flex; gap: 4px; margin-top: 8px; }
+.week i { flex: 1; height: 22px; border-radius: 6px; background: var(--hover); position: relative; }
+.week i b { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 6px; background: rgba(var(--accent-rgb), .55); }
+.week-l { display: flex; gap: 4px; margin-top: 3px; } .week-l span { flex: 1; text-align: center; font-size: 9.5px; color: var(--text-3); }
+.foot-row { display: flex; align-items: center; margin-top: 8px; }
+.foot-row .sp { flex: 1; }
+
+.main { position: absolute; inset: 0; left: 240px; }
+.toolbar { position: absolute; top: 0; left: 0; right: 0; height: 64px; display: flex; align-items: center; gap: 10px; padding: 0 16px; z-index: 15; }
+.lookup { flex: 1; max-width: 560px; margin: 0 auto; height: 40px; border-radius: 999px; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 14px; transition: box-shadow .25s; }
+.lookup.focus { box-shadow: var(--glass-shadow), 0 0 0 3px rgba(var(--accent-rgb), .35); }
+.lookup input { flex: 1; border: 0; outline: 0; background: transparent; font-size: 14px; min-width: 0; }
+.lookup input::placeholder { color: var(--text-3); }
+.dir { height: 28px; border-radius: 999px; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-2); background: var(--hover); white-space: nowrap; }
+.dir:hover { color: var(--text); }
+.preview { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); width: 560px; font-size: 12px; color: var(--text-2); padding: 6px 16px; z-index: 16; display: none; }
+.preview.show { display: block; }
+.preview b { color: var(--text); font-weight: 600; }
+
+.cols { position: absolute; top: 64px; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 312px 1fr; }
+.list { border-right: .5px solid var(--sep); display: flex; flex-direction: column; min-height: 0; }
+.list-h { display: flex; align-items: center; gap: 6px; padding: 4px 10px 8px 16px; }
+.list-h .ttl { font-weight: 650; font-size: 15px; }
+.list-h .cnt { color: var(--text-3); font-size: 12px; }
+.list-h .sp { flex: 1; }
+.filter { margin: 0 10px 6px; height: 30px; border-radius: 10px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: var(--hover); box-shadow: inset 0 0 0 .5px var(--sep); color: var(--text-3); }
+.filter input { flex: 1; border: 0; outline: 0; background: transparent; font-size: 12.5px; min-width: 0; color: var(--text); }
+.rows { flex: 1; overflow-y: auto; padding: 0 8px 12px; }
+.rows::-webkit-scrollbar { width: 8px; } .rows::-webkit-scrollbar-thumb { background: var(--hover); border-radius: 8px; }
+.day { font-size: 11px; font-weight: 600; color: var(--text-3); padding: 10px 10px 4px; }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 1px 8px; padding: 8px 10px; border-radius: 12px; cursor: pointer; transition: background .15s; }
+.row:hover { background: var(--hover); }
+.row.on { background: rgba(var(--accent-rgb), .16); box-shadow: inset 0 0 0 .5px rgba(var(--accent-rgb), .4); }
+.row .h { font-weight: 650; font-size: 14px; display: flex; gap: 7px; align-items: baseline; min-width: 0; }
+.row .h .p { font-weight: 400; font-size: 11.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .s { grid-column: 1; font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .m { grid-row: 1 / span 2; grid-column: 2; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 2px; }
+.row .stb { color: var(--text-3); opacity: 0; transition: opacity .15s; display: inline-flex; }
+.row:hover .stb, .row .stb.on { opacity: 1; } .row .stb.on { color: var(--star); }
+.row .c { font-size: 10.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.tag { font-size: 10px; border-radius: 4px; padding: 0 4px; margin-right: 4px; color: var(--success); box-shadow: inset 0 0 0 .5px rgba(50,215,75,.5); }
+
+.detail { position: relative; overflow-y: auto; padding: 4px 34px 100px; }
+.detail::-webkit-scrollbar { width: 8px; } .detail::-webkit-scrollbar-thumb { background: var(--hover); border-radius: 8px; }
+.meta { display: flex; gap: 8px; align-items: center; color: var(--text-3); font-size: 12px; margin: 6px 0 12px; flex-wrap: wrap; }
+.meta .lp { color: var(--text-2); }
+.meta .b { border-radius: 999px; padding: 1px 8px; background: var(--hover); color: var(--text-2); }
+.meta .b.new { background: rgba(var(--accent-rgb), .16); color: var(--accent); }
+.meta .b.ai { color: #bf5af2; background: rgba(191,90,242,.14); }
+.hero { display: flex; align-items: flex-start; gap: 16px; }
+.hero .w { font-size: 38px; font-weight: 700; letter-spacing: -.3px; line-height: 1.1; }
+.phs { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.ph { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 4px 0 10px; border-radius: 999px; background: var(--hover); font-size: 13px; color: var(--text-2); }
+.ph .k { font-size: 10.5px; color: var(--text-3); }
+.ph button { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: var(--accent); }
+.ph button:hover { background: rgba(var(--accent-rgb), .16); }
+.hero .sp { flex: 1; }
+.bigstar { height: 36px; padding: 0 14px; font-size: 13px; }
+.senses { margin-top: 18px; border-radius: 18px; padding: 14px 18px; background: var(--card); box-shadow: inset 0 0 0 .5px var(--sep); }
+.sense { display: grid; grid-template-columns: 52px 1fr; gap: 10px; padding: 6px 0; align-items: baseline; }
+.sense + .sense { border-top: .5px solid var(--sep); }
+.pos { font-size: 12px; font-weight: 700; font-style: italic; color: var(--accent); text-align: right; }
+.means { display: flex; flex-wrap: wrap; gap: 6px; }
+.mean { font-size: 15.5px; padding: 2px 8px; border-radius: 8px; cursor: pointer; transition: background .15s; }
+.mean:hover { background: rgba(var(--accent-rgb), .14); }
+.mean.first { font-weight: 650; }
+.sec-h { font-size: 11px; font-weight: 600; color: var(--text-3); margin: 18px 0 8px; letter-spacing: .02em; }
+.ex { border-radius: 14px; padding: 10px 14px; background: var(--card); box-shadow: inset 0 0 0 .5px var(--sep); margin-bottom: 8px; display: flex; gap: 10px; }
+.ex .t { flex: 1; } .ex .s { font-size: 14px; } .ex .s b { color: var(--accent); font-weight: 600; } .ex .d { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+.ex button { color: var(--text-3); align-self: center; } .ex button:hover { color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.wchip { height: 26px; padding: 0 11px; border-radius: 999px; background: var(--hover); font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; transition: background .15s; }
+.wchip:hover { background: rgba(var(--accent-rgb), .16); color: var(--accent); }
+.wchip .f { color: var(--text-3); font-size: 11px; }
+.history { display: flex; gap: 18px; font-size: 12px; color: var(--text-2); }
+.history b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.actionbar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); border-radius: 999px; padding: 4px; display: flex; gap: 2px; z-index: 18; }
+.sk { height: 14px; border-radius: 7px; background: var(--hover); margin: 10px 0; position: relative; overflow: hidden; }
+.sk::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent); animation: shim 1.1s infinite; }
+@keyframes shim { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.empty { display: grid; place-items: center; text-align: center; color: var(--text-2); padding-top: 90px; }
+.empty .art { width: 84px; height: 84px; border-radius: 26px; display: grid; place-items: center; background: rgba(var(--accent-rgb), .14); color: var(--accent); margin: 0 auto 14px; }
+.empty .ttl { font-size: 17px; font-weight: 650; color: var(--text); margin-bottom: 6px; }
+.tips { display: grid; gap: 8px; margin-top: 16px; text-align: left; }
+.tips div { display: flex; gap: 10px; align-items: center; font-size: 12.5px; }
+.toast { position: absolute; left: 50%; bottom: 72px; transform: translate(-50%, 8px); opacity: 0; pointer-events: none; transition: all .25s var(--spring); z-index: 40;
+  border-radius: 999px; padding: 7px 8px 7px 14px; display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast button { color: var(--accent); font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.toast button:hover { background: rgba(var(--accent-rgb), .14); }
+.pop { position: absolute; z-index: 45; border-radius: 16px; padding: 6px; min-width: 220px; display: none; }
+.pop.show { display: block; }
+.pop .mi { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-radius: 9px; font-size: 13px; cursor: pointer; }
+.pop .mi:hover { background: rgba(var(--accent-rgb), .9); color: #fff; }
+.pop .mi .k { margin-left: auto; color: var(--text-3); font-size: 11px; }
+.pop .mi:hover .k { color: rgba(255,255,255,.8); }
+.pop .hr { height: .5px; background: var(--sep); margin: 4px 6px; }
+.pop .on::after { content: "✓"; margin-left: auto; color: var(--accent); }
+.pop .mi:hover.on::after { color: #fff; }
+.sheet { width: 340px; padding: 8px; }
+.sheet .sr { display: flex; align-items: center; gap: 12px; padding: 10px; }
+.sheet .sr .tx { flex: 1; } .sheet .sr .tx div:last-child { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+.seg { display: inline-flex; padding: 2px; border-radius: 999px; background: var(--hover); }
+.seg button { height: 24px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; color: var(--text-2); }
+.seg button.on { background: var(--glass-strong); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.2); font-weight: 600; }
+.keys { position: absolute; right: 18px; bottom: 26px; font-size: 11px; color: var(--text-3); z-index: 17; display: flex; gap: 8px; }
+
+/* compare table */
+table.t { border-collapse: collapse; width: 100%; font-size: 12.5px; color: var(--text-2); }
+table.t td, table.t th { border-top: .5px solid var(--sep); padding: 8px 10px; text-align: left; vertical-align: top; }
+table.t th { color: var(--text-3); font-weight: 600; font-size: 11px; }
+table.t td b { color: var(--text); font-weight: 600; }
+
+body.shot { padding: 0; width: auto; }
+body.shot > *:not(.shot-target) { display: none !important; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 11.5h5"/></symbol>
+    <symbol id="star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></symbol>
+    <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+    <symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+    <symbol id="cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.6 2.6 14.4 0 17M12 3.5c-2.6 2.6-2.6 14.4 0 17"/></symbol>
+    <symbol id="speak" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
+    <symbol id="copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></symbol>
+    <symbol id="redo" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5V9H15"/></symbol>
+    <symbol id="trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"/></symbol>
+    <symbol id="chat" viewBox="0 0 24 24"><path d="M20 12a7.5 7.5 0 0 1-11 6.6L4 20l1.4-4.6A7.5 7.5 0 1 1 20 12z"/></symbol>
+    <symbol id="more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/></symbol>
+    <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></symbol>
+    <symbol id="sort" viewBox="0 0 24 24"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></symbol>
+    <symbol id="ret" viewBox="0 0 24 24"><path d="M19 5v6a3 3 0 0 1-3 3H5"/><path d="M9 10l-4 4 4 4"/></symbol>
+    <symbol id="swap" viewBox="0 0 24 24"><path d="M5 8h13l-3-3M19 16H6l3 3"/></symbol>
+    <symbol id="out" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></symbol>
+  </defs>
+</svg>
+
+<h1>单词本改版 · dict 关键字</h1>
+<p class="sub">GUL-237 第三版设计稿。两件事：① 启动器新增 <code>dict</code>（及 <code>词典</code>）关键字，在「翻译」一组里，直接打开单词本并在里面查词；② 单词本窗口按随便问工作区的 Liquid Glass 风格重做：悬浮玻璃侧栏、顶部玻璃查词栏、三栏布局、卡片式详情、底部玻璃操作条。下面三块都能操作，并共用同一份数据：在 ① 按 ↩，会在 ③ 里完成查词。</p>
+<div class="topbar">
+  <div class="pill" id="theme"><button class="on" data-t="dark">深色</button><button data-t="light">浅色</button></div>
+  <span class="notes">键盘：点一下单词本窗口再试 <kbd>⌘L</kbd> 查词 · <kbd>↑↓</kbd> 选择 · <kbd>⌘S</kbd> 收藏 · <kbd>⌫</kbd> 删除 · <kbd>⌘F</kbd> 过滤 · <kbd>esc</kbd>（Ctrl 代替 ⌘ 也行）</span>
+</div>
+
+<!-- ================= ① launcher ================= -->
+<h3>① 启动器：<code>dict</code> 打开单词本</h3>
+<div class="row2">
+  <div>
+    <div class="lstate pill" id="lstate"><button class="on" data-s="alone">dict</button><button data-s="word">dict serendipity</button><button data-s="fresh">dict gregarious（新词）</button></div>
+    <div class="desk launch" id="desk1">
+      <div class="launcher glass strong">
+        <div class="l-in">
+          <span class="chip"><span class="ic"><svg class="i sm"><use href="#book"/></svg></span>单词本</span>
+          <input class="l-q" id="lq" placeholder="查一个词，或直接回车打开单词本">
+          <svg class="i" style="color:var(--text-3)"><use href="#ret"/></svg>
+        </div>
+        <div class="l-body" id="lbody"></div>
+        <div class="lbar" id="lbar"></div>
+      </div>
+    </div>
+  </div>
+  <div class="notes"><ul>
+    <li><b>关键字</b>：<code>dict</code>、<code>词典</code>，放在启动器关键字设置的「翻译」一组里（见 ②），可改名、可关闭，与 <code>fy</code> 一样自定义。</li>
+    <li><b>只输入 dict</b>：第一行「打开单词本 ↩」，下面是最近查过的词（与 <code>fy</code> 留空一致）；↩ 打开窗口，↓ 选一个词再 ↩ 直接打开到这个词。</li>
+    <li><b>dict + 词</b>：本机先给一行简短译文做预览（不发送任何内容）；<b>↩ 打开单词本并在窗口里查这个词</b>——AI 单词卡在窗口里生成，自动记入单词本。单词本里已有卡片的词，预览直接显示「来自单词本」。</li>
+    <li>和 <code>fy</code> 的区别：<code>fy</code> 是“查完就走”（复制 / 插入）；<code>dict</code> 是“进单词本细看”。两者共用同一个单词本。</li>
+    <li>有选中文字且只输入 <code>dict</code> 时，↩ 用选中的词在单词本里查（多行或句子则只打开窗口）。</li>
+  </ul></div>
+</div>
+
+<!-- ================= ② settings ================= -->
+<h3>② 设置 · 启动器 · 关键字：「翻译」一组</h3>
+<div class="row2">
+  <div class="set" id="settings">
+    <div class="t">关键字</div>
+    <div class="g">翻译</div>
+    <div class="krow"><span class="kw">fy</span><span class="d">翻译输入或选中的文字</span><span class="act">翻译</span><span class="switch on"></span></div>
+    <div class="krow"><span class="kw">tr</span><span class="d">翻译输入或选中的文字</span><span class="act">翻译</span><span class="switch on"></span></div>
+    <div class="krow"><span class="kw">翻译</span><span class="d">翻译输入或选中的文字</span><span class="act">翻译</span><span class="switch on"></span></div>
+    <div class="krow new"><span class="kw">dict</span><span class="d">打开单词本，在里面查词<span class="tag-new">新</span></span><span class="act">打开单词本</span><span class="switch on" data-sw></span></div>
+    <div class="krow new"><span class="kw">词典</span><span class="d">同上</span><span class="act">打开单词本</span><span class="switch on" data-sw></span></div>
+    <div class="g">提示词 · 网页搜索</div>
+    <div class="krow"><span class="kw">rw</span><span class="d">改写</span><span class="act">提示词</span><span class="switch on"></span></div>
+  </div>
+  <div class="notes"><ul>
+    <li>编辑关键字时，「翻译」插件多一个<b>动作</b>选项：<b>翻译</b>（默认）/ <b>打开单词本</b>。<code>dict</code>、<code>词典</code> 是后者的默认关键字；用户也可以自己加，比如 <code>wb</code>。</li>
+    <li>实现上不新增插件：沿用翻译插件，关键字带 <code>action=wordbook</code> 选项（与现有 <code>target</code> 选项同一机制），老用户升级后自动补上这两个默认关键字。</li>
+  </ul></div>
+</div>
+
+<!-- ================= ③ word book ================= -->
+<h3>③ 单词本窗口（Liquid Glass）</h3>
+<div class="desk wb" id="desk3">
+  <div class="window" id="win" tabindex="0">
+    <div class="ambient"></div>
+    <div class="traffic"><i></i><i></i><i></i></div>
+
+    <aside class="sidebar glass" id="side">
+      <div class="side-head"></div>
+      <div class="side-list" id="nav"></div>
+      <div class="side-foot">
+        <div class="streak"><span class="big" id="streak">3</span><span class="lb">天连续查词<br><span id="weekN">本周 6 个词</span></span></div>
+        <div class="week" id="week"></div>
+        <div class="week-l"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+        <div class="foot-row"><span class="notes" style="font-size:11px">仅存在本机</span><span class="sp"></span>
+          <button class="gbtn" id="exportBtn" title="导出"><svg class="i sm"><use href="#out"/></svg></button>
+          <button class="gbtn" id="gearBtn" title="记录设置"><svg class="i sm"><use href="#gear"/></svg></button></div>
+      </div>
+    </aside>
+
+    <section class="main">
+      <div class="toolbar">
+        <div class="lookup glass" id="lookupBox">
+          <svg class="i" style="color:var(--text-3)"><use href="#search"/></svg>
+          <input id="lookup" placeholder="查一个词…" autocomplete="off">
+          <kbd id="lkKbd">⌘L</kbd>
+          <button class="dir" id="dirBtn" title="切换方向 ⇥"><span id="dirTxt">英 → 中</span><svg class="i sm"><use href="#swap"/></svg></button>
+        </div>
+      </div>
+      <div class="preview glass strong" id="preview"></div>
+      <div class="cols">
+        <div class="list">
+          <div class="list-h"><span class="ttl" id="listTitle">全部</span><span class="cnt" id="listCnt"></span><span class="sp"></span>
+            <button class="gbtn" id="sortBtn" title="排序"><svg class="i sm"><use href="#sort"/></svg><span id="sortTxt" style="font-size:11.5px;color:var(--text-2)">最近</span></button></div>
+          <div class="filter"><svg class="i sm"><use href="#search"/></svg><input id="filter" placeholder="在列表中过滤  ⌘F"></div>
+          <div class="rows" id="rows"></div>
+        </div>
+        <div class="detail" id="detail"></div>
+      </div>
+      <div class="actionbar glass strong" id="actionbar"></div>
+      <div class="toast glass strong" id="toast"></div>
+    </section>
+
+    <div class="pop glass strong" id="sortPop" style="top:150px;left:500px">
+      <div class="mi" data-sort="recent">最近查询</div><div class="mi" data-sort="count">查询次数</div><div class="mi" data-sort="alpha">字母顺序</div><div class="mi" data-sort="starred">收藏时间</div>
+    </div>
+    <div class="pop glass strong" id="exportPop" style="bottom:56px;left:120px">
+      <div class="mi" data-x="csv">导出 CSV<span class="k">Excel / Numbers</span></div><div class="mi" data-x="md">导出 Markdown<span class="k">笔记</span></div><div class="mi" data-x="anki">导出 Anki<span class="k">TSV</span></div>
+    </div>
+    <div class="pop glass strong sheet" id="gearPop" style="bottom:56px;left:150px">
+      <div class="sr"><div class="tx"><div>记录查词历史</div><div>关闭后只保留收藏</div></div><span class="switch on" id="swRec"></span></div>
+      <div class="sr"><div class="tx"><div>保留查词记录</div><div>只清理未收藏的</div></div>
+        <div class="seg" id="ret"><button>7 天</button><button>30 天</button><button class="on">90 天</button><button>永久</button></div></div>
+      <div class="hr"></div>
+      <div class="mi" id="clearHist" style="color:var(--danger)">清空查词记录…</div>
+    </div>
+  </div>
+</div>
+
+<div class="row2" style="margin-top:22px; grid-template-columns: 1fr 1fr;">
+  <div class="notes"><ul>
+    <li><b>窗口</b>：与随便问工作区同一套语言——隐藏标题栏、红绿灯嵌在悬浮玻璃侧栏上，环境光晕随强调色；macOS 26 用系统 Liquid Glass，13–15 用 HUD 毛玻璃，「减少透明度」时退回不透明（复用 <code>AskGlass</code>）。</li>
+    <li><b>顶部查词栏</b>（核心）：随时 <kbd>⌘L</kbd> 输入一个词。打字时本机给出一行预览（不出本机）；<kbd>↩</kbd> 用 AI 生成单词卡，结果直接显示在右侧并记入「今天」；<kbd>⇥</kbd> 或点方向切换语言。已查过的词直接打开存下的卡，不再请求模型。</li>
+    <li><b>侧栏</b>：资料库（全部 / 收藏 / 今天 / 本周）+ 语言方向；底部是连续查词天数与本周柱状条，给一点点成就感；导出与记录设置收在这里，不占主界面。</li>
+    <li><b>列表</b>：大字号词头 + 音标 + 一行释义；悬停出现 ☆，查过多次显示 ×N；按天分组；顶部可过滤与排序。</li>
+  </ul></div>
+  <div class="notes"><ul>
+    <li><b>详情</b>：大号词头，音标胶囊里直接朗读（英 / 美音）；收藏是醒目的星形按钮；释义按词性分组，<b>点一条即复制</b>；例句可朗读；<b>近义词与词形是可点的胶囊——点了就在单词本里查它</b>，方便顺藤摸瓜。</li>
+    <li><b>底部玻璃操作条</b>：复制释义 · 朗读 · 问 AI（带着单词卡开一段随便问）· 重新生成 · 删除，常用操作一处找到。</li>
+    <li><b>状态</b>：生成中骨架屏；新词标「新词 · 已记入」；查过的标「第 N 次查」；空状态给出 3 条上手提示；删除、复制等用底部玻璃提示，删除可撤销。</li>
+    <li><b>键盘优先</b>：⌘L 查词、⌘F 过滤、↑↓ 选择、⌘S 收藏、⌘C 复制释义（焦点不在输入框时）、⌫ 删除、esc 依次清空输入 / 关闭窗口。</li>
+  </ul></div>
+</div>
+
+<h3>④ 与当前实现的差异</h3>
+<table class="t">
+  <tr><th style="width:150px">方面</th><th>现在（#343）</th><th>改版</th></tr>
+  <tr><td><b>窗口外观</b></td><td>标准窗口、灰色工具栏、分段控件</td><td>Liquid Glass：悬浮玻璃侧栏、环境光晕、玻璃查词栏与操作条，与随便问一致</td></tr>
+  <tr><td><b>在单词本里查词</b></td><td>不能，只能从启动器进来</td><td>顶部查词栏，⌘L 随时查；<code>dict 词</code> 直接带词进来</td></tr>
+  <tr><td><b>导航</b></td><td>收藏 / 查词记录 + 语言下拉</td><td>侧栏：全部 / 收藏 / 今天 / 本周 + 各语言方向，带数量</td></tr>
+  <tr><td><b>详情</b></td><td>启动器单词卡原样嵌入 + 元数据表格 + 一排按钮</td><td>大号词头、可朗读音标胶囊、分组释义、可点的近义词 / 词形、例句朗读、查词记录一行</td></tr>
+  <tr><td><b>操作</b></td><td>详情底部按钮 + ⋯ 菜单</td><td>悬浮玻璃操作条；导出 / 设置移到侧栏底部</td></tr>
+  <tr><td><b>空状态与反馈</b></td><td>一行灰字</td><td>插图 + 上手提示；玻璃提示条，删除可撤销</td></tr>
+</table>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const bold = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+const NOW = new Date('2026-10-07T10:00:00').getTime();
+const D = (d, h = 10) => { const t = new Date(NOW); t.setDate(t.getDate() - d); t.setHours(h, 12); return t.getTime(); };
+const ic = (id, cls = '') => `<svg class="i ${cls}"><use href="#${id}"/></svg>`;
+
+const CARDS = {
+  serendipity: { ph: [['英', '/ˌserənˈdɪpəti/'], ['美', '/ˌserənˈdɪpəti/']], senses: [['n.', ['机缘巧合', '意外发现珍奇事物的运气']]], forms: [['复数', 'serendipities']],
+    ex: [['It was pure **serendipity** that we met.', '我们相遇纯属机缘巧合。'], ['Many discoveries come from **serendipity**.', '许多发现源自意外的好运。']], syn: ['chance', 'fluke', 'luck'] },
+  'take off': { ph: [['英', '/teɪk ɒf/'], ['美', '/teɪk ɔːf/']], senses: [['phr. v.', ['起飞', '突然成功；走红']], ['phr. v.', ['脱下（衣服）', '休假']]], forms: [['过去式', 'took off']],
+    ex: [['The plane will **take off** at noon.', '飞机将在中午起飞。']], syn: ['depart', 'soar'] },
+  ubiquitous: { ph: [['英', '/juːˈbɪkwɪtəs/'], ['美', '/juːˈbɪkwətəs/']], senses: [['adj.', ['无处不在的', '普遍存在的']]], forms: [['副词', 'ubiquitously']],
+    ex: [['Smartphones are **ubiquitous** these days.', '如今智能手机无处不在。']], syn: ['omnipresent', 'pervasive', 'universal'] },
+  meticulous: { ph: [['英', '/məˈtɪkjələs/']], senses: [['adj.', ['一丝不苟的', '极其仔细的']]], forms: [['副词', 'meticulously']],
+    ex: [['She keeps **meticulous** records.', '她的记录一丝不苟。']], syn: ['careful', 'precise', 'thorough'] },
+  ephemeral: { ph: [['英', '/ɪˈfemərəl/']], senses: [['adj.', ['短暂的', '转瞬即逝的']], ['n.', ['短命的事物']]], forms: [],
+    ex: [['Fame in the internet age is often **ephemeral**.', '互联网时代的名气往往转瞬即逝。']], syn: ['fleeting', 'transient', 'brief'] },
+  gregarious: { ph: [['英', '/ɡrɪˈɡeəriəs/'], ['美', '/ɡrɪˈɡeriəs/']], senses: [['adj.', ['爱交际的', '合群的']], ['adj.', ['（动物）群居的']]], forms: [['副词', 'gregariously']],
+    ex: [['He is a **gregarious** person who loves parties.', '他是个爱交际的人，喜欢聚会。']], syn: ['sociable', 'outgoing', 'friendly'] },
+  fleeting: { ph: [['英', '/ˈfliːtɪŋ/']], senses: [['adj.', ['短暂的', '飞逝的']]], forms: [], ex: [['a **fleeting** glimpse', '匆匆一瞥']], syn: ['brief', 'momentary'] },
+  sociable: { ph: [['英', '/ˈsəʊʃəbl/']], senses: [['adj.', ['好交际的', '友善的']]], forms: [], ex: [['She is very **sociable**.', '她很好交际。']], syn: ['friendly', 'outgoing'] },
+};
+const QUICK = { serendipity: '机缘巧合', resilient: '有弹性的', gregarious: '爱交际的', ubiquitous: '无处不在的', fleeting: '短暂的', sociable: '好交际的', chance: '机会', luck: '运气' };
+function seed() {
+  const W = (hw, d, n, star, extra = {}) => ({ hw, card: CARDS[hw] ? JSON.parse(JSON.stringify(CARDS[hw])) : null, text: extra.text || null, pair: extra.pair || 'en>zh', first: D(d + 5), last: D(d, extra.h || 10), count: n, starred: star ? D(d) : null });
+  return [
+    W('serendipity', 0, 3, true, { h: 9 }), W('resilient', 0, 1, false, { text: '有弹性的；适应力强的', h: 8 }), W('take off', 1, 2, false), W('ubiquitous', 1, 2, true, { h: 15 }),
+    W('meticulous', 3, 1, true), W('ephemeral', 6, 4, true), W('leverage', 8, 2, false, { text: '杠杆作用；利用' }),
+    { hw: '机缘', card: { ph: [['拼音', 'jī yuán']], senses: [['n.', ['opportunity', 'chance', 'karmic connection']]], forms: [], ex: [['这是难得的**机缘**。', 'This is a rare opportunity.']], syn: ['机会', '缘分'] }, text: null, pair: 'zh>en', first: D(4), last: D(4), count: 1, starred: null },
+  ];
+}
+let db = seed();
+let S = { nav: 'all', sel: 'serendipity', sort: 'recent', filter: '', look: null, dir: 'en>zh', recording: true };
+const PAIRS = { 'en>zh': '英 → 中', 'zh>en': '中 → 英' };
+const find = hw => db.find(e => e.hw.toLowerCase() === hw.toLowerCase());
+const summary = e => e.card ? e.card.senses.map(s => s[0] + ' ' + s[1].join('；')).join('  ') : e.text;
+const first = e => e.card ? e.card.senses[0][1][0] : (e.text || '').split('；')[0];
+function dayOf(t) { const d = Math.round((new Date(NOW).setHours(0,0,0,0) - new Date(t).setHours(0,0,0,0)) / 864e5); return d <= 0 ? '今天' : d === 1 ? '昨天' : d < 7 ? '本周' : d < 31 ? '本月' : '更早'; }
+function ago(t) { const d = Math.round((new Date(NOW).setHours(0,0,0,0) - new Date(t).setHours(0,0,0,0)) / 864e5); const hm = new Date(t).toTimeString().slice(0, 5); return d <= 0 ? '今天 ' + hm : d === 1 ? '昨天 ' + hm : d + ' 天前'; }
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(html, undo) {
+  const t = $('#toast'); t.innerHTML = '<span>' + html + '</span>' + (undo ? '<button id="undoBtn">撤销</button>' : '');
+  t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
+  if (undo) $('#undoBtn').onclick = () => { undo(); t.classList.remove('show'); };
+}
+
+/* ---------- sidebar ---------- */
+function inNav(e, nav) {
+  if (nav === 'all') return true; if (nav === 'starred') return !!e.starred;
+  if (nav === 'today') return dayOf(e.last) === '今天'; if (nav === 'week') return ['今天', '昨天', '本周'].includes(dayOf(e.last));
+  return e.pair === nav;
+}
+function renderNav() {
+  const n = nav => db.filter(e => inNav(e, nav)).length;
+  const item = (nav, icon, t, cls = '') => `<div class="nav ${S.nav === nav ? 'active' : ''}" data-nav="${nav}"><span class="ic ${cls}">${ic(icon)}</span><span class="t">${t}</span><span class="n">${n(nav)}</span></div>`;
+  $('#nav').innerHTML = '<div class="group-h">资料库</div>' + item('all', 'book', '全部') + item('starred', 'star', '收藏', 'st') + item('today', 'sun', '今天') + item('week', 'cal', '本周')
+    + (db.length ? '<div class="group-h">语言</div>' : '') + [...new Set(db.map(e => e.pair))].map(p => item(p, 'globe', p === 'en>zh' ? '英语 → 简体中文' : '简体中文 → 英语')).join('');
+  const days = [0, 0, 0, 0, 0, 0, 0]; db.forEach(e => { const d = Math.round((NOW - e.last) / 864e5); if (d < 7) days[(new Date(e.last).getDay() + 6) % 7]++; });
+  const max = Math.max(1, ...days);
+  $('#week').innerHTML = days.map(v => `<i><b style="height:${v ? Math.max(18, v / max * 100) : 0}%"></b></i>`).join('');
+  $('#weekN').textContent = `本周 ${db.filter(e => NOW - e.last < 7 * 864e5).length} 个词`;
+  // Consecutive days with a lookup, ending today (or yesterday, so the streak survives until tonight).
+  const active = new Set(db.map(e => Math.round((new Date(NOW).setHours(0,0,0,0) - new Date(e.last).setHours(0,0,0,0)) / 864e5)));
+  let streak = 0, d = active.has(0) ? 0 : 1; while (active.has(d)) { streak++; d++; }
+  $('#streak').textContent = streak;
+}
+
+/* ---------- list ---------- */
+function rows() {
+  let r = db.filter(e => inNav(e, S.nav));
+  if (S.filter) { const q = S.filter.toLowerCase(); r = r.filter(e => e.hw.toLowerCase().includes(q) || (summary(e) || '').toLowerCase().includes(q)); }
+  const by = { recent: (a, b) => b.last - a.last, count: (a, b) => b.count - a.count, alpha: (a, b) => a.hw.localeCompare(b.hw), starred: (a, b) => (b.starred || 0) - (a.starred || 0) }[S.sort];
+  return r.sort(by);
+}
+function renderList() {
+  const names = { all: '全部', starred: '收藏', today: '今天', week: '本周', 'en>zh': '英 → 中', 'zh>en': '中 → 英' };
+  $('#listTitle').textContent = names[S.nav]; const r = rows(); $('#listCnt').textContent = r.length + ' 个词';
+  $('#sortTxt').textContent = { recent: '最近', count: '次数', alpha: 'A–Z', starred: '收藏' }[S.sort];
+  document.querySelectorAll('#sortPop .mi').forEach(m => m.classList.toggle('on', m.dataset.sort === S.sort));
+  let h = '', last = null;
+  r.forEach(e => {
+    if (S.sort === 'recent') { const d = dayOf(e.last); if (d !== last) { h += `<div class="day">${d}</div>`; last = d; } }
+    h += `<div class="row ${e.hw === (S.look ? S.look.text : S.sel) ? 'on' : ''}" data-hw="${esc(e.hw)}"><div class="h">${esc(e.hw)}<span class="p">${e.card && e.card.ph[0] ? esc(e.card.ph[0][1]) : ''}</span></div>
+      <div class="m"><button class="stb ${e.starred ? 'on' : ''}" data-star="${esc(e.hw)}">${ic('star', e.starred ? 'sm fill' : 'sm')}</button>${e.count > 1 ? `<span class="c">×${e.count}</span>` : ''}</div>
+      <div class="s">${e.card ? '' : '<span class="tag">本机</span>'}${esc(summary(e))}</div></div>`;
+  });
+  if (!r.length) h = `<div class="notes" style="padding:30px 14px;text-align:center">${S.filter ? '没有匹配的词' : S.nav === 'starred' ? '还没有收藏。查词后按 ⌘S。' : '这里还没有词'}</div>`;
+  $('#rows').innerHTML = h;
+}
+
+/* ---------- detail ---------- */
+function cardHTML(e, fresh) {
+  const c = e.card;
+  const metaB = fresh ? '<span class="b new">新词 · 已记入今天</span>' : `<span class="b">第 ${e.count} 次查</span>`;
+  let h = `<div class="meta"><span class="lp">${e.pair === 'en>zh' ? '英语 → 简体中文' : '简体中文 → 英语'}</span>${metaB}${c ? '<span class="b ai">AI 单词卡 · gpt-5-mini</span>' : '<span class="b">本机译文</span>'}</div>
+    <div class="hero"><div><div class="w">${esc(e.hw)}</div><div class="phs">${c ? c.ph.map(p => `<span class="ph"><span class="k">${p[0]}</span>${esc(p[1])}<button data-say>${ic('speak', 'sm')}</button></span>`).join('') : `<span class="ph">朗读<button data-say>${ic('speak', 'sm')}</button></span>`}</div></div>
+    <span class="sp"></span><button class="gbtn star bigstar ${e.starred ? 'on' : ''}" data-star="${esc(e.hw)}">${ic('star', e.starred ? 'fill' : '')}${e.starred ? '已收藏' : '收藏'}<span class="k">⌘S</span></button></div>`;
+  if (!c) return h + `<div class="senses"><div class="means"><span class="mean first" data-copy="${esc(e.text)}">${esc(e.text)}</span></div></div>
+    <div class="notes" style="margin-top:12px">这是本机给出的简短译文。<button class="gbtn on" data-regen style="margin-left:6px">${ic('spark', 'sm')}生成 AI 单词卡</button></div>` + histHTML(e);
+  h += `<div class="senses">${c.senses.map((s, i) => `<div class="sense"><span class="pos">${s[0]}</span><div class="means">${s[1].map((m, j) => `<span class="mean ${i === 0 && j === 0 ? 'first' : ''}" data-copy="${esc(m)}" title="点击复制">${esc(m)}</span>`).join('')}</div></div>`).join('')}</div>`;
+  if (c.ex.length) h += '<div class="sec-h">例句</div>' + c.ex.map(x => `<div class="ex"><div class="t"><div class="s">${bold(x[0])}</div><div class="d">${esc(x[1])}</div></div><button data-say title="朗读">${ic('speak')}</button></div>`).join('');
+  if (c.syn.length || c.forms.length) h += '<div class="sec-h">近义词与词形 · 点一下就查</div><div class="chips">' + c.syn.map(s => `<button class="wchip" data-look="${esc(s)}">${esc(s)}</button>`).join('') + c.forms.map(f => `<button class="wchip" data-look="${esc(f[1])}"><span class="f">${esc(f[0])}</span>${esc(f[1])}</button>`).join('') + '</div>';
+  return h + histHTML(e);
+}
+function histHTML(e) { return `<div class="sec-h">查词记录</div><div class="history"><span>共 <b>${e.count}</b> 次</span><span>首次 <b>${ago(e.first)}</b></span><span>最近 <b>${ago(e.last)}</b></span>${e.starred ? `<span>收藏于 <b>${ago(e.starred)}</b></span>` : ''}</div>`; }
+function renderDetail() {
+  const d = $('#detail'), bar = $('#actionbar');
+  if (S.look && S.look.phase === 'loading') {
+    d.innerHTML = `<div class="meta"><span class="lp">${PAIRS[S.dir]}</span><span class="b ai">正在请 gpt-5-mini 写单词卡…</span></div><div class="hero"><div><div class="w">${esc(S.look.text)}</div></div></div>
+      <div class="senses"><div class="sk" style="width:60%"></div><div class="sk" style="width:85%"></div><div class="sk" style="width:40%"></div></div><div class="sk" style="width:70%;margin-top:22px"></div><div class="sk" style="width:50%"></div>`;
+    bar.style.display = 'none'; return;
+  }
+  const e = S.look ? find(S.look.text) : find(S.sel || '');
+  if (!e) {
+    d.innerHTML = db.length ? '<div class="empty">选择左侧的词</div>' : `<div class="empty"><div><div class="art"><svg class="i" style="width:34px;height:34px"><use href="#book"/></svg></div><div class="ttl">单词本还是空的</div><div>查过的词会自动出现在这里</div>
+      <div class="tips"><div><kbd>⌘L</kbd>在上面输入一个词，回车查词</div><div><kbd>⌥Space</kbd>任何地方打开启动器，输入 <code>dict 词</code></div><div><kbd>⌘S</kbd>在翻译结果上收藏，回来复习</div></div></div></div>`;
+    bar.style.display = 'none'; return;
+  }
+  d.innerHTML = cardHTML(e, S.look && S.look.fresh);
+  bar.style.display = 'flex';
+  bar.innerHTML = `<button class="gbtn" data-act="copy">${ic('copy', 'sm')}复制释义<span class="k">⌘C</span></button><button class="gbtn" data-act="say">${ic('speak', 'sm')}朗读</button>
+    <button class="gbtn" data-act="ask">${ic('chat', 'sm')}问 AI</button><button class="gbtn" data-act="regen">${ic('redo', 'sm')}${e.card ? '重新生成' : '生成单词卡'}</button><span style="width:1px;height:18px;background:var(--sep);align-self:center;margin:0 3px"></span>
+    <button class="gbtn danger" data-act="del">${ic('trash', 'sm')}删除</button>`;
+}
+function renderAll() { renderNav(); renderList(); renderDetail(); renderLauncher(); }
+
+/* ---------- actions ---------- */
+function current() { return S.look ? find(S.look.text) : find(S.sel || ''); }
+function toggleStar(hw) { const e = find(hw); if (!e) return; e.starred = e.starred ? null : NOW; toast(e.starred ? `<b style="color:var(--star)">★</b> 已收藏「${esc(e.hw)}」` : `已取消收藏「${esc(e.hw)}」`); renderAll(); }
+function del() {
+  const e = current(); if (!e) return; const i = db.indexOf(e); const r = rows(); const idx = r.indexOf(e);
+  db.splice(i, 1); S.look = null; const nr = rows(); S.sel = nr.length ? nr[Math.min(idx, nr.length - 1)].hw : null;
+  toast(`已删除「${esc(e.hw)}」`, () => { db.splice(i, 0, e); S.sel = e.hw; renderAll(); }); renderAll();
+}
+function lookup(word) {
+  word = word.trim(); if (!word) return;
+  $('#lookup').value = word; $('#preview').classList.remove('show');
+  const known = find(word);
+  if (known && known.card) { known.count++; known.last = NOW + 1; S.look = null; S.sel = known.hw; S.nav = inNav(known, S.nav) ? S.nav : 'all'; toast(`「${esc(known.hw)}」在单词本里，直接打开（未请求模型）`); renderAll(); return; }
+  S.look = { text: word, phase: 'loading' }; renderAll();
+  setTimeout(() => {
+    let e = known;
+    const card = CARDS[word.toLowerCase()] ? JSON.parse(JSON.stringify(CARDS[word.toLowerCase()])) : { ph: [['英', '/…/']], senses: [['?', [QUICK[word.toLowerCase()] || '（示例）释义']]], forms: [], ex: [], syn: [] };
+    if (e) { e.card = card; e.count++; e.last = NOW + 1; } else if (S.recording) { e = { hw: word, card, text: null, pair: S.dir, first: NOW + 1, last: NOW + 1, count: 1, starred: null }; db.unshift(e); }
+    else { e = { hw: word, card, text: null, pair: S.dir, first: NOW, last: NOW, count: 1, starred: null }; }
+    S.look = { text: word, phase: 'done', fresh: !known }; S.sel = word; if (!['all', 'today', 'week', S.dir].includes(S.nav)) S.nav = 'all';
+    renderAll();
+  }, 900);
+}
+$('#win').addEventListener('click', ev => {
+  const t = ev.target;
+  document.querySelectorAll('.pop').forEach(p => { if (!p.contains(t) && !t.closest('#sortBtn,#exportBtn,#gearBtn')) p.classList.remove('show'); });
+  const nav = t.closest('[data-nav]'); if (nav) { S.nav = nav.dataset.nav; S.look = null; const r = rows(); if (r.length && !r.find(e => e.hw === S.sel)) S.sel = r[0].hw; renderAll(); return; }
+  const st = t.closest('[data-star]'); if (st) { ev.stopPropagation(); toggleStar(st.dataset.star); return; }
+  const row = t.closest('.row'); if (row) { S.sel = row.dataset.hw; S.look = null; $('#lookup').value = ''; renderAll(); return; }
+  const look = t.closest('[data-look]'); if (look) { lookup(look.dataset.look); return; }
+  const cp = t.closest('[data-copy]'); if (cp) { toast(`已复制「${esc(cp.dataset.copy)}」`); return; }
+  if (t.closest('[data-say]')) { toast(ic('speak', 'sm') + ' 朗读中…'); return; }
+  if (t.closest('[data-regen]')) { const e = current(); if (e) { S.look = { text: e.hw, phase: 'loading' }; renderDetail(); setTimeout(() => { e.card = e.card || { ph: [['英', '/rɪˈzɪliənt/']], senses: [['adj.', ['有弹性的', '适应力强的', '能迅速恢复的']]], forms: [['名词', 'resilience']], ex: [['Children are often very **resilient**.', '孩子们往往很能适应。']], syn: ['tough', 'flexible'] }; S.look = null; S.sel = e.hw; renderAll(); toast(`已为「${esc(e.hw)}」生成单词卡`); }, 900); } return; }
+  const act = t.closest('[data-act]');
+  if (act) {
+    const e = current(); const a = act.dataset.act;
+    if (a === 'copy') toast(`已复制「${esc(first(e))}」`); if (a === 'say') toast(ic('speak', 'sm') + ' 朗读中…');
+    if (a === 'ask') toast('已带着单词卡打开随便问'); if (a === 'del') del();
+    if (a === 'regen') { if (confirm(`用 AI 重新生成「${e.hw}」的单词卡？\n会发送到 gpt-5-mini。`)) { S.look = { text: e.hw, phase: 'loading' }; renderDetail(); setTimeout(() => { S.look = null; S.sel = e.hw; renderAll(); toast('单词卡已更新'); }, 900); } }
+    return;
+  }
+  if (t.closest('#sortBtn')) { $('#sortPop').classList.toggle('show'); return; }
+  const so = t.closest('[data-sort]'); if (so) { S.sort = so.dataset.sort; $('#sortPop').classList.remove('show'); renderAll(); return; }
+  if (t.closest('#exportBtn')) { $('#exportPop').classList.toggle('show'); return; }
+  const x = t.closest('[data-x]'); if (x) { $('#exportPop').classList.remove('show'); toast(`已导出 ${rows().length} 个词`); return; }
+  if (t.closest('#gearBtn')) { $('#gearPop').classList.toggle('show'); return; }
+  if (t.closest('#swRec')) { S.recording = !S.recording; $('#swRec').classList.toggle('on', S.recording); toast(S.recording ? '已恢复记录查词' : '已暂停记录，只保留收藏'); return; }
+  const rb = t.closest('#ret button'); if (rb) { document.querySelectorAll('#ret button').forEach(b => b.classList.toggle('on', b === rb)); return; }
+  if (t.closest('#clearHist')) { const n = db.filter(e => !e.starred).length; if (confirm(`删除 ${n} 条未收藏的记录？收藏会保留。`)) { db = db.filter(e => e.starred); S.sel = db[0] && db[0].hw; $('#gearPop').classList.remove('show'); renderAll(); toast(`已清空 ${n} 条记录`); } return; }
+  if (t.closest('#dirBtn')) { S.dir = S.dir === 'en>zh' ? 'zh>en' : 'en>zh'; $('#dirTxt').textContent = PAIRS[S.dir]; return; }
+});
+const lk = $('#lookup');
+lk.addEventListener('focus', () => { $('#lookupBox').classList.add('focus'); $('#lkKbd').style.display = 'none'; });
+lk.addEventListener('blur', () => { $('#lookupBox').classList.remove('focus'); $('#lkKbd').style.display = ''; });
+lk.addEventListener('input', () => {
+  const v = lk.value.trim(); const p = $('#preview');
+  if (!v) { p.classList.remove('show'); return; }
+  const k = find(v);
+  p.innerHTML = k && k.card ? `单词本里有 <b>${esc(k.hw)}</b> · ${esc(first(k))} <span style="float:right"><kbd>↩</kbd> 打开</span>`
+    : `本机：<b>${esc(QUICK[v.toLowerCase()] || '…')}</b> <span style="float:right"><kbd>↩</kbd> AI 单词卡 <kbd>⇥</kbd> 换方向</span>`;
+  p.classList.add('show');
+});
+lk.addEventListener('keydown', ev => {
+  if (ev.key === 'Enter') { ev.preventDefault(); lookup(lk.value); lk.blur(); }
+  if (ev.key === 'Tab') { ev.preventDefault(); $('#dirBtn').click(); }
+  if (ev.key === 'Escape') { ev.preventDefault(); if (lk.value) { lk.value = ''; $('#preview').classList.remove('show'); } else lk.blur(); }
+});
+$('#filter').addEventListener('input', ev => { S.filter = ev.target.value.trim(); renderList(); });
+$('#win').addEventListener('keydown', ev => {
+  const typing = ['INPUT'].includes(ev.target.tagName); const mod = ev.metaKey || ev.ctrlKey; const k = ev.key.toLowerCase();
+  if (mod && k === 'l') { ev.preventDefault(); lk.focus(); lk.select(); return; }
+  if (mod && k === 'f') { ev.preventDefault(); $('#filter').focus(); return; }
+  if (typing) return;
+  if (mod && k === 's') { ev.preventDefault(); const e = current(); if (e) toggleStar(e.hw); return; }
+  if (mod && k === 'c') { ev.preventDefault(); const e = current(); if (e) toast(`已复制「${esc(first(e))}」`); return; }
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); const r = rows(); const i = r.findIndex(e => e.hw === S.sel); const n = r[Math.max(0, Math.min(r.length - 1, i + (ev.key === 'ArrowDown' ? 1 : -1)))]; if (n) { S.sel = n.hw; S.look = null; renderAll(); } return; }
+  if (ev.key === 'Backspace') { ev.preventDefault(); del(); return; }
+});
+
+/* ---------- ① launcher ---------- */
+let L = 'alone', lsel = 0;
+function renderLauncher() {
+  const q = $('#lq'), body = $('#lbody'), bar = $('#lbar');
+  document.querySelectorAll('#lstate button').forEach(b => b.classList.toggle('on', b.dataset.s === L));
+  if (L === 'alone') {
+    q.value = '';
+    const recent = [...db].sort((a, b) => b.last - a.last).slice(0, 4);
+    body.innerHTML = `<div class="l-sec">单词本</div><div class="lrow ${lsel === 0 ? 'hl' : ''}" data-li="0"><span class="tile">${ic('book', 'sm')}</span><span class="h">打开单词本</span><span class="s">${db.length} 个词 · ${db.filter(e => e.starred).length} 个收藏</span><span class="cap">↩</span></div>
+      <div class="l-sec">最近查过</div>` + recent.map((e, i) => `<div class="lrow ${lsel === i + 1 ? 'hl' : ''}" data-li="${i + 1}" data-hw="${esc(e.hw)}"><span class="tile ${e.starred ? 'st' : ''}">${ic(e.starred ? 'star' : 'clock', e.starred ? 'sm fill' : 'sm')}</span><span class="h">${esc(e.hw)}</span><span class="s">${esc(summary(e))}</span><span class="cap">${ago(e.last)}</span></div>`).join('');
+    bar.innerHTML = '<span>↩ 打开单词本</span><span>↓ 选词</span><span class="sp"></span><span>esc 关闭</span>';
+  } else {
+    const w = L === 'word' ? 'serendipity' : 'gregarious'; q.value = w; const k = find(w);
+    body.innerHTML = `<div class="l-sec">预览</div><div class="lcard"><div class="hd"><b>${esc(w)}</b><span>英语 → 简体中文</span><span class="src">${k && k.card ? '来自单词本' : '本机'}</span></div>
+      <div class="m">${esc(k ? first(k) : QUICK[w])}${k && k.card ? ` <span style="color:var(--text-3);font-size:12px">· 查过 ${k.count} 次</span>` : ''}</div>
+      <div class="acts"><span class="lact p">${ic('book', 'sm')}在单词本中${k && k.card ? '打开' : '查词'} ↩</span><span class="lact">复制 ⌘C</span></div></div>`;
+    bar.innerHTML = `<span>↩ ${k && k.card ? '打开单词本到这个词' : '在单词本里生成 AI 单词卡'}</span><span class="sp"></span><span>本机预览，回车前不发送</span>`;
+  }
+}
+function launch() {
+  if (L === 'alone') { const r = document.querySelector(`#lbody [data-li="${lsel}"]`); const hw = r && r.dataset.hw; if (hw) { S.look = null; S.sel = hw; S.nav = 'all'; renderAll(); } }
+  else lookup(L === 'word' ? 'serendipity' : 'gregarious');
+  $('#desk3').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('#win').focus({ preventScroll: true });
+}
+$('#lstate').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) { L = b.dataset.s; lsel = 0; renderLauncher(); } });
+$('#lbody').addEventListener('click', ev => { const r = ev.target.closest('[data-li]'); if (r) { lsel = +r.dataset.li; renderLauncher(); launch(); return; } if (ev.target.closest('.lact.p')) launch(); });
+$('#lq').addEventListener('keydown', ev => {
+  if (ev.key === 'Enter') { ev.preventDefault(); launch(); }
+  if (L === 'alone' && (ev.key === 'ArrowDown' || ev.key === 'ArrowUp')) { ev.preventDefault(); lsel = Math.max(0, Math.min(4, lsel + (ev.key === 'ArrowDown' ? 1 : -1))); renderLauncher(); }
+});
+$('#settings').addEventListener('click', ev => { const s = ev.target.closest('[data-sw]'); if (s) s.classList.toggle('on'); });
+
+document.getElementById('theme').addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; document.documentElement.dataset.theme = b.dataset.t; document.querySelectorAll('#theme button').forEach(x => x.classList.toggle('on', x === b)); });
+
+/* screenshot helper: ?theme=light&shot=<id>&L=word&nav=starred&sel=hw&look=word&loading=1&empty=1&menu=gear */
+const P = new URLSearchParams(location.search);
+if (P.get('theme')) document.documentElement.dataset.theme = P.get('theme');
+if (P.get('L')) L = P.get('L');
+if (P.get('nav')) S.nav = P.get('nav');
+if (P.get('sel')) S.sel = P.get('sel');
+if (P.get('empty')) { db = []; S.sel = null; }
+renderAll();
+if (P.get('look')) { if (P.get('loading')) { S.look = { text: P.get('look'), phase: 'loading' }; renderAll(); } else { lookup(P.get('look')); } }
+if (P.get('typing')) { lk.value = P.get('typing'); lk.dispatchEvent(new Event('input')); $('#lookupBox').classList.add('focus'); }
+if (P.get('menu')) $('#' + P.get('menu') + 'Pop').classList.add('show');
+if (P.get('shot')) { const t = document.getElementById(P.get('shot')); t.classList.add('shot-target'); document.body.appendChild(t); document.body.classList.add('shot'); }
+</script>
+</body>
+</html>
