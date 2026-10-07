@@ -39,6 +39,7 @@ struct AskLauncherHeaderVisualTests {
         draft.sourceBundleID = "com.google.Chrome"
         draft.screenshot = "data:image/png;base64," + png.base64EncodedString()
         draft.capturedAt = Date()
+        draft.memory = AskMemory(global: "Prefers short answers.", app: nil)
         fixture.model.launcherDraft = draft
     }
 
@@ -128,7 +129,7 @@ struct AskLauncherHeaderVisualTests {
                 try await render(composer, size: NSSize(width: 760, height: 180), appearance: appearance,
                                  file: root.appendingPathComponent("header-workspace-composer-\(name).png"))
             }
-            // The context panel the footer settings button opens.
+            // The context panel opened with Command-K.
             do {
                 let fixture = try AskTestFixture()
                 defer { fixture.model.resetSession() }

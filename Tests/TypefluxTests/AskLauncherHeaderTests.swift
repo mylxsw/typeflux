@@ -38,10 +38,11 @@ struct AskLauncherHeaderTests {
         draft.source = "Google Chrome — Issues | Multica - Google Chrome"
         draft.sourceBundleID = "com.google.Chrome"
         draft.selection = "first line\nsecond line"
+        draft.memory = AskMemory(global: "Prefers short answers.", app: nil)
         fixture.model.launcherDraft = draft
     }
 
-    @Test func capturedContextLeavesTheEditorClearAndSettingsStayInTheFooter() async throws {
+    @Test func capturedContextLeavesTheEditorClearAndKeepsTheOriginalFooterSwitches() async throws {
         let fixture = try AskTestFixture()
         captured(fixture)
         let (window, reported) = host(fixture)
@@ -58,16 +59,22 @@ struct AskLauncherHeaderTests {
         // The model menu sits in the bottom bar, below the suggestions.
         let model = try element("ask.composer.model", in: window)
         #expect(model.frame.maxY < editorFrame.minY - AskLauncherSuggestions.height + 8)
-        let settings = try element("ask.context.settings", in: window)
         let screenshot = try element("ask.context.screenshot.toggle", in: window)
-        #expect(abs(settings.frame.midY - model.frame.midY) < 2)
+        let memory = try #require(find(L("ask.memory"), attribute: "accessibilityLabel", in: window))
+        #expect(find("ask.context.settings", in: window) == nil)
+        #expect(abs(memory.frame.midY - model.frame.midY) < 2)
         #expect(abs(screenshot.frame.midY - model.frame.midY) < 2)
-        #expect(settings.frame.width == AskMetrics.composerControlHeight)
+        #expect(memory.frame.width == AskMetrics.composerControlHeight)
+        #expect(abs(memory.frame.minX - screenshot.frame.maxX - AskContextChips.spacing) < 1)
         let request = fixture.model.launcherDraft.request(deviceId: "device", tools: [])
         #expect(request.source == fixture.model.launcherDraft.source)
         #expect(request.selection == "first line\nsecond line")
         let expected = AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: true)
         #expect(abs(reported.height - expected) <= 4, "reported \(reported.height), expected \(expected)")
+        try click(memory, in: window)
+        try await fixture.wait { fixture.model.launcherDraft.memoryOff == true }
+        try click(try #require(find(L("ask.memory"), attribute: "accessibilityLabel", in: window)), in: window)
+        try await fixture.wait { fixture.model.launcherDraft.memoryOff == nil }
     }
 
     @Test func recordingSwapsTheResultsForTheVoicePanel() async throws {
@@ -96,7 +103,8 @@ struct AskLauncherHeaderTests {
         try await Task.sleep(for: .milliseconds(300))
         #expect(find("ask.voice.panel", in: window) == nil)
         #expect(find("ask.context.token", in: window) == nil)
-        #expect(find("ask.context.settings", in: window) != nil)
+        #expect(find("ask.context.settings", in: window) == nil)
+        #expect(find(L("ask.memory"), attribute: "accessibilityLabel", in: window) != nil)
     }
 
     @Test func voicePanelIsAtLeastItsMinimumWhenThereWereNoResults() async throws {
@@ -167,24 +175,22 @@ struct AskLauncherHeaderTests {
         #expect(!card.isVisible)
     }
 
-    @Test(arguments: [false, true])
-    func contextSettingsOpenFromTheFooterAndCommandK(_ keyboard: Bool) async throws {
+    @Test func commandKOpensAndClosesContextSettingsWithoutAnExtraFooterButton() async throws {
         let fixture = try AskTestFixture()
         captured(fixture)
         let (window, _) = host(fixture)
         defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
         try await Task.sleep(for: .milliseconds(300))
-        if keyboard {
-            let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
-            window.makeFirstResponder(editor)
-            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command,
-                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
-                characters: "k", charactersIgnoringModifiers: "k", isARepeat: false, keyCode: 40))
-            #expect(editor.performKeyEquivalent(with: event))
-        } else {
-            try click(try element("ask.context.settings", in: window), in: window)
-        }
+        #expect(find("ask.context.settings", in: window) == nil)
+        let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
+        window.makeFirstResponder(editor)
+        let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command,
+            timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
+            characters: "k", charactersIgnoringModifiers: "k", isARepeat: false, keyCode: 40))
+        #expect(editor.performKeyEquivalent(with: event))
         try await fixture.wait { NSApp.windows.contains { $0.isVisible && find("ask.context.panel", in: $0) != nil } }
+        #expect(editor.performKeyEquivalent(with: event))
+        try await fixture.wait { !NSApp.windows.contains { $0.isVisible && find("ask.context.panel", in: $0) != nil } }
     }
 
     @Test func hoverUsesTheCaptureThatArrivesDuringItsDelay() async throws {
@@ -276,16 +282,15 @@ struct AskLauncherHeaderTests {
             object.responds(to: NSSelectorFromString(key)) ? object.value(forKey: key) : nil
         }
         var children: [Any] { value("accessibilityChildren") as? [Any] ?? [] }
-        var identifier: String? { value("accessibilityIdentifier") as? String }
         var frame: NSRect { (value("accessibilityFrame") as? NSValue)?.rectValue ?? .zero }
     }
 
-    private func find(_ identifier: String, in window: NSWindow) -> Element? {
+    private func find(_ value: String, attribute: String = "accessibilityIdentifier", in window: NSWindow) -> Element? {
         var seen = Set<ObjectIdentifier>()
-        func walk(_ value: Any) -> Element? {
-            guard let object = value as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
+        func walk(_ node: Any) -> Element? {
+            guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
             let element = Element(object: object)
-            if element.identifier == identifier { return element }
+            if element.value(attribute) as? String == value { return element }
             for child in element.children {
                 if let found = walk(child) { return found }
             }

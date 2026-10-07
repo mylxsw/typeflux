@@ -926,22 +926,8 @@ struct AskComposer: View {
             contextChips
                 .disabled(active)
                 .opacity(Self.recordingDim(active))
-            if contextToken != nil {
-                Button { contextPanelOpen.toggle() } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 15))
-                        .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
-                .help(L("ask.context.token.help"))
-                .accessibilityLabel(L("ask.context"))
-                .accessibilityIdentifier("ask.context.settings")
-                .disabled(active)
-                .opacity(Self.recordingDim(active))
+                // Command-K keeps the context panel reachable without adding a footer control.
                 .popover(isPresented: $contextPanelOpen, arrowEdge: .bottom) { contextPanel }
-            }
             // In the launcher the empty space moves the panel; it lays out exactly like the spacer.
             Spacer(minLength: 8)
                 .frame(maxHeight: .infinity)
