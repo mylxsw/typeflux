@@ -18,6 +18,11 @@ struct AskQuickResultsInteractionTests {
 
         init(text: String, apps: AskTestAppIndex = AskTestAppIndex([]), selection: String? = nil, waitForSearch: Bool = true,
              prepare: (AskConversationModel) -> Void = { _ in }) async throws {
+            // Launcher chrome initializes shared auth; keep it away from the user's Keychain.
+            let previousStore = KeychainTokenStore.useInMemoryStoreForTesting
+            KeychainTokenStore.useInMemoryStoreForTesting = true
+            _ = AuthState.shared
+            KeychainTokenStore.useInMemoryStoreForTesting = previousStore
             fixture = try AskTestFixture()
             fixture.model.appIndex = apps
             prepare(fixture.model)

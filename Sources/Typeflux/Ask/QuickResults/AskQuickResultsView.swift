@@ -79,7 +79,11 @@ struct AskQuickResultsView: View {
                     .padding(Self.listPadding)
                 }
                 .scrollDisabled(Self.contentHeight(for: results) <= Self.maximumHeight)
-                .onChange(of: results.highlighted) { index in proxy.scrollTo(results.identity(of: results.rows[index])) }
+                // SwiftUI can deliver a new value to the previous render's closure.
+                // Carry the row identity itself instead of indexing that render's results.
+                .onChange(of: results.identity(of: results.highlightedRow)) { identity in
+                    proxy.scrollTo(identity)
+                }
             }
             Spacer(minLength: 0)
         }
