@@ -9,6 +9,17 @@ struct AskToolDefinition: Codable, Equatable, Sendable {
 
 typealias AskToolCall = ChatToolCall
 
+struct AskGeneratedImage: Codable, Equatable, Sendable {
+    var assetId: String
+    var url: String
+
+    var safeURL: URL? {
+        guard let value = URL(string: url), value.scheme == "https", value.host != nil,
+              value.user == nil, value.password == nil else { return nil }
+        return value
+    }
+}
+
 struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var id: String
     var role: String
@@ -33,6 +44,7 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var mcpServers: [String]? = nil
     var harness: AskHarnessContract? = nil
     var diagnostic: AskResultDiagnostic? = nil
+    var generatedImage: AskGeneratedImage? = nil
 
     /// The screenshot or an attached image; such a conversation needs a vision model.
     var hasImage: Bool { image != nil || attachments?.contains { $0.kind == .image } == true }
@@ -104,6 +116,7 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
 typealias AskConversationSummary = ChatConversationSummary
 
 struct AskSendRequest: Codable, Equatable, Sendable {
+    var imageResults: Bool? = true
     var id: String
     var deviceId: String
     var text: String

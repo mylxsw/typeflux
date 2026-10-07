@@ -10,9 +10,10 @@ struct AskRunOutputs: Equatable {
 
     var artifacts: [Artifact] = []
     var storedArtifacts: [AskArtifactRef] = []
+    var generatedImages: [AskGeneratedImage] = []
     var sources: [URL] = []
 
-    var isEmpty: Bool { artifacts.isEmpty && storedArtifacts.isEmpty && sources.isEmpty }
+    var isEmpty: Bool { artifacts.isEmpty && storedArtifacts.isEmpty && generatedImages.isEmpty && sources.isEmpty }
 }
 
 /// Consecutive assistant steps that called tools, shown as one collapsible block.
@@ -104,6 +105,11 @@ enum AskActivity {
                 value.sources.append(url)
             }
             if let result = results.first(where: { $0.toolCallId == call.id }) {
+                if ["image_generate", "image_edit"].contains(name), result.isError != true,
+                   let image = result.generatedImage, image.safeURL != nil,
+                   !value.generatedImages.contains(where: { $0.assetId == image.assetId }) {
+                    value.generatedImages.append(image)
+                }
                 var refs = result.harness?.version == 1
                     ? (result.harness?.outcome?.artifacts ?? []) + (result.harness?.artifacts ?? []) : []
                 if let receipt = try? JSONDecoder().decode(
