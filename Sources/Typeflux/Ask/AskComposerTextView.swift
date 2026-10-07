@@ -28,6 +28,8 @@ struct AskComposerTextView: NSViewRepresentable {
     var onCommandKey: ((AskCommandKey) -> Bool)?
     /// Delete in an empty editor; true when it removed something instead.
     var onEmptyBackspace: (() -> Bool)?
+    /// Launcher-local ⌘O. The model checks recording and draft readiness.
+    var onOpenChat: (() -> Void)?
     /// ⌘K; true when handled.
     var onContextShortcut: (() -> Bool)?
 
@@ -68,6 +70,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onCommandKey = onCommandKey
         editor.onEmptyBackspace = onEmptyBackspace
         editor.onContextShortcut = onContextShortcut
+        editor.onOpenChat = onOpenChat
         editor.setAccessibilityLabel(placeholder)
         editor.setAccessibilityHelp(L("ask.voice.holdHint"))
         scroll.documentView = editor
@@ -101,6 +104,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onCommandKey = onCommandKey
         editor.onEmptyBackspace = onEmptyBackspace
         editor.onContextShortcut = onContextShortcut
+        editor.onOpenChat = onOpenChat
         if editor.font?.pointSize != fontSize { editor.font = .systemFont(ofSize: fontSize) }
         if editor.string != text, !editor.hasMarkedText() {
             editor.string = text
@@ -147,6 +151,7 @@ struct AskComposerTextView: NSViewRepresentable {
         var onSlashQuery: ((AskSlashQuery?, Bool) -> Void)?
         var onCommandKey: ((AskCommandKey) -> Bool)?
         var onEmptyBackspace: (() -> Bool)?
+        var onOpenChat: (() -> Void)?
         var onContextShortcut: (() -> Bool)?
         /// A key press is being handled; edits made now were typed.
         private(set) var typing = false
@@ -360,7 +365,17 @@ struct AskComposerTextView: NSViewRepresentable {
             reportedHeight = height
             DispatchQueue.main.async { [weak self] in self?.onHeightChange(height) }
         }
+        private func openChatShortcut(_ event: NSEvent) -> Bool {
+            guard Self.isOpenChatShortcut(event), !hasMarkedText(), let onOpenChat else { return false }
+            onOpenChat()
+            return true
+        }
+        static func isOpenChatShortcut(_ event: NSEvent) -> Bool {
+            event.type == .keyDown && event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command
+                && event.charactersIgnoringModifiers?.lowercased() == "o"
+        }
         override func performKeyEquivalent(with event: NSEvent) -> Bool {
+            if window?.firstResponder === self, openChatShortcut(event) { return true }
             if Self.isContextShortcut(event), window?.firstResponder === self, voice?.isActive != true,
                onContextShortcut?() == true { return true }
             return super.performKeyEquivalent(with: event)
@@ -375,6 +390,7 @@ struct AskComposerTextView: NSViewRepresentable {
         }
 
         override func keyDown(with event: NSEvent) {
+            if openChatShortcut(event) { return }
             if event.keyCode == 53, mouseDownEvent != nil { cancelInteraction(); return }
             if voice?.isActive == true {
                 if event.keyCode == 53 { cancelInteraction() }

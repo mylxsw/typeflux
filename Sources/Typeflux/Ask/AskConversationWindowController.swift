@@ -314,7 +314,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
         conversationWindow.makeKeyAndOrderFront(nil)
         focusEditor(in: conversationWindow)
-        Task { await model.refreshHistory() }
+        Task { await model.refreshHistory(); await model.loadSavedChatDrafts() }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {

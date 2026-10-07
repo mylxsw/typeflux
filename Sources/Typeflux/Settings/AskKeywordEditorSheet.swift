@@ -62,6 +62,7 @@ struct AskKeywordEditorSheet: View {
         case .prompt: "fix"
         case .web: "wiki"
         case .files: "ff"
+        case .chat: "chat"
         case .workflow: ""
         }
     }
@@ -157,7 +158,7 @@ struct AskKeywordEditorSheet: View {
                     }
                 }
             }
-        case .files, .workflow:
+        case .files, .chat, .workflow:
             EmptyView()
         }
     }

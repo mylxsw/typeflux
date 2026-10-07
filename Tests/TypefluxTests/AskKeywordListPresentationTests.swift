@@ -33,16 +33,16 @@ struct AskKeywordListPresentationTests {
     @Test func `rows list built in keywords by plugin then workflows`() {
         let rows = rows()
         #expect(rows.map(\.keyword)
-            == ["fy", "tr", "翻译", "dict", "词典", "rw", "sum", "ex", "g", "bd", "gh", "f", "wf", "FY"])
+            == ["fy", "tr", "翻译", "dict", "词典", "rw", "sum", "ex", "g", "bd", "gh", "f", "chat", "wf", "FY"])
         #expect(rows.map(\.kind) == [.translate, .translate, .translate, .translate, .translate, .prompt, .prompt, .prompt,
-                                     .web, .web, .web, .files, .workflow, .workflow])
+                                     .web, .web, .web, .files, .chat, .workflow, .workflow])
         #expect(Set(rows.map(\.id)).count == rows.count, "row ids are unique")
         #expect(rows[11].summary == L("ask.settings.keywords.kind.files.hint"))
-        let workflow = rows[12]
+        let workflow = rows[13]
         #expect(workflow.workflowID == "local.python" && workflow.source == nil && workflow.enabled && !workflow
             .shadowed)
         #expect(workflow.summary == L("ask.settings.keywords.summary.workflow"))
-        let clash = rows[13]
+        let clash = rows[14]
         #expect(clash.shadowed && !clash.enabled, "a built-in keyword wins over a workflow's")
         #expect(clash.summary == L("ask.settings.keywords.summary.shadowed"))
     }
@@ -99,7 +99,7 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "summarize").map(\.keyword) == ["sum"])
         #expect(AskKeywordListPresentation.filter(rows, kind: .prompt, query: "google").isEmpty)
         let counts = AskKeywordListPresentation.counts(rows)
-        #expect(counts[nil] == 14 && counts[.translate] == 5 && counts[.files] == 1 && counts[.workflow] == 2)
+        #expect(counts[nil] == 15 && counts[.translate] == 5 && counts[.files] == 1 && counts[.workflow] == 2)
     }
 
     @MainActor
