@@ -15,6 +15,9 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     var ai: (any AskTranslationEngine)?
     /// Writes word cards for single words and short phrases; nil keeps them plain translations.
     var dictionary: (any AskWordLookingUp)?
+    /// Words looked up before: a card kept there shows again without asking the AI,
+    /// and every word lookup can be starred. Nil without a word book.
+    var wordBook: (any AskWordBookStoring)?
     var aiName: @Sendable () -> String = { "AI" }
     var detector: any AskLanguageDetecting = AskLanguageDetector()
     /// The language translations go into when the text is already in the interface language.
@@ -44,20 +47,22 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         let target = AskTranslationLanguages.target(source: source, primary: primary, second: second,
                                                     preset: request.options[Self.targetOption])
         let wantsAI = request.options[Self.engineOption] == "ai"
-        let local = !wantsAI ? await onDevice.canTranslate(from: source, to: target) : false
+        let kept = wantsAI ? nil : keptCard(request.text, source: source, target: target)
+        let local = !wantsAI && kept == nil ? await onDevice.canTranslate(from: source, to: target) : false
         // Typed text may translate while typing, but only on this Mac; the
         // selection and the AI wait for Return.
-        let mode: AskPluginPlan.Mode = local && request.origin == .argument ? .live : .onSubmit
+        // A card from the word book never leaves this Mac either.
+        let mode: AskPluginPlan.Mode = (local || kept != nil) && request.origin == .argument ? .live : .onSubmit
         let language = request.interfaceLanguage
         var meta: [AskPluginMeta] = []
         if let source { meta.append(AskPluginMeta(text: AskTranslationLanguages.name(source, in: language))) }
         meta.append(AskPluginMeta(text: AskTranslationLanguages.name(target, in: language), emphasized: true))
         let title = request.origin == .selection
             ? L("ask.plugin.translate.selection", request.lines)
-            : !local && dictionary != nil && AskWordCard.isLookup(request.text)
+            : kept != nil || (!local && dictionary != nil && AskWordCard.isLookup(request.text))
             ? L("ask.plugin.translate.wordCard")
             : L("ask.plugin.translate.title")
-        var values = ["target": target, "engine": local ? "device" : "ai"]
+        var values = ["target": target, "engine": kept != nil ? "book" : local ? "device" : "ai"]
         if let source { values["source"] = source }
         return AskPluginPlan(mode: mode, title: title, meta: meta, values: values)
     }
@@ -67,6 +72,9 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         let source = plan.values["source"]
         let target = plan.values["target"] ?? AskTranslationLanguages.code(for: request.interfaceLanguage)
         let usesAI = plan.values["engine"] == "ai"
+        if plan.values["engine"] == "book", let card = keptCard(request.text, source: source, target: target) {
+            return wordCardOutput(.card(card), request: request, plan: plan, target: target, generation: "0", kept: true)
+        }
         if usesAI, let dictionary, AskWordCard.isLookup(request.text) {
             let generation = request.options[Self.generationOption] ?? "0"
             var lookup = try await dictionary.lookUp(request.text, from: source, to: target, generation: generation)
@@ -105,20 +113,54 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         }
         actions.append(AskPluginAction(kind: .askAI(L("ask.plugin.translate.askAI", request.text, text)),
                                        title: L("ask.quick.askAI"), symbol: "bubble.left", shortcut: nil))
-        return AskPluginOutput(body: text, original: request.text, meta: plan.meta,
-                               source: usesAI ? AskPluginRegistry.sourceLabel(aiName()) : L("ask.plugin.source.device"),
-                               sourceIsAI: usesAI, note: note ?? (offersCard ? L("ask.plugin.translate.cardHint", aiName()) : nil),
-                               actions: actions)
+        var output = AskPluginOutput(body: text, original: request.text, meta: plan.meta,
+                                     source: usesAI ? AskPluginRegistry.sourceLabel(aiName()) : L("ask.plugin.source.device"),
+                                     sourceIsAI: usesAI,
+                                     note: note ?? (offersCard ? L("ask.plugin.translate.cardHint", aiName()) : nil),
+                                     actions: actions)
+        if AskWordCard.isLookup(request.text) {
+            keep(AskWordBookLookup(headword: Self.headword(request.text), source: source, target: target,
+                                   translation: text, model: usesAI ? aiName() : nil),
+                 in: &output, plan: plan)
+        }
+        return output
+    }
+
+    /// The word as typed, trimmed: the word book's headword.
+    static func headword(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// A card the word book holds for this word and direction.
+    private func keptCard(_ text: String, source: String?, target: String) -> AskWordCard? {
+        guard let wordBook, AskWordCard.isLookup(text) else { return nil }
+        return wordBook.entry(forKey: AskWordBookEntry.key(headword: Self.headword(text), source: source, target: target))?
+            .lookup.card
+    }
+
+    /// Lets the result go into the word book and be starred (⌘S). A word shown while
+    /// typing counts once it settles; one the user pressed Return for, at once.
+    private func keep(_ lookup: AskWordBookLookup, in output: inout AskPluginOutput, plan: AskPluginPlan) {
+        guard let wordBook else { return }
+        output.wordBook = lookup
+        output.recordsAtOnce = plan.mode == .onSubmit
+        let entry = wordBook.entry(forKey: lookup.key)
+        output.detail = entry.map { L("ask.wordBook.seen", $0.lookupCount) }
+        output.actions.append(Self.starAction(lookup, starred: entry?.isStarred == true))
+        output.starred = entry?.isStarred == true
+    }
+
+    static func starAction(_ lookup: AskWordBookLookup, starred: Bool) -> AskPluginAction {
+        AskPluginAction(kind: .toggleStar(lookup), title: L(starred ? "ask.wordBook.unstar" : "ask.wordBook.star"),
+                        symbol: starred ? "star.fill" : "star", shortcut: .commandS)
     }
 
     /// A word card, or what the AI said instead: a sentence's translation, or a reply it could not shape.
     private func wordCardOutput(_ lookup: AskWordLookup, request: AskPluginRequest, plan: AskPluginPlan,
-                                target: String, generation: String) -> AskPluginOutput {
+                                target: String, generation: String, kept: Bool = false) -> AskPluginOutput {
         let replaces = request.origin == .selection
         let writeBackTitle = L(replaces ? "ask.plugin.action.replace" : "ask.plugin.action.insert")
         let writeBackSymbol = replaces ? "arrow.down.to.line" : "text.insert"
         let next = [Self.engineOption: "ai", Self.generationOption: String((Int(generation) ?? 0) + 1)]
-        let source = AskPluginRegistry.sourceLabel(aiName())
+        let source = kept ? L("ask.plugin.source.wordBook") : AskPluginRegistry.sourceLabel(aiName())
         switch lookup {
         case let .card(card):
             var actions = [
@@ -140,8 +182,12 @@ struct AskTranslatePlugin: AskLauncherPlugin {
                 AskPluginAction(kind: .askAI(L("ask.plugin.translate.askAI.word", card.markdown)),
                                 title: L("ask.quick.askAI"), symbol: "bubble.left", shortcut: nil)
             ]
-            return AskPluginOutput(body: card.summary, original: request.text, meta: plan.meta, source: source,
-                                   sourceIsAI: true, actions: actions, wordCard: card)
+            var output = AskPluginOutput(body: card.summary, original: request.text, meta: plan.meta, source: source,
+                                         sourceIsAI: !kept, actions: actions, wordCard: card)
+            keep(AskWordBookLookup(headword: Self.headword(request.text), source: plan.values["source"], target: target,
+                                   card: card, model: kept ? nil : aiName()),
+                 in: &output, plan: plan)
+            return output
         case let .translation(text), let .unreadable(text):
             var note: String?
             if case .unreadable = lookup { note = L("ask.plugin.translate.cardUnreadable") }
@@ -167,5 +213,19 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         let next = AskTranslationLanguages.step(from: current, by: step, primary: primary, second: second,
                                                 skipping: plan.values["source"])
         return next == current ? nil : [Self.targetOption: next]
+    }
+}
+
+extension AskPluginOutput {
+    /// The same result with its word starred or not, and ⌘S saying what it does next.
+    func starring(_ starred: Bool) -> AskPluginOutput {
+        guard let lookup = wordBook else { return self }
+        var output = self
+        output.starred = starred
+        output.actions = actions.map { action in
+            if case .toggleStar = action.kind { return AskTranslatePlugin.starAction(lookup, starred: starred) }
+            return action
+        }
+        return output
     }
 }

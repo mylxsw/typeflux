@@ -48,6 +48,15 @@ final class AskPluginSession: ObservableObject {
     private var chained: (keywords: [String], text: String)?
     /// How long a live plugin waits after the last keystroke.
     var debounce: Duration = .milliseconds(250)
+    /// Keeps looked-up words in the word book; nil keeps nothing.
+    var recordWordBook: (@MainActor (AskWordBookLookup) -> Void)?
+    /// A new keyword mode began: the word book counts every word again.
+    var beginWordBookSession: (@MainActor () -> Void)?
+    /// A result shown this long counts as looked up when keyword mode ends.
+    var settleDelay: TimeInterval = 1.5
+    var clock: () -> Date = Date.init
+    /// When the shown result arrived.
+    private var shownAt: Date?
 
     init(plugins: [any AskLauncherPlugin], keywords: @escaping () -> [AskKeyword]) {
         self.plugins = Dictionary(plugins.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -109,6 +118,7 @@ final class AskPluginSession: ObservableObject {
     private func activate(_ found: AskKeyword) {
         overrides = [:]
         chained = nil
+        beginWordBookSession?()
         set(\.keyword, found)
         set(\.phase, .waiting)
     }
@@ -118,6 +128,7 @@ final class AskPluginSession: ObservableObject {
     @discardableResult
     func deactivate(argument: String = "") -> String? {
         guard let keyword else { return nil }
+        if let shownAt, clock().timeIntervalSince(shownAt) >= settleDelay { settleWordBook() }
         cancel()
         self.keyword = nil
         request = nil
@@ -259,6 +270,8 @@ final class AskPluginSession: ObservableObject {
             set(\.previous, nil)
             adopt(output.variables)
             set(\.phase, .done(plan, output))
+            shownAt = clock()
+            if output.recordsAtOnce, let lookup = output.wordBook { recordWordBook?(lookup) }
             scheduleRerun(of: output, plan: plan, generation: current, plugin: plugin)
         } catch is CancellationError {
             return
@@ -324,11 +337,29 @@ final class AskPluginSession: ObservableObject {
     private func cancel() {
         task?.cancel()
         task = nil
+        shownAt = nil
         set(\.partial, nil)
     }
 
     private func set<Value: Equatable>(_ path: ReferenceWritableKeyPath<AskPluginSession, Value>, _ value: Value) {
         if self[keyPath: path] != value { self[keyPath: path] = value }
+    }
+}
+
+// MARK: - Word book
+
+extension AskPluginSession {
+    /// The shown result was used (copied, read aloud, starred…) or stayed long enough:
+    /// the word it looked up goes into the word book.
+    func settleWordBook() {
+        guard let lookup = output?.wordBook else { return }
+        recordWordBook?(lookup)
+    }
+
+    /// Shows the word as starred or not without running again.
+    func showStarred(_ starred: Bool, key: String) {
+        guard case let .done(plan, output) = phase, output.wordBook?.key == key else { return }
+        set(\.phase, .done(plan, output.starring(starred)))
     }
 }
 

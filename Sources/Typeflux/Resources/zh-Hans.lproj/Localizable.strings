@@ -2590,6 +2590,12 @@
 "ask.plugin.hint.option" = "⇥ %@";
 "ask.plugin.hint.askAI" = "⌘↩ 问 AI";
 "ask.plugin.copied" = "已复制";
+"ask.plugin.source.wordBook" = "单词本";
+"ask.wordBook.seen" = "查过 %d 次";
+"ask.wordBook.star" = "收藏";
+"ask.wordBook.unstar" = "取消收藏";
+"ask.wordBook.starred" = "已收藏「%@」 · ⌘S 撤销";
+"ask.wordBook.unstarred" = "已取消收藏「%@」 · ⌘S 撤销";
 "ask.plugin.translate.option" = "换语言";
 "ask.plugin.action.open" = "打开";
 "ask.plugin.action.copyLink" = "复制链接";

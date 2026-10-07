@@ -2587,6 +2587,12 @@
 "ask.plugin.hint.option" = "⇥ %@";
 "ask.plugin.hint.askAI" = "⌘↩ 問 AI";
 "ask.plugin.copied" = "已拷貝";
+"ask.plugin.source.wordBook" = "單字本";
+"ask.wordBook.seen" = "查過 %d 次";
+"ask.wordBook.star" = "收藏";
+"ask.wordBook.unstar" = "取消收藏";
+"ask.wordBook.starred" = "已收藏「%@」 · ⌘S 復原";
+"ask.wordBook.unstarred" = "已取消收藏「%@」 · ⌘S 復原";
 "ask.plugin.translate.option" = "換語言";
 "ask.plugin.action.open" = "打開";
 "ask.plugin.action.copyLink" = "拷貝連結";

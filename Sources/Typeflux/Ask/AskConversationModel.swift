@@ -46,10 +46,16 @@ final class AskConversationModel: ObservableObject {
     var promptAI: (any AskTextGenerating)?
     /// The user's workflows (`docs/design/ask-launcher-workflows.md`); the window controller supplies them.
     var workflows: AskWorkflowStore?
+    /// Keeps what the translation plugin looked up; the window controller supplies it.
+    var wordBook: AskWordBookRecorder?
     /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.
-    lazy var plugins = AskPluginSession(plugins: makeLauncherPlugins()) { [weak self] in
-        self?.launcherKeywords ?? AskPluginRegistry.defaultKeywords
-    }
+    lazy var plugins: AskPluginSession = {
+        let session = AskPluginSession(plugins: makeLauncherPlugins()) { [weak self] in
+            self?.launcherKeywords ?? AskPluginRegistry.defaultKeywords
+        }
+        connectWordBook(to: session)
+        return session
+    }()
     /// Types text into the app the launcher came from; the window controller supplies it.
     var deliverText: ((String) async throws -> Void)?
     /// Reads text aloud in a language; tests record it instead.

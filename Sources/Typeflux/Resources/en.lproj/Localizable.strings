@@ -2590,6 +2590,12 @@
 "ask.plugin.hint.option" = "⇥ %@";
 "ask.plugin.hint.askAI" = "⌘↩ Ask AI";
 "ask.plugin.copied" = "Copied";
+"ask.plugin.source.wordBook" = "Word book";
+"ask.wordBook.seen" = "Looked up %d×";
+"ask.wordBook.star" = "Star";
+"ask.wordBook.unstar" = "Unstar";
+"ask.wordBook.starred" = "Starred “%@” · ⌘S to undo";
+"ask.wordBook.unstarred" = "Unstarred “%@” · ⌘S to undo";
 "ask.plugin.translate.option" = "Language";
 "ask.plugin.action.open" = "Open";
 "ask.plugin.action.copyLink" = "Copy link";

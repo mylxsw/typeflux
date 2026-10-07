@@ -2580,6 +2580,12 @@
 "ask.plugin.hint.option" = "⇥ %@";
 "ask.plugin.hint.askAI" = "⌘↩ AI에게 질문";
 "ask.plugin.copied" = "복사됨";
+"ask.plugin.source.wordBook" = "단어장";
+"ask.wordBook.seen" = "%d번 찾아봄";
+"ask.wordBook.star" = "즐겨찾기";
+"ask.wordBook.unstar" = "즐겨찾기 해제";
+"ask.wordBook.starred" = "“%@” 즐겨찾기 추가 · ⌘S로 취소";
+"ask.wordBook.unstarred" = "“%@” 즐겨찾기 해제 · ⌘S로 취소";
 "ask.plugin.translate.option" = "언어";
 "ask.plugin.action.open" = "열기";
 "ask.plugin.action.copyLink" = "링크 복사";

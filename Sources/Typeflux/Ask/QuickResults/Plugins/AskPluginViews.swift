@@ -371,10 +371,14 @@ struct AskPluginResultsView: View {
                 metaChips(output?.meta ?? plan.meta)
                 Spacer(minLength: 8)
                 if let output {
+                    if let detail = output.detail {
+                        Text(detail).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                    }
                     Text(output.source).font(.system(size: 11))
                         .foregroundStyle(output.sourceIsAI ? AskTheme.accent : StudioTheme.textTertiary)
                         .padding(.horizontal, 6).frame(height: 18)
                         .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(AskTheme.separator))
+                    headerButtons(output, enabled: !running)
                 }
             }
             .frame(height: Self.headerHeight)
@@ -500,10 +504,11 @@ struct AskPluginResultsView: View {
     private func actions(_ actions: [AskPluginAction], enabled: Bool) -> some View {
         HStack(spacing: 6) {
             Spacer(minLength: 0)
-            // ⌘E (edit the workflow) works from the keyboard without taking room in the row.
+            // ⌘E (edit the workflow) works from the keyboard without taking room in the row;
+            // the star sits in the header.
             ForEach(Array(actions.filter {
                 switch $0.kind {
-                case .askAI, .editWorkflow: false
+                case .askAI, .editWorkflow, .toggleStar: false
                 default: true
                 }
             }.enumerated()),
@@ -516,6 +521,27 @@ struct AskPluginResultsView: View {
         .padding(.top, 10)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.5)
+    }
+
+    /// Small buttons beside the source label: the word book's star (⌘S).
+    @ViewBuilder
+    private func headerButtons(_ output: AskPluginOutput, enabled: Bool) -> some View {
+        if let star = output.actions.first(where: { if case .toggleStar = $0.kind { true } else { false } }) {
+            let starred = output.starred == true
+            Button { onAction(star) } label: {
+                Image(systemName: starred ? "star.fill" : "star").font(.system(size: 12))
+                    .foregroundStyle(starred ? Color.yellow : StudioTheme.textSecondary)
+                    .frame(width: 22, height: 20)
+                    .background(starred ? Color.yellow.opacity(0.16) : AskTheme.hoverFill,
+                                in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(star.title + " ⌘S")
+            .accessibilityLabel(star.title)
+            .accessibilityIdentifier("ask.plugin.star")
+            .disabled(!enabled)
+        }
     }
 
     /// The language the result's read-aloud action uses.
@@ -534,6 +560,7 @@ struct AskPluginResultsView: View {
         case .commandC: "⌘C"
         case .shiftCommandC: "⇧⌘C"
         case .commandE: "⌘E"
+        case .commandS: "⌘S"
         case nil: nil
         }
     }

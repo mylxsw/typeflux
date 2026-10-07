@@ -115,10 +115,12 @@ struct AskPluginAction: Equatable, Sendable {
         case editWorkflow(id: String, path: String?, line: Int?)
         /// Opens the workflow editor and asks its assistant to fix what failed.
         case fixWorkflow(id: String, query: String, error: String)
+        /// Stars or unstars a looked-up word in the word book (⌘S).
+        case toggleStar(AskWordBookLookup)
     }
 
     enum Shortcut: Equatable, Sendable {
-        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE
+        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE, commandS
     }
 
     var kind: Kind
@@ -187,6 +189,15 @@ struct AskPluginOutput: Equatable, Sendable {
     var rerunAfter: Double?
     /// Options for the next run (a workflow's `variables`).
     var variables: [String: String] = [:]
+    /// A word or phrase the translation plugin looked up, for the word book.
+    var wordBook: AskWordBookLookup?
+    /// The lookup goes into the word book as soon as it shows (the user pressed Return
+    /// for it); otherwise only once it settles: used, or shown a while (`AskPluginSession`).
+    var recordsAtOnce = false
+    /// Whether the looked-up word is starred; nil when it cannot be.
+    var starred: Bool?
+    /// A short fact beside the source, such as how often the word was looked up.
+    var detail: String?
 
     var selected: AskPluginItem? {
         items.indices.contains(selectedItem) ? items[selectedItem] : nil

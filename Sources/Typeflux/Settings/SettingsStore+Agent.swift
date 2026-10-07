@@ -99,6 +99,18 @@ extension SettingsStore {
         set { defaults.set(newValue, forKey: "ask.translation.secondLanguage") }
     }
 
+    /// Whether looked-up words go into the word book; starring still works when off.
+    var askWordBookRecordsHistory: Bool {
+        get { defaults.object(forKey: "ask.wordBook.recordsHistory") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "ask.wordBook.recordsHistory") }
+    }
+
+    /// How long lookups that are not starred stay in the word book.
+    var askWordBookRetention: AskWordBookRetention {
+        get { defaults.string(forKey: "ask.wordBook.retention").flatMap(AskWordBookRetention.init(rawValue:)) ?? .default }
+        set { defaults.set(newValue.rawValue, forKey: "ask.wordBook.retention") }
+    }
+
     /// Skills the user turned off; they are not offered to the model.
     var askDisabledSkills: Set<String> {
         get { Set(defaults.stringArray(forKey: "ask.disabledSkills") ?? []) }
