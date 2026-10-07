@@ -3,13 +3,13 @@ import SwiftUI
 
 /// What the launcher card is made of. Liquid Glass exists only on macOS 26, so
 /// earlier systems fall back to the system HUD blur, and Reduce Transparency
-/// restores the opaque composer surface on every version.
+/// restores the opaque surface on every version.
 enum AskGlassMaterial: Equatable {
     /// macOS 26+: system Liquid Glass with its own refraction and highlights.
     case liquidGlass
     /// macOS 13–15: `NSVisualEffectView(.hudWindow)` blending with the desktop behind the panel.
     case visualEffect
-    /// Reduce Transparency: the workspace composer's opaque fill.
+    /// Reduce Transparency: the surface's opaque fill.
     case opaque
 
     static func resolve(reduceTransparency: Bool,
@@ -54,11 +54,11 @@ enum AskGlassPlacement: Equatable {
     var blending: NSVisualEffectView.BlendingMode { self == .inWindow ? .withinWindow : .behindWindow }
     /// How much of the surface's own fill frosts the glass. Clear glass over the
     /// transcript let black text show through the composer and made the header
-    /// pills vanish on a white window; a floating panel samples a busy desktop
-    /// and keeps the system's clear look.
-    var frost: Double {
+    /// pills vanish on a white window. Floating glass gets a stronger dark frost
+    /// to stay legible over bright windows, and a lighter white wash in light mode.
+    func frost(dark: Bool) -> Double {
         switch self {
-        case .floating: return 0
+        case .floating: return dark ? 0.78 : 0.18
         case .inWindow: return 0.45
         case .menu: return 0.6
         }
@@ -80,12 +80,13 @@ extension EnvironmentValues {
     @Entry var askGlassMaterialOverride: AskGlassMaterial? = nil
 }
 
-/// The launcher's floating card. It replaces the opaque `composerSurface`
+/// The launcher's floating card. It replaces the opaque `launcherSurface`
 /// with glass so the panel reads as part of whatever window it floats over.
 struct AskGlassBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
     var material: AskGlassMaterial
     var corner: CGFloat
-    /// Used when transparency is reduced.
+    /// Frosts translucent glass and fills the card when transparency is reduced.
     var opaqueFill: Color
     var placement: AskGlassPlacement = .floating
     /// `.circular` for pills: a continuous corner near half the height draws a
@@ -128,7 +129,7 @@ struct AskGlassBackground: View {
     }
 
     @ViewBuilder private var frosting: some View {
-        if placement.frost > 0 { shape.fill(opaqueFill.opacity(placement.frost)) }
+        shape.fill(opaqueFill.opacity(placement.frost(dark: colorScheme == .dark)))
     }
 
     private var fallback: some View {
