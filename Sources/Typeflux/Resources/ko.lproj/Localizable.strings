@@ -1593,7 +1593,7 @@
 "ask.context.panel.useApp" = "현재 앱 사용 (%@)";
 "ask.quick.app.open" = "열기";
 "ask.quick.app.system" = "시스템";
-"ask.settings.quick.apps.title" = "런처 앱 검색";
+"ask.settings.quick.apps.title" = "앱 검색";
 "ask.settings.quick.apps.subtitle" = "런처에 앱 이름의 일부, 머리글자 또는 병음을 입력해 앱을 엽니다.";
 "ask.quick.copy" = "복사";
 "ask.quick.format.chineseAmount" = "중국어 금액 대문자";
@@ -1604,7 +1604,7 @@
 "ask.quick.error.divisionByZero" = "0으로 나눌 수 없습니다";
 "ask.quick.error.domain" = "이 값에서는 정의되지 않습니다";
 "ask.quick.error.outOfRange" = "너무 커서 계산할 수 없습니다";
-"ask.settings.quick.calculator.title" = "런처 계산기";
+"ask.settings.quick.calculator.title" = "계산기";
 "ask.settings.quick.calculator.subtitle" = "런처에 입력한 수식의 결과를 AI에 보내지 않고 바로 표시합니다.";
 "ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
@@ -2545,7 +2545,7 @@
 "ask.plugin.waiting" = "처리할 텍스트를 입력하세요";
 "ask.plugin.enter" = "스페이스 또는 ⇥로 사용";
 "ask.plugin.running" = "처리 중…";
-"ask.workflow.section" = "런처 워크플로";
+"ask.workflow.section" = "워크플로";
 "ask.workflow.footnote" = "키워드로 내 스크립트(Python, Node, TypeScript, 셸, AppleScript, 모든 프로그램)를 실행합니다. 내 권한으로 실행되므로 이해하는 워크플로만 신뢰하세요.";
 "ask.workflow.empty" = "아직 워크플로가 없습니다. 템플릿으로 만들어 보세요.";
 "ask.workflow.new" = "새 워크플로";
@@ -2768,7 +2768,7 @@
 "ask.settings.keywords.save" = "저장";
 "ask.settings.keywords.restore" = "기본 키워드로 되돌리기";
 "ask.command.group.plugins" = "플러그인";
-"ask.settings.plugins.title" = "런처 키워드";
+"ask.settings.plugins.title" = "키워드";
 "ask.settings.plugins.footnote" = "런처 맨 앞에 키워드와 스페이스를 입력하세요(예: “fy hello”). 뒤에 내용이 없으면 ↩로 선택한 텍스트를 처리합니다.";
 "ask.settings.plugins.translate.subtitle" = "기기 내 번역 우선, 필요하면 설정 → 모델의 텍스트 모델 사용";
 "ask.settings.plugins.translate.second" = "제2 언어";
@@ -3082,7 +3082,7 @@
 "ask.settings.keywords.kind.prompt.hint" = "텍스트 모델로 프롬프트 실행";
 "ask.settings.keywords.kind.web.hint" = "브라우저에서 검색 결과 열기";
 "ask.settings.keywords.kind.workflow.hint" = "직접 만든 스크립트 실행";
-"ask.settings.keywords.listFootnote" = "행을 클릭해 편집합니다. 키워드는 워크플로와 같은 이름 공간을 쓰며, 겹치면 기본 키워드가 우선합니다.";
+"ask.settings.keywords.listFootnote" = "행을 클릭해 편집합니다. 워크플로 키워드는 워크플로에서 관리하며, 저장할 때 이름 중복을 확인합니다.";
 "ask.settings.keywords.newWorkflow" = "새 워크플로…";
 "ask.settings.keywords.noMatch" = "“%@”과(와) 일치하는 키워드가 없습니다";
 "ask.settings.keywords.restoreTitle" = "기본 키워드로 되돌릴까요?";
@@ -3488,9 +3488,9 @@
 "ask.plugin.files.source" = "이 Mac의 파일 이름";
 "ask.plugin.files.separator" = ", ";
 "ask.settings.keywords.kind.files.hint" = "이름으로 파일과 폴더 찾기";
-"ask.settings.quick.files.title" = "런처 파일 검색";
+"ask.settings.quick.files.title" = "파일 검색";
 "ask.settings.quick.files.subtitle" = "입력과 이름이 일치하는 파일과 폴더를 보여 줍니다. 색인은 이 Mac에만 저장됩니다.";
-"launcher.pane.search" = "검색";
+"launcher.pane.search" = "기본 검색";
 "launcher.search.subtitle" = "런처가 앱과 파일을 찾는 방법. 파일 색인은 이름만 기록하며 이 Mac에만 저장됩니다.";
 "launcher.search.tab.general" = "일반";
 "launcher.search.tab.apps" = "앱";

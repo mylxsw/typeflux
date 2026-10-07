@@ -4,14 +4,8 @@ import Testing
 
 @Suite("Launcher keyword list")
 struct AskKeywordListPresentationTests {
-    private let workflows = [
-        AskWorkflowKeywordEntry(keyword: "wf", workflowID: "local.python", workflowName: "Python", enabled: true),
-        AskWorkflowKeywordEntry(keyword: "FY", workflowID: "local.clash", workflowName: "Clash", enabled: true)
-    ]
-
     private func rows(_ keywords: [AskKeyword] = AskPluginRegistry.defaultKeywords) -> [AskKeywordListRow] {
-        AskKeywordListPresentation.rows(keywords: keywords, workflows: workflows, interface: .english,
-                                        secondLanguage: "ja")
+        AskKeywordListPresentation.rows(keywords: keywords, interface: .english, secondLanguage: "ja")
     }
 
     @Test func `kinds follow plugin I ds`() {
@@ -19,6 +13,8 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordKind(pluginID: AskPromptPlugin.id) == .prompt)
         #expect(AskKeywordKind(pluginID: AskWebSearchPlugin.id) == .web)
         #expect(AskKeywordKind(pluginID: AskFileSearchPlugin.id) == .files)
+        #expect(AskKeywordKind(pluginID: AskOpenChatPlugin.id) == .chat)
+        #expect(AskKeywordKind.chat.pluginID == AskOpenChatPlugin.id)
         #expect(AskKeywordKind.files.pluginID == AskFileSearchPlugin.id)
         #expect(AskKeywordKind(pluginID: AskWorkflowPlugin.idPrefix + "local.x") == .workflow)
         #expect(AskKeywordKind(pluginID: "unknown") == nil)
@@ -30,21 +26,40 @@ struct AskKeywordListPresentationTests {
         }
     }
 
-    @Test func `rows list built in keywords by plugin then workflows`() {
-        let rows = rows()
-        #expect(rows.map(\.keyword)
-            == ["fy", "tr", "翻译", "dict", "词典", "rw", "sum", "ex", "g", "bd", "gh", "f", "chat", "wf", "FY"])
-        #expect(rows.map(\.kind) == [.translate, .translate, .translate, .translate, .translate, .prompt, .prompt, .prompt,
-                                     .web, .web, .web, .files, .chat, .workflow, .workflow])
-        #expect(Set(rows.map(\.id)).count == rows.count, "row ids are unique")
-        #expect(rows[11].summary == L("ask.settings.keywords.kind.files.hint"))
-        let workflow = rows[13]
-        #expect(workflow.workflowID == "local.python" && workflow.source == nil && workflow.enabled && !workflow
-            .shadowed)
-        #expect(workflow.summary == L("ask.settings.keywords.summary.workflow"))
-        let clash = rows[14]
-        #expect(clash.shadowed && !clash.enabled, "a built-in keyword wins over a workflow's")
-        #expect(clash.summary == L("ask.settings.keywords.summary.shadowed"))
+    @Test func `rows only list editable plugin keywords`() {
+        let input = AskPluginRegistry.defaultKeywords + [
+            AskKeyword(keyword: "wf", pluginID: AskWorkflowPlugin.idPrefix + "local.python"),
+            AskKeyword(keyword: "FY", pluginID: AskWorkflowPlugin.idPrefix + "local.clash"),
+            AskKeyword(keyword: "unknown", pluginID: "unknown"),
+            AskKeyword(keyword: "custom", pluginID: AskPromptPlugin.id, options: ["prompt": "Say {input}"])
+        ]
+        let rows = rows(input)
+        #expect(rows.map(\.keyword) == [
+            "fy",
+            "tr",
+            "翻译",
+            "dict",
+            "词典",
+            "rw",
+            "sum",
+            "ex",
+            "custom",
+            "g",
+            "bd",
+            "gh",
+            "f",
+            "chat"
+        ])
+        #expect(rows.allSatisfy { $0.kind != .workflow })
+        #expect(Set(rows.map(\.id)).count == rows.count)
+        #expect(rows.first { $0.kind == .files }?.summary == L("ask.settings.keywords.kind.files.hint"))
+        #expect(rows.last?.source.pluginID == AskOpenChatPlugin.id)
+        #expect(rows.last?.summary == L("ask.settings.keywords.kind.chat.hint"))
+        #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "wf").isEmpty)
+        #expect(AskKeywordListPresentation.counts(rows)[nil] == 14)
+        #expect(AskKeywordListPresentation.filter(rows, kind: .chat, query: "chat").map(\.keyword) == ["chat"])
+        #expect(!AskKeywordKind.editableKinds.contains(.workflow))
+        #expect(self.rows([]).isEmpty)
     }
 
     @Test func `summaries say what each keyword does`() {
@@ -85,10 +100,6 @@ struct AskKeywordListPresentationTests {
         var keywords = AskPluginRegistry.defaultKeywords
         keywords[1].enabled = false
         #expect(rows(keywords)[1].enabled == false)
-        let off = AskWorkflowKeywordEntry(keyword: "ip", workflowID: "local.ip", workflowName: "IP", enabled: false)
-        let row = AskKeywordListPresentation.rows(keywords: [], workflows: [off], interface: .english,
-                                                  secondLanguage: "en")[0]
-        #expect(!row.enabled && !row.shadowed)
     }
 
     @Test func `filters by kind and query`() {
@@ -99,7 +110,8 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "summarize").map(\.keyword) == ["sum"])
         #expect(AskKeywordListPresentation.filter(rows, kind: .prompt, query: "google").isEmpty)
         let counts = AskKeywordListPresentation.counts(rows)
-        #expect(counts[nil] == 15 && counts[.translate] == 5 && counts[.files] == 1 && counts[.workflow] == 2)
+        #expect(counts[nil] == 13 && counts[.translate] == 5 && counts[.files] == 1 && counts[.workflow] == nil)
+        #expect(counts[.chat] == 1)
     }
 
     @MainActor

@@ -1603,7 +1603,7 @@
 "ask.context.panel.useApp" = "Use the current app (%@)";
 "ask.quick.app.open" = "Open";
 "ask.quick.app.system" = "System";
-"ask.settings.quick.apps.title" = "Launcher app search";
+"ask.settings.quick.apps.title" = "App search";
 "ask.settings.quick.apps.subtitle" = "Type part of an app's name, its initials or pinyin in the launcher to open it.";
 "ask.quick.copy" = "Copy";
 "ask.quick.format.chineseAmount" = "Chinese amount";
@@ -1614,7 +1614,7 @@
 "ask.quick.error.divisionByZero" = "Cannot divide by 0";
 "ask.quick.error.domain" = "Not defined for this value";
 "ask.quick.error.outOfRange" = "Too large to calculate";
-"ask.settings.quick.calculator.title" = "Launcher calculator";
+"ask.settings.quick.calculator.title" = "Calculator";
 "ask.settings.quick.calculator.subtitle" = "Show the result of arithmetic typed into the launcher right away, without sending it to the AI.";
 "ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
@@ -2555,7 +2555,7 @@
 "ask.plugin.waiting" = "Type the text to work on";
 "ask.plugin.enter" = "Space or ⇥ to use";
 "ask.plugin.running" = "Working…";
-"ask.workflow.section" = "Launcher workflows";
+"ask.workflow.section" = "Workflows";
 "ask.workflow.footnote" = "Your own scripts behind keywords, in Python, Node, TypeScript, shell, AppleScript or any program. They run as you, so only trust ones you understand.";
 "ask.workflow.empty" = "No workflows yet. Start one from a template.";
 "ask.workflow.new" = "New workflow";
@@ -2778,7 +2778,7 @@
 "ask.settings.keywords.save" = "Save";
 "ask.settings.keywords.restore" = "Restore default keywords";
 "ask.command.group.plugins" = "Plugins";
-"ask.settings.plugins.title" = "Launcher keywords";
+"ask.settings.plugins.title" = "Keywords";
 "ask.settings.plugins.footnote" = "Type a keyword and a space at the start of the launcher, e.g. “fy hello”. With nothing after it, Return works on the selected text.";
 "ask.settings.plugins.translate.subtitle" = "On-device first; the text model in Settings → Models when needed";
 "ask.settings.plugins.translate.second" = "Second language";
@@ -3092,7 +3092,7 @@
 "ask.settings.keywords.kind.prompt.hint" = "Runs a prompt with the text model";
 "ask.settings.keywords.kind.web.hint" = "Opens the search in your browser";
 "ask.settings.keywords.kind.workflow.hint" = "Runs your own scripts";
-"ask.settings.keywords.listFootnote" = "Click a row to edit it. Keywords share one namespace with workflows; built-in keywords win a clash.";
+"ask.settings.keywords.listFootnote" = "Click a row to edit. Manage workflow keywords in Workflows; their names are reserved here.";
 "ask.settings.keywords.newWorkflow" = "New workflow…";
 "ask.settings.keywords.noMatch" = "No keyword matches “%@”";
 "ask.settings.keywords.restoreTitle" = "Restore the default keywords?";
@@ -3498,9 +3498,9 @@
 "ask.plugin.files.source" = "File names on this Mac";
 "ask.plugin.files.separator" = ", ";
 "ask.settings.keywords.kind.files.hint" = "Finds files and folders by name";
-"ask.settings.quick.files.title" = "File search in the launcher";
+"ask.settings.quick.files.title" = "File search";
 "ask.settings.quick.files.subtitle" = "Lists files and folders whose names match what you type. Names stay on this Mac.";
-"launcher.pane.search" = "Search";
+"launcher.pane.search" = "Built-in search";
 "launcher.search.subtitle" = "How the launcher finds applications and files. The file index holds names only and stays on this Mac.";
 "launcher.search.tab.general" = "General";
 "launcher.search.tab.apps" = "Applications";

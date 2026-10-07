@@ -1806,64 +1806,6 @@ struct StudioHistoryRow: View {
     }
 }
 
-struct StudioSegmentedPicker<T: Hashable>: View {
-    let options: [(label: String, value: T)]
-    @Binding var selection: T
-
-    var body: some View {
-        HStack(spacing: StudioTheme.Spacing.xSmall) {
-            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
-                Button {
-                    withAnimation(.easeOut(duration: 0.15)) {
-                        selection = option.value
-                    }
-                } label: {
-                    Text(option.label)
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                        .foregroundStyle(
-                            selection == option.value ? StudioTheme.textPrimary : StudioTheme.textSecondary
-                        )
-                        .padding(.horizontal, StudioTheme.Insets.segmentedItemHorizontal)
-                        .padding(.vertical, StudioTheme.Insets.segmentedItemVertical)
-                        .background(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedItem, style: .continuous)
-                                .fill(selection == option.value ? StudioTheme.selectionSurfaceRaised : Color.clear)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedItem, style: .continuous)
-                                .stroke(
-                                    Color.clear,
-                                    lineWidth: StudioTheme.BorderWidth.thin
-                                )
-                        )
-                        .shadow(
-                            color: StudioTheme.shadow.opacity(selection == option.value ? 0.22 : 0),
-                            radius: 10,
-                            x: 0,
-                            y: 3
-                        )
-                        .contentShape(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedItem, style: .continuous)
-                        )
-                }
-                .buttonStyle(StudioInteractiveButtonStyle())
-            }
-        }
-        .padding(.horizontal, StudioTheme.Insets.segmentedControlHorizontal)
-        .padding(.vertical, StudioTheme.Insets.segmentedControlVertical)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedControl, style: .continuous)
-                .fill(StudioTheme.segmentedTrack)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedControl, style: .continuous)
-                .stroke(StudioTheme.border.opacity(0.55), lineWidth: StudioTheme.BorderWidth.thin)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.segmentedControl, style: .continuous))
-        .frame(minHeight: StudioTheme.Layout.modelTabsMinHeight, alignment: .leading)
-    }
-}
-
 struct StudioMenuPicker<T: Hashable>: View {
     let options: [(label: String, value: T)]
     @Binding var selection: T

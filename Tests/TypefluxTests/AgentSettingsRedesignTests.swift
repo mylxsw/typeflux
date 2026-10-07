@@ -268,7 +268,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
         }
         let view = LauncherSettingsView(settings: settings, workflows: workflows)
         view.setQuickCalculator(true)
-        view.setQuickApps(false)
+        LauncherSearchSettingsView(settings: settings, index: AskTestFileIndex()).setAppsEnabled(false)
         XCTAssertTrue(settings.askQuickCalculatorEnabled)
         XCTAssertFalse(settings.askQuickAppSearchEnabled)
     }

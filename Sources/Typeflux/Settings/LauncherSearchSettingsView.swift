@@ -7,8 +7,13 @@ struct LauncherSearchSettingsView: View {
     enum Tab: String, CaseIterable, Identifiable {
         case general, apps, files, exclude
 
-        var id: String { rawValue }
-        var title: String { L("launcher.search.tab.\(rawValue)") }
+        var id: String {
+            rawValue
+        }
+
+        var title: String {
+            L("launcher.search.tab.\(rawValue)")
+        }
     }
 
     let settings: SettingsStore
@@ -17,6 +22,7 @@ struct LauncherSearchSettingsView: View {
 
     @State var tab: Tab = .general
     @State var search = AskLauncherSearchSettings()
+    @State var appsEnabled = true
     @State var filesEnabled = true
     @State var status = AskFileIndexStatus()
     @State var hasFullDiskAccess = false
@@ -25,13 +31,9 @@ struct LauncherSearchSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            AgentPaneHeader(symbol: LauncherSettingsPane.search.symbol, title: LauncherSettingsPane.search.title,
-                            subtitle: L("launcher.search.subtitle")) { EmptyView() }
-            Picker("", selection: $tab) {
-                ForEach(Tab.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 360)
-            .accessibilityIdentifier("launcher.search.tabs")
+            AgentPaneHeader(symbol: LauncherSettingsPane.search.symbol, title: LauncherSettingsPane.search.title)
+            StudioSegmentedControl(options: Tab.allCases.map { (label: $0.title, value: $0) }, selection: $tab)
+                .accessibilityIdentifier("launcher.search.tabs")
             switch tab {
             case .general: generalTab
             case .apps: appsTab
@@ -49,12 +51,13 @@ struct LauncherSearchSettingsView: View {
         AgentSettingsSection(title: L("launcher.search.general")) {
             AgentSettingsRow(icon: "square.stack.3d.up", title: L("launcher.search.mode"),
                              subtitle: L("launcher.search.mode.subtitle"), subtitleLineLimit: nil) {
-                Picker("", selection: binding(\.mode)) {
-                    ForEach(AskLauncherSearchSettings.Mode.allCases, id: \.self) { mode in
-                        Text(L("launcher.search.mode.\(mode.rawValue)")).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented).labelsHidden().fixedSize()
+                StudioSegmentedControl(
+                    options: AskLauncherSearchSettings.Mode.allCases.map { (
+                        label: L("launcher.search.mode.\($0.rawValue)"),
+                        value: $0
+                    ) },
+                    selection: binding(\.mode), size: .compact
+                )
                 .accessibilityLabel(L("launcher.search.mode"))
             }
             ModelRowDivider(leading: 66)
@@ -74,12 +77,13 @@ struct LauncherSearchSettingsView: View {
             ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "photo", title: L("launcher.search.icons"),
                              subtitle: L("launcher.search.icons.subtitle"), subtitleLineLimit: nil) {
-                Picker("", selection: binding(\.fileIcons)) {
-                    ForEach(AskLauncherSearchSettings.FileIcons.allCases, id: \.self) { style in
-                        Text(L("launcher.search.icons.\(style.rawValue)")).tag(style)
-                    }
-                }
-                .pickerStyle(.segmented).labelsHidden().fixedSize()
+                StudioSegmentedControl(
+                    options: AskLauncherSearchSettings.FileIcons.allCases.map { (
+                        label: L("launcher.search.icons.\($0.rawValue)"),
+                        value: $0
+                    ) },
+                    selection: binding(\.fileIcons), size: .compact
+                )
                 .accessibilityLabel(L("launcher.search.icons"))
             }
         }
@@ -103,10 +107,20 @@ struct LauncherSearchSettingsView: View {
     // MARK: - Applications
 
     @ViewBuilder private var appsTab: some View {
+        ModelSurface {
+            AgentSettingsRow(icon: "square.grid.2x2", title: L("ask.settings.quick.apps.title")) {
+                Toggle("", isOn: Binding(get: { appsEnabled }, set: setAppsEnabled))
+                    .labelsHidden().toggleStyle(.switch)
+                    .accessibilityLabel(L("ask.settings.quick.apps.title"))
+                    .accessibilityIdentifier("launcher.search.apps.enabled")
+            }
+        }
         AgentSettingsSection(title: L("launcher.search.apps.roots"), detail: "\(search.appRoots.count)",
                              footnote: L("launcher.search.apps.footnote")) {
             ForEach(search.appRoots, id: \.self) { root in
-                pathRow(root, icon: root.hasSuffix(".app") ? "app" : "folder") { update { $0.appRoots.removeAll { $0 == root } } }
+                pathRow(root, icon: root.hasSuffix(".app") ? "app" : "folder") {
+                    update { $0.appRoots.removeAll { $0 == root } }
+                }
                 ModelRowDivider(leading: 66)
             }
             AgentSettingsActionRow(icon: "plus", title: L("launcher.search.add")) {
@@ -131,6 +145,14 @@ struct LauncherSearchSettingsView: View {
     // MARK: - Files
 
     @ViewBuilder private var filesTab: some View {
+        ModelSurface {
+            AgentSettingsRow(icon: "doc.text.magnifyingglass", title: L("ask.settings.quick.files.title")) {
+                Toggle("", isOn: Binding(get: { filesEnabled }, set: setFilesEnabled))
+                    .labelsHidden().toggleStyle(.switch)
+                    .accessibilityLabel(L("ask.settings.quick.files.title"))
+                    .accessibilityIdentifier("launcher.search.files.enabled")
+            }
+        }
         AgentSettingsSection(title: L("launcher.search.files.roots"), detail: "\(search.fileRoots.count)",
                              footnote: L("launcher.search.files.footnote")) {
             if search.fileRoots.isEmpty {
@@ -151,8 +173,10 @@ struct LauncherSearchSettingsView: View {
                 quickAdd(L("launcher.search.files.icloud"), "~/Library/Mobile Documents")
                 quickAdd(L("launcher.search.files.cloudStorage"), "~/Library/CloudStorage")
                 Spacer()
-                Button(L("launcher.search.reset")) { update { $0.fileRoots = AskLauncherSearchSettings.defaultFileRoots } }
-                    .controlSize(.small)
+                Button(L("launcher.search.reset")) {
+                    update { $0.fileRoots = AskLauncherSearchSettings.defaultFileRoots }
+                }
+                .controlSize(.small)
             }
             .padding(.horizontal, 18).padding(.vertical, 10)
         }
@@ -231,10 +255,12 @@ struct LauncherSearchSettingsView: View {
         }
         tagSection(title: L("launcher.search.exclude.types"), values: search.excludedExtensions,
                    placeholder: L("launcher.search.exclude.types.placeholder"), text: $newExtension,
-                   clean: AskLauncherSearchSettings.cleanExtension) { values in update { $0.excludedExtensions = values } }
+                   clean: AskLauncherSearchSettings
+                       .cleanExtension) { values in update { $0.excludedExtensions = values } }
         tagSection(title: L("launcher.search.exclude.names"), values: search.excludedFolderNames,
                    placeholder: L("launcher.search.exclude.names.placeholder"), text: $newFolderName,
-                   clean: AskLauncherSearchSettings.cleanFolderName) { values in update { $0.excludedFolderNames = values } }
+                   clean: AskLauncherSearchSettings
+                       .cleanFolderName) { values in update { $0.excludedFolderNames = values } }
         AgentSettingsSection(title: L("launcher.search.exclude.more"),
                              footnote: L("launcher.search.exclude.footnote")) {
             AgentSettingsRow(icon: "eye.slash", title: L("launcher.search.hidden"),
@@ -270,7 +296,10 @@ struct LauncherSearchSettingsView: View {
                                 .accessibilityLabel(L("ask.remove"))
                             }
                             .padding(.leading, 8).padding(.trailing, 6).frame(height: 22)
-                            .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .background(
+                                ModelVisualStyle.control,
+                                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            )
                         }
                     }
                 }
@@ -286,12 +315,21 @@ struct LauncherSearchSettingsView: View {
         }
     }
 
-    private func add(_ text: Binding<String>, clean: (String) -> String?, to values: [String], save: ([String]) -> Void) {
+    private func add(
+        _ text: Binding<String>,
+        clean: (String) -> String?,
+        to values: [String],
+        save: ([String]) -> Void
+    ) {
         guard let value = clean(text.wrappedValue) else { return }
-        if !values.contains(value) { save(values + [value]) }
+        if !values.contains(value) {
+            save(values + [value])
+        }
         text.wrappedValue = ""
     }
+}
 
+extension LauncherSearchSettingsView {
     // MARK: - Pieces
 
     private func pathRow(_ path: String, icon: String, remove: @escaping () -> Void) -> some View {
@@ -315,8 +353,22 @@ struct LauncherSearchSettingsView: View {
         settings.askLauncherSearchSettings = next
     }
 
+    func setAppsEnabled(_ enabled: Bool) {
+        appsEnabled = enabled
+        settings.askQuickAppSearchEnabled = enabled
+    }
+
+    /// Reuses the existing preference and index lifecycle when file search changes.
+    func setFilesEnabled(_ enabled: Bool) {
+        filesEnabled = enabled
+        settings.askQuickFileSearchEnabled = enabled
+        index.start()
+        status = index.status
+    }
+
     func reload() {
         search = settings.askLauncherSearchSettings
+        appsEnabled = settings.askQuickAppSearchEnabled
         filesEnabled = settings.askQuickFileSearchEnabled
         status = index.status
         hasFullDiskAccess = fullDiskAccess()

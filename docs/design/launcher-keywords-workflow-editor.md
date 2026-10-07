@@ -1,6 +1,8 @@
 # 启动器关键字 & 工作流编辑器：UI 重构方案
 
 > 状态：已按本方案实现（GUL-229），实现说明和截图对照见第 6 节。配套可交互设计稿：`docs/design/launcher-keywords-workflow-editor.html`（`?solo=<id>` 只显示一屏，`?light=1` 浅色）。截图在 `docs/design/launcher-keywords-workflow-editor/`：`kw-list` `kw-edit` `kw-add` `ed-keywords` `ed-input` `ed-script` `ed-output` `ed-test` `ed-ai`，以及 `light-*`；改版前的截图是 `before-*.png`。
+> GUL-243 follow-up: the keyword page now lists only built-in/custom plugin keywords. Workflow keywords are managed on the workflow page, while save-time conflict validation still checks their reserved names. Settings tabs share `StudioSegmentedControl`; inline choices use its compact size. Workflow rows separate identity, description, metadata and diagnostics. Repeated pane/dialog introductions are removed. App/file switches move to Built-in search without changing their stored preferences or file-index lifecycle. The original GUL-229 design below is historical where it differs.
+>
 > 只改 UI 和交互，不改数据：`AskKeyword`、`settings.askLauncherKeywords`、`workflow.json`、运行器和信任规则都不变。
 
 ## 0. 一页结论

@@ -96,7 +96,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .agent:
             L("studio.subheading.agent")
         case .launcher:
-            L("studio.subheading.launcher")
+            nil
         case .settings:
             nil
         case .account:

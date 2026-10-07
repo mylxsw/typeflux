@@ -17,6 +17,9 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         }
     }
 
+    /// Kinds managed on the keyword page; workflows have their own page.
+    static let editableKinds: [Self] = allCases.filter { $0 != .workflow }
+
     /// The built-in plugin behind the kind; nil for workflows.
     var pluginID: String? {
         switch self {
@@ -57,7 +60,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
     }
 }
 
-/// A launcher keyword that comes from a workflow's manifest, as the keyword list shows it.
+/// A workflow's manifest keyword reserved for conflict validation in the keyword editor.
 struct AskWorkflowKeywordEntry: Equatable, Sendable {
     var keyword: String
     var workflowID: String
@@ -75,39 +78,24 @@ struct AskKeywordListRow: Identifiable, Equatable {
     /// URLs read best monospaced.
     var monospacedSummary = false
     var enabled: Bool
-    /// The built-in keyword the row edits; nil for workflow rows.
-    var source: AskKeyword?
-    var workflowID: String?
-    /// A workflow keyword a built-in one already has: the launcher ignores it.
-    var shadowed = false
+    /// The built-in or custom keyword the row edits.
+    var source: AskKeyword
 
     var id: String {
-        kind.rawValue + "/" + (workflowID ?? "") + "/" + keyword.lowercased()
+        kind.rawValue + "/" + keyword.lowercased()
     }
 }
 
 /// Builds, filters and counts the keyword list. Pure, so it is tested without the settings window.
 enum AskKeywordListPresentation {
-    /// Built-in keywords in plugin order, then the workflows'.
-    static func rows(keywords: [AskKeyword], workflows: [AskWorkflowKeywordEntry],
-                     interface: AppLanguage, secondLanguage: String) -> [AskKeywordListRow] {
-        var rows: [AskKeywordListRow] = []
-        for kind in AskKeywordKind.allCases where kind != .workflow {
-            for keyword in keywords where AskKeywordKind(pluginID: keyword.pluginID) == kind {
-                rows.append(row(keyword, kind: kind, interface: interface, secondLanguage: secondLanguage))
+    /// Only built-in and custom plugin keywords, in plugin order.
+    /// Workflow entries are kept separately for save-time conflict validation.
+    static func rows(keywords: [AskKeyword], interface: AppLanguage, secondLanguage: String) -> [AskKeywordListRow] {
+        AskKeywordKind.editableKinds.flatMap { kind in
+            keywords.filter { AskKeywordKind(pluginID: $0.pluginID) == kind }.map {
+                row($0, kind: kind, interface: interface, secondLanguage: secondLanguage)
             }
         }
-        let taken = Set(keywords.map(\.id))
-        for entry in workflows {
-            let shadowed = taken.contains(entry.keyword.lowercased())
-            rows.append(AskKeywordListRow(
-                keyword: entry.keyword, kind: .workflow, name: entry.workflowName,
-                summary: shadowed ? L("ask.settings.keywords.summary.shadowed")
-                    : L("ask.settings.keywords.summary.workflow"),
-                enabled: entry.enabled && !shadowed, workflowID: entry.workflowID, shadowed: shadowed
-            ))
-        }
-        return rows
     }
 
     static func row(_ keyword: AskKeyword, kind: AskKeywordKind, interface: AppLanguage,
@@ -121,7 +109,8 @@ enum AskKeywordListPresentation {
     static func name(of keyword: AskKeyword) -> String {
         switch AskKeywordKind(pluginID: keyword.pluginID) {
         case .translate:
-            AskTranslatePlugin.opensWordBook(keyword.options) ? L("ask.wordBook.title") : L("ask.plugin.translate.title")
+            AskTranslatePlugin
+                .opensWordBook(keyword.options) ? L("ask.wordBook.title") : L("ask.plugin.translate.title")
         case .prompt:
             AskPromptPlugin.name(of: keyword.options)
         case .web:
@@ -140,7 +129,9 @@ enum AskKeywordListPresentation {
     static func summary(of keyword: AskKeyword, interface: AppLanguage, secondLanguage: String) -> String {
         switch AskKeywordKind(pluginID: keyword.pluginID) {
         case .translate:
-            if AskTranslatePlugin.opensWordBook(keyword.options) { return L("ask.settings.keywords.summary.wordBook") }
+            if AskTranslatePlugin.opensWordBook(keyword.options) {
+                return L("ask.settings.keywords.summary.wordBook")
+            }
             if let target = keyword.options[AskTranslatePlugin.targetOption], !target.isEmpty {
                 return L("ask.settings.plugins.translate.into", AskTranslationLanguages.name(target, in: interface))
             }
@@ -183,13 +174,13 @@ enum AskKeywordListPresentation {
     /// How many rows each filter tab has; `nil` counts all of them.
     static func counts(_ rows: [AskKeywordListRow]) -> [AskKeywordKind?: Int] {
         var counts: [AskKeywordKind?: Int] = [nil: rows.count]
-        for kind in AskKeywordKind.allCases {
+        for kind in AskKeywordKind.editableKinds {
             counts[kind] = rows.filter { $0.kind == kind }.count
         }
         return counts
     }
 
-    /// The workflows' keywords, in list order.
+    /// Manifest keywords reserved for validation, in workflow order.
     static func workflowEntries(_ workflows: [AskWorkflow],
                                 isEnabled: (String) -> Bool) -> [AskWorkflowKeywordEntry] {
         workflows.flatMap { workflow in

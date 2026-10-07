@@ -139,46 +139,6 @@ struct ModelDetailHeader: View {
     }
 }
 
-/// Compact segmented switch used above the provider lists.
-struct ModelSegmentedControl<Value: Hashable>: View {
-    let options: [(label: String, value: Value)]
-    @Binding var selection: Value
-
-    var body: some View {
-        HStack(spacing: 2) {
-            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
-                let selected = selection == option.value
-                Button {
-                    withAnimation(.easeOut(duration: 0.15)) { selection = option.value }
-                } label: {
-                    Text(option.label)
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                        .lineLimit(1)
-                        .padding(.horizontal, 16).frame(height: 26)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(selected ? StudioTheme.selectionSurfaceRaised : Color.clear)
-                                .shadow(color: Color.black.opacity(selected ? 0.18 : 0), radius: 1, x: 0, y: 1)
-                        )
-                        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
-        }
-        .padding(2)
-        .background(
-            ModelVisualStyle.control,
-            in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(ModelVisualStyle.border)
-        )
-        .fixedSize()
-    }
-}
-
 struct ModelActionStyle: ButtonStyle {
     var primary = false
     @Environment(\.isEnabled) private var enabled
