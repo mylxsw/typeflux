@@ -3598,3 +3598,12 @@
 "ask.home.hint.context" = "⌘K Context";
 "ask.home.hint.close" = "esc Close";
 "ask.home.justNow" = "just now";
+
+// Launcher chat entry and preserved drafts.
+"ask.openChat" = "Open chat";
+"ask.openChat.hint" = "Open chat window ⌘O";
+"ask.openChat.wait" = "Finish recording or loading attachments before opening chat.";
+"ask.openChat.placeholder" = "Optional message — opens as a draft";
+"ask.settings.keywords.kind.chat.hint" = "Open the chat window without sending a message";
+"ask.drafts.saved" = "Saved drafts";
+"ask.drafts.untitled" = "Untitled draft";

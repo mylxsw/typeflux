@@ -4,10 +4,10 @@ import Foundation
 /// The plugins the launcher knows and the keywords they start with.
 enum AskPluginRegistry {
     /// Every built-in plugin, in the order settings and the `/` palette list them.
-    static let pluginIDs = [AskTranslatePlugin.id, AskPromptPlugin.id, AskWebSearchPlugin.id, AskFileSearchPlugin.id]
+    static let pluginIDs = [AskTranslatePlugin.id, AskPromptPlugin.id, AskWebSearchPlugin.id, AskFileSearchPlugin.id, AskOpenChatPlugin.id]
 
     static var defaultKeywords: [AskKeyword] {
-        AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords + AskFileSearchPlugin.keywords
+        AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords
     }
 
     /// Default keywords that came after their plugin: `dict` and `词典` joined translation later.
@@ -101,7 +101,8 @@ extension AskConversationModel {
             AskFileSearchPlugin(
                 index: { [weak self] in self.flatMap { $0.quickFilesEnabled ? $0.fileIndex : nil } },
                 settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() }
-            )
+            ),
+            AskOpenChatPlugin()
         ] + workflowPlugins()
     }
 
@@ -119,6 +120,9 @@ extension AskConversationModel {
         // Using a result is what makes a word typed on the fly count as looked up.
         plugins.settleWordBook()
         switch action.kind {
+        case .openChat:
+            Task { await openChatFromLauncher() }
+            return .stay
         case let .copy(text):
             AskQuickResults.copy(text)
             finishPluginResult()

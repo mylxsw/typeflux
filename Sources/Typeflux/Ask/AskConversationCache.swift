@@ -14,6 +14,7 @@ protocol AskCaching: Sendable {
     func delete(id: String, owner: String) async throws
     func saveDraft(_ draft: AskDraft, key: String, owner: String) async throws
     func draft(key: String, owner: String) async throws -> AskDraft?
+    func savedChatDrafts(owner: String) async throws -> [AskSavedChatDraft]
     func associateTool(id: String, conversationId: String, owner: String) async throws
     func claimTool(id: String, owner: String) async throws -> Bool
     func saveToolResult(_ result: AskToolResultRequest, owner: String) async throws
@@ -118,6 +119,23 @@ actor AskConversationCache: AskCaching {
             ?? read(table: "ask_drafts", id: AskConversationID.legacy(key), owner: owner)
         return try data.map { try AskCoding.decoder().decode(AskDraft.self, from: $0) }
     }
+    func savedChatDrafts(owner: String) throws -> [AskSavedChatDraft] {
+        let statement = try prepare("SELECT id,data FROM ask_drafts WHERE owner=? AND id LIKE 'saved-chat:%' ORDER BY id", strings: [owner])
+        defer { sqlite3_finalize(statement) }
+        var result: [AskSavedChatDraft] = []
+        var status = sqlite3_step(statement)
+        while status == SQLITE_ROW {
+            if let id = sqlite3_column_text(statement, 0), let bytes = sqlite3_column_blob(statement, 1) {
+                let data = Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, 1)))
+                let draft = try AskCoding.decoder().decode(AskDraft.self, from: data)
+                if draft.hasChatInput { result.append(AskSavedChatDraft(id: String(cString: id), draft: draft)) }
+            }
+            status = sqlite3_step(statement)
+        }
+        guard status == SQLITE_DONE else { throw CocoaError(.fileReadUnknown) }
+        return result
+    }
+
     func claimTool(id: String, owner: String) throws -> Bool {
         let statement = try prepare("INSERT OR IGNORE INTO ask_tools(owner,id) VALUES(?,?)", strings: [owner, id])
         defer { sqlite3_finalize(statement) }

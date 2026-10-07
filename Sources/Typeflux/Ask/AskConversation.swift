@@ -228,7 +228,7 @@ struct AskDraft: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case text, includeScreenshot, screenshot, selection, source, sourceOff, capturedAt, modelRef
-        case references, memory, memoryOff, selectionOff, attachments, skills, mcpServers
+        case references, memory, memoryOff, selectionOff, attachments, skills, mcpServers, storesLocally
         // convertFromSnakeCase maps source_bundle_id to sourceBundleId.
         case sourceBundleID = "sourceBundleId"
     }

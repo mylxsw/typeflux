@@ -164,7 +164,7 @@ final class AskConversationModel: ObservableObject {
     func isLocal(_ id: String) -> Bool { !isSignedIn || localConversationIds.contains(id) }
 
     /// The cache partition of a conversation's copies and drafts.
-    private func cacheOwner(_ id: String) -> String {
+    func cacheOwner(_ id: String) -> String {
         localConversationIds.contains(id) ? AskRoutedAPI.localOwner : owner
     }
     func requiresVision(launcher: Bool) -> Bool {
@@ -173,6 +173,8 @@ final class AskConversationModel: ObservableObject {
             || (!launcher && selected?.messages.contains(where: { $0.hasImage }) == true)
     }
 
+    @Published var isOpeningChat = false
+    @Published var savedChatDrafts: [AskSavedChatDraft] = []
     @Published var referenceLocation: String?
     @Published var launcherDraft = AskDraft() {
         didSet {
@@ -275,8 +277,8 @@ final class AskConversationModel: ObservableObject {
     private var pendingSends: [String: AskSendRequest] = [:]
     // Local consent for the latest submission, retained for retries but never restored from history.
     private var screenshotConsent: [String: String] = [:]
-    private var captureGeneration = UUID()
-    private var selectionGeneration = UUID()
+    var captureGeneration = UUID()
+    var selectionGeneration = UUID()
     private var selectionObservation: Task<Void, Never>?
     private var draftSave: Task<Void, Never>?
     private var draftSaveConversationID: String?
@@ -427,7 +429,7 @@ final class AskConversationModel: ObservableObject {
         selectionObservation?.cancel(); selectionObservation = nil
         inferenceProgress = [:]; progressInferenceIDs = [:]
         selected = nil; selectedId = nil; isLoadingSelection = false; selectionLoadFailed = false
-        snapshots = [:]; drafts = [:]; transcriptPositions = [:]
+        snapshots = [:]; drafts = [:]; transcriptPositions = [:]; savedChatDrafts = []
         historyGeneration = UUID(); historyOffset = 0; conversations = []; localConversationIds = []
         launcherScreenshotNotice = nil; screenshotNotice = nil; recoveringImages = [:]
         attachmentNotice = nil; launcherAttachmentNotice = nil

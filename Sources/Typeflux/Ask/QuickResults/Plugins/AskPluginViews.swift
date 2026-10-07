@@ -204,6 +204,7 @@ struct AskPluginResultsView: View {
 
     /// What Return and the other keys do now, for the bottom bar.
     static func hint(for display: AskPluginDisplay) -> String {
+        if display.hint?.pluginID == AskOpenChatPlugin.id { return L("ask.plugin.hint.action", display.title) }
         if display.hint != nil { return L("ask.plugin.hint.keyword") }
         if display.asksAI { return L("ask.launcher.hint") }
         let option = display.optionName.map { L("ask.plugin.hint.option", $0) }
@@ -352,7 +353,7 @@ struct AskPluginResultsView: View {
                 Text(hint.keyword).font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer(minLength: 8)
-                Text(L("ask.plugin.enter")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text(hint.pluginID == AskOpenChatPlugin.id ? L("ask.plugin.hint.action", display.title) : L("ask.plugin.enter")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             }
             .padding(.horizontal, 10)
             .frame(height: Self.askHeight)
@@ -362,7 +363,7 @@ struct AskPluginResultsView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(display.title)
-        .accessibilityHint(L("ask.plugin.enter"))
+        .accessibilityHint(hint.pluginID == AskOpenChatPlugin.id ? L("ask.plugin.hint.action", display.title) : L("ask.plugin.enter"))
         .accessibilityIdentifier("ask.plugin.hint")
     }
 
