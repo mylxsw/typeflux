@@ -70,9 +70,10 @@ enum AskTheme {
         dark: NSColor(srgbRed: 0.180, green: 0.180, blue: 0.180, alpha: 1)
     )
     /// The floating launcher's frost and opaque fallback. A deeper neutral in
-    /// dark mode keeps bright windows behind the panel from washing out its text.
+    /// dark mode keeps bright windows behind the panel from washing out its text;
+    /// a cool off-white in light mode keeps the glass from reading as paper.
     static let launcherSurface = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
+        light: NSColor(srgbRed: 0.965, green: 0.969, blue: 0.980, alpha: 1),
         dark: NSColor(srgbRed: 0.110, green: 0.110, blue: 0.110, alpha: 1)
     )
     /// Popovers opened from the composer (model and reasoning choosers).
@@ -95,6 +96,79 @@ enum AskTheme {
     static let floatingBorder = StudioTheme.dynamic(
         light: NSColor(calibratedWhite: 0, alpha: 0.12),
         dark: NSColor(calibratedWhite: 1, alpha: 0.18)
+    )
+    /// The launcher's hairline on glass. The light card is clear enough to vanish
+    /// into a white window without it; dark glass keeps its own rim.
+    static let floatingGlassEdge = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.08),
+        dark: .clear
+    )
+
+    // The launcher's own washes. Its card is glass over arbitrary windows, so in
+    // light mode these are translucent and take on the backdrop instead of
+    // pasting opaque greys on it. Dark mode keeps the shared opaque tokens.
+
+    /// Rules inside the launcher: under the editor and above its bottom bar.
+    static let launcherSeparator = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.07),
+        dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
+    )
+    /// The highlighted home row or keyword chip, outlined by `launcherSelectionEdge`.
+    static let launcherSelection = StudioTheme.dynamic(
+        light: NSColor(calibratedRed: 0.18, green: 0.43, blue: 0.94, alpha: 0.13),
+        dark: NSColor(calibratedRed: 0.082, green: 0.149, blue: 0.243, alpha: 1)
+    )
+    static let launcherSelectionEdge = StudioTheme.dynamic(
+        light: NSColor(calibratedRed: 0.18, green: 0.43, blue: 0.94, alpha: 0.18),
+        dark: .clear
+    )
+    /// The `fy`, `dict` keyword labels.
+    static let launcherKeyword = StudioTheme.dynamic(
+        light: NSColor(calibratedRed: 0.18, green: 0.43, blue: 0.94, alpha: 0.11),
+        dark: NSColor(calibratedRed: 0.082, green: 0.149, blue: 0.243, alpha: 1)
+    )
+    /// A neutral row icon's tile: a raised white chip in light mode instead of a grey wash.
+    static let launcherTile = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.72),
+        dark: NSColor(calibratedWhite: 0.720, alpha: 0.14)
+    )
+    static let launcherTileEdge = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.10),
+        dark: .clear
+    )
+    /// Keyword chips at rest.
+    static let launcherChipFill = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.5),
+        dark: .clear
+    )
+    static let launcherChipEdge = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.07),
+        dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
+    )
+    /// The ⌘1…⌘9 badges: a faint well in light mode, an outline in dark.
+    static let launcherShortcutFill = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.045),
+        dark: .clear
+    )
+    static let launcherShortcutEdge = StudioTheme.dynamic(
+        light: .clear,
+        dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
+    )
+    /// Times, shortcut badges and the key hint: a step below secondary text in
+    /// light mode so titles lead. Dark mode keeps secondary text.
+    static let launcherMetaText = StudioTheme.dynamic(
+        light: NSColor(calibratedWhite: 0.40, alpha: 1),
+        dark: NSColor(calibratedWhite: 0.720, alpha: 1)
+    )
+    /// A footer switch that is on (screenshot, memory): a tinted well behind the
+    /// accent icon, so "on" reads by shape as well as colour.
+    static let switchOnFill = StudioTheme.dynamic(
+        light: NSColor(calibratedRed: 0.18, green: 0.43, blue: 0.94, alpha: 0.14),
+        dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1.00, alpha: 0.22)
+    )
+    static let switchOnEdge = StudioTheme.dynamic(
+        light: NSColor(calibratedRed: 0.18, green: 0.43, blue: 0.94, alpha: 0.30),
+        dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1.00, alpha: 0.35)
     )
     /// The design board's glass tint for in-window panels (sidebar, header
     /// pills, composer): a cool graphite in dark, white in light. Frosted at

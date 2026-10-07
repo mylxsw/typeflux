@@ -46,17 +46,19 @@ struct AskSurfaceOpacityTests {
         fixture.model.resetSession()
     }
 
-    @Test func opaqueLauncherUsesWhiteInLightAndDeepGreyInDark() async throws {
+    @Test func opaqueLauncherUsesCoolOffWhiteInLightAndDeepGreyInDark() async throws {
         let launcher = AskComposerChrome.launcher.glassBackground(.opaque)
         let cardSize = NSSize(width: 100, height: 80)
         // Native bitmap color conversion varies by the display profile; check
-        // the visual brightness and neutrality rather than an exact sRGB token.
-        for (appearance, brightness) in [(NSAppearance.Name.aqua, 0.95 ... 1.0), (.darkAqua, 0.05 ... 0.18)] {
+        // the visual brightness and tint rather than an exact sRGB token.
+        // Light is a cool off-white (GUL-252): blue leads red slightly; dark is neutral.
+        for (appearance, brightness, coolness) in [(NSAppearance.Name.aqua, 0.94 ... 1.0, 0.005 ... 0.03),
+                                                   (.darkAqua, 0.05 ... 0.18, -0.01 ... 0.01)] {
             let bitmap = try await render(launcher, size: cardSize, appearance: appearance)
             let fill = try pixel(bitmap, x: 50, y: 40)
             #expect(brightness.contains(fill.redComponent))
             #expect(abs(fill.greenComponent - fill.redComponent) < 0.01)
-            #expect(abs(fill.blueComponent - fill.redComponent) < 0.01)
+            #expect(coolness.contains(fill.blueComponent - fill.redComponent))
             #expect(fill.alphaComponent > 0.999)
         }
     }

@@ -290,6 +290,8 @@ struct AskStorageButton: View {
                 .font(.system(size: 12.5, weight: local || active ? .semibold : .medium))
                 .foregroundStyle(Self.iconColor(local: local, active: active))
                 .frame(width: Self.size, height: Self.size)
+                .background(Self.wellFill(local: local, active: active),
+                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -302,11 +304,17 @@ struct AskStorageButton: View {
                                    model: model, launcher: launcher))
     }
 
-    /// No circle behind the icon: the private tint marks this Mac, hover or an
-    /// open menu brightens the cloud.
+    /// The private tint marks this Mac, hover or an open menu brightens the cloud.
     static func iconColor(local: Bool, active: Bool) -> Color {
         if local { return AskTheme.privateTint }
         return active ? StudioTheme.textPrimary : StudioTheme.textSecondary
+    }
+
+    /// Kept on this Mac is a state, so it sits in a private-tinted well like an
+    /// on switch; the cloud only gets the hover wash.
+    static func wellFill(local: Bool, active: Bool) -> Color {
+        if local { return AskTheme.privateTint.opacity(0.13) }
+        return active ? AskTheme.hoverFill : .clear
     }
 }
 
