@@ -2631,6 +2631,13 @@
 "ask.wordBook.unstar" = "즐겨찾기 해제";
 "ask.wordBook.starred" = "“%@” 즐겨찾기 추가 · ⌘S로 취소";
 "ask.wordBook.unstarred" = "“%@” 즐겨찾기 해제 · ⌘S로 취소";
+"ask.wordBook.list.recent" = "최근 찾아본 단어";
+"ask.wordBook.list.starred" = "즐겨찾기한 단어";
+"ask.wordBook.list.openAll" = "단어장 열기…";
+"ask.wordBook.list.openAll.detail" = "모든 즐겨찾기와 기록";
+"ask.wordBook.list.empty" = "아직 찾아본 단어가 없습니다. 단어를 입력해 번역하세요.";
+"ask.wordBook.list.emptyStarred" = "즐겨찾기한 단어가 없습니다. 번역 결과에서 ⌘S를 누르세요.";
+"ask.wordBook.list.option" = "즐겨찾기만";
 "ask.wordBook.title" = "단어장";
 "ask.wordBook.open" = "단어장";
 "ask.wordBook.scope.starred" = "즐겨찾기";

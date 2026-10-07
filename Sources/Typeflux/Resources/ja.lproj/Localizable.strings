@@ -2631,6 +2631,13 @@
 "ask.wordBook.unstar" = "お気に入り解除";
 "ask.wordBook.starred" = "「%@」をお気に入りに追加 · ⌘S で取り消す";
 "ask.wordBook.unstarred" = "「%@」をお気に入りから削除 · ⌘S で取り消す";
+"ask.wordBook.list.recent" = "最近調べた単語";
+"ask.wordBook.list.starred" = "お気に入りの単語";
+"ask.wordBook.list.openAll" = "単語帳を開く…";
+"ask.wordBook.list.openAll.detail" = "お気に入りと履歴のすべて";
+"ask.wordBook.list.empty" = "まだ単語を調べていません。単語を入力すると翻訳します。";
+"ask.wordBook.list.emptyStarred" = "お気に入りはまだありません。翻訳結果で ⌘S を押して追加します。";
+"ask.wordBook.list.option" = "お気に入りのみ";
 "ask.wordBook.title" = "単語帳";
 "ask.wordBook.open" = "単語帳";
 "ask.wordBook.scope.starred" = "お気に入り";

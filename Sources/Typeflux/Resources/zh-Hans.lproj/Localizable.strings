@@ -2641,6 +2641,13 @@
 "ask.wordBook.unstar" = "取消收藏";
 "ask.wordBook.starred" = "已收藏「%@」 · ⌘S 撤销";
 "ask.wordBook.unstarred" = "已取消收藏「%@」 · ⌘S 撤销";
+"ask.wordBook.list.recent" = "最近查过";
+"ask.wordBook.list.starred" = "收藏的词";
+"ask.wordBook.list.openAll" = "打开单词本…";
+"ask.wordBook.list.openAll.detail" = "全部收藏与查词记录";
+"ask.wordBook.list.empty" = "还没有查过词，输入单词即可翻译。";
+"ask.wordBook.list.emptyStarred" = "还没有收藏的词，在翻译结果上按 ⌘S 收藏。";
+"ask.wordBook.list.option" = "只看收藏";
 "ask.wordBook.title" = "单词本";
 "ask.wordBook.open" = "单词本";
 "ask.wordBook.scope.starred" = "收藏";

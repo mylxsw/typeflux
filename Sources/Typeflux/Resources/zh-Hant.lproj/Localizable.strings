@@ -2638,6 +2638,13 @@
 "ask.wordBook.unstar" = "取消收藏";
 "ask.wordBook.starred" = "已收藏「%@」 · ⌘S 復原";
 "ask.wordBook.unstarred" = "已取消收藏「%@」 · ⌘S 復原";
+"ask.wordBook.list.recent" = "最近查過";
+"ask.wordBook.list.starred" = "收藏的單字";
+"ask.wordBook.list.openAll" = "打開單字本…";
+"ask.wordBook.list.openAll.detail" = "全部收藏與查詢紀錄";
+"ask.wordBook.list.empty" = "還沒有查過單字，輸入單字即可翻譯。";
+"ask.wordBook.list.emptyStarred" = "還沒有收藏的單字，在翻譯結果上按 ⌘S 收藏。";
+"ask.wordBook.list.option" = "只看收藏";
 "ask.wordBook.title" = "單字本";
 "ask.wordBook.open" = "單字本";
 "ask.wordBook.scope.starred" = "收藏";

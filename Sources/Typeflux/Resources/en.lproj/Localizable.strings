@@ -2641,6 +2641,13 @@
 "ask.wordBook.unstar" = "Unstar";
 "ask.wordBook.starred" = "Starred “%@” · ⌘S to undo";
 "ask.wordBook.unstarred" = "Unstarred “%@” · ⌘S to undo";
+"ask.wordBook.list.recent" = "Recent words";
+"ask.wordBook.list.starred" = "Starred words";
+"ask.wordBook.list.openAll" = "Open the word book…";
+"ask.wordBook.list.openAll.detail" = "All starred words and history";
+"ask.wordBook.list.empty" = "No words looked up yet. Type a word to translate it.";
+"ask.wordBook.list.emptyStarred" = "No starred words yet. Press ⌘S on a translation to star it.";
+"ask.wordBook.list.option" = "Starred only";
 "ask.wordBook.title" = "Word Book";
 "ask.wordBook.open" = "Word book";
 "ask.wordBook.scope.starred" = "Starred";
