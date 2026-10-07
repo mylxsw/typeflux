@@ -42,43 +42,20 @@ struct AskKeywordListChip: View {
     }
 }
 
-/// All · Translate · AI prompt · Web search · Workflows, each with its count.
+/// All and the plugin kinds managed here, each with its count.
 struct AskKeywordFilterBar: View {
     @Binding var selection: AskKeywordKind?
     let counts: [AskKeywordKind?: Int]
 
     private var options: [(AskKeywordKind?, String)] {
-        [(nil, L("ask.settings.keywords.filter.all"))] + AskKeywordKind.allCases.map { ($0, $0.title) }
+        [(nil, L("ask.settings.keywords.filter.all"))] + AskKeywordKind.editableKinds.map { ($0, $0.title) }
     }
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(options, id: \.1) { kind, title in
-                let selected = selection == kind
-                Button { selection = kind } label: {
-                    HStack(spacing: 4) {
-                        Text(title).foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                        Text("\(counts[kind] ?? 0)").foregroundStyle(StudioTheme.textTertiary)
-                    }
-                    .font(.system(size: 12, weight: selected ? .semibold : .regular))
-                    .lineLimit(1)
-                    .padding(.horizontal, 10).frame(height: 24)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(selected ? StudioTheme.selectionSurfaceRaised : Color.clear)
-                            .shadow(color: .black.opacity(selected ? 0.18 : 0), radius: 1, y: 1)
-                    )
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-                .accessibilityIdentifier("ask.settings.keywords.filter." + (kind?.rawValue ?? "all"))
-            }
-        }
-        .padding(2)
-        .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(ModelVisualStyle.border))
-        .fixedSize()
+        StudioSegmentedControl(options: options.map { (label: $0.1, value: $0.0) }, selection: $selection,
+                               counts: counts, optionIdentifier: {
+                                   "ask.settings.keywords.filter." + ($0?.rawValue ?? "all")
+                               })
     }
 }
 
@@ -106,7 +83,7 @@ struct AskKeywordGroupHeader: View {
 }
 
 /// One keyword: chip, kind and name, one line on what it does, and its switch.
-/// The whole row opens the editor; workflow rows open the workflow editor instead.
+/// The whole row opens the keyword editor.
 struct AskKeywordRowView: View {
     let row: AskKeywordListRow
     let toggle: () -> Void
@@ -127,19 +104,12 @@ struct AskKeywordRowView: View {
                     size: row.monospacedSummary ? 11.5 : 12,
                     design: row.monospacedSummary ? .monospaced : .default
                 ))
-                .foregroundStyle(row.shadowed ? StudioTheme.warning : StudioTheme.textTertiary)
+                .foregroundStyle(StudioTheme.textTertiary)
                 .lineLimit(1).truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            if row.workflowID != nil {
-                Image(systemName: "arrow.up.forward.app")
-                    .font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary)
-                    .frame(width: 38)
-                    .help(L("ask.settings.keywords.summary.workflow"))
-            } else {
-                Toggle("", isOn: Binding(get: { row.enabled }, set: { _ in toggle() }))
-                    .labelsHidden().toggleStyle(.switch).controlSize(.small)
-                    .accessibilityLabel(L("ask.settings.keywords.enabled") + " " + row.keyword)
-            }
+            Toggle("", isOn: Binding(get: { row.enabled }, set: { _ in toggle() }))
+                .labelsHidden().toggleStyle(.switch).controlSize(.small)
+                .accessibilityLabel(L("ask.settings.keywords.enabled") + " " + row.keyword)
             Image(systemName: "chevron.right")
                 .font(.system(size: 10, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
                 .opacity(hovering ? 1 : 0)

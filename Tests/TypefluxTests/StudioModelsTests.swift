@@ -140,7 +140,7 @@ final class StudioModelsTests: XCTestCase {
         XCTAssertEqual(LauncherSettingsPane.keywords.title, L("ask.settings.plugins.title"))
         XCTAssertEqual(LauncherSettingsPane.workflows.title, L("ask.workflow.section"))
         XCTAssertEqual(StudioSection.launcher.iconName, "command")
-        XCTAssertNotNil(StudioSection.launcher.subheading)
+        XCTAssertNil(StudioSection.launcher.subheading)
     }
 
     func testPaneListFoldsIntoMenuWhenNarrow() {
