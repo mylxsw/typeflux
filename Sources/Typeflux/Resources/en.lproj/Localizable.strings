@@ -2685,6 +2685,8 @@
 "ask.wordBook.lookUpWord" = "Look up “%@”";
 "ask.wordBook.plainHint" = "A short translation from this Mac.";
 "ask.wordBook.history" = "Lookups";
+"ask.wordBook.meanings" = "Meanings";
+"ask.wordBook.firstLookup" = "Look up a word";
 "ask.wordBook.list.recent" = "Recent words";
 "ask.wordBook.list.starred" = "Starred words";
 "ask.wordBook.list.openAll" = "Open the word book…";
@@ -2696,7 +2698,7 @@
 "ask.wordBook.open" = "Word book";
 "ask.wordBook.scope.starred" = "Starred";
 "ask.wordBook.scope.all" = "History";
-"ask.wordBook.search" = "Search words or meanings  ⌘F";
+"ask.wordBook.search" = "Search words";
 "ask.wordBook.allLanguages" = "All languages";
 "ask.wordBook.sort.recent" = "Last looked up";
 "ask.wordBook.sort.count" = "Most looked up";

@@ -2682,6 +2682,8 @@
 "ask.wordBook.lookUpWord" = "查「%@」";
 "ask.wordBook.plainHint" = "這是本機提供的簡短譯文。";
 "ask.wordBook.history" = "查詢紀錄";
+"ask.wordBook.meanings" = "釋義";
+"ask.wordBook.firstLookup" = "查第一個單字";
 "ask.wordBook.list.recent" = "最近查過";
 "ask.wordBook.list.starred" = "收藏的單字";
 "ask.wordBook.list.openAll" = "打開單字本…";
@@ -2693,7 +2695,7 @@
 "ask.wordBook.open" = "單字本";
 "ask.wordBook.scope.starred" = "收藏";
 "ask.wordBook.scope.all" = "查詢紀錄";
-"ask.wordBook.search" = "搜尋單字或釋義  ⌘F";
+"ask.wordBook.search" = "搜尋單字或釋義";
 "ask.wordBook.allLanguages" = "全部語言";
 "ask.wordBook.sort.recent" = "最近查詢";
 "ask.wordBook.sort.count" = "查詢次數";

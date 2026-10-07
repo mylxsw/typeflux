@@ -2675,6 +2675,8 @@
 "ask.wordBook.lookUpWord" = "「%@」を調べる";
 "ask.wordBook.plainHint" = "この Mac による短い翻訳です。";
 "ask.wordBook.history" = "履歴";
+"ask.wordBook.meanings" = "意味";
+"ask.wordBook.firstLookup" = "単語を調べる";
 "ask.wordBook.list.recent" = "最近調べた単語";
 "ask.wordBook.list.starred" = "お気に入りの単語";
 "ask.wordBook.list.openAll" = "単語帳を開く…";
@@ -2686,7 +2688,7 @@
 "ask.wordBook.open" = "単語帳";
 "ask.wordBook.scope.starred" = "お気に入り";
 "ask.wordBook.scope.all" = "履歴";
-"ask.wordBook.search" = "単語や意味を検索  ⌘F";
+"ask.wordBook.search" = "単語や意味を検索";
 "ask.wordBook.allLanguages" = "すべての言語";
 "ask.wordBook.sort.recent" = "最近調べた順";
 "ask.wordBook.sort.count" = "調べた回数";

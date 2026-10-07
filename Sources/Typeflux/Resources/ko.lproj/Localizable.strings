@@ -2675,6 +2675,8 @@
 "ask.wordBook.lookUpWord" = "“%@” 찾기";
 "ask.wordBook.plainHint" = "이 Mac의 짧은 번역입니다.";
 "ask.wordBook.history" = "조회 기록";
+"ask.wordBook.meanings" = "뜻";
+"ask.wordBook.firstLookup" = "단어 찾아보기";
 "ask.wordBook.list.recent" = "최근 찾아본 단어";
 "ask.wordBook.list.starred" = "즐겨찾기한 단어";
 "ask.wordBook.list.openAll" = "단어장 열기…";
@@ -2686,7 +2688,7 @@
 "ask.wordBook.open" = "단어장";
 "ask.wordBook.scope.starred" = "즐겨찾기";
 "ask.wordBook.scope.all" = "기록";
-"ask.wordBook.search" = "단어 또는 뜻 검색  ⌘F";
+"ask.wordBook.search" = "단어 또는 뜻 검색";
 "ask.wordBook.allLanguages" = "모든 언어";
 "ask.wordBook.sort.recent" = "최근 조회순";
 "ask.wordBook.sort.count" = "조회 횟수";

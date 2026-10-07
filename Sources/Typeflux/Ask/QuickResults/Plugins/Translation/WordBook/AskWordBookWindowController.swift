@@ -2,7 +2,8 @@ import AppKit
 import SwiftUI
 
 /// The one word book window. Translation results open it (⌘B) on the word they show,
-/// and `dict word` opens it looking the word up; see `docs/design/word-book-redesign.md`.
+/// and `dict word` opens it looking the word up; see `docs/design/word-book-redesign.md`
+/// and, for its look, `docs/design/word-book-studio.md`.
 @MainActor
 final class AskWordBookWindowController: NSObject, NSWindowDelegate {
     static let shared = AskWordBookWindowController()
@@ -69,16 +70,12 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: Self.defaultSize),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
-        // Translucent like the Ask workspace: the sidebar floats on the window as glass.
+        // Set up like the main window: a transparent title bar over the view's own backdrop.
         window.isOpaque = false
         window.backgroundColor = .clear
         window.title = L("ask.wordBook.title")
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
-        // An empty unified toolbar gives the title bar the workspace's height, so the
-        // traffic lights sit in the sidebar's top strip and level with the lookup bar.
-        window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.word-book.toolbar")
-        window.toolbarStyle = .unified
         window.titlebarSeparatorStyle = .none
         let hosting = TransparentAskHostingView(rootView: AskWordBookView(model: model) { [weak window] in
             window?.performClose(nil)
