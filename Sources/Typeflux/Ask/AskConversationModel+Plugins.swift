@@ -79,6 +79,7 @@ extension AskConversationModel {
                 onDevice: AskOnDeviceTranslationEngine(),
                 ai: translationAI,
                 dictionary: translationAI as? any AskWordLookingUp,
+                wordBook: wordBook?.store,
                 aiName: { [weak settings] in AskPluginRegistry.modelName(settings) },
                 secondLanguage: { [weak settings] language in
                     settings?.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
@@ -100,6 +101,8 @@ extension AskConversationModel {
     // One case per kind of action; splitting it would only scatter them.
     // swiftlint:disable:next cyclomatic_complexity function_body_length
     func performPluginAction(_ action: AskPluginAction) -> PluginActionOutcome {
+        // Using a result is what makes a word typed on the fly count as looked up.
+        plugins.settleWordBook()
         switch action.kind {
         case let .copy(text):
             AskQuickResults.copy(text)
@@ -154,7 +157,24 @@ extension AskConversationModel {
             finishPluginResult()
             fixWorkflow(id, query, error)
             return .close
+        case let .toggleStar(lookup):
+            toggleWordBookStar(lookup)
+            return .stay
         }
+    }
+
+    /// Lets `session` keep looked-up words in the word book.
+    func connectWordBook(to session: AskPluginSession) {
+        session.recordWordBook = { [weak self] lookup in self?.wordBook?.record(lookup) }
+        session.beginWordBookSession = { [weak self] in self?.wordBook?.beginSession() }
+    }
+
+    /// ⌘S: stars or unstars the word and says so in the bottom bar; ⌘S again undoes it.
+    func toggleWordBookStar(_ lookup: AskWordBookLookup) {
+        guard let wordBook else { return }
+        let starred = wordBook.toggleStar(lookup)
+        plugins.showStarred(starred, key: lookup.key)
+        confirm(L(starred ? "ask.wordBook.starred" : "ask.wordBook.unstarred", lookup.headword))
     }
 
     /// A workflow's `runKeyword`: puts `keyword argument` in the launcher and runs it,

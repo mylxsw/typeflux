@@ -69,6 +69,15 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             model.promptAI = AskLLMTextGenerator(service: llmService)
         }
         model.workflows = AskWorkflowStore.shared
+        // The word book: words the translation plugin looked up, and the ones starred.
+        let wordBook = SQLiteAskWordBookStore(url: SQLiteAskWordBookStore.defaultURL())
+        // Forever keeps everything; `purgeHistory(before: nil)` would clear it instead.
+        if let cutoff = settings.askWordBookRetention.cutoff(now: Date()) {
+            DispatchQueue.global(qos: .utility).async { wordBook.purgeHistory(before: cutoff) }
+        }
+        model.wordBook = AskWordBookRecorder(store: wordBook) { [weak settings] in
+            settings?.askWordBookRecordsHistory ?? true
+        }
         model.deliverText = { text in
             let result = try await injector.deliver(text: text, to: .currentInput)
             if case .notApplied = result { throw TextDeliveryError.noInput }

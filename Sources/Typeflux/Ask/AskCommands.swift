@@ -375,6 +375,8 @@ enum AskCommandKey: Equatable {
     case commandE
     /// ⌘Z: undo a workflow's copy; otherwise the editor's own undo.
     case commandZ
+    /// ⌘S: star the word a translation looked up.
+    case commandS
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
@@ -386,6 +388,7 @@ enum AskCommandKey: Equatable {
         if modifiers == .command, event.keyCode == 2 { self = .commandD; return }
         if modifiers == .command, event.keyCode == 14 { self = .commandE; return }
         if modifiers == .command, event.keyCode == 6 { self = .commandZ; return }
+        if modifiers == .command, event.keyCode == 1 { self = .commandS; return }
         if modifiers == .command, event.keyCode == 8 { self = .commandC; return }
         if modifiers == [.command, .shift], event.keyCode == 8 { self = .shiftCommandC; return }
         guard modifiers.isEmpty else { return nil }

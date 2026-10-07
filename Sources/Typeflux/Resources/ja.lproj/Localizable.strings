@@ -2625,6 +2625,12 @@
 "ask.plugin.hint.option" = "⇥ %@";
 "ask.plugin.hint.askAI" = "⌘↩ AI に質問";
 "ask.plugin.copied" = "コピーしました";
+"ask.plugin.source.wordBook" = "単語帳";
+"ask.wordBook.seen" = "%d 回調べた";
+"ask.wordBook.star" = "お気に入り";
+"ask.wordBook.unstar" = "お気に入り解除";
+"ask.wordBook.starred" = "「%@」をお気に入りに追加 · ⌘S で取り消す";
+"ask.wordBook.unstarred" = "「%@」をお気に入りから削除 · ⌘S で取り消す";
 "ask.plugin.translate.option" = "言語";
 "ask.plugin.action.open" = "開く";
 "ask.plugin.action.copyLink" = "リンクをコピー";

@@ -40,12 +40,14 @@ enum AskTranslationLanguages {
 
     /// Simplified and Traditional Chinese are different targets; "en-US" and "en" are the same.
     static func sameLanguage(_ first: String, _ second: String) -> Bool {
-        func base(_ code: String) -> String {
-            let lowered = code.lowercased()
-            if lowered.hasPrefix("zh") { return lowered.contains("hant") || lowered.contains("tw") || lowered.contains("hk") ? "zh-hant" : "zh-hans" }
-            return String(lowered.split(separator: "-").first ?? "")
-        }
-        return base(first) == base(second)
+        base(first) == base(second)
+    }
+
+    /// What `sameLanguage` compares: "en" for "en-US", "zh-hans" or "zh-hant" for Chinese.
+    static func base(_ code: String) -> String {
+        let lowered = code.lowercased()
+        if lowered.hasPrefix("zh") { return lowered.contains("hant") || lowered.contains("tw") || lowered.contains("hk") ? "zh-hant" : "zh-hans" }
+        return String(lowered.split(separator: "-").first ?? "")
     }
 
     /// Every target ⇥ can reach, in order, without repeats.
