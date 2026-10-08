@@ -24,9 +24,6 @@ extension AskToolsSettingsView {
                              (false, L("agent.storage.local.search")), (false, L("agent.storage.local.limits"))]
                 ) { setNewConversationsStayLocal(true) }
             }
-            Text(L("agent.overview.storage.footnote"))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
         }
         let attention = statuses.filter { $0.level == .attention }
         AgentSettingsSection(title: L("agent.overview.attention.title"),

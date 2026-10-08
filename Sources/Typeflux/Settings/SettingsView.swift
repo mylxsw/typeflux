@@ -2936,8 +2936,6 @@ struct StudioView: View {
                     .buttonStyle(ModelActionStyle())
                 }
             }
-            Text(L("agent.mcp.emptyHint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .padding(.horizontal, 4)
         } else {
             VStack(alignment: .leading, spacing: 8) {
                 ModelSurface {

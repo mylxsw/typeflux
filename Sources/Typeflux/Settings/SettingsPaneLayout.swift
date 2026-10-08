@@ -43,7 +43,7 @@ struct SettingsPaneLayout<Pane: SettingsPaneItem, Detail: View>: View {
     }
 }
 
-/// Grouped list of panes; each row shows the pane's state as a dot and one line.
+/// Grouped list of panes; each row shows the pane's state as a dot.
 struct SettingsPaneList<Pane: SettingsPaneItem>: View {
     let sections: [(title: String?, panes: [Pane])]
     @Binding var selection: Pane
@@ -82,18 +82,10 @@ struct SettingsPaneRow<Pane: SettingsPaneItem>: View {
                     .font(.system(size: 13))
                     .foregroundStyle(selected ? ModelVisualStyle.accent : StudioTheme.textSecondary)
                     .frame(width: 18)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(pane.title)
-                        .font(.system(size: 13, weight: selected ? .semibold : .medium))
-                        .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                        .lineLimit(1)
-                    if let status {
-                        Text(status.label)
-                            .font(.system(size: 11))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .lineLimit(1)
-                    }
-                }
+                Text(pane.title)
+                    .font(.system(size: 13, weight: selected ? .semibold : .medium))
+                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .lineLimit(1)
                 Spacer(minLength: 4)
                 if let status {
                     AgentStatusDot(level: status.level)

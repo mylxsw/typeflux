@@ -59,22 +59,12 @@ struct MemoryNotesEditorView: View {
                                 onDismiss: { model.dismissUndo() })
                     .id(removed.id)
             }
-            AgentRulesCard(title: L("agent.memory.rules.title"), rules: Self.rules).padding(.top, 12)
-            Text(L("agent.memory.historyNote")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .padding(.horizontal, 4)
         }
         .onChange(of: owner) { _ in
             model.cancelEditing()
             model.dismissUndo()
             model.reload(from: store, owner: owner)
         }
-    }
-
-    /// How saved notes are used, saved and forgotten.
-    static var rules: [(title: String, detail: String?)] {
-        [(L("agent.memory.rule.use.title"), L("agent.memory.rule.use.detail")),
-         (L("agent.memory.rule.ask.title"), L("agent.memory.rule.ask.detail")),
-         (L("agent.memory.rule.delete.title"), L("agent.memory.rule.delete.detail"))]
     }
 
     private func retentionOptions(isNew: Bool, currentExpiry: Date?) -> [(

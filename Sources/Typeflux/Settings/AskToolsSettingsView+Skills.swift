@@ -43,9 +43,6 @@ extension AskToolsSettingsView {
                     }
                 }
             }
-            Text(L("ask.settings.skills.subtitle"))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
         }
         .sheet(isPresented: $showingInstall) { installSheet }
         .sheet(item: $inspectedSkill) { item in skillDetail(item.name) }

@@ -24,8 +24,10 @@ struct ModelProviderRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(row.name).font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text(row.detail).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                        .lineLimit(1).truncationMode(.middle)
+                    if !row.detail.isEmpty {
+                        Text(row.detail).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                            .lineLimit(1).truncationMode(.middle)
+                    }
                 }.opacity(row.available ? 1 : 0.6)
                 Spacer(minLength: 12)
                 ModelConnectionStatus(connected: row.available)

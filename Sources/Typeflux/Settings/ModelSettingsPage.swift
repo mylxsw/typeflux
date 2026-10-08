@@ -71,11 +71,11 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     private var scenes: some View {
         ModelSurface {
             VStack(alignment: .leading, spacing: 0) {
-                sceneRow("ask.models.speech", subtitle: "models.fixedSpeech", icon: "mic") {
+                sceneRow("ask.models.speech", icon: "mic") {
                     speechSceneMenu
                 }
                 ModelRowDivider(leading: 66)
-                sceneRow("ask.models.rewrite", subtitle: "models.fixedRewrite", icon: "pencil") {
+                sceneRow("ask.models.rewrite", icon: "pencil") {
                     AskModelMenu(
                         library: library,
                         reference: $library.rewriteReference,
@@ -85,7 +85,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                     )
                 }
                 ModelRowDivider(leading: 66)
-                sceneRow("models.askDefault", subtitle: "models.defaultHint", icon: "sparkles") {
+                sceneRow("models.askDefault", icon: "sparkles") {
                     AskModelMenu(
                         library: library,
                         reference: $library.defaultReference,
@@ -144,18 +144,14 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
         )
     }
 
-    private func sceneRow(_ title: String, subtitle: String, icon: String,
+    private func sceneRow(_ title: String, icon: String,
                           @ViewBuilder content: () -> some View) -> some View {
         HStack(spacing: 14) {
             ModelIconTile {
                 Image(systemName: icon).font(.system(size: 15)).foregroundStyle(StudioTheme.textSecondary)
             }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(L(title)).font(.system(size: StudioTheme.Typography.settingTitle, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text(L(subtitle)).font(.system(size: StudioTheme.Typography.body))
-                    .foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
-            }
+            Text(L(title)).font(.system(size: StudioTheme.Typography.settingTitle, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
             Spacer(minLength: 16)
             content()
         }.padding(.horizontal, 18).padding(.vertical, 14).frame(minHeight: 68)
@@ -229,7 +225,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                 return ModelProviderRowData(
                     id: provider.rawValue,
                     name: provider.displayName,
-                    detail: reason ?? speechModelName(provider),
+                    detail: reason ?? "",
                     icon: provider.studioProviderID,
                     available: reason == nil
                 )
