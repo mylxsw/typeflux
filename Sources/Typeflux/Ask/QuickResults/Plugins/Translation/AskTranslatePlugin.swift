@@ -2,10 +2,11 @@ import Foundation
 
 /// Translates the text after `fy` / `tr` / `翻译`, or the selection when nothing
 /// follows. On-device translation runs while typing; the selection, and anything
-/// that needs the AI, waits for Return.
+/// that goes to the AI or a translation service, waits for Return.
 struct AskTranslatePlugin: AskLauncherPlugin {
     static let id = "translate"
-    /// Options a keyword or the user sets: the target language, and `engine=ai` for ⌘R.
+    /// Options a keyword or the user sets: the target language, and the engine:
+    /// `engine=ai` for ⌘R, or a service (`engine=deepl`) a keyword always uses.
     static let targetOption = "target"
     static let engineOption = "engine"
     /// Bumped by ⌘R on a word card so the AI writes a new one instead of reusing it.
@@ -26,6 +27,10 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     /// and every word lookup can be starred. Nil without a word book.
     var wordBook: (any AskWordBookStoring)?
     var aiName: @Sendable () -> String = { "AI" }
+    /// How the engine is picked; the defaults are this Mac first, then the AI.
+    var engineSettings: @Sendable () -> AskTranslationSettings = { AskTranslationSettings() }
+    /// A translation service, with its keys from the Keychain; nil leaves services out.
+    var service: (@Sendable (AskTranslationProvider) -> any AskTranslationEngine)?
     var detector: any AskLanguageDetecting = AskLanguageDetector()
     /// The language translations go into when the text is already in the interface language.
     var secondLanguage: @Sendable (AppLanguage) -> String = { AskTranslationLanguages.defaultSecond(for: $0) }
@@ -51,7 +56,10 @@ struct AskTranslatePlugin: AskLauncherPlugin {
 
     func chipDetail(for keyword: AskKeyword, language: AppLanguage) -> String? {
         if Self.opensWordBook(keyword.options) { return L("ask.wordBook.title") }
-        return keyword.options[Self.targetOption].map { AskTranslationLanguages.name($0, in: language) }
+        let details = [keyword.options[Self.targetOption].map { AskTranslationLanguages.name($0, in: language) },
+                       keyword.options[Self.engineOption].flatMap(AskTranslationProvider.init(rawValue:))?.title]
+            .compactMap { $0 }
+        return details.isEmpty ? nil : details.joined(separator: " · ")
     }
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
@@ -62,11 +70,18 @@ struct AskTranslatePlugin: AskLauncherPlugin {
                                  values: [Self.listOption: starred ? "starred" : "recent"])
         }
         let (source, target) = direction(request)
-        let wantsAI = request.options[Self.engineOption] == "ai"
-        let kept = wantsAI ? nil : keptCard(request.text, source: source, target: target)
-        let local = !wantsAI && kept == nil ? await onDevice.canTranslate(from: source, to: target) : false
+        let settings = engineSettings()
+        let asked = request.options[Self.engineOption]
+        let wantsAI = asked == "ai"
+        // A service the keyword names is used even where this Mac could translate.
+        let askedService = service == nil ? nil : asked.flatMap(AskTranslationProvider.init(rawValue:))
+        let chosen = wantsAI || askedService != nil
+        let kept = chosen ? nil : keptCard(request.text, source: source, target: target)
+        let local = !chosen && kept == nil && settings.prefersOnDevice
+            ? await onDevice.canTranslate(from: source, to: target) : false
+        let remote = wantsAI || service == nil ? nil : askedService ?? settings.engine.provider
         // Typed text may translate while typing, but only on this Mac; the
-        // selection and the AI wait for Return.
+        // selection, the AI and translation services wait for Return.
         // A card from the word book never leaves this Mac either.
         let mode: AskPluginPlan.Mode = (local || kept != nil) && request.origin == .argument ? .live : .onSubmit
         let language = request.interfaceLanguage
@@ -75,10 +90,11 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         meta.append(AskPluginMeta(text: AskTranslationLanguages.name(target, in: language), emphasized: true))
         let title = request.origin == .selection
             ? L("ask.plugin.translate.selection", request.lines)
-            : kept != nil || (!local && dictionary != nil && AskWordCard.isLookup(request.text))
+            : kept != nil || (!local && remote == nil && dictionary != nil && AskWordCard.isLookup(request.text))
             ? L("ask.plugin.translate.wordCard")
             : L("ask.plugin.translate.title")
-        var values = ["target": target, "engine": kept != nil ? "book" : local ? "device" : "ai"]
+        let engine = kept != nil ? "book" : local ? "device" : remote?.rawValue ?? "ai"
+        var values = ["target": target, "engine": engine]
         if let source { values["source"] = source }
         return AskPluginPlan(mode: mode, title: title, meta: meta, values: values)
     }
@@ -109,7 +125,8 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     private func translate(_ request: AskPluginRequest, plan: AskPluginPlan) async throws -> AskPluginOutput {
         let source = plan.values["source"]
         let target = plan.values["target"] ?? AskTranslationLanguages.code(for: request.interfaceLanguage)
-        let usesAI = plan.values["engine"] == "ai"
+        var usesAI = plan.values["engine"] == "ai"
+        let provider = plan.values["engine"].flatMap(AskTranslationProvider.init(rawValue:))
         if plan.values["engine"] == "book", let card = keptCard(request.text, source: source, target: target) {
             return wordCardOutput(.card(card), request: request, plan: plan, target: target, generation: "0", kept: true)
         }
@@ -123,14 +140,24 @@ struct AskTranslatePlugin: AskLauncherPlugin {
             return wordCardOutput(lookup, request: request, plan: plan, target: target, generation: generation)
         }
         let text: String
-        if usesAI {
+        var note: String?
+        if let provider {
+            let result = try await serviceTranslation(request.text, provider: provider, source: source, target: target)
+            text = result.text
+            if let fallback = result.fallback {
+                usesAI = true
+                note = L("ask.plugin.translate.serviceFallback", provider.title, fallback)
+            }
+        } else if usesAI {
             guard let ai else { throw AskPluginFailure(message: L("ask.plugin.translate.noModel"), retry: false) }
             text = try await ai.translate(request.text, from: source, to: target)
+            // AI was used only because this Mac cannot translate the pair: say so.
+            if request.options[Self.engineOption] != "ai", engineSettings().prefersOnDevice {
+                note = L("ask.plugin.translate.aiFallback")
+            }
         } else {
             text = try await onDevice.translate(request.text, from: source, to: target)
         }
-        // AI was used only because this Mac cannot translate the pair: say so.
-        let note = usesAI && request.options[Self.engineOption] != "ai" ? L("ask.plugin.translate.aiFallback") : nil
         let replaces = request.origin == .selection
         var actions = [
             AskPluginAction(kind: .copy(text), title: L("ask.plugin.action.copy"), symbol: "doc.on.doc", shortcut: .enter),
@@ -151,17 +178,47 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         }
         actions.append(AskPluginAction(kind: .askAI(L("ask.plugin.translate.askAI", request.text, text)),
                                        title: L("ask.quick.askAI"), symbol: "bubble.left", shortcut: nil))
-        var output = AskPluginOutput(body: text, original: request.text, meta: plan.meta,
-                                     source: usesAI ? AskPluginRegistry.sourceLabel(aiName()) : L("ask.plugin.source.device"),
+        let sourceLabel = usesAI ? AskPluginRegistry.sourceLabel(aiName())
+            : provider?.title ?? L("ask.plugin.source.device")
+        var output = AskPluginOutput(body: text, original: request.text, meta: plan.meta, source: sourceLabel,
                                      sourceIsAI: usesAI,
                                      note: note ?? (offersCard ? L("ask.plugin.translate.cardHint", aiName()) : nil),
                                      actions: actions)
         if AskWordCard.isLookup(request.text) {
             keep(AskWordBookLookup(headword: Self.headword(request.text), source: source, target: target,
-                                   translation: text, model: usesAI ? aiName() : nil),
+                                   translation: text, model: usesAI ? aiName() : provider?.title),
                  in: &output, plan: plan)
         }
         return output
+    }
+
+    /// `text` translated by `provider`; when it fails and the AI may stand in, the
+    /// AI's translation and why the service failed.
+    private func serviceTranslation(_ text: String, provider: AskTranslationProvider, source: String?,
+                                    target: String) async throws -> (text: String, fallback: String?) {
+        guard let engine = service?(provider) else { throw AskTranslationServiceError.notConfigured }
+        do {
+            return (try await engine.translate(text, from: source, to: target), nil)
+        } catch {
+            if error is CancellationError || Task.isCancelled { throw CancellationError() }
+            let failure = Self.failure(error, provider: provider)
+            guard engineSettings().fallsBackToAI, let ai else { throw failure }
+            return (try await ai.translate(text, from: source, to: target), Self.reason(error))
+        }
+    }
+
+    /// What a service's failure card says; keys and quota are not fixed by trying again.
+    static func failure(_ error: Error, provider: AskTranslationProvider) -> AskPluginFailure {
+        let fixedByRetry: Bool = switch error as? AskTranslationServiceError {
+        case .notConfigured?, .authentication?, .unsupportedLanguage?, .quota?, .tooLong?: false
+        default: true
+        }
+        return AskPluginFailure(message: L("ask.translation.error.from", provider.title, reason(error)),
+                                retry: fixedByRetry)
+    }
+
+    static func reason(_ error: Error) -> String {
+        (error as? AskPluginFailure)?.message ?? error.localizedDescription
     }
 
     /// The word as typed, trimmed: the word book's headword.

@@ -10,6 +10,8 @@ struct AskKeywordDraft: Equatable {
     var enabled: Bool
     /// Translation: a language code, empty for "detect the direction".
     var target: String
+    /// Translation: a service the keyword always uses (`deepl`), empty for the usual engine.
+    var translationService: String
     /// Translation: the keyword opens the word book (`dict`) instead of translating in place.
     var opensWordBook: Bool
     /// AI prompt and web search: the name on the chip; empty shows the preset's.
@@ -27,6 +29,8 @@ struct AskKeywordDraft: Equatable {
         self.keyword = keyword.keyword
         enabled = keyword.enabled
         target = keyword.options[AskTranslatePlugin.targetOption] ?? ""
+        translationService = keyword.options[AskTranslatePlugin.engineOption]
+            .flatMap(AskTranslationProvider.init(rawValue:))?.rawValue ?? ""
         opensWordBook = AskTranslatePlugin.opensWordBook(keyword.options)
         title = keyword.options[AskPromptPlugin.titleOption] ?? ""
         prompt = AskPromptPlugin.template(of: keyword.options) ?? ""
@@ -42,6 +46,7 @@ struct AskKeywordDraft: Equatable {
         keyword = ""
         enabled = true
         target = ""
+        translationService = ""
         opensWordBook = false
         title = ""
         prompt = ""
@@ -83,11 +88,11 @@ struct AskKeywordDraft: Equatable {
         case .translate:
             if opensWordBook {
                 L("ask.wordBook.title")
-            } else if target.isEmpty {
-                L("ask.plugin.translate.title")
             } else {
-                L("ask.plugin.translate.title") + " · "
-                    + AskTranslationLanguages.name(target, in: AppLocalization.shared.language)
+                ([L("ask.plugin.translate.title")]
+                    + [target.isEmpty ? nil : AskTranslationLanguages.name(target, in: AppLocalization.shared.language),
+                       AskTranslationProvider(rawValue: translationService)?.title].compactMap { $0 })
+                    .joined(separator: " · ")
             }
         case .prompt, .web:
             title.trimmingCharacters(in: .whitespaces).isEmpty ? titlePlaceholder : title
@@ -155,6 +160,7 @@ struct AskKeywordDraft: Equatable {
         switch kind {
         case .translate:
             set(AskTranslatePlugin.targetOption, opensWordBook ? nil : target)
+            set(AskTranslatePlugin.engineOption, opensWordBook ? nil : translationService)
             options[AskTranslatePlugin.actionOption] = opensWordBook ? AskTranslatePlugin.wordBookAction : nil
         case .prompt:
             set(AskPromptPlugin.titleOption, title.trimmingCharacters(in: .whitespaces))

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Launcher settings panes: results shown right in the launcher, keywords and workflows.
+/// Launcher settings panes: results shown right in the launcher, keywords, translation and workflows.
 /// These run from the launcher without the Agent, so they live on their own page.
 struct LauncherSettingsView: View {
     let settings: SettingsStore
@@ -19,6 +19,9 @@ struct LauncherSettingsView: View {
             case .keywords:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 AskLauncherPluginSettingsView(settings: settings, workflows: workflows)
+            case .translation:
+                AgentPaneHeader(symbol: pane.symbol, title: pane.title)
+                AskTranslationSettingsView(settings: settings)
             case .workflows:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 ModelSurface {

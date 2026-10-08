@@ -84,6 +84,20 @@ struct AskKeywordEditorSheet: View {
         }
     }
 
+    private var translateServiceField: some View {
+        field(L("ask.settings.keywords.sheet.service")) {
+            Picker("", selection: $draft.translationService) {
+                Text(L("ask.settings.keywords.sheet.service.default")).tag("")
+                ForEach(AskTranslationProvider.allCases) { provider in
+                    Text(provider.title).tag(provider.rawValue)
+                }
+            }
+            .labelsHidden().frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityLabel(L("ask.settings.keywords.sheet.service"))
+            hint(L("ask.settings.keywords.sheet.serviceHint"))
+        }
+    }
+
     @ViewBuilder private var kindFields: some View {
         switch draft.kind {
         case .translate:
@@ -97,6 +111,7 @@ struct AskKeywordEditorSheet: View {
             }
             if !draft.opensWordBook {
                 translateTargetField
+                translateServiceField
             }
         case .prompt:
             field(L("ask.settings.keywords.name")) {
