@@ -102,20 +102,26 @@ struct AskLiquidGlassRedesignTests {
     // MARK: - Header and composer state
 
     @Test func runToneFollowsTheRunAndPendingApproval() {
+        func tone(_ run: AskRun?, pendingApproval: Bool = false, busy: Bool = false) -> AskRunTone? {
+            AskRunPhase.resolve(run: run, busy: busy, pendingApproval: pendingApproval,
+                                recovery: .init(run: run, entries: [], deviceId: "d", local: false))?.tone
+        }
         var run = AskRun(id: "r", deviceId: "d", status: "running", steps: 1, updatedAt: Self.now, tools: [], pending: [])
-        #expect(AskRunTone.of(nil, pendingApproval: true) == nil)
-        #expect(AskRunTone.of(run, pendingApproval: false) == .running)
-        #expect(AskRunTone.of(run, pendingApproval: true) == .attention)
+        #expect(tone(nil, pendingApproval: true) == nil)
+        #expect(tone(run) == .running)
+        #expect(tone(run, pendingApproval: true) == .attention)
         run.status = "waiting_tool"
-        #expect(AskRunTone.of(run, pendingApproval: false) == .running)
+        #expect(tone(run, busy: true) == .running)
+        // Nothing drives it any more: the recovery card asks the user to continue.
+        #expect(tone(run) == .attention)
         run.status = "completed"
-        #expect(AskRunTone.of(run, pendingApproval: false) == .done)
+        #expect(tone(run) == .done)
         run.status = "failed"
-        #expect(AskRunTone.of(run, pendingApproval: false) == .failed)
+        #expect(tone(run) == .failed)
         run.status = "cancelled"
-        #expect(AskRunTone.of(run, pendingApproval: false) == .failed)
+        #expect(tone(run) == .failed)
         run.status = "unknown"
-        #expect(AskRunTone.of(run, pendingApproval: false) == nil)
+        #expect(tone(run) == .attention)
     }
 
     @Test func toneDotColoursAndMotion() {

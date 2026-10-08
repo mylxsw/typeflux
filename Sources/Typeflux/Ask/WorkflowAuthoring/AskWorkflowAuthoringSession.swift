@@ -50,12 +50,27 @@ final class AskWorkflowAuthoringSession: ObservableObject, AskWorkflowAuthoringH
     var canUndo: Bool { undoDraft != nil }
     var risks: Set<AskWorkflowRisk> { AskWorkflowRiskScanner.scan(draft.scannedFiles) }
     var isDirty: Bool { workflowID == nil || draft.isDirty }
-    var problems: [String] {
-        var values = draft.problems().map(\.message)
-        values += (draft.manifest?.keywords ?? []).compactMap { keywordProblem($0.keyword) }
-        if let workflowID, draft.manifest?.id != workflowID { values.append(L("ask.workflow.chat.idChanged")) }
+    var problems: [String] { fieldProblems.map(\.message) }
+
+    /// Every problem with the manifest field it belongs to, so the panel's
+    /// checklist can mark the item it concerns.
+    var fieldProblems: [AskWorkflowManifest.Problem] {
+        var values = draft.problems()
+        for (index, keyword) in (draft.manifest?.keywords ?? []).enumerated() {
+            if let problem = keywordProblem(keyword.keyword) {
+                values.append(.init(field: "keywords[\(index)]", message: problem))
+            }
+        }
+        if let workflowID, draft.manifest?.id != workflowID {
+            values.append(.init(field: "id", message: L("ask.workflow.chat.idChanged")))
+        }
         return values
     }
+
+    var checklist: AskWorkflowChecklist { .init(manifest: draft.manifest, problems: fieldProblems) }
+
+    /// The latest test run, only while it still describes the current draft.
+    var currentPreview: Preview? { preview?.revision == revision ? preview : nil }
 
     func keywordProblem(_ keyword: String) -> String? {
         store.keywordProblem(keyword, builtIn: store.settings.effectiveAskLauncherKeywords, excluding: workflowID)

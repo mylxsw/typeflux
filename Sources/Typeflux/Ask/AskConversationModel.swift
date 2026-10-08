@@ -793,6 +793,15 @@ final class AskConversationModel: ObservableObject {
         submit(draft, newConversation: selectedId == nil)
     }
 
+    /// Sends `text` as a follow-up in the selected conversation, leaving whatever
+    /// the user is typing in the composer untouched.
+    func sendFollowUp(_ text: String) {
+        guard selected != nil else { return }
+        var followUp = AskDraft.followUp
+        followUp.text = text
+        submit(followUp, newConversation: false, clearsDraft: false)
+    }
+
     /// `messageId` keeps a queued message's ID; `clearsDraft` is false when the queue
     /// sends on its own, so whatever the user is typing stays in the composer.
     private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil, clearsDraft: Bool = true, launcher: Bool = false) {

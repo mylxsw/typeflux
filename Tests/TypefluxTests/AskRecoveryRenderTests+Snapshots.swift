@@ -8,7 +8,9 @@ extension AskRecoveryRenderTests {
     func readable(_ text: String) -> String {
         // OCR inserts spaces between wrapped lines and Chinese words. Ignore those
         // differences and curly/straight quotes while still requiring every word.
-        text.replacingOccurrences(of: "“", with: "\"")
+        // Vision also reads 并 as 井 and drops a sentence's final full stop at a wrap.
+        text.replacingOccurrences(of: "井", with: "并").replacingOccurrences(of: "。", with: "")
+            .replacingOccurrences(of: "“", with: "\"")
             .replacingOccurrences(of: "”", with: "\"")
             .replacingOccurrences(of: "‘", with: "'")
             .replacingOccurrences(of: "’", with: "'")

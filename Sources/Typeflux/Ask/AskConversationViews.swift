@@ -117,7 +117,8 @@ struct AskConversationView: View {
                 guard let id = model.selectedId else { return }
                 do { try model.workflowAuthoring?.remove(id) }
                 catch { session.message = error.localizedDescription }
-            })
+            }, complete: { model.sendFollowUp($0) },
+               completing: model.runPhase?.isWorking == true, canComplete: !model.isBusy)
             .frame(width: layout.usageInline ? layout.usageWidth : layout.drawerWidth)
         } else {
             AskUsagePanel(model: model, compact: layout.isShort, focusCloseOnAppear: layout.usageOverlay,
@@ -662,7 +663,7 @@ struct AskConversationView: View {
     /// The title and the conversation's actions as two glass capsules over the
     /// transcript: the title carries the run's state as a dot and a summary;
     /// the actions capsule appears only for an existing conversation and carries
-    /// the credits spent, usage, and delete.
+    /// the credits this conversation spent ("Used here"), usage, and delete.
     @ViewBuilder private var header: some View {
         if layout.compactContent { compactHeader } else { spaciousHeader }
     }
@@ -710,14 +711,10 @@ struct AskConversationView: View {
                         .foregroundStyle(StudioTheme.textPrimary)
                         .lineLimit(1)
                     if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
-                    if layout.mainWidth >= 760, let summary = AskActivity.runSummary(
-                        model.selected?.run, pendingApproval: model.pendingApprovals[id] != nil) {
+                    if layout.mainWidth >= 760, let phase = model.runPhase {
                         HStack(spacing: 5) {
-                            if let tone = AskRunTone.of(model.selected?.run,
-                                                        pendingApproval: model.pendingApprovals[id] != nil) {
-                                AskRunToneDot(tone: tone)
-                            }
-                            Text(summary)
+                            AskRunToneDot(tone: phase.tone)
+                            Text(phase.summary)
                                 .font(.system(size: 12))
                                 .foregroundStyle(StudioTheme.textSecondary)
                                 .monospacedDigit()
@@ -749,10 +746,12 @@ struct AskConversationView: View {
                             HStack(spacing: 6) {
                                 Image(systemName: "sparkles").font(.system(size: 12, weight: .medium))
                                     .foregroundStyle(AskTheme.accent)
-                                (Text(credits).font(.system(size: 12.5, weight: .semibold))
-                                    .foregroundColor(StudioTheme.textPrimary)
-                                    + Text(verbatim: " credits").font(.system(size: 12.5))
-                                    .foregroundColor(StudioTheme.textSecondary))
+                                // Credits this conversation spent, labelled so it never
+                                // reads as the account's remaining balance.
+                                (Text(L("ask.usage.conversationSpent") + " ").font(.system(size: 12.5))
+                                    .foregroundColor(StudioTheme.textSecondary)
+                                    + Text(credits).font(.system(size: 12.5, weight: .semibold))
+                                    .foregroundColor(StudioTheme.textPrimary))
                                     .monospacedDigit()
                                     .lineLimit(1)
                                     .fixedSize()
@@ -763,9 +762,9 @@ struct AskConversationView: View {
                             .contentShape(Capsule())
                         }
                         .buttonStyle(.plain)
-                        .help(L("ask.usage.title"))
+                        .help(L("ask.usage.conversationSpentHelp"))
                         .accessibilityLabel(L("ask.usage.title"))
-                        .accessibilityValue(credits + " credits")
+                        .accessibilityValue(L("ask.usage.conversationSpent") + " " + credits + " credits")
                         .accessibilityIdentifier("ask.workspace.usage")
                         Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
                     } else {
@@ -938,9 +937,7 @@ struct AskConversationView: View {
                 canContinue: model.recoveryPresentation.canContinue && !model.canRetransmitReceipts,
                 working: model.recoveryWorking,
                 inspect: { model.inspectingRecovery = true },
-                retransmit: { Task { await model.retransmitSavedReceipts() } },
-                continueRun: { model.resume() },
-                endRun: { Task { await model.endRecoveryRun() } }
+                perform: { model.performRecovery($0) }
             )
             .sheet(isPresented: $model.inspectingRecovery) { AskRecoveryInspector(model: model) }
         }
@@ -1057,13 +1054,6 @@ struct AskConversationView: View {
                                                            value: [item.id: geometry.frame(in: .named("ask-transcript"))])
                                 })
                         }
-                        if let session = model.authoringSession {
-                            AskWorkflowAuthoringCard(session: session) {
-                                showsUsage = false
-                                session.isPresented = true
-                                model.objectWillChange.send()
-                            }
-                        }
                         // A decision for a step in a tool card sits inside that card.
                         if let id = model.selected?.id, let call = model.pendingApprovals[id],
                            !Self.groupContains(items, callId: call.id) {
@@ -1075,6 +1065,17 @@ struct AskConversationView: View {
                         }
                         // Errors, interrupted runs and model switches follow the last answer.
                         if hasStatus { statusColumn.id("status") }
+                        // The draft follows what happened to the run that wrote it.
+                        if let session = model.authoringSession {
+                            AskWorkflowAuthoringCard(session: session, selected: showsWorkflow, open: {
+                                showsUsage = false
+                                session.isPresented = true
+                                model.objectWillChange.send()
+                            }, close: {
+                                session.isPresented = false
+                                model.objectWillChange.send()
+                            })
+                        }
                         // The end marker spans the space under the composer, so
                         // scrolling to it leaves the last answer above the card.
                         Color.clear.frame(height: bottomChromeHeight + 1).id("bottom")
@@ -1158,7 +1159,8 @@ struct AskConversationView: View {
     @ViewBuilder
     private func transcriptRow(_ item: AskTranscriptItem, items: [AskTranscriptItem], regenerable: String?) -> some View {
         let run = model.selected?.run
-        let streamingId = run?.isActive == true ? run?.assistantId : nil
+        let phase = model.runPhase
+        let streamingId = phase?.isWorking == true ? run?.assistantId : nil
         let approvalToolId = model.selectedId.flatMap { model.pendingApprovals[$0]?.id }
         switch item.kind {
         case let .message(message):
@@ -1174,16 +1176,23 @@ struct AskConversationView: View {
         case let .activity(group):
             let results = model.selected?.messages.filter { $0.role == "tool" } ?? []
             let isLatest = items.last(where: { if case .activity = $0.kind { return true }; return false })?.id == group.id
-            // The run's latest block stays live between steps, while no answer follows it yet.
-            let live = run?.isActive == true && items.last?.id == group.id
+            // The run's latest block stays live between steps, while no answer follows it yet,
+            // and stops spinning with every other indicator once the run waits for a decision.
+            let carriesRun = run?.isActive == true && items.last?.id == group.id
+            let halted: Bool = {
+                guard case .needsDecision = phase, isLatest else { return false }
+                return group.messages.contains { $0.runId == nil || $0.runId == run?.id }
+            }()
+            let live = phase?.isWorking == true && carriesRun
             let status = AskActivity.status(group, results: results, streamingId: streamingId,
-                                            approvalToolId: approvalToolId, live: live)
+                                            approvalToolId: approvalToolId, live: live, halted: halted)
             let pending = model.selectedId.flatMap { id in
                 model.pendingApprovals[id].map { (id: id, call: $0) }
             }
             AskActivityBlock(group: group, results: results,
                              plan: AskActivity.plan(for: group, run: run, isLatest: isLatest),
                              status: status, streamingId: streamingId, approvalToolId: approvalToolId,
+                             runStep: live || halted ? phase?.step : nil,
                              outputs: item.outputs,
                              approval: pending.flatMap { pending in
                                  group.calls.contains { $0.id == pending.call.id }
