@@ -74,7 +74,56 @@ extension AskRecoveryRenderTests {
         return try snapshot(hosting, name: name, language: language)
     }
 
-    @Test func `credit pause flow shows the balance, the purchase entry and continue`() async throws {
+    /// Synchronous card renders: stable under the parallel full suite.
+    @Test func `credit pause card offers buying, then continue once credits are back`() throws {
+        let subscription = creditAuth(nil).subscription
+        let run = pausedConversation(chinese: false).run
+        let exhausted = try #require(AskCreditPausePresentation(run: run, busy: false, credits: Self.exhausted,
+                                                                details: nil, subscription: subscription,
+                                                                usagePeriodEnd: nil))
+        let paused = try render(AskCreditPauseCard(presentation: exhausted).padding(24), name: "credit-card-paused",
+                                size: .init(width: 650, height: 300))
+        #expect(readable(paused).contains(readable(localized("ask.credits.exhausted.title"))))
+        #expect(readable(paused).contains(readable(localized("ask.credits.buy"))))
+        #expect(readable(paused).contains(readable(localized("ask.credits.upgrade"))))
+        let available = try #require(AskCreditPausePresentation(run: run, busy: false, credits: Self.toppedUp,
+                                                                details: nil, subscription: subscription,
+                                                                usagePeriodEnd: nil))
+        let ready = try render(AskCreditPauseCard(presentation: available).padding(24), name: "credit-card-available",
+                               dark: true, size: .init(width: 650, height: 300))
+        #expect(readable(ready).contains(readable(localized("ask.credits.continue"))))
+        #expect(!readable(ready).contains(readable(localized("ask.credits.buy"))))
+
+        // Without billing: no buttons, the reset date, and a billing error line.
+        let waiting = try #require(AskCreditPausePresentation(run: run, busy: false, credits: Self.exhausted,
+                                                              details: nil, subscription: .none,
+                                                              usagePeriodEnd: "2026-11-01T00:00:00Z"))
+        let wait = try render(AskCreditPauseCard(presentation: waiting, working: true, errorMessage: "Billing offline")
+            .padding(24), name: "credit-card-wait", size: .init(width: 650, height: 300))
+        #expect(wait.contains("Billing offline"))
+        #expect(!readable(wait).contains(readable(localized("ask.credits.buy"))))
+    }
+
+    @Test func `credit pause section reads the selected run and the account balance`() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        await fixture.api.seed(pausedConversation(chinese: false))
+        await fixture.model.select("credit-pause")
+        let auth = creditAuth(Self.toppedUp)
+        let text = try render(AskCreditPauseSection(model: fixture.model, auth: auth).padding(24),
+                              name: "credit-section", size: .init(width: 650, height: 300))
+        #expect(readable(text).contains(readable(localized("ask.credits.continue"))))
+        // A rejected resume wins over the stale balance and offers the purchase again.
+        fixture.model.creditPauseDetails["credit-pause"] = .init(purchasable: true)
+        let rejected = try render(AskCreditPauseSection(model: fixture.model, auth: auth).padding(24),
+                                  name: "credit-section-rejected", size: .init(width: 650, height: 300))
+        #expect(readable(rejected).contains(readable(localized("ask.credits.buy"))))
+    }
+
+    /// The whole workspace through pause → top-up → continue. Window layout needs
+    /// an idle main thread, so like the other screenshot suites it runs on request.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_RECOVERY_SCREENSHOTS"] != nil))
+    func `credit pause flow shows the balance, the purchase entry and continue`() async throws {
         for (language, chinese) in [(AppLanguage.english, false), (.simplifiedChinese, true)] {
             for dark in [false, true] {
                 let fixture = try AskTestFixture()
