@@ -158,18 +158,23 @@ struct AskHarnessUITests {
     }
 
     @Test func runSummaryCoversEveryState() {
+        func summary(_ run: AskRun?, pendingApproval: Bool = false) -> String? {
+            AskRunPhase.resolve(run: run, busy: false, pendingApproval: pendingApproval,
+                                recovery: .init(run: run, entries: [], deviceId: "d", local: false))?.summary
+        }
         var run = AskRun(id: "r", deviceId: "d", status: "running", steps: 0, updatedAt: now, tools: [], pending: [])
-        #expect(AskActivity.runSummary(nil, pendingApproval: false) == nil)
-        #expect(AskActivity.runSummary(run, pendingApproval: true) == L("ask.run.attention"))
-        #expect(AskActivity.runSummary(run, pendingApproval: false) == L("ask.run.running", 1))
+        #expect(summary(nil) == nil)
+        #expect(summary(run, pendingApproval: true) == L("ask.run.attention"))
+        #expect(summary(run) == L("ask.run.running", 1))
         run.status = "completed"; run.steps = 9
-        #expect(AskActivity.runSummary(run, pendingApproval: false) == L("ask.run.completed", 9))
+        #expect(summary(run) == L("ask.run.completed", 9))
         run.status = "failed"
-        #expect(AskActivity.runSummary(run, pendingApproval: false) == L("ask.run.failed"))
+        #expect(summary(run) == L("ask.run.failed"))
         run.status = "cancelled"
-        #expect(AskActivity.runSummary(run, pendingApproval: false) == L("ask.run.cancelled"))
+        #expect(summary(run) == L("ask.run.cancelled"))
+        // A state this build does not know blocks execution: it waits for the user.
         run.status = "unknown"
-        #expect(AskActivity.runSummary(run, pendingApproval: false) == nil)
+        #expect(summary(run) == L("ask.run.needsDecision"))
     }
 
     // MARK: - Titles and status

@@ -38,7 +38,9 @@ struct AskRecoveryWireTests {
         var future = AskRecoveryFixture.conversation()
         future.run?.status = "future_queued"
         #expect(future.run?.isActive == true && future.run?.needsRecoveryInspection == true)
-        #expect(AskRunTone.of(future.run, pendingApproval: false) == nil)
+        let phase = AskRunPhase.resolve(run: future.run, busy: false, pendingApproval: false,
+                                        recovery: .init(run: future.run, entries: [], deviceId: "device", local: false))
+        #expect(phase?.isWorking == false && phase?.tone == .attention)
         let old = AskRecoveryFixture.conversation()
         #expect(try AskCoding.decoder().decode(AskConversation.self, from: AskCoding.encoder().encode(old)).run?
             .recovery == nil)

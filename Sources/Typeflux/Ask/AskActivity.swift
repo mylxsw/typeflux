@@ -174,12 +174,16 @@ enum AskActivity {
         return title.components(separatedBy: " · ").first ?? title
     }
 
-    enum Status: Equatable { case running, attention, failed, done }
+    /// `paused` is a block whose run stopped for a recovery decision: it neither
+    /// spins nor reads as finished.
+    enum Status: Equatable { case running, attention, paused, failed, done }
 
-    /// `live` marks the latest block of a run that is still working, even between steps.
+    /// `live` marks the latest block of a run that is still working, even between steps;
+    /// `halted` marks the latest block of a run that waits for the user to decide.
     static func status(_ group: AskActivityGroup, results: [AskMessage], streamingId: String?,
-                       approvalToolId: String?, live: Bool = false) -> Status {
+                       approvalToolId: String?, live: Bool = false, halted: Bool = false) -> Status {
         if let approvalToolId, group.calls.contains(where: { $0.id == approvalToolId }) { return .attention }
+        if halted { return .paused }
         if live { return .running }
         if let streamingId, group.messageIds.contains(streamingId) { return .running }
         if group.calls.contains(where: { call in !results.contains { $0.toolCallId == call.id } }) { return .running }
@@ -194,7 +198,7 @@ enum AskActivity {
     static func title(_ group: AskActivityGroup, status: Status, plan: [AskPlanItem]?, results: [AskMessage]) -> String {
         let steps = group.steps
         switch status {
-        case .running:
+        case .running, .paused:
             return steps.last.map { AskTheme.toolTitle($0) } ?? L("ask.activity.working")
         case .attention: return L("ask.activity.attention")
         case .failed, .done:
@@ -213,11 +217,15 @@ enum AskActivity {
     }
 
     /// The quieter tail of the line: "Step 3" while working, "3 steps" once
-    /// there was more than one, nothing for a single step.
-    static func stepNote(_ group: AskActivityGroup, status: Status) -> String? {
+    /// there was more than one, nothing for a single step. `runStep` is the run's
+    /// own count, shared with the header, for the block that carries the run.
+    static func stepNote(_ group: AskActivityGroup, status: Status, runStep: Int? = nil) -> String? {
         let count = group.steps.count
         switch status {
-        case .running: return count > 0 ? L("ask.activity.step", count) : nil
+        case .running:
+            let step = runStep ?? count
+            return step > 0 ? L("ask.activity.step", step) : nil
+        case .paused: return L("ask.activity.pausedAt", max(runStep ?? count, 1))
         case .attention: return nil
         case .failed, .done: return count > 1 ? L("ask.activity.steps", count) : nil
         }
@@ -233,18 +241,5 @@ enum AskActivity {
     /// The line's glyph: the first step's tool.
     static func symbol(_ group: AskActivityGroup) -> String {
         group.steps.first.map(AskPresentation.toolSymbol) ?? "list.bullet.clipboard"
-    }
-
-    /// The header's run line: where Ask runs, then the run's state and step count.
-    static func runSummary(_ run: AskRun?, pendingApproval: Bool) -> String? {
-        guard let run else { return nil }
-        if pendingApproval { return L("ask.run.attention") }
-        switch run.status {
-        case "running", "waiting_tool", "waiting_inference": return L("ask.run.running", max(run.steps, 1))
-        case "completed": return L("ask.run.completed", run.steps)
-        case "failed": return L("ask.run.failed")
-        case "cancelled": return L("ask.run.cancelled")
-        default: return nil
-        }
     }
 }

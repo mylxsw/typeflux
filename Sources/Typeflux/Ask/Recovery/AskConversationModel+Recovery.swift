@@ -16,6 +16,14 @@ extension AskConversationModel {
               local: selected.map { isLocal($0.id) } ?? false)
     }
 
+    /// The single state every run indicator reads; see `AskRunPhase`.
+    var runPhase: AskRunPhase? {
+        guard let value = selected else { return nil }
+        return AskRunPhase.resolve(run: value.run, busy: busyIds.contains(value.id),
+                                   pendingApproval: pendingApprovals[value.id] != nil,
+                                   recovery: recoveryPresentation)
+    }
+
     var hasRecoveryNotice: Bool {
         selected != nil && recoveryPresentation.isVisible
     }
@@ -146,6 +154,31 @@ extension AskConversationModel {
             }
             await refreshRecovery(response, route: current)
         } catch { reportOperationError(error, id: value.id, owner: current.account) }
+    }
+
+    /// "Check and continue": ends the uncertain run when it is still active, then
+    /// starts a new one that first inspects what already happened. The uncertain
+    /// step itself is never replayed; the new run decides from what it finds.
+    func checkAndContinueRecovery() async {
+        guard !recoveryWorking, let value = selected, !busyIds.contains(value.id),
+              !recoveryPresentation.otherDevice else { return }
+        if value.run?.isActive == true {
+            await endRecoveryRun()
+            guard selectedId == value.id, selected?.run?.isActive == false else { return }
+        }
+        inspectingRecovery = false
+        sendFollowUp(L("ask.recovery.checkPrompt"))
+    }
+
+    /// Runs the action the user picked on the recovery card or in the inspector.
+    func performRecovery(_ action: AskRecoveryAction) {
+        switch action {
+        case .checkAndContinue: Task { await checkAndContinueRecovery() }
+        case .refresh: inspectingRecovery = false; Task { await retransmitSavedReceipts() }
+        case .continueRun: inspectingRecovery = false; resume()
+        case .selfCheck: dismissRecoveryInspector()
+        case .stop: Task { await endRecoveryRun() }
+        }
     }
 
     /// Returning to the conversation does not confirm an outcome or start any work.

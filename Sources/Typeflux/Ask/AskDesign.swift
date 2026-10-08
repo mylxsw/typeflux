@@ -654,13 +654,15 @@ struct AskSystemLine: View {
 
 /// Capsule buttons for Ask's own cards and sheets, in place of the stock
 /// bordered buttons: `primary` fills with the design blue, `secondary` is a
-/// quiet outline, `destructive` fills red for actions that cannot be undone. All dim when disabled.
+/// quiet outline, `destructive` fills red for actions that cannot be undone. All turn neutral grey when disabled.
 struct AskCapsuleButtonStyle: ButtonStyle {
     enum Kind { case primary, secondary, destructive }
     var kind: Kind = .primary
+    /// Fills the available width at the taller height, for a panel's main action.
+    var expands = false
 
     func makeBody(configuration: Configuration) -> some View {
-        CapsuleLabel(configuration: configuration, kind: kind)
+        CapsuleLabel(configuration: configuration, kind: kind, expands: expands)
     }
 
     /// Not named `Body`: that would shadow the protocol's associated type.
@@ -668,36 +670,45 @@ struct AskCapsuleButtonStyle: ButtonStyle {
     struct CapsuleLabel: View {
         let configuration: Configuration
         let kind: Kind
+        var expands = false
         @Environment(\.isEnabled) private var isEnabled
+
+        /// Disabled buttons turn neutral grey rather than a faded accent, so they
+        /// never read as a weaker version of the action they cannot perform.
+        private var lit: Bool { isEnabled && kind != .secondary }
 
         var body: some View {
             configuration.label
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(.system(size: expands ? 13 : 12.5, weight: .semibold))
                 .lineLimit(1)
-                .foregroundStyle(kind == .secondary ? StudioTheme.textPrimary : Color.white)
+                .foregroundStyle(!isEnabled ? StudioTheme.textTertiary
+                    : (kind == .secondary ? StudioTheme.textPrimary : Color.white))
                 .padding(.horizontal, 14)
-                .frame(height: 30)
+                .frame(maxWidth: expands ? .infinity : nil)
+                .frame(height: expands ? 36 : 30)
                 .background(fill, in: Capsule())
                 // A lit top edge on filled buttons, like the board's glass buttons.
                 .overlay {
-                    if kind != .secondary {
+                    if lit {
                         Capsule().fill(LinearGradient(colors: [Color.white.opacity(0.18), .clear],
                                                       startPoint: .top, endPoint: .bottom))
                             .allowsHitTesting(false)
                     }
                 }
-                .overlay(Capsule().strokeBorder(kind == .secondary ? AskTheme.border : Color.white.opacity(0.3),
-                                                lineWidth: kind == .secondary ? 1 : 0.5))
-                .shadow(color: kind == .primary ? AskTheme.accent.opacity(0.4) : .clear, radius: 7, y: 3)
+                .overlay(Capsule().strokeBorder(lit ? Color.white.opacity(0.3)
+                                                    : (isEnabled ? AskTheme.border : AskTheme.separator),
+                                                lineWidth: lit ? 0.5 : 1))
+                .shadow(color: kind == .primary && isEnabled ? AskTheme.accent.opacity(0.4) : .clear, radius: 7, y: 3)
                 .contentShape(Capsule())
                 .scaleEffect(configuration.isPressed ? 0.95 : 1)
                 .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
-                .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.45)
-                .fixedSize()
+                .opacity(configuration.isPressed ? 0.85 : 1)
+                .fixedSize(horizontal: !expands, vertical: true)
         }
 
         private var fill: Color {
-            switch kind {
+            guard isEnabled else { return AskTheme.controlSurface }
+            return switch kind {
             case .primary: AskTheme.accent
             case .secondary: AskTheme.hoverFill
             case .destructive: StudioTheme.danger

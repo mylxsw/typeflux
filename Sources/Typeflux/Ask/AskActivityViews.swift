@@ -14,6 +14,8 @@ struct AskActivityBlock: View {
     let status: AskActivity.Status
     var streamingId: String?
     var approvalToolId: String?
+    /// The run's step count from `AskRunPhase`, for the block that carries the run.
+    var runStep: Int?
     var outputs = AskRunOutputs()
     /// The approval for one of this card's steps, shown under its header.
     var approval: AnyView?
@@ -72,6 +74,10 @@ struct AskActivityBlock: View {
             HStack(spacing: 6) {
                 if running {
                     ProgressView().controlSize(.mini).frame(width: 14, height: 14)
+                } else if status == .paused {
+                    Image(systemName: "pause.fill").font(.system(size: 9))
+                        .foregroundStyle(StudioTheme.warning)
+                        .frame(width: 14, height: 14)
                 } else {
                     Image(systemName: AskActivity.symbol(group)).font(.system(size: 11))
                         .frame(width: 14, height: 14)
@@ -80,7 +86,7 @@ struct AskActivityBlock: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .modifier(AskShimmer(active: running))
-                if let note = AskActivity.stepNote(group, status: status) {
+                if let note = AskActivity.stepNote(group, status: status, runStep: runStep) {
                     Text("· " + note).foregroundStyle(StudioTheme.textTertiary.opacity(0.8)).lineLimit(1)
                         .layoutPriority(1)
                 }
