@@ -1,4 +1,6 @@
+import AppKit
 import Foundation
+import SwiftUI
 import Testing
 @testable import Typeflux
 
@@ -283,6 +285,38 @@ struct AskTranslationSettingsModelTests {
         model.test()
         await model.waitForTest()
         #expect(model.noticeIsError && model.notice == AskTranslationServiceError.authentication.localizedDescription)
+    }
+}
+
+@Suite("Ask translation provider sheet")
+@MainActor
+struct AskTranslationProviderSheetTests {
+    @Test func everyProviderSheetDraws() async throws {
+        let defaults = UserDefaults(suiteName: "AskTranslationProviderSheetTests-" + UUID().uuidString)!
+        let credentials = AskTestTranslationCredentials([.deepl: .init(key: "k")])
+        let model = AskTranslationSettingsModel(store: SettingsStore(defaults: defaults), credentials: credentials)
+        _ = NSApplication.shared
+        for provider in AskTranslationProvider.allCases {
+            model.edit(provider)
+            if provider == .deepl {
+                model.http = AskTestTranslationHTTP([("{}", 403)])
+                model.test()
+                await model.waitForTest()
+                #expect(model.notice != nil)
+            }
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 320), styleMask: [.borderless],
+                                  backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            let hosting = NSHostingView(rootView: AskTranslationProviderSheet(model: model, provider: provider))
+            window.contentView = hosting
+            window.orderFront(nil)
+            try await Task.sleep(for: .milliseconds(80))
+            hosting.layoutSubtreeIfNeeded()
+            #expect(hosting.fittingSize.height > 100, "\(provider)")
+            window.orderOut(nil)
+            window.close()
+        }
+        model.cancelEdit()
     }
 }
 
