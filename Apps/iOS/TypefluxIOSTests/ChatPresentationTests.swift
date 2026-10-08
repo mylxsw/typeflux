@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 import TypefluxChat
 @testable import TypefluxIOS
@@ -158,12 +159,40 @@ struct ChatPresentationTests {
         #expect(clock != date)
     }
 
-    @Test func `provider tiles use brand colors and fall back to the initial`() {
-        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "claude-sonnet", name: "Claude Sonnet")).letter == "C")
-        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "m3", name: "MiniMax M3")).letter == "M")
-        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "x", name: "deepseek v4")).letter == "D")
-        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "x", name: "zeta")).letter == "Z")
-        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "x", name: "  ")).letter == "?")
-        #expect(ChatModelPickerDisplay.brand(ChatModel(id: "x", name: "zeta")).colors.count == 2)
+    @Test func `model logos decode bundled artwork in both themes and cache images`() throws {
+        for id in ["claude-sonnet", "gpt-5", "qwen3:8b", "kimi-k2", "glm-4.6"] {
+            let descriptor = ModelIconResolver.resolve(modelID: id)
+            for dark in [false, true] {
+                let first = try #require(ChatModelLogo.image(for: descriptor, dark: dark))
+                #expect(first.size.width > 0)
+                #expect(ChatModelLogo.image(for: descriptor, dark: dark) === first)
+            }
+        }
+        #expect(ChatModelLogo.image(for: .generic, dark: false) == nil)
+        #expect(ChatModelLogo.image(for: .asset("missing", monochrome: false), dark: true) == nil)
+    }
+
+    @Test func `all bundled model logos decode on iOS and fallback views render`() throws {
+        let first = try #require(ModelIconResolver.resolve(modelID: "claude").resourceURL(dark: false))
+        let files = try FileManager.default.contentsOfDirectory(at: first.deletingLastPathComponent(),
+                                                                includingPropertiesForKeys: nil)
+        let pngs = files.filter { $0.pathExtension == "png" }
+        #expect(pngs.count == 172)
+        for url in pngs {
+            let key = url.deletingPathExtension().lastPathComponent.replacingOccurrences(of: "-light", with: "")
+                .replacingOccurrences(of: "-dark", with: "")
+            let image = try #require(ChatModelLogo.image(for: .asset(key, monochrome: false),
+                                                        dark: url.lastPathComponent.contains("-dark")))
+            #expect(image.cgImage != nil)
+        }
+        for dark in [false, true] {
+            for id in ["claude", "gpt-5", "unknown"] {
+                let renderer = ImageRenderer(content: ChatModelLogo(model: ChatModel(id: id, name: id))
+                    .environment(\.colorScheme, dark ? .dark : .light))
+                let image = try #require(renderer.uiImage)
+                #expect(image.size.width == 28)
+                #expect(image.size.height == 28)
+            }
+        }
     }
 }

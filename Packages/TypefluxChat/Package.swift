@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v13), .iOS(.v17)],
     products: [.library(name: "TypefluxChat", targets: ["TypefluxChat"])],
     targets: [
-        .target(name: "TypefluxChat"),
+        .target(name: "TypefluxChat", resources: [.copy("Resources/ModelIcons")]),
         .testTarget(name: "TypefluxChatTests", dependencies: ["TypefluxChat"])
     ]
 )

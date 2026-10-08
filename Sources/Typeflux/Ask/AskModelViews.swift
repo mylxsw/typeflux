@@ -57,9 +57,8 @@ struct AskModelMenu: View {
     var body: some View {
         Button { expanded.toggle() } label: {
             HStack(spacing: compact ? 6 : 8) {
-                // Settings shows the provider logo so same-named models stay distinguishable.
-                if fieldStyle, let provider = library.registry.resolve(reference)?.0 {
-                    ModelProviderIcon(provider: provider.studioProviderID, size: 16)
+                if let (provider, model) = library.registry.resolve(reference) {
+                    ModelIcon(model: model, provider: provider, size: 16)
                 }
                 // A long model name must not squeeze the context chips out of the
                 // footer, and a short one hugs its text instead of padding out to the cap.
@@ -236,7 +235,8 @@ struct AskModelChoices: View {
                                           caption: blocked ?? Self.imageTrialCaption(model, provider: provider, hasImage: hasImage)
                                               ?? Self.caption(model),
                                           selected: reference == model.reference,
-                                          enabled: blocked == nil) {
+                                          enabled: blocked == nil,
+                                          modelIcon: ModelIcon(model: model, provider: provider)) {
                                 reference = model.reference; dismiss()
                             } accessory: {
                                 AskModelCapabilities(model: model)
@@ -345,16 +345,17 @@ struct AskModelChoices: View {
                     .foregroundStyle(StudioTheme.textSecondary)
                     .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
                 ForEach(provider.models) { model in
-                    choice(model)
+                    choice(model, provider: provider)
                 }
             }
         }.padding(8)
     }
 
-    private func choice(_ model: RegisteredModel) -> some View {
+    private func choice(_ model: RegisteredModel, provider: RegisteredProvider) -> some View {
         let selected = reference == model.reference
         return Button { reference = model.reference; dismiss() } label: {
             HStack(spacing: 10) {
+                ModelIcon(model: model, provider: provider)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(recoveryProviders == nil ? model.displayName : model.name).font(.system(
                         size: 13,

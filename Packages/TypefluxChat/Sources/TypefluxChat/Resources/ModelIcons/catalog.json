@@ -1,0 +1,866 @@
+{
+  "source": "https://github.com/lobehub/lobe-icons",
+  "revision": "c385b2b8d1f9e19aa86e628d4e23c91ee1111a47",
+  "icons": [
+    {
+      "key": "ace",
+      "title": "ace",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "abf39f1db4e03b795bf66abb91e7c92d4d49073ca215f2bafb5d032e2cde0d38",
+        "dark": "a342e9f6ff0b22da37755cc2444ff24eb83f32c96e758701eaec9d0367da7196"
+      }
+    },
+    {
+      "key": "ai2",
+      "title": "Ai2",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "2a82382a3464ae5b32c5b9b7c8354105b6a7cf8afc6e991119912dcf442e0f13",
+        "dark": "2a82382a3464ae5b32c5b9b7c8354105b6a7cf8afc6e991119912dcf442e0f13"
+      }
+    },
+    {
+      "key": "ai21",
+      "title": "AI21",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "72651bb2e853671ca2d9db2eebbcd874a9332a5b76812788216992786a415111",
+        "dark": "149ef9d7b743b39cd2c58b6edc755f4848d26c46b50ddea9362e41b42d1a2363"
+      }
+    },
+    {
+      "key": "aionlabs",
+      "title": "AionLabs",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "3fff75ae993b431dec61fceba52b1e4513b50fcfe231042bff383c3e0836769c",
+        "dark": "3fff75ae993b431dec61fceba52b1e4513b50fcfe231042bff383c3e0836769c"
+      }
+    },
+    {
+      "key": "anthropic",
+      "title": "Anthropic",
+      "group": "provider",
+      "monochrome": true,
+      "sha256": {
+        "light": "389105af72687ae02e5dfbbafe24ed99a84a77a6cf6ea339c13993615b64b37e",
+        "dark": "77c77059492c4b09937bcabafbbcfaf06738c893b1bc60a5a272eafeea68a8ea"
+      }
+    },
+    {
+      "key": "arcee",
+      "title": "Arcee",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "e81bc3a0c8c9f82475c63b54540ce2ff1015b5b1e0010c6f37c4a7ad7ee2365a",
+        "dark": "e81bc3a0c8c9f82475c63b54540ce2ff1015b5b1e0010c6f37c4a7ad7ee2365a"
+      }
+    },
+    {
+      "key": "assemblyai",
+      "title": "AssemblyAI",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "5d57b38411352ba2ee29881d1912f2c45f249fe2aaf92232d1de58061e7aee12",
+        "dark": "5d57b38411352ba2ee29881d1912f2c45f249fe2aaf92232d1de58061e7aee12"
+      }
+    },
+    {
+      "key": "aya",
+      "title": "Aya",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "2f72f2d2d1784311644f6f12edf6119193e43ce4f7f7a58f1f920ef8fd2cc742",
+        "dark": "2f72f2d2d1784311644f6f12edf6119193e43ce4f7f7a58f1f920ef8fd2cc742"
+      }
+    },
+    {
+      "key": "baai",
+      "title": "BAAI",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "89a1f4dcc16d45f078948db0c16adab6d05fdc1a6c4a9eab752392abfd03bba6",
+        "dark": "c8e60fec0c99e9a6ef27a0a630986b39f04ebf7ecce394a41ae85d77f40aad7e"
+      }
+    },
+    {
+      "key": "baichuan",
+      "title": "Baichuan",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "731dc01636a0da23d581f013ed94e82b87c0945f96e45b237f56e620e1849415",
+        "dark": "731dc01636a0da23d581f013ed94e82b87c0945f96e45b237f56e620e1849415"
+      }
+    },
+    {
+      "key": "bilibiliindex",
+      "title": "bilibili index",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "7a7c51d6b8f3ae0a2156107aea67c46fd5ae39b83d239b3d2a30b3a8a0d2b09a",
+        "dark": "e9d7d220eaa84a42f21088179a2d653960928489805379e1b851854fe5b8e662"
+      }
+    },
+    {
+      "key": "chatglm",
+      "title": "ChatGLM",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "4d3db10e2191d9df313e0ff72e94eed5b7f33fbde798c41d52fe8ce5f16e61a1",
+        "dark": "4d3db10e2191d9df313e0ff72e94eed5b7f33fbde798c41d52fe8ce5f16e61a1"
+      }
+    },
+    {
+      "key": "claude",
+      "title": "Claude",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "97b53fb85b3bf401ffeb8ee7c5ebad734ce9f6edc3038f242021c53bcc18e23d",
+        "dark": "97b53fb85b3bf401ffeb8ee7c5ebad734ce9f6edc3038f242021c53bcc18e23d"
+      }
+    },
+    {
+      "key": "codegeex",
+      "title": "CodeGeeX",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "19df7daf6df3577a876e92c04ac6b8e49e798601ad6ea970aec86b7704d7fdff",
+        "dark": "19df7daf6df3577a876e92c04ac6b8e49e798601ad6ea970aec86b7704d7fdff"
+      }
+    },
+    {
+      "key": "codex",
+      "title": "Codex",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "fcea9ddbaafdca236a8380cef2ecd3342ecd9914a7b080873873cf45f415686d",
+        "dark": "fcea9ddbaafdca236a8380cef2ecd3342ecd9914a7b080873873cf45f415686d"
+      }
+    },
+    {
+      "key": "cogvideo",
+      "title": "CogVideo",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "95bdf301c9fa5fa031fee59c8aa59d82c70593dc6916f773835f15068bbb50fb",
+        "dark": "95bdf301c9fa5fa031fee59c8aa59d82c70593dc6916f773835f15068bbb50fb"
+      }
+    },
+    {
+      "key": "cogview",
+      "title": "CogView",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "9bb03d9aa505abe835cc5c9f5d399c7ccb98d98f139c1604aaa3260c7c2d78b4",
+        "dark": "9bb03d9aa505abe835cc5c9f5d399c7ccb98d98f139c1604aaa3260c7c2d78b4"
+      }
+    },
+    {
+      "key": "cohere",
+      "title": "Cohere",
+      "group": "provider",
+      "monochrome": false,
+      "sha256": {
+        "light": "81a4521ebb2e33befce5c347c7c21fb8d4eda4212152d6a7a19f15408a0bd18d",
+        "dark": "81a4521ebb2e33befce5c347c7c21fb8d4eda4212152d6a7a19f15408a0bd18d"
+      }
+    },
+    {
+      "key": "commanda",
+      "title": "CommandA",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "81a4521ebb2e33befce5c347c7c21fb8d4eda4212152d6a7a19f15408a0bd18d",
+        "dark": "81a4521ebb2e33befce5c347c7c21fb8d4eda4212152d6a7a19f15408a0bd18d"
+      }
+    },
+    {
+      "key": "dalle",
+      "title": "DALL-E",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "7eee3af48a5d985cb997a0538fbbbc3224d096cdb4679c4ec9681b688d609c9e",
+        "dark": "7eee3af48a5d985cb997a0538fbbbc3224d096cdb4679c4ec9681b688d609c9e"
+      }
+    },
+    {
+      "key": "dbrx",
+      "title": "DBRX",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "c4dc8ec4bc7028f7c4375a378f7e5a83923cafabf5e5033168c88c1b46dd4322",
+        "dark": "c4dc8ec4bc7028f7c4375a378f7e5a83923cafabf5e5033168c88c1b46dd4322"
+      }
+    },
+    {
+      "key": "deepcogito",
+      "title": "Deep Cogito",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "6932434b6c5cac3728617e487b5f94836d5df8d1a9efa8a70207bda677e57102",
+        "dark": "6932434b6c5cac3728617e487b5f94836d5df8d1a9efa8a70207bda677e57102"
+      }
+    },
+    {
+      "key": "deepseek",
+      "title": "DeepSeek",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "f98596fd7802ca0c5290c498fec578fa823988646332ee36c43b7920dc4936eb",
+        "dark": "f98596fd7802ca0c5290c498fec578fa823988646332ee36c43b7920dc4936eb"
+      }
+    },
+    {
+      "key": "dolphin",
+      "title": "Dolphin",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "a9564316e1cfe57f7ebb264b0c0e265c4b65cbddffb69de5f836aedb613ba35f",
+        "dark": "d20950c11362b8f320eb3778edc2b9f9d1d6fdce9db069fa2001c92e56606ffc"
+      }
+    },
+    {
+      "key": "dotsstudio",
+      "title": "Dots Studio",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "d853e8197af604ce7bb8fd64484032c229253f418ca5373ed3464cbdf0eece11",
+        "dark": "377efefa15dfaca0a0b1ea963f587f6f913d2c86adefbaa967225bf48a2d8696"
+      }
+    },
+    {
+      "key": "doubao",
+      "title": "Doubao",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "e2a9ade3d125e2965ed06bb1910223b8723a2a9402ad608eb49f540272209847",
+        "dark": "e2a9ade3d125e2965ed06bb1910223b8723a2a9402ad608eb49f540272209847"
+      }
+    },
+    {
+      "key": "elevenlabs",
+      "title": "ElevenLabs",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "86b9976c3765c3e601cfe06e9eb7c4ee7fdc02f493039d5f5fc98b529f6c9c87",
+        "dark": "7666caaf1aa0a2f3c8b02d5e34d45d0217a38e2779293b73f8b5cf5f42234755"
+      }
+    },
+    {
+      "key": "essentialai",
+      "title": "Essential AI",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "8317ff38307b97f4837ce517c2c6ba3d7ec75b2f321b797984e8bbd48d9967f2",
+        "dark": "8317ff38307b97f4837ce517c2c6ba3d7ec75b2f321b797984e8bbd48d9967f2"
+      }
+    },
+    {
+      "key": "fishaudio",
+      "title": "FishAudio",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "e8e596b8a3ae9be1a378731d989ca835748db8f18ab471156f6fafd83b020d11",
+        "dark": "19054cf630781b3338bb6d3924c0eac78e1a7cf7a1c0ee0ad610f76c4185b505"
+      }
+    },
+    {
+      "key": "flux",
+      "title": "Flux",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "7429907ef38e14356f178deb1eb677174a37af96b9e4169f76c4b09825abdb6a",
+        "dark": "b3cbf0835b55f0a9f4043b7d8a79ee8ddcf8a3c6ffbcdebd44dbf0f5f72a63f7"
+      }
+    },
+    {
+      "key": "gemini",
+      "title": "Gemini",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "10c628f55d22a9725b9f9fccce7cf062b9fb68da5f7736e87010e0594d7ba6db",
+        "dark": "10c628f55d22a9725b9f9fccce7cf062b9fb68da5f7736e87010e0594d7ba6db"
+      }
+    },
+    {
+      "key": "gemma",
+      "title": "Gemma",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "5f64463f9e00b29595c3ce7222100e263b67c3f29035c304d1249f30c99d2913",
+        "dark": "5f64463f9e00b29595c3ce7222100e263b67c3f29035c304d1249f30c99d2913"
+      }
+    },
+    {
+      "key": "glmv",
+      "title": "GLM-V",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "73d15f7dddf3f4908be028d856903b73be706b3cfa9ff49471de6d2ce4fd8950",
+        "dark": "73d15f7dddf3f4908be028d856903b73be706b3cfa9ff49471de6d2ce4fd8950"
+      }
+    },
+    {
+      "key": "google",
+      "title": "Google",
+      "group": "provider",
+      "monochrome": false,
+      "sha256": {
+        "light": "e7139f81e7b9c9eafb28071a74a59ababc26558895ec4b47c0f449682f18bd12",
+        "dark": "e7139f81e7b9c9eafb28071a74a59ababc26558895ec4b47c0f449682f18bd12"
+      }
+    },
+    {
+      "key": "grok",
+      "title": "Grok",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "f10ec0b2322f9d65a973d3d48fcdc41270d8b123a5d36e2826dabf9dcefb0762",
+        "dark": "dbd7bf8431752d3a1ad00f7b3b28df4ef5bd508cdb8583c3bd9f579936545fa0"
+      }
+    },
+    {
+      "key": "groq",
+      "title": "Groq",
+      "group": "provider",
+      "monochrome": true,
+      "sha256": {
+        "light": "bb018de642bd10aa7b7a64d90fb76b26da2b264627aa1278f9306c034f98c898",
+        "dark": "de0d9a7dc3b6419ba9c4c546b8f76273e4d46469340089a8d8aa85e010febe8f"
+      }
+    },
+    {
+      "key": "happyhorse",
+      "title": "Hedra",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "2614bfcd3164379dd5dc6abfe06fea7bdd853acc3d895a30bee4cf4fbea0f73c",
+        "dark": "f468273483aeb020e0566e40de4676e048b40e85d6fde2a03ec3c0b46d3b4d33"
+      }
+    },
+    {
+      "key": "hunyuan",
+      "title": "Hunyuan",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "0f2f9af09b698f4cfa3158d43b29e90a5f30297b09401c49133c9f195899556d",
+        "dark": "0f2f9af09b698f4cfa3158d43b29e90a5f30297b09401c49133c9f195899556d"
+      }
+    },
+    {
+      "key": "inception",
+      "title": "Inception",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "ab449dad148f79a5ca53facd7af9fcc5b8a6c5b80a657d9a0ab9f3aa08337da4",
+        "dark": "3a7d4aacdf0970285b7b3aaa95940b7bc754c0909be11245654518c9b07181b0"
+      }
+    },
+    {
+      "key": "inflection",
+      "title": "Inflection",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "0de0d5575c3f6992b28d400abe42c35772d2f814d6a81b7260774ebdf1af885f",
+        "dark": "646a0c763b83155c0936299dd955777af97bd876eafcaaff5e1540f7f6693000"
+      }
+    },
+    {
+      "key": "kimi",
+      "title": "Kimi",
+      "group": "application",
+      "monochrome": true,
+      "sha256": {
+        "light": "ae68c5f479c6b92bc79f56172f2bb789c50e46c69def7a443209555086acddc3",
+        "dark": "373db4703eb8b6e5a2e165c49708bb567ef29bb210f63ee8216f5c9ee1cb66ba"
+      }
+    },
+    {
+      "key": "kolors",
+      "title": "Kolors",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "63172ce162757a5f22d70abc74d30bab90a330d319f935ebc6b3fd49473dbccc",
+        "dark": "63172ce162757a5f22d70abc74d30bab90a330d319f935ebc6b3fd49473dbccc"
+      }
+    },
+    {
+      "key": "kwaikat",
+      "title": "KwaiKAT",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "ef28ff5971577ec8b9588b102e309aee1517cf01621e40f8da699a143d0bcbe0",
+        "dark": "7cad3755196c8cece3e99264b218b3907f138ae7b75c214d2675ad311e812bad"
+      }
+    },
+    {
+      "key": "kwaipilot",
+      "title": "Kwaipilot",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "a8f8c4b2b6b515050cbf7dd6dc8ba049975110629fac3c2b6158d20c5a1540b8",
+        "dark": "a8f8c4b2b6b515050cbf7dd6dc8ba049975110629fac3c2b6158d20c5a1540b8"
+      }
+    },
+    {
+      "key": "liquid",
+      "title": "Liquid",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "87db16ec89ab0c87d4e9c64fcf100572096594d1bdc9dca98fa844e8757b7c22",
+        "dark": "67a68dfc04a4efcae3adc6f303e53e74b16432678fd1108d14193158660e49b4"
+      }
+    },
+    {
+      "key": "llava",
+      "title": "LLaVA",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "aee465e664794701128f34d48d37432e8a2d0572a0931b188cab087747315c9a",
+        "dark": "aee465e664794701128f34d48d37432e8a2d0572a0931b188cab087747315c9a"
+      }
+    },
+    {
+      "key": "longcat",
+      "title": "LongCat",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "521dbdc2bf5cc1f65eed7fc903a3121066f944ce65d4df90ebef88ae61fd4b0b",
+        "dark": "d79cb8590135e423337691813f52948f58e97a286ec6a0b672f954652624a328"
+      }
+    },
+    {
+      "key": "magic",
+      "title": "Magic",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "449004c7dcfa54044b598127fc5aaa5e96026a52f8de337f6db28f416be7091f",
+        "dark": "20818f1939a68c49450ba80a6698ba0ad6f168f34fba8976edde28c9abfb3575"
+      }
+    },
+    {
+      "key": "meshy",
+      "title": "Meshy",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "827e17227e98797b05b9fb7ce1a8c200b77392edafda3bd9b8ef5fe5791057e6",
+        "dark": "827e17227e98797b05b9fb7ce1a8c200b77392edafda3bd9b8ef5fe5791057e6"
+      }
+    },
+    {
+      "key": "meta",
+      "title": "Meta",
+      "group": "provider",
+      "monochrome": false,
+      "sha256": {
+        "light": "144fab9ba427c7d8f7ee415e5a9113a3a66538ca4fc79fb0e01502978af29a41",
+        "dark": "144fab9ba427c7d8f7ee415e5a9113a3a66538ca4fc79fb0e01502978af29a41"
+      }
+    },
+    {
+      "key": "microsoft",
+      "title": "Azure",
+      "group": "provider",
+      "monochrome": false,
+      "sha256": {
+        "light": "24e4d6941f867805df0c756d2aac13ac43b4a338bb234a30eeba607c70a52b8a",
+        "dark": "24e4d6941f867805df0c756d2aac13ac43b4a338bb234a30eeba607c70a52b8a"
+      }
+    },
+    {
+      "key": "minimax",
+      "title": "Minimax",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "9e596627348deb4030938a948243cc94e96cc1548d645ce4faf1de0e51b9043a",
+        "dark": "9e596627348deb4030938a948243cc94e96cc1548d645ce4faf1de0e51b9043a"
+      }
+    },
+    {
+      "key": "mistral",
+      "title": "Mistral",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "f3b97d586f84e68b8031c74b34bebe4651ee0cb130831ac9b97cb64e1820a2ef",
+        "dark": "f3b97d586f84e68b8031c74b34bebe4651ee0cb130831ac9b97cb64e1820a2ef"
+      }
+    },
+    {
+      "key": "moonshot",
+      "title": "MoonshotAI",
+      "group": "provider",
+      "monochrome": true,
+      "sha256": {
+        "light": "d578871fe5b2c3bba76ce75d9ebe7e6b614961e0ec893574dbcbd796c7c67287",
+        "dark": "10f9a0e0336b921a21feead2fa9e64056414d6bdd43739eca3b07333d5a5eab4"
+      }
+    },
+    {
+      "key": "morph",
+      "title": "Morph",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "58e7903d9e904adf732e65f1aaf58707cd497eb6ee99bfed9071f03581dd72c4",
+        "dark": "58e7903d9e904adf732e65f1aaf58707cd497eb6ee99bfed9071f03581dd72c4"
+      }
+    },
+    {
+      "key": "nanobanana",
+      "title": "NanoBanana",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "696b6e1e281de32018bb49ce2c129774ad63e0cf7097f94ed7049f359f07acf9",
+        "dark": "696b6e1e281de32018bb49ce2c129774ad63e0cf7097f94ed7049f359f07acf9"
+      }
+    },
+    {
+      "key": "nova",
+      "title": "Nova",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "6a41519c5e5512f1a7b37bb02db1e5323e741c6e3afd66f20b107b70d6e65f27",
+        "dark": "6a41519c5e5512f1a7b37bb02db1e5323e741c6e3afd66f20b107b70d6e65f27"
+      }
+    },
+    {
+      "key": "nvidia",
+      "title": "Nvidia",
+      "group": "provider",
+      "monochrome": false,
+      "sha256": {
+        "light": "5a059cec39a179d3de978fb5c83d80882f8bad61e016b9ac5a87ec8cc8dee721",
+        "dark": "5a059cec39a179d3de978fb5c83d80882f8bad61e016b9ac5a87ec8cc8dee721"
+      }
+    },
+    {
+      "key": "ollama",
+      "title": "Ollama",
+      "group": "provider",
+      "monochrome": true,
+      "sha256": {
+        "light": "2818613ff0dde6370819dcd6206316710ff01ee7821063cec55e1608b3a60296",
+        "dark": "601c558832e50aa51e25782429de683fec8885da5fc3a29431fa4f611adf3dad"
+      }
+    },
+    {
+      "key": "openai",
+      "title": "OpenAI",
+      "group": "provider",
+      "monochrome": true,
+      "sha256": {
+        "light": "8a33312f6bb17c1edddf8f9d7fbac09ce1d1d697d6601f37227afa879e94c52e",
+        "dark": "375016542ebe78b63c7f36b8f6aee3058f2b706d861e5153fd74f9c27f63b8b7"
+      }
+    },
+    {
+      "key": "openchat",
+      "title": "OpenChat",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "5bd84d11a37f7c00116690771e5450d727ae557f3d0af00e58926b32df048e2f",
+        "dark": "5bd84d11a37f7c00116690771e5450d727ae557f3d0af00e58926b32df048e2f"
+      }
+    },
+    {
+      "key": "openrouter",
+      "title": "OpenRouter",
+      "group": "provider",
+      "monochrome": false,
+      "sha256": {
+        "light": "beffae2e08c6bac23bce327ca6f09b10d35beb418f49a54ff30ab5b0ec159e22",
+        "dark": "beffae2e08c6bac23bce327ca6f09b10d35beb418f49a54ff30ab5b0ec159e22"
+      }
+    },
+    {
+      "key": "palm",
+      "title": "PaLM",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "c19d2c1918958c8ef61281f474bd98ff60e0d5d3693feb5d152cbbf0aacf8482",
+        "dark": "c19d2c1918958c8ef61281f474bd98ff60e0d5d3693feb5d152cbbf0aacf8482"
+      }
+    },
+    {
+      "key": "perceptron",
+      "title": "Perceptron",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "dbcfdaf01e50e13f933d5f334b876a7f6571060edbdbfd932981b1f86e56cc2d",
+        "dark": "846ff14af197469c54f5019318a2732f81e800575de4cedde1c8d53c181f85a9"
+      }
+    },
+    {
+      "key": "phind",
+      "title": "phind",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "5fc0493c726753b065fefad7168d4b638d70194e289fc64b2e541161262f886c",
+        "dark": "f65f1cd8569570f3403a30861cf813adefff49604f0fba32aba48ca6baf83d07"
+      }
+    },
+    {
+      "key": "poolside",
+      "title": "Poolside",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "ca8a5458014444c36d522d5a8d26bc4728eb9c37d82494abc2887cf368d30540",
+        "dark": "ca8a5458014444c36d522d5a8d26bc4728eb9c37d82494abc2887cf368d30540"
+      }
+    },
+    {
+      "key": "prunaai",
+      "title": "PrunaAI",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "8ea4d5a2f7a686c5105a234c87db0f0edfcdb35a78ea1c33423e401fc8545ac8",
+        "dark": "8ea4d5a2f7a686c5105a234c87db0f0edfcdb35a78ea1c33423e401fc8545ac8"
+      }
+    },
+    {
+      "key": "qwen",
+      "title": "Qwen",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "de9bc7e285164e0d284a7b9555511c7f7767af7699d6272b3b67b376eeddbfb3",
+        "dark": "de9bc7e285164e0d284a7b9555511c7f7767af7699d6272b3b67b376eeddbfb3"
+      }
+    },
+    {
+      "key": "reka",
+      "title": "Reka",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "8253751292bb152c2fbd01195cb8d1909b7131782d4d6ed2674eb71368e1a72c",
+        "dark": "9ca92f56078cd8362bc8568db9c5ef4217ad5ceb034d3fbd90eff6854cdd5abe"
+      }
+    },
+    {
+      "key": "relace",
+      "title": "Relace",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "b22841968b66ba58456cb35fce817d376a8d11423b5fa25ef6cebcf10e93ce1e",
+        "dark": "d7d4addb46f1e7c3c1a4ab4292a6512419f97e4707cc018fd06e955ad3b458b4"
+      }
+    },
+    {
+      "key": "reve",
+      "title": "Reve",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "b31b3c96ac21404d4b85b99f0f27027a3e5d86911268c8926c5dfafbcd668dab",
+        "dark": "2717fe7e5195c87f6c8b9e5c2ed9bf5f643532475c5c1de1738b5dc7833ad418"
+      }
+    },
+    {
+      "key": "rwkv",
+      "title": "RWKV",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "4d06ccc703cb7b21675dd26240570a9895960b2e976bd304dea079440c410c6e",
+        "dark": "4d06ccc703cb7b21675dd26240570a9895960b2e976bd304dea079440c410c6e"
+      }
+    },
+    {
+      "key": "sakana",
+      "title": "sakana.ai",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "4adefe6bd119290a30a72b1e1273efebeb56cea10ab07ad802bcc5eecab918a4",
+        "dark": "4adefe6bd119290a30a72b1e1273efebeb56cea10ab07ad802bcc5eecab918a4"
+      }
+    },
+    {
+      "key": "sensenova",
+      "title": "SenseNova",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "543bcf0d9a29f5dbc5392a434b11dd64c6aa4b631a4bbc663b20e0aa24afe037",
+        "dark": "543bcf0d9a29f5dbc5392a434b11dd64c6aa4b631a4bbc663b20e0aa24afe037"
+      }
+    },
+    {
+      "key": "skywork",
+      "title": "Skywork",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "b43134157e280d8c4c8d5d8ec2f671cdc2f5cdaac151c3e526fa5dacda92ce42",
+        "dark": "b43134157e280d8c4c8d5d8ec2f671cdc2f5cdaac151c3e526fa5dacda92ce42"
+      }
+    },
+    {
+      "key": "sora",
+      "title": "Sora",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "eec45103975b802aae43ca53aaefc4792bbfe694e8ea53966d5616eb3ffa2c1d",
+        "dark": "eec45103975b802aae43ca53aaefc4792bbfe694e8ea53966d5616eb3ffa2c1d"
+      }
+    },
+    {
+      "key": "spark",
+      "title": "Spark",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "5d11ec9d03aee234b8f074214dc2cdb1fc364fc75a2d6b32ea68916fe09bda5a",
+        "dark": "5d11ec9d03aee234b8f074214dc2cdb1fc364fc75a2d6b32ea68916fe09bda5a"
+      }
+    },
+    {
+      "key": "stability",
+      "title": "Stability",
+      "group": "provider",
+      "monochrome": false,
+      "sha256": {
+        "light": "590f018df5af220de401432b10db69054f10ab6510362f8863df7a77dfdead34",
+        "dark": "590f018df5af220de401432b10db69054f10ab6510362f8863df7a77dfdead34"
+      }
+    },
+    {
+      "key": "stepfun",
+      "title": "StepFun",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "4fabb84a7bb27454379f8f17d08983451afe578fde125fecfba1691878c1e748",
+        "dark": "4cdbafba61bd48cc0e2172aaf0c741fc85ab28823d88d5153f7a177ae40bfcc7"
+      }
+    },
+    {
+      "key": "unionalpha",
+      "title": "UnionAlpha",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "f166bba628e198c40b510aa01e4a2b40e397f32f4f807da783847ef7e7dcfddd",
+        "dark": "caf91a6353bc48e26ba12e729297fe72e9790785d0b2aa54e2b6bb86f9fae4eb"
+      }
+    },
+    {
+      "key": "voyage",
+      "title": "Voyage",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "f63f5ee500b679d481345a3fc676af983b40337ddc34339f7b8b4bfafbf60086",
+        "dark": "f63f5ee500b679d481345a3fc676af983b40337ddc34339f7b8b4bfafbf60086"
+      }
+    },
+    {
+      "key": "wenxin",
+      "title": "Wenxin",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "eec35d49e783bed2f74da9d8e6869e43441a007d495281578f035b5fefeac033",
+        "dark": "eec35d49e783bed2f74da9d8e6869e43441a007d495281578f035b5fefeac033"
+      }
+    },
+    {
+      "key": "xiaomimimo",
+      "title": "XiaomiMiMo",
+      "group": "model",
+      "monochrome": true,
+      "sha256": {
+        "light": "04f78ad5b2ebd628ddaa59261c3696971dc54799c1ae3401454977810ca1f63b",
+        "dark": "060e7cb51b2524e1efca8bcdc9f71cd3dbed556820dd98bc44363a0304282fd7"
+      }
+    },
+    {
+      "key": "xuanyuan",
+      "title": "轩辕",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "d5e64379ffa20517310eee7101255beb8aaffa90c84162dbe0cb832e5422f167",
+        "dark": "d5e64379ffa20517310eee7101255beb8aaffa90c84162dbe0cb832e5422f167"
+      }
+    },
+    {
+      "key": "yi",
+      "title": "Yi",
+      "group": "model",
+      "monochrome": false,
+      "sha256": {
+        "light": "dfb708ab0d2b4546a6eabf5b7dee461cfcdbfbb12cbdd87fa171babcf4cb89c4",
+        "dark": "2efd6e5a779eea3fc30d904dc1068c9a10981367aff97f847b93f9a4eb1a12d5"
+      }
+    },
+    {
+      "key": "zai",
+      "title": "Z.ai",
+      "group": "application",
+      "monochrome": true,
+      "sha256": {
+        "light": "e53c9c5bfac0971024d08ab812ec13682f22f12247fcc4f134b6a0f2c988fee7",
+        "dark": "3c66d1980cac2edddb594f0c52cb0a4601127aaedb94fc9cb2cbdb5d9d469db9"
+      }
+    }
+  ]
+}

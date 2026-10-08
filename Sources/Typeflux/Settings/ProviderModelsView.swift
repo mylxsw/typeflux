@@ -215,6 +215,7 @@ struct ProviderModelsView: View {
 extension ProviderModelsView {
     private func modelRow(_ model: RegisteredModel, provider: RegisteredProvider, canRewrite: Bool, canAsk: Bool) -> some View {
         HStack(spacing: 10) {
+            ModelIcon(model: model, provider: provider)
             VStack(alignment: .leading, spacing: 3) {
                 Text(model.id).font(.system(size: 13, design: .monospaced)).foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1).truncationMode(.middle)
@@ -338,7 +339,7 @@ extension ProviderModelsView {
                                  )
                                  showingCatalog = false
                              }
-                         })
+                         }, provider: provider)
     }
 
     private func perform(_ action: () throws -> Void) {

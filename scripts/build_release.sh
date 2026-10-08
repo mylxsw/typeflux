@@ -126,7 +126,6 @@ swift build "${SWIFT_BUILD_ARGS[@]}"
 
 BIN_DIR="$(swift build "${SWIFT_BUILD_ARGS[@]}" --show-bin-path)"
 BIN="$BIN_DIR/Typeflux"
-RESOURCE_BUNDLE="$BIN_DIR/Typeflux_Typeflux.bundle"
 
 rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_BUNDLE/Contents/MacOS"
@@ -135,7 +134,7 @@ mkdir -p "$APP_BUNDLE/Contents/Resources"
 cp "$ROOT_DIR/app/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 cp "$BIN" "$APP_BUNDLE/Contents/MacOS/Typeflux"
 cp "$ROOT_DIR/app/Typeflux.icns" "$APP_BUNDLE/Contents/Resources/Typeflux.icns"
-cp -R "$RESOURCE_BUNDLE" "$APP_BUNDLE/Contents/Resources/Typeflux_Typeflux.bundle"
+bash "$ROOT_DIR/scripts/copy_resource_bundles.sh" "$BIN_DIR" "$APP_BUNDLE/Contents/Resources"
 verify_main_executable_architecture
 
 rm -rf "$APP_BUNDLE/Contents/Resources/BundledModels"
