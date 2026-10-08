@@ -29,14 +29,22 @@ struct AskWordCard: Codable, Equatable, Sendable {
     }
 
     var headword: String
+    /// A concise equivalent in the target language; absent in older saved cards.
+    var translation: String?
     var phonetics: [Phonetic] = []
     var senses: [Sense] = []
     var forms: [Form] = []
     var examples: [Example] = []
     var synonyms: [String] = []
 
-    /// The most common meaning: what ⌥↩ writes in place of the word.
+    /// The most common dictionary definition.
     var firstMeaning: String? { senses.lazy.flatMap(\.meanings).first }
+
+    /// The translation shown first and used by copy/insert. Older cards use their first target-language meaning.
+    var translatedText: String? {
+        let text = translation?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return text?.isEmpty == false ? text : firstMeaning
+    }
 
     /// One line for the clipboard: `serendipity /ˌserənˈdɪpəti/ n. 机缘巧合；意外的好运`.
     var summary: String {
@@ -52,6 +60,7 @@ struct AskWordCard: Codable, Equatable, Sendable {
     var markdown: String {
         var lines = ["**\(headword)**" + (phonetics.isEmpty ? "" : " " + phonetics.map { "\($0.label) \($0.text)" }
                 .joined(separator: " · "))]
+        if let translation, !translation.isEmpty { lines.append(translation) }
         lines += senses.map { "- *\($0.pos)* " + $0.meanings.joined(separator: Self.meaningSeparator) }
         if !forms.isEmpty { lines.append(forms.map { "\($0.label): \($0.value)" }.joined(separator: " · ")) }
         if !examples.isEmpty {
@@ -69,6 +78,7 @@ struct AskWordCard: Codable, Equatable, Sendable {
         func clean(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
         var card = self
         card.headword = clean(headword)
+        card.translation = translation.map(clean).flatMap { $0.isEmpty ? nil : $0 }
         card.phonetics = phonetics.map { Phonetic(label: clean($0.label), text: clean($0.text)) }
             .filter { !$0.text.isEmpty }.prefix(2).map { $0 }
         card.senses = senses.map { Sense(pos: clean($0.pos), meanings: $0.meanings.map(clean).filter { !$0.isEmpty }.prefix(4).map { $0 }) }
@@ -134,6 +144,7 @@ extension AskWordCard {
         }
         let card = AskWordCard(
             headword: text(object, "headword", "word", "term", "entry") ?? word,
+            translation: translation,
             phonetics: phonetics(object), senses: senses(object), forms: forms(object),
             examples: list(object, "examples", "example_sentences", "sentences").compactMap(example),
             synonyms: texts(object, "synonyms", "similar_words", "related")

@@ -1,7 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// A word card inside the translation result: the word and how it sounds, its
+/// A word card inside the translation result: the target-language equivalent,
+/// the source word and how it sounds, its
 /// meanings by part of speech (each one copies on click), forms, examples and
 /// synonyms. Its height is worked out from the text, so the launcher can size
 /// itself before the card is drawn; past `maximumHeight` it scrolls.
@@ -14,6 +15,7 @@ struct AskWordCardView: View {
 
     static let maximumHeight: CGFloat = 300
     static let headwordHeight: CGFloat = 30
+    static let translatedWordFont = NSFont.systemFont(ofSize: 22, weight: .semibold)
     static let posWidth: CGFloat = 44
     static let senseSpacing: CGFloat = 4
     static let sectionSpacing: CGFloat = 10
@@ -47,6 +49,9 @@ struct AskWordCardView: View {
     static func contentHeight(_ card: AskWordCard) -> CGFloat {
         let text = AskPluginResultsView.textHeight
         var height = headwordHeight
+        if let translation = card.translatedText {
+            height += max(headwordHeight, text(translation, translatedWordFont, 0, width)) + 4
+        }
         height += card.senses.reduce(0) { total, sense in
             total + senseSpacing + max(20, text(meaningsText(sense), meaningFont, 2, meaningWidth))
         }
@@ -67,6 +72,14 @@ struct AskWordCardView: View {
     var body: some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 0) {
+                if let translation = card.translatedText {
+                    Text(translation).font(Font(Self.translatedWordFont)).foregroundStyle(StudioTheme.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                        .accessibilityIdentifier("ask.plugin.wordCard.translation")
+                        .padding(.bottom, 4)
+                }
                 headword
                 ForEach(Array(card.senses.enumerated()), id: \.offset) { index, sense in
                     senseRow(sense, first: index == 0)
@@ -94,7 +107,9 @@ struct AskWordCardView: View {
 
     private var headword: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(card.headword).font(.system(size: 22, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+            Text(card.headword).font(.system(size: card.translatedText == nil ? 22 : 13,
+                                            weight: card.translatedText == nil ? .semibold : .regular))
+                .foregroundStyle(StudioTheme.textSecondary)
                 .lineLimit(1).truncationMode(.tail)
                 .textSelection(.enabled)
             ForEach(Array(card.phonetics.enumerated()), id: \.offset) { _, phonetic in

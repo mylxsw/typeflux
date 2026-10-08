@@ -25,9 +25,9 @@ struct AskWordBookLookup: Equatable, Sendable {
         return translation ?? ""
     }
 
-    /// What ⌥↩ writes: the card's first meaning, or the translation's first part.
+    /// What ⌥↩ writes: the card's concise translation, or the translation's first part.
     var firstMeaning: String? {
-        if let meaning = card?.firstMeaning { return meaning }
+        if let meaning = card?.translatedText { return meaning }
         let first = translation?.components(separatedBy: CharacterSet(charactersIn: "；;,，")).first?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return first?.isEmpty == false ? first : nil
