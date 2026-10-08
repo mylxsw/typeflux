@@ -21,6 +21,9 @@ struct AskRoutedAPI: AskAPI {
         try await api(token).observe(id: id, token: token, onValue: onValue)
     }
     func models(token: String) async throws -> [AskCloudModel] { try await api(token).models(token: token) }
+    func featureModels(feature: String, token: String) async throws -> [AskCloudModel]? {
+        try await api(token).featureModels(feature: feature, token: token)
+    }
     func models(token: String, scenario: String) async throws -> [AskCloudModel] { try await api(token).models(token: token, scenario: scenario) }
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation {
         try await api(token).inferenceResult(conversationId: conversationId, request: request, token: token)

@@ -2,6 +2,7 @@ import Foundation
 import TypefluxChat
 
 protocol AskAPI: Sendable {
+    func featureModels(feature: String, token: String) async throws -> [AskCloudModel]?
     func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage
     func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token: String) async throws -> AskConversation
     func observe(id: String, token: String, onValue: @Sendable (AskConversation) async throws -> Void) async throws
@@ -23,6 +24,7 @@ protocol AskAPI: Sendable {
 }
 
 extension AskAPI {
+    func featureModels(feature: String, token: String) async throws -> [AskCloudModel]? { nil }
     /// Services without steering reject it; the device then sends the message as a new turn.
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
         throw AskLocalError.message(L("ask.local.conflict"))
@@ -52,6 +54,18 @@ struct AskAPIClient: AskAPI {
         var path = "/\(id)/usage?cursor=\(cursor ?? 0)"
         if let runId { path += "&run_id=" + (runId.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "") }
         return try await execute(path: path, token: token)
+    }
+    func featureModels(feature: String, token: String) async throws -> [AskCloudModel]? {
+        struct Catalog: Decodable { let configured: Bool; let models: [AskCloudModel]? }
+        let encoded = feature.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? feature
+        let path = "/api/v1/cloud-models?feature=" + encoded
+        let (data, response) = try await executor.execute(apiPath: path) { base in
+            ChatRequest.make(baseURL: base, path: path, method: "GET", body: nil, token: token,
+                             headers: ["X-Typeflux-Model-Catalog": "1"])
+        }
+        if response.statusCode == 404 { return nil }
+        let catalog: Catalog = try ChatRequest.decode(data: data, statusCode: response.statusCode)
+        return catalog.configured ? (catalog.models ?? []) : nil
     }
     func models(token: String, scenario: String) async throws -> [AskCloudModel] {
         try await execute(path: "/models?scenario=" + (scenario == "rewrite" ? "rewrite" : "ask"), token: token)

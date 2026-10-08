@@ -859,9 +859,9 @@ final class SettingsStore {
 
     var rewriteModelReference: String { defaults.string(forKey: "llm.profile.reference") ?? "" }
 
-    /// The merged speech protocol has no field for an explicit model reference.
+    /// The merged protocol cannot carry feature routing or a priced model snapshot yet.
     var canUseIntegratedCloudRewrite: Bool {
-        rewriteModelReference.isEmpty && llmProvider == .openAICompatible && llmRemoteProvider == .typefluxCloud
+        false
     }
 
     var effectiveLLMProvider: LLMProvider {
@@ -878,6 +878,9 @@ final class SettingsStore {
     }
 
     func textLLMConfiguration() -> TextLLMConfiguration {
+        if let model = AskModelLibrary.readRewriteModels(defaults)?.first(where: { $0.reference == rewriteModelReference }) {
+            return TextLLMConfiguration(provider: .typefluxCloud, baseURL: "", model: model.reference, apiKey: "")
+        }
         if let (provider, model) = ModelRegistry.read(defaults)?.resolve(rewriteModelReference) {
             return provider.connection(settings: self, model: model)
         }

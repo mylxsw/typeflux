@@ -336,7 +336,8 @@ extension WorkflowController {
         let response = try await llmService.completeJSON(
             systemPrompt: prompts.system,
             userPrompt: prompts.user,
-            schema: AutomaticVocabularyMonitor.decisionSchema
+            schema: AutomaticVocabularyMonitor.decisionSchema,
+            feature: .automaticVocabulary
         )
         logAutomaticVocabulary("llm raw response | response=\(automaticVocabularyPreview(response))")
         return AutomaticVocabularyMonitor.parseAcceptedTerms(from: response)

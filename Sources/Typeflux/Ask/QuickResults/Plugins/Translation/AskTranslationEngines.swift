@@ -68,7 +68,7 @@ final class AskAITranslationEngine: AskTranslationEngine, AskWordLookingUp, @unc
         let reply = try await service.completeJSON(
             systemPrompt: Self.wordCardPrompt(sourceName: source.flatMap { english.localizedString(forIdentifier: $0) },
                                               targetName: english.localizedString(forIdentifier: target) ?? target),
-            userPrompt: word, schema: AskWordCard.schema
+            userPrompt: word, schema: AskWordCard.schema, feature: .wordCard
         )
         let lookup = AskWordCard.parse(reply, word: word)
         if case let .unreadable(raw) = lookup, raw.isEmpty { throw AskPluginFailure(message: L("ask.plugin.translate.empty")) }
@@ -119,7 +119,7 @@ final class AskAITranslationEngine: AskTranslationEngine, AskWordLookingUp, @unc
     func translate(_ text: String, from source: String?, to target: String) async throws -> String {
         let english = Locale(identifier: "en")
         let targetName = english.localizedString(forIdentifier: target) ?? target
-        let result = try await service.complete(systemPrompt: Self.systemPrompt(targetName: targetName), userPrompt: text)
+        let result = try await service.complete(systemPrompt: Self.systemPrompt(targetName: targetName), userPrompt: text, feature: .translation)
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw AskPluginFailure(message: L("ask.plugin.translate.empty")) }
         return trimmed

@@ -34,7 +34,7 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
         for connection: ResolvedLLMConnection,
         scenario: TypefluxCloudScenario
     ) -> [String: String] {
-        connection.headers(for: scenario)
+        connection.headers(for: scenario, feature: .askSelection)
     }
 
     func runTool<T: Decodable & Sendable>(request: LLMAgentRequest, decoding type: T.Type) async throws -> T {

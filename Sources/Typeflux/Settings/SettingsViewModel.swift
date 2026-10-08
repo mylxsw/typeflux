@@ -2753,7 +2753,7 @@ final class StudioViewModel: ObservableObject {
                             baseURL: connection.baseURL,
                             model: connection.model,
                             apiKey: connection.apiKey,
-                            additionalHeaders: connection.headers(for: .modelSetup)
+                            additionalHeaders: connection.headers(for: .modelSetup, feature: .textRewrite)
                         )
                         if !preview.isEmpty {
                             firstTokenDate = Date()

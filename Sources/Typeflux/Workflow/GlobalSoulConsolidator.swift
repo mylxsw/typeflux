@@ -131,7 +131,7 @@ final class GlobalSoulConsolidator {
 
         do {
             let response = try await llmService.completeJSON(
-                systemPrompt: systemPrompt, userPrompt: userPrompt, schema: schema
+                systemPrompt: systemPrompt, userPrompt: userPrompt, schema: schema, feature: .memoryConsolidation
             )
             guard let data = response.data(using: .utf8),
                   let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],

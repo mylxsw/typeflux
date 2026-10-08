@@ -135,6 +135,7 @@ enum TypefluxCloudScenario: String, CaseIterable, Hashable, Sendable {
 }
 
 enum TypefluxCloudRequestHeaders {
+    static let featureField = "X-Typeflux-Feature"
     static let scenarioField = "x-scenario"
     static let clientIDField = "x-client-id"
     static let clientLocaleField = "x-client-locale"
@@ -225,12 +226,16 @@ enum TypefluxCloudRequestHeaders {
 }
 
 extension ResolvedLLMConnection {
-    func headers(for scenario: TypefluxCloudScenario, personaID: UUID? = nil) -> [String: String] {
-        let scenarioHeaders = TypefluxCloudRequestHeaders.applyingScenario(
+    func headers(for scenario: TypefluxCloudScenario, personaID: UUID? = nil, feature: TypefluxCloudFeature? = nil) -> [String: String] {
+        var scenarioHeaders = TypefluxCloudRequestHeaders.applyingScenario(
             scenario,
             to: additionalHeaders,
             provider: provider
         )
+        if provider == .typefluxCloud, let feature {
+            scenarioHeaders[TypefluxCloudRequestHeaders.featureField] = feature.rawValue
+            scenarioHeaders["X-Typeflux-Model-Catalog"] = "1"
+        }
         return TypefluxCloudRequestHeaders.applyingPersonaID(
             personaID,
             to: scenarioHeaders,
