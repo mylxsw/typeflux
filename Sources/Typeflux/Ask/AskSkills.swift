@@ -98,6 +98,9 @@ extension AskSkill {
 
 enum AskBuiltinSkills {
     static let all: [AskSkill] = [
+        AskSkill(name: AskWorkflowAuthorSkill.name,
+                 description: "Create or edit a reusable Typeflux launcher tool/workflow from a natural-language request. Do not use for one-off text processing.",
+                 body: AskWorkflowAuthorSkill.chatInstructions),
         AskSkill(name: "email-reply", description: "Draft a clear, polite email reply that matches the thread's tone and language.", body: """
         1. Identify the sender's request, deadline and any open questions in the thread.
         2. Reply in the language of the email, matching its formality.

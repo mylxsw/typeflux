@@ -3,7 +3,7 @@ import Foundation
 /// The editor's working copy of one workflow: `workflow.json` as text, so fields the
 /// form does not know survive every edit, and the other text files in the folder.
 /// See `docs/design/ask-workflow-editor.md` §5.
-struct AskWorkflowDraft: Equatable, Sendable {
+struct AskWorkflowDraft: Equatable, Sendable, Codable {
     /// The four things a workflow does, as the editor's flow strip shows them.
     enum Step: String, CaseIterable, Sendable {
         case keywords, input, script, output

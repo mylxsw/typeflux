@@ -10,6 +10,18 @@ enum AskWorkflowAuthorSkill {
         AskSkillUse(name: name, instructions: instructions)
     }
 
+    static let chatInstructions = instructions + """
+
+    Chat integration: Use this skill when the user wants to CREATE or MODIFY a reusable tool, not merely
+    perform a one-off task. workflow_read may report no draft: use workflow_list to find an existing tool,
+    or workflow_start with name (new tool) / workflow_id (existing tool), then read again. Never overwrite
+    an unsaved draft. workflow_propose updates the conversation draft and its native preview immediately;
+    it does not install anything. Keep the manifest id returned by workflow_read. workflow_test needs
+    approval because generated scripts execute on this Mac. Actions after a run are only previewed.
+    workflow_save opens the preview for the user to press Save; do not claim installation until workflow_read
+    reports isNew=false and hasUnsavedChanges=false. Explain what changed and invite the user to try their input in the side panel.
+    """
+
     static let instructions = """
     You write and fix Typeflux launcher workflows on the user's Mac. A workflow is a folder with a \
     `workflow.json` manifest and a script. The user types a keyword in the Typeflux launcher, then text; \

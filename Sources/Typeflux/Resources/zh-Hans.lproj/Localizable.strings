@@ -3673,3 +3673,38 @@
 "ask.settings.keywords.sheet.service" = "翻译服务";
 "ask.settings.keywords.sheet.service.default" = "默认引擎";
 "ask.settings.keywords.sheet.serviceHint" = "每次都用这个服务翻译，即使本机能翻也一样";
+
+// Workflow authoring in Chat.
+"ask.workflow.chat.title" = "工具预览";
+"ask.workflow.chat.draft" = "草稿 · 尚未安装";
+"ask.workflow.chat.try" = "试一试";
+"ask.workflow.chat.run" = "运行试用";
+"ask.workflow.chat.cancel" = "取消";
+"ask.workflow.chat.undo" = "撤销修改";
+"ask.workflow.chat.actionsPreview" = "运行后的动作仅预览。脚本本身可以访问你的 Mac。";
+"ask.workflow.chat.details" = "运行详情";
+"ask.workflow.chat.empty" = "输入内容并运行，在这里查看结果。";
+"ask.workflow.chat.save" = "保存到启动器";
+"ask.workflow.chat.saved" = "已保存到启动器";
+"ask.workflow.chat.advanced" = "高级编辑";
+"ask.workflow.chat.runNotice" = "允许这个草稿在你的 Mac 上运行代码吗？";
+"ask.workflow.chat.keyword" = "关键词 / 预设";
+"ask.workflow.chat.input" = "输入测试内容";
+"ask.workflow.chat.selection" = "选中文本（可选）";
+"ask.workflow.chat.back" = "返回预览";
+"ask.workflow.chat.editNotice" = "修改会更新当前会话的草稿，完成后请在预览中保存。";
+"ask.workflow.chat.idChanged" = "编辑时请保留已有工具的 ID。";
+"ask.workflow.chat.conflict" = "这个工具已在 Chat 外部发生修改，请重新打开已保存的工具再更新。";
+"ask.workflow.chat.existingDraft" = "当前会话已有未保存的草稿。请继续修改或先保存，再创建另一个工具。";
+"ask.skill.typeflux-workflow-author.description" = "通过对话创建或修改可复用的 Typeflux 工具。";
+
+"ask.workflow.chat.discard" = "放弃草稿";
+"ask.workflow.chat.discardNotice" = "放弃当前会话的草稿？已安装的工具会保留。";
+"ask.tool.workflow_start" = "开始创建工具";
+"ask.tool.workflow_list" = "查找已有工具";
+"ask.tool.workflow_read" = "读取工具草稿";
+"ask.tool.workflow_environment" = "检查脚本环境";
+"ask.tool.workflow_check_keyword" = "检查启动关键词";
+"ask.tool.workflow_propose" = "更新工具草稿";
+"ask.tool.workflow_test" = "试用工具";
+"ask.tool.workflow_save" = "查看并保存工具";

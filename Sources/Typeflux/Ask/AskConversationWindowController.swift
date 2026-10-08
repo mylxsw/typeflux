@@ -72,6 +72,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             model.promptAI = AskLLMTextGenerator(service: llmService)
         }
         model.workflows = AskWorkflowStore.shared
+        let authoring = AskWorkflowAuthoringStore(workflows: .shared, owner: { GlobalSoulOwner.currentID })
+        tools.workflowAuthoring = authoring
+        model.workflowAuthoring = authoring
+        authoring.onChange = { [weak model] in model?.objectWillChange.send() }
         // The word book: words the translation plugin looked up, and the ones starred.
         let wordBook = SQLiteAskWordBookStore(url: SQLiteAskWordBookStore.defaultURL())
         // Forever keeps everything; `purgeHistory(before: nil)` would clear it instead.

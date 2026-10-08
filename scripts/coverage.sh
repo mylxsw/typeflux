@@ -4,7 +4,8 @@ set -e
 COVERAGE_DIR="coverage-report"
 
 echo "Running tests with code coverage enabled..."
-swift test --enable-code-coverage
+# AppKit tests share window focus and the localization singleton across suites.
+swift test --no-parallel --enable-code-coverage
 
 BIN_PATH=$(swift build --show-bin-path)
 

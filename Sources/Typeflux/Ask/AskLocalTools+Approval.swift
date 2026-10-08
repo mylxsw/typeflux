@@ -2,6 +2,9 @@ import AppKit
 
 extension AskLocalTools {
     func approvalBinding(for call: AskToolCall, conversationId: String) async throws -> AskToolBinding {
+        if Self.workflowChatNames.contains(call.function.name) {
+            return try workflowBinding(call, conversationId: conversationId)
+        }
         if let server = mcpIdentities[call.function.name] {
             // Resolve against the live registry, not the definitions cached for a model request.
             guard let entry = Self.mcpToolNames(await registry.registeredTools()).first(where: { $0.0 == call.function.name }),
@@ -87,6 +90,9 @@ extension AskLocalTools {
         }
         try Task.checkCancellation()
         try authorize()
+        if Self.workflowChatNames.contains(call.function.name) {
+            return try await executeWorkflow(call, conversationId: conversationId)
+        }
         if let server = mcpIdentities[call.function.name] {
             guard let entry = Self.mcpToolNames(await registry.registeredTools()).first(where: { $0.0 == call.function.name }) else {
                 throw AskLocalError.message(L("ask.approval.changed"))

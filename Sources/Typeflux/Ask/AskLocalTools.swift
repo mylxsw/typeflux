@@ -149,6 +149,8 @@ final class AskLocalTools: AskToolExecuting {
         }
     }
 
+    var workflowAuthoring: AskWorkflowAuthoringStore?
+
     /// Skills the user has not turned off in settings.
     var enabledSkills: [AskSkill] {
         let disabled = settings?.askDisabledSkills ?? []
@@ -187,6 +189,7 @@ final class AskLocalTools: AskToolExecuting {
         }
         if settings?.askCodeExecutionEnabled == true, let code = sandbox.definition() { result.append(code) }
         if let skill = skills.definition(enabledSkills) { result.append(skill) }
+        if workflowAuthoringEnabled { result += Self.workflowChatDefinitions }
         result.append(AskMemoryNoteStore.definition)
         if imageConfiguration != nil { result.append(Self.imageGenerationDefinition) }
         mcpTools = [:]
@@ -213,6 +216,9 @@ final class AskLocalTools: AskToolExecuting {
     /// External annotations are hints, never evidence of a trusted read-only tool.
     func risk(of call: AskToolCall) -> AskToolRisk {
         if mcpTools[call.function.name] != nil { return .destructive }
+        if Self.workflowChatNames.contains(call.function.name) {
+            return call.function.name == AskWorkflowAuthorTools.test ? .destructive : .read
+        }
         return Self.builtinRisk(call)
     }
 
@@ -319,6 +325,12 @@ final class AskLocalTools: AskToolExecuting {
 
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput {
         try Task.checkCancellation()
+        if Self.workflowChatNames.contains(call.function.name) {
+            guard call.function.name != AskWorkflowAuthorTools.test else {
+                throw AskLocalError.message(L("ask.tool.unavailable"))
+            }
+            return try await executeWorkflow(call, conversationId: conversationId)
+        }
         if let tool = mcpTools[call.function.name] {
             let output = try await tool.call(arguments: call.function.arguments)
             try Task.checkCancellation()

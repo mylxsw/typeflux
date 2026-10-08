@@ -3663,3 +3663,38 @@
 "ask.settings.keywords.sheet.service" = "번역 서비스";
 "ask.settings.keywords.sheet.service.default" = "기본 엔진";
 "ask.settings.keywords.sheet.serviceHint" = "이 Mac에서 번역할 수 있어도 항상 이 서비스로 번역합니다";
+
+// Workflow authoring in Chat.
+"ask.workflow.chat.title" = "워크플로 미리보기";
+"ask.workflow.chat.draft" = "초안 · 설치되지 않음";
+"ask.workflow.chat.try" = "사용해 보기";
+"ask.workflow.chat.run" = "테스트 실행";
+"ask.workflow.chat.cancel" = "취소";
+"ask.workflow.chat.undo" = "변경 실행 취소";
+"ask.workflow.chat.actionsPreview" = "실행 후 동작은 미리보기만 합니다. 스크립트 자체는 Mac에 접근할 수 있습니다.";
+"ask.workflow.chat.details" = "실행 세부 정보";
+"ask.workflow.chat.empty" = "내용을 입력하고 실행하면 여기에 결과가 표시됩니다.";
+"ask.workflow.chat.save" = "런처에 저장";
+"ask.workflow.chat.saved" = "런처에 저장됨";
+"ask.workflow.chat.advanced" = "고급 편집기";
+"ask.workflow.chat.runNotice" = "이 초안의 코드를 Mac에서 실행하도록 허용할까요?";
+"ask.workflow.chat.keyword" = "키워드 / 프리셋";
+"ask.workflow.chat.input" = "테스트 입력";
+"ask.workflow.chat.selection" = "선택한 텍스트 (선택 사항)";
+"ask.workflow.chat.back" = "미리보기로 돌아가기";
+"ask.workflow.chat.editNotice" = "변경 사항은 이 대화의 초안에 반영됩니다. 준비가 되면 미리보기에서 저장하세요.";
+"ask.workflow.chat.idChanged" = "편집 중인 워크플로 ID는 유지하세요.";
+"ask.workflow.chat.conflict" = "이 워크플로가 Chat 외부에서 변경되었습니다. 저장된 워크플로를 다시 여세요.";
+"ask.workflow.chat.existingDraft" = "이 대화에 저장하지 않은 초안이 있습니다. 계속 편집하거나 저장한 후 다른 도구를 만드세요.";
+"ask.skill.typeflux-workflow-author.description" = "대화를 통해 재사용 가능한 Typeflux 도구를 만들거나 편집합니다.";
+
+"ask.workflow.chat.discard" = "초안 삭제";
+"ask.workflow.chat.discardNotice" = "이 대화의 초안을 삭제할까요? 설치된 도구는 유지됩니다.";
+"ask.tool.workflow_start" = "워크플로 초안 시작";
+"ask.tool.workflow_list" = "설치된 도구 찾기";
+"ask.tool.workflow_read" = "초안 읽기";
+"ask.tool.workflow_environment" = "스크립트 환경 확인";
+"ask.tool.workflow_check_keyword" = "실행 키워드 확인";
+"ask.tool.workflow_propose" = "초안 업데이트";
+"ask.tool.workflow_test" = "워크플로 테스트";
+"ask.tool.workflow_save" = "검토 후 저장";
