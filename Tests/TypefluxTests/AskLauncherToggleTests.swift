@@ -25,6 +25,61 @@ private final class HeldLauncherCapture: AskContextCapturing {
 @Suite("Ask launcher toggle", .serialized)
 @MainActor
 struct AskLauncherToggleTests {
+    init() {
+        // Launcher chrome initializes shared auth; do not access the user's Keychain.
+        let previousStore = KeychainTokenStore.useInMemoryStoreForTesting
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        _ = AuthState.shared
+        KeychainTokenStore.useInMemoryStoreForTesting = previousStore
+    }
+
+    @MainActor
+    private final class InputSourceRecorder: AskLauncherInputSourceSelecting {
+        var onSelect: () -> Void = {}
+        func selectEnglish() { onSelect() }
+    }
+
+    @Test func selectsEnglishAfterFocusOnlyWhenOpeningLauncher() async throws {
+        _ = NSApplication.shared
+        let f = try AskTestFixture(authenticated: false)
+        let suite = "ask-input-source-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let inputSource = InputSourceRecorder()
+        var selections = 0
+        inputSource.onSelect = {
+            selections += 1
+            let editor = self.panel()?.firstResponder as? NSTextView
+            #expect(editor?.isEditable == true)
+        }
+        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: f.model,
+                                                        launcherInputSource: inputSource)
+        defer {
+            controller.dismissLauncher()
+            f.model.resetSession()
+            defaults.removePersistentDomain(forName: suite)
+        }
+
+        controller.prewarmLauncher()
+        #expect(selections == 0)
+        controller.showLauncher()
+        #expect(selections == 1)
+
+        // Refocusing an open launcher must preserve a manual input-source change.
+        panel()?.makeFirstResponder(nil)
+        controller.showLauncher()
+        #expect(selections == 1)
+        controller.dismissLauncher()
+        #expect(selections == 1)
+
+        controller.showLauncher()
+        #expect(selections == 2)
+        controller.showConversation()
+        #expect(selections == 2)
+        for window in NSApp.windows where window.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-conversations" {
+            window.orderOut(nil)
+        }
+    }
+
     private func panel() -> NSWindow? {
         NSApp.windows.first {
             $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-launcher" && $0.isVisible

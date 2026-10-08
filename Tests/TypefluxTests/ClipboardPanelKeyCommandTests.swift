@@ -58,4 +58,17 @@ final class ClipboardPanelKeyCommandTests: XCTestCase {
         XCTAssertNil(command(51, .command, queryIsEmpty: false))
         XCTAssertNil(command(51))
     }
+
+    func testNumberShortcutsMatchTheLauncherAndAllowSearching() {
+        for (index, code) in [UInt16(18), 19, 20, 21, 23, 22, 26, 28, 25].enumerated() {
+            XCTAssertEqual(command(code, .command, String(index + 1), queryIsEmpty: false, selection: true), .quickPaste(index + 1))
+            XCTAssertEqual(command(code, .command, nil), .quickPaste(index + 1))
+            XCTAssertNil(command(code, [], String(index + 1)))
+            XCTAssertNil(command(code, [.command, .shift], String(index + 1)))
+            XCTAssertNil(command(code, [.command, .option], String(index + 1)))
+            XCTAssertNil(command(code, [.command, .control], String(index + 1)))
+        }
+        XCTAssertEqual(command(92, [.command, .numericPad], "9"), .quickPaste(9))
+        XCTAssertNil(command(18, .command, "!"))
+    }
 }

@@ -22,8 +22,10 @@ enum ClipboardPanelKeyCommand: Equatable {
         if let command = navigationCommand(keyCode: keyCode, flags: flags, queryIsEmpty: queryIsEmpty) {
             return command
         }
+        if let number = AskLauncherNumberShortcuts.number(keyCode: keyCode, modifiers: modifiers, characters: characters) {
+            return .quickPaste(number)
+        }
         guard flags == .command, let key = characters?.lowercased() else { return nil }
-        if let number = Int(key), (1 ... 9).contains(number) { return .quickPaste(number) }
         switch key {
         case "p": return .action(.togglePin)
         case "y": return .action(.quickLook)

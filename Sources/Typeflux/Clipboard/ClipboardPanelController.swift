@@ -84,15 +84,15 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
         return panel
     }
 
-    /// Centers the panel slightly above the middle of the screen under the mouse.
+    /// Shares the launcher's visible top edge on the screen under the mouse.
     private func position(_ panel: NSPanel) {
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
-        guard let frame = screen?.visibleFrame else { return }
-        let size = panel.frame.size
-        panel.setFrameOrigin(NSPoint(
-            x: frame.midX - size.width / 2,
-            y: frame.midY - size.height / 2 + min(80, frame.height * 0.08)
-        ))
+        guard let screen else { return }
+        let anchor = settingsStore.askLauncherPosition == .lastPosition
+            ? settingsStore.askLauncherAnchors[AskLauncherPlacement.key(for: screen)] : nil
+        panel.setFrameOrigin(ClipboardPanelPlacement.frame(
+            size: panel.frame.size, screen: screen.visibleFrame, launcherAnchor: anchor
+        ).origin)
     }
 
     private func applyAppearance(to panel: NSPanel) {
@@ -152,7 +152,8 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
         case .previousCategory: model.cycleCategory(forward: false)
         case .cancel: model.cancel()
         case let .action(action): model.perform(action)
-        case let .quickPaste(number): model.quickPaste(number: number)
+        case let .quickPaste(number):
+            if !event.isARepeat { model.quickPaste(number: number) }
         case nil: return false
         }
         return true

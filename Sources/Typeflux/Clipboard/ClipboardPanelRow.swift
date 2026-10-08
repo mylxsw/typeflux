@@ -33,9 +33,6 @@ struct ClipboardPanelRow: View {
                         .font(.system(size: 10))
                         .foregroundStyle(Color.yellow)
                 }
-                if isSelected || isHovered, index < 9 {
-                    ClipboardKeycap(text: "⌘\(index + 1)")
-                }
             }
             .padding(.top, 6)
         }
@@ -49,6 +46,7 @@ struct ClipboardPanelRow: View {
         .onTapGesture(count: 2) { model.perform(.paste, at: index) }
         .onTapGesture { model.select(index: index) }
         .contextMenu { contextMenu }
+        .modifier(AskLauncherNumberBadge(number: AskLauncherNumberShortcuts.number(at: index)))
     }
 
     private func subtitle(missing: Bool) -> some View {

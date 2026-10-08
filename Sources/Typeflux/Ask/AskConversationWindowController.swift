@@ -17,6 +17,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     let model: AskConversationModel
     private let dockVisibility: DockVisibilityController
     private let settings: SettingsStore
+    private let launcherInputSource: any AskLauncherInputSourceSelecting
     private let tools: AskLocalTools?
     private let conversationFrameAutosaveName: NSWindow.FrameAutosaveName
     private var launcher: AskFloatingPanel?
@@ -30,9 +31,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private var localClickMonitor: Any?
 
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary,
-         llmService: LLMService? = nil, dockVisibility: DockVisibilityController = .shared) throws {
+         llmService: LLMService? = nil, dockVisibility: DockVisibilityController = .shared,
+         launcherInputSource: any AskLauncherInputSourceSelecting = SystemAskLauncherInputSourceSelector()) throws {
         self.dockVisibility = dockVisibility
         self.settings = settings
+        self.launcherInputSource = launcherInputSource
         conversationFrameAutosaveName = "AskConversationWorkspace"
         let tools = AskLocalTools(registry: registry, settings: settings)
         let sandbox = tools.sandbox
@@ -107,9 +110,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     init(settings: SettingsStore, model: AskConversationModel, dockVisibility: DockVisibilityController = .shared,
-         conversationFrameAutosaveName: NSWindow.FrameAutosaveName = "AskConversationWorkspace") {
+         conversationFrameAutosaveName: NSWindow.FrameAutosaveName = "AskConversationWorkspace",
+         launcherInputSource: any AskLauncherInputSourceSelecting = SystemAskLauncherInputSourceSelector()) {
         self.dockVisibility = dockVisibility
         self.settings = settings; self.model = model; self.tools = nil
+        self.launcherInputSource = launcherInputSource
         self.conversationFrameAutosaveName = conversationFrameAutosaveName
         super.init()
         bindCallbacks()
@@ -157,7 +162,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         }
         // Take keyboard focus without activating the app and raising its other windows.
         panel.makeKeyAndOrderFront(nil)
-        focusEditor(in: panel)
+        // Select after focus: AppKit may restore the editor's previous source
+        // when it becomes first responder. Do this only on a fresh opening.
+        if focusEditor(in: panel) { launcherInputSource.selectEnglish() }
         installClickMonitors()
         launchTask = Task { [weak self] in
             guard let self else { return }
@@ -393,14 +400,16 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         default: window?.appearance = nil
         }
     }
-    private func focusEditor(in window: NSWindow?) {
+    @discardableResult
+    private func focusEditor(in window: NSWindow?) -> Bool {
         func editor(in view: NSView) -> NSTextView? {
             if let text = view as? NSTextView, text.isEditable { return text }
             return view.subviews.lazy.compactMap { editor(in: $0) }.first
         }
-        guard let content = window?.contentView else { return }
+        guard let content = window?.contentView else { return false }
         content.layoutSubtreeIfNeeded()
-        if let editor = editor(in: content) { window?.makeFirstResponder(editor) }
+        guard let editor = editor(in: content) else { return false }
+        return window?.makeFirstResponder(editor) == true
     }
 }
 

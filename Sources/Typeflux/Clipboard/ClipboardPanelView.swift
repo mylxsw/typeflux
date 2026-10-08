@@ -11,6 +11,7 @@ struct ClipboardPanelView: View {
     @FocusState private var searchFocused: Bool
     @Namespace private var tabNamespace
     @State private var hoveredIndex: Int?
+    @State private var showingNumberHints = false
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.askGlassMaterialOverride) private var materialOverride
@@ -35,6 +36,8 @@ struct ClipboardPanelView: View {
                 .strokeBorder(AskTheme.floatingBorder, lineWidth: contrast == .increased ? 1 : 0.5)
         )
         .overlay(alignment: .bottom) { noticeToast }
+        .environment(\.askLauncherNumberHints, showingNumberHints)
+        .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
         .onAppear { searchFocused = true }
         .onChange(of: focusRequest) { _ in searchFocused = true }
     }

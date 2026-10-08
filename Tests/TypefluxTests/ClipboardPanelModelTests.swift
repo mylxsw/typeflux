@@ -149,6 +149,19 @@ final class ClipboardPanelModelTests: XCTestCase {
         XCTAssertEqual(performed.map(\.0), [.paste])
     }
 
+    func testQuickPasteNumbersFollowSearchAndCategoryChanges() {
+        model.reset(entries: entries)
+        model.query = "words"
+        model.quickPaste(number: 2)
+        XCTAssertEqual(performed.map(\.1), ["plain words"])
+        XCTAssertEqual(model.selectedIndex, 1)
+        model.category = .text
+        model.quickPaste(number: 1)
+        model.quickPaste(number: 2)
+        XCTAssertEqual(performed.map(\.1), ["plain words", "plain words"])
+        XCTAssertEqual(model.selectedIndex, 0)
+    }
+
     func testCancelClearsSearchBeforeDismissing() {
         model.reset(entries: entries)
         model.query = "zzz"

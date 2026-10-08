@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The same 1...9 numbering is used by the home's rows, search and plugin lists.
+/// The same 1...9 numbering is used by launcher and clipboard lists.
 enum AskLauncherNumberShortcuts {
     static func number(at index: Int) -> Int? {
         (0..<9).contains(index) ? index + 1 : nil
@@ -53,7 +53,7 @@ struct AskLauncherNumberBadge: ViewModifier {
     }
 }
 
-/// Observe modifiers only in this launcher window and clear hints when it loses focus.
+/// Observe modifiers only in the hosting window and clear hints when it loses focus.
 struct AskLauncherCommandMonitor: NSViewRepresentable {
     var onChange: (Bool) -> Void
 

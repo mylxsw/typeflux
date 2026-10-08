@@ -116,7 +116,8 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         let suite = "ClipboardPanelRenderingTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        let controller = ClipboardPanelController(settingsStore: SettingsStore(defaults: defaults))
+        let settings = SettingsStore(defaults: defaults)
+        let controller = ClipboardPanelController(settingsStore: settings)
         let model = ClipboardPanelModel()
         var actions: [ClipboardEntryAction] = []
         var dismissed = 0
@@ -131,6 +132,27 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         let window = try XCTUnwrap(NSApplication.shared.windows.first {
             $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.clipboard"
         })
+        let screen = try XCTUnwrap(window.screen)
+        XCTAssertEqual(window.frame.maxY,
+                       AskLauncherPlacement.top(on: screen.visibleFrame) - AskMetrics.launcherGutter)
+        XCTAssertEqual(window.frame.midX, screen.visibleFrame.midX, accuracy: 0.5)
+        XCTAssertEqual(window.frame.size, NSSize(width: 640, height: 560))
+
+        // Reopening follows the launcher's saved vertical position on this display.
+        settings.askLauncherPosition = .lastPosition
+        settings.askLauncherAnchors = [
+            AskLauncherPlacement.key(for: screen): .init(left: 100, fromTop: 90)
+        ]
+        controller.dismiss()
+        controller.present(model)
+        XCTAssertEqual(window.frame.maxY, screen.visibleFrame.maxY - 90 - AskMetrics.launcherGutter)
+        XCTAssertEqual(window.frame.midX, screen.visibleFrame.midX, accuracy: 0.5)
+
+        settings.askLauncherPosition = .center
+        controller.dismiss()
+        controller.present(model)
+        XCTAssertEqual(window.frame.maxY,
+                       AskLauncherPlacement.top(on: screen.visibleFrame) - AskMetrics.launcherGutter)
         func key(_ code: UInt16, _ characters: String, _ flags: NSEvent.ModifierFlags = []) -> Bool {
             let event = NSEvent.keyEvent(
                 with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0,
