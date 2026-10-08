@@ -1155,26 +1155,37 @@ struct AskComposer: View {
             Group {
                 if let approval = model.workflowApproval, !active {
                     AskWorkflowApprovalView(approval: approval) { model.answerWorkflowApproval($0) }
+                        .layoutPriority(1)
                 } else if let actions = model.currentWorkflowActions, !active {
                     AskWorkflowActionsSummaryView(state: actions)
+                        .layoutPriority(1)
                 } else if let feedback = model.capturedContentFeedback(launcher: true), !active {
                     AskCapturedContentFeedbackView(feedback: feedback) {
                         model.undoCapturedContent(launcher: true)
                     }
+                    .layoutPriority(1)
                 } else if let feedback = model.commandFeedback, !active {
                     AskComposerFootnote(text: feedback)
                         .transition(.opacity)
+                        .layoutPriority(1)
                 } else {
-                    Text(launcherHint)
-                        .font(.system(size: 11))
-                        .foregroundStyle(AskTheme.launcherMetaText)
-                        .lineLimit(1)
-                        .accessibilityHidden(true)
-                        // Passive hints share the empty bar's drag behavior.
-                        .overlay { if let windowDrag { AskWindowDragArea(handlers: windowDrag) } }
+                    // The longest version that fits after the model; nothing when even the main key does not.
+                    ViewThatFits(in: .horizontal) {
+                        ForEach(AskLauncherContext.hintTiers(launcherHint), id: \.self) { hint in
+                            Text(hint)
+                                .font(.system(size: 11))
+                                .foregroundStyle(AskTheme.launcherMetaText)
+                                .lineLimit(1)
+                        }
+                        Color.clear.frame(width: 0, height: 0)
+                    }
+                    .accessibilityHidden(true)
+                    // Passive hints share the empty bar's drag behavior.
+                    .overlay { if let windowDrag { AskWindowDragArea(handlers: windowDrag) } }
+                    // Below the model, above the chat button's label.
+                    .layoutPriority(0.5)
                 }
             }
-            .layoutPriority(1)
             Button(action: openChat) {
                 ViewThatFits(in: .horizontal) {
                     Label(L("ask.openChat"), systemImage: "macwindow")
@@ -1343,7 +1354,7 @@ struct AskComposer: View {
 
     private var permissionModeMenu: some View {
         AskPermissionModeMenu(mode: model.permissionMode(launcher: launcher),
-                              compact: launcher || layout.width < 800) { mode in
+                              compact: launcher || layout.width < 800, bare: launcher) { mode in
             model.setPermissionMode(mode, launcher: launcher)
         }
         .disabled(active || (!launcher && model.isLoadingSelection))
@@ -1364,10 +1375,13 @@ struct AskComposer: View {
         ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
            hasImage: !launcher && model.hasConversationImages, compact: true,
            condensed: layout.condensedFooter,
+           showsChevron: !launcher,
            cloudAvailable: model.cloudAvailable(launcher: launcher),
            onManage: model.onOpenSettings.map { open in { open(.models) } },
            effort: $model.reasoningEffort)
         .opacity(Self.recordingDim(active))
+        // In the launcher the model outranks the key hints, which shorten instead.
+        .layoutPriority(launcher ? 1 : 0)
         .accessibilityIdentifier("ask.composer.model")
     }
 

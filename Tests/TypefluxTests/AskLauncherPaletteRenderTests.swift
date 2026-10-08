@@ -33,6 +33,15 @@ struct AskLauncherPaletteRenderTests {
         #expect(AskPermissionModeMenu.wellFill(.yolo) == StudioTheme.danger.opacity(0.11))
     }
 
+    @Test func `the launcher shows every mode as its symbol alone without a chevron`() {
+        func width(_ mode: AskPermissionMode, bare: Bool) -> CGFloat {
+            NSHostingView(rootView: AskPermissionModeMenu(mode: mode, compact: true, bare: bare, onSelect: { _ in }))
+                .fittingSize.width
+        }
+        #expect(width(.yolo, bare: true) < width(.yolo, bare: false) - 20, "YOLO drops its word")
+        #expect(width(.standard, bare: true) < width(.standard, bare: false), "the chevron goes")
+    }
+
     @Test func `an on switch sits in a tinted well and an off switch does not`() async throws {
         let on = AskContextItem(kind: .screenshot, systemImage: "camera.viewfinder", style: .active,
                                 title: "Screenshot")

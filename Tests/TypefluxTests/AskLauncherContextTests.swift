@@ -128,6 +128,24 @@ struct AskLauncherContextTests {
         #expect(L("ask.launcher.hint.context").contains("⌘K"))
     }
 
+    @Test func hintsNeverSpendRoomOnEscClosing() {
+        for key in ["ask.launcher.hint", "ask.launcher.hint.context", "ask.quick.hint", "ask.quick.hint.app",
+                    "ask.quick.hint.file", "ask.quick.hint.showAll", "ask.plugin.hint.keyword", "ask.plugin.hint.failed",
+                    "ask.home.hint.chip"] {
+            #expect(!L(key).contains("esc"), "\(key)")
+        }
+        #expect(L("ask.launcher.hint.voice").contains("esc"), "esc still cancels a recording")
+    }
+
+    @Test func hintTiersShortenToTheMainKeyAndContext() {
+        #expect(AskLauncherContext.hintTiers("").isEmpty)
+        #expect(AskLauncherContext.hintTiers("↩ Send") == ["↩ Send"])
+        #expect(AskLauncherContext.hintTiers("↩ Send · ⌘K Context") == ["↩ Send · ⌘K Context", "↩ Send"])
+        #expect(AskLauncherContext.hintTiers("↩ Use keyword · ←→ Switch · ⌘K Context")
+            == ["↩ Use keyword · ←→ Switch · ⌘K Context", "↩ Use keyword · ⌘K Context", "↩ Use keyword"])
+        #expect(AskLauncherContext.hintTiers("↩ Open · → More · ⌘↩ Ask AI") == ["↩ Open · → More · ⌘↩ Ask AI", "↩ Open"])
+    }
+
     @Test func sendIsLitOnlyWhenReturnAsksTheAI() throws {
         #expect(AskLauncherContext.sendIsProminent(quickResults: nil))
         var results = try #require(AskQuickResults.resolve(text: "1+1", previous: nil, chinese: true))

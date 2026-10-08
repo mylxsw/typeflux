@@ -1578,17 +1578,17 @@
 "ask.search.actions" = "操作";
 "ask.search.conversations" = "对话";
 "ask.search.placeholder" = "搜索对话或操作";
-"ask.launcher.hint" = "↩ 发送 · esc 关闭";
+"ask.launcher.hint" = "↩ 发送";
 "ask.launcher.drag" = "拖动以移动 · 双击回到中间";
 "ask.quick.calculator" = "计算器";
 "ask.quick.askAI" = "问 AI";
-"ask.quick.hint" = "↩ 复制结果 · ⌘↩ 问 AI · esc 关闭";
-"ask.quick.hint.app" = "↩ 打开 · ⌘↩ 问 AI · esc 关闭";
+"ask.quick.hint" = "↩ 复制结果 · ⌘↩ 问 AI";
+"ask.quick.hint.app" = "↩ 打开 · ⌘↩ 问 AI";
 "ask.quick.section.calculation" = "计算";
 "ask.quick.section.apps" = "应用";
 "ask.quick.section.ai" = "AI";
 "ask.launcher.placeholder" = "搜索应用、计算，或直接提问";
-"ask.launcher.hint.context" = "↩ 发送 · ⌘K 上下文 · esc 关闭";
+"ask.launcher.hint.context" = "↩ 发送 · ⌘K 上下文";
 "ask.launcher.hint.voice" = "↩ 结束并填入 · esc 取消";
 "ask.launcher.hint.transcribing" = "esc 取消";
 "ask.voice.waiting" = "正在听…";
@@ -2545,12 +2545,11 @@
 "ask.plugin.source.device" = "本机";
 "ask.plugin.askAI.selection" = "%@选中的文字";
 "ask.plugin.writeBack.failed" = "没能写回原应用，结果已复制到剪贴板";
-"ask.plugin.hint.keyword" = "↩ 发送 · ⇥ 进入关键字 · esc 关闭";
-"ask.plugin.hint.waiting" = "esc 关闭";
+"ask.plugin.hint.keyword" = "↩ 发送 · ⇥ 进入关键字";
 "ask.plugin.hint.ready" = "↩ 运行";
 "ask.plugin.hint.running" = "esc 取消";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
-"ask.plugin.hint.failed" = "↩ 重试 · esc 关闭";
+"ask.plugin.hint.failed" = "↩ 重试";
 "ask.plugin.section" = "关键字";
 "ask.plugin.waiting" = "输入要处理的内容";
 "ask.plugin.enter" = "空格或 ⇥ 进入";
@@ -3459,8 +3458,8 @@
 "ask.quick.section.files" = "文件";
 "ask.quick.section.folders" = "文件夹";
 "ask.quick.pane.location" = "系统设置";
-"ask.quick.hint.file" = "↩ 打开 · → 更多操作 · ⌘↩ 问 AI · esc 关闭";
-"ask.quick.hint.showAll" = "↩ 显示全部文件 · ⌘↩ 问 AI · esc 关闭";
+"ask.quick.hint.file" = "↩ 打开 · → 更多操作 · ⌘↩ 问 AI";
+"ask.quick.hint.showAll" = "↩ 显示全部文件 · ⌘↩ 问 AI";
 "ask.quick.file.actions" = "打开 ↩ · → 更多";
 "ask.quick.file.showAll" = "显示全部匹配的文件";
 "ask.quick.file.indexing" = "正在建立文件索引 · 已收录 %@ 项";
@@ -3598,7 +3597,6 @@
 "ask.home.hint.open" = "↩ 打开对话";
 "ask.home.hint.chip" = "↩ 使用关键词 · ←→ 切换";
 "ask.home.hint.context" = "⌘K 上下文";
-"ask.home.hint.close" = "esc 关闭";
 "ask.home.justNow" = "刚刚";
 
 // Launcher chat entry and preserved drafts.

@@ -14,6 +14,8 @@ struct AskModelMenu: View {
     var compact = false
     /// Narrow workspace cards reserve room for send and voice controls.
     var condensed = false
+    /// The launcher's bar drops the chevron: the name alone reads as the control.
+    var showsChevron = true
     /// Whether Cloud models can run here; Ask passes false in local mode. Defaults to the sign-in state.
     var cloudAvailable: Bool? = nil
     /// Composer only: a "Manage models…" row that opens settings.
@@ -77,9 +79,11 @@ struct AskModelMenu: View {
                 if currentReason != nil {
                     Image(systemName: "exclamationmark.circle")
                 }
-                Image(systemName: fieldStyle ? "chevron.up.chevron.down" : "chevron.down")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                if showsChevron {
+                    Image(systemName: fieldStyle ? "chevron.up.chevron.down" : "chevron.down")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
             }
             .font(.system(size: compact ? 13.5 : 13,
                           weight: fieldStyle ? .regular : (compact ? .semibold : .medium)))

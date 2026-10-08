@@ -42,14 +42,13 @@ struct AskPluginViewTests {
     @Test func theHintSaysWhatTheKeysDo() {
         #expect(AskPluginResultsView.hint(for: display(.waiting, hint: AskTranslatePlugin.keywords[0])) == L("ask.plugin.hint.keyword"))
         #expect(AskPluginResultsView.hint(for: display(.ready(plan), highlighted: 1)) == L("ask.launcher.hint"))
-        #expect(AskPluginResultsView.hint(for: display(.waiting)) == L("ask.plugin.hint.waiting"))
-        #expect(AskPluginResultsView.hint(for: display(.ready(plan))) == L("ask.plugin.hint.ready") + " · " + L("ask.plugin.hint.waiting"))
+        #expect(AskPluginResultsView.hint(for: display(.waiting)).isEmpty, "esc closing goes without saying")
+        #expect(AskPluginResultsView.hint(for: display(.ready(plan))) == L("ask.plugin.hint.ready"))
         #expect(AskPluginResultsView.hint(for: display(.running(plan))) == L("ask.plugin.hint.running"))
         #expect(AskPluginResultsView.hint(for: display(.done(plan, output())))
             == L("ask.plugin.hint.done", "Copy", "Replace") + " · " + L("ask.plugin.hint.askAI"))
         #expect(AskPluginResultsView.hint(for: display(.failed(plan, AskPluginFailure(message: "x")))) == L("ask.plugin.hint.failed"))
-        #expect(AskPluginResultsView.hint(for: display(.failed(plan, AskPluginFailure(message: "x", retry: false))))
-            == L("ask.plugin.hint.waiting"))
+        #expect(AskPluginResultsView.hint(for: display(.failed(plan, AskPluginFailure(message: "x", retry: false)))).isEmpty)
         #expect(AskPluginResultsView.key(.enter) == "↩" && AskPluginResultsView.key(.optionEnter) == "⌥↩")
         #expect(AskPluginResultsView.key(.commandR) == "⌘R" && AskPluginResultsView.key(.commandD) == "⌘D")
         #expect(AskPluginResultsView.key(nil) == nil)
@@ -84,8 +83,7 @@ struct AskPluginViewTests {
                                                            L("ask.plugin.hint.option", "Engine"), L("ask.plugin.hint.askAI")]
                 .joined(separator: " · "))
         shown.phase = .ready(plan)
-        #expect(AskPluginResultsView.hint(for: shown) == [L("ask.plugin.hint.ready"), L("ask.plugin.hint.option", "Engine"),
-                                                           L("ask.plugin.hint.waiting")].joined(separator: " · "))
+        #expect(AskPluginResultsView.hint(for: shown) == L("ask.plugin.hint.ready") + " · " + L("ask.plugin.hint.option", "Engine"))
         let copyOnly = AskPluginOutput(body: "x", original: "y", meta: [], source: "s",
                                        actions: [AskPluginAction(kind: .copy("x"), title: "Copy", symbol: "doc", shortcut: .enter)])
         #expect(AskPluginResultsView.hint(for: display(.done(plan, copyOnly)))

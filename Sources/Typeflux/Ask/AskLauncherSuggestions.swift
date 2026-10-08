@@ -99,8 +99,7 @@ struct AskLauncherSuggestions: View {
         case .chip: action = L("ask.home.hint.chip")
         case nil: return L(hasContext ? "ask.launcher.hint.context" : "ask.launcher.hint")
         }
-        return ([action] + (hasContext ? [L("ask.home.hint.context")] : []) + [L("ask.home.hint.close")])
-            .joined(separator: " · ")
+        return ([action] + (hasContext ? [L("ask.home.hint.context")] : [])).joined(separator: " · ")
     }
 
     /// "just now", "12 min. ago": when a conversation was last active.
