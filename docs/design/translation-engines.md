@@ -28,7 +28,7 @@
 - 密钥只存钥匙串，账号 `translation-provider-<id>`（`AskKeychainTranslationCredentials`）。
 - 翻译模型：`AskTranslationLLMService`。没选模型时继续用原来的文本处理模型；选了模型时用
   `OpenAICompatibleLLMService(configuration:sendsPromptsAsWritten: true)`，不再拼接听写用的语言策略和环境上下文；
-  选中的模型被删除时提示「翻译模型已被删除」，不会悄悄换成别的模型。
+  选中的模型被删除时提示「翻译模型已被删除」，不会悄悄换成别的模型。选中 Ollama 模型时走它的 OpenAI 兼容接口（`/v1`）。
 
 ## 服务商适配（`Translation/Providers/`）
 

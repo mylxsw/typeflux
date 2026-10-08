@@ -131,6 +131,16 @@ struct AskTranslationSettingsTests {
         #expect(AskPluginRegistry.translationModelName(store) == L("ask.models.unavailable"))
         store.askTranslationSettings = AskTranslationSettings(modelReference: "cloud:default")
         #expect(AskPluginRegistry.translationModelName(store) == LLMRemoteProvider.typefluxCloud.displayName)
+        registry.providers.append(RegisteredProvider(id: "ollama", name: "Ollama",
+                                                     models: [RegisteredModel(id: "qwen3", name: "qwen3",
+                                                                              reference: "custom:qwen")]))
+        try registry.write(store.defaults)
+        store.ollamaBaseURL = "http://127.0.0.1:11434/"
+        store.askTranslationSettings = AskTranslationSettings(modelReference: "custom:qwen")
+        #expect(store.translationLLMConfiguration().baseURL == "http://127.0.0.1:11434/v1")
+        #expect(store.translationLLMConfiguration().model == "qwen3")
+        #expect(SettingsStore.ollamaOpenAIBaseURL("") == "http://127.0.0.1:11434/v1")
+        #expect(SettingsStore.ollamaOpenAIBaseURL("http://host:1/v1/") == "http://host:1/v1")
         store.askTranslationSettings = AskTranslationSettings()
         #expect(AskPluginRegistry.translationModelName(store) == AskPluginRegistry.modelName(store))
         #expect(AskPluginRegistry.translationModelName(nil) == "AI")

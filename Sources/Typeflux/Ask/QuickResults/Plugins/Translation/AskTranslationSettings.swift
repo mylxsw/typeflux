@@ -186,8 +186,21 @@ extension SettingsStore {
         let reference = askTranslationSettings.modelReference
         guard !reference.isEmpty else { return textLLMConfiguration() }
         if let (provider, model) = ModelRegistry.read(defaults)?.resolve(reference) {
-            return provider.connection(settings: self, model: model)
+            let configuration = provider.connection(settings: self, model: model)
+            guard provider.isOllama else { return configuration }
+            // Ollama answers OpenAI-style requests under /v1.
+            return TextLLMConfiguration(provider: configuration.provider,
+                                        baseURL: Self.ollamaOpenAIBaseURL(configuration.baseURL),
+                                        model: configuration.model, apiKey: configuration.apiKey,
+                                        apiStyle: configuration.apiStyle)
         }
         return TextLLMConfiguration(provider: .custom, baseURL: "", model: "", apiKey: "")
+    }
+
+    static func ollamaOpenAIBaseURL(_ baseURL: String) -> String {
+        var base = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if base.isEmpty { base = "http://127.0.0.1:11434" }
+        while base.hasSuffix("/") { base.removeLast() }
+        return base.lowercased().hasSuffix("/v1") ? base : base + "/v1"
     }
 }
