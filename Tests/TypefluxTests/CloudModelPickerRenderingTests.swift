@@ -5,6 +5,38 @@ import XCTest
 
 @MainActor
 final class CloudModelPickerRenderingTests: XCTestCase {
+    func testDefaultAliasPickerRendersOnlyConfiguredModelsInBothThemes() throws {
+        let suite = "cloud-alias-picker-" + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        try library.replaceCloudModels(CloudModelAliasFixture.models)
+        for dark in [false, true] {
+            let content = AskModelChoices(library: library, reference: .constant("cloud:default"),
+                                          loggedIn: true, composerStyle: true)
+                .background(StudioTheme.cardSurface)
+                .environment(\.colorScheme, dark ? .dark : .light)
+            let host = NSHostingView(rootView: content)
+            host.frame = NSRect(x: 0, y: 0, width: 330, height: 400)
+            host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = host
+            defer { window.close() }
+            host.layoutSubtreeIfNeeded()
+            host.displayIfNeeded()
+            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            XCTAssertGreaterThanOrEqual(bitmap.pixelsHigh, 400)
+            if let path = ProcessInfo.processInfo.environment["TYPEFLUX_CATALOG_CAPTURE_DIR"] {
+                let directory = URL(fileURLWithPath: path, isDirectory: true)
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                    .write(to: directory.appendingPathComponent("cloud-default-alias-\(dark ? "dark" : "light").png"))
+            }
+        }
+    }
+
     func testPricedPickerRendersModelParameters() throws {
         let suite = "cloud-picker-" + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

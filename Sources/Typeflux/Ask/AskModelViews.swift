@@ -57,7 +57,7 @@ struct AskModelMenu: View {
     var body: some View {
         Button { expanded.toggle() } label: {
             HStack(spacing: compact ? 6 : 8) {
-                if let (provider, model) = library.registry.resolve(reference) {
+                if let (provider, model) = library.registry.resolve(library.presentationReference(for: reference, scenario: scenario)) {
                     ModelIcon(model: model, provider: provider, size: 16)
                 }
                 // A long model name must not squeeze the context chips out of the
@@ -168,6 +168,9 @@ struct AskModelChoices: View {
     /// Signed out: a locked Typeflux Cloud row says what signing in adds.
     var offersCloudSignIn = false
 
+    private var selectedReference: String { library.presentationReference(for: reference, scenario: scenario) }
+    private var defaultReference: String { library.presentationReference(for: library.defaultReference, scenario: scenario) }
+
     var body: some View {
         if composerStyle { composerBody } else { standardBody }
     }
@@ -175,7 +178,7 @@ struct AskModelChoices: View {
     private var standardBody: some View {
         let available = recoveryProviders ?? library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
         let choices = available.filter { $0.id == preferredProviderID } + available.filter { $0.id != preferredProviderID }
-        let selectionAvailable = choices.contains { $0.models.contains { $0.reference == reference } }
+        let selectionAvailable = choices.contains { $0.models.contains { $0.reference == selectedReference } }
         return VStack(alignment: .leading, spacing: 0) {
             Group {
                 if recoveryProviders != nil, choices.reduce(0, { $0 + $1.models.count }) <= 4 {
@@ -206,7 +209,7 @@ struct AskModelChoices: View {
         // silently disappearing (custom models rarely declare vision support).
         let choices = library.selectableProviders(loggedIn: loggedIn, hasImage: false, scenario: scenario)
         let compatible = library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
-        let selectionAvailable = compatible.contains { $0.models.contains { $0.reference == reference } }
+        let selectionAvailable = compatible.contains { $0.models.contains { $0.reference == selectedReference } }
         return VStack(alignment: .leading, spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
@@ -231,10 +234,10 @@ struct AskModelChoices: View {
                             let blocked = Self.imageReason(model, provider: provider, hasImage: hasImage,
                                                            library: library, loggedIn: loggedIn, scenario: scenario)
                             AskPopoverRow(title: model.name,
-                                          note: model.reference == library.defaultReference ? L("ask.models.isDefault") : nil,
+                                          note: model.reference == defaultReference ? L("ask.models.isDefault") : nil,
                                           caption: blocked ?? Self.imageTrialCaption(model, provider: provider, hasImage: hasImage)
                                               ?? Self.caption(model),
-                                          selected: reference == model.reference,
+                                          selected: selectedReference == model.reference,
                                           enabled: blocked == nil,
                                           modelIcon: ModelIcon(model: model, provider: provider)) {
                                 reference = model.reference; dismiss()
@@ -274,7 +277,7 @@ struct AskModelChoices: View {
             VStack(spacing: 0) {
                 if Self.offersMakeDefault(showsDefaultAction: showsDefaultAction,
                                           selectionAvailable: selectionAvailable,
-                                          reference: reference, defaultReference: library.defaultReference) {
+                                          reference: selectedReference, defaultReference: defaultReference) {
                     AskPopoverRow(title: L("ask.models.makeDefault"), caption: nil, selected: false) {
                         library.defaultReference = reference
                         dismiss()
@@ -352,7 +355,7 @@ struct AskModelChoices: View {
     }
 
     private func choice(_ model: RegisteredModel, provider: RegisteredProvider) -> some View {
-        let selected = reference == model.reference
+        let selected = selectedReference == model.reference
         return Button { reference = model.reference; dismiss() } label: {
             HStack(spacing: 10) {
                 ModelIcon(model: model, provider: provider)

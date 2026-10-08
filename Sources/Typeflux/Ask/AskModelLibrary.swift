@@ -296,8 +296,10 @@ final class AskModelLibrary: ObservableObject {
         providers.compactMap { provider in
             guard unavailableReason(provider, loggedIn: loggedIn) == nil else { return nil }
             var available = provider
+            let hidesDefaultAlias = scenario == "ask" && provider.explicitCloudDefault != nil
             available.models = (provider.isCloud && scenario == "rewrite" ? (rewriteCloud?.map(\.registered) ?? provider.models) : provider.models).filter {
-                $0.exclusionReason == nil && ($0.scenarios?.contains(scenario) ?? true)
+                (!hidesDefaultAlias || $0.reference != "cloud:default")
+                    && $0.exclusionReason == nil && ($0.scenarios?.contains(scenario) ?? true)
                     && (!hasImage || Self.acceptsImages($0, provider: provider, confirmedOnly: confirmedVision))
             }
             return available.models.isEmpty ? nil : available

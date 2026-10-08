@@ -99,7 +99,7 @@ struct AskModelEffortCard: View {
                         .animation(.easeOut(duration: 0.2), value: shown)
                     Button { page = .models } label: {
                         HStack(spacing: 2) {
-                            if let (provider, model) = library.registry.resolve(liveReference) {
+                            if let (provider, model) = library.registry.resolve(library.presentationReference(for: liveReference)) {
                                 ModelIcon(model: model, provider: provider, size: 14)
                             }
                             Text(levels.isEmpty ? L("ask.reasoning.changeModel") : library.name(for: liveReference))
