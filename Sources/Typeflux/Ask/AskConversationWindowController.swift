@@ -63,8 +63,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // Keyword plugins: translation falls back to the text-processing model, and
         // ⌥Return types results into the app the launcher came from.
         if let llmService {
-            model.translationAI = AskAITranslationEngine(service: llmService) { [weak settings] in
-                AskPluginRegistry.modelName(settings)
+            // Translation may have a model of its own; without one it uses the text-processing model.
+            model.translationAI = AskAITranslationEngine(
+                service: AskTranslationLLMService(settings: settings, textProcessing: llmService)
+            ) { [weak settings] in
+                AskPluginRegistry.translationModelName(settings)
             }
             model.promptAI = AskLLMTextGenerator(service: llmService)
         }
@@ -85,7 +88,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 model?.launcherDraft = AskDraft(text: prompt, includeScreenshot: false, selection: nil)
                 model?.submitLauncher()
             }
-        ) { [weak settings] in AskPluginRegistry.modelName(settings) }
+        ) { [weak settings] in AskPluginRegistry.translationModelName(settings) }
         model.deliverText = { text in
             let result = try await injector.deliver(text: text, to: .currentInput)
             if case .notApplied = result { throw TextDeliveryError.noInput }

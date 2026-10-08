@@ -129,8 +129,8 @@ final class StudioModelsTests: XCTestCase {
     }
 
     func testLauncherSettingsPanes() {
-        XCTAssertEqual(LauncherSettingsPane.allCases, [.basics, .search, .keywords, .workflows])
-        XCTAssertEqual(LauncherSettingsPane.sections.map { $0.panes }, [[.basics, .search, .keywords, .workflows]])
+        XCTAssertEqual(LauncherSettingsPane.allCases, [.basics, .search, .keywords, .translation, .workflows])
+        XCTAssertEqual(LauncherSettingsPane.sections.map { $0.panes }, [[.basics, .search, .keywords, .translation, .workflows]])
         XCTAssertNil(LauncherSettingsPane.sections.first?.title)
         for pane in LauncherSettingsPane.allCases {
             XCTAssertEqual(pane.id, pane.rawValue)

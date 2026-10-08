@@ -235,6 +235,7 @@ enum LauncherSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem 
     case basics
     case search
     case keywords
+    case translation
     case workflows
 
     var id: String {
@@ -246,6 +247,7 @@ enum LauncherSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem 
         case .basics: L("launcher.pane.basics")
         case .search: L("launcher.pane.search")
         case .keywords: L("ask.settings.plugins.title")
+        case .translation: L("ask.plugin.translate.title")
         case .workflows: L("ask.workflow.section")
         }
     }
@@ -255,6 +257,7 @@ enum LauncherSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem 
         case .basics: "square.grid.2x2"
         case .search: "magnifyingglass"
         case .keywords: "keyboard"
+        case .translation: "translate"
         case .workflows: "point.3.connected.trianglepath.dotted"
         }
     }

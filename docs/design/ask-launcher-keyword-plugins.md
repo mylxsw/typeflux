@@ -226,7 +226,7 @@ struct AskPluginAction: Equatable {
 | AI 指令 | `rw` 润色、`sum` 总结、`ex` 解释（用户可以自己加：关键字 + 提示词，`{input}` 是占位符） | text | onSubmit | 流式文本卡片 |
 | 网页搜索 | `g` Google、`bd` 百度、`gh` GitHub（用户可以自己加：关键字 + URL 模板，`{query}` 是占位符） | argument（为空时用选中文字） | onSubmit | 直接执行 |
 
-- **翻译**：引擎和隐私规则沿用翻译设计稿。本机 Translation 优先，AI 用文本处理模型；选中文字只有在用户按 ↩ 后才会处理；会走 AI 时，卡片上始终标明。
+- **翻译**：引擎和隐私规则沿用翻译设计稿。本机 Translation 优先，AI 用文本处理模型；选中文字只有在用户按 ↩ 后才会处理；会走 AI 时，卡片上始终标明。翻译模型和翻译服务商（DeepL、Google 等）后来可以单独配置，见 `translation-engines.md`（GUL-255）。
 - **AI 指令**最能体现扩展性：用户不写代码，加一个「关键字 + 提示词」就是一个新功能。例如 `jd` → 「把下面的内容改写成京东客服口吻：{input}」。
 
 ## 8. 设置

@@ -126,9 +126,25 @@ enum LLMConnectionResolver {
 
 final class OpenAICompatibleLLMService: LLMService {
     private let settingsStore: SettingsStore
+    /// The connection `complete`, `completeJSON` and `streamComplete` use; rewriting
+    /// always follows the text-processing model.
+    private let configuration: () -> SettingsStore.TextLLMConfiguration
+    /// Sends prompts as written, without the dictation language policy and the
+    /// user's environment: for callers whose prompts already say which language to write.
+    private let sendsPromptsAsWritten: Bool
 
-    init(settingsStore: SettingsStore) {
+    init(settingsStore: SettingsStore, configuration: (() -> SettingsStore.TextLLMConfiguration)? = nil,
+         sendsPromptsAsWritten: Bool = false) {
         self.settingsStore = settingsStore
+        self.configuration = configuration ?? { [settingsStore] in settingsStore.textLLMConfiguration() }
+        self.sendsPromptsAsWritten = sendsPromptsAsWritten
+    }
+
+    /// The prompts as sent: with the language policy and the environment, unless sent as written.
+    private func prompts(system: String, user: String) -> (system: String, user: String) {
+        guard !sendsPromptsAsWritten else { return (system, user) }
+        return (PromptCatalog.appendLanguageResolutionPolicy(to: system),
+                PromptCatalog.appendUserEnvironmentContext(to: user, appLanguage: settingsStore.appLanguage))
     }
 
     /// Connection plus the raw cloud base URL (no `/api/v1` suffix) when
@@ -192,11 +208,10 @@ final class OpenAICompatibleLLMService: LLMService {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let llmConfig = settingsStore.textLLMConfiguration()
+                    let llmConfig = configuration()
                     let call = try await resolveConnection(for: llmConfig)
                     let additionalHeaders = headers(for: call.connection, scenario: .askAnything)
-                    let system = PromptCatalog.appendLanguageResolutionPolicy(to: systemPrompt)
-                    let user = PromptCatalog.appendUserEnvironmentContext(to: userPrompt, appLanguage: settingsStore.appLanguage)
+                    let (system, user) = prompts(system: systemPrompt, user: userPrompt)
                     _ = try await runWithFailureReporting(cloudBaseURL: call.cloudBaseURL) {
                         try await RemoteLLMClient.streamRewrite(
                             provider: call.connection.provider,
@@ -220,15 +235,8 @@ final class OpenAICompatibleLLMService: LLMService {
     }
 
     func complete(systemPrompt: String, userPrompt: String) async throws -> String {
-        let llmConfig = settingsStore.textLLMConfiguration()
-        let appLanguage = settingsStore.appLanguage
-        let effectiveSystemPrompt = PromptCatalog.appendLanguageResolutionPolicy(
-            to: systemPrompt
-        )
-        let effectiveUserPrompt = PromptCatalog.appendUserEnvironmentContext(
-            to: userPrompt,
-            appLanguage: appLanguage
-        )
+        let llmConfig = configuration()
+        let (effectiveSystemPrompt, effectiveUserPrompt) = prompts(system: systemPrompt, user: userPrompt)
         return try await RequestRetry.perform(operationName: "LLM completion request") { [weak self] in
             guard let self else { throw CancellationError() }
             // Re-resolve on each attempt so typefluxCloud retries pick up the
@@ -252,15 +260,8 @@ final class OpenAICompatibleLLMService: LLMService {
     }
 
     func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
-        let llmConfig = settingsStore.textLLMConfiguration()
-        let appLanguage = settingsStore.appLanguage
-        let effectiveSystemPrompt = PromptCatalog.appendLanguageResolutionPolicy(
-            to: systemPrompt
-        )
-        let effectiveUserPrompt = PromptCatalog.appendUserEnvironmentContext(
-            to: userPrompt,
-            appLanguage: appLanguage
-        )
+        let llmConfig = configuration()
+        let (effectiveSystemPrompt, effectiveUserPrompt) = prompts(system: systemPrompt, user: userPrompt)
         return try await RequestRetry.perform(operationName: "LLM JSON completion request") { [weak self] in
             guard let self else { throw CancellationError() }
             let call = try await resolveConnection(for: llmConfig)

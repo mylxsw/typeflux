@@ -42,6 +42,16 @@ enum AskPluginRegistry {
         return settings.llmModel.isEmpty ? "AI" : settings.llmModel
     }
 
+    /// The display name of the model AI translations use: the one chosen for
+    /// translation, or the text-processing model.
+    static func translationModelName(_ settings: SettingsStore?) -> String {
+        guard let settings else { return "AI" }
+        let reference = settings.askTranslationSettings.modelReference
+        guard !reference.isEmpty else { return modelName(settings) }
+        if reference == "cloud:default" { return LLMRemoteProvider.typefluxCloud.displayName }
+        return ModelRegistry.read(settings.defaults)?.resolve(reference)?.1.name ?? L("ask.models.unavailable")
+    }
+
     /// "AI · model" on a result card, or just "AI" when the model has no name to show.
     static func sourceLabel(_ modelName: String) -> String {
         modelName.isEmpty || modelName == "AI" ? "AI" : L("ask.plugin.source.ai", modelName)
@@ -91,7 +101,9 @@ extension AskConversationModel {
                 ai: translationAI,
                 dictionary: translationAI as? any AskWordLookingUp,
                 wordBook: wordBook?.store,
-                aiName: { [weak settings] in AskPluginRegistry.modelName(settings) },
+                aiName: { [weak settings] in AskPluginRegistry.translationModelName(settings) },
+                engineSettings: { [weak settings] in settings?.askTranslationSettings ?? AskTranslationSettings() },
+                service: { AskServiceTranslationEngine(client: AskServiceTranslationEngine.client(for: $0)) },
                 secondLanguage: { [weak settings] language in
                     settings?.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
                 }

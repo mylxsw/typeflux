@@ -114,19 +114,6 @@ struct AskLauncherPluginSettingsView: View {
             listCard
             Text(L("ask.settings.keywords.listFootnote"))
                 .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 4)
-            ModelSectionLabel(title: L("ask.plugin.translate.title")).padding(.top, 14)
-            ModelSurface {
-                AgentSettingsRow(icon: "globe", title: L("ask.settings.plugins.translate.second"),
-                                 subtitle: L("ask.settings.plugins.translate.secondSubtitle"), subtitleLineLimit: nil) {
-                    SettingsMenuPicker(title: L("ask.settings.plugins.translate.second"),
-                                       options: AskTranslationLanguages.common.map { (
-                                           label: AskTranslationLanguages.name($0, in: interface),
-                                           value: $0
-                                       ) },
-                                       selection: Binding(get: { secondLanguage }, set: setSecondLanguage))
-                        .frame(width: 150)
-                }
-            }
             Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
                 .buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(ModelVisualStyle.accent)
                 .padding(.horizontal, 4)
@@ -257,11 +244,6 @@ struct AskLauncherPluginSettingsView: View {
     private func restoreDefaults() {
         list = AskKeywordList(keywords: AskPluginRegistry.defaultKeywords)
         settings.saveAskLauncherKeywords(nil)
-    }
-
-    private func setSecondLanguage(_ code: String) {
-        secondLanguage = code
-        settings.askTranslationSecondLanguage = code
     }
 
     private func reload() {
