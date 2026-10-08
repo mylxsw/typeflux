@@ -6,7 +6,7 @@ import Testing
 /// A scripted Ask service: each send or tool result moves to the next step,
 /// either a tool call the assistant must run or a final reply.
 actor AskWorkflowScriptedAPI: AskAPI {
-    enum Step { case tool(String, [String: Any]), reply(String), running, fail(String), inference(String) }
+    enum Step { case tool(String, [String: Any]), reply(String), running, fail(String), inference(String), pausedCredits }
 
     private var steps: [Step]
     private var holdRunning: Bool
@@ -63,6 +63,10 @@ actor AskWorkflowScriptedAPI: AskAPI {
             case let .fail(message):
                 value.run?.status = "failed"
                 value.run?.error = message
+                value.run?.pending = []
+            case .pausedCredits:
+                value.run?.status = "paused_credits"
+                value.run?.stopReason = "credits_exhausted"
                 value.run?.pending = []
             case let .inference(model):
                 value.run?.status = "waiting_inference"
@@ -496,6 +500,15 @@ struct AskWorkflowAssistantSessionTests {
         assistant.send("again")
         await waitFor("failure") { !assistant.isBusy }
         #expect(assistant.error == "Model overloaded")
+    }
+
+    @Test func creditPauseStopsWithALocalizedMessage() async {
+        let api = AskWorkflowScriptedAPI([.pausedCredits])
+        let assistant = makeAssistant(api)
+        assistant.host = host()
+        assistant.send("hi")
+        await waitFor("paused") { !assistant.isBusy }
+        #expect(assistant.error == L("cloud.error.creditsExhausted"))
     }
 
     @Test func aMessageWithNothingToDoEndsWithAReply() async {

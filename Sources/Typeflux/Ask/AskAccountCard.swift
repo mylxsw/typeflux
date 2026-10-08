@@ -102,6 +102,10 @@ struct AskAccountCard: View {
             }
             .font(.system(size: 11))
             .foregroundStyle(StudioTheme.textTertiary)
+            if let addon = credits.addon() {
+                Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 8)
+                AccountAddonCreditRow(addon: addon)
+            }
         }
         .padding(.horizontal, 10)
         .padding(.top, 10)

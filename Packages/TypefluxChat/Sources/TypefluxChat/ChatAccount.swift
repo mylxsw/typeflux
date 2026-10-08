@@ -20,10 +20,20 @@ public struct ChatCreditUsage: Decodable, Equatable, Sendable {
         public var used: Int
         public var remaining: Int
         public var unlimited: Bool
+        /// Purchased credits, spent after the monthly allowance; nil from older servers.
+        public var addon: Addon?
 
-        public init(limit: Int, used: Int, remaining: Int, unlimited: Bool = false) {
+        public init(limit: Int, used: Int, remaining: Int, unlimited: Bool = false, addon: Addon? = nil) {
             self.limit = limit; self.used = used; self.remaining = remaining; self.unlimited = unlimited
+            self.addon = addon
         }
+    }
+
+    /// Shown only: purchases are made on the web, never inside the iOS app.
+    public struct Addon: Decodable, Equatable, Sendable {
+        public var remaining: Int
+
+        public init(remaining: Int) { self.remaining = remaining }
     }
 
     public var periodEnd: Date
@@ -33,6 +43,12 @@ public struct ChatCreditUsage: Decodable, Equatable, Sendable {
 
     public init(periodEnd: Date, planCode: String, paid: Bool, credits: Credits) {
         self.periodEnd = periodEnd; self.planCode = planCode; self.paid = paid; self.credits = credits
+    }
+
+    /// Add-on credits left, or nil when there are none to show.
+    public var addonRemaining: Int? {
+        guard let remaining = credits.addon?.remaining, remaining > 0 else { return nil }
+        return remaining
     }
 
     /// The share of this period's credits already used, clamped to 0...1. Unlimited

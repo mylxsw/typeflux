@@ -17,6 +17,9 @@ protocol AskAPI: Sendable {
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, token: String) async throws -> AskConversation
     func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation
+    /// Continues a run paused for credits. A balance that is still empty throws
+    /// `CloudCreditsExhaustedError`; repeated calls never start a second runner.
+    func resume(conversationId: String, runId: String, token: String) async throws -> AskConversation
     func delete(conversationId: String, token: String) async throws
     /// Removes device memory pinned to every conversation of the signed-in user.
     func purgeMemory(token: String) async throws
@@ -28,6 +31,10 @@ extension AskAPI {
     /// Services without steering reject it; the device then sends the message as a new turn.
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
         throw AskLocalError.message(L("ask.local.conflict"))
+    }
+    /// Only Typeflux Cloud pauses for credits; elsewhere there is nothing to resume.
+    func resume(conversationId: String, runId: String, token: String) async throws -> AskConversation {
+        try await conversation(id: conversationId, token: token)
     }
     func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage {
         throw AskLocalError.message(L("ask.usage.unavailable"))
@@ -128,6 +135,10 @@ struct AskAPIClient: AskAPI {
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
         try await execute(path: "/\(conversationId)/steer", method: "POST", body: AskCoding.encoder().encode(request), token: token)
     }
+    func resume(conversationId: String, runId: String, token: String) async throws -> AskConversation {
+        let run = runId.addingPercentEncoding(withAllowedCharacters: .alphanumerics.union(["-"])) ?? runId
+        return try await execute(path: "/\(conversationId)/runs/\(run)/resume", method: "POST", body: Data("{}".utf8), token: token)
+    }
     func delete(conversationId: String, token: String) async throws {
         struct Deleted: Decodable { let deleted: Bool }
         let _: Deleted = try await execute(path: "/\(conversationId)", method: "DELETE", token: token)
@@ -150,6 +161,9 @@ struct AskAPIClient: AskAPI {
             if recoveryMetadataEnabled { headers["X-Typeflux-Capabilities"] = "run_recovery_v1" }
             return ChatRequest.make(baseURL: base, path: path, method: method, body: body,
                                         token: token, headers: headers)
+        }
+        if !(200..<300).contains(response.statusCode), let exhausted = CloudCreditsExhaustedError.parse(data: data) {
+            throw exhausted
         }
         do { return try ChatRequest.decode(data: data, statusCode: response.statusCode) }
         catch ChatAPIError.unauthorized { throw AuthError.unauthorized }

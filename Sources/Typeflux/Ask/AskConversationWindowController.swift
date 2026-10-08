@@ -118,6 +118,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private func bindCallbacks() {
         model.onShowConversation = { [weak self] in self?.showConversation() }
         model.onControlChanged = { [weak self] active in self?.showControl(active) }
+        model.onCreditsExhausted = {
+            Task { @MainActor in
+                AuthState.shared.invalidateAccountSummary()
+                await AuthState.shared.refreshAccountSummary()
+            }
+        }
     }
 
     func toggleLauncher() {
@@ -326,7 +332,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         model.persistDrafts()
-        if model.isBusy || !model.busyIds.isEmpty {
+        // A run paused for credits waits on the server; closing the window loses nothing.
+        if (model.isBusy && model.selected?.run?.isPausedForCredits != true) || !model.busyIds.isEmpty {
             let alert = NSAlert()
             alert.messageText = L("ask.close.running")
             alert.addButton(withTitle: L("ask.close.continue"))

@@ -920,8 +920,11 @@ struct AskConversationView: View {
     /// Whether `statusArea` shows anything, so an empty one adds no gap to the transcript.
     private var hasStatus: Bool {
         model.visibleVisionSwitch != nil || model.error != nil || model.imageRecoveryTarget != nil
-            || stoppedRun || resumable || model.hasRecoveryNotice
+            || stoppedRun || resumable || model.hasRecoveryNotice || creditPaused
     }
+
+    /// The selected run waits for credits; its card replaces the generic resume hint.
+    private var creditPaused: Bool { model.selected?.run?.isPausedForCredits == true }
 
     /// The selected run failed or was stopped, and nothing is about to resume it.
     private var stoppedRun: Bool {
@@ -930,6 +933,9 @@ struct AskConversationView: View {
     }
 
     @ViewBuilder private var statusArea: some View {
+        if creditPaused {
+            AskCreditPauseSection(model: model, auth: auth)
+        }
         if model.hasRecoveryNotice, let value = model.selected, !model.busyIds.contains(value.id) {
             AskRecoveryCard(
                 presentation: model.recoveryPresentation,
@@ -978,6 +984,7 @@ struct AskConversationView: View {
     private var resumable: Bool {
         guard let selected = model.selected, !model.isBusy else { return false }
         if model.hasPendingSubmission { return true }
+        if creditPaused { return false }
         if selected.run == nil, selected.messages.last?.role == "user" { return true }
         return selected.run?.isActive == true && !model.busyIds.contains(selected.id)
     }
@@ -1180,7 +1187,11 @@ struct AskConversationView: View {
             // and stops spinning with every other indicator once the run waits for a decision.
             let carriesRun = run?.isActive == true && items.last?.id == group.id
             let halted: Bool = {
-                guard case .needsDecision = phase, isLatest else { return false }
+                switch phase {
+                case .needsDecision?, .pausedCredits?: break
+                default: return false
+                }
+                guard isLatest else { return false }
                 return group.messages.contains { $0.runId == nil || $0.runId == run?.id }
             }()
             let live = phase?.isWorking == true && carriesRun

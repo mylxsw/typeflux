@@ -3793,3 +3793,22 @@
 "ask.plugin.history.open" = "Open chat";
 "ask.plugin.history.noMatch" = "No matching conversations";
 "ask.plugin.history.note" = "Searches titles of listed and locally cached chats";
+
+/* Add-on credits and credit pauses */
+"cloud.error.creditsExhausted" = "Your monthly and add-on credits are used up.";
+"ask.run.pausedCredits" = "Paused · out of credits";
+"ask.credits.exhausted.title" = "Credits used up";
+"ask.credits.exhausted.body" = "Your monthly and add-on credits are both used up, so this task paused at its current step. Add credits to continue from here; finished steps won't run again.";
+"ask.credits.exhausted.stillBody" = "The new credits haven't arrived yet. Finish the purchase and come back to Typeflux; the balance refreshes on its own.";
+"ask.credits.exhausted.waitBody" = "This task paused at its current step. It can continue once your credits reset.";
+"ask.credits.exhausted.waitUntilBody" = "This task paused at its current step. It can continue when your credits reset on %@.";
+"ask.credits.available.title" = "Credits added · Continue";
+"ask.credits.available.body" = "The task picks up where it paused. Finished steps won't run again.";
+"ask.credits.monthly" = "Monthly credits";
+"ask.credits.addon" = "Add-on credits";
+"ask.credits.buy" = "Buy add-on credits";
+"ask.credits.upgrade" = "Upgrade plan";
+"ask.credits.continue" = "Continue";
+"account.addon.title" = "Add-on credits";
+"account.addon.nextExpiry" = "Next expiry: %@ credits on %@";
+"account.addon.expiringSoon" = "%@ credits expire on %@. Use them before then.";
