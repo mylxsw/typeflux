@@ -2,7 +2,7 @@ import Foundation
 
 /// What a launcher keyword reaches: one of the built-in plugins or a workflow.
 enum AskKeywordKind: String, CaseIterable, Sendable {
-    case translate, prompt, web, files, chat, workflow
+    case translate, prompt, web, files, chat, prefix, setting, history, workflow
 
     init?(pluginID: String) {
         switch pluginID {
@@ -11,6 +11,9 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case AskWebSearchPlugin.id: self = .web
         case AskFileSearchPlugin.id: self = .files
         case AskOpenChatPlugin.id: self = .chat
+        case AskPrefixPlugin.id: self = .prefix
+        case AskSettingsPlugin.id: self = .setting
+        case AskHistoryPlugin.id: self = .history
         default:
             guard pluginID.hasPrefix(AskWorkflowPlugin.idPrefix) else { return nil }
             self = .workflow
@@ -28,6 +31,9 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .web: AskWebSearchPlugin.id
         case .files: AskFileSearchPlugin.id
         case .chat: AskOpenChatPlugin.id
+        case .prefix: AskPrefixPlugin.id
+        case .setting: AskSettingsPlugin.id
+        case .history: AskHistoryPlugin.id
         case .workflow: nil
         }
     }
@@ -39,6 +45,9 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .web: L("ask.plugin.web.title")
         case .files: L("ask.plugin.files.title")
         case .chat: L("ask.openChat")
+        case .prefix: L("ask.plugin.prefix.title")
+        case .setting: L("ask.plugin.setting.title")
+        case .history: L("ask.plugin.history.title")
         case .workflow: L("ask.settings.keywords.kind.workflow")
         }
     }
@@ -55,6 +64,9 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .web: "magnifyingglass"
         case .files: "doc.text.magnifyingglass"
         case .chat: "macwindow"
+        case .prefix: "list.bullet.rectangle"
+        case .setting: "gearshape"
+        case .history: "clock.arrow.circlepath"
         case .workflow: "point.3.connected.trianglepath.dotted"
         }
     }
@@ -119,6 +131,12 @@ enum AskKeywordListPresentation {
             L("ask.plugin.files.title")
         case .chat:
             L("ask.openChat")
+        case .prefix:
+            L("ask.plugin.prefix.title")
+        case .setting:
+            L("ask.plugin.setting.title")
+        case .history:
+            L("ask.plugin.history.title")
         case .workflow, nil:
             keyword.keyword
         }
@@ -150,6 +168,12 @@ enum AskKeywordListPresentation {
             return L("ask.settings.keywords.kind.files.hint")
         case .chat:
             return L("ask.settings.keywords.kind.chat.hint")
+        case .prefix:
+            return L("ask.settings.keywords.kind.prefix.hint")
+        case .setting:
+            return L("ask.settings.keywords.kind.setting.hint")
+        case .history:
+            return L("ask.settings.keywords.kind.history.hint")
         case .workflow, nil:
             return ""
         }

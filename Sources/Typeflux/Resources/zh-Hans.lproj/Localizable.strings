@@ -3774,3 +3774,22 @@
 "ask.tool.workflow_propose" = "更新工具草稿";
 "ask.tool.workflow_test" = "试用工具";
 "ask.tool.workflow_save" = "查看并保存工具";
+
+/* Launcher keyword directory */
+"ask.plugin.prefix.title" = "关键词目录";
+"ask.plugin.prefix.placeholder" = "搜索关键词或功能名称";
+"ask.plugin.prefix.disabled" = "已停用";
+"ask.plugin.prefix.unavailable" = "不可用";
+"ask.plugin.prefix.enter" = "进入";
+"ask.plugin.prefix.noMatch" = "没有匹配“%@”的关键词";
+"ask.settings.keywords.kind.prefix.hint" = "查看全部关键词，选择后进入对应功能";
+
+/* Launcher settings and chat history */
+"ask.plugin.setting.title" = "系统设置";
+"ask.settings.keywords.kind.setting.hint" = "打开 Typeflux 的系统设置";
+"ask.plugin.history.title" = "聊天历史";
+"ask.settings.keywords.kind.history.hint" = "搜索聊天标题，打开历史对话";
+"ask.plugin.history.placeholder" = "搜索聊天标题";
+"ask.plugin.history.open" = "打开对话";
+"ask.plugin.history.noMatch" = "没有匹配的聊天记录";
+"ask.plugin.history.note" = "检索已加载及本机缓存的聊天标题";

@@ -13,6 +13,10 @@ protocol AskLauncherPlugin: Sendable {
     var optionName: String? { get }
     /// Runs with nothing typed and nothing selected, like a workflow that shows the IP address.
     var runsWithoutInput: Bool { get }
+    /// Whether captured text may supply the argument when the editor is empty.
+    var usesSelectionInput: Bool { get }
+    /// A lone keyword defaults to entering its local feature on Return.
+    var entersOnReturn: Bool { get }
     /// What the editor says while the keyword is active.
     func placeholder(selectionLines: Int?) -> String
     /// A keyword's preset for its chip, e.g. "Japanese" for `fyja`; nil for none.
@@ -29,6 +33,8 @@ protocol AskLauncherPlugin: Sendable {
 extension AskLauncherPlugin {
     var optionName: String? { nil }
     var runsWithoutInput: Bool { false }
+    var usesSelectionInput: Bool { true }
+    var entersOnReturn: Bool { false }
 }
 
 /// Receives a result as it grows, on the main actor and in order.
@@ -96,6 +102,8 @@ struct AskPluginPlan: Equatable, Sendable {
 struct AskPluginAction: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
         case openChat
+        case openSettings
+        case openConversation(String, account: String)
         case copy(String)
         /// Writes into the app the launcher came from, over its selection when there is one.
         case writeBack(String)
@@ -114,6 +122,8 @@ struct AskPluginAction: Equatable, Sendable {
         case copyImage(URL)
         /// Puts this text after the keyword and runs again: ⇥ on an item, or its `run` action.
         case runWith(String)
+        /// Enters another keyword and waits for input, without carrying the directory query.
+        case enterKeyword(String)
         /// Opens a workflow in the workflow editor, at a line of a file when known.
         case editWorkflow(id: String, path: String?, line: Int?)
         /// Opens the workflow editor and asks its assistant to fix what failed.

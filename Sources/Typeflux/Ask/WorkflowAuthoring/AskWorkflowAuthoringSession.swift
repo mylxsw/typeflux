@@ -74,7 +74,7 @@ final class AskWorkflowAuthoringSession: ObservableObject, AskWorkflowAuthoringH
     var currentPreview: Preview? { preview?.revision == revision ? preview : nil }
 
     func keywordProblem(_ keyword: String) -> String? {
-        store.keywordProblem(keyword, builtIn: store.settings.effectiveAskLauncherKeywords, excluding: workflowID)
+        store.keywordProblem(keyword, builtIn: store.settings.effectiveAskLauncherKeywords(reserving: store.workflows), excluding: workflowID)
     }
 
     func submit(_ proposal: AskWorkflowProposal) -> AskWorkflowProposal {

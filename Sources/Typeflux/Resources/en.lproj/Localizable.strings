@@ -3774,3 +3774,22 @@
 "ask.tool.workflow_propose" = "Update workflow draft";
 "ask.tool.workflow_test" = "Test workflow";
 "ask.tool.workflow_save" = "Review and save workflow";
+
+/* Launcher keyword directory */
+"ask.plugin.prefix.title" = "Keywords";
+"ask.plugin.prefix.placeholder" = "Search keywords or features";
+"ask.plugin.prefix.disabled" = "Disabled";
+"ask.plugin.prefix.unavailable" = "Unavailable";
+"ask.plugin.prefix.enter" = "Enter";
+"ask.plugin.prefix.noMatch" = "No keywords match “%@”.";
+"ask.settings.keywords.kind.prefix.hint" = "Browse all keywords and enter a feature";
+
+/* Launcher settings and chat history */
+"ask.plugin.setting.title" = "System Settings";
+"ask.settings.keywords.kind.setting.hint" = "Open Typeflux System Settings";
+"ask.plugin.history.title" = "Chat history";
+"ask.settings.keywords.kind.history.hint" = "Search chat titles and open a conversation";
+"ask.plugin.history.placeholder" = "Search chat titles";
+"ask.plugin.history.open" = "Open chat";
+"ask.plugin.history.noMatch" = "No matching conversations";
+"ask.plugin.history.note" = "Searches titles of listed and locally cached chats";

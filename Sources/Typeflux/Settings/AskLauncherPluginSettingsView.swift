@@ -247,7 +247,7 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     private func reload() {
-        list = AskKeywordList(keywords: settings.effectiveAskLauncherKeywords)
+        list = AskKeywordList(keywords: settings.effectiveAskLauncherKeywords(reserving: workflows.workflows))
         secondLanguage = settings.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: interface)
     }
 

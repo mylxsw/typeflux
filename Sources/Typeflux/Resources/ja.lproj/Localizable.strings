@@ -3764,3 +3764,22 @@
 "ask.tool.workflow_propose" = "下書きを更新";
 "ask.tool.workflow_test" = "ワークフローをテスト";
 "ask.tool.workflow_save" = "確認して保存";
+
+/* Launcher keyword directory */
+"ask.plugin.prefix.title" = "キーワード一覧";
+"ask.plugin.prefix.placeholder" = "キーワードや機能名を検索";
+"ask.plugin.prefix.disabled" = "無効";
+"ask.plugin.prefix.unavailable" = "利用不可";
+"ask.plugin.prefix.enter" = "選択";
+"ask.plugin.prefix.noMatch" = "「%@」に一致するキーワードはありません";
+"ask.settings.keywords.kind.prefix.hint" = "すべてのキーワードを確認して機能を選択";
+
+/* Launcher settings and chat history */
+"ask.plugin.setting.title" = "システム設定";
+"ask.settings.keywords.kind.setting.hint" = "Typeflux のシステム設定を開く";
+"ask.plugin.history.title" = "チャット履歴";
+"ask.settings.keywords.kind.history.hint" = "チャットのタイトルを検索して開く";
+"ask.plugin.history.placeholder" = "チャットのタイトルを検索";
+"ask.plugin.history.open" = "チャットを開く";
+"ask.plugin.history.noMatch" = "一致するチャットはありません";
+"ask.plugin.history.note" = "読み込み済みとローカルキャッシュのチャットタイトルを検索";

@@ -126,12 +126,12 @@ struct AskWorkflowSettingsView: View {
             ModelRowDivider(leading: 18)
             if store.workflows.isEmpty {
                 AskWorkflowGalleryStarter(store: store, gallery: .bundled,
-                                          builtIn: settings.effectiveAskLauncherKeywords,
+                                          builtIn: settings.effectiveAskLauncherKeywords(reserving: store.workflows),
                                           browse: { showingGallery = true },
                                           open: { AskWorkflowEditorWindowController.shared.show(workflowID: $0) })
                 ModelRowDivider(leading: 18)
             }
-            let builtIn = settings.effectiveAskLauncherKeywords
+            let builtIn = settings.effectiveAskLauncherKeywords(reserving: store.workflows)
             let conflicts = AskWorkflowStore.keywords(of: store.plugins { (nil, nil) }, excluding: builtIn).conflicts
             ForEach(store.workflows) { workflow in
                 row(
@@ -147,7 +147,7 @@ struct AskWorkflowSettingsView: View {
         }
         .onAppear { store.reload() }
         .sheet(isPresented: $showingGallery) {
-            AskWorkflowGallerySheet(store: store, builtIn: settings.effectiveAskLauncherKeywords, open: { id in
+            AskWorkflowGallerySheet(store: store, builtIn: settings.effectiveAskLauncherKeywords(reserving: store.workflows), open: { id in
                 showingGallery = false
                 AskWorkflowEditorWindowController.shared.show(workflowID: id)
             }, done: { showingGallery = false })
@@ -258,7 +258,7 @@ struct AskWorkflowSettingsView: View {
 
     private func create(_ template: AskWorkflowTemplate) {
         do {
-            let created = try store.create(template, takenKeywords: settings.effectiveAskLauncherKeywords)
+            let created = try store.create(template, takenKeywords: settings.effectiveAskLauncherKeywords(reserving: store.workflows))
             failure = nil
             AskWorkflowEditorWindowController.shared.show(workflowID: created.id)
         } catch {

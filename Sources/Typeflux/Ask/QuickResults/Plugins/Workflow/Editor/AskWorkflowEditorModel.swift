@@ -107,7 +107,7 @@ final class AskWorkflowEditorModel: ObservableObject {
     // MARK: - Opening
 
     var builtInKeywords: [AskKeyword] {
-        settings.effectiveAskLauncherKeywords
+        settings.effectiveAskLauncherKeywords(reserving: store.workflows)
     }
 
     var workflow: AskWorkflow? {

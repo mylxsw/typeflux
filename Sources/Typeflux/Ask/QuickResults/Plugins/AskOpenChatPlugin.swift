@@ -9,6 +9,7 @@ struct AskOpenChatPlugin: AskLauncherPlugin {
     var symbol: String { "macwindow" }
     var defaultKeywords: [AskKeyword] { Self.keywords }
     var runsWithoutInput: Bool { true }
+    var entersOnReturn: Bool { true }
     func placeholder(selectionLines: Int?) -> String { L("ask.openChat.placeholder") }
     func chipDetail(for keyword: AskKeyword, language: AppLanguage) -> String? { nil }
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {

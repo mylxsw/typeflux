@@ -95,6 +95,12 @@ struct AskPluginResultsView: View {
     static let itemSpacing: CGFloat = 2
     /// Longer lists scroll; the launcher does not grow past this many rows.
     static let maximumVisibleItems = 6
+    /// Only completed lists offer numbered choices; stale lists shown while running do not.
+    static func numberedItemCount(_ display: AskPluginDisplay) -> Int? {
+        guard display.hint == nil, case let .done(_, output) = display.phase,
+              output.wordCard == nil, !output.items.isEmpty else { return nil }
+        return output.items.count
+    }
     static let maximumMarkdownHeight: CGFloat = 280
     static let maximumImageHeight: CGFloat = 240
     private static let bodyID = "ask.plugin.body"
@@ -250,6 +256,8 @@ struct AskPluginResultsView: View {
                     }
                 section(L("ask.quick.section.ai"))
                 askRow
+                    .modifier(AskLauncherNumberBadge(number: Self.numberedItemCount(display)
+                        .flatMap { AskLauncherNumberShortcuts.number(at: $0) }))
                     .onContinuousHover { phase in
                         if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(1) }
                     }
@@ -535,13 +543,15 @@ struct AskPluginResultsView: View {
                             onSelectItem(index)
                             onMain()
                         }
+                        .modifier(AskLauncherNumberBadge(number: Self.numberedItemCount(display) == nil
+                            ? nil : AskLauncherNumberShortcuts.number(at: index)))
                         .id(item.id)
                     }
                 }
             }
             .scrollDisabled(output.items.count <= Self.maximumVisibleItems)
-            .onChange(of: output.selectedItem) { index in
-                if output.items.indices.contains(index) { reader.scrollTo(output.items[index].id) }
+            .onChange(of: output.selected?.id) { id in
+                if let id { reader.scrollTo(id) }
             }
         }
         .frame(height: Self.itemsHeight(output.items.count))

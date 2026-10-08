@@ -156,6 +156,6 @@ struct AskKeywordListTests {
         settings.askTranslationSecondLanguage = "ja"
         #expect(settings.askTranslationSecondLanguage == "ja")
         #expect(AskPluginRegistry.defaultKeywords.map(\.keyword)
-            == ["fy", "tr", "翻译", "dict", "词典", "rw", "sum", "ex", "g", "bd", "gh", "f", "chat"])
+            == ["fy", "tr", "翻译", "dict", "词典", "rw", "sum", "ex", "g", "bd", "gh", "f", "chat", "prefix", "setting", "history"])
     }
 }

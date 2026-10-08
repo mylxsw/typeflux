@@ -42,6 +42,8 @@ final class AskPluginSession: ObservableObject {
     private var plannedFor: AskPluginRequest?
     /// Return came while the plan for the latest text was still being made.
     private var pendingRun = false
+    /// A directory choice waits for typed input or an explicit second Return.
+    private var waitingForInput = false
     private var generation = 0
     private var task: Task<Void, Never>?
     /// The keywords that led here with `runKeyword`, and the text the last one put in.
@@ -110,16 +112,18 @@ final class AskPluginSession: ObservableObject {
     }
 
     /// Enters a keyword chosen in the `/` palette, leaving any other first.
-    func enter(_ chosen: AskKeyword) {
+    func enter(_ chosen: AskKeyword, waitingForInput: Bool = false) {
         guard plugin(for: chosen) != nil else { return }
         deactivate()
         set(\.hint, nil)
         activate(chosen)
+        self.waitingForInput = waitingForInput
     }
 
     private func activate(_ found: AskKeyword) {
         overrides = [:]
         chained = nil
+        waitingForInput = false
         beginWordBookSession?()
         onActivate?(found)
         set(\.keyword, found)
@@ -137,6 +141,7 @@ final class AskPluginSession: ObservableObject {
         request = nil
         plannedFor = nil
         pendingRun = false
+        waitingForInput = false
         previous = nil
         comparing = false
         overrides = [:]
@@ -151,7 +156,9 @@ final class AskPluginSession: ObservableObject {
     func update(text: String, selection: String?, language: AppLanguage, runWhenPlanned: Bool = false) {
         guard let keyword, let plugin else { return }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let selected = selection?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        guard !waitingForInput || !trimmed.isEmpty || runWhenPlanned else { return }
+        waitingForInput = false
+        let selected = plugin.usesSelectionInput && selection?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
             ? selection?.trimmingCharacters(in: .whitespacesAndNewlines) : nil
         let options = keyword.options.merging(overrides) { $1 }
         var next: AskPluginRequest?

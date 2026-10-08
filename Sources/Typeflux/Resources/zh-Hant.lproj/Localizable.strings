@@ -3771,3 +3771,22 @@
 "ask.tool.workflow_propose" = "更新工具草稿";
 "ask.tool.workflow_test" = "試用工具";
 "ask.tool.workflow_save" = "檢視並儲存工具";
+
+/* Launcher keyword directory */
+"ask.plugin.prefix.title" = "關鍵詞目錄";
+"ask.plugin.prefix.placeholder" = "搜尋關鍵詞或功能名稱";
+"ask.plugin.prefix.disabled" = "已停用";
+"ask.plugin.prefix.unavailable" = "無法使用";
+"ask.plugin.prefix.enter" = "進入";
+"ask.plugin.prefix.noMatch" = "沒有符合「%@」的關鍵詞";
+"ask.settings.keywords.kind.prefix.hint" = "查看全部關鍵詞，選擇後進入對應功能";
+
+/* Launcher settings and chat history */
+"ask.plugin.setting.title" = "系統設定";
+"ask.settings.keywords.kind.setting.hint" = "開啟 Typeflux 的系統設定";
+"ask.plugin.history.title" = "聊天歷史";
+"ask.settings.keywords.kind.history.hint" = "搜尋聊天標題，開啟歷史對話";
+"ask.plugin.history.placeholder" = "搜尋聊天標題";
+"ask.plugin.history.open" = "開啟對話";
+"ask.plugin.history.noMatch" = "沒有符合的聊天記錄";
+"ask.plugin.history.note" = "搜尋已載入及本機快取的聊天標題";

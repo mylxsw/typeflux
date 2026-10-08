@@ -376,6 +376,11 @@ struct AskComposerTextView: NSViewRepresentable {
         }
         override func performKeyEquivalent(with event: NSEvent) -> Bool {
             if window?.firstResponder === self, openChatShortcut(event) { return true }
+            if window?.firstResponder === self, voice?.isActive != true, !hasMarkedText(),
+               let key = AskCommandKey(event), case .number = key {
+                if event.isARepeat { return true }
+                if onCommandKey?(key) == true { return true }
+            }
             if Self.isContextShortcut(event), window?.firstResponder === self, voice?.isActive != true,
                onContextShortcut?() == true { return true }
             return super.performKeyEquivalent(with: event)
@@ -403,7 +408,10 @@ struct AskComposerTextView: NSViewRepresentable {
                event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
                onEmptyBackspace?() == true { return }
             if !hasMarkedText(), let key = AskCommandKey(event), key != .commandC || selectedRange().length == 0,
-               key != .right || caretAtEnd, onCommandKey?(key) == true { return }
+               key != .right || caretAtEnd {
+                if event.isARepeat, case .number = key { return }
+                if onCommandKey?(key) == true { return }
+            }
             if event.keyCode == 36, !event.modifierFlags.contains(.shift), !hasMarkedText() {
                 onSubmit(); return
             }

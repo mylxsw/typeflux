@@ -3764,3 +3764,22 @@
 "ask.tool.workflow_propose" = "초안 업데이트";
 "ask.tool.workflow_test" = "워크플로 테스트";
 "ask.tool.workflow_save" = "검토 후 저장";
+
+/* Launcher keyword directory */
+"ask.plugin.prefix.title" = "키워드 목록";
+"ask.plugin.prefix.placeholder" = "키워드 또는 기능 검색";
+"ask.plugin.prefix.disabled" = "사용 안 함";
+"ask.plugin.prefix.unavailable" = "사용 불가";
+"ask.plugin.prefix.enter" = "선택";
+"ask.plugin.prefix.noMatch" = "“%@”에 일치하는 키워드가 없습니다";
+"ask.settings.keywords.kind.prefix.hint" = "모든 키워드를 살펴보고 기능을 선택";
+
+/* Launcher settings and chat history */
+"ask.plugin.setting.title" = "시스템 설정";
+"ask.settings.keywords.kind.setting.hint" = "Typeflux 시스템 설정 열기";
+"ask.plugin.history.title" = "채팅 기록";
+"ask.settings.keywords.kind.history.hint" = "채팅 제목을 검색하고 대화 열기";
+"ask.plugin.history.placeholder" = "채팅 제목 검색";
+"ask.plugin.history.open" = "대화 열기";
+"ask.plugin.history.noMatch" = "일치하는 대화가 없습니다";
+"ask.plugin.history.note" = "불러온 채팅과 로컬 캐시의 제목을 검색";

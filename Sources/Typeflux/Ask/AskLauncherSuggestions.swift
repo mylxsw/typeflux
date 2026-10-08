@@ -244,7 +244,6 @@ struct AskLauncherSuggestions: View {
                         .foregroundStyle(AskTheme.launcherMetaText)
                         .lineLimit(1)
                 }
-                if let number { shortcutBadge(number) }
             }
             .padding(.horizontal, Self.contentInset)
             .frame(height: Self.rowHeight)
@@ -259,6 +258,7 @@ struct AskLauncherSuggestions: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(row.title)
+        .modifier(AskLauncherNumberBadge(number: number))
         .accessibilityHint(row.detail ?? "")
         .accessibilityAddTraits(highlighted ? .isSelected : [])
     }
@@ -270,15 +270,6 @@ struct AskLauncherSuggestions: View {
             .background(Self.tileFill(row.tint), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
                 .strokeBorder(Self.tileEdge(row.tint), lineWidth: 0.5))
-    }
-
-    private func shortcutBadge(_ number: Int) -> some View {
-        Text("⌘\(number)").font(.system(size: 10.5, design: .rounded))
-            .foregroundStyle(AskTheme.launcherMetaText)
-            .padding(.horizontal, 5)
-            .frame(height: 18)
-            .background(AskTheme.launcherShortcutFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.launcherShortcutEdge))
     }
 
     private func keywordLabel(_ keyword: String) -> some View {
@@ -333,8 +324,7 @@ struct AskLauncherHomeKeyMonitor: NSViewRepresentable {
     /// The key an event stands for, or nil for every other key.
     static func key(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, characters: String?) -> Key? {
         let modifiers = modifiers.intersection([.command, .option, .control, .shift])
-        if modifiers == .command, let characters, characters.count == 1,
-           let digit = Int(characters), (1 ... 9).contains(digit) {
+        if let digit = AskLauncherNumberShortcuts.number(keyCode: keyCode, modifiers: modifiers, characters: characters) {
             return .number(digit)
         }
         guard modifiers.isEmpty else { return nil }
@@ -359,6 +349,7 @@ struct AskLauncherHomeKeyMonitor: NSViewRepresentable {
                       let key = AskLauncherHomeKeyMonitor.key(keyCode: event.keyCode, modifiers: event.modifierFlags,
                                                               characters: event.charactersIgnoringModifiers)
                 else { return event }
+                if event.isARepeat, case .number = key { return nil }
                 return self.onKey(key) ? nil : event
             }
         }

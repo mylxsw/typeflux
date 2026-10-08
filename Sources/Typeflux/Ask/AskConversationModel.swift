@@ -167,6 +167,12 @@ final class AskConversationModel: ObservableObject {
     /// The conversation is kept on this Mac rather than in the Typeflux Cloud account.
     func isLocal(_ id: String) -> Bool { !isSignedIn || localConversationIds.contains(id) }
 
+    func registerLocalHistory(_ items: [AskConversationSummary]) {
+        localConversationIds.formUnion(items.map(\.id))
+    }
+
+    func isDeletedConversation(_ id: String) -> Bool { deletedConversationIDs.contains(id) }
+
     /// The cache partition of a conversation's copies and drafts.
     func cacheOwner(_ id: String) -> String {
         localConversationIds.contains(id) ? AskRoutedAPI.localOwner : owner

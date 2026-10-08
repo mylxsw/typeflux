@@ -4,10 +4,10 @@ import Foundation
 /// The plugins the launcher knows and the keywords they start with.
 enum AskPluginRegistry {
     /// Every built-in plugin, in the order settings and the `/` palette list them.
-    static let pluginIDs = [AskTranslatePlugin.id, AskPromptPlugin.id, AskWebSearchPlugin.id, AskFileSearchPlugin.id, AskOpenChatPlugin.id]
+    static let pluginIDs = [AskTranslatePlugin.id, AskPromptPlugin.id, AskWebSearchPlugin.id, AskFileSearchPlugin.id, AskOpenChatPlugin.id, AskPrefixPlugin.id, AskSettingsPlugin.id, AskHistoryPlugin.id]
 
     static var defaultKeywords: [AskKeyword] {
-        AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords
+        AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin.keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords
     }
 
     /// Default keywords that came after their plugin: `dict` and `词典` joined translation later.
@@ -24,10 +24,13 @@ enum AskPluginRegistry {
     /// The keywords in use: the saved ones, plus the defaults of plugins (or later groups
     /// of a plugin's keywords) that came after they were saved. `known` lists what the
     /// saved list covers; lists saved before it existed only knew translation.
-    static func keywords(saved: [AskKeyword]?, known: [String]?) -> [AskKeyword] {
-        guard let saved else { return defaultKeywords }
+    static func keywords(saved: [AskKeyword]?, known: [String]?, reserved: Set<String> = []) -> [AskKeyword] {
+        // A newly introduced directory must not displace an existing workflow.
+        let newEntryPoints = [AskPrefixPlugin.id, AskSettingsPlugin.id, AskHistoryPlugin.id]
+        let defaults = defaultKeywords.filter { !newEntryPoints.contains($0.pluginID) || !reserved.contains($0.id) }
+        guard let saved else { return defaults }
         let covered = Set(known ?? [AskTranslatePlugin.id])
-        return saved + defaultKeywords.filter { keyword in
+        return saved + defaults.filter { keyword in
             !covered.contains(group(of: keyword)) && !saved.contains { $0.id == keyword.id }
         }
     }
@@ -64,6 +67,11 @@ extension SettingsStore {
         AskPluginRegistry.keywords(saved: askLauncherKeywords, known: askLauncherKeywordPlugins)
     }
 
+    func effectiveAskLauncherKeywords(reserving workflows: [AskWorkflow]) -> [AskKeyword] {
+        let reserved = Set(workflows.flatMap { $0.manifest?.keywords.map { $0.keyword.lowercased() } ?? [] })
+        return AskPluginRegistry.keywords(saved: askLauncherKeywords, known: askLauncherKeywordPlugins, reserved: reserved)
+    }
+
     /// Saves the keywords as covering every plugin there is now.
     func saveAskLauncherKeywords(_ keywords: [AskKeyword]?) {
         askLauncherKeywords = keywords
@@ -75,7 +83,7 @@ extension AskConversationModel {
     /// The user's keywords (or each plugin's defaults until they change them), then
     /// the workflows' keywords that do not clash with them.
     var launcherKeywords: [AskKeyword] {
-        let builtIn = modelLibrary.settings.effectiveAskLauncherKeywords
+        let builtIn = modelLibrary.settings.effectiveAskLauncherKeywords(reserving: workflows?.workflows ?? [])
         return builtIn + AskWorkflowStore.keywords(of: workflowPlugins(), excluding: builtIn).keywords
     }
 
@@ -114,7 +122,10 @@ extension AskConversationModel {
                 index: { [weak self] in self.flatMap { $0.quickFilesEnabled ? $0.fileIndex : nil } },
                 settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() }
             ),
-            AskOpenChatPlugin()
+            AskOpenChatPlugin(),
+            AskPrefixPlugin(entries: { [weak self] language in self?.launcherKeywordDirectory(language: language) ?? [] }),
+            AskSettingsPlugin(),
+            AskHistoryPlugin(conversations: { [weak self] in await self?.launcherChatHistory() ?? .empty })
         ] + workflowPlugins()
     }
 
@@ -135,6 +146,16 @@ extension AskConversationModel {
         case .openChat:
             Task { await openChatFromLauncher() }
             return .stay
+        case .openSettings:
+            guard let onOpenSettings else { return .stay }
+            finishPluginResult()
+            onOpenSettings(.settings)
+            return .close
+        case let .openConversation(id, account):
+            guard session()?.owner == account, !isDeletedConversation(id) else { return .stay }
+            finishPluginResult()
+            openConversationFromLauncher(id)
+            return .close
         case let .copy(text):
             AskQuickResults.copy(text)
             finishPluginResult()
@@ -180,6 +201,12 @@ extension AskConversationModel {
             launcherDraft.text = text
             plugins.rerun(with: [:], selection: launcherDraft.sentSelection, text: text,
                           language: AppLocalization.shared.language)
+            return .stay
+        case let .enterKeyword(id):
+            guard let keyword = plugins.availableKeywords.first(where: { $0.id == id && $0.enabled }) else { return .stay }
+            plugins.enter(keyword, waitingForInput: ![AskPrefixPlugin.id, AskHistoryPlugin.id].contains(keyword.pluginID))
+            launcherDraft.text = ""
+            plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language)
             return .stay
         case let .editWorkflow(id, path, line):
             finishPluginResult()

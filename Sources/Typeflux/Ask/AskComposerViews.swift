@@ -9,6 +9,7 @@ struct AskLauncherView: View {
     /// Moving the panel: a strip along the card's top edge and the bottom bar's empty space.
     var drag: AskWindowDragHandlers?
     @State private var hovering = false
+    @State private var showingNumberHints = false
 
     var body: some View {
         AskComposer(model: model, launcher: true, onDismiss: onDismiss, onHeightChange: onHeightChange)
@@ -20,6 +21,8 @@ struct AskLauncherView: View {
             .overlay(alignment: .top) { if let drag { grip(drag) } }
             .onHover { hovering = $0 }
             .environment(\.askWindowDrag, drag)
+            .environment(\.askLauncherNumberHints, showingNumberHints)
+            .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
             .tint(AskTheme.accent)
             .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
     }
@@ -358,6 +361,12 @@ struct AskComposer: View {
         case .up, .down:
             results.move(key == .up ? -1 : 1)
             quickResults = results
+        case let .number(number):
+            guard quickActions == nil, results.rows.indices.contains(number - 1) else { return false }
+            let row = results.rows[number - 1]
+            guard results.isEnabled(row) else { return true }
+            self.quickResults?.highlight(number - 1)
+            runQuickResult(row, close: true)
         case .enter:
             runQuickResult(results.highlightedRow, close: true)
         case .commandEnter:
@@ -430,8 +439,8 @@ struct AskComposer: View {
             reportHeight()
             return true
         }
-        // Chat opens on Return; other lone keywords keep the existing Ask AI default.
-        if plugins.hint != nil, plugins.hint != previousHint { pluginHighlight = plugins.hint?.pluginID == AskOpenChatPlugin.id ? 0 : 1 }
+        // Local entry points default to their feature; text-processing hints default to Ask AI.
+        if let hint = plugins.hint, hint != previousHint { pluginHighlight = plugins.plugin(for: hint)?.entersOnReturn == true ? 0 : 1 }
         return false
     }
 
@@ -447,6 +456,10 @@ struct AskComposer: View {
     /// Return on the plugin's row: run it (or do what its plan offers, like opening
     /// a search), or use its result.
     private func runPluginMain() {
+        if pluginDisplay?.hint?.pluginID == AskSettingsPlugin.id || plugins.keyword?.pluginID == AskSettingsPlugin.id {
+            performPluginAction(.init(kind: .openSettings, title: "", symbol: ""))
+            return
+        }
         if pluginDisplay?.hint?.pluginID == AskOpenChatPlugin.id || plugins.keyword?.pluginID == AskOpenChatPlugin.id {
             openChat()
             return
@@ -465,11 +478,14 @@ struct AskComposer: View {
         case let .running(plan):
             // A plan that acts (`dict` opening the word book) need not wait for its preview.
             if let action = plan.action(for: .enter), plugins.isPlanCurrent { performPluginAction(action) }
-        case .waiting: break
+        case .waiting:
+            plugins.update(text: draft.wrappedValue.text, selection: draft.wrappedValue.sentSelection,
+                           language: AppLocalization.shared.language, runWhenPlanned: true)
         }
     }
 
     private func performPluginAction(_ action: AskPluginAction) {
+        if case .enterKeyword = action.kind { pluginHighlight = 0; pluginReserve = 0 }
         if model.performPluginAction(action) == .close { onDismiss() }
     }
 
@@ -497,6 +513,16 @@ struct AskComposer: View {
         }
         switch key {
         case .up, .down: movePluginHighlight(key == .up ? -1 : 1)
+        case let .number(number):
+            guard let count = AskPluginResultsView.numberedItemCount(display) else { return false }
+            if number == count + 1 {
+                askAIFromPlugin()
+            } else {
+                guard number <= count else { return false }
+                pluginHighlight = 0
+                plugins.selectItem(number - 1)
+                runPluginMain()
+            }
         case .tab:
             // ⇥ on a row that completes goes one level deeper; elsewhere it changes the option.
             if let completion = plugins.output?.selected?.autocomplete {
@@ -944,6 +970,31 @@ struct AskComposer: View {
         }
         // Return can arrive before SwiftUI has refreshed the keyword hint.
         if launcher, key == .enter, !plugins.isActive,
+           plugins.hint?.pluginID != AskSettingsPlugin.id || pluginHighlight == 0 {
+            let match = AskKeywordMatcher.match(draft.wrappedValue.text, keywords: plugins.availableKeywords)
+            switch match {
+            case let .hint(keyword) where keyword.pluginID == AskSettingsPlugin.id,
+                 let .active(keyword, _) where keyword.pluginID == AskSettingsPlugin.id:
+                performPluginAction(.init(kind: .openSettings, title: "", symbol: ""))
+                return true
+            default: break
+            }
+        }
+        if launcher, key == .enter, !plugins.isActive,
+           plugins.hint?.pluginID != AskHistoryPlugin.id || pluginHighlight == 0,
+           model.enterLauncherKeywordFromText(pluginID: AskHistoryPlugin.id) {
+            pluginHighlight = 0
+            pluginReserve = 0
+            return true
+        }
+        if launcher, key == .enter, !plugins.isActive,
+           plugins.hint?.pluginID != AskPrefixPlugin.id || pluginHighlight == 0,
+           model.enterKeywordDirectoryFromLauncher() {
+            pluginHighlight = 0
+            pluginReserve = 0
+            return true
+        }
+        if launcher, key == .enter, !plugins.isActive,
            plugins.hint?.pluginID != AskOpenChatPlugin.id || pluginHighlight == 0 {
             let match = AskKeywordMatcher.match(draft.wrappedValue.text, keywords: model.launcherKeywords)
             switch match {
@@ -964,7 +1015,7 @@ struct AskComposer: View {
             dismissedSlash = slash?.range.location
             closePalette()
         case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE,
-             .commandZ, .commandS, .commandB, .right, .commandY, .optionCommandC, .shiftCommandEnter, .commandDown:
+             .commandZ, .commandS, .commandB, .right, .commandY, .optionCommandC, .shiftCommandEnter, .commandDown, .number:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }

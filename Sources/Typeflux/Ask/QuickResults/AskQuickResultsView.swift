@@ -68,6 +68,7 @@ struct AskQuickResultsView: View {
                                 sectionTitle(section)
                             }
                             content(row, index: index, highlighted: index == results.highlighted)
+                                .modifier(AskLauncherNumberBadge(number: actions == nil ? AskLauncherNumberShortcuts.number(at: index) : nil))
                                 .onContinuousHover { phase in
                                     if case .active = phase, actions == nil, pointer.moved(to: NSEvent.mouseLocation) {
                                         onHighlight(index)

@@ -9,6 +9,9 @@ extension AskKeywordKind {
         case .web: StudioTheme.success
         case .files: Color.teal
         case .chat: Color.blue
+        case .prefix: Color.indigo
+        case .setting: Color.gray
+        case .history: Color.blue
         case .workflow: Color.orange
         }
     }

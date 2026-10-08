@@ -375,6 +375,7 @@ struct AskSlashQuery: Equatable {
 /// Keys the command palette takes from the editor while it is open.
 enum AskCommandKey: Equatable {
     case up, down, enter, tab, escape
+    case number(Int)
     /// ⌘Return: send to the AI whatever the launcher offers.
     case commandEnter
     /// Keys a keyword plugin's result answers to: ⌥Return writes it back,
@@ -396,6 +397,11 @@ enum AskCommandKey: Equatable {
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
+        if let number = AskLauncherNumberShortcuts.number(keyCode: event.keyCode, modifiers: modifiers,
+                                                        characters: event.charactersIgnoringModifiers) {
+            self = .number(number)
+            return
+        }
         let isReturn = event.keyCode == 36 || event.keyCode == 76
         if modifiers == .command, isReturn { self = .commandEnter; return }
         if modifiers == [.command, .shift], isReturn { self = .shiftCommandEnter; return }
