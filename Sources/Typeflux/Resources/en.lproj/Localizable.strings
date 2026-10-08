@@ -3673,3 +3673,38 @@
 "ask.settings.keywords.sheet.service" = "Service";
 "ask.settings.keywords.sheet.service.default" = "Usual engine";
 "ask.settings.keywords.sheet.serviceHint" = "Translates with this service every time, even where this Mac could translate.";
+
+// Workflow authoring in Chat.
+"ask.workflow.chat.title" = "Workflow preview";
+"ask.workflow.chat.draft" = "Draft · not installed";
+"ask.workflow.chat.try" = "Try it";
+"ask.workflow.chat.run" = "Run test";
+"ask.workflow.chat.cancel" = "Cancel";
+"ask.workflow.chat.undo" = "Undo change";
+"ask.workflow.chat.actionsPreview" = "Post-run actions are previewed only. The script itself can access your Mac.";
+"ask.workflow.chat.details" = "Run details";
+"ask.workflow.chat.empty" = "Run with your input to see the result here.";
+"ask.workflow.chat.save" = "Save to launcher";
+"ask.workflow.chat.saved" = "Saved to launcher";
+"ask.workflow.chat.advanced" = "Advanced editor";
+"ask.workflow.chat.runNotice" = "Allow this draft to run code on your Mac?";
+"ask.workflow.chat.keyword" = "Keyword / preset";
+"ask.workflow.chat.input" = "Try your input";
+"ask.workflow.chat.selection" = "Selected text (optional)";
+"ask.workflow.chat.back" = "Back to preview";
+"ask.workflow.chat.editNotice" = "Changes update this conversation’s draft. Save from the preview when ready.";
+"ask.workflow.chat.idChanged" = "Keep the installed workflow ID when editing.";
+"ask.workflow.chat.conflict" = "This workflow changed outside Chat. Reopen the saved workflow before updating it.";
+"ask.workflow.chat.existingDraft" = "This conversation already has an unsaved draft. Continue editing it or save it before starting another tool.";
+"ask.skill.typeflux-workflow-author.description" = "Create or edit a reusable Typeflux tool through conversation.";
+
+"ask.workflow.chat.discard" = "Discard draft";
+"ask.workflow.chat.discardNotice" = "Discard this conversation’s draft? Installed tools are kept.";
+"ask.tool.workflow_start" = "Start workflow draft";
+"ask.tool.workflow_list" = "Find installed tools";
+"ask.tool.workflow_read" = "Read workflow draft";
+"ask.tool.workflow_environment" = "Check script environment";
+"ask.tool.workflow_check_keyword" = "Check launcher keyword";
+"ask.tool.workflow_propose" = "Update workflow draft";
+"ask.tool.workflow_test" = "Test workflow";
+"ask.tool.workflow_save" = "Review and save workflow";

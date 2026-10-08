@@ -196,6 +196,10 @@ enum AskTheme {
     /// `mcpServer` names the server of an MCP tool when the caller knows it.
     static func toolTitle(_ call: AskToolCall, mcpServer: String? = nil) -> String {
         let name = call.function.name
+        if ["workflow_start", "workflow_list", "workflow_read", "workflow_environment", "workflow_check_keyword",
+            "workflow_propose", "workflow_test", "workflow_save"].contains(name) {
+            return L("ask.tool." + name)
+        }
         if name == "web_search" || name == "web_fetch" {
             let args = (try? JSONSerialization.jsonObject(with: Data(call.function.arguments.utf8))) as? [String: Any]
             let detail = name == "web_search"

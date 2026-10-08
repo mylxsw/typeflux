@@ -56,6 +56,9 @@ struct AskConversationView: View {
             usageRunId = nil
             showsSidebarDrawer = false
         }
+        .onChange(of: model.authoringSession?.revision) { _ in
+            if model.authoringSession?.isPresented == true { showsUsage = false }
+        }
         .onChange(of: layout.sidebarInline) { inline in
             if inline { showsSidebarDrawer = false }
         }
@@ -99,7 +102,27 @@ struct AskConversationView: View {
     }
 
     private var layout: AskWorkspaceLayout {
-        AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed, showsUsage: showsUsage)
+        AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed, showsUsage: showsUsage || showsWorkflow,
+                           rightPanelWidth: showsWorkflow ? 390 : nil)
+    }
+
+    private var showsWorkflow: Bool { model.authoringSession?.isPresented == true && !showsUsage }
+
+    @ViewBuilder private var rightPanel: some View {
+        if showsWorkflow, let session = model.authoringSession {
+            AskWorkflowAuthoringPanel(session: session, focusCloseOnAppear: layout.usageOverlay, close: {
+                session.isPresented = false
+                model.objectWillChange.send()
+            }, discard: {
+                guard let id = model.selectedId else { return }
+                do { try model.workflowAuthoring?.remove(id) }
+                catch { session.message = error.localizedDescription }
+            })
+            .frame(width: layout.usageInline ? layout.usageWidth : layout.drawerWidth)
+        } else {
+            AskUsagePanel(model: model, compact: layout.isShort, focusCloseOnAppear: layout.usageOverlay,
+                          runId: $usageRunId, close: { setUsage(false) })
+        }
     }
 
     private var hasDrawer: Bool { showsSidebarDrawer || layout.usageOverlay }
@@ -115,8 +138,7 @@ struct AskConversationView: View {
                     }
                     content
                     if layout.usageInline {
-                        AskUsagePanel(model: model, compact: layout.isShort,
-                                      runId: $usageRunId, close: { setUsage(false) })
+                        rightPanel
                             .id(model.selectedId)
                             .transition(AskMotion.panel(edge: .trailing, reduceMotion: reduceMotion))
                     }
@@ -174,8 +196,7 @@ struct AskConversationView: View {
                 .padding(8)
                 .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
             } else {
-                AskUsagePanel(model: model, compact: layout.isShort, focusCloseOnAppear: true,
-                              runId: $usageRunId, close: { setUsage(false) })
+                rightPanel
                     .frame(width: layout.drawerWidth)
                     .padding(.leading, 8)
                     .padding(.top, layout.usageOverlayTopInset)
@@ -189,7 +210,10 @@ struct AskConversationView: View {
 
     private func closeDrawer() {
         withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
-            if !showsSidebarDrawer { showsUsage = false }
+            if !showsSidebarDrawer {
+                showsUsage = false
+                model.authoringSession?.isPresented = false
+            }
             showsSidebarDrawer = false
         }
     }
@@ -1032,6 +1056,13 @@ struct AskConversationView: View {
                                     Color.clear.preference(key: AskTranscriptFrames.self,
                                                            value: [item.id: geometry.frame(in: .named("ask-transcript"))])
                                 })
+                        }
+                        if let session = model.authoringSession {
+                            AskWorkflowAuthoringCard(session: session) {
+                                showsUsage = false
+                                session.isPresented = true
+                                model.objectWillChange.send()
+                            }
                         }
                         // A decision for a step in a tool card sits inside that card.
                         if let id = model.selected?.id, let call = model.pendingApprovals[id],

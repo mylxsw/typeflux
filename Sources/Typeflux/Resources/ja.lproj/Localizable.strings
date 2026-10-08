@@ -3663,3 +3663,38 @@
 "ask.settings.keywords.sheet.service" = "翻訳サービス";
 "ask.settings.keywords.sheet.service.default" = "通常のエンジン";
 "ask.settings.keywords.sheet.serviceHint" = "この Mac で翻訳できる場合も、常にこのサービスで翻訳します";
+
+// Workflow authoring in Chat.
+"ask.workflow.chat.title" = "ワークフローのプレビュー";
+"ask.workflow.chat.draft" = "下書き · 未インストール";
+"ask.workflow.chat.try" = "試す";
+"ask.workflow.chat.run" = "テスト実行";
+"ask.workflow.chat.cancel" = "キャンセル";
+"ask.workflow.chat.undo" = "変更を元に戻す";
+"ask.workflow.chat.actionsPreview" = "実行後のアクションはプレビューのみです。スクリプト自体は Mac にアクセスできます。";
+"ask.workflow.chat.details" = "実行の詳細";
+"ask.workflow.chat.empty" = "入力して実行すると、ここに結果が表示されます。";
+"ask.workflow.chat.save" = "ランチャーに保存";
+"ask.workflow.chat.saved" = "ランチャーに保存済み";
+"ask.workflow.chat.advanced" = "詳細エディタ";
+"ask.workflow.chat.runNotice" = "この下書きのコードを Mac で実行しますか？";
+"ask.workflow.chat.keyword" = "キーワード / プリセット";
+"ask.workflow.chat.input" = "テスト入力";
+"ask.workflow.chat.selection" = "選択テキスト（任意）";
+"ask.workflow.chat.back" = "プレビューに戻る";
+"ask.workflow.chat.editNotice" = "変更はこの会話の下書きに反映されます。準備ができたらプレビューから保存してください。";
+"ask.workflow.chat.idChanged" = "編集中のワークフロー ID は変更しないでください。";
+"ask.workflow.chat.conflict" = "このワークフローは Chat の外部で変更されました。保存済みのワークフローを開き直してください。";
+"ask.workflow.chat.existingDraft" = "この会話には未保存の下書きがあります。編集を続けるか、保存してから別のツールを作成してください。";
+"ask.skill.typeflux-workflow-author.description" = "会話で再利用可能な Typeflux ツールを作成・編集します。";
+
+"ask.workflow.chat.discard" = "下書きを破棄";
+"ask.workflow.chat.discardNotice" = "この会話の下書きを破棄しますか？インストール済みのツールは保持されます。";
+"ask.tool.workflow_start" = "ワークフローの下書きを開始";
+"ask.tool.workflow_list" = "既存のツールを検索";
+"ask.tool.workflow_read" = "下書きを読む";
+"ask.tool.workflow_environment" = "スクリプト環境を確認";
+"ask.tool.workflow_check_keyword" = "起動キーワードを確認";
+"ask.tool.workflow_propose" = "下書きを更新";
+"ask.tool.workflow_test" = "ワークフローをテスト";
+"ask.tool.workflow_save" = "確認して保存";

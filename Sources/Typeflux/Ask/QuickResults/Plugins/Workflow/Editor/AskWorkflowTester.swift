@@ -36,7 +36,7 @@ struct AskWorkflowTestResult: Equatable, Sendable {
     var actionOutcomes: [AskWorkflowActionOutcome] = []
 
     var succeeded: Bool {
-        failure == nil && !timedOut && exitCode == 0
+        failure == nil && !timedOut && !truncated && exitCode == 0
     }
 
     /// The launcher would take the failure actions: it timed out, failed, or was cut short.
@@ -103,6 +103,10 @@ struct AskWorkflowTester: Sendable {
         let request = AskPluginRequest(text: input.query, origin: .argument, keyword: keyword, options: keyword.options,
                                        interfaceLanguage: language, selection: input.selection)
         let pluginInput = plugin.input(for: request)
+        guard manifest.input.argument != .required || !pluginInput.query.isEmpty || pluginInput.selection != nil else {
+            result.failure = L("ask.workflow.needsInput")
+            return result
+        }
         let path = await searchPath()
         let invocation: AskWorkflowInvocation
         do {
@@ -152,6 +156,7 @@ struct AskWorkflowTester: Sendable {
     /// Runs the process and copies how it ended into `result`.
     private func execute(_ invocation: AskWorkflowInvocation, into result: inout AskWorkflowTestResult) async {
         do {
+            try Task.checkCancellation()
             for try await event in runner.run(invocation) {
                 guard case let .finished(finished) = event else { continue }
                 result.exitCode = finished.exitCode

@@ -9,6 +9,7 @@ struct AskWorkspaceLayout: Equatable {
     let size: CGSize
     let sidebarCollapsed: Bool
     let showsUsage: Bool
+    var rightPanelWidth: CGFloat? = nil
 
     var usageInline: Bool {
         showsUsage && size.width >= Self.comfortableContentWidth + usageWidth
@@ -36,7 +37,7 @@ struct AskWorkspaceLayout: Equatable {
         max(0, size.height - AskMetrics.titleBarRowHeight - composerTopInset - composerBottomInset)
     }
     var usageOverlay: Bool { showsUsage && !usageInline }
-    var usageWidth: CGFloat { AskMetrics.usagePanelWidth + AskMetrics.sidebarPanelInset }
+    var usageWidth: CGFloat { rightPanelWidth ?? (AskMetrics.usagePanelWidth + AskMetrics.sidebarPanelInset) }
     var drawerWidth: CGFloat { min(usageWidth, max(0, size.width - 16)) }
     var usageOverlayTopInset: CGFloat {
         size.width - drawerWidth < AskMetrics.trafficLightInset ? AskMetrics.titleBarRowHeight - 8 : 0

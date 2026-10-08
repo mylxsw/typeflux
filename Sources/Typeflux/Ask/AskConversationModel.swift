@@ -57,6 +57,10 @@ final class AskConversationModel: ObservableObject {
     var promptAI: (any AskTextGenerating)?
     /// The user's workflows (`docs/design/ask-launcher-workflows.md`); the window controller supplies them.
     var workflows: AskWorkflowStore?
+    var workflowAuthoring: AskWorkflowAuthoringStore?
+    var authoringSession: AskWorkflowAuthoringSession? {
+        selectedId.flatMap { workflowAuthoring?.session($0) }
+    }
     /// Keeps what the translation plugin looked up; the window controller supplies it.
     var wordBook: AskWordBookRecorder?
     /// Opens the word book dialog on a word; tests record it instead.
@@ -419,6 +423,7 @@ final class AskConversationModel: ObservableObject {
         capturedContentFeedbackTasks.values.forEach { $0.cancel() }
         capturedContentFeedbackTasks = [:]
         capturedContentChanges = [:]
+        workflowAuthoring?.reset()
         tools.cancelProjects(conversationId: nil)
         voiceInput.cancel()
         historyErrorTask?.cancel(); historyRefreshError = nil
@@ -1440,6 +1445,7 @@ final class AskConversationModel: ObservableObject {
             try await api.delete(conversationId: id, token: current.token)
             guard owner == current.account else { return }
             try tools.deleteArtifacts(ownerId: current.account, conversationId: id)
+            try workflowAuthoring?.remove(id)
             deletedConversationIDs.insert(id)
             // Drain a writer already inside the cache before deleting its draft.
             // New writers check the tombstone immediately before saving.
