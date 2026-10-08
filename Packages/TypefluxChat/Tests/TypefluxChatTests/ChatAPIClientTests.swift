@@ -194,7 +194,7 @@ final class ChatAPIClientTests: XCTestCase {
                 XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access")
                 payload = #"{"id":"u1","email":"me@example.test","name":"Me","status":1,"providers":["apple"]}"#
             case "/proxy/api/v1/usage/current-period/stats":
-                payload = #"{"period_start":"2026-10-01T00:00:00Z","period_end":"2026-11-01T00:00:00Z","plan_code":"pro","paid":true,"period_source":"subscription","stats":{},"credits":{"limit":500,"used":200,"remaining":300,"unlimited":false}}"#
+                payload = #"{"period_start":"2026-10-01T00:00:00Z","period_end":"2026-11-01T00:00:00Z","plan_code":"pro","paid":true,"period_source":"subscription","stats":{},"credits":{"limit":500,"used":200,"remaining":300,"unlimited":false,"total_remaining":1300,"addon":{"balance":1000,"used_this_period":0,"remaining":1000,"next_expiry":{"credits":1000,"expires_at":"2027-10-01T00:00:00Z"}}}}"#
             case "/proxy/api/v1/ask/conversations/chat/regenerate":
                 XCTAssertEqual(request.httpMethod, "POST")
                 let body = try self.body(request)
@@ -219,6 +219,7 @@ final class ChatAPIClientTests: XCTestCase {
         XCTAssertEqual(profile, ChatProfile(id: "u1", email: "me@example.test", name: "Me", providers: ["apple"]))
         let usage = try await api.creditUsage(token: "access")
         XCTAssertEqual(usage.credits.remaining, 300)
+        XCTAssertEqual(usage.addonRemaining, 1000)
         XCTAssertTrue(usage.paid)
         XCTAssertEqual(usage.usedFraction ?? 0, 0.4, accuracy: 0.0001)
         let regenerated = try await api.regenerate(
@@ -228,6 +229,18 @@ final class ChatAPIClientTests: XCTestCase {
         )
         XCTAssertEqual(regenerated.id, "chat")
         try await api.deleteConversation(id: "chat", token: "access")
+    }
+
+    func testAddonRemainingHidesEmptyOrMissingPools() {
+        let end = Date(timeIntervalSince1970: 0)
+        XCTAssertNil(ChatCreditUsage(periodEnd: end, planCode: "free", paid: false,
+                                     credits: .init(limit: 100, used: 0, remaining: 100)).addonRemaining)
+        XCTAssertNil(ChatCreditUsage(periodEnd: end, planCode: "free", paid: false,
+                                     credits: .init(limit: 100, used: 0, remaining: 100,
+                                                    addon: .init(remaining: 0))).addonRemaining)
+        XCTAssertEqual(ChatCreditUsage(periodEnd: end, planCode: "free", paid: false,
+                                       credits: .init(limit: 100, used: 100, remaining: 0,
+                                                      addon: .init(remaining: 42))).addonRemaining, 42)
     }
 
     func testCreditFractionClampsAndSkipsUnlimitedPlans() {

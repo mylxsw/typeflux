@@ -45,6 +45,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appCoordinator?.start()
     }
 
+    func application(_: NSApplication, open urls: [URL]) {
+        guard urls.contains(where: BillingReturnLink.matches) else { return }
+        Task { @MainActor in
+            await BillingReturnLink.handle(auth: .shared)
+        }
+    }
+
     func applicationWillTerminate(_: Notification) {
         if let languageObserver {
             NotificationCenter.default.removeObserver(languageObserver)

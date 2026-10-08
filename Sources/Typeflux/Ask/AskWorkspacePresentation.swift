@@ -16,6 +16,8 @@ enum AskRunPhase: Equatable {
     case approval
     /// The run stopped where only the user can decide what happens next.
     case needsDecision(step: Int)
+    /// The server paused the run until the account has credits again.
+    case pausedCredits(step: Int)
     case completed(steps: Int)
     case failed
     case cancelled
@@ -29,6 +31,8 @@ enum AskRunPhase: Equatable {
         if pendingApproval, let run, !run.needsRecoveryInspection { return .approval }
         if busy { return .working(step: step) }
         guard let run else { return nil }
+        // A credit pause is a known checkpoint, never an ambiguous outcome.
+        if run.isPausedForCredits, (recovery?.savedReceipts ?? 0) == 0 { return .pausedCredits(step: step) }
         // The recovery card only appears while nothing drives the run.
         if recovery?.isVisible == true { return .needsDecision(step: step) }
         if run.isActive { return .working(step: step) }
@@ -50,7 +54,7 @@ enum AskRunPhase: Equatable {
     /// waiting on an approval. A recovery decision has its own Stop on the card.
     var offersStop: Bool {
         switch self {
-        case .working, .approval: return true
+        case .working, .approval, .pausedCredits: return true
         default: return false
         }
     }
@@ -58,7 +62,7 @@ enum AskRunPhase: Equatable {
     /// The step shown by both the header and the live activity line.
     var step: Int? {
         switch self {
-        case let .working(step), let .needsDecision(step): return step
+        case let .working(step), let .needsDecision(step), let .pausedCredits(step): return step
         default: return nil
         }
     }
@@ -66,7 +70,7 @@ enum AskRunPhase: Equatable {
     var tone: AskRunTone {
         switch self {
         case .working: return .running
-        case .approval, .needsDecision: return .attention
+        case .approval, .needsDecision, .pausedCredits: return .attention
         case .completed: return .done
         case .failed, .cancelled: return .failed
         }
@@ -77,6 +81,7 @@ enum AskRunPhase: Equatable {
         case let .working(step): return L("ask.run.running", step)
         case .approval: return L("ask.run.attention")
         case .needsDecision: return L("ask.run.needsDecision")
+        case .pausedCredits: return L("ask.run.pausedCredits")
         case let .completed(steps): return L("ask.run.completed", steps)
         case .failed: return L("ask.run.failed")
         case .cancelled: return L("ask.run.cancelled")

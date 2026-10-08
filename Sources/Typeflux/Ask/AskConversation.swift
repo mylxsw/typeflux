@@ -88,12 +88,20 @@ struct AskRun: Codable, Equatable, Sendable {
     var budget: AskBudgetSummary? = nil
     var stopReason: String? = nil
     var recovery: AskRunRecovery?
+    /// When the server paused the run because the account ran out of credits.
+    var creditsPausedAt: Date? = nil
 
     var isActive: Bool { !["completed", "failed", "cancelled"].contains(status) }
+    /// Waits for credits at a known checkpoint: nothing ran, nothing is ambiguous,
+    /// and only `resume` continues it.
+    var isPausedForCredits: Bool { status == Self.pausedCreditsStatus }
     var needsRecoveryInspection: Bool {
         recovery?.blocksExecution == true
-            || !["running", "waiting_tool", "waiting_inference", "completed", "failed", "cancelled"].contains(status)
+            || !["running", "waiting_tool", "waiting_inference", Self.pausedCreditsStatus,
+                 "completed", "failed", "cancelled"].contains(status)
     }
+
+    static let pausedCreditsStatus = "paused_credits"
 }
 
 struct AskPlanItem: Codable, Equatable, Sendable, Hashable {

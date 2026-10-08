@@ -45,6 +45,14 @@
                 <string>ai.gulu.app.typeflux</string>
             </array>
         </dict>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>ai.gulu.app.typeflux.billing</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>typeflux</string>
+            </array>
+        </dict>
     </array>
 </dict>
 </plist>

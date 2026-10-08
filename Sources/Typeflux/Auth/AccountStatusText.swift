@@ -30,6 +30,15 @@ enum AccountStatusText {
         return formatter.string(from: date)
     }
 
+    /// When the first add-on purchase expires; a warning within the last 30 days.
+    static func addonExpiry(_ addon: AccountUsageCreditPresentation.Addon, locale: Locale,
+                            timeZone: TimeZone = .current, now: Date = Date()) -> String? {
+        guard let date = addon.expiresAt else { return nil }
+        let day = shortDate(date, locale: locale, timeZone: timeZone, now: now)
+        let amount = AccountUsageDisplayFormatter.creditAmount(addon.expiringCredits ?? addon.remaining)
+        return L(addon.expiresSoon ? "account.addon.expiringSoon" : "account.addon.nextExpiry", amount, day)
+    }
+
     static func period(_ note: AccountStatusPresentation.PeriodNote, locale: Locale,
                        timeZone: TimeZone = .current, now: Date = Date()) -> String {
         func day(_ date: Date) -> String { shortDate(date, locale: locale, timeZone: timeZone, now: now) }

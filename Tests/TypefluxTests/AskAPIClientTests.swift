@@ -60,6 +60,39 @@ struct AskAPIClientTests {
         }
     }
 
+    @Test func resumePostsToTheRunAndSurfacesCreditDetails() async throws {
+        let stub = AskHTTPStub(), api = client(stub)
+        var paused = AskConversation(id: "c", title: "Q", revision: 1, updatedAt: Date(), messages: [])
+        paused.run = .init(id: "run-1", deviceId: "d", status: "running", steps: 1, updatedAt: Date(), tools: [], pending: [])
+        try await stub.configure(payload: Data("{\"code\":\"OK\",\"data\":".utf8)
+            + AskCoding.encoder().encode(paused) + Data("}".utf8))
+        let resumed = try await AskRoutedAPI(cloud: api, local: api).resume(conversationId: "c", runId: "run-1", token: "t")
+        #expect(resumed.run?.status == "running")
+        let request = try #require(await stub.requests.last)
+        #expect(request.httpMethod == "POST")
+        #expect(request.url?.path == "/api/v1/ask/conversations/c/runs/run-1/resume")
+        #expect(request.value(forHTTPHeaderField: "X-Scenario") == "ask-anything")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer t")
+
+        await stub.configure(status: 402, payload: Data(#"{"code":"CREDITS_EXHAUSTED","message":"credits exhausted","details":{"monthly_remaining":0,"addon_remaining":0,"period_end":null,"purchasable":true}}"#.utf8))
+        do {
+            _ = try await api.resume(conversationId: "c", runId: "run-1", token: "t")
+            Issue.record("Expected the exhausted balance to throw")
+        } catch let error as CloudCreditsExhaustedError {
+            #expect(error.details == CloudCreditsExhaustedDetails(purchasable: true))
+            #expect(error.localizedDescription == L("cloud.error.creditsExhausted"))
+        }
+
+        // A send rejected by the credit middleware is localized the same way.
+        await stub.configure(status: 402, payload: Data(#"{"code":"CREDITS_EXHAUSTED","message":"credits exhausted"}"#.utf8))
+        await #expect(throws: CloudCreditsExhaustedError(details: nil)) {
+            try await api.conversation(id: "c", token: "t")
+        }
+        // Other failures keep their existing mapping.
+        await stub.configure(status: 409, payload: Data(#"{"code":"CONFLICT","message":"different run"}"#.utf8))
+        await #expect(throws: AuthError.self) { try await api.resume(conversationId: "c", runId: "other", token: "t") }
+    }
+
     @Test func approvalReceiptCannotOverwriteEngineFailure() async throws {
         let stub = AskHTTPStub(), api = client(stub)
         let message = AskMessage(id: "result", role: "tool", text: "Search failed", toolCallId: "call", isError: true, createdAt: Date())

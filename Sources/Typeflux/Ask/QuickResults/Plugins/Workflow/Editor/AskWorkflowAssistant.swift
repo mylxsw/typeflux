@@ -196,6 +196,9 @@ final class AskWorkflowAssistant: ObservableObject {
         if run.needsRecoveryInspection {
             throw AskLocalError.message(L("ask.workflow.assistant.interrupted"))
         }
+        if run.isPausedForCredits {
+            throw CloudCreditsExhaustedError(details: nil)
+        }
         if run.status == "running" {
             preview = run.preview ?? preview
         }

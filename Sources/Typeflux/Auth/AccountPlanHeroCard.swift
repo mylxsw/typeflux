@@ -111,6 +111,7 @@ struct AccountPlanHeroCard: View {
                     .accessibilityValue(L("auth.account.usageQuotaRemainingPercentage",
                                           AccountStatusText.percent(credits.remainingFraction ?? 0)))
                 periodProgress(status)
+                addon(credits)
                 forecast(status)
             }
         case .unlimited:
@@ -118,6 +119,7 @@ struct AccountPlanHeroCard: View {
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .padding(.top, StudioTheme.Spacing.medium)
+            addon(credits)
         case .unavailable:
             HStack(spacing: StudioTheme.Spacing.xSmall) {
                 if authState.isLoadingUsage { ProgressView().controlSize(.small) }
@@ -126,6 +128,17 @@ struct AccountPlanHeroCard: View {
                     .foregroundStyle(StudioTheme.textSecondary)
             }
             .padding(.top, StudioTheme.Spacing.medium)
+        }
+    }
+
+    @ViewBuilder
+    private func addon(_ credits: AccountUsageCreditPresentation) -> some View {
+        if let addon = credits.addon() {
+            AccountAddonCreditRow(addon: addon, compact: false)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AskAccountTone.chip))
+                .padding(.top, 12)
         }
     }
 

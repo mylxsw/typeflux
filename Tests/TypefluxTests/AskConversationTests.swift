@@ -94,6 +94,25 @@ actor AskTestAPI: AskAPI {
         value.run?.status = "completed"; value.run?.pending = []; value.revision += 1; values[conversationId] = value
         return value
     }
+    /// Runs `resume` sent, and what it throws instead while the balance is still empty.
+    var resumes: [String] = []
+    var resumeError: Error?
+    func setResumeError(_ error: Error?) { resumeError = error }
+    func resume(conversationId: String, runId: String, token: String) async throws -> AskConversation {
+        resumes.append(runId)
+        if let resumeError { throw resumeError }
+        var value = try await conversation(id: conversationId, token: token)
+        guard value.run?.id == runId, value.run?.isPausedForCredits == true else { return value }
+        // Like the server: continue the pinned run, which may hand a pending tool back to this Mac.
+        let hasPending = value.run?.pending.isEmpty == false
+        value.run?.status = hasPending ? "waiting_tool" : "completed"
+        value.run?.creditsPausedAt = nil
+        if !hasPending {
+            value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: "Resumed answer.", createdAt: Date()))
+        }
+        value.revision += 1; values[conversationId] = value
+        return value
+    }
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation {
         if failReceipts { throw URLError(.notConnectedToInternet) }
         inferenceResults.append(request)

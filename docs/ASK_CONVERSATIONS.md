@@ -132,6 +132,24 @@ the workspace. Only one conversation can
 control the desktop at a time. Cancellation blocks late answers and later local
 actions; it cannot reverse actions already performed.
 
+### Credit pauses
+
+When the account's monthly and add-on credits are both used up, Typeflux Cloud
+pauses the run (`status: "paused_credits"`) before the next model call instead of
+failing it. The client treats this as a known checkpoint, not an unknown outcome:
+pending tool calls are not executed, and the transcript shows a "Credits used up"
+card with the monthly and add-on balances side by side. "Buy add-on credits"
+opens the web billing page on its credits tab (`?tab=credits`, page token in the
+fragment); "Upgrade plan" opens the plans tab. The balance is fetched again when
+the card appears, whenever Typeflux becomes active, and when the billing page
+returns through `typeflux://billing/return`. Once credits are available the card
+turns into "Credits added · Continue", which calls
+`POST /api/v1/ask/conversations/:id/runs/:run_id/resume` and drives the run from
+its checkpoint. A 402 `CREDITS_EXHAUSTED` keeps the pause and shows the details
+the server returned; the code is localized and never displayed as server text.
+Stop in the composer ends a paused run. Without billing, the card only explains
+when the period resets. Requires typeflux-api with migration 00044.
+
 Closing an active workspace offers hide-and-continue or stop. Work continues
 while the application is alive. Terminating the application does not create a
 background agent: interrupted requests fail or expire and require deliberate

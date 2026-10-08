@@ -161,6 +161,11 @@ extension AuthState {
         return response.plansURL
     }
 
+    /// The billing page opened on `tab`, e.g. `BillingPlansLink.creditsTab`.
+    func requestBillingPageToken(tab: String?) async throws -> URL {
+        try await BillingPlansLink.url(requestBillingPageToken(), tab: tab)
+    }
+
     private func startCheckoutPolling() {
         checkoutPollingTask?.cancel()
         checkoutPollingTask = Task { @MainActor [weak self] in
