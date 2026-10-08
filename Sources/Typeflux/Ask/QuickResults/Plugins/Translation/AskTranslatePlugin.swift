@@ -201,11 +201,12 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         let source = kept ? L("ask.plugin.source.wordBook") : AskPluginRegistry.sourceLabel(aiName())
         switch lookup {
         case let .card(card):
+            let text = card.translatedText ?? card.summary
             var actions = [
-                AskPluginAction(kind: .copy(card.summary), title: L("ask.plugin.action.copyDefinition"),
+                AskPluginAction(kind: .copy(text), title: L("ask.plugin.action.copy"),
                                 symbol: "doc.on.doc", shortcut: .enter)
             ]
-            if let meaning = card.firstMeaning {
+            if let meaning = card.translatedText {
                 actions.append(AskPluginAction(kind: .writeBack(meaning), title: writeBackTitle, symbol: writeBackSymbol,
                                                shortcut: .optionEnter))
             }
@@ -220,7 +221,7 @@ struct AskTranslatePlugin: AskLauncherPlugin {
                 AskPluginAction(kind: .askAI(L("ask.plugin.translate.askAI.word", card.markdown)),
                                 title: L("ask.quick.askAI"), symbol: "bubble.left", shortcut: nil)
             ]
-            var output = AskPluginOutput(body: card.summary, original: request.text, meta: plan.meta, source: source,
+            var output = AskPluginOutput(body: text, original: request.text, meta: plan.meta, source: source,
                                          sourceIsAI: !kept, actions: actions, wordCard: card)
             keep(AskWordBookLookup(headword: Self.headword(request.text), source: plan.values["source"], target: target,
                                    card: card, model: kept ? nil : aiName()),
