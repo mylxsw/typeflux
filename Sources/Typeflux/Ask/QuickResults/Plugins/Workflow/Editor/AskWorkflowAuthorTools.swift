@@ -51,7 +51,8 @@ struct AskWorkflowAuthorTools {
             """, ["path": ["type": "string"]], required: []),
             definition(environment, """
             List the script interpreters installed on this Mac with their versions, and look up commands on the \
-            PATH (only looked up, never run).
+            PATH (only looked up, never run). No workflow draft is required. Pass executable names such as \
+            curl or python3, never URLs or website names. A tool error is not evidence that a command is missing.
             """, ["commands": ["type": "array", "items": ["type": "string"], "maxItems": 20]], required: []),
             definition(checkKeyword, "Check whether a launcher keyword is free to use.",
                        ["keyword": ["type": "string"]], required: ["keyword"]),
@@ -144,7 +145,7 @@ struct AskWorkflowAuthorTools {
         )
     }
 
-    private func environment(_ arguments: [String: Any]) async -> Output {
+    func environment(_ arguments: [String: Any]) async -> Output {
         let commands = (arguments["commands"] as? [String] ?? []).prefix(20).map(\.self)
         let report = await probe.report(commands: commands)
         return Output(content: report, isError: false, summary: L("ask.workflow.assistant.tool.environment"))

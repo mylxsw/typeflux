@@ -1,10 +1,12 @@
 # Workflow authoring in Chat
 
-Chat can load the built-in `typeflux-workflow-author` skill when a user asks for a reusable tool. One-off transformations remain ordinary Chat requests. The model selects the skill using its description; there is no keyword classifier or separate model request.
+Chat can load the built-in `typeflux-workflow-author` skill when a user asks for a reusable tool. One-off transformations remain ordinary Chat requests. The model selects the skill using its description; there is no keyword classifier or separate model request. `workflow_list` and `workflow_start` also return the enabled authoring instructions, so tool discovery does not depend on a separate skill call.
 
 ## Data flow
 
 `AskLocalTools` exposes the existing five authoring tools plus `workflow_list`, `workflow_start`, and `workflow_save`. They operate on an `AskWorkflowAuthoringSession` implementing the editor's `AskWorkflowAuthoringHost` protocol. Proposals use the existing manifest, path, file-size, keyword, and risk validation.
+
+`workflow_environment` works before a draft exists and reports executable paths separately from website URLs. `workflow_list` lists installed tools without opening a draft. A missing `workflow_read` returns the normal discovery state `hasDraft=false`; creation and editing then require `workflow_start`, followed by `workflow_read`, environment/keyword checks, proposal and test. Other draft operations fail with an explicit start instruction rather than suggesting that listing opens a draft. Authoring instructions distinguish local workflow network calls from cloud `web_fetch`: cloud IP geolocation describes the API server, and Fake-IP DNS is destination resolution rather than the public source address.
 
 Each account/conversation has one draft. `AskWorkflowAuthoringStore` persists the draft and its original save baseline under Application Support, outside installed workflow packages. Account changes cancel and release active sessions; deleting a conversation removes its record. Drafts do not sync to other devices. Restoring a conversation restores the draft, not an old run result.
 

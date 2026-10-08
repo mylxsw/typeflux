@@ -150,6 +150,7 @@ final class AskLocalTools: AskToolExecuting {
     }
 
     var workflowAuthoring: AskWorkflowAuthoringStore?
+    var workflowEnvironmentProbe = AskWorkflowEnvironmentProbe()
 
     /// Skills the user has not turned off in settings.
     var enabledSkills: [AskSkill] {

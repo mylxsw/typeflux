@@ -159,7 +159,7 @@ struct AskWorkflowAuthoringTests {
     @Test func toolsAreDiscoverableScopedAndExecutionRequiresFreshApproval() async throws {
         let fixture = try AskWorkflowFixture()
         let tools = AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: fixture.settings.defaults)),
-                                  settings: fixture.settings)
+                                  settings: fixture.settings, owner: { "alice" })
         let authoring = authoring(fixture)
         tools.workflowAuthoring = authoring
         #expect(tools.workflowAuthoringEnabled)
@@ -167,7 +167,8 @@ struct AskWorkflowAuthoringTests {
         #expect(AskBuiltinSkills.all.contains { $0.name == AskWorkflowAuthorSkill.name })
         #expect(AskWorkflowAuthorSkill.chatInstructions.contains("one-off"))
         let read = try call("workflow_read")
-        #expect(try await tools.execute(read, conversationId: "c").isError)
+        let absent = try await tools.execute(read, conversationId: "c")
+        #expect(!absent.isError && absent.content.contains("workflow_start"))
         _ = try await tools.execute(call("workflow_start", ["name": "Unique lines"]), conversationId: "c")
         let session = try #require(authoring.session("c"))
         let object = AskWorkflowFixture.inline(session.draft.manifest!.id, keyword: "wfchat", script: "print hello")
@@ -199,12 +200,45 @@ struct AskWorkflowAuthoringTests {
         #expect(savedState?["isNew"] as? Bool == false)
         #expect(savedState?["hasUnsavedChanges"] as? Bool == false)
         #expect(try await tools.execute(call("workflow_list"), conversationId: "c").content.contains("local.unique-lines"))
-        #expect(try await tools.execute(read, conversationId: "another").isError)
+        #expect(!(try await tools.execute(read, conversationId: "another").isError))
         fixture.settings.askDisabledSkills.insert(AskWorkflowAuthorSkill.name)
         #expect(!tools.workflowAuthoringEnabled)
         await #expect(throws: (any Error).self) { try await tools.execute(read, conversationId: "c") }
         await #expect(throws: (any Error).self) { try await tools.approvalBinding(for: test, conversationId: "c") }
         session.close()
+    }
+
+    @Test func freshChatCanInspectEnvironmentAndLoadsAuthoringGuidanceWithoutOpeningDraft() async throws {
+        let fixture = try AskWorkflowFixture()
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: fixture.settings.defaults)),
+                                  settings: fixture.settings, owner: { "alice" })
+        let store = authoring(fixture)
+        tools.workflowAuthoring = store
+        tools.workflowEnvironmentProbe = AskWorkflowEnvironmentProbe(searchPath: { "/bin:/usr/bin" }, osVersion: "macOS test")
+        let environment = try await tools.execute(call("workflow_environment", ["commands": ["curl", "python3", "not-installed-xyz"]]),
+                                                  conversationId: "fresh")
+        #expect(!environment.isError)
+        let report = try #require(try JSONSerialization.jsonObject(with: Data(environment.content.utf8)) as? [String: Any])
+        #expect(report["hasDraft"] as? Bool == false)
+        let commands = try #require(report["commands"] as? [String: Any])
+        #expect(commands["curl"] as? String == "/usr/bin/curl")
+        #expect(commands["python3"] as? String == "/usr/bin/python3")
+        #expect(commands["not-installed-xyz"] is NSNull)
+        #expect(store.session("fresh") == nil && fixture.store.workflows.isEmpty)
+
+        let listed = try await tools.execute(call("workflow_list"), conversationId: "fresh")
+        let listing = try #require(try JSONSerialization.jsonObject(with: Data(listed.content.utf8)) as? [String: Any])
+        #expect(listing["workflows"] is [[String: String]])
+        #expect(listing["instructions"] as? String == AskWorkflowAuthorSkill.chatInstructions)
+        #expect(listing["hasDraft"] as? Bool == false && store.session("fresh") == nil)
+        let missing = try await tools.execute(call("workflow_save"), conversationId: "fresh")
+        #expect(missing.isError && missing.content.contains("workflow_start"))
+        let started = try await tools.execute(call("workflow_start", ["name": "Weather"]), conversationId: "fresh")
+        #expect(!started.isError && started.content.contains("workflow_propose"))
+        let read = try await tools.execute(call("workflow_read"), conversationId: "fresh")
+        let draft = try #require(try JSONSerialization.jsonObject(with: Data(read.content.utf8)) as? [String: Any])
+        #expect(draft["hasDraft"] as? Bool == true)
+        #expect(store.session("fresh") != nil && fixture.store.workflows.isEmpty)
     }
 
     @Test func timeoutAndTruncationAreFailuresAndActionsStayPreviewOnly() async throws {
@@ -273,7 +307,7 @@ struct AskWorkflowAuthoringTests {
         let fixture = try AskWorkflowFixture()
         let api = AskTestAPI()
         let tools = AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: fixture.settings.defaults)),
-                                  settings: fixture.settings)
+                                  settings: fixture.settings, owner: { "o" })
         let authoring = authoring(fixture, owner: { "o" })
         tools.workflowAuthoring = authoring
         let model = AskConversationModel(api: api,

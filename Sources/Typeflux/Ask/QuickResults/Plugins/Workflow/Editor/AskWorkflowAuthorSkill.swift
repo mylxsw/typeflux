@@ -13,13 +13,22 @@ enum AskWorkflowAuthorSkill {
     static let chatInstructions = instructions + """
 
     Chat integration: Use this skill when the user wants to CREATE or MODIFY a reusable tool, not merely
-    perform a one-off task. workflow_read may report no draft: use workflow_list to find an existing tool,
-    or workflow_start with name (new tool) / workflow_id (existing tool), then read again. Never overwrite
+    perform a one-off task. For a fresh conversation: workflow_list, workflow_start, workflow_read,
+    workflow_environment / workflow_check_keyword, workflow_propose, workflow_test, workflow_save.
+    workflow_list only lists tools and loads these instructions; it never opens a draft. workflow_read
+    reports hasDraft=false when absent: call workflow_start with name (new tool) / workflow_id (existing
+    tool), then read again. workflow_environment works without a draft. Never overwrite
     an unsaved draft. workflow_propose updates the conversation draft and its native preview immediately;
     it does not install anything. Keep the manifest id returned by workflow_read. workflow_test needs
     approval because generated scripts execute on this Mac. Actions after a run are only previewed.
     workflow_save opens the preview for the user to press Save; do not claim installation until workflow_read
     reports isNew=false and hasUnsavedChanges=false. Explain what changed and invite the user to try their input in the side panel.
+    Treat website names such as wttr.in as URLs, not executable commands. Do not infer missing programs
+    from a tool failure. Cloud web_fetch runs on the API server; its IP geolocation is the server's
+    location, not the user's Mac. For local IP geolocation use the generated workflow on the Mac and
+    explain that VPN/proxy egress can affect accuracy. Fake-IP DNS errors describe destination resolution,
+    not the public source IP observed by a geolocation service. Prefer a configurable default city and
+    optional city argument when accurate device location is unavailable.
     """
 
     static let instructions = """
