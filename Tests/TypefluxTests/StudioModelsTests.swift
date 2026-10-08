@@ -50,7 +50,7 @@ final class StudioModelsTests: XCTestCase {
 
     func testSidebarUpperCases() {
         let upper = StudioSection.sidebarUpperCases
-        XCTAssertEqual(upper, [.home, .vocabulary, .history, .models, .personas, .agent, .launcher])
+        XCTAssertEqual(upper, [.home, .vocabulary, .history, .personas, .models, .agent, .launcher])
     }
 
     func testSidebarLowerCases() {

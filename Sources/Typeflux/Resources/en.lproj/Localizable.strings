@@ -3501,7 +3501,7 @@
 "ask.settings.keywords.kind.files.hint" = "Finds files and folders by name";
 "ask.settings.quick.files.title" = "File search";
 "ask.settings.quick.files.subtitle" = "Lists files and folders whose names match what you type. Names stay on this Mac.";
-"launcher.pane.search" = "Built-in search";
+"launcher.pane.search" = "Content search";
 "launcher.search.subtitle" = "How the launcher finds applications and files. The file index holds names only and stays on this Mac.";
 "launcher.search.tab.general" = "General";
 "launcher.search.tab.apps" = "Applications";

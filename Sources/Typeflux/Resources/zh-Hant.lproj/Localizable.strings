@@ -3498,7 +3498,7 @@
 "ask.settings.keywords.kind.files.hint" = "依名稱尋找檔案與檔案夾";
 "ask.settings.quick.files.title" = "檔案搜尋";
 "ask.settings.quick.files.subtitle" = "輸入時列出名稱符合的檔案與檔案夾。索引只儲存在本機。";
-"launcher.pane.search" = "內建搜尋";
+"launcher.pane.search" = "內容檢索";
 "launcher.search.subtitle" = "啟動器如何尋找 App 與檔案。檔案索引只記錄名稱，只儲存在本機。";
 "launcher.search.tab.general" = "一般";
 "launcher.search.tab.apps" = "App";

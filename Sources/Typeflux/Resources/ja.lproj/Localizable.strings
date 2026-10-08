@@ -3491,7 +3491,7 @@
 "ask.settings.keywords.kind.files.hint" = "名前でファイルとフォルダを探す";
 "ask.settings.quick.files.title" = "ファイル検索";
 "ask.settings.quick.files.subtitle" = "入力に名前が一致するファイルとフォルダを表示します。インデックスはこの Mac にだけ保存されます。";
-"launcher.pane.search" = "組み込み検索";
+"launcher.pane.search" = "コンテンツ検索";
 "launcher.search.subtitle" = "ランチャーがアプリとファイルを探す方法。ファイルのインデックスは名前だけを記録し、この Mac にのみ保存されます。";
 "launcher.search.tab.general" = "一般";
 "launcher.search.tab.apps" = "アプリ";

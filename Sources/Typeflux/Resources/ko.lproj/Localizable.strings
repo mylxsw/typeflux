@@ -3491,7 +3491,7 @@
 "ask.settings.keywords.kind.files.hint" = "이름으로 파일과 폴더 찾기";
 "ask.settings.quick.files.title" = "파일 검색";
 "ask.settings.quick.files.subtitle" = "입력과 이름이 일치하는 파일과 폴더를 보여 줍니다. 색인은 이 Mac에만 저장됩니다.";
-"launcher.pane.search" = "기본 검색";
+"launcher.pane.search" = "콘텐츠 검색";
 "launcher.search.subtitle" = "런처가 앱과 파일을 찾는 방법. 파일 색인은 이름만 기록하며 이 Mac에만 저장됩니다.";
 "launcher.search.tab.general" = "일반";
 "launcher.search.tab.apps" = "앱";

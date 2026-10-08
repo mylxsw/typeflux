@@ -1375,7 +1375,7 @@ struct AskComposer: View {
         ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
            hasImage: !launcher && model.hasConversationImages, compact: true,
            condensed: layout.condensedFooter,
-           showsChevron: !launcher,
+           showsChevron: false,
            cloudAvailable: model.cloudAvailable(launcher: launcher),
            onManage: model.onOpenSettings.map { open in { open(.models) } },
            effort: $model.reasoningEffort)

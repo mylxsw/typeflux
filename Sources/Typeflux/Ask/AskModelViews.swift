@@ -14,7 +14,7 @@ struct AskModelMenu: View {
     var compact = false
     /// Narrow workspace cards reserve room for send and voice controls.
     var condensed = false
-    /// The launcher's bar drops the chevron: the name alone reads as the control.
+    /// Composer footers hide the chevron; settings retain their field indicator.
     var showsChevron = true
     /// Whether Cloud models can run here; Ask passes false in local mode. Defaults to the sign-in state.
     var cloudAvailable: Bool? = nil

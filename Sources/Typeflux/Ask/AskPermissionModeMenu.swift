@@ -41,8 +41,8 @@ struct AskPermissionModeMenu: View {
             .fixedSize()
         }
         .menuStyle(.borderlessButton)
-        .menuIndicator(bare ? .hidden : .visible)
-        // Overrides the composer's accent so the label and its indicator keep this colour.
+        .menuIndicator(.hidden)
+        // Overrides the composer's accent so the label keeps this colour.
         .tint(Self.labelColor(mode))
         .fixedSize()
         // Drawn around the menu without taking layout space from its neighbours.

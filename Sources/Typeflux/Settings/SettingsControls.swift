@@ -35,6 +35,9 @@ struct SettingsMenuPicker<Value: Hashable>: View {
                         Text(option.label).tag(option.value)
                     }
                 }
+                // The automatic macOS style turns a picker inside a menu into a submenu.
+                .pickerStyle(.inline)
+                .labelsHidden()
             } label: {
                 Text(options.first { $0.value == selection }?.label ?? title)
                     .lineLimit(1).truncationMode(.middle)

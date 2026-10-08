@@ -3501,7 +3501,7 @@
 "ask.settings.keywords.kind.files.hint" = "按名称查找文件和文件夹";
 "ask.settings.quick.files.title" = "文件搜索";
 "ask.settings.quick.files.subtitle" = "输入时列出名称匹配的文件和文件夹。索引只保存在本机。";
-"launcher.pane.search" = "内置搜索";
+"launcher.pane.search" = "内容检索";
 "launcher.search.subtitle" = "启动器如何查找应用和文件。文件索引只记录名称，只保存在本机。";
 "launcher.search.tab.general" = "常规";
 "launcher.search.tab.apps" = "应用";

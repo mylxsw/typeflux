@@ -17,7 +17,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     /// Sections that appear in the upper sidebar group.
     static var sidebarUpperCases: [StudioSection] {
-        [.home, .vocabulary, .history, .models, .personas, .agent, .launcher]
+        [.home, .vocabulary, .history, .personas, .models, .agent, .launcher]
     }
 
     /// Sections that appear in the lower sidebar group.
