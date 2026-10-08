@@ -3786,7 +3786,7 @@
 
 /* Add-on credits and credit pauses */
 "cloud.error.creditsExhausted" = "今月のクレジットと追加クレジットをすべて使い切りました。";
-"ask.run.pausedCredits" = "クレジット切れで一時停止中";
+"ask.run.pausedCredits" = "一時停止中・続行待ち";
 "ask.credits.exhausted.title" = "クレジットを使い切りました";
 "ask.credits.exhausted.body" = "今月のクレジットと追加クレジットをすべて使い切ったため、タスクは現在のステップで一時停止しています。クレジットを追加するとここから再開でき、完了したステップは繰り返されません。";
 "ask.credits.exhausted.stillBody" = "新しいクレジットはまだ反映されていません。購入を完了して Typeflux に戻ると、残高は自動で更新されます。";

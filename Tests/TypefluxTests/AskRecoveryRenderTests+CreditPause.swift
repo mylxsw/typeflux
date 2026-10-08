@@ -142,6 +142,8 @@ extension AskRecoveryRenderTests {
                 #expect(readable(paused).contains(readable(localized("ask.credits.buy", language: language))))
                 #expect(readable(paused).contains(readable(localized("ask.credits.upgrade", language: language))))
                 #expect(!readable(paused).contains(readable(localized("ask.recovery.unknown", language: language))))
+                let pausedHeader = chinese ? "已暂停，等待继续" : "Paused, waiting to continue"
+                #expect(readable(paused).contains(readable(pausedHeader)))
 
                 // 2. Back from the billing page: the refreshed balance turns the card into Continue.
                 auth.usageCredits = Self.toppedUp
@@ -150,6 +152,8 @@ extension AskRecoveryRenderTests {
                                                           dark: dark, language: language)
                 #expect(readable(available).contains(readable(localized("ask.credits.continue", language: language))))
                 #expect(readable(available).contains("220,000") || readable(available).contains("220000"))
+                #expect(readable(available).contains(readable(pausedHeader)))
+                #expect(fixture.model.runPhase == .pausedCredits(step: 3))
 
                 // 3. Continue resumes the pinned run, which finishes its answer.
                 fixture.model.resumeCreditPause()
