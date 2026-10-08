@@ -183,9 +183,10 @@ final class OpenAICompatibleLLMService: LLMService {
     private func headers(
         for connection: ResolvedLLMConnection,
         scenario: TypefluxCloudScenario,
-        personaID: UUID? = nil
+        personaID: UUID? = nil,
+        feature: TypefluxCloudFeature? = nil
     ) -> [String: String] {
-        connection.headers(for: scenario, personaID: personaID)
+        connection.headers(for: scenario, personaID: personaID, feature: feature ?? LLMFeatureContext.feature ?? .textRewrite)
     }
 
     func streamRewrite(request rewriteRequest: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
@@ -265,7 +266,7 @@ final class OpenAICompatibleLLMService: LLMService {
         return try await RequestRetry.perform(operationName: "LLM JSON completion request") { [weak self] in
             guard let self else { throw CancellationError() }
             let call = try await resolveConnection(for: llmConfig)
-            let additionalHeaders = headers(for: call.connection, scenario: .automaticVocabulary)
+            let additionalHeaders = headers(for: call.connection, scenario: .automaticVocabulary, feature: LLMFeatureContext.feature ?? .automaticVocabulary)
             return try await runWithFailureReporting(cloudBaseURL: call.cloudBaseURL) {
                 try await RemoteLLMClient.complete(
                     provider: call.connection.provider,
@@ -311,7 +312,8 @@ final class OpenAICompatibleLLMService: LLMService {
         let additionalHeaders = headers(
             for: call.connection,
             scenario: .textRewrite,
-            personaID: rewriteRequest.personaID
+            personaID: rewriteRequest.personaID,
+            feature: rewriteRequest.mode == .rewriteTranscript ? .voiceInput : .textRewrite
         )
 
         let prompts = PromptCatalog.rewritePrompts(for: rewriteRequest)

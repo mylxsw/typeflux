@@ -45,9 +45,8 @@ final class AskModelLibrary: ObservableObject {
     static let shared = AskModelLibrary()
     @Published private(set) var registry: ModelRegistry
     @Published var cloud: [AskCloudModel] = [.init(id: "default", name: "Typeflux Cloud")]
-    // Rewrite retains its existing default Cloud route; Ask catalog entries
-    // and price metadata must never become rewrite choices.
-    private let rewriteCloud: [AskCloudModel]? = [.init(id: "default", name: "Typeflux Cloud")]
+    // Feature discovery is independent of the Ask catalog.
+    @Published private(set) var rewriteCloud: [AskCloudModel]? = [.init(id: "default", name: "Typeflux Cloud", scenarios: ["rewrite"])]
     @Published var defaultReference: String {
         didSet { defaults.set(defaultReference, forKey: "ask.model.default") }
     }
@@ -83,6 +82,7 @@ final class AskModelLibrary: ObservableObject {
     init(defaults: UserDefaults = .standard, automaticallyLoadsCatalog: Bool = true,
          catalog: any ProviderModelCatalog = HTTPProviderModelCatalog()) {
         self.defaults = defaults
+        rewriteCloud = Self.readRewriteModels(defaults) ?? [.init(id: "default", name: "Typeflux Cloud", scenarios: ["rewrite"])]
         self.catalog = catalog
         self.automaticallyLoadsCatalog = automaticallyLoadsCatalog
         let store = SettingsStore(defaults: defaults)
@@ -382,6 +382,18 @@ extension AskModelLibrary {
         catalogError = nil
     }
 
+    nonisolated static let rewriteCatalogKey = "cloud.textModels"
+
+    nonisolated static func readRewriteModels(_ defaults: UserDefaults) -> [AskCloudModel]? {
+        defaults.data(forKey: rewriteCatalogKey).flatMap { try? JSONDecoder().decode([AskCloudModel].self, from: $0) }
+    }
+
+    func replaceRewriteModels(_ models: [AskCloudModel]?) throws {
+        if let models { defaults.set(try JSONEncoder().encode(models), forKey: Self.rewriteCatalogKey) }
+        else { defaults.removeObject(forKey: Self.rewriteCatalogKey) }
+        rewriteCloud = models ?? [.init(id: "default", name: "Typeflux Cloud", scenarios: ["rewrite"])]
+    }
+
     func refresh(api: any AskAPI = AskAPIClient(), token: String?) async {
         guard !loading, let token else { return }
         loading = true
@@ -390,6 +402,9 @@ extension AskModelLibrary {
             let askModels = try await api.models(token: token, scenario: "ask")
             try Task.checkCancellation()
             try replaceCloudModels(askModels)
+            let textModels = try await api.featureModels(feature: "text-rewrite", token: token)
+            try Task.checkCancellation()
+            try replaceRewriteModels(textModels)
         } catch is CancellationError {
             return
         } catch { catalogError = L("ask.models.catalogError") }

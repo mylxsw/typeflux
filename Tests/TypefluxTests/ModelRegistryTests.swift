@@ -362,7 +362,7 @@ final class ModelRegistryTests: XCTestCase {
         let settings = SettingsStore(defaults: defaults)
         settings.llmProvider = .openAICompatible
         settings.llmRemoteProvider = .typefluxCloud
-        XCTAssertTrue(settings.canUseIntegratedCloudRewrite)
+        XCTAssertFalse(settings.canUseIntegratedCloudRewrite)
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         XCTAssertFalse(settings.canUseIntegratedCloudRewrite)
         XCTAssertEqual(LLMConfigurationValidator(settingsStore: settings, isLoggedIn: false).validate(),

@@ -27,6 +27,23 @@ private struct AskHTTPProber: CloudEndpointProbing {
 
 @Suite("Ask HTTP contract")
 struct AskAPIClientTests {
+    @Test func featureDiscoveryDistinguishesUnconfiguredDisabledAndOldServers() async throws {
+        let stub = AskHTTPStub(), api = client(stub)
+        await stub.configure(payload: Data(#"{"code":"OK","data":{"configured":true,"models":[{"id":"default","name":"Text"}]}}"#.utf8))
+        let models = try await AskRoutedAPI(cloud: api, local: api).featureModels(feature: "text-rewrite", token: "token")
+        #expect(models?.first?.name == "Text")
+        #expect(await stub.requests.last?.url?.path == "/api/v1/cloud-models")
+        #expect(await stub.requests.last?.url?.query == "feature=text-rewrite")
+        await stub.configure(payload: Data(#"{"code":"OK","data":{"configured":true,"models":[]}}"#.utf8))
+        #expect(try await api.featureModels(feature: "text-rewrite", token: "token") == [])
+        await stub.configure(payload: Data(#"{"code":"OK","data":{"configured":false,"models":null}}"#.utf8))
+        #expect(try await api.featureModels(feature: "text-rewrite", token: "token") == nil)
+        await stub.configure(status: 404, payload: Data())
+        #expect(try await api.featureModels(feature: "text-rewrite", token: "token") == nil)
+        await stub.configure(status: 403, payload: Data(#"{"code":"FORBIDDEN","message":"denied"}"#.utf8))
+        await #expect(throws: (any Error).self) { try await api.featureModels(feature: "text-rewrite", token: "token") }
+    }
+
     @Test(arguments: [0, 1, 2]) func approvalCapabilityIsCheckedBeforeSending(version: Int) async throws {
         let stub = AskHTTPStub(), api = client(stub)
         let conversation = AskConversation(id: "c", title: "Q", revision: 1, updatedAt: Date(), messages: [])
