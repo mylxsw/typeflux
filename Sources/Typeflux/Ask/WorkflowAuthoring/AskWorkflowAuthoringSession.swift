@@ -30,6 +30,7 @@ final class AskWorkflowAuthoringSession: ObservableObject, AskWorkflowAuthoringH
     @Published var selection = ""
     @Published var keyword = ""
     @Published var message: String?
+    private(set) var authoringTestFailure: AskWorkflowAuthoringTestFailure?
     @Published private(set) var proposals: [AskWorkflowProposal] = []
     private(set) var expectedHash: String?
     private var runID: UUID?
@@ -114,15 +115,26 @@ final class AskWorkflowAuthoringSession: ObservableObject, AskWorkflowAuthoringH
     /// The caller has obtained approval for this exact revision. Actions are described,
     /// never performed here; executing the script itself still has real local effects.
     func testLatestProposal(_ inputs: [AskWorkflowTestInput]) async -> [AskWorkflowTestResult]? {
-        guard !Task.isCancelled, !inputs.isEmpty, inputs.count <= AskWorkflowAuthorTools.maximumInputs else { return nil }
+        authoringTestFailure = .cancelled
+        guard !Task.isCancelled else { return nil }
+        guard !inputs.isEmpty, inputs.count <= AskWorkflowAuthorTools.maximumInputs else {
+            authoringTestFailure = .unavailable("Give between 1 and 5 test inputs")
+            return nil
+        }
         cancel(); clearPreview(); message = nil
         guard problems.isEmpty, let manifest = draft.manifest else {
-            message = problems.first; return nil
+            message = problems.first
+            authoringTestFailure = .unavailable(problems.joined(separator: "; "))
+            return nil
         }
         let snapshot = draft, revision = revision, id = UUID(), tester = tester, staging = staging
         let folder: URL
         do { folder = try staging.make(snapshot, copying: try sourceFolder()) }
-        catch { message = error.localizedDescription; return nil }
+        catch {
+            message = error.localizedDescription
+            authoringTestFailure = .unavailable(error.localizedDescription)
+            return nil
+        }
         let hash = AskWorkflow.contentHash(of: folder)
         let workflow = AskWorkflow.load(folder: folder, trusted: hash, disabled: false)
         runID = id; isRunning = true
@@ -141,6 +153,7 @@ final class AskWorkflowAuthoringSession: ObservableObject, AskWorkflowAuthoringH
             }
             guard let self, self.runID == id, !Task.isCancelled, let result = results.last else { return nil }
             self.preview = Preview(revision: revision, manifest: manifest, folder: folder, result: result)
+            self.authoringTestFailure = nil
             retained = true
             return results
         }

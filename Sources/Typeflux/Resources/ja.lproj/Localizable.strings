@@ -2832,6 +2832,7 @@
 "ask.workflow.assistant.tool.read" = "%@ を読み込み";
 "ask.workflow.assistant.tool.readWorkflow" = "ワークフローを読み込み";
 "ask.workflow.assistant.tool.testDeclined" = "テスト実行は許可されませんでした";
+"ask.workflow.assistant.tool.testNotRun" = "テスト実行は完了しませんでした";
 "ask.workflow.assistant.tool.tested" = "%1$d 件テスト · %2$d 件成功";
 "ask.workflow.assistant.tool.unknown" = "使えないツール";
 "ask.workflow.editor.title" = "ワークフローエディタ";

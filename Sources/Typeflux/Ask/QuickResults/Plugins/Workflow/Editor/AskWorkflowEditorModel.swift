@@ -81,6 +81,7 @@ final class AskWorkflowEditorModel: ObservableObject {
     @Published var pendingRun: PendingRun?
     /// Run the assistant's code without asking unless a new risk appears.
     @Published var autoTest = true
+    private(set) var authoringTestFailure: AskWorkflowAuthoringTestFailure?
     var undoDraft: AskWorkflowDraft?
     @Published var canUndoProposal = false
     /// Risks of the version the user last approved; nil for a generated workflow before its first approval.
@@ -470,25 +471,31 @@ extension AskWorkflowEditorModel: AskWorkflowAuthoringHost {
     }
 
     func testLatestProposal(_ inputs: [AskWorkflowTestInput]) async -> [AskWorkflowTestResult]? {
-        guard !Task.isCancelled, let proposal = latestProposal, let base = draft else { return nil }
+        authoringTestFailure = .cancelled
+        guard !Task.isCancelled else { return nil }
+        guard let proposal = latestProposal, let base = draft else {
+            authoringTestFailure = .unavailable("No proposal is available")
+            return nil
+        }
         if !autoTest || AskWorkflowRiskScanner.needsApproval(proposal.risks, baseline: approvedRisks) {
             let risks = autoTest ?
                 (approvedRisks.map { proposal.risks.subtracting($0) } ?? proposal.risks.filter(\.isHigh))
                 : proposal.risks
             let allowed = await waitForRunApproval(PendingRun(proposalID: proposal.id, risks: risks.sorted()))
-            guard allowed, !Task.isCancelled else { return nil }
+            guard !Task.isCancelled else { return nil }
+            guard allowed else { authoringTestFailure = .declined; return nil }
         }
         let candidate = proposal.applied(to: base)
         let fileManager = store.fileManager
-        guard let folder = try? staging.make(candidate, copying: folder, fileManager: fileManager) else { return nil }
+        let folder: URL
+        do { folder = try staging.make(candidate, copying: self.folder, fileManager: fileManager) }
+        catch { authoringTestFailure = .unavailable(error.localizedDescription); return nil }
         defer { staging.remove(folder, fileManager: fileManager) }
         let hash = AskWorkflow.contentHash(of: folder, fileManager: fileManager)
         let workflow = AskWorkflow.load(folder: folder, trusted: hash, disabled: false, fileManager: fileManager)
         var runs: [AskWorkflowTestResult] = []
         for input in inputs {
-            if Task.isCancelled {
-                break
-            }
+            guard !Task.isCancelled else { return nil }
             let result = await tester.run(workflow, input: input)
             guard !Task.isCancelled else { return nil }
             runs.append(result)
@@ -496,6 +503,7 @@ extension AskWorkflowEditorModel: AskWorkflowAuthoringHost {
         if let index = proposals.firstIndex(where: { $0.id == proposal.id }) {
             proposals[index].tests += runs
         }
+        authoringTestFailure = nil
         return runs
     }
 }

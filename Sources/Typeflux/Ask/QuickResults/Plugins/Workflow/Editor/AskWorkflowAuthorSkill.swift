@@ -69,6 +69,11 @@ enum AskWorkflowAuthorSkill {
     A keyword may run its own entry instead of command.script: {"keyword": "rate", "script": "table.py"} \
     (a file in the folder, same runtime; not with an inline script). Shared code goes in another file \
     that the entries import (Python `import helper`, Node `require('./helper')`, shell `source ./lib.sh`).
+    - keywords and command.args must be JSON arrays: [{"keyword":"weather"}] and ["{query}"]. \
+    Never encode an array as {"item":...}. Put workflow.json only in manifest, never in files. \
+    accepted=false means the draft was NOT updated: fix every reported field and resubmit the complete \
+    manifest and files. Do not save or test an invalid draft. After three rejected proposals, stop \
+    and explain the reported errors instead of guessing more structures.
     - input.argument: required | optional | none (none: the keyword alone runs it, e.g. `ip`).
     - input.selection: ifEmpty (selected text when nothing was typed) | never | always.
     - run.mode must be "onSubmit"; timeoutSeconds 1-300 (default 30; use 5-15 for network calls).

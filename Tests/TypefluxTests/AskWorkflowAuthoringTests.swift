@@ -131,6 +131,7 @@ struct AskWorkflowAuthoringTests {
         #expect(session.isRunning)
         _ = session.submit(proposal(session, script: "print fresh"))
         #expect(await task.value == nil)
+        #expect(session.authoringTestFailure == .cancelled)
         #expect(session.preview == nil && !session.isRunning)
         let next = Task { await session.testLatestProposal([.init(query: "new")]) }
         next.cancel()
@@ -300,6 +301,7 @@ struct AskWorkflowAuthoringTests {
         try Data([0, 1, 2]).write(to: saved.folder.appendingPathComponent("asset.bin"))
         #expect(await restored.testLatestProposal([.init(query: "")]) == nil)
         #expect(restored.message == L("ask.workflow.chat.conflict"))
+        #expect(restored.authoringTestFailure == .unavailable(L("ask.workflow.chat.conflict")))
         restored.close()
     }
 

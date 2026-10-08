@@ -2842,6 +2842,7 @@
 "ask.workflow.assistant.tool.read" = "Read %@";
 "ask.workflow.assistant.tool.readWorkflow" = "Read the workflow";
 "ask.workflow.assistant.tool.testDeclined" = "Test run not allowed";
+"ask.workflow.assistant.tool.testNotRun" = "Test run not completed";
 "ask.workflow.assistant.tool.tested" = "Ran %1$d tests · %2$d passed";
 "ask.workflow.assistant.tool.unknown" = "Unavailable tool";
 "ask.workflow.editor.title" = "Workflow Editor";

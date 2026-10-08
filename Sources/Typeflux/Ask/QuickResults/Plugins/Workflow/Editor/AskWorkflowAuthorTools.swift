@@ -9,11 +9,32 @@ protocol AskWorkflowAuthoringHost: AnyObject {
     /// The installed workflow being edited; nil while generating a new one.
     var authoringWorkflowID: String? { get }
     var lastTestResult: AskWorkflowTestResult? { get }
+    var authoringTestFailure: AskWorkflowAuthoringTestFailure? { get }
     func keywordProblem(_ keyword: String) -> String?
     /// Records a proposal; returns it with its risks filled in.
     func submit(_ proposal: AskWorkflowProposal) -> AskWorkflowProposal
-    /// Runs the latest proposal with these inputs; nil when the user did not allow it.
+    /// Nil means the run did not start or was interrupted; inspect its failure.
     func testLatestProposal(_ inputs: [AskWorkflowTestInput]) async -> [AskWorkflowTestResult]?
+}
+
+enum AskWorkflowAuthoringTestFailure: Equatable {
+    case declined, cancelled
+    case unavailable(String)
+
+    var content: String {
+        switch self {
+        case .declined:
+            "The user did not allow running this version. Do not test again; explain what the code does."
+        case .cancelled:
+            "The test was cancelled or its draft changed. No test result is available."
+        case let .unavailable(reason):
+            "The test could not start: \(reason). Read the draft and fix the problem before testing. This is not a user refusal."
+        }
+    }
+}
+
+extension AskWorkflowAuthoringHost {
+    var authoringTestFailure: AskWorkflowAuthoringTestFailure? { nil }
 }
 
 /// The five tools the workflow assistant gets, and nothing else: no files, desktop,
@@ -58,11 +79,11 @@ struct AskWorkflowAuthorTools {
                        ["keyword": ["type": "string"]], required: ["keyword"]),
             definition(propose, """
             Propose the workflow: the complete manifest object and every file to write (full contents), plus \
-            files to delete. Nothing is written until the user applies it. Returns problems to fix and the \
-            detected risks.
+            files to delete. Valid proposals update the draft/preview; installation requires the user to save. \
+            Returns all structural problems to fix and the detected risks. Submit workflow.json only through manifest.
             """, [
                 "summary": ["type": "string", "description": "One or two sentences on what changed."],
-                "manifest": ["type": "object", "description": "The complete workflow.json object."],
+                "manifest": AskWorkflowAuthorManifestSchema.definition,
                 "files": ["type": "array", "items": ["type": "object", "properties": [
                     "path": ["type": "string"], "content": ["type": "string"]
                 ], "required": ["path", "content"]]],
@@ -174,6 +195,11 @@ struct AskWorkflowAuthorTools {
             )
         }
         var files: [String: String] = [:]
+        let structuralProblems = AskWorkflowAuthorManifestSchema.problems(manifest)
+        if !structuralProblems.isEmpty {
+            return Output(content: Self.json(["accepted": false, "draftUpdated": false,
+                                              "problems": structuralProblems]), isError: true, summary: failed)
+        }
         for entry in arguments["files"] as? [[String: Any]] ?? [] {
             guard let path = entry["path"] as? String, let content = entry["content"] as? String else {
                 return Output(content: "Each file needs `path` and `content`.", isError: true, summary: failed)
@@ -201,13 +227,13 @@ struct AskWorkflowAuthorTools {
         }
         if !problems.isEmpty {
             let list = problems.map { ["field": $0.field, "message": $0.message] }
-            return Output(content: Self.json(["accepted": false, "problems": list]), isError: true, summary: failed)
+            return Output(content: Self.json(["accepted": false, "draftUpdated": false, "problems": list]), isError: true, summary: failed)
         }
         // Before submitting: a new workflow's draft already is the proposal afterwards.
         let paths = proposal.changes(against: host.authoringDraft).map(\.path).joined(separator: ", ")
         proposal = host.submit(proposal)
         let risks = proposal.risks.sorted().map { ["kind": $0.kind.rawValue, "detail": $0.detail] }
-        return Output(content: Self.json(["accepted": true, "risks": risks]), isError: false,
+        return Output(content: Self.json(["accepted": true, "draftUpdated": true, "risks": risks]), isError: false,
                       summary: L("ask.workflow.assistant.tool.proposedFiles", paths),
                       proposalID: proposal.id)
     }
@@ -221,14 +247,24 @@ struct AskWorkflowAuthorTools {
             return Output(
                 content: "Give at least one input.",
                 isError: true,
-                summary: L("ask.workflow.assistant.tool.testDeclined")
+                summary: L("ask.workflow.assistant.tool.testNotRun")
             )
+        }
+        let problems = host.authoringDraft.problems()
+        guard problems.isEmpty else {
+            return Output(content: Self.json([
+                "status": "invalid_draft",
+                "problems": problems.map { ["field": $0.field, "message": $0.message] },
+                "nextStep": "Read the draft and submit a valid workflow_propose before testing. No script ran."
+            ]), isError: true, summary: L("ask.workflow.assistant.tool.testNotRun"))
         }
         guard let results = await host.testLatestProposal(inputs) else {
             return Output(
-                content: "The user did not allow running this version. Do not test again; explain what the code does.",
+                content: (host.authoringTestFailure ?? (Task.isCancelled ? .cancelled
+                    : .unavailable("No test result was returned"))).content,
                 isError: true,
-                summary: L("ask.workflow.assistant.tool.testDeclined")
+                summary: L(host.authoringTestFailure == .declined
+                    ? "ask.workflow.assistant.tool.testDeclined" : "ask.workflow.assistant.tool.testNotRun")
             )
         }
         let passed = results.filter(\.succeeded).count

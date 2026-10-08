@@ -2842,6 +2842,7 @@
 "ask.workflow.assistant.tool.read" = "读取了 %@";
 "ask.workflow.assistant.tool.readWorkflow" = "读取了工作流";
 "ask.workflow.assistant.tool.testDeclined" = "没有允许试跑";
+"ask.workflow.assistant.tool.testNotRun" = "试跑未完成";
 "ask.workflow.assistant.tool.tested" = "试跑 %1$d 次 · %2$d 次通过";
 "ask.workflow.assistant.tool.unknown" = "不可用的工具";
 "ask.workflow.editor.title" = "工作流编辑器";

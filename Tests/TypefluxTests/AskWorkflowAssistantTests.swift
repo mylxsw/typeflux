@@ -178,6 +178,7 @@ private final class RecordingHost: AskWorkflowAuthoringHost {
     var submitted: [AskWorkflowProposal] = []
     var tests: [[AskWorkflowTestInput]] = []
     var allowTests = true
+    var authoringTestFailure: AskWorkflowAuthoringTestFailure? { allowTests ? nil : .declined }
     var taken: Set<String> = ["tr"]
 
     init(draft: AskWorkflowDraft) {
@@ -527,7 +528,7 @@ struct AskWorkflowAssistantSessionTests {
         ])
         let assistant = makeAssistant(api)
         let host = SlowHost(draft: AskWorkflowDraft(folder: URL(fileURLWithPath: "/tmp"),
-                                                    manifestText: "{}", files: [:]))
+            manifestText: AskWorkflowDraft.format(echoManifest) ?? "", files: ["main.sh": "print test"]))
         assistant.host = host
         assistant.send("old")
         await waitFor { host.started }
@@ -547,8 +548,8 @@ struct AskWorkflowAssistantSessionTests {
         let assistant = makeAssistant(api)
         let host = SlowHost(draft: AskWorkflowDraft(
             folder: URL(fileURLWithPath: "/tmp"),
-            manifestText: "{}",
-            files: [:]
+            manifestText: AskWorkflowDraft.format(echoManifest) ?? "",
+            files: ["main.sh": "print test"]
         ))
         assistant.host = host
         assistant.send("go")
@@ -879,6 +880,7 @@ struct AskWorkflowEditorModelTests {
         model.resolvePendingRun(false)
         await waitFor("declined") { declined.value != nil }
         #expect(declined.value == .some(nil))
+        #expect(model.authoringTestFailure == .declined)
         let allowed = Box<[AskWorkflowTestResult]?>()
         Task { allowed.value = await .some(model.testLatestProposal([.init(query: "c")])) }
         await waitFor("approval again") { model.pendingRun != nil }

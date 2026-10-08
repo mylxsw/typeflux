@@ -90,6 +90,13 @@ extension AskLocalTools {
         if call.function.name == "workflow_save" {
             session.isPresented = true
             authoring.onChange?()
+            guard session.problems.isEmpty else {
+                return .init(content: AskWorkflowAuthorTools.json([
+                    "status": "invalid_draft", "saved": false,
+                    "problems": session.problems,
+                    "nextStep": "Submit a valid workflow_propose before asking the user to save. The preview still shows the current draft."
+                ]), isError: true)
+            }
             return .init(content: "Not saved yet. Ask the user to choose Save in the workflow preview panel.")
         }
         let output = await AskWorkflowAuthorTools().execute(call, host: session)

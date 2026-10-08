@@ -2839,6 +2839,7 @@
 "ask.workflow.assistant.tool.read" = "讀取了 %@";
 "ask.workflow.assistant.tool.readWorkflow" = "讀取了工作流程";
 "ask.workflow.assistant.tool.testDeclined" = "沒有允許試跑";
+"ask.workflow.assistant.tool.testNotRun" = "試跑未完成";
 "ask.workflow.assistant.tool.tested" = "試跑 %1$d 次 · %2$d 次通過";
 "ask.workflow.assistant.tool.unknown" = "無法使用的工具";
 "ask.workflow.editor.title" = "工作流程編輯器";

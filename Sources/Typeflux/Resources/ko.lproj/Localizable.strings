@@ -2832,6 +2832,7 @@
 "ask.workflow.assistant.tool.read" = "%@ 읽음";
 "ask.workflow.assistant.tool.readWorkflow" = "워크플로 읽음";
 "ask.workflow.assistant.tool.testDeclined" = "테스트 실행이 허용되지 않음";
+"ask.workflow.assistant.tool.testNotRun" = "테스트 실행이 완료되지 않음";
 "ask.workflow.assistant.tool.tested" = "테스트 %1$d회 · %2$d회 통과";
 "ask.workflow.assistant.tool.unknown" = "사용할 수 없는 도구";
 "ask.workflow.editor.title" = "워크플로 편집기";
