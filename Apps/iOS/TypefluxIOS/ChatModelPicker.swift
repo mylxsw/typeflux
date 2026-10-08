@@ -12,6 +12,9 @@ struct ChatModelPicker: View {
         let shown = store.reasoningEffort.nearest(in: store.supportedReasoningLevels)
         Button { expanded = true } label: {
             HStack(spacing: 6) {
+                if let model = store.selectedModel {
+                    ChatModelLogo(model: model, size: 16)
+                }
                 Text(store.selectedModel?.name ?? NSLocalizedString(
                     store.isAuthenticated ? "Choose model" : "Auto",
                     comment: ""
@@ -112,6 +115,9 @@ struct ChatModelEffortCard: View {
                         .accessibilityIdentifier("reasoningTitle")
                     Button { page = .models } label: {
                         HStack(spacing: 3) {
+                            if let model = store.selectedModel {
+                                ChatModelLogo(model: model, size: 14)
+                            }
                             Text(store.supportedReasoningLevels.isEmpty
                                 ? NSLocalizedString("Change model", comment: "")
                                 : store.selectedModel?.name ?? NSLocalizedString("Choose model", comment: ""))
@@ -318,18 +324,37 @@ struct ChatEffortTicks: View {
     }
 }
 
-/// A provider tile: the brand initial on its color, so the list scans like the Mac menu.
+/// Uses the same family rules and bundled artwork as the desktop picker.
 struct ChatModelLogo: View {
     let model: ChatModel
+    var size: CGFloat = 28
+    @Environment(\.colorScheme) private var colorScheme
+    private static let images = NSCache<NSString, UIImage>()
+
+    static func image(for descriptor: ModelIconDescriptor, dark: Bool) -> UIImage? {
+        guard let url = descriptor.resourceURL(dark: dark) else { return nil }
+        let key = url.path as NSString
+        if let cached = images.object(forKey: key) { return cached }
+        guard let image = UIImage(contentsOfFile: url.path) else { return nil }
+        images.setObject(image, forKey: key)
+        return image
+    }
 
     var body: some View {
-        let brand = ChatModelPickerDisplay.brand(model)
-        Text(brand.letter)
-            .font(.system(size: 12.5, weight: .bold)).foregroundStyle(.white)
-            .frame(width: 28, height: 28)
-            .background(LinearGradient(colors: brand.colors, startPoint: .topLeading, endPoint: .bottomTrailing),
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .accessibilityHidden(true)
+        let descriptor = ModelIconResolver.resolve(modelID: model.id, displayName: model.name)
+        Group {
+            if let image = Self.image(for: descriptor, dark: colorScheme == .dark) {
+                Image(uiImage: image)
+                    .renderingMode(descriptor.isMonochrome ? .template : .original)
+                    .resizable().interpolation(.high).scaledToFit()
+            } else {
+                Image(systemName: "square.stack.3d.up")
+                    .font(.system(size: size * 0.75, weight: .regular))
+            }
+        }
+        .foregroundStyle(.primary)
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
 
@@ -404,26 +429,6 @@ enum ChatModelPickerDisplay {
               context > 0, output > 0 else { return nil }
         return String(format: NSLocalizedString("%@ context · %@ output", comment: "Model capacity"),
                       count(context), count(output))
-    }
-
-    /// Known providers get their brand color; anything else a neutral tile.
-    static func brand(_ model: ChatModel) -> (letter: String, colors: [Color]) {
-        let key = (model.id + " " + model.name).lowercased()
-        let table: [(String, String, [Color])] = [
-            ("claude", "C", [Color(red: 0.85, green: 0.47, blue: 0.34), Color(red: 0.76, green: 0.37, blue: 0.24)]),
-            ("gpt", "G", [Color(red: 0.06, green: 0.64, blue: 0.50), Color(red: 0.04, green: 0.48, blue: 0.37)]),
-            ("deepseek", "D", [Color(red: 0.30, green: 0.42, blue: 1), Color(red: 0.18, green: 0.28, blue: 0.79)]),
-            ("minimax", "M", [Color(red: 1, green: 0.37, blue: 0.43), Color(red: 1, green: 0.70, blue: 0.28)]),
-            ("gemini", "G", [Color(red: 0.26, green: 0.52, blue: 0.96), Color(red: 0.55, green: 0.36, blue: 0.96)]),
-            ("qwen", "Q", [Color(red: 0.42, green: 0.33, blue: 0.93), Color(red: 0.31, green: 0.24, blue: 0.78)]),
-            ("kimi", "K", [Color(red: 0.2, green: 0.2, blue: 0.22), Color(red: 0.05, green: 0.05, blue: 0.06)]),
-            ("glm", "Z", [Color(red: 0.18, green: 0.43, blue: 0.94), Color(red: 0.09, green: 0.3, blue: 0.75)])
-        ]
-        if let match = table.first(where: { key.contains($0.0) }) {
-            return (match.1, match.2)
-        }
-        let letter = model.name.trimmingCharacters(in: .whitespaces).first.map { String($0).uppercased() } ?? "?"
-        return (letter, [Color(red: 0.56, green: 0.56, blue: 0.6), Color(red: 0.42, green: 0.42, blue: 0.46)])
     }
 
     static func count(_ value: Int) -> String {

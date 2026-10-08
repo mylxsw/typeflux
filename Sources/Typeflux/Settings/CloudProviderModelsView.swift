@@ -79,6 +79,7 @@ struct CloudProviderModelsView: View {
 
     private func modelRow(_ model: RegisteredModel) -> some View {
         HStack(spacing: 10) {
+            ModelIcon(model: model, provider: library.providers.first(where: \.isCloud))
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(model.name).font(.system(size: 14, weight: .semibold))

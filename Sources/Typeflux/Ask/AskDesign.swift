@@ -1294,6 +1294,7 @@ struct AskPopoverRow<Accessory: View>: View {
     var selected: Bool
     /// Listed but not choosable, e.g. a model that cannot read this conversation's images.
     var enabled = true
+    var modelIcon: ModelIcon? = nil
     var action: () -> Void
     @ViewBuilder var accessory: () -> Accessory
     @State private var hovering = false
@@ -1305,6 +1306,7 @@ struct AskPopoverRow<Accessory: View>: View {
                     .foregroundStyle(AskTheme.accentText)
                     .frame(width: 14)
                     .opacity(selected ? 1 : 0)
+                if let modelIcon { modelIcon }
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
                         Text(title).font(.system(size: 13))

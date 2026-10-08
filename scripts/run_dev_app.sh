@@ -120,7 +120,6 @@ swift build --package-path "$ROOT_DIR" -c debug
 
 BIN_DIR="$(swift build --package-path "$ROOT_DIR" --show-bin-path)"
 BIN="$BIN_DIR/Typeflux"
-RESOURCE_BUNDLE="$BIN_DIR/Typeflux_Typeflux.bundle"
 mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
 
@@ -128,8 +127,7 @@ mkdir -p "$APP_DIR/Contents/Resources"
 cp "$ROOT_DIR/app/Info.plist" "$APP_DIR/Contents/Info.plist"
 cp "$BIN" "$APP_DIR/Contents/MacOS/Typeflux"
 cp "$ROOT_DIR/app/Typeflux.icns" "$APP_DIR/Contents/Resources/Typeflux.icns"
-rm -rf "$APP_DIR/Contents/Resources/Typeflux_Typeflux.bundle"
-cp -R "$RESOURCE_BUNDLE" "$APP_DIR/Contents/Resources/Typeflux_Typeflux.bundle"
+bash "$ROOT_DIR/scripts/copy_resource_bundles.sh" "$BIN_DIR" "$APP_DIR/Contents/Resources"
 install_bundled_models
 
 set_plist_value() {

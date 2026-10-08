@@ -7,6 +7,7 @@ struct ModelCatalogView: View {
     @Binding var selected: Set<String>
     let onCancel: () -> Void
     let onAdd: () -> Void
+    var provider: RegisteredProvider? = nil
     @State private var search = ""
 
     private var addedCount: Int {
@@ -52,7 +53,12 @@ struct ModelCatalogView: View {
                 } else {
                     selected.remove(model.id)
                 }
-            })) { Text(model.id).font(.system(size: 13, design: .monospaced)) }
+            })) {
+                HStack(spacing: 8) {
+                    ModelIcon(model: model, provider: provider)
+                    Text(model.id).font(.system(size: 13, design: .monospaced))
+                }
+            }
                 .toggleStyle(ModelCheckboxStyle())
                 .disabled(model.exclusionReason != nil && !existingIDs.contains(model.id))
             Spacer(minLength: 4)
