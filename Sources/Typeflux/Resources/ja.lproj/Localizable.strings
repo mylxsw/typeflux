@@ -67,6 +67,7 @@
 "feedback.toast.submitted" = "フィードバックを送信しました。ありがとうございます。";
 "feedback.error.emptyContent" = "フィードバック内容を入力してください。";
 "feedback.error.invalidImage" = "この画像を読み込めません。";
+"feedback.error.accountChanged" = "この画像のアップロード後にアカウントが変更されました。削除してからもう一度追加してください。";
 "feedback.error.server" = "フィードバックの送信に失敗しました。";
 "feedback.error.invalidResponse" = "フィードバックの応答が無効です。";
 

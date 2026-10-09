@@ -26,14 +26,16 @@ extension AuthState {
         isLoadingSubscription = true
         defer { isLoadingSubscription = false }
 
+        let generation = sessionGeneration
         do {
             let snapshot = try await fetchSubscription(token)
+            // A snapshot for a session that was logged out or replaced
+            // meanwhile must not be shown for, or notify about, the new one.
+            guard generation == sessionGeneration else { return nil }
             applySubscriptionSnapshot(snapshot)
             return snapshot
-        } catch let error as AuthError {
-            subscriptionError = error.localizedDescription
-            return nil
         } catch {
+            guard generation == sessionGeneration else { return nil }
             subscriptionError = error.localizedDescription
             return nil
         }

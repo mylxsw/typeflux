@@ -67,6 +67,7 @@
 "feedback.toast.submitted" = "回饋已提交，謝謝。";
 "feedback.error.emptyContent" = "請輸入回饋內容。";
 "feedback.error.invalidImage" = "無法讀取這張圖片。";
+"feedback.error.accountChanged" = "上傳這張圖片後帳號已變更，請移除後重新加入。";
 "feedback.error.server" = "提交回饋失敗。";
 "feedback.error.invalidResponse" = "收到的回饋回應無效。";
 

@@ -67,6 +67,7 @@
 "feedback.toast.submitted" = "反馈已提交，谢谢。";
 "feedback.error.emptyContent" = "请输入反馈内容。";
 "feedback.error.invalidImage" = "无法读取这张图片。";
+"feedback.error.accountChanged" = "上传这张图片后账号已变更，请移除后重新添加。";
 "feedback.error.server" = "提交反馈失败。";
 "feedback.error.invalidResponse" = "收到的反馈响应无效。";
 

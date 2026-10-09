@@ -706,18 +706,31 @@ struct StudioView: View {
     private func submitDirectFeedback() {
         let content = feedbackContent
         let contact = feedbackContact
-        let imageURLs = feedbackImages.compactMap(\.state.uploadedURL)
         isSubmittingFeedback = true
         feedbackSubmissionError = nil
 
         Task { @MainActor in
             do {
-                let token = await authState.validAccessToken()
+                let credential = await authState.validSessionCredential()
+                let imageURLs: [String]
+                do {
+                    imageURLs = try FeedbackUploadFlow.submissionImageURLs(
+                        for: feedbackImages,
+                        submittingAs: FeedbackUploadOwner(credential)
+                    )
+                } catch let error as FeedbackUploadOwnerError {
+                    // Never attach another sign-in's uploads; the user removes
+                    // and re-adds them under the current account.
+                    for id in error.staleImageIDs {
+                        updateFeedbackImage(id: id) { $0.state = .failed(error.localizedDescription) }
+                    }
+                    throw error
+                }
                 _ = try await FeedbackAPIService.submit(
                     content: content,
                     contact: contact,
                     imageURLs: imageURLs,
-                    token: token
+                    token: credential?.accessToken
                 )
                 isSubmittingFeedback = false
                 isDirectFeedbackPresented = false
@@ -776,26 +789,14 @@ struct StudioView: View {
                 }
                 try Task.checkCancellation()
 
-                // The ticket and the PUT must carry the same account token.
-                let token = await AuthState.shared.validAccessToken()
-                let target = try await FeedbackAPIService.createImageUploadTarget(
-                    filename: prepared.filename,
-                    contentType: prepared.contentType,
-                    sizeBytes: Int64(prepared.data.count),
-                    token: token
-                )
-                try Task.checkCancellation()
-                try await FeedbackAPIService.uploadImage(
-                    data: prepared.data,
-                    filename: prepared.filename,
-                    contentType: prepared.contentType,
-                    to: target,
-                    token: token
-                )
-                try Task.checkCancellation()
+                // The ticket and the PUT carry the same account token; the
+                // image remembers which sign-in uploaded it.
+                let credential = await AuthState.shared.validSessionCredential()
+                let imageURL = try await FeedbackUploadFlow.upload(prepared, credential: credential)
 
                 await updateFeedbackImage(id: id) { image in
-                    image.state = .uploaded(target.imageURL)
+                    image.state = .uploaded(imageURL)
+                    image.uploadOwner = FeedbackUploadOwner(credential)
                 }
             } catch is CancellationError {
                 await clearFeedbackImageUploadTask(id: id)
