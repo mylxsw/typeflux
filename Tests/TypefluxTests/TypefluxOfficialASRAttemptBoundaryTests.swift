@@ -32,7 +32,10 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
 
     func testRecordingStopsWhenTheSessionChangesBeforeAReplacementGrant() async throws {
         let routing = RecordingRoutingClient(servers: [serverA, serverB])
+        // The recording starts, its first grant is checked, then account B
+        // signs in before the replacement grant.
         let credentials = CredentialSequence([
+            TypefluxCloudSessionCredential(accessToken: "account-a", session: 7),
             TypefluxCloudSessionCredential(accessToken: "account-a", session: 7),
             TypefluxCloudSessionCredential(accessToken: "account-b", session: 8)
         ])
@@ -66,6 +69,7 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
     func testRecordingStopsWhenTheSessionEndsBeforeAReplacementGrant() async throws {
         let routing = RecordingRoutingClient(servers: [serverA, serverB])
         let credentials = CredentialSequence([
+            TypefluxCloudSessionCredential(accessToken: "access-1", session: 7),
             TypefluxCloudSessionCredential(accessToken: "access-1", session: 7),
             nil
         ])
@@ -223,14 +227,15 @@ extension TypefluxOfficialASRAttemptBoundaryTests {
         let transcriber = makeTranscriber(routing: routing, transport: transport, registry: registry)
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = OwnedWorker {
             try await transcriber.transcribeStream(
                 audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
             )
         }
-        await routing.waitUntilParked()
+        addTeardownBlock { await recording.stop(releasing: [routing.gate]) }
+        try await routing.gate.waitUntilParked(unlessFinished: recording)
         recording.cancel()
-        await routing.releaseParked()
+        await routing.gate.release()
 
         do {
             _ = try await recording.value
@@ -247,14 +252,15 @@ extension TypefluxOfficialASRAttemptBoundaryTests {
         let transcriber = makeTranscriber(routing: routing, transport: transport)
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = OwnedWorker {
             try await transcriber.transcribeStream(
                 audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
             )
         }
-        await routing.waitUntilParked()
+        addTeardownBlock { await recording.stop(releasing: [routing.gate]) }
+        try await routing.gate.waitUntilParked(unlessFinished: recording)
         recording.cancel()
-        await routing.releaseParked()
+        await routing.gate.release()
 
         do {
             _ = try await recording.value

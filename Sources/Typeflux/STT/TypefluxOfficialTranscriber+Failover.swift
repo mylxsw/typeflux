@@ -10,25 +10,63 @@ extension TypefluxOfficialTranscriber {
         return credential
     }
 
-    /// Requests a replacement grant with a currently valid access token of the
-    /// session that started the recording. A failover attempt can run long
-    /// after the recording began, so the original access token may have
-    /// expired; a recording whose session was logged out or replaced stops
-    /// instead of continuing on (and billing) another account.
-    static func fetchReplacementRoute(
-        for recording: TypefluxCloudSessionCredential,
-        credentialProvider: @Sendable () async -> TypefluxCloudSessionCredential?,
-        routingClient: any TypefluxOfficialASRRoutingClient,
-        scenario: TypefluxCloudScenario
-    ) async throws -> TypefluxOfficialASRRouteDecision {
+    /// Returns a currently valid credential of the session that started the
+    /// recording. A token refresh within that session is allowed; a recording
+    /// whose session was logged out or replaced stops instead of continuing
+    /// on (and billing) another account.
+    @discardableResult
+    static func requireRecordingSession(
+        _ recording: TypefluxCloudSessionCredential,
+        credentialProvider: @Sendable () async -> TypefluxCloudSessionCredential?
+    ) async throws -> TypefluxCloudSessionCredential {
         guard let current = await credentialProvider(), !current.accessToken.isEmpty else {
             throw TypefluxOfficialASRError.notLoggedIn
         }
         guard current.session == recording.session else {
             throw TypefluxOfficialASRError.sessionChanged
         }
+        return current
+    }
+
+    /// Requests a replacement grant with a currently valid access token of the
+    /// session that started the recording. A failover attempt can run long
+    /// after the recording began, so the original access token may have
+    /// expired. The session is checked again before the grant is used (see
+    /// `TypefluxOfficialASRGrantSequence`).
+    static func fetchReplacementRoute(
+        for recording: TypefluxCloudSessionCredential,
+        credentialProvider: @Sendable () async -> TypefluxCloudSessionCredential?,
+        routingClient: any TypefluxOfficialASRRoutingClient,
+        scenario: TypefluxCloudScenario
+    ) async throws -> TypefluxOfficialASRRouteDecision {
+        let current = try await requireRecordingSession(recording, credentialProvider: credentialProvider)
         try Task.checkCancellation()
         return try await routingClient.fetchRoute(accessToken: current.accessToken, scenario: scenario)
+    }
+
+    /// Hands out one-time grants for a recording that started with
+    /// `recording`, checking its session before every grant is used.
+    static func makeGrantSequence(
+        initial route: TypefluxOfficialASRRouteDecision,
+        recording: TypefluxCloudSessionCredential,
+        credentialProvider: @escaping @Sendable () async -> TypefluxCloudSessionCredential?,
+        routingClient: any TypefluxOfficialASRRoutingClient,
+        scenario: TypefluxCloudScenario
+    ) -> TypefluxOfficialASRGrantSequence {
+        TypefluxOfficialASRGrantSequence(
+            initial: route,
+            verifySession: {
+                try await requireRecordingSession(recording, credentialProvider: credentialProvider)
+            },
+            fetch: {
+                try await fetchReplacementRoute(
+                    for: recording,
+                    credentialProvider: credentialProvider,
+                    routingClient: routingClient,
+                    scenario: scenario
+                )
+            }
+        )
     }
 
     /// Runs an ASR session against the highest-priority cloud endpoint and

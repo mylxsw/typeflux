@@ -6,6 +6,11 @@ import Foundation
 /// ambiguous failure may already have consumed it. The first connection
 /// attempt therefore uses the route that selected the servers, and every
 /// failover attempt fetches a fresh grant instead of replaying the old one.
+///
+/// Every grant is checked with `verifySession` right before it is handed
+/// out, after all route and server-selection suspensions, so a recording
+/// whose account was logged out or replaced meanwhile never opens a
+/// connection with it.
 actor TypefluxOfficialASRGrantSequence {
     struct Grant: Equatable, Sendable {
         let token: String
@@ -22,33 +27,47 @@ actor TypefluxOfficialASRGrantSequence {
 
     private var initial: Grant?
     private let fetch: @Sendable () async throws -> TypefluxOfficialASRRouteDecision
+    private let verifySession: @Sendable () async throws -> Void
 
     init(
         initial route: TypefluxOfficialASRRouteDecision,
+        verifySession: @escaping @Sendable () async throws -> Void = {},
         fetch: @escaping @Sendable () async throws -> TypefluxOfficialASRRouteDecision
     ) {
         initial = Grant(route: route)
+        self.verifySession = verifySession
         self.fetch = fetch
     }
 
     func next() async throws -> Grant {
         try Task.checkCancellation()
+        let grant: Grant
         if let initial {
             self.initial = nil
-            return initial
+            grant = initial
+        } else {
+            grant = try await Grant(route: refreshing(fetch))
         }
-        let route: TypefluxOfficialASRRouteDecision
+        // A recording cancelled or moved to another session while the grant
+        // was issued or the servers were selected must not use it; an
+        // unclaimed grant costs nothing.
+        try Task.checkCancellation()
+        try await refreshing(verifySession)
+        try Task.checkCancellation()
+        return grant
+    }
+
+    /// Runs a grant step. Cancellation stays cancellation; any other failure
+    /// becomes a `TypefluxOfficialASRGrantRefreshError` so failover stops
+    /// without blaming the endpoint.
+    private func refreshing<T>(_ step: @Sendable () async throws -> T) async throws -> T {
         do {
-            route = try await fetch()
+            return try await step()
         } catch let error where TypefluxOfficialASRCancellation.isCancellation(error) {
             throw CancellationError()
         } catch {
             throw TypefluxOfficialASRGrantRefreshError(underlying: error)
         }
-        // A recording cancelled while the grant was being issued must not
-        // use it; an unclaimed grant costs nothing.
-        try Task.checkCancellation()
-        return Grant(route: route)
     }
 }
 

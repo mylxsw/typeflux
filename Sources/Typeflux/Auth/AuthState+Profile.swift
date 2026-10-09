@@ -32,8 +32,14 @@ extension AuthState {
             return .unauthenticated
         }
 
+        // Counted rather than set, so a refresh for a replaced session that
+        // finishes late does not clear the loading state of a newer one.
+        profileRefreshesInFlight += 1
         isLoading = true
-        defer { isLoading = false }
+        defer {
+            profileRefreshesInFlight -= 1
+            isLoading = profileRefreshesInFlight > 0
+        }
 
         do {
             let profile = try await fetchProfile(token)
@@ -42,6 +48,7 @@ extension AuthState {
             saveStoredUserProfile(profile)
             logger.info("Profile refreshed for \(profile.email)")
             await refreshSubscription()
+            guard generation == sessionGeneration else { return discardStaleProfileRefresh() }
             return .authenticated
         } catch let error as AuthError {
             guard generation == sessionGeneration else { return discardStaleProfileRefresh() }

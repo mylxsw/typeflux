@@ -108,6 +108,13 @@ final class AuthState: ObservableObject {
     /// Incremented on login and logout so a refresh that started for an older
     /// session cannot overwrite or invalidate the current one.
     var sessionGeneration = 0
+    /// Profile refreshes that are running; `isLoading` is true while any is.
+    var profileRefreshesInFlight = 0
+    /// The session whose subscription, usage or usage breakdown load is
+    /// running, if any. The matching `isLoading…` flag belongs to that load.
+    var subscriptionLoadGeneration: Int?
+    var usageLoadGeneration: Int?
+    var usageBreakdownLoadGeneration: Int?
 
     var accessToken: String? {
         if let inMemorySessionToken,
@@ -210,7 +217,11 @@ final class AuthState: ObservableObject {
         )
         isLoggedIn = true
         startRefreshTimer()
+        let generation = sessionGeneration
         await refreshProfile()
+        // A logout or another login during the profile fetch owns the
+        // session now; this login must not announce itself afterwards.
+        guard generation == sessionGeneration else { return }
         NotificationCenter.default.post(name: .authDidLogin, object: self)
     }
 
@@ -237,6 +248,13 @@ final class AuthState: ObservableObject {
         subscription = .none
         subscriptionError = nil
         isSyncingSubscription = false
+        // Loads still running for the old session no longer own these flags.
+        subscriptionLoadGeneration = nil
+        isLoadingSubscription = false
+        usageLoadGeneration = nil
+        isLoadingUsage = false
+        usageBreakdownLoadGeneration = nil
+        isLoadingUsageBreakdown = false
         usageStats = .empty
         usageCredits = nil
         usagePeriodStart = nil
