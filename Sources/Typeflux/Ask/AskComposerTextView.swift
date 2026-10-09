@@ -4,12 +4,12 @@ import SwiftUI
 /// A native editor keeps IME composition, selection and the existing dictation
 /// insertion path intact. Return confirms only after marked text is committed.
 struct AskComposerTextView: NSViewRepresentable {
-    /// Horizontal inset of the text inside its container. The SwiftUI
-    /// placeholder uses the same value so it starts where the caret does.
+    /// Horizontal inset shared by the text, caret and native placeholder.
     static let lineFragmentPadding: CGFloat = 5
     @Binding var text: String
     @Environment(\.isEnabled) private var isEnabled
     var placeholder: String
+    var placeholderSingleLine = false
     var voice: AskVoiceInput? = nil
     var contextID: String = "launcher"
     var fontSize: CGFloat = StudioTheme.Typography.bodyLarge
@@ -51,6 +51,8 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.font = .systemFont(ofSize: fontSize)
         editor.textColor = .labelColor
         editor.insertionPointColor = .labelColor
+        editor.placeholder = placeholder
+        editor.placeholderSingleLine = placeholderSingleLine
         editor.textContainerInset = NSSize(width: 0, height: 4)
         editor.textContainer?.lineFragmentPadding = Self.lineFragmentPadding
         editor.isVerticallyResizable = true
@@ -95,6 +97,9 @@ struct AskComposerTextView: NSViewRepresentable {
             DispatchQueue.main.async { [weak editor] in editor?.publishFocus() }
         }
         if editor.isEditable != isEnabled { editor.isEditable = isEnabled }
+        editor.placeholder = placeholder
+        editor.placeholderSingleLine = placeholderSingleLine
+        editor.setAccessibilityLabel(placeholder)
         editor.onSubmit = onSubmit; editor.onDismiss = onDismiss
         editor.onHeightChange = onHeightChange
         editor.maximumHeight = maximumHeight
@@ -157,6 +162,59 @@ struct AskComposerTextView: NSViewRepresentable {
         private(set) var typing = false
         private var reportedHeight: CGFloat = 0
         var maximumHeight: CGFloat = 148
+        var placeholder = "" {
+            didSet { if placeholder != oldValue { needsDisplay = true; reportHeight() } }
+        }
+        var placeholderSingleLine = false {
+            didSet { if placeholderSingleLine != oldValue { needsDisplay = true; reportHeight() } }
+        }
+
+        /// Composition changes the native text before textDidChange publishes
+        /// the draft. Drawing here keeps the hint and marked text in sync.
+        var showsPlaceholder: Bool { !placeholder.isEmpty && string.isEmpty && !hasMarkedText() }
+
+        private var placeholderText: NSAttributedString {
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.lineBreakMode = placeholderSingleLine ? .byTruncatingTail : .byWordWrapping
+            return NSAttributedString(string: placeholder, attributes: [
+                .font: font ?? NSFont.systemFont(ofSize: StudioTheme.Typography.bodyLarge),
+                .foregroundColor: NSColor(StudioTheme.textSecondary),
+                .paragraphStyle: paragraph
+            ])
+        }
+
+        private var placeholderRect: NSRect {
+            let origin = textContainerOrigin
+            let padding = textContainer?.lineFragmentPadding ?? 0
+            return NSRect(x: origin.x + padding, y: origin.y,
+                          width: max(0, bounds.width - origin.x - textContainerInset.width - 2 * padding),
+                          height: max(0, bounds.height - origin.y))
+        }
+
+        override func draw(_ dirtyRect: NSRect) {
+            super.draw(dirtyRect)
+            guard showsPlaceholder else { return }
+            placeholderText.draw(with: placeholderRect,
+                                 options: [.usesLineFragmentOrigin, .usesFontLeading])
+        }
+
+        override func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
+            super.setMarkedText(string, selectedRange: selectedRange, replacementRange: replacementRange)
+            needsDisplay = true
+            reportHeight()
+        }
+
+        override func unmarkText() {
+            super.unmarkText()
+            needsDisplay = true
+            reportHeight()
+        }
+
+        override func didChangeText() {
+            super.didChangeText()
+            needsDisplay = true
+            reportHeight()
+        }
 
         func reportSlash() {
             guard let onSlashQuery, !hasMarkedText() else { return }
@@ -359,7 +417,14 @@ struct AskComposerTextView: NSViewRepresentable {
         func reportHeight() {
             guard let layoutManager, let textContainer else { return }
             layoutManager.ensureLayout(for: textContainer)
-            let contentHeight = ceil(layoutManager.usedRect(for: textContainer).height + 12)
+            var usedHeight = layoutManager.usedRect(for: textContainer).height
+            if showsPlaceholder, !placeholderSingleLine {
+                usedHeight = max(usedHeight, placeholderText.boundingRect(
+                    with: NSSize(width: placeholderRect.width, height: .greatestFiniteMagnitude),
+                    options: [.usesLineFragmentOrigin, .usesFontLeading]
+                ).height)
+            }
+            let contentHeight = ceil(usedHeight + 12)
             let height = min(max(32, maximumHeight), max(32, contentHeight))
             guard height != reportedHeight else { return }
             reportedHeight = height

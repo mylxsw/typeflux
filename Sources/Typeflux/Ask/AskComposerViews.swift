@@ -1089,38 +1089,27 @@ struct AskComposer: View {
     }
 
     private var editorField: some View {
-        ZStack(alignment: .topLeading) {
-            if draft.wrappedValue.text.isEmpty {
-                Text(placeholder)
-                    .font(.system(size: chrome.editorFontSize))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    // The launcher's single-row placeholder truncates rather than wraps.
-                    .lineLimit(launcher ? 1 : nil)
-                    .padding(.leading, AskComposerTextView.lineFragmentPadding)
-                    .padding(.top, 4)
-                    .allowsHitTesting(false)
-            }
-            AskComposerTextView(
-                text: draft.text,
-                placeholder: placeholder,
-                voice: voice,
-                contextID: contextID,
-                fontSize: chrome.editorFontSize,
-                maximumHeight: layout.editorMaximumHeight,
-                onSubmit: submit,
-                onDismiss: { if editingQueued { model.cancelQueuedEdit() } else { onDismiss() } },
-                onHeightChange: { editorHeight = $0 },
-                onAttach: { model.addAttachments($0, launcher: launcher) },
-                onDropTargetChange: { editorDropTargeted = $0 },
-                onSlashQuery: launcher ? nil : slashChanged,
-                onCommandKey: commandKey,
-                onEmptyBackspace: launcher ? { removeKeyword() || removeLastContext() } : nil,
-                onOpenChat: launcher ? openChat : nil,
-                onContextShortcut: launcher ? toggleContextPanel : nil
-            )
-            .frame(height: min(editorHeight, layout.editorMaximumHeight))
-            .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection))
-        }
+        AskComposerTextView(
+            text: draft.text,
+            placeholder: placeholder,
+            placeholderSingleLine: launcher,
+            voice: voice,
+            contextID: contextID,
+            fontSize: chrome.editorFontSize,
+            maximumHeight: layout.editorMaximumHeight,
+            onSubmit: submit,
+            onDismiss: { if editingQueued { model.cancelQueuedEdit() } else { onDismiss() } },
+            onHeightChange: { editorHeight = $0 },
+            onAttach: { model.addAttachments($0, launcher: launcher) },
+            onDropTargetChange: { editorDropTargeted = $0 },
+            onSlashQuery: launcher ? nil : slashChanged,
+            onCommandKey: commandKey,
+            onEmptyBackspace: launcher ? { removeKeyword() || removeLastContext() } : nil,
+            onOpenChat: launcher ? openChat : nil,
+            onContextShortcut: launcher ? toggleContextPanel : nil
+        )
+        .frame(height: min(editorHeight, layout.editorMaximumHeight))
+        .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection))
     }
 
     private var editorRow: some View {
