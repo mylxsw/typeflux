@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask localization native accessibility", .serialized)
+@Suite("Ask localization native accessibility", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLocalizationPolishAccessibilityTests {
     init() {

@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// Opt-in production-view snapshots and native AX evidence with synthetic data.
-@Suite("Ask localization polish snapshots", .serialized)
+@Suite("Ask localization polish snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLocalizationPolishVisualTests {
     @Test func renderPolishSurfaces() async throws {

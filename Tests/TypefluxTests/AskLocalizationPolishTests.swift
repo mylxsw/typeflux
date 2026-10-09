@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher localization polish", .serialized)
+@Suite("Launcher localization polish", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLocalizationPolishTests {
     @Test func cloudSignInFailureFallsBackOnlyToAConfiguredService() async throws {
