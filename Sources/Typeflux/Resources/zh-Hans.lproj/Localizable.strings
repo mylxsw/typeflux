@@ -2005,6 +2005,7 @@
 "ask.local.card.cloudQuestion" = "想用云端模型？";
 "ask.local.identity" = "未登录";
 "ask.local.identity.detail" = "%@ · 对话仅存本机";
+"ask.local.identity.storage" = "对话仅存本机";
 "ask.cloudPromo.body" = "登录后可使用云端模型（支持识图、联网搜索），对话在多台设备间同步。";
 "ask.cloudPromo.signIn" = "登录";
 "ask.cloudPromo.dismiss" = "30 天内不再显示";
@@ -2564,6 +2565,7 @@
 "ask.plugin.askAI.selection" = "%@选中的文字";
 "ask.plugin.writeBack.failed" = "没能写回原应用，结果已复制到剪贴板";
 "ask.plugin.hint.keyword" = "↩ 发送 · ⇥ 进入关键字";
+"ask.plugin.hint.keyword.enter" = "↩ 进入关键字 · ⌘↩ 问 AI";
 "ask.plugin.hint.ready" = "↩ 运行";
 "ask.plugin.hint.running" = "esc 取消";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
@@ -2571,6 +2573,7 @@
 "ask.plugin.section" = "关键字";
 "ask.plugin.waiting" = "输入要处理的内容";
 "ask.plugin.enter" = "空格或 ⇥ 进入";
+"ask.plugin.enter.return" = "↩ 进入";
 "ask.plugin.running" = "处理中…";
 "ask.workflow.section" = "工作流";
 "ask.workflow.footnote" = "用关键字触发你自己的脚本：Python、Node、TypeScript、Shell、AppleScript 或任何程序。它们以你的身份运行，只信任你了解的工作流。";

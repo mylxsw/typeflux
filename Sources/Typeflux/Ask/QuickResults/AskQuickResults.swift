@@ -230,6 +230,11 @@ struct AskQuickResults: Equatable {
             notice = .indexing(found: found, progress: status.progress)
         }
         if status?.phase == .loading { notice = .indexing(found: 0, progress: nil) }
+        // A question does not need the index's progress; a file's name, files found or files first do.
+        if notice != nil, files.isEmpty, folders.isEmpty, settings.mode != .filesFirst,
+           !AskSearchQuery(text).hasFilters, !looksLikeName(text) {
+            notice = nil
+        }
         guard !apps.isEmpty || !panes.isEmpty || !files.isEmpty || !folders.isEmpty || notice != nil else { return nil }
         var groups: [(group: Group, top: Double)] = []
         if let top = apps.first?.score { groups.append((.apps, top)) }
@@ -256,6 +261,22 @@ struct AskQuickResults: Equatable {
         }
         return AskQuickResults(apps: apps, panes: panes, files: listed, moreFiles: moreFiles, groups: groups.map(\.group),
                                best: best, notice: notice)
+    }
+
+    /// Whether `text` reads like the name of a file rather than a question: short,
+    /// a few words, no sentence punctuation, and no run of Chinese, Japanese or
+    /// Korean longer than a short name.
+    static func looksLikeName(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.count <= 40, trimmed.split(whereSeparator: \.isWhitespace).count <= 3,
+              !trimmed.contains(where: { "?？。，,!！:：;；".contains($0) }) else { return false }
+        var run = 0
+        for scalar in trimmed.unicodeScalars {
+            run = scalar.properties.isIdeographic || (0xAC00 ... 0xD7AF).contains(scalar.value)
+                || (0x3040 ... 0x30FF).contains(scalar.value) ? run + 1 : 0
+            if run > 6 { return false }
+        }
+        return true
     }
 
     /// The result that clearly answers a short query, if one does. Applications

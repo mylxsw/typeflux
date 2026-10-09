@@ -341,6 +341,11 @@ struct AskLocalModeIdentity: View {
     @State private var presented = false
     @State private var hovering = false
 
+    /// "Ollama · Stays on this Mac": the model's source and where chats are kept.
+    static func detail(source: String) -> String {
+        String(format: L("ask.local.identity.detail"), source)
+    }
+
     var body: some View {
         let status = AskLocalModeStatus.make(model: model, signedIn: false)
         Button { presented.toggle() } label: {
@@ -352,10 +357,12 @@ struct AskLocalModeIdentity: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(L("ask.local.identity")).font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text(String(format: L("ask.local.identity.detail"), status.source))
+                    // The 210pt sidebar has room for where chats are kept, not the model's name
+                    // as well; the full line is the button's tooltip and its card says the rest.
+                    Text(L("ask.local.identity.storage"))
                         .font(.system(size: 11))
                         .foregroundStyle(StudioTheme.textTertiary)
-                        .lineLimit(1).truncationMode(.middle)
+                        .lineLimit(1).minimumScaleFactor(0.85)
                 }
             }
             .padding(.leading, 4).padding(.trailing, 8)
@@ -367,8 +374,10 @@ struct AskLocalModeIdentity: View {
         .buttonStyle(.plain)
         .padding(.leading, -4)
         .onHover { hovering = $0 }
+        .help(Self.detail(source: status.source))
         .modifier(AskLocalModeMenu(isPresented: $presented, status: status, model: model))
         .accessibilityLabel(L("ask.local.identity"))
+        .accessibilityValue(Self.detail(source: status.source))
         .accessibilityHint(L("ask.location.local.help"))
     }
 }

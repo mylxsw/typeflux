@@ -174,8 +174,11 @@ struct AskComposer: View {
     }
     private func submit() {
         if model.consumeModeCommand(launcher: launcher) { closePalette(); return }
-        // The send button in keyword mode asks the AI, like ⌘Return.
-        if launcher, plugins.isActive, !active { askAIFromPlugin(); return }
+        // The send button in keyword mode asks the AI, like ⌘Return, when there is something to ask.
+        if launcher, plugins.isActive, !active {
+            if pluginDisplay?.offersAskAI != false { askAIFromPlugin() }
+            return
+        }
         if launcher, showsLauncherSuggestions, !active, let item = highlightedHomeItem {
             pick(item)
             return
@@ -192,8 +195,11 @@ struct AskComposer: View {
     }
     /// The tallest the quick results have been since they appeared. The list keeps
     /// that height while typing, so the panel does not shrink and grow with every
-    /// keystroke as matches come and go; it resets when the results go away.
+    /// keystroke as matches come and go; it resets when the results go away and
+    /// settles to the rows once typing pauses (`AskLauncherHeightReserve`).
     @State private var quickReserve: CGFloat = 0
+    /// Settles the kept heights once typing pauses.
+    @State private var reserveSettle: Task<Void, Never>?
     /// The highlighted result's actions, open after → or a context click.
     @State private var quickActions: AskQuickActionPanel?
     /// Quick results show while the launcher's text is all there is to send:
@@ -232,9 +238,45 @@ struct AskComposer: View {
 
     private func quickResultsChanged() {
         let next = quickResults
-        let reserve = next.map { max(quickReserve, AskQuickResultsView.height(for: $0)) } ?? 0
+        let reserve = next.map { AskLauncherHeightReserve.holding(quickReserve, content: AskQuickResultsView.height(for: $0)) } ?? 0
         if reserve != quickReserve { quickReserve = reserve }
         reportHeight()
+        scheduleReserveSettle()
+    }
+
+    /// Once typing pauses, the space kept below shorter results goes away.
+    private func scheduleReserveSettle() {
+        guard launcher else { return }
+        reserveSettle?.cancel()
+        reserveSettle = Task { @MainActor in
+            try? await Task.sleep(for: AskLauncherHeightReserve.settleDelay)
+            guard !Task.isCancelled else { return }
+            settleReserves()
+        }
+    }
+
+    /// The card shrinks to its rows first; the panel follows once it has, so the
+    /// bottom bar is never clipped on the way. Recording keeps its panel's height.
+    private func settleReserves() {
+        guard !active else { return }
+        let quick = AskLauncherHeightReserve.settled(quickReserve,
+                                                     content: quickResults.map(AskQuickResultsView.height(for:)) ?? 0)
+        let plugin = AskLauncherHeightReserve.settled(pluginReserve,
+                                                      content: pluginDisplay.map(AskPluginResultsView.height(for:)) ?? 0)
+        guard quick != quickReserve || plugin != pluginReserve else { return }
+        guard !reduceMotion else {
+            quickReserve = quick; pluginReserve = plugin
+            reportHeight()
+            return
+        }
+        withAnimation(.easeOut(duration: AskLauncherHeightReserve.settleAnimation)) {
+            quickReserve = quick; pluginReserve = plugin
+        }
+        reserveSettle = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(AskLauncherHeightReserve.settleAnimation))
+            guard !Task.isCancelled else { return }
+            reportHeight()
+        }
     }
 
     /// Copies a quick result, closing the launcher when asked to, opens an
@@ -411,9 +453,13 @@ struct AskComposer: View {
     private var pluginDisplay: AskPluginDisplay? {
         guard launcher else { return nil }
         if let plugin = plugins.plugin {
+            let asks = AskPluginDisplay.offersAskAI(question: draft.wrappedValue.text,
+                                                    selection: draft.wrappedValue.sentSelection,
+                                                    usesSelection: plugin.usesSelectionInput, output: plugins.output)
             return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, optionName: plugin.optionName,
                                     phase: plugins.phase, previous: plugins.previous, partial: plugins.partial,
-                                    comparing: plugins.comparing, highlighted: pluginHighlight)
+                                    comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
+                                    offersAskAI: asks)
         }
         if let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
             return AskPluginDisplay(hint: hint, title: plugin.title, symbol: plugin.symbol, phase: .waiting,
@@ -512,10 +558,10 @@ struct AskComposer: View {
             return true
         }
         switch key {
-        case .up, .down: movePluginHighlight(key == .up ? -1 : 1)
+        case .up, .down: movePluginHighlight(key == .up ? -1 : 1, offersAskAI: display.offersAskAI)
         case let .number(number):
             guard let count = AskPluginResultsView.numberedItemCount(display) else { return false }
-            if number == count + 1 {
+            if number == count + 1, display.offersAskAI {
                 askAIFromPlugin()
             } else {
                 guard number <= count else { return false }
@@ -532,7 +578,7 @@ struct AskComposer: View {
             }
         case .shiftTab: _ = plugins.cycle(-1, selection: selection, text: text, language: language)
         case .enter: if display.asksAI { askAIFromPlugin() } else { runPluginMain() }
-        case .commandEnter: askAIFromPlugin()
+        case .commandEnter: if display.offersAskAI { askAIFromPlugin() }
         case .optionEnter, .commandR, .commandD, .shiftCommandC, .commandS, .commandB:
             let shortcut: AskPluginAction.Shortcut = switch key {
             case .optionEnter: .optionEnter
@@ -569,9 +615,8 @@ struct AskComposer: View {
             guard let action = offered else { return false }
             if case let .copy(text) = action.kind { model.copyPluginText(text) } else { performPluginAction(action) }
         case .commandZ: return model.undoWorkflowCopy()
-        case .escape:
-            if AskQuickLook.shared.isVisible { AskQuickLook.shared.close(); return true }
-            return plugins.cancelRun()
+        // Esc steps back through the launcher's layers in `escapeKey`.
+        case .escape: return false
         case .commandY:
             // A list of files (file mode) previews the chosen one.
             guard case let .fileIcon(url)? = plugins.output?.selected?.icon else { return false }
@@ -592,9 +637,15 @@ struct AskComposer: View {
         return true
     }
 
-    /// The arrows move through a list's rows, then on to "Ask AI" and back around.
-    private func movePluginHighlight(_ delta: Int) {
+    /// The arrows move through a list's rows, then on to "Ask AI" (when offered) and back around.
+    private func movePluginHighlight(_ delta: Int, offersAskAI: Bool) {
         if pluginHighlight == 0, plugins.moveSelection(delta) { return }
+        guard offersAskAI else {
+            // Without "Ask AI" the list wraps around on itself.
+            pluginHighlight = 0
+            if let count = plugins.output?.items.count, count > 0 { plugins.selectItem(delta < 0 ? count - 1 : 0) }
+            return
+        }
         pluginHighlight = pluginHighlight == 0 ? 1 : 0
         if pluginHighlight == 0, let count = plugins.output?.items.count, count > 0 {
             plugins.selectItem(delta < 0 ? count - 1 : 0)
@@ -610,7 +661,7 @@ struct AskComposer: View {
     }
 
     private var pluginHeight: CGFloat {
-        pluginDisplay.map { max(pluginReserve, AskPluginResultsView.height(for: $0)) } ?? 0
+        pluginDisplay.map { AskLauncherHeightReserve.holding(pluginReserve, content: AskPluginResultsView.height(for: $0)) } ?? 0
     }
 
     /// The launcher offers its starting points until something is typed. They
@@ -700,7 +751,11 @@ struct AskComposer: View {
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
             // The home fills in as the context arrives after the panel shows.
             .onChange(of: homeHeight) { _ in reportHeight() }
-            .onChange(of: draft.wrappedValue.text) { _ in refreshQuickResults() }
+            .onChange(of: draft.wrappedValue.text) { _ in
+                refreshQuickResults()
+                // Typing restarts the pause the kept heights wait for.
+                if quickReserve > 0 || pluginReserve > 0 { scheduleReserveSettle() }
+            }
             .onChange(of: quickResults) { _ in quickResultsChanged() }
             .onChange(of: pluginDisplay) { display in
                 guard launcher else { return }
@@ -712,9 +767,12 @@ struct AskComposer: View {
                     // A workflow that only does something closes the launcher when it is done.
                     model.finishPluginResult(); onDismiss(); return
                 }
-                let reserve = display.map { max(pluginReserve, AskPluginResultsView.height(for: $0)) } ?? 0
+                let reserve = display.map {
+                    AskLauncherHeightReserve.holding(pluginReserve, content: AskPluginResultsView.height(for: $0))
+                } ?? 0
                 if reserve != pluginReserve { pluginReserve = reserve }
                 reportHeight()
+                scheduleReserveSettle()
             }
             .onChange(of: draft.wrappedValue.sentSelection) { _ in if launcher, plugins.isActive { refreshQuickResults() } }
             .onChange(of: noticeRows) { _ in reportHeight() }
@@ -731,7 +789,10 @@ struct AskComposer: View {
                 reportHeight()
             }
             .onAppear { searchVisible = true; refreshQuickResults(); reportHeight() }
-            .onDisappear { if launcher { searchVisible = false; quickSearch.cancel() } }
+            .onDisappear {
+                reserveSettle?.cancel()
+                if launcher { searchVisible = false; quickSearch.cancel() }
+            }
             .onChange(of: quickSearch.isVisible) { visible in if visible { refreshQuickResults() } }
             .onReceive(NotificationCenter.default.publisher(for: AskAppIndex.didChange)) { notification in
                 if (notification.object as AnyObject?) === model.appIndex { refreshQuickResults(resetActions: false) }
@@ -777,14 +838,14 @@ struct AskComposer: View {
                     .disabled(active)
             } else if let pluginDisplay {
                 AskPluginResultsView(display: pluginDisplay, question: draft.wrappedValue.text,
-                                     minimumHeight: pluginReserve,
+                                     minimumHeight: pluginHeight,
                                      onMain: runPluginMain, onAction: performPluginAction,
                                      onAskAI: askAIFromPlugin,
                                      onHighlight: { pluginHighlight = $0 },
                                      onSelectItem: { plugins.selectItem($0) })
             } else if showsQuickResults, let quickResults {
                 AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
-                                    minimumHeight: quickReserve, actions: quickActions,
+                                    minimumHeight: resultsHeight, actions: quickActions,
                                     thumbnails: model.launcherSearchSettings.fileIcons == .thumbnails,
                                     onRun: runQuickResult,
                                     onHighlight: { index in self.quickResults?.highlight(index) },
@@ -969,7 +1030,38 @@ struct AskComposer: View {
         Task { await model.openChatFromLauncher() }
     }
 
+    /// Esc steps back one layer (`AskLauncherEscape`); false closes the launcher.
+    private func escapeKey() -> Bool {
+        let step = AskLauncherEscape.resolve(.init(
+            quickLook: AskQuickLook.shared.isVisible, menu: AskGlassMenuPresenter.shared.isShowing || contextPanelOpen,
+            actions: quickActions != nil, approval: model.workflowApproval != nil,
+            running: plugins.isRunning, keyword: plugins.isActive
+        ))
+        switch step {
+        case .closeQuickLook: AskQuickLook.shared.close()
+        case .closeMenu:
+            contextPanelOpen = false
+            AskGlassMenuPresenter.shared.hide()
+        case .closeActions: quickActions = nil
+        case .declineApproval: model.answerWorkflowApproval(false)
+        case .cancelRun: _ = plugins.cancelRun()
+        case .exitKeyword: exitKeyword()
+        case .closeLauncher: return false
+        }
+        return true
+    }
+
+    /// Leaves keyword mode, keeping the text typed after the keyword as plain launcher text.
+    private func exitKeyword() {
+        plugins.deactivate()
+        pluginHighlight = 0
+        pluginReserve = 0
+        refreshQuickResults()
+        reportHeight()
+    }
+
     private func commandKey(_ key: AskCommandKey) -> Bool {
+        if launcher, !active, key == .escape { return escapeKey() }
         if (key == .enter || key == .commandEnter),
            AskPermissionMode.command(draft.wrappedValue.text).recognized,
            AskPermissionMode.command(draft.wrappedValue.text).mode != nil || !paletteOpen {
@@ -1210,7 +1302,10 @@ struct AskComposer: View {
                 .disabled(active)
                 .opacity(Self.recordingDim(active))
                 // Command-K keeps the context panel reachable without adding a footer control.
-                .popover(isPresented: $contextPanelOpen, arrowEdge: .bottom) { contextPanel }
+                // It is a glass menu like the composer's others: the same material, and Esc closes only it.
+                .askMenu(isPresented: $contextPanelOpen, glass: true) {
+                    AskObservedContent(model: model) { contextPanel }
+                }
             // In the launcher the empty space moves the panel; it lays out exactly like the spacer.
             Spacer(minLength: 8)
                 .frame(maxHeight: .infinity)
@@ -1258,6 +1353,8 @@ struct AskComposer: View {
             }
             .buttonStyle(.plain)
             .padding(5)
+            // The label outranks the key hints, which shorten instead, so it reads the same before and after typing.
+            .layoutPriority(0.75)
             .disabled(!model.canOpenChatFromLauncher)
             .help(model.canOpenChatFromLauncher ? L("ask.openChat.hint") : L("ask.openChat.wait"))
             .accessibilityLabel(L("ask.openChat"))
@@ -1288,7 +1385,7 @@ struct AskComposer: View {
         if showsLauncherSuggestions { return homeHeight }
         if pluginDisplay != nil { return pluginHeight }
         if showsQuickResults, let quickResults {
-            return max(quickReserve, AskQuickResultsView.height(for: quickResults))
+            return AskLauncherHeightReserve.holding(quickReserve, content: AskQuickResultsView.height(for: quickResults))
         }
         return 0
     }
@@ -1620,7 +1717,7 @@ struct AskComposer: View {
         // Recording shows its panel in the results' place, at least as tall as they were.
         let recording = launcher && active
         let quick = !recording && showsQuickResults && !showsLauncherSuggestions
-            ? quickResults.map { max(quickReserve, AskQuickResultsView.height(for: $0)) } ?? 0 : 0
+            ? quickResults.map { AskLauncherHeightReserve.holding(quickReserve, content: AskQuickResultsView.height(for: $0)) } ?? 0 : 0
         let panel = recording ? voicePanelHeight : 0
         let keyword = !recording ? pluginHeight : 0
         onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
@@ -1628,6 +1725,14 @@ struct AskComposer: View {
                                                  attachments: showsStrip,
                                                  attachmentHeight: attachmentHeight) + commands + quick + panel + keyword)
     }
+}
+
+/// Redraws content shown outside the composer (a glass menu) as the model changes.
+private struct AskObservedContent<Content: View>: View {
+    @ObservedObject var model: AskConversationModel
+    @ViewBuilder var content: () -> Content
+
+    var body: some View { content() }
 }
 
 private struct AskComposerWidth: PreferenceKey {

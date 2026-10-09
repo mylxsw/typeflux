@@ -149,7 +149,7 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func escapeCancelsARunThenCloses() async throws {
+    @Test func escapeCancelsARunThenLeavesTheKeywordThenCloses() async throws {
         try await withPasteboard { _ in
             let translation = Translation()
             translation.device.delay = .milliseconds(500)
@@ -163,6 +163,8 @@ extension AskQuickResultsInteractionTests {
             try await launcher.press(Self.escape)
             #expect(launcher.dismissed == 0)
             if case .ready = model.plugins.phase {} else { Issue.record("esc returns to ready") }
+            try await launcher.press(Self.escape)
+            #expect(launcher.dismissed == 0 && !model.plugins.isActive, "then keyword mode ends")
             try await launcher.press(Self.escape)
             #expect(launcher.dismissed == 1)
         }

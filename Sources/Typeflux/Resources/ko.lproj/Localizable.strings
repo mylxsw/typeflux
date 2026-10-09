@@ -1995,6 +1995,7 @@
 "ask.local.card.cloudQuestion" = "클라우드 모델을 사용하시겠어요?";
 "ask.local.identity" = "로그인 안 됨";
 "ask.local.identity.detail" = "%@ · 이 Mac에만 저장";
+"ask.local.identity.storage" = "대화는 이 Mac에만 저장";
 "ask.cloudPromo.body" = "로그인하면 이미지 인식과 웹 검색을 지원하는 클라우드 모델을 사용하고 여러 기기에서 대화를 동기화할 수 있습니다.";
 "ask.cloudPromo.signIn" = "로그인";
 "ask.cloudPromo.dismiss" = "30일 동안 숨기기";
@@ -2554,6 +2555,7 @@
 "ask.plugin.askAI.selection" = "선택한 텍스트 %@";
 "ask.plugin.writeBack.failed" = "앱에 입력하지 못했습니다. 결과는 클립보드에 있습니다";
 "ask.plugin.hint.keyword" = "↩ 보내기 · ⇥ 키워드 사용";
+"ask.plugin.hint.keyword.enter" = "↩ 키워드 사용 · ⌘↩ AI에게 질문";
 "ask.plugin.hint.ready" = "↩ 실행";
 "ask.plugin.hint.running" = "esc 취소";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
@@ -2561,6 +2563,7 @@
 "ask.plugin.section" = "키워드";
 "ask.plugin.waiting" = "처리할 텍스트를 입력하세요";
 "ask.plugin.enter" = "스페이스 또는 ⇥로 사용";
+"ask.plugin.enter.return" = "↩ 사용";
 "ask.plugin.running" = "처리 중…";
 "ask.workflow.section" = "워크플로";
 "ask.workflow.footnote" = "키워드로 내 스크립트(Python, Node, TypeScript, 셸, AppleScript, 모든 프로그램)를 실행합니다. 내 권한으로 실행되므로 이해하는 워크플로만 신뢰하세요.";
