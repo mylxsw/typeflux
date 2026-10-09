@@ -72,6 +72,8 @@ final class ChatPreferences {
 enum ChatSettingsInfo {
     /// Matches the existing Mac account help page.
     static let privacyURL = URL(string: "https://typeflux.app/privacy")!
+    static let termsURL = URL(string: "https://typeflux.app/terms")!
+    static let feedbackURL = URL(string: "https://typeflux.app/feedback")!
 
     static func languageName(preferredLocalizations: [String] = Bundle.main.preferredLocalizations) -> String {
         preferredLocalizations.first?.hasPrefix("zh-Hans") == true ? "简体中文" : "English"

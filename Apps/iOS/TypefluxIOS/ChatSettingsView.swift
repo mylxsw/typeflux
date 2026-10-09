@@ -5,7 +5,9 @@ import UIKit
 struct ChatSettingsView: View {
     @Bindable var store: ChatStore
     @Bindable var preferences: ChatPreferences
+    var shop: ChatCreditShop?
     @Environment(\.dismiss) private var dismiss
+    @State private var showShop = false
     @Environment(\.openURL) private var openURL
     @State private var settingsOpenFailed = false
     @State private var confirmingSignOut = false
@@ -17,25 +19,7 @@ struct ChatSettingsView: View {
                     if store.isAuthenticated {
                         accountCard
                     } else {
-                        Button("Sign in") { dismiss(); store.showsLogin = true }
-                            .buttonStyle(.borderedProminent).padding().accessibilityIdentifier("settings.login")
-                    }
-                    sectionLabel("Data and privacy")
-                    group {
-                        if store.isAuthenticated {
-                            NavigationLink { ChatPrivacySettings(store: store) } label: {
-                                row(symbol: "checkmark.shield.fill", tint: ChatTheme.accent, title: "AI data sharing") {
-                                    Text(store.hasAIConsent ? "Consent granted" : "Consent not granted").font(.caption)
-                                }
-                            }.buttonStyle(.plain).accessibilityIdentifier("settings.aiPrivacy")
-                        }
-                        Link(destination: URL(string: "https://typeflux.app/terms")!) {
-                            row(symbol: "doc.text.fill", tint: .gray, title: "Terms of Service") { EmptyView() }
-                        }
-                        Link(destination: URL(string: "https://typeflux.app/feedback")!) {
-                            row(symbol: "bubble.left.fill", tint: .orange, title: "Contact and feedback") { EmptyView()
-                            }
-                        }
+                        signInCard
                     }
                     sectionLabel("General")
                     group {
@@ -58,8 +42,7 @@ struct ChatSettingsView: View {
                             row(symbol: "globe", tint: ChatTheme.accent, title: "Language") {
                                 HStack(spacing: 5) {
                                     Text(ChatSettingsInfo.languageName())
-                                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(ChatTheme.tertiary)
+                                    chevron
                                 }
                                 .foregroundStyle(ChatTheme.secondary)
                             }
@@ -67,17 +50,32 @@ struct ChatSettingsView: View {
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("settings.language")
                         .accessibilityHint("Change the app language in iOS Settings.")
-                    }
-                    group {
-                        Link(destination: ChatSettingsInfo.privacyURL) {
-                            row(symbol: "hand.raised.fill", tint: Color(red: 0.2, green: 0.78, blue: 0.35),
-                                title: "Privacy Policy") {
-                                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(ChatTheme.tertiary)
+                        if store.isAuthenticated {
+                            divider
+                            NavigationLink { ChatPrivacySettings(store: store) } label: {
+                                row(symbol: "checkmark.shield.fill", tint: ChatTheme.success, title: "AI data sharing") {
+                                    HStack(spacing: 5) {
+                                        Text(store.hasAIConsent ? "On" : "Off")
+                                        chevron
+                                    }
+                                    .foregroundStyle(ChatTheme.secondary)
                                 }
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("settings.aiPrivacy")
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("settings.privacy")
+                    }
+                    sectionLabel("About")
+                    group {
+                        linkRow(ChatSettingsInfo.privacyURL, symbol: "hand.raised.fill",
+                                tint: Color(red: 0.2, green: 0.78, blue: 0.35), title: "Privacy Policy",
+                                identifier: "settings.privacy")
+                        divider
+                        linkRow(ChatSettingsInfo.termsURL, symbol: "doc.text.fill", tint: .gray,
+                                title: "Terms of Service", identifier: "settings.terms")
+                        divider
+                        linkRow(ChatSettingsInfo.feedbackURL, symbol: "bubble.left.fill", tint: .orange,
+                                title: "Contact and feedback", identifier: "settings.feedback")
                         divider
                         row(symbol: "info", tint: Color(red: 0.56, green: 0.56, blue: 0.58), title: "Version") {
                             Text(ChatSettingsInfo.version).foregroundStyle(ChatTheme.secondary)
@@ -86,6 +84,7 @@ struct ChatSettingsView: View {
                         .accessibilityIdentifier("settings.version")
                     }
                     if store.isAuthenticated {
+                        sectionLabel("Account")
                         group {
                             Button { confirmingSignOut = true } label: {
                                 Text("Sign out").font(.system(size: 16, weight: .medium)).foregroundStyle(.red)
@@ -93,14 +92,19 @@ struct ChatSettingsView: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("account.signOut")
+                            Rectangle().fill(ChatTheme.separator).frame(height: 0.5).padding(.horizontal, 16)
+                            NavigationLink { ChatDeleteAccountView(store: store) } label: {
+                                Text("Delete account").font(.system(size: 16)).foregroundStyle(.red)
+                                    .frame(maxWidth: .infinity, minHeight: 50).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("settings.deleteAccount")
                         }
                         Text(
                             "Signing out removes this account from this device. Your cloud conversations stay in your account."
                         )
                         .font(.system(size: 12.5)).foregroundStyle(ChatTheme.tertiary)
                         .padding(.horizontal, 16)
-                        NavigationLink("Delete account") { ChatDeleteAccountView(store: store) }
-                            .foregroundStyle(.red).padding().accessibilityIdentifier("settings.deleteAccount")
                     }
                 }
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 28)
@@ -173,8 +177,28 @@ struct ChatSettingsView: View {
                 Rectangle().fill(ChatTheme.separator).frame(height: 0.5)
                 ChatCreditSummary(usage: usage).padding(16)
             }
+            if shop != nil {
+                Rectangle().fill(ChatTheme.separator).frame(height: 0.5)
+                Button { showShop = true } label: {
+                    HStack {
+                        Label("Buy credits", systemImage: "plus.circle.fill").font(.system(size: 16, weight: .medium))
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(ChatTheme.tertiary)
+                    }
+                    .foregroundStyle(ChatTheme.accentText)
+                    .padding(.horizontal, 16).frame(minHeight: 50).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("settings.buyCredits")
+            }
         }
         .chatCard(corner: 20)
+        .sheet(isPresented: $showShop) {
+            if let shop {
+                ChatCreditShopView(store: store, shop: shop)
+            }
+        }
     }
 
     // MARK: Building blocks
@@ -190,6 +214,47 @@ struct ChatSettingsView: View {
 
     private var divider: some View {
         Rectangle().fill(ChatTheme.separator).frame(height: 0.5).padding(.leading, 57)
+    }
+
+    private var chevron: some View {
+        Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(ChatTheme.tertiary)
+    }
+
+    /// External pages share one row style: label in the primary color, an
+    /// "opens in browser" arrow on the trailing edge.
+    private func linkRow(_ url: URL, symbol: String, tint: Color, title: LocalizedStringKey,
+                         identifier: String) -> some View {
+        Link(destination: url) {
+            row(symbol: symbol, tint: tint, title: title) {
+                Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(ChatTheme.tertiary)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// Guests see what an account adds before the sign-in choices.
+    private var signInCard: some View {
+        Button { dismiss(); store.showsLogin = true } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "person.crop.circle.fill").font(.system(size: 46))
+                    .foregroundStyle(ChatTheme.tertiary).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Sign in to Typeflux").font(.system(size: 17, weight: .semibold)).foregroundStyle(.primary)
+                    Text("Sync conversations and share credits with your Mac.")
+                        .font(.system(size: 13.5)).foregroundStyle(ChatTheme.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 4)
+                chevron
+            }
+            .padding(16).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .chatCard(corner: 20)
+        .accessibilityIdentifier("settings.login")
     }
 
     private func row(symbol: String, tint: Color, title: LocalizedStringKey,

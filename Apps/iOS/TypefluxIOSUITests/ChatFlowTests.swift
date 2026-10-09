@@ -167,7 +167,8 @@ final class ChatFlowTests: XCTestCase {
         openHistory(app)
         app.buttons["chat.history.preview-tools"].tap()
         XCTAssertTrue(app.staticTexts["chat.run.status"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["chat.run.status"].label, "Waiting for the originating device")
+        XCTAssertEqual(app.staticTexts["chat.run.status"].label,
+                       "This step runs on your Mac. Keep Typeflux open there and online.")
         XCTAssertFalse(app.buttons["modelPicker"].isEnabled)
         attachScreenshot(app, name: "v4-desktop-tool")
         app.buttons["Stop response"].tap()

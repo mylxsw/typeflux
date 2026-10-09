@@ -28,12 +28,17 @@ final class ChatStore {
     var imageDataURL: String?
     var errorMessage: String?
     var infoMessage: String?
+    /// The last send, regenerate or resume was refused because the account has no
+    /// credits left. The conversation offers buying credits until this clears.
+    private(set) var creditsExhausted = false
 
     let isSynthetic: Bool
     let deviceID: String
     private let service: any ChatAPI
     private let credentials: any CredentialStore
     private let reconnectDelay: Duration
+    /// The server's conversation page size; a shorter page means no more history.
+    private let historyPageSize: Int
     var showsLogin = false
     var showsConsent = false
     var example: ChatExample?
@@ -57,8 +62,10 @@ final class ChatStore {
         deviceID: String,
         isSynthetic: Bool = false,
         consentDefaults: UserDefaults = .standard,
-        reconnectDelay: Duration = .milliseconds(500)
+        reconnectDelay: Duration = .milliseconds(500),
+        historyPageSize: Int = 50
     ) {
+        self.historyPageSize = max(1, historyPageSize)
         self.consentDefaults = consentDefaults
         self.service = service
         self.credentials = credentials
@@ -76,7 +83,7 @@ final class ChatStore {
             isAuthenticated = true
             await refreshHome()
             await loadDisclosure()
-        } catch { errorMessage = error.localizedDescription }
+        } catch { errorMessage = Self.userMessage(for: error) }
     }
 
     func login(email: String, password: String) async {
@@ -108,7 +115,7 @@ final class ChatStore {
     func signOut() async {
         let token = session?.refreshToken
         resetAccount()
-        do { try credentials.clear() } catch { errorMessage = error.localizedDescription }
+        do { try credentials.clear() } catch { errorMessage = Self.userMessage(for: error) }
         // Local state is gone before awaiting server revocation.
         if let token {
             try? await service.logout(refreshToken: token)
@@ -128,7 +135,7 @@ final class ChatStore {
             let values = try await authorized { [service] token in try await service.list(token: token, offset: 0) }
             try checkAccount(generation)
             conversations = values
-            hasMore = !values.isEmpty
+            hasMore = values.count >= historyPageSize
             let catalog = try await authorized { [service] token in try await service.models(token: token) }
             try checkAccount(generation)
             models = catalog
@@ -158,7 +165,7 @@ final class ChatStore {
             let existing = Set(conversations.map(\.id))
             let additions = values.filter { !existing.contains($0.id) }
             conversations += additions
-            hasMore = !additions.isEmpty
+            hasMore = !additions.isEmpty && values.count >= historyPageSize
         } catch { report(error, generation: generation) }
     }
 
@@ -233,6 +240,7 @@ final class ChatStore {
             guard generation == accountGeneration, selection == selectionGeneration else { return }
             clearSubmittedComposer(request, draft: submittedDraft)
             pendingRequest = nil
+            creditsExhausted = false
             accept(value)
             isSending = false
             activeSendID = nil
@@ -394,6 +402,7 @@ private extension ChatStore {
         isSending = false
         pendingRequest = nil
         activeSendID = nil
+        creditsExhausted = false
     }
 
     private func accept(_ value: ChatConversation) {
@@ -406,7 +415,7 @@ private extension ChatStore {
 
     private func startObservation() {
         observationTask?.cancel()
-        guard isForeground, let id = selectedID, isRunning else { return }
+        guard isForeground, let id = selectedID, isRunning, !isPausedForCredits else { return }
         let generation = accountGeneration
         let selection = selectionGeneration
         observationTask = Task { [weak self] in
@@ -425,7 +434,7 @@ private extension ChatStore {
                             await self?.receive(value, generation: generation, selection: selection)
                         }
                     }
-                    if !isRunning {
+                    if !isRunning || isPausedForCredits {
                         return
                     }
                     // The server deliberately closes healthy streams after 30 seconds.
@@ -557,15 +566,16 @@ private extension ChatStore {
 
     private func report(_ error: Error, generation: Int, signInRejection: String? = nil) {
         guard generation == accountGeneration, !(error is CancellationError), !Task.isCancelled else { return }
-        if case ChatAPIError.server("AUTH_OAUTH_INVALID_TOKEN", _) = error {
+        if case ChatAPIError.server(Self.creditsExhaustedCode, _) = error {
+            creditsExhausted = true
+            errorMessage = Self.creditsExhaustedMessage
+        } else if case ChatAPIError.server("AUTH_OAUTH_INVALID_TOKEN", _) = error {
             errorMessage = signInRejection ??
                 "The server could not verify your sign-in. Please try again or contact support."
-        } else if case let ChatAPIError.server(_, message) = error {
-            errorMessage = message ?? "The server could not complete this request."
         } else if case ChatAPIError.unauthorized = error {
             errorMessage = signInRejection ?? "Please check your email and password."
         } else {
-            errorMessage = error.localizedDescription
+            errorMessage = Self.userMessage(for: error)
         }
     }
 }
@@ -885,5 +895,140 @@ extension ChatStore {
             try checkAccount(generation)
             return true
         } catch { report(error, generation: generation); return false }
+    }
+}
+
+// MARK: - Credits and App Store purchases
+
+extension ChatStore {
+    nonisolated static let creditsExhaustedCode = "CREDITS_EXHAUSTED"
+    nonisolated static let creditsExhaustedMessage =
+        "You've used all your credits. Buy more to keep going, or wait for your monthly credits to reset."
+
+    /// The selected run stopped at a checkpoint because credits ran out.
+    var isPausedForCredits: Bool {
+        conversation?.run?.isPausedForCredits == true
+    }
+
+    /// Shows the "out of credits" card: a paused run or a refused message.
+    var needsCredits: Bool {
+        isAuthenticated && (isPausedForCredits || creditsExhausted)
+    }
+
+    /// Continues a credit-paused run. The server checks the balance again; a run
+    /// that is still short stays paused and the card stays visible.
+    func resumeRun() async {
+        guard let value = conversation, let run = value.run, run.isPausedForCredits, !isSending else { return }
+        let generation = accountGeneration
+        let selection = selectionGeneration
+        isSending = true
+        errorMessage = nil
+        defer {
+            if generation == accountGeneration, selection == selectionGeneration {
+                isSending = false
+            }
+        }
+        do {
+            let updated = try await authorized { [service] token in
+                try await service.resume(conversationId: value.id, runId: run.id, token: token)
+            }
+            guard generation == accountGeneration, selection == selectionGeneration else { return }
+            creditsExhausted = false
+            accept(updated)
+            isSending = false
+            startObservation()
+        } catch {
+            if selection == selectionGeneration {
+                report(error, generation: generation)
+            }
+        }
+    }
+
+    /// Packs on sale in the App Store, in the app's language.
+    func appleCreditPacks() async throws -> ChatAppleCreditPacks {
+        let language = Locale.preferredLanguages.first?.hasPrefix("zh") == true ? "zh-CN" : "en"
+        return try await authorized { [service] token in
+            try await service.appleCreditPacks(language: language, token: token)
+        }
+    }
+
+    /// Delivers a StoreKit transaction to this account. Throws when the server
+    /// has not taken responsibility for it; the caller then keeps it unfinished.
+    func submitApplePurchase(_ signedTransaction: String) async throws -> ChatApplePurchaseReceipt {
+        let generation = accountGeneration
+        let receipt = try await authorized { [service] token in
+            try await service.submitAppleTransaction(signedTransaction, token: token)
+        }
+        try checkAccount(generation)
+        if receipt.status == "granted" {
+            creditsExhausted = false
+            if errorMessage == Self.creditsExhaustedMessage {
+                errorMessage = nil
+            }
+        }
+        await refreshAccountDetails()
+        return receipt
+    }
+
+    /// The signed-in account as a StoreKit `appAccountToken`, so the server can
+    /// refuse to credit a purchase to anyone else.
+    var purchaseAccountToken: UUID? {
+        guard isAuthenticated, let id = profile?.id else { return nil }
+        return UUID(uuidString: id)
+    }
+}
+
+// MARK: - User-facing errors
+
+extension ChatStore {
+    /// A sentence a person can act on. Type names, status codes and English
+    /// server diagnostics never reach the screen.
+    nonisolated static func userMessage(for error: Error) -> String {
+        switch error {
+        case let ChatAPIError.server(code, message):
+            switch code {
+            case creditsExhaustedCode: return creditsExhaustedMessage
+            case "RATE_LIMITED", "TOO_MANY_REQUESTS", "CHAT_RATE_LIMITED":
+                return "You're sending requests too quickly. Wait a moment and try again."
+            case "NOT_FOUND", "ASK_NOT_FOUND":
+                return "This conversation is no longer available. It may have been deleted on another device."
+            case "ASK_CONFLICT":
+                return "This conversation changed on another device. Pull down to refresh, then try again."
+            case "AUTH_RESET_CODE_INVALID":
+                return "That code isn't right or has expired. Check the latest email and try again."
+            case "AUTH_RESET_CODE_LOCKED", "AUTH_ACTIVATION_LOCKED":
+                return "Too many attempts. Please wait a while and try again."
+            case "AUTH_PASSWORD_TOO_WEAK":
+                return "Use at least 8 characters, with uppercase and lowercase letters and a number."
+            case "AUTH_EMAIL_NOT_FOUND":
+                return "No Typeflux account uses this email."
+            case "AUTH_USER_NOT_ACTIVE":
+                return "This account isn't activated yet. Check your email for the activation link."
+            default:
+                let text = message?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                // Server messages are written for people only when they are full sentences.
+                return text.count > 12 && text.contains(" ") && text.first?.isUppercase == true
+                    ? text : "Typeflux couldn't complete this request. Please try again."
+            }
+        case ChatAPIError.unauthorized:
+            return "Please sign in again."
+        case ChatAPIError.unavailable:
+            return "This feature isn't available right now. Please try again later."
+        case ChatAPIError.invalidResponse:
+            return "Typeflux sent an unexpected response. Please try again."
+        case let error as URLError:
+            switch error.code {
+            case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .internationalRoamingOff:
+                return "You're offline. Check your connection and try again."
+            case .timedOut:
+                return "Typeflux is taking too long to respond. Please try again."
+            default:
+                return "Couldn't reach Typeflux. Check your connection and try again."
+            }
+        case let error as LocalizedError where error.errorDescription != nil:
+            return error.errorDescription ?? ""
+        default:
+            return "Something went wrong. Please try again."
+        }
     }
 }

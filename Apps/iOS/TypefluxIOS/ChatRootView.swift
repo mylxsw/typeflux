@@ -7,6 +7,8 @@ import UIKit
 struct ChatRootView: View {
     @Bindable var store: ChatStore
     @Bindable var preferences: ChatPreferences
+    @Bindable var shop: ChatCreditShop
+    @State private var showShop = false
     @State private var checkingSession = true
     @State private var sidebarOpen = false
     @State private var dragOffset: CGFloat = 0
@@ -24,7 +26,7 @@ struct ChatRootView: View {
             let progress = sidebarProgress(width: width)
             ZStack(alignment: .leading) {
                 ChatDetailView(store: store, onOpenSidebar: { setSidebar(true) },
-                               onNewConversation: newConversation)
+                               onNewConversation: newConversation, onBuyCredits: { showShop = true })
                     .accessibilityHidden(sidebarOpen)
                     .allowsHitTesting(!sidebarOpen)
                 // A thin leading strip opens the sidebar, like the system back swipe.
@@ -82,13 +84,17 @@ struct ChatRootView: View {
             ChatConsentView(store: store)
         }
         .sheet(isPresented: $showSettings, onDismiss: { settingsDismissed = true }) {
-            ChatSettingsView(store: store, preferences: preferences)
+            ChatSettingsView(store: store, preferences: preferences, shop: shop)
                 .onAppear { settingsDismissed = false }
+        }
+        .sheet(isPresented: $showShop) {
+            ChatCreditShopView(store: store, shop: shop)
         }
         .onChange(of: store.isAuthenticated) { _, authenticated in
             sidebarOpen = false
             if !authenticated {
                 showSettings = false
+                showShop = false
             }
         }
     }

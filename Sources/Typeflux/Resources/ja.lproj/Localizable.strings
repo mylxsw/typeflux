@@ -1995,6 +1995,7 @@
 "ask.local.card.cloudQuestion" = "クラウドのモデルを使いますか？";
 "ask.local.identity" = "未サインイン";
 "ask.local.identity.detail" = "%@ · このMacに保存";
+"ask.local.identity.storage" = "チャットはこのMacに保存";
 "ask.cloudPromo.body" = "サインインすると、画像認識やWeb検索に対応したクラウドのモデルを使え、会話がデバイス間で同期されます。";
 "ask.cloudPromo.signIn" = "サインイン";
 "ask.cloudPromo.dismiss" = "30日間表示しない";
@@ -2554,6 +2555,7 @@
 "ask.plugin.askAI.selection" = "選択したテキストを%@";
 "ask.plugin.writeBack.failed" = "アプリに書き戻せませんでした。結果はクリップボードにあります";
 "ask.plugin.hint.keyword" = "↩ 送信 · ⇥ キーワードを使う";
+"ask.plugin.hint.keyword.enter" = "↩ キーワードを使う · ⌘↩ AI に質問";
 "ask.plugin.hint.ready" = "↩ 実行";
 "ask.plugin.hint.running" = "esc キャンセル";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
@@ -2561,6 +2563,7 @@
 "ask.plugin.section" = "キーワード";
 "ask.plugin.waiting" = "処理するテキストを入力";
 "ask.plugin.enter" = "スペースまたは ⇥ で使う";
+"ask.plugin.enter.return" = "↩ で使う";
 "ask.plugin.running" = "処理中…";
 "ask.workflow.section" = "ワークフロー";
 "ask.workflow.footnote" = "キーワードで自分のスクリプト（Python、Node、TypeScript、シェル、AppleScript、任意のプログラム）を実行します。あなたの権限で動くので、理解できるものだけを信頼してください。";
@@ -3803,6 +3806,10 @@
 "account.addon.nextExpiry" = "次の有効期限：%@ クレジット（%@）";
 "account.addon.expiringSoon" = "%@ クレジットが %@ に失効します。それまでにご利用ください。";
 
+"ask.submission.models" = "設定 → モデル";
+"ask.usage.empty" = "使用量はまだありません";
+"ask.usage.emptyHelp" = "メッセージを送信すると使用量が表示されます。";
+"ask.submission.signIn" = "Typeflux Cloud にログイン";
 /* File indexing status and file-system-free folder labels */
 "ask.plugin.files.skipped" = "スキップ：%@";
 "ask.files.skip.timeout" = "タイムアウトしたフォルダ %@ 件";

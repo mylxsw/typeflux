@@ -22,12 +22,18 @@ struct ChatSidebar: View {
             searchField.padding(.horizontal, 4).padding(.top, 10).padding(.bottom, 4)
             List {
                 if !store.isAuthenticated {
+                    guestRow(symbol: "person.crop.circle.badge.plus", tint: ChatTheme.accentText,
+                             title: Text("Sign in to sync your conversations")) { store.showsLogin = true }
                     Section {
-                        Button("Sign in to sync your conversations") { store.showsLogin = true }
                         ForEach(ChatExample.allCases) { example in
-                            Button(example.title) { store.example = example; onSelect("example:" + example.id) }
+                            guestRow(symbol: "sparkles", tint: .primary, title: Text(verbatim: example.title)) {
+                                store.example = example; onSelect("example:" + example.id)
+                            }
                         }
-                    } header: { Text("Examples") }
+                    } header: {
+                        Text("Examples").font(.system(size: 12.5, weight: .semibold)).foregroundStyle(ChatTheme.tertiary)
+                            .textCase(nil)
+                    }
                 }
                 if store.isSynthetic {
                     Label("Synthetic preview · No network", systemImage: "testtube.2")
@@ -152,6 +158,24 @@ struct ChatSidebar: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
+    /// Guest entries share the history rows' shape instead of default list cells.
+    private func guestRow(symbol: String, tint: Color, title: Text,
+                          action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: symbol).font(.system(size: 14)).foregroundStyle(tint == .primary
+                    ? ChatTheme.accent : tint).frame(width: 20)
+                title.font(.system(size: 15, weight: tint == .primary ? .regular : .semibold))
+                    .foregroundStyle(tint).lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12).frame(minHeight: 40).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowInsets(EdgeInsets(top: 1, leading: 4, bottom: 1, trailing: 4))
+        .listRowBackground(Color.clear).listRowSeparator(.hidden)
+    }
+
     @ViewBuilder private var emptyOverlay: some View {
         if store.isAuthenticated, store.conversations.isEmpty, !store.isLoading {
             ContentUnavailableView("Start a conversation", systemImage: "bubble.left.and.bubble.right",
@@ -165,7 +189,12 @@ struct ChatSidebar: View {
     private var footer: some View {
         Button(action: onSettings) {
             HStack(spacing: 10) {
-                ChatAvatar(initials: store.initials, size: 32)
+                if store.isAuthenticated {
+                    ChatAvatar(initials: store.initials, size: 32)
+                } else {
+                    Image(systemName: "person.crop.circle.fill").font(.system(size: 30))
+                        .foregroundStyle(ChatTheme.tertiary).frame(width: 32, height: 32).accessibilityHidden(true)
+                }
                 Text(store.isAuthenticated ? store.displayName : NSLocalizedString("Guest mode", comment: ""))
                     .font(.system(
                         size: 14.5,
