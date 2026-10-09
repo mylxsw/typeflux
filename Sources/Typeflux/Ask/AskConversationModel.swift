@@ -75,12 +75,25 @@ final class AskConversationModel: ObservableObject {
     var lookUpInWordBook: @MainActor (String) -> Void = { text in
         AskWordBookWindowController.shared.show(lookingUp: text)
     }
+    /// Saved AI prompt results; the window controller supplies them (`AskConversationModel+Notes`).
+    var notes: (any AskNoteStoring)?
+    /// The shown result's text and the note it was saved as, so ⌘S again takes it out.
+    var launcherNote: (body: String, id: UUID)?
+    /// Opens the notes window on a note; tests record it instead.
+    var openNotes: @MainActor (UUID?) -> Void = { id in AskNotesWindowController.shared.show(selecting: id) }
+    /// Shows a result moved out of the launcher (⌘O); tests record it instead.
+    var presentResultWindow: @MainActor (AskResultDocument) -> Void = { AskResultWindowController.shared.present($0) }
+    /// Opens a saved note in a result window; tests record it instead.
+    var openNoteWindow: @MainActor (AskNote) -> Void = { AskResultWindowController.shared.open($0) }
+    /// What result windows opened from the launcher can do.
+    var resultWindowServices: AskResultDocument.Services { AskResultWindowController.shared.services }
     /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.
     lazy var plugins: AskPluginSession = {
         let session = AskPluginSession(plugins: makeLauncherPlugins()) { [weak self] in
             self?.launcherKeywords ?? AskPluginRegistry.defaultKeywords
         }
         connectWordBook(to: session)
+        connectNotes(to: session)
         session.onActivate = { [weak self] keyword in self?.keywordUsage.record(keyword) }
         return session
     }()

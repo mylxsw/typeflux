@@ -437,7 +437,7 @@ struct AskComposer: View {
         case .optionEnter:
             guard let file, file.kind != .folder else { return false }
             runFileAction(.openWith, file)
-        case .escape, .shiftTab, .commandD, .commandC, .commandE, .commandZ, .commandS, .commandB:
+        case .escape, .shiftTab, .commandD, .commandC, .commandE, .commandZ, .commandS, .commandB, .commandO:
             return false
         }
         return true
@@ -459,7 +459,7 @@ struct AskComposer: View {
             return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, optionName: plugin.optionName,
                                     phase: plugins.phase, previous: plugins.previous, partial: plugins.partial,
                                     comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
-                                    offersAskAI: asks)
+                                    offersAskAI: asks, savesNoteWhenDone: plugins.savesNoteWhenDone)
         }
         if let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
             return AskPluginDisplay(hint: hint, title: plugin.title, symbol: plugin.symbol, phase: .waiting,
@@ -579,18 +579,21 @@ struct AskComposer: View {
         case .shiftTab: _ = plugins.cycle(-1, selection: selection, text: text, language: language)
         case .enter: if display.asksAI { askAIFromPlugin() } else { runPluginMain() }
         case .commandEnter: if display.offersAskAI { askAIFromPlugin() }
-        case .optionEnter, .commandR, .commandD, .shiftCommandC, .commandS, .commandB:
+        case .optionEnter, .commandR, .commandD, .shiftCommandC, .commandS, .commandB, .commandO:
             let shortcut: AskPluginAction.Shortcut = switch key {
             case .optionEnter: .optionEnter
             case .commandR: .commandR
             case .commandD: .commandD
             case .commandS: .commandS
             case .commandB: .commandB
+            case .commandO: .commandO
             default: .shiftCommandC
             }
-            // ⇧⌘C, ⌘S and ⌘B fall through to the editor when the result offers nothing for them.
-            guard let action = plugins.output?.action(for: shortcut) else {
-                return ![.shiftCommandC, .commandS, .commandB].contains(key)
+            // A result still streaming can already be saved (⌘S) or moved to a window (⌘O).
+            let offering = [.commandS, .commandO].contains(key) ? plugins.currentOutput : plugins.output
+            // ⇧⌘C, ⌘S, ⌘B and ⌘O fall through to the editor when the result offers nothing for them.
+            guard let action = offering?.action(for: shortcut) else {
+                return ![.shiftCommandC, .commandS, .commandB, .commandO].contains(key)
             }
             // ⇧⌘C copies and stays, like ⌘C.
             if shortcut == .shiftCommandC, case let .copy(text) = action.kind { model.copyPluginText(text) } else { performPluginAction(action) }
@@ -1116,7 +1119,8 @@ struct AskComposer: View {
             dismissedSlash = slash?.range.location
             closePalette()
         case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE,
-             .commandZ, .commandS, .commandB, .right, .commandY, .optionCommandC, .shiftCommandEnter, .commandDown, .number:
+             .commandZ, .commandS, .commandB, .commandO, .right, .commandY, .optionCommandC, .shiftCommandEnter, .commandDown,
+             .number:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }

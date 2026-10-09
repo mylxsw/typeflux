@@ -26,6 +26,7 @@ final class StatusBarMenuSupportTests: XCTestCase {
         XCTAssertEqual(menu.items.filter { $0.title == L("menu.openVoiceStudio") }.count, 1)
         XCTAssertFalse(menu.items.contains { $0.title == L("menu.openAskConversations") })
         XCTAssertEqual(menu.items[index + 1].title, L("menu.addVocabulary"))
+        XCTAssertEqual(menu.items[index + 2].title, L("menu.notes"))
         XCTAssertNil(menu.items[index].submenu)
         XCTAssertTrue(menu.items[index].isEnabled)
         menu.performActionForItem(at: index)

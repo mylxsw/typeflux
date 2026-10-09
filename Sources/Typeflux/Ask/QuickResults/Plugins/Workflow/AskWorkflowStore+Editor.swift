@@ -138,6 +138,7 @@ extension AskWorkflowStore {
         case AskPrefixPlugin.id: return L("ask.plugin.prefix.title")
         case AskSettingsPlugin.id: return L("ask.plugin.setting.title")
         case AskHistoryPlugin.id: return L("ask.plugin.history.title")
+        case AskNotesPlugin.id: return L("ask.notes.title")
         default:
             guard pluginID.hasPrefix(AskWorkflowPlugin.idPrefix) else { return nil }
             let id = String(pluginID.dropFirst(AskWorkflowPlugin.idPrefix.count))

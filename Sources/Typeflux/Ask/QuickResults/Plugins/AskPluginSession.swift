@@ -61,6 +61,12 @@ final class AskPluginSession: ObservableObject {
     var clock: () -> Date = Date.init
     /// When the shown result arrived.
     private var shownAt: Date?
+    /// Runs moved to a result window (⌘O), by generation: they report there instead of here.
+    private var handoffSinks: [Int: AskPluginHandoff.Sink] = [:]
+    /// ⌘S while the result streams: it is saved to the notes once it is done.
+    @Published private(set) var savesNoteWhenDone = false
+    /// Saves a finished result whose ⌘S came while it streamed.
+    var saveNoteWhenDone: (@MainActor (AskPluginOutput) -> Void)?
 
     init(plugins: [any AskLauncherPlugin], keywords: @escaping () -> [AskKeyword]) {
         self.plugins = Dictionary(plugins.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -276,8 +282,14 @@ final class AskPluginSession: ObservableObject {
                          plugin: any AskLauncherPlugin, shown: AskPluginOutput? = nil) async {
         do {
             var output = try await plugin.run(request, plan: plan) { [weak self] partial in
-                guard let self, current == self.generation, self.isRunning else { return }
+                guard let self else { return }
+                if let sink = self.handoffSinks[current] { sink(.progress(partial)); return }
+                guard current == self.generation, self.isRunning else { return }
                 self.set(\.partial, partial)
+            }
+            if let sink = handoffSinks.removeValue(forKey: current) {
+                sink(Task.isCancelled ? .cancelled : .done(output))
+                return
             }
             guard !Task.isCancelled, current == generation else { return }
             if let shown {
@@ -290,10 +302,19 @@ final class AskPluginSession: ObservableObject {
             set(\.phase, .done(plan, output))
             shownAt = clock()
             if output.recordsAtOnce, let lookup = output.wordBook { recordWordBook?(lookup) }
+            if savesNoteWhenDone {
+                set(\.savesNoteWhenDone, false)
+                saveNoteWhenDone?(output)
+            }
             scheduleRerun(of: output, plan: plan, generation: current, plugin: plugin)
         } catch is CancellationError {
+            handoffSinks.removeValue(forKey: current)?(.cancelled)
             return
         } catch {
+            if let sink = handoffSinks.removeValue(forKey: current) {
+                sink(.failed(error as? AskPluginFailure ?? AskPluginFailure(message: error.localizedDescription)))
+                return
+            }
             guard !Task.isCancelled, current == generation else { return }
             let failure = error as? AskPluginFailure ?? AskPluginFailure(message: error.localizedDescription)
             set(\.previous, nil)
@@ -357,6 +378,7 @@ final class AskPluginSession: ObservableObject {
         task = nil
         shownAt = nil
         set(\.partial, nil)
+        set(\.savesNoteWhenDone, false)
     }
 
     private func set<Value: Equatable>(_ path: ReferenceWritableKeyPath<AskPluginSession, Value>, _ value: Value) {
@@ -408,5 +430,74 @@ extension AskPluginSession {
             chained = nil
         }
         return chained?.keywords ?? []
+    }
+}
+
+// MARK: - Result windows and notes
+
+/// A result leaving the launcher for a window of its own (⌘O), with what it needs to run again.
+struct AskPluginHandoff {
+    enum Event {
+        case progress(AskPluginOutput)
+        case done(AskPluginOutput)
+        case failed(AskPluginFailure)
+        case cancelled
+    }
+
+    typealias Sink = @MainActor (Event) -> Void
+
+    var plugin: any AskLauncherPlugin
+    var plan: AskPluginPlan
+    var request: AskPluginRequest
+    /// The result so far: finished, or as much as has streamed in.
+    var output: AskPluginOutput?
+    /// Still streaming: the rest arrives through the sink.
+    var running: Bool
+    /// Stops a run that is still going; does nothing once it ended.
+    var cancel: @MainActor () -> Void
+}
+
+extension AskPluginSession {
+    /// The shown result, or the one streaming in.
+    var currentOutput: AskPluginOutput? { output ?? (isRunning ? partial : nil) }
+
+    /// Hands the shown result to `sink`'s owner. A run still streaming keeps going and
+    /// reports there from now on; the launcher can close without stopping it. Nil
+    /// when there is no result to hand over.
+    func handOff(to sink: @escaping AskPluginHandoff.Sink) -> AskPluginHandoff? {
+        guard let plugin, let request else { return nil }
+        switch phase {
+        case let .done(plan, output):
+            return AskPluginHandoff(plugin: plugin, plan: plan, request: request, output: output, running: false,
+                                    cancel: {})
+        case let .running(plan):
+            // A live plan may still be waiting out its debounce, with nothing yet to hand over.
+            guard plan.mode == .onSubmit, let running = task else { return nil }
+            // Leaving the running phase clears `partial`, so take it first.
+            let streamed = partial
+            let handed = generation
+            handoffSinks[handed] = sink
+            // The run no longer belongs to the launcher: closing it must not cancel the run.
+            task = nil
+            generation += 1
+            set(\.savesNoteWhenDone, false)
+            set(\.phase, .ready(plan))
+            return AskPluginHandoff(plugin: plugin, plan: plan, request: request, output: streamed, running: true,
+                                    cancel: { running.cancel() })
+        default:
+            return nil
+        }
+    }
+
+    /// ⌘S while streaming: asks to save the result once it is done, or takes the request back.
+    func toggleSaveNoteWhenDone() {
+        guard isRunning else { return }
+        set(\.savesNoteWhenDone, !savesNoteWhenDone)
+    }
+
+    /// Shows the result as saved in the notes or not, without running again.
+    func showNoteSaved(_ saved: Bool) {
+        guard case let .done(plan, output) = phase, output.starred != nil else { return }
+        set(\.phase, .done(plan, output.noteSaving(saved)))
     }
 }
