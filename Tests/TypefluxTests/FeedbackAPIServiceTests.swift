@@ -463,6 +463,15 @@ private actor FeedbackStubSession: CloudHTTPSession {
     }
 }
 
+private actor PresignCounter {
+    private var count = 0
+
+    func next() -> Int {
+        count += 1
+        return count
+    }
+}
+
 private struct FeedbackNoOpProber: CloudEndpointProbing {
     func probe(baseURL _: URL, nonce _: String, timeout _: TimeInterval) async throws -> CloudEndpointProbeResult {
         CloudEndpointProbeResult(latencyMs: 1, serverID: nil, serverVersion: nil, nonceMatches: true)
@@ -556,6 +565,83 @@ extension FeedbackAPIServiceTests {
         )
         let hosts = await session.requestedHosts
         XCTAssertEqual(hosts, ["api.example", "api-fallback.example", "api-fallback.example"])
+    }
+
+    func testCanonicalAbsoluteTargetFromFailoverEndpointUploadsToTheCanonicalAPIOrigin() async throws {
+        // FEEDBACK_UPLOAD_API_BASE_URL names api.example; the fallback
+        // endpoint issued the ticket because api.example returned 503.
+        let canonicalJSON = Self.proxyTargetJSON.replacingOccurrences(
+            of: #""url":"/api/v1/feedback/uploads/upload-9""#,
+            with: #""url":"https://api.example/api/v1/feedback/uploads/upload-9""#
+        )
+        let session = FeedbackStubSession()
+        let presignCalls = PresignCounter()
+        await session.setHandler { request in
+            if request.url?.path == "/api/v1/feedback/uploads/presign" {
+                if await presignCalls.next() == 1 {
+                    return (Data(), Self.httpResponse(url: request.url!, status: 503))
+                }
+                return (Data(canonicalJSON.utf8), Self.httpResponse(url: request.url!, status: 200))
+            }
+            XCTAssertEqual(request.url?.absoluteString, "https://api.example/api/v1/feedback/uploads/upload-9")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token-1")
+            return (Data(), Self.httpResponse(url: request.url!, status: 204))
+        }
+        let executor = makeExecutor(
+            session: session,
+            baseURLs: [baseURL, URL(string: "https://api-fallback.example")!]
+        )
+
+        let target = try await FeedbackAPIService.createImageUploadTarget(
+            filename: "screen.png", contentType: "image/png", sizeBytes: 9, token: "token-1", executor: executor
+        )
+        XCTAssertEqual(target.issuingAPIBaseURL?.host, "api-fallback.example")
+        XCTAssertEqual(target.trustedAPIBaseURLs.map(\.host), ["api.example", "api-fallback.example"])
+        XCTAssertTrue(try FeedbackAPIService.resolveUploadURL(for: target).isAPIOrigin)
+
+        try await FeedbackAPIService.uploadImage(
+            data: Data("png-bytes".utf8), filename: "screen.png", contentType: "image/png",
+            to: target, token: "token-1", session: session
+        )
+        let hosts = await session.requestedHosts
+        XCTAssertEqual(hosts, ["api.example", "api-fallback.example", "api.example"])
+    }
+
+    func testCanonicalOriginOutsideTheConfiguredAPIEndpointsIsRejected() async throws {
+        let session = FeedbackStubSession()
+        var target = proxyTarget(
+            url: "https://canonical.example/api/v1/feedback/uploads/upload-9",
+            issuingAPIBaseURL: URL(string: "https://api-fallback.example")
+        )
+        target.trustedAPIBaseURLs = [baseURL, URL(string: "https://api-fallback.example")!]
+
+        do {
+            try await FeedbackAPIService.uploadImage(
+                data: Data("png".utf8), filename: "screen.png", contentType: "image/png",
+                to: target, token: "token-1", session: session
+            )
+            XCTFail("An unknown origin must not receive the bearer")
+        } catch let error as FeedbackAPIError {
+            XCTAssertEqual(error, .invalidResponse)
+        }
+        let calls = await session.callCount
+        XCTAssertEqual(calls, 0)
+    }
+
+    func testTrustedAPIOriginMustMatchSchemeAndPort() throws {
+        var target = proxyTarget(
+            url: "http://api.example/api/v1/feedback/uploads/upload-9",
+            issuingAPIBaseURL: URL(string: "https://api-fallback.example")
+        )
+        target.trustedAPIBaseURLs = [baseURL]
+        XCTAssertThrowsError(try FeedbackAPIService.resolveUploadURL(for: target))
+
+        target = proxyTarget(
+            url: "https://api.example:8443/api/v1/feedback/uploads/upload-9",
+            issuingAPIBaseURL: URL(string: "https://api-fallback.example")
+        )
+        target.trustedAPIBaseURLs = [baseURL]
+        XCTAssertThrowsError(try FeedbackAPIService.resolveUploadURL(for: target))
     }
 
     func testAbsoluteSameOriginProxyTargetCarriesBearer() async throws {

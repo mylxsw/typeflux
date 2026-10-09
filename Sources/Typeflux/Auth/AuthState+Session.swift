@@ -21,8 +21,12 @@ extension AuthState {
         } else if hasRefreshToken {
             userProfile = loadStoredUserProfile()
             isLoggedIn = true
+            let generation = sessionGeneration
             Task {
-                switch await refreshStoredAccessToken(force: true) {
+                let result = await refreshStoredAccessToken(force: true)
+                // A login or logout while restoring owns the session now.
+                guard generation == sessionGeneration else { return }
+                switch result {
                 case .refreshed:
                     await refreshProfile()
                 case .invalidated:

@@ -32,17 +32,21 @@ struct FeedbackImageAttachment: Identifiable {
     var filename: String
     var thumbnail: NSImage?
     var state: FeedbackImageUploadState
+    /// The sign-in that uploaded the image; set when the upload finishes.
+    var uploadOwner: FeedbackUploadOwner?
 
     init(
         id: UUID = UUID(),
         filename: String,
         thumbnail: NSImage? = nil,
-        state: FeedbackImageUploadState
+        state: FeedbackImageUploadState,
+        uploadOwner: FeedbackUploadOwner? = nil
     ) {
         self.id = id
         self.filename = filename
         self.thumbnail = thumbnail
         self.state = state
+        self.uploadOwner = uploadOwner
     }
 }
 

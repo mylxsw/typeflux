@@ -67,6 +67,7 @@
 "feedback.toast.submitted" = "Feedback submitted. Thank you.";
 "feedback.error.emptyContent" = "Please enter feedback content.";
 "feedback.error.invalidImage" = "Unable to read this image.";
+"feedback.error.accountChanged" = "The account changed after this image was uploaded. Remove it and add it again.";
 "feedback.error.server" = "Failed to submit feedback.";
 "feedback.error.invalidResponse" = "Received an invalid feedback response.";
 

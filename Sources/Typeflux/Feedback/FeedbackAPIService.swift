@@ -49,8 +49,15 @@ struct FeedbackUploadTarget: Decodable, Equatable {
     let imageURL: String
     let uploadID: String
     /// Base URL of the API endpoint that issued this target. Relative upload
-    /// URLs resolve against it, and only this origin receives the bearer token.
+    /// URLs resolve against it.
     var issuingAPIBaseURL: URL?
+    /// The API base URLs this app is configured with, which already receive
+    /// the account bearer token for every API request. An absolute upload URL
+    /// on one of these origins (for example the canonical
+    /// `FEEDBACK_UPLOAD_API_BASE_URL` while another endpoint issued the
+    /// ticket) may receive the token too. This list comes from local
+    /// configuration, never from the response.
+    var trustedAPIBaseURLs: [URL] = []
 
     enum CodingKeys: String, CodingKey {
         case type, method, url, bucket, region, key, headers, fields
@@ -243,13 +250,18 @@ enum FeedbackAPIService {
 
         var target = responseData
         target.issuingAPIBaseURL = issuingBaseURL.value
+        target.trustedAPIBaseURLs = executor.selector.configuredEndpoints
         return target
     }
 
     /// Resolves the upload URL and decides whether it may carry the account
-    /// bearer token. API upload targets may be relative and must stay on the
-    /// issuing API origin; legacy presigned storage URLs are absolute HTTPS
-    /// URLs on another host and never receive the token.
+    /// bearer token. API upload targets are either relative to the issuing
+    /// API origin or absolute on an API origin this app is configured with
+    /// (the issuing one or the canonical upload origin); any other host is
+    /// rejected. Deployments whose canonical upload origin is not one of the
+    /// app's API endpoints must issue relative tickets. Legacy presigned
+    /// storage URLs are absolute HTTPS URLs on another host and never receive
+    /// the token.
     static func resolveUploadURL(for target: FeedbackUploadTarget) throws -> (url: URL, isAPIOrigin: Bool) {
         let apiBaseURL = target.issuingAPIBaseURL
         guard let url = URL(string: target.url, relativeTo: apiBaseURL)?.absoluteURL,
@@ -259,7 +271,8 @@ enum FeedbackAPIService {
         else {
             throw FeedbackAPIError.invalidResponse
         }
-        if let apiBaseURL, isSameOrigin(url, apiBaseURL) {
+        let apiOrigins = [apiBaseURL].compactMap { $0 } + target.trustedAPIBaseURLs
+        if apiOrigins.contains(where: { isSameOrigin(url, $0) }) {
             return (url, true)
         }
         // Only an absolute storage URL may leave the API origin, and only over

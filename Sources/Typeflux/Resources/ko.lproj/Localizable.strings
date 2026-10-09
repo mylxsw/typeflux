@@ -67,6 +67,7 @@
 "feedback.toast.submitted" = "피드백이 제출되었습니다. 감사합니다.";
 "feedback.error.emptyContent" = "피드백 내용을 입력하세요.";
 "feedback.error.invalidImage" = "이 이미지를 읽을 수 없습니다.";
+"feedback.error.accountChanged" = "이 이미지를 업로드한 후 계정이 변경되었습니다. 이미지를 제거한 뒤 다시 추가하세요.";
 "feedback.error.server" = "피드백 제출에 실패했습니다.";
 "feedback.error.invalidResponse" = "피드백 응답이 올바르지 않습니다.";
 

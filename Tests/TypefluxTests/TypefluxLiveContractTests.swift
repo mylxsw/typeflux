@@ -123,13 +123,16 @@ final class TypefluxLiveContractTests: XCTestCase {
 
         let changed = "\(password)-c"
         _ = try await AuthAPIService.changePassword(token: deviceB.accessToken, oldPassword: password, newPassword: changed)
+        // Every exit, including a failed assertion or an unexpected error,
+        // restores the password before the test ends.
+        var failure: Error?
         do {
             // The old access token is rejected immediately (no TTL window).
             do {
                 _ = try await AuthAPIService.fetchProfile(token: deviceA.accessToken)
                 XCTFail("Old access token must be rejected after a password change")
             } catch let error as AuthError {
-                guard case .unauthorized = error else { return XCTFail("Unexpected \(error)") }
+                guard case .unauthorized = error else { throw LiveContractFailure("Expected 401, got \(error)") }
             }
 
             let result = await state.refreshProfile()
@@ -147,19 +150,25 @@ final class TypefluxLiveContractTests: XCTestCase {
             await state.handleLoginSuccess(token: again.accessToken, expiresAt: again.expiresAt, refreshToken: again.refreshToken)
             let restored = await state.refreshProfile()
             XCTAssertEqual(restored, .authenticated)
-            _ = try await AuthAPIService.changePassword(token: again.accessToken, oldPassword: changed, newPassword: password)
         } catch {
-            // Restore the password even when an assertion path throws.
-            if let again = try? await AuthAPIService.login(email: email, password: changed) {
-                _ = try? await AuthAPIService.changePassword(
-                    token: again.accessToken,
-                    oldPassword: changed,
-                    newPassword: password
-                )
-            }
-            throw error
+            failure = error
         }
         state.logout(clearRecentInputMemory: false)
+        await restorePassword(from: changed)
+        if let failure { throw failure }
+    }
+
+    /// Changes the disposable account's password back, reporting a failure
+    /// instead of leaving later tests with an unknown password.
+    private func restorePassword(from changed: String) async {
+        do {
+            let login = try await AuthAPIService.login(email: email, password: changed)
+            _ = try await AuthAPIService.changePassword(
+                token: login.accessToken, oldPassword: changed, newPassword: password
+            )
+        } catch {
+            XCTFail("Could not restore the disposable account's password: \(error)")
+        }
     }
 
     // MARK: - ASR grants
@@ -170,31 +179,29 @@ final class TypefluxLiveContractTests: XCTestCase {
         let route = try await routing.fetchRoute(accessToken: login.accessToken, scenario: .voiceInput)
         let grant = TypefluxOfficialASRGrantSequence.Grant(route: route)
         let servers = route.serverBaseURLs
-        XCTAssertGreaterThanOrEqual(servers.count, 2, "configure two gateway origins")
-        let transport = DefaultTypefluxOfficialASRTransport()
-        let pcm = RemoteSTTTestAudio.pcm16MonoSilence()
+        guard servers.count >= 2 else {
+            throw LiveContractFailure("Configure two gateway origins; the API returned \(servers.count)")
+        }
 
-        // First use claims the grant (the isolated gateway has no speech
-        // provider, so the session itself ends with an upstream failure).
-        let firstError = await capture {
-            try await transport.transcribeViaWebSocket(
-                pcmData: pcm, apiBaseURL: servers[0].absoluteString, token: grant.token,
-                provider: grant.provider, scenario: .voiceInput, optimize: false, onUpdate: { _ in }
-            )
-        }
-        // Reusing it on another gateway is rejected before the upgrade.
-        let replayError = await capture {
-            try await transport.transcribeViaWebSocket(
-                pcmData: pcm, apiBaseURL: servers[1].absoluteString, token: grant.token,
-                provider: grant.provider, scenario: .voiceInput, optimize: false, onUpdate: { _ in }
-            )
-        }
-        print("LIVE first-use error: \(String(describing: firstError))")
-        print("LIVE replay error: \(String(describing: replayError))")
-        XCTAssertNotNil(replayError)
+        // The first use is admitted: the gateway claims the grant and upgrades.
+        let first = try await upgrade(server: servers[0], grant: grant)
+        XCTAssertEqual(first.status, 101, "first use must be admitted: \(String(describing: first.error))")
+        let settled = try await stableUsage(token: login.accessToken)
+
+        // Reusing it on another gateway is rejected before the upgrade with
+        // 403 ASR_GRANT_REJECTED. A transport outage has no HTTP status and
+        // fails this assertion instead of passing as a rejection.
+        let replay = try await upgrade(server: servers[1], grant: grant)
+        XCTAssertEqual(replay.status, 403, "replay must be rejected: \(String(describing: replay.error))")
+        XCTAssertNotNil(replay.error)
+
+        // The rejected replay adds no usage or credit debit.
+        try await Task.sleep(nanoseconds: 3_000_000_000)
+        let afterReplay = try await CloudUsageAPIService.fetchCurrentPeriodStats(token: login.accessToken)
+        XCTAssertEqual(afterReplay, settled)
     }
 
-    func testTranscriberFailoverUsesAFreshGrantPerGateway() async throws {
+    func testFailureAfterAudioUsesOneGrantAndNoSecondGateway() async throws {
         let login = try await AuthAPIService.login(email: email, password: password)
         let routing = LiveCountingRouting(upstream: TypefluxOfficialASRRoutingHTTPClient())
         let transcriber = TypefluxOfficialTranscriber(
@@ -206,6 +213,9 @@ final class TypefluxLiveContractTests: XCTestCase {
         try LiveWAV.silence(seconds: 0.5).write(to: url)
         defer { try? FileManager.default.removeItem(at: url) }
 
+        // The isolated gateway has no speech provider, so the admitted
+        // session fails after its audio was sent. That failure is final:
+        // replaying the audio on gateway B would claim and bill a second grant.
         let error = await capture {
             try await transcriber.transcribeStream(
                 audioFile: AudioFile(fileURL: url, duration: 0.5),
@@ -215,9 +225,10 @@ final class TypefluxLiveContractTests: XCTestCase {
             )
         }
         let tokens = await routing.tokens
-        print("LIVE failover grants: \(tokens.count), error: \(String(describing: error))")
-        XCTAssertEqual(tokens.count, 2, "one grant for each gateway attempt")
-        XCTAssertEqual(Set(tokens).count, tokens.count)
+        print("LIVE grants: \(tokens.count), error: \(String(describing: error))")
+        XCTAssertNotNil(error)
+        XCTAssertFalse(error is CancellationError)
+        XCTAssertEqual(tokens.count, 1, "no second grant after audio was sent")
     }
 
     // MARK: - Feedback uploads
@@ -243,7 +254,7 @@ final class TypefluxLiveContractTests: XCTestCase {
                 data: png, filename: "live.png", contentType: "image/png", to: target, token: login.accessToken
             )
         }
-        XCTAssertNotNil(duplicate)
+        assertUploadRejected(duplicate, status: 409, code: "FEEDBACK_UPLOAD_UNAVAILABLE")
 
         let feedback = try await FeedbackAPIService.submit(
             content: "GUL-289 live contract check", contact: nil, imageURLs: [target.imageURL], token: login.accessToken
@@ -265,7 +276,7 @@ final class TypefluxLiveContractTests: XCTestCase {
                 data: png, filename: "a.png", contentType: "image/png", to: small, token: login.accessToken
             )
         }
-        XCTAssertNotNil(falseSize)
+        assertUploadRejected(falseSize, status: 413, code: "PAYLOAD_TOO_LARGE")
 
         // Another account's bearer cannot claim this account's target.
         let owned = try await FeedbackAPIService.createImageUploadTarget(
@@ -276,13 +287,13 @@ final class TypefluxLiveContractTests: XCTestCase {
                 data: png, filename: "b.png", contentType: "image/png", to: owned, token: other.accessToken
             )
         }
-        XCTAssertNotNil(wrongOwner)
+        assertUploadRejected(wrongOwner, status: 409, code: "FEEDBACK_UPLOAD_UNAVAILABLE")
         let missingBearer = await capture {
             try await FeedbackAPIService.uploadImage(
                 data: png, filename: "b.png", contentType: "image/png", to: owned, token: nil
             )
         }
-        XCTAssertNotNil(missingBearer)
+        assertUploadRejected(missingBearer, status: 409, code: "FEEDBACK_UPLOAD_UNAVAILABLE")
 
         // Anonymous feedback still works without any bearer.
         let anonymous = try await FeedbackAPIService.createImageUploadTarget(
@@ -297,6 +308,56 @@ final class TypefluxLiveContractTests: XCTestCase {
 
     // MARK: - Helpers
 
+    /// Opens a WebSocket session with `grant` and closes it right after the
+    /// upgrade. Returns the HTTP status of the upgrade response (nil when no
+    /// response arrived) and the error, if any.
+    private func upgrade(
+        server: URL,
+        grant: TypefluxOfficialASRGrantSequence.Grant
+    ) async throws -> (status: Int?, error: Error?) {
+        let request = try TypefluxOfficialASRRequestFactory.makeWebSocketRequest(
+            apiBaseURL: server.absoluteString, token: grant.token, scenario: .voiceInput, provider: grant.provider
+        )
+        let session = URLSession(configuration: .ephemeral)
+        let task = session.webSocketTask(with: request)
+        task.resume()
+        defer {
+            task.cancel(with: .normalClosure, reason: nil)
+            session.invalidateAndCancel()
+        }
+        let error = await capture { try await task.send(.string(#"{"type":"stop"}"#)) }
+        return ((task.response as? HTTPURLResponse)?.statusCode, error)
+    }
+
+    /// Waits until the account's usage stops changing, so a later comparison
+    /// only sees what happened after this point.
+    private func stableUsage(token: String) async throws -> CloudUsageCurrentPeriodStats {
+        var previous = try await CloudUsageAPIService.fetchCurrentPeriodStats(token: token)
+        for _ in 0 ..< 20 {
+            try await Task.sleep(nanoseconds: 1_000_000_000)
+            let current = try await CloudUsageAPIService.fetchCurrentPeriodStats(token: token)
+            if current == previous { return current }
+            previous = current
+        }
+        throw LiveContractFailure("Usage did not settle")
+    }
+
+    private func assertUploadRejected(
+        _ error: Error?,
+        status: Int,
+        code: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard case let .serverError(_, message)? = error as? FeedbackAPIError,
+              let message,
+              message.hasPrefix("HTTP \(status)"),
+              message.contains(code)
+        else {
+            return XCTFail("Expected HTTP \(status) \(code), got \(String(describing: error))", file: file, line: line)
+        }
+    }
+
     private func capture<T>(_ operation: () async throws -> T) async -> Error? {
         do {
             _ = try await operation()
@@ -304,6 +365,14 @@ final class TypefluxLiveContractTests: XCTestCase {
         } catch {
             return error
         }
+    }
+}
+
+private struct LiveContractFailure: Error, CustomStringConvertible {
+    let description: String
+
+    init(_ description: String) {
+        self.description = description
     }
 }
 

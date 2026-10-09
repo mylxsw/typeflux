@@ -279,4 +279,11 @@ final class AuthState: ObservableObject {
         }
         return accessToken
     }
+
+    /// A usable access token together with the session it belongs to, read
+    /// without a suspension in between so the two always match.
+    func validSessionCredential() async -> TypefluxCloudSessionCredential? {
+        guard let token = await validAccessToken() else { return nil }
+        return TypefluxCloudSessionCredential(accessToken: token, session: sessionGeneration)
+    }
 }
