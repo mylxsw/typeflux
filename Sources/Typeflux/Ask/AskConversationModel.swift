@@ -906,7 +906,7 @@ final class AskConversationModel: ObservableObject {
                 let response = try await api.send(conversationId: id, request: request, token: current.token)
                 pendingSends[id] = nil
                 try await drive(response, current: current, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil)
-            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.account) }
+            } catch is CancellationError {} catch { await reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -999,7 +999,7 @@ final class AskConversationModel: ObservableObject {
                     response = try await api.conversation(id: id, token: current.token)
                 }
                 try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
-            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.account) }
+            } catch is CancellationError {} catch { await reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -1023,7 +1023,7 @@ final class AskConversationModel: ObservableObject {
                 guard owner == current.account else { return }
                 creditPauseDetails[id] = exhausted.details ?? CloudCreditsExhaustedDetails()
                 onCreditsExhausted?()
-            } catch { reportOperationError(error, id: id, owner: current.account) }
+            } catch { await reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -1073,7 +1073,7 @@ final class AskConversationModel: ObservableObject {
                                                    modelRef: modelRef, tools: definitions)
                 let response = try await api.regenerate(conversationId: id, request: request, token: current.token)
                 try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
-            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.account) }
+            } catch is CancellationError {} catch { await reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -1485,7 +1485,7 @@ final class AskConversationModel: ObservableObject {
                 let stopped = try await api.cancel(conversationId: id, runId: run.id, partial: partial, token: current.token)
                 if owner == current.account { pendingSends[id] = nil }
                 try await accept(stopped, route: current)
-            } catch { reportOperationError(error, id: id, owner: current.account) }
+            } catch { await reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -1516,12 +1516,14 @@ final class AskConversationModel: ObservableObject {
         } catch { self.error = error.localizedDescription }
     }
 
-    func reportOperationError(_ error: Error, id: String, owner expectedOwner: String) {
+    /// Callers await this before their operation finishes, so a conversation never looks idle
+    /// and resumable while its journal still lacks the execution that just failed.
+    func reportOperationError(_ error: Error, id: String, owner expectedOwner: String) async {
         guard owner == expectedOwner else { return }
         operationErrors[id] = error.localizedDescription
         if selectedId == id { self.error = error.localizedDescription }
         if let value = snapshots[id], let route = credentials(for: id) {
-            Task { await refreshRecovery(value, route: route) }
+            await refreshRecovery(value, route: route)
         }
     }
 
@@ -1689,7 +1691,7 @@ extension AskConversationModel {
                     try? await accept(refreshed, route: current)
                     queueDidSettle(id)
                 } else {
-                    reportOperationError(error, id: id, owner: current.account)
+                    await reportOperationError(error, id: id, owner: current.account)
                 }
             }
         }

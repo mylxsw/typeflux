@@ -302,7 +302,7 @@ struct AskCommandPaletteStateTests {
     }
 }
 
-@Suite("Ask command execution")
+@Suite("Ask command execution", .exclusiveUIState)
 @MainActor
 struct AskCommandExecutionTests {
     private func command(_ action: AskCommandAction, _ name: String, kind: AskCommand.Kind = .action) -> AskCommand {

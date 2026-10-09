@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Text delivery behavior")
+@Suite("Text delivery behavior", .exclusiveUIState)
 @MainActor
 struct TextDeliveryCoordinatorTests {
     @Test(arguments: [

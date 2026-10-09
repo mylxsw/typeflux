@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask hover card")
+@Suite("Ask hover card", .exclusiveUIState)
 @MainActor
 struct AskHoverCardTests {
     private let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)

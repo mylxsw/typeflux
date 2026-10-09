@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveUIState)
 struct OverlayTransitionRenderingTests {
     @Test(arguments: OverlayStyle.allCases) @MainActor
     func noticesAndFailuresFitTheirContentAfterCapsuleTransitions(style: OverlayStyle) async throws {

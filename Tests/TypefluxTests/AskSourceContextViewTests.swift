@@ -6,16 +6,19 @@ import Vision
 
 /// Native event tests share the composer's serialized suite with voice input.
 extension AskComposerInteractionTests {
+    /// The workspace composer lists the source as text; the launcher keeps it out of its footer
+    /// (see `narrowLauncherKeepsContentInIconChipsAndMemoryInTheFooter`).
     @Test func sourceChipPreviewsMetadataAndRemovalCanBeUndoneWithoutAScreenshot() async throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let fixture = try AskTestFixture()
-        fixture.model.launcherDraft = AskDraft(text: "Explain this", includeScreenshot: false,
-                                               selection: "Selected words", source: "Safari — Example",
-                                               sourceBundleID: "com.apple.Safari")
-        let window = try await hostSourceContext(AskLauncherView(model: fixture.model, onDismiss: {}),
-                                                size: NSSize(width: AskMetrics.launcherWidth, height: 260))
+        fixture.model.newConversation()
+        fixture.model.draft = AskDraft(text: "Explain this", includeScreenshot: false,
+                                       selection: "Selected words", source: "Safari — Example",
+                                       sourceBundleID: "com.apple.Safari")
+        let window = try await hostSourceContext(AskConversationView(model: fixture.model),
+                                                size: NSSize(width: 1100, height: 760))
         defer { window.close(); fixture.model.resetSession() }
         let host = try #require(window.contentView)
         #expect(!(try sourceContainsLabel(in: host, label: L("ask.context.details"))))
@@ -30,15 +33,15 @@ extension AskComposerInteractionTests {
         #expect(try sourceContainsLabel(in: details, label: "Example"))
         #expect(!(try sourceContainsLabel(in: details, label: "Selected words")))
         try clickSourceControl("ask.context.source.remove", in: popover)
-        try await fixture.wait { fixture.model.launcherDraft.sourceOff == true }
-        #expect(fixture.model.launcherDraft.source == "Safari — Example")
-        #expect(fixture.model.launcherDraft.sourceBundleID == "com.apple.Safari")
-        #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).source == nil)
-        #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).selection == "Selected words")
+        try await fixture.wait { fixture.model.draft.sourceOff == true }
+        #expect(fixture.model.draft.source == "Safari — Example")
+        #expect(fixture.model.draft.sourceBundleID == "com.apple.Safari")
+        #expect(fixture.model.draft.request(deviceId: "device", tools: []).source == nil)
+        #expect(fixture.model.draft.request(deviceId: "device", tools: []).selection == "Selected words")
         try await Task.sleep(for: .milliseconds(150))
         try clickSourceControl("ask.context.undo", in: window)
-        try await fixture.wait { fixture.model.launcherDraft.sourceOff != true }
-        #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).source == "Safari — Example")
+        try await fixture.wait { fixture.model.draft.sourceOff != true }
+        #expect(fixture.model.draft.request(deviceId: "device", tools: []).source == "Safari — Example")
     }
 
     @Test func plusMenuRestoresSourceAndSelectionIndependently() async throws {
@@ -68,7 +71,7 @@ extension AskComposerInteractionTests {
     }
 
     @Test(arguments: [AppLanguage.simplifiedChinese, .english])
-    func narrowLauncherWrapsContentAndKeepsMemoryInTheFooter(_ language: AppLanguage) async throws {
+    func narrowLauncherKeepsContentInIconChipsAndMemoryInTheFooter(_ language: AppLanguage) async throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(language)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
@@ -106,9 +109,12 @@ extension AskComposerInteractionTests {
         #expect(host.bounds.contains(sendFrame))
         #expect(abs(host.bounds.width - width) < 0.5)
         #expect(!(try sourceContainsLabel(in: host, label: L("ask.context.details"))))
-        let source = try #require(try sourceText(in: host, matching: "Safari").first)
-        let selection = try #require(try sourceText(in: host, matching: "Selected").first)
-        #expect(abs(source.frame.midY - selection.frame.midY) > 20, "Content chips wrap to another row")
+        // The launcher footer draws content as icon chips; source and selection words live in
+        // hover cards, so a long window title cannot crowd the footer at any width.
+        #expect(try sourceText(in: host, matching: "Safari").isEmpty)
+        #expect(try sourceText(in: host, matching: "Selected").isEmpty)
+        #expect(fixture.model.launcherDraft.sentSource == "Safari — A long page title that must fit in this window")
+        #expect(fixture.model.launcherDraft.sentSelection == "Selected words that need a separate row")
         try clickSourceChip(try #require(anchors.last), in: window)
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == true }
         #expect(fixture.model.launcherDraft.memory == memory)
@@ -121,19 +127,20 @@ extension AskComposerInteractionTests {
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let fixture = try AskTestFixture()
-        fixture.model.launcherDraft = AskDraft(text: "Explain this", includeScreenshot: false,
-                                               selection: "Selected words", source: "Safari — Example")
-        let window = try await hostSourceContext(AskLauncherView(model: fixture.model, onDismiss: {}),
-                                                size: NSSize(width: AskMetrics.launcherWidth, height: 260))
+        fixture.model.newConversation()
+        fixture.model.draft = AskDraft(text: "Explain this", includeScreenshot: false,
+                                       selection: "Selected words", source: "Safari — Example")
+        let window = try await hostSourceContext(AskConversationView(model: fixture.model),
+                                                size: NSSize(width: 1100, height: 760))
         defer { window.close(); fixture.model.resetSession() }
         try clickSourceText("Selected words", in: window)
         let popover = try await waitForSourceControl("ask.selection.remove")
         defer { if popover !== window { popover.orderOut(nil) } }
         try clickSourceControl("ask.selection.remove", in: popover)
-        try await fixture.wait { fixture.model.launcherDraft.selectionOff == true }
-        #expect(fixture.model.launcherDraft.sentSource == "Safari — Example")
-        #expect(fixture.model.launcherDraft.selection == "Selected words")
-        #expect(fixture.model.launcherDraft.sentSelection == nil)
+        try await fixture.wait { fixture.model.draft.selectionOff == true }
+        #expect(fixture.model.draft.sentSource == "Safari — Example")
+        #expect(fixture.model.draft.selection == "Selected words")
+        #expect(fixture.model.draft.sentSelection == nil)
     }
 
     @Test func refreshIconIsAnExplicitActionAndDisabledWhileCapturing() async throws {

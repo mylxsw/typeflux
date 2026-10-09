@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask conversation window sizing", .serialized)
+@Suite("Ask conversation window sizing", .serialized, .exclusiveUIState)
 @MainActor
 struct AskConversationWindowSizingTests {
     @Test func supportedNarrowAndShortViewportsRemainAtTheRequestedSize() async throws {

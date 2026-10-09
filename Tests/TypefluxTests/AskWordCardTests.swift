@@ -112,7 +112,7 @@ struct AskWordCardTests {
     }
 }
 
-@Suite("Ask word card view")
+@Suite("Ask word card view", .exclusiveUIState)
 @MainActor
 struct AskWordCardViewTests {
     @Test func phoneticsChooseAnAccent() {
@@ -324,7 +324,7 @@ struct AskTranslatePluginWordCardTests {
     }
 }
 
-@Suite("Ask command keys")
+@Suite("Ask command keys", .exclusiveUIState)
 @MainActor
 struct AskCommandKeyWordCardTests {
     private func key(_ characters: String, code: UInt16, modifiers: NSEvent.ModifierFlags) -> AskCommandKey? {

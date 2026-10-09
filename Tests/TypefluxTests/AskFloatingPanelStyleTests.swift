@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// Native rendering checks; the window server's refraction is not part of bitmap captures.
-@Suite("Floating panel readability", .serialized)
+@Suite("Floating panel readability", .serialized, .exclusiveUIState)
 @MainActor
 struct AskFloatingPanelStyleTests {
     @Test func `light panels shield text from dark and saturated backdrops`() async throws {

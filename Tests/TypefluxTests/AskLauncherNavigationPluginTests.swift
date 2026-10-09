@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher settings and chat history", .serialized)
+@Suite("Launcher settings and chat history", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherNavigationPluginTests {
     private func request(_ keyword: AskKeyword, text: String = "", origin: AskPluginRequest.Origin = .argument) -> AskPluginRequest {

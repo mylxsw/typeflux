@@ -336,7 +336,7 @@ struct AskWorkflowRunnerTests {
     }
 }
 
-@Suite("Ask workflow store", .serialized)
+@Suite("Ask workflow store", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWorkflowStoreTests {
     @Test func statusFollowsTrustEditsAndSwitches() throws {
@@ -438,7 +438,7 @@ struct AskWorkflowStoreTests {
     }
 }
 
-@Suite("Ask workflow plugin", .serialized)
+@Suite("Ask workflow plugin", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWorkflowPluginTests {
     private func plugin(_ fixture: AskWorkflowFixture, _ id: String) throws -> AskWorkflowPlugin {
@@ -601,7 +601,7 @@ struct AskWorkflowPluginTests {
     }
 }
 
-@Suite("Ask workflow settings")
+@Suite("Ask workflow settings", .exclusiveUIState)
 @MainActor
 struct AskWorkflowSettingsTests {
     @Test func summariesSayWhatStateAWorkflowIsIn() throws {
@@ -688,7 +688,7 @@ struct AskWorkflowSettingsTests {
 }
 
 /// Draws the settings list and the trust sheet; writes PNGs when TYPEFLUX_ASK_SNAPSHOTS is set.
-@Suite("Ask workflow settings rendering", .serialized)
+@Suite("Ask workflow settings rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWorkflowRenderTests {
     private func render<V: View>(_ view: V, size: NSSize, name: String) async throws {

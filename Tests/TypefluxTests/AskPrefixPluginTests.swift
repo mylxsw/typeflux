@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher keyword directory", .serialized)
+@Suite("Launcher keyword directory", .serialized, .exclusiveUIState)
 @MainActor
 struct AskPrefixPluginTests {
     private func entry(_ word: String, title: String = "Feature", detail: String = "", enabled: Bool = true) -> AskPrefixPlugin.Entry {

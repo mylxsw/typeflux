@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask capped width")
+@Suite("Ask capped width", .exclusiveUIState)
 @MainActor
 struct AskCappedWidthTests {
     private func width<V: View>(_ view: V) -> CGFloat {

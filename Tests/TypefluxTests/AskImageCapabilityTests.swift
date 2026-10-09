@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask image capability", .serialized)
+@Suite("Ask image capability", .serialized, .exclusiveUIState)
 @MainActor
 struct AskImageCapabilityTests {
     static let image = "data:image/jpeg;base64,YQ=="

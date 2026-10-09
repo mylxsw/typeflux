@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Cloud catalog synchronization", .serialized)
+@Suite("Cloud catalog synchronization", .serialized, .exclusiveUIState)
 @MainActor
 struct CloudCatalogSyncTests {
     @Test func settingsHideOnlyTheCloudRoutingAliasWithoutChangingRegistry() throws {

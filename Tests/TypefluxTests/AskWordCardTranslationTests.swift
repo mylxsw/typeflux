@@ -116,7 +116,7 @@ struct AskWordCardTranslationTests {
     }
 }
 
-@Suite("Ask translated word card rendering", .serialized)
+@Suite("Ask translated word card rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWordCardTranslationViewTests {
     @Test func longTranslationsGetEnoughRoomAndCardsStillScroll() {

@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher settings polish", .serialized)
+@Suite("Launcher settings polish", .serialized, .exclusiveUIState)
 @MainActor
 struct LauncherSettingsPolishTests {
     private func render(_ view: some View, size: NSSize, name: String, light: Bool = false,

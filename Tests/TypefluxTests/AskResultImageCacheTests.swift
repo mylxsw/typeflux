@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Asynchronous launcher images", .serialized)
+@Suite("Asynchronous launcher images", .serialized, .exclusiveUIState)
 @MainActor
 struct AskResultImageCacheTests {
     @Test func coalescesRequestsCachesAndInvalidatesByFileVersion() async throws {

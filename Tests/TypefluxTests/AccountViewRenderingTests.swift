@@ -7,7 +7,7 @@ import Testing
 /// subscription state so each branch lays out without trapping, and checks the
 /// page asks for the breakdown when it appears.
 @MainActor
-@Suite("Account view rendering", .serialized)
+@Suite("Account view rendering", .serialized, .exclusiveUIState)
 struct AccountViewRenderingTests {
     final class Fixture {
         var subscription = BillingSubscriptionSnapshot.none

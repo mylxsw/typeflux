@@ -7,7 +7,7 @@ import Testing
 /// TYPEFLUX_ORB_FRAMES. Dictation starts at 2 s and stops at 6 s; the left drop
 /// reproduces the old behaviour (the loop length and the outline switch at
 /// once), the right one is the eased `AskOrbMotion`.
-@Suite("Ask orb motion frames", .serialized)
+@Suite("Ask orb motion frames", .serialized, .exclusiveUIState)
 @MainActor
 struct AskConversationOrbRenderTests {
     static let frames = 300

@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask captured content inventory")
+@Suite("Ask captured content inventory", .exclusiveUIState)
 @MainActor
 struct AskCapturedContentItemsTests {
     @Test func sourceAndSelectionMatchTheirIndependentOutgoingFields() throws {

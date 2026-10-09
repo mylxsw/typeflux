@@ -221,7 +221,7 @@ struct AskRecoveryJournalTests {
     }
 }
 
-@Suite("Ask recovery interactions", .serialized)
+@Suite("Ask recovery interactions", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryInteractionTests {
     @Test func `unreadable journal cannot enable resume`() async throws {

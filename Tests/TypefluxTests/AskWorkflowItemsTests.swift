@@ -247,7 +247,7 @@ struct AskPluginOutputItemTests {
     }
 }
 
-@Suite("Ask plugin list views")
+@Suite("Ask plugin list views", .exclusiveUIState)
 @MainActor
 struct AskPluginListViewTests {
     private func display(_ items: [AskPluginItem], selected: Int = 0) -> AskPluginDisplay {

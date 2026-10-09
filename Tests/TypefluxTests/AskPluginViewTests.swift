@@ -103,7 +103,7 @@ struct AskPluginViewTests {
 }
 
 /// Opt-in renders of the launcher in keyword mode (set TYPEFLUX_ASK_SNAPSHOTS).
-@Suite("Ask plugin snapshots", .serialized)
+@Suite("Ask plugin snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskPluginVisualTests {
     func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL) async throws {

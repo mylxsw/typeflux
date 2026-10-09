@@ -32,7 +32,7 @@ final class AskProgressRecorder {
     var progress: AskPluginProgress { { [self] output in bodies.append(output.body) } }
 }
 
-@Suite("Ask prompt plugin")
+@Suite("Ask prompt plugin", .exclusiveUIState)
 @MainActor
 struct AskPromptPluginTests {
     private func request(_ text: String = "teh text", origin: AskPluginRequest.Origin = .argument,

@@ -189,7 +189,7 @@ struct AskAttachmentLoaderTests {
     }
 }
 
-@Suite("Ask attachment pasteboard")
+@Suite("Ask attachment pasteboard", .exclusiveUIState)
 @MainActor
 struct AskAttachmentPasteboardTests {
     private func pasteboard() -> NSPasteboard { NSPasteboard(name: .init("ask-attach-" + UUID().uuidString)) }
@@ -366,7 +366,7 @@ struct AskAttachmentPromptTests {
     }
 }
 
-@Suite("Ask folder grants")
+@Suite("Ask folder grants", .exclusiveUIState)
 @MainActor
 struct AskFolderGrantTests {
     private func defaults() -> UserDefaults { UserDefaults(suiteName: "ask-grants-" + UUID().uuidString)! }
@@ -406,7 +406,7 @@ struct AskFolderGrantTests {
     }
 }
 
-@Suite("Ask attachment composer model")
+@Suite("Ask attachment composer model", .exclusiveUIState)
 @MainActor
 struct AskAttachmentModelTests {
     @Test func loadedAttachmentsJoinTheDraftOnScreen() async throws {

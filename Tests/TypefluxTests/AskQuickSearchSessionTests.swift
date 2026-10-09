@@ -31,7 +31,7 @@ final class AskControlledSearchIndex: AskAppSearching, AskFileSearching, @unchec
     func clear() {}
 }
 
-@Suite("Staged launcher search", .serialized)
+@Suite("Staged launcher search", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickSearchSessionTests {
     nonisolated static let app = AskAppMatch(entry: AskTestAppIndex.app("Notes"), score: 0.9)

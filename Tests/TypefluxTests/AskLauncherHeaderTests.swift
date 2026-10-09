@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 /// The launcher rendered in a real window: captured context stays out of the editor's
 /// row, the switches sit in the bottom bar, and recording swaps the results for
 /// the voice panel without moving the rest.
-@Suite("Ask launcher header", .serialized)
+@Suite("Ask launcher header", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherHeaderTests {
     private final class Reported { var height: CGFloat = 0 }

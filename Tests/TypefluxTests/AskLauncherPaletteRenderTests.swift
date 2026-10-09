@@ -5,7 +5,7 @@ import Testing
 
 /// Footer controls rendered natively: switches show "on" with a tinted well,
 /// menus stay neutral under the launcher's accent tint.
-@Suite("Launcher palette rendering", .serialized)
+@Suite("Launcher palette rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherPaletteRenderTests {
     private struct Census {

@@ -56,7 +56,7 @@ final class AskTestPlugin: AskLauncherPlugin, @unchecked Sendable {
     }
 }
 
-@Suite("Ask plugin session", .serialized)
+@Suite("Ask plugin session", .serialized, .exclusiveUIState)
 @MainActor
 struct AskPluginSessionTests {
     func session(_ plugin: AskTestPlugin = AskTestPlugin()) -> AskPluginSession {

@@ -23,7 +23,7 @@ Follow existing Swift style in the repo: 4-space indentation, one top-level type
 
 ## Testing Guidelines
 
-Add tests in `Tests/TypefluxTests` for logic, routing, parsing, and provider behavior. Match production names where possible, for example `LLMRouter.swift` with `LLMRouterTests.swift`. Keep test names behavior-focused, such as `testCompleteRoutesToOpenAI`. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage. Run `swift test` before opening a PR; run `make coverage` for larger changes that touch core workflow paths.
+Add tests in `Tests/TypefluxTests` for logic, routing, parsing, and provider behavior. Match production names where possible, for example `LLMRouter.swift` with `LLMRouterTests.swift`. Keep test names behavior-focused, such as `testCompleteRoutesToOpenAI`. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage. Run `swift test` before opening a PR; run `make coverage` for larger changes that touch core workflow paths. Swift Testing suites that host windows, send native events, switch `AppLocalization.shared`, or otherwise run on the main actor must carry `.exclusiveUIState` (see `Tests/TypefluxTests/ExclusiveUIStateTrait.swift`); `.serialized` alone does not stop other suites from changing that shared state mid-test. Look up windows through the object that presented them, not by identifier alone, since windows from earlier tests can stay in `NSApp.windows`.
 
 ## Commit & Pull Request Guidelines
 

@@ -112,6 +112,40 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         XCTAssertNil(missing)
     }
 
+    /// A panel dismissed by another controller keeps the clipboard identifier in `NSApp.windows`;
+    /// tests must drive the panel their own controller presented.
+    func testPresentedPanelIgnoresPanelsDismissedByOtherControllers() throws {
+        let suite = "ClipboardPanelRenderingTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let model = ClipboardPanelModel()
+        model.reset(entries: Array(allKindsEntries().prefix(2)))
+
+        let earlier = ClipboardPanelController(settingsStore: SettingsStore(defaults: defaults))
+        earlier.present(model)
+        let stale = try XCTUnwrap(ClipboardTestSupport.presentedPanel())
+        earlier.dismiss()
+        XCTAssertNil(ClipboardTestSupport.presentedPanel())
+        XCTAssertTrue(NSApplication.shared.windows.contains { $0 === stale })
+
+        let controller = ClipboardPanelController(settingsStore: SettingsStore(defaults: defaults))
+        controller.present(model)
+        defer { controller.dismiss() }
+        let current = try XCTUnwrap(ClipboardTestSupport.presentedPanel())
+        XCTAssertFalse(current === stale)
+        XCTAssertTrue(controller.handleKeyDown(try XCTUnwrap(NSEvent.keyEvent(
+            with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+            windowNumber: current.windowNumber, context: nil, characters: "",
+            charactersIgnoringModifiers: "", isARepeat: false, keyCode: 125
+        ))))
+        XCTAssertEqual(model.selectedIndex, 1)
+        XCTAssertFalse(controller.handleKeyDown(try XCTUnwrap(NSEvent.keyEvent(
+            with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+            windowNumber: stale.windowNumber, context: nil, characters: "",
+            charactersIgnoringModifiers: "", isARepeat: false, keyCode: 125
+        ))), "Keys sent to the stale panel do not reach the presented one")
+    }
+
     func testControllerPresentsHandlesKeysAndDismisses() throws {
         let suite = "ClipboardPanelRenderingTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -129,9 +163,7 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         controller.present(model)
         XCTAssertTrue(controller.isPresented)
 
-        let window = try XCTUnwrap(NSApplication.shared.windows.first {
-            $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.clipboard"
-        })
+        let window = try XCTUnwrap(ClipboardTestSupport.presentedPanel())
         let screen = try XCTUnwrap(window.screen)
         XCTAssertEqual(window.frame.maxY,
                        AskLauncherPlacement.top(on: screen.visibleFrame) - AskMetrics.launcherGutter)

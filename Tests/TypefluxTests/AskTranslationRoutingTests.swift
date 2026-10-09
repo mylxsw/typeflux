@@ -200,7 +200,7 @@ struct AskTranslationLLMServiceTests {
     }
 }
 
-@Suite("Ask translation settings pane")
+@Suite("Ask translation settings pane", .exclusiveUIState)
 @MainActor
 struct AskTranslationSettingsModelTests {
     private func model(_ credentials: AskTestTranslationCredentials = AskTestTranslationCredentials())
@@ -288,7 +288,7 @@ struct AskTranslationSettingsModelTests {
     }
 }
 
-@Suite("Ask translation provider sheet")
+@Suite("Ask translation provider sheet", .exclusiveUIState)
 @MainActor
 struct AskTranslationProviderSheetTests {
     @Test func everyProviderSheetDraws() async throws {

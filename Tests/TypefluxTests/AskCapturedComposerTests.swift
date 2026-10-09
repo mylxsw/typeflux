@@ -2,7 +2,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask captured content sizing")
+@Suite("Ask captured content sizing", .exclusiveUIState)
 @MainActor
 struct AskCapturedComposerTests {
     @Test func measuredRowsGrowTheLauncherAndDisappearWithTheStrip() {

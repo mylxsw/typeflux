@@ -262,7 +262,7 @@ struct AskWorkflowPlaceholdersTests {
     }
 }
 
-@Suite("Ask workflow action runner")
+@Suite("Ask workflow action runner", .exclusiveUIState)
 @MainActor
 struct AskWorkflowActionRunnerTests {
     private let folder: URL

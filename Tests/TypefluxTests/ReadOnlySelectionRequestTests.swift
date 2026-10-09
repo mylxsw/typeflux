@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Pinned read-only selection", .serialized)
+@Suite("Pinned read-only selection", .serialized, .exclusiveUIState)
 @MainActor
 struct ReadOnlySelectionRequestTests {
     @Test func requestDoesNotRetargetAfterWaitingForTextOperation() async throws {

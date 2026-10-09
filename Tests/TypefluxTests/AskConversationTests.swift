@@ -281,7 +281,7 @@ struct AskTestFixture {
     }
 }
 
-@Suite("Ask conversations")
+@Suite("Ask conversations", .exclusiveUIState)
 @MainActor
 struct AskConversationTests {
     @Test func pullRefreshKeepsSelectionDraftAndReadingPositionOnFailure() async throws {
@@ -599,7 +599,7 @@ struct AskConversationTests {
     }
 }
 
-@Suite("Ask navigation regressions")
+@Suite("Ask navigation regressions", .exclusiveUIState)
 @MainActor
 struct AskNavigationTests {
     private func conversation(_ id: String) -> AskConversation {

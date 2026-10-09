@@ -6,7 +6,7 @@ import Testing
 /// Opt-in production-view renders for the launcher corners and adaptive frost.
 /// Bitmap captures include the synthetic backdrop, but cannot show the window
 /// server's behind-window blur or Liquid Glass refraction.
-@Suite("Ask launcher glass snapshots", .serialized)
+@Suite("Ask launcher glass snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherGlassVisualTests {
     @Test func `render launcher materials over bright backdrop`() async throws {

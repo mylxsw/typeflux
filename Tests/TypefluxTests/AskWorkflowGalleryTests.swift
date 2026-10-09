@@ -103,7 +103,7 @@ struct AskWorkflowGalleryIndexTests {
     }
 }
 
-@Suite("Ask workflow gallery store", .serialized)
+@Suite("Ask workflow gallery store", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWorkflowGalleryStoreTests {
     @Test func `adding copies trusts and renames what clashes`() throws {
@@ -224,7 +224,7 @@ struct AskWorkflowGalleryStoreTests {
 }
 
 /// Runs each example the way the launcher would. Examples whose runtime this Mac lacks are skipped.
-@Suite("Ask workflow gallery examples", .serialized)
+@Suite("Ask workflow gallery examples", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWorkflowGalleryExampleTests {
     private func run(_ fixture: AskWorkflowFixture, _ id: String, keyword: String? = nil, query: String,
@@ -472,7 +472,7 @@ struct AskWorkflowKeywordEntryTests {
     }
 }
 
-@Suite("Ask workflow keyword entries at run time", .serialized)
+@Suite("Ask workflow keyword entries at run time", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWorkflowKeywordEntryRunTests {
     @Test func `the launcher runs the keywords entry and points at A helper`() async throws {
