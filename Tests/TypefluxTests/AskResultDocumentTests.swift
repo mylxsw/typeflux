@@ -244,11 +244,20 @@ struct AskResultDocumentTests {
         first.pinned = true
         let windows = NSApp.windows.filter { ($0.contentView as? NSHostingView<AskResultWindowView>) != nil }
         #expect(windows.contains { $0.level == .floating })
-        defaults.set(NSStringFromSize(NSSize(width: 100, height: 700)), forKey: AskResultWindowController.sizeKey)
+        // A saved height the display can hold, so AppKit does not shrink the window to fit.
+        let visible = try #require(NSScreen.main?.visibleFrame)
+        let savedHeight = min(700, (visible.height - 100).rounded(.down))
+        #expect(savedHeight > AskResultWindowController.minimumSize.height)
+        defaults.set(NSStringFromSize(NSSize(width: 100, height: savedHeight)),
+                     forKey: AskResultWindowController.sizeKey)
         let third = document(recorder)
         controller.present(third)
-        let sized = NSApp.windows.first { $0.delegate === controller && $0.frame.height >= 700 }
+        let sized = NSApp.windows.first { window in
+            window.delegate === controller
+                && (window.contentView as? NSHostingView<AskResultWindowView>)?.rootView.document === third
+        }
         #expect(sized?.frame.width ?? 0 >= AskResultWindowController.minimumSize.width, "too small a size is widened")
+        #expect(sized?.frame.height == savedHeight, "the saved height is remembered")
         for window in NSApp.windows where window.delegate === controller { window.close() }
         #expect(controller.documents.isEmpty)
     }

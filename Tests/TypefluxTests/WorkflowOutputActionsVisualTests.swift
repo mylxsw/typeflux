@@ -205,7 +205,11 @@ struct WorkflowOutputActionsVisualTests {
             _ = NSApplication.shared
             let fixture = try AskWorkflowFixture()
             let model = try editor(fixture)
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 780),
+            // Within the usable screen where the editor's minimum size allows: AppKit moves and
+            // clips a window larger than the display, and a control off screen opens no popover.
+            let visible = try #require(NSScreen.main?.visibleFrame)
+            let size = NSSize(width: min(1280, visible.width), height: min(780, visible.height))
+            let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
                                   styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
                                   backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
@@ -214,10 +218,26 @@ struct WorkflowOutputActionsVisualTests {
             window.appearance = NSAppearance(named: .darkAqua)
             let hosting = NSHostingView(rootView: AskWorkflowEditorView(model: model, store: fixture.store))
             window.contentView = hosting
-            window.setFrameOrigin(NSPoint(x: 80, y: 80))
+            window.setFrameOrigin(NSPoint(x: visible.minX + min(80, visible.width - size.width),
+                                          y: visible.minY + min(80, visible.height - size.height)))
             window.makeKeyAndOrderFront(nil)
             defer { window.orderOut(nil); window.close() }
             try await Task.sleep(for: .milliseconds(600))
+            // On a display shorter than the editor's minimum height the form opens scrolled away
+            // from the action list. Bring the list's add control into the part of the form that
+            // is on screen, as a user would, so it and the row above it can anchor a popover.
+            NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+            defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+            let add = try controlFrame(identifier: "ask.workflow.editor.output.add.onSuccess", in: window)
+            let form = try #require(window.contentView?.hitTest(NSPoint(x: add.midX, y: window.frame.height / 2))?
+                .enclosingScrollView)
+            let shown = window.convertFromScreen(visible).intersection(form.convert(form.bounds, to: nil))
+            if add.minY < shown.minY + 8 {
+                form.documentView?.scroll(NSPoint(x: 0, y: form.contentView.bounds.minY + shown.minY + 8 - add.minY))
+                try await Task.sleep(for: .milliseconds(300))
+            }
+            let revealed = try controlFrame(identifier: "ask.workflow.editor.output.add.onSuccess", in: window)
+            #expect(shown.contains(revealed), "the add control is on screen")
             for (menu, name) in [(AskWorkflowOutputMenu.add(.onSuccess), "add"),
                                  (.placeholder(.onSuccess, index: 0, field: .value), "token")] {
                 model.outputMenu = menu

@@ -46,18 +46,30 @@ struct AskLauncherMotionTests {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         let fixture = try AskTestFixture()
-        fixture.model.appIndex = AskTestAppIndex((0 ..< 8).map { AskTestAppIndex.app(
+        // Few enough results that the tallest list fits under the top of a short display: a
+        // launcher taller than the usable area moves up by design, which is not what this checks.
+        fixture.model.appIndex = AskTestAppIndex((0 ..< 2).map { AskTestAppIndex.app(
             "Alpha \($0)",
             id: "test.alpha\($0)"
         ) })
-        fixture.model.fileIndex = AskTestFileIndex((0 ..< 10).map {
+        fixture.model.fileIndex = AskTestFileIndex((0 ..< 1).map {
             ("/Users/test/Documents/Alpha/alpha \($0).txt", .file, Double($0))
         })
         fixture.model.launcherDraft.text = ""
         let suite = "ask-motion-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
+        let settings = SettingsStore(defaults: defaults)
+        // Open at the top of the usable area, on the screen `showLauncher` picks, so every
+        // height grows down from a top edge with the most room below it.
+        let screen = try #require(NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main)
+        let visible = screen.visibleFrame
+        settings.askLauncherPosition = .lastPosition
+        settings.askLauncherAnchors = [AskLauncherPlacement.key(for: screen): .init(
+            left: ((visible.width - min(AskMetrics.launcherWidth, visible.width - 40)) / 2).rounded(),
+            fromTop: AskLauncherPlacement.screenMargin
+        )]
         let controller = AskConversationWindowController(
-            settings: SettingsStore(defaults: defaults),
+            settings: settings,
             model: fixture.model,
             dockVisibility: DockVisibilityController(app: AskMotionActivationPolicy()),
             launcherInputSource: AskMotionInputSource()

@@ -190,8 +190,16 @@ final class ClipboardPanelRenderingTests: XCTestCase {
 
         let window = try XCTUnwrap(ClipboardTestSupport.presentedPanel())
         let screen = try XCTUnwrap(window.screen)
-        XCTAssertEqual(window.frame.maxY,
-                       AskLauncherPlacement.top(on: screen.visibleFrame) - AskMetrics.launcherGutter)
+        // The card's top edge at `top`, centred and kept inside the usable area. On a display
+        // shorter than the panel AppKit then holds it below the menu bar, so compare with the
+        // frame the window server allows rather than assume the host display fits 560pt.
+        func placed(top: CGFloat) -> NSRect {
+            let visible = screen.visibleFrame
+            let wanted = NSRect(x: (visible.midX - 320).rounded(), y: top - 560, width: 640, height: 560)
+            return window.constrainFrameRect(AskLauncherPlacement.clamped(wanted, screen: visible), to: screen)
+        }
+        XCTAssertEqual(window.frame,
+                       placed(top: AskLauncherPlacement.top(on: screen.visibleFrame) - AskMetrics.launcherGutter))
         XCTAssertEqual(window.frame.midX, screen.visibleFrame.midX, accuracy: 0.5)
         XCTAssertEqual(window.frame.size, NSSize(width: 640, height: 560))
 
@@ -202,14 +210,14 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         ]
         controller.dismiss()
         controller.present(model)
-        XCTAssertEqual(window.frame.maxY, screen.visibleFrame.maxY - 90 - AskMetrics.launcherGutter)
+        XCTAssertEqual(window.frame, placed(top: screen.visibleFrame.maxY - 90 - AskMetrics.launcherGutter))
         XCTAssertEqual(window.frame.midX, screen.visibleFrame.midX, accuracy: 0.5)
 
         settings.askLauncherPosition = .center
         controller.dismiss()
         controller.present(model)
-        XCTAssertEqual(window.frame.maxY,
-                       AskLauncherPlacement.top(on: screen.visibleFrame) - AskMetrics.launcherGutter)
+        XCTAssertEqual(window.frame,
+                       placed(top: AskLauncherPlacement.top(on: screen.visibleFrame) - AskMetrics.launcherGutter))
         func key(_ code: UInt16, _ characters: String, _ flags: NSEvent.ModifierFlags = []) -> Bool {
             let event = NSEvent.keyEvent(
                 with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0,
