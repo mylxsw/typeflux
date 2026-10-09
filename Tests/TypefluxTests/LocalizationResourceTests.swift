@@ -386,3 +386,19 @@ final class LocalizationResourceTests: XCTestCase {
         return try XCTUnwrap(Bundle(path: path), "Missing bundle for \(language.rawValue)")
     }
 }
+
+extension LocalizationResourceTests {
+    func testLauncherSettingsTitleNamesTypefluxInEveryLanguage() throws {
+        let expected: [AppLanguage: String] = [
+            .english: "Typeflux Settings", .simplifiedChinese: "Typeflux 设置",
+            .traditionalChinese: "Typeflux 設定", .japanese: "Typeflux 設定", .korean: "Typeflux 설정"
+        ]
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            let tableURL = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))
+            let table = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: tableURL),
+                options: [], format: nil) as? [String: String])
+            XCTAssertEqual(table["ask.plugin.setting.title"], try XCTUnwrap(expected[language]), language.rawValue)
+        }
+    }
+}

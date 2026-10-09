@@ -85,6 +85,9 @@ struct AskLauncherNoticeLayoutTests {
     @Test func confirmationsKeepTheHeightAndNoticesAddOneRow() async throws {
         _ = NSApplication.shared
         let fixture = try AskTestFixture()
+        // This test measures notices; asynchronous search can temporarily add an Ask AI row.
+        fixture.model.modelLibrary.settings.askQuickAppSearchEnabled = false
+        fixture.model.modelLibrary.settings.askQuickFileSearchEnabled = false
         var reported: CGFloat = 0
         let size = NSSize(width: AskMetrics.launcherWidth, height: 200)
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size),

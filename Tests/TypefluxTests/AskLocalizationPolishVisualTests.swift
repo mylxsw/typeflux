@@ -122,7 +122,7 @@ struct AskLocalizationPolishVisualTests {
 
     private struct SignedOutPlugin: AskLauncherPlugin {
         let id = "signed-out"
-        let title = "Translation"
+        var title: String { L("ask.plugin.translate.title") }
         let symbol = "translate"
         var defaultKeywords: [AskKeyword] { [.init(keyword: "fy", pluginID: id)] }
         func placeholder(selectionLines: Int?) -> String { "" }

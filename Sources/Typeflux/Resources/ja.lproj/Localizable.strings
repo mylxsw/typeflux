@@ -3778,7 +3778,7 @@
 "ask.settings.keywords.kind.prefix.hint" = "すべてのキーワードを確認して機能を選択";
 
 /* Launcher settings and chat history */
-"ask.plugin.setting.title" = "システム設定";
+"ask.plugin.setting.title" = "Typeflux 設定";
 "ask.settings.keywords.kind.setting.hint" = "Typeflux の設定を開く";
 "ask.plugin.history.title" = "チャット履歴";
 "ask.settings.keywords.kind.history.hint" = "チャットのタイトルを検索して開く";

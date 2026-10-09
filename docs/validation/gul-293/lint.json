@@ -1,0 +1,22 @@
+{
+  "command": "swiftlint lint --quiet --reporter json on the 11 changed Swift files; separately compare baseline fixture sources with the same .swiftlint.yml",
+  "baseline": "277147b2",
+  "before": {
+    "errors": 0,
+    "warnings": 33
+  },
+  "after": {
+    "errors": 0,
+    "warnings": 33
+  },
+  "feature_files": {
+    "before_warnings": 31,
+    "after_warnings": 31
+  },
+  "fixture_files": {
+    "before_warnings": 2,
+    "after_warnings": 2
+  },
+  "new_errors": 0,
+  "new_warnings": 0
+}

@@ -3785,7 +3785,7 @@
 "ask.settings.keywords.kind.prefix.hint" = "查看全部關鍵詞，選擇後進入對應功能";
 
 /* Launcher settings and chat history */
-"ask.plugin.setting.title" = "系統設定";
+"ask.plugin.setting.title" = "Typeflux 設定";
 "ask.settings.keywords.kind.setting.hint" = "開啟 Typeflux 設定";
 "ask.plugin.history.title" = "聊天歷史";
 "ask.settings.keywords.kind.history.hint" = "搜尋聊天標題，開啟歷史對話";

@@ -1,0 +1,42 @@
+{
+  "basis": "git diff --unified=0 277147b2 intersected with LLVM LCOV DA records; executable added/changed production Swift lines only; final full-suite run",
+  "covered": 20,
+  "executable": 20,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Apps/AskAppIndex.swift",
+      "covered": 6,
+      "executable": 6,
+      "lines": {
+        "237": 38,
+        "238": 38,
+        "239": 38,
+        "240": 38,
+        "241": 38,
+        "242": 12
+      }
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskResultImageCache.swift",
+      "covered": 14,
+      "executable": 14,
+      "lines": {
+        "41": 178,
+        "42": 177,
+        "77": 177,
+        "78": 177,
+        "79": 126,
+        "80": 126,
+        "81": 126,
+        "82": 126,
+        "83": 126,
+        "84": 126,
+        "85": 177,
+        "88": 73,
+        "89": 37,
+        "90": 37
+      }
+    }
+  ]
+}
