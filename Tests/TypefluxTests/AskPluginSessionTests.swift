@@ -12,15 +12,41 @@ extension AskLauncherPlugin {
 /// A plugin whose plans and results the test decides, recording every run.
 /// With `steps`, it reports each one as progress before finishing.
 final class AskTestPlugin: AskLauncherPlugin, @unchecked Sendable {
-    var live = true
-    var failure: AskPluginFailure?
-    var runDelay: Duration = .zero
-    var steps: [String] = []
-    var stepDelay: Duration = .milliseconds(20)
-    var planActions: [AskPluginAction] = []
-    var noInput = false
+    /// `plan` and `run` execute off the main actor while the test reconfigures the plugin, and a
+    /// cancelled run can still be starting when the next one records itself. Every mutable value
+    /// is therefore read and written under one lock.
+    private struct State {
+        var live = true
+        var failure: AskPluginFailure?
+        var runDelay: Duration = .zero
+        var steps: [String] = []
+        var stepDelay: Duration = .milliseconds(20)
+        var planActions: [AskPluginAction] = []
+        var noInput = false
+        var runs: [AskPluginRequest] = []
+    }
+
+    private let lock = NSLock()
+    private var state = State()
+
+    private func locked<T>(_ body: (inout State) -> T) -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return body(&state)
+    }
+
+    var live: Bool { get { locked { $0.live } } set { locked { $0.live = newValue } } }
+    var failure: AskPluginFailure? { get { locked { $0.failure } } set { locked { $0.failure = newValue } } }
+    var runDelay: Duration { get { locked { $0.runDelay } } set { locked { $0.runDelay = newValue } } }
+    var steps: [String] { get { locked { $0.steps } } set { locked { $0.steps = newValue } } }
+    var stepDelay: Duration { get { locked { $0.stepDelay } } set { locked { $0.stepDelay = newValue } } }
+    var planActions: [AskPluginAction] {
+        get { locked { $0.planActions } }
+        set { locked { $0.planActions = newValue } }
+    }
+    var noInput: Bool { get { locked { $0.noInput } } set { locked { $0.noInput = newValue } } }
     var runsWithoutInput: Bool { noInput }
-    private(set) var runs: [AskPluginRequest] = []
+    var runs: [AskPluginRequest] { locked { $0.runs } }
 
     let id = "test"
     let title = "Test"
@@ -31,13 +57,17 @@ final class AskTestPlugin: AskLauncherPlugin, @unchecked Sendable {
     func chipDetail(for keyword: AskKeyword, language: AppLanguage) -> String? { keyword.options["target"] }
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
+        let (live, planActions) = locked { ($0.live, $0.planActions) }
         let mode: AskPluginPlan.Mode = live && request.origin == .argument && request.options["engine"] == nil ? .live : .onSubmit
         return AskPluginPlan(mode: mode, title: "plan " + request.text, values: request.options, actions: planActions)
     }
 
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
              progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
-        runs.append(request)
+        let (runDelay, steps, stepDelay) = locked { state in
+            state.runs.append(request)
+            return (state.runDelay, state.steps, state.stepDelay)
+        }
         if runDelay != .zero { try await Task.sleep(for: runDelay) }
         var text = ""
         for step in steps {
@@ -45,7 +75,7 @@ final class AskTestPlugin: AskLauncherPlugin, @unchecked Sendable {
             await progress(AskPluginOutput(body: text, original: request.text, meta: [], source: "test", actions: []))
             try await Task.sleep(for: stepDelay)
         }
-        if let failure { throw failure }
+        if let failure = locked({ $0.failure }) { throw failure }
         return AskPluginOutput(body: "done " + request.text, original: request.text, meta: [], source: "test",
                                actions: [AskPluginAction(kind: .copy("done " + request.text), title: "Copy",
                                                          symbol: "doc", shortcut: .enter)])
@@ -277,4 +307,32 @@ private struct ThrowingPlugin: AskLauncherPlugin {
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
              progress: @escaping AskPluginProgress) async throws -> AskPluginOutput { throw Broken() }
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? { nil }
+}
+
+@Suite("Ask test plugin")
+struct AskTestPluginTests {
+    /// Runs overlap and the test reconfigures the plugin meanwhile, as a cancelled run that is
+    /// still starting does next to a retry. Every run is recorded and none is lost or corrupted.
+    @Test func concurrentRunsAndReconfigurationAreRecordedSafely() async throws {
+        let plugin = AskTestPlugin()
+        plugin.stepDelay = .zero
+        let keyword = try #require(plugin.defaultKeywords.first)
+        let plan = AskPluginPlan(mode: .onSubmit, title: "t")
+        let count = 200
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for index in 0 ..< count {
+                group.addTask {
+                    let request = AskPluginRequest(text: "\(index)", origin: .argument, keyword: keyword,
+                                                   options: [:], interfaceLanguage: .english)
+                    _ = try? await plugin.run(request, plan: plan)
+                }
+                group.addTask {
+                    plugin.failure = index.isMultiple(of: 2) ? AskPluginFailure(message: "offline \(index)") : nil
+                    plugin.steps = index.isMultiple(of: 3) ? ["a"] : []
+                }
+            }
+            try await group.waitForAll()
+        }
+        #expect(Set(plugin.runs.map(\.text)) == Set((0 ..< count).map(String.init)))
+    }
 }

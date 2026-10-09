@@ -93,8 +93,9 @@ struct ExclusiveUIStateLanguageTests {
 
         let readsLanguage = try NSRegularExpression(pattern: #"\bL\(|AppLocalization|\binterface:\s*\."#)
         let testAttribute = try NSRegularExpression(pattern: #"(?m)^\s+@Test\b"#)
+        let modifiers = #"(?:(?:private|fileprivate|internal|public|final)\s+)*"#
         let declaration = try NSRegularExpression(
-            pattern: #"^(?:@MainActor\s+)?(?:(?:private|fileprivate|internal|public|final)\s+)*(?:struct|class|enum|actor)\s+(\w+)"#)
+            pattern: #"^(?:@MainActor\s+)?"# + modifiers + #"(?:struct|class|enum|actor)\s+(\w+)"#)
         let extensionHeader = try NSRegularExpression(pattern: #"^(?:private\s+)?extension\s+(\w+)"#)
         func matches(_ expression: NSRegularExpression, _ text: String) -> Bool {
             expression.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil
