@@ -1,78 +1,64 @@
 import Foundation
 
-/// Walks the search folders with `fts`, which reads each folder's entries and
-/// their dates in one pass, many times faster than `FileManager`. Excluded and
-/// guarded folders are skipped without being opened; bundles count as one entry.
+/// Walks search folders through an isolated reader. Guarded paths are filtered before I/O.
 enum AskFileCrawler {
     /// No index holds more than this; past it the settings ask for smaller folders.
     static let maximumEntries = 1_000_000
 
-    struct Entry: Equatable {
+    struct Entry: Equatable, Codable {
         var path: String
         var kind: AskFileRecord.Kind
         var modified: Date
     }
 
-    /// Visits every entry below `root` the scope keeps, parents before children.
-    /// `visit` returns false to stop. Returns the number of entries visited.
+    enum SkipReason: Equatable { case timeout, failed, nonLocalMount }
+
+    /// Each directory is a separate deadline-bound request, so siblings survive a blocked read.
     @discardableResult
     static func crawl(_ root: String, scope: AskFileScope, limit: Int = maximumEntries,
-                      isCancelled: () -> Bool = { false }, visit: (Entry) -> Bool) -> Int {
-        guard scope.includes(root, isDirectory: true) else { return 0 }
+                      reader: AskFileReading = AskFileReader(), isCancelled: () -> Bool = { false },
+                      skipped: (String, SkipReason) -> Void = { _, _ in }, visit: (Entry) -> Bool) -> Int {
+        guard limit > 0, scope.includes(root, isDirectory: true) else { return 0 }
+        var pending = [root]
         var visited = 0
-        let options = FTS_PHYSICAL | FTS_NOCHDIR | FTS_XDEV
-        root.withCString { pointer in
-            let copy = strdup(pointer)
-            defer { free(copy) }
-            var arguments: [UnsafeMutablePointer<CChar>?] = [copy, nil]
-            guard let stream = fts_open(&arguments, options, nil) else { return }
-            defer { fts_close(stream) }
-            while let entry = fts_read(stream) {
-                if visited % 512 == 0, isCancelled() { return }
-                let info = Int32(entry.pointee.fts_info)
-                // Children are visited after their folder; the second visit of a folder is not news.
-                if info == FTS_DP { continue }
-                let path = String(cString: entry.pointee.fts_path)
-                if entry.pointee.fts_level == FTS_ROOTLEVEL { continue }
-                let isDirectory = info == FTS_D || info == FTS_DNR || info == FTS_DC
-                guard scope.includes(path, isDirectory: isDirectory) else {
-                    if isDirectory { fts_set(stream, entry, FTS_SKIP) }
-                    continue
-                }
-                let kind: AskFileRecord.Kind
-                switch info {
-                case FTS_D:
-                    // Another search folder is scanned on its own, with its own exclusions.
-                    if scope.roots.contains(path) {
-                        fts_set(stream, entry, FTS_SKIP)
-                        kind = .folder
-                    } else if isPackage(path) {
-                        fts_set(stream, entry, FTS_SKIP)
-                        kind = .package
-                    } else {
-                        kind = .folder
+        while let path = pending.popLast() {
+            if isCancelled() { break }
+            do {
+                var stopped = false
+                try reader.stream(.init(operation: .directory, path: path, scope: scope, limit: limit - visited),
+                                  isCancelled: isCancelled) { response in
+                    if response.error != nil { skipped(path, .failed) }
+                    for mount in response.skippedMounts ?? [] { skipped(mount, .nonLocalMount) }
+                    for entry in response.entries {
+                        if isCancelled() { stopped = true; return false }
+                        guard scope.includes(entry.path, isDirectory: entry.kind != .file) else { continue }
+                        visited += 1
+                        if !visit(entry) || visited >= limit { stopped = true; return false }
+                        if entry.kind == .folder, !scope.roots.contains(entry.path) { pending.append(entry.path) }
                     }
-                case FTS_F, FTS_SL, FTS_SLNONE, FTS_DEFAULT: kind = .file
-                default: continue
+                    return true
                 }
-                let modified = entry.pointee.fts_statp.map {
-                    Date(timeIntervalSince1970: TimeInterval($0.pointee.st_mtimespec.tv_sec))
-                } ?? Date()
-                visited += 1
-                if !visit(Entry(path: path, kind: kind, modified: modified)) || visited >= limit { return }
-            }
+                if stopped { return visited }
+            } catch AskFileReadError.cancelled { break }
+            catch AskFileReadError.timeout { skipped(path, .timeout) }
+            catch { skipped(path, .failed) }
         }
         return visited
     }
 
-    /// The entry at `path` as the crawler would list it, or nil when it is gone or not kept.
-    static func entry(at path: String, scope: AskFileScope) -> Entry? {
-        var info = stat()
-        guard lstat(path, &info) == 0 else { return nil }
-        let isDirectory = info.st_mode & S_IFMT == S_IFDIR
-        guard scope.includes(path, isDirectory: isDirectory) else { return nil }
-        let kind: AskFileRecord.Kind = isDirectory ? (isPackage(path) ? .package : .folder) : .file
-        return Entry(path: path, kind: kind, modified: Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec)))
+    /// Resolve metadata only after the pure scope check, including FSEvents updates.
+    static func entry(at path: String, scope: AskFileScope, reader: AskFileReading = AskFileReader()) -> Entry? {
+        guard scope.includes(path, isDirectory: false) || scope.includes(path, isDirectory: true) else { return nil }
+        return try? metadata(at: path, scope: scope, reader: reader)
+    }
+
+    static func metadata(at path: String, scope: AskFileScope, reader: AskFileReading) throws -> Entry? {
+        let response = try reader.read(.init(operation: .entry, path: path, scope: scope), isCancelled: { false })
+        if !(response.skippedMounts ?? []).isEmpty { throw AskFileReadError.nonLocalMount }
+        if let code = response.error, code != ENOENT, code != ENOTDIR {
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(code))
+        }
+        return response.entries.first
     }
 
     private static let knownPackages: Set<String> = [
@@ -85,7 +71,6 @@ enum AskFileCrawler {
     static func isPackage(_ path: String) -> Bool {
         let ext = (path as NSString).pathExtension
         guard !ext.isEmpty else { return false }
-        if knownPackages.contains(ext.lowercased()) { return true }
-        return (try? URL(fileURLWithPath: path).resourceValues(forKeys: [.isPackageKey]).isPackage) == true
+        return knownPackages.contains(ext.lowercased())
     }
 }

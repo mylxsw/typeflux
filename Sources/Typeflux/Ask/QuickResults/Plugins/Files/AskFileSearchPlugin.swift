@@ -77,6 +77,9 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
         }
         var note: String?
         if case let .building(found, _) = status.phase { note = L("ask.quick.file.indexing", found.formatted()) }
+        if let summary = AskFileLabels.skipped(status) {
+            note = [note, summary].compactMap { $0 }.joined(separator: " · ")
+        }
         return output(items, note: note)
     }
 
@@ -116,6 +119,6 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
 
     /// "Desktop, Documents and Downloads": the guarded folders by their Finder names.
     static func folderNames(_ paths: [String]) -> String {
-        paths.map { FileManager.default.displayName(atPath: $0) }.joined(separator: L("ask.plugin.files.separator"))
+        paths.map { AskFileLabels.folder($0) }.joined(separator: L("ask.plugin.files.separator"))
     }
 }

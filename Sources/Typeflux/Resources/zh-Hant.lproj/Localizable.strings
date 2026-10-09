@@ -3817,3 +3817,20 @@
 "ask.usage.empty" = "還沒有用量";
 "ask.usage.emptyHelp" = "傳送訊息後，用量會顯示在這裡。";
 "ask.submission.signIn" = "登入 Typeflux Cloud";
+/* File indexing status and file-system-free folder labels */
+"ask.plugin.files.skipped" = "已略過：%@";
+"ask.files.skip.timeout" = "%@ 個逾時目錄";
+"ask.files.skip.failed" = "%@ 個無法讀取的目錄";
+"ask.files.skip.mount" = "%@ 個網路或虛擬掛載點";
+"ask.files.folder.home" = "個人專屬檔案夾";
+"ask.files.folder.desktop" = "桌面";
+"ask.files.folder.documents" = "文件";
+"ask.files.folder.downloads" = "下載項目";
+"ask.files.folder.music" = "音樂";
+"ask.files.folder.pictures" = "圖片";
+"ask.files.folder.movies" = "影片";
+"ask.files.folder.library" = "資源庫";
+"ask.files.folder.applications" = "應用程式";
+"ask.files.folder.volumes" = "卷宗";
+"ask.files.folder.icloud" = "iCloud 雲碟";
+"ask.files.folder.cloud" = "雲端儲存空間";

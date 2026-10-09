@@ -3820,3 +3820,21 @@
 "ask.usage.empty" = "还没有用量";
 "ask.usage.emptyHelp" = "发送消息后，用量会显示在这里。";
 "ask.submission.signIn" = "登录 Typeflux Cloud";
+
+/* File indexing status and file-system-free folder labels */
+"ask.plugin.files.skipped" = "已跳过：%@";
+"ask.files.skip.timeout" = "%@ 个超时目录";
+"ask.files.skip.failed" = "%@ 个读取失败目录";
+"ask.files.skip.mount" = "%@ 个网络或虚拟挂载点";
+"ask.files.folder.home" = "个人文件夹";
+"ask.files.folder.desktop" = "桌面";
+"ask.files.folder.documents" = "文稿";
+"ask.files.folder.downloads" = "下载";
+"ask.files.folder.music" = "音乐";
+"ask.files.folder.pictures" = "图片";
+"ask.files.folder.movies" = "影片";
+"ask.files.folder.library" = "资源库";
+"ask.files.folder.applications" = "应用程序";
+"ask.files.folder.volumes" = "宗卷";
+"ask.files.folder.icloud" = "iCloud 云盘";
+"ask.files.folder.cloud" = "云存储";

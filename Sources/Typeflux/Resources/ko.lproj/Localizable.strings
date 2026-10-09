@@ -3810,3 +3810,20 @@
 "ask.usage.empty" = "아직 사용량이 없습니다";
 "ask.usage.emptyHelp" = "메시지를 보내면 사용량이 여기에 표시됩니다.";
 "ask.submission.signIn" = "Typeflux Cloud 로그인";
+/* File indexing status and file-system-free folder labels */
+"ask.plugin.files.skipped" = "건너뜀: %@";
+"ask.files.skip.timeout" = "시간 초과 폴더 %@개";
+"ask.files.skip.failed" = "읽을 수 없는 폴더 %@개";
+"ask.files.skip.mount" = "네트워크 또는 가상 마운트 %@개";
+"ask.files.folder.home" = "홈";
+"ask.files.folder.desktop" = "데스크탑";
+"ask.files.folder.documents" = "문서";
+"ask.files.folder.downloads" = "다운로드";
+"ask.files.folder.music" = "음악";
+"ask.files.folder.pictures" = "그림";
+"ask.files.folder.movies" = "동영상";
+"ask.files.folder.library" = "라이브러리";
+"ask.files.folder.applications" = "응용 프로그램";
+"ask.files.folder.volumes" = "볼륨";
+"ask.files.folder.icloud" = "iCloud Drive";
+"ask.files.folder.cloud" = "클라우드 저장 공간";
