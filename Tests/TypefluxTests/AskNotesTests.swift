@@ -20,7 +20,7 @@ func makeTestNote(_ title: String = "Explain · Comparative advantage", body: St
             createdAt: Date(timeIntervalSince1970: seconds), updatedAt: Date(timeIntervalSince1970: seconds))
 }
 
-@Suite("Ask notes: model and store")
+@Suite("Ask notes: model and store", .exclusiveUIState)
 @MainActor
 struct AskNotesStoreTests {
     @Test func aDraftBecomesANoteTitledAfterItsCommandAndInput() {
@@ -119,7 +119,7 @@ struct AskNotesStoreTests {
     }
 }
 
-@Suite("Ask notes: export and rich copy")
+@Suite("Ask notes: export and rich copy", .exclusiveUIState)
 @MainActor
 struct AskNoteExportTests {
     @Test func exportsMarkdownWithFrontMatter() {
@@ -148,7 +148,7 @@ struct AskNoteExportTests {
     }
 }
 
-@Suite("Ask notes keyword")
+@Suite("Ask notes keyword", .exclusiveUIState)
 @MainActor
 struct AskNotesPluginTests {
     private func request(_ text: String = "", origin: AskPluginRequest.Origin = .argument) -> AskPluginRequest {

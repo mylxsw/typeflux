@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("AI prompt results: Markdown, windows and notes")
+@Suite("AI prompt results: Markdown, windows and notes", .exclusiveUIState)
 @MainActor
 struct AskPromptResultFlowTests {
     private func request(_ text: String = "teh text", origin: AskPluginRequest.Origin = .argument) -> AskPluginRequest {
@@ -223,7 +223,7 @@ struct AskPromptResultFlowTests {
     }
 }
 
-@Suite("Ask notes window")
+@Suite("Ask notes window", .exclusiveUIState)
 @MainActor
 struct AskNotesViewModelTests {
     private func model(_ store: SQLiteAskNoteStore) -> AskNotesViewModel {

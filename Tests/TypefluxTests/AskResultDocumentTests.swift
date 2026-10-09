@@ -47,7 +47,7 @@ final class AskResultServicesRecorder {
     }
 }
 
-@Suite("Ask result windows")
+@Suite("Ask result windows", .exclusiveUIState)
 @MainActor
 struct AskResultDocumentTests {
     private func settle(_ condition: () -> Bool) async throws {

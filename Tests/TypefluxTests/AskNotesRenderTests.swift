@@ -7,7 +7,7 @@ import Testing
 /// Draws the result card, the result window and the notes window; writes PNGs when
 /// TYPEFLUX_ASK_SNAPSHOTS is set (compare with `docs/design/ai-command-results/`). The launcher card is
 /// drawn light: its dark glass comes from the launcher panel, which a bare window lacks.
-@Suite("AI prompt result rendering", .serialized)
+@Suite("AI prompt result rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskNotesRenderTests {
     static let markdown = """
