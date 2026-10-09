@@ -2156,6 +2156,9 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         await waitForMainActorWork()
     }
 
+    /// Main-actor isolated, so no processing task can run between the stop callbacks and the
+    /// intent check: the check sees the state the callbacks left, not a finished recording.
+    @MainActor
     func testRecordingStopCallbackPreservesAskAndDisablesAfterFinish() async {
         let hotkeys = MockProcessingHotkeyService()
         let audioRecorder = MockProcessingAudioRecorder()

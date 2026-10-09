@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask selected references", .serialized)
+@Suite("Ask selected references", .serialized, .exclusiveUIState)
 @MainActor
 struct AskReferenceTests {
     private func reference(question: String = "Why?") -> AskReference {

@@ -8,7 +8,7 @@ import Testing
 /// real mouse events. Use TYPEFLUX_ASK_RESPONSIVE_TESTS=1; additionally set
 /// TYPEFLUX_ASK_RESPONSIVE_SNAPSHOTS to save each production window's rendering.
 /// All conversations, account information and tools are synthetic.
-@Suite("Ask responsive workspace", .serialized)
+@Suite("Ask responsive workspace", .serialized, .exclusiveUIState)
 @MainActor
 struct AskResponsiveWorkspaceTests {
     private static let sizes: [NSSize] = [

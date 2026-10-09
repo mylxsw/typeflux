@@ -187,6 +187,7 @@ final class StatusBarController: NSObject {
 
         menu.addItem(makeItem(title: L("menu.openVoiceStudio"), action: #selector(openAskConversations)))
         menu.addItem(makeItem(title: L("menu.addVocabulary"), action: #selector(addVocabularyTerm)))
+        menu.addItem(makeItem(title: L("menu.notes"), action: #selector(openNotes)))
         let historyItem = NSMenuItem(title: L("menu.transcriptionHistory"), action: nil, keyEquivalent: "")
         historyItem.tag = MenuTag.transcriptionHistory
         historyItem.submenu = buildTranscriptionHistoryMenu()
@@ -534,6 +535,10 @@ final class StatusBarController: NSObject {
 
     @objc private func openAskConversations() {
         onOpenAskConversations()
+    }
+
+    @objc private func openNotes() {
+        AskNotesWindowController.shared.show()
     }
 
     @objc private func openAbout() {

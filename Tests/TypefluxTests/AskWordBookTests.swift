@@ -242,7 +242,7 @@ struct AskWordBookStoreTests {
     }
 }
 
-@Suite("Ask word book recorder")
+@Suite("Ask word book recorder", .exclusiveUIState)
 @MainActor
 struct AskWordBookRecorderTests {
     private let lookup = AskWordBookLookup(headword: "resilient", source: "en", target: "zh-Hans", translation: "有弹性的")
@@ -277,7 +277,7 @@ struct AskWordBookRecorderTests {
     }
 }
 
-@Suite("Ask translate plugin and the word book")
+@Suite("Ask translate plugin and the word book", .exclusiveUIState)
 struct AskTranslateWordBookTests {
     private func plugin(_ store: SQLiteAskWordBookStore?, local: Bool = true,
                         dictionary: AskTestWordLookup? = nil) -> AskTranslatePlugin {
@@ -429,7 +429,7 @@ private final class AskWordBookTestPlugin: AskLauncherPlugin, @unchecked Sendabl
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? { nil }
 }
 
-@Suite("Ask plugin session and the word book", .serialized)
+@Suite("Ask plugin session and the word book", .serialized, .exclusiveUIState)
 @MainActor
 struct AskPluginSessionWordBookTests {
     private func makeSession(_ plugin: AskWordBookTestPlugin) -> (AskPluginSession, Recorded) {

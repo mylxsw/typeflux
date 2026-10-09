@@ -32,7 +32,7 @@ final class AskProgressRecorder {
     var progress: AskPluginProgress { { [self] output in bodies.append(output.body) } }
 }
 
-@Suite("Ask prompt plugin")
+@Suite("Ask prompt plugin", .exclusiveUIState)
 @MainActor
 struct AskPromptPluginTests {
     private func request(_ text: String = "teh text", origin: AskPluginRequest.Origin = .argument,
@@ -147,7 +147,7 @@ private final class AskTestCompletingLLM: LLMService, @unchecked Sendable {
     func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String { "{}" }
 }
 
-@Suite("Ask web search plugin")
+@Suite("Ask web search plugin", .exclusiveUIState)
 struct AskWebSearchPluginTests {
     private func request(_ text: String = "swift actors", origin: AskPluginRequest.Origin = .argument,
                          options: [String: String] = ["engine": "google"]) -> AskPluginRequest {
@@ -212,7 +212,7 @@ struct AskWebSearchPluginTests {
     }
 }
 
-@Suite("Ask plugin registry")
+@Suite("Ask plugin registry", .exclusiveUIState)
 struct AskPluginRegistryTests {
     @Test func pluginsAddedLaterBringTheirKeywords() throws {
         let fyja = AskKeyword(keyword: "fyja", pluginID: "translate", options: ["target": "ja"])
@@ -222,7 +222,8 @@ struct AskPluginRegistryTests {
         #expect(dict.map(\.keyword) == ["dict", "词典"])
         let merged = AskPluginRegistry.keywords(saved: [fyja], known: nil)
         #expect(merged == [fyja] + dict + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords
-            + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin.keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords)
+            + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin.keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords
+            + AskNotesPlugin.keywords)
         // Saved before `dict` existed: it joins, and nothing else does.
         #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.pluginIDs) == [fyja] + dict)
         // Saved with every group but files: only `f` joins.
@@ -242,7 +243,7 @@ struct AskPluginRegistryTests {
         let settings = SettingsStore(defaults: defaults)
         #expect(settings.effectiveAskLauncherKeywords == AskPluginRegistry.defaultKeywords)
         settings.askLauncherKeywords = [fyja]
-        #expect(settings.effectiveAskLauncherKeywords.count == 14, "an old list gains later plugins and keywords")
+        #expect(settings.effectiveAskLauncherKeywords.count == 16, "an old list gains later plugins and keywords")
         settings.saveAskLauncherKeywords([fyja])
         #expect(settings.askLauncherKeywordPlugins == AskPluginRegistry.coveredGroups)
         #expect(settings.effectiveAskLauncherKeywords == [fyja])

@@ -6,7 +6,7 @@ import Testing
 /// Opt-in renders of launcher search with the production views (set
 /// TYPEFLUX_ASK_SNAPSHOTS): files and folders in the launcher, the actions panel,
 /// file mode and the settings page. Files live in a temporary folder.
-@Suite("Ask launcher search snapshots", .serialized)
+@Suite("Ask launcher search snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherSearchVisualTests {
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL,

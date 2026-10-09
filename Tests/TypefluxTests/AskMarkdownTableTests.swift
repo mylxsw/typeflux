@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask Markdown tables", .serialized)
+@Suite("Ask Markdown tables", .serialized, .exclusiveUIState)
 @MainActor struct AskMarkdownTableTests {
     private let sample = """
     ## 方案成本

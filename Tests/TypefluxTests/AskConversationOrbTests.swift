@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask conversation orb")
+@Suite("Ask conversation orb", .exclusiveUIState)
 @MainActor
 struct AskConversationOrbTests {
     private let start = Date(timeIntervalSinceReferenceDate: 0)

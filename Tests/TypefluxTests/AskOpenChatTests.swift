@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Open chat from launcher", .serialized)
+@Suite("Open chat from launcher", .serialized, .exclusiveUIState)
 @MainActor
 struct AskOpenChatTests {
     @Test func emptyOpenKeepsCurrentConversationAndIgnoresCapturedContext() async throws {

@@ -57,7 +57,7 @@ private struct SourceContextFixture {
     }
 }
 
-@Suite("Ask source context model")
+@Suite("Ask source context model", .exclusiveUIState)
 @MainActor
 struct AskSourceContextModelTests {
     @Test func legacyDraftIncludesSourceAndNewDraftRoundTripsExclusion() throws {

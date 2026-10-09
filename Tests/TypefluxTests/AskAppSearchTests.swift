@@ -217,7 +217,8 @@ struct AskAppIndexTests {
         let index = AskAppIndex(roots: [root], defaults: defaults)
         index.refreshIfStale()
         index.refreshIfStale()
-        for _ in 0 ..< 500 where index.search("calc", limit: 5).isEmpty {
+        // The scan runs at utility QoS, which a loaded Mac can delay by seconds; stop as soon as it lands.
+        for _ in 0 ..< 2000 where index.search("calc", limit: 5).isEmpty {
             try await Task.sleep(for: .milliseconds(5))
         }
         #expect(index.search("calc", limit: 5).first?.entry.id == "com.apple.calculator")
@@ -241,7 +242,7 @@ struct AskAppIndexTests {
     }
 }
 
-@Suite("Ask quick results with apps")
+@Suite("Ask quick results with apps", .exclusiveUIState)
 struct AskQuickResultsAppTests {
     private let apps = AskTestAppIndex(AskTestAppIndex.sample.entries)
 

@@ -5,7 +5,7 @@ import Testing
 
 /// The design-board details of the Liquid Glass workspace that are decided by
 /// pure logic: geometry, labels, ordering and drawing helpers.
-@Suite("Ask design fidelity")
+@Suite("Ask design fidelity", .exclusiveUIState)
 struct AskDesignFidelityTests {
     // MARK: - Window and glass
 

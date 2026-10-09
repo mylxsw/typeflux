@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask model chooser with images")
+@Suite("Ask model chooser with images", .exclusiveUIState)
 @MainActor
 struct AskModelChooserImageTests {
     private func library() throws -> AskModelLibrary {

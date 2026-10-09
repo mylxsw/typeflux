@@ -4,7 +4,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Delivery platform boundaries")
+@Suite("Delivery platform boundaries", .exclusiveUIState)
 @MainActor
 struct TextDeliveryPlatformTests {
     @Test(arguments: Array(AXTextInjector.opaqueContainerRoles).sorted(), [true, false])

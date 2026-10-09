@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// The launcher's height, Esc, highlight and notice rules, as pure values.
-@Suite("Ask launcher polish")
+@Suite("Ask launcher polish", .exclusiveUIState)
 @MainActor
 struct AskLauncherPolishTests {
     // MARK: - Height

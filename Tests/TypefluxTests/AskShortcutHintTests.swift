@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask shortcut hint")
+@Suite("Ask shortcut hint", .exclusiveUIState)
 struct AskShortcutHintTests {
     private func keys(_ clauses: [[AskHintSegment]]) -> [String] {
         clauses.flatMap { $0 }.compactMap { segment in

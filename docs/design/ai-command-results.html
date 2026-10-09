@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · AI 指令结果：Markdown、独立窗口与笔记本 设计稿</title>
+<style>
+  :root {
+    --canvas: #0c0c0d; --desk: #1b1c1f;
+    --glass: rgba(58,58,62,.86);
+    --hair: rgba(255,255,255,.10);
+    --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: rgba(10,132,255,.16); --accent-text: #8ebdff;
+    --hover: rgba(255,255,255,.08); --ctl: rgba(255,255,255,.08);
+    --violet: #bf5af2; --violet-text: #d6a1f7;
+    --star: #ffcc00; --star-soft: rgba(255,204,0,.16);
+    --danger: #ff6961; --ok: #34c759;
+    --win: #232325; --side: #1e1e20; --code: rgba(255,255,255,.06); --wall-a: #2c3442; --wall-b: #3b2f45;
+  }
+  body.light {
+    --canvas: #eceef1; --desk: #dfe3e8;
+    --glass: rgba(250,250,252,.92);
+    --hair: rgba(0,0,0,.09);
+    --text: #1d1d1f; --text-2: #5f5f64; --text-3: #8e8e93;
+    --accent-soft: rgba(10,132,255,.12); --accent-text: #0a6cdb;
+    --hover: rgba(0,0,0,.05); --ctl: rgba(0,0,0,.05);
+    --violet-text: #8e3fc0;
+    --star: #e0a800; --star-soft: rgba(224,168,0,.14);
+    --win: #f7f7f8; --side: #efeff1; --code: rgba(0,0,0,.05); --wall-a: #b9c7dc; --wall-b: #d9c8e4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 56px; background: var(--canvas); color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans SC", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 18px; max-width: 1260px; }
+  h3 { font-size: 17px; margin: 44px 0 14px; font-weight: 650; }
+  code { font-family: ui-monospace, Menlo, monospace; }
+  .topbar { display: flex; gap: 10px; align-items: center; margin-bottom: 22px; flex-wrap: wrap; }
+  .pill { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--ctl); border: 1px solid var(--hair); }
+  .pill button { border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; height: 26px; padding: 0 12px; border-radius: 7px; cursor: pointer; }
+  .pill button.on { background: var(--accent); color: #fff; }
+  .btn { border: 1px solid var(--hair); background: var(--ctl); color: var(--text); font: inherit; font-size: 12px; height: 28px; padding: 0 12px; border-radius: 8px; cursor: pointer; }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn.danger { color: var(--danger); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 10px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  .notes code { font-size: 11.5px; }
+  .grid2 { display: grid; grid-template-columns: 780px 1fr; gap: 28px 36px; align-items: start; }
+  .kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 18px; padding: 0 5px; border-radius: 5px; background: var(--ctl); border: 1px solid var(--hair); font-size: 10.5px; font-weight: 600; color: var(--text-2); }
+  .opts { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+  .opts .ln2 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .opts .k2 { width: 62px; color: var(--text-3); font-size: 12px; }
+
+  /* ===== markdown ===== */
+  .md { font-size: 14.5px; line-height: 1.65; color: var(--text); word-wrap: break-word; }
+  .md > :first-child { margin-top: 0; } .md > :last-child { margin-bottom: 0; }
+  .md p { margin: 0 0 8px; }
+  .md h1, .md h2, .md h3 { margin: 12px 0 6px; line-height: 1.3; font-weight: 700; }
+  .md h1 { font-size: 19px; } .md h2 { font-size: 17px; } .md h3 { font-size: 15px; }
+  .md ul, .md ol { margin: 0 0 8px; padding-left: 22px; } .md li { margin: 2px 0; }
+  .md blockquote { margin: 0 0 8px; padding: 2px 0 2px 12px; border-left: 3px solid var(--hair); color: var(--text-2); }
+  .md code { font-size: .88em; background: var(--code); padding: 1px 5px; border-radius: 5px; }
+  .md pre { margin: 0 0 8px; padding: 10px 12px; background: var(--code); border-radius: 8px; overflow: auto; font-size: 12.5px; line-height: 1.5; }
+  .md pre code { background: none; padding: 0; }
+  .md table { border-collapse: collapse; margin: 0 0 8px; font-size: 13px; }
+  .md th, .md td { border: 1px solid var(--hair); padding: 4px 10px; text-align: left; }
+  .md th { background: var(--code); font-weight: 600; }
+  .md strong { font-weight: 650; }
+  .md a { color: var(--accent-text); text-decoration: none; }
+  .raw { font-size: 14.5px; line-height: 1.65; white-space: pre-wrap; color: var(--text); }
+  .cursor { display: inline-block; width: 7px; height: 15px; background: var(--accent); vertical-align: -2px; margin-left: 2px; animation: blink 1s steps(1) infinite; border-radius: 1px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ===== stage + launcher ===== */
+  .stage { position: relative; width: 780px; min-height: 640px; border-radius: 14px; overflow: hidden; border: 1px solid var(--hair); padding: 44px 50px 40px;
+    background: radial-gradient(700px 400px at 20% 0%, var(--wall-a), transparent 60%), radial-gradient(700px 400px at 90% 100%, var(--wall-b), transparent 60%), var(--desk); outline: none; }
+  .stage:focus-visible, .desk:focus-visible { box-shadow: inset 0 0 0 2px rgba(10,132,255,.6); }
+  .card { width: 680px; border-radius: 24px; background: var(--glass); border: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(24px);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 24px 60px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.25); overflow: hidden; position: relative; transition: opacity .2s, transform .2s; }
+  body.light .card { border-color: rgba(0,0,0,.10); }
+  .card.gone { opacity: 0; transform: scale(.97); pointer-events: none; }
+  .inrow { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 12px; }
+  .q { flex: 1; min-width: 0; font-size: 15.5px; line-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q .ph { color: var(--text-3); }
+  .q input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; }
+  .kw { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; flex: none; font-size: 13px; font-weight: 600; white-space: nowrap; background: var(--accent-soft); color: var(--accent-text); }
+  .kw .g { width: 20px; height: 20px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; background: var(--accent); color: #fff; }
+  .kw .d { opacity: .8; font-weight: 500; }
+  .send { width: 32px; height: 32px; border-radius: 50%; background: var(--ctl); color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex: none; }
+  .hair { height: 1px; background: var(--hair); }
+  .qr { padding: 6px; }
+  .grp { display: flex; align-items: center; font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--text-3); padding: 6px 12px 4px; }
+  .bar { display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border-top: 1px solid var(--hair); background: rgba(0,0,0,.06); font-size: 12px; color: var(--text-2); position: relative; }
+  .bar .spacer { flex: 1; }
+  .bar .keys { color: var(--text-3); font-size: 11px; white-space: nowrap; }
+  .bar .keys b { color: var(--text-2); font-weight: 600; margin-left: 8px; }
+  .bar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--violet); }
+  .toast { position: absolute; left: 8px; top: 6px; height: 26px; display: flex; align-items: center; opacity: 0; pointer-events: none; transition: opacity .15s;
+    background: var(--win); color: var(--text); border-radius: 7px; padding: 0 8px; font-size: 12px; white-space: nowrap; z-index: 5; border: 1px solid var(--hair); }
+  .toast.show { opacity: 1; }
+  .toast b { color: var(--star); font-weight: 600; }
+
+  .rc { margin: 2px 0 4px; border-radius: 14px; padding: 12px 14px 10px; background: var(--hover); box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); position: relative; }
+  .rh { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); margin-bottom: 8px; }
+  .rh .name { color: var(--text); font-size: 13px; font-weight: 600; }
+  .badge2 { font-size: 11px; color: var(--violet-text); border: 1px solid rgba(191,90,242,.35); border-radius: 5px; padding: 0 6px; white-space: nowrap; }
+  .rh .sp { flex: 1; }
+  .iconbtn { width: 26px; height: 26px; border-radius: 8px; border: 0; background: var(--ctl); color: var(--text-2); font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: transform .15s; font-family: inherit; }
+  .iconbtn:hover { color: var(--text); }
+  .iconbtn.on { background: var(--star-soft); color: var(--star); }
+  .iconbtn.pending { background: var(--star-soft); color: var(--star); opacity: .55; }
+  .iconbtn.pin.on { background: var(--accent-soft); color: var(--accent-text); }
+  .iconbtn.pop { transform: scale(1.25); }
+  .rbody { max-height: 280px; overflow: auto; padding-right: 4px; }
+  .orig { font-size: 12.5px; color: var(--text-2); white-space: pre-wrap; max-height: 80px; overflow: auto; }
+  .sep { height: 1px; background: var(--hair); margin: 8px 0; }
+  .acts { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .act { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border-radius: 7px; background: var(--ctl); color: var(--text-2); font-size: 11.5px; cursor: pointer; border: 0; font-family: inherit; white-space: nowrap; }
+  .act:hover { color: var(--text); }
+  .act .s { color: var(--text-3); font-size: 10.5px; }
+  .act.p { background: rgba(10,132,255,.22); color: var(--accent-text); }
+  .act.new { box-shadow: inset 0 0 0 1px rgba(52,199,89,.55); }
+  .act:disabled { opacity: .45; cursor: default; }
+  .lrow { display: flex; align-items: center; gap: 12px; padding: 0 12px; height: 44px; border-radius: 12px; font-size: 13.5px; cursor: pointer; }
+  .lrow.hl { background: var(--hover); box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); }
+  .lrow .tile { width: 26px; height: 26px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent-text); font-size: 12px; font-weight: 700; flex: none; }
+  .lrow .tile.pin { background: var(--star-soft); color: var(--star); }
+  .lrow .tt2 { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+  .lrow .sm { color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+  .lrow .cap { margin-left: auto; color: var(--text-3); font-size: 11.5px; white-space: nowrap; }
+  .lrow mark, .item mark { background: rgba(255,204,0,.28); color: inherit; border-radius: 3px; }
+  .empty { padding: 26px 12px; text-align: center; color: var(--text-3); font-size: 12.5px; }
+  .hidden { display: none !important; }
+
+  /* ===== desktop + windows ===== */
+  .desk { position: relative; width: 1500px; height: 760px; border-radius: 14px; overflow: hidden; border: 1px solid var(--hair); outline: none;
+    background: radial-gradient(900px 500px at 20% 0%, var(--wall-a), transparent 60%), radial-gradient(900px 500px at 90% 100%, var(--wall-b), transparent 60%), var(--desk); }
+  .desk .other { position: absolute; left: 40px; top: 40px; width: 520px; height: 380px; border-radius: 12px; background: var(--win); border: 1px solid var(--hair); opacity: .55; padding: 0; overflow: hidden; }
+  .desk .other .wt { height: 34px; border-bottom: 1px solid var(--hair); display: flex; align-items: center; padding: 0 12px; gap: 7px; font-size: 12px; color: var(--text-2); }
+  .desk .other .lines { padding: 16px 18px; color: var(--text-3); font-size: 13px; line-height: 1.9; }
+  .desk .hint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: var(--text-3); font-size: 13px; text-align: center; }
+  .rwin { position: absolute; width: 580px; height: 600px; border-radius: 12px; background: var(--win); border: 1px solid var(--hair); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 70px rgba(0,0,0,.5); }
+  .rwin.top { box-shadow: 0 0 0 2px rgba(10,132,255,.55), 0 24px 70px rgba(0,0,0,.5); }
+  .rwin .resize { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; }
+  .wtitle { height: 40px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 14px; border-bottom: 1px solid var(--hair); font-size: 13px; position: relative; cursor: grab; user-select: none; }
+  .wtitle .tl { display: flex; gap: 8px; }
+  .wtitle .tl i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; background: #ff5f57; cursor: pointer; }
+  .wtitle .tl i:nth-child(2) { background: #febc2e; cursor: default; } .wtitle .tl i:nth-child(3) { background: #28c840; cursor: default; }
+  .wtitle .tt { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; white-space: nowrap; pointer-events: none; }
+  .wtitle .tt b { font-weight: 600; } .wtitle .tt .c { color: var(--text-3); font-size: 12px; }
+  .wtitle .r { margin-left: auto; display: flex; gap: 6px; }
+  .rwin .origbox { flex: none; padding: 10px 22px; border-bottom: 1px solid var(--hair); font-size: 12.5px; color: var(--text-2); }
+  .rwin .origbox summary { cursor: pointer; color: var(--text-3); font-size: 12px; list-style: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rwin .origbox summary::before { content: "▸ "; } .rwin .origbox[open] summary::before { content: "▾ "; }
+  .rwin .origbox .ot { margin-top: 6px; white-space: pre-wrap; max-height: 110px; overflow: auto; }
+  .rwin .content { flex: 1; overflow: auto; padding: 18px 26px; }
+  .rwin .content .md { font-size: 15.5px; max-width: 680px; margin: 0 auto; }
+  .rwin .content.dim .md { opacity: .45; }
+  .wtool { flex: none; display: flex; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--hair); flex-wrap: wrap; align-items: center; }
+  .wtool .sp { flex: 1; }
+  .wtool .st { font-size: 11.5px; color: var(--text-3); }
+  .wtoast { position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); background: var(--glass); border: 1px solid var(--hair); border-radius: 8px; padding: 5px 10px; font-size: 12px; opacity: 0; transition: opacity .15s; pointer-events: none; white-space: nowrap; }
+  .wtoast.show { opacity: 1; } .wtoast b { color: var(--star); }
+
+  /* ===== notes window ===== */
+  .nbwin { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 1180px; height: 690px; border-radius: 12px; background: var(--win); border: 1px solid var(--hair); overflow: hidden;
+    box-shadow: 0 24px 70px rgba(0,0,0,.5); display: grid; grid-template-columns: 200px 330px 1fr; }
+  .side { background: var(--side); border-right: 1px solid var(--hair); padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; overflow: auto; }
+  .side .tl { display: flex; gap: 8px; padding: 2px 6px 16px; }
+  .side .tl i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; background: #ff5f57; }
+  .side .tl i:nth-child(2) { background: #febc2e; } .side .tl i:nth-child(3) { background: #28c840; }
+  .side .sec { font-size: 11px; font-weight: 600; color: var(--text-3); padding: 12px 10px 4px; }
+  .nav { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 10px; border-radius: 8px; color: var(--text-2); font-size: 13px; cursor: pointer; }
+  .nav:hover { background: var(--hover); }
+  .nav .ic { width: 16px; text-align: center; color: var(--text-3); }
+  .nav .n { margin-left: auto; font-size: 11.5px; color: var(--text-3); }
+  .nav.on { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+  .nav.on .ic { color: var(--accent-text); }
+  .mid { border-right: 1px solid var(--hair); display: flex; flex-direction: column; min-height: 0; }
+  .mid .tools { display: flex; gap: 6px; padding: 12px 10px 8px; align-items: center; }
+  .search { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; background: var(--ctl); border: 1px solid var(--hair); flex: 1; min-width: 0; color: var(--text-3); }
+  .search input { border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 12.5px; flex: 1; min-width: 0; }
+  select.sel { height: 30px; border-radius: 8px; background: var(--ctl); border: 1px solid var(--hair); color: var(--text); font: inherit; font-size: 12px; padding: 0 6px; }
+  .list { flex: 1; overflow: auto; padding: 0 8px 8px; }
+  .day { font-size: 11px; font-weight: 600; color: var(--text-3); padding: 10px 10px 4px; }
+  .item { padding: 8px 10px; border-radius: 10px; cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; }
+  .item:hover { background: var(--hover); }
+  .item.on { background: var(--accent-soft); }
+  .item .t { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item .tm { color: var(--text-3); font-size: 11px; white-space: nowrap; }
+  .item .ex { grid-column: 1 / -1; color: var(--text-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item .cmd { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; font-size: 11px; color: var(--text-3); }
+  .tag { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--ctl); color: var(--text-2); font-size: 11px; }
+  .tag.cmdtag { background: var(--accent-soft); color: var(--accent-text); }
+  .tag button { border: 0; background: none; color: var(--text-3); cursor: pointer; padding: 0; font-size: 11px; }
+  .detail { display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; }
+  .dhead { padding: 18px 24px 10px; border-bottom: 1px solid var(--hair); }
+  .dhead input.title { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 20px; font-weight: 700; padding: 0; }
+  .dhead .meta { margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--text-3); font-size: 11.5px; }
+  .dhead .tags { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .dhead .tags input { width: 90px; height: 20px; border: 1px dashed var(--hair); border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-size: 11px; padding: 0 6px; outline: 0; }
+  .dhead .rt { position: absolute; right: 16px; top: 16px; display: flex; gap: 6px; }
+  .dorig { padding: 8px 24px; border-bottom: 1px solid var(--hair); font-size: 12.5px; color: var(--text-2); }
+  .dorig summary { cursor: pointer; color: var(--text-3); font-size: 12px; }
+  .dorig .ot { margin-top: 6px; white-space: pre-wrap; max-height: 90px; overflow: auto; }
+  .dbody { flex: 1; overflow: auto; padding: 16px 24px; }
+  .dbody.split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .dbody textarea { width: 100%; height: 100%; min-height: 300px; resize: none; border: 1px solid var(--hair); border-radius: 8px; background: var(--code); color: var(--text); font: 12.5px/1.6 ui-monospace, Menlo, monospace; padding: 10px; outline: 0; }
+  .dfoot { flex: none; display: flex; gap: 6px; padding: 10px 14px; border-top: 1px solid var(--hair); align-items: center; }
+  .dfoot .sp { flex: 1; }
+  .undo { position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); background: var(--glass); border: 1px solid var(--hair); border-radius: 9px; padding: 6px 8px 6px 12px; display: flex; gap: 10px; align-items: center; font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+  .nbempty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-3); gap: 8px; font-size: 13px; }
+  .nbempty .big { font-size: 34px; }
+</style></head>
+<body>
+<h1>AI 指令结果：Markdown 渲染、独立窗口与笔记本</h1>
+<p class="sub">GUL-292 可交互设计稿。四个场景共用一份数据：在 ① 里 ⌘S 收藏的结果，会出现在 ③ 笔记本和 ④ <code>nb</code> 关键词里；⌘O 会把结果送到 ② 的独立窗口。点击灰色舞台后可用键盘操作（⌘ 也可用 Ctrl 代替）。方案文档：<code>docs/design/ai-command-results.md</code>。</p>
+<div class="topbar">
+  <div class="pill" id="theme"><button class="on" data-v="dark">深色</button><button data-v="light">浅色</button></div>
+  <span class="notes">跳到：<a href="#s1" style="color:var(--accent-text)">① 结果卡</a> · <a href="#s2" style="color:var(--accent-text)">② 独立窗口</a> · <a href="#s3" style="color:var(--accent-text)">③ 笔记本</a> · <a href="#s4" style="color:var(--accent-text)">④ nb 关键词</a></span>
+</div>
+
+<!-- ============ 1. result card ============ -->
+<h3 id="s1">① 启动器结果卡：Markdown 渲染 + ⌘O / ⌘S / ⌘B</h3>
+<div class="grid2">
+  <div class="stage" id="stage1" tabindex="0">
+    <div class="card" id="card1">
+      <div class="inrow">
+        <span class="kw"><span class="g">✦</span>AI 指令 <span class="d" id="kwName">→ 解释</span></span>
+        <div class="q"><span class="ph" id="kwPh">要处理的内容 · 留空处理选中的 1 行</span></div>
+        <span class="send">🎙</span><span class="send">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr">
+        <div class="grp">AI 指令</div>
+        <div class="rc">
+          <div class="rh">
+            <span class="name" id="rcTitle">解释选中的 1 行</span>
+            <span class="badge2" id="rcModel">gpt-5-mini</span>
+            <span class="sp"></span>
+            <button class="iconbtn" id="star1" title="收藏到笔记本 ⌘S">☆</button>
+            <button class="iconbtn" id="open1" title="在窗口中打开 ⌘O">⧉</button>
+          </div>
+          <div id="cmpBox" class="hidden"><div class="orig" id="origText"></div><div class="sep"></div></div>
+          <div class="rbody" id="rbody"></div>
+          <div class="acts" id="acts1"></div>
+        </div>
+        <div class="grp">AI</div>
+        <div class="lrow"><span class="tile">✦</span><span class="tt2">问 AI</span><span class="cap">⌘↩</span></div>
+      </div>
+      <div class="bar">
+        <span class="dot"></span><span>gpt-5-mini</span>
+        <span class="toast" id="toast1"></span>
+        <span class="spacer"></span>
+        <span class="keys" id="keys1"></span>
+      </div>
+    </div>
+    <div class="hint hidden" id="cardGone" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--text-3);text-align:center">
+      启动器已收起，结果在 ② 的窗口里继续。<br><br><button class="btn" id="reopen1">重新唤起启动器</button>
+    </div>
+  </div>
+  <div>
+    <div class="opts">
+      <div class="ln2"><span class="k2">渲染</span><div class="pill" id="mode1"><button data-v="before">现状（纯文本）</button><button class="on" data-v="after">方案（Markdown）</button></div></div>
+      <div class="ln2"><span class="k2">示例</span><div class="pill" id="sample1"></div></div>
+      <div class="ln2"><span class="k2">操作</span>
+        <button class="btn" id="play1">▶ 模拟流式生成</button>
+        <button class="btn" id="cmp1">对照 ⌘D</button>
+        <button class="btn" id="rich1">复制为富文本 ⇧⌘C</button>
+      </div>
+    </div>
+    <div class="notes">
+      <div class="label">要点</div>
+      <ul>
+        <li><b>根因</b>：结果卡早就有 Markdown 分支（<code>output.markdown</code>），但 <code>AskPromptPlugin</code> 从没打开它。改为 <code>markdown: true</code>，并补上 Markdown 下的<b>对照（⌘D）</b>和<b>流式自动滚动</b>。</li>
+        <li><b>↩ 复制</b> 仍是 Markdown 原文；新增 <b>⇧⌘C 复制为富文本</b>（HTML + RTF + 纯文本），贴进邮件 / 文档就是排好版的样子。</li>
+        <li>头部右侧两个按钮：<b>☆ 收藏 ⌘S</b>（存进笔记本，底栏提示「⌘B 打开」）、<b>⧉ 在窗口中打开 ⌘O</b>。生成中也能按：⌘S 会在完成后自动收藏（半透明 ☆），⌘O 把流式输出带进窗口。</li>
+        <li>⌘R 重新生成后是新内容，☆ 回到空心；旧的那条保留在笔记本里。</li>
+        <li>卡内高度上限沿用 280pt，长内容卡内滚动，或 ⌘O 拿出去看。</li>
+      </ul>
+      <div class="label" style="margin-top:14px">新增快捷键</div>
+      <table style="font-size:12px;color:var(--text-2);border-collapse:collapse">
+        <tr><td style="padding:3px 10px 3px 0"><span class="kbd">⌘O</span></td><td>在窗口中打开</td></tr>
+        <tr><td style="padding:3px 10px 3px 0"><span class="kbd">⌘S</span></td><td>收藏 / 取消收藏</td></tr>
+        <tr><td style="padding:3px 10px 3px 0"><span class="kbd">⌘B</span></td><td>打开笔记本（与翻译里打开单词本同一个键位）</td></tr>
+        <tr><td style="padding:3px 10px 3px 0"><span class="kbd">⇧⌘C</span></td><td>复制为富文本</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 2. detached window ============ -->
+<h3 id="s2">② 独立结果窗口（⌘O）</h3>
+<div class="grid2" style="grid-template-columns: 1500px; gap: 14px">
+  <div class="notes" style="max-width:1280px">
+    普通 macOS 窗口：拖动标题栏移动、右下角拖动改变大小、可多开（依次错位排开），📌 置顶切换浮动层级，⌘W / 红点关闭。<b>插入到 备忘录</b>回到唤起启动器时的 App 写入；
+    <label style="cursor:pointer"><input type="checkbox" id="appGone"> 模拟「原 App 已退出」</label>（按钮置灰并提示）。
+    <button class="btn" id="spawn2" style="margin-left:8px">再打开一个示例窗口</button>
+  </div>
+  <div class="desk" id="desk2" tabindex="0">
+    <div class="other"><div class="wt"><span style="color:#ff5f57">●</span><span style="color:#febc2e">●</span><span style="color:#28c840">●</span>&nbsp; 备忘录 — 经济学读书笔记</div>
+      <div class="lines">第三章 国际贸易<br><span style="background:rgba(10,132,255,.3);color:var(--text)">比较优势（Comparative Advantage）</span><br>李嘉图模型的假设 …<br>……</div></div>
+    <div class="hint" id="deskHint">在 ① 里按 ⌘O（或点「再打开一个示例窗口」），结果会出现在这里。</div>
+  </div>
+</div>
+
+<!-- ============ 3. notes window ============ -->
+<h3 id="s3">③ 笔记本窗口（⌘B）</h3>
+<div class="notes" style="max-width:1280px;margin-bottom:12px">
+  三栏：分类 / 列表（全文搜索 + 排序）/ 阅读与编辑。正文默认渲染，「编辑」切到 Markdown 源码 + 实时预览；标题可直接改；回车添加标签；删除带撤销；导出为带 front matter 的 <code>.md</code>。
+</div>
+<div class="desk" id="desk3" style="height:760px">
+  <div class="nbwin">
+    <div class="side" id="nbSide"></div>
+    <div class="mid">
+      <div class="tools">
+        <div class="search">⌕ <input id="nbSearch" placeholder="搜索标题、正文、原文"></div>
+        <select class="sel" id="nbSort"><option value="updated">最近更新</option><option value="created">创建时间</option></select>
+      </div>
+      <div class="list" id="nbList"></div>
+    </div>
+    <div class="detail" id="nbDetail"></div>
+  </div>
+</div>
+
+<!-- ============ 4. note keyword ============ -->
+<h3 id="s4">④ 启动器里找笔记：<code>nb</code> / <code>笔记</code></h3>
+<div class="grid2">
+  <div class="stage" id="stage4" tabindex="0" style="min-height:470px">
+    <div class="card">
+      <div class="inrow">
+        <span class="kw"><span class="g">✎</span>笔记本</span>
+        <div class="q"><input id="q4" placeholder="搜索笔记 · 留空显示最近"></div>
+        <span class="send">↑</span>
+      </div>
+      <div class="hair"></div>
+      <div class="qr" id="list4"></div>
+      <div class="bar"><span class="toast" id="toast4"></span><span class="spacer"></span><span class="keys"><b>↩</b> 在窗口中打开 <b>⌘↩</b> 复制正文 <b>⌘B</b> 打开笔记本</span></div>
+    </div>
+  </div>
+  <div class="notes">
+    <div class="label">要点</div>
+    <ul>
+      <li>留空：最近 8 条，置顶在前；输入：标题 / 正文 / 原文全文搜索（本机 FTS5），命中高亮。</li>
+      <li><b>↩</b> 用 ② 的结果窗口打开这条笔记；<b>⌘↩</b> 直接复制正文；最后一行「打开笔记本…」。</li>
+      <li>↑ ↓ 选择。在 ① 里收藏的新结果会立刻出现在这里。</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+// ---------------- tiny markdown renderer ----------------
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function inline(s) {
+  const codes = [];
+  s = esc(s).replace(/`([^`]+)`/g, (_, c) => { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
+       .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="#" title="$2">$1</a>');
+  return s.replace(/\u0000(\d+)\u0000/g, (_, i) => '<code>' + codes[i] + '</code>');
+}
+function md(src) {
+  const lines = src.replace(/\r/g, '').split('\n'); let out = '', i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^```/.test(l)) { const buf = []; i++; while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]); i++; out += '<pre><code>' + esc(buf.join('\n')) + '</code></pre>'; continue; }
+    let m;
+    if ((m = l.match(/^(#{1,3})\s+(.*)/))) { out += `<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`; i++; continue; }
+    if (/^>\s?/.test(l)) { const buf = []; while (i < lines.length && /^>\s?/.test(lines[i])) buf.push(lines[i++].replace(/^>\s?/, '')); out += '<blockquote>' + md(buf.join('\n')) + '</blockquote>'; continue; }
+    if (/^\s*[-*]\s+/.test(l)) { out += '<ul>'; while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) out += '<li>' + inline(lines[i++].replace(/^\s*[-*]\s+/, '')) + '</li>'; out += '</ul>'; continue; }
+    if (/^\s*\d+\.\s+/.test(l)) { out += '<ol>'; while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) out += '<li>' + inline(lines[i++].replace(/^\s*\d+\.\s+/, '')) + '</li>'; out += '</ol>'; continue; }
+    if (/^\|/.test(l) && i + 1 < lines.length && /^\|\s*:?-/.test(lines[i + 1])) {
+      const row = r => r.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      out += '<table><tr>' + row(l).map(c => '<th>' + inline(c) + '</th>').join('') + '</tr>'; i += 2;
+      while (i < lines.length && /^\|/.test(lines[i])) out += '<tr>' + row(lines[i++]).map(c => '<td>' + inline(c) + '</td>').join('') + '</tr>';
+      out += '</table>'; continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const buf = []; while (i < lines.length && lines[i].trim() && !/^(#{1,3}\s|```|>|\s*[-*]\s|\s*\d+\.\s|\|)/.test(lines[i])) buf.push(lines[i++]);
+    out += '<p>' + inline(buf.join('\n')).replace(/\n/g, '<br>') + '</p>';
+  }
+  return out;
+}
+const $ = id => document.getElementById(id);
+const plain = s => s.replace(/```[\s\S]*?```/g, '').replace(/[#>*`|]/g, '').replace(/\s+/g, ' ').trim();
+const mod = e => e.metaKey || e.ctrlKey;
+const clip = (s, n = 24) => { s = s.replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n) + '…' : s; };
+
+// ---------------- data ----------------
+const SAMPLES = {
+  explain: { name: '解释', kw: 'ex', title: '解释选中的 1 行', app: '备忘录', input: '比较优势（Comparative Advantage）',
+    body: `比较优势（Comparative Advantage）是经济学里解释**“为什么贸易对双方都有好处”**的核心概念，由大卫·李嘉图提出。
+
+**一句话理解：** 即使一方样样都比对方强，双方仍然应该各自专注做自己“相对更擅长”的事，然后互相交换，这样双方都能获益。
+
+**关键点：**
+- 比较的不是“谁绝对更强”，而是“谁放弃的代价更小”（机会成本）。
+- 只要两边的机会成本不同，分工 + 交换就能让总产出变多。
+
+**例子：**
+
+| | 做蛋糕 | 修电脑 |
+|---|---|---|
+| 小王 | 1 小时 | 2 小时 |
+| 小李 | 3 小时 | 3 小时 |
+
+小王两样都更快，但他修电脑的机会成本是 2 个蛋糕，小李只有 1 个，所以**小李修电脑、小王做蛋糕**更划算。
+
+> 和“绝对优势”的区别：绝对优势看效率高低，比较优势看机会成本高低。` },
+  summary: { name: '总结', kw: 'sum', title: '总结选中的 18 行', app: 'Slack',
+    input: '（会议纪要原文 18 行：讨论了 Q4 发布节奏、iOS 审核风险、定价实验…）',
+    body: `## 会议要点
+
+1. **Q4 发布**：macOS 2.4 定在 11 月 12 日，iOS 晚一周，等审核。
+2. **风险**：App Store 审核对订阅文案有新要求，需要 \`legal\` 先过一遍。
+3. **定价实验**：年付折扣从 30% 调到 40%，只对新用户，跑两周。
+
+### 待办
+- @Mia：更新订阅文案，周三前
+- @Leo：准备 A/B 实验的埋点
+- @Ann：和审核团队约沟通时间` },
+  code: { name: '解释代码', kw: 'exc', title: '解释代码 · 选中的 6 行', app: 'Xcode',
+    input: 'for try await delta in generator.stream(...) {\n    try Task.checkCancellation()\n    text += delta\n    await progress(...)\n}',
+    body: `这段代码**逐段消费模型的流式输出**，并把累计结果实时推给界面：
+
+\`\`\`swift
+for try await delta in generator.stream(...) {
+    try Task.checkCancellation()   // 用户关掉启动器时尽快退出
+    text += delta                  // 累加到目前为止的全文
+    await progress(output(text))   // 刷新结果卡
+}
+\`\`\`
+
+- \`for try await\`：异步序列，网络错误会直接抛出。
+- \`Task.checkCancellation()\`：保证取消是**及时**的，而不是等整段生成完。
+- 每次推的是**全文**而不是增量，界面不需要自己拼接。` }
+};
+const NOW = new Date('2026-10-09T10:42:00');
+const ago = (d, h) => { const t = new Date(NOW); t.setDate(t.getDate() - d); if (h != null) t.setHours(h, 5); return t.getTime(); };
+let notes = [
+  { id: 'n1', title: '润色 · 产品发布邮件开头', cmd: '润色', kw: 'rw', model: 'gpt-5-mini', app: 'Mail', input: 'hi all, we are exciting to announce ...',
+    body: 'Hi all,\n\nWe are **excited** to announce that Typeflux 2.3 is now available. This release focuses on speed and reliability:\n\n- Faster on-device transcription\n- A redesigned launcher\n- Word book for translations', tags: ['工作', '邮件'], pinned: true, created: ago(1, 16), updated: ago(1, 16) },
+  { id: 'n2', title: '解释 · RAG 和微调的区别', cmd: '解释', kw: 'ex', model: 'claude-sonnet-5-5', app: 'Safari', input: 'RAG vs fine-tuning',
+    body: '**RAG（检索增强生成）** 在回答前先去知识库里检索，把相关片段塞进提示词；**微调** 则是用数据改模型本身的参数。\n\n| | RAG | 微调 |\n|---|---|---|\n| 知识更新 | 改文档即可 | 需要重新训练 |\n| 成本 | 低 | 高 |\n| 适合 | 事实性问答 | 风格、格式、领域语言 |\n\n> 经验法则：先 RAG，不够再微调。', tags: ['AI'], pinned: false, created: ago(3, 11), updated: ago(2, 9) },
+  { id: 'n3', title: '总结 · 《思考，快与慢》第 3 章', cmd: '总结', kw: 'sum', model: 'gpt-5-mini', app: 'Books', input: '（第 3 章正文，约 4,000 字）',
+    body: '## 系统 1 与系统 2\n\n- **系统 1**：快速、自动、不费力，负责直觉判断。\n- **系统 2**：缓慢、需要专注，负责计算和推理。\n\n大多数时候系统 2 很“懒”，只是认可系统 1 的结论，这就是很多认知偏差的来源。', tags: ['读书'], pinned: false, created: ago(6, 21), updated: ago(6, 21) },
+  { id: 'n4', title: '周报口吻 · 本周进展', cmd: '周报口吻', kw: 'wr', model: 'gpt-5-mini', app: '飞书', input: '做了 launcher 高度修复 esc 分层 单词本样式',
+    body: '本周主要完成三件事：\n\n1. 修复启动器高度跳动，并理顺了 **Esc 的分层关闭**逻辑；\n2. 单词本改为与主窗口一致的样式；\n3. 配合 QA 完成 2.3 回归。', tags: ['工作'], pinned: false, created: ago(8, 18), updated: ago(8, 18) },
+];
+let curSample = 'explain', streamPos = SAMPLES.explain.body.length, streaming = false, streamTimer = null, comparing = false, pendingStar = false;
+let currentNoteId = null; // note saved from current card result
+let renderMode = 'after';
+
+// ---------------- toasts ----------------
+function toast(el, html, ms = 1600) { el.innerHTML = html; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms); }
+
+// ---------------- 1. card ----------------
+function sampleBody() { return SAMPLES[curSample].body.slice(0, streamPos); }
+function renderCard() {
+  const s = SAMPLES[curSample];
+  $('kwName').textContent = '→ ' + s.name; $('rcTitle').textContent = s.title;
+  $('origText').textContent = s.input; $('cmpBox').classList.toggle('hidden', !comparing);
+  const body = sampleBody();
+  const caret = streaming ? '<span class="cursor"></span>' : '';
+  $('rbody').innerHTML = renderMode === 'after' ? '<div class="md">' + md(body) + caret + '</div>' : '<div class="raw">' + esc(body) + caret + '</div>';
+  if (streaming) $('rbody').scrollTop = $('rbody').scrollHeight;
+  const st = $('star1'); st.className = 'iconbtn' + (currentNoteId ? ' on' : pendingStar ? ' pending' : ''); st.textContent = currentNoteId || pendingStar ? '★' : '☆';
+  const after = renderMode === 'after';
+  const A = [['复制', '↩', 'copy', true], ['替换选中', '⌥↩', 'replace'], ['对照', '⌘D', 'cmp'], ['重新生成', '⌘R', 'regen']];
+  if (after) A.splice(1, 0, ['富文本', '⇧⌘C', 'rich', false, true]), A.push(['在窗口中打开', '⌘O', 'open', false, true], ['笔记本', '⌘B', 'book', false, true]);
+  $('acts1').innerHTML = A.map(([t, k, a, p, n]) => `<button class="act${p ? ' p' : ''}${n ? ' new' : ''}" data-a="${a}">${t} <span class="s">${k}</span></button>`).join('');
+  $('star1').classList.toggle('hidden', !after); $('open1').classList.toggle('hidden', !after);
+  $('keys1').innerHTML = after ? '<b>↩</b> 复制 <b>⌘S</b> 收藏 <b>⌘O</b> 窗口 <b>⌘↩</b> 问 AI' : '<b>↩</b> 复制 · <b>⌥↩</b> 替换选中 · <b>⌘↩</b> 问 AI';
+}
+function startStream(after) {
+  clearInterval(streamTimer); streaming = true; streamPos = 0; currentNoteId = null; pendingStar = false; renderCard();
+  const full = SAMPLES[curSample].body.length;
+  streamTimer = setInterval(() => {
+    streamPos = Math.min(full, streamPos + 6 + Math.floor(Math.random() * 6));
+    if (streamPos >= full) { clearInterval(streamTimer); streaming = false; if (pendingStar) { pendingStar = false; saveFromCard(true); } if (after) after(); }
+    renderCard(); syncStreamingWindows();
+  }, 45);
+}
+function noteFromSample(body) {
+  const s = SAMPLES[curSample];
+  return { id: 'n' + Date.now(), title: s.name + ' · ' + clip(s.input), cmd: s.name, kw: s.kw, model: 'gpt-5-mini', app: s.app,
+    input: s.input, body, tags: [], pinned: false, created: Date.now(), updated: Date.now() };
+}
+function saveFromCard(silent) {
+  if (renderMode !== 'after') return;
+  if (streaming) { pendingStar = !pendingStar; renderCard(); toast($('toast1'), pendingStar ? '生成完成后自动收藏' : '已取消待收藏'); return; }
+  if (currentNoteId) {
+    const n = notes.find(x => x.id === currentNoteId);
+    if (n && n.edited) { toast($('toast1'), '这条笔记已编辑，请在笔记本里删除'); return; }
+    notes = notes.filter(x => x.id !== currentNoteId); currentNoteId = null; toast($('toast1'), '已取消收藏');
+  } else {
+    const n = noteFromSample(sampleBody()); notes.unshift(n); currentNoteId = n.id; nbSel = n.id;
+    toast($('toast1'), '<b>★</b>&nbsp;已收藏到笔记本 · ⌘B 打开', 2000);
+    $('star1').classList.add('pop'); setTimeout(() => $('star1').classList.remove('pop'), 160);
+  }
+  renderCard(); renderNotebook(); render4(); syncWindowsStar();
+}
+function cardAction(a) {
+  if (a === 'copy') toast($('toast1'), '已复制 Markdown 原文');
+  else if (a === 'rich') toast($('toast1'), '已复制为富文本（HTML + RTF）');
+  else if (a === 'replace') toast($('toast1'), '已替换 备忘录 中的选中文字');
+  else if (a === 'cmp') { comparing = !comparing; renderCard(); }
+  else if (a === 'regen') startStream();
+  else if (a === 'open') openFromCard();
+  else if (a === 'book') { nbSel = currentNoteId || nbSel; renderNotebook(); $('s3').scrollIntoView({ behavior: 'smooth' }); }
+}
+$('acts1').addEventListener('click', e => { const b = e.target.closest('.act'); if (b) cardAction(b.dataset.a); });
+$('star1').onclick = () => saveFromCard(); $('open1').onclick = () => cardAction('open');
+$('cmp1').onclick = () => cardAction('cmp'); $('rich1').onclick = () => cardAction('rich'); $('play1').onclick = () => startStream();
+$('sample1').innerHTML = Object.entries(SAMPLES).map(([k, s], i) => `<button data-v="${k}" class="${i ? '' : 'on'}">${s.name}</button>`).join('');
+$('sample1').onclick = e => { const b = e.target.closest('button'); if (!b) return; [...$('sample1').children].forEach(x => x.classList.toggle('on', x === b));
+  curSample = b.dataset.v; clearInterval(streamTimer); streaming = false; streamPos = SAMPLES[curSample].body.length; currentNoteId = null; pendingStar = false; renderCard(); };
+$('mode1').onclick = e => { const b = e.target.closest('button'); if (!b) return; [...$('mode1').children].forEach(x => x.classList.toggle('on', x === b)); renderMode = b.dataset.v; renderCard(); };
+$('stage1').addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (mod(e) && e.shiftKey && k === 'c') { e.preventDefault(); return cardAction('rich'); }
+  if (mod(e) && k === 'd') { e.preventDefault(); cardAction('cmp'); }
+  else if (mod(e) && k === 's') { e.preventDefault(); saveFromCard(); }
+  else if (mod(e) && k === 'o') { e.preventDefault(); if (renderMode === 'after') cardAction('open'); }
+  else if (mod(e) && k === 'b') { e.preventDefault(); if (renderMode === 'after') cardAction('book'); }
+  else if (mod(e) && k === 'r') { e.preventDefault(); cardAction('regen'); }
+  else if (e.key === 'Enter' && e.altKey) { e.preventDefault(); cardAction('replace'); }
+  else if (e.key === 'Enter') { e.preventDefault(); cardAction('copy'); }
+});
+// Buttons re-render while streaming; keep keyboard focus on the stage so shortcuts keep working.
+['stage1', 'desk2'].forEach(id => $(id).addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); if (!e.target.closest('input,textarea,summary')) $(id).focus(); }));
+$('reopen1').onclick = () => { $('card1').classList.remove('gone'); $('cardGone').classList.add('hidden'); $('stage1').focus(); };
+
+// ---------------- 2. windows ----------------
+let wins = [], zTop = 10, winSeq = 0;
+function openFromCard() {
+  const s = SAMPLES[curSample];
+  const w = { id: ++winSeq, title: s.name, model: 'gpt-5-mini', app: s.app, input: s.input, body: sampleBody(), noteId: currentNoteId,
+    live: streaming, sample: curSample, pinned: false };
+  addWindow(w);
+  $('card1').classList.add('gone'); $('cardGone').classList.remove('hidden');
+  $('s2').scrollIntoView({ behavior: 'smooth' });
+}
+function openNoteWindow(n) {
+  addWindow({ id: ++winSeq, title: n.cmd, model: n.model, app: n.app, input: n.input, body: n.body, noteId: n.id, fromNote: true, pinned: false });
+  $('s2').scrollIntoView({ behavior: 'smooth' });
+}
+function addWindow(w) {
+  const k = wins.length % 6; w.x = 420 + k * 34; w.y = 40 + k * 26; w.z = ++zTop; wins.push(w); renderWins();
+}
+function syncStreamingWindows() {
+  wins.forEach(w => { if (w.live && w.sample === curSample) { w.body = sampleBody(); w.live = streaming; if (!streaming) w.noteId = currentNoteId; } });
+  if (wins.some(w => w.sample === curSample)) renderWins();
+}
+function syncWindowsStar() { wins.forEach(w => { if (w.noteId && !notes.find(n => n.id === w.noteId)) w.noteId = null; }); renderWins(); }
+function renderWins() {
+  const desk = $('desk2');
+  desk.querySelectorAll('.rwin').forEach(n => n.remove());
+  $('deskHint').classList.toggle('hidden', wins.length > 0);
+  const gone = $('appGone').checked;
+  const topZ = Math.max(0, ...wins.map(w => w.z));
+  wins.forEach(w => {
+    const el = document.createElement('div');
+    el.className = 'rwin' + (w.z === topZ ? ' top' : '');
+    Object.assign(el.style, { left: w.x + 'px', top: w.y + 'px', zIndex: w.pinned ? 1000 + w.z : w.z, width: (w.w || 580) + 'px', height: (w.h || 600) + 'px' });
+    const time = '10:42';
+    el.innerHTML = `
+      <div class="wtitle"><span class="tl"><i data-a="close" title="关闭 ⌘W"></i><i></i><i></i></span>
+        <span class="tt"><b>${esc(w.title)}</b><span class="c">· ${esc(w.model)} · ${w.live ? '生成中…' : time}</span></span>
+        <span class="r">
+          ${w.live ? '<button class="iconbtn" data-a="stop" title="停止">■</button>' : ''}
+          <button class="iconbtn pin ${w.pinned ? 'on' : ''}" data-a="pin" title="置顶">📌</button>
+          <button class="iconbtn ${w.noteId ? 'on' : ''}" data-a="star" title="收藏 ⌘S">${w.noteId ? '★' : '☆'}</button>
+        </span></div>
+      <details class="origbox"><summary>原文 · ${esc(w.input.replace(/\n/g, ' '))}</summary><div class="ot">${esc(w.input)}</div></details>
+      <div class="content ${w.dim ? 'dim' : ''}"><div class="md">${md(w.body)}${w.live ? '<span class="cursor"></span>' : ''}</div></div>
+      <div class="wtool">
+        <button class="act p" data-a="copy">复制 <span class="s">⌘C</span></button>
+        <button class="act" data-a="rich">富文本 <span class="s">⇧⌘C</span></button>
+        <button class="act" data-a="insert" ${gone || w.live ? 'disabled' : ''} title="${gone ? '原 App 已关闭，可复制后粘贴' : ''}">插入到 ${esc(w.app)} <span class="s">⌥↩</span></button>
+        ${w.fromNote ? '<button class="act" data-a="reveal">在笔记本中显示</button>' : `<button class="act" data-a="regen" ${w.live ? 'disabled' : ''}>重新生成 <span class="s">⌘R</span></button>`}
+        <span class="sp"></span>
+        <button class="act" data-a="ask">继续问 AI <span class="s">⌘↩</span></button>
+      </div>
+      <div class="wtoast"></div><div class="resize"></div>`;
+    el.addEventListener('mousedown', () => { if (w.z !== topZ) { w.z = ++zTop; renderWins(); } });
+    el.querySelector('.wtitle').addEventListener('mousedown', e => {
+      if (e.target.closest('button,i')) return;
+      const sx = e.clientX, sy = e.clientY, ox = w.x, oy = w.y;
+      const mv = ev => { w.x = Math.max(-200, Math.min(1300, ox + ev.clientX - sx)); w.y = Math.max(0, Math.min(700, oy + ev.clientY - sy)); el.style.left = w.x + 'px'; el.style.top = w.y + 'px'; };
+      const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
+      addEventListener('mousemove', mv); addEventListener('mouseup', up);
+    });
+    el.querySelector('.resize').addEventListener('mousedown', e => {
+      e.stopPropagation(); const sx = e.clientX, sy = e.clientY, ow = w.w || 580, oh = w.h || 600;
+      const mv = ev => { w.w = Math.max(420, ow + ev.clientX - sx); w.h = Math.max(360, oh + ev.clientY - sy); el.style.width = w.w + 'px'; el.style.height = w.h + 'px'; };
+      const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
+      addEventListener('mousemove', mv); addEventListener('mouseup', up);
+    });
+    el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (b && !b.disabled) winAction(w, b.dataset.a, el); });
+    desk.appendChild(el);
+  });
+}
+function winToast(el, html) { const t = el.querySelector('.wtoast'); toast(t, html); }
+function winAction(w, a, el) {
+  if (a === 'close') { wins = wins.filter(x => x !== w); renderWins(); }
+  else if (a === 'pin') { w.pinned = !w.pinned; renderWins(); }
+  else if (a === 'stop') { clearInterval(streamTimer); streaming = false; w.live = false; renderCard(); renderWins(); }
+  else if (a === 'star') {
+    if (w.live) return winToast(el, '生成完成后再收藏');
+    if (w.noteId && notes.find(n => n.id === w.noteId)?.edited) return winToast(el, '这条笔记已编辑，请在笔记本里删除');
+    if (w.noteId) { notes = notes.filter(n => n.id !== w.noteId); if (currentNoteId === w.noteId) currentNoteId = null; w.noteId = null; renderWins(); }
+    else { const s = SAMPLES[w.sample] || SAMPLES.explain; const n = { ...noteFromSample(w.body), title: w.title + ' · ' + clip(w.input), cmd: w.title, app: w.app, input: w.input, kw: s.kw };
+      notes.unshift(n); w.noteId = n.id; nbSel = n.id; renderWins(); winToast(desk2El().querySelector('.rwin.top') || el, '<b>★</b> 已收藏到笔记本 · ⌘B 打开'); }
+    renderCard(); renderNotebook(); render4();
+  }
+  else if (a === 'copy') winToast(el, '已复制 Markdown 原文');
+  else if (a === 'rich') winToast(el, '已复制为富文本');
+  else if (a === 'insert') winToast(el, '已切回 ' + w.app + ' 并写入');
+  else if (a === 'ask') winToast(el, '已在聊天中打开：指令 + 原文 + 结果');
+  else if (a === 'reveal') { nbSel = w.noteId; renderNotebook(); $('s3').scrollIntoView({ behavior: 'smooth' }); }
+  else if (a === 'regen') {
+    const full = w.body; w.dim = true; w.noteId = null; renderWins();
+    setTimeout(() => { w.dim = false; w.live = true; let p = 0; const t = setInterval(() => { p = Math.min(full.length, p + 9); w.body = full.slice(0, p); if (p >= full.length) { clearInterval(t); w.live = false; } renderWins(); }, 40); }, 500);
+  }
+}
+const desk2El = () => $('desk2');
+$('appGone').onchange = renderWins;
+$('spawn2').onclick = () => { const keys = Object.keys(SAMPLES); const s = SAMPLES[keys[winSeq % keys.length]];
+  addWindow({ id: ++winSeq, title: s.name, model: 'gpt-5-mini', app: s.app, input: s.input, body: s.body, noteId: null, sample: keys[(winSeq - 1) % keys.length], pinned: false }); };
+$('desk2').addEventListener('keydown', e => {
+  const w = wins.find(x => x.z === Math.max(...wins.map(y => y.z))); if (!w) return;
+  const el = [...$('desk2').querySelectorAll('.rwin')].find(n => n.classList.contains('top'));
+  const k = e.key.toLowerCase();
+  if (mod(e) && k === 'w' || e.key === 'Escape') { e.preventDefault(); winAction(w, 'close', el); }
+  else if (mod(e) && k === 's') { e.preventDefault(); winAction(w, 'star', el); }
+  else if (mod(e) && e.shiftKey && k === 'c') { e.preventDefault(); winAction(w, 'rich', el); }
+  else if (mod(e) && k === 'r') { e.preventDefault(); if (!w.live && !w.fromNote) winAction(w, 'regen', el); }
+  else if (mod(e) && k === 'b') { e.preventDefault(); nbSel = w.noteId || nbSel; renderNotebook(); $('s3').scrollIntoView({ behavior: 'smooth' }); }
+});
+
+// ---------------- 3. notebook ----------------
+let nbFilter = 'all', nbSel = 'n2', nbEditing = false, nbUndo = null;
+const fmtDay = t => { const d = Math.round((new Date(NOW).setHours(0, 0, 0, 0) - new Date(t).setHours(0, 0, 0, 0)) / 864e5); return d <= 0 ? '今天' : d === 1 ? '昨天' : d < 7 ? d + ' 天前' : new Date(t).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' }); };
+const fmtTime = t => { const d = new Date(t); return fmtDay(t) === '今天' || fmtDay(t) === '昨天' ? d.toTimeString().slice(0, 5) : `${d.getMonth() + 1}/${d.getDate()}`; };
+function hl(s, q) { s = esc(s); if (!q) return s; const i = s.toLowerCase().indexOf(esc(q).toLowerCase()); return i < 0 ? s : s.slice(0, i) + '<mark>' + s.slice(i, i + esc(q).length) + '</mark>' + s.slice(i + esc(q).length); }
+function search(list, q) { q = q.trim().toLowerCase(); return q ? list.filter(n => (n.title + '\n' + n.body + '\n' + n.input).toLowerCase().includes(q)) : list; }
+function snippet(n, q) {
+  const p = plain(n.body); q = q.trim(); if (!q) return p.slice(0, 80);
+  const i = p.toLowerCase().indexOf(q.toLowerCase()); return i < 0 ? p.slice(0, 80) : (i > 20 ? '…' : '') + p.slice(Math.max(0, i - 20), i + 60);
+}
+function filtered() {
+  let l = notes;
+  if (nbFilter === 'pinned') l = l.filter(n => n.pinned);
+  else if (nbFilter.startsWith('cmd:')) l = l.filter(n => n.cmd === nbFilter.slice(4));
+  else if (nbFilter.startsWith('tag:')) l = l.filter(n => n.tags.includes(nbFilter.slice(4)));
+  l = search(l, $('nbSearch').value);
+  const key = $('nbSort').value;
+  return [...l].sort((a, b) => (b.pinned - a.pinned) || (b[key] - a[key]));
+}
+function renderNotebook() {
+  const cmds = [...new Set(notes.map(n => n.cmd))], tags = [...new Set(notes.flatMap(n => n.tags))];
+  const nav = (f, ic, t, n) => `<div class="nav ${nbFilter === f ? 'on' : ''}" data-f="${esc(f)}"><span class="ic">${ic}</span>${esc(t)}<span class="n">${n}</span></div>`;
+  $('nbSide').innerHTML = '<div class="tl"><i></i><i></i><i></i></div>' + nav('all', '▤', '全部笔记', notes.length) + nav('pinned', '📌', '置顶', notes.filter(n => n.pinned).length)
+    + '<div class="sec">按指令</div>' + cmds.map(c => nav('cmd:' + c, '✦', c, notes.filter(n => n.cmd === c).length)).join('')
+    + '<div class="sec">标签</div>' + (tags.length ? tags.map(t => nav('tag:' + t, '#', t, notes.filter(n => n.tags.includes(t)).length)).join('') : '<div class="nav" style="color:var(--text-3)">还没有标签</div>');
+  const list = filtered(), q = $('nbSearch').value;
+  if (!list.find(n => n.id === nbSel)) nbSel = list[0]?.id || null;
+  let html = '', lastDay = '';
+  const key = $('nbSort').value;
+  list.forEach(n => {
+    const day = n.pinned ? '置顶' : fmtDay(n[key]);
+    if (day !== lastDay) { html += `<div class="day">${day}</div>`; lastDay = day; }
+    html += `<div class="item ${n.id === nbSel ? 'on' : ''}" data-id="${n.id}"><span class="t">${n.pinned ? '📌 ' : ''}${hl(n.title, q)}</span><span class="tm">${fmtTime(n[key])}</span>
+      <span class="ex">${hl(snippet(n, q), q)}</span><span class="cmd"><span class="tag cmdtag">${esc(n.cmd)}</span>${n.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join('')}</span></div>`;
+  });
+  $('nbList').innerHTML = html || `<div class="empty">${notes.length ? '没有匹配的笔记' : '在 AI 指令结果上按 ⌘S，就会收藏到这里'}</div>`;
+  renderDetail();
+}
+function renderDetail() {
+  const n = notes.find(x => x.id === nbSel), d = $('nbDetail');
+  const undo = nbUndo ? `<div class="undo">已删除「${esc(nbUndo.note.title.slice(0, 18))}」<button class="btn" data-a="undo">撤销</button></div>` : '';
+  if (!n) { d.innerHTML = `<div class="nbempty"><div class="big">✎</div>${notes.length ? '选择一条笔记' : '还没有笔记'}<div style="font-size:12px">在 AI 指令结果上按 <span class="kbd">⌘S</span> 收藏</div></div>` + undo; return; }
+  d.innerHTML = `
+    <div class="dhead">
+      <input class="title" data-f="title" value="${esc(n.title).replace(/"/g, '&quot;')}">
+      <div class="meta"><span class="tag cmdtag">✦ ${esc(n.cmd)} · ${esc(n.kw)}</span><span>${esc(n.model)}</span>·<span>来自 ${esc(n.app)}</span>·<span>创建 ${fmtDay(n.created)} ${new Date(n.created).toTimeString().slice(0, 5)}</span>${n.edited ? '·<span>已编辑</span>' : ''}</div>
+      <div class="tags">${n.tags.map(t => `<span class="tag">#${esc(t)} <button data-a="untag" data-t="${esc(t)}">✕</button></span>`).join('')}<input data-f="tag" placeholder="+ 标签，回车"></div>
+      <div class="rt"><button class="iconbtn pin ${n.pinned ? 'on' : ''}" data-a="pin" title="置顶">📌</button></div>
+    </div>
+    <details class="dorig"><summary>原文</summary><div class="ot">${esc(n.input)}</div></details>
+    <div class="dbody ${nbEditing ? 'split' : ''}">${nbEditing ? `<textarea data-f="body">${esc(n.body)}</textarea><div class="md" id="nbPrev">${md(n.body)}</div>` : `<div class="md" style="max-width:680px">${md(n.body)}</div>`}</div>
+    <div class="dfoot">
+      <button class="btn ${nbEditing ? 'primary' : ''}" data-a="edit">${nbEditing ? '完成 ⌘↩' : '编辑'}</button>
+      <button class="btn" data-a="copy">复制</button><button class="btn" data-a="rich">复制为富文本</button>
+      <button class="btn" data-a="win">在窗口中打开</button><button class="btn" data-a="ask">继续问 AI</button>
+      <span class="sp"></span>
+      <button class="btn" data-a="export">导出 .md</button><button class="btn danger" data-a="del">删除</button>
+    </div><div class="wtoast" id="nbToast"></div>` + undo;
+}
+$('nbSide').onclick = e => { const n = e.target.closest('.nav[data-f]'); if (n) { nbFilter = n.dataset.f; renderNotebook(); } };
+$('nbList').onclick = e => { const it = e.target.closest('.item'); if (it) { nbSel = it.dataset.id; nbEditing = false; renderNotebook(); } };
+$('nbSearch').oninput = renderNotebook; $('nbSort').onchange = renderNotebook;
+$('nbDetail').addEventListener('click', e => {
+  const b = e.target.closest('[data-a]'); if (!b) return; const n = notes.find(x => x.id === nbSel); const a = b.dataset.a;
+  if (a === 'undo') { notes.push(nbUndo.note); nbSel = nbUndo.note.id; clearTimeout(nbUndo.t); nbUndo = null; renderNotebook(); render4(); return; }
+  if (!n) return;
+  if (a === 'pin') { n.pinned = !n.pinned; renderNotebook(); render4(); }
+  else if (a === 'edit') { nbEditing = !nbEditing; renderNotebook(); }
+  else if (a === 'untag') { n.tags = n.tags.filter(t => t !== b.dataset.t); renderNotebook(); }
+  else if (a === 'del') {
+    notes = notes.filter(x => x !== n); if (currentNoteId === n.id) currentNoteId = null; wins.forEach(w => { if (w.noteId === n.id) w.noteId = null; });
+    if (nbUndo) clearTimeout(nbUndo.t);
+    nbUndo = { note: n, t: setTimeout(() => { nbUndo = null; renderDetail(); }, 6000) }; nbEditing = false; renderNotebook(); renderCard(); renderWins(); render4();
+  }
+  else if (a === 'win') openNoteWindow(n);
+  else toast($('nbToast'), { copy: '已复制 Markdown 原文', rich: '已复制为富文本', ask: '已在聊天中打开这条笔记', export: '已导出「' + esc(n.title) + '.md」（含 front matter）' }[a]);
+});
+$('nbDetail').addEventListener('input', e => {
+  const n = notes.find(x => x.id === nbSel); if (!n) return; const f = e.target.dataset.f;
+  if (f === 'title') { n.title = e.target.value; n.updated = Date.now(); const it = $('nbList').querySelector('.item.on .t'); if (it) it.textContent = (n.pinned ? '📌 ' : '') + n.title; }
+  if (f === 'body') { n.body = e.target.value; n.edited = true; n.updated = Date.now(); $('nbPrev').innerHTML = md(n.body); }
+});
+$('nbDetail').addEventListener('change', e => { if (e.target.dataset.f === 'body' || e.target.dataset.f === 'title') { renderNotebook(); render4(); } });
+$('nbDetail').addEventListener('keydown', e => {
+  const n = notes.find(x => x.id === nbSel); if (!n) return;
+  if (e.target.dataset.f === 'tag' && e.key === 'Enter') { const v = e.target.value.trim().replace(/^#/, ''); if (v && !n.tags.includes(v)) n.tags.push(v); renderNotebook(); $('nbDetail').querySelector('[data-f=tag]').focus(); }
+  if (e.target.dataset.f === 'body' && e.key === 'Enter' && mod(e)) { e.preventDefault(); nbEditing = false; renderNotebook(); render4(); }
+});
+
+// ---------------- 4. note keyword ----------------
+let sel4 = 0;
+function rows4() { const q = $('q4').value; const l = [...search(notes, q)].sort((a, b) => (q ? 0 : b.pinned - a.pinned) || b.updated - a.updated).slice(0, 8); return l; }
+function render4() {
+  const q = $('q4').value, l = rows4();
+  sel4 = Math.min(sel4, l.length); // last index = "open notebook"
+  $('list4').innerHTML = `<div class="grp">${q ? '搜索结果' : '最近的笔记'}</div>`
+    + (l.length ? l.map((n, i) => `<div class="lrow ${i === sel4 ? 'hl' : ''}" data-i="${i}"><span class="tile ${n.pinned ? 'pin' : ''}">${n.pinned ? '📌' : '✎'}</span><span class="tt2">${hl(n.title, q)}</span><span class="sm">${hl(snippet(n, q), q)}</span><span class="cap">${fmtTime(n.updated)}</span></div>`).join('') : '<div class="empty">没有匹配的笔记</div>')
+    + `<div class="lrow ${sel4 === l.length ? 'hl' : ''}" data-i="${l.length}"><span class="tile">▤</span><span class="tt2">打开笔记本…</span><span class="cap">⌘B</span></div>`;
+}
+function act4(i, copy) {
+  const l = rows4();
+  if (i >= l.length) { $('s3').scrollIntoView({ behavior: 'smooth' }); return; }
+  if (copy) toast($('toast4'), '已复制「' + esc(l[i].title.slice(0, 16)) + '」正文'); else openNoteWindow(l[i]);
+}
+$('q4').oninput = () => { sel4 = 0; render4(); };
+$('list4').onclick = e => { const r = e.target.closest('.lrow[data-i]'); if (r) { sel4 = +r.dataset.i; render4(); act4(sel4); } };
+$('stage4').addEventListener('keydown', e => {
+  const n = rows4().length;
+  if (e.key === 'ArrowDown') { e.preventDefault(); sel4 = Math.min(n, sel4 + 1); render4(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); sel4 = Math.max(0, sel4 - 1); render4(); }
+  else if (e.key === 'Enter') { e.preventDefault(); act4(sel4, mod(e)); }
+  else if (mod(e) && e.key.toLowerCase() === 'b') { e.preventDefault(); act4(n); }
+});
+
+// ---------------- theme ----------------
+$('theme').onclick = e => { const b = e.target.closest('button'); if (!b) return; [...$('theme').children].forEach(x => x.classList.toggle('on', x === b)); document.body.classList.toggle('light', b.dataset.v === 'light'); };
+if (location.hash === '#light') { document.body.classList.add('light'); [...$('theme').children].forEach(x => x.classList.toggle('on', x.dataset.v === 'light')); }
+
+renderCard(); renderWins(); renderNotebook(); render4();
+</script>
+</body></html>

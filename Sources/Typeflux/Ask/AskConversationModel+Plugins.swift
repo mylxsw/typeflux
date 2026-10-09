@@ -4,10 +4,10 @@ import Foundation
 /// The plugins the launcher knows and the keywords they start with.
 enum AskPluginRegistry {
     /// Every built-in plugin, in the order settings and the `/` palette list them.
-    static let pluginIDs = [AskTranslatePlugin.id, AskPromptPlugin.id, AskWebSearchPlugin.id, AskFileSearchPlugin.id, AskOpenChatPlugin.id, AskPrefixPlugin.id, AskSettingsPlugin.id, AskHistoryPlugin.id]
+    static let pluginIDs = [AskTranslatePlugin.id, AskPromptPlugin.id, AskWebSearchPlugin.id, AskFileSearchPlugin.id, AskOpenChatPlugin.id, AskPrefixPlugin.id, AskSettingsPlugin.id, AskHistoryPlugin.id, AskNotesPlugin.id]
 
     static var defaultKeywords: [AskKeyword] {
-        AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin.keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords
+        AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin.keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords + AskNotesPlugin.keywords
     }
 
     /// Default keywords that came after their plugin: `dict` and `词典` joined translation later.
@@ -26,7 +26,7 @@ enum AskPluginRegistry {
     /// saved list covers; lists saved before it existed only knew translation.
     static func keywords(saved: [AskKeyword]?, known: [String]?, reserved: Set<String> = []) -> [AskKeyword] {
         // A newly introduced directory must not displace an existing workflow.
-        let newEntryPoints = [AskPrefixPlugin.id, AskSettingsPlugin.id, AskHistoryPlugin.id]
+        let newEntryPoints = [AskPrefixPlugin.id, AskSettingsPlugin.id, AskHistoryPlugin.id, AskNotesPlugin.id]
         let defaults = defaultKeywords.filter { !newEntryPoints.contains($0.pluginID) || !reserved.contains($0.id) }
         guard let saved else { return defaults }
         let covered = Set(known ?? [AskTranslatePlugin.id])
@@ -120,7 +120,8 @@ extension AskConversationModel {
                     settings?.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
                 }
             ),
-            AskPromptPlugin(generator: promptAI, modelName: { [weak settings] in AskPluginRegistry.modelName(settings) }),
+            AskPromptPlugin(generator: promptAI, modelName: { [weak settings] in AskPluginRegistry.modelName(settings) },
+                            savesNotes: notes != nil),
             AskWebSearchPlugin(),
             AskFileSearchPlugin(
                 index: { [weak self] in self.flatMap { $0.quickFilesEnabled ? $0.fileIndex : nil } },
@@ -129,7 +130,8 @@ extension AskConversationModel {
             AskOpenChatPlugin(),
             AskPrefixPlugin(entries: { [weak self] language in self?.launcherKeywordDirectory(language: language) ?? [] }),
             AskSettingsPlugin(),
-            AskHistoryPlugin(conversations: { [weak self] in await self?.launcherChatHistory() ?? .empty })
+            AskHistoryPlugin(conversations: { [weak self] in await self?.launcherChatHistory() ?? .empty }),
+            AskNotesPlugin(store: notes)
         ] + workflowPlugins()
     }
 
@@ -211,7 +213,8 @@ extension AskConversationModel {
             return .stay
         case let .enterKeyword(id):
             guard let keyword = plugins.availableKeywords.first(where: { $0.id == id && $0.enabled }) else { return .stay }
-            plugins.enter(keyword, waitingForInput: ![AskPrefixPlugin.id, AskHistoryPlugin.id].contains(keyword.pluginID))
+            let listsAtOnce = [AskPrefixPlugin.id, AskHistoryPlugin.id, AskNotesPlugin.id]
+            plugins.enter(keyword, waitingForInput: !listsAtOnce.contains(keyword.pluginID))
             launcherDraft.text = ""
             plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language)
             return .stay
@@ -234,6 +237,22 @@ extension AskConversationModel {
             finishPluginResult()
             lookUpInWordBook(text)
             return .close
+        case let .copyRich(text):
+            AskRichCopy.copy(text)
+            confirm(L("ask.plugin.copiedRich"))
+            return .stay
+        case .openInWindow:
+            return openLauncherResultInWindow()
+        case let .toggleNote(draft):
+            toggleLauncherNote(draft)
+            return .stay
+        case let .openNotes(id):
+            let shown = id ?? launcherNoteID
+            finishPluginResult()
+            openNotes(shown)
+            return .close
+        case let .openNote(id):
+            return openNoteInWindow(id) ? .close : .stay
         }
     }
 

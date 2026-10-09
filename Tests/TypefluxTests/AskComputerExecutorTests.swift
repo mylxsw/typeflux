@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Computer observation execution")
+@Suite("Computer observation execution", .exclusiveUIState)
 @MainActor
 struct AskComputerExecutorTests {
     let scope = AskObservationStore.Scope(owner: "o", conversation: "c", tool: "computer")

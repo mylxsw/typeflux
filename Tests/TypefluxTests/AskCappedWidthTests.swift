@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask capped width")
+@Suite("Ask capped width", .exclusiveUIState)
 @MainActor
 struct AskCappedWidthTests {
     private func width<V: View>(_ view: V) -> CGFloat {
@@ -57,8 +57,9 @@ struct AskCappedWidthTests {
         // where `.frame(maxWidth:)` would have grown to the cap.
         let hugged = try await placedWidth(AskCappedWidth(maxWidth: AskMetrics.modelMenuMaxWidth) { text })
         let stretched = try await placedWidth(text.frame(maxWidth: AskMetrics.modelMenuMaxWidth))
-        // Detached intrinsic measurement and on-screen placement can differ by one Retina pixel.
-        #expect(abs(hugged - natural) <= 0.5)
+        // Layout snaps to device pixels and `fittingSize` does not, so allow one pixel.
+        let pixel = 1 / (NSScreen.main?.backingScaleFactor ?? 1)
+        #expect(abs(hugged - natural) <= pixel)
         #expect(stretched == AskMetrics.modelMenuMaxWidth)
     }
 

@@ -3,7 +3,7 @@ import Testing
 @testable import Typeflux
 
 @MainActor
-@Suite("Ask account card hover")
+@Suite("Ask account card hover", .exclusiveUIState)
 struct AskAccountCardHoverTests {
     final class Pointer {
         var inside = false

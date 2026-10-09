@@ -6,7 +6,7 @@ import Testing
 /// Drives the real launcher with key presses: Return copies, ⌘Return asks the
 /// AI, Tab keeps calculating and the arrows move. Copies go to a private
 /// pasteboard, never the user's clipboard.
-@Suite("Ask quick results in the launcher", .serialized)
+@Suite("Ask quick results in the launcher", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickResultsInteractionTests {
     @MainActor final class Launcher {

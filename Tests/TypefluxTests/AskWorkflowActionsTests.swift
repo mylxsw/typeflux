@@ -59,7 +59,7 @@ final class RecordingActionHost: AskWorkflowActionHost {
     }
 }
 
-@Suite("Ask workflow output")
+@Suite("Ask workflow output", .exclusiveUIState)
 struct AskWorkflowOutputTests {
     private func decode(_ json: String) throws -> AskWorkflowManifest.Output {
         try JSONDecoder().decode(AskWorkflowManifest.Output.self, from: Data(json.utf8))
@@ -262,7 +262,7 @@ struct AskWorkflowPlaceholdersTests {
     }
 }
 
-@Suite("Ask workflow action runner")
+@Suite("Ask workflow action runner", .exclusiveUIState)
 @MainActor
 struct AskWorkflowActionRunnerTests {
     private let folder: URL

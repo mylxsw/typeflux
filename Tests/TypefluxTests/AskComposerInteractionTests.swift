@@ -4,7 +4,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask composer event delivery", .serialized)
+@Suite("Ask composer event delivery", .serialized, .exclusiveUIState)
 @MainActor
 struct AskComposerInteractionTests {
     @Test func idleUpdatesDoNotCycleFocusOrResizeTheEditor() async throws {
@@ -163,14 +163,7 @@ struct AskComposerInteractionTests {
             try await fixture.wait { button.toolTip?.contains(HotkeyFormat.display(shortcut)) == true }
             for hold in [false, true] {
                 // A filled launcher drops its suggestions, so each round measures its own resting place.
-                restingFrame = button.convert(button.bounds, to: nil)
-                func expectStableVoiceFrame() {
-                    let frame = button.convert(button.bounds, to: nil)
-                    #expect(frame.size == restingFrame.size)
-                    #expect(abs(frame.minY - restingFrame.minY) <= 0.5)
-                    // The launcher's elapsed time and cancel button replace Send while recording.
-                    if !launcher { #expect(frame == restingFrame) }
-                }
+                restingFrame = try await settledFrame(of: button)
                 let starts = recorder.starts, stops = recorder.stops
                 let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)
                 NSApp.sendEvent(try mouse(.leftMouseDown, window: window, point: point))
@@ -178,18 +171,33 @@ struct AskComposerInteractionTests {
                 NSApp.sendEvent(try mouse(.leftMouseUp, window: window, point: point))
                 try await fixture.wait { recorder.starts == starts + 1 }
                 #expect(window.firstResponder === editor)
+                var activeFrame: NSRect?
                 if !hold {
                     #expect(fixture.model.voiceInput.phase == .listening)
                     try await fixture.wait { button.accessibilityLabel() == L("ask.voice.stop") }
-                    expectStableVoiceFrame()
-                    NSApp.sendEvent(try mouse(.leftMouseDown, window: window, point: point))
-                    NSApp.sendEvent(try mouse(.leftMouseUp, window: window, point: point))
+                    activeFrame = try await settledFrame(of: button)
+                    let stopPoint = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)
+                    NSApp.sendEvent(try mouse(.leftMouseDown, window: window, point: stopPoint))
+                    NSApp.sendEvent(try mouse(.leftMouseUp, window: window, point: stopPoint))
                 }
                 try await fixture.wait { recorder.stops == stops + 1 }
                 try await fixture.wait { !button.isEnabled }
                 #expect(button.accessibilityLabel() == L("ask.voice.transcribing"))
                 #expect(button.visualPhase == .transcribing)
-                expectStableVoiceFrame()
+                // Listening and transcribing share one layout, so the control never jumps between them.
+                let transcribingFrame = try await settledFrame(of: button)
+                if let activeFrame { #expect(transcribingFrame == activeFrame) }
+                if launcher {
+                    // The launcher's recording row ends with the stop control in the send
+                    // button's place (docs/design/ask-launcher-header-voice.md, 3.1).
+                    // Only the position changes: the same 34pt control moves, it is not resized
+                    // to the send button.
+                    #expect(transcribingFrame.size == restingFrame.size)
+                    #expect(transcribingFrame.minY == restingFrame.minY)
+                    #expect(transcribingFrame.minX > restingFrame.maxX)
+                } else {
+                    #expect(transcribingFrame == restingFrame)
+                }
 
                 #expect(!(launcher ? fixture.model.canSendLauncher : fixture.model.canSend))
                 recorder.releaseTranscript()
@@ -269,6 +277,22 @@ struct AskComposerInteractionTests {
 
     private func mouse(_ type: NSEvent.EventType, window: NSWindow, point: NSPoint) throws -> NSEvent {
         try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
+    }
+}
+
+private extension AskComposerInteractionTests {
+    /// The control's window frame once SwiftUI's layout animation has come to rest.
+    func settledFrame(of view: NSView) async throws -> NSRect {
+        var last = view.convert(view.bounds, to: nil)
+        var stableSamples = 0
+        for _ in 0 ..< 250 where stableSamples < 3 {
+            try await Task.sleep(for: .milliseconds(20))
+            let frame = view.convert(view.bounds, to: nil)
+            stableSamples = frame == last ? stableSamples + 1 : 0
+            last = frame
+        }
+        #expect(stableSamples >= 3, "The control never came to rest")
+        return last
     }
 }
 

@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask composer notices")
+@Suite("Ask composer notices", .exclusiveUIState)
 @MainActor
 struct AskComposerNoticeTests {
     @Test func noticesAreOrderedMostUrgentFirst() {
@@ -79,7 +79,7 @@ struct AskComposerNoticeTests {
     }
 }
 
-@Suite("Ask launcher notices", .serialized)
+@Suite("Ask launcher notices", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherNoticeLayoutTests {
     @Test func confirmationsKeepTheHeightAndNoticesAddOneRow() async throws {
@@ -135,7 +135,7 @@ struct AskLauncherNoticeLayoutTests {
 /// Renders the composer's notices: a failed run and a model switch in the
 /// transcript, a notice row and a confirmation in the card. The PNGs land in
 /// TYPEFLUX_ASK_SNAPSHOTS when it is set, otherwise in a temporary directory.
-@Suite("Ask notice snapshots", .serialized)
+@Suite("Ask notice snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskNoticeVisualTests {
     private func snapshot(_ hosting: NSView, to url: URL) throws {

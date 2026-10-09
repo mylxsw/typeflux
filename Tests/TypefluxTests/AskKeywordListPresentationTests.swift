@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher keyword list")
+@Suite("Launcher keyword list", .exclusiveUIState)
 struct AskKeywordListPresentationTests {
     private func rows(_ keywords: [AskKeyword] = AskPluginRegistry.defaultKeywords) -> [AskKeywordListRow] {
         AskKeywordListPresentation.rows(keywords: keywords, interface: .english, secondLanguage: "ja")
@@ -136,7 +136,7 @@ struct AskKeywordListPresentationTests {
     }
 }
 
-@Suite("Launcher keyword draft")
+@Suite("Launcher keyword draft", .exclusiveUIState)
 struct AskKeywordDraftTests {
     private let defaults = AskPluginRegistry.defaultKeywords
     private let workflows = [AskWorkflowKeywordEntry(keyword: "wf", workflowID: "local.p", workflowName: "Python",

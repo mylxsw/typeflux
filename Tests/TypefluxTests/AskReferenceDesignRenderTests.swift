@@ -8,7 +8,7 @@ import Testing
 /// TYPEFLUX_REFERENCE_SNAPSHOTS. Glass is drawn as its opaque Reduce
 /// Transparency fill: an offscreen render has no desktop for the material to
 /// blend with and would come out flat grey.
-@Suite("Ask reference design renders", .serialized)
+@Suite("Ask reference design renders", .serialized, .exclusiveUIState)
 @MainActor
 struct AskReferenceDesignRenderTests {
     private static let answer = """

@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask usage detail loading")
+@Suite("Ask usage detail loading", .exclusiveUIState)
 @MainActor
 struct AskUsageDetailsTests {
     private func item(_ id: String) -> AskUsageInvocation {

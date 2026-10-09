@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask launcher position settings")
+@Suite("Ask launcher position settings", .exclusiveUIState)
 @MainActor
 struct AskLauncherPositionSettingsTests {
     private func store() throws -> SettingsStore {
@@ -75,7 +75,7 @@ struct AskLauncherPositionSettingsTests {
 }
 
 /// Opt-in render of the shortcuts page with the position setting (set TYPEFLUX_ASK_SNAPSHOTS).
-@Suite("Ask launcher position snapshots", .serialized)
+@Suite("Ask launcher position snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherPositionVisualTests {
     @Test func renderShortcutSettings() async throws {

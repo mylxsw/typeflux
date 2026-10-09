@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask independent model selection", .serialized)
+@Suite("Ask independent model selection", .serialized, .exclusiveUIState)
 @MainActor
 struct AskModelSelectionTests {
     @Test(arguments: ["failed", "cancelled"])

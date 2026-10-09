@@ -49,7 +49,7 @@ struct AskTranslationLanguagesTests {
     }
 }
 
-@Suite("Ask translate plugin")
+@Suite("Ask translate plugin", .exclusiveUIState)
 struct AskTranslatePluginTests {
     private func plugin(local: Bool = true, ai: AskTestTranslationEngine? = AskTestTranslationEngine(),
                         source: String? = "en") -> (AskTranslatePlugin, AskTestTranslationEngine) {

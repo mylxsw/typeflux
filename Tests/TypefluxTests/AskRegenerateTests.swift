@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask regenerate", .serialized)
+@Suite("Ask regenerate", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRegenerateTests {
     private func answered() async throws -> AskTestFixture {

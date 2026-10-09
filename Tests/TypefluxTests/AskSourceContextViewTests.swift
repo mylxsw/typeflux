@@ -6,35 +6,42 @@ import Vision
 
 /// Native event tests share the composer's serialized suite with voice input.
 extension AskComposerInteractionTests {
-    @Test func contextPanelSourceRemovalCanBeUndoneWithoutAScreenshot() async throws {
-        let accessibility = AskWorkspaceTestAccessibility()
-        defer { accessibility.restore(); AskGlassMenuPresenter.shared.hide() }
+    /// The workspace composer lists the source as text; the launcher keeps it out of its footer
+    /// (see `narrowLauncherKeepsContentInIconChipsAndMemoryInTheFooter`).
+    @Test func sourceChipPreviewsMetadataAndRemovalCanBeUndoneWithoutAScreenshot() async throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let fixture = try AskTestFixture()
-        fixture.model.launcherDraft = AskDraft(text: "Explain this", includeScreenshot: false,
-                                               selection: "Selected words", source: "Safari — Example",
-                                               sourceBundleID: "com.apple.Safari")
-        let window = try await hostSourceContext(AskLauncherView(model: fixture.model, onDismiss: {}),
-                                                size: NSSize(width: AskMetrics.launcherWidth, height: 260))
+        fixture.model.newConversation()
+        fixture.model.draft = AskDraft(text: "Explain this", includeScreenshot: false,
+                                       selection: "Selected words", source: "Safari — Example",
+                                       sourceBundleID: "com.apple.Safari")
+        let window = try await hostSourceContext(AskConversationView(model: fixture.model),
+                                                size: NSSize(width: 1100, height: 760))
         defer { window.close(); fixture.model.resetSession() }
-        let popover = try await openSourceContext(in: window)
+        let host = try #require(window.contentView)
+        #expect(!(try sourceContainsLabel(in: host, label: L("ask.context.details"))))
+        let appLabel = try #require(try sourceText(in: host, matching: "Safari").first)
+        let windowLabel = try #require(try sourceText(in: host, matching: "Example").first)
+        #expect(windowLabel.frame.minX - appLabel.frame.maxX < 24,
+                "A short app name must not reserve the maximum width before the window title")
+        try clickSourceText("Safari", in: window)
+        let popover = try await waitForSourceControl("ask.context.source.remove")
+        defer { if popover !== window { popover.orderOut(nil) } }
         let details = try #require(popover.contentView)
-        #expect(try sourceContainsLabel(in: details, label: "Safari"))
         #expect(try sourceContainsLabel(in: details, label: "Example"))
-        #expect(try sourceContainsLabel(in: details, label: "Selected words"))
-        try clickSourceToggle("ask.context.panel.source", in: popover)
-        try await fixture.wait { fixture.model.launcherDraft.sourceOff == true }
-        #expect(fixture.model.launcherDraft.source == "Safari — Example")
-        #expect(fixture.model.launcherDraft.sourceBundleID == "com.apple.Safari")
-        #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).source == nil)
-        #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).selection == "Selected words")
-        AskGlassMenuPresenter.shared.hide()
+        #expect(!(try sourceContainsLabel(in: details, label: "Selected words")))
+        try clickSourceControl("ask.context.source.remove", in: popover)
+        try await fixture.wait { fixture.model.draft.sourceOff == true }
+        #expect(fixture.model.draft.source == "Safari — Example")
+        #expect(fixture.model.draft.sourceBundleID == "com.apple.Safari")
+        #expect(fixture.model.draft.request(deviceId: "device", tools: []).source == nil)
+        #expect(fixture.model.draft.request(deviceId: "device", tools: []).selection == "Selected words")
         try await Task.sleep(for: .milliseconds(150))
         try clickSourceControl("ask.context.undo", in: window)
-        try await fixture.wait { fixture.model.launcherDraft.sourceOff != true }
-        #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).source == "Safari — Example")
+        try await fixture.wait { fixture.model.draft.sourceOff != true }
+        #expect(fixture.model.draft.request(deviceId: "device", tools: []).source == "Safari — Example")
     }
 
     @Test func plusMenuRestoresSourceAndSelectionIndependently() async throws {
@@ -64,9 +71,7 @@ extension AskComposerInteractionTests {
     }
 
     @Test(arguments: [AppLanguage.simplifiedChinese, .english])
-    func narrowLauncherKeepsContextInThePanelAndMemoryInTheFooter(_ language: AppLanguage) async throws {
-        let accessibility = AskWorkspaceTestAccessibility()
-        defer { accessibility.restore(); AskGlassMenuPresenter.shared.hide() }
+    func narrowLauncherKeepsContentInIconChipsAndMemoryInTheFooter(_ language: AppLanguage) async throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(language)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
@@ -103,16 +108,13 @@ extension AskComposerInteractionTests {
                                width: AskSendButton.size, height: AskSendButton.size)
         #expect(host.bounds.contains(sendFrame))
         #expect(abs(host.bounds.width - width) < 0.5)
-        let popover = try await openSourceContext(in: window)
-        let details = try #require(popover.contentView)
-        let controls = try sourcePanelSwitches(in: popover)
-        let source = controls[0], selection = controls[2]
-        let sourceFrame = source.convert(source.bounds, to: details)
-        let selectionFrame = selection.convert(selection.bounds, to: details)
-        #expect(source.state == .on && selection.state == .on)
-        #expect(details.bounds.contains(sourceFrame) && details.bounds.contains(selectionFrame))
-        #expect(abs(sourceFrame.midY - selectionFrame.midY) > 20, "Context entries keep separate rows")
-        AskGlassMenuPresenter.shared.hide()
+        #expect(!(try sourceContainsLabel(in: host, label: L("ask.context.details"))))
+        // The launcher footer draws content as icon chips; source and selection words live in
+        // hover cards, so a long window title cannot crowd the footer at any width.
+        #expect(try sourceText(in: host, matching: "Safari").isEmpty)
+        #expect(try sourceText(in: host, matching: "Selected").isEmpty)
+        #expect(fixture.model.launcherDraft.sentSource == "Safari — A long page title that must fit in this window")
+        #expect(fixture.model.launcherDraft.sentSelection == "Selected words that need a separate row")
         try clickSourceChip(try #require(anchors.last), in: window)
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == true }
         #expect(fixture.model.launcherDraft.memory == memory)
@@ -120,24 +122,25 @@ extension AskComposerInteractionTests {
         try await fixture.wait { fixture.model.launcherDraft.memoryOff != true }
     }
 
-    @Test func contextPanelCanExcludeOnlyTheSelection() async throws {
-        let accessibility = AskWorkspaceTestAccessibility()
-        defer { accessibility.restore(); AskGlassMenuPresenter.shared.hide() }
+    @Test func selectedTextPreviewCanRemoveOnlyTheSelection() async throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let fixture = try AskTestFixture()
-        fixture.model.launcherDraft = AskDraft(text: "Explain this", includeScreenshot: false,
-                                               selection: "Selected words", source: "Safari — Example")
-        let window = try await hostSourceContext(AskLauncherView(model: fixture.model, onDismiss: {}),
-                                                size: NSSize(width: AskMetrics.launcherWidth, height: 260))
+        fixture.model.newConversation()
+        fixture.model.draft = AskDraft(text: "Explain this", includeScreenshot: false,
+                                       selection: "Selected words", source: "Safari — Example")
+        let window = try await hostSourceContext(AskConversationView(model: fixture.model),
+                                                size: NSSize(width: 1100, height: 760))
         defer { window.close(); fixture.model.resetSession() }
-        let popover = try await openSourceContext(in: window)
-        try clickSourceToggle("ask.context.panel.selection", in: popover)
-        try await fixture.wait { fixture.model.launcherDraft.selectionOff == true }
-        #expect(fixture.model.launcherDraft.sentSource == "Safari — Example")
-        #expect(fixture.model.launcherDraft.selection == "Selected words")
-        #expect(fixture.model.launcherDraft.sentSelection == nil)
+        try clickSourceText("Selected words", in: window)
+        let popover = try await waitForSourceControl("ask.selection.remove")
+        defer { if popover !== window { popover.orderOut(nil) } }
+        try clickSourceControl("ask.selection.remove", in: popover)
+        try await fixture.wait { fixture.model.draft.selectionOff == true }
+        #expect(fixture.model.draft.sentSource == "Safari — Example")
+        #expect(fixture.model.draft.selection == "Selected words")
+        #expect(fixture.model.draft.sentSelection == nil)
     }
 
     @Test func refreshIconIsAnExplicitActionAndDisabledWhileCapturing() async throws {
@@ -212,51 +215,6 @@ extension AskComposerInteractionTests {
         let frame = try #require(try sourceText(in: root, matching: label).first?.frame,
                                  "Missing label: \(label); found \(labels)")
         try sendSourceClick(at: root.convert(NSPoint(x: frame.midX, y: frame.midY), to: nil), in: window)
-    }
-
-    private func openSourceContext(in window: NSWindow) async throws -> NSWindow {
-        func editor(_ root: NSView) -> AskComposerTextView.Editor? {
-            (root as? AskComposerTextView.Editor) ?? root.subviews.lazy.compactMap(editor).first
-        }
-        let field = try #require(window.contentView.flatMap(editor))
-        let event = try #require(NSEvent.keyEvent(
-            with: .keyDown, location: .zero, modifierFlags: .command, timestamp: 0,
-            windowNumber: window.windowNumber, context: nil, characters: "k",
-            charactersIgnoringModifiers: "k", isARepeat: false, keyCode: 40))
-        #expect(window.makeFirstResponder(field))
-        #expect(field.performKeyEquivalent(with: event))
-        for _ in 0..<20 {
-            if let panel = AskGlassMenuPresenter.shared.panel, panel.isVisible, panel.parent === window {
-                try await Task.sleep(for: .milliseconds(150))
-                panel.contentView?.layoutSubtreeIfNeeded()
-                return panel
-            }
-            try await Task.sleep(for: .milliseconds(50))
-        }
-        return try #require(AskGlassMenuPresenter.shared.panel?.isVisible == true
-            ? AskGlassMenuPresenter.shared.panel : nil, "Command-K opens the captured-context panel")
-    }
-
-    private func sourcePanelSwitches(in window: NSWindow) throws -> [NSSwitch] {
-        let root = try #require(window.contentView)
-        func switches(_ view: NSView) -> [NSSwitch] {
-            (view as? NSSwitch).map { [$0] } ?? view.subviews.flatMap(switches)
-        }
-        let controls = switches(root).sorted {
-            $0.convert($0.bounds, to: root).minY < $1.convert($1.bounds, to: root).minY
-        }
-        _ = try #require(controls.count == 3 ? controls : nil,
-                         "Source, screenshot and selection have independent native switches")
-        return controls
-    }
-
-    private func clickSourceToggle(_ identifier: String, in window: NSWindow) throws {
-        let controls = try sourcePanelSwitches(in: window)
-        let index = identifier == "ask.context.panel.source" ? 0 : 2
-        let control = try #require(controls.indices.contains(index) ? controls[index] : nil)
-        #expect(control.isEnabled)
-        control.state = control.state == .on ? .off : .on
-        #expect(control.sendAction(control.action, to: control.target))
     }
 
     /// SwiftUI does not vend accessibility children in a headless Swift Testing

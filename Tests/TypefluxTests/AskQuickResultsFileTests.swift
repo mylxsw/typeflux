@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask quick results with files")
+@Suite("Ask quick results with files", .exclusiveUIState)
 struct AskQuickResultsFileTests {
     private let apps = AskTestAppIndex(AskTestAppIndex.sample.entries + [
         AskAppEntry(name: "网络", url: URL(fileURLWithPath: "/System/Library/ExtensionKit/Extensions/Network.appex"),

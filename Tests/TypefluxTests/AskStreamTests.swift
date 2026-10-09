@@ -175,7 +175,7 @@ struct AskStreamTests {
     }
 }
 
-@Suite("Ask selectable transcript", .serialized)
+@Suite("Ask selectable transcript", .serialized, .exclusiveUIState)
 @MainActor struct AskTranscriptTextTests {
     @Test func `native mouse drag selects across paragraphs`() async throws {
         guard ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] != nil else { return }

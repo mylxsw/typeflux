@@ -1,8 +1,9 @@
+import Combine
 import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Tool preparation failures", .serialized)
+@Suite("Tool preparation failures", .serialized, .exclusiveUIState)
 @MainActor
 struct AskToolPreparationTests {
     @MainActor struct Fixture {
@@ -199,8 +200,17 @@ struct AskToolPreparationTests {
         f.model.setPermissionMode(.strict, launcher: true)
         f.model.submitLauncher()
         try await f.wait { !f.model.pendingApprovals.isEmpty }
-        try f.model.approve(conversationId: #require(f.model.selectedId), allowed: true)
+        let id = try #require(f.model.selectedId)
+        // Sample the journal the instant the conversation stops being busy: a failed run must
+        // not look idle and resumable before its unknown execution is visible.
+        var statusWhenIdle: [String?] = []
+        let observation = f.model.$busyIds.dropFirst().sink { [model = f.model] busy in
+            if !busy.contains(id) { statusWhenIdle.append(model.selectedRecoveryEntries.first?.receipt?.status) }
+        }
+        defer { observation.cancel() }
+        f.model.approve(conversationId: id, allowed: true)
         try await f.wait { f.model.busyIds.isEmpty }
+        #expect(statusWhenIdle == ["unknown"])
         #expect(await f.api.results.isEmpty)
         #expect(f.model.selectedRecoveryEntries.first?.receipt?.status == "unknown")
         #expect(f.model.recoveryPresentation.unknown && !f.model.recoveryPresentation.canContinue)

@@ -2,7 +2,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask launcher glass")
+@Suite("Ask launcher glass", .exclusiveUIState)
 struct AskGlassTests {
     @Test func liquidGlassOnlyWhereTheSystemHasIt() {
         #expect(AskGlassMaterial.resolve(reduceTransparency: false, supportsLiquidGlass: true) == .liquidGlass)

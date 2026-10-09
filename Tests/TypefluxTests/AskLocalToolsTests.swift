@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask browser adapter")
+@Suite("Ask browser adapter", .exclusiveUIState)
 @MainActor
 struct AskLocalToolsTests {
     @Test func scriptsValidateDestinationsAndKeepUserContentQuoted() throws {

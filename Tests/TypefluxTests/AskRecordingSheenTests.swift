@@ -3,7 +3,7 @@ import QuartzCore
 import Testing
 @testable import Typeflux
 
-@Suite("Ask recording sheen")
+@Suite("Ask recording sheen", .exclusiveUIState)
 @MainActor
 struct AskRecordingSheenTests {
     @Test func shownOnlyWhileListeningAndNotUnderReduceMotion() {

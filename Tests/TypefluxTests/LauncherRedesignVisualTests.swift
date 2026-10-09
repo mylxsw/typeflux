@@ -8,7 +8,7 @@ import Testing
 /// design shows (`docs/design/launcher-keywords-workflow-editor.html`). With
 /// TYPEFLUX_ASK_SNAPSHOTS set the images are written there in Chinese; otherwise the
 /// views are only laid out.
-@Suite("Launcher keywords and workflow editor rendering", .serialized)
+@Suite("Launcher keywords and workflow editor rendering", .serialized, .exclusiveUIState)
 @MainActor
 // swiftlint:disable:next type_body_length
 struct LauncherRedesignVisualTests {

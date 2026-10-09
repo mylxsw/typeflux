@@ -26,7 +26,7 @@ private final class ContextTextInjector: TextInjector {
     }
 }
 
-@Suite("Ask context selection")
+@Suite("Ask context selection", .exclusiveUIState)
 @MainActor
 struct AskContextCaptureTests {
     @Test func systemDialogUsesPreviousAppIdentityWithoutReadingItsSelection() async {

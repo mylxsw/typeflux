@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask launcher home")
+@Suite("Ask launcher home", .exclusiveUIState)
 @MainActor
 struct AskLauncherHomeTests {
     private typealias Home = AskLauncherHome

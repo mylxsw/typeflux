@@ -7,7 +7,7 @@ import Testing
 /// views (set TYPEFLUX_ASK_SNAPSHOTS). Each launcher state is driven through the
 /// real editor, then the window takes the height the launcher asked for, as the
 /// panel does. Light and dark, at the 680 and 640 point launcher widths.
-@Suite("Ask launcher polish snapshots", .serialized)
+@Suite("Ask launcher polish snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherPolishVisualTests {
     @MainActor private final class Host {

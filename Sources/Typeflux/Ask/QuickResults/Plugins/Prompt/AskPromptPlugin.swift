@@ -59,6 +59,8 @@ struct AskPromptPlugin: AskLauncherPlugin {
 
     var generator: (any AskTextGenerating)?
     var modelName: @Sendable () -> String = { "AI" }
+    /// Results offer saving to the notes (⌘S) and opening them (⌘B).
+    var savesNotes = false
 
     var id: String { Self.id }
     var title: String { L("ask.plugin.prompt.title") }
@@ -135,8 +137,11 @@ struct AskPromptPlugin: AskLauncherPlugin {
 
     private func output(_ text: String, name: String, request: AskPluginRequest, plan: AskPluginPlan) -> AskPluginOutput {
         let replaces = request.origin == .selection
-        let actions = [
+        let model = modelName()
+        var actions = [
             AskPluginAction(kind: .copy(text), title: L("ask.plugin.action.copy"), symbol: "doc.on.doc", shortcut: .enter),
+            AskPluginAction(kind: .copyRich(text), title: L("ask.plugin.action.copyRich"), symbol: "doc.richtext",
+                            shortcut: .shiftCommandC),
             AskPluginAction(kind: .writeBack(text),
                             title: L(replaces ? "ask.plugin.action.replace" : "ask.plugin.action.insert"),
                             symbol: replaces ? "arrow.down.to.line" : "text.insert", shortcut: .optionEnter),
@@ -144,13 +149,47 @@ struct AskPromptPlugin: AskLauncherPlugin {
                             shortcut: .commandD),
             AskPluginAction(kind: .rerun([:]), title: L("ask.plugin.action.regenerate"), symbol: "arrow.clockwise",
                             shortcut: .commandR),
+            AskPluginAction(kind: .openInWindow, title: L("ask.plugin.action.openInWindow"),
+                            symbol: "macwindow.on.rectangle", shortcut: .commandO),
             AskPluginAction(kind: .askAI(L("ask.plugin.prompt.askAI", name, request.text, text)),
                             title: L("ask.quick.askAI"), symbol: "bubble.left", shortcut: nil)
         ]
+        if savesNotes {
+            let draft = AskNoteDraft(command: name, keyword: request.keyword.keyword, input: request.text, body: text,
+                                     model: model == "AI" ? nil : model)
+            actions += [Self.noteAction(draft, saved: false), Self.openNotesAction]
+        }
         // The source badge names the model; the plan's model chip would repeat it.
-        return AskPluginOutput(body: text, original: request.text, meta: [],
-                               source: AskPluginRegistry.sourceLabel(modelName()), sourceIsAI: true, actions: actions)
+        var output = AskPluginOutput(body: text, original: request.text, meta: [],
+                                     source: AskPluginRegistry.sourceLabel(model), sourceIsAI: true, actions: actions)
+        output.markdown = true
+        output.starred = savesNotes ? false : nil
+        return output
+    }
+
+    /// ⌘S on a result: save it to the notes, or take it out again.
+    static func noteAction(_ draft: AskNoteDraft, saved: Bool) -> AskPluginAction {
+        AskPluginAction(kind: .toggleNote(draft), title: L(saved ? "ask.notes.unsave" : "ask.notes.save"),
+                        symbol: saved ? "star.fill" : "star", shortcut: .commandS)
+    }
+
+    /// ⌘B: the notes window. Built each time so it follows the interface language.
+    static var openNotesAction: AskPluginAction {
+        AskPluginAction(kind: .openNotes(id: nil), title: L("ask.notes.open"), symbol: "note.text", shortcut: .commandB)
     }
 
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? { nil }
+}
+
+extension AskPluginOutput {
+    /// The result shown as saved in the notes or not: the header star and its ⌘S action.
+    func noteSaving(_ saved: Bool) -> AskPluginOutput {
+        var output = self
+        output.starred = saved
+        output.actions = actions.map { action in
+            if case let .toggleNote(draft) = action.kind { return AskPromptPlugin.noteAction(draft, saved: saved) }
+            return action
+        }
+        return output
+    }
 }

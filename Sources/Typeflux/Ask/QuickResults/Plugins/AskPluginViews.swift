@@ -21,6 +21,8 @@ struct AskPluginDisplay: Equatable {
     /// False when there is nothing to ask about (no text, selection or result to
     /// ask on): the "Ask AI" row is left out rather than shown empty.
     var offersAskAI = true
+    /// ⌘S came while the result streams: the star shows it will be saved.
+    var savesNoteWhenDone = false
 
     var output: AskPluginOutput? { if case let .done(_, output) = phase { output } else { nil } }
     var asksAI: Bool { offersAskAI && highlighted == 1 }
@@ -469,7 +471,7 @@ struct AskPluginResultsView: View {
                         .foregroundStyle(output.sourceIsAI ? AskTheme.accent : StudioTheme.textTertiary)
                         .padding(.horizontal, 6).frame(height: 18)
                         .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(AskTheme.separator))
-                    headerButtons(output, enabled: !running)
+                    headerButtons(output, enabled: !running, streaming: streaming)
                 }
             }
             .frame(height: Self.headerHeight)
@@ -533,21 +535,21 @@ struct AskPluginResultsView: View {
         } else if let image = output.image {
             imageCard(image, dimmed: running)
         } else if output.markdown {
-            ScrollView(.vertical) {
-                AskTranscriptText(text: streaming ? output.body + Self.caret : output.body)
-                    .opacity(running && !streaming ? 0.5 : 1)
+            if display.comparing { original(output) }
+            ScrollViewReader { reader in
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        AskTranscriptText(text: streaming ? output.body + Self.caret : output.body)
+                            .opacity(running && !streaming ? 0.5 : 1)
+                        Color.clear.frame(height: 0).id(Self.bodyID)
+                    }
+                }
+                // Long streams keep their newest line in view.
+                .onChange(of: output.body) { _ in if streaming { reader.scrollTo(Self.bodyID, anchor: .bottom) } }
             }
             .frame(height: Self.markdownHeight(output.body))
         } else {
-            if display.comparing {
-                ScrollView(.vertical) {
-                    Text(output.original).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
-                }
-                .frame(height: Self.originalHeight(output.original))
-                Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 4)
-            }
+            if display.comparing { original(output) }
             ScrollViewReader { reader in
                 ScrollView(.vertical) {
                     // A streaming result is bright with a caret; an old one waiting for its successor is dim.
@@ -563,6 +565,18 @@ struct AskPluginResultsView: View {
             }
             .frame(height: Self.bodyHeight(output.body))
         }
+    }
+
+    /// The original above the result while comparing (⌘D).
+    @ViewBuilder
+    private func original(_ output: AskPluginOutput) -> some View {
+        ScrollView(.vertical) {
+            Text(output.original).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+        }
+        .frame(height: Self.originalHeight(output.original))
+        Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 4)
     }
 
     /// Result rows: icon, title and subtitle; the chosen one says what Return does.
@@ -601,7 +615,7 @@ struct AskPluginResultsView: View {
             // the star sits in the header.
             ForEach(Array(actions.filter {
                 switch $0.kind {
-                case .askAI, .editWorkflow, .toggleStar, .openWordBook: false
+                case .askAI, .editWorkflow, .toggleStar, .openWordBook, .toggleNote, .openNotes, .openInWindow: false
                 default: true
                 }
             }.enumerated()),
@@ -616,12 +630,27 @@ struct AskPluginResultsView: View {
         .opacity(enabled ? 1 : 0.5)
     }
 
-    /// Small buttons beside the source label: the word book's star (⌘S) and the word book itself (⌘B).
+    /// Small buttons beside the source label: the star (⌘S) and the word book or notes (⌘B); for AI
+    /// prompts also the window (⌘O). The star and the window already work while the result streams.
     @ViewBuilder
-    private func headerButtons(_ output: AskPluginOutput, enabled: Bool) -> some View {
-        if let book = output.actions.first(where: { if case .openWordBook = $0.kind { true } else { false } }) {
+    private func headerButtons(_ output: AskPluginOutput, enabled: Bool, streaming: Bool) -> some View {
+        if let window = output.actions.first(where: { $0.kind == .openInWindow }) {
+            Button { onAction(window) } label: {
+                Image(systemName: "macwindow.on.rectangle").font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 22, height: 20)
+                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(window.title + " ⌘O")
+            .accessibilityLabel(window.title)
+            .accessibilityIdentifier("ask.plugin.openInWindow")
+            .disabled(!enabled && !streaming)
+        }
+        if let book = output.actions.first(where: Self.opensBook) {
             Button { onAction(book) } label: {
-                Image(systemName: "character.book.closed").font(.system(size: 11.5))
+                Image(systemName: book.symbol).font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .frame(width: 22, height: 20)
                     .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -630,14 +659,16 @@ struct AskPluginResultsView: View {
             .buttonStyle(.plain)
             .help(book.title + " ⌘B")
             .accessibilityLabel(book.title)
-            .accessibilityIdentifier("ask.plugin.wordBook")
+            .accessibilityIdentifier(book.kind == .openNotes(id: nil) ? "ask.plugin.notes" : "ask.plugin.wordBook")
             .disabled(!enabled)
         }
-        if let star = output.actions.first(where: { if case .toggleStar = $0.kind { true } else { false } }) {
-            let starred = output.starred == true
+        if let star = output.actions.first(where: Self.stars) {
+            let saving = streaming && display.savesNoteWhenDone
+            let starred = output.starred == true || saving
             Button { onAction(star) } label: {
                 Image(systemName: starred ? "star.fill" : "star").font(.system(size: 12))
                     .foregroundStyle(starred ? Color.yellow : StudioTheme.textSecondary)
+                    .opacity(saving ? 0.55 : 1)
                     .frame(width: 22, height: 20)
                     .background(starred ? Color.yellow.opacity(0.16) : AskTheme.hoverFill,
                                 in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -647,8 +678,26 @@ struct AskPluginResultsView: View {
             .help(star.title + " ⌘S")
             .accessibilityLabel(star.title)
             .accessibilityIdentifier("ask.plugin.star")
-            .disabled(!enabled)
+            .disabled(!enabled && !(streaming && Self.savesNote(star)))
         }
+    }
+
+    static func opensBook(_ action: AskPluginAction) -> Bool {
+        switch action.kind {
+        case .openWordBook, .openNotes: true
+        default: false
+        }
+    }
+
+    static func stars(_ action: AskPluginAction) -> Bool {
+        switch action.kind {
+        case .toggleStar, .toggleNote: true
+        default: false
+        }
+    }
+
+    static func savesNote(_ action: AskPluginAction) -> Bool {
+        if case .toggleNote = action.kind { true } else { false }
     }
 
     /// The language the result's read-aloud action uses.
@@ -669,6 +718,7 @@ struct AskPluginResultsView: View {
         case .commandE: "⌘E"
         case .commandS: "⌘S"
         case .commandB: "⌘B"
+        case .commandO: "⌘O"
         case nil: nil
         }
     }

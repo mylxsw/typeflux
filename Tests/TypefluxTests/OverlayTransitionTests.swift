@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveUIState)
 struct OverlayTransitionTests {
     @Test @MainActor
     func captionsExpandAndCollapseAroundTheSameBottomAnchor() async throws {

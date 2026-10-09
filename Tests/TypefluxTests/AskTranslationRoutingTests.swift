@@ -10,7 +10,7 @@ final class AskTestTranslationSettingsBox: @unchecked Sendable {
     init(_ value: AskTranslationSettings = AskTranslationSettings()) { self.value = value }
 }
 
-@Suite("Ask translate plugin engines")
+@Suite("Ask translate plugin engines", .exclusiveUIState)
 struct AskTranslationRoutingTests {
     private struct Setup {
         let plugin: AskTranslatePlugin
@@ -158,7 +158,7 @@ struct AskTranslationRoutingTests {
     }
 }
 
-@Suite("Ask translation model")
+@Suite("Ask translation model", .exclusiveUIState)
 struct AskTranslationLLMServiceTests {
     @Test func followsTheTextModelUntilOneIsChosen() async throws {
         let text = AskTestLLMService()
@@ -200,7 +200,7 @@ struct AskTranslationLLMServiceTests {
     }
 }
 
-@Suite("Ask translation settings pane")
+@Suite("Ask translation settings pane", .exclusiveUIState)
 @MainActor
 struct AskTranslationSettingsModelTests {
     private func model(_ credentials: AskTestTranslationCredentials = AskTestTranslationCredentials())
@@ -288,7 +288,7 @@ struct AskTranslationSettingsModelTests {
     }
 }
 
-@Suite("Ask translation provider sheet")
+@Suite("Ask translation provider sheet", .exclusiveUIState)
 @MainActor
 struct AskTranslationProviderSheetTests {
     @Test func everyProviderSheetDraws() async throws {

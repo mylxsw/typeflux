@@ -225,7 +225,7 @@ private final class RecordingHost: AskWorkflowAuthoringHost {
     }
 }
 
-@Suite("Ask workflow author tools")
+@Suite("Ask workflow author tools", .exclusiveUIState)
 @MainActor
 struct AskWorkflowAuthorToolsTests {
     private let folder = URL(fileURLWithPath: "/tmp/wf-tools")
@@ -371,7 +371,7 @@ struct AskWorkflowAuthorToolsTests {
     }
 }
 
-@Suite("Ask workflow assistant")
+@Suite("Ask workflow assistant", .exclusiveUIState)
 @MainActor
 struct AskWorkflowAssistantSessionTests {
     private func host() -> RecordingHost {
@@ -628,7 +628,7 @@ private final class SlowHost: AskWorkflowAuthoringHost {
     }
 }
 
-@Suite("Ask workflow tester")
+@Suite("Ask workflow tester", .exclusiveUIState)
 @MainActor
 struct AskWorkflowTesterTests {
     @Test func aTestRunIsTheLaunchersRun() async throws {
@@ -683,7 +683,7 @@ struct AskWorkflowFailingRunner: AskWorkflowRunning {
     }
 }
 
-@Suite("Ask workflow tester failures")
+@Suite("Ask workflow tester failures", .exclusiveUIState)
 @MainActor
 struct AskWorkflowTesterFailureTests {
     @Test func spawnFailuresAndRunnerErrorsAreReported() async throws {
@@ -716,7 +716,7 @@ final class AskWorkflowLogRecorder: @unchecked Sendable {
     }
 }
 
-@Suite("Ask workflow editor model")
+@Suite("Ask workflow editor model", .exclusiveUIState)
 @MainActor
 struct AskWorkflowEditorModelTests {
     private func model(_ fixture: AskWorkflowFixture,
@@ -1123,7 +1123,7 @@ struct AskWorkflowEditorModelTests {
     }
 }
 
-@Suite("Ask workflow launcher actions")
+@Suite("Ask workflow launcher actions", .exclusiveUIState)
 @MainActor
 struct AskWorkflowLauncherActionTests {
     @Test func failedRunsOfferEditingAndFixing() async throws {
@@ -1205,7 +1205,7 @@ struct AskWorkflowLauncherActionTests {
     }
 }
 
-@Suite("Ask workflow editor presentation")
+@Suite("Ask workflow editor presentation", .exclusiveUIState)
 @MainActor
 struct AskWorkflowEditorPresentationTests {
     private func open(_ fixture: AskWorkflowFixture, id: String,
@@ -1319,7 +1319,7 @@ struct AskWorkflowEditorPresentationTests {
     }
 }
 
-@Suite("Ask workflow editor simplification")
+@Suite("Ask workflow editor simplification", .exclusiveUIState)
 @MainActor
 struct AskWorkflowEditorSimplificationTests {
     @Test func toolStepsFoldIntoOneLineBetweenMessages() {

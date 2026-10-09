@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Chat workflow preview rendering", .serialized)
+@Suite("Chat workflow preview rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWorkflowAuthoringVisualTests {
     @Test func previewFitsWideAndNarrowWorkspaces() async throws {
