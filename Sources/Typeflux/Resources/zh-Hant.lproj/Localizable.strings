@@ -3793,7 +3793,7 @@
 
 /* Add-on credits and credit pauses */
 "cloud.error.creditsExhausted" = "本月額度和加購額度都已用完。";
-"ask.run.pausedCredits" = "額度用完，已暫停";
+"ask.run.pausedCredits" = "已暫停，等待繼續";
 "ask.credits.exhausted.title" = "額度已用完";
 "ask.credits.exhausted.body" = "本月額度和加購額度都已用完，任務暫停在目前步驟。補充額度後可以從這裡繼續，已完成的步驟不會重複執行。";
 "ask.credits.exhausted.stillBody" = "新的額度還沒有到帳。完成購買後回到 Typeflux，餘額會自動重新整理。";
