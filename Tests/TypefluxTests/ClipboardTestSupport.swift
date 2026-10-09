@@ -110,6 +110,32 @@ enum ClipboardTestSupport {
         return url
     }
 
+    /// One entry of every kind, with real image, PDF and audio files where the kind needs one.
+    static func allKindsEntries(in directory: URL) -> [ClipboardEntry] {
+        let png = directory.appendingPathComponent("shot.png")
+        let pngData = imageData(width: 400, height: 150, text: "Typeflux")
+        FileManager.default.createFile(atPath: png.path, contents: pngData)
+        let pdf = makePDF(named: "report.pdf", in: directory, pages: 2)
+        let movie = makeFile(named: "demo.mov", in: directory)
+        let audio = (try? makeAudioFile(named: "talk.wav", in: directory))
+            ?? makeFile(named: "talk.wav", in: directory)
+        let doc = makeFile(named: "plan.docx", in: directory)
+        return [
+            entry(.voice, text: "spoken words", isPinned: true),
+            entry(.text, text: "plain text", sourceBundleID: "com.apple.finder", sourceAppName: "Finder"),
+            entry(.link, text: "https://example.com", sourceBundleID: "com.apple.Safari"),
+            entry(.code, text: "func a() {\n}\n", sourceBundleID: "com.example.uninstalled"),
+            entry(.image, imagePath: png.path, imagePixelSize: CGSize(width: 400, height: 150),
+                  sourceBundleID: "com.apple.Preview", sourceAppName: "Preview"),
+            entry(.images, filePaths: [png.path, png.path, png.path, png.path, png.path]),
+            entry(.pdf, filePaths: [pdf.path], byteSize: 16),
+            entry(.video, filePaths: [movie.path], sourceBundleID: "com.apple.finder"),
+            entry(.audio, filePaths: [audio.path], sourceBundleID: "com.apple.finder"),
+            entry(.document, filePaths: [doc.path]),
+            entry(.files, filePaths: [pdf.path, doc.path, "/missing/archive.zip"])
+        ]
+    }
+
     struct MissingValue: Error {}
 
     private static func unwrap<T>(_ value: T?) throws -> T {

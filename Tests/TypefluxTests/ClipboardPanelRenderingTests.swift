@@ -18,30 +18,7 @@ final class ClipboardPanelRenderingTests: XCTestCase {
     }
 
     private func allKindsEntries() -> [ClipboardEntry] {
-        let png = directory.appendingPathComponent("shot.png")
-        let pngData = ClipboardTestSupport.imageData(width: 400, height: 150, text: "Typeflux")
-        FileManager.default.createFile(atPath: png.path, contents: pngData)
-        let pdf = ClipboardTestSupport.makePDF(named: "report.pdf", in: directory, pages: 2)
-        let movie = ClipboardTestSupport.makeFile(named: "demo.mov", in: directory)
-        let audio = (try? ClipboardTestSupport.makeAudioFile(named: "talk.wav", in: directory))
-            ?? ClipboardTestSupport.makeFile(named: "talk.wav", in: directory)
-        let doc = ClipboardTestSupport.makeFile(named: "plan.docx", in: directory)
-        return [
-            ClipboardTestSupport.entry(.voice, text: "spoken words", isPinned: true),
-            ClipboardTestSupport.entry(
-                .text, text: "plain text", sourceBundleID: "com.apple.finder", sourceAppName: "Finder"
-            ),
-            ClipboardTestSupport.entry(.link, text: "https://example.com", sourceBundleID: "com.apple.Safari"),
-            ClipboardTestSupport.entry(.code, text: "func a() {\n}\n", sourceBundleID: "com.example.uninstalled"),
-            ClipboardTestSupport.entry(.image, imagePath: png.path, imagePixelSize: CGSize(width: 400, height: 150),
-                                       sourceBundleID: "com.apple.Preview", sourceAppName: "Preview"),
-            ClipboardTestSupport.entry(.images, filePaths: [png.path, png.path, png.path, png.path, png.path]),
-            ClipboardTestSupport.entry(.pdf, filePaths: [pdf.path], byteSize: 16),
-            ClipboardTestSupport.entry(.video, filePaths: [movie.path], sourceBundleID: "com.apple.finder"),
-            ClipboardTestSupport.entry(.audio, filePaths: [audio.path], sourceBundleID: "com.apple.finder"),
-            ClipboardTestSupport.entry(.document, filePaths: [doc.path]),
-            ClipboardTestSupport.entry(.files, filePaths: [pdf.path, doc.path, "/missing/archive.zip"])
-        ]
+        ClipboardTestSupport.allKindsEntries(in: directory)
     }
 
     func testPanelRendersMissingFilesSelectedAndCollapsed() {
