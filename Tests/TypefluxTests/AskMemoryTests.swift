@@ -4,6 +4,7 @@ import Testing
 
 @MainActor
 private final class AskMemoryCapture: AskContextCapturing {
+    var screenCaptureAllowed: Bool { true }
     var captured: AskMemory?
     var global: AskMemory?
     func capture(includeScreenshot: Bool, includeSelection: Bool, request: ReadOnlySelectionRequest) async -> AskCapturedContext {

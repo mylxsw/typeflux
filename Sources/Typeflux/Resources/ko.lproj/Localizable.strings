@@ -3891,3 +3891,5 @@
 "ask.result.revealNote" = "노트에서 보기";
 "ask.result.askAI" = "채팅에서 계속";
 "menu.notes" = "노트…";
+
+"ask.capture.optIn" = "스크린샷 첨부 · 화면 기록 권한이 필요합니다";

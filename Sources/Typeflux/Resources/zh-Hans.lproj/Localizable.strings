@@ -3902,3 +3902,5 @@
 "ask.result.revealNote" = "在笔记本中显示";
 "ask.result.askAI" = "继续问 AI";
 "menu.notes" = "笔记本…";
+
+"ask.capture.optIn" = "附带截图 · 开启后需要屏幕录制授权";

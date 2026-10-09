@@ -3891,3 +3891,5 @@
 "ask.result.revealNote" = "ノートで表示";
 "ask.result.askAI" = "チャットで続ける";
 "menu.notes" = "ノート…";
+
+"ask.capture.optIn" = "スクリーンショットを添付 · 画面収録の許可が必要です";

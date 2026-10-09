@@ -205,7 +205,7 @@ final class AskConversationModel: ObservableObject {
     @Published var isOpeningChat = false
     @Published var savedChatDrafts: [AskSavedChatDraft] = []
     @Published var referenceLocation: String?
-    @Published var launcherDraft = AskDraft() {
+    @Published var launcherDraft = AskDraft(includeScreenshot: false) {
         didSet {
             if launcherDraft.includeScreenshot, !screenshotCapability(launcher: true).canAttach {
                 launcherDraft.includeScreenshot = false
@@ -346,6 +346,7 @@ final class AskConversationModel: ObservableObject {
         // Only DI-supplied, trusted advertisements may enable reuse. Conversation metadata is inert.
         approvalReuseEnabled = AskHarnessContract(version: 1, capabilities: [AskHarnessCapability.scopedApproval.rawValue])
             .permits(.scopedApproval, peer: trustedApprovalPeer, enabled: scopedApprovalEnabled ? [.scopedApproval] : [])
+        launcherDraft = newQuestionDraft()
         normalizeScreenshotChoices()
         modelObserver = self.modelLibrary.objectWillChange.sink { [weak self] _ in
             Task { @MainActor [weak self] in
@@ -482,10 +483,15 @@ final class AskConversationModel: ObservableObject {
         historyGeneration = UUID(); historyOffset = 0; conversations = []; localConversationIds = []
         launcherScreenshotNotice = nil; screenshotNotice = nil; recoveringImages = [:]
         attachmentNotice = nil; launcherAttachmentNotice = nil
-        launcherDraft = AskDraft(); draft = .followUp; launcherContextRestored = false
+        launcherDraft = newQuestionDraft(); draft = .followUp; launcherContextRestored = false
         capturing = false; capturingScreenshot = false
         controllingConversationId = nil; onControlChanged?(false); owner = ""
     }
+
+    /// New questions inherit screen access without requesting it. Saved drafts keep their choice.
+    func newQuestionDraft() -> AskDraft { AskDraft(includeScreenshot: capture.screenCaptureAllowed) }
+
+    var screenCaptureAllowed: Bool { capture.screenCaptureAllowed }
 
     func makeLauncherSelectionRequest() -> ReadOnlySelectionRequest { capture.makeSelectionRequest() }
     func restoreLauncherContextMarker(_ restored: Bool) { launcherContextRestored = restored }
@@ -523,6 +529,7 @@ final class AskConversationModel: ObservableObject {
             }
             return
         }
+        if !capture.screenCaptureAllowed { launcherDraft.includeScreenshot = false }
         clearCapturedContentFeedback(launcher: true)
         capturing = true; capturingScreenshot = launcherDraft.includeScreenshot; launcherContextRestored = false
         let memoryGeneration = memoryPurgeGeneration
@@ -588,6 +595,12 @@ final class AskConversationModel: ObservableObject {
     func refreshScreenshot(launcher: Bool) async {
         guard !Task.isCancelled, !capturing || capturingScreenshot,
               screenshotCapability(launcher: launcher).canAttach else { return }
+        guard capture.requestScreenCapturePermission() else {
+            captureWarning = AskContextCapture.missingScreenshotWarning(allowed: false)
+            if (launcher ? launcherDraft : draft).screenshot == nil { clearCapturedContentFeedback(launcher: launcher) }
+            persistDrafts()
+            return
+        }
         let generation = UUID(); captureGeneration = generation; capturing = true; capturingScreenshot = true
         let expectedOwner = owner, expectedSessionOwner = session()?.owner
         let draftKey = capturedContentKey(launcher: launcher)
@@ -598,6 +611,7 @@ final class AskConversationModel: ObservableObject {
               capturedContentKey(launcher: launcher) == draftKey else { return }
         guard let screenshot = context.screenshot else {
             captureWarning = context.warning ?? L("ask.capture.unavailable")
+            if (launcher ? launcherDraft : draft).screenshot == nil { clearCapturedContentFeedback(launcher: launcher) }
             return
         }
         clearCapturedContentFeedback(launcher: launcher)
@@ -805,7 +819,7 @@ final class AskConversationModel: ObservableObject {
         selectionGeneration = UUID(); selected = nil; selectedId = nil
         isLoadingSelection = false; selectionLoadFailed = false
         captureGeneration = UUID(); capturing = false; capturingScreenshot = false
-        draft = AskDraft(); submissionIssues[false] = nil; error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
+        draft = newQuestionDraft(); submissionIssues[false] = nil; error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
         attachmentNotice = nil
         if isSignedIn { draft.storesLocally = storesLocally }
         // No source app is trustworthy here, so only global memory applies.
@@ -986,7 +1000,7 @@ final class AskConversationModel: ObservableObject {
         snapshots[id] = value; selectionLoadFailed = false
         updateSummary(value)
         if launcher, launcherDraft == submitted {
-            clearCapturedContentFeedback(launcher: true); launcherDraft = AskDraft(); launcherContextRestored = false
+            clearCapturedContentFeedback(launcher: true); launcherDraft = newQuestionDraft(); launcherContextRestored = false
         }
         // A queued message sending on its own must not bring the window forward.
         if clearsDraft { onShowConversation?() }
