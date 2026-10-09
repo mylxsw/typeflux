@@ -9,7 +9,7 @@ enum LLMConnectionTestResolver {
         apiStyle: LLMRemoteAPIStyle? = nil
     ) async throws -> ResolvedLLMConnection {
         if provider == .typefluxCloud {
-            let token = await MainActor.run { AuthState.shared.accessToken }
+            let token = await AuthState.shared.validAccessToken()
             guard let token else {
                 throw TypefluxCloudLLMError.notLoggedIn
             }

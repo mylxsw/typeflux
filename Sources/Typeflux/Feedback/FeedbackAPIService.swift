@@ -48,6 +48,9 @@ struct FeedbackUploadTarget: Decodable, Equatable {
     let fields: [String: String]
     let imageURL: String
     let uploadID: String
+    /// Base URL of the API endpoint that issued this target. Relative upload
+    /// URLs resolve against it, and only this origin receives the bearer token.
+    var issuingAPIBaseURL: URL?
 
     enum CodingKeys: String, CodingKey {
         case type, method, url, bucket, region, key, headers, fields
@@ -188,8 +191,10 @@ enum FeedbackAPIService {
 
         let data: Data
         let httpResponse: HTTPURLResponse
+        let issuingBaseURL = IssuingBaseURLRecorder()
         do {
             (data, httpResponse) = try await executor.execute(apiPath: "/api/v1/feedback/uploads/presign") { baseURL in
+                issuingBaseURL.record(baseURL)
                 let url = AuthEndpointResolver.resolve(baseURL: baseURL, path: "/api/v1/feedback/uploads/presign")
                 var urlRequest = URLRequest(url: url)
                 urlRequest.httpMethod = "POST"
@@ -236,7 +241,53 @@ enum FeedbackAPIService {
             throw FeedbackAPIError.serverError(code: envelope.code, message: envelope.message)
         }
 
-        return responseData
+        var target = responseData
+        target.issuingAPIBaseURL = issuingBaseURL.value
+        return target
+    }
+
+    /// Resolves the upload URL and decides whether it may carry the account
+    /// bearer token. API upload targets may be relative and must stay on the
+    /// issuing API origin; legacy presigned storage URLs are absolute HTTPS
+    /// URLs on another host and never receive the token.
+    static func resolveUploadURL(for target: FeedbackUploadTarget) throws -> (url: URL, isAPIOrigin: Bool) {
+        let apiBaseURL = target.issuingAPIBaseURL
+        guard let url = URL(string: target.url, relativeTo: apiBaseURL)?.absoluteURL,
+              let scheme = url.scheme?.lowercased(),
+              scheme == "https" || scheme == "http",
+              url.host?.isEmpty == false
+        else {
+            throw FeedbackAPIError.invalidResponse
+        }
+        if let apiBaseURL, isSameOrigin(url, apiBaseURL) {
+            return (url, true)
+        }
+        // Only an absolute storage URL may leave the API origin, and only over
+        // HTTPS. A proxy target must never point elsewhere.
+        guard URL(string: target.url)?.scheme != nil,
+              scheme == "https",
+              target.type != apiProxyUploadType
+        else {
+            throw FeedbackAPIError.invalidResponse
+        }
+        return (url, false)
+    }
+
+    static let apiProxyUploadType = "bounded_proxy_put"
+
+    private static func isSameOrigin(_ lhs: URL, _ rhs: URL) -> Bool {
+        lhs.scheme?.lowercased() == rhs.scheme?.lowercased()
+            && lhs.host?.lowercased() == rhs.host?.lowercased()
+            && effectivePort(lhs) == effectivePort(rhs)
+    }
+
+    private static func effectivePort(_ url: URL) -> Int? {
+        if let port = url.port { return port }
+        switch url.scheme?.lowercased() {
+        case "https": return 443
+        case "http": return 80
+        default: return nil
+        }
     }
 
     static func uploadImage(
@@ -244,18 +295,22 @@ enum FeedbackAPIService {
         filename: String,
         contentType: String,
         to target: FeedbackUploadTarget,
+        token: String? = nil,
         session: CloudHTTPSession = URLSession.shared
     ) async throws {
-        guard let url = URL(string: target.url) else {
-            throw FeedbackAPIError.invalidResponse
-        }
+        let (url, isAPIOrigin) = try resolveUploadURL(for: target)
 
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: url)
         request.httpMethod = target.method.isEmpty ? "POST" : target.method
         request.timeoutInterval = 60
-        for (name, value) in target.headers {
+        for (name, value) in target.headers where name.caseInsensitiveCompare("Authorization") != .orderedSame {
             request.setValue(value, forHTTPHeaderField: name)
+        }
+        if isAPIOrigin, let token, !token.isEmpty {
+            // The API checks the same account on the ticket, the PUT and the
+            // feedback submission.
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         if request.httpMethod?.uppercased() == "PUT" {
             if request.value(forHTTPHeaderField: "Content-Type") == nil {
@@ -278,6 +333,9 @@ enum FeedbackAPIService {
             let (responseData, response) = try await session.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw FeedbackAPIError.invalidResponse
+            }
+            if isAPIOrigin, httpResponse.statusCode == 401 {
+                throw FeedbackAPIError.unauthorized
             }
             guard httpResponse.statusCode >= 200, httpResponse.statusCode < 300 else {
                 let responseBody = uploadFailureResponseBody(responseData)
@@ -307,5 +365,25 @@ enum FeedbackAPIService {
             return body.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         return "<\(data.count) bytes binary>"
+    }
+}
+
+/// Remembers the endpoint of the most recent attempt made by
+/// `CloudRequestExecutor`; attempts run sequentially, so the last recorded
+/// base URL issued the response that was returned.
+private final class IssuingBaseURLRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var baseURL: URL?
+
+    func record(_ url: URL) {
+        lock.lock()
+        baseURL = url
+        lock.unlock()
+    }
+
+    var value: URL? {
+        lock.lock()
+        defer { lock.unlock() }
+        return baseURL
     }
 }

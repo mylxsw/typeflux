@@ -157,7 +157,7 @@ final class OpenAICompatibleLLMService: LLMService {
 
     private func resolveConnection(for config: SettingsStore.TextLLMConfiguration) async throws -> ResolvedLLMCall {
         if config.provider == .typefluxCloud {
-            let token = await MainActor.run { AuthState.shared.accessToken }
+            let token = await AuthState.shared.validAccessToken()
             guard let token else {
                 throw TypefluxCloudLLMError.notLoggedIn
             }

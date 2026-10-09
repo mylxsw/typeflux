@@ -707,12 +707,12 @@ struct StudioView: View {
         let content = feedbackContent
         let contact = feedbackContact
         let imageURLs = feedbackImages.compactMap(\.state.uploadedURL)
-        let token = authState.accessToken
         isSubmittingFeedback = true
         feedbackSubmissionError = nil
 
         Task { @MainActor in
             do {
+                let token = await authState.validAccessToken()
                 _ = try await FeedbackAPIService.submit(
                     content: content,
                     contact: contact,
@@ -764,7 +764,6 @@ struct StudioView: View {
             )
         )
 
-        let token = authState.accessToken
         let task = Task.detached(priority: .utility) {
             do {
                 try Task.checkCancellation()
@@ -777,6 +776,8 @@ struct StudioView: View {
                 }
                 try Task.checkCancellation()
 
+                // The ticket and the PUT must carry the same account token.
+                let token = await AuthState.shared.validAccessToken()
                 let target = try await FeedbackAPIService.createImageUploadTarget(
                     filename: prepared.filename,
                     contentType: prepared.contentType,
@@ -788,7 +789,8 @@ struct StudioView: View {
                     data: prepared.data,
                     filename: prepared.filename,
                     contentType: prepared.contentType,
-                    to: target
+                    to: target,
+                    token: token
                 )
                 try Task.checkCancellation()
 

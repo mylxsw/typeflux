@@ -81,7 +81,7 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
         transport: any TypefluxOfficialASRTransport = DefaultTypefluxOfficialASRTransport(),
         serverRegistry: any TypefluxASRServerProviding = TypefluxASRServerRegistry.shared,
         accessTokenProvider: @escaping @Sendable () async -> String? = {
-            await MainActor.run { AuthState.shared.accessToken }
+            await AuthState.shared.validAccessToken()
         }
     ) {
         self.routingClient = routingClient
@@ -128,25 +128,20 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
 
         let pcmData = try CloudASRAudioConverter.convert(url: audioFile.fileURL)
         let route = try await routingClient.fetchRoute(accessToken: token, scenario: scenario)
-        let asrToken: String
-        let asrProvider: String
-        let serverBaseURLs: [URL]
-        switch route {
-        case let .webSocket(token, _, _, _, servers):
-            asrToken = token
-            asrProvider = TypefluxOfficialASRTokenScope.provider(from: token) ?? "default"
-            serverBaseURLs = servers
+        let grants = TypefluxOfficialASRGrantSequence(initial: route) { [routingClient] in
+            try await routingClient.fetchRoute(accessToken: token, scenario: scenario)
         }
 
         return try await Self.runWithASRServerFailover(
-            preferredServers: serverBaseURLs,
+            preferredServers: route.serverBaseURLs,
             serverRegistry: serverRegistry
         ) { apiBaseURL in
-            try await transport.transcribeViaWebSocket(
+            let grant = try await grants.next()
+            return try await transport.transcribeViaWebSocket(
                 pcmData: pcmData,
                 apiBaseURL: apiBaseURL,
-                token: asrToken,
-                provider: asrProvider,
+                token: grant.token,
+                provider: grant.provider,
                 scenario: scenario,
                 optimize: optimize,
                 onUpdate: onUpdate
@@ -169,25 +164,20 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
 
         let pcmData = try CloudASRAudioConverter.convert(url: audioFile.fileURL)
         let route = try await routingClient.fetchRoute(accessToken: token, scenario: scenario)
-        let asrToken: String
-        let asrProvider: String
-        let serverBaseURLs: [URL]
-        switch route {
-        case let .webSocket(token, _, _, _, servers):
-            asrToken = token
-            asrProvider = TypefluxOfficialASRTokenScope.provider(from: token) ?? "default"
-            serverBaseURLs = servers
+        let grants = TypefluxOfficialASRGrantSequence(initial: route) { [routingClient] in
+            try await routingClient.fetchRoute(accessToken: token, scenario: scenario)
         }
 
         return try await Self.runWithASRServerFailover(
-            preferredServers: serverBaseURLs,
+            preferredServers: route.serverBaseURLs,
             serverRegistry: serverRegistry
         ) { apiBaseURL in
-            try await transport.transcribeViaWebSocketWithLLM(
+            let grant = try await grants.next()
+            return try await transport.transcribeViaWebSocketWithLLM(
                 pcmData: pcmData,
                 apiBaseURL: apiBaseURL,
-                token: asrToken,
-                provider: asrProvider,
+                token: grant.token,
+                provider: grant.provider,
                 scenario: scenario,
                 llmConfig: llmConfig,
                 onASRUpdate: onASRUpdate,
@@ -261,7 +251,7 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
         guard await MainActor.run(body: { AuthState.shared.canUseCloudASR }) else {
             throw TypefluxCloudASRDirectiveError()
         }
-        let token = await MainActor.run { AuthState.shared.accessToken }
+        let token = await AuthState.shared.validAccessToken()
         guard let token, !token.isEmpty else {
             throw TypefluxOfficialASRError.notLoggedIn
         }
@@ -269,30 +259,26 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
         let pcmData = RemoteSTTTestAudio.pcm16MonoSilence()
         let routingClient = TypefluxOfficialASRRoutingHTTPClient()
         let route = try await routingClient.fetchRoute(accessToken: token, scenario: .modelSetup)
-        let asrToken: String
-        let asrProvider: String
-        let serverBaseURLs: [URL]
-        switch route {
-        case let .webSocket(token, _, _, _, servers):
-            asrToken = token
-            asrProvider = TypefluxOfficialASRTokenScope.provider(from: token) ?? "default"
-            serverBaseURLs = servers
+        let grants = TypefluxOfficialASRGrantSequence(initial: route) {
+            try await routingClient.fetchRoute(accessToken: token, scenario: .modelSetup)
         }
 
-        return try await runWithASRServerFailover(preferredServers: serverBaseURLs) { apiBaseURL in
-            try await TypefluxOfficialASRSession.run(
+        return try await runWithASRServerFailover(preferredServers: route.serverBaseURLs) { apiBaseURL in
+            let grant = try await grants.next()
+            return try await TypefluxOfficialASRSession.run(
                 pcmData: pcmData,
                 apiBaseURL: apiBaseURL,
-                token: asrToken,
+                token: grant.token,
                 scenario: .modelSetup,
-                provider: asrProvider
+                provider: grant.provider
             ) { _ in }
         }
     }
 
     /// Runs an ASR session against the highest-priority cloud endpoint and
     /// transparently retries against the next endpoint when the connection
-    /// fails. Once a session begins streaming results we let it run to
+    /// fails. Each attempt must take its own one-time grant (see
+    /// `TypefluxOfficialASRGrantSequence`). Once a session begins streaming results we let it run to
     /// completion against the chosen endpoint — mid-session migration is not
     /// supported because that would risk reordering or duplicating audio.
     static func runWithASRServerFailover<T>(
@@ -312,6 +298,8 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
                 return try await operation(baseURL.absoluteString)
             } catch is CancellationError {
                 throw CancellationError()
+            } catch let error as TypefluxOfficialASRGrantRefreshError {
+                throw error.underlying
             } catch let error where TypefluxCloudASRDirectiveError.fromError(error) != nil {
                 throw TypefluxCloudASRDirectiveError()
             } catch let error where TypefluxCloudBillingError.fromError(error) != nil {
