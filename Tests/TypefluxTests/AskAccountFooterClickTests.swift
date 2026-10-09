@@ -11,7 +11,11 @@ extension AskComposerInteractionTests {
         let auth = makeFooterAuth()
         #expect(auth.isLoggedIn)
         var openedAccount = 0
-        let window = AccountFooterClickWindow(contentRect: NSRect(x: 200, y: 200, width: 248, height: 50),
+        // At the foot of the usable screen, like the sidebar's footer, so the card has room
+        // above it even on a short display.
+        let visible = try #require(NSScreen.main?.visibleFrame)
+        let window = AccountFooterClickWindow(contentRect: NSRect(x: visible.minX + 200, y: visible.minY + 12,
+                                                                  width: 248, height: 50),
                                               styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         let hosting = NSHostingView(rootView: HStack {
