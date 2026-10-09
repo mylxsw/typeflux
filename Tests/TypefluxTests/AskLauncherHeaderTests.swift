@@ -122,16 +122,28 @@ struct AskLauncherHeaderTests {
         fixture.model.voiceInput.recorder = recorder
         let (window, reported) = host(fixture)
         defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
-        try await Task.sleep(for: .milliseconds(300))
-        let resting = reported.height
+        // A loaded Mac can finish the quick search after a fixed wait; measure only at rest.
+        let resting = try await settledHeight(fixture, reported)
         let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
         window.makeFirstResponder(editor)
         #expect(fixture.model.voiceInput.begin(in: editor))
-        try await Task.sleep(for: .milliseconds(300))
-        #expect(abs(reported.height - resting - AskVoicePanel.minimumHeight) <= 1)
+        #expect(abs(try await settledHeight(fixture, reported) - resting - AskVoicePanel.minimumHeight) <= 1)
         fixture.model.voiceInput.cancel()
-        try await Task.sleep(for: .milliseconds(300))
-        #expect(abs(reported.height - resting) <= 1)
+        #expect(abs(try await settledHeight(fixture, reported) - resting) <= 1)
+    }
+
+    /// The launcher's reported height once its quick search has finished and layout is still.
+    private func settledHeight(_ fixture: AskTestFixture, _ reported: Reported) async throws -> CGFloat {
+        var last = reported.height
+        var stableSamples = 0
+        for _ in 0 ..< 250 where stableSamples < 5 {
+            try await Task.sleep(for: .milliseconds(20))
+            let height = reported.height
+            stableSamples = !fixture.model.quickSearch.isSearching && height == last ? stableSamples + 1 : 0
+            last = height
+        }
+        #expect(stableSamples >= 5, "The launcher height never settled")
+        return last
     }
 
     @Test func screenshotHoverPreviewsTheCaptureWithoutTakingFocusOrTheToggleClick() async throws {
