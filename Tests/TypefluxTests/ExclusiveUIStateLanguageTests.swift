@@ -160,42 +160,56 @@ struct ExclusiveUIStateLanguageTests {
         await expectCleanedUp(lock, reads, original: original)
     }
 
-    /// Runs the race in its own task, so a cancel can arrive from outside it, and waits until the
-    /// reader is queued. `beforeQueued` runs inside the race just before it reports that, and
-    /// `whileQueued` runs here once it has; then the race is cancelled and its result returned.
-    /// Every exit of this function (normal, a throwing `whileQueued`, cancellation of the caller,
-    /// or a race that ends before the reader queues, which also ends the wait) cancels the race if
-    /// it is still running and joins it first.
+    /// Starts `operation` in its own task, so a cancel can arrive from outside it, and waits until
+    /// the operation opens the `ready` gate it is given or ends. Then runs `whileReady`, cancels the
+    /// task and returns its result. Every exit of this function (normal, a throwing `whileReady`,
+    /// cancellation of the calling task, or an operation that ends before it is ready, which also
+    /// ends the wait) cancels the task if it is still running and joins it first.
+    private func cancelOnceReady(
+        _ operation: @escaping @Sendable (_ ready: Gate) async throws -> Void,
+        whileReady: () async throws -> Void = {}
+    ) async throws -> Result<Void, Error> {
+        let ready = Gate(), ended = Gate()
+        let task = Task {
+            do {
+                try await operation(ready)
+            } catch {
+                await ended.signal()
+                await ready.signal()
+                throw error
+            }
+            await ended.signal()
+            await ready.signal()
+        }
+        do {
+            try await ready.wait()
+            // An open gate does not observe cancellation, so check it after the wait as well.
+            try Task.checkCancellation()
+            if await ended.isOpen { return await task.result }
+            try await whileReady()
+        } catch {
+            task.cancel()
+            _ = await task.result
+            throw error
+        }
+        task.cancel()
+        return await task.result
+    }
+
+    /// Runs the race through `cancelOnceReady`, ready once the reader is queued. `beforeQueued`
+    /// runs inside the race just before it reports that, and `whileQueued` runs here once it has.
     private func cancelRaceOnceQueued(
         on lock: ExclusiveUIStateLock, original: AppLanguage, switched: AppLanguage, reads: Reads,
         beforeQueued: @escaping @Sendable () async throws -> Void = {},
         whileQueued: () async throws -> Void = {}
     ) async throws -> Result<Void, Error> {
-        let queued = Gate(), raceEnded = Gate()
-        let race = Task {
-            do {
-                try await raceWriterAndReader(on: lock, original: original, switched: switched, reads: reads) {
-                    try await beforeQueued()
-                    await queued.signal()
-                    try await Task.sleep(for: .seconds(60))
-                }
-            } catch {
-                await raceEnded.signal()
+        try await cancelOnceReady({ queued in
+            try await raceWriterAndReader(on: lock, original: original, switched: switched, reads: reads) {
+                try await beforeQueued()
                 await queued.signal()
-                throw error
+                try await Task.sleep(for: .seconds(60))
             }
-        }
-        do {
-            try await queued.wait()
-            if await raceEnded.isOpen { return await race.result }
-            try await whileQueued()
-        } catch {
-            race.cancel()
-            _ = await race.result
-            throw error
-        }
-        race.cancel()
-        return await race.result
+        }, whileReady: whileQueued)
     }
 
     @Test func cancellingTheTestWhileTheReaderIsQueuedStillRestoresTheLanguageAndJoinsBothTasks() async throws {
@@ -227,11 +241,10 @@ struct ExclusiveUIStateLanguageTests {
         let text = texts(original: original, switched: switched)
         let lock = ExclusiveUIStateLock()
         let reads = Reads()
-        let held = Gate()
 
-        // The race queues the reader but never reports it, so the caller is still waiting for
-        // readiness (or about to) when it is cancelled; either way its wait throws.
-        let caller = Task {
+        // The caller's race queues the reader but never reports it, so the caller is still waiting
+        // for readiness (or about to) when it is cancelled; either way its wait throws.
+        let result = try await cancelOnceReady({ held in
             try await cancelRaceOnceQueued(
                 on: lock, original: original, switched: switched, reads: reads,
                 beforeQueued: {
@@ -239,14 +252,12 @@ struct ExclusiveUIStateLanguageTests {
                     try await Task.sleep(for: .seconds(60))
                 },
                 whileQueued: { Issue.record("The caller must not get past the readiness wait") }
-            )
-        }
-        try await held.wait()
-        #expect(await lock.isLocked)
-        #expect(await lock.waiterCount == 1)
-        #expect(AppLocalization.shared.language == switched)
-        caller.cancel()
-        let result = await caller.result
+            ).get()
+        }, whileReady: {
+            #expect(await lock.isLocked)
+            #expect(await lock.waiterCount == 1)
+            #expect(AppLocalization.shared.language == switched)
+        })
         #expect(throws: CancellationError.self) { try result.get() }
         #expect(reads.texts == ["unlocked: " + text.switched, "locked: " + text.original])
         await expectCleanedUp(lock, reads, original: original)
@@ -294,6 +305,64 @@ struct ExclusiveUIStateLanguageTests {
 }
 
 extension ExclusiveUIStateLanguageTests {
+    /// Cancels a task that is itself waiting in `cancelOnceReady` for a caller whose race holds the
+    /// lock with the reader queued: the cancel reaches every level, and each level joins its task.
+    @Test func cancellingTheOuterTaskWhileItWaitsForTheCallerCancelsAndJoinsEveryLevel() async throws {
+        let original = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(original) }
+        let switched: AppLanguage = original == .english ? .simplifiedChinese : .english
+        let text = texts(original: original, switched: switched)
+        let lock = ExclusiveUIStateLock()
+        let reads = Reads()
+
+        let result = try await cancelOnceReady({ entered in
+            try await cancelOnceReady({ _ in
+                try await cancelRaceOnceQueued(
+                    on: lock, original: original, switched: switched, reads: reads,
+                    beforeQueued: {
+                        await entered.signal()
+                        try await Task.sleep(for: .seconds(60))
+                    },
+                    whileQueued: { Issue.record("The caller must not get past the readiness wait") }
+                ).get()
+            }, whileReady: { Issue.record("The outer task must not get past the readiness wait") }).get()
+        }, whileReady: {
+            #expect(await lock.isLocked)
+            #expect(await lock.waiterCount == 1)
+            #expect(AppLocalization.shared.language == switched)
+        })
+        #expect(throws: CancellationError.self) { try result.get() }
+        #expect(reads.texts == ["unlocked: " + text.switched, "locked: " + text.original])
+        await expectCleanedUp(lock, reads, original: original)
+    }
+
+    @Test func aCallerThatFailsBeforeItIsReadyEndsTheWaitAndReportsItsError() async throws {
+        let original = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(original) }
+        let switched: AppLanguage = original == .english ? .simplifiedChinese : .english
+        let text = texts(original: original, switched: switched)
+        let lock = ExclusiveUIStateLock()
+        let reads = Reads()
+
+        // The caller's race fails before the caller could report it held the lock.
+        let result = try await cancelOnceReady({ _ in
+            try await cancelRaceOnceQueued(
+                on: lock, original: original, switched: switched, reads: reads,
+                beforeQueued: { throw Failure() }
+            ).get()
+        }, whileReady: { Issue.record("A failed caller must not be reported ready") })
+        #expect(throws: Failure.self) { try result.get() }
+        #expect(reads.texts == ["unlocked: " + text.switched, "locked: " + text.original])
+        await expectCleanedUp(lock, reads, original: original)
+    }
+
+    @Test func aCallerThatFinishesBeforeItIsReadyEndsTheWait() async throws {
+        let result = try await cancelOnceReady({ _ in }, whileReady: {
+            Issue.record("A finished caller must not be reported ready")
+        })
+        #expect(throws: Never.self) { try result.get() }
+    }
+
     /// Every Swift Testing suite that reads localized text, switches the language, or runs on the
     /// main actor must share the lock. Extensions in other files count toward the suite they extend.
     @Test func everySuiteThatReadsTheGlobalLanguageIsExclusive() throws {
