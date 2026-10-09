@@ -81,10 +81,16 @@ struct AskSearchSchedulingTests {
             let result = try #require(AskQuickResults.assemble("note", matches: [app], hits: [file],
                                                               status: nil, settings: settings))
             #expect(result.rows.first == (mode == .filesFirst ? .file(0) : .app(0)))
+            #expect(result.highlightedRow == result.rows.first && result.rows.last == .askAI)
+            // A weak application cannot lead: AI keeps Return from its fixed place at the bottom,
+            // and the groups keep their order instead of AI moving to the top.
             let weak = AskAppMatch(entry: app.entry, score: 0.5)
             let fallback = try #require(AskQuickResults.assemble("note", matches: [weak], hits: [file],
                                                                 status: nil, settings: settings))
-            #expect(fallback.rows.first == (mode == .filesFirst ? .file(0) : .askAI))
+            #expect(fallback.best == (mode == .filesFirst ? .file(0) : nil))
+            #expect(fallback.rows.first == (mode == .filesFirst ? .file(0) : .app(0)))
+            #expect(fallback.rows.last == .askAI)
+            #expect(fallback.highlightedRow == (mode == .filesFirst ? .file(0) : .askAI))
             #expect(result.identity(of: .app(0)) == "app:" + app.entry.id)
             #expect(result.identity(of: .file(0)) == "file:/notes.pdf")
         }

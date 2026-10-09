@@ -159,6 +159,9 @@ struct AskCommandRenderTests {
         let (f, _) = try fixture()
         var heights: [CGFloat] = []
         var dismissed = false
+        // Search nothing on this Mac: once the shared index has scanned, "/me" matches real
+        // applications (Messages, Menu Bar…) and their rows, not a palette, would grow the card.
+        f.model.appIndex = AskTestAppIndex([])
         f.model.launcherDraft = AskDraft(includeScreenshot: false)
         f.model.launcherDraft.append([AskAttachment(kind: .file, name: "a.txt", text: "x")])
         let host = Host(VStack {
@@ -171,9 +174,14 @@ struct AskCommandRenderTests {
         host.window.makeFirstResponder(editor)
         let closed = try #require(heights.last)
         #expect(closed > 0, "the native launcher has reported its height")
+        host.draw()
+        let width = editor.frame.width
         try await type("/me", in: editor)
+        // The search the text starts must finish before the height is final.
+        try await f.wait { !f.model.quickSearch.isSearching }
         host.draw()
         #expect((heights.last ?? 0) == closed, "ordinary slash text does not add a command palette")
+        #expect(editor.frame.width == width, "nor does it narrow or widen the editor")
         #expect(f.model.launcherDraft.text == "/me")
         try await press("\u{1b}", keyCode: 53, in: editor)
         try await settle()

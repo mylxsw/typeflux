@@ -31,7 +31,9 @@ struct AskQuickResultsScrollTests {
 
     @Test(arguments: [NSAppearance.Name.aqua, .darkAqua])
     func replacementRowsHaveNoGhostsAndAIStaysAtTheBottom(appearance: NSAppearance.Name) async throws {
-        _ = NSApplication.shared
+        // The rows are located through their AX nodes, which SwiftUI creates on demand.
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
         let state = State()
         let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: 430),
                                         styleMask: [.borderless], backing: .buffered, defer: false)
@@ -60,7 +62,7 @@ struct AskQuickResultsScrollTests {
             }
             return png
         }
-        func frame(_ identifier: String) throws -> NSRect {
+        func lookup(_ identifier: String) -> NSRect? {
             var seen = Set<ObjectIdentifier>()
             func find(_ node: Any) -> NSRect? {
                 guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
@@ -75,10 +77,13 @@ struct AskQuickResultsScrollTests {
                 }
                 return nil
             }
-            return try #require(find(window))
+            return find(window)
         }
+        func frame(_ identifier: String) throws -> NSRect { try #require(lookup(identifier)) }
         state.results = results("Before", count: 12)
         try await Task.sleep(for: .milliseconds(100))
+        // Wait, at most two seconds, for the first rows' AX nodes; later lookups must find them at once.
+        for _ in 0 ..< 100 where lookup("ask.quick.askAI") == nil { try await Task.sleep(for: .milliseconds(20)) }
         let anchored = try frame("ask.quick.askAI")
         #expect(anchored.height > 0 && anchored.minY >= window.frame.minY)
         let before = try snapshot("before")

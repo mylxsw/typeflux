@@ -1,0 +1,93 @@
+[
+  {
+    "job": "7f0c0a51-3d1e-4b52-9a61-0b1e2f300a01",
+    "status": "succeeded",
+    "exit_code": 0,
+    "output_sha256": "a373bbd490842d21915fa3ac0e79eb26a8fb8cc59d183cc5e54457eea2921ad2",
+    "selected_lines": [
+      "Tests/TypefluxTests/GUL300CleanupProbeTests.swift",
+      "BUILD_EXIT=0",
+      "TEST_EXIT=0",
+      "PROBE resultEarly openAtHook=4 domainHadValue=true",
+      "PROBE resultEarly openAfter=0 documents=0 domainAfter=false",
+      "PROBE resultAfterSave openAtHook=4 domainHadValue=true",
+      "PROBE resultAfterSave openAfter=0 documents=0 domainAfter=false",
+      "PROBE motionEarly axAtHook=true axAfter=false domainHad=true domainAfter=false reset=true",
+      "PROBE motionCancel cancelled=true visibleAfter=false axAtHook=true axAfter=false domainHad=true domainAfter=false reset=true",
+      "\u2714 Suite \"GUL-300 cleanup probes\" passed after 0.605 seconds.",
+      "\u2714 Test run with 3 tests in 1 suite passed after 0.605 seconds."
+    ]
+  },
+  {
+    "job": "9a2d3c64-5b1e-4f7a-8c20-1e3f300a0b02",
+    "status": "succeeded",
+    "exit_code": 0,
+    "output_sha256": "929f34529d9836816d62788e3df0b22e66de031611330983d701f2644dbf2e08",
+    "selected_lines": [
+      "BUILD_EXIT=0",
+      "NEG_TEST_EXIT=1",
+      "PROBE resultEarly openAtHook=4 domainHadValue=true",
+      "PROBE resultEarly suite=ask.result.window.26E83BB9-BC1B-492F-BBDF-1D7C0E4DEB7B openAfter=4 documents=4 domainAfter=true",
+      "Expectation failed: controller.documents.isEmpty",
+      "Expectation failed: GUL300Probe.domain(GUL300Probe.suite) == nil",
+      "PROBE resultAfterSave openAtHook=4 domainHadValue=true",
+      "PROBE resultAfterSave suite=ask.result.window.CA822C1A-A751-4D9A-B766-C221016ACCB6 openAfter=4 documents=4 domainAfter=true",
+      "Expectation failed: controller.documents.isEmpty",
+      "Expectation failed: GUL300Probe.domain(GUL300Probe.suite) == nil",
+      "\u2718 Test resultWindowExitsCloseOwnedWindowsAndRemoveDomain(mode:) with 2 test cases failed after 0.422 seconds with 6 issues.",
+      "PROBE motionEarly suite=ask-motion-28A6CA1F-C85C-48DC-B173-67151FBA3179 axAtHook=true axAfter=true domainHad=true domainAfter=true reset=false",
+      "Expectation failed: !GUL300Probe.ax",
+      "Expectation failed: GUL300Probe.domain(GUL300Probe.suite) == nil",
+      "Expectation failed: model.recoveryGeneration != GUL300Probe.generation",
+      "\u2718 Test motionEarlyExitRestoresAXDefaultsAndModel() failed after 0.059 seconds with 3 issues.",
+      "Expectation failed: !GUL300Probe.ax",
+      "PROBE motionCancel suite=ask-motion-A9C16148-628F-4FFF-9B6B-7A21F3B93E2E cancelled=true visibleAfter=true axAtHook=true axAfter=true domainHad=true domainAfter=true reset=false",
+      "Expectation failed: !GUL300Probe.ax",
+      "Expectation failed: GUL300Probe.domain(GUL300Probe.suite) == nil",
+      "Expectation failed: model.recoveryGeneration != GUL300Probe.generation",
+      "\u2718 Test motionCancellationDismissesLauncherAndRestoresState() failed after 0.124 seconds with 5 issues.",
+      "\u2718 Suite \"GUL-300 cleanup probes\" failed after 0.606 seconds with 14 issues.",
+      "\u2718 Test run with 3 tests in 1 suite failed after 0.606 seconds with 14 issues."
+    ]
+  },
+  {
+    "job": "c41e8a77-2f60-4b3d-9e15-6a0f300a0c03",
+    "status": "succeeded",
+    "exit_code": 0,
+    "output_sha256": "bad89c11387a72e0b5c8837bc3cfaf3a04f7af967b75ac7ca937dbcab725dec7",
+    "selected_lines": [
+      "FILES=    1237 FP=fdc3492dc46209145a46f895b4e7c177c6bbf07f9c8a646cc80dcded08aeff66",
+      "PROBE_REFS=0",
+      "LINT_EXIT=2",
+      "Tests/TypefluxTests/AskLauncherMotionTests.swift:45:5: error: Function Body Length Violation: Function body should span 50 lines or less excluding comments and whitespace: currently spans 85 lines (function_body_length)",
+      "Tests/TypefluxTests/AskResultDocumentTests.swift:145:1: error: Line Length Violation: Line should be 120 characters or less; currently it has 127 characters (line_length)",
+      "Tests/TypefluxTests/AskResultDocumentTests.swift:213:1: error: Line Length Violation: Line should be 120 characters or less; currently it has 122 characters (line_length)",
+      "BASE_LINT_EXIT=2",
+      "Tests/TypefluxTests/AskLauncherMotionTests.swift:45:5: error: Function Body Length Violation: Function body should span 50 lines or less excluding comments and whitespace: currently spans 86 lines (function_body_length)",
+      "Tests/TypefluxTests/AskResultDocumentTests.swift:145:1: error: Line Length Violation: Line should be 120 characters or less; currently it has 127 characters (line_length)",
+      "Tests/TypefluxTests/AskResultDocumentTests.swift:213:1: error: Line Length Violation: Line should be 120 characters or less; currently it has 122 characters (line_length)",
+      "BUILD_EXIT=0",
+      "REP1 TEST_EXIT=0",
+      "\u2714 Test run with 18 tests in 5 suites passed after 21.559 seconds.",
+      "REP2 TEST_EXIT=0",
+      "\u2714 Test run with 18 tests in 5 suites passed after 21.451 seconds.",
+      "REP3 TEST_EXIT=0",
+      "\u2714 Test run with 18 tests in 5 suites passed after 21.221 seconds.",
+      "TEST_EXIT=0",
+      "\u2714 Test run with 2035 tests in 313 suites passed after 368.661 seconds."
+    ]
+  },
+  {
+    "job": "e8b1f0d2-6c4a-4a9e-8f3b-2d0f300a0d04",
+    "status": "succeeded",
+    "exit_code": 0,
+    "output_sha256": "53f71f061fd279ea35a6884e98063385b985a4b18068969055cd69519e1a5834",
+    "selected_lines": [
+      "\t Executed 8 tests, with 1 test skipped and 0 failures (0 unexpected) in 0.720 (0.721) seconds",
+      "\t Executed 8 tests, with 1 test skipped and 0 failures (0 unexpected) in 0.632 (0.634) seconds",
+      "\t Executed 8 tests, with 1 test skipped and 0 failures (0 unexpected) in 0.625 (0.626) seconds",
+      "\t Executed 3218 tests, with 16 tests skipped and 0 failures (0 unexpected) in 189.581 (189.729) seconds",
+      "\u2714 Test run with 2035 tests in 313 suites passed after 368.661 seconds."
+    ]
+  }
+]
