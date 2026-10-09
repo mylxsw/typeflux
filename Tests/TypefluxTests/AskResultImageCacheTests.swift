@@ -5,6 +5,92 @@ import Testing
 @Suite("Asynchronous launcher images", .serialized, .exclusiveUIState)
 @MainActor
 struct AskResultImageCacheTests {
+    @Test func hiddenRelativeApplicationLinksShareTheResolvedCacheAndPendingRequest() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let applications = root.appendingPathComponent("Applications")
+        let target = root.appendingPathComponent("System/Cryptexes/App/System/Applications/Safari.app",
+                                                isDirectory: true)
+        try FileManager.default.createDirectory(at: applications, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+        let link = applications.appendingPathComponent("Safari.app")
+        try FileManager.default.createSymbolicLink(atPath: link.path,
+            withDestinationPath: "../System/Cryptexes/App/System/Applications/Safari.app")
+        var hidden = URLResourceValues()
+        hidden.isHidden = true
+        var hiddenLink = link
+        try hiddenLink.setResourceValues(hidden)
+        let expected = NSImage(size: .init(width: 28, height: 28))
+        let modified = Date(timeIntervalSinceReferenceDate: 100)
+        var calls = 0
+        let cache = AskResultImageCache { key in
+            #expect(key.url == target)
+            #expect(key.modified == modified && !key.thumbnail && key.scale == 1)
+            calls += 1
+            try? await Task.sleep(for: .milliseconds(20))
+            return expected
+        }
+        let aliasKey = AskResultImageCache.Key(url: link, thumbnail: false, modified: modified, scale: 1)
+        var targetKey = aliasKey
+        targetKey.url = target
+        let alias = Task { await cache.image(aliasKey) }
+        let direct = Task { await cache.image(targetKey) }
+        #expect(await alias.value === expected)
+        #expect(await direct.value === expected)
+        #expect(await cache.image(aliasKey) === expected)
+        #expect(cache.cached(targetKey) === expected)
+        #expect(calls == 1, "Aliases must coalesce and use the resolved path as the cache key")
+    }
+
+    @Test func retargetingAnApplicationLinkLoadsTheNewBundleInsteadOfTheOldCachedIcon() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let first = root.appendingPathComponent("First.app", isDirectory: true)
+        let second = root.appendingPathComponent("Second.app", isDirectory: true)
+        try FileManager.default.createDirectory(at: first, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: second, withIntermediateDirectories: true)
+        let link = root.appendingPathComponent("Safari.app")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: first)
+        let firstIcon = NSImage(size: .init(width: 28, height: 28))
+        let secondIcon = NSImage(size: .init(width: 32, height: 32))
+        var loaded: [URL] = []
+        let cache = AskResultImageCache { key in
+            loaded.append(key.url)
+            return key.url == first ? firstIcon : secondIcon
+        }
+        let key = AskResultImageCache.Key(url: link, thumbnail: false)
+        #expect(await cache.image(key) === firstIcon)
+        try FileManager.default.removeItem(at: link)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: second)
+        #expect(await cache.image(key) === secondIcon)
+        #expect(loaded == [first, second])
+    }
+
+    @Test func nonApplicationLinksKeepTheirOriginalPreviewURL() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let target = root.appendingPathComponent("Target.pdf"), link = root.appendingPathComponent("Alias.pdf")
+        try Data().write(to: target)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+        let cache = AskResultImageCache { key in
+            #expect(key.url == link && key.thumbnail)
+            return NSImage(size: .init(width: 28, height: 28))
+        }
+        #expect(await cache.image(.init(url: link, thumbnail: true)) != nil)
+    }
+
+    @Test func aCancelledApplicationIconLoadDoesNotPublishAnImage() async {
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return await AskAppIcon.image(for: URL(fileURLWithPath: "/missing.app"))
+        }
+        #expect(await task.value == nil)
+    }
+
     @Test func coalescesRequestsCachesAndInvalidatesByFileVersion() async throws {
         var calls = 0
         let expected = NSImage(size: .init(width: 28, height: 28))

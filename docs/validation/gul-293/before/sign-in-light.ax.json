@@ -1,0 +1,39 @@
+[
+  {
+    "accessibilityLabel" : "",
+    "accessibilityRole" : "AXWindow",
+    "accessibilityTitle" : ""
+  },
+  {
+    "accessibilityRole" : "AXGroup"
+  },
+  {
+    "accessibilityIdentifier" : "",
+    "accessibilityLabel" : "翻译",
+    "accessibilityRole" : "AXHeading"
+  },
+  {
+    "accessibilityIdentifier" : "ask.plugin.card",
+    "accessibilityRole" : "AXGroup"
+  },
+  {
+    "accessibilityIdentifier" : "",
+    "accessibilityRole" : "AXStaticText",
+    "accessibilityValue" : "Translation"
+  },
+  {
+    "accessibilityIdentifier" : "",
+    "accessibilityRole" : "AXStaticText",
+    "accessibilityValue" : "请登录后使用 Typeflux Cloud 语言模型。"
+  },
+  {
+    "accessibilityIdentifier" : "",
+    "accessibilityLabel" : "登录 Typeflux Cloud",
+    "accessibilityRole" : "AXButton"
+  },
+  {
+    "accessibilityIdentifier" : "",
+    "accessibilityRole" : "AXStaticText",
+    "accessibilityValue" : "↩ 登录 Typeflux Cloud"
+  }
+]

@@ -1,0 +1,36 @@
+{
+  "Sources/Typeflux/Ask/QuickResults/Apps/AskAppIndex.swift": [
+    234,
+    235,
+    237,
+    238,
+    239,
+    240,
+    241,
+    242
+  ],
+  "Sources/Typeflux/Ask/QuickResults/AskResultImageCache.swift": [
+    4,
+    5,
+    41,
+    42,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    88,
+    89,
+    90
+  ],
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskSettingsPlugin.swift": [
+    3
+  ]
+}

@@ -3778,7 +3778,7 @@
 "ask.settings.keywords.kind.prefix.hint" = "모든 키워드를 살펴보고 기능을 선택";
 
 /* Launcher settings and chat history */
-"ask.plugin.setting.title" = "시스템 설정";
+"ask.plugin.setting.title" = "Typeflux 설정";
 "ask.settings.keywords.kind.setting.hint" = "Typeflux 설정 열기";
 "ask.plugin.history.title" = "채팅 기록";
 "ask.settings.keywords.kind.history.hint" = "채팅 제목을 검색하고 대화 열기";

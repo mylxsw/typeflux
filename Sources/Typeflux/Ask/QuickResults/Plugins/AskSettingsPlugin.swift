@@ -1,6 +1,6 @@
 import Foundation
 
-/// Opens the application's System Settings page without forwarding launcher context.
+/// Opens Typeflux settings without forwarding launcher context.
 struct AskSettingsPlugin: AskLauncherPlugin {
     static let id = "setting"
     static let keywords = [AskKeyword(keyword: "setting", pluginID: id)]

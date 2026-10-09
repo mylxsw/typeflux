@@ -231,14 +231,14 @@ final class AskAppIndex: AskAppSearching, @unchecked Sendable {
     }
 }
 
-/// Application icons for the launcher's rows, cached by path.
+/// Loads a resolved application's Finder icon off the main thread. The result
+/// cache owns coalescing and caching; only image construction happens on MainActor.
 enum AskAppIcon {
-    @MainActor private static let cache = NSCache<NSString, NSImage>()
-
-    @MainActor static func image(for url: URL) -> NSImage {
-        if let cached = cache.object(forKey: url.path as NSString) { return cached }
-        let icon = NSWorkspace.shared.icon(forFile: url.path)
-        cache.setObject(icon, forKey: url.path as NSString)
-        return icon
+    @MainActor static func image(for resolvedURL: URL) async -> NSImage? {
+        let data = await Task.detached(priority: .utility) {
+            NSWorkspace.shared.icon(forFile: resolvedURL.path).tiffRepresentation
+        }.value
+        guard !Task.isCancelled else { return nil }
+        return data.flatMap { NSImage(data: $0) }
     }
 }

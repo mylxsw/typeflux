@@ -5,6 +5,31 @@ import Testing
 @Suite("Launcher localization polish", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLocalizationPolishTests {
+    @Test func settingsTitlesAreConsistentAcrossThePluginDirectoryAndKeywordSettings() async throws {
+        let previous = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let workflows = try AskWorkflowFixture()
+        let plugin = AskSettingsPlugin()
+        for language in AppLanguage.allCases {
+            AppLocalization.shared.setLanguage(language)
+            let title = L("ask.plugin.setting.title")
+            #expect(title.hasPrefix("Typeflux "))
+            #expect(plugin.title == title && AskKeywordKind.setting.title == title)
+            #expect(AskKeywordListPresentation.name(of: AskSettingsPlugin.keywords[0]) == title)
+            #expect(AskKeywordDraft(adding: .setting).displayName == title)
+            #expect(workflows.store.ownerName(plugin.id) == title)
+            let directory = fixture.model.launcherKeywordDirectory(language: language)
+            #expect(directory.first { $0.keyword.pluginID == plugin.id }?.title == title)
+            let request = AskPluginRequest(text: "", origin: .argument, keyword: AskSettingsPlugin.keywords[0],
+                                           options: [:], interfaceLanguage: language)
+            let plan = await plugin.plan(request)
+            #expect(plan.title == title && plan.actions.first?.title == title)
+            #expect(plan.actions.first?.kind == .openSettings)
+        }
+    }
+
     @Test func cloudSignInFailureFallsBackOnlyToAConfiguredService() async throws {
         let device = AskTestTranslationEngine(available: false)
         let cloudEngine = AskTestTranslationEngine(failure: TypefluxCloudLLMError.notLoggedIn)

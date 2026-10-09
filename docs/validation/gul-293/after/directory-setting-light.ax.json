@@ -1,0 +1,29 @@
+[
+  {
+    "accessibilityLabel" : "",
+    "accessibilityRole" : "AXWindow",
+    "accessibilityTitle" : ""
+  },
+  {
+    "accessibilityRole" : "AXGroup"
+  },
+  {
+    "accessibilityIdentifier" : "",
+    "accessibilityLabel" : "关键词目录",
+    "accessibilityRole" : "AXHeading"
+  },
+  {
+    "accessibilityIdentifier" : "ask.plugin.items",
+    "accessibilityRole" : "AXScrollArea"
+  },
+  {
+    "accessibilityIdentifier" : "ask.plugin.item",
+    "accessibilityLabel" : "setting, Typeflux 设置 · 打开 Typeflux 设置",
+    "accessibilityRole" : "AXButton"
+  },
+  {
+    "accessibilityIdentifier" : "",
+    "accessibilityRole" : "AXStaticText",
+    "accessibilityValue" : "↩ 进入"
+  }
+]

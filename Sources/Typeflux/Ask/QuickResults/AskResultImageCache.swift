@@ -1,8 +1,8 @@
 import AppKit
 import QuickLookThumbnailing
 
-/// Quick Look supplies icons asynchronously as well as thumbnails. View bodies
-/// only read this cache; they never ask Finder for an uncached file icon.
+/// Quick Look supplies file previews; application icons come from their resolved
+/// bundles. Filesystem and Finder work runs off the main thread, never in view bodies.
 @MainActor
 final class AskResultImageCache {
     struct Key: Hashable {
@@ -39,6 +39,8 @@ final class AskResultImageCache {
 
     func image(_ key: Key) async -> NSImage? {
         guard !Task.isCancelled else { return nil }
+        let key = await Self.resolved(key)
+        guard !Task.isCancelled else { return nil }
         if let image = cached(key) { return image }
         let client = UUID()
         let task: Task<LoadedImage, Never>
@@ -70,7 +72,22 @@ final class AskResultImageCache {
         }
     }
 
+    /// Resolve before looking up either the cache or pending requests: aliases share
+    /// an icon, while a link retargeted by a macOS update gets a new cache entry.
+    private static func resolved(_ key: Key) async -> Key {
+        guard key.url.isFileURL, key.url.pathExtension.lowercased() == "app" else { return key }
+        let url = await Task.detached(priority: .utility) { [url = key.url] in
+            url.resolvingSymlinksInPath()
+        }.value
+        var resolved = key
+        resolved.url = url
+        return resolved
+    }
+
     private static func generate(_ key: Key) async -> NSImage? {
+        if key.url.isFileURL, key.url.pathExtension.lowercased() == "app" {
+            return await AskAppIcon.image(for: key.url)
+        }
         let request = QLThumbnailGenerator.Request(fileAt: key.url, size: CGSize(width: 56, height: 56),
                                                    scale: key.scale, representationTypes: key.thumbnail ? .all : .icon)
         return await withTaskCancellationHandler {

@@ -236,9 +236,12 @@ struct AskAppIndexTests {
         #expect(AskAppIndex.shared === AskAppIndex.shared)
     }
 
-    @Test @MainActor func iconsAreCached() {
+    @Test(.exclusiveUIState) @MainActor func iconsAreCached() async throws {
         let url = URL(fileURLWithPath: "/System/Applications/Calculator.app")
-        #expect(AskAppIcon.image(for: url) === AskAppIcon.image(for: url))
+        let key = AskResultImageCache.Key(url: url, thumbnail: false)
+        let cache = AskResultImageCache()
+        let first = try #require(await cache.image(key))
+        #expect(await cache.image(key) === first)
     }
 }
 
