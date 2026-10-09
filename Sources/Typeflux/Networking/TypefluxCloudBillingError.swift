@@ -117,6 +117,10 @@ struct TypefluxCloudBillingError: LocalizedError, Equatable {
             return billingError
         }
 
+        if error is CloudCreditsExhaustedError {
+            return TypefluxCloudBillingError(reason: .quotaExceeded, serverMessage: nil)
+        }
+
         if let routingError = error as? TypefluxOfficialASRRoutingError,
            case let .serverError(code, message) = routingError {
             return fromServerCode(code, message: message)

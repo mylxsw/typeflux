@@ -3793,3 +3793,22 @@
 "ask.plugin.history.open" = "打开对话";
 "ask.plugin.history.noMatch" = "没有匹配的聊天记录";
 "ask.plugin.history.note" = "检索已加载及本机缓存的聊天标题";
+
+/* Add-on credits and credit pauses */
+"cloud.error.creditsExhausted" = "本月额度和加购额度都已用完。";
+"ask.run.pausedCredits" = "已暂停，等待继续";
+"ask.credits.exhausted.title" = "额度已用完";
+"ask.credits.exhausted.body" = "本月额度和加购额度都已用完，任务暂停在当前步骤。补充额度后可以从这里继续，已完成的步骤不会重复执行。";
+"ask.credits.exhausted.stillBody" = "新的额度还没有到账。完成购买后回到 Typeflux，余额会自动刷新。";
+"ask.credits.exhausted.waitBody" = "任务暂停在当前步骤，额度重置后可以继续。";
+"ask.credits.exhausted.waitUntilBody" = "任务暂停在当前步骤，额度将于 %@ 重置，届时可以继续。";
+"ask.credits.available.title" = "额度已到账 · 继续";
+"ask.credits.available.body" = "任务会从暂停的地方接着做，已完成的步骤不会重复执行。";
+"ask.credits.monthly" = "月度额度";
+"ask.credits.addon" = "加购额度";
+"ask.credits.buy" = "购买加购额度";
+"ask.credits.upgrade" = "升级套餐";
+"ask.credits.continue" = "继续";
+"account.addon.title" = "加购额度";
+"account.addon.nextExpiry" = "最近到期：%@ credits，%@";
+"account.addon.expiringSoon" = "%@ credits 将于 %@ 到期，请在此之前用完。";

@@ -3783,3 +3783,22 @@
 "ask.plugin.history.open" = "チャットを開く";
 "ask.plugin.history.noMatch" = "一致するチャットはありません";
 "ask.plugin.history.note" = "読み込み済みとローカルキャッシュのチャットタイトルを検索";
+
+/* Add-on credits and credit pauses */
+"cloud.error.creditsExhausted" = "今月のクレジットと追加クレジットをすべて使い切りました。";
+"ask.run.pausedCredits" = "一時停止中・続行待ち";
+"ask.credits.exhausted.title" = "クレジットを使い切りました";
+"ask.credits.exhausted.body" = "今月のクレジットと追加クレジットをすべて使い切ったため、タスクは現在のステップで一時停止しています。クレジットを追加するとここから再開でき、完了したステップは繰り返されません。";
+"ask.credits.exhausted.stillBody" = "新しいクレジットはまだ反映されていません。購入を完了して Typeflux に戻ると、残高は自動で更新されます。";
+"ask.credits.exhausted.waitBody" = "タスクは現在のステップで一時停止しています。クレジットがリセットされると再開できます。";
+"ask.credits.exhausted.waitUntilBody" = "タスクは現在のステップで一時停止しています。%@ にクレジットがリセットされると再開できます。";
+"ask.credits.available.title" = "クレジットが追加されました · 再開";
+"ask.credits.available.body" = "一時停止したところから再開します。完了したステップは繰り返されません。";
+"ask.credits.monthly" = "月間クレジット";
+"ask.credits.addon" = "追加クレジット";
+"ask.credits.buy" = "追加クレジットを購入";
+"ask.credits.upgrade" = "プランをアップグレード";
+"ask.credits.continue" = "再開";
+"account.addon.title" = "追加クレジット";
+"account.addon.nextExpiry" = "次の有効期限：%@ クレジット（%@）";
+"account.addon.expiringSoon" = "%@ クレジットが %@ に失効します。それまでにご利用ください。";

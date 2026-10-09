@@ -86,7 +86,7 @@ struct AccountStatusPresentation: Equatable {
         let quota = AccountUsageCreditPresentation(credits: credits)
         let level: QuotaLevel = if quota.isExhausted {
             .exhausted
-        } else if let fraction = quota.remainingFraction, fraction < lowThreshold {
+        } else if let fraction = quota.remainingFraction, fraction < lowThreshold, quota.addonRemaining == 0 {
             .low
         } else {
             .normal

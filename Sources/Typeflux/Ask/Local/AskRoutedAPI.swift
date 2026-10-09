@@ -48,6 +48,9 @@ struct AskRoutedAPI: AskAPI {
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
         try await api(token).steer(conversationId: conversationId, request: request, token: token)
     }
+    func resume(conversationId: String, runId: String, token: String) async throws -> AskConversation {
+        try await api(token).resume(conversationId: conversationId, runId: runId, token: token)
+    }
     func delete(conversationId: String, token: String) async throws { try await api(token).delete(conversationId: conversationId, token: token) }
 
     /// Local copies are always cleared; Cloud copies only with a Cloud session.

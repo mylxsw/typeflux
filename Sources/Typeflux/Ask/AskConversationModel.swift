@@ -259,6 +259,9 @@ final class AskConversationModel: ObservableObject {
     @Published var inspectingRecovery = false
     @Published var recoveryWorking = false
     var recoveryGeneration = UUID()
+    /// What the latest `resume` of a credit-paused run reported, per conversation,
+    /// until the account balance changes again.
+    @Published var creditPauseDetails: [String: CloudCreditsExhaustedDetails] = [:]
     @Published var error: String?
     @Published var captureWarning: String?
     @Published private(set) var isRefreshingHistory = false
@@ -271,6 +274,8 @@ final class AskConversationModel: ObservableObject {
     var onShowConversation: (() -> Void)?
     var onOpenSettings: ((StudioSection) -> Void)?
     var onControlChanged: ((Bool) -> Void)?
+    /// Called when Typeflux Cloud reports no credits left, so the account balance can refresh.
+    var onCreditsExhausted: (() -> Void)?
     var recordingIsActive: () -> Bool = { false }
 
     let api: any AskAPI
@@ -998,6 +1003,35 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
+    /// Continues the selected run where the server paused it for credits. The server
+    /// re-checks the balance; a run that is still short stays paused with the new details.
+    func resumeCreditPause() {
+        guard let value = selected, let run = value.run, run.isPausedForCredits, !busyIds.contains(value.id),
+              let current = credentials(for: value.id) else { return }
+        selectionObservation?.cancel(); selectionObservation = nil
+        let id = value.id
+        busyIds.insert(id); error = nil; operationErrors[id] = nil; creditPauseDetails[id] = nil
+        let operationId = UUID(); operationIds[id] = operationId
+        operations[id] = Task { [weak self] in
+            guard let self else { return }; defer { finishOperation(id, operationId: operationId) }
+            let monitor = monitorConversation(id: id, current: current)
+            defer { monitor.cancel() }
+            do {
+                let response = try await api.resume(conversationId: id, runId: run.id, token: current.token)
+                try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
+            } catch is CancellationError {} catch let exhausted as CloudCreditsExhaustedError {
+                guard owner == current.account else { return }
+                creditPauseDetails[id] = exhausted.details ?? CloudCreditsExhaustedDetails()
+                onCreditsExhausted?()
+            } catch { reportOperationError(error, id: id, owner: current.account) }
+        }
+    }
+
+    /// A refreshed balance supersedes what an earlier `resume` reported.
+    func creditBalanceDidChange() {
+        if !creditPauseDetails.isEmpty { creditPauseDetails = [:] }
+    }
+
     /// Only the latest reply can be regenerated: the server rewinds the whole
     /// turn that produced it, so an older answer could not be replaced without
     /// silently discarding the turns that follow it.
@@ -1111,6 +1145,8 @@ final class AskConversationModel: ObservableObject {
             if let latest = snapshots[value.id] { value = latest }
             guard let run = value.run, run.isActive else { return }
             guard !run.needsRecoveryInspection else { throw AskRecoveryError.unknown }
+            // Pending calls stay pending while credits are out; only `resume` continues.
+            if run.isPausedForCredits { return }
             if run.status == "running" {
                 try await Task.sleep(for: .seconds(1))
                 value = try await api.conversation(id: value.id, token: current.token)

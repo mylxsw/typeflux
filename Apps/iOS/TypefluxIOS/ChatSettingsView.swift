@@ -285,6 +285,16 @@ struct ChatCreditSummary: View {
                 .frame(height: 6).padding(.top, 12).padding(.bottom, 8)
                 .accessibilityHidden(true)
             }
+            if let addon = usage.addonRemaining {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Add-on credits").font(.system(size: 13)).foregroundStyle(ChatTheme.secondary)
+                    Spacer()
+                    Text(addon.formatted()).font(.system(size: 15, weight: .semibold)).monospacedDigit()
+                }
+                .padding(.bottom, 8)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("account.addonCredits")
+            }
             Text("Shared with your Mac").font(.system(size: 12)).foregroundStyle(ChatTheme.tertiary)
         }
     }

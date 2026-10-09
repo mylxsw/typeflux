@@ -650,8 +650,8 @@ struct AskComposer: View {
     }
     private var sendControl: AskSendControl {
         guard !launcher else { return .send(enabled: canSend) }
-        // Stop only while the run works or waits on an approval: a run waiting for a
-        // recovery decision is stopped from its card, so the composer offers no second Stop.
+        // Stop only while the run works, waits on an approval or waits for credits: a run
+        // waiting for a recovery decision is stopped from its card, so the composer offers no second Stop.
         let working = model.isBusy && model.runPhase?.offersStop != false
         return AskSendControl.resolve(busy: working, hasDraft: model.draft.canSend,
                                       canSend: canSend, editingQueued: editingQueued)
