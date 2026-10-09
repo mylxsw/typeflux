@@ -60,9 +60,21 @@ phone, with one accent colour, one type scale and glass only on floating layers.
   provider tile, capacity, vision badge and credit multiplier. Switching models
   keeps the closest supported level and explains any adjustment. Auto omits
   `reasoning_effort` from the request.
-- Settings shows the profile and this period's credits (shared with the Mac),
-  appearance (Automatic / Light / Dark, persisted on this device), language
-  (opens iOS Settings), privacy policy, version and a confirmed sign-out.
+- Settings shows the profile and this period's credits (shared with the Mac) with
+  a Buy credits entry, appearance (Automatic / Light / Dark, persisted on this
+  device), language (opens iOS Settings), AI data sharing, an About group (privacy
+  policy, terms, feedback, version) and an Account group (confirmed sign-out,
+  account deletion). Guests see a sign-in card instead of the account card.
+- Credit packs are sold as App Store consumables (StoreKit 2). The shop lists the
+  server catalog with App Store prices; each purchase carries the account ID as
+  `appAccountToken` and is finished only after the server grants it, so an
+  interrupted purchase is delivered on the next launch, foreground or
+  `Transaction.updates` event. See the API's `docs/credit-packs.md`.
+- Running out of credits is never a dead end: a refused message or a run the
+  server paused for credits (`paused_credits`) shows an "out of credits" card
+  above the composer with Buy credits and, for a paused run, Continue (resume).
+- Errors are written as actionable sentences; type names, status codes and English
+  server diagnostics are never shown. A failed answer offers Try again.
 - Markdown headings, lists, quotes, code cards and horizontally scrolling table
   cards. English and Simplified Chinese follow the system language. Reduce Motion
   freezes the orb, shimmer and spinners; Reduce Transparency uses solid surfaces.
@@ -73,8 +85,8 @@ phone, with one accent colour, one type scale and glass only on floating layers.
 - Runs waiting for a desktop tool or local model show as waiting for their
   originating device. The phone does not take over those operations.
 
-Not yet available on iOS: deleting the account (no API exists yet; required
-before App Store submission), renaming conversations, and in-app purchase.
+Not yet available on iOS: renaming conversations and subscriptions (monthly plans
+are bought on the web; credit packs are bought in the app).
 
 The server owns cloud history and run state. Drafts and loaded history are held
 in memory; this first app does not promise offline history or draft recovery
@@ -152,6 +164,11 @@ arguments in a Debug build. Add `--synthetic-tools` for a desktop-tool run or
 an in-memory account, and no production requests. It is excluded from Release
 builds and is not evidence of live account/API validation.
 
+Credit fixtures: `--synthetic-paused` (a run paused for credits),
+`--synthetic-no-credits` (sending is refused until a pack is bought),
+`--synthetic-no-store` (purchases unavailable) and `--synthetic-purchase-pending`
+(Ask to Buy). Purchases in preview mode use an offline StoreKit stand-in.
+
 Additional fixture flags are `--synthetic-rich` (Markdown, reasoning, tools and
 Mac image attachments), `--synthetic-stream` (send to start incremental output),
 `--synthetic-failure`, `--synthetic-empty`, and `--synthetic-history` (pagination).
@@ -160,8 +177,9 @@ preferences use a separate UserDefaults domain and reset to System by default;
 `--synthetic-preserve-settings` explicitly retains them for persistence tests.
 
 The existing `@autotest` PR workflow runs shared-package, iOS, and Mac tests.
-Account registration, purchasing, and App Store distribution are outside this
-implementation.
+Account registration and App Store distribution are outside this implementation.
+In-app purchases need consumable products in App Store Connect matching the API's
+`APPLE_IAP_PRODUCT_MAP`; test them with Sandbox testers or TestFlight.
 
 ## Simulator previews
 

@@ -26,8 +26,14 @@ struct ChatTranscriptView: View {
         if let run = conversation.run {
             VStack(alignment: .leading, spacing: 10) {
                 let preview = ChatTranscript.preview(conversation)
-                if run.isActive, run.requiresDesktop {
-                    Label(NSLocalizedString("Waiting for the originating device", comment: "Live response status"),
+                if run.isPausedForCredits {
+                    Label(NSLocalizedString("Paused · out of credits", comment: "Live response status"),
+                          systemImage: "pause.circle")
+                        .font(.system(size: 13.5)).foregroundStyle(.orange)
+                        .accessibilityIdentifier("chat.run.status")
+                } else if run.isActive, run.requiresDesktop {
+                    Label(NSLocalizedString("This step runs on your Mac. Keep Typeflux open there and online.",
+                                            comment: "Live response status"),
                           systemImage: "desktopcomputer")
                         .font(.system(size: 13.5)).foregroundStyle(ChatTheme.secondary)
                         .accessibilityIdentifier("chat.run.status")
@@ -40,7 +46,7 @@ struct ChatTranscriptView: View {
                 if let preview {
                     ChatMarkdownView(text: preview).accessibilityElement(children: .contain)
                         .accessibilityIdentifier("chat.run.preview")
-                    if run.isActive {
+                    if run.isActive, !run.isPausedForCredits {
                         ChatStreamingDot()
                     }
                 }
@@ -57,9 +63,18 @@ struct ChatTranscriptView: View {
                 .font(.system(size: 13.5)).foregroundStyle(ChatTheme.secondary)
                 .accessibilityIdentifier("chat.run.stopped")
         case let .failure(error):
-            Label(NSLocalizedString(error, comment: "Run error"), systemImage: "exclamationmark.circle")
-                .font(.system(size: 13.5)).foregroundStyle(.red)
-                .accessibilityIdentifier("chat.run.error")
+            VStack(alignment: .leading, spacing: 8) {
+                Label(NSLocalizedString(error, comment: "Run error"), systemImage: "exclamationmark.circle")
+                    .font(.system(size: 13.5)).foregroundStyle(.red)
+                    .accessibilityIdentifier("chat.run.error")
+                if run.status == "failed", let id = regenerableMessageID {
+                    Button { regenerate(id) } label: {
+                        Label("Try again", systemImage: "arrow.clockwise").font(.system(size: 14, weight: .medium))
+                    }
+                    .buttonStyle(.bordered).controlSize(.small)
+                    .accessibilityIdentifier("chat.run.retry")
+                }
+            }
         case nil:
             EmptyView()
         }
@@ -137,25 +152,35 @@ private struct ChatMessageView: View {
                 .accessibilityLabel(NSLocalizedString(copied ? "Copied" : "Copy response", comment: "Message action"))
                 .accessibilityIdentifier("chat.copy." + message.id)
                 .foregroundStyle(copied ? ChatTheme.accent : ChatTheme.tertiary)
-            Button { selectingText = true } label: { actionIcon("text.cursor") }
-                .accessibilityLabel(NSLocalizedString("Select text", comment: "Message action"))
-                .accessibilityIdentifier("chat.select." + message.id)
-            Button { quote(message.text) } label: { actionIcon("text.quote") }
-                .accessibilityLabel(NSLocalizedString("Quote response", comment: "Message action"))
-                .accessibilityIdentifier("chat.quote." + message.id)
-                .disabled(!allowsQuote)
             if canRegenerate {
                 Button { regenerate(message.id) } label: { actionIcon("arrow.clockwise") }
                     .accessibilityLabel(NSLocalizedString("Regenerate", comment: "Message action"))
                     .accessibilityIdentifier("chat.regenerate." + message.id)
             }
-            if let report {
-                Button { report(message) } label: { actionIcon("flag") }
-                    .accessibilityLabel("Report answer").accessibilityIdentifier("chat.report." + message.id)
-            }
             ShareLink(item: message.text) { actionIcon("square.and.arrow.up") }
                 .accessibilityLabel(NSLocalizedString("Share", comment: "Message action"))
                 .accessibilityIdentifier("chat.share." + message.id)
+            // Less frequent actions carry words, not glyphs a person has to guess.
+            Menu {
+                Button { selectingText = true } label: {
+                    Label(NSLocalizedString("Select text", comment: "Message action"), systemImage: "text.cursor")
+                }
+                .accessibilityIdentifier("chat.select." + message.id)
+                Button { quote(message.text) } label: {
+                    Label(NSLocalizedString("Quote in reply", comment: "Message action"), systemImage: "text.quote")
+                }
+                .accessibilityIdentifier("chat.quote." + message.id)
+                .disabled(!allowsQuote)
+                if let report {
+                    Divider()
+                    Button(role: .destructive) { report(message) } label: {
+                        Label(NSLocalizedString("Report answer", comment: "Message action"), systemImage: "flag")
+                    }
+                    .accessibilityIdentifier("chat.report." + message.id)
+                }
+            } label: { actionIcon("ellipsis") }
+                .accessibilityLabel(NSLocalizedString("More actions", comment: "Message action"))
+                .accessibilityIdentifier("chat.more." + message.id)
         }
         .foregroundStyle(ChatTheme.tertiary).buttonStyle(.plain)
         .padding(.leading, -11).padding(.top, -6)

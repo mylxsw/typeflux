@@ -24,6 +24,9 @@ public protocol ChatAPI: Sendable {
     func aiDisclosure(token: String) async throws -> ChatAIDisclosure
     func deleteAccount(proof: ChatDeletionProof, token: String) async throws
     func reportAnswer(content: String, token: String) async throws
+    func appleCreditPacks(language: String, token: String) async throws -> ChatAppleCreditPacks
+    func submitAppleTransaction(_ signedTransaction: String, token: String) async throws -> ChatApplePurchaseReceipt
+    func resume(conversationId: String, runId: String, token: String) async throws -> ChatConversation
 }
 
 /// Account and history extras are optional for test doubles and older fixtures:
@@ -38,6 +41,18 @@ public extension ChatAPI {
     }
 
     func reportAnswer(content _: String, token _: String) async throws {
+        throw ChatAPIError.unavailable
+    }
+
+    func appleCreditPacks(language _: String, token _: String) async throws -> ChatAppleCreditPacks {
+        throw ChatAPIError.unavailable
+    }
+
+    func submitAppleTransaction(_: String, token _: String) async throws -> ChatApplePurchaseReceipt {
+        throw ChatAPIError.unavailable
+    }
+
+    func resume(conversationId _: String, runId _: String, token _: String) async throws -> ChatConversation {
         throw ChatAPIError.unavailable
     }
 
@@ -197,6 +212,28 @@ public struct ChatAPIClient: ChatAPI {
         struct Receipt: Decodable { let id: String }
         let _: Receipt = try await execute(path: "/api/v1/feedback", method: "POST",
                                            body: ChatCoding.encoder().encode(Report(content: content)), token: token)
+    }
+
+    public func appleCreditPacks(language: String, token: String) async throws -> ChatAppleCreditPacks {
+        var allowed = CharacterSet.alphanumerics
+        allowed.insert("-")
+        let lang = language.addingPercentEncoding(withAllowedCharacters: allowed) ?? "en"
+        return try await execute(path: "/api/v1/me/billing/apple/products?lang=" + lang, token: token)
+    }
+
+    public func submitAppleTransaction(_ signedTransaction: String,
+                                       token: String) async throws -> ChatApplePurchaseReceipt {
+        struct Submit: Encodable { let signedTransaction: String }
+        return try await execute(path: "/api/v1/me/billing/apple/transactions", method: "POST",
+                                 body: ChatCoding.encoder().encode(Submit(signedTransaction: signedTransaction)),
+                                 token: token)
+    }
+
+    /// Continues a run the server paused for credits. Still short of credits
+    /// answers `CREDITS_EXHAUSTED`; the run then stays paused.
+    public func resume(conversationId: String, runId: String, token: String) async throws -> ChatConversation {
+        try await execute(path: conversationPath(conversationId) + "/runs/" + ChatRequest.pathComponent(runId) + "/resume",
+                          method: "POST", body: Data("{}".utf8), token: token)
     }
 
     public func observe(

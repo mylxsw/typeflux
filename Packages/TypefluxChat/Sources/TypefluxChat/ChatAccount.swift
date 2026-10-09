@@ -29,7 +29,7 @@ public struct ChatCreditUsage: Decodable, Equatable, Sendable {
         }
     }
 
-    /// Shown only: purchases are made on the web, never inside the iOS app.
+    /// Purchased credits: the web store or, on iOS, the App Store.
     public struct Addon: Decodable, Equatable, Sendable {
         public var remaining: Int
 
@@ -97,4 +97,63 @@ public struct ChatDeletionProof: Encodable, Sendable {
         self.provider = provider; self.password = password; self.idToken = idToken
         self.authorizationCode = authorizationCode; self.clientId = clientId
     }
+}
+
+/// One credit pack sold through the App Store. The server owns the credits and
+/// validity; StoreKit supplies the localized price for `productId`.
+public struct ChatAppleCreditPack: Decodable, Equatable, Identifiable, Sendable {
+    public var code: String
+    public var productId: String
+    public var name: String
+    public var description: String
+    public var credits: Int
+    public var validDays: Int
+    public var highlight: Bool
+
+    public var id: String { code }
+
+    public init(code: String, productId: String, name: String, description: String = "", credits: Int,
+                validDays: Int = 365, highlight: Bool = false) {
+        self.code = code; self.productId = productId; self.name = name; self.description = description
+        self.credits = credits; self.validDays = validDays; self.highlight = highlight
+    }
+
+    private enum CodingKeys: String, CodingKey { case code, productId, name, description, credits, validDays, highlight }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        code = try values.decode(String.self, forKey: .code)
+        productId = try values.decode(String.self, forKey: .productId)
+        name = try values.decodeIfPresent(String.self, forKey: .name) ?? code
+        description = try values.decodeIfPresent(String.self, forKey: .description) ?? ""
+        credits = try values.decode(Int.self, forKey: .credits)
+        validDays = try values.decodeIfPresent(Int.self, forKey: .validDays) ?? 365
+        highlight = try values.decodeIfPresent(Bool.self, forKey: .highlight) ?? false
+    }
+}
+
+/// `/api/v1/me/billing/apple/products`: whether App Store purchases are open
+/// and which packs to offer.
+public struct ChatAppleCreditPacks: Decodable, Equatable, Sendable {
+    public var enabled: Bool
+    public var packs: [ChatAppleCreditPack]
+
+    public init(enabled: Bool, packs: [ChatAppleCreditPack]) {
+        self.enabled = enabled; self.packs = packs
+    }
+}
+
+/// The server's answer to a delivered App Store transaction. `granted` and
+/// `revoked` are final, so the app may finish the StoreKit transaction.
+public struct ChatApplePurchaseReceipt: Decodable, Equatable, Sendable {
+    public var status: String
+    public var transactionId: String
+    public var packCode: String?
+    public var credits: Int?
+
+    public init(status: String, transactionId: String, packCode: String? = nil, credits: Int? = nil) {
+        self.status = status; self.transactionId = transactionId; self.packCode = packCode; self.credits = credits
+    }
+
+    public var isFinal: Bool { status == "granted" || status == "revoked" }
 }
