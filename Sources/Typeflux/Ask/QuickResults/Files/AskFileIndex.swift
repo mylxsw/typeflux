@@ -20,6 +20,11 @@ struct AskFileIndexStatus: Equatable, Sendable {
     var blocked: [String] = []
     /// The index stopped at `AskFileCrawler.maximumEntries`.
     var truncated = false
+    var timedOut = 0
+    var failed = 0
+    var nonLocalMounts = 0
+
+    var incomplete: Bool { timedOut + failed > 0 }
 
     var isBuilding: Bool { if case .building = phase { true } else { false } }
 
@@ -72,6 +77,9 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private let makeWatcher: () -> AskFileWatching
     private let home: String
 
+    private let preparation = DispatchQueue(label: "typeflux.ask.files.prepare", qos: .utility)
+    private let makeReader: () -> AskFileReading
+    private var reader: AskFileReading
     private let queue = DispatchQueue(label: "typeflux.ask.files.index", qos: .utility)
     private let lock = NSLock()
     private var published: AskFileIndexState
@@ -80,6 +88,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     /// What the queue is working towards; nil when off. Changing it cancels a scan under way.
     private var target: String?
     private var generation = 0
+    private var preparationGeneration = 0
 
     // Owned by `queue`.
     private var working: AskFileIndexState
@@ -89,18 +98,22 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private var lastEventID: UInt64 = 0
     private var dirty = false
     private var saveScheduled = false
+    private var skippedMounts = Set<String>()
     private var observers: [NSObjectProtocol] = []
 
     init(configuration: @escaping () -> (enabled: Bool, settings: AskLauncherSearchSettings) = AskFileIndex.storedConfiguration,
          fullDiskAccess: @escaping () -> Bool = { AskFullDiskAccess.isGranted() },
          snapshotURL: URL = AskFileIndex.defaultSnapshotURL, defaults: UserDefaults = .standard,
-         home: String = NSHomeDirectory(), makeWatcher: @escaping () -> AskFileWatching = { AskFSEventsWatcher() }) {
+         home: String = NSHomeDirectory(), makeReader: @escaping () -> AskFileReading = { AskFileReader() },
+         makeWatcher: @escaping () -> AskFileWatching = { AskFSEventsWatcher() }) {
         self.configuration = configuration
         self.fullDiskAccess = fullDiskAccess
         self.snapshotURL = snapshotURL
         self.defaults = defaults
         self.home = home
         self.makeWatcher = makeWatcher
+        self.makeReader = makeReader
+        reader = makeReader()
         published = AskFileIndexState(home: home)
         working = AskFileIndexState(home: home)
         usageCounts = defaults.dictionary(forKey: Self.usageKey) as? [String: Int] ?? [:]
@@ -121,6 +134,9 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
         return support.appendingPathComponent("Typeflux", isDirectory: true).appendingPathComponent("file-index.bin")
     }
 
+}
+
+extension AskFileIndex {
     // MARK: - Reading
 
     func search(_ query: AskSearchQuery, options: AskFileSearchOptions) -> [AskFileHit] {
@@ -153,19 +169,23 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
 
     func start() {
         let (enabled, settings) = configuration()
-        let access = fullDiskAccess()
-        let fingerprint = enabled && !settings.fileRoots.isEmpty
-            ? settings.fileIndexFingerprint + "\u{3}" + (access ? "all" : "guarded") : nil
-        let run = lock.withLock { () -> Int? in
-            guard fingerprint != target || (fingerprint == nil && currentStatus.phase != .off) else { return nil }
-            target = fingerprint
-            generation += 1
-            return generation
-        }
-        if let run {
-            queue.async { [weak self] in
-                guard let self else { return }
-                if let fingerprint { follow(settings: settings, access: access, fingerprint: fingerprint, run: run) } else { turnOff() }
+        let requested = lock.withLock { preparationGeneration += 1; return preparationGeneration }
+        preparation.async { [weak self] in
+            guard let self, self.lock.withLock({ self.preparationGeneration == requested }) else { return }
+            let access = enabled && self.fullDiskAccess()
+            let fingerprint = enabled && !settings.fileRoots.isEmpty ? Self.fingerprint(settings, access: access) : nil
+            let run = self.lock.withLock { () -> Int? in
+                guard self.preparationGeneration == requested,
+                      fingerprint != self.target || (fingerprint == nil && self.currentStatus.phase != .off) else { return nil }
+                self.target = fingerprint
+                self.generation += 1
+                return self.generation
+            }
+            if let run {
+                self.queue.async {
+                    if let fingerprint { self.follow(settings: settings, access: access, fingerprint: fingerprint, run: run) }
+                    else { self.turnOff() }
+                }
             }
         }
         lock.withLock {
@@ -185,23 +205,34 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     func rebuild() {
         let (enabled, settings) = configuration()
         guard enabled else { return }
-        let access = fullDiskAccess()
-        let fingerprint = settings.fileIndexFingerprint + "\u{3}" + (access ? "all" : "guarded")
-        let run = lock.withLock { () -> Int in
-            target = fingerprint
-            generation += 1
-            return generation
+        let run = lock.withLock { preparationGeneration += 1; generation += 1; return generation }
+        preparation.async { [weak self] in
+            guard let self, self.isCurrent(run) else { return }
+            let access = self.fullDiskAccess()
+            let fingerprint = Self.fingerprint(settings, access: access)
+            guard self.lock.withLock({ () -> Bool in
+                guard self.generation == run else { return false }
+                self.target = fingerprint
+                return true
+            }) else { return }
+            self.queue.async {
+                guard self.isCurrent(run) else { return }
+                self.reader = self.makeReader()
+                self.fingerprint = fingerprint
+                let scope = AskFileScope(settings: settings, fullDiskAccess: access, home: self.home).resolved(using: self.reader)
+                self.build(scope: scope, run: run)
+            }
         }
-        queue.async { [weak self] in
-            guard let self else { return }
-            self.fingerprint = fingerprint
-            build(scope: AskFileScope(settings: settings, fullDiskAccess: access, home: home), run: run)
-        }
+    }
+
+    static func fingerprint(_ settings: AskLauncherSearchSettings, access: Bool) -> String {
+        settings.fileIndexFingerprint + "\u{3}" + (access ? "all" : "guarded") + "\u{3}policy-3"
     }
 
     func clear() {
         lock.withLock {
             target = nil
+            preparationGeneration += 1
             generation += 1
         }
         queue.async { [weak self] in self?.turnOff() }
@@ -219,22 +250,25 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
 
     /// Quitting stops a scan under way (it starts over next time) and saves what changed.
     func saveBeforeQuitting() {
-        lock.withLock { generation += 1 }
-        queue.sync {
+        lock.withLock { preparationGeneration += 1; generation += 1 }
+        queue.async { [self] in
             watcher?.stop()
+            reader = makeReader()
             if lock.withLock({ currentStatus.phase }) == .ready { saveNow() }
         }
     }
 
     /// Waits until the queue has done everything asked of it so far; for tests.
     func waitUntilIdle() {
+        preparation.sync {}
         queue.sync {}
     }
 
     /// Brings the index in line with the settings: off, already right, loaded from disk, or built.
     private func follow(settings: AskLauncherSearchSettings, access: Bool, fingerprint: String, run: Int) {
         guard isCurrent(run), fingerprint != self.fingerprint else { return }
-        let scope = AskFileScope(settings: settings, fullDiskAccess: access, home: home)
+        reader = makeReader()
+        let scope = AskFileScope(settings: settings, fullDiskAccess: access, home: home).resolved(using: reader)
         self.fingerprint = fingerprint
         self.scope = scope
         publish(phase: .loading)
@@ -254,6 +288,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
         watcher = nil
         fingerprint = nil
         scope = nil
+        reader = makeReader()
         working = AskFileIndexState(home: home)
         dirty = false
         try? FileManager.default.removeItem(at: snapshotURL)
@@ -264,7 +299,11 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private func build(scope: AskFileScope, run: Int) {
         guard isCurrent(run) else { return }
         watcher?.stop()
-        let estimate = currentStatus.count > 0 ? currentStatus.count : nil
+        let count = status.count
+        let estimate = count > 0 ? count : nil
+        skippedMounts.removeAll()
+        lock.withLock { currentStatus.timedOut = 0; currentStatus.failed = 0; currentStatus.nonLocalMounts = 0 }
+        var lastPublish = ProcessInfo.processInfo.systemUptime
         let startEvent = AskFSEventsWatcher.currentEventID
         working = AskFileIndexState(home: home)
         self.scope = scope
@@ -272,11 +311,15 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
         var truncated = false
         // Outer folders first, so a folder added inside another hangs under it when the outer scan reached it.
         for root in scope.roots.reversed() {
+            guard scope.includes(root, isDirectory: true) else { continue }
             insertRoot(root)
             AskFileCrawler.crawl(root, scope: scope, limit: AskFileCrawler.maximumEntries - working.count,
-                                 isCancelled: { [weak self] in self?.isCurrent(run) != true }) { entry in
+                                 reader: reader, isCancelled: { [weak self] in self?.isCurrent(run) != true },
+                                 skipped: recordSkip) { entry in
                 insert(entry)
-                if working.count % Self.publishEvery == 0 {
+                let now = ProcessInfo.processInfo.systemUptime
+                if working.count % Self.publishEvery == 0 || now - lastPublish >= 0.25 {
+                    lastPublish = now
                     publish(phase: .building(found: working.count, estimate: estimate))
                 }
                 return true
@@ -296,7 +339,8 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
         watcher?.stop()
         let watcher = makeWatcher()
         self.watcher = watcher
-        watcher.start(paths: scope.roots, since: eventID) { [weak self] changes, last in
+        let mounts = AskFileMounts.current()
+        watcher.start(paths: scope.roots.filter { scope.includes($0, isDirectory: true) && mounts.blocking($0) == nil }, since: eventID) { [weak self] changes, last in
             self?.queue.async {
                 guard let self, self.isCurrent(run) else { return }
                 self.apply(changes)
@@ -310,43 +354,40 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     /// Brings the index up to date with what the file system reported.
     func apply(_ changes: [AskFileChange]) {
         guard let scope, !changes.isEmpty else { return }
+        // Each event batch starts with a fresh worker; earlier directory failures do not carry over.
+        reader = makeReader()
         var changed = false
         var seen = Set<String>()
         for change in changes where seen.insert(change.path).inserted {
             var path = change.path
             while path.count > 1, path.hasSuffix("/") { path.removeLast() }
-            guard scope.root(of: path) != nil else { continue }
-            if scope.roots.contains(path) {
-                // A search folder itself: moved, or its events were dropped. Read it all again.
-                guard change.rescan || AskFileCrawler.entry(at: path, scope: scope) == nil else { continue }
-                changed = working.remove(path) || changed
-                // Search folders inside it went with it; outer ones first, as when building.
-                for root in scope.roots.reversed() where AskFileScope.isInside(root, path) {
-                    guard AskFileCrawler.entry(at: root, scope: scope) != nil else { continue }
-                    insertRoot(root)
-                    AskFileCrawler.crawl(root, scope: scope) { entry in
-                        insert(entry)
-                        return true
+            guard scope.includes(path, isDirectory: false) || scope.includes(path, isDirectory: true) else { continue }
+            do {
+                let entry = try AskFileCrawler.metadata(at: path, scope: scope, reader: reader)
+                if scope.roots.contains(path) {
+                    guard change.rescan || entry == nil else { continue }
+                    changed = working.remove(path) || changed
+                    for root in scope.roots.reversed() where AskFileScope.isInside(root, path) {
+                        guard scope.includes(root, isDirectory: true),
+                              try AskFileCrawler.metadata(at: root, scope: scope, reader: reader) != nil else { continue }
+                        insertRoot(root)
+                        AskFileCrawler.crawl(root, scope: scope, reader: reader, skipped: recordSkip) { entry in
+                            insert(entry)
+                            return true
+                        }
+                        changed = true
                     }
-                    changed = true
-                }
-                continue
-            }
-            if change.rescan {
-                changed = working.remove(path) || changed
-                if let entry = AskFileCrawler.entry(at: path, scope: scope) { changed = insertTree(entry, scope: scope) || changed }
-                continue
-            }
-            guard let entry = AskFileCrawler.entry(at: path, scope: scope) else {
-                changed = working.remove(path) || changed
-                continue
-            }
-            if let existing = working.record(at: path) {
-                working.touch(existing, modified: entry.modified)
-                changed = true
-            } else {
-                changed = insertTree(entry, scope: scope) || changed
-            }
+                } else if change.rescan {
+                    changed = working.remove(path) || changed
+                    if let entry { changed = insertTree(entry, scope: scope) || changed }
+                } else if let entry {
+                    if let existing = working.record(at: path) { working.touch(existing, modified: entry.modified); changed = true }
+                    else { changed = insertTree(entry, scope: scope) || changed }
+                } else { changed = working.remove(path) || changed }
+            } catch AskFileReadError.timeout { recordSkip(path, .timeout) }
+            catch AskFileReadError.nonLocalMount { recordSkip(path, .nonLocalMount) }
+            catch { recordSkip(path, .failed) }
+
         }
         guard changed else { return }
         if working.needsCompaction { working = working.compacted() }
@@ -359,7 +400,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
         guard ensureParent(of: entry.path, scope: scope) else { return false }
         insert(entry)
         if entry.kind == .folder {
-            AskFileCrawler.crawl(entry.path, scope: scope) { child in
+            AskFileCrawler.crawl(entry.path, scope: scope, reader: reader, skipped: recordSkip) { child in
                 if working.record(at: child.path) == nil { insert(child) }
                 return true
             }
@@ -372,7 +413,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
         let parent = (path as NSString).deletingLastPathComponent
         if working.directoryIndex[parent] != nil { return true }
         if scope.roots.contains(parent) { insertRoot(parent); return true }
-        guard scope.root(of: parent) != nil, let entry = AskFileCrawler.entry(at: parent, scope: scope),
+        guard scope.root(of: parent) != nil, let entry = AskFileCrawler.entry(at: parent, scope: scope, reader: reader),
               entry.kind == .folder, ensureParent(of: parent, scope: scope) else { return false }
         insert(entry)
         return true
@@ -413,6 +454,18 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
             + state.names.count + state.directories.reduce(0) { $0 + 48 + $1.path.utf8.count + $1.key.count }
     }
 
+    private func recordSkip(_ path: String, _ reason: AskFileCrawler.SkipReason) {
+        if reason == .nonLocalMount, !skippedMounts.insert(path).inserted { return }
+        lock.withLock {
+            switch reason {
+            case .timeout: currentStatus.timedOut += 1
+            case .failed: currentStatus.failed += 1
+            case .nonLocalMount: currentStatus.nonLocalMounts += 1
+            }
+        }
+        publish(phase: status.phase)
+    }
+
     private func markDirty() {
         dirty = true
         guard !saveScheduled else { return }
@@ -426,7 +479,9 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private func saveNow(force: Bool = false) {
         guard let fingerprint, force || dirty else { return }
         dirty = false
-        let data = AskFileSnapshot.encode(working, fingerprint: fingerprint, eventID: lastEventID)
+        // A partial snapshot remains useful on disk, but is rebuilt on the next launch.
+        let savedFingerprint = fingerprint + (status.incomplete ? "\u{3}partial" : "")
+        let data = AskFileSnapshot.encode(working, fingerprint: savedFingerprint, eventID: lastEventID)
         try? FileManager.default.createDirectory(at: snapshotURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: snapshotURL, options: .atomic)
     }

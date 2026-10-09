@@ -148,7 +148,7 @@ struct LoginView: View {
         case let .failure(error):
             // Closing the Apple sheet is a choice, not an error.
             if (error as? ASAuthorizationError)?.code != .canceled {
-                store.errorMessage = error.localizedDescription
+                store.errorMessage = ChatStore.userMessage(for: error)
             }
         }
     }
@@ -236,7 +236,7 @@ struct ChatEmailLoginView: View {
             store.errorMessage = nil
             focusedField = .email
         }
-        .sheet(isPresented: $showReset) {
+        .sheet(isPresented: $showReset, onDismiss: { store.errorMessage = nil }) {
             ChatPasswordResetView(store: store, email: email)
         }
     }
@@ -300,13 +300,16 @@ struct ChatPasswordResetView: View {
                             TextField("Verification code", text: $code)
                                 .textContentType(.oneTimeCode).keyboardType(.numberPad)
                                 .accessibilityIdentifier("reset.code")
-                            SecureField("New password (at least 8 characters)", text: $newPassword)
-                                .textContentType(.newPassword)
+                            // `.newPassword` lets the strong-password AutoFill replace the
+                            // field on each keystroke, keeping only the last character typed.
+                            SecureField("New password", text: $newPassword)
+                                .textContentType(.password)
                                 .accessibilityIdentifier("reset.password")
                         }
                     } footer: {
-                        Text(codeSent ? LocalizedStringKey("Enter the code we emailed you and choose a new password.")
-                            : LocalizedStringKey("We'll email you a verification code."))
+                        Text(codeSent ? LocalizedStringKey(
+                            "Enter the code we emailed you. The new password needs at least 8 characters, with uppercase and lowercase letters and a number."
+                        ) : LocalizedStringKey("We'll email you a verification code."))
                     }
                     if let error = store.errorMessage {
                         Text(NSLocalizedString(error, comment: "Reset error")).font(.footnote).foregroundStyle(.red)
@@ -331,7 +334,8 @@ struct ChatPasswordResetView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        // Full height: at half height the keyboard covers the code and password fields.
+        .presentationDetents([.large])
         .onAppear { store.errorMessage = nil }
     }
 

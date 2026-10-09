@@ -40,7 +40,10 @@ struct AskPluginViewTests {
     }
 
     @Test func theHintSaysWhatTheKeysDo() {
-        #expect(AskPluginResultsView.hint(for: display(.waiting, hint: AskTranslatePlugin.keywords[0])) == L("ask.plugin.hint.keyword"))
+        #expect(AskPluginResultsView.hint(for: display(.waiting, hint: AskTranslatePlugin.keywords[0], highlighted: 1))
+            == L("ask.plugin.hint.keyword"))
+        #expect(AskPluginResultsView.hint(for: display(.waiting, hint: AskTranslatePlugin.keywords[0]))
+            == L("ask.plugin.hint.keyword.enter"), "Return enters the highlighted keyword, and the bar says so")
         #expect(AskPluginResultsView.hint(for: display(.ready(plan), highlighted: 1)) == L("ask.launcher.hint"))
         #expect(AskPluginResultsView.hint(for: display(.waiting)).isEmpty, "esc closing goes without saying")
         #expect(AskPluginResultsView.hint(for: display(.ready(plan))) == L("ask.plugin.hint.ready"))

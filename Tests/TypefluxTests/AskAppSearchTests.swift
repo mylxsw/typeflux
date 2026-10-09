@@ -173,6 +173,22 @@ struct AskAppIndexTests {
         #expect(AskAppIndex.scan([root.appendingPathComponent("WeChat.app")]).count == 1, "a root can be one app")
     }
 
+    @Test func hiddenApplicationLinksAreIndexedAndDeduplicated() throws {
+        let root = try makeApps()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let link = root.appendingPathComponent("Safari.app")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: root.appendingPathComponent("WeChat.app"))
+        var hidden = URLResourceValues()
+        hidden.isHidden = true
+        var hiddenURL = link
+        try hiddenURL.setResourceValues(hidden)
+        let entries = AskAppIndex.scan([root, link])
+        #expect(entries.filter { $0.id == "com.tencent.xinWeChat" }.count == 1)
+        #expect(entries.first { $0.id == "com.tencent.xinWeChat" }?.url.path == AskFileScope.canonical(root.path) + "/Safari.app")
+        #expect(AskAppIndex.scan([link]).first?.url == link)
+        #expect(AskLauncherSearchSettings.defaultAppRoots.contains("/System/Cryptexes/App/System/Applications"))
+    }
+
     @Test func searchesAfterARefreshAndRemembersLaunches() throws {
         let root = try makeApps()
         defer { try? FileManager.default.removeItem(at: root) }

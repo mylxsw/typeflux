@@ -263,6 +263,12 @@ struct AskFileSearchPluginTests {
         #expect(unlock.valid)
         #expect(unlock.actions.first?.kind == .open(AskFullDiskAccess.settingsURL))
         #expect(output.note?.contains("10") == true)
+        index.status = AskFileIndexStatus(phase: .ready, blocked: ["/Users/test/Music", "/Users/test/Pictures"],
+                                          timedOut: 2, failed: 3)
+        let partial = try await run(plugin(index), request("invoice"))
+        #expect(partial.note == AskFileLabels.skipped(index.status))
+        #expect(partial.items.last?.title.contains(AskFileLabels.folder("/Music")) == true)
+        #expect(partial.items.last?.title.contains(AskFileLabels.folder("/Pictures")) == true)
         index.status = AskFileIndexStatus(phase: .ready)
     }
 }

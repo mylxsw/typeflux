@@ -58,11 +58,13 @@ enum AskGlassPlacement: Equatable {
     /// pills vanish on a white window. Menus need a stable light backplate over
     /// busy windows; floating panels keep enough frost for primary text and let
     /// the backdrop show through, so the light card no longer reads as paper.
+    /// A menu opens over the launcher, so it is never clearer than the card under
+    /// it: the card's chips must not show through its rows.
     func frost(dark: Bool) -> Double {
         switch self {
         case .floating: return dark ? 0.78 : 0.70
         case .inWindow: return 0.45
-        case .menu: return dark ? 0.6 : 0.90
+        case .menu: return 0.9
         }
     }
     /// Adaptive popover material avoids the HUD's grey cast in light mode.

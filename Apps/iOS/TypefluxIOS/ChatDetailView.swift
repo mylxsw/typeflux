@@ -6,6 +6,7 @@ struct ChatDetailView: View {
     @Bindable var store: ChatStore
     var onOpenSidebar: () -> Void = {}
     var onNewConversation: () -> Void = {}
+    var onBuyCredits: () -> Void = {}
     @State private var reportedMessage: ChatMessage?
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var showPhotoPicker = false
@@ -29,11 +30,13 @@ struct ChatDetailView: View {
                             VStack(alignment: .leading, spacing: 20) {
                                 Label("Local example · No credits used", systemImage: "sparkles").font(.caption)
                                     .foregroundStyle(ChatTheme.accent)
-                                Text(example.question).padding().frame(maxWidth: .infinity, alignment: .trailing)
-                                    .background(
-                                        ChatTheme.accentSoft,
-                                        in: RoundedRectangle(cornerRadius: 16)
-                                    )
+                                // Same bubble as a sent message: it hugs the text on the trailing side.
+                                Text(example.question).foregroundStyle(ChatTheme.bubbleText)
+                                    .padding(.horizontal, 15).padding(.vertical, 10)
+                                    .background(ChatTheme.bubble,
+                                                in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                                    .padding(.leading, 48)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
                                 ChatMarkdownView(text: example.answer)
                                 Text(
                                     "This is a preset example. Your own message will start a new conversation after sign-in."
@@ -78,8 +81,11 @@ struct ChatDetailView: View {
                 .safeAreaInset(edge: .top, spacing: 0) { topBar }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     VStack(spacing: 0) {
-                        if isEmpty, !editorFocused, geometry.size.height > 450 {
+                        if isEmpty, !editorFocused, geometry.size.height > 450, !store.needsCredits {
                             suggestions.padding(.bottom, 12)
+                        }
+                        if store.needsCredits {
+                            ChatCreditPauseCard(store: store, onBuy: onBuyCredits)
                         }
                         ChatComposer(store: store, editorFocused: $editorFocused,
                                      isLoadingPhoto: isLoadingPhoto, isEmpty: isEmpty,
@@ -178,7 +184,7 @@ struct ChatDetailView: View {
         case "failed": .red
         case "cancelled": ChatTheme.secondary
         case "completed": ChatTheme.success
-        default: run.requiresDesktop ? .orange : ChatTheme.accent
+        default: run.requiresDesktop || run.isPausedForCredits ? .orange : ChatTheme.accent
         }
     }
 
@@ -272,7 +278,7 @@ struct ChatDetailView: View {
             // Navigation and account changes cancel attachment loading.
         } catch {
             if context == store.attachmentContext {
-                store.errorMessage = error.localizedDescription
+                store.errorMessage = ChatStore.userMessage(for: error)
             }
         }
         self.selectedPhoto = nil
@@ -288,7 +294,7 @@ struct ChatDetailView: View {
                 store.imageDataURL = encoded
             }
         } catch {
-            store.errorMessage = error.localizedDescription
+            store.errorMessage = ChatStore.userMessage(for: error)
         }
     }
 }

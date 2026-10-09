@@ -200,6 +200,29 @@ struct AskLauncherHeaderTests {
         try await fixture.wait { !NSApp.windows.contains { $0.isVisible && find("ask.context.panel", in: $0) != nil } }
     }
 
+    @Test func escapeClosesTheContextPanelBeforeTheLauncher() async throws {
+        let fixture = try AskTestFixture()
+        captured(fixture)
+        var dismissed = 0
+        let (window, _) = host(fixture, onDismiss: { dismissed += 1 })
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(300))
+        let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
+        window.makeFirstResponder(editor)
+        #expect(editor.performKeyEquivalent(with: try key("k", code: 40, modifiers: .command, in: window)))
+        let panel = { NSApp.windows.first { $0.isVisible && find("ask.context.panel", in: $0) != nil } }
+        try await fixture.wait { panel() != nil }
+        // The same glass card as the composer's other menus, never key, so the launcher keeps typing.
+        let card = try #require(panel())
+        #expect(card is AskGlassMenuPresenter.Panel && !card.canBecomeKey)
+        #expect(window.firstResponder === editor)
+        editor.keyDown(with: try key("\u{1b}", code: 53, in: window))
+        try await fixture.wait { panel() == nil }
+        #expect(dismissed == 0, "the first Esc closes only the panel")
+        editor.keyDown(with: try key("\u{1b}", code: 53, in: window))
+        #expect(dismissed == 1)
+    }
+
     @Test(arguments: ["/", "、"])
     func slashTokensSendAsOrdinaryLauncherText(_ separator: String) async throws {
         let fixture = try AskTestFixture()

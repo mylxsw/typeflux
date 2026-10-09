@@ -2005,6 +2005,7 @@
 "ask.local.card.cloudQuestion" = "Want Cloud models?";
 "ask.local.identity" = "Not signed in";
 "ask.local.identity.detail" = "%@ · Stays on this Mac";
+"ask.local.identity.storage" = "Chats stay on this Mac";
 "ask.cloudPromo.body" = "Sign in to use Cloud models that read images and search the web, with conversations on all your devices.";
 "ask.cloudPromo.signIn" = "Sign In";
 "ask.cloudPromo.dismiss" = "Hide for 30 days";
@@ -2564,6 +2565,7 @@
 "ask.plugin.askAI.selection" = "%@ the selected text";
 "ask.plugin.writeBack.failed" = "Couldn't type into the app; the result is on the clipboard";
 "ask.plugin.hint.keyword" = "↩ Send · ⇥ Use keyword";
+"ask.plugin.hint.keyword.enter" = "↩ Use keyword · ⌘↩ Ask AI";
 "ask.plugin.hint.ready" = "↩ Run";
 "ask.plugin.hint.running" = "esc Cancel";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
@@ -2571,6 +2573,7 @@
 "ask.plugin.section" = "Keywords";
 "ask.plugin.waiting" = "Type the text to work on";
 "ask.plugin.enter" = "Space or ⇥ to use";
+"ask.plugin.enter.return" = "↩ Use";
 "ask.plugin.running" = "Working…";
 "ask.workflow.section" = "Workflows";
 "ask.workflow.footnote" = "Your own scripts behind keywords, in Python, Node, TypeScript, shell, AppleScript or any program. They run as you, so only trust ones you understand.";
@@ -3812,3 +3815,26 @@
 "account.addon.title" = "Add-on credits";
 "account.addon.nextExpiry" = "Next expiry: %@ credits on %@";
 "account.addon.expiringSoon" = "%@ credits expire on %@. Use them before then.";
+
+"ask.submission.models" = "Settings → Models";
+"ask.usage.empty" = "No usage yet";
+"ask.usage.emptyHelp" = "Usage will appear after you send a message.";
+"ask.submission.signIn" = "Sign in to Typeflux Cloud";
+
+/* File indexing status and file-system-free folder labels */
+"ask.plugin.files.skipped" = "Skipped: %@";
+"ask.files.skip.timeout" = "%@ timed out";
+"ask.files.skip.failed" = "%@ unreadable";
+"ask.files.skip.mount" = "%@ network or virtual mounts";
+"ask.files.folder.home" = "Home";
+"ask.files.folder.desktop" = "Desktop";
+"ask.files.folder.documents" = "Documents";
+"ask.files.folder.downloads" = "Downloads";
+"ask.files.folder.music" = "Music";
+"ask.files.folder.pictures" = "Pictures";
+"ask.files.folder.movies" = "Movies";
+"ask.files.folder.library" = "Library";
+"ask.files.folder.applications" = "Applications";
+"ask.files.folder.volumes" = "Volumes";
+"ask.files.folder.icloud" = "iCloud Drive";
+"ask.files.folder.cloud" = "Cloud Storage";

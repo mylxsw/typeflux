@@ -72,9 +72,16 @@ struct ChatPrivacySettings: View {
     var body: some View {
         Form {
             Section("AI data sharing") {
-                Text(store.hasAIConsent ? "Consent granted" : "Consent not granted")
+                LabeledContent("Status") {
+                    Text(store.hasAIConsent ? "Consent granted" : "Consent not granted")
+                }
                 if let disclosure = store.disclosure {
-                    Text(disclosure.providers.joined(separator: ", "))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("AI and tool providers")
+                        Text(disclosure.providers.joined(separator: ", ")).font(.subheadline)
+                            .foregroundStyle(ChatTheme.secondary)
+                    }
+                    .accessibilityElement(children: .combine)
                 }
                 Button("Review data sharing") { showConsent = true }
                 if store.hasAIConsent {
@@ -88,7 +95,7 @@ struct ChatPrivacySettings: View {
             }
             Section {
                 Link("Privacy Policy", destination: ChatSettingsInfo.privacyURL)
-                Link("Terms of Service", destination: URL(string: "https://typeflux.app/terms")!)
+                Link("Terms of Service", destination: ChatSettingsInfo.termsURL)
             }
         }
         .navigationTitle("Data and privacy")
@@ -124,6 +131,8 @@ struct ChatDeleteAccountView: View {
                 Text(
                     "Website subscriptions will be cancelled immediately. Deletion does not issue a refund. Any App Store subscriptions must be managed separately."
                 ).font(.subheadline)
+                Text("Unused purchased credits, including credit packs bought in the App Store, are lost when the account is deleted.")
+                    .font(.subheadline)
                 Link(
                     "Manage App Store subscriptions",
                     destination: URL(string: "https://apps.apple.com/account/subscriptions")!
@@ -135,7 +144,7 @@ struct ChatDeleteAccountView: View {
                 Link("Privacy Policy", destination: ChatSettingsInfo.privacyURL)
             }
             if let error = store.errorMessage {
-                Text(error).foregroundStyle(.red)
+                Text(NSLocalizedString(error, comment: "Error")).foregroundStyle(.red)
             }
             Section("Verify your identity") {
                 Toggle("I understand and want to delete my account", isOn: $confirmed)
@@ -148,7 +157,7 @@ struct ChatDeleteAccountView: View {
                     } onCompletion: { result in
                         if case let .failure(error) = result {
                             if (error as? ASAuthorizationError)?.code != .canceled {
-                                store.errorMessage = error.localizedDescription
+                                store.errorMessage = ChatStore.userMessage(for: error)
                             }
                             return
                         }
@@ -188,7 +197,7 @@ struct ChatDeleteAccountView: View {
                                 do {
                                     let token = try await google.signIn()
                                     _ = await store.deleteAccount(proof: .init(provider: "google", idToken: token))
-                                } catch { store.errorMessage = error.localizedDescription }
+                                } catch { store.errorMessage = ChatStore.userMessage(for: error) }
                             }
                         }.disabled(!confirmed || busy || store.isSynthetic)
                     }
@@ -265,7 +274,7 @@ struct ChatReportView: View {
                     )
                 }
                 if let error = store.errorMessage {
-                    Text(error).foregroundStyle(.red)
+                    Text(NSLocalizedString(error, comment: "Error")).foregroundStyle(.red)
                 }
             }
             .navigationTitle("Report answer").navigationBarTitleDisplayMode(.inline)

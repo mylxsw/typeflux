@@ -5,10 +5,15 @@ import Testing
 @testable import Typeflux
 
 actor AskTestAPI: AskAPI {
+    var failUsage = false
+    var usageRequests = 0
+    func setFailUsage(_ value: Bool) { failUsage = value }
     var usageRecords: [AskUsageInvocation] = []
     func setUsageRecords(_ value: [AskUsageInvocation]) { usageRecords = value }
     func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage {
-        AskUsagePage(items: usageRecords.filter { runId == nil || $0.runId == runId }, nextCursor: nil)
+        usageRequests += 1
+        if failUsage { throw AskLocalError.message("Offline") }
+        return AskUsagePage(items: usageRecords.filter { runId == nil || $0.runId == runId }, nextCursor: nil)
     }
 
     var values: [String: AskConversation] = [:]
