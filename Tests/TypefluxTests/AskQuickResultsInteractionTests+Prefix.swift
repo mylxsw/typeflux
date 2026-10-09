@@ -53,7 +53,7 @@ extension AskQuickResultsInteractionTests {
             defer { launcher.close() }
             let model = launcher.fixture.model
             try await AskQuickSearchSessionTests.wait { model.plugins.output?.items.count == 1 }
-            #expect(model.plugins.output?.selected?.valid == false)
+            #expect(model.plugins.output?.selected == nil && model.plugins.output?.selectedItem == -1)
             try await launcher.press(Self.returnKey)
             #expect(model.plugins.keyword?.pluginID == AskPrefixPlugin.id && launcher.dismissed == 0)
             launcher.editor.selectAll(nil)

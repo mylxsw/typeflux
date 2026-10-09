@@ -107,11 +107,13 @@ struct AskUsagePanel: View {
                         totalsCard(totals)
                     } else if !model.hasUsageRecords || (!loading && !loadError && items.isEmpty) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Label(L("ask.usage.empty"), systemImage: "chart.pie")
+                            Image(systemName: "chart.pie").accessibilityHidden(true)
+                            Text(L("ask.usage.empty"))
                                 .font(.system(size: 13, weight: .semibold))
                             Text(L("ask.usage.emptyHelp")).font(.system(size: 11))
                         }
                         .foregroundStyle(StudioTheme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 12)
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(L("ask.usage.empty"))

@@ -24,7 +24,7 @@ struct AskAttachButton: View {
         .disabled(disabled)
         .help(L("ask.attach.help"))
         .accessibilityLabel(L("ask.attach.title"))
-        .accessibilityIdentifier("ask.attach")
+        .accessibilityIdentifier("ask.composer.attach")
         .askMenu(isPresented: $expanded, glass: true) {
             AskAttachChoices(clipboardHasImage: AskAttachmentSource.canRead(from: .general),
                              sourceToRestore: sourceToRestore, selectionLinesToRestore: selectionLinesToRestore,

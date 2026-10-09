@@ -10,7 +10,9 @@ struct AskConversationWindowSizingTests {
         defer { fixture.close() }
         let window = try fixture.show()
 
-        for size in [NSSize(width: 440, height: 880), NSSize(width: 960, height: 320),
+        // AppKit constrains windows taller than the current display's visible frame.
+        let tallHeight = min(880, try #require(window.screen).visibleFrame.height)
+        for size in [NSSize(width: 440, height: tallHeight), NSSize(width: 960, height: 320),
                      NSSize(width: 440, height: 320), AskWorkspaceLayout.minimumWindowSize] {
             window.setContentSize(size)
             try await settle(window)

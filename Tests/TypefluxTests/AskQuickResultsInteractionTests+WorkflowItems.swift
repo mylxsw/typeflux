@@ -58,9 +58,8 @@ extension AskQuickResultsInteractionTests {
                 .contains(L("ask.plugin.action.copy")))
             try await launcher.press(Self.down)
             #expect(model.plugins.output?.selectedItem == 1)
-            try await launcher.press(Self.down)
-            #expect(model.plugins.output?.selectedItem == 2)
-            try await launcher.press(Self.returnKey)
+            try await launcher.press(20, .command) // The invalid third row cannot execute.
+            #expect(model.plugins.output?.selectedItem == 1)
             #expect(
                 launcher.dismissed == 0 && pasteboard.string(forType: .string) == nil,
                 "an invalid row does nothing"
@@ -70,8 +69,7 @@ extension AskQuickResultsInteractionTests {
             #expect(model.plugins.output?.selectedItem == 0, "past Ask AI the arrows come back to the first row")
             try await launcher.press(Self.up)
             try await launcher.press(Self.up)
-            #expect(model.plugins.output?.selectedItem == 2, "up from the first row goes through Ask AI to the last")
-            try await launcher.press(Self.up)
+            #expect(model.plugins.output?.selectedItem == 1, "up from the first row skips the invalid last row")
             #expect(model.plugins.output?.selected?.autocomplete == "deeper")
             try await launcher.press(Self.tab)
             try await waitFor { model.plugins.output?.items.first?.title == "A:deeper:yes" }

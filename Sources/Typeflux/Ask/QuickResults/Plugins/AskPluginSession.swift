@@ -284,6 +284,8 @@ final class AskPluginSession: ObservableObject {
                 // A timed rerun keeps the chosen row, and its actions already ran for the first result.
                 output.followUp = shown.followUp
                 output.selectedItem = Self.selection(keeping: shown, in: output)
+            } else if !output.items.isEmpty, output.selected == nil {
+                output.selectedItem = output.selectableIndices.first ?? -1
             }
             set(\.previous, nil)
             adopt(output.variables)
@@ -295,7 +297,7 @@ final class AskPluginSession: ObservableObject {
             return
         } catch {
             guard !Task.isCancelled, current == generation else { return }
-            let failure = error as? AskPluginFailure ?? AskPluginFailure(message: error.localizedDescription)
+            let failure = AskPluginFailure.presenting(error)
             set(\.previous, nil)
             set(\.phase, .failed(plan, failure))
         }
@@ -307,8 +309,12 @@ final class AskPluginSession: ObservableObject {
     /// list, so the arrows can move on to "Ask AI".
     func moveSelection(_ delta: Int) -> Bool {
         guard case let .done(plan, output) = phase, !output.items.isEmpty else { return false }
-        let next = output.selectedItem + delta
-        guard output.items.indices.contains(next) else { return false }
+        let indices = output.selectableIndices
+        guard delta != 0 else { return false }
+        let position = indices.firstIndex(of: output.selectedItem) ?? (delta > 0 ? -1 : indices.count)
+        let nextPosition = position + delta
+        guard indices.indices.contains(nextPosition) else { return false }
+        let next = indices[nextPosition]
         var moved = output
         moved.selectedItem = next
         set(\.phase, .done(plan, moved))
@@ -316,18 +322,24 @@ final class AskPluginSession: ObservableObject {
     }
 
     /// Chooses a row (a click, or the arrows coming back from "Ask AI").
-    func selectItem(_ index: Int) {
-        guard case let .done(plan, output) = phase, !output.items.isEmpty else { return }
+    @discardableResult
+    func selectItem(_ index: Int) -> Bool {
+        guard case let .done(plan, output) = phase, !output.items.isEmpty else { return false }
+        let index = min(max(0, index), output.items.count - 1)
+        guard output.items[index].valid else { return false }
         var chosen = output
-        chosen.selectedItem = min(max(0, index), output.items.count - 1)
+        chosen.selectedItem = index
         set(\.phase, .done(plan, chosen))
+        return true
     }
 
     /// The row that was chosen before, found by its id in the new list; else the same place.
     static func selection(keeping shown: AskPluginOutput, in output: AskPluginOutput) -> Int {
         guard !output.items.isEmpty else { return 0 }
-        if let id = shown.selected?.id, let index = output.items.firstIndex(where: { $0.id == id }) { return index }
-        return min(shown.selectedItem, output.items.count - 1)
+        if let id = shown.selected?.id,
+           let index = output.items.firstIndex(where: { $0.valid && $0.id == id }) { return index }
+        return output.selectableIndices.first(where: { $0 >= shown.selectedItem })
+            ?? output.selectableIndices.last ?? -1
     }
 
     /// A workflow's `variables` become options for every later run in this keyword

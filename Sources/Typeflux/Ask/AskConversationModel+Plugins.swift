@@ -112,6 +112,10 @@ extension AskConversationModel {
                 aiName: { [weak settings] in AskPluginRegistry.translationModelName(settings) },
                 engineSettings: { [weak settings] in settings?.askTranslationSettings ?? AskTranslationSettings() },
                 service: { AskServiceTranslationEngine(client: AskServiceTranslationEngine.client(for: $0)) },
+                signedOutFallback: { [weak settings] in
+                    AskTranslationProvider.configuredFallback(credentials: AskKeychainTranslationCredentials(),
+                        preferred: settings?.askTranslationSettings.engine.provider)
+                },
                 secondLanguage: { [weak settings] language in
                     settings?.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
                 }
@@ -156,6 +160,9 @@ extension AskConversationModel {
             finishPluginResult()
             openConversationFromLauncher(id)
             return .close
+        case .signIn:
+            onSignIn()
+            return .stay
         case let .copy(text):
             AskQuickResults.copy(text)
             finishPluginResult()

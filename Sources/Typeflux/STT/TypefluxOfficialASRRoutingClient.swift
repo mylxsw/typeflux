@@ -22,7 +22,7 @@ enum TypefluxOfficialASRRoutingError: LocalizedError, Equatable {
         case .invalidResponse:
             "Received an invalid Typeflux Cloud ASR token response."
         case .unauthorized:
-            "Please sign in to use Typeflux Cloud speech recognition."
+            L("cloud.error.asrSignInRequired")
         case let .serverError(code, message):
             TypefluxCloudServerErrorMessage.userMessage(
                 code: code,

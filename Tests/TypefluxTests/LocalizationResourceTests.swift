@@ -3,6 +3,33 @@ import Foundation
 import XCTest
 
 final class LocalizationResourceTests: XCTestCase {
+    func testLauncherPolishKeysAndChineseTerminologyAreComplete() throws {
+        let keys = ["cloud.error.llmSignInRequired", "cloud.error.asrSignInRequired",
+                    "ask.plugin.prompt.description.polish", "ask.plugin.prompt.description.summarize",
+                    "ask.plugin.prompt.description.explain", "ask.plugin.translate.signInFallback"]
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            let tableURL = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))
+            let table = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: tableURL),
+                options: [], format: nil) as? [String: String])
+            for key in keys {
+                XCTAssertFalse(try XCTUnwrap(table[key], "Missing \(key) in \(language.rawValue)").isEmpty)
+            }
+            XCTAssertEqual(try XCTUnwrap(table["ask.plugin.translate.signInFallback"]).components(separatedBy: "%@").count, 2)
+            if [.simplifiedChinese, .traditionalChinese].contains(language) {
+                XCTAssertFalse(table.values.contains { $0.contains("关键字") || $0.contains("關鍵字") })
+            }
+        }
+    }
+
+    func testMainAppDeclaresAllResourceLocalizations() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let plist = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: root.appendingPathComponent("app/Info.plist")),
+            options: [], format: nil) as? [String: Any])
+        let languages = try XCTUnwrap(plist["CFBundleLocalizations"] as? [String])
+        XCTAssertEqual(Set(languages), Set(["en", "zh-Hans", "zh-Hant", "ja", "ko"]))
+    }
+
     func testLocalizedStringTablesParseForAllSupportedLanguages() throws {
         for language in AppLanguage.allCases {
             let bundle = try localizationBundle(for: language)

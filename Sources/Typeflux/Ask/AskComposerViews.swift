@@ -519,7 +519,8 @@ struct AskComposer: View {
             } else {
                 plugins.run()
             }
-        case .failed: plugins.run()
+        case let .failed(_, failure):
+            if let action = failure.action(for: .enter) { performPluginAction(action) } else if failure.retry { plugins.run() }
         case let .done(_, output): if let action = output.action(for: .enter) { performPluginAction(action) }
         case let .running(plan):
             // A plan that acts (`dict` opening the word book) need not wait for its preview.
@@ -566,7 +567,7 @@ struct AskComposer: View {
             } else {
                 guard number <= count else { return false }
                 pluginHighlight = 0
-                plugins.selectItem(number - 1)
+                guard plugins.selectItem(number - 1) else { return true }
                 runPluginMain()
             }
         case .tab:
@@ -643,12 +644,15 @@ struct AskComposer: View {
         guard offersAskAI else {
             // Without "Ask AI" the list wraps around on itself.
             pluginHighlight = 0
-            if let count = plugins.output?.items.count, count > 0 { plugins.selectItem(delta < 0 ? count - 1 : 0) }
+            if let indices = plugins.output?.selectableIndices, let index = delta < 0 ? indices.last : indices.first {
+                plugins.selectItem(index)
+            }
             return
         }
         pluginHighlight = pluginHighlight == 0 ? 1 : 0
-        if pluginHighlight == 0, let count = plugins.output?.items.count, count > 0 {
-            plugins.selectItem(delta < 0 ? count - 1 : 0)
+        if pluginHighlight == 0, let indices = plugins.output?.selectableIndices {
+            guard let index = delta < 0 ? indices.last : indices.first else { pluginHighlight = 1; return }
+            plugins.selectItem(index)
         }
     }
 
@@ -1277,6 +1281,7 @@ struct AskComposer: View {
             }
             AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
                 .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+                .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
                 .accessibilityIdentifier("ask.composer.voice")
             if !active {
                 AskSendButton(enabled: canSend, tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
@@ -1486,6 +1491,7 @@ struct AskComposer: View {
                            enabled: launcher || !model.isLoadingSelection,
                            shortcut: voiceShortcut)
                 .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+                .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
                 .accessibilityIdentifier("ask.composer.voice")
             if editingQueued {
                 AskQueueEditActions(canSave: model.draft.canSend, compact: layout.condensedFooter,
@@ -1525,7 +1531,6 @@ struct AskComposer: View {
         AskAttachButton(model: model, launcher: launcher,
                         disabled: active || (!launcher && model.isLoadingSelection))
             .opacity(Self.recordingDim(active))
-            .accessibilityIdentifier("ask.composer.attach")
         AskStorageButton(model: model, launcher: launcher)
             .disabled(active)
             .opacity(Self.recordingDim(active))

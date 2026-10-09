@@ -130,7 +130,7 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         XCTAssertTrue(controller.isPresented)
 
         let window = try XCTUnwrap(NSApplication.shared.windows.first {
-            $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.clipboard"
+            $0.isVisible && $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.clipboard"
         })
         let screen = try XCTUnwrap(window.screen)
         XCTAssertEqual(window.frame.maxY,

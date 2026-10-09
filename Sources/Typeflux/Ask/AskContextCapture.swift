@@ -40,23 +40,27 @@ final class AskContextCapture: AskContextCapturing {
     private static let screenCaptureRequestedKey = "ask.screenCaptureAccessRequested"
     private let injector: TextInjector
     private let memory: (any AskMemoryProviding)?
-    private let frontmostProcessID: () -> pid_t?
+    private let frontmostProcessID: @MainActor () -> pid_t?
     private let accessibilityTrusted: () -> Bool
     private let captureScreenshot: (CGDirectDisplayID?) async throws -> String
+    private let sourceTracker: AskSourceApplicationTracker
 
     init(
         injector: TextInjector, memory: (any AskMemoryProviding)? = nil,
         accessibilityTrusted: @escaping () -> Bool = { AXIsProcessTrusted() },
-        frontmostProcessID: @escaping () -> pid_t? = { NSWorkspace.shared.frontmostApplication?.processIdentifier },
+        frontmostProcessID: (@MainActor () -> pid_t?)? = nil,
+        sourceTracker: AskSourceApplicationTracker? = nil,
         captureScreenshot: @escaping (CGDirectDisplayID?) async throws -> String = {
             try await AskContextCapture.screenshot(displayId: $0).dataURL
         }
     ) {
         self.injector = injector
         self.memory = memory
-        self.frontmostProcessID = frontmostProcessID
+        let tracker = sourceTracker ?? AskSourceApplicationTracker.shared
+        self.frontmostProcessID = frontmostProcessID ?? { tracker.resolve(.frontmost()).processID }
         self.accessibilityTrusted = accessibilityTrusted
         self.captureScreenshot = captureScreenshot
+        self.sourceTracker = tracker
     }
 
     func globalMemory() -> AskMemory? {
@@ -71,7 +75,7 @@ final class AskContextCapture: AskContextCapturing {
         L(allowed ? "ask.capture.unavailable" : "ask.capture.permission")
     }
 
-    func makeSelectionRequest() -> ReadOnlySelectionRequest { injector.makeReadOnlySelectionRequest() }
+    func makeSelectionRequest() -> ReadOnlySelectionRequest { sourceTracker.resolve(injector.makeReadOnlySelectionRequest()) }
 
     func capture(includeScreenshot: Bool, includeSelection: Bool, request: ReadOnlySelectionRequest) async -> AskCapturedContext {
         func discarded(_ status: String) -> AskCapturedContext {
@@ -94,6 +98,8 @@ final class AskContextCapture: AskContextCapturing {
         let selection: TextSelectionSnapshot
         if !includeSelection {
             selection = TextSelectionSnapshot(source: "selection-not-requested")
+        } else if let snapshot = request.nativeSnapshot, snapshot.source == "system-ui-fallback" {
+            selection = snapshot
         } else if request.nativeSnapshot != nil || accessibilityTrusted() {
             selection = await injector.readOnlySelectionSnapshot(for: request)
         } else {

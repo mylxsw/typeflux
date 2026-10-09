@@ -57,7 +57,8 @@ struct AskCappedWidthTests {
         // where `.frame(maxWidth:)` would have grown to the cap.
         let hugged = try await placedWidth(AskCappedWidth(maxWidth: AskMetrics.modelMenuMaxWidth) { text })
         let stretched = try await placedWidth(text.frame(maxWidth: AskMetrics.modelMenuMaxWidth))
-        #expect(abs(hugged - natural) < 0.5)
+        // Detached intrinsic measurement and on-screen placement can differ by one Retina pixel.
+        #expect(abs(hugged - natural) <= 0.5)
         #expect(stretched == AskMetrics.modelMenuMaxWidth)
     }
 

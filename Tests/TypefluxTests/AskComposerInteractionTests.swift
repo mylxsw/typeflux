@@ -164,6 +164,13 @@ struct AskComposerInteractionTests {
             for hold in [false, true] {
                 // A filled launcher drops its suggestions, so each round measures its own resting place.
                 restingFrame = button.convert(button.bounds, to: nil)
+                func expectStableVoiceFrame() {
+                    let frame = button.convert(button.bounds, to: nil)
+                    #expect(frame.size == restingFrame.size)
+                    #expect(abs(frame.minY - restingFrame.minY) <= 0.5)
+                    // The launcher's elapsed time and cancel button replace Send while recording.
+                    if !launcher { #expect(frame == restingFrame) }
+                }
                 let starts = recorder.starts, stops = recorder.stops
                 let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)
                 NSApp.sendEvent(try mouse(.leftMouseDown, window: window, point: point))
@@ -174,7 +181,7 @@ struct AskComposerInteractionTests {
                 if !hold {
                     #expect(fixture.model.voiceInput.phase == .listening)
                     try await fixture.wait { button.accessibilityLabel() == L("ask.voice.stop") }
-                    #expect(button.convert(button.bounds, to: nil) == restingFrame)
+                    expectStableVoiceFrame()
                     NSApp.sendEvent(try mouse(.leftMouseDown, window: window, point: point))
                     NSApp.sendEvent(try mouse(.leftMouseUp, window: window, point: point))
                 }
@@ -182,7 +189,7 @@ struct AskComposerInteractionTests {
                 try await fixture.wait { !button.isEnabled }
                 #expect(button.accessibilityLabel() == L("ask.voice.transcribing"))
                 #expect(button.visualPhase == .transcribing)
-                #expect(button.convert(button.bounds, to: nil) == restingFrame)
+                expectStableVoiceFrame()
 
                 #expect(!(launcher ? fixture.model.canSendLauncher : fixture.model.canSend))
                 recorder.releaseTranscript()

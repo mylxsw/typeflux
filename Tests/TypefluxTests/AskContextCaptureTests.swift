@@ -29,6 +29,19 @@ private final class ContextTextInjector: TextInjector {
 @Suite("Ask context selection")
 @MainActor
 struct AskContextCaptureTests {
+    @Test func systemDialogUsesPreviousAppIdentityWithoutReadingItsSelection() async {
+        let injector = ContextTextInjector()
+        injector.source = .init(processID: 99, processName: "UserNotificationCenter")
+        let tracker = AskSourceApplicationTracker(observeWorkspace: false, isRunning: { _ in true })
+        tracker.record(.init(processID: 42, processName: "Safari", bundleIdentifier: "com.apple.Safari"), regular: true)
+        let capture = AskContextCapture(injector: injector, accessibilityTrusted: { true }, frontmostProcessID: { 42 },
+                                       sourceTracker: tracker)
+        let context = await capture.capture(includeScreenshot: false)
+        #expect(context.source == "Safari" && context.sourceBundleID == "com.apple.Safari")
+        #expect(context.selection == nil && context.selectionStatus == "system-ui-fallback")
+        #expect(injector.requests.isEmpty)
+    }
+
     @Test func launcherCapturesReadOnlySelectionWithoutScreenshot() async {
         let injector = ContextTextInjector()
         let capture = AskContextCapture(injector: injector, accessibilityTrusted: { true }, frontmostProcessID: { 42 }, captureScreenshot: { _ in

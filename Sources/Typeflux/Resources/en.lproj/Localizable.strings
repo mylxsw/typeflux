@@ -1936,7 +1936,7 @@
 "ask.local.modelFailed" = "Your model request failed; check its configuration and retry.";
 "ask.local.badSummary" = "The model returned an invalid summary; retry to continue.";
 "ask.local.regenerateLatest" = "Only the latest reply can be regenerated.";
-"ask.local.modelRequired" = "Choose one of your own models to use Ask without Typeflux Cloud. Add one in Settings → Models.";
+"ask.local.modelRequired" = "Choose one of your own models to use Ask without Typeflux Cloud.";
 "ask.local.conflict" = "The conversation changed; reload and try again.";
 "ask.local.stepLimit" = "Agent step limit reached.";
 "ask.local.truncated" = "The answer reached the output limit and was cut off; retry or ask to continue.";
@@ -3789,7 +3789,7 @@
 
 /* Launcher settings and chat history */
 "ask.plugin.setting.title" = "System Settings";
-"ask.settings.keywords.kind.setting.hint" = "Open Typeflux System Settings";
+"ask.settings.keywords.kind.setting.hint" = "Open Typeflux Settings";
 "ask.plugin.history.title" = "Chat history";
 "ask.settings.keywords.kind.history.hint" = "Search chat titles and open a conversation";
 "ask.plugin.history.placeholder" = "Search chat titles";
@@ -3838,3 +3838,11 @@
 "ask.files.folder.volumes" = "Volumes";
 "ask.files.folder.icloud" = "iCloud Drive";
 "ask.files.folder.cloud" = "Cloud Storage";
+
+// Launcher localization and accessibility polish
+"cloud.error.llmSignInRequired" = "Please sign in to use the Typeflux Cloud language model.";
+"cloud.error.asrSignInRequired" = "Please sign in to use Typeflux Cloud speech recognition.";
+"ask.plugin.prompt.description.polish" = "Improve grammar and wording while preserving meaning and tone";
+"ask.plugin.prompt.description.summarize" = "Summarize the main points of the text";
+"ask.plugin.prompt.description.explain" = "Explain the text in clear, simple language";
+"ask.plugin.translate.signInFallback" = "Cloud sign-in is required. Translated with %@ instead.";

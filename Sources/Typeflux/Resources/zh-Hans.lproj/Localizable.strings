@@ -1936,7 +1936,7 @@
 "ask.local.modelFailed" = "模型请求失败，请检查模型配置后重试。";
 "ask.local.badSummary" = "模型返回的摘要无效，请重试。";
 "ask.local.regenerateLatest" = "只能重新生成最新的回复。";
-"ask.local.modelRequired" = "不使用 Typeflux Cloud 时，请选择你自己配置的模型。可在 设置 → 模型 中添加。";
+"ask.local.modelRequired" = "不使用 Typeflux Cloud 时，请选择你自己配置的模型。";
 "ask.local.conflict" = "对话已变化，请刷新后重试。";
 "ask.local.stepLimit" = "已达到 Agent 步数上限。";
 "ask.local.truncated" = "回答达到输出上限被截断，请重试或让模型继续。";
@@ -2564,19 +2564,19 @@
 "ask.plugin.source.device" = "本机";
 "ask.plugin.askAI.selection" = "%@选中的文字";
 "ask.plugin.writeBack.failed" = "没能写回原应用，结果已复制到剪贴板";
-"ask.plugin.hint.keyword" = "↩ 发送 · ⇥ 进入关键字";
-"ask.plugin.hint.keyword.enter" = "↩ 进入关键字 · ⌘↩ 问 AI";
+"ask.plugin.hint.keyword" = "↩ 发送 · ⇥ 进入关键词";
+"ask.plugin.hint.keyword.enter" = "↩ 进入关键词 · ⌘↩ 问 AI";
 "ask.plugin.hint.ready" = "↩ 运行";
 "ask.plugin.hint.running" = "esc 取消";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
 "ask.plugin.hint.failed" = "↩ 重试";
-"ask.plugin.section" = "关键字";
+"ask.plugin.section" = "关键词";
 "ask.plugin.waiting" = "输入要处理的内容";
 "ask.plugin.enter" = "空格或 ⇥ 进入";
 "ask.plugin.enter.return" = "↩ 进入";
 "ask.plugin.running" = "处理中…";
 "ask.workflow.section" = "工作流";
-"ask.workflow.footnote" = "用关键字触发你自己的脚本：Python、Node、TypeScript、Shell、AppleScript 或任何程序。它们以你的身份运行，只信任你了解的工作流。";
+"ask.workflow.footnote" = "用关键词触发你自己的脚本：Python、Node、TypeScript、Shell、AppleScript 或任何程序。它们以你的身份运行，只信任你了解的工作流。";
 "ask.workflow.empty" = "还没有工作流，可以从模板新建一个。";
 "ask.workflow.new" = "新建工作流";
 "ask.workflow.revealFolder" = "打开文件夹";
@@ -2592,7 +2592,7 @@
 "ask.workflow.status.modified" = "文件已修改，需重新确认";
 "ask.workflow.status.invalid" = "清单有误";
 "ask.workflow.status.disabled" = "已停用";
-"ask.workflow.conflicts" = "关键字已被占用，已忽略：%@";
+"ask.workflow.conflicts" = "关键词已被占用，已忽略：%@";
 "ask.workflow.lastRun" = "上次运行：退出码 %d · %.1f 秒";
 "ask.workflow.lastRun.timedOut" = "上次运行超时（%.1f 秒）";
 "ask.workflow.template.pythonText" = "Python · 输出文本";
@@ -2623,7 +2623,7 @@
 "ask.workflow.problem.schema" = "不支持的 schema 版本 %d";
 "ask.workflow.problem.id" = "只能用字母、数字、点、短横线和下划线";
 "ask.workflow.problem.name" = "请填写工作流名称";
-"ask.workflow.problem.noKeywords" = "至少需要一个关键字";
+"ask.workflow.problem.noKeywords" = "至少需要一个关键词";
 "ask.workflow.problem.live" = "边打边出将在下个版本支持，目前请用 onSubmit";
 "ask.workflow.problem.noScript" = "请设置 command.script（zsh 和 bash 也可以用 command.inline）";
 "ask.workflow.problem.scriptAndInline" = "command.script 和 command.inline 只能选一个";
@@ -2639,7 +2639,7 @@
 "ask.workflow.trust.title" = "要信任工作流「%@」吗？";
 "ask.workflow.trust.modifiedTitle" = "「%@」的文件被修改过，要信任现在的版本吗？";
 "ask.workflow.trust.warning" = "工作流会以你的身份在这台 Mac 上运行代码，可以读写你能访问的文件和网络。只信任你了解来源的工作流。";
-"ask.workflow.trust.keywords" = "关键字";
+"ask.workflow.trust.keywords" = "关键词";
 "ask.workflow.trust.command" = "运行";
 "ask.workflow.trust.selection" = "选中的文字";
 "ask.workflow.trust.files" = "文件";
@@ -2668,7 +2668,7 @@
 "ask.settings.keywords.sheet.action" = "动作";
 "ask.settings.keywords.sheet.action.translate" = "翻译";
 "ask.settings.keywords.sheet.action.wordBook" = "打开单词本";
-"ask.settings.keywords.sheet.action.wordBookHint" = "输入「关键字 词」会打开单词本并查这个词；只输入关键字则打开单词本。";
+"ask.settings.keywords.sheet.action.wordBookHint" = "输入「关键词 词」会打开单词本并查这个词；只输入关键词则打开单词本。";
 "ask.wordBook.shelf.all" = "全部";
 "ask.wordBook.shelf.starred" = "收藏";
 "ask.wordBook.shelf.today" = "今天";
@@ -2779,7 +2779,7 @@
 "ask.plugin.prompt.placeholder.selection" = "要处理的内容 · 留空处理选中的 %d 行";
 "ask.plugin.prompt.selection" = "%1$@选中的 %2$d 行";
 "ask.plugin.prompt.noModel" = "先在「设置 → 模型」里配置文本处理模型，才能使用 AI 指令";
-"ask.plugin.prompt.noPrompt" = "这个关键字还没有提示词，请到「设置 → 启动器 → 启动器关键字」里填写";
+"ask.plugin.prompt.noPrompt" = "这个关键词还没有提示词，请到「设置 → 启动器 → 启动器关键词」里填写";
 "ask.plugin.prompt.empty" = "模型没有返回内容";
 "ask.plugin.prompt.askAI" = "我用「%1$@」处理了一段文字，帮我把结果改得更好。\n\n原文：\n%2$@\n\n结果：\n%3$@";
 "ask.plugin.web.title" = "网页搜索";
@@ -2798,24 +2798,24 @@
 "ask.settings.plugins.web.problem.url" = "请使用 http 或 https 网址";
 "ask.settings.keywords.name" = "名称";
 "ask.settings.keywords.save" = "保存";
-"ask.settings.keywords.restore" = "恢复默认关键字";
+"ask.settings.keywords.restore" = "恢复默认关键词";
 "ask.command.group.plugins" = "插件";
-"ask.settings.plugins.title" = "关键字";
-"ask.settings.plugins.footnote" = "在启动器开头输入关键字和空格，例如「fy hello」。关键字后面没有内容时，按 ↩ 处理选中的文字。";
+"ask.settings.plugins.title" = "关键词";
+"ask.settings.plugins.footnote" = "在启动器开头输入关键词和空格，例如「fy hello」。关键词后面没有内容时，按 ↩ 处理选中的文字。";
 "ask.settings.plugins.translate.subtitle" = "优先本机翻译；需要时用「设置 → 模型」里的文本处理模型";
 "ask.settings.plugins.translate.second" = "第二语言";
 "ask.settings.plugins.translate.secondSubtitle" = "内容已经是界面语言时，译成这种语言";
 "ask.settings.plugins.translate.auto" = "自动判断方向";
 "ask.settings.plugins.translate.into" = "译成%@";
 "ask.settings.plugins.translate.target" = "目标语言";
-"ask.settings.keywords.add" = "添加关键字";
-"ask.settings.keywords.keyword" = "关键字";
+"ask.settings.keywords.add" = "添加关键词";
+"ask.settings.keywords.keyword" = "关键词";
 "ask.settings.keywords.enabled" = "启用";
-"ask.settings.keywords.problem.empty" = "请输入关键字";
+"ask.settings.keywords.problem.empty" = "请输入关键词";
 "ask.settings.keywords.problem.tooLong" = "最多 %d 个字符";
 "ask.settings.keywords.problem.whitespace" = "不能包含空格或冒号";
-"ask.settings.keywords.problem.slash" = "关键字不能以 / 开头";
-"ask.settings.keywords.problem.duplicate" = "已经有同名关键字";
+"ask.settings.keywords.problem.slash" = "关键词不能以 / 开头";
+"ask.settings.keywords.problem.duplicate" = "已经有同名关键词";
 
 /* Workflow editor and assistant (GUL-222) */
 "ask.workflow.action.edit" = "编辑工作流";
@@ -2842,7 +2842,7 @@
 "ask.workflow.assistant.fix.prompt" = "用「%1$@」试跑失败了（退出码 %2$d）。找出原因并修复。";
 "ask.workflow.assistant.fix.location" = "错误指向 %1$@ 第 %2$d 行。";
 "ask.workflow.assistant.fix.launcher" = "这个工作流在启动器里处理「%1$@」时出错了。找出原因并修复。\n\n%2$@";
-"ask.workflow.assistant.generate.prompt" = "帮我做这个工作流：%1$@\n\n关键字用「%2$@」，id 保持「%3$@」。先检查本机环境，再提交清单和脚本，并试跑。";
+"ask.workflow.assistant.generate.prompt" = "帮我做这个工作流：%1$@\n\n关键词用「%2$@」，id 保持「%3$@」。先检查本机环境，再提交清单和脚本，并试跑。";
 "ask.workflow.assistant.generate.runtime" = "\n用 %@ 写。";
 "ask.workflow.assistant.interrupted" = "助手被中断了，请再发一次。";
 "ask.workflow.assistant.noModel" = "没有可用的模型：请登录 Typeflux Cloud，或在「设置 → 模型」里添加模型。";
@@ -2856,8 +2856,8 @@
 "ask.workflow.assistant.problem.tooLarge" = "%@ 超过 256 KB。";
 "ask.workflow.assistant.problem.tooManyFiles" = "一个提案最多改 %d 个文件。";
 "ask.workflow.assistant.tool.environment" = "检查了本机环境";
-"ask.workflow.assistant.tool.keywordFree" = "关键字 %@ 可用";
-"ask.workflow.assistant.tool.keywordTaken" = "关键字 %@ 已被占用";
+"ask.workflow.assistant.tool.keywordFree" = "关键词 %@ 可用";
+"ask.workflow.assistant.tool.keywordTaken" = "关键词 %@ 已被占用";
 "ask.workflow.assistant.tool.limit" = "这条消息的工具调用已达上限";
 "ask.workflow.assistant.tool.proposeFailed" = "提案有问题，正在修改";
 "ask.workflow.assistant.tool.read" = "读取了 %@";
@@ -2878,7 +2878,7 @@
 "ask.workflow.editor.new.ai" = "用 AI 生成";
 "ask.workflow.editor.new.template" = "从模板";
 "ask.workflow.editor.duplicate" = "复制工作流…";
-"ask.workflow.editor.new.duplicateHint" = "复制「%@」，使用新的 id 和关键字。";
+"ask.workflow.editor.new.duplicateHint" = "复制「%@」，使用新的 id 和关键词。";
 "ask.workflow.editor.new.copySuffix" = "副本";
 "ask.workflow.editor.new.aiPlaceholder" = "说说它做什么，例如「输入 fx 100 usd jpy 时，查实时汇率换算」。";
 "ask.workflow.editor.new.examples" = "试试：";
@@ -2931,17 +2931,17 @@
 "ask.workflow.editor.noScript" = "这个工作流没有脚本文件。";
 "ask.workflow.editor.form" = "表单";
 "ask.workflow.editor.format" = "格式化";
-"ask.workflow.editor.step.keywords" = "关键字";
+"ask.workflow.editor.step.keywords" = "关键词";
 "ask.workflow.editor.step.input" = "输入";
 "ask.workflow.editor.step.script" = "脚本";
 "ask.workflow.editor.step.output" = "输出";
-"ask.workflow.editor.keywords.hint" = "在启动器里输入关键字加空格就会进入这个工作流。每个关键字可以有自己的入口脚本，不选时用默认入口。预设参数在脚本里用 {option:名字} 或 TYPEFLUX_OPTION_名字 读取。";
+"ask.workflow.editor.keywords.hint" = "在启动器里输入关键词加空格就会进入这个工作流。每个关键词可以有自己的入口脚本，不选时用默认入口。预设参数在脚本里用 {option:名字} 或 TYPEFLUX_OPTION_名字 读取。";
 "ask.workflow.editor.keywords.title" = "显示名称";
 "ask.workflow.editor.keywords.titlePlaceholder" = "用工作流名称";
 "ask.workflow.editor.keywords.options" = "预设参数（名字=值）";
-"ask.workflow.editor.keywords.add" = "添加关键字";
-"ask.workflow.editor.argument" = "关键字后面的内容";
-"ask.workflow.editor.argument.hint" = "用户在关键字后面输入的参数。";
+"ask.workflow.editor.keywords.add" = "添加关键词";
+"ask.workflow.editor.argument" = "关键词后面的内容";
+"ask.workflow.editor.argument.hint" = "用户在关键词后面输入的参数。";
 "ask.workflow.editor.argument.required" = "必须输入";
 "ask.workflow.editor.argument.optional" = "可以不输入";
 "ask.workflow.editor.argument.none" = "不需要";
@@ -3025,7 +3025,7 @@
 "ask.workflow.editor.new.tileDetail.shellText" = "调用命令行工具最快。";
 "ask.workflow.editor.new.tileDetail.shellAction" = "打开项目、朗读、切换设置…运行完启动器关闭。";
 "ask.workflow.editor.argumentDetail.required" = "没有参数不能运行";
-"ask.workflow.editor.argumentDetail.optional" = "只输关键字也能运行";
+"ask.workflow.editor.argumentDetail.optional" = "只输关键词也能运行";
 "ask.workflow.editor.argumentDetail.none" = "例如 ip、uuid";
 "ask.workflow.editor.selectionDetail.ifEmpty" = "默认";
 "ask.workflow.editor.selectionDetail.always" = "两者都给";
@@ -3083,13 +3083,13 @@
 "ask.workflow.editor.new.adjust" = "在编辑器里调整";
 "ask.workflow.editor.new.save" = "保存";
 "ask.workflow.assistant.steps" = "%d 步";
-"ask.workflow.assistant.generate.promptPickKeyword" = "帮我做这个工作流：%1$@\n\n自己挑一个好记、好打的短关键字，用 workflow_check_keyword 确认可用，id 保持「%2$@」。先检查本机环境，再提交清单和脚本，并试跑。";
+"ask.workflow.assistant.generate.promptPickKeyword" = "帮我做这个工作流：%1$@\n\n自己挑一个好记、好打的短关键词，用 workflow_check_keyword 确认可用，id 保持「%2$@」。先检查本机环境，再提交清单和脚本，并试跑。";
 
 /* Agent and Launcher settings panes */
 "studio.section.launcher" = "启动器";
 "studio.eyebrow.launcher" = "启动器";
 "studio.heading.launcher" = "启动器";
-"studio.subheading.launcher" = "启动器里的计算器、应用搜索、关键字和你自己的工作流。它们由启动器直接触发，不经过 Agent。";
+"studio.subheading.launcher" = "启动器里的计算器、应用搜索、关键词和你自己的工作流。它们由启动器直接触发，不经过 Agent。";
 "studio.search.launcher" = "搜索启动器设置...";
 "launcher.pane.basics" = "内置功能";
 "launcher.basics.subtitle" = "在启动器里直接得到结果，不发送给 AI。";
@@ -3115,17 +3115,17 @@
 "ask.settings.keywords.kind.prompt.hint" = "用文本处理模型执行一段提示词";
 "ask.settings.keywords.kind.web.hint" = "在浏览器里打开搜索结果";
 "ask.settings.keywords.kind.workflow.hint" = "运行你自己的脚本";
-"ask.settings.keywords.listFootnote" = "点一行编辑。工作流关键字在“工作流”中管理，保存时仍检查重名。";
+"ask.settings.keywords.listFootnote" = "点一行编辑。工作流关键词在“工作流”中管理，保存时仍检查重名。";
 "ask.settings.keywords.newWorkflow" = "新建工作流…";
-"ask.settings.keywords.noMatch" = "没有匹配「%@」的关键字";
-"ask.settings.keywords.restoreTitle" = "恢复默认关键字？";
-"ask.settings.keywords.restoreMessage" = "你添加和修改过的关键字会被替换成默认的。";
-"ask.settings.keywords.search" = "搜索关键字或功能";
+"ask.settings.keywords.noMatch" = "没有匹配「%@」的关键词";
+"ask.settings.keywords.restoreTitle" = "恢复默认关键词？";
+"ask.settings.keywords.restoreMessage" = "你添加和修改过的关键词会被替换成默认的。";
+"ask.settings.keywords.search" = "搜索关键词或功能";
 "ask.settings.keywords.sheet.add" = "添加";
-"ask.settings.keywords.sheet.addTitle" = "添加%@关键字";
+"ask.settings.keywords.sheet.addTitle" = "添加%@关键词";
 "ask.settings.keywords.sheet.autoHint" = "「自动判断方向」：外文译成界面语言，界面语言译成第二语言。";
 "ask.settings.keywords.sheet.delete" = "删除";
-"ask.settings.keywords.sheet.editTitle" = "编辑关键字";
+"ask.settings.keywords.sheet.editTitle" = "编辑关键词";
 "ask.settings.keywords.sheet.insertInput" = "插入要处理的内容";
 "ask.settings.keywords.sheet.preview" = "效果";
 "ask.settings.keywords.sheet.promptNamePlaceholder" = "例如：改成正式语气";
@@ -3134,7 +3134,7 @@
 "ask.settings.keywords.sheet.target" = "翻译成";
 "ask.settings.keywords.sheet.webNamePlaceholder" = "例如：维基百科";
 "ask.settings.keywords.summary.auto" = "自动判断方向（%1$@ ↔ %2$@）";
-"ask.settings.keywords.summary.shadowed" = "和内置关键字重名，不会生效";
+"ask.settings.keywords.summary.shadowed" = "和内置关键词重名，不会生效";
 "ask.settings.keywords.summary.workflow" = "在工作流编辑器中编辑";
 "ask.workflow.editor.args.add" = "添加参数";
 "ask.workflow.editor.args.try" = "试一下";
@@ -3151,7 +3151,7 @@
 "ask.workflow.editor.keywords.addOption" = "＋ 参数";
 "ask.workflow.editor.keywords.optionsPlaceholderHint" = "以 名字=值 添加一个预设参数";
 "ask.workflow.editor.keywords.optionsShort" = "预设参数";
-"ask.workflow.editor.keywords.remove" = "删除关键字";
+"ask.workflow.editor.keywords.remove" = "删除关键词";
 "ask.workflow.editor.keywords.removeOption" = "删除 %@";
 "ask.workflow.editor.newWorkflow" = "新建工作流";
 "ask.workflow.editor.outputShort.text" = "文本";
@@ -3163,7 +3163,7 @@
 "ask.workflow.editor.status.ready" = "已信任";
 "ask.workflow.editor.test.go" = "运行";
 "ask.workflow.editor.test.runButton" = "运行测试";
-"ask.workflow.assistant.suggestion.keyword" = "再加一个只统计字数的关键字";
+"ask.workflow.assistant.suggestion.keyword" = "再加一个只统计字数的关键词";
 "ask.workflow.assistant.suggestion.format" = "结果保留两位小数";
 "ask.workflow.assistant.suggestion.runtime" = "改成用 Node 写";
 "ask.workflow.editor.interpreterAutoShort" = "自动（%@）";
@@ -3247,9 +3247,9 @@
 "ask.workflow.editor.placeholder.output.line1" = "第一行";
 "ask.workflow.editor.placeholder.output.lastLine" = "最后一行";
 "ask.workflow.editor.placeholder.json" = "JSON 字段（输出是 JSON 时）";
-"ask.workflow.editor.placeholder.query" = "关键字后面的输入";
+"ask.workflow.editor.placeholder.query" = "关键词后面的输入";
 "ask.workflow.editor.placeholder.selection" = "选中的文字";
-"ask.workflow.editor.placeholder.keyword" = "关键字";
+"ask.workflow.editor.placeholder.keyword" = "关键词";
 "ask.workflow.editor.placeholder.option" = "预设参数";
 "ask.workflow.editor.placeholder.error" = "失败原因和 stderr 最后几行";
 "ask.workflow.editor.placeholder.empty" = "（空）";
@@ -3267,7 +3267,7 @@
 "ask.workflow.editor.test.actionDone" = "✓ 已执行";
 
 /* Workflow gallery and per-keyword entries (GUL-231) */
-"ask.workflow.problem.keywordScriptInline" = "使用内联脚本的工作流不能给关键字指定入口";
+"ask.workflow.problem.keywordScriptInline" = "使用内联脚本的工作流不能给关键词指定入口";
 "ask.workflow.editor.keywords.entry" = "入口";
 "ask.workflow.editor.keywords.entryDefault" = "默认（%@）";
 "ask.workflow.editor.files.title" = "文件";
@@ -3309,7 +3309,7 @@
 "ask.workflow.gallery.fromGallery" = "来自示例库";
 "ask.workflow.gallery.fromGalleryMenu" = "从示例库添加…";
 "ask.workflow.gallery.addedNote" = "已添加「%@」。";
-"ask.workflow.gallery.addedRenamed" = "已添加「%1$@」。关键字已被占用，已改名：%2$@。";
+"ask.workflow.gallery.addedRenamed" = "已添加「%1$@」。关键词已被占用，已改名：%2$@。";
 "ask.workflow.gallery.updatedNote" = "已把「%1$@」更新到 %2$@。";
 "ask.workflow.gallery.update.title" = "更新「%1$@」：%2$@ → %3$@";
 "ask.workflow.gallery.update.hint" = "看看会改什么。点「覆盖为新版本」之前不会改动任何文件，覆盖后仍是已信任。";
@@ -3338,7 +3338,7 @@
 "ask.workflow.gallery.install.exec" = "找不到 exec";
 "ask.workflow.gallery.fx.name" = "汇率换算";
 "ask.workflow.gallery.fx.summary" = "输入「100 usd jpy」查实时汇率；rate 列出常用币种。";
-"ask.workflow.gallery.fx.demonstrates" = "联网请求、参数解析、两个关键字两个入口、复制 + 通知";
+"ask.workflow.gallery.fx.demonstrates" = "联网请求、参数解析、两个关键词两个入口、复制 + 通知";
 "ask.workflow.gallery.fx.keyword.fx" = "汇率";
 "ask.workflow.gallery.fx.keyword.rate" = "汇率表";
 "ask.workflow.gallery.fx.usage.1" = "100 美元换成日元";
@@ -3358,8 +3358,8 @@
 "ask.workflow.gallery.json.usage.1" = "格式化选中的 JSON 并替换";
 "ask.workflow.gallery.json.usage.2" = "压缩成一行";
 "ask.workflow.gallery.codec.name" = "URL / Base64 编解码";
-"ask.workflow.gallery.codec.summary" = "一个工作流两个关键字，用预设参数区分编码和解码。";
-"ask.workflow.gallery.codec.demonstrates" = "一个工作流多个关键字，用预设参数区分";
+"ask.workflow.gallery.codec.summary" = "一个工作流两个关键词，用预设参数区分编码和解码。";
+"ask.workflow.gallery.codec.demonstrates" = "一个工作流多个关键词，用预设参数区分";
 "ask.workflow.gallery.codec.keyword.url" = "URL 编解码";
 "ask.workflow.gallery.codec.keyword.b64" = "Base64 编解码";
 "ask.workflow.gallery.codec.usage.1" = "URL 编码；已编码的会解码";
@@ -3407,14 +3407,14 @@
 "ask.workflow.gallery.code.usage.2" = "只列出名称包含「web」的项目";
 
 /* Workflow O4: script actions, image display, run another keyword */
-"ask.workflow.action.kind.runKeyword" = "运行另一个关键字";
-"ask.workflow.action.field.keyword" = "关键字";
+"ask.workflow.action.kind.runKeyword" = "运行另一个关键词";
+"ask.workflow.action.field.keyword" = "关键词";
 "ask.workflow.action.field.argument" = "输入";
-"ask.workflow.problem.action.keyword" = "关键字只能是一个词，例如「tr」";
+"ask.workflow.problem.action.keyword" = "关键词只能是一个词，例如「tr」";
 "ask.workflow.action.scriptNotAllowed" = "未执行：未允许脚本追加";
 "ask.workflow.action.loop" = "未执行：会形成循环（%@）";
-"ask.workflow.action.tooDeep" = "未执行：最多连续运行 %d 个关键字";
-"ask.workflow.action.noKeyword" = "没有关键字「%@」";
+"ask.workflow.action.tooDeep" = "未执行：最多连续运行 %d 个关键词";
+"ask.workflow.action.noKeyword" = "没有关键词「%@」";
 "ask.workflow.action.hostDeclined" = "未执行：没有允许打开 %@";
 "ask.workflow.action.done.runKeyword" = "已运行「%@」";
 "ask.plugin.action.copyImage" = "复制图片";
@@ -3723,7 +3723,7 @@
 "ask.workflow.chat.discardNotice" = "放弃当前会话的草稿？已安装的工具会保留。";
 "ask.workflow.chat.view" = "查看草稿";
 "ask.workflow.chat.openedBeside" = "已在右侧打开";
-"ask.workflow.chat.keywordLine" = "关键字 %@";
+"ask.workflow.chat.keywordLine" = "关键词 %@";
 "ask.workflow.chat.keywordNone" = "未设置";
 "ask.workflow.chat.tab.test" = "试运行";
 "ask.workflow.chat.tab.code" = "代码";
@@ -3734,7 +3734,7 @@
 "ask.workflow.chat.check.subtitle" = "问题会直接标在对应的项目上";
 "ask.workflow.chat.check.details" = "名称与描述";
 "ask.workflow.chat.check.script" = "脚本";
-"ask.workflow.chat.check.keywords" = "触发关键字";
+"ask.workflow.chat.check.keywords" = "触发关键词";
 "ask.workflow.chat.check.inlineScript" = "内联脚本";
 "ask.workflow.chat.check.separator" = "、";
 "ask.workflow.chat.check.addManually" = "手动添加";
@@ -3789,7 +3789,7 @@
 
 /* Launcher settings and chat history */
 "ask.plugin.setting.title" = "系统设置";
-"ask.settings.keywords.kind.setting.hint" = "打开 Typeflux 的系统设置";
+"ask.settings.keywords.kind.setting.hint" = "打开 Typeflux 设置";
 "ask.plugin.history.title" = "聊天历史";
 "ask.settings.keywords.kind.history.hint" = "搜索聊天标题，打开历史对话";
 "ask.plugin.history.placeholder" = "搜索聊天标题";
@@ -3838,3 +3838,11 @@
 "ask.files.folder.volumes" = "宗卷";
 "ask.files.folder.icloud" = "iCloud 云盘";
 "ask.files.folder.cloud" = "云存储";
+
+// Launcher localization and accessibility polish
+"cloud.error.llmSignInRequired" = "请登录后使用 Typeflux Cloud 语言模型。";
+"cloud.error.asrSignInRequired" = "请登录后使用 Typeflux Cloud 语音识别。";
+"ask.plugin.prompt.description.polish" = "改善语法与措辞，保留原意和语气";
+"ask.plugin.prompt.description.summarize" = "提炼文本的主要内容";
+"ask.plugin.prompt.description.explain" = "用通俗易懂的语言解释文本";
+"ask.plugin.translate.signInFallback" = "Typeflux Cloud 需要登录，已改用 %@ 翻译。";

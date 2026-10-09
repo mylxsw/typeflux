@@ -20,7 +20,7 @@ struct AskLocalModeStatus: Equatable {
         let library = model.modelLibrary
         let reference = model.modelReference(launcher: launcher)
         let provider = library.registry.resolve(reference)?.0
-        let reason = model.modelSelectionIssue(reference, token: model.cloudAvailable(launcher: launcher) ? "available" : "",
+        let reason = model.modelSelectionIssue(reference, cloudAvailable: model.cloudAvailable(launcher: launcher),
                                                hasImage: model.requiresVision(launcher: launcher))?.text
         return .init(source: provider.map(sourceName) ?? L("ask.local.sourceNone"),
                      searchConfigured: AskSearchSettings(defaults: library.settings.defaults).provider != .none,
@@ -392,6 +392,7 @@ struct AskCloudPromoCard: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "cloud").font(.system(size: 12, weight: .semibold))
+                    .accessibilityHidden(true)
                 Text(verbatim: "Typeflux Cloud").font(.system(size: 12.5, weight: .semibold))
                 Spacer(minLength: 4)
                 Button(action: onDismiss) {

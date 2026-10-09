@@ -308,7 +308,7 @@ struct AskPluginListViewTests {
             == [L("ask.plugin.hint.action", "Copy"), L("ask.plugin.hint.option.enter", "Insert"),
                 L("ask.plugin.hint.askAI")].joined(separator: " · "))
         #expect(AskPluginResultsView.hint(for: display(items, selected: 1))
-            == [L("ask.plugin.hint.complete"), L("ask.plugin.hint.askAI")].joined(separator: " · "))
+            == L("ask.plugin.hint.askAI"), "an invalid row offers neither execution nor completion")
     }
 
     @Test func `markdown is measured as Ask draws it`() {

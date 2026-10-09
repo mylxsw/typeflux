@@ -74,8 +74,8 @@ struct AskKeywordListPresentationTests {
         #expect(rows[3].name == L("ask.wordBook.title"))
         #expect(rows[3].summary == L("ask.settings.keywords.summary.wordBook"))
         #expect(rows[5].name == AskPromptPlugin.Preset.polish.title)
-        #expect(rows[5].summary.hasPrefix("Polish the following text"))
-        #expect(!rows[5].summary.contains("\n"), "only the prompt's first line")
+        #expect(rows[5].summary == L("ask.plugin.prompt.description.polish"))
+        #expect(!rows[5].summary.contains("\n"), "the preset description is one line")
         #expect(rows[8].name == "Google" && rows[8].monospacedSummary)
         #expect(rows[8].summary == "www.google.com/search?q={query}")
 
@@ -84,7 +84,7 @@ struct AskKeywordListPresentationTests {
             == L("ask.settings.plugins.translate.into", AskTranslationLanguages.name("ja", in: .english)))
         let blank = AskKeyword(keyword: "p", pluginID: AskPromptPlugin.id, options: ["prompt": "\n  \nFix {input}"])
         #expect(AskKeywordListPresentation
-            .summary(of: blank, interface: .english, secondLanguage: "en") == "Fix {input}")
+            .summary(of: blank, interface: .english, secondLanguage: "en") == "Fix")
         let empty = AskKeyword(keyword: "p", pluginID: AskPromptPlugin.id)
         #expect(AskKeywordListPresentation.summary(of: empty, interface: .english, secondLanguage: "en")
             == L("ask.settings.plugins.prompt.placeholder"))

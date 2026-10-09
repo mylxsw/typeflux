@@ -6,6 +6,14 @@ enum AskTranslationProvider: String, Codable, CaseIterable, Identifiable, Sendab
 
     var id: String { rawValue }
 
+    static func configuredFallback(credentials: any AskTranslationCredentialStoring,
+                                   preferred: Self? = nil) -> Self? {
+        if let preferred, credentials.credentials(for: preferred)?.isComplete(for: preferred) == true {
+            return preferred
+        }
+        return allCases.first { credentials.credentials(for: $0)?.isComplete(for: $0) == true }
+    }
+
     var title: String {
         switch self {
         case .deepl: "DeepL"
