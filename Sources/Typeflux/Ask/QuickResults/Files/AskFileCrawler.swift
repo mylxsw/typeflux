@@ -11,7 +11,7 @@ enum AskFileCrawler {
         var modified: Date
     }
 
-    enum SkipReason: Equatable { case timeout, failed }
+    enum SkipReason: Equatable { case timeout, failed, nonLocalMount }
 
     /// Each directory is a separate deadline-bound request, so siblings survive a blocked read.
     @discardableResult
@@ -24,18 +24,22 @@ enum AskFileCrawler {
         while let path = pending.popLast() {
             if isCancelled() { break }
             do {
-                let response = try reader.read(.init(operation: .directory, path: path, scope: scope,
-                                                     limit: limit - visited), isCancelled: isCancelled)
-                if response.error != nil { skipped(path, .failed) }
-                for entry in response.entries {
-                    if isCancelled() { return visited }
-                    guard scope.includes(entry.path, isDirectory: entry.kind != .file) else { continue }
-                    visited += 1
-                    if !visit(entry) || visited >= limit { return visited }
-                    if entry.kind == .folder, !scope.roots.contains(entry.path) { pending.append(entry.path) }
+                var stopped = false
+                try reader.stream(.init(operation: .directory, path: path, scope: scope, limit: limit - visited),
+                                  isCancelled: isCancelled) { response in
+                    if response.error != nil { skipped(path, .failed) }
+                    for mount in response.skippedMounts ?? [] { skipped(mount, .nonLocalMount) }
+                    for entry in response.entries {
+                        if isCancelled() { stopped = true; return false }
+                        guard scope.includes(entry.path, isDirectory: entry.kind != .file) else { continue }
+                        visited += 1
+                        if !visit(entry) || visited >= limit { stopped = true; return false }
+                        if entry.kind == .folder, !scope.roots.contains(entry.path) { pending.append(entry.path) }
+                    }
+                    return true
                 }
+                if stopped { return visited }
             } catch AskFileReadError.cancelled { break }
-            catch AskFileReadError.exhausted { skipped(path, .failed); break }
             catch AskFileReadError.timeout { skipped(path, .timeout) }
             catch { skipped(path, .failed) }
         }
@@ -50,6 +54,7 @@ enum AskFileCrawler {
 
     static func metadata(at path: String, scope: AskFileScope, reader: AskFileReading) throws -> Entry? {
         let response = try reader.read(.init(operation: .entry, path: path, scope: scope), isCancelled: { false })
+        if !(response.skippedMounts ?? []).isEmpty { throw AskFileReadError.nonLocalMount }
         if let code = response.error, code != ENOENT, code != ENOTDIR {
             throw NSError(domain: NSPOSIXErrorDomain, code: Int(code))
         }

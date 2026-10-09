@@ -259,7 +259,7 @@ struct AskFileIndexServiceTests {
         defer { try? FileManager.default.removeItem(at: root) }
         let scope = AskFileScope(settings: settings(root), fullDiskAccess: true)
         var found: [String: AskFileRecord.Kind] = [:]
-        let count = AskFileCrawler.crawl(root.path, scope: scope) { entry in
+        let count = AskFileCrawler.crawl(root.path, scope: scope, reader: AskRecordingFileReader()) { entry in
             found[String(entry.path.dropFirst(root.path.count + 1))] = entry.kind
             return true
         }
@@ -271,12 +271,12 @@ struct AskFileIndexServiceTests {
         #expect(found["Code/node_modules"] == nil && found["Code/node_modules/lib/index.js"] == nil)
         #expect(found["Code/.git"] == nil && found[".hidden.txt"] == nil)
         var stopped = 0
-        AskFileCrawler.crawl(root.path, scope: scope) { _ in stopped += 1; return false }
+        AskFileCrawler.crawl(root.path, scope: scope, reader: AskRecordingFileReader()) { _ in stopped += 1; return false }
         #expect(stopped == 1, "visit can stop the walk")
-        #expect(AskFileCrawler.crawl(root.path, scope: scope, limit: 2) { _ in true } == 2)
-        #expect(AskFileCrawler.crawl("/nowhere", scope: scope) { _ in true } == 0)
-        #expect(AskFileCrawler.entry(at: root.appendingPathComponent("Notes.md").path, scope: scope)?.kind == .file)
-        #expect(AskFileCrawler.entry(at: root.appendingPathComponent("missing").path, scope: scope) == nil)
+        #expect(AskFileCrawler.crawl(root.path, scope: scope, limit: 2, reader: AskRecordingFileReader()) { _ in true } == 2)
+        #expect(AskFileCrawler.crawl("/nowhere", scope: scope, reader: AskRecordingFileReader()) { _ in true } == 0)
+        #expect(AskFileCrawler.entry(at: root.appendingPathComponent("Notes.md").path, scope: scope, reader: AskRecordingFileReader())?.kind == .file)
+        #expect(AskFileCrawler.entry(at: root.appendingPathComponent("missing").path, scope: scope, reader: AskRecordingFileReader()) == nil)
         #expect(AskFileCrawler.isPackage("/x/Thing.app"))
         #expect(!AskFileCrawler.isPackage("/x/folder"))
     }
@@ -285,7 +285,7 @@ struct AskFileIndexServiceTests {
                            settings: AskLauncherSearchSettings? = nil, defaults: UserDefaults = .standard) -> AskFileIndex {
         let current = settings ?? self.settings(root)
         return AskFileIndex(configuration: { (enabled, current) }, fullDiskAccess: { true }, snapshotURL: snapshot,
-                            defaults: defaults, home: root.path, makeWatcher: { watcher })
+                            defaults: defaults, home: root.path, makeReader: { AskRecordingFileReader() }, makeWatcher: { watcher })
     }
 
     @Test func buildsWatchesAndFollowsChanges() throws {

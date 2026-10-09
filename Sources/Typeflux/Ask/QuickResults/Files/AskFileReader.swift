@@ -3,34 +3,40 @@ import Foundation
 
 protocol AskFileReading: AnyObject {
     func read(_ request: AskFileReadRequest, isCancelled: () -> Bool) throws -> AskFileReadResponse
+    func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool,
+                receive: (AskFileReadResponse) -> Bool) throws
 }
 
 extension AskFileReading {
+    func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool,
+                receive: (AskFileReadResponse) -> Bool) throws {
+        _ = receive(try read(request, isCancelled: isCancelled))
+    }
+
     func resolve(_ path: String, blocked: [String]) throws -> String {
         try read(AskFileReadRequest(operation: .resolve, path: path, blocked: blocked), isCancelled: { false }).path ?? path
     }
 }
 
-enum AskFileReadError: Error { case timeout, cancelled, unavailable, exhausted, protocolError }
+enum AskFileReadError: Error { case timeout, cancelled, unavailable, nonLocalMount, protocolError }
 
 /// Serial, reusable child with deadline-bound pipe I/O. A hung syscall is confined to the child.
 final class AskFileReader: AskFileReading {
     private let executable: URL?
     private let arguments: [String]
     private let timeout: TimeInterval
-    private let maximumFailures: Int
-    private var failures = 0
+    private let startupTimeout: TimeInterval
     private var process: Process?
     private var input: FileHandle?
     private var output: FileHandle?
     private var buffer = Data()
 
     init(executable: URL? = nil, arguments: [String] = ["file-index-worker"],
-         timeout: TimeInterval = 5, maximumFailures: Int = 3) {
+         timeout: TimeInterval = 5, startupTimeout: TimeInterval? = nil) {
         self.executable = executable
         self.arguments = arguments
         self.timeout = timeout
-        self.maximumFailures = maximumFailures
+        self.startupTimeout = startupTimeout ?? (executable == nil ? max(30, timeout) : timeout)
     }
 
     deinit { stop() }
@@ -45,12 +51,26 @@ final class AskFileReader: AskFileReading {
     }
 
     func read(_ request: AskFileReadRequest, isCancelled: () -> Bool = { false }) throws -> AskFileReadResponse {
-        guard failures < maximumFailures else { throw AskFileReadError.exhausted }
+        var result = AskFileReadResponse()
+        try stream(request, isCancelled: isCancelled) { response in
+            result.entries += response.entries
+            result.path = response.path ?? result.path
+            result.error = response.error ?? result.error
+            result.skippedMounts = (result.skippedMounts ?? []) + (response.skippedMounts ?? [])
+            return true
+        }
+        return result
+    }
+
+    /// Each frame/pipe transfer resets the idle deadline; a large advancing directory has no total deadline.
+    func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool = { false },
+                receive: (AskFileReadResponse) -> Bool) throws {
         do {
             if isCancelled() { throw AskFileReadError.cancelled }
-            if process == nil { try start() }
+            let starting = process == nil
+            if starting { try start() }
             guard let input, let output else { throw AskFileReadError.unavailable }
-            let deadline = ProcessInfo.processInfo.systemUptime + timeout
+            var deadline = ProcessInfo.processInfo.systemUptime + (starting ? startupTimeout : timeout)
             let data = try JSONEncoder().encode(request) + Data([10])
             try data.withUnsafeBytes { bytes in
                 var offset = 0
@@ -67,18 +87,21 @@ final class AskFileReader: AskFileReading {
                     let line = buffer[..<end]
                     let response = try JSONDecoder().decode(AskFileReadResponse.self, from: line)
                     buffer.removeSubrange(...end)
-                    return response
+                    if !receive(response) { stop(); return }
+                    if response.more != true { return }
+                    deadline = ProcessInfo.processInfo.systemUptime + timeout
+                    continue
                 }
                 try wait(output.fileDescriptor, events: Int16(POLLIN), deadline: deadline, isCancelled: isCancelled)
                 var bytes = [UInt8](repeating: 0, count: 65536)
                 let count = Darwin.read(output.fileDescriptor, &bytes, bytes.count)
                 if count < 0, errno == EAGAIN || errno == EINTR { continue }
                 guard count > 0 else { throw AskFileReadError.unavailable }
+                deadline = ProcessInfo.processInfo.systemUptime + timeout
                 buffer.append(contentsOf: bytes.prefix(count))
-                guard buffer.count <= 128 * 1024 * 1024 else { throw AskFileReadError.protocolError }
+                guard buffer.count <= 8 * 1024 * 1024 else { throw AskFileReadError.protocolError }
             }
         } catch {
-            failures += 1
             stop()
             throw error
         }

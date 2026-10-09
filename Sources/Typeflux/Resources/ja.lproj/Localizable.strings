@@ -3802,3 +3802,21 @@
 "account.addon.title" = "追加クレジット";
 "account.addon.nextExpiry" = "次の有効期限：%@ クレジット（%@）";
 "account.addon.expiringSoon" = "%@ クレジットが %@ に失効します。それまでにご利用ください。";
+
+/* File indexing status and file-system-free folder labels */
+"ask.plugin.files.skipped" = "スキップ：%@";
+"ask.files.skip.timeout" = "タイムアウトしたフォルダ %@ 件";
+"ask.files.skip.failed" = "読み取れないフォルダ %@ 件";
+"ask.files.skip.mount" = "ネットワークまたは仮想マウント %@ 件";
+"ask.files.folder.home" = "ホーム";
+"ask.files.folder.desktop" = "デスクトップ";
+"ask.files.folder.documents" = "書類";
+"ask.files.folder.downloads" = "ダウンロード";
+"ask.files.folder.music" = "ミュージック";
+"ask.files.folder.pictures" = "ピクチャ";
+"ask.files.folder.movies" = "ムービー";
+"ask.files.folder.library" = "ライブラリ";
+"ask.files.folder.applications" = "アプリケーション";
+"ask.files.folder.volumes" = "ボリューム";
+"ask.files.folder.icloud" = "iCloud Drive";
+"ask.files.folder.cloud" = "クラウドストレージ";

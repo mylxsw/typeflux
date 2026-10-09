@@ -3813,4 +3813,21 @@
 "account.addon.nextExpiry" = "Next expiry: %@ credits on %@";
 "account.addon.expiringSoon" = "%@ credits expire on %@. Use them before then.";
 
-"ask.plugin.files.skipped" = "Skipped: %@ protected, %@ timed out, %@ unreadable";
+
+/* File indexing status and file-system-free folder labels */
+"ask.plugin.files.skipped" = "Skipped: %@";
+"ask.files.skip.timeout" = "%@ timed out";
+"ask.files.skip.failed" = "%@ unreadable";
+"ask.files.skip.mount" = "%@ network or virtual mounts";
+"ask.files.folder.home" = "Home";
+"ask.files.folder.desktop" = "Desktop";
+"ask.files.folder.documents" = "Documents";
+"ask.files.folder.downloads" = "Downloads";
+"ask.files.folder.music" = "Music";
+"ask.files.folder.pictures" = "Pictures";
+"ask.files.folder.movies" = "Movies";
+"ask.files.folder.library" = "Library";
+"ask.files.folder.applications" = "Applications";
+"ask.files.folder.volumes" = "Volumes";
+"ask.files.folder.icloud" = "iCloud Drive";
+"ask.files.folder.cloud" = "Cloud Storage";

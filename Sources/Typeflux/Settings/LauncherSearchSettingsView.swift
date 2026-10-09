@@ -333,8 +333,7 @@ extension LauncherSearchSettingsView {
     // MARK: - Pieces
 
     private func pathRow(_ path: String, icon: String, remove: @escaping () -> Void) -> some View {
-        let expanded = AskLauncherSearchSettings.expand(path)
-        return AgentSettingsRow(icon: icon, title: (expanded as NSString).lastPathComponent,
+        return AgentSettingsRow(icon: icon, title: AskFileLabels.folder(path),
                                 subtitle: path, subtitleLineLimit: 1) {
             AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove"), action: remove)
         }

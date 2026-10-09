@@ -22,6 +22,7 @@ struct AskFileIndexStatus: Equatable, Sendable {
     var truncated = false
     var timedOut = 0
     var failed = 0
+    var nonLocalMounts = 0
 
     var incomplete: Bool { timedOut + failed > 0 }
 
@@ -97,6 +98,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private var lastEventID: UInt64 = 0
     private var dirty = false
     private var saveScheduled = false
+    private var skippedMounts = Set<String>()
     private var observers: [NSObjectProtocol] = []
 
     init(configuration: @escaping () -> (enabled: Bool, settings: AskLauncherSearchSettings) = AskFileIndex.storedConfiguration,
@@ -224,7 +226,7 @@ extension AskFileIndex {
     }
 
     static func fingerprint(_ settings: AskLauncherSearchSettings, access: Bool) -> String {
-        settings.fileIndexFingerprint + "\u{3}" + (access ? "all" : "guarded") + "\u{3}policy-2"
+        settings.fileIndexFingerprint + "\u{3}" + (access ? "all" : "guarded") + "\u{3}policy-3"
     }
 
     func clear() {
@@ -299,7 +301,8 @@ extension AskFileIndex {
         watcher?.stop()
         let count = status.count
         let estimate = count > 0 ? count : nil
-        lock.withLock { currentStatus.timedOut = 0; currentStatus.failed = 0 }
+        skippedMounts.removeAll()
+        lock.withLock { currentStatus.timedOut = 0; currentStatus.failed = 0; currentStatus.nonLocalMounts = 0 }
         var lastPublish = ProcessInfo.processInfo.systemUptime
         let startEvent = AskFSEventsWatcher.currentEventID
         working = AskFileIndexState(home: home)
@@ -336,7 +339,8 @@ extension AskFileIndex {
         watcher?.stop()
         let watcher = makeWatcher()
         self.watcher = watcher
-        watcher.start(paths: scope.roots.filter { scope.includes($0, isDirectory: true) }, since: eventID) { [weak self] changes, last in
+        let mounts = AskFileMounts.current()
+        watcher.start(paths: scope.roots.filter { scope.includes($0, isDirectory: true) && mounts.blocking($0) == nil }, since: eventID) { [weak self] changes, last in
             self?.queue.async {
                 guard let self, self.isCurrent(run) else { return }
                 self.apply(changes)
@@ -350,7 +354,7 @@ extension AskFileIndex {
     /// Brings the index up to date with what the file system reported.
     func apply(_ changes: [AskFileChange]) {
         guard let scope, !changes.isEmpty else { return }
-        // A later event batch can retry after the preceding scan exhausted its worker budget.
+        // Each event batch starts with a fresh worker; earlier directory failures do not carry over.
         reader = makeReader()
         var changed = false
         var seen = Set<String>()
@@ -381,6 +385,7 @@ extension AskFileIndex {
                     else { changed = insertTree(entry, scope: scope) || changed }
                 } else { changed = working.remove(path) || changed }
             } catch AskFileReadError.timeout { recordSkip(path, .timeout) }
+            catch AskFileReadError.nonLocalMount { recordSkip(path, .nonLocalMount) }
             catch { recordSkip(path, .failed) }
 
         }
@@ -450,10 +455,12 @@ extension AskFileIndex {
     }
 
     private func recordSkip(_ path: String, _ reason: AskFileCrawler.SkipReason) {
+        if reason == .nonLocalMount, !skippedMounts.insert(path).inserted { return }
         lock.withLock {
             switch reason {
             case .timeout: currentStatus.timedOut += 1
             case .failed: currentStatus.failed += 1
+            case .nonLocalMount: currentStatus.nonLocalMounts += 1
             }
         }
         publish(phase: status.phase)

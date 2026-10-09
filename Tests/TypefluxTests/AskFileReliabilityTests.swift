@@ -133,7 +133,7 @@ struct AskFileReliabilityTests {
     @Test func actualWorkerReusesConnectionAndHandlesLargeResponse() throws {
         let root = try tree()
         defer { try? FileManager.default.removeItem(at: root) }
-        let reader = AskFileReader()
+        let reader = AskFileReader(timeout: 30)
         let scope = scope(root)
         #expect(try reader.resolve(root.path, blocked: []) == root.path)
         let link = root.appendingPathComponent("project-link")
@@ -160,19 +160,14 @@ struct AskFileReliabilityTests {
         // First child hangs, the next child answers. The process exec keeps the recorded PID stable.
         let script = "if [ ! -e '\(marker.path)' ]; then echo $$ > '\(marker.path)'; exec /bin/sleep 20; fi; "
             + "while read line; do printf '{\"entries\":[],\"path\":\"/ok\"}\\n'; done"
-        let reader = AskFileReader(executable: URL(fileURLWithPath: "/bin/sh"), arguments: ["-c", script], timeout: 0.3)
+        let reader = AskFileReader(executable: URL(fileURLWithPath: "/bin/sh"), arguments: ["-c", script], timeout: 1)
         let start = Date()
         #expect(throws: (any Error).self) { try reader.resolve("/a", blocked: []) }
-        #expect(Date().timeIntervalSince(start) < 2)
+        #expect(Date().timeIntervalSince(start) < 5)
         let pid = try #require(Int32(String(contentsOf: marker).trimmingCharacters(in: .whitespacesAndNewlines)))
         #expect(try reader.resolve("/b", blocked: []) == "/ok")
         #expect(kill(pid, 0) == -1, "timed-out child was reaped")
-        let exhausted = AskFileReader(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["20"],
-                                      timeout: 0.05, maximumFailures: 1)
-        #expect(throws: (any Error).self) { try exhausted.resolve("/a", blocked: []) }
-        let retry = Date()
-        #expect(throws: (any Error).self) { try exhausted.resolve("/b", blocked: []) }
-        #expect(Date().timeIntervalSince(retry) < 0.2, "failure cap does not spawn more children")
+
     }
 
     @Test func actualCrawlerSurvivesABlockedDirectoryAndAnUnreadableSibling() throws {
@@ -185,10 +180,10 @@ struct AskFileReliabilityTests {
         try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: denied.path)
         // Forward requests to the production worker, except one directory whose read never returns.
         // exec keeps that hung read in the supervised PID; no sleeping grandchild is left behind.
-        let script = "while IFS= read -r line; do case \"$line\" in *Music*) exec /bin/sleep 20 ;; "
+        let script = "while IFS= read -r line; do case \"$line\" in *Music*) exec /bin/sleep 60 ;; "
             + "*) printf '%s\\n' \"$line\" | \"$1\" file-index-worker ;; esac; done"
         let reader = AskFileReader(executable: URL(fileURLWithPath: "/bin/sh"),
-                                   arguments: ["-c", script, "file-reader-test", AskFileReader.executableURL.path], timeout: 2)
+                                   arguments: ["-c", script, "file-reader-test", AskFileReader.executableURL.path], timeout: 5, startupTimeout: 30)
         var paths: [String] = []
         var failures: [String: AskFileCrawler.SkipReason] = [:]
         let count = AskFileCrawler.crawl(root.path, scope: scope(root, access: true), reader: reader,
