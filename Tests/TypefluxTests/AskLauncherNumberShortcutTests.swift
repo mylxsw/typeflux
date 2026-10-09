@@ -43,6 +43,54 @@ struct AskLauncherNumberShortcutTests {
         #expect(changes.last == false)
     }
 
+    @Test func openChatHintRendersInBothThemesAndCompactLayouts() async throws {
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer {
+            AppLocalization.shared.setLanguage(previousLanguage)
+        }
+        let directory = ProcessInfo.processInfo.environment["TYPEFLUX_NUMBER_SNAPSHOTS"]
+        if let directory { try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true) }
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            for width: CGFloat in [640, 440] {
+                let size = NSSize(width: width, height: 50)
+                var renders: [Data] = []
+                for visible in [false, true] {
+                    let hosting = NSHostingView(rootView:
+                        HStack {
+                            Spacer(minLength: 0)
+                            AskLauncherOpenChatButton(enabled: true, action: {})
+                        }
+                            .padding(.horizontal, 14)
+                            .frame(height: 50)
+                            .environment(\.askLauncherNumberHints, visible)
+                            .background(AskTheme.composerSurface)
+                    )
+                    let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size),
+                                                    styleMask: [.borderless], backing: .buffered, defer: false)
+                    window.isReleasedWhenClosed = false
+                    window.appearance = NSAppearance(named: appearance)
+                    window.contentView = hosting
+                    window.orderFront(nil)
+                    defer { window.close() }
+                    try await Task.sleep(for: .milliseconds(100))
+                    hosting.layoutSubtreeIfNeeded()
+                    #expect(hosting.frame.size == size)
+                    let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+                    hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+                    let png = try #require(bitmap.representation(using: .png, properties: [:]))
+                    renders.append(png)
+                    if let directory {
+                        let mode = appearance == .aqua ? "light" : "dark"
+                        try png.write(to: URL(fileURLWithPath: directory)
+                            .appendingPathComponent("chat-\(Int(width))-\(mode)-\(visible ? "held" : "idle").png"))
+                    }
+                }
+                #expect(renders[0] != renders[1], "The open-chat shortcut must appear while Command is held")
+            }
+        }
+    }
+
     @Test func numberBadgesRenderWithoutChangingTheListSize() async throws {
         let apps = ["Calendar", "Calculator", "Contacts"].map {
             AskAppMatch(entry: AskTestAppIndex.app($0), score: 0.9)

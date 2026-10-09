@@ -197,6 +197,7 @@ struct AskFileIconView: View {
     var thumbnail: Bool
     var modified: Date?
     @State private var image: NSImage?
+    @State private var imageURL: URL?
 
     private var key: AskResultImageCache.Key {
         .init(url: url, thumbnail: thumbnail && AskFileType.hasThumbnail(url.pathExtension.lowercased()),
@@ -205,7 +206,7 @@ struct AskFileIconView: View {
 
     var body: some View {
         Group {
-            if let shown = image ?? AskResultImageCache.shared.cached(key) {
+            if let shown = AskResultImageCache.shared.cached(key) ?? (imageURL == url ? image : nil) {
                 Image(nsImage: shown).resizable().interpolation(.high).scaledToFit()
             } else {
                 Image(systemName: url.hasDirectoryPath ? "folder" : "doc")
@@ -215,10 +216,9 @@ struct AskFileIconView: View {
         .clipShape(RoundedRectangle(cornerRadius: thumbnail ? 4 : 0, style: .continuous))
         .accessibilityHidden(true)
         .task(id: key) {
-            image = nil
             let loaded = await AskResultImageCache.shared.image(key)
             guard !Task.isCancelled else { return }
-            image = loaded
+            if let loaded { image = loaded; imageURL = url }
         }
     }
 }

@@ -576,9 +576,13 @@ struct AskBanner: View {
                 .buttonStyle(.plain)
             }
             if let onDismiss {
-                Button(action: onDismiss) { Image(systemName: "xmark").font(.system(size: 10, weight: .bold)) }
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark").font(.system(size: 10, weight: .bold))
+                        .frame(width: 22, height: 22).contentShape(Rectangle())
+                }
                     .buttonStyle(.plain)
                     .accessibilityLabel(L("ask.remove"))
+                    .accessibilityIdentifier("ask.banner.dismiss")
             }
         }
         .foregroundStyle(foreground)
@@ -725,7 +729,9 @@ struct AskSendButton: View {
     /// Unlit but still clickable while Return does something else, such as
     /// opening the launcher's highlighted application.
     var prominent = true
+    var animatesEmphasis = true
     var action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var lit: Bool { enabled && prominent }
 
@@ -749,10 +755,10 @@ struct AskSendButton: View {
             }
         }
         .shadow(color: lit ? tint.opacity(0.5) : .clear, radius: 9, y: 3)
-        // Becoming sendable, the button lights up with a small spring.
-        .scaleEffect(lit ? 1 : 0.94)
+        // Launcher geometry stays fixed while its native window changes size.
+        .scaleEffect(animatesEmphasis && !reduceMotion && !lit ? 0.94 : 1)
         .disabled(!enabled)
-        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: lit)
+        .animation(animatesEmphasis && !reduceMotion ? .easeOut(duration: 0.16) : nil, value: lit)
         // The keys live here rather than in a hint row under the composer.
         .help(L("ask.send.help"))
         .accessibilityLabel(L("ask.send"))

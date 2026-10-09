@@ -38,7 +38,7 @@ struct AskQuickResults: Equatable {
     var moreFiles = false
     /// Applications precede files unless file-first mode was explicitly selected.
     var groups: [Group] = []
-    /// The clear winner, listed first and taking Return. Without one "Ask AI" leads.
+    /// The clear winner, listed first and taking Return. Without one "Ask AI" takes Return from its fixed footer.
     var best: Row?
     var notice: Notice?
     /// The expression being typed while the last result stays on screen, dimmed.
@@ -61,6 +61,7 @@ struct AskQuickResults: Equatable {
         self.apps = apps
         groups = apps.isEmpty ? [] : [.apps]
         best = lead && !apps.isEmpty ? .app(0) : nil
+        highlighted = best == nil ? rows.count - 1 : 0
     }
 
     init(apps: [AskAppMatch], panes: [AskAppMatch], files: [AskFileHit], moreFiles: Bool, groups: [Group],
@@ -72,6 +73,7 @@ struct AskQuickResults: Equatable {
         self.groups = groups
         self.best = best
         self.notice = notice
+        highlighted = best == nil ? rows.count - 1 : 0
     }
 
     var rows: [Row] {
@@ -87,7 +89,7 @@ struct AskQuickResults: Equatable {
             case .folders: listed += files.indices.filter { files[$0].isFolder }.map(Row.file)
             }
         }
-        guard let best else { return [.askAI] + listed }
+        guard let best else { return listed + [.askAI] }
         return [best] + listed.filter { $0 != best } + [.askAI]
     }
 
@@ -245,8 +247,8 @@ struct AskQuickResults: Equatable {
             let fileGroup = group == .files || group == .folders
             switch settings.mode {
             case .mixed, .appsFirst:
-                return group == .apps ? 0 : (group == .panes ? 1 : 2)
-            case .filesFirst: return fileGroup ? 0 : 1
+                return group == .apps ? 0 : (group == .panes ? 1 : (group == .files ? 2 : 3))
+            case .filesFirst: return fileGroup ? (group == .files ? 0 : 1) : (group == .apps ? 2 : 3)
             }
         }
         groups.sort { lhs, rhs in

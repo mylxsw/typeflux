@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import Testing
 @testable import Typeflux
 
@@ -50,6 +51,110 @@ struct AskQuickSearchSessionTests {
                         apps: (any AskAppSearching)? = nil, files: (any AskFileSearching)? = nil,
                         calculator: Bool = false) {
         session.update(text: text, chinese: false, calculator: calculator, sources: .init(apps: apps, files: files))
+    }
+
+    @Test func firstSearchNeverPresentsAnEmptyAskAIRowWhileWaiting() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        let apps = AskControlledSearchIndex()
+        apps.appSearch = { query in
+            if query == "note" { _ = gate.wait(timeout: .now() + 5) }
+            return [Self.app]
+        }
+        let session = AskQuickSearchSession()
+        update(session, apps: apps)
+        #expect(session.isSearching)
+        #expect(session.presentation == nil)
+        update(session, "notebook", apps: apps)
+        #expect(session.presentation == nil, "rapid typing before the first batch must not expose a placeholder")
+        gate.signal()
+        try await Self.wait { !session.isSearching }
+        #expect(session.presentation?.apps.count == 1)
+    }
+
+    @Test func fastProvidersPublishOneCombinedUsefulBatch() async throws {
+        let apps = AskControlledSearchIndex(), files = AskControlledSearchIndex()
+        apps.appSearch = { _ in [Self.app] }
+        files.fileSearch = { _ in [Self.file] }
+        let session = AskQuickSearchSession()
+        var batches: [AskQuickResults] = []
+        let subscription = session.$results.sink { result in
+            if let result, !result.apps.isEmpty || !result.files.isEmpty { batches.append(result) }
+        }
+        defer { subscription.cancel() }
+        update(session, apps: apps, files: files)
+        try await Self.wait { !session.isSearching }
+        #expect(batches.count == 1)
+        #expect(batches.first?.apps.count == 1 && batches.first?.files.count == 1)
+    }
+
+    @Test func pendingQueriesKeepTheirPresentationWithoutRetainingExecutableRows() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        let apps = AskControlledSearchIndex()
+        apps.appSearch = { query in
+            if query != "note" { _ = gate.wait(timeout: .now() + 5) }
+            return [.init(entry: AskTestAppIndex.app(query), score: 1)]
+        }
+        let session = AskQuickSearchSession()
+        update(session, apps: apps)
+        try await Self.wait { !session.isSearching }
+        let first = session.results
+        update(session, "notebook", apps: apps)
+        #expect(session.pendingResults == first)
+        #expect(session.presentation == first)
+        #expect(session.results?.apps.isEmpty == true)
+        update(session, "notebooks", apps: apps)
+        #expect(session.pendingResults == first, "rapid typing keeps the last real batch")
+        gate.signal()
+        gate.signal()
+        try await Self.wait { !session.isSearching }
+        #expect(session.pendingResults == nil)
+        #expect(session.results?.apps.first?.entry.name == "notebooks")
+    }
+
+    @Test func clearingOrHidingTheQueryRemovesThePendingPresentation() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        let apps = AskControlledSearchIndex()
+        apps.appSearch = { query in
+            if query != "note" { _ = gate.wait(timeout: .now() + 5) }
+            return [Self.app]
+        }
+        let session = AskQuickSearchSession()
+        update(session, apps: apps)
+        try await Self.wait { !session.isSearching }
+        update(session, "next", apps: apps)
+        #expect(session.pendingResults != nil)
+        update(session, "", apps: apps)
+        #expect(session.pendingResults == nil && session.results == nil)
+        update(session, "note", apps: apps)
+        gate.signal()
+        try await Self.wait { !session.isSearching }
+        update(session, "later", apps: apps)
+        session.setVisible(false)
+        #expect(session.pendingResults == nil && session.results == nil)
+    }
+
+    @Test func anEmptyApplicationBatchDoesNotFlashBetweenTwoUsefulBatches() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        let apps = AskControlledSearchIndex(), files = AskControlledSearchIndex()
+        apps.appSearch = { query in query == "note" ? [Self.app] : [] }
+        files.fileSearch = { _ in _ = gate.wait(timeout: .now() + 5); return [Self.file] }
+        let session = AskQuickSearchSession()
+        session.fileDebounce = .zero
+        update(session, apps: apps)
+        try await Self.wait { !session.isSearching }
+        let first = session.results
+        update(session, "report", apps: apps, files: files)
+        try await Self.wait { !files.calls.isEmpty && apps.calls.count == 2 }
+        #expect(session.isSearching)
+        #expect(session.pendingResults == first)
+        #expect(session.results?.apps.isEmpty == true)
+        gate.signal()
+        try await Self.wait { !session.isSearching }
+        #expect(session.pendingResults == nil && session.results?.files.count == 1)
     }
 
     @Test func slowFilesNeverBlockApplicationsOrChangeTheirSelection() async throws {

@@ -84,11 +84,10 @@ extension AskQuickResultsInteractionTests {
             try await waitFor { model.plugins.output?.items.count == 1 }
             try await Task.sleep(for: .milliseconds(50))
             let typing = try #require(launcher.heights.last)
-            #expect(typing < tall, "the kept space is capped while typing")
+            #expect(typing >= tall - 1, "typing keeps the list height even when most rows disappear")
             try await Task.sleep(for: AskLauncherHeightReserve.settleDelay + .milliseconds(450))
             let settled = try #require(launcher.heights.last)
-            #expect(abs(typing - settled - AskLauncherHeightReserve.maximumSlack) <= 1,
-                    "after the pause the panel fits the one row")
+            #expect(settled < typing, "after the pause the panel fits the shorter list")
         }
     }
 }

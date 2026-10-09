@@ -25,7 +25,8 @@ struct AskQuickResultsFileTests {
         let results = try #require(resolve("readme"))
         // Two READMEs: the newer one is ahead, but not by enough to take Return.
         #expect(results.best == nil)
-        #expect(results.rows.first == .askAI)
+        #expect(results.rows.last == .askAI)
+        #expect(results.highlightedRow == .askAI)
         let contract = try #require(resolve("hetong"))
         #expect(contract.best == .file(contract.files.firstIndex { $0.name == "合同" }!), "the folder's whole pinyin")
         #expect(contract.highlightedRow == contract.best)
@@ -60,6 +61,27 @@ struct AskQuickResultsFileTests {
         if filesFirst.groups.contains(.files), filesFirst.groups.contains(.apps) {
             #expect(filesFirst.groups.firstIndex(of: .files)! < filesFirst.groups.firstIndex(of: .apps)!)
             #expect(appsFirst.groups.firstIndex(of: .apps)! < appsFirst.groups.firstIndex(of: .files)!)
+        }
+    }
+
+    @Test func groupOrderDoesNotFlipWhenFolderScoresChange() throws {
+        let apps = [AskAppMatch(entry: AskTestAppIndex.app("Alpha"), score: 0.7)]
+        let file = AskFileHit(path: "/alpha.txt", name: "alpha.txt", kind: .file,
+                              modified: Date(), score: 0.7, match: 0.7)
+        var folder = AskFileHit(path: "/Alpha", name: "Alpha", kind: .folder,
+                                modified: Date(), score: 0.5, match: 0.5)
+        for mode in [AskLauncherSearchSettings.Mode.mixed, .appsFirst, .filesFirst] {
+            var settings = AskLauncherSearchSettings()
+            settings.mode = mode
+            let before = try #require(AskQuickResults.assemble("a", matches: apps, hits: [file, folder],
+                                                               status: nil, settings: settings))
+            folder.score = 1.1
+            let after = try #require(AskQuickResults.assemble("a", matches: apps, hits: [folder, file],
+                                                              status: nil, settings: settings))
+            #expect(before.groups == after.groups)
+            #expect(after.groups.firstIndex(of: .files)! < after.groups.firstIndex(of: .folders)!)
+            #expect(after.rows.last == .askAI && after.highlightedRow == .askAI)
+            folder.score = 0.5
         }
     }
 

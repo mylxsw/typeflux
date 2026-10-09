@@ -95,7 +95,10 @@ struct AskLauncherPositionTests {
 
         controller.dismissLauncher()
         controller.showLauncher()
-        #expect(controller.launcherWindow?.frame.origin == centred.origin)
+        let reopened = try #require(controller.launcherWindow).frame
+        // The home can finish measuring between openings. Its height changes
+        // the bottom edge, but must never remember the dragged top or left edge.
+        #expect(reopened.minX == centred.minX && reopened.maxY == centred.maxY)
     }
 
     @Test func remembersWhereItWasLeftAndGrowsDownFromThere() async throws {

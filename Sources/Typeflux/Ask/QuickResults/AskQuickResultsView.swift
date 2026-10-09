@@ -13,6 +13,8 @@ struct AskQuickResultsView: View {
     var question: String
     /// Height held while typing; rows stay at the top.
     var minimumHeight: CGFloat = 0
+    /// Actual space during native resizing, shared with the bottom toolbar.
+    var viewportHeight: CGFloat?
     /// The highlighted file's actions, open with → or a context click.
     var actions: AskQuickActionPanel?
     var thumbnails = true
@@ -55,48 +57,83 @@ struct AskQuickResultsView: View {
         }
     }
 
+    private struct ScrollPosition: Equatable {
+        var rows: [String]
+        var target: String
+    }
+
+    private static let topID = "quickResults.top"
+
     var body: some View {
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
-            ScrollViewReader { proxy in
-                ScrollView(.vertical, showsIndicators: Self.contentHeight(for: results) > Self.maximumHeight) {
-                    VStack(spacing: Self.rowSpacing) {
-                        ForEach(results.rows.map { (id: results.identity(of: $0), row: $0) }, id: \.id) { item in
-                            let row = item.row
-                            let index = results.rows.firstIndex(of: row) ?? 0
-                            if let section = Self.sectionStart(at: index, in: results.rows, results: results) {
-                                sectionTitle(section)
-                            }
-                            content(row, index: index, highlighted: index == results.highlighted)
-                                .modifier(AskLauncherNumberBadge(number: actions == nil ? AskLauncherNumberShortcuts.number(at: index) : nil))
-                                .onContinuousHover { phase in
-                                    if case .active = phase, actions == nil, pointer.moved(to: NSEvent.mouseLocation) {
-                                        onHighlight(index)
+            if results.rows.count > 1 || results.notice != nil {
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: Self.contentHeight(for: results) > visibleHeight) {
+                        VStack(spacing: Self.rowSpacing) {
+                            ForEach(results.rows.filter { $0 != .askAI }.map {
+                                (id: results.identity(of: $0), row: $0)
+                            }, id: \.id) { item in
+                                let index = results.rows.firstIndex(of: item.row) ?? 0
+                                // One identified block includes its heading. A changing
+                                // heading must not leave the scroll anchor on a removed sibling.
+                                VStack(spacing: Self.rowSpacing) {
+                                    if let section = Self.sectionStart(at: index, in: results.rows, results: results) {
+                                        sectionTitle(section)
                                     }
+                                    resultRow(item.row, index: index)
                                 }
                                 .id(item.id)
+                            }
+                            if let notice = results.notice { noticeRow(notice) }
                         }
-                        if let notice = results.notice { noticeRow(notice) }
+                        .padding(.horizontal, Self.listPadding)
+                        .padding(.top, Self.listPadding)
+                        .id(Self.topID)
                     }
-                    .padding(Self.listPadding)
+                    .scrollDisabled(Self.contentHeight(for: results) <= visibleHeight)
+                    // SwiftUI may deliver the new value to an old render's closure.
+                    // Carry both the target and list version in the new value itself.
+                    .onChange(of: ScrollPosition(
+                        rows: results.rows.map { results.identity(of: $0) },
+                        target: results.chosen && results.highlightedRow != .askAI
+                            ? results.identity(of: results.highlightedRow) : Self.topID
+                    )) { position in
+                        proxy.scrollTo(position.target, anchor: position.target == Self.topID ? .top : nil)
+                    }
                 }
-                .scrollDisabled(Self.contentHeight(for: results) <= Self.maximumHeight)
-                // SwiftUI can deliver a new value to the previous render's closure.
-                // Carry the row identity itself instead of indexing that render's results.
-                .onChange(of: results.identity(of: results.highlightedRow)) { identity in
-                    proxy.scrollTo(identity)
-                }
+            } else {
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
+            // Keep the AI action visible and anchored, even when matching strength
+            // changes or a second provider extends the scrolling list.
+            VStack(spacing: Self.rowSpacing) {
+                sectionTitle(.ai)
+                resultRow(.askAI, index: results.rows.count - 1)
+            }
+            .padding(.horizontal, Self.listPadding)
+            .padding(.top, results.rows.count > 1 || results.notice != nil ? Self.rowSpacing : Self.listPadding)
+            .padding(.bottom, Self.listPadding)
         }
-        .frame(height: max(minimumHeight, Self.height(for: results)), alignment: .top)
+        .frame(height: visibleHeight, alignment: .top)
         .overlay(alignment: .topTrailing) {
             if let actions {
                 AskQuickActionPanelView(panel: actions, onAction: onAction).padding(.top, 8).padding(.trailing, 14)
             }
         }
+        .transaction { $0.animation = nil; $0.disablesAnimations = true }
         .onAppear { pointer.position = NSEvent.mouseLocation }
         .onDisappear { copiedReset?.cancel() }
+    }
+
+    private func resultRow(_ row: AskQuickResults.Row, index: Int) -> some View {
+        content(row, index: index, highlighted: index == results.highlighted)
+            .modifier(AskLauncherNumberBadge(number: actions == nil ? AskLauncherNumberShortcuts.number(at: index) : nil))
+            .onContinuousHover { phase in
+                if case .active = phase, actions == nil, pointer.moved(to: NSEvent.mouseLocation) {
+                    onHighlight(index)
+                }
+            }
     }
 
     private func sectionTitle(_ section: Section) -> some View {
@@ -108,6 +145,8 @@ struct AskQuickResultsView: View {
             .frame(height: Self.sectionHeight, alignment: .bottom)
             .accessibilityAddTraits(.isHeader)
     }
+
+    private var visibleHeight: CGFloat { viewportHeight ?? max(minimumHeight, Self.height(for: results)) }
 
     @ViewBuilder private func content(_ row: AskQuickResults.Row, index: Int, highlighted: Bool) -> some View {
         switch row {

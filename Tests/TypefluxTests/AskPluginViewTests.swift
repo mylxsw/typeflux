@@ -5,6 +5,41 @@ import Testing
 
 @Suite("Ask plugin views", .exclusiveUIState)
 struct AskPluginViewTests {
+    @MainActor
+    @Test func liveListKeepsTheSamePixelsWhileItsNextQueryRuns() async throws {
+        _ = NSApplication.shared
+        let plan = AskPluginPlan(mode: .live, title: "Keywords")
+        let output = AskPluginOutput(body: "", original: "", meta: [], source: "", actions: [], items: [
+            AskPluginItem(id: "notes", title: "Notes", actions: [])
+        ])
+        func view(_ pending: Bool) -> some View {
+            AskPluginResultsView(display: AskPluginDisplay(title: "Keywords", symbol: "list.bullet",
+                phase: pending ? .running(plan) : .done(plan, output), previous: pending ? output : nil),
+                question: "note", onMain: {}, onAction: { _ in }, onAskAI: {}, onHighlight: { _ in })
+                .background(AskTheme.composerSurface)
+        }
+        let size = NSSize(width: AskMetrics.launcherWidth, height: 160)
+        let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
+                                        backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: .darkAqua)
+        let hosting = NSHostingView(rootView: view(false))
+        window.contentView = hosting
+        window.orderFront(nil)
+        defer { window.close() }
+        func pixels() throws -> Data {
+            hosting.layoutSubtreeIfNeeded()
+            let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+            hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+            return try #require(bitmap.representation(using: .png, properties: [:]))
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        let settled = try pixels()
+        hosting.rootView = view(true)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(try pixels() == settled, "typing must not dim or rebuild the retained local list")
+    }
+
     private let plan = AskPluginPlan(mode: .onSubmit, title: "Translate", meta: [AskPluginMeta(text: "English")])
     private func output(_ body: String = "Hola", note: String? = nil) -> AskPluginOutput {
         AskPluginOutput(body: body, original: "Hello", meta: [], source: "On this Mac", note: note, actions: [

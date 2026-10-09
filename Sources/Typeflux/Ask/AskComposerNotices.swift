@@ -49,7 +49,7 @@ struct AskComposerNotice: Identifiable, Equatable {
 struct AskComposerNoticeStack: View {
     var notices: [AskComposerNotice]
     @Binding var expanded: Bool
-    /// Nil for a notice that clears itself when its cause is fixed.
+    /// Supplies the close action for each notice.
     var dismiss: (AskComposerNotice.Kind) -> (() -> Void)?
 
     var body: some View {
@@ -60,6 +60,8 @@ struct AskComposerNoticeStack: View {
                           more: index == 0 ? moreTitle : nil,
                           onMore: index == 0 && notices.count > 1 ? { expanded.toggle() } : nil,
                           onDismiss: dismiss(notice.kind))
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("ask.notice.\(notice.kind)")
                     .transition(.opacity)
             }
         }

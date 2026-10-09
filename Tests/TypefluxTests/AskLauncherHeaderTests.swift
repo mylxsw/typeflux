@@ -84,6 +84,70 @@ struct AskLauncherHeaderTests {
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == nil }
     }
 
+    @Test func openChatReplacesSendInTheHeaderAndTransfersTheDraftWithoutSending() async throws {
+        let fixture = try AskTestFixture()
+        fixture.model.launcherDraft.text = "Help me think"
+        var opens = 0
+        fixture.model.onShowConversation = { opens += 1 }
+        let (window, _) = host(fixture)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(300))
+        let button = try element("ask.launcher.openChat", in: window)
+        let voice = try element("ask.composer.voice", in: window)
+        let model = try element("ask.composer.model", in: window)
+        #expect(find("ask.composer.send", in: window) == nil)
+        #expect(abs(button.frame.midY - voice.frame.midY) < 2)
+        #expect(button.frame.minX > voice.frame.maxX)
+        #expect(button.frame.minY > model.frame.maxY)
+        #expect(button.frame.width == AskSendButton.size)
+        #expect(button.value("accessibilityLabel") as? String == L("ask.openChat"))
+        try click(button, in: window)
+        try await fixture.wait { opens == 1 }
+        #expect(fixture.model.draft.text == "Help me think")
+        #expect(fixture.model.launcherDraft.text.isEmpty)
+        #expect(await fixture.api.sends.isEmpty)
+    }
+
+    @Test(arguments: [true, false])
+    func warningCanBeClosedWithoutChangingTheDraftAndNewFailuresReappear(voiceWarning: Bool) async throws {
+        let fixture = try AskTestFixture()
+        fixture.model.launcherDraft.text = "Keep this draft"
+        if voiceWarning { fixture.model.voiceInput.error = "Sign in to use cloud models" }
+        else { fixture.model.error = "Request failed" }
+        let (window, reported) = host(fixture)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(300))
+        let before = reported.height
+        let kind = voiceWarning ? "voice" : "sendError"
+        #expect(find("ask.notice.\(kind)", in: window) != nil)
+        try saveSnapshot(window.contentView!, name: "warning-\(kind)-before-close")
+        try click(try element("ask.banner.dismiss", in: window), in: window)
+        try await fixture.wait {
+            voiceWarning ? fixture.model.voiceInput.error == nil : fixture.model.error == nil
+        }
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(find("ask.notice.\(kind)", in: window) == nil)
+        try saveSnapshot(window.contentView!, name: "warning-\(kind)-after-close")
+        #expect(reported.height < before)
+        #expect(fixture.model.launcherDraft.text == "Keep this draft")
+        #expect(await fixture.api.sends.isEmpty)
+        if voiceWarning { fixture.model.voiceInput.error = "Sign in to use cloud models" }
+        else { fixture.model.error = "Request failed" }
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(find("ask.notice.\(kind)", in: window) != nil)
+        #expect(find("ask.banner.dismiss", in: window) != nil)
+    }
+
+    @Test func workspaceKeepsItsSendButton() async throws {
+        let fixture = try AskTestFixture()
+        fixture.model.draft.text = "Follow up"
+        let (window, _) = host(fixture, launcher: false)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(find("ask.composer.send", in: window) != nil)
+        #expect(find("ask.launcher.openChat", in: window) == nil)
+    }
+
     @Test func recordingSwapsTheResultsForTheVoicePanel() async throws {
         let fixture = try AskTestFixture()
         captured(fixture)
@@ -103,12 +167,14 @@ struct AskLauncherHeaderTests {
         #expect(find("ask.voice.cancel", in: window) != nil)
         #expect(find("ask.context.token", in: window) == nil)
         #expect(find("ask.composer.send", in: window) == nil)
+        #expect(find("ask.launcher.openChat", in: window) == nil)
         #expect(find("ask.composer.model", in: window) != nil, "the bottom bar stays")
         // The panel takes the suggestions' height, so the launcher does not move.
         #expect(abs(reported.height - resting) <= 1, "recording \(reported.height), resting \(resting)")
         fixture.model.voiceInput.cancel()
         try await Task.sleep(for: .milliseconds(300))
         #expect(find("ask.voice.panel", in: window) == nil)
+        #expect(find("ask.launcher.openChat", in: window) != nil)
         #expect(find("ask.context.token", in: window) == nil)
         #expect(find("ask.context.settings", in: window) == nil)
         #expect(find(L("ask.memory"), attribute: "accessibilityLabel", in: window) != nil)

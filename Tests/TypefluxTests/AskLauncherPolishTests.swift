@@ -9,19 +9,20 @@ import Testing
 struct AskLauncherPolishTests {
     // MARK: - Height
 
-    @Test func typingHoldsTheTallestHeightUpToTheSlack() {
-        let slack = AskLauncherHeightReserve.maximumSlack
+    @Test func typingHoldsTheTallestHeightUntilTheQuerySettles() {
         #expect(AskLauncherHeightReserve.holding(0, content: 120) == 120, "new results take their own height")
         #expect(AskLauncherHeightReserve.holding(200, content: 300) == 300, "taller results grow the area")
         #expect(AskLauncherHeightReserve.holding(200, content: 180) == 200, "a row less keeps the panel still")
-        #expect(AskLauncherHeightReserve.holding(480, content: 100) == 100 + slack,
-                "two rows under a tall list leave at most the slack empty")
+        #expect(AskLauncherHeightReserve.holding(480, content: 100) == 480,
+                "shorter results keep the panel still until typing pauses")
+        #expect(AskLauncherHeightReserve.holding(480, content: 0) == 480,
+                "an empty batch between queries must not collapse the panel")
     }
 
     @Test func pausingSettlesToTheRows() {
         #expect(AskLauncherHeightReserve.settled(480, content: 100) == 100)
         #expect(AskLauncherHeightReserve.settled(80, content: 100) == 80, "never grows on its own")
-        #expect(AskLauncherHeightReserve.settleDelay > .zero && AskLauncherHeightReserve.settleAnimation > 0)
+        #expect(AskLauncherHeightReserve.settleDelay > .zero)
     }
 
     // MARK: - Esc

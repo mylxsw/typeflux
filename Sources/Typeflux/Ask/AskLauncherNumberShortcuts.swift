@@ -30,26 +30,36 @@ extension EnvironmentValues {
     }
 }
 
-/// An overlay near the icon; showing hints never changes the row's layout.
-struct AskLauncherNumberBadge: ViewModifier {
+/// An overlay near the icon; showing hints never changes the control's layout.
+struct AskLauncherShortcutBadge: ViewModifier {
     @Environment(\.askLauncherNumberHints) private var visible
-    var number: Int?
+    var key: String?
+    var leadingInset: CGFloat = 29
+    var topInset: CGFloat = 1
 
     func body(content: Content) -> some View {
         content.overlay(alignment: .topLeading) {
-            if visible, let number, (1...9).contains(number) {
-                Text(String(number))
+            if visible, let key {
+                Text(key)
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.black.opacity(0.85))
                     .frame(width: 17, height: 17)
                     .background(.white, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                     .shadow(color: .black.opacity(0.18), radius: 1, y: 1)
-                    .padding(.leading, 29)
-                    .padding(.top, 1)
+                    .padding(.leading, leadingInset)
+                    .padding(.top, topInset)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
         }
+    }
+}
+
+struct AskLauncherNumberBadge: ViewModifier {
+    var number: Int?
+
+    func body(content: Content) -> some View {
+        content.modifier(AskLauncherShortcutBadge(key: number.flatMap { (1...9).contains($0) ? String($0) : nil }))
     }
 }
 

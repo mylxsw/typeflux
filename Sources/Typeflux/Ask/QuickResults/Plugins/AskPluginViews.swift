@@ -88,7 +88,7 @@ struct AskPluginResultsView: View {
     var onAskAI: () -> Void
     var onHighlight: (Int) -> Void
     /// A click on a list's row chooses it (then Return's action runs).
-    var onSelectItem: (Int) -> Void = { _ in }
+    var onSelectItem: (String) -> Bool = { _ in true }
 
     // Shared with the quick results, so both lists line up.
     static let listPadding = AskQuickResultsView.listPadding
@@ -325,20 +325,29 @@ struct AskPluginResultsView: View {
     @ViewBuilder private var main: some View {
         if let hint = display.hint {
             hintRow(hint)
+        } else if let shown = shownCard {
+            // Running and completed local lists share one subtree, preserving
+            // row and icon state while typing instead of rebuilding the list.
+            card(plan: shown.plan, output: shown.output, failure: nil, running: shown.running,
+                 streaming: display.partial != nil)
         } else {
             switch display.phase {
             case .waiting:
                 row(title: L("ask.plugin.waiting"), meta: [], enabled: false)
             case let .ready(plan):
                 row(title: plan.title, meta: plan.meta, enabled: true, action: plan.action(for: .enter))
-            case let .running(plan):
-                card(plan: plan, output: display.partial ?? display.previous, failure: nil, running: true,
-                     streaming: display.partial != nil)
-            case let .done(plan, output):
-                card(plan: plan, output: output, failure: nil, running: false)
+            case .running, .done: EmptyView()
             case let .failed(plan, failure):
                 card(plan: plan, output: nil, failure: failure, running: false)
             }
+        }
+    }
+
+    private var shownCard: (plan: AskPluginPlan, output: AskPluginOutput?, running: Bool)? {
+        switch display.phase {
+        case let .running(plan): return (plan, display.partial ?? display.previous, true)
+        case let .done(plan, output): return (plan, output, false)
+        default: return nil
         }
     }
 
@@ -441,7 +450,7 @@ struct AskPluginResultsView: View {
                       streaming: Bool = false) -> some View {
         if let output, output.wordCard == nil, !output.items.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
-                itemList(output, dimmed: running)
+                itemList(output, pending: running, dimmed: running && plan.mode != .live)
                 if let note = output.note {
                     Text(note).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(1)
@@ -531,7 +540,7 @@ struct AskPluginResultsView: View {
             AskWordCardView(card: card, language: Self.spokenLanguage(output) ?? "en", dimmed: running,
                             onAction: onAction)
         } else if !output.items.isEmpty {
-            itemList(output, dimmed: running)
+            itemList(output, pending: running, dimmed: running && shownCard?.plan.mode != .live)
         } else if let image = output.image {
             imageCard(image, dimmed: running)
         } else if output.markdown {
@@ -580,14 +589,14 @@ struct AskPluginResultsView: View {
     }
 
     /// Result rows: icon, title and subtitle; the chosen one says what Return does.
-    private func itemList(_ output: AskPluginOutput, dimmed: Bool) -> some View {
+    private func itemList(_ output: AskPluginOutput, pending: Bool, dimmed: Bool) -> some View {
         ScrollViewReader { reader in
             ScrollView(.vertical) {
                 VStack(spacing: Self.itemSpacing) {
                     ForEach(Array(output.items.enumerated()), id: \.element.id) { index, item in
                         AskPluginItemRow(item: item, symbol: display.symbol, selected: index == output.selectedItem,
                                          emphasized: highlighted, height: Self.itemHeight) {
-                            onSelectItem(index)
+                            guard !pending, onSelectItem(item.id) else { return }
                             onMain()
                         }
                         .modifier(AskLauncherNumberBadge(number: !item.valid || Self.numberedItemCount(display) == nil
@@ -595,6 +604,7 @@ struct AskPluginResultsView: View {
                         .id(item.id)
                     }
                 }
+                .transaction { $0.animation = nil; $0.disablesAnimations = true }
             }
             .scrollDisabled(output.items.count <= Self.maximumVisibleItems)
             .onChange(of: output.selected?.id) { id in
@@ -603,7 +613,7 @@ struct AskPluginResultsView: View {
         }
         .frame(height: Self.itemsHeight(output.items.count))
         .opacity(dimmed ? 0.5 : 1)
-        .disabled(dimmed)
+        .allowsHitTesting(!pending)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.plugin.items")
     }

@@ -266,10 +266,10 @@ struct AskQuickResultsAppTests {
         #expect(results.calculation == nil)
     }
 
-    @Test func aQuestionKeepsAskAIFirst() throws {
+    @Test func aQuestionKeepsAskAISelectedInTheFooter() throws {
         let results = try #require(resolve("wechat?"))
         #expect(!results.appsLead)
-        #expect(results.rows == [.askAI, .app(0)])
+        #expect(results.rows == [.app(0), .askAI])
         #expect(results.highlightedRow == .askAI)
     }
 

@@ -39,9 +39,13 @@ final class AskResultImageCache {
 
     func image(_ key: Key) async -> NSImage? {
         guard !Task.isCancelled else { return nil }
+        let original = key
         let key = await Self.resolved(key)
         guard !Task.isCancelled else { return nil }
-        if let image = cached(key) { return image }
+        if let image = cached(key) {
+            cache.setObject(image, forKey: cacheKey(original))
+            return image
+        }
         let client = UUID()
         let task: Task<LoadedImage, Never>
         if var entry = pending[key] {
@@ -54,7 +58,12 @@ final class AskResultImageCache {
         }
         return await withTaskCancellationHandler {
             let image = await task.value.image
-            if !Task.isCancelled, let image { cache.setObject(image, forKey: cacheKey(key)) }
+            if !Task.isCancelled, let image {
+                cache.setObject(image, forKey: cacheKey(key))
+                // View bodies use the original URL synchronously; keep its last
+                // good image while the next async request resolves any retargeting.
+                cache.setObject(image, forKey: cacheKey(original))
+            }
             release(key, client: client)
             return Task.isCancelled ? nil : image
         } onCancel: {

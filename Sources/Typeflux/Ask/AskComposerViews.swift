@@ -12,7 +12,10 @@ struct AskLauncherView: View {
     @State private var showingNumberHints = false
 
     var body: some View {
-        AskComposer(model: model, launcher: true, onDismiss: onDismiss, onHeightChange: onHeightChange)
+        GeometryReader { geometry in
+            AskComposer(model: model, availableHeight: geometry.size.height, launcher: true,
+                        onDismiss: onDismiss, onHeightChange: onHeightChange)
+        }
             .padding(AskMetrics.launcherGutter)
             // Pinned to the panel's top edge: SwiftUI draws new results before the panel
             // takes their height, and centred content would shift the editor and its
@@ -174,7 +177,7 @@ struct AskComposer: View {
     }
     private func submit() {
         if model.consumeModeCommand(launcher: launcher) { closePalette(); return }
-        // The send button in keyword mode asks the AI, like ⌘Return, when there is something to ask.
+        // Submitting in keyword mode asks the AI, like ⌘Return, when there is something to ask.
         if launcher, plugins.isActive, !active {
             if pluginDisplay?.offersAskAI != false { askAIFromPlugin() }
             return
@@ -193,6 +196,10 @@ struct AskComposer: View {
         get { quickSearch.results }
         nonmutating set { quickSearch.results = newValue }
     }
+    private var presentedQuickResults: AskQuickResults? { quickSearch.presentation }
+    private var quickResultsArePending: Bool {
+        quickSearch.pendingResults != nil || !quickSearch.isCurrent(text: draft.wrappedValue.text)
+    }
     /// The tallest the quick results have been since they appeared. The list keeps
     /// that height while typing, so the panel does not shrink and grow with every
     /// keystroke as matches come and go; it resets when the results go away and
@@ -205,8 +212,8 @@ struct AskComposer: View {
     /// Quick results show while the launcher's text is all there is to send:
     /// quotes, files or chosen tools mean the text is written for the AI.
     private var showsQuickResults: Bool {
-        guard launcher, quickSearch.isCurrent(text: draft.wrappedValue.text),
-              quickResults != nil, !paletteOpen, pluginDisplay == nil else { return false }
+        guard launcher, quickSearch.isVisible,
+              presentedQuickResults != nil, !paletteOpen, pluginDisplay == nil else { return false }
         let value = draft.wrappedValue
         return (value.references ?? []).isEmpty && (value.attachments ?? []).isEmpty
             && (value.skills ?? []).isEmpty && (value.mcpServers ?? []).isEmpty
@@ -237,8 +244,8 @@ struct AskComposer: View {
     }
 
     private func quickResultsChanged() {
-        let next = quickResults
-        let reserve = next.map { AskLauncherHeightReserve.holding(quickReserve, content: AskQuickResultsView.height(for: $0)) } ?? 0
+        let next = presentedQuickResults
+        let reserve = AskLauncherHeightReserve.holding(quickReserve, content: next.map { AskQuickResultsView.height(for: $0) } ?? 0)
         if reserve != quickReserve { quickReserve = reserve }
         reportHeight()
         scheduleReserveSettle()
@@ -255,34 +262,24 @@ struct AskComposer: View {
         }
     }
 
-    /// The card shrinks to its rows first; the panel follows once it has, so the
-    /// bottom bar is never clipped on the way. Recording keeps its panel's height.
+    /// Publish the settled height immediately; the window controller animates
+    /// the panel and its viewport together. Recording keeps its panel's height.
     private func settleReserves() {
-        guard !active else { return }
+        guard !active, !quickSearch.isSearching else { return }
         let quick = AskLauncherHeightReserve.settled(quickReserve,
                                                      content: quickResults.map(AskQuickResultsView.height(for:)) ?? 0)
         let plugin = AskLauncherHeightReserve.settled(pluginReserve,
                                                       content: pluginDisplay.map(AskPluginResultsView.height(for:)) ?? 0)
         guard quick != quickReserve || plugin != pluginReserve else { return }
-        guard !reduceMotion else {
-            quickReserve = quick; pluginReserve = plugin
-            reportHeight()
-            return
-        }
-        withAnimation(.easeOut(duration: AskLauncherHeightReserve.settleAnimation)) {
-            quickReserve = quick; pluginReserve = plugin
-        }
-        reserveSettle = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(AskLauncherHeightReserve.settleAnimation))
-            guard !Task.isCancelled else { return }
-            reportHeight()
-        }
+        quickReserve = quick; pluginReserve = plugin
+        reportHeight()
     }
 
     /// Copies a quick result, closing the launcher when asked to, opens an
     /// application or file, or sends the text to the AI.
     private func runQuickResult(_ row: AskQuickResults.Row, close: Bool) {
-        guard quickSearch.isCurrent(text: draft.wrappedValue.text), let results = quickResults else { return }
+        guard quickSearch.pendingResults == nil,
+              quickSearch.isCurrent(text: draft.wrappedValue.text), let results = quickResults else { return }
         quickActions = nil
         switch row {
         case .askAI: model.submitLauncher(); return
@@ -361,7 +358,7 @@ struct AskComposer: View {
 
     /// Selects the clicked file by path, so a search update cannot redirect its actions.
     private func showQuickFileActions(_ file: AskFileHit) {
-        guard showsQuickResults, !active, var results = quickResults,
+        guard showsQuickResults, !active, !quickResultsArePending, var results = quickResults,
               let fileIndex = results.files.firstIndex(where: { $0.path == file.path }),
               let rowIndex = results.rows.firstIndex(of: .file(fileIndex)) else { return }
         results.highlight(rowIndex)
@@ -392,6 +389,15 @@ struct AskComposer: View {
     /// actions' own shortcuts work on the highlighted file.
     private func quickResultsKey(_ key: AskCommandKey) -> Bool {
         guard showsQuickResults, !active, var results = quickResults else { return false }
+        // Retained rows are a visual placeholder, never a shortcut target.
+        if quickResultsArePending {
+            switch key {
+            case .commandEnter: model.submitLauncher(); return true
+            case .escape, .commandO, .commandC, .commandZ, .shiftTab,
+                 .commandD, .commandE, .commandS, .commandB: return false
+            default: return true
+            }
+        }
         if quickActionsKey(key) { return true }
         let file = results.file(at: results.highlightedRow)
         let app = results.app(at: results.highlightedRow)
@@ -521,7 +527,8 @@ struct AskComposer: View {
             }
         case let .failed(_, failure):
             if let action = failure.action(for: .enter) { performPluginAction(action) } else if failure.retry { plugins.run() }
-        case let .done(_, output): if let action = output.action(for: .enter) { performPluginAction(action) }
+        case let .done(_, output):
+            if plugins.isPlanCurrent, let action = output.action(for: .enter) { performPluginAction(action) }
         case let .running(plan):
             // A plan that acts (`dict` opening the word book) need not wait for its preview.
             if let action = plan.action(for: .enter), plugins.isPlanCurrent { performPluginAction(action) }
@@ -736,8 +743,10 @@ struct AskComposer: View {
             return { if launcher { model.launcherScreenshotNotice = nil } else { model.screenshotNotice = nil } }
         case .attachment:
             return { model.dismissAttachmentNotice(launcher: launcher) }
-        case .sendError, .voice:
-            return nil
+        case .sendError:
+            return { model.error = nil }
+        case .voice:
+            return { voice.error = nil }
         }
     }
 
@@ -752,18 +761,35 @@ struct AskComposer: View {
                     measuredWidth = width
                 }
             }
-            .onPreferenceChange(AskComposerSupplementalHeight.self) { supplementalHeight = $0 }
-            .onPreferenceChange(AskComposerHeight.self) { cardHeight = $0 }
+            .onPreferenceChange(AskComposerSupplementalHeight.self) { height in
+                if abs(supplementalHeight - height) > 0.5 {
+                    supplementalHeight = height
+                    if launcher { reportHeight() }
+                }
+            }
+            .onPreferenceChange(AskComposerHeight.self) { height in
+                if !launcher, abs(cardHeight - height) > 0.5 { cardHeight = height }
+            }
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
             // The home fills in as the context arrives after the panel shows.
             .onChange(of: homeHeight) { _ in reportHeight() }
             .onChange(of: draft.wrappedValue.text) { _ in
                 refreshQuickResults()
-                // Typing restarts the pause the kept heights wait for.
-                if quickReserve > 0 || pluginReserve > 0 { scheduleReserveSettle() }
+                if draft.wrappedValue.text.isEmpty {
+                    reserveSettle?.cancel()
+                    quickReserve = 0
+                    pluginReserve = 0
+                    reportHeight()
+                } else if quickReserve > 0 || pluginReserve > 0 {
+                    scheduleReserveSettle()
+                }
             }
             .onChange(of: quickResults) { _ in quickResultsChanged() }
+            .onChange(of: quickSearch.pendingResults) { _ in quickResultsChanged() }
+            .onChange(of: quickSearch.isSearching) { searching in
+                if !searching { scheduleReserveSettle() }
+            }
             .onChange(of: pluginDisplay) { display in
                 guard launcher else { return }
                 if let followUp = display?.followUp {
@@ -822,6 +848,9 @@ struct AskComposer: View {
         VStack(spacing: 0) {
             if launcher {
                 supplementalContent
+                    .background(GeometryReader { geometry in
+                        Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
+                    })
             } else if hasSupplementalContent {
                 ScrollView(.vertical) {
                     supplementalContent
@@ -837,27 +866,15 @@ struct AskComposer: View {
                 editorRow
                 footer
             }
-            if launcher, active {
-                // Recording takes the results' place at their height, so the panel stays put.
-                AskVoicePanel(live: voice.live, listening: listening, height: voicePanelHeight, token: contextToken)
-            } else if showsLauncherSuggestions {
-                AskLauncherSuggestions(sections: home, highlighted: $suggestionIndex, onPick: pick)
-                    .disabled(active)
-            } else if let pluginDisplay {
-                AskPluginResultsView(display: pluginDisplay, question: draft.wrappedValue.text,
-                                     minimumHeight: pluginHeight,
-                                     onMain: runPluginMain, onAction: performPluginAction,
-                                     onAskAI: askAIFromPlugin,
-                                     onHighlight: { pluginHighlight = $0 },
-                                     onSelectItem: { plugins.selectItem($0) })
-            } else if showsQuickResults, let quickResults {
-                AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
-                                    minimumHeight: resultsHeight, actions: quickActions,
-                                    thumbnails: model.launcherSearchSettings.fileIcons == .thumbnails,
-                                    onRun: runQuickResult,
-                                    onHighlight: { index in self.quickResults?.highlight(index) },
-                                    onAction: runPanelAction, onShowFileActions: showQuickFileActions)
-                    .disabled(active)
+            if launcher {
+                ZStack(alignment: .top) {
+                    // EmptyView does not participate in layout. Keep a real
+                    // viewport while the last results disappear during shrinkage.
+                    Color.clear
+                    launcherResults
+                }
+                .frame(height: launcherResultsViewportHeight, alignment: .top)
+                .clipped()
             }
             if launcher {
                 launcherBar
@@ -899,6 +916,72 @@ struct AskComposer: View {
                     .transition(.opacity)
             }
         }
+        .transaction { transaction in
+            if launcher {
+                transaction.animation = nil
+                transaction.disablesAnimations = true
+            }
+        }
+    }
+
+    /// Follow the actual panel height so the footer never jumps to a target
+    /// height before the window reaches it.
+    private var launcherResultsViewportHeight: CGFloat {
+        let natural = active ? voicePanelHeight : resultsHeight
+        guard let availableHeight else { return natural }
+        let chromeHeight = desiredLauncherHeight - natural - AskMetrics.launcherGutter * 2
+        return max(0, availableHeight - chromeHeight)
+    }
+
+    private var launcherResults: some View {
+        Group {
+            if active {
+                // Recording takes the results' place at their height, so the panel stays put.
+                AskVoicePanel(live: voice.live, listening: listening, height: voicePanelHeight, token: contextToken)
+            } else if showsLauncherSuggestions {
+                AskLauncherSuggestions(sections: home, highlighted: $suggestionIndex, onPick: pick)
+                    .disabled(active)
+            } else if let pluginDisplay {
+                AskPluginResultsView(display: pluginDisplay, question: draft.wrappedValue.text,
+                                     minimumHeight: pluginHeight,
+                                     onMain: runPluginMain, onAction: performPluginAction,
+                                     onAskAI: askAIFromPlugin,
+                                     onHighlight: { pluginHighlight = $0 },
+                                     onSelectItem: { id in
+                                         guard plugins.isPlanCurrent, let output = plugins.output,
+                                               let index = output.items.firstIndex(where: { $0.id == id }) else { return false }
+                                         return plugins.selectItem(index)
+                                     })
+            } else if showsQuickResults, let quickResults = presentedQuickResults {
+                AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
+                                    minimumHeight: resultsHeight, viewportHeight: launcherResultsViewportHeight,
+                                    actions: quickActions,
+                                    thumbnails: model.launcherSearchSettings.fileIcons == .thumbnails,
+                                    onRun: { row, close in
+                                        // A previous render may carry an old array index.
+                                        // Resolve its identity against the current batch before running.
+                                        guard let current = self.quickResults,
+                                              let target = current.rows.first(where: {
+                                                  current.identity(of: $0) == quickResults.identity(of: row)
+                                              }) else { return }
+                                        runQuickResult(target, close: close)
+                                    },
+                                    onHighlight: { index in
+                                        guard !quickResultsArePending, quickResults.rows.indices.contains(index),
+                                              let current = self.quickResults,
+                                              let target = current.rows.firstIndex(where: {
+                                                  current.identity(of: $0) == quickResults.identity(of: quickResults.rows[index])
+                                              }) else { return }
+                                        self.quickResults?.highlight(target)
+                                    },
+                                    onAction: runPanelAction, onShowFileActions: showQuickFileActions)
+                    // Pending rows keep their brightness instead of flashing disabled
+                    // on every keystroke. All keyboard and action paths also reject them.
+                    .disabled(active)
+                    .allowsHitTesting(!quickResultsArePending)
+            }
+        }
+        .transaction { $0.animation = nil; $0.disablesAnimations = true }
     }
 
     private var submissionIssue: AskSubmissionIssue? { model.submissionIssues[launcher] }
@@ -1253,7 +1336,7 @@ struct AskComposer: View {
 
     /// The launcher's first row: the recording dot while dictating,
     /// the editor (the words being recognised), then the microphone
-    /// and send buttons, or the elapsed time, cancel and stop while recording.
+    /// and open-chat buttons, or the elapsed time, cancel and stop while recording.
     private var launcherHeader: some View {
         HStack(alignment: .top, spacing: 10) {
             if active {
@@ -1295,11 +1378,7 @@ struct AskComposer: View {
                 .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
                 .accessibilityIdentifier("ask.composer.voice")
             if !active {
-                AskSendButton(enabled: canSend, tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
-                              prominent: pluginDisplay.map(\.asksAI) ?? AskLauncherContext.sendIsProminent(
-                                  quickResults: showsQuickResults && !showsLauncherSuggestions ? quickResults : nil),
-                              action: submit)
-                    .accessibilityIdentifier("ask.composer.send")
+                AskLauncherOpenChatButton(enabled: model.canOpenChatFromLauncher, action: openChat)
             }
         }
         .padding(.horizontal, chrome.horizontalInset)
@@ -1356,25 +1435,10 @@ struct AskComposer: View {
                     .accessibilityHidden(true)
                     // Passive hints share the empty bar's drag behavior.
                     .overlay { if let windowDrag { AskWindowDragArea(handlers: windowDrag) } }
-                    // Below the model, above the chat button's label.
+                    // Shorten the passive hints before shrinking the model control.
                     .layoutPriority(0.5)
                 }
             }
-            Button(action: openChat) {
-                ViewThatFits(in: .horizontal) {
-                    Label(L("ask.openChat"), systemImage: "macwindow")
-                    Image(systemName: "macwindow")
-                }
-                .font(.system(size: 11))
-            }
-            .buttonStyle(.plain)
-            .padding(5)
-            // The label outranks the key hints, which shorten instead, so it reads the same before and after typing.
-            .layoutPriority(0.75)
-            .disabled(!model.canOpenChatFromLauncher)
-            .help(model.canOpenChatFromLauncher ? L("ask.openChat.hint") : L("ask.openChat.wait"))
-            .accessibilityLabel(L("ask.openChat"))
-            .accessibilityIdentifier("ask.launcher.openChat")
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: model.commandFeedback)
         .padding(.leading, chrome.footerLeadingInset)
@@ -1392,7 +1456,7 @@ struct AskComposer: View {
             return AskLauncherSuggestions.hint(for: item, hasContext: contextToken != nil)
         }
         return AskLauncherContext.hint(voice: active ? voice.phase : .idle,
-                                quickResults: showsQuickResults && !showsLauncherSuggestions ? quickResults : nil,
+                                quickResults: showsQuickResults && !showsLauncherSuggestions ? presentedQuickResults : nil,
                                 hasContext: contextToken != nil)
     }
 
@@ -1400,10 +1464,11 @@ struct AskComposer: View {
     private var resultsHeight: CGFloat {
         if showsLauncherSuggestions { return homeHeight }
         if pluginDisplay != nil { return pluginHeight }
-        if showsQuickResults, let quickResults {
+        if showsQuickResults, let quickResults = presentedQuickResults {
             return AskLauncherHeightReserve.holding(quickReserve, content: AskQuickResultsView.height(for: quickResults))
         }
-        return 0
+        // Keep the viewport until typing settles, including a final empty batch.
+        return quickReserve
     }
 
     private var voicePanelHeight: CGFloat { max(AskVoicePanel.minimumHeight, resultsHeight) }
@@ -1726,20 +1791,28 @@ struct AskComposer: View {
         .accessibilityHidden(!active)
     }
 
-    private func reportHeight() {
+    private var desiredLauncherHeight: CGFloat {
         // Confirmations ride in the footer, so only notice rows add height.
         let banners = noticeRows + (submissionIssue.map { $0.offersModels || $0.offersSignIn ? 3 : 1 } ?? 0)
         let commands = launcher && paletteOpen ? AskCommandPaletteView.height(for: palette) + 10 : 0
         // Recording shows its panel in the results' place, at least as tall as they were.
         let recording = launcher && active
-        let quick = !recording && showsQuickResults && !showsLauncherSuggestions
-            ? quickResults.map { AskLauncherHeightReserve.holding(quickReserve, content: AskQuickResultsView.height(for: $0)) } ?? 0 : 0
+        let quick = !recording && !showsLauncherSuggestions && pluginDisplay == nil ? resultsHeight : 0
         let panel = recording ? voicePanelHeight : 0
         let keyword = !recording ? pluginHeight : 0
-        onHeightChange(AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
+        if launcher {
+            return AskMetrics.launcherHeight(editor: editorHeight, banners: 0)
+                + supplementalHeight + commands + quick + panel + keyword
+                + (!recording && showsLauncherSuggestions ? homeHeight : 0)
+        }
+        return AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
                                                  suggestions: !recording && showsLauncherSuggestions ? homeHeight : 0,
                                                  attachments: showsStrip,
-                                                 attachmentHeight: attachmentHeight) + commands + quick + panel + keyword)
+                                                 attachmentHeight: attachmentHeight) + commands + quick + panel + keyword
+    }
+
+    private func reportHeight() {
+        onHeightChange(desiredLauncherHeight)
     }
 }
 

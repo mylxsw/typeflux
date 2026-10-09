@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 
 final class TransparentAskHostingView<Content: View>: NSHostingView<Content> {
@@ -22,6 +23,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private let conversationFrameAutosaveName: NSWindow.FrameAutosaveName
     private var launcher: AskFloatingPanel?
     private var launcherHeight = AskMetrics.launcherHeight(editor: 32, banners: 0)
+    private let launcherHeightAnimator = AskLauncherHeightAnimator()
     /// The top edge the launcher opened with; every resize keeps it.
     private var launcherTop: CGFloat?
     private var conversationWindow: NSWindow?
@@ -259,9 +261,22 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     private func resizeLauncher(height: CGFloat) {
         launcherHeight = height
-        guard let launcher, abs(launcher.frame.height - height) > 1 else { return }
-        launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height, top: launcherTop,
-                                                       screen: launcher.screen?.visibleFrame), display: true)
+        guard let launcher else { return }
+        launcherHeightAnimator.update(from: launcher.frame.height, to: height,
+                                      animated: launcher.isVisible && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+                                      framesPerSecond: launcher.screen?.maximumFramesPerSecond ?? 60,
+                                      rate: model.launcherDraft.text.isEmpty ? 60 : 28) { [weak self, weak launcher] height in
+            guard let self, let launcher else { return }
+            // Commit bounds and content together; controls must never animate their
+            // layer positions separately from the window's changing coordinate space.
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height, top: self.launcherTop,
+                                                           screen: launcher.screen?.visibleFrame), display: false)
+            launcher.contentView?.layoutSubtreeIfNeeded()
+            launcher.displayIfNeeded()
+            CATransaction.commit()
+        }
     }
 
     // MARK: - Launcher position
@@ -310,6 +325,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     func dismissLauncher() {
+        launcherHeightAnimator.stop()
         // Menus and hover cards are child panels; close them with the launcher so
         // their buttons do not reopen into a stale state next time.
         AskGlassMenuPresenter.shared.hide()

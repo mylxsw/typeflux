@@ -3,15 +3,18 @@ import Foundation
 import os
 
 /// The main actor only parses input and publishes small result batches. Apps
-/// and files have independent workers so file latency never delays applications.
+/// and files have independent workers with a bounded publication grace period.
 @MainActor
 final class AskQuickSearchSession: ObservableObject {
     @Published var isVisible = true
     @Published var results: AskQuickResults?
+    /// Last-query rows remain visible, but never executable, until the first new batch.
+    @Published private(set) var pendingResults: AskQuickResults?
     @Published private(set) var isSearching = false
     private let apps = AskSearchWorker<[AskAppMatch]>(label: "typeflux.ask.search.apps")
     private let files = AskSearchWorker<FileBatch>(label: "typeflux.ask.search.files")
     private var delay: Task<Void, Never>?
+    private var publication: Task<Void, Never>?
     private var generation = 0
     private var appResults: [AskAppMatch] = []
     private var fileResults: FileBatch?
@@ -27,6 +30,13 @@ final class AskQuickSearchSession: ObservableObject {
     var fileDebounce: Duration = .milliseconds(60)
     private static let log = OSLog(subsystem: "com.typeflux", category: "LauncherSearch")
 
+    /// Keep the empty, non-executable search placeholder out of the visible list.
+    var presentation: AskQuickResults? {
+        if let pendingResults { return pendingResults }
+        if isSearching, results?.rows == [.askAI], results?.notice == nil { return nil }
+        return results
+    }
+
     private struct FileBatch: Sendable {
         var hits: [AskFileHit]
         var status: AskFileIndexStatus
@@ -34,6 +44,7 @@ final class AskQuickSearchSession: ObservableObject {
 
     func update(text: String, chinese: Bool, calculator: Bool, sources: AskQuickResults.Sources) {
         let previous = results
+        let presentation = self.presentation
         let appID = sources.apps.map(ObjectIdentifier.init), fileID = sources.files.map(ObjectIdentifier.init)
         let sameQuery = currentText == text && currentSettings == sources.settings
             && currentApp == appID && currentFile == fileID && currentCalculator == calculator && currentChinese == chinese
@@ -69,6 +80,7 @@ final class AskQuickSearchSession: ObservableObject {
         appResults = []
         fileResults = sources.files == nil ? FileBatch(hits: [], status: .init()) : nil
         isSearching = true
+        pendingResults = sameQuery ? nil : presentation
         // Old-query rows must not remain actionable while the next query runs.
         results = sameQuery ? previous : AskQuickResults(apps: [], lead: false)
         startQueries(text: text, query: query, appIndex: appIndex, fileIndex: sources.files,
@@ -108,12 +120,29 @@ final class AskQuickSearchSession: ObservableObject {
     }
 
     private func publish() {
+        // Give debounced files a bounded chance to join the application batch.
+        // Slow providers still publish independently after this short grace period.
+        guard publication == nil else { return }
+        let ticket = generation
+        let grace: Duration = appsReady && fileResults == nil ? .milliseconds(80) : .milliseconds(16)
+        publication = Task { [weak self] in
+            do { try await Task.sleep(for: grace) } catch { return }
+            guard let self, generation == ticket, !Task.isCancelled else { return }
+            publication = nil
+            commitResults()
+        }
+    }
+
+    private func commitResults() {
         guard appsReady || currentSettings.mode == .filesFirst else { return }
         isSearching = !appsReady || fileResults == nil
         var next = AskQuickResults.assemble(currentText, matches: appResults, hits: fileResults?.hits ?? retainedFiles,
                                             status: fileResults?.status, settings: currentSettings)
         next?.keepChoice(from: results?.chosen == true ? results : previousChoice)
         results = next ?? (isSearching ? AskQuickResults(apps: [], lead: false) : nil)
+        // An empty application batch is not the final answer while files are
+        // still searching. Do not flash Ask AI between two useful batches.
+        if next != nil || !isSearching { pendingResults = nil }
     }
 
     func isCurrent(text: String) -> Bool { isVisible && text == currentText }
@@ -127,10 +156,13 @@ final class AskQuickSearchSession: ObservableObject {
         generation += 1
         delay?.cancel()
         delay = nil
+        publication?.cancel()
+        publication = nil
         apps.cancel()
         files.cancel()
         isSearching = false
+        pendingResults = nil
     }
 
-    deinit { delay?.cancel() }
+    deinit { delay?.cancel(); publication?.cancel() }
 }

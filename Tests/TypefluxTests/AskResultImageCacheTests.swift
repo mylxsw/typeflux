@@ -40,6 +40,7 @@ struct AskResultImageCacheTests {
         #expect(await direct.value === expected)
         #expect(await cache.image(aliasKey) === expected)
         #expect(cache.cached(targetKey) === expected)
+        #expect(cache.cached(aliasKey) === expected, "A recreated row must show the alias icon without a placeholder")
         #expect(calls == 1, "Aliases must coalesce and use the resolved path as the cache key")
     }
 
@@ -62,9 +63,11 @@ struct AskResultImageCacheTests {
         }
         let key = AskResultImageCache.Key(url: link, thumbnail: false)
         #expect(await cache.image(key) === firstIcon)
+        #expect(cache.cached(key) === firstIcon)
         try FileManager.default.removeItem(at: link)
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: second)
         #expect(await cache.image(key) === secondIcon)
+        #expect(cache.cached(key) === secondIcon)
         #expect(loaded == [first, second])
     }
 
