@@ -3802,3 +3802,8 @@
 "account.addon.title" = "추가 크레딧";
 "account.addon.nextExpiry" = "다음 만료: %@ 크레딧, %@";
 "account.addon.expiringSoon" = "%@ 크레딧이 %@에 만료됩니다. 그 전에 사용하세요.";
+
+"ask.submission.models" = "설정 → 모델";
+"ask.usage.empty" = "아직 사용량이 없습니다";
+"ask.usage.emptyHelp" = "메시지를 보내면 사용량이 여기에 표시됩니다.";
+"ask.submission.signIn" = "Typeflux Cloud 로그인";

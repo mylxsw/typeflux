@@ -3809,3 +3809,8 @@
 "account.addon.title" = "加購額度";
 "account.addon.nextExpiry" = "最近到期：%@ credits，%@";
 "account.addon.expiringSoon" = "%@ credits 將於 %@ 到期，請在此之前用完。";
+
+"ask.submission.models" = "設定 → 模型";
+"ask.usage.empty" = "還沒有用量";
+"ask.usage.emptyHelp" = "傳送訊息後，用量會顯示在這裡。";
+"ask.submission.signIn" = "登入 Typeflux Cloud";
