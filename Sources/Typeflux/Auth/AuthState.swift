@@ -82,8 +82,13 @@ final class AuthState: ObservableObject {
     /// Refresh the access token when it expires within this window (7 days).
     static let refreshEarlyInterval: TimeInterval = 7 * 24 * 3600
 
-    /// Background timer interval: check every hour.
+    /// Longest delay between background refresh checks.
     static let timerInterval: TimeInterval = 3600
+    /// Shortest delay between background refresh checks, which also bounds
+    /// retries after a failed refresh.
+    static let minimumTimerInterval: TimeInterval = 60
+    /// `validAccessToken()` refreshes synchronously only inside this window.
+    static let validTokenRefreshLeadTime: TimeInterval = 60
     static let checkoutPollingAttempts = 120
     static let checkoutPollingInterval: Duration = .seconds(3)
 
@@ -96,6 +101,13 @@ final class AuthState: ObservableObject {
     var inMemorySessionToken: (token: String, expiresAt: Int)?
     var cachedStoredToken: (token: String, expiresAt: Int)?
     var cachedRefreshToken: String?
+    /// The single in-flight refresh. The server revokes the whole refresh
+    /// family when a consumed refresh token is replayed, so concurrent callers
+    /// must share one exchange instead of racing with the same token.
+    var accessTokenRefreshTask: Task<AccessTokenRefreshResult, Never>?
+    /// Incremented on login and logout so a refresh that started for an older
+    /// session cannot overwrite or invalidate the current one.
+    var sessionGeneration = 0
 
     var accessToken: String? {
         if let inMemorySessionToken,
@@ -187,6 +199,8 @@ final class AuthState: ObservableObject {
     func handleLoginSuccess(token: String, expiresAt: Int, refreshToken: String? = nil) async {
         RecentInputMemoryStore.shared.invalidateObservations()
         let normalizedExpiresAt = normalizeLoginExpiry(expiresAt)
+        sessionGeneration += 1
+        accessTokenRefreshTask = nil
         inMemorySessionToken = (token, normalizedExpiresAt)
         cachedStoredToken = (token, normalizedExpiresAt)
         cachedRefreshToken = refreshToken
@@ -195,6 +209,7 @@ final class AuthState: ObservableObject {
             "Login session saved: expiresAt=\(normalizedExpiresAt, privacy: .public), refreshTokenProvided=\((refreshToken?.isEmpty == false), privacy: .public)"
         )
         isLoggedIn = true
+        startRefreshTimer()
         await refreshProfile()
         NotificationCenter.default.post(name: .authDidLogin, object: self)
     }
@@ -211,6 +226,8 @@ final class AuthState: ObservableObject {
                 try? await AuthAPIService.logout(refreshToken: refreshToken)
             }
         }
+        sessionGeneration += 1
+        accessTokenRefreshTask = nil
         inMemorySessionToken = nil
         cachedStoredToken = nil
         cachedRefreshToken = nil
@@ -236,13 +253,30 @@ final class AuthState: ObservableObject {
 
     // MARK: - Token Refresh
 
-    /// Refreshes the access token when it will expire within 7 days.
-    /// Safe to call from multiple trigger points; skips silently when not needed.
+    /// Refreshes the access token when it is inside its refresh lead time
+    /// (see `accessTokenRefreshLeadTime`). Safe to call from multiple trigger
+    /// points; concurrent calls share one refresh request.
     func refreshTokenIfNeeded() async {
         guard isLoggedIn else { return }
+        let generation = sessionGeneration
         let result = await refreshStoredAccessToken(force: false)
-        if result == .invalidated {
+        if result == .invalidated, generation == sessionGeneration {
             logout(clearRecentInputMemory: false)
         }
+    }
+
+    /// Returns a usable access token, refreshing it first when it has expired
+    /// or is about to. Returns nil when the session is gone or was revoked.
+    func validAccessToken() async -> String? {
+        guard isLoggedIn else { return accessToken }
+        let remaining = accessTokenExpiresAt.map { TimeInterval($0) - Date().timeIntervalSince1970 } ?? 0
+        if remaining < Self.validTokenRefreshLeadTime, hasStoredRefreshToken {
+            let generation = sessionGeneration
+            let result = await refreshStoredAccessToken(force: true)
+            if result == .invalidated, generation == sessionGeneration {
+                logout(clearRecentInputMemory: false)
+            }
+        }
+        return accessToken
     }
 }

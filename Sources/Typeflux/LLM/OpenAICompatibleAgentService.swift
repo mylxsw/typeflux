@@ -9,7 +9,7 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
 
     func resolveConnection(for config: SettingsStore.TextLLMConfiguration) async throws -> ResolvedLLMConnection {
         if config.provider == .typefluxCloud {
-            let token = await MainActor.run { AuthState.shared.accessToken }
+            let token = await AuthState.shared.validAccessToken()
             guard let token else {
                 throw TypefluxCloudLLMError.notLoggedIn
             }

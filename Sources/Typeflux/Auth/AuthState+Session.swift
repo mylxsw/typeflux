@@ -37,13 +37,28 @@ extension AuthState {
 
     // MARK: - Background Timer
 
+    /// Schedules the next background refresh check for when the current
+    /// access token enters its refresh lead time, bounded by
+    /// `minimumTimerInterval` and `timerInterval`. Short-lived access tokens
+    /// (the API defaults to 15 minutes) are therefore renewed before they
+    /// lapse instead of on a fixed hourly cadence.
     func startRefreshTimer() {
         refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: Self.timerInterval, repeats: true) { [weak self] _ in
+        let delay = nextRefreshCheckDelay()
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in
-                await self?.refreshTokenIfNeeded()
+                guard let self else { return }
+                await refreshTokenIfNeeded()
+                startRefreshTimer()
             }
         }
+    }
+
+    func nextRefreshCheckDelay(now: Date = Date()) -> TimeInterval {
+        guard let expiresAt = accessTokenExpiresAt else { return Self.timerInterval }
+        let leadTime = accessTokenRefreshLeadTime()
+        let dueIn = TimeInterval(expiresAt) - leadTime - now.timeIntervalSince1970
+        return min(Self.timerInterval, max(Self.minimumTimerInterval, dueIn))
     }
 
     // MARK: - Token Helpers
@@ -70,15 +85,41 @@ extension AuthState {
         if !force, !isAccessTokenExpiringSoon() {
             return .unavailable
         }
+        if let accessTokenRefreshTask {
+            return await accessTokenRefreshTask.value
+        }
 
         guard let refreshToken = cachedRefreshToken, !refreshToken.isEmpty else {
             logger.debug("Access token refresh needed but no refresh token is stored")
             return .unavailable
         }
 
+        let generation = sessionGeneration
+        let task = Task { @MainActor [weak self] () -> AccessTokenRefreshResult in
+            guard let self else { return .unavailable }
+            return await performAccessTokenRefresh(refreshToken: refreshToken, generation: generation)
+        }
+        accessTokenRefreshTask = task
+        let result = await task.value
+        if generation == sessionGeneration {
+            accessTokenRefreshTask = nil
+        }
+        return result
+    }
+
+    private func performAccessTokenRefresh(
+        refreshToken: String,
+        generation: Int
+    ) async -> AccessTokenRefreshResult {
         logger.info("Refreshing access token...")
         do {
             let response = try await refreshAccessToken(refreshToken)
+            guard generation == sessionGeneration else {
+                // Logout or a new login happened meanwhile; never resurrect
+                // the old session with the returned pair.
+                logger.info("Discarding token refresh result for a replaced session")
+                return .unavailable
+            }
             let normalizedExpiresAt = normalizeLoginExpiry(response.expiresAt)
             saveStoredSession(
                 response.accessToken,
@@ -93,6 +134,7 @@ extension AuthState {
             return .refreshed
         } catch let error as AuthError {
             logger.error("Token refresh failed: \(error.localizedDescription)")
+            guard generation == sessionGeneration else { return .unavailable }
             return shouldInvalidateSession(for: error) ? .invalidated : .failed
         } catch {
             logger.error("Token refresh error: \(error.localizedDescription)")
@@ -100,14 +142,32 @@ extension AuthState {
         }
     }
 
-    func isAccessTokenExpiringSoon() -> Bool {
+    /// Expiry of the token returned by `accessToken`, or of the stored token
+    /// when it has already lapsed.
+    var accessTokenExpiresAt: Int? {
         let now = Int(Date().timeIntervalSince1970)
-        let threshold = Int(Date().timeIntervalSince1970 + Self.refreshEarlyInterval)
         if let inMemorySessionToken, inMemorySessionToken.expiresAt > now {
-            return inMemorySessionToken.expiresAt < threshold
+            return inMemorySessionToken.expiresAt
         }
-        guard let stored = cachedStoredToken else { return true }
-        return stored.expiresAt < threshold
+        return cachedStoredToken?.expiresAt
+    }
+
+    func isAccessTokenExpiringSoon() -> Bool {
+        guard let expiresAt = accessTokenExpiresAt else { return true }
+        let threshold = Date().timeIntervalSince1970 + accessTokenRefreshLeadTime()
+        return TimeInterval(expiresAt) < threshold
+    }
+
+    /// How long before expiry the current access token should be refreshed:
+    /// one third of its signed lifetime, at least one minute and at most
+    /// `refreshEarlyInterval`. Tokens whose lifetime cannot be read keep the
+    /// `refreshEarlyInterval` policy.
+    func accessTokenRefreshLeadTime() -> TimeInterval {
+        let token = inMemorySessionToken?.token ?? cachedStoredToken?.token
+        guard let token, let lifetime = AccessTokenClaims.lifetime(of: token) else {
+            return Self.refreshEarlyInterval
+        }
+        return min(Self.refreshEarlyInterval, max(Self.minimumTimerInterval, lifetime / 3))
     }
 
     func normalizeLoginExpiry(_ expiresAt: Int) -> Int {
