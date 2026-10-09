@@ -45,7 +45,9 @@ struct AskLauncherMotionTests {
     func controlsStayAttachedToTheirEdgesAcrossEveryResize(appearance: NSAppearance.Name) async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
         // Few enough results that the tallest list fits under the top of a short display: a
         // launcher taller than the usable area moves up by design, which is not what this checks.
         fixture.model.appIndex = AskTestAppIndex((0 ..< 2).map { AskTestAppIndex.app(
@@ -58,6 +60,7 @@ struct AskLauncherMotionTests {
         fixture.model.launcherDraft.text = ""
         let suite = "ask-motion-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
         let settings = SettingsStore(defaults: defaults)
         // Open at the top of the usable area, on the screen `showLauncher` picks, so every
         // height grows down from a top edge with the most room below it.
@@ -74,11 +77,7 @@ struct AskLauncherMotionTests {
             dockVisibility: DockVisibilityController(app: AskMotionActivationPolicy()),
             launcherInputSource: AskMotionInputSource()
         )
-        defer {
-            controller.dismissLauncher()
-            fixture.model.resetSession()
-            defaults.removePersistentDomain(forName: suite)
-        }
+        defer { controller.dismissLauncher() }
         controller.showLauncher()
         let window = try #require(controller.launcherWindow)
         window.appearance = NSAppearance(named: appearance)

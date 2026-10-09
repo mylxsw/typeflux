@@ -229,10 +229,15 @@ struct AskResultDocumentTests {
 
     @Test func windowsOpenCascadeAndRememberTheirSize() throws {
         let controller = AskResultWindowController()
-        let defaults = try #require(UserDefaults(suiteName: "ask.result.window.\(UUID().uuidString)"))
+        let suite = "ask.result.window.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
         controller.defaults = defaults
         let recorder = AskResultServicesRecorder()
         controller.services = recorder.services
+        // Runs before the domain is removed, so a close that saves a size cannot outlive it,
+        // and on every exit, including a failed `#require` after windows are open.
+        defer { for window in NSApp.windows where window.delegate === controller { window.close() } }
         let first = document(recorder)
         controller.present(first)
         let second = controller.open(makeTestNote())
