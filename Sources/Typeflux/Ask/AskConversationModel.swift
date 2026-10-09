@@ -467,6 +467,7 @@ final class AskConversationModel: ObservableObject {
         let request = request ?? makeLauncherSelectionRequest()
         guard !Task.isCancelled else { return }
         flushMemoryPurge()
+        let previousWarning = captureWarning
         captureWarning = nil
         normalizeScreenshotChoices()
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
@@ -486,7 +487,15 @@ final class AskConversationModel: ObservableObject {
               owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
         // Restore an unfinished question without silently replacing its context.
         // Text typed into the just-opened panel still gets this launch's context.
-        if typedBefore || restored { launcherContextRestored = true; return }
+        if typedBefore || restored {
+            launcherContextRestored = true
+            // The kept draft keeps its context as it was. A screenshot that was not
+            // taken still says why, instead of reading as attached on this opening.
+            if launcherDraft.includeScreenshot, launcherDraft.screenshot == nil {
+                captureWarning = previousWarning ?? capture.missingScreenshotWarning()
+            }
+            return
+        }
         clearCapturedContentFeedback(launcher: true)
         capturing = true; capturingScreenshot = launcherDraft.includeScreenshot; launcherContextRestored = false
         let memoryGeneration = memoryPurgeGeneration

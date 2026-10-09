@@ -15,6 +15,8 @@ struct AskQuickResultsInteractionTests {
         let editor: AskComposerTextView.Editor
         var dismissed = 0
         var opened: [URL] = []
+        /// Every height the launcher asked its panel for.
+        var heights: [CGFloat] = []
 
         init(text: String, apps: AskTestAppIndex = AskTestAppIndex([]), selection: String? = nil, waitForSearch: Bool = true,
              prepare: (AskConversationModel) -> Void = { _ in }) async throws {
@@ -31,7 +33,9 @@ struct AskQuickResultsInteractionTests {
                                         styleMask: [.borderless], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             var dismiss: () -> Void = {}
-            let hosting = NSHostingView(rootView: AskLauncherView(model: fixture.model, onDismiss: { dismiss() }))
+            var report: (CGFloat) -> Void = { _ in }
+            let hosting = NSHostingView(rootView: AskLauncherView(model: fixture.model, onDismiss: { dismiss() },
+                                                                  onHeightChange: { report($0) }))
             window.contentView = hosting
             window.orderFront(nil)
             var found: AskComposerTextView.Editor?
@@ -42,6 +46,7 @@ struct AskQuickResultsInteractionTests {
             }
             editor = try #require(found)
             dismiss = { [unowned self] in dismissed += 1 }
+            report = { [weak self] in self?.heights.append($0) }
             fixture.model.openApplication = { [unowned self] url in opened.append(url) }
             try await Task.sleep(for: .milliseconds(100))
             if waitForSearch {

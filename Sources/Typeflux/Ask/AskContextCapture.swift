@@ -19,10 +19,14 @@ protocol AskContextCapturing {
     func capture(includeScreenshot: Bool, includeSelection: Bool, request: ReadOnlySelectionRequest) async -> AskCapturedContext
     /// Memory for a conversation started without a source application.
     func globalMemory() -> AskMemory?
+    /// Why a screenshot is missing when none was taken: no permission, or unavailable.
+    /// Reads the permission without asking for it.
+    func missingScreenshotWarning() -> String
 }
 
 extension AskContextCapturing {
     func globalMemory() -> AskMemory? { nil }
+    func missingScreenshotWarning() -> String { AskContextCapture.missingScreenshotWarning(allowed: false) }
     func makeSelectionRequest() -> ReadOnlySelectionRequest { .frontmost() }
 
     func capture(includeScreenshot: Bool, includeSelection: Bool = true) async -> AskCapturedContext {
@@ -57,6 +61,14 @@ final class AskContextCapture: AskContextCapturing {
 
     func globalMemory() -> AskMemory? {
         memory?.memory(bundleIdentifier: nil, appName: nil)
+    }
+
+    func missingScreenshotWarning() -> String {
+        Self.missingScreenshotWarning(allowed: CGPreflightScreenCaptureAccess())
+    }
+
+    static func missingScreenshotWarning(allowed: Bool) -> String {
+        L(allowed ? "ask.capture.unavailable" : "ask.capture.permission")
     }
 
     func makeSelectionRequest() -> ReadOnlySelectionRequest { injector.makeReadOnlySelectionRequest() }

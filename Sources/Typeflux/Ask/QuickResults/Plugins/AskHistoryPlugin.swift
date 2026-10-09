@@ -29,13 +29,19 @@ struct AskHistoryPlugin: AskLauncherPlugin {
         let snapshot = await conversations()
         let matches = AskPresentation.filterHistory(snapshot.conversations, query: query).sorted { $0.updatedAt > $1.updatedAt }
         try Task.checkCancellation()
-        let items = matches.map { conversation in
+        var items = matches.map { conversation in
             AskPluginItem(id: conversation.id, title: conversation.title.isEmpty ? L("ask.new") : conversation.title,
                           subtitle: AskPresentation.historyTimeLabel(conversation.updatedAt), icon: .symbol("bubble.left.and.bubble.right"),
                           actions: [AskPluginAction(kind: .openConversation(conversation.id, account: snapshot.account), title: L("ask.plugin.history.open"),
                                                     symbol: "arrow.up.right", shortcut: .enter)])
         }
-        return AskPluginOutput(body: items.isEmpty ? L("ask.plugin.history.noMatch") : items.map(\.title).joined(separator: "\n"),
+        // Nothing found is one quiet line in the list, not a result card.
+        if items.isEmpty {
+            let empty = query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            items = [AskPluginItem(id: "notice.history", title: L(empty ? "ask.history.empty" : "ask.plugin.history.noMatch"),
+                                   icon: .symbol("clock.arrow.circlepath"), valid: false)]
+        }
+        return AskPluginOutput(body: items.map(\.title).joined(separator: "\n"),
                                original: query, meta: [], source: L("ask.plugin.source.device"),
                                note: L("ask.plugin.history.note"), actions: [], items: items)
     }

@@ -18,9 +18,23 @@ struct AskPluginDisplay: Equatable {
     var comparing = false
     /// 0 is the plugin's row or card, 1 is "Ask AI".
     var highlighted = 0
+    /// False when there is nothing to ask about (no text, selection or result to
+    /// ask on): the "Ask AI" row is left out rather than shown empty.
+    var offersAskAI = true
 
     var output: AskPluginOutput? { if case let .done(_, output) = phase { output } else { nil } }
-    var asksAI: Bool { highlighted == 1 }
+    var asksAI: Bool { offersAskAI && highlighted == 1 }
+
+    /// Whether "Ask AI" has something to ask: typed text, a selection the plugin
+    /// works on, or a result that offers asking about itself.
+    static func offersAskAI(question: String, selection: String?, usesSelection: Bool,
+                            output: AskPluginOutput?) -> Bool {
+        if !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
+        if usesSelection, let selection, !selection.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+        return output?.askAIAction != nil
+    }
     /// A workflow's actions after this run, success or failure.
     var followUp: AskWorkflowFollowUp? {
         switch phase {
@@ -204,7 +218,8 @@ struct AskPluginResultsView: View {
 
     /// Everything the list adds to the launcher card.
     static func height(for display: AskPluginDisplay) -> CGFloat {
-        1 + listPadding * 2 + (sectionHeight + rowSpacing) * 2 + mainHeight(display) + rowSpacing + askHeight
+        let ask = display.offersAskAI ? sectionHeight + rowSpacing + rowSpacing + askHeight : 0
+        return 1 + listPadding * 2 + sectionHeight + rowSpacing + mainHeight(display) + ask
     }
 
     /// What Return and the other keys do now, for the bottom bar.
@@ -213,9 +228,13 @@ struct AskPluginResultsView: View {
         if display.hint?.pluginID == AskOpenChatPlugin.id {
             return display.asksAI ? L("ask.launcher.hint") : ""
         }
-        if display.hint != nil { return L("ask.plugin.hint.keyword") }
+        // The highlighted row is what Return does; the bar says the same.
+        if display.hint != nil {
+            return display.asksAI ? L("ask.plugin.hint.keyword") : L("ask.plugin.hint.keyword.enter")
+        }
         if display.asksAI { return L("ask.launcher.hint") }
         let option = display.optionName.map { L("ask.plugin.hint.option", $0) }
+        let askAI = display.offersAskAI ? L("ask.plugin.hint.askAI") : nil
         let parts: [String?]
         switch display.phase {
         // Esc always closes the launcher; the bar spends its room on other keys.
@@ -225,7 +244,7 @@ struct AskPluginResultsView: View {
                 if case .openChat = action.kind { return "" }
                 parts = [L("ask.plugin.hint.action", action.title),
                          plan.action(for: .commandC).map { L("ask.plugin.hint.copy", $0.title) },
-                         option, L("ask.plugin.hint.askAI")]
+                         option, askAI]
             } else {
                 parts = [L("ask.plugin.hint.ready"), option]
             }
@@ -235,11 +254,15 @@ struct AskPluginResultsView: View {
             parts = [output.action(for: .enter).map { L("ask.plugin.hint.action", $0.title) },
                      output.action(for: .optionEnter).map { L("ask.plugin.hint.option.enter", $0.title) },
                      output.selected?.autocomplete.map { _ in L("ask.plugin.hint.complete") },
-                     L("ask.plugin.hint.askAI")]
+                     askAI]
         case let .done(_, output):
-            let main = output.action(for: .enter)?.title ?? ""
-            parts = [output.action(for: .optionEnter).map { L("ask.plugin.hint.done", main, $0.title) }
-                ?? L("ask.plugin.hint.action", main), option, L("ask.plugin.hint.askAI")]
+            // Without a main action Return does nothing, so the bar leaves it out.
+            let main = output.action(for: .enter)?.title
+            let keys = main.map { main in
+                output.action(for: .optionEnter).map { L("ask.plugin.hint.done", main, $0.title) }
+                    ?? L("ask.plugin.hint.action", main)
+            }
+            parts = [keys, option, askAI]
         case let .failed(_, failure): return failure.retry ? L("ask.plugin.hint.failed") : ""
         }
         return parts.compactMap { $0 }.joined(separator: " · ")
@@ -254,13 +277,15 @@ struct AskPluginResultsView: View {
                     .onContinuousHover { phase in
                         if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(0) }
                     }
-                section(L("ask.quick.section.ai"))
-                askRow
-                    .modifier(AskLauncherNumberBadge(number: Self.numberedItemCount(display)
-                        .flatMap { AskLauncherNumberShortcuts.number(at: $0) }))
-                    .onContinuousHover { phase in
-                        if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(1) }
-                    }
+                if display.offersAskAI {
+                    section(L("ask.quick.section.ai"))
+                    askRow
+                        .modifier(AskLauncherNumberBadge(number: Self.numberedItemCount(display)
+                            .flatMap { AskLauncherNumberShortcuts.number(at: $0) }))
+                        .onContinuousHover { phase in
+                            if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(1) }
+                        }
+                }
             }
             .padding(Self.listPadding)
             Spacer(minLength: 0)
@@ -339,6 +364,12 @@ struct AskPluginResultsView: View {
         .fixedSize()
     }
 
+    /// What enters the offered keyword: Return when its row is highlighted, otherwise space or ⇥.
+    static func hintRowKeys(_ hint: AskKeyword, highlighted: Bool) -> String {
+        if hint.pluginID == AskOpenChatPlugin.id { return "↩" }
+        return highlighted ? L("ask.plugin.enter.return") : L("ask.plugin.enter")
+    }
+
     static func rowHint(for action: AskPluginAction?) -> String {
         if case .openChat? = action?.kind { return "↩" }
         return action.map { $0.title + "  ↩" } ?? "↩"
@@ -385,7 +416,7 @@ struct AskPluginResultsView: View {
                 Text(hint.keyword).font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer(minLength: 8)
-                Text(hint.pluginID == AskOpenChatPlugin.id ? "↩" : L("ask.plugin.enter"))
+                Text(Self.hintRowKeys(hint, highlighted: highlighted))
                     .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             }
             .padding(.horizontal, 10)
