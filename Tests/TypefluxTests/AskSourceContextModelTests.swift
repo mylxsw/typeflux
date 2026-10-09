@@ -4,6 +4,7 @@ import Testing
 
 @MainActor
 private final class SourceContextCapture: AskContextCapturing {
+    var screenCaptureAllowed: Bool { true }
     var target = ReadOnlySelectionRequest(processID: 42, processName: "New app", bundleIdentifier: "test.new")
     var context = AskCapturedContext(selection: "New selection", selectionStatus: "accessibility-context", source: "New app — New window",
                                      sourceBundleID: "test.new", screenshot: "new-image",

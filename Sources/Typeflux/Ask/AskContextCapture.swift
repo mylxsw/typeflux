@@ -15,6 +15,10 @@ struct AskCapturedContext: Sendable {
 
 @MainActor
 protocol AskContextCapturing {
+    /// A read-only check; querying it must never request permission.
+    var screenCaptureAllowed: Bool { get }
+    /// Called only after an explicit screenshot action.
+    func requestScreenCapturePermission() -> Bool
     func makeSelectionRequest() -> ReadOnlySelectionRequest
     func capture(includeScreenshot: Bool, includeSelection: Bool, request: ReadOnlySelectionRequest) async -> AskCapturedContext
     /// Memory for a conversation started without a source application.
@@ -25,6 +29,7 @@ protocol AskContextCapturing {
 }
 
 extension AskContextCapturing {
+    func requestScreenCapturePermission() -> Bool { screenCaptureAllowed }
     func globalMemory() -> AskMemory? { nil }
     func missingScreenshotWarning() -> String { AskContextCapture.missingScreenshotWarning(allowed: false) }
     func makeSelectionRequest() -> ReadOnlySelectionRequest { .frontmost() }
@@ -38,6 +43,8 @@ extension AskContextCapturing {
 @MainActor
 final class AskContextCapture: AskContextCapturing {
     private static let screenCaptureRequestedKey = "ask.screenCaptureAccessRequested"
+    private let preflightScreenCapture: () -> Bool
+    private let requestScreenCapture: () -> Bool
     private let injector: TextInjector
     private let memory: (any AskMemoryProviding)?
     private let frontmostProcessID: @MainActor () -> pid_t?
@@ -47,13 +54,17 @@ final class AskContextCapture: AskContextCapturing {
 
     init(
         injector: TextInjector, memory: (any AskMemoryProviding)? = nil,
+        preflightScreenCapture: @escaping () -> Bool = { CGPreflightScreenCaptureAccess() },
+        requestScreenCapture: @escaping () -> Bool = { CGRequestScreenCaptureAccess() },
         accessibilityTrusted: @escaping () -> Bool = { AXIsProcessTrusted() },
         frontmostProcessID: (@MainActor () -> pid_t?)? = nil,
         sourceTracker: AskSourceApplicationTracker? = nil,
         captureScreenshot: @escaping (CGDirectDisplayID?) async throws -> String = {
-            try await AskContextCapture.screenshot(displayId: $0).dataURL
+            try await AskContextCapture.screenshot(displayId: $0, requestAccessIfNeeded: false).dataURL
         }
     ) {
+        self.preflightScreenCapture = preflightScreenCapture
+        self.requestScreenCapture = requestScreenCapture
         self.injector = injector
         self.memory = memory
         let tracker = sourceTracker ?? AskSourceApplicationTracker.shared
@@ -67,8 +78,14 @@ final class AskContextCapture: AskContextCapturing {
         memory?.memory(bundleIdentifier: nil, appName: nil)
     }
 
+    var screenCaptureAllowed: Bool { preflightScreenCapture() }
+
+    func requestScreenCapturePermission() -> Bool {
+        screenCaptureAllowed || requestScreenCapture()
+    }
+
     func missingScreenshotWarning() -> String {
-        Self.missingScreenshotWarning(allowed: CGPreflightScreenCaptureAccess())
+        Self.missingScreenshotWarning(allowed: screenCaptureAllowed)
     }
 
     static func missingScreenshotWarning(allowed: Bool) -> String {
@@ -90,7 +107,8 @@ final class AskContextCapture: AskContextCapturing {
         let displayId = (screen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
         // The screenshot runs alongside the accessibility read rather than after it;
         // the launcher is already on screen and is excluded from the capture.
-        let screenshotTask: Task<String, Error>? = includeScreenshot
+        let screenshotAllowed = screenCaptureAllowed
+        let screenshotTask: Task<String, Error>? = includeScreenshot && screenshotAllowed
             ? Task { [captureScreenshot] in try await captureScreenshot(displayId) } : nil
         defer { screenshotTask?.cancel() }
         // The request was fixed before the launcher took focus and before any
@@ -118,6 +136,7 @@ final class AskContextCapture: AskContextCapturing {
             // Source identity stays the same even after asynchronous selection reads.
             memory: memory?.memory(bundleIdentifier: request.bundleIdentifier, appName: request.processName)
         )
+        if includeScreenshot && !screenshotAllowed { result.warning = Self.missingScreenshotWarning(allowed: false) }
         if let screenshotTask {
             do { result.screenshot = try await screenshotTask.value }
             catch { result.warning = error.localizedDescription }
@@ -144,11 +163,11 @@ final class AskContextCapture: AskContextCapturing {
         CGPreflightScreenCaptureAccess() || CGRequestScreenCaptureAccess()
     }
 
-    static func screenshot(displayId: CGDirectDisplayID? = nil) async throws -> Screenshot {
+    static func screenshot(displayId: CGDirectDisplayID? = nil, requestAccessIfNeeded: Bool = true) async throws -> Screenshot {
         guard CGPreflightScreenCaptureAccess() else {
             // Registers Typeflux in the Screen Recording list the first time; the
             // system only shows its prompt while the decision is still undetermined.
-            if !UserDefaults.standard.bool(forKey: screenCaptureRequestedKey) {
+            if requestAccessIfNeeded && !UserDefaults.standard.bool(forKey: screenCaptureRequestedKey) {
                 UserDefaults.standard.set(true, forKey: screenCaptureRequestedKey)
                 _ = CGRequestScreenCaptureAccess()
             }

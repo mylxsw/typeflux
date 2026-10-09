@@ -3898,3 +3898,5 @@
 "ask.result.revealNote" = "在筆記本中顯示";
 "ask.result.askAI" = "繼續問 AI";
 "menu.notes" = "筆記本…";
+
+"ask.capture.optIn" = "附帶截圖 · 開啟後需要螢幕錄製授權";

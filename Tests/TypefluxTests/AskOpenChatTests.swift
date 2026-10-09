@@ -289,6 +289,7 @@ extension AskOpenChatTests {
 
 @MainActor
 private final class OpenChatHeldCapture: AskContextCapturing {
+    var screenCaptureAllowed: Bool { true }
     var continuation: CheckedContinuation<AskCapturedContext, Never>?
     func capture(includeScreenshot: Bool, includeSelection: Bool, request: ReadOnlySelectionRequest) async -> AskCapturedContext {
         await withCheckedContinuation { continuation = $0 }

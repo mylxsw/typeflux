@@ -3902,3 +3902,5 @@
 "ask.result.revealNote" = "Show in Notes";
 "ask.result.askAI" = "Continue in Chat";
 "menu.notes" = "Notes…";
+
+"ask.capture.optIn" = "Attach screenshot · Requires screen recording access";

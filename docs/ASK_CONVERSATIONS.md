@@ -13,7 +13,12 @@ Validation failures preserve the submitting draft without creating a conversatio
 Signed out, an available own model replaces the Cloud default; otherwise the composer
 offers sign-in and Settings → Models. Model configuration failures offer settings
 rather than retrying a run.
-The first question defaults to attaching a screenshot; follow-ups default to
+The first question defaults to attaching a screenshot only when screen recording
+access is already granted (a read-only preflight check). Without access, opening
+the launcher or a new chat neither captures the screen nor requests permission.
+The composer offers “Attach screenshot”; enabling it, using `/screenshot`, or
+choosing a screen suggestion requests access explicitly. Denial keeps the draft
+and offers System Settings. Follow-ups default to
 text only. Attachments can be previewed, removed, or recaptured before sending.
 Context is captured before the launcher takes focus. Removing a draft attachment
 does not remove context already sent in previous messages.

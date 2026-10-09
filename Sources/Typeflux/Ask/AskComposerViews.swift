@@ -903,13 +903,31 @@ struct AskComposer: View {
 
     private var submissionIssue: AskSubmissionIssue? { model.submissionIssues[launcher] }
 
+    private var showsScreenshotPermissionHint: Bool {
+        !draft.wrappedValue.includeScreenshot && !model.screenCaptureAllowed
+            && model.screenshotCapability(launcher: launcher).canAttach
+    }
+
     private var hasSupplementalContent: Bool {
-        submissionIssue != nil || !notices.isEmpty || (!launcher && !model.queuedMessages.isEmpty) || editingQueued
+        showsScreenshotPermissionHint || submissionIssue != nil || !notices.isEmpty || (!launcher && !model.queuedMessages.isEmpty) || editingQueued
             || !(draft.wrappedValue.references ?? []).isEmpty || showsStrip
     }
 
     private var supplementalContent: some View {
         VStack(spacing: 0) {
+            if showsScreenshotPermissionHint {
+                Button { screenshotAction?() } label: {
+                    Label(L("ask.capture.optIn"), systemImage: "camera.viewfinder")
+                        .font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .disabled(model.capturing)
+                .padding(.horizontal, chrome.horizontalInset)
+                .padding(.top, 8)
+                .accessibilityIdentifier("ask.screenshot.optIn")
+            }
             if let issue = submissionIssue {
                 AskSubmissionIssueView(issue: issue, onModels: { model.onOpenSettings?(.models) },
                                        onSignIn: model.onSignIn)

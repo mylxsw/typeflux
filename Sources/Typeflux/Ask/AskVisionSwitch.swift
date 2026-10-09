@@ -95,5 +95,8 @@ extension AskConversationModel {
         switchToVisionModelIfNeeded(launcher: launcher, needsVision: true)
         guard screenshotCapability(launcher: launcher).canAttach else { return }
         if launcher { launcherDraft.includeScreenshot = true } else { draft.includeScreenshot = true }
+        if (launcher ? launcherDraft : draft).screenshot == nil {
+            Task { await refreshScreenshot(launcher: launcher) }
+        }
     }
 }

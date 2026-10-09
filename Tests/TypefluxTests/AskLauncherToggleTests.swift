@@ -4,6 +4,7 @@ import Testing
 
 @MainActor
 private final class HeldLauncherCapture: AskContextCapturing {
+    var screenCaptureAllowed: Bool { true }
     var pending: [Int: CheckedContinuation<AskCapturedContext, Never>] = [:]
     private(set) var calls = 0
     var requests: [ReadOnlySelectionRequest] = []

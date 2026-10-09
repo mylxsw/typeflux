@@ -50,7 +50,7 @@ extension AskConversationModel {
                 draftPermissionMode = mode; launcherPermissionMode = .standard
                 draft = incoming
                 clearCapturedContentFeedback(launcher: true)
-                launcherDraft = AskDraft()
+                launcherDraft = newQuestionDraft()
                 restoreLauncherContextMarker(false)
             }
             // Invalidate an in-flight cache restore even on an empty open.
