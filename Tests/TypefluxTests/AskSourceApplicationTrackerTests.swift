@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask source application filtering")
+@Suite("Ask source application filtering", .exclusiveUIState)
 @MainActor
 struct AskSourceApplicationTrackerTests {
     @Test func systemUIFallsBackToTheLastOrdinaryApplicationWithoutSelection() {

@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask composer IME placeholder", .serialized)
+@Suite("Ask composer IME placeholder", .serialized, .exclusiveUIState)
 @MainActor
 struct AskComposerPlaceholderTests {
     init() {
