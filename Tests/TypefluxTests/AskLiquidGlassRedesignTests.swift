@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask Liquid Glass redesign")
+@Suite("Ask Liquid Glass redesign", .exclusiveUIState)
 struct AskLiquidGlassRedesignTests {
     private static let now = Date(timeIntervalSince1970: 1_790_000_000)
 

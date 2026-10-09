@@ -122,9 +122,8 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         model.reset(entries: Array(allKindsEntries().prefix(2)))
 
         let earlier = ClipboardPanelController(settingsStore: SettingsStore(defaults: defaults))
-        earlier.present(model)
-        let stale = try XCTUnwrap(ClipboardTestSupport.presentedPanel())
-        earlier.dismiss()
+        let stale = try ClipboardTestSupport.withPresentedPanel(earlier, model) { $0 }
+        XCTAssertFalse(earlier.isPresented)
         XCTAssertNil(ClipboardTestSupport.presentedPanel())
         XCTAssertTrue(NSApplication.shared.windows.contains { $0 === stale })
 
@@ -146,6 +145,27 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         ))), "Keys sent to the stale panel do not reach the presented one")
     }
 
+    /// A test that fails right after presenting still dismisses, so its panel cannot become the
+    /// stale one the next test finds.
+    func testPresentedPanelIsDismissedWhenTheTestFailsEarly() throws {
+        let suite = "ClipboardPanelRenderingTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let model = ClipboardPanelModel()
+        model.reset(entries: Array(allKindsEntries().prefix(2)))
+        let controller = ClipboardPanelController(settingsStore: SettingsStore(defaults: defaults))
+        struct EarlyFailure: Error {}
+
+        var presentedDuringBody = false
+        XCTAssertThrowsError(try ClipboardTestSupport.withPresentedPanel(controller, model) { _ in
+            presentedDuringBody = controller.isPresented
+            throw EarlyFailure()
+        }) { XCTAssertTrue($0 is EarlyFailure) }
+        XCTAssertTrue(presentedDuringBody)
+        XCTAssertFalse(controller.isPresented)
+        XCTAssertNil(ClipboardTestSupport.presentedPanel())
+    }
+
     func testControllerPresentsHandlesKeysAndDismisses() throws {
         let suite = "ClipboardPanelRenderingTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -161,6 +181,8 @@ final class ClipboardPanelRenderingTests: XCTestCase {
 
         XCTAssertFalse(controller.isPresented)
         controller.present(model)
+        // Dismissing twice is harmless; an early failure must not leave the panel visible.
+        defer { controller.dismiss() }
         XCTAssertTrue(controller.isPresented)
 
         let window = try XCTUnwrap(ClipboardTestSupport.presentedPanel())

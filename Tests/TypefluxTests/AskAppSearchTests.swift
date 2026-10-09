@@ -241,7 +241,7 @@ struct AskAppIndexTests {
     }
 }
 
-@Suite("Ask quick results with apps")
+@Suite("Ask quick results with apps", .exclusiveUIState)
 struct AskQuickResultsAppTests {
     private let apps = AskTestAppIndex(AskTestAppIndex.sample.entries)
 

@@ -5,7 +5,7 @@ import Testing
 
 /// Item lists (`{"items": …}`, Alfred's Script Filter format) and Markdown output:
 /// parsing and its tolerance, what each row's keys do, and how the plugin shows them.
-@Suite("Ask workflow item lists")
+@Suite("Ask workflow item lists", .exclusiveUIState)
 struct AskWorkflowItemListTests {
     /// The example in `docs/design/ask-launcher-workflows.md` §4.2.
     static let alfred = #"""
@@ -108,7 +108,7 @@ struct AskWorkflowItemListTests {
     }
 }
 
-@Suite("Ask workflow item rows")
+@Suite("Ask workflow item rows", .exclusiveUIState)
 struct AskWorkflowItemRowTests {
     let folder = URL(fileURLWithPath: "/tmp/wf")
     var rows: AskWorkflowItemRows {

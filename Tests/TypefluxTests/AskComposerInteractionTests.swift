@@ -190,6 +190,9 @@ struct AskComposerInteractionTests {
                 if launcher {
                     // The launcher's recording row ends with the stop control in the send
                     // button's place (docs/design/ask-launcher-header-voice.md, 3.1).
+                    // Only the position changes: the same 34pt control moves, it is not resized
+                    // to the send button.
+                    #expect(transcribingFrame.size == restingFrame.size)
                     #expect(transcribingFrame.minY == restingFrame.minY)
                     #expect(transcribingFrame.minX > restingFrame.maxX)
                 } else {

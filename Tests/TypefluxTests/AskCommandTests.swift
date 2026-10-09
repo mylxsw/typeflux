@@ -67,7 +67,7 @@ struct AskSlashQueryTests {
     }
 }
 
-@Suite("Ask command catalog")
+@Suite("Ask command catalog", .exclusiveUIState)
 struct AskCommandCatalogTests {
     private var context: AskCommandContext {
         var context = AskCommandContext()

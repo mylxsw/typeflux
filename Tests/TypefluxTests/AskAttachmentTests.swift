@@ -49,7 +49,7 @@ enum AskAttachmentFixture {
     }
 }
 
-@Suite("Ask attachment loading")
+@Suite("Ask attachment loading", .exclusiveUIState)
 struct AskAttachmentLoaderTests {
     @Test func largeImagesShrinkToTheLongEdgeAsJPEG() throws {
         let png = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 4000, height: 1000, alpha: true), type: .png)
@@ -247,7 +247,7 @@ struct AskAttachmentPasteboardTests {
     }
 }
 
-@Suite("Ask attachment drafts")
+@Suite("Ask attachment drafts", .exclusiveUIState)
 struct AskAttachmentDraftTests {
     @Test func attachmentsAloneCanBeSentAndNameTheConversation() {
         var draft = AskDraft.followUp

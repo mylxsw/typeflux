@@ -13,6 +13,19 @@ enum ClipboardTestSupport {
         return panels.count == 1 ? panels[0] : nil
     }
 
+    struct MissingPanel: Error {}
+
+    /// Presents `model`, hands `body` the visible panel and always dismisses afterwards, also
+    /// when the lookup or `body` throws, so a failing test cannot leave its panel to the next.
+    static func withPresentedPanel<T>(
+        _ controller: ClipboardPanelController, _ model: ClipboardPanelModel, _ body: (NSWindow) throws -> T
+    ) throws -> T {
+        controller.present(model)
+        defer { controller.dismiss() }
+        guard let panel = presentedPanel() else { throw MissingPanel() }
+        return try body(panel)
+    }
+
     static func temporaryDirectory(_ name: String = "ClipboardTests") -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(name)-\(UUID().uuidString)", isDirectory: true)

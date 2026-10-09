@@ -59,7 +59,7 @@ private func request(_ text: String, origin: AskPluginRequest.Origin = .argument
                      selection: selection)
 }
 
-@Suite("Ask workflow manifest")
+@Suite("Ask workflow manifest", .exclusiveUIState)
 struct AskWorkflowManifestTests {
     private let folder = FileManager.default.temporaryDirectory.appendingPathComponent("tf-manifest-\(UUID().uuidString)")
 

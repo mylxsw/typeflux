@@ -226,7 +226,7 @@ struct AskWordLookupEngineTests {
     }
 }
 
-@Suite("Ask translate plugin word cards")
+@Suite("Ask translate plugin word cards", .exclusiveUIState)
 struct AskTranslatePluginWordCardTests {
     private func request(_ text: String, origin: AskPluginRequest.Origin = .argument,
                          options: [String: String] = [:]) -> AskPluginRequest {
@@ -417,7 +417,7 @@ struct AskWordCardLooseReplyTests {
     }
 }
 
-@Suite("Ask translate plugin garbled word cards")
+@Suite("Ask translate plugin garbled word cards", .exclusiveUIState)
 struct AskTranslatePluginGarbledCardTests {
     private func request(_ text: String) -> AskPluginRequest {
         AskPluginRequest(text: text, origin: .argument, keyword: AskTranslatePlugin.keywords[0], options: [:],

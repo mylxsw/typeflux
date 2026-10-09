@@ -277,7 +277,7 @@ struct AskWordBookRecorderTests {
     }
 }
 
-@Suite("Ask translate plugin and the word book")
+@Suite("Ask translate plugin and the word book", .exclusiveUIState)
 struct AskTranslateWordBookTests {
     private func plugin(_ store: SQLiteAskWordBookStore?, local: Bool = true,
                         dictionary: AskTestWordLookup? = nil) -> AskTranslatePlugin {

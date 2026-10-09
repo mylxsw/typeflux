@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask image recovery copy")
+@Suite("Ask image recovery copy", .exclusiveUIState)
 struct AskImageRecoveryCopyTests {
     private func copy(busy: Bool = false, canResume: Bool = false,
                       capability: AskImageCapability = .unsupported) -> AskImageRecoveryCopy {

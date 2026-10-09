@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask plugin views")
+@Suite("Ask plugin views", .exclusiveUIState)
 struct AskPluginViewTests {
     private let plan = AskPluginPlan(mode: .onSubmit, title: "Translate", meta: [AskPluginMeta(text: "English")])
     private func output(_ body: String = "Hola", note: String? = nil) -> AskPluginOutput {

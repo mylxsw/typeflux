@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask context chips")
+@Suite("Ask context chips", .exclusiveUIState)
 struct AskContextChipsTests {
     private func items(screenshot: AskScreenshotState = .off, source: String? = nil, bundle: String? = nil,
                        selection: String? = nil, selectionOff: Bool = false, memory: AskMemory? = nil,
