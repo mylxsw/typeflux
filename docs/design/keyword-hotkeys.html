@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 独立的快捷键管理（可交互设计稿）</title>
+<style>
+:root {
+  --bg: #1b1b1d; --sidebar: #161617; --card: rgba(255,255,255,.045);
+  --card-hover: rgba(255,255,255,.07); --border: rgba(255,255,255,.115); --border-soft: rgba(255,255,255,.07);
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16);
+  --ok: #29c76e; --ok-soft: rgba(41,199,110,.14); --warn: #eb8040; --warn-soft: rgba(235,128,64,.15);
+  --danger: #dc5252; --danger-soft: rgba(220,82,82,.13); --field: rgba(255,255,255,.06); --tile: rgba(255,255,255,.07);
+  --ai: #a970ff; --ai-soft: rgba(169,112,255,.15); --key: rgba(255,255,255,.09);
+  --shadow: 0 30px 80px rgba(0,0,0,.45); --stage: #0e0e10; --pop: #2a2a2d; --glass: rgba(36,36,40,.92);
+  --desk: linear-gradient(135deg, #1d2a3f 0%, #2b1f3a 55%, #3a2a24 100%);
+}
+body.light {
+  --bg: #f4f5f7; --sidebar: #eceef1; --card: rgba(255,255,255,.95); --card-hover: #f2f4f7;
+  --border: rgba(97,115,143,.16); --border-soft: rgba(97,115,143,.10); --text: #141414; --text2: #474747; --text3: #85868a; --accent: #1f6fe0;
+  --accent-soft: rgba(31,111,224,.12); --ok: #1fab63; --ok-soft: rgba(31,171,99,.12); --warn: #ed5c2e;
+  --warn-soft: rgba(237,92,46,.12); --danger-soft: rgba(220,82,82,.10); --field: #fff; --tile: #eef0f3; --key: #fff;
+  --ai: #8a4fe8; --ai-soft: rgba(138,79,232,.11);
+  --shadow: 0 30px 80px rgba(30,40,60,.18); --stage: #d9dde3; --pop: #fff; --glass: rgba(250,250,252,.94);
+  --desk: linear-gradient(135deg, #b9cbe6 0%, #d8c8e8 55%, #ecd6c6 100%);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button, input, select, textarea { font: inherit; color: inherit; }
+svg { flex: none; }
+.mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace; }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1180px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1180px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 30px; }
+.caption b { color: var(--text2); font-weight: 600; }
+body.solo .stagebar, body.solo .caption { display: none; }
+body.solo { padding: 28px 0; }
+
+/* ---------- Shared controls ---------- */
+.btn { height: 28px; border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 0 12px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 500; font-size: 12.5px; }
+.btn:hover { background: var(--card-hover); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--text2); }
+.btn.ghost:hover { background: var(--card-hover); color: var(--text); }
+.btn.danger { color: var(--danger); }
+.btn.sm { height: 24px; padding: 0 9px; font-size: 12px; border-radius: 7px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.ibtn { width: 26px; height: 26px; border-radius: 7px; border: 1px solid transparent; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text3); }
+.ibtn:hover { background: var(--card-hover); color: var(--text); }
+.switch { width: 32px; height: 19px; border-radius: 999px; background: var(--tile); border: 1px solid var(--border); position: relative; cursor: pointer; flex: none; transition: background .15s; }
+.switch::after { content: ""; position: absolute; top: 1px; left: 1px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: left .15s; }
+.switch.on { background: var(--ok); border-color: var(--ok); }
+.switch.on::after { left: 14px; }
+.seg { display: inline-flex; background: var(--tile); border-radius: 8px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 3px 11px; border-radius: 6px; cursor: pointer; color: var(--text2); font-size: 12px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.seg button.on { background: var(--card-hover); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+body.light .seg button.on { background: #fff; }
+.seg button .n { font-size: 10.5px; color: var(--text3); }
+.seg button:disabled { opacity: .4; cursor: default; }
+.kw { font: 12px ui-monospace, Menlo, monospace; padding: 1px 7px; border-radius: 6px; background: var(--tile); border: 1px solid var(--border); white-space: nowrap; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.sl { display: flex; align-items: baseline; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text3); margin: 18px 4px 8px; }
+.sl .aux { font-weight: 400; }
+.sl .sp { flex: 1; }
+.foot { font-size: 12px; color: var(--text3); margin: 8px 4px 0; }
+.tile { width: 28px; height: 28px; border-radius: 7px; background: var(--tile); display: grid; place-items: center; color: var(--text2); flex: none; }
+.tile.t-sys { background: var(--accent-soft); color: var(--accent); }
+.tile.t-translate { background: rgba(47,140,255,.16); color: #4c9dff; }
+.tile.t-prompt { background: var(--ai-soft); color: var(--ai); }
+.tile.t-web { background: rgba(41,199,110,.14); color: var(--ok); }
+.tile.t-workflow { background: rgba(235,128,64,.15); color: var(--warn); }
+.tile.t-local { background: rgba(32,178,170,.15); color: #2bb3aa; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge.off { background: var(--tile); color: var(--text3); }
+.badge.bad { background: var(--danger-soft); color: var(--danger); }
+
+/* Keycaps */
+.keys { display: inline-flex; gap: 3px; align-items: center; }
+.keys kbd { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--key); border: 1px solid var(--border); border-bottom-width: 2px;
+  font: 600 11.5px -apple-system, "SF Pro Text", sans-serif; display: inline-grid; place-items: center; color: var(--text); }
+.keys.unset { color: var(--text3); font-size: 12px; }
+.keys .x2 { font-size: 10.5px; color: var(--text3); margin-left: 3px; }
+
+/* ---------- Windows ---------- */
+.window { position: relative; display: flex; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); background: var(--bg); }
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.screen { display: none; }
+.screen.on { display: flex; }
+
+.win-settings { width: 1180px; height: 800px; }
+.mainnav { width: 200px; background: var(--sidebar); padding: 14px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border); }
+.mainnav .lights { margin: 2px 4px 22px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin: 0 6px 22px; }
+.brand .logo { width: 28px; height: 28px; border-radius: 50%; background: var(--text); color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+.navitem { display: flex; align-items: center; gap: 11px; padding: 8px 12px; border-radius: 9px; color: var(--text2); font-weight: 500; cursor: pointer; }
+.navitem.on { background: var(--card-hover); color: var(--text); }
+.navitem .new { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 0 6px; }
+.navsp { flex: 1; }
+.content { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+.detail { flex: 1; overflow-y: auto; padding: 26px 36px 40px; }
+.detail-inner { max-width: 860px; }
+.dh { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.dh .bigtile { width: 44px; height: 44px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.dh h2 { margin: 0; font-size: 20px; }
+.dh p { margin: 2px 0 0; color: var(--text2); }
+
+.kbar { display: flex; gap: 8px; align-items: center; }
+.kbar .sp { flex: 1; }
+.searchbox { width: 220px; display: flex; align-items: center; gap: 6px; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 0 9px; color: var(--text3); height: 28px; }
+.searchbox input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; color: var(--text); font-size: 12.5px; }
+
+/* Rows */
+.row { display: grid; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--border-soft); cursor: pointer; }
+.row:first-child { border-top: 0; }
+.row:hover { background: var(--card-hover); }
+.row.sys { grid-template-columns: 28px 1fr 190px 26px; }
+.row.kwr { grid-template-columns: 150px 210px 1fr 32px; }
+.row.off { opacity: .5; }
+.row .t { font-weight: 600; }
+.row .s { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .fn { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.row .fn .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .how { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: 12px; min-width: 0; }
+.row .how span.txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .rec { border-radius: 8px; padding: 3px 6px; margin: -3px -6px; border: 1px dashed transparent; }
+.row .rec:hover { border-color: var(--border); }
+.row .rec.recording { border: 1px solid var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); color: var(--accent); font-size: 12px; }
+.sub { grid-column: 2 / -1; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text3); padding-top: 2px; }
+.sub .sp { flex: 1; }
+.empty { padding: 30px; text-align: center; color: var(--text3); }
+
+/* Context menu */
+.menu { position: absolute; width: 220px; background: var(--pop); border: 1px solid var(--border); border-radius: 10px; padding: 5px; box-shadow: 0 16px 40px rgba(0,0,0,.35); z-index: 60; display: none; }
+.menu.show { display: block; }
+.menu .mi { display: flex; align-items: center; gap: 9px; padding: 6px 9px; border-radius: 7px; cursor: pointer; }
+.menu .mi:hover { background: var(--accent); color: #fff; }
+.menu .mi.danger { color: var(--danger); }
+.menu .mi.danger:hover { color: #fff; background: var(--danger); }
+.menu hr { border: 0; border-top: 1px solid var(--border-soft); margin: 4px 2px; }
+
+/* Toast */
+.toast { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--pop); border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.3); font-size: 12.5px; display: none; z-index: 80; }
+.toast.show { display: block; }
+
+/* ---------- Sheet ---------- */
+.scrim { position: absolute; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: flex-start; justify-content: center; z-index: 50; }
+body.light .scrim { background: rgba(30,40,60,.18); }
+.scrim.show { display: flex; }
+.sheet { width: 580px; margin-top: 46px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.sheet header { display: flex; align-items: center; gap: 11px; padding: 16px 20px 6px; }
+.sheet header h3 { margin: 0; font-size: 15px; }
+.sheet header p { margin: 1px 0 0; color: var(--text3); font-size: 12px; }
+.sheet .body { padding: 10px 20px 6px; }
+.sheet footer { display: flex; align-items: center; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid var(--border-soft); margin-top: 8px; }
+.sheet footer .sp { flex: 1; }
+.frow { display: grid; grid-template-columns: 112px 1fr; gap: 12px; align-items: start; padding: 9px 0; }
+.frow > label { color: var(--text2); padding-top: 5px; font-weight: 500; }
+.hint { font-size: 12px; color: var(--text3); margin-top: 5px; }
+.hint.warn { color: var(--warn); }
+.hint.bad { color: var(--danger); }
+.hint .lnk { color: var(--accent); cursor: pointer; }
+
+.picker { position: relative; }
+.pickbtn { width: 100%; min-height: 34px; display: flex; align-items: center; gap: 9px; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 3px 10px 3px 4px; cursor: pointer; text-align: left; }
+.pickbtn .ph { color: var(--text3); padding-left: 6px; }
+.pickbtn .chev { margin-left: auto; color: var(--text3); }
+.pickpop { position: absolute; top: 38px; left: 0; right: 0; background: var(--pop); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,.35); z-index: 70; display: none; padding: 6px; max-height: 330px; overflow-y: auto; }
+.pickpop.show { display: block; }
+.pickpop .searchbox { width: 100%; margin-bottom: 4px; }
+.pickpop .grp { font-size: 11px; font-weight: 600; color: var(--text3); padding: 7px 8px 3px; }
+.opt { display: grid; grid-template-columns: 64px 24px 1fr auto; gap: 8px; align-items: center; padding: 5px 8px; border-radius: 7px; cursor: pointer; }
+.opt:hover { background: var(--accent-soft); }
+.opt .d { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.opt .tile { width: 22px; height: 22px; border-radius: 6px; }
+
+.recorder { display: flex; align-items: center; gap: 8px; }
+.recbox { flex: 1; height: 34px; display: flex; align-items: center; gap: 8px; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; cursor: pointer; outline: none; }
+.recbox.recording { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.recbox.bad { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+.recbox.warn { border-color: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
+.recbox .ph { color: var(--text3); }
+.recbox .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+.recbox .sp { flex: 1; }
+.recbox .esc { font-size: 11px; color: var(--text3); }
+
+.radios { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.radio { display: grid; grid-template-columns: 18px 1fr; gap: 9px; padding: 9px 12px; cursor: pointer; border-top: 1px solid var(--border-soft); }
+.radio:first-child { border-top: 0; }
+.radio:hover { background: var(--card-hover); }
+.radio.on { background: var(--accent-soft); }
+.radio.dis { opacity: .45; cursor: default; }
+.radio .dotr { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--text3); margin-top: 1px; display: grid; place-items: center; }
+.radio.on .dotr { border-color: var(--accent); }
+.radio.on .dotr::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.radio .rt { font-weight: 600; }
+.radio .rd { color: var(--text3); font-size: 12px; margin-top: 1px; }
+.nested { margin: 2px 0 2px 27px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.nested .lab { color: var(--text2); font-size: 12px; margin-right: 2px; }
+
+.preview { background: var(--tile); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; color: var(--text2); display: flex; gap: 9px; align-items: flex-start; }
+.preview b { color: var(--text); }
+
+/* ---------- Desktop (runtime) ---------- */
+.win-desk { width: 1180px; height: 720px; background: var(--desk); flex-direction: column; }
+.menubar { height: 26px; background: rgba(0,0,0,.25); display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 12.5px; color: #fff; }
+body.light .menubar { background: rgba(255,255,255,.45); color: #111; }
+.menubar .sp { flex: 1; }
+.appwin { position: absolute; left: 90px; top: 70px; width: 640px; height: 420px; background: var(--bg); border-radius: 11px; border: 1px solid var(--border); box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.appwin .tb { height: 38px; display: flex; align-items: center; gap: 12px; padding: 0 13px; border-bottom: 1px solid var(--border-soft); color: var(--text2); font-weight: 600; }
+.appwin .doc { padding: 22px 30px; line-height: 1.8; font-size: 14px; color: var(--text); }
+.appwin .doc mark { background: rgba(47,140,255,.35); color: inherit; border-radius: 2px; }
+.appwin .doc .rep { background: rgba(41,199,110,.22); border-radius: 2px; transition: background 1.5s; }
+.keytip { position: absolute; right: 40px; top: 60px; display: flex; flex-direction: column; gap: 10px; width: 330px; }
+.keytip .card { padding: 14px; }
+.keytip h4 { margin: 0 0 6px; font-size: 13px; }
+.keytip p { margin: 0 0 10px; color: var(--text2); font-size: 12px; }
+
+.hud { position: absolute; display: flex; align-items: center; gap: 9px; padding: 7px 12px 7px 9px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 34px rgba(0,0,0,.35); font-size: 12.5px; backdrop-filter: blur(20px); }
+.hud .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent-soft); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hud .kw { font-size: 11px; }
+.hud .muted { color: var(--text3); }
+.resultpop { position: absolute; width: 380px; background: var(--glass); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 18px 44px rgba(0,0,0,.4); backdrop-filter: blur(20px); }
+.resultpop .hd { display: flex; align-items: center; gap: 8px; padding: 10px 12px 4px; font-size: 12px; color: var(--text3); }
+.resultpop .bd { padding: 4px 14px 10px; font-size: 14px; line-height: 1.6; }
+.resultpop .ft { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text3); align-items: center; }
+.resultpop .ft .sp { flex: 1; }
+.resultpop .ft kbd { font: 11px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; margin-right: 3px; }
+
+.launcher { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); width: 660px; background: var(--glass); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 26px 70px rgba(0,0,0,.45); backdrop-filter: blur(24px); }
+.launcher .in { display: flex; align-items: center; gap: 9px; padding: 13px 15px; border-bottom: 1px solid var(--border-soft); font-size: 16px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 4px; border-radius: 8px; background: var(--ai-soft); color: var(--ai); font-size: 13px; font-weight: 600; }
+.chip .tile { width: 20px; height: 20px; border-radius: 5px; }
+.launcher .ph { color: var(--text3); }
+.launcher .sel { margin: 10px 15px 0; font-size: 12px; color: var(--text3); display: flex; gap: 6px; align-items: center; }
+.launcher .res { margin: 10px 15px 12px; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.launcher .res .meta { font-size: 11.5px; color: var(--text3); margin-bottom: 6px; display: flex; gap: 8px; }
+.launcher .res .txt { font-size: 14px; line-height: 1.6; }
+.launcher .bar { display: flex; align-items: center; gap: 14px; padding: 8px 15px; border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text3); }
+.launcher .bar .sp { flex: 1; }
+.launcher .bar kbd { font: 11px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; margin-right: 3px; color: var(--text2); }
+.launcher .trig { font-size: 11px; color: var(--text3); display: inline-flex; gap: 5px; align-items: center; }
+
+/* Keyword page integration */
+.kwgrid { display: grid; grid-template-columns: 70px 150px 1fr 120px 40px; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--border-soft); }
+.kwgrid:first-child { border-top: 0; }
+.kwgrid .s { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kwgrid.head { color: var(--text3); font-size: 11px; font-weight: 600; padding: 7px 14px; background: var(--tile); }
+.addkey { color: var(--text3); font-size: 12px; border: 1px dashed var(--border); border-radius: 6px; padding: 1px 7px; cursor: pointer; white-space: nowrap; }
+.addkey:hover { color: var(--accent); border-color: var(--accent); }
+.anno { position: absolute; background: var(--accent); color: #fff; font-size: 11.5px; padding: 4px 9px; border-radius: 6px; box-shadow: 0 6px 16px rgba(0,0,0,.3); max-width: 260px; z-index: 90; }
+.anno::before { content: attr(data-n); display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #fff; color: var(--accent); font-weight: 700; font-size: 10.5px; margin-right: 6px; }
+body.noanno .anno { display: none; }
+</style>
+</head>
+<body>
+
+<div class="stagebar" id="stagebar">
+  <b>独立的快捷键管理</b>
+  <button class="pill" data-screen="page">① 快捷键页</button>
+  <button class="pill" data-screen="edit">② 编辑关键字快捷键</button>
+  <button class="pill" data-screen="add">③ 添加 · 选关键字</button>
+  <button class="pill" data-screen="conflict">④ 录制与冲突</button>
+  <button class="pill" data-screen="launcher">⑤ 触发 · 在启动器中打开</button>
+  <button class="pill" data-screen="direct">⑥ 触发 · 直接执行</button>
+  <button class="pill" data-screen="kwpage">⑦ 关键字页联动</button>
+  <span class="sp"></span>
+  <button class="pill" id="annoToggle">标注</button>
+  <button class="pill" id="themeToggle">浅色</button>
+</div>
+<div class="caption" id="caption"></div>
+
+<!-- ================= Settings window ================= -->
+<div class="window win-settings screen" id="settingsWin">
+  <nav class="mainnav">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><span class="logo">T</span>Typeflux</div>
+    <div class="navitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg>概览</div>
+    <div class="navitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/></svg>词库</div>
+    <div class="navitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>历史</div>
+    <div class="navitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="11" r="2.5"/></svg>人设</div>
+    <div class="navitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg>模型</div>
+    <div class="navitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3h4v4a2 2 0 1 0 4 0h3v4h-3a2 2 0 1 0 0 4h3v6H3v-6h3a2 2 0 1 0 0-4H3V7h7z"/></svg>Agent</div>
+    <div class="navitem" data-nav="launcher"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z"/></svg>启动器</div>
+    <div class="navitem" data-nav="hotkeys"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>快捷键<span class="new">新</span></div>
+    <div class="navsp"></div>
+    <div class="navitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>设置</div>
+  </nav>
+  <div class="content">
+    <div class="detail" id="detail"></div>
+    <div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
+    <div class="menu" id="ctxmenu"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<!-- ================= Desktop: launcher mode ================= -->
+<div class="window win-desk screen" id="deskLauncher">
+  <div class="menubar"><b></b><b>Notes</b><span>文件</span><span>编辑</span><span>格式</span><span class="sp"></span><span>T</span><span>10月9日 周五 16:20</span></div>
+  <div class="appwin" style="filter: brightness(.82)">
+    <div class="tb"><div class="lights"><i></i><i></i><i></i></div>周报草稿</div>
+    <div class="doc">本周完成了快捷键设置的调研。<br><mark>we has finished the research about hotkey and will starting design next week</mark><br>下周进入设计评审。</div>
+  </div>
+  <div class="launcher">
+    <div class="in">
+      <span class="chip"><span class="tile t-prompt"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg></span>sum · 总结</span>
+      <span class="ph">输入要总结的文字，或直接按 ↩ 处理选中的 1 行</span>
+    </div>
+    <div class="sel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>选中的文字 · Notes · 1 行 <span class="sp"></span></div>
+    <div class="res">
+      <div class="meta"><span>总结</span><span>·</span><span>AI · gpt-5-mini</span></div>
+      <div class="txt">Hotkey research is done; the design starts next week.</div>
+    </div>
+    <div class="bar">
+      <span class="trig"><span class="keys"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>S</kbd></span>由快捷键打开</span>
+      <span class="sp"></span>
+      <span><kbd>↩</kbd>替换选中文字</span><span><kbd>⌘C</kbd>复制</span><span><kbd>⌘↩</kbd>问 AI</span><span><kbd>esc</kbd>关闭</span>
+    </div>
+  </div>
+  <div class="anno" data-n="1" style="left: 960px; top: 186px; max-width: 200px">按下快捷键 = 打开启动器 + 进入关键字 + 带上选中文字</div>
+  <div class="anno" data-n="2" style="left: 960px; top: 290px; max-width: 200px">有选中文字时立即运行（相当于替用户按了 ↩）</div>
+  <div class="anno" data-n="3" style="left: 290px; top: 410px">底栏左侧提示是哪个快捷键打开的，可点击跳到设置</div>
+</div>
+
+<!-- ================= Desktop: direct mode ================= -->
+<div class="window win-desk screen" id="deskDirect">
+  <div class="menubar"><b></b><b>Notes</b><span>文件</span><span>编辑</span><span>格式</span><span class="sp"></span><span>T</span><span>10月9日 周五 16:20</span></div>
+  <div class="appwin">
+    <div class="tb"><div class="lights"><i></i><i></i><i></i></div>周报草稿</div>
+    <div class="doc" id="directDoc"></div>
+  </div>
+  <div id="directOverlay"></div>
+  <div class="keytip">
+    <div class="card">
+      <h4>试一下：<span class="keys"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>R</kbd></span> rw · 润色 → 替换</h4>
+      <p>直接执行，不打开启动器：在选中文字旁显示进度，完成后替换选中文字。</p>
+      <button class="btn primary sm" data-direct="replace">按下 ⌃⌥R</button>
+    </div>
+    <div class="card">
+      <h4>试一下：<span class="keys"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>T</kbd></span> fy · 翻译 → 浮窗</h4>
+      <p>结果显示在选中文字下方的小浮窗里，↩ 写回、⌘C 复制、⌘O 在启动器里继续。</p>
+      <button class="btn primary sm" data-direct="panel">按下 ⌃⌥T</button>
+    </div>
+    <div class="card">
+      <h4>试一下：<span class="keys"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>S</kbd></span> 没有选中文字</h4>
+      <p>按快捷键时没有选中任何文字，按规则「打开启动器等待输入」或「什么都不做」。</p>
+      <button class="btn sm" data-direct="nosel">什么都不做 → 提示</button>
+      <button class="btn sm" data-direct="fail">运行失败</button>
+      <button class="btn ghost sm" data-direct="reset">重置</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================== Data ============================== */
+const ICONS = {
+  mic: '<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  mic2: '<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/><circle cx="19" cy="5" r="2"/>',
+  bubble: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/>',
+  persona: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="11" r="2.5"/><path d="M8 17c1-2 7-2 8 0"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  translate: '<path d="M4 5h8M8 3v2M6 5c0 4 3 7 6 8M10 5c0 3-3 7-6 8M13 21l4-9 4 9M14.5 18h5"/>',
+  sparkle: '<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  flow: '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M6 8l5 8M18 8l-5 8"/>',
+  doc: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
+  chat: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21l4-4"/>',
+  book: '<path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/>',
+  more: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  kb: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  warn: '<path d="M12 3 2 21h20zM12 10v5M12 18h.01"/>',
+  bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  launcher: '<rect x="3" y="6" width="18" height="12" rx="3"/><path d="M7 12h6"/>',
+  chev: '<path d="m6 9 6 6 6-6"/>',
+  check: '<path d="m5 12 5 5 9-10"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
+};
+const ic = (n, s = 14, fill = false) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" ${fill ? 'fill="currentColor"' : 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'}>${ICONS[n]}</svg>`;
+
+/** Built-in Typeflux hotkeys (today: Settings → 语音快捷键). */
+const SYSTEM = [
+  { id: 'activation', icon: 'mic', title: '语音输入', desc: '按住说话，松开插入；轻触锁定录音', keys: ['fn'], def: ['fn'], extra: '快速录入 Beta' },
+  { id: 'auxiliary', icon: 'mic2', title: '辅助快捷键', desc: '使用独立人设进行语音输入', keys: ['fn', '⇧'], def: ['fn', '⇧'] },
+  { id: 'ask', icon: 'bubble', title: '随便问 · 启动器', desc: '打开启动器；连按两次开始录音提问', keys: ['⌘', 'Space'], def: ['⌘', 'Space'], extra: '打开位置：始终居中' },
+  { id: 'persona', icon: 'persona', title: '人设切换器', desc: '打开选择器，可直接把人设应用到选中文字', keys: ['⌥', '⌘', 'P'], def: ['⌥', '⌘', 'P'] },
+  { id: 'history', icon: 'clock', title: '剪贴板与历史', desc: '在任何地方打开剪贴板与语音历史', keys: ['⌥', '⌘', 'O'], def: ['⌥', '⌘', 'O'] },
+];
+
+/** Plugin kinds and what a hotkey may do with each. */
+const KINDS = {
+  translate: { tile: 't-translate', icon: 'translate', label: '翻译', modes: ['launcher', 'direct'], results: ['panel', 'replace', 'copy'], input: 'selection' },
+  prompt:    { tile: 't-prompt', icon: 'sparkle', label: 'AI 指令', modes: ['launcher', 'direct'], results: ['replace', 'panel', 'copy'], input: 'selection' },
+  web:       { tile: 't-web', icon: 'search', label: '网页搜索', modes: ['launcher', 'direct'], results: ['browser'], input: 'selection' },
+  workflow:  { tile: 't-workflow', icon: 'flow', label: '工作流', modes: ['launcher', 'direct'], results: ['workflow'], input: 'optional' },
+  files:     { tile: 't-local', icon: 'doc', label: '文件搜索', modes: ['launcher'], input: 'none' },
+  chat:      { tile: 't-sys', icon: 'chat', label: '打开聊天', modes: ['launcher'], input: 'none' },
+  dict:      { tile: 't-translate', icon: 'book', label: '单词本', modes: ['launcher'], input: 'selection' },
+};
+
+const KEYWORDS = [
+  { kw: 'fy', kind: 'translate', name: '翻译', detail: '自动判断方向（简体中文 ↔ 英语）' },
+  { kw: 'fyja', kind: 'translate', name: '翻译', detail: '翻译成日语' },
+  { kw: 'dict', kind: 'dict', name: '单词本', detail: '打开单词本，在里面查词' },
+  { kw: 'rw', kind: 'prompt', name: '润色', detail: 'Polish the following text: fix grammar…' },
+  { kw: 'sum', kind: 'prompt', name: '总结', detail: 'Summarize the following text in a few…' },
+  { kw: 'ex', kind: 'prompt', name: '解释', detail: 'Explain the following clearly and briefly…' },
+  { kw: 'g', kind: 'web', name: 'Google', detail: 'www.google.com/search?q={query}' },
+  { kw: 'gh', kind: 'web', name: 'GitHub', detail: 'github.com/search?q={query}' },
+  { kw: 'f', kind: 'files', name: '文件搜索', detail: '按名称查找文件和文件夹' },
+  { kw: 'chat', kind: 'chat', name: '打开聊天', detail: '打开聊天窗口，不发送消息' },
+  { kw: 'wc', kind: 'workflow', name: '字数统计', detail: 'Python · 输出文本 · 复制结果' },
+  { kw: 'ip', kind: 'workflow', name: '本机 IP', detail: 'Shell · 不需要输入', disabled: true },
+];
+
+const MODE_TEXT = { launcher: '在启动器中打开', direct: '直接执行' };
+const RESULT_TEXT = { replace: '替换选中文字', copy: '复制到剪贴板', panel: '在浮窗中显示', browser: '在浏览器中打开', workflow: '按工作流的输出动作' };
+const NOSEL_TEXT = { launcher: '打开启动器等待输入', clipboard: '使用剪贴板内容', skip: '什么都不做' };
+
+let BINDINGS = [
+  { id: 1, kw: 'rw', keys: ['⌃', '⌥', 'R'], mode: 'direct', result: 'replace', nosel: 'skip', enabled: true },
+  { id: 2, kw: 'fy', keys: ['⌃', '⌥', 'T'], mode: 'direct', result: 'panel', nosel: 'clipboard', enabled: true },
+  { id: 3, kw: 'sum', keys: ['⌃', '⌥', 'S'], mode: 'launcher', result: 'replace', nosel: 'launcher', enabled: true },
+  { id: 4, kw: 'g', keys: ['⌃', '⌥', 'G'], mode: 'direct', result: 'browser', nosel: 'launcher', enabled: true },
+  { id: 5, kw: 'wc', keys: ['⌃', '⌥', 'W'], mode: 'direct', result: 'workflow', nosel: 'clipboard', enabled: true },
+  { id: 6, kw: 'f', keys: ['⌃', '⌥', 'F'], mode: 'launcher', result: null, nosel: 'launcher', enabled: true },
+  { id: 7, kw: 'ip', keys: ['⌃', '⌥', 'I'], mode: 'direct', result: 'workflow', nosel: 'launcher', enabled: true },
+];
+let nextID = 8;
+
+/** Common macOS shortcuts: allowed, with a warning (Typeflux would take them everywhere). */
+const MACOS = { '⌘C': '复制', '⌘V': '粘贴', '⌘X': '剪切', '⌘Z': '撤销', '⌘A': '全选', '⌘S': '保存', '⌘Q': '退出', '⌘W': '关闭窗口', '⌘T': '新标签页', '⌘N': '新建', '⌘F': '查找', '⌘P': '打印', '⌘Tab': '切换应用', '⌃Space': '切换输入法', '⌘⇧3': '截屏', '⌘⇧4': '截取区域', '⌘⇧5': '截屏工具', '⌃⌘Q': '锁定屏幕', '⌃⌘F': '全屏', '⌘,': '偏好设置', '⌘H': '隐藏' };
+
+/* ============================== Helpers ============================== */
+const $ = (s, r = document) => r.querySelector(s);
+const kwInfo = (kw) => KEYWORDS.find(k => k.kw === kw);
+const keyStr = (keys) => keys ? keys.join('') : '';
+const keycaps = (keys, x2) => keys && keys.length ? `<span class="keys">${keys.map(k => `<kbd>${k}</kbd>`).join('')}${x2 ? '<span class="x2">连按两次</span>' : ''}</span>` : '<span class="keys unset">未设置</span>';
+const kindOf = (kw) => KINDS[kwInfo(kw)?.kind];
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/** Why a binding can't run right now (shown as a badge), or null. */
+function bindingProblem(b) {
+  const k = kwInfo(b.kw);
+  if (!k) return { text: '关键字已删除', tone: 'bad' };
+  if (k.disabled) return { text: k.kind === 'workflow' ? '工作流已停用' : '关键字已停用', tone: 'warn' };
+  return null;
+}
+
+function howText(b) {
+  const kind = kindOf(b.kw);
+  if (!kind) return '—';
+  if (b.mode === 'launcher') return MODE_TEXT.launcher;
+  return `${MODE_TEXT.direct} · ${RESULT_TEXT[b.result] || ''}`;
+}
+
+/** Everything a new binding may collide with, except `selfID`. */
+function conflictFor(keys, selfID, selfSys) {
+  const s = keyStr(keys);
+  for (const sys of SYSTEM) if (sys.id !== selfSys && keyStr(sys.keys) === s) return { tone: 'bad', text: `已被 Typeflux「${sys.title}」使用`, sys };
+  for (const b of BINDINGS) if (b.id !== selfID && keyStr(b.keys) === s) return { tone: 'bad', text: `已被关键字快捷键「${b.kw} · ${kwInfo(b.kw)?.name ?? ''}」使用`, other: b };
+  const main = keys.filter(k => !['⌘', '⌥', '⌃', '⇧', 'fn'].includes(k));
+  const isF = main.length === 1 && /^F\d+$/.test(main[0]);
+  if (!main.length) return { tone: 'bad', text: '关键字快捷键需要一个普通按键（只按修饰键或连按两次留给语音输入）' };
+  if (!isF && !keys.some(k => ['⌘', '⌥', '⌃'].includes(k))) return { tone: 'bad', text: '至少要有 ⌘、⌥ 或 ⌃ 之一（F1–F19 除外），否则正常打字会误触发' };
+  const sys = MACOS[s.replace('⇧⌘', '⌘⇧')];
+  if (sys) return { tone: 'warn', text: `这是 macOS 常用的「${sys}」，设置后它在所有应用中都会被 Typeflux 接管` };
+  return null;
+}
+
+/* ============================== Settings page ============================== */
+const ui = { filter: 'all', query: '', recordingRow: null };
+
+function renderPage() {
+  const q = ui.query.trim().toLowerCase();
+  const sys = SYSTEM.filter(s => !q || (s.title + s.desc + keyStr(s.keys)).toLowerCase().includes(q));
+  const kws = BINDINGS.filter(b => !q || (b.kw + (kwInfo(b.kw)?.name ?? '') + keyStr(b.keys) + howText(b)).toLowerCase().includes(q));
+  const showSys = ui.filter !== 'kw', showKw = ui.filter !== 'sys';
+  $('#detail').innerHTML = `
+  <div class="detail-inner">
+    <div class="dh"><div class="bigtile">${ic('kb', 22)}</div><div><h2>快捷键</h2><p>Typeflux 的全部全局快捷键都在这里：语音、启动器，以及直接触发某个关键字。</p></div></div>
+    <div class="kbar">
+      <div class="seg" id="filterSeg">
+        <button data-f="all" class="${ui.filter === 'all' ? 'on' : ''}">全部 <span class="n">${SYSTEM.length + BINDINGS.length}</span></button>
+        <button data-f="sys" class="${ui.filter === 'sys' ? 'on' : ''}">Typeflux <span class="n">${SYSTEM.length}</span></button>
+        <button data-f="kw" class="${ui.filter === 'kw' ? 'on' : ''}">关键字 <span class="n">${BINDINGS.length}</span></button>
+      </div>
+      <div class="searchbox">${ic('search', 13)}<input id="q" placeholder="搜索功能、关键字或按键" value="${esc(ui.query)}"></div>
+      <span class="sp"></span>
+      <button class="btn primary" id="addBtn">${ic('plus', 13)}添加关键字快捷键</button>
+    </div>
+    ${showSys ? `
+    <div class="sl">Typeflux <span class="aux">· 内置功能，可以改键或取消</span><span class="sp"></span><span class="aux" style="cursor:pointer;color:var(--accent)" id="resetAll">全部恢复默认</span></div>
+    <div class="card">${sys.map(sysRow).join('') || '<div class="empty">没有匹配的快捷键</div>'}</div>` : ''}
+    ${showKw ? `
+    <div class="sl">关键字快捷键 <span class="aux">· 在任何应用里按下，直接运行一个启动器关键字</span></div>
+    <div class="card">${kws.map(kwRow).join('') || (BINDINGS.length ? '<div class="empty">没有匹配的快捷键</div>' : emptyKw())}</div>
+    <div class="foot">快捷键在所有应用中生效。点按键可以直接重新录制：Esc 取消，⌫ 清除。关键字改名后快捷键自动跟着走；关键字被删除或停用时，快捷键暂停并在这里标出。</div>` : ''}
+  </div>`;
+  bindPage();
+}
+
+function sysRow(s) {
+  const rec = ui.recordingRow === 'sys:' + s.id;
+  return `<div class="row sys" data-sys="${s.id}">
+    <div class="tile t-sys">${ic(s.icon, 15)}</div>
+    <div style="min-width:0"><div class="t">${s.title}</div><div class="s">${s.desc}${s.extra ? ` · <span style="color:var(--text2)">${s.extra}</span>` : ''}</div></div>
+    <div><span class="rec ${rec ? 'recording' : ''}" data-rec="sys:${s.id}">${rec ? '按下新的快捷键…' : keycaps(s.keys)}</span>
+      ${keyStr(s.keys) !== keyStr(s.def) && s.keys.length ? '<span class="badge off" style="margin-left:6px">已修改</span>' : ''}</div>
+    <button class="ibtn" data-more="sys:${s.id}">${ic('more', 15, true)}</button>
+  </div>`;
+}
+
+function kwRow(b) {
+  const k = kwInfo(b.kw), kind = kindOf(b.kw), p = bindingProblem(b);
+  const rec = ui.recordingRow === 'kw:' + b.id;
+  return `<div class="row kwr ${b.enabled ? '' : 'off'}" data-kw="${b.id}">
+    <div><span class="rec ${rec ? 'recording' : ''}" data-rec="kw:${b.id}">${rec ? '按下新的快捷键…' : keycaps(b.keys)}</span></div>
+    <div class="fn"><span class="kw">${esc(b.kw)}</span>${kind ? `<span class="tile ${kind.tile}" style="width:22px;height:22px;border-radius:6px">${ic(kind.icon, 12)}</span>` : ''}<span class="nm">${k ? k.name : '<span style="color:var(--text3)">（已删除）</span>'}</span></div>
+    <div class="how">${p ? `<span class="badge ${p.tone}">${ic('warn', 11)}${p.text}</span>` : ''}
+      ${ic(b.mode === 'direct' ? 'bolt' : 'launcher', 12)}<span class="txt">${howText(b)}${b.mode === 'direct' || kind?.input !== 'none' ? ` · 没选中时${NOSEL_TEXT[b.nosel]}` : ''}</span></div>
+    <div class="switch ${b.enabled ? 'on' : ''}" data-toggle="${b.id}" title="启用"></div>
+  </div>`;
+}
+
+function emptyKw() {
+  return `<div class="empty">${ic('kb', 26)}<div style="margin:8px 0 4px;color:var(--text2);font-weight:600">还没有关键字快捷键</div>
+  <div>比如：选中文字按 <span class="keys"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>R</kbd></span> 直接润色并替换。</div>
+  <div style="margin-top:10px;display:flex;gap:6px;justify-content:center">
+    <button class="btn sm" data-quick="rw">润色并替换</button><button class="btn sm" data-quick="fy">翻译选中文字</button><button class="btn sm" data-quick="g">Google 搜索</button></div></div>`;
+}
+
+function bindPage() {
+  $('#filterSeg').onclick = (e) => { const b = e.target.closest('button'); if (b) { ui.filter = b.dataset.f; renderPage(); } };
+  const qi = $('#q'); qi.oninput = () => { ui.query = qi.value; const pos = qi.selectionStart; renderPage(); const n = $('#q'); n.focus(); n.setSelectionRange(pos, pos); };
+  $('#addBtn').onclick = () => openSheet(null);
+  const ra = $('#resetAll'); if (ra) ra.onclick = () => { SYSTEM.forEach(s => s.keys = [...s.def]); renderPage(); toast('Typeflux 快捷键已恢复默认'); };
+  document.querySelectorAll('[data-toggle]').forEach(el => el.onclick = (e) => {
+    e.stopPropagation(); const b = BINDINGS.find(x => x.id == el.dataset.toggle); b.enabled = !b.enabled; renderPage();
+  });
+  document.querySelectorAll('.row.kwr').forEach(el => el.onclick = (e) => { if (e.target.closest('[data-rec],[data-toggle]')) return; openSheet(BINDINGS.find(b => b.id == el.dataset.kw)); });
+  document.querySelectorAll('.row.kwr').forEach(el => el.oncontextmenu = (e) => { e.preventDefault(); showKwMenu(e, +el.dataset.kw); });
+  document.querySelectorAll('[data-rec]').forEach(el => el.onclick = (e) => { e.stopPropagation(); startRowRecording(el.dataset.rec); });
+  document.querySelectorAll('[data-more]').forEach(el => el.onclick = (e) => { e.stopPropagation(); showSysMenu(e, el.dataset.more.slice(4)); });
+  document.querySelectorAll('[data-quick]').forEach(el => el.onclick = () => openSheet(null, el.dataset.quick));
+}
+
+/* ---- inline row recording ---- */
+let rowKeyHandler = null;
+function startRowRecording(id) {
+  ui.recordingRow = id; renderPage();
+  rowKeyHandler = (e) => {
+    e.preventDefault();
+    if (e.key === 'Escape') return stopRow();
+    const keys = eventKeys(e); if (!keys) return;
+    const [type, rid] = id.split(':');
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      if (type === 'sys') SYSTEM.find(s => s.id === rid).keys = []; else BINDINGS.find(b => b.id == rid).keys = [];
+      toast('已取消快捷键'); return stopRow();
+    }
+    const c = type === 'sys' ? sysConflict(keys, rid) : conflictFor(keys, +rid);
+    if (c && c.tone === 'bad') { toast('⚠︎ ' + c.text + '，未修改'); return stopRow(); }
+    if (type === 'sys') SYSTEM.find(s => s.id === rid).keys = keys; else BINDINGS.find(b => b.id == rid).keys = keys;
+    toast(c ? '已更新 · ' + c.text : '快捷键已更新：' + keyStr(keys)); stopRow();
+  };
+  document.addEventListener('keydown', rowKeyHandler, true);
+}
+function stopRow() { document.removeEventListener('keydown', rowKeyHandler, true); ui.recordingRow = null; renderPage(); }
+function sysConflict(keys, sysID) {
+  const s = keyStr(keys);
+  for (const o of SYSTEM) if (o.id !== sysID && keyStr(o.keys) === s) return { tone: 'bad', text: `已被「${o.title}」使用` };
+  for (const b of BINDINGS) if (keyStr(b.keys) === s) return { tone: 'bad', text: `已被关键字快捷键「${b.kw}」使用` };
+  return null;
+}
+
+/** Keycaps for a keydown, or null for a lone modifier. */
+function eventKeys(e) {
+  if (['Shift', 'Control', 'Alt', 'Meta', 'Fn', 'CapsLock'].includes(e.key)) return null;
+  const keys = [];
+  if (e.ctrlKey) keys.push('⌃'); if (e.altKey) keys.push('⌥'); if (e.shiftKey) keys.push('⇧'); if (e.metaKey) keys.push('⌘');
+  let k = e.code.startsWith('Key') ? e.code.slice(3) : e.code.startsWith('Digit') ? e.code.slice(5) : e.code;
+  k = { Space: 'Space', Enter: '↩', Tab: 'Tab', Backspace: '⌫', Delete: '⌫', ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']', Minus: '-', Equal: '=', Backquote: '`', Backslash: '\\' }[k] || k;
+  keys.push(k);
+  return keys;
+}
+
+/* ---- menus & toast ---- */
+function showMenu(e, html) {
+  const m = $('#ctxmenu'), r = $('#settingsWin .content').getBoundingClientRect();
+  m.innerHTML = html; m.classList.add('show');
+  m.style.left = Math.min(e.clientX - r.left - 200, r.width - 230) + 'px'; m.style.top = (e.clientY - r.top + 10) + 'px';
+  setTimeout(() => document.addEventListener('click', () => m.classList.remove('show'), { once: true }));
+}
+function showSysMenu(e, id) {
+  const s = SYSTEM.find(x => x.id === id);
+  showMenu(e, `<div class="mi" data-a="rec">${ic('kb', 13)}重新录制</div><div class="mi" data-a="def">恢复默认（${keyStr(s.def)}）</div><hr><div class="mi danger" data-a="unset">取消快捷键</div>`);
+  $('#ctxmenu').onclick = (ev) => { const a = ev.target.closest('.mi')?.dataset.a; if (a === 'rec') startRowRecording('sys:' + id); if (a === 'def') { s.keys = [...s.def]; renderPage(); } if (a === 'unset') { s.keys = []; renderPage(); } };
+}
+function showKwMenu(e, id) {
+  const b = BINDINGS.find(x => x.id === id);
+  showMenu(e, `<div class="mi" data-a="edit">编辑…</div><div class="mi" data-a="rec">重新录制按键</div><div class="mi" data-a="dup">复制一份</div><div class="mi" data-a="kw">在关键字页中查看 ${b.kw}</div><hr><div class="mi danger" data-a="del">删除</div>`);
+  $('#ctxmenu').onclick = (ev) => {
+    const a = ev.target.closest('.mi')?.dataset.a;
+    if (a === 'edit') openSheet(b); if (a === 'rec') startRowRecording('kw:' + id);
+    if (a === 'dup') openSheet({ ...b, id: null, keys: [] });
+    if (a === 'kw') show('kwpage');
+    if (a === 'del') { BINDINGS = BINDINGS.filter(x => x.id !== id); renderPage(); toast('已删除 · 撤销'); }
+  };
+}
+let toastTimer;
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2400); }
+
+/* ============================== Sheet ============================== */
+let draft = null, sheetKeyHandler = null;
+
+function openSheet(binding, presetKw) {
+  draft = binding ? { ...binding, keys: [...binding.keys] } : { id: null, kw: presetKw || null, keys: [], mode: 'direct', result: null, nosel: 'launcher', enabled: true };
+  draft.isNew = !binding || binding.id == null;
+  if (draft.kw) normalizeDraft();
+  draft.recording = false; draft.pickOpen = !draft.kw;
+  $('#scrim').classList.add('show');
+  renderSheet();
+}
+function closeSheet() { stopSheetRecording(); $('#scrim').classList.remove('show'); draft = null; }
+
+/** Keeps mode/result valid for the chosen keyword's plugin. */
+function normalizeDraft() {
+  const kind = kindOf(draft.kw);
+  if (!kind) return;
+  if (!kind.modes.includes(draft.mode)) draft.mode = kind.modes[0];
+  if (kind.results && !kind.results.includes(draft.result)) draft.result = kind.results[0];
+  if (!kind.results) draft.result = null;
+}
+
+function renderSheet() {
+  const k = draft.kw && kwInfo(draft.kw), kind = k && KINDS[k.kind];
+  const conflict = draft.keys.length ? conflictFor(draft.keys, draft.id) : null;
+  const errors = !draft.kw || !draft.keys.length || (conflict && conflict.tone === 'bad' && !draft.takeOver);
+  $('#sheet').innerHTML = `
+    <header><div class="tile t-sys">${ic('kb', 15)}</div><div><h3>${draft.isNew ? '添加关键字快捷键' : '编辑关键字快捷键'}</h3><p>按下快捷键时，用选中的文字运行一个启动器关键字。</p></div></header>
+    <div class="body">
+      <div class="frow"><label>关键字</label><div class="picker">
+        <button class="pickbtn" id="pickBtn">${k ? `<span class="kw">${esc(k.kw)}</span><span class="tile ${kind.tile}" style="width:22px;height:22px;border-radius:6px">${ic(kind.icon, 12)}</span><b>${k.name}</b><span style="color:var(--text3);font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${k.detail}</span>` : '<span class="ph">选择一个关键字…</span>'}<span class="chev">${ic('chev', 13)}</span></button>
+        <div class="pickpop ${draft.pickOpen ? 'show' : ''}" id="pickPop"></div>
+        ${k && k.disabled ? `<div class="hint warn">${ic('warn', 11)} 这个${k.kind === 'workflow' ? '工作流' : '关键字'}已停用，重新启用前快捷键不会生效。</div>` : ''}
+      </div></div>
+
+      <div class="frow"><label>快捷键</label><div>
+        <div class="recorder">
+          <div class="recbox ${draft.recording ? 'recording' : conflict ? conflict.tone : ''}" id="recBox" tabindex="0">
+            ${draft.recording ? '<span class="pulse"></span><span class="ph">按下快捷键…</span><span class="sp"></span><span class="esc">Esc 取消 · ⌫ 清除</span>' : draft.keys.length ? keycaps(draft.keys) + '<span class="sp"></span><span class="esc">点击重新录制</span>' : '<span class="ph">点击后按下快捷键</span>'}
+          </div>
+          ${draft.keys.length && !draft.recording ? `<button class="ibtn" id="clearKeys" title="清除">✕</button>` : ''}
+        </div>
+        ${conflict ? `<div class="hint ${conflict.tone}">${ic('warn', 11)} ${conflict.text}${conflict.other ? ` · <span class="lnk" id="takeOver">${draft.takeOver ? '✓ 保存时取消它的快捷键' : '改为给这里用'}</span>` : ''}${conflict.sys ? ' · 先在上方 Typeflux 区域改掉它' : ''}</div>` : '<div class="hint">建议用 ⌃⌥ + 字母，不容易和其他应用冲突。</div>'}
+      </div></div>
+
+      ${kind ? modeRows(k, kind) : ''}
+
+      ${kind ? `<div class="frow"><label>效果</label><div class="preview">${ic('info', 14)}<div>${previewText(k, kind)}</div></div></div>` : ''}
+    </div>
+    <footer>
+      ${draft.isNew ? '' : '<button class="btn ghost danger" id="delBtn">删除</button>'}
+      <span class="sp"></span>
+      <span style="color:var(--text2);font-size:12px">启用</span><div class="switch ${draft.enabled ? 'on' : ''}" id="enSw"></div>
+      <span style="width:6px"></span>
+      <button class="btn" id="cancelBtn">取消</button>
+      <button class="btn primary" id="saveBtn" ${errors ? 'disabled' : ''}>${draft.isNew ? '添加' : '保存'}</button>
+    </footer>`;
+  renderPicker();
+  bindSheet();
+}
+
+function modeRows(k, kind) {
+  const directDesc = {
+    translate: '不打开启动器，在选中文字旁显示进度，完成后按下面的方式处理结果',
+    prompt: '不打开启动器，在选中文字旁显示进度，完成后按下面的方式处理结果',
+    web: '直接在浏览器里搜索选中的文字',
+    workflow: '在后台运行工作流，结果按它自己的输出动作处理（复制、通知、写回…）',
+  }[k.kind];
+  const canDirect = kind.modes.includes('direct');
+  let html = `<div class="frow"><label>按下后</label><div><div class="radios">
+    <div class="radio ${draft.mode === 'launcher' ? 'on' : ''}" data-mode="launcher"><span class="dotr"></span><div><div class="rt">在启动器中打开</div><div class="rd">打开启动器并进入 <span class="kw">${esc(k.kw)} · ${k.name}</span>${kind.input === 'none' ? '' : '，有选中文字时立即运行；结果在启动器里查看，↩ 写回、⌘C 复制'}</div></div></div>
+    <div class="radio ${draft.mode === 'direct' ? 'on' : ''} ${canDirect ? '' : 'dis'}" data-mode="direct"><span class="dotr"></span><div><div class="rt">直接执行</div><div class="rd">${canDirect ? directDesc : `「${kind.label}」需要在启动器里选择结果，只能在启动器中打开`}</div></div></div>
+  </div>`;
+  if (draft.mode === 'direct' && kind.results && kind.results.length > 1) {
+    html += `<div class="nested" style="margin-top:8px"><span class="lab">结果</span><div class="seg" id="resSeg">${kind.results.map(r => `<button data-r="${r}" class="${draft.result === r ? 'on' : ''}">${RESULT_TEXT[r]}</button>`).join('')}</div></div>`;
+    if (draft.result === 'replace') html += `<div class="hint" style="margin-left:0">选中的地方不可编辑时，自动改为在浮窗中显示。</div>`;
+  }
+  html += `</div></div>`;
+  if (kind.input !== 'none') {
+    const opts = draft.mode === 'launcher' ? ['launcher', 'clipboard'] : ['launcher', 'clipboard', 'skip'];
+    if (!opts.includes(draft.nosel)) draft.nosel = 'launcher';
+    html += `<div class="frow"><label>没有选中文字时</label><div><div class="seg" id="noselSeg">${opts.map(o => `<button data-n="${o}" class="${draft.nosel === o ? 'on' : ''}">${NOSEL_TEXT[o]}</button>`).join('')}</div>
+      ${kind.input === 'optional' ? '<div class="hint">这个工作流不需要输入时，直接运行，不受这里影响。</div>' : ''}</div></div>`;
+  }
+  return html;
+}
+
+function previewText(k, kind) {
+  const keys = draft.keys.length ? keycaps(draft.keys) : '<span style="color:var(--text3)">（快捷键）</span>';
+  if (draft.mode === 'launcher') {
+    return kind.input === 'none' ? `在任何应用按 ${keys} → 打开启动器，进入 <b>${k.kw} · ${k.name}</b>，等你输入。`
+      : `在任何应用选中文字后按 ${keys} → 打开启动器，用 <b>${k.name}</b> 处理选中的文字。` + (draft.nosel === 'clipboard' ? '<br>没有选中文字时，用剪贴板里的文字。' : '<br>没有选中文字时，进入关键字等你输入。');
+  }
+  const res = { replace: '替换选中的文字', copy: '把结果复制到剪贴板', panel: '在选中文字下方的浮窗里显示结果', browser: '在浏览器里打开搜索结果', workflow: '按工作流的输出动作处理结果' }[draft.result];
+  const nosel = { launcher: '没有选中文字时，打开启动器等你输入。', clipboard: '没有选中文字时，用剪贴板里的文字。', skip: '没有选中文字时，只提示「没有选中文字」。' }[draft.nosel];
+  return `选中文字后按 ${keys} → 用 <b>${k.name}</b> 处理，然后${res}。<br>${nosel}`;
+}
+
+function renderPicker() {
+  const pop = $('#pickPop'); if (!pop) return;
+  const q = (draft.pickQuery || '').toLowerCase();
+  const groups = {};
+  KEYWORDS.filter(k => !q || (k.kw + k.name + k.detail).toLowerCase().includes(q)).forEach(k => (groups[KINDS[k.kind].label] ||= []).push(k));
+  pop.innerHTML = `<div class="searchbox">${ic('search', 13)}<input id="pickQ" placeholder="搜索关键字" value="${esc(draft.pickQuery || '')}"></div>` +
+    Object.entries(groups).map(([g, list]) => `<div class="grp">${g}</div>` + list.map(k => {
+      const kind = KINDS[k.kind], used = BINDINGS.filter(b => b.kw === k.kw && b.id !== draft.id);
+      return `<div class="opt" data-kw="${k.kw}"><span><span class="kw">${esc(k.kw)}</span></span><span class="tile ${kind.tile}">${ic(kind.icon, 12)}</span>
+        <span style="min-width:0;display:flex;gap:7px;align-items:baseline"><b style="white-space:nowrap">${k.name}</b><span class="d">${k.detail}</span></span>
+        <span>${used.length ? keycaps(used[0].keys) : k.disabled ? '<span class="badge off">已停用</span>' : ''}</span></div>`;
+    }).join('')).join('') + `<div class="grp" style="border-top:1px solid var(--border-soft);margin-top:6px;padding-top:9px;cursor:pointer;color:var(--accent)">＋ 新建关键字…（打开关键字页）</div>`;
+}
+
+function bindSheet() {
+  $('#pickBtn').onclick = (e) => { e.stopPropagation(); draft.pickOpen = !draft.pickOpen; renderSheet(); if (draft.pickOpen) $('#pickQ')?.focus(); };
+  const pq = $('#pickQ'); if (pq) pq.oninput = () => { draft.pickQuery = pq.value; renderPicker(); bindPickerOpts(); const n = $('#pickQ'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
+  bindPickerOpts();
+  $('#recBox').onclick = () => { draft.recording ? stopSheetRecording(true) : startSheetRecording(); };
+  const ck = $('#clearKeys'); if (ck) ck.onclick = () => { draft.keys = []; draft.takeOver = false; renderSheet(); };
+  const to = $('#takeOver'); if (to) to.onclick = () => { draft.takeOver = !draft.takeOver; renderSheet(); };
+  document.querySelectorAll('#sheet [data-mode]').forEach(el => el.onclick = () => { if (el.classList.contains('dis')) return; draft.mode = el.dataset.mode; renderSheet(); });
+  const rs = $('#resSeg'); if (rs) rs.onclick = (e) => { const b = e.target.closest('button'); if (b) { draft.result = b.dataset.r; renderSheet(); } };
+  const ns = $('#noselSeg'); if (ns) ns.onclick = (e) => { const b = e.target.closest('button'); if (b) { draft.nosel = b.dataset.n; renderSheet(); } };
+  $('#enSw').onclick = () => { draft.enabled = !draft.enabled; renderSheet(); };
+  $('#cancelBtn').onclick = closeSheet;
+  const del = $('#delBtn'); if (del) del.onclick = () => { BINDINGS = BINDINGS.filter(b => b.id !== draft.id); closeSheet(); renderPage(); toast('已删除快捷键'); };
+  $('#saveBtn').onclick = saveDraft;
+}
+function bindPickerOpts() {
+  document.querySelectorAll('#pickPop .opt').forEach(el => el.onclick = (e) => { e.stopPropagation(); draft.kw = el.dataset.kw; draft.pickOpen = false; normalizeDraft(); renderSheet(); });
+}
+
+function startSheetRecording() {
+  draft.recording = true; renderSheet();
+  sheetKeyHandler = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (e.key === 'Escape') return stopSheetRecording(true);
+    if (e.key === 'Backspace' && !e.metaKey && !e.ctrlKey && !e.altKey) { draft.keys = []; return stopSheetRecording(true); }
+    const keys = eventKeys(e); if (!keys) return;
+    draft.keys = keys; draft.takeOver = false; stopSheetRecording(true);
+  };
+  document.addEventListener('keydown', sheetKeyHandler, true);
+}
+function stopSheetRecording(rerender) {
+  if (sheetKeyHandler) document.removeEventListener('keydown', sheetKeyHandler, true);
+  sheetKeyHandler = null;
+  if (draft) { draft.recording = false; if (rerender) renderSheet(); }
+}
+
+function saveDraft() {
+  const c = conflictFor(draft.keys, draft.id);
+  if (c && c.other && draft.takeOver) c.other.keys = [];
+  const { isNew, recording, pickOpen, pickQuery, takeOver, ...b } = draft;
+  if (isNew) { b.id = nextID++; BINDINGS.push(b); } else BINDINGS[BINDINGS.findIndex(x => x.id === b.id)] = b;
+  closeSheet(); ui.filter = ui.filter === 'sys' ? 'all' : ui.filter; renderPage();
+  toast(`${isNew ? '已添加' : '已保存'}：${keyStr(b.keys)} → ${b.kw}`);
+}
+
+$('#scrim').onclick = (e) => { if (draft && draft.pickOpen && !e.target.closest('.picker')) { draft.pickOpen = false; renderSheet(); } };
+
+/* ============================== Keyword page (integration) ============================== */
+function renderKwPage() {
+  const rows = KEYWORDS.filter(k => k.kind !== 'workflow');
+  $('#detail').innerHTML = `
+  <div class="detail-inner">
+    <div class="dh"><div class="bigtile">${ic('kb', 22)}</div><div><h2>关键字</h2><p>启动器 → 关键字。新增「快捷键」一列，和快捷键页是同一份数据。</p></div></div>
+    <div class="card">
+      <div class="kwgrid head"><span>关键字</span><span>功能</span><span>做什么</span><span>快捷键</span><span>启用</span></div>
+      ${rows.map(k => {
+        const kind = KINDS[k.kind], b = BINDINGS.find(x => x.kw === k.kw);
+        return `<div class="kwgrid"><span><span class="kw">${esc(k.kw)}</span></span>
+          <span style="display:flex;gap:8px;align-items:center"><span class="tile ${kind.tile}" style="width:22px;height:22px;border-radius:6px">${ic(kind.icon, 12)}</span><b>${k.name}</b></span>
+          <span class="s">${k.detail}</span>
+          <span>${b ? `<span style="cursor:pointer" data-open="${b.id}">${keycaps(b.keys)}</span>` : `<span class="addkey" data-new="${k.kw}">＋ 快捷键</span>`}</span>
+          <div class="switch on"></div></div>`;
+      }).join('')}
+    </div>
+    <div class="foot">点快捷键打开同一个编辑对话框；「＋ 快捷键」打开添加对话框并预选这个关键字。工作流的关键字在「工作流」页，同样带一个快捷键入口。</div>
+    <div class="sl" style="margin-top:26px">关键字编辑对话框（节选）</div>
+    <div class="card" style="padding:14px 18px">
+      <div class="frow"><label>关键字</label><div><span class="kw" style="font-size:13px">rw</span></div></div>
+      <div class="frow"><label>名称</label><div>润色</div></div>
+      <div class="frow" style="border-top:1px solid var(--border-soft)"><label>快捷键</label><div style="display:flex;gap:10px;align-items:center">${keycaps(['⌃', '⌥', 'R'])}<span style="color:var(--text3);font-size:12px">直接执行 · 替换选中文字</span><span class="sp" style="flex:1"></span><button class="btn sm" data-open="1">编辑快捷键…</button></div></div>
+    </div>
+  </div>`;
+  document.querySelectorAll('[data-open]').forEach(el => el.onclick = () => openSheet(BINDINGS.find(b => b.id == el.dataset.open)));
+  document.querySelectorAll('[data-new]').forEach(el => el.onclick = () => openSheet(null, el.dataset.new));
+}
+
+/* ============================== Direct mode demo ============================== */
+const DOC_SEL = 'we has finished the research about hotkey and will starting design next week';
+const DOC_POL = 'We have finished the research on hotkeys and will start the design next week.';
+function resetDirect(selected = true) {
+  $('#directDoc').innerHTML = `本周完成了快捷键设置的调研。<br>${selected ? `<mark id="selText">${DOC_SEL}</mark>` : DOC_SEL}<br>下周进入设计评审。`;
+  $('#directOverlay').innerHTML = '';
+}
+function hudAt(html) {
+  const r = $('#directDoc').getBoundingClientRect(), w = $('#deskDirect').getBoundingClientRect();
+  $('#directOverlay').innerHTML = `<div class="hud" style="left:${r.left - w.left + 30}px;top:${r.top - w.top + 92}px">${html}</div>`;
+}
+function runDirect(kind) {
+  if (kind === 'reset') return resetDirect();
+  if (kind === 'nosel') {
+    resetDirect(false);
+    hudAt(`${ic('info', 14)}<span class="kw">sum</span><span>没有选中文字</span><span class="muted">· 按规则什么都不做</span>`);
+    return;
+  }
+  resetDirect();
+  const kw = kind === 'panel' ? 'fy' : 'rw', nm = kind === 'panel' ? '翻译中…' : '润色中…';
+  hudAt(`<span class="spin"></span><span class="kw">${kw}</span><span>${nm}</span><span class="muted">esc 取消</span>`);
+  setTimeout(() => {
+    if (kind === 'fail') {
+      hudAt(`<span style="color:var(--danger)">${ic('warn', 14)}</span><span class="kw">rw</span><span>没有可用的文本处理模型</span><span style="color:var(--accent);cursor:pointer">在启动器中打开 ⌘O</span>`);
+      return;
+    }
+    if (kind === 'replace') {
+      $('#directDoc').innerHTML = `本周完成了快捷键设置的调研。<br><span class="rep">${DOC_POL}</span><br>下周进入设计评审。`;
+      hudAt(`<span style="color:var(--ok)">${ic('check', 14)}</span><span class="kw">rw</span><span>已替换选中文字</span><span class="muted">⌘Z 撤销</span>`);
+      setTimeout(() => { const el = $('#directDoc .rep'); if (el) el.style.background = 'transparent'; }, 600);
+      return;
+    }
+    const r = $('#directDoc').getBoundingClientRect(), w = $('#deskDirect').getBoundingClientRect();
+    $('#directOverlay').innerHTML = `<div class="resultpop" style="left:${r.left - w.left + 30}px;top:${r.top - w.top + 92}px">
+      <div class="hd"><span class="kw">fy</span><span>英语 → 简体中文</span><span style="flex:1"></span><span>本机翻译</span></div>
+      <div class="bd">我们已经完成了快捷键的调研，下周开始设计。</div>
+      <div class="ft"><span><kbd>↩</kbd>替换</span><span><kbd>⌘C</kbd>复制</span><span><kbd>⌘O</kbd>在启动器中继续</span><span class="sp"></span><span><kbd>esc</kbd>关闭</span></div></div>`;
+  }, 1300);
+}
+document.querySelectorAll('[data-direct]').forEach(b => b.onclick = () => runDirect(b.dataset.direct));
+
+/* ============================== Screens ============================== */
+const CAPTIONS = {
+  page: '<b>① 快捷键页</b>：侧边栏新增「快捷键」，集中管理 Typeflux 的 5 个内置快捷键（从「设置 → 语音快捷键」挪来）和新的<b>关键字快捷键</b>。点按键直接重录，点行打开编辑，右键有更多操作。可以试试搜索、筛选、开关、点 ⌃⌥R 重录。',
+  edit: '<b>② 编辑对话框</b>：选关键字 → 录快捷键 → 选「在启动器中打开 / 直接执行」→ 结果怎么处理 → 没选中文字时怎么办。底部一句话说明效果。换一个关键字，可选项会跟着插件能力变化。',
+  add: '<b>③ 添加</b>：先选关键字。列表按插件分组，可搜索；已经绑过快捷键的显示按键，停用的标出来。只能在启动器里用的功能（文件搜索、聊天、单词本）只提供「在启动器中打开」。',
+  conflict: '<b>④ 录制与冲突</b>：点录制框后按键（真的可以按）。和 Typeflux 内置快捷键或其他关键字快捷键重复 → 红色，不能保存（关键字之间可以「改为给这里用」）；macOS 常用快捷键（试试 ⌘C）→ 橙色警告，可以保存；没有 ⌘/⌥/⌃ 或只按修饰键 → 红色。',
+  launcher: '<b>⑤ 在启动器中打开</b>：等于「打开启动器 + 输入关键字 + 带上选中文字 + 按 ↩」。结果和平时一样在启动器里使用，底栏左侧标出是哪个快捷键打开的。',
+  direct: '<b>⑥ 直接执行</b>：不打开启动器，选中文字旁出现小进度条，完成后替换 / 复制 / 浮窗显示。点右侧按钮演示几种情况：替换、浮窗、没选中文字、失败。',
+  kwpage: '<b>⑦ 关键字页联动</b>：关键字列表加一列「快捷键」，关键字编辑对话框里也能看到并跳到它的快捷键。两个入口改的是同一份数据。',
+};
+function show(id) {
+  document.querySelectorAll('.pill[data-screen]').forEach(p => p.classList.toggle('on', p.dataset.screen === id));
+  $('#caption').innerHTML = CAPTIONS[id];
+  const settings = ['page', 'edit', 'add', 'conflict', 'kwpage'].includes(id);
+  $('#settingsWin').classList.toggle('on', settings);
+  $('#deskLauncher').classList.toggle('on', id === 'launcher');
+  $('#deskDirect').classList.toggle('on', id === 'direct');
+  document.querySelectorAll('.navitem[data-nav]').forEach(n => n.classList.toggle('on', n.dataset.nav === (id === 'kwpage' ? 'launcher' : 'hotkeys')));
+  if (draft) closeSheet();
+  if (settings) { ui.recordingRow = null; id === 'kwpage' ? renderKwPage() : renderPage(); }
+  if (id === 'edit') openSheet(BINDINGS[0]);
+  if (id === 'add') openSheet(null);
+  if (id === 'conflict') { openSheet({ id: null, kw: 'ex', keys: ['⌃', '⌥', 'R'], mode: 'direct', result: 'panel', nosel: 'launcher', enabled: true }); }
+  if (id === 'direct') resetDirect();
+  history.replaceState(null, '', '?' + new URLSearchParams({ ...Object.fromEntries(new URLSearchParams(location.search)), s: id }));
+}
+document.querySelectorAll('.pill[data-screen]').forEach(p => p.onclick = () => show(p.dataset.screen));
+document.querySelectorAll('.navitem[data-nav]').forEach(n => n.onclick = () => show(n.dataset.nav === 'launcher' ? 'kwpage' : 'page'));
+$('#themeToggle').onclick = () => { document.body.classList.toggle('light'); $('#themeToggle').classList.toggle('on'); };
+$('#annoToggle').onclick = () => { document.body.classList.toggle('noanno'); $('#annoToggle').classList.toggle('on', !document.body.classList.contains('noanno')); };
+
+const params = new URLSearchParams(location.search);
+if (params.get('light') === '1') { document.body.classList.add('light'); $('#themeToggle').classList.add('on'); }
+if (params.get('solo')) document.body.classList.add('solo');
+$('#annoToggle').classList.add('on');
+show(params.get('solo') || params.get('s') || 'page');
+if (params.get('demo')) runDirect(params.get('demo'));
+</script>
+</body>
+</html>
