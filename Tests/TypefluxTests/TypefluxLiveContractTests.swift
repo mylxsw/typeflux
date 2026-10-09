@@ -1,3 +1,4 @@
+import AppKit
 @testable import Typeflux
 import XCTest
 
@@ -195,10 +196,15 @@ final class TypefluxLiveContractTests: XCTestCase {
         XCTAssertEqual(replay.status, 403, "replay must be rejected: \(String(describing: replay.error))")
         XCTAssertNotNil(replay.error)
 
-        // The rejected replay adds no usage or credit debit.
+        // The rejected replay adds no admission or credit debit. The admitted
+        // session's audio duration is held at the admission maximum until its
+        // gateway reports the end, which may land after the replay, so only
+        // the admission count and credits are compared.
         try await Task.sleep(nanoseconds: 3_000_000_000)
         let afterReplay = try await CloudUsageAPIService.fetchCurrentPeriodStats(token: login.accessToken)
-        XCTAssertEqual(afterReplay, settled)
+        XCTAssertEqual(afterReplay.stats.asrCount, settled.stats.asrCount)
+        XCTAssertEqual(afterReplay.credits, settled.credits)
+        XCTAssertNotNil(afterReplay.credits)
     }
 
     func testFailureAfterAudioUsesOneGrantAndNoSecondGateway() async throws {
@@ -304,6 +310,89 @@ final class TypefluxLiveContractTests: XCTestCase {
         )
         print("LIVE false-size: \(String(describing: falseSize))")
         print("LIVE wrong-owner: \(String(describing: wrongOwner)); missing-bearer: \(String(describing: missingBearer))")
+    }
+
+    /// The Settings feedback path against two API nodes sharing one backend:
+    /// failover node B issues a ticket for canonical upload origin A. The
+    /// ticket and PUT share one credential, the submission re-reads it after
+    /// a rotation, and a switch to another account refuses the old upload.
+    /// Needs `TYPEFLUX_LIVE_FAILOVER_API_URL` (B, deployed with
+    /// `FEEDBACK_UPLOAD_API_BASE_URL` set to `TYPEFLUX_LIVE_API_URL`).
+    func testSettingsFeedbackFlowUploadsCanonicalTicketFromFailoverNode() async throws {
+        guard let rawFailover = ProcessInfo.processInfo.environment["TYPEFLUX_LIVE_FAILOVER_API_URL"],
+              let failover = URL(string: rawFailover)
+        else {
+            throw XCTSkip("Set TYPEFLUX_LIVE_FAILOVER_API_URL to run the canonical upload origin check")
+        }
+        let png = LivePNG.onePixel
+        let image = PreparedFeedbackImage(
+            data: png, filename: "live.png", contentType: "image/png", thumbnail: NSImage(size: .zero)
+        )
+        let executor = CloudRequestExecutor(
+            selector: CloudEndpointSelector(baseURLs: [failover, apiURL], prober: LiveNoOpProber())
+        )
+        let state = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil })
+        let login = try await AuthAPIService.login(email: email, password: password)
+        await state.handleLoginSuccess(token: login.accessToken, expiresAt: login.expiresAt, refreshToken: login.refreshToken)
+        defer { state.logout(clearRecentInputMemory: false) }
+
+        // B issues an absolute ticket on A; A is a configured API origin, so
+        // it receives the bearer and accepts the ticket B issued.
+        let uploadCredentialValue = await state.validSessionCredential()
+        let uploadCredential = try XCTUnwrap(uploadCredentialValue)
+        let target = try await FeedbackAPIService.createImageUploadTarget(
+            filename: "probe.png", contentType: "image/png", sizeBytes: Int64(png.count),
+            token: uploadCredential.accessToken, executor: executor
+        )
+        XCTAssertEqual(target.issuingAPIBaseURL, failover)
+        let resolved = try FeedbackAPIService.resolveUploadURL(for: target)
+        XCTAssertTrue(resolved.isAPIOrigin)
+        XCTAssertEqual(resolved.url.host, apiURL.host)
+        XCTAssertEqual(resolved.url.port, apiURL.port)
+        print("LIVE canonical ticket: issued by \(failover) for \(resolved.url.scheme ?? "")://\(resolved.url.host ?? ""):\(resolved.url.port ?? 0)")
+
+        // Without A among the configured origins the same ticket is refused
+        // before any bearer is sent.
+        var untrusted = target
+        untrusted.trustedAPIBaseURLs = [failover]
+        XCTAssertThrowsError(try FeedbackAPIService.resolveUploadURL(for: untrusted))
+
+        // Step 1+2: the Settings upload flow (ticket from B, PUT on A).
+        let imageURL = try await FeedbackUploadFlow.upload(image, credential: uploadCredential, executor: executor)
+        let attachment = FeedbackImageAttachment(
+            filename: "live.png", state: .uploaded(imageURL),
+            uploadOwner: FeedbackUploadOwner(uploadCredential)
+        )
+
+        // Step 3 after a rotation: same sign-in, new access token.
+        let rotated = await state.refreshStoredAccessToken(force: true)
+        XCTAssertEqual(rotated, .refreshed)
+        let submitCredentialValue = await state.validSessionCredential()
+        let submitCredential = try XCTUnwrap(submitCredentialValue)
+        XCTAssertNotEqual(submitCredential.accessToken, uploadCredential.accessToken)
+        XCTAssertEqual(submitCredential.session, uploadCredential.session)
+        let urls = try FeedbackUploadFlow.submissionImageURLs(
+            for: [attachment], submittingAs: FeedbackUploadOwner(submitCredential)
+        )
+        XCTAssertEqual(urls, [imageURL])
+        let feedback = try await FeedbackAPIService.submit(
+            content: "GUL-296 live canonical upload check", contact: nil, imageURLs: urls,
+            token: submitCredential.accessToken, executor: executor
+        )
+        XCTAssertFalse(feedback.id.isEmpty)
+
+        // Another account signs in: the earlier upload is refused.
+        state.logout(clearRecentInputMemory: false)
+        let other = try await AuthAPIService.login(email: secondEmail, password: secondPassword)
+        await state.handleLoginSuccess(token: other.accessToken, expiresAt: other.expiresAt, refreshToken: other.refreshToken)
+        let otherCredentialValue = await state.validSessionCredential()
+        let otherCredential = try XCTUnwrap(otherCredentialValue)
+        XCTAssertNotEqual(otherCredential.session, uploadCredential.session)
+        XCTAssertThrowsError(
+            try FeedbackUploadFlow.submissionImageURLs(for: [attachment], submittingAs: FeedbackUploadOwner(otherCredential))
+        ) { error in
+            XCTAssertEqual((error as? FeedbackUploadOwnerError)?.staleImageIDs, [attachment.id])
+        }
     }
 
     // MARK: - Helpers
