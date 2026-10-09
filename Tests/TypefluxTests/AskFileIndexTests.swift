@@ -172,7 +172,7 @@ struct AskFileScopeTests {
         defer { try? FileManager.default.removeItem(at: link); try? FileManager.default.removeItem(at: real) }
         var settings = AskLauncherSearchSettings()
         settings.fileRoots = [link.path]
-        let scope = AskFileScope(settings: settings, fullDiskAccess: true)
+        let scope = AskFileScope(settings: settings, fullDiskAccess: true).resolved(using: AskRecordingFileReader())
         let resolved = AskFileScope.canonical(real.path)
         #expect(scope.roots == [resolved], "FSEvents reports real paths, so the index keeps them")
         #expect(resolved.hasPrefix("/private/"), "the temporary folder is itself behind a link")

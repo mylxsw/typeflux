@@ -3,7 +3,7 @@ import Foundation
 /// One file or folder in the index. Plain values only, so the whole table can be
 /// copied, scanned in parallel and written to disk as it is.
 struct AskFileRecord: Equatable, Sendable {
-    enum Kind: UInt8, Sendable {
+    enum Kind: UInt8, Sendable, Codable {
         case file = 0
         case folder = 1
         /// A bundle Finder shows as one file, such as an app or a Photos library.

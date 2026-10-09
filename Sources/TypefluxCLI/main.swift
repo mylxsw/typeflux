@@ -7,6 +7,8 @@ struct TypefluxCLI {
     static func main() async {
         var arguments = Array(CommandLine.arguments.dropFirst())
         switch arguments.first {
+        case "file-index-worker":
+            exit(AskFileWorkerCommand.run())
         #if DEBUG
         case "audio-capture-check":
             arguments.removeFirst()

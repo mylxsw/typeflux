@@ -3812,3 +3812,5 @@
 "account.addon.title" = "加购额度";
 "account.addon.nextExpiry" = "最近到期：%@ credits，%@";
 "account.addon.expiringSoon" = "%@ credits 将于 %@ 到期，请在此之前用完。";
+
+"ask.plugin.files.skipped" = "已跳过：%@ 个受保护目录、%@ 个超时目录、%@ 个读取失败目录";

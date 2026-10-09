@@ -334,7 +334,7 @@ extension LauncherSearchSettingsView {
 
     private func pathRow(_ path: String, icon: String, remove: @escaping () -> Void) -> some View {
         let expanded = AskLauncherSearchSettings.expand(path)
-        return AgentSettingsRow(icon: icon, title: FileManager.default.displayName(atPath: expanded),
+        return AgentSettingsRow(icon: icon, title: (expanded as NSString).lastPathComponent,
                                 subtitle: path, subtitleLineLimit: 1) {
             AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove"), action: remove)
         }
@@ -371,7 +371,11 @@ extension LauncherSearchSettingsView {
         appsEnabled = settings.askQuickAppSearchEnabled
         filesEnabled = settings.askQuickFileSearchEnabled
         status = index.status
-        hasFullDiskAccess = fullDiskAccess()
+        let check = fullDiskAccess
+        Task {
+            let granted = await Task.detached(priority: .utility) { check() }.value
+            hasFullDiskAccess = granted
+        }
     }
 
     /// Paths with `~` for the home folder, added after the others without repeats.

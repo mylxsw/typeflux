@@ -3812,3 +3812,5 @@
 "account.addon.title" = "Add-on credits";
 "account.addon.nextExpiry" = "Next expiry: %@ credits on %@";
 "account.addon.expiringSoon" = "%@ credits expire on %@. Use them before then.";
+
+"ask.plugin.files.skipped" = "Skipped: %@ protected, %@ timed out, %@ unreadable";
