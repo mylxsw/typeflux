@@ -50,6 +50,10 @@
 		A21700000000000000000002 /* ChatPrivacyViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21700000000000000000001 /* ChatPrivacyViews.swift */; };
 		A21700000000000000000004 /* ChatExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21700000000000000000003 /* ChatExample.swift */; };
 		A21700000000000000000006 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A21700000000000000000005 /* PrivacyInfo.xcprivacy */; };
+		179C206E3C360F936927358F /* ScreenTourTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCB323772258122914340A7 /* ScreenTourTests.swift */; };
+		C9043DE6202ECA0D7E76738E /* ChatPurchases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D0EDBE2E4EC7E8A0BB62D7B /* ChatPurchases.swift */; };
+		4F44639CC525302FDE497BE4 /* ChatCreditViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5011B349457AB44404938D00 /* ChatCreditViews.swift */; };
+		78E1230DF8F690F166B12307 /* ChatPurchasesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5EEB10E4A2BCF06E35406AC /* ChatPurchasesTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -111,6 +115,10 @@
 		A21700000000000000000001 /* ChatPrivacyViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPrivacyViews.swift; sourceTree = "<group>"; };
 		A21700000000000000000003 /* ChatExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatExample.swift; sourceTree = "<group>"; };
 		A21700000000000000000005 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		9FCB323772258122914340A7 /* ScreenTourTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTourTests.swift; sourceTree = "<group>"; };
+		0D0EDBE2E4EC7E8A0BB62D7B /* ChatPurchases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPurchases.swift; sourceTree = "<group>"; };
+		5011B349457AB44404938D00 /* ChatCreditViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCreditViews.swift; sourceTree = "<group>"; };
+		C5EEB10E4A2BCF06E35406AC /* ChatPurchasesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPurchasesTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -153,6 +161,8 @@
 		000000000000000000000003 /* TypefluxIOS */ = {
 			isa = PBXGroup;
 			children = (
+				5011B349457AB44404938D00 /* ChatCreditViews.swift */,
+				0D0EDBE2E4EC7E8A0BB62D7B /* ChatPurchases.swift */,
 				6A1F0C2E9D3B4A5E8F7C6D03 /* InfoPlist.strings */,
 				6A1F0C2E9D3B4A5E8F7C6D05 /* TypefluxIOS.entitlements */,
 				AA1C64D0A26949F64EF8C4B6 /* ChatDictation.swift */,
@@ -190,6 +200,7 @@
 		000000000000000000000004 /* TypefluxIOSTests */ = {
 			isa = PBXGroup;
 			children = (
+				C5EEB10E4A2BCF06E35406AC /* ChatPurchasesTests.swift */,
 				A20900000000000000000003 /* GoogleSignInTests.swift */,
 				6EDC9ED4857EF34E96A3F17C /* ChatAccountTests.swift */,
 				00000000000000000000012C /* ChatStoreTests.swift */,
@@ -217,6 +228,7 @@
 		000000000000000000000008 /* TypefluxIOSUITests */ = {
 			isa = PBXGroup;
 			children = (
+				9FCB323772258122914340A7 /* ScreenTourTests.swift */,
 				00000000000000000000012E /* ChatFlowTests.swift */,
 				BE9C134009BEF1F2D651EE59 /* ChatVerificationTests.swift */,
 				A21200000000000000000003 /* ChatPolishTests.swift */,
@@ -337,6 +349,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F44639CC525302FDE497BE4 /* ChatCreditViews.swift in Sources */,
+				C9043DE6202ECA0D7E76738E /* ChatPurchases.swift in Sources */,
 				B90CFD2DCACB58F5C635AE35 /* ChatDictation.swift in Sources */,
 				2AB4FE017BC3920B3576B7F8 /* ChatComposer.swift in Sources */,
 				1A21F9F168C3E41C47553DAD /* ChatSidebar.swift in Sources */,
@@ -368,6 +382,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				78E1230DF8F690F166B12307 /* ChatPurchasesTests.swift in Sources */,
 				A20900000000000000000004 /* GoogleSignInTests.swift in Sources */,
 				27D885831CAAFB84B2CFE3DA /* ChatAccountTests.swift in Sources */,
 				000000000000000000000190 /* ChatStoreTests.swift in Sources */,
@@ -385,6 +400,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				179C206E3C360F936927358F /* ScreenTourTests.swift in Sources */,
 				000000000000000000000192 /* ChatFlowTests.swift in Sources */,
 				3426366FA84749B4BC8E300D /* ChatVerificationTests.swift in Sources */,
 				A21200000000000000000004 /* ChatPolishTests.swift in Sources */,

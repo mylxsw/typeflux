@@ -115,6 +115,9 @@ public struct ChatRun: Decodable, Equatable, Identifiable, Sendable {
     /// These runs require a desktop executor. Mobile can display or cancel them,
     /// but must never try to fulfill their tool/inference requests.
     public var requiresDesktop: Bool { ["waiting_tool", "waiting_inference"].contains(status) }
+    /// The server stopped at a checkpoint because the account ran out of credits.
+    /// It continues only after an explicit resume; nothing streams meanwhile.
+    public var isPausedForCredits: Bool { status == "paused_credits" }
     public init(id: String, deviceId: String, status: String, updatedAt: Date = Date(),
                 preview: String? = nil, reasoning: String? = nil, reasoningMilliseconds: Int? = nil, error: String? = nil,
                 pending: [ChatToolCall] = []) {

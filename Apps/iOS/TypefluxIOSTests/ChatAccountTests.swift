@@ -172,7 +172,7 @@ struct ChatAccountTests {
         #expect(await api.resetCodes == ["123456"])
         await api.rejectReset()
         #expect(await store.requestPasswordReset(email: "me@example.com") == false)
-        #expect(store.errorMessage == "Too many requests.")
+        #expect(store.errorMessage == "You're sending requests too quickly. Wait a moment and try again.")
         #expect(await store.resetPassword(email: "me@example.com", code: "1", newPassword: "x") == false)
     }
 
@@ -241,7 +241,8 @@ struct ChatAccountTests {
         await store.login(email: "me@example.com", password: "password")
         await store.deleteConversation("one")
         #expect(store.conversations.map(\.id) == ["one"])
-        #expect(store.errorMessage == "Not found.")
+        #expect(store.errorMessage
+            == "This conversation is no longer available. It may have been deleted on another device.")
     }
 }
 

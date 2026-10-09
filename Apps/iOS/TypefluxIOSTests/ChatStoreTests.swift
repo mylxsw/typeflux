@@ -761,7 +761,8 @@ private extension ChatStoreTests {
                 credentials: credentials,
                 deviceID: "ios-test",
                 consentDefaults: defaults,
-                reconnectDelay: .milliseconds(1)
+                reconnectDelay: .milliseconds(1),
+                historyPageSize: 1
             ),
             api,
             credentials

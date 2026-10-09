@@ -33,6 +33,7 @@ enum ChatPresentation {
         case "failed": "Failed"
         case "cancelled": "Stopped"
         case "completed": "Completed"
+        case "paused_credits": "Paused"
         default: run.requiresDesktop ? "Waiting for Mac" : "Running"
         }
     }
@@ -46,6 +47,8 @@ enum ChatPresentation {
             return title + " · " + String(format: NSLocalizedString("%d steps", comment: "Run step count"), steps)
         case "failed", "cancelled":
             return title
+        case "paused_credits":
+            return title + " · " + NSLocalizedString("Out of credits", comment: "Run paused for credits")
         default:
             return title + " · " + String(format: NSLocalizedString("Step %d", comment: "Activity step"), max(1, steps))
         }

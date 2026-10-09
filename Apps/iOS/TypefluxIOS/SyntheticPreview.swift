@@ -8,7 +8,7 @@
     /// Explicit, network-free fixture for screenshots and local UI inspection.
     enum SyntheticPreview {
         enum Scenario: String, CaseIterable, Sendable {
-            case tools, rich, stream, failure, empty, history
+            case tools, rich, stream, failure, empty, history, paused
 
             static func resolve(_ arguments: [String]) -> Scenario? {
                 allCases.first { arguments.contains("--synthetic-" + $0.rawValue) }
@@ -20,14 +20,15 @@
             let defaults = UserDefaults(suiteName: "app.typeflux.ios.synthetic-consent")!
             defaults.removePersistentDomain(forName: "app.typeflux.ios.synthetic-consent")
             if !arguments.contains("--synthetic-no-consent") {
-                defaults.set("preview|Preview Provider", forKey: "ai-consent.synthetic-user")
+                defaults.set("preview|Preview Provider", forKey: "ai-consent." + userID)
             }
             return ChatStore(service: makeService(arguments: arguments, now: now, streamInterval: streamInterval),
                              credentials: PreviewCredentials(
                                  longEmail: arguments.contains("--synthetic-long-email"),
                                  guest: arguments.contains("--synthetic-guest")
                              ),
-                             deviceID: "synthetic-device", isSynthetic: true, consentDefaults: defaults)
+                             deviceID: "synthetic-device", isSynthetic: true, consentDefaults: defaults,
+                             historyPageSize: Scenario.resolve(arguments) == .history ? 5 : 50)
         }
 
         static func makeService(arguments: [String] = [], now: Date = Date(),
@@ -44,10 +45,30 @@
             case .failure: documents = [failureDocument()]
             case .empty: documents = []
             case .history: documents = historyDocuments(now: now)
+            case .paused: documents = [pausedDocument()]
             case .tools, nil: documents = nil
             }
-            return PreviewService(scenario: scenario, documents: documents, streamInterval: interval)
+            return PreviewService(scenario: scenario, documents: documents, streamInterval: interval,
+                                  outOfCredits: scenario == .paused || arguments.contains("--synthetic-no-credits"),
+                                  storeEnabled: !arguments.contains("--synthetic-no-store"))
         }
+
+        /// A UUID like real accounts, so purchases can carry it as appAccountToken.
+        nonisolated static let userID = "5f0c2a1e-6b1d-4c35-9a5e-0000000000a1"
+
+        static func makeStoreKit(arguments: [String] = ProcessInfo.processInfo.arguments) -> any ChatStoreKit {
+            PreviewStoreKit(pending: arguments.contains("--synthetic-purchase-pending"))
+        }
+
+        /// Synthetic catalog; the real one comes from the server.
+        nonisolated static let packs = [
+            ChatAppleCreditPack(code: "pack_s", productId: "app.typeflux.ios.credits.small", name: "Small",
+                                description: "Extra credits for occasional use", credits: 100_000),
+            ChatAppleCreditPack(code: "pack_m", productId: "app.typeflux.ios.credits.medium", name: "Medium",
+                                description: "10% more credits than the base rate", credits: 220_000, highlight: true),
+            ChatAppleCreditPack(code: "pack_l", productId: "app.typeflux.ios.credits.large", name: "Large",
+                                description: "15% more credits than the base rate", credits: 460_000)
+        ]
 
         nonisolated static let streamChunks = [
             "先把今天最重要的一件事写下来。",
@@ -85,6 +106,13 @@
     }
 
     private extension SyntheticPreview {
+        static func pausedDocument() -> ChatConversation {
+            ChatConversation(id: "preview-paused", title: "整理一份出差清单", revision: 3, messages: [
+                ChatMessage(id: "paused-question", role: "user", text: "下周去上海出差三天，帮我列一份行李和行程清单。")
+            ], run: ChatRun(id: "paused-run", deviceId: "synthetic-device", status: "paused_credits",
+                            preview: "## 行李\n\n- 笔记本电脑和充电器\n- 两套正装"))
+        }
+
         static func streamDocument() -> ChatConversation {
             ChatConversation(id: "preview-stream", title: "慢一点，也能把事情做好", revision: 1, messages: [
                 ChatMessage(id: "stream-intro-question", role: "user", text: "我想给一天安排一个轻一点的开始。"),
@@ -318,9 +346,17 @@
         private var streamSequence = 0
         private var streamSteps: [String: Int] = [:]
 
-        init(scenario: SyntheticPreview.Scenario?, documents: [ChatConversation]?, streamInterval: Duration) {
+        private let outOfCredits: Bool
+        private let storeEnabled: Bool
+        private var addon = 0
+        private var granted: Set<String> = []
+
+        init(scenario: SyntheticPreview.Scenario?, documents: [ChatConversation]?, streamInterval: Duration,
+             outOfCredits: Bool = false, storeEnabled: Bool = true) {
             self.scenario = scenario
             self.streamInterval = streamInterval
+            self.outOfCredits = outOfCredits
+            self.storeEnabled = storeEnabled
             if scenario == .tools {
                 let tool = ChatToolCall(
                     id: "preview-tool",
@@ -361,6 +397,13 @@
         }
 
         func logout(refreshToken _: String) async throws {}
+        func forgotPassword(email _: String) async throws {}
+
+        func resetPassword(email _: String, code: String, newPassword _: String) async throws {
+            guard code == "123456" else {
+                throw ChatAPIError.server(code: "AUTH_RESET_CODE_INVALID", message: "invalid reset code")
+            }
+        }
         func reportAnswer(content _: String, token _: String) async throws {}
         func deleteAccount(proof _: ChatDeletionProof, token _: String) async throws {}
 
@@ -385,7 +428,7 @@
 
         func profile(token _: String) async throws -> ChatProfile {
             ChatProfile(
-                id: "synthetic-user",
+                id: SyntheticPreview.userID,
                 email: "preview@example.invalid",
                 name: "Demir Von",
                 providers: ["password"]
@@ -393,8 +436,63 @@
         }
 
         func creditUsage(token _: String) async throws -> ChatCreditUsage {
-            ChatCreditUsage(periodEnd: Date().addingTimeInterval(20 * 86400), planCode: "pro", paid: true,
-                            credits: .init(limit: 500, used: 184, remaining: 316))
+            let used = outOfCredits ? 500 : 184
+            return ChatCreditUsage(periodEnd: Date().addingTimeInterval(20 * 86400), planCode: "pro", paid: true,
+                                   credits: .init(limit: 500, used: used, remaining: 500 - used,
+                                                  addon: addon > 0 ? .init(remaining: addon) : nil))
+        }
+
+        func appleCreditPacks(language: String, token _: String) async throws -> ChatAppleCreditPacks {
+            guard storeEnabled else { return ChatAppleCreditPacks(enabled: false, packs: []) }
+            guard language == "zh-CN" else { return ChatAppleCreditPacks(enabled: true, packs: SyntheticPreview.packs) }
+            let names = ["pack_s": ("小额包", "满足偶尔的额外用量"), "pack_m": ("中额包", "比基础档多送 10% 额度"),
+                         "pack_l": ("大额包", "比基础档多送 15% 额度")]
+            return ChatAppleCreditPacks(enabled: true, packs: SyntheticPreview.packs.map { pack in
+                var pack = pack
+                if let name = names[pack.code] {
+                    (pack.name, pack.description) = name
+                }
+                return pack
+            })
+        }
+
+        func submitAppleTransaction(_ signed: String, token _: String) async throws -> ChatApplePurchaseReceipt {
+            let parts = signed.split(separator: "|").map(String.init)
+            guard parts.count == 3, parts[0] == "synthetic",
+                  let pack = SyntheticPreview.packs.first(where: { $0.productId == parts[1] }) else {
+                throw ChatAPIError.server(code: "APPLE_TRANSACTION_INVALID", message: "Synthetic transaction is invalid.")
+            }
+            if !granted.contains(parts[2]) {
+                granted.insert(parts[2])
+                addon += pack.credits
+            }
+            return ChatApplePurchaseReceipt(status: "granted", transactionId: parts[2], packCode: pack.code,
+                                            credits: pack.credits)
+        }
+
+        func resume(conversationId: String, runId _: String, token _: String) async throws -> ChatConversation {
+            guard addon > 0 else { throw creditsExhausted }
+            let index = try documentIndex(conversationId)
+            documents[index].messages.append(ChatMessage(id: "paused-answer", role: "assistant", text: """
+            ## 行李
+
+            - 笔记本电脑和充电器
+            - 两套正装
+
+            ## 行程
+
+            1. 周一上午出发，下午拜访客户。
+            2. 周二全天会议。
+            3. 周三上午复盘，下午返程。
+            """))
+            documents[index].run?.status = "completed"
+            documents[index].run?.preview = nil
+            documents[index].revision += 1
+            return documents[index]
+        }
+
+        private var creditsExhausted: ChatAPIError {
+            ChatAPIError.server(code: "CREDITS_EXHAUSTED", message: "credits exhausted")
         }
 
         func deleteConversation(id: String, token _: String) async throws {
@@ -409,6 +507,8 @@
             }
             documents[index].messages[answer].id = UUID().uuidString
             documents[index].messages[answer].text = "This is a regenerated synthetic answer."
+            documents[index].messages[answer].isError = nil
+            documents[index].run = nil
             documents[index].revision += 1
             return documents[index]
         }
@@ -425,6 +525,9 @@
         }
 
         func send(conversationId: String, request: ChatSendRequest, token _: String) async throws -> ChatConversation {
+            if outOfCredits, addon == 0 {
+                throw creditsExhausted
+            }
             if !documents.contains(where: { $0.id == conversationId }) {
                 documents.insert(ChatConversation(id: conversationId, title: "Synthetic conversation"), at: 0)
             }
@@ -498,5 +601,52 @@
             }
             return index
         }
+    }
+
+    /// Offline StoreKit: fixed prices, an immediate purchase, nothing unfinished.
+    private actor PreviewStoreKit: ChatStoreKit {
+        private let pending: Bool
+        private var sequence: UInt64 = 0
+
+        init(pending: Bool) {
+            self.pending = pending
+        }
+
+        func prices(for productIDs: [String]) async throws -> [String: String] {
+            let chinese = Locale.preferredLanguages.first?.hasPrefix("zh") == true
+            let amounts: [String: Decimal] = chinese
+                ? ["app.typeflux.ios.credits.small": 12, "app.typeflux.ios.credits.medium": 25,
+                   "app.typeflux.ios.credits.large": 50]
+                : ["app.typeflux.ios.credits.small": 1.99, "app.typeflux.ios.credits.medium": 3.99,
+                   "app.typeflux.ios.credits.large": 7.99]
+            let style = Decimal.FormatStyle.Currency(code: chinese ? "CNY" : "USD",
+                                                     locale: Locale(identifier: chinese ? "zh_CN" : "en_US"))
+            var prices: [String: String] = [:]
+            for id in productIDs {
+                if let amount = amounts[id] {
+                    prices[id] = amount.formatted(style)
+                }
+            }
+            return prices
+        }
+
+        func purchase(productID: String, account _: UUID) async throws -> ChatPurchaseOutcome {
+            if pending {
+                return .pending
+            }
+            sequence += 1
+            return .purchased(ChatStoreTransaction(id: sequence, productID: productID,
+                                                   signed: "synthetic|\(productID)|preview-\(sequence)"))
+        }
+
+        func unfinished() async -> [ChatStoreTransaction] {
+            []
+        }
+
+        nonisolated func updates() -> AsyncStream<ChatStoreTransaction> {
+            AsyncStream { _ in }
+        }
+
+        func finish(_: UInt64) async {}
     }
 #endif
