@@ -134,10 +134,20 @@ struct AskPluginAction: Equatable, Sendable {
         case openWordBook(key: String?)
         /// Opens the word book and looks this word up there (`dict`).
         case lookUpInWordBook(String)
+        /// Copies Markdown as rich text (HTML and RTF, with the source as plain text) and stays (⇧⌘C).
+        case copyRich(String)
+        /// Moves the result, even one still streaming, into a window of its own (⌘O).
+        case openInWindow
+        /// Saves the result to the notes, or takes it out again (⌘S).
+        case toggleNote(AskNoteDraft)
+        /// Opens the notes window, on this note when there is one (⌘B).
+        case openNotes(id: UUID?)
+        /// Opens a saved note in a result window (`note` keyword).
+        case openNote(UUID)
     }
 
     enum Shortcut: Equatable, Sendable {
-        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE, commandS, commandB
+        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE, commandS, commandB, commandO
     }
 
     var kind: Kind

@@ -100,6 +100,46 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             let result = try await injector.deliver(text: text, to: .currentInput)
             if case .notApplied = result { throw TextDeliveryError.noInput }
         }
+        // Saved AI prompt results, and the windows results and notes open in.
+        let notes = SQLiteAskNoteStore(url: SQLiteAskNoteStore.defaultURL())
+        model.notes = notes
+        let askAboutResult: @MainActor (String) -> Void = { [weak model] prompt in
+            // A new conversation about the result, without the launcher's selection or screenshot.
+            model?.launcherDraft = AskDraft(text: prompt, includeScreenshot: false, selection: nil)
+            model?.submitLauncher()
+        }
+        AskNotesWindowController.shared.configure(store: notes, askAI: askAboutResult) { [weak settings] in
+            settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
+        }
+        AskResultWindowController.shared.appearance = { [weak settings] in
+            settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
+        }
+        AskResultWindowController.shared.services = AskResultDocument.Services(
+            saveNote: { draft in
+                let note = AskNote(draft: draft, at: Date())
+                return notes.save(note) ? note.id : nil
+            },
+            removeNote: { id in
+                guard let note = notes.note(id: id), !note.isEdited else { return false }
+                notes.delete(ids: [id])
+                return true
+            },
+            noteExists: { notes.note(id: $0) != nil },
+            openNotes: { AskNotesWindowController.shared.show(selecting: $0) },
+            insert: { text, bundleID in
+                guard let bundleID,
+                      let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first
+                else { return false }
+                app.activate(options: [.activateIgnoringOtherApps])
+                // Let the app take focus back before typing into it.
+                try? await Task.sleep(for: .milliseconds(300))
+                guard let result = try? await injector.deliver(text: text, to: .currentInput) else { return false }
+                if case .notApplied = result { return false }
+                return true
+            },
+            askAI: askAboutResult,
+            isRunning: { !NSRunningApplication.runningApplications(withBundleIdentifier: $0).isEmpty }
+        )
         model.commandSources = AskCommandSources(
             skills: { tools.enabledSkills },
             mcpServers: { MCPSettingsStore().servers.map { AskMCPServerSummary(name: $0.name, enabled: $0.enabled) } },
