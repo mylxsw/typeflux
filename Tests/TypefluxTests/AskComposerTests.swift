@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask native composer")
+@Suite("Ask native composer", .exclusiveUIState)
 @MainActor
 struct AskComposerTests {
     @Test func nativeHoldAllowsSelectionAndIMEToKeepTheirMeanings() throws {

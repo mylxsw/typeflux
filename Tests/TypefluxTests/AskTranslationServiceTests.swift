@@ -77,7 +77,7 @@ private func engine(_ provider: AskTranslationProvider, keys: AskTranslationCred
                                         credentials: credentials, http: http, context: { fixedContext }), http)
 }
 
-@Suite("Ask translation settings")
+@Suite("Ask translation settings", .exclusiveUIState)
 struct AskTranslationSettingsTests {
     private func store() -> SettingsStore {
         let defaults = UserDefaults(suiteName: "AskTranslationSettingsTests-" + UUID().uuidString)!

@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask send queue")
+@Suite("Ask send queue", .exclusiveUIState)
 @MainActor
 struct AskSendQueueTests {
     private func draft(_ text: String) -> AskDraft {
@@ -194,13 +194,13 @@ struct AskSendQueueTests {
         let item = try #require(f.model.queuedMessages.first)
         #expect(f.model.canSteer)
         f.model.steerQueued(item.id)
-        // The jump leaves the queue first, then the run's reply shows it delivered.
-        try await f.wait { f.model.queuedMessages.isEmpty && f.model.selected?.messages.last?.id == item.id }
+        // A concurrent tool completion may append a reply after the delivered jump.
+        try await f.wait { f.model.queuedMessages.isEmpty && f.model.selected?.messages.contains(where: { $0.id == item.id }) == true }
         let steers = await f.api.steers
         #expect(steers.map(\.id) == [item.id])
         #expect(steers.first?.runId == f.model.selected?.run?.id)
         #expect(f.model.steeredMessages.isEmpty, "the run already holds it")
-        #expect(f.model.selected?.messages.last?.steered == true)
+        #expect(f.model.selected?.messages.first(where: { $0.id == item.id })?.steered == true)
         f.model.approve(conversationId: id, allowed: false)
         try await f.wait { f.model.busyIds.isEmpty }
         #expect(await f.api.sends.count == 1, "a delivered jump is not sent again")

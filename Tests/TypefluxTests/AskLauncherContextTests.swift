@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask launcher context token")
+@Suite("Ask launcher context token", .exclusiveUIState)
 struct AskLauncherContextTests {
     private func draft(source: String? = "Google Chrome — Issues | Multica - Google Chrome",
                        selection: String? = nil, screenshot: String? = "data:image/png;base64,AA==",

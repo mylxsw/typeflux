@@ -25,7 +25,7 @@ private struct AskHTTPProber: CloudEndpointProbing {
     }
 }
 
-@Suite("Ask HTTP contract")
+@Suite("Ask HTTP contract", .exclusiveUIState)
 struct AskAPIClientTests {
     @Test func featureDiscoveryDistinguishesUnconfiguredDisabledAndOldServers() async throws {
         let stub = AskHTTPStub(), api = client(stub)

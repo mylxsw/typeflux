@@ -8,7 +8,7 @@ enum TypefluxCloudLLMError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notLoggedIn:
-            "Please sign in to use Typeflux Cloud language model."
+            L("cloud.error.llmSignInRequired")
         }
     }
 }

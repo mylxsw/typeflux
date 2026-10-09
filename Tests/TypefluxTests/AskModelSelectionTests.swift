@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask independent model selection", .serialized)
+@Suite("Ask independent model selection", .serialized, .exclusiveUIState)
 @MainActor
 struct AskModelSelectionTests {
     @Test(arguments: ["failed", "cancelled"])
@@ -91,10 +91,12 @@ struct AskModelSelectionTests {
         fixture.model.submitLauncher()
         try await fixture.wait { fixture.model.busyIds.isEmpty }
         #expect(await fixture.api.sends.isEmpty)
-        #expect(fixture.model.draft.text == "Keep my question")
-        #expect(fixture.model.canSend)
-        fixture.model.draft.modelRef = "cloud:default"
-        fixture.model.submitDraft()
+        #expect(fixture.model.launcherDraft.text == "Keep my question")
+        #expect(fixture.model.conversations.isEmpty)
+        #expect(fixture.model.selectedId == nil)
+        #expect(fixture.model.canSendLauncher)
+        fixture.model.launcherDraft.modelRef = "cloud:default"
+        fixture.model.submitLauncher()
         try await fixture.wait { fixture.model.busyIds.isEmpty }
         #expect(await fixture.api.sends.count == 1)
         fixture.model.resetSession()

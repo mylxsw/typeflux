@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask local mode surfaces", .serialized)
+@Suite("Ask local mode surfaces", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLocalModeUITests {
     private let text = RegisteredModel(id: "qwen3:8b", name: "qwen3:8b", reference: "custom:text", vision: false)

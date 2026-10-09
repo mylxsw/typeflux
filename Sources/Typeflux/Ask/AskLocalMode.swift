@@ -12,16 +12,22 @@ struct AskLocalModeStatus: Equatable {
     var local = true
     /// The conversation has not started, so where it is kept can still change.
     var changeable = false
+    var modelAvailable = true
+    var modelReason: String? = nil
 
     @MainActor
     static func make(model: AskConversationModel, signedIn: Bool, launcher: Bool = false) -> Self {
         let library = model.modelLibrary
-        let provider = library.registry.resolve(model.modelReference(launcher: launcher))?.0
+        let reference = model.modelReference(launcher: launcher)
+        let provider = library.registry.resolve(reference)?.0
+        let reason = model.modelSelectionIssue(reference, cloudAvailable: model.cloudAvailable(launcher: launcher),
+                                               hasImage: model.requiresVision(launcher: launcher))?.text
         return .init(source: provider.map(sourceName) ?? L("ask.local.sourceNone"),
                      searchConfigured: AskSearchSettings(defaults: library.settings.defaults).provider != .none,
                      offersSignIn: !signedIn,
                      local: model.storesLocally(launcher: launcher),
-                     changeable: model.canChangeStorage(launcher: launcher))
+                     changeable: model.canChangeStorage(launcher: launcher),
+                     modelAvailable: reason == nil, modelReason: reason)
     }
 
     static func sourceName(_ provider: RegisteredProvider) -> String {
@@ -118,6 +124,7 @@ struct AskLocalModeCard: View {
     let status: AskLocalModeStatus
     var onOpenSearchSettings: () -> Void
     var onSignIn: () -> Void
+    var onOpenModelSettings: () -> Void = {}
     /// Picks where the new conversation is kept: true on this Mac.
     var onChoose: (Bool) -> Void = { _ in }
     /// Starts a conversation of the other kind, for one that already started.
@@ -166,8 +173,14 @@ struct AskLocalModeCard: View {
 
     @ViewBuilder private var localDetails: some View {
         VStack(spacing: 6) {
-            row(L("ask.local.card.source"), status.source)
+            row(L("ask.local.card.source"), status.source, available: status.modelAvailable)
             row(L("ask.local.card.readPages"), L("ask.local.card.available"))
+        }
+        if let reason = status.modelReason {
+            Text(reason).font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(L("ask.submission.models"), action: onOpenModelSettings)
+                .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
         }
         if !status.searchConfigured {
             HStack(spacing: 8) {
@@ -233,12 +246,13 @@ struct AskLocalModeCard: View {
         .accessibilityAddTraits(chosen ? .isSelected : [])
     }
 
-    private func row(_ label: String, _ value: String) -> some View {
+    private func row(_ label: String, _ value: String, available: Bool = true) -> some View {
         HStack(spacing: 8) {
             Text(label).foregroundStyle(StudioTheme.textSecondary).frame(width: 64, alignment: .leading)
             Text(value).foregroundStyle(StudioTheme.textPrimary).lineLimit(1).truncationMode(.middle)
             Spacer(minLength: 6)
-            Circle().fill(StudioTheme.success).frame(width: 6, height: 6)
+            Circle().fill(available ? StudioTheme.success : StudioTheme.warning).frame(width: 6, height: 6)
+                .accessibilityLabel(L(available ? "ask.local.card.available" : "ask.models.unavailable"))
         }
         .font(.system(size: 12))
     }
@@ -258,7 +272,10 @@ private struct AskLocalModeMenu: ViewModifier {
                 model.onOpenSettings?(.agent)
             }, onSignIn: {
                 isPresented = false
-                LoginWindowController.shared.show()
+                model.onSignIn()
+            }, onOpenModelSettings: {
+                isPresented = false
+                model.onOpenSettings?(.models)
             }, onChoose: { local in
                 isPresented = false
                 model.setStoresLocally(local, launcher: launcher)
@@ -324,6 +341,11 @@ struct AskLocalModeIdentity: View {
     @State private var presented = false
     @State private var hovering = false
 
+    /// "Ollama · Stays on this Mac": the model's source and where chats are kept.
+    static func detail(source: String) -> String {
+        String(format: L("ask.local.identity.detail"), source)
+    }
+
     var body: some View {
         let status = AskLocalModeStatus.make(model: model, signedIn: false)
         Button { presented.toggle() } label: {
@@ -335,10 +357,12 @@ struct AskLocalModeIdentity: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(L("ask.local.identity")).font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text(String(format: L("ask.local.identity.detail"), status.source))
+                    // The 210pt sidebar has room for where chats are kept, not the model's name
+                    // as well; the full line is the button's tooltip and its card says the rest.
+                    Text(L("ask.local.identity.storage"))
                         .font(.system(size: 11))
                         .foregroundStyle(StudioTheme.textTertiary)
-                        .lineLimit(1).truncationMode(.middle)
+                        .lineLimit(1).minimumScaleFactor(0.85)
                 }
             }
             .padding(.leading, 4).padding(.trailing, 8)
@@ -350,8 +374,10 @@ struct AskLocalModeIdentity: View {
         .buttonStyle(.plain)
         .padding(.leading, -4)
         .onHover { hovering = $0 }
+        .help(Self.detail(source: status.source))
         .modifier(AskLocalModeMenu(isPresented: $presented, status: status, model: model))
         .accessibilityLabel(L("ask.local.identity"))
+        .accessibilityValue(Self.detail(source: status.source))
         .accessibilityHint(L("ask.location.local.help"))
     }
 }
@@ -366,6 +392,7 @@ struct AskCloudPromoCard: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "cloud").font(.system(size: 12, weight: .semibold))
+                    .accessibilityHidden(true)
                 Text(verbatim: "Typeflux Cloud").font(.system(size: 12.5, weight: .semibold))
                 Spacer(minLength: 4)
                 Button(action: onDismiss) {

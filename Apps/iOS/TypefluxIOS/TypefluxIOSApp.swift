@@ -6,12 +6,15 @@ import TypefluxChat
 struct TypefluxIOSApp: App {
     @State private var store: ChatStore
     @State private var preferences: ChatPreferences
+    @State private var shop: ChatCreditShop
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
         #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--synthetic-preview") {
-                _store = State(initialValue: SyntheticPreview.makeStore())
+                let store = SyntheticPreview.makeStore()
+                _store = State(initialValue: store)
+                _shop = State(initialValue: ChatCreditShop(store: store, storeKit: SyntheticPreview.makeStoreKit()))
                 _preferences = State(initialValue: ChatPreferences
                     .synthetic(arguments: ProcessInfo.processInfo.arguments))
                 return
@@ -19,20 +22,36 @@ struct TypefluxIOSApp: App {
         #endif
         let endpoint = AppConfiguration.endpoint
         _preferences = State(initialValue: ChatPreferences())
-        _store = State(initialValue: ChatStore(
+        let store = ChatStore(
             service: ChatAPIClient(baseURL: endpoint, deviceId: DeviceIdentity.persistentID()),
             credentials: KeychainCredentialStore(endpoint: endpoint),
             deviceID: DeviceIdentity.persistentID()
-        ))
+        )
+        _store = State(initialValue: store)
+        _shop = State(initialValue: ChatCreditShop(store: store, storeKit: LiveStoreKit()))
     }
 
     var body: some Scene {
         WindowGroup {
-            ChatRootView(store: store, preferences: preferences)
+            ChatRootView(store: store, preferences: preferences, shop: shop)
                 .tint(ChatTheme.accent)
                 .preferredColorScheme(preferredColorScheme)
                 .onChange(of: scenePhase) { _, phase in
-                    Task { await store.setForeground(phase == .active) }
+                    Task {
+                        await store.setForeground(phase == .active)
+                        if phase == .active {
+                            await shop.deliverUnfinished()
+                        }
+                    }
+                }
+                // Purchases that finish outside the shop (Ask to Buy, an interrupted
+                // launch) are delivered whenever an account is signed in.
+                .onChange(of: store.isAuthenticated, initial: true) { _, authenticated in
+                    if authenticated {
+                        shop.start()
+                    } else {
+                        shop.reset()
+                    }
                 }
         }
     }

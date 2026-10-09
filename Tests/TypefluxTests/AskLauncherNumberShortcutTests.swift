@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher number hints", .serialized)
+@Suite("Launcher number hints", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherNumberShortcutTests {
     @Test func numbersRequireCommandAloneAndStopAtNine() {

@@ -5,7 +5,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask workflow output editing")
+@Suite("Ask workflow output editing", .exclusiveUIState)
 @MainActor
 struct AskWorkflowOutputEditorTests {
     private func model(_ fixture: AskWorkflowFixture) -> AskWorkflowEditorModel {
@@ -214,7 +214,7 @@ struct AskWorkflowOutputEditorTests {
     }
 }
 
-@Suite("Ask workflow actions in the plugin, risks and trust")
+@Suite("Ask workflow actions in the plugin, risks and trust", .exclusiveUIState)
 @MainActor
 struct AskWorkflowActionPluginTests {
     private func run(_ script: String,
@@ -345,7 +345,7 @@ struct AskWorkflowActionPluginTests {
     }
 }
 
-@Suite("Ask workflow action hosts")
+@Suite("Ask workflow action hosts", .exclusiveUIState)
 @MainActor
 struct AskWorkflowActionHostTests {
     @Test func theLauncherHostClosesOnceAndNotesAfterThat() async throws {

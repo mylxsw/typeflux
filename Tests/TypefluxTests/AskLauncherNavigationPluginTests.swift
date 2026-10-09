@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher settings and chat history", .serialized)
+@Suite("Launcher settings and chat history", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherNavigationPluginTests {
     private func request(_ keyword: AskKeyword, text: String = "", origin: AskPluginRequest.Origin = .argument) -> AskPluginRequest {
@@ -50,7 +50,8 @@ struct AskLauncherNavigationPluginTests {
         #expect(try await plugin.run(input, plan: plan).items.map(\.id) == ["chinese"])
         input.text = "missing"
         let empty = try await plugin.run(input, plan: plan)
-        #expect(empty.items.isEmpty && empty.body == L("ask.plugin.history.noMatch"))
+        #expect(empty.items.map(\.title) == [L("ask.plugin.history.noMatch")] && empty.items.allSatisfy { !$0.valid })
+        #expect(empty.action(for: .enter) == nil, "the quiet empty row does nothing on Return")
         input.origin = .selection
         #expect(try await plugin.run(input, plan: plan).items.count == 3)
         #expect(plugin.nextOptions(after: plan, request: input, step: 1) == nil)

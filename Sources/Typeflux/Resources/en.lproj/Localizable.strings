@@ -1936,7 +1936,7 @@
 "ask.local.modelFailed" = "Your model request failed; check its configuration and retry.";
 "ask.local.badSummary" = "The model returned an invalid summary; retry to continue.";
 "ask.local.regenerateLatest" = "Only the latest reply can be regenerated.";
-"ask.local.modelRequired" = "Choose one of your own models to use Ask without Typeflux Cloud. Add one in Settings → Models.";
+"ask.local.modelRequired" = "Choose one of your own models to use Ask without Typeflux Cloud.";
 "ask.local.conflict" = "The conversation changed; reload and try again.";
 "ask.local.stepLimit" = "Agent step limit reached.";
 "ask.local.truncated" = "The answer reached the output limit and was cut off; retry or ask to continue.";
@@ -2005,6 +2005,7 @@
 "ask.local.card.cloudQuestion" = "Want Cloud models?";
 "ask.local.identity" = "Not signed in";
 "ask.local.identity.detail" = "%@ · Stays on this Mac";
+"ask.local.identity.storage" = "Chats stay on this Mac";
 "ask.cloudPromo.body" = "Sign in to use Cloud models that read images and search the web, with conversations on all your devices.";
 "ask.cloudPromo.signIn" = "Sign In";
 "ask.cloudPromo.dismiss" = "Hide for 30 days";
@@ -2564,6 +2565,7 @@
 "ask.plugin.askAI.selection" = "%@ the selected text";
 "ask.plugin.writeBack.failed" = "Couldn't type into the app; the result is on the clipboard";
 "ask.plugin.hint.keyword" = "↩ Send · ⇥ Use keyword";
+"ask.plugin.hint.keyword.enter" = "↩ Use keyword · ⌘↩ Ask AI";
 "ask.plugin.hint.ready" = "↩ Run";
 "ask.plugin.hint.running" = "esc Cancel";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
@@ -2571,6 +2573,7 @@
 "ask.plugin.section" = "Keywords";
 "ask.plugin.waiting" = "Type the text to work on";
 "ask.plugin.enter" = "Space or ⇥ to use";
+"ask.plugin.enter.return" = "↩ Use";
 "ask.plugin.running" = "Working…";
 "ask.workflow.section" = "Workflows";
 "ask.workflow.footnote" = "Your own scripts behind keywords, in Python, Node, TypeScript, shell, AppleScript or any program. They run as you, so only trust ones you understand.";
@@ -3786,7 +3789,7 @@
 
 /* Launcher settings and chat history */
 "ask.plugin.setting.title" = "System Settings";
-"ask.settings.keywords.kind.setting.hint" = "Open Typeflux System Settings";
+"ask.settings.keywords.kind.setting.hint" = "Open Typeflux Settings";
 "ask.plugin.history.title" = "Chat history";
 "ask.settings.keywords.kind.history.hint" = "Search chat titles and open a conversation";
 "ask.plugin.history.placeholder" = "Search chat titles";
@@ -3812,3 +3815,90 @@
 "account.addon.title" = "Add-on credits";
 "account.addon.nextExpiry" = "Next expiry: %@ credits on %@";
 "account.addon.expiringSoon" = "%@ credits expire on %@. Use them before then.";
+
+"ask.submission.models" = "Settings → Models";
+"ask.usage.empty" = "No usage yet";
+"ask.usage.emptyHelp" = "Usage will appear after you send a message.";
+"ask.submission.signIn" = "Sign in to Typeflux Cloud";
+
+/* File indexing status and file-system-free folder labels */
+"ask.plugin.files.skipped" = "Skipped: %@";
+"ask.files.skip.timeout" = "%@ timed out";
+"ask.files.skip.failed" = "%@ unreadable";
+"ask.files.skip.mount" = "%@ network or virtual mounts";
+"ask.files.folder.home" = "Home";
+"ask.files.folder.desktop" = "Desktop";
+"ask.files.folder.documents" = "Documents";
+"ask.files.folder.downloads" = "Downloads";
+"ask.files.folder.music" = "Music";
+"ask.files.folder.pictures" = "Pictures";
+"ask.files.folder.movies" = "Movies";
+"ask.files.folder.library" = "Library";
+"ask.files.folder.applications" = "Applications";
+"ask.files.folder.volumes" = "Volumes";
+"ask.files.folder.icloud" = "iCloud Drive";
+"ask.files.folder.cloud" = "Cloud Storage";
+
+// Launcher localization and accessibility polish
+"cloud.error.llmSignInRequired" = "Please sign in to use the Typeflux Cloud language model.";
+"cloud.error.asrSignInRequired" = "Please sign in to use Typeflux Cloud speech recognition.";
+"ask.plugin.prompt.description.polish" = "Improve grammar and wording while preserving meaning and tone";
+"ask.plugin.prompt.description.summarize" = "Summarize the main points of the text";
+"ask.plugin.prompt.description.explain" = "Explain the text in clear, simple language";
+"ask.plugin.translate.signInFallback" = "Cloud sign-in is required. Translated with %@ instead.";
+
+/* AI command results: windows and notes (GUL-292) */
+"ask.plugin.action.copyRich" = "Copy as Rich Text";
+"ask.plugin.action.openInWindow" = "Open in Window";
+"ask.plugin.copiedRich" = "Copied as rich text";
+"ask.notes.title" = "Notes";
+"ask.notes.save" = "Save to Notes";
+"ask.notes.unsave" = "Remove from Notes";
+"ask.notes.open" = "Notes";
+"ask.notes.saved" = "Saved to Notes · ⌘B to open";
+"ask.notes.removed" = "Removed from Notes";
+"ask.notes.editedKept" = "This note was edited; delete it in Notes";
+"ask.notes.saveWhenDone" = "Will save to Notes when done";
+"ask.notes.saveWhenDone.cancelled" = "Won't save when done";
+"ask.notes.placeholder" = "Search notes · empty shows recent";
+"ask.notes.openNote" = "Open in Window";
+"ask.notes.empty" = "Press ⌘S on an AI command result to save it here";
+"ask.notes.noMatch" = "No matching notes";
+"ask.notes.openWindow" = "Open Notes…";
+"ask.notes.untitled" = "Note";
+"ask.notes.shelf.all" = "All Notes";
+"ask.notes.shelf.pinned" = "Pinned";
+"ask.notes.shelf.commands" = "By Command";
+"ask.notes.shelf.tags" = "Tags";
+"ask.notes.noTags" = "No tags yet";
+"ask.notes.localOnly" = "Stored on this Mac";
+"ask.notes.search" = "Search titles, text and inputs";
+"ask.notes.sort.updated" = "Recently Updated";
+"ask.notes.sort.created" = "Date Created";
+"ask.notes.title.placeholder" = "Title";
+"ask.notes.pin" = "Pin";
+"ask.notes.unpin" = "Unpin";
+"ask.notes.tag.remove" = "Remove tag %@";
+"ask.notes.tag.add" = "+ Tag, Return";
+"ask.notes.from" = "from %@";
+"ask.notes.created" = "created %@";
+"ask.notes.edited" = "edited";
+"ask.notes.done" = "Done";
+"ask.notes.edit" = "Edit";
+"ask.notes.export" = "Export .md";
+"ask.notes.delete" = "Delete";
+"ask.notes.undo" = "Undo";
+"ask.notes.deleted" = "Deleted “%@”";
+"ask.notes.exported" = "Exported %@";
+"ask.result.stopped" = "Stopped before any text arrived";
+"ask.result.stop" = "Stop";
+"ask.result.pin" = "Keep on Top";
+"ask.result.unpin" = "Stop Keeping on Top";
+"ask.result.streaming" = "Generating…";
+"ask.result.original" = "Original";
+"ask.result.insert" = "Insert into %@";
+"ask.result.sourceApp" = "Source App";
+"ask.result.insert.unavailable" = "The source app has quit; copy and paste instead";
+"ask.result.revealNote" = "Show in Notes";
+"ask.result.askAI" = "Continue in Chat";
+"menu.notes" = "Notes…";

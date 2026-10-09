@@ -39,7 +39,7 @@ final class ObservationScriptRunner: ProcessCommandRunning {
     }
 }
 
-@Suite("Browser observation execution")
+@Suite("Browser observation execution", .exclusiveUIState)
 @MainActor
 struct AskBrowserExecutorTests {
     let scope = AskObservationStore.Scope(owner: "o", conversation: "c", tool: "browser")

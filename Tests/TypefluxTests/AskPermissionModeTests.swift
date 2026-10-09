@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask permission modes", .serialized)
+@Suite("Ask permission modes", .serialized, .exclusiveUIState)
 @MainActor
 struct AskPermissionModeTests {
     private func call(_ name: String, _ action: String = "read", id: String = "call") -> AskToolCall {

@@ -110,7 +110,9 @@ extension AskConversationModel {
                 logRecovery(entry, event: .acknowledged)
             }
             await refreshRecovery(latest, route: current)
-        } catch is CancellationError {} catch { reportOperationError(error, id: value.id, owner: current.account) }
+        } catch is CancellationError {} catch {
+            await reportOperationError(error, id: value.id, owner: current.account)
+        }
     }
 
     private func transmit(
@@ -153,7 +155,7 @@ extension AskConversationModel {
                 logRecovery(entry, event: .ended)
             }
             await refreshRecovery(response, route: current)
-        } catch { reportOperationError(error, id: value.id, owner: current.account) }
+        } catch { await reportOperationError(error, id: value.id, owner: current.account) }
     }
 
     /// "Check and continue": ends the uncertain run when it is still active, then

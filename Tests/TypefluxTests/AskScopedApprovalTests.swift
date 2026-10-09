@@ -8,7 +8,7 @@ private struct ApprovalReceiptCatalog: ProviderModelCatalog {
     }
 }
 
-@Suite("Ask scoped approval integration")
+@Suite("Ask scoped approval integration", .exclusiveUIState)
 @MainActor
 struct AskScopedApprovalTests {
     func call(_ name: String = "browser", _ action: String = "read", id: String = "call") -> AskToolCall {

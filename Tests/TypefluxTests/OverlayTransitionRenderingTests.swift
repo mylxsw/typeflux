@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite(.serialized)
+@Suite(.serialized, .exclusiveUIState)
 struct OverlayTransitionRenderingTests {
     @Test(arguments: OverlayStyle.allCases) @MainActor
     func noticesAndFailuresFitTheirContentAfterCapsuleTransitions(style: OverlayStyle) async throws {
@@ -320,12 +320,17 @@ struct OverlayTransitionRenderingTests {
 
     /// Waits for a window animation to start moving away from `previous` and come to rest.
     @MainActor
-    private func settledFrame(of window: NSWindow, changingFrom previous: NSRect, timeout: TimeInterval = 5) async throws -> NSRect {
+    private func settledFrame(
+        of window: NSWindow, changingFrom previous: NSRect, timeout: TimeInterval = 5,
+        sourceLocation: SourceLocation = #_sourceLocation
+    ) async throws -> NSRect {
         let deadline = Date().addingTimeInterval(timeout)
         var last = window.frame
         var stableSamples = 0
         while stableSamples < 4 {
-            try #require(Date() < deadline, "The window frame never settled")
+            try #require(Date() < deadline,
+                         "The window frame never settled: previous \(previous), last \(last), visible \(window.isVisible)",
+                         sourceLocation: sourceLocation)
             try await Task.sleep(for: .milliseconds(25))
             let frame = window.frame
             stableSamples = frame == last && frame != previous ? stableSamples + 1 : 0

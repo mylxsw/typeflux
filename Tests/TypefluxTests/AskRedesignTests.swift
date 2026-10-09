@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask redesign presentation")
+@Suite("Ask redesign presentation", .exclusiveUIState)
 @MainActor
 struct AskPresentationTests {
     @Test func accountNamePrefersProfileNameThenEmailLocalPart() {
@@ -101,7 +101,7 @@ struct AskPresentationTests {
     }
 }
 
-@Suite("Ask redesign layout", .serialized)
+@Suite("Ask redesign layout", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRedesignLayoutTests {
     @Test func launcherPanelReportsTheRedesignedHeight() async throws {
@@ -177,7 +177,7 @@ struct AskRedesignLayoutTests {
     }
 }
 
-@Suite("Ask redesign fidelity helpers")
+@Suite("Ask redesign fidelity helpers", .exclusiveUIState)
 @MainActor
 struct AskRedesignFidelityTests {
     @Test func referenceTrayFoldsPastFourAndScrollsPastThreeRows() {
@@ -215,7 +215,7 @@ struct AskRedesignFidelityTests {
     }
 }
 
-@Suite("Ask design polish helpers")
+@Suite("Ask design polish helpers", .exclusiveUIState)
 @MainActor
 struct AskDesignPolishTests {
     @Test func multiplierBadgeUsesTheTimesSignAndATone() {

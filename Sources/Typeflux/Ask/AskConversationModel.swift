@@ -11,6 +11,12 @@ final class AskConversationModel: ObservableObject {
         return page
     }
 
+    var hasUsageRecords: Bool {
+        guard let selected else { return false }
+        return selected.run != nil || (selected.usage?.total.calls ?? 0) > 0
+            || selected.messages.contains { $0.runId != nil }
+    }
+
     var usageContext: AskContextUsage? {
         guard var context = selected?.contextUsage else { return nil }
         let ref = modelReference(launcher: false)
@@ -69,12 +75,25 @@ final class AskConversationModel: ObservableObject {
     var lookUpInWordBook: @MainActor (String) -> Void = { text in
         AskWordBookWindowController.shared.show(lookingUp: text)
     }
+    /// Saved AI prompt results; the window controller supplies them (`AskConversationModel+Notes`).
+    var notes: (any AskNoteStoring)?
+    /// The shown result's text and the note it was saved as, so ⌘S again takes it out.
+    var launcherNote: (body: String, id: UUID)?
+    /// Opens the notes window on a note; tests record it instead.
+    var openNotes: @MainActor (UUID?) -> Void = { id in AskNotesWindowController.shared.show(selecting: id) }
+    /// Shows a result moved out of the launcher (⌘O); tests record it instead.
+    var presentResultWindow: @MainActor (AskResultDocument) -> Void = { AskResultWindowController.shared.present($0) }
+    /// Opens a saved note in a result window; tests record it instead.
+    var openNoteWindow: @MainActor (AskNote) -> Void = { AskResultWindowController.shared.open($0) }
+    /// What result windows opened from the launcher can do.
+    var resultWindowServices: AskResultDocument.Services { AskResultWindowController.shared.services }
     /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.
     lazy var plugins: AskPluginSession = {
         let session = AskPluginSession(plugins: makeLauncherPlugins()) { [weak self] in
             self?.launcherKeywords ?? AskPluginRegistry.defaultKeywords
         }
         connectWordBook(to: session)
+        connectNotes(to: session)
         session.onActivate = { [weak self] keyword in self?.keywordUsage.record(keyword) }
         return session
     }()
@@ -262,6 +281,9 @@ final class AskConversationModel: ObservableObject {
     /// What the latest `resume` of a credit-paused run reported, per conversation,
     /// until the account balance changes again.
     @Published var creditPauseDetails: [String: CloudCreditsExhaustedDetails] = [:]
+    /// Validation feedback belongs to the composer that submitted it.
+    @Published var submissionIssues: [Bool: AskSubmissionIssue] = [:]
+    @Published private(set) var submissionPreflights: [Bool: UUID] = [:]
     @Published var error: String?
     @Published var captureWarning: String?
     @Published private(set) var isRefreshingHistory = false
@@ -273,6 +295,7 @@ final class AskConversationModel: ObservableObject {
 
     var onShowConversation: (() -> Void)?
     var onOpenSettings: ((StudioSection) -> Void)?
+    var onSignIn: () -> Void = { LoginWindowController.shared.show() }
     var onControlChanged: ((Bool) -> Void)?
     /// Called when Typeflux Cloud reports no credits left, so the account balance can refresh.
     var onCreditsExhausted: (() -> Void)?
@@ -403,18 +426,21 @@ final class AskConversationModel: ObservableObject {
     var isBusy: Bool { selected.map { busyIds.contains($0.id) || $0.run?.isActive == true } ?? false }
     var hasPendingSubmission: Bool { selectedId.map { pendingSends[$0] != nil } ?? false }
     var canSend: Bool { !isLoadingAttachments(launcher: false) && (canSendNow || canQueue || (isEditingQueued && draft.canSend)) }
-    private var canSendNow: Bool { !isLoadingSelection && (selectedId == nil || selected != nil) && draft.canSend && !isBusy && (selected.map { pendingSends[$0.id] == nil && !($0.run == nil && $0.messages.last?.role == "user") } ?? true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
+    private var canSendNow: Bool { submissionPreflights[false] == nil && !isLoadingSelection && (selectedId == nil || selected != nil) && draft.canSend && !isBusy && (selected.map { pendingSends[$0.id] == nil && !($0.run == nil && $0.messages.last?.role == "user") } ?? true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
     /// A busy conversation takes the follow-up into its queue instead.
     var canQueue: Bool {
-        guard let value = selected, !isLoadingSelection, isBusy, !isEditingQueued else { return false }
+        guard submissionPreflights[false] == nil, let value = selected, !isLoadingSelection, isBusy, !isEditingQueued else { return false }
         return draft.canSend && sendQueue.canEnqueue(value.id) && !capturing && !recordingIsActive() && !voiceInput.isOccupied
     }
-    var canSendLauncher: Bool { launcherDraft.canSend && !isLoadingAttachments(launcher: true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
+    var canSendLauncher: Bool { submissionPreflights[true] == nil && launcherDraft.canSend && !isLoadingAttachments(launcher: true) && !capturing && !recordingIsActive() && !voiceInput.isOccupied }
 
     /// The account session; switching accounts resets the model first.
     func credentials() -> AskRoute? {
         guard let current = session() else { error = L("ask.loginRequired"); return nil }
-        if owner != current.owner { resetSession(); owner = current.owner }
+        if owner != current.owner {
+            if !owner.isEmpty { resetSession() }
+            owner = current.owner
+        }
         return AskRoute(account: current.owner, owner: current.owner, token: current.token)
     }
 
@@ -440,6 +466,7 @@ final class AskConversationModel: ObservableObject {
         historyErrorTask?.cancel(); historyRefreshError = nil
         pullRefreshID = nil; isRefreshingHistory = false
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]
+        submissionPreflights = [:]; submissionIssues = [:]
         approvals.values.forEach { $0.resume(returning: nil) }; approvals = [:]; approvalRequests = [:]; approvalStore.reset()
         inferenceUsage = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
@@ -467,6 +494,7 @@ final class AskConversationModel: ObservableObject {
         let request = request ?? makeLauncherSelectionRequest()
         guard !Task.isCancelled else { return }
         flushMemoryPurge()
+        let previousWarning = captureWarning
         captureWarning = nil
         normalizeScreenshotChoices()
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
@@ -486,7 +514,15 @@ final class AskConversationModel: ObservableObject {
               owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
         // Restore an unfinished question without silently replacing its context.
         // Text typed into the just-opened panel still gets this launch's context.
-        if typedBefore || restored { launcherContextRestored = true; return }
+        if typedBefore || restored {
+            launcherContextRestored = true
+            // The kept draft keeps its context as it was. A screenshot that was not
+            // taken still says why, instead of reading as attached on this opening.
+            if launcherDraft.includeScreenshot, launcherDraft.screenshot == nil {
+                captureWarning = previousWarning ?? capture.missingScreenshotWarning()
+            }
+            return
+        }
         clearCapturedContentFeedback(launcher: true)
         capturing = true; capturingScreenshot = launcherDraft.includeScreenshot; launcherContextRestored = false
         let memoryGeneration = memoryPurgeGeneration
@@ -711,7 +747,7 @@ final class AskConversationModel: ObservableObject {
         if let oldId, !isLoadingSelection { drafts[oldId] = oldDraft }
         // Commit navigation synchronously, before the first cache/network await.
         selectedId = id; selected = snapshots[id]; isLoadingSelection = true; selectionLoadFailed = false
-        draft = drafts[id] ?? .followUp; error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
+        draft = drafts[id] ?? .followUp; submissionIssues[false] = nil; error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
         attachmentNotice = nil
         captureGeneration = UUID(); capturing = false; capturingScreenshot = false
         if let oldId, !deletedConversationIDs.contains(oldId), let saved = drafts[oldId] { try? await cache.saveDraft(saved, key: oldId, owner: cacheOwner(oldId)) }
@@ -769,7 +805,7 @@ final class AskConversationModel: ObservableObject {
         selectionGeneration = UUID(); selected = nil; selectedId = nil
         isLoadingSelection = false; selectionLoadFailed = false
         captureGeneration = UUID(); capturing = false; capturingScreenshot = false
-        draft = AskDraft(); error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
+        draft = AskDraft(); submissionIssues[false] = nil; error = nil; captureWarning = nil; screenshotNotice = nil; visionSwitch = nil
         attachmentNotice = nil
         if isSignedIn { draft.storesLocally = storesLocally }
         // No source app is trustworthy here, so only global memory applies.
@@ -815,20 +851,108 @@ final class AskConversationModel: ObservableObject {
 
     /// `messageId` keeps a queued message's ID; `clearsDraft` is false when the queue
     /// sends on its own, so whatever the user is typing stays in the composer.
-    private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil, clearsDraft: Bool = true, launcher: Bool = false) {
+    private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil,
+                        clearsDraft: Bool = true, launcher: Bool = false) {
+        guard submissionPreflights[launcher] == nil else { return }
         guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000,
               (submitted.sentSelection?.utf8.count ?? 0) <= 64000,
               (submitted.sentSource?.utf8.count ?? 0) <= 1000,
               (submitted.attachments ?? []).reduce(0, { $0 + $1.payloadBytes }) <= AskAttachmentLimits.maximumPayloadBytes else {
-            error = L("ask.input.tooLarge"); return
+            rejectSubmission(.init(text: L("ask.input.tooLarge")), submitted: submitted, queuedId: queuedId, launcher: launcher)
+            return
         }
+        guard let account = credentials() else {
+            rejectSubmission(.init(text: L("ask.loginRequired"), offersSignIn: true),
+                             submitted: submitted, queuedId: queuedId, launcher: launcher)
+            return
+        }
+        guard newConversation || selected != nil else { return }
+        let local = newConversation
+            ? account.token.isEmpty || (submitted.storesLocally ?? commandSources.privateByDefault())
+            : selectedId.map(isLocal) == true
+        let hasImage = submitted.sendsImage || (!newConversation && selected?.messages.contains { $0.hasImage } == true)
+        let reference = localFallback(submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference
+                                      : selected?.modelRef ?? "cloud:default"), hasImage: hasImage, local: local)
+        let token = local ? "" : account.token
+        // Catalog refresh and Ollama probing may suspend. Reserve the submission only;
+        // history, cache, tool grants and window changes happen after they succeed.
+        let needsRefresh = (reference.hasPrefix("cloud:") && reference != "cloud:default")
+            || modelLibrary.registry.resolve(reference)?.0.isOllama == true
+        if !needsRefresh {
+            if let reason = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage) {
+                rejectSubmission(reason, submitted: submitted, queuedId: queuedId, launcher: launcher)
+                return
+            }
+            submissionIssues[launcher] = nil
+            submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
+                            clearsDraft: clearsDraft, launcher: launcher)
+            return
+        }
+        let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
+        guard !busyIds.contains(id) else { return }
+        let generation = selectionGeneration
+        let operationId = UUID()
+        submissionPreflights[launcher] = operationId
+        busyIds.insert(id); operationIds[id] = operationId
+        operations[id] = Task { [weak self] in
+            guard let self else { return }
+            var handled = false
+            defer {
+                if !handled, owner == account.account, session()?.owner == account.account,
+                   !deletedConversationIDs.contains(id), let queuedId {
+                    sendQueue.putFirst(AskQueuedMessage(id: queuedId, draft: submitted), in: id)
+                    sendQueue.pause(id)
+                }
+                if submissionPreflights[launcher] == operationId { submissionPreflights[launcher] = nil }
+                finishOperation(id, operationId: operationId)
+            }
+            do {
+                try await validateModel(reference, token: token, hasImage: hasImage)
+                try Task.checkCancellation()
+                guard owner == account.account, session()?.owner == account.account else { return }
+                guard selectionGeneration == generation else { return }
+                handled = true
+                submissionIssues[launcher] = nil
+                busyIds.remove(id)
+                submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
+                                clearsDraft: clearsDraft, launcher: launcher)
+            } catch is CancellationError {} catch {
+                guard owner == account.account, session()?.owner == account.account, selectionGeneration == generation else { return }
+                let issue = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage)
+                    ?? AskSubmissionIssue(text: error.localizedDescription, offersModels: true)
+                handled = true
+                rejectSubmission(issue, submitted: submitted, queuedId: queuedId, launcher: launcher)
+            }
+        }
+    }
+
+    private func rejectSubmission(_ issue: AskSubmissionIssue, submitted: AskDraft, queuedId: String?, launcher: Bool) {
+        submissionIssues[launcher] = issue
+        error = issue.text
+        if let queuedId, let id = selectedId {
+            sendQueue.putFirst(AskQueuedMessage(id: queuedId, draft: submitted), in: id)
+            sendQueue.pause(id)
+        }
+        persistDrafts()
+    }
+
+    func modelSelectionIssue(_ reference: String, cloudAvailable: Bool, hasImage: Bool) -> AskSubmissionIssue? {
+        if !cloudAvailable, reference.hasPrefix("cloud:") {
+            return .init(text: L("ask.local.modelRequired"), offersModels: true, offersSignIn: !isSignedIn)
+        }
+        guard let (provider, model) = modelLibrary.registry.resolve(reference) else {
+            return .init(text: L("ask.models.unavailable"), offersModels: true)
+        }
+        return modelLibrary.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: cloudAvailable)
+            .map { .init(text: $0, offersModels: true) }
+    }
+
+    private func submitValidated(_ submitted: AskDraft, modelRef: String, local: Bool, newConversation: Bool, messageId queuedId: String? = nil,
+                                 clearsDraft: Bool = true, launcher: Bool = false) {
         guard let account = credentials() else { return }
         guard newConversation || selected != nil else { return }
         let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
         guard !busyIds.contains(id) else { return }
-        let local = newConversation
-            ? account.token.isEmpty || (submitted.storesLocally ?? commandSources.privateByDefault())
-            : isLocal(id)
         if newConversation, local { localConversationIds.insert(id) }
         let current = local ? account.local : account
         error = nil; operationErrors[id] = nil; busyIds.insert(id)
@@ -844,9 +968,7 @@ final class AskConversationModel: ObservableObject {
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.clientToolApproval = true
         request.skills = skillUses(submitted.skills)
-        request.modelRef = localFallback(submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference : (value.modelRef ?? "cloud:default")),
-                                         hasImage: request.sendsImage || value.messages.contains { $0.hasImage },
-                                         local: local)
+        request.modelRef = modelRef
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
         request.memory = newConversation && submitted.memoryOff != true
             ? (submitted.memory ?? capture.globalMemory())?.usable(owner: current.account,
@@ -856,11 +978,14 @@ final class AskConversationModel: ObservableObject {
         pendingSends[id] = request
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
         value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
+        if launcher { persistDrafts() }
         selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID()
-        if clearsDraft { clearCapturedContentFeedback(launcher: false); draft = .followUp }
+        if clearsDraft, launcher || draft == submitted {
+            clearCapturedContentFeedback(launcher: false); draft = .followUp
+        }
         snapshots[id] = value; selectionLoadFailed = false
         updateSummary(value)
-        if newConversation {
+        if launcher, launcherDraft == submitted {
             clearCapturedContentFeedback(launcher: true); launcherDraft = AskDraft(); launcherContextRestored = false
         }
         // A queued message sending on its own must not bring the window forward.
@@ -876,37 +1001,13 @@ final class AskConversationModel: ObservableObject {
                 try await cache.save(value, owner: current.owner)
                 var request = request
                 request.tools = await tools.definitions(conversationId: id)
-                do {
-                    try await validateModel(
-                        request.modelRef, token: current.token,
-                        hasImage: request.sendsImage || value.messages.contains(where: { $0.hasImage })
-                    )
-                } catch {
-                    // No message was sent. Restore the editable draft so another model can be selected.
-                    guard owner == current.account else { throw CancellationError() }
-                    pendingSends[id] = nil
-                    var unsent = value
-                    unsent.messages.removeAll { $0.id == messageId }
-                    snapshots[id] = unsent
-                    if let queuedId {
-                        // The queued message goes back first and waits for the user.
-                        sendQueue.putFirst(AskQueuedMessage(id: queuedId, draft: submitted), in: id)
-                        sendQueue.pause(id)
-                        if selectedId == id { selected = unsent }
-                    } else {
-                        drafts[id] = submitted
-                        if selectedId == id { selected = unsent; draft = submitted }
-                    }
-                    try await cache.save(unsent, owner: current.owner)
-                    throw error
-                }
                 try Task.checkCancellation()
                 request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
                 pendingSends[id] = request
                 let response = try await api.send(conversationId: id, request: request, token: current.token)
                 pendingSends[id] = nil
                 try await drive(response, current: current, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil)
-            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.account) }
+            } catch is CancellationError {} catch { await reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -918,21 +1019,19 @@ final class AskConversationModel: ObservableObject {
 
     private func validateModel(_ reference: String?, token: String, hasImage: Bool = false) async throws {
         let reference = reference ?? "cloud:default"
-        if token.isEmpty, reference.hasPrefix("cloud:") { throw AskLocalError.message(L("ask.local.modelRequired")) }
+        if token.isEmpty, reference.hasPrefix("cloud:") {
+            throw AskSubmissionIssue(text: L("ask.local.modelRequired"), offersModels: true, offersSignIn: !isSignedIn)
+        }
         if reference.hasPrefix("cloud:"), reference != "cloud:default" {
             let catalog = try await api.models(token: token)
             try Task.checkCancellation()
             try modelLibrary.replaceCloudModels(catalog)
         }
-        guard let (provider, model) = modelLibrary.registry.resolve(reference) else {
-            throw modelLibrary.unavailable()
-        }
-        if provider.isOllama {
+        if modelLibrary.registry.resolve(reference)?.0.isOllama == true {
             await modelLibrary.probeOllama()
+            try Task.checkCancellation()
         }
-        if let reason = modelLibrary.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: !token.isEmpty) {
-            throw AskLocalError.message(reason)
-        }
+        if let issue = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage) { throw issue }
     }
 
     func refreshImageModels() async {
@@ -962,7 +1061,7 @@ final class AskConversationModel: ObservableObject {
             }
             if let target = imageRecoveryTarget { recoveringImages[id] = target }
         }
-        busyIds.insert(id); error = nil; operationErrors[id] = nil
+        busyIds.insert(id); submissionIssues[false] = nil; error = nil; operationErrors[id] = nil
         let operationId = UUID(); operationIds[id] = operationId
         operations[id] = Task { [weak self] in
             guard let self else { return }; defer { finishOperation(id, operationId: operationId) }
@@ -999,7 +1098,7 @@ final class AskConversationModel: ObservableObject {
                     response = try await api.conversation(id: id, token: current.token)
                 }
                 try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
-            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.account) }
+            } catch is CancellationError {} catch { await reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -1010,7 +1109,7 @@ final class AskConversationModel: ObservableObject {
               let current = credentials(for: value.id) else { return }
         selectionObservation?.cancel(); selectionObservation = nil
         let id = value.id
-        busyIds.insert(id); error = nil; operationErrors[id] = nil; creditPauseDetails[id] = nil
+        busyIds.insert(id); submissionIssues[false] = nil; error = nil; operationErrors[id] = nil; creditPauseDetails[id] = nil
         let operationId = UUID(); operationIds[id] = operationId
         operations[id] = Task { [weak self] in
             guard let self else { return }; defer { finishOperation(id, operationId: operationId) }
@@ -1023,7 +1122,7 @@ final class AskConversationModel: ObservableObject {
                 guard owner == current.account else { return }
                 creditPauseDetails[id] = exhausted.details ?? CloudCreditsExhaustedDetails()
                 onCreditsExhausted?()
-            } catch { reportOperationError(error, id: id, owner: current.account) }
+            } catch { await reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -1056,7 +1155,7 @@ final class AskConversationModel: ObservableObject {
         guard !recoveryBlocksResume(value) else { inspectingRecovery = true; return }
         let id = value.id
         let modelRef = modelReference(launcher: false)
-        busyIds.insert(id); error = nil; operationErrors[id] = nil
+        busyIds.insert(id); submissionIssues[false] = nil; error = nil; operationErrors[id] = nil
         let operationId = UUID(); operationIds[id] = operationId
         operations[id] = Task { [weak self] in
             guard let self else { return }
@@ -1073,7 +1172,7 @@ final class AskConversationModel: ObservableObject {
                                                    modelRef: modelRef, tools: definitions)
                 let response = try await api.regenerate(conversationId: id, request: request, token: current.token)
                 try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
-            } catch is CancellationError {} catch { reportOperationError(error, id: id, owner: current.account) }
+            } catch is CancellationError {} catch { await reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -1485,7 +1584,7 @@ final class AskConversationModel: ObservableObject {
                 let stopped = try await api.cancel(conversationId: id, runId: run.id, partial: partial, token: current.token)
                 if owner == current.account { pendingSends[id] = nil }
                 try await accept(stopped, route: current)
-            } catch { reportOperationError(error, id: id, owner: current.account) }
+            } catch { await reportOperationError(error, id: id, owner: current.account) }
         }
     }
 
@@ -1516,12 +1615,15 @@ final class AskConversationModel: ObservableObject {
         } catch { self.error = error.localizedDescription }
     }
 
-    func reportOperationError(_ error: Error, id: String, owner expectedOwner: String) {
+    /// Callers await this before their operation finishes, so a conversation never looks idle
+    /// and resumable while its journal still lacks the execution that just failed.
+    func reportOperationError(_ error: Error, id: String, owner expectedOwner: String) async {
         guard owner == expectedOwner else { return }
+        if let issue = error as? AskSubmissionIssue, selectedId == id { submissionIssues[false] = issue }
         operationErrors[id] = error.localizedDescription
         if selectedId == id { self.error = error.localizedDescription }
         if let value = snapshots[id], let route = credentials(for: id) {
-            Task { await refreshRecovery(value, route: route) }
+            await refreshRecovery(value, route: route)
         }
     }
 
@@ -1689,7 +1791,7 @@ extension AskConversationModel {
                     try? await accept(refreshed, route: current)
                     queueDidSettle(id)
                 } else {
-                    reportOperationError(error, id: id, owner: current.account)
+                    await reportOperationError(error, id: id, owner: current.account)
                 }
             }
         }

@@ -124,12 +124,14 @@ struct AskWorkflowAuthoringPanel: View {
                     selection: session.selection.isEmpty ? nil : session.selection, keyword: session.keyword)
                 testTask = Task { _ = await session.testLatestProposal([input]) }
             }
+            Button(L("common.cancel"), role: .cancel) {}
         } message: {
             Text(([L("ask.workflow.chat.actionsPreview")] + session.risks.sorted().map(\.title)).joined(separator: "\n"))
         }
         .sheet(isPresented: $showsCode) { codeEditor }
         .confirmationDialog(L("ask.workflow.chat.discardNotice"), isPresented: $confirmsDiscard) {
             Button(L("ask.workflow.chat.discard"), role: .destructive) { discard?() }
+            Button(L("common.cancel"), role: .cancel) {}
         }
         .onDisappear { testTask?.cancel(); session.cancel() }
         .onAppear {

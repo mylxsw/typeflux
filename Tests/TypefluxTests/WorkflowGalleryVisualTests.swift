@@ -9,7 +9,7 @@ import Testing
 /// `docs/design/workflow-gallery-output-actions.html` shows them (screens ①②③).
 /// With TYPEFLUX_ASK_SNAPSHOTS set the images are written there in Chinese as
 /// `implemented-*.png`; otherwise the views are only laid out.
-@Suite("Workflow gallery rendering", .serialized)
+@Suite("Workflow gallery rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct WorkflowGalleryVisualTests {
     private let size = NSSize(width: 1450, height: 900)

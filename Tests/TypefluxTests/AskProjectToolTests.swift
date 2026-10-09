@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Project tool approval and integration", .serialized)
+@Suite("Project tool approval and integration", .serialized, .exclusiveUIState)
 @MainActor
 struct AskProjectToolTests {
     @MainActor struct Fixture {

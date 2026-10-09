@@ -6,8 +6,13 @@ Shift-Return inserts a newline; Return during IME composition does not submit.
 Escape and clicking another application dismiss the composer while preserving
 the draft. Existing dictation writes into its native NSTextView.
 
-Submitting opens the workspace with history on the left, messages and tool
-results on the right, and a follow-up composer. The menu also opens history.
+After input and model validation succeeds, submitting opens the workspace with
+history on the left, messages and tool results on the right, and a follow-up
+composer. The menu also opens history.
+Validation failures preserve the submitting draft without creating a conversation.
+Signed out, an available own model replaces the Cloud default; otherwise the composer
+offers sign-in and Settings → Models. Model configuration failures offer settings
+rather than retrying a run.
 The first question defaults to attaching a screenshot; follow-ups default to
 text only. Attachments can be previewed, removed, or recaptured before sending.
 Context is captured before the launcher takes focus. Removing a draft attachment

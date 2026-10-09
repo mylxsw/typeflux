@@ -22,7 +22,7 @@ private final class HeldLauncherCapture: AskContextCapturing {
     }
 }
 
-@Suite("Ask launcher toggle", .serialized)
+@Suite("Ask launcher toggle", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherToggleTests {
     init() {

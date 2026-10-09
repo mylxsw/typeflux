@@ -388,8 +388,10 @@ enum AskCommandKey: Equatable {
     case commandZ
     /// ⌘S: star the word a translation looked up.
     case commandS
-    /// ⌘B: open the word book from a translation.
+    /// ⌘B: open the word book from a translation, or the notes from an AI prompt result.
     case commandB
+    /// ⌘O: move an AI prompt result into a window of its own.
+    case commandO
     /// Keys for a found file or application: → opens its actions (the editor only offers it
     /// with the caret at the end), ⌘Y Quick Look, ⌥⌘C copies the file, ⇧⌘Return asks the AI
     /// about it, ⌘↓ shows all the files.
@@ -416,6 +418,7 @@ enum AskCommandKey: Equatable {
         if modifiers == .command, event.keyCode == 6 { self = .commandZ; return }
         if modifiers == .command, event.keyCode == 1 { self = .commandS; return }
         if modifiers == .command, event.keyCode == 11 { self = .commandB; return }
+        if modifiers == .command, event.keyCode == 31 { self = .commandO; return }
         if modifiers == .command, event.keyCode == 8 { self = .commandC; return }
         if modifiers == [.command, .shift], event.keyCode == 8 { self = .shiftCommandC; return }
         guard modifiers.isEmpty else { return nil }

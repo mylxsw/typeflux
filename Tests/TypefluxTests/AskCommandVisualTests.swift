@@ -6,7 +6,7 @@ import Testing
 /// Opt-in renders of the attachment strip and the slash command palette with
 /// the production composer (set TYPEFLUX_ASK_SNAPSHOTS). Keys are sent to the
 /// real editor, so the palette opens the way it does for a user.
-@Suite("Ask command snapshots", .serialized)
+@Suite("Ask command snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskCommandVisualTests {
     private func editor(in view: NSView) -> AskComposerTextView.Editor? {

@@ -17,6 +17,7 @@ struct AskLauncherSearchSettings: Codable, Equatable, Sendable {
     }
 
     static let defaultAppRoots = ["/Applications", "~/Applications", "/System/Applications",
+                                  "/System/Cryptexes/App/System/Applications",
                                   "/System/Library/CoreServices/Applications",
                                   "/System/Library/CoreServices/Finder.app"]
     static let defaultFileRoots = ["~"]

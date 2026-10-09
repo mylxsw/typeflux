@@ -29,7 +29,7 @@ final class AskLiveTestRecorder: AskVoiceRecording {
     func release() { released = true; gate?.resume(); gate = nil }
 }
 
-@Suite("Ask voice live data", .serialized)
+@Suite("Ask voice live data", .serialized, .exclusiveUIState)
 @MainActor
 struct AskVoiceLiveTests {
     @Test func levelsArePublishedAtMostEveryIntervalKeepingThePeak() {

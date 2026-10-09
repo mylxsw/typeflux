@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Production automation routing")
+@Suite("Production automation routing", .exclusiveUIState)
 @MainActor
 struct AskAutomationIntegrationTests {
     func tools(owner: @escaping @MainActor () -> String = { "owner" }) -> (AskLocalTools, ObservationScriptRunner) {

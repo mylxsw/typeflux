@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask launcher dragging", .serialized)
+@Suite("Ask launcher dragging", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherDragTests {
     private func event(_ type: NSEvent.EventType, clicks: Int = 1, in window: NSWindow) throws -> NSEvent {
@@ -63,7 +63,7 @@ struct AskLauncherDragTests {
     }
 }
 
-@Suite("Ask launcher position", .serialized)
+@Suite("Ask launcher position", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherPositionTests {
 

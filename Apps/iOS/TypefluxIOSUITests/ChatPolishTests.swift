@@ -44,6 +44,12 @@ final class ChatPolishTests: XCTestCase {
         XCTAssertTrue(app.buttons["chat.sidebar.open"].waitForExistence(timeout: 10))
         openHistory(app)
         app.buttons["chat.history.preview"].tap()
+        let more = app.buttons["chat.more.answer"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        if !more.isHittable {
+            app.swipeUp()
+        }
+        more.tap()
         let select = app.buttons["chat.select.answer"]
         XCTAssertTrue(select.waitForExistence(timeout: 5))
         if !select.isHittable {
@@ -71,7 +77,8 @@ final class ChatPolishTests: XCTestCase {
         }
         screenshot(app, "gul212-native-selection")
         app.buttons["chat.selection.done"].tap()
-        XCTAssertTrue(select.waitForExistence(timeout: 5))
+        // Closing the sheet returns to the answer; the menu itself has closed.
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
     }
 
     @MainActor

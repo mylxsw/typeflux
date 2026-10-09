@@ -16,7 +16,7 @@ struct AskPluginItemRow: View {
     var onPick: () -> Void
 
     private var filled: Bool {
-        selected && emphasized
+        item.valid && selected && emphasized
     }
 
     var body: some View {
@@ -41,13 +41,14 @@ struct AskPluginItemRow: View {
             }
             .padding(.horizontal, 8)
             .frame(height: height)
-            .background(filled ? AskTheme.accentSoft : selected ? AskTheme.hoverFill : Color.clear,
+            .background(filled ? AskTheme.accentSoft : item.valid && selected ? AskTheme.hoverFill : Color.clear,
                         in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(!item.valid)
         .accessibilityLabel(item.subtitle.isEmpty ? item.title : item.title + ", " + item.subtitle)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityAddTraits(item.valid && selected ? .isSelected : [])
         .accessibilityIdentifier("ask.plugin.item")
     }
 }

@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Permission mode composer", .serialized)
+@Suite("Permission mode composer", .serialized, .exclusiveUIState)
 @MainActor
 struct AskPermissionModeUITests {
     private func editor(_ view: NSView) -> AskComposerTextView.Editor? {

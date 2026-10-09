@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask local authorization evidence")
+@Suite("Ask local authorization evidence", .exclusiveUIState)
 @MainActor
 struct AskLocalApprovalTests {
     func call(_ name: String, _ args: [String: Any]) throws -> AskToolCall {

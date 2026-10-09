@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask launcher surfaces", .serialized)
+@Suite("Ask launcher surfaces", .serialized, .exclusiveUIState)
 @MainActor
 struct AskSurfaceOpacityTests {
     private let size = NSSize(width: AskMetrics.launcherWidth,

@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 /// The launcher rendered in a real window: captured context stays out of the editor's
 /// row, the switches sit in the bottom bar, and recording swaps the results for
 /// the voice panel without moving the rest.
-@Suite("Ask launcher header", .serialized)
+@Suite("Ask launcher header", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherHeaderTests {
     private final class Reported { var height: CGFloat = 0 }
@@ -122,16 +122,28 @@ struct AskLauncherHeaderTests {
         fixture.model.voiceInput.recorder = recorder
         let (window, reported) = host(fixture)
         defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
-        try await Task.sleep(for: .milliseconds(300))
-        let resting = reported.height
+        // A loaded Mac can finish the quick search after a fixed wait; measure only at rest.
+        let resting = try await settledHeight(fixture, reported)
         let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
         window.makeFirstResponder(editor)
         #expect(fixture.model.voiceInput.begin(in: editor))
-        try await Task.sleep(for: .milliseconds(300))
-        #expect(abs(reported.height - resting - AskVoicePanel.minimumHeight) <= 1)
+        #expect(abs(try await settledHeight(fixture, reported) - resting - AskVoicePanel.minimumHeight) <= 1)
         fixture.model.voiceInput.cancel()
-        try await Task.sleep(for: .milliseconds(300))
-        #expect(abs(reported.height - resting) <= 1)
+        #expect(abs(try await settledHeight(fixture, reported) - resting) <= 1)
+    }
+
+    /// The launcher's reported height once its quick search has finished and layout is still.
+    private func settledHeight(_ fixture: AskTestFixture, _ reported: Reported) async throws -> CGFloat {
+        var last = reported.height
+        var stableSamples = 0
+        for _ in 0 ..< 250 where stableSamples < 5 {
+            try await Task.sleep(for: .milliseconds(20))
+            let height = reported.height
+            stableSamples = !fixture.model.quickSearch.isSearching && height == last ? stableSamples + 1 : 0
+            last = height
+        }
+        #expect(stableSamples >= 5, "The launcher height never settled")
+        return last
     }
 
     @Test func screenshotHoverPreviewsTheCaptureWithoutTakingFocusOrTheToggleClick() async throws {
@@ -198,6 +210,29 @@ struct AskLauncherHeaderTests {
         try await fixture.wait { NSApp.windows.contains { $0.isVisible && find("ask.context.panel", in: $0) != nil } }
         #expect(editor.performKeyEquivalent(with: event))
         try await fixture.wait { !NSApp.windows.contains { $0.isVisible && find("ask.context.panel", in: $0) != nil } }
+    }
+
+    @Test func escapeClosesTheContextPanelBeforeTheLauncher() async throws {
+        let fixture = try AskTestFixture()
+        captured(fixture)
+        var dismissed = 0
+        let (window, _) = host(fixture, onDismiss: { dismissed += 1 })
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(300))
+        let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
+        window.makeFirstResponder(editor)
+        #expect(editor.performKeyEquivalent(with: try key("k", code: 40, modifiers: .command, in: window)))
+        let panel = { NSApp.windows.first { $0.isVisible && find("ask.context.panel", in: $0) != nil } }
+        try await fixture.wait { panel() != nil }
+        // The same glass card as the composer's other menus, never key, so the launcher keeps typing.
+        let card = try #require(panel())
+        #expect(card is AskGlassMenuPresenter.Panel && !card.canBecomeKey)
+        #expect(window.firstResponder === editor)
+        editor.keyDown(with: try key("\u{1b}", code: 53, in: window))
+        try await fixture.wait { panel() == nil }
+        #expect(dismissed == 0, "the first Esc closes only the panel")
+        editor.keyDown(with: try key("\u{1b}", code: 53, in: window))
+        #expect(dismissed == 1)
     }
 
     @Test(arguments: ["/", "、"])

@@ -10,7 +10,7 @@ private let chineseWordJSON = """
  "forms":[],"examples":[{"source":"你这个**狗蛋**！","target":"You silly fool!"}],"synonyms":["狗子"]}
 """
 
-@Suite("Ask word card target-language translation")
+@Suite("Ask word card target-language translation", .exclusiveUIState)
 struct AskWordCardTranslationTests {
     @Test func wordsKeepTheirTranslationSeparateFromDefinitions() throws {
         guard case let .card(card) = AskWordCard.parse(chineseWordJSON) else {
@@ -116,7 +116,7 @@ struct AskWordCardTranslationTests {
     }
 }
 
-@Suite("Ask translated word card rendering", .serialized)
+@Suite("Ask translated word card rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWordCardTranslationViewTests {
     @Test func longTranslationsGetEnoughRoomAndCardsStillScroll() {

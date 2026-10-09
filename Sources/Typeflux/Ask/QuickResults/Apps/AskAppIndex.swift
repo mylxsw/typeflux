@@ -150,14 +150,16 @@ final class AskAppIndex: AskAppSearching, @unchecked Sendable {
         for root in roots {
             if root.pathExtension == "app" { add(root); continue }
             // Applications first, then folders; each by name, so a scan is repeatable.
-            let children = ((try? files.contentsOfDirectory(at: root, includingPropertiesForKeys: [.isDirectoryKey],
-                                                            options: [.skipsHiddenFiles])) ?? [])
+            let children = ((try? files.contentsOfDirectory(at: root, includingPropertiesForKeys: [.isDirectoryKey, .isHiddenKey],
+                                                            options: [])) ?? [])
                 .sorted { (rank($0), $0.lastPathComponent) < (rank($1), $1.lastPathComponent) }
             for child in children {
                 if child.pathExtension == "app" { add(child); continue }
-                guard (try? child.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { continue }
+                guard !child.lastPathComponent.hasPrefix("."),
+                      let values = try? child.resourceValues(forKeys: [.isDirectoryKey, .isHiddenKey]),
+                      values.isHidden != true, values.isDirectory == true else { continue }
                 let nested = (try? files.contentsOfDirectory(at: child, includingPropertiesForKeys: nil,
-                                                             options: [.skipsHiddenFiles])) ?? []
+                                                             options: [])) ?? []
                 nested.filter { $0.pathExtension == "app" }.forEach(add)
             }
         }

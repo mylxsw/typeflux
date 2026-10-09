@@ -31,6 +31,8 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     var engineSettings: @Sendable () -> AskTranslationSettings = { AskTranslationSettings() }
     /// A translation service, with its keys from the Keychain; nil leaves services out.
     var service: (@Sendable (AskTranslationProvider) -> any AskTranslationEngine)?
+    /// A configured service to use when the Cloud model requires sign-in.
+    var signedOutFallback: @Sendable () -> AskTranslationProvider? = { nil }
     var detector: any AskLanguageDetecting = AskLanguageDetector()
     /// The language translations go into when the text is already in the interface language.
     var secondLanguage: @Sendable (AppLanguage) -> String = { AskTranslationLanguages.defaultSecond(for: $0) }
@@ -111,7 +113,19 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
              progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
         if Self.opensWordBook(request.options) { return try await wordBookPreview(request, plan: plan) }
-        var output = request.text.isEmpty ? recentWords(plan: plan) : try await translate(request, plan: plan)
+        var output: AskPluginOutput
+        do {
+            output = request.text.isEmpty ? recentWords(plan: plan) : try await translate(request, plan: plan)
+        } catch TypefluxCloudLLMError.notLoggedIn {
+            try Task.checkCancellation()
+            guard plan.values["engine"] == "ai", service != nil, let provider = signedOutFallback() else {
+                throw TypefluxCloudLLMError.notLoggedIn
+            }
+            var fallback = plan
+            fallback.values["engine"] = provider.rawValue
+            output = try await translate(request, plan: fallback, allowsAIFallback: false)
+            output.note = L("ask.plugin.translate.signInFallback", provider.title)
+        }
         // Every translation leads to the word book, on its word when it looked one up.
         if wordBook != nil { output.actions.append(Self.openWordBookAction(key: output.wordBook?.key)) }
         return output
@@ -122,7 +136,7 @@ struct AskTranslatePlugin: AskLauncherPlugin {
                         shortcut: .commandB)
     }
 
-    private func translate(_ request: AskPluginRequest, plan: AskPluginPlan) async throws -> AskPluginOutput {
+    private func translate(_ request: AskPluginRequest, plan: AskPluginPlan, allowsAIFallback: Bool = true) async throws -> AskPluginOutput {
         let source = plan.values["source"]
         let target = plan.values["target"] ?? AskTranslationLanguages.code(for: request.interfaceLanguage)
         var usesAI = plan.values["engine"] == "ai"
@@ -142,7 +156,8 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         let text: String
         var note: String?
         if let provider {
-            let result = try await serviceTranslation(request.text, provider: provider, source: source, target: target)
+            let result = try await serviceTranslation(request.text, provider: provider, source: source, target: target,
+                                                      allowsAIFallback: allowsAIFallback)
             text = result.text
             if let fallback = result.fallback {
                 usesAI = true
@@ -195,14 +210,14 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     /// `text` translated by `provider`; when it fails and the AI may stand in, the
     /// AI's translation and why the service failed.
     private func serviceTranslation(_ text: String, provider: AskTranslationProvider, source: String?,
-                                    target: String) async throws -> (text: String, fallback: String?) {
+                                    target: String, allowsAIFallback: Bool) async throws -> (text: String, fallback: String?) {
         guard let engine = service?(provider) else { throw AskTranslationServiceError.notConfigured }
         do {
             return (try await engine.translate(text, from: source, to: target), nil)
         } catch {
             if error is CancellationError || Task.isCancelled { throw CancellationError() }
             let failure = Self.failure(error, provider: provider)
-            guard engineSettings().fallsBackToAI, let ai else { throw failure }
+            guard allowsAIFallback, engineSettings().fallsBackToAI, let ai else { throw failure }
             return (try await ai.translate(text, from: source, to: target), Self.reason(error))
         }
     }

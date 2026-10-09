@@ -12,7 +12,7 @@ import Testing
 /// `TYPEFLUX_ASK_LIVE_ACCOUNT=local` shows a signed-out Mac that runs Ask only on
 /// the user's own (Ollama) models instead of the signed-in Cloud account.
 /// It never touches a real account, microphone, screen or desktop tool.
-@Suite("Ask live preview", .serialized)
+@Suite("Ask live preview", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLivePreviewHarness {
     @Test func showDesignStateOnScreen() async throws {

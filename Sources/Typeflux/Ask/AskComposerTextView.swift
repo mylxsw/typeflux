@@ -90,6 +90,7 @@ struct AskComposerTextView: NSViewRepresentable {
         if editor.contextID != contextID { editor.voice?.cancel(ifOwnedBy: editor) }
         editor.contextID = contextID
         editor.voice = voice
+        editor.setAccessibilityLabel(placeholder)
         // An inactive window retains its first responder. It must not compete
         // with the key window for the shared composer's focus state.
         if editor.window?.isKeyWindow == true, editor.window?.firstResponder === editor,

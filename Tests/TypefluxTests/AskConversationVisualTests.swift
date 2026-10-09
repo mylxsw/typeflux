@@ -5,7 +5,7 @@ import Testing
 
 /// Opt-in render checks use the production views with isolated, synthetic data.
 /// They never access a user's screens, microphone, account or desktop tools.
-@Suite("Ask visual snapshots", .serialized)
+@Suite("Ask visual snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskConversationVisualTests {
     @Test func nativeWindowTransitionFollowsExplicitSubmission() async throws {

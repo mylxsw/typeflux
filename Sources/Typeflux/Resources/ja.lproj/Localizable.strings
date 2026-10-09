@@ -1926,7 +1926,7 @@
 "ask.local.modelFailed" = "モデルへのリクエストが失敗しました。設定を確認して再試行してください。";
 "ask.local.badSummary" = "モデルが無効な要約を返しました。再試行してください。";
 "ask.local.regenerateLatest" = "再生成できるのは最新の返信だけです。";
-"ask.local.modelRequired" = "Typeflux Cloud を使わずに Ask を使うには、自分のモデルを選んでください。設定 → モデル で追加できます。";
+"ask.local.modelRequired" = "Typeflux Cloud を使わずに Ask を使うには、自分のモデルを選んでください。";
 "ask.local.conflict" = "会話が変更されました。再読み込みしてもう一度お試しください。";
 "ask.local.stepLimit" = "エージェントのステップ上限に達しました。";
 "ask.local.truncated" = "回答が出力上限に達して途切れました。再試行するか続きを依頼してください。";
@@ -1995,6 +1995,7 @@
 "ask.local.card.cloudQuestion" = "クラウドのモデルを使いますか？";
 "ask.local.identity" = "未サインイン";
 "ask.local.identity.detail" = "%@ · このMacに保存";
+"ask.local.identity.storage" = "チャットはこのMacに保存";
 "ask.cloudPromo.body" = "サインインすると、画像認識やWeb検索に対応したクラウドのモデルを使え、会話がデバイス間で同期されます。";
 "ask.cloudPromo.signIn" = "サインイン";
 "ask.cloudPromo.dismiss" = "30日間表示しない";
@@ -2554,6 +2555,7 @@
 "ask.plugin.askAI.selection" = "選択したテキストを%@";
 "ask.plugin.writeBack.failed" = "アプリに書き戻せませんでした。結果はクリップボードにあります";
 "ask.plugin.hint.keyword" = "↩ 送信 · ⇥ キーワードを使う";
+"ask.plugin.hint.keyword.enter" = "↩ キーワードを使う · ⌘↩ AI に質問";
 "ask.plugin.hint.ready" = "↩ 実行";
 "ask.plugin.hint.running" = "esc キャンセル";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
@@ -2561,6 +2563,7 @@
 "ask.plugin.section" = "キーワード";
 "ask.plugin.waiting" = "処理するテキストを入力";
 "ask.plugin.enter" = "スペースまたは ⇥ で使う";
+"ask.plugin.enter.return" = "↩ で使う";
 "ask.plugin.running" = "処理中…";
 "ask.workflow.section" = "ワークフロー";
 "ask.workflow.footnote" = "キーワードで自分のスクリプト（Python、Node、TypeScript、シェル、AppleScript、任意のプログラム）を実行します。あなたの権限で動くので、理解できるものだけを信頼してください。";
@@ -3776,7 +3779,7 @@
 
 /* Launcher settings and chat history */
 "ask.plugin.setting.title" = "システム設定";
-"ask.settings.keywords.kind.setting.hint" = "Typeflux のシステム設定を開く";
+"ask.settings.keywords.kind.setting.hint" = "Typeflux の設定を開く";
 "ask.plugin.history.title" = "チャット履歴";
 "ask.settings.keywords.kind.history.hint" = "チャットのタイトルを検索して開く";
 "ask.plugin.history.placeholder" = "チャットのタイトルを検索";
@@ -3802,3 +3805,89 @@
 "account.addon.title" = "追加クレジット";
 "account.addon.nextExpiry" = "次の有効期限：%@ クレジット（%@）";
 "account.addon.expiringSoon" = "%@ クレジットが %@ に失効します。それまでにご利用ください。";
+
+"ask.submission.models" = "設定 → モデル";
+"ask.usage.empty" = "使用量はまだありません";
+"ask.usage.emptyHelp" = "メッセージを送信すると使用量が表示されます。";
+"ask.submission.signIn" = "Typeflux Cloud にログイン";
+/* File indexing status and file-system-free folder labels */
+"ask.plugin.files.skipped" = "スキップ：%@";
+"ask.files.skip.timeout" = "タイムアウトしたフォルダ %@ 件";
+"ask.files.skip.failed" = "読み取れないフォルダ %@ 件";
+"ask.files.skip.mount" = "ネットワークまたは仮想マウント %@ 件";
+"ask.files.folder.home" = "ホーム";
+"ask.files.folder.desktop" = "デスクトップ";
+"ask.files.folder.documents" = "書類";
+"ask.files.folder.downloads" = "ダウンロード";
+"ask.files.folder.music" = "ミュージック";
+"ask.files.folder.pictures" = "ピクチャ";
+"ask.files.folder.movies" = "ムービー";
+"ask.files.folder.library" = "ライブラリ";
+"ask.files.folder.applications" = "アプリケーション";
+"ask.files.folder.volumes" = "ボリューム";
+"ask.files.folder.icloud" = "iCloud Drive";
+"ask.files.folder.cloud" = "クラウドストレージ";
+
+// Launcher localization and accessibility polish
+"cloud.error.llmSignInRequired" = "Typeflux Cloud の言語モデルを使うにはログインしてください。";
+"cloud.error.asrSignInRequired" = "Typeflux Cloud の音声認識を使うにはログインしてください。";
+"ask.plugin.prompt.description.polish" = "意味や語調を保ちながら文法と表現を改善";
+"ask.plugin.prompt.description.summarize" = "文章の要点をまとめる";
+"ask.plugin.prompt.description.explain" = "文章をわかりやすく説明";
+"ask.plugin.translate.signInFallback" = "Typeflux Cloud にはログインが必要です。代わりに %@ で翻訳しました。";
+
+/* AI command results: windows and notes (GUL-292) */
+"ask.plugin.action.copyRich" = "リッチテキストでコピー";
+"ask.plugin.action.openInWindow" = "ウインドウで開く";
+"ask.plugin.copiedRich" = "リッチテキストでコピーしました";
+"ask.notes.title" = "ノート";
+"ask.notes.save" = "ノートに保存";
+"ask.notes.unsave" = "ノートから削除";
+"ask.notes.open" = "ノート";
+"ask.notes.saved" = "ノートに保存しました · ⌘B で開く";
+"ask.notes.removed" = "ノートから削除しました";
+"ask.notes.editedKept" = "このノートは編集済みです。ノートで削除してください";
+"ask.notes.saveWhenDone" = "完了したらノートに保存します";
+"ask.notes.saveWhenDone.cancelled" = "保存の予約を取り消しました";
+"ask.notes.placeholder" = "ノートを検索 · 空欄で最近のノート";
+"ask.notes.openNote" = "ウインドウで開く";
+"ask.notes.empty" = "AI コマンドの結果で ⌘S を押すとここに保存されます";
+"ask.notes.noMatch" = "一致するノートはありません";
+"ask.notes.openWindow" = "ノートを開く…";
+"ask.notes.untitled" = "ノート";
+"ask.notes.shelf.all" = "すべてのノート";
+"ask.notes.shelf.pinned" = "ピン留め";
+"ask.notes.shelf.commands" = "コマンド別";
+"ask.notes.shelf.tags" = "タグ";
+"ask.notes.noTags" = "タグはまだありません";
+"ask.notes.localOnly" = "この Mac にのみ保存";
+"ask.notes.search" = "タイトル・本文・元の文を検索";
+"ask.notes.sort.updated" = "最近の更新";
+"ask.notes.sort.created" = "作成日";
+"ask.notes.title.placeholder" = "タイトル";
+"ask.notes.pin" = "ピン留め";
+"ask.notes.unpin" = "ピン留めを外す";
+"ask.notes.tag.remove" = "タグ %@ を削除";
+"ask.notes.tag.add" = "+ タグ、Return";
+"ask.notes.from" = "%@ から";
+"ask.notes.created" = "%@ に作成";
+"ask.notes.edited" = "編集済み";
+"ask.notes.done" = "完了";
+"ask.notes.edit" = "編集";
+"ask.notes.export" = ".md で書き出す";
+"ask.notes.delete" = "削除";
+"ask.notes.undo" = "取り消す";
+"ask.notes.deleted" = "「%@」を削除しました";
+"ask.notes.exported" = "%@ を書き出しました";
+"ask.result.stopped" = "テキストが届く前に停止しました";
+"ask.result.stop" = "停止";
+"ask.result.pin" = "最前面に表示";
+"ask.result.unpin" = "最前面表示をやめる";
+"ask.result.streaming" = "生成中…";
+"ask.result.original" = "元の文";
+"ask.result.insert" = "%@ に挿入";
+"ask.result.sourceApp" = "元のアプリ";
+"ask.result.insert.unavailable" = "元のアプリは終了しています。コピーして貼り付けてください";
+"ask.result.revealNote" = "ノートで表示";
+"ask.result.askAI" = "チャットで続ける";
+"menu.notes" = "ノート…";

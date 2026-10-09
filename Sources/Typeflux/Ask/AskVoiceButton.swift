@@ -16,9 +16,16 @@ struct AskVoiceButton: NSViewRepresentable {
         return instructions + "\n" + L("ask.voice.shortcutHint", HotkeyFormat.display(shortcut))
     }
 
+    static func title(phase: AskVoiceInput.Phase, contextMatches: Bool) -> String {
+        let listening = contextMatches && phase == .listening
+        let transcribing = contextMatches && phase == .transcribing
+        return L(listening ? "ask.voice.stop" : transcribing ? "ask.voice.transcribing" : "ask.voice.input")
+    }
+
     func makeNSView(context: Context) -> Control {
         let button = Control()
         button.identifier = NSUserInterfaceItemIdentifier("ask.voice.button")
+        button.setAccessibilityIdentifier("ask.composer.voice")
         button.isBordered = false
         button.setButtonType(.momentaryPushIn)
         button.refusesFirstResponder = true
@@ -32,7 +39,7 @@ struct AskVoiceButton: NSViewRepresentable {
         button.contextID = contextID
         let listening = voice.context == contextID && voice.phase == .listening
         let transcribing = voice.context == contextID && voice.phase == .transcribing
-        let title = L(listening ? "ask.voice.stop" : transcribing ? "ask.voice.transcribing" : "ask.voice.input")
+        let title = Self.title(phase: voice.phase, contextMatches: voice.context == contextID)
         button.title = ""
         button.visualPhase = voice.context == contextID ? voice.phase : .idle
         button.reduceMotion = reduceMotion

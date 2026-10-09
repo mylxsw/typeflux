@@ -103,6 +103,7 @@ struct AskPluginAction: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
         case openChat
         case openSettings
+        case signIn
         case openConversation(String, account: String)
         case copy(String)
         /// Writes into the app the launcher came from, over its selection when there is one.
@@ -134,10 +135,20 @@ struct AskPluginAction: Equatable, Sendable {
         case openWordBook(key: String?)
         /// Opens the word book and looks this word up there (`dict`).
         case lookUpInWordBook(String)
+        /// Copies Markdown as rich text (HTML and RTF, with the source as plain text) and stays (⇧⌘C).
+        case copyRich(String)
+        /// Moves the result, even one still streaming, into a window of its own (⌘O).
+        case openInWindow
+        /// Saves the result to the notes, or takes it out again (⌘S).
+        case toggleNote(AskNoteDraft)
+        /// Opens the notes window, on this note when there is one (⌘B).
+        case openNotes(id: UUID?)
+        /// Opens a saved note in a result window (`nb` keyword).
+        case openNote(UUID)
     }
 
     enum Shortcut: Equatable, Sendable {
-        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE, commandS, commandB
+        case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE, commandS, commandB, commandO
     }
 
     var kind: Kind
@@ -217,8 +228,10 @@ struct AskPluginOutput: Equatable, Sendable {
     var detail: String?
 
     var selected: AskPluginItem? {
-        items.indices.contains(selectedItem) ? items[selectedItem] : nil
+        items.indices.contains(selectedItem) && items[selectedItem].valid ? items[selectedItem] : nil
     }
+
+    var selectableIndices: [Int] { items.indices.filter { items[$0].valid } }
 
     /// What a key does. With a list it is the chosen row's (Return, ⌥↩, ⌘C), and
     /// the result's for the rest (⌘R, ⌘E).
@@ -252,5 +265,17 @@ struct AskPluginFailure: Error, Equatable, Sendable {
 
     func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
         actions.first { $0.shortcut == shortcut }
+    }
+
+    static func presenting(_ error: Error) -> Self {
+        if let failure = error as? Self { return failure }
+        let requiresSignIn: Bool = switch error {
+        case TypefluxCloudLLMError.notLoggedIn, TypefluxOfficialASRError.notLoggedIn,
+             TypefluxOfficialASRRoutingError.unauthorized: true
+        default: false
+        }
+        return Self(message: error.localizedDescription, retry: !requiresSignIn,
+                    actions: requiresSignIn ? [.init(kind: .signIn, title: L("ask.submission.signIn"),
+                                                     symbol: "person.crop.circle", shortcut: .enter)] : [])
     }
 }

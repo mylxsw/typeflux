@@ -58,15 +58,16 @@ struct AskUsagePanel: View {
     @ObservedObject private var auth = AuthState.shared
     @Binding var runId: String?
     var close: () -> Void
-    @State private var items: [AskUsageInvocation] = []
-    @State private var cursor: Int64?
-    @State private var loading = false
-    @State private var loadError = false
+    @StateObject private var details = AskUsageDetails()
+    private var items: [AskUsageInvocation] { details.items }
+    private var cursor: Int64? { details.cursor }
+    private var loading: Bool { details.loading }
+    private var loadError: Bool { details.loadError }
     @FocusState private var closeFocused: Bool
 
     private var usage: AskConversationUsage? { model.selected?.usage }
     private var totals: AskUsageTotals? { runId.flatMap { usage?.runs[$0] } ?? (runId == nil ? usage?.total : nil) }
-    private var loadKey: String { "\(model.selectedId ?? "")/\(usage?.version ?? 0)/\(runId ?? "all")" }
+    private var loadKey: String { "\(model.selectedId ?? "")/\(usage?.version ?? 0)/\(model.selected?.run?.id ?? "none")/\(runId ?? "all")" }
 
     @State private var expandedCall: String?
 
@@ -98,17 +99,33 @@ struct AskUsagePanel: View {
                 VStack(alignment: .leading, spacing: compact ? 8 : 12) {
                     if let context = model.usageContext { contextCard(context) }
                     if let budget = model.selected?.run?.budget { AskBudgetView(budget: budget) }
-                    AskSegmentedControl(options: scopeOptions, selection: $runId)
-                        .padding(.top, 4)
-                    if let totals {
+                    if scopeOptions.count > 1 {
+                        AskSegmentedControl(options: scopeOptions, selection: $runId)
+                            .padding(.top, 4)
+                    }
+                    if model.hasUsageRecords, let totals {
                         totalsCard(totals)
-                    } else {
+                    } else if !model.hasUsageRecords || (!loading && !loadError && items.isEmpty) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Image(systemName: "chart.pie").accessibilityHidden(true)
+                            Text(L("ask.usage.empty"))
+                                .font(.system(size: 13, weight: .semibold))
+                            Text(L("ask.usage.emptyHelp")).font(.system(size: 11))
+                        }
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 12)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(L("ask.usage.empty"))
+                        .accessibilityHint(L("ask.usage.emptyHelp"))
+                        .accessibilityIdentifier("ask.usage.empty")
+                    } else if !loading {
                         Text(L("ask.usage.unavailable")).font(.system(size: 12))
                             .foregroundStyle(StudioTheme.textSecondary)
                     }
                     if usage?.historicalGap == true { help("ask.usage.historicalGap") }
                     callsSection
-                    help("ask.usage.scopeHelp")
+                    if model.hasUsageRecords { help("ask.usage.scopeHelp") }
                 }
                 .padding(compact ? 12 : 16)
             }
@@ -221,7 +238,11 @@ struct AskUsagePanel: View {
             .background(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
             if loadError {
                 Text(L("ask.usage.loadError")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                Button(L("ask.retry")) { Task { await load(reset: false) } }.buttonStyle(.plain)
+                Button { Task { await load(reset: false) } } label: {
+                    Label(L("ask.retry"), systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                .accessibilityIdentifier("ask.usage.retry")
             } else if cursor != nil {
                 Button(L("ask.usage.more")) { Task { await load(reset: false) } }.buttonStyle(.plain)
                     .font(.system(size: 11.5)).foregroundStyle(AskTheme.accentText)
@@ -349,18 +370,11 @@ struct AskUsagePanel: View {
     private func help(_ key: String) -> some View { Text(L(key)).font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true) }
 
     @MainActor private func load(reset: Bool) async {
-        let key = loadKey
-        guard let id = model.selectedId else { return }
-        if reset { items = []; cursor = nil }
-        loading = true; loadError = false
-        do {
-            let page = try await model.usagePage(id: id, runId: runId, cursor: reset ? nil : cursor)
-            guard !Task.isCancelled, key == loadKey else { return }
-            let existing = Set(items.map(\.id))
-            items += page.items.filter { !existing.contains($0.id) }; cursor = page.nextCursor; loading = false
-        } catch {
-            guard !Task.isCancelled, key == loadKey else { return }
-            loading = false; loadError = true
+        let id = model.selectedId
+        let scope = runId
+        await details.load(key: loadKey, hasRecords: id != nil && model.hasUsageRecords, reset: reset) { cursor in
+            guard let id else { return AskUsagePage(items: [], nextCursor: nil) }
+            return try await model.usagePage(id: id, runId: scope, cursor: cursor)
         }
     }
 }

@@ -79,6 +79,7 @@ struct AskWorkflowEditorView: View {
         .confirmationDialog(L("ask.workflow.editor.deleteTitle", model.draft?.manifest?.name ?? model.workflowID ?? ""),
                             isPresented: $confirmingDelete) {
             Button(L("ask.workflow.delete"), role: .destructive) { model.delete() }
+            Button(L("common.cancel"), role: .cancel) {}
         }
         .onReceive(NotificationCenter.default.publisher(for: .askWorkflowEditorCreate)) { note in
             creating = (note.object as? AskWorkflowNewSheet.Mode) ?? .assistant
@@ -457,6 +458,7 @@ struct AskWorkflowEditorSidebar: View {
                 }
                 switching = nil
             }
+            Button(L("common.cancel"), role: .cancel) { switching = nil }
         }
     }
 

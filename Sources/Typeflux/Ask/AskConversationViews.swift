@@ -54,6 +54,7 @@ struct AskConversationView: View {
         .ignoresSafeArea(.container, edges: .top)
         .onChange(of: model.selectedId) { _ in
             usageRunId = nil
+            showsUsage = false
             showsSidebarDrawer = false
         }
         .onChange(of: model.authoringSession?.revision) { _ in
@@ -98,6 +99,7 @@ struct AskConversationView: View {
                 if let id = deleteId { Task { await model.delete(id) } }
                 deleteId = nil
             }
+            Button(L("common.cancel"), role: .cancel) { deleteId = nil }
         }
     }
 
@@ -956,6 +958,7 @@ struct AskConversationView: View {
                           onDismiss: { model.visionSwitch = nil })
         }
         if model.imageRecoveryTarget == nil, let error = model.error,
+           !model.submissionIssues.values.contains(where: { $0.text == error }),
            !model.hasRecoveryNotice || error != L("ask.recovery.unknownBody") {
             AskBanner(
                 text: error,

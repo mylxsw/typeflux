@@ -59,7 +59,7 @@ struct ChatComposer: View {
                 .padding(.horizontal, 8).padding(.bottom, 8)
                 .accessibilityIdentifier("chat.composer.validation")
         }
-        if let error = store.errorMessage ?? dictation.errorMessage {
+        if let error = visibleError {
             HStack(alignment: .top, spacing: 4) {
                 Text(NSLocalizedString(error, comment: "Chat error")).font(.footnote).foregroundStyle(.red)
                     .accessibilityIdentifier("chat.composer.error")
@@ -68,7 +68,7 @@ struct ChatComposer: View {
                     Link("Open Settings", destination: URL(string: UIApplication.openSettingsURLString)!)
                         .font(.footnote)
                 }
-                if store.errorMessage != nil {
+                if error == store.errorMessage {
                     Button { Task { await store.reloadConversation() } } label: {
                         Image(systemName: "arrow.clockwise").font(.footnote)
                             .frame(width: 32, height: 32)
@@ -78,6 +78,15 @@ struct ChatComposer: View {
             }
             .padding(.leading, 8).padding(.bottom, 6)
         }
+    }
+
+    /// The out-of-credits card above the composer already explains that error.
+    private var visibleError: String? {
+        if let error = store.errorMessage,
+           !(store.needsCredits && error == ChatStore.creditsExhaustedMessage) {
+            return error
+        }
+        return dictation.errorMessage
     }
 
     private func attachment(_ data: String) -> some View {

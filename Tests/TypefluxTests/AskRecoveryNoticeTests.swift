@@ -150,7 +150,7 @@ struct AskRecoveryNoticePresentationTests {
     }
 }
 
-@Suite("Ask recovery notice interactions", .serialized)
+@Suite("Ask recovery notice interactions", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryNoticeInteractionTests {
     @Test func `completed retry with delivered failure stays quiet after reopening`() async throws {

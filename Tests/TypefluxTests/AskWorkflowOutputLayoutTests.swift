@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Workflow output layout", .serialized)
+@Suite("Workflow output layout", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWorkflowOutputLayoutTests {
     @Test(arguments: [480.0, 658.0, 700.0, 888.0])

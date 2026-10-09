@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher search settings page", .serialized)
+@Suite("Launcher search settings page", .serialized, .exclusiveUIState)
 @MainActor
 struct LauncherSearchSettingsViewTests {
     private func store() throws -> (SettingsStore, UserDefaults, String) {
@@ -145,7 +145,7 @@ struct LauncherSearchSettingsViewTests {
     }
 }
 
-@Suite("Ask quick file and app actions", .serialized)
+@Suite("Ask quick file and app actions", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickFileActionTests {
     private final class Host {

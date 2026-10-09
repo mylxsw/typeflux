@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Desktop identity evidence")
+@Suite("Desktop identity evidence", .exclusiveUIState)
 @MainActor
 struct AskComputerTargetProbeTests {
     @Test func `window focus element replacement geometry and process generation change evidence`() throws {

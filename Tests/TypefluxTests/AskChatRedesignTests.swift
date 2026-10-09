@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Chat run phase")
+@Suite("Chat run phase", .exclusiveUIState)
 @MainActor
 struct AskRunPhaseTests {
     private func run(_ status: String, steps: Int = 3, recovery: AskRunRecovery? = nil) -> AskRun {
@@ -104,7 +104,7 @@ struct AskRunPhaseTests {
     }
 }
 
-@Suite("Chat activity line while paused")
+@Suite("Chat activity line while paused", .exclusiveUIState)
 @MainActor
 struct AskActivityPausedTests {
     private let group = AskActivityGroup(id: "a", messages: [
@@ -134,7 +134,7 @@ struct AskActivityPausedTests {
     }
 }
 
-@Suite("Chat recovery actions")
+@Suite("Chat recovery actions", .exclusiveUIState)
 @MainActor
 struct AskRecoveryActionTests {
     private let value = AskRecoveryFixture.conversation()
@@ -214,7 +214,7 @@ struct AskRecoveryActionTests {
     }
 }
 
-@Suite("Chat recovery timeline")
+@Suite("Chat recovery timeline", .exclusiveUIState)
 @MainActor
 struct AskRecoveryTimelineTests {
     @Test func countsStepsWithoutNamingTools() {
@@ -247,7 +247,7 @@ struct AskRecoveryTimelineTests {
     }
 }
 
-@Suite("Chat workflow draft presentation")
+@Suite("Chat workflow draft presentation", .exclusiveUIState)
 @MainActor
 struct AskWorkflowChecklistTests {
     private func manifest(keywords: [String] = ["weather"], description: String? = "Current weather",
@@ -361,7 +361,7 @@ struct AskWorkflowChecklistTests {
     }
 }
 
-@Suite("Chat redesign copy")
+@Suite("Chat redesign copy", .exclusiveUIState)
 @MainActor
 struct AskChatRedesignCopyTests {
     static let keys = [

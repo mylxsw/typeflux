@@ -24,14 +24,14 @@ struct AskPermissionModeMenu: View {
         Menu {
             ForEach(AskPermissionMode.allCases, id: \.self) { option in
                 Button { onSelect(option) } label: {
-                    Label(option.title + " — " + option.detail,
+                    Label(option.title + " · " + option.detail,
                           systemImage: mode == option ? "checkmark" : option.symbol)
                 }
             }
         } label: {
             Group {
                 if bare || (compact && mode != .yolo) {
-                    Image(systemName: mode.symbol)
+                    Image(systemName: mode.symbol).accessibilityHidden(true)
                 } else {
                     Label(mode == .yolo ? "YOLO" : mode.title, systemImage: mode.symbol)
                 }
@@ -49,6 +49,7 @@ struct AskPermissionModeMenu: View {
         .background(Capsule().fill(Self.wellFill(mode)).padding(.horizontal, -4).padding(.vertical, -3))
         .help(mode.detail + " /mode [yolo|strict|standard]")
         .accessibilityLabel(L("ask.mode.title") + ": " + mode.title)
+        .accessibilityValue(mode.title)
         .accessibilityIdentifier("ask.composer.permissionMode")
     }
 }

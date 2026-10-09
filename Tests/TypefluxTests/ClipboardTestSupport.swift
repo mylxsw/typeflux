@@ -3,6 +3,29 @@ import AppKit
 
 /// Shared fixtures for clipboard history tests.
 enum ClipboardTestSupport {
+    /// The clipboard panel a controller is showing. Panels dismissed by earlier tests keep the
+    /// same identifier and can stay in `NSApp.windows` until AppKit releases them, so a lookup
+    /// by identifier alone can return a stale panel. Only a single visible panel counts.
+    static func presentedPanel() -> NSWindow? {
+        let panels = NSApplication.shared.windows.filter {
+            $0.isVisible && $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.clipboard"
+        }
+        return panels.count == 1 ? panels[0] : nil
+    }
+
+    struct MissingPanel: Error {}
+
+    /// Presents `model`, hands `body` the visible panel and always dismisses afterwards, also
+    /// when the lookup or `body` throws, so a failing test cannot leave its panel to the next.
+    static func withPresentedPanel<T>(
+        _ controller: ClipboardPanelController, _ model: ClipboardPanelModel, _ body: (NSWindow) throws -> T
+    ) throws -> T {
+        controller.present(model)
+        defer { controller.dismiss() }
+        guard let panel = presentedPanel() else { throw MissingPanel() }
+        return try body(panel)
+    }
+
     static func temporaryDirectory(_ name: String = "ClipboardTests") -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(name)-\(UUID().uuidString)", isDirectory: true)

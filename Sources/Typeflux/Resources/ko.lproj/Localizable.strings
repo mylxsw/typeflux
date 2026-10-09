@@ -1926,7 +1926,7 @@
 "ask.local.modelFailed" = "모델 요청이 실패했습니다. 설정을 확인하고 다시 시도하세요.";
 "ask.local.badSummary" = "모델이 잘못된 요약을 반환했습니다. 다시 시도하세요.";
 "ask.local.regenerateLatest" = "최신 답변만 다시 생성할 수 있습니다.";
-"ask.local.modelRequired" = "Typeflux Cloud 없이 Ask를 사용하려면 직접 설정한 모델을 선택하세요. 설정 → 모델에서 추가할 수 있습니다.";
+"ask.local.modelRequired" = "Typeflux Cloud 없이 Ask를 사용하려면 직접 설정한 모델을 선택하세요.";
 "ask.local.conflict" = "대화가 변경되었습니다. 새로 고친 후 다시 시도하세요.";
 "ask.local.stepLimit" = "에이전트 단계 한도에 도달했습니다.";
 "ask.local.truncated" = "답변이 출력 한도에 도달해 잘렸습니다. 다시 시도하거나 계속해 달라고 요청하세요.";
@@ -1995,6 +1995,7 @@
 "ask.local.card.cloudQuestion" = "클라우드 모델을 사용하시겠어요?";
 "ask.local.identity" = "로그인 안 됨";
 "ask.local.identity.detail" = "%@ · 이 Mac에만 저장";
+"ask.local.identity.storage" = "대화는 이 Mac에만 저장";
 "ask.cloudPromo.body" = "로그인하면 이미지 인식과 웹 검색을 지원하는 클라우드 모델을 사용하고 여러 기기에서 대화를 동기화할 수 있습니다.";
 "ask.cloudPromo.signIn" = "로그인";
 "ask.cloudPromo.dismiss" = "30일 동안 숨기기";
@@ -2554,6 +2555,7 @@
 "ask.plugin.askAI.selection" = "선택한 텍스트 %@";
 "ask.plugin.writeBack.failed" = "앱에 입력하지 못했습니다. 결과는 클립보드에 있습니다";
 "ask.plugin.hint.keyword" = "↩ 보내기 · ⇥ 키워드 사용";
+"ask.plugin.hint.keyword.enter" = "↩ 키워드 사용 · ⌘↩ AI에게 질문";
 "ask.plugin.hint.ready" = "↩ 실행";
 "ask.plugin.hint.running" = "esc 취소";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
@@ -2561,6 +2563,7 @@
 "ask.plugin.section" = "키워드";
 "ask.plugin.waiting" = "처리할 텍스트를 입력하세요";
 "ask.plugin.enter" = "스페이스 또는 ⇥로 사용";
+"ask.plugin.enter.return" = "↩ 사용";
 "ask.plugin.running" = "처리 중…";
 "ask.workflow.section" = "워크플로";
 "ask.workflow.footnote" = "키워드로 내 스크립트(Python, Node, TypeScript, 셸, AppleScript, 모든 프로그램)를 실행합니다. 내 권한으로 실행되므로 이해하는 워크플로만 신뢰하세요.";
@@ -3776,7 +3779,7 @@
 
 /* Launcher settings and chat history */
 "ask.plugin.setting.title" = "시스템 설정";
-"ask.settings.keywords.kind.setting.hint" = "Typeflux 시스템 설정 열기";
+"ask.settings.keywords.kind.setting.hint" = "Typeflux 설정 열기";
 "ask.plugin.history.title" = "채팅 기록";
 "ask.settings.keywords.kind.history.hint" = "채팅 제목을 검색하고 대화 열기";
 "ask.plugin.history.placeholder" = "채팅 제목 검색";
@@ -3802,3 +3805,89 @@
 "account.addon.title" = "추가 크레딧";
 "account.addon.nextExpiry" = "다음 만료: %@ 크레딧, %@";
 "account.addon.expiringSoon" = "%@ 크레딧이 %@에 만료됩니다. 그 전에 사용하세요.";
+
+"ask.submission.models" = "설정 → 모델";
+"ask.usage.empty" = "아직 사용량이 없습니다";
+"ask.usage.emptyHelp" = "메시지를 보내면 사용량이 여기에 표시됩니다.";
+"ask.submission.signIn" = "Typeflux Cloud 로그인";
+/* File indexing status and file-system-free folder labels */
+"ask.plugin.files.skipped" = "건너뜀: %@";
+"ask.files.skip.timeout" = "시간 초과 폴더 %@개";
+"ask.files.skip.failed" = "읽을 수 없는 폴더 %@개";
+"ask.files.skip.mount" = "네트워크 또는 가상 마운트 %@개";
+"ask.files.folder.home" = "홈";
+"ask.files.folder.desktop" = "데스크탑";
+"ask.files.folder.documents" = "문서";
+"ask.files.folder.downloads" = "다운로드";
+"ask.files.folder.music" = "음악";
+"ask.files.folder.pictures" = "그림";
+"ask.files.folder.movies" = "동영상";
+"ask.files.folder.library" = "라이브러리";
+"ask.files.folder.applications" = "응용 프로그램";
+"ask.files.folder.volumes" = "볼륨";
+"ask.files.folder.icloud" = "iCloud Drive";
+"ask.files.folder.cloud" = "클라우드 저장 공간";
+
+// Launcher localization and accessibility polish
+"cloud.error.llmSignInRequired" = "Typeflux Cloud 언어 모델을 사용하려면 로그인하세요.";
+"cloud.error.asrSignInRequired" = "Typeflux Cloud 음성 인식을 사용하려면 로그인하세요.";
+"ask.plugin.prompt.description.polish" = "의미와 어조를 유지하면서 문법과 표현 개선";
+"ask.plugin.prompt.description.summarize" = "텍스트의 핵심 내용 요약";
+"ask.plugin.prompt.description.explain" = "텍스트를 쉽고 명확하게 설명";
+"ask.plugin.translate.signInFallback" = "Typeflux Cloud 로그인이 필요하여 %@ 번역을 사용했습니다.";
+
+/* AI command results: windows and notes (GUL-292) */
+"ask.plugin.action.copyRich" = "서식 있는 텍스트로 복사";
+"ask.plugin.action.openInWindow" = "창에서 열기";
+"ask.plugin.copiedRich" = "서식 있는 텍스트로 복사됨";
+"ask.notes.title" = "노트";
+"ask.notes.save" = "노트에 저장";
+"ask.notes.unsave" = "노트에서 제거";
+"ask.notes.open" = "노트";
+"ask.notes.saved" = "노트에 저장됨 · ⌘B로 열기";
+"ask.notes.removed" = "노트에서 제거됨";
+"ask.notes.editedKept" = "편집된 노트입니다. 노트에서 삭제하세요";
+"ask.notes.saveWhenDone" = "완료되면 노트에 저장합니다";
+"ask.notes.saveWhenDone.cancelled" = "저장 예약을 취소했습니다";
+"ask.notes.placeholder" = "노트 검색 · 비우면 최근 노트";
+"ask.notes.openNote" = "창에서 열기";
+"ask.notes.empty" = "AI 명령 결과에서 ⌘S를 누르면 여기에 저장됩니다";
+"ask.notes.noMatch" = "일치하는 노트가 없습니다";
+"ask.notes.openWindow" = "노트 열기…";
+"ask.notes.untitled" = "노트";
+"ask.notes.shelf.all" = "모든 노트";
+"ask.notes.shelf.pinned" = "고정됨";
+"ask.notes.shelf.commands" = "명령별";
+"ask.notes.shelf.tags" = "태그";
+"ask.notes.noTags" = "아직 태그가 없습니다";
+"ask.notes.localOnly" = "이 Mac에만 저장";
+"ask.notes.search" = "제목, 본문, 원문 검색";
+"ask.notes.sort.updated" = "최근 업데이트";
+"ask.notes.sort.created" = "만든 날짜";
+"ask.notes.title.placeholder" = "제목";
+"ask.notes.pin" = "고정";
+"ask.notes.unpin" = "고정 해제";
+"ask.notes.tag.remove" = "태그 %@ 제거";
+"ask.notes.tag.add" = "+ 태그, Return";
+"ask.notes.from" = "%@에서";
+"ask.notes.created" = "%@에 만듦";
+"ask.notes.edited" = "편집됨";
+"ask.notes.done" = "완료";
+"ask.notes.edit" = "편집";
+"ask.notes.export" = ".md로 내보내기";
+"ask.notes.delete" = "삭제";
+"ask.notes.undo" = "실행 취소";
+"ask.notes.deleted" = "“%@” 삭제됨";
+"ask.notes.exported" = "%@ 내보냄";
+"ask.result.stopped" = "텍스트가 도착하기 전에 중지됨";
+"ask.result.stop" = "중지";
+"ask.result.pin" = "항상 위에 표시";
+"ask.result.unpin" = "항상 위에 표시 해제";
+"ask.result.streaming" = "생성 중…";
+"ask.result.original" = "원문";
+"ask.result.insert" = "%@에 삽입";
+"ask.result.sourceApp" = "원래 앱";
+"ask.result.insert.unavailable" = "원래 앱이 종료되었습니다. 복사해서 붙여 넣으세요";
+"ask.result.revealNote" = "노트에서 보기";
+"ask.result.askAI" = "채팅에서 계속";
+"menu.notes" = "노트…";

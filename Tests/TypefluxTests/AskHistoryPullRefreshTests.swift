@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask native pull refresh")
+@Suite("Ask native pull refresh", .exclusiveUIState)
 @MainActor
 struct AskHistoryPullRefreshTests {
     private func pull(_ probe: AskHistoryPullRefresh.Probe, momentum: NSEvent.Phase = [], atTop: Bool = true,

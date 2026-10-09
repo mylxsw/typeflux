@@ -2156,21 +2156,48 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         await waitForMainActorWork()
     }
 
+    /// Processing parks at the tail-capture sleep, so the checks between the stop callbacks and
+    /// `open()` see the intent the callbacks left, before processing captures and resets it.
     func testRecordingStopCallbackPreservesAskAndDisablesAfterFinish() async {
         let hotkeys = MockProcessingHotkeyService()
         let audioRecorder = MockProcessingAudioRecorder()
-        let controller = makeWorkflowController(hotkeyService: hotkeys, audioRecorder: audioRecorder)
+        let tailCapture = ProcessingGate()
+        // A failed check must not leave processing parked for the rest of the run.
+        defer { tailCapture.open() }
+        let controller = makeWorkflowController(hotkeyService: hotkeys, audioRecorder: audioRecorder, sleep: { duration in
+            if duration == WorkflowController.recordingTailCaptureDuration { await tailCapture.pass() }
+        })
         controller.start()
         XCTAssertEqual(hotkeys.recordingStopEnabled?(), false)
         await controller.beginRecording(intent: .askSelection, startLocked: true)
         XCTAssertEqual(hotkeys.recordingStopEnabled?(), true)
         hotkeys.onRecordingStop?()
         hotkeys.onRecordingStop?()
+        await waitUntil { tailCapture.arrivals == 1 }
+        XCTAssertEqual(tailCapture.arrivals, 1, "processing reached the tail capture")
         XCTAssertEqual(controller.recordingIntent, .askSelection)
+        XCTAssertEqual(audioRecorder.stopCallCount, 0)
+
+        tailCapture.open()
         await audioRecorder.waitUntilStopCount(isAtLeast: 1)
+        await waitUntil { controller.recordingIntent == .dictation }
         XCTAssertEqual(audioRecorder.stopCallCount, 1)
+        XCTAssertEqual(tailCapture.arrivals, 1, "the second stop callback does not process again")
+        XCTAssertEqual(controller.recordingIntent, .dictation, "processing continued after the gate")
         XCTAssertEqual(hotkeys.recordingStopEnabled?(), false)
         await waitForMainActorWork()
+    }
+
+    func testProcessingGateReleasesParkedAndLaterPasses() async {
+        let gate = ProcessingGate()
+        let parked = Task { await gate.pass() }
+        await waitUntil { gate.arrivals == 1 }
+        XCTAssertEqual(gate.arrivals, 1)
+        gate.open()
+        gate.open()
+        await parked.value
+        await gate.pass()
+        XCTAssertEqual(gate.arrivals, 2)
     }
 
     func testCompleteInputShortcutsStopWithoutChangingRecordingIntentOrPersona() async {
@@ -4886,5 +4913,36 @@ extension WorkflowControllerProcessingTests {
         harness.controller.clipboardHistoryStore = nil
         harness.controller.enforceClipboardRetentionPolicy(now: now)
         XCTAssertEqual(harness.store.trimCounts.count, 3)
+    }
+}
+
+/// Parks callers of `pass()` until `open()`; `open()` is synchronous so a `defer` can release it.
+final class ProcessingGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var isOpen = false
+    private var count = 0
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    var arrivals: Int { lock.withLock { count } }
+
+    func pass() async {
+        await withCheckedContinuation { continuation in
+            let resumeNow = lock.withLock { () -> Bool in
+                count += 1
+                if isOpen { return true }
+                waiters.append(continuation)
+                return false
+            }
+            if resumeNow { continuation.resume() }
+        }
+    }
+
+    func open() {
+        let parked = lock.withLock { () -> [CheckedContinuation<Void, Never>] in
+            isOpen = true
+            defer { waiters.removeAll() }
+            return waiters
+        }
+        parked.forEach { $0.resume() }
     }
 }

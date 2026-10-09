@@ -310,6 +310,9 @@ final class ChatAPIClientTests: XCTestCase {
             _ = try await api.regenerate(conversationId: "c", request: .init(messageId: "m", deviceId: "d"), token: "t")
         }
         await expectUnavailable { try await api.deleteConversation(id: "c", token: "t") }
+        await expectUnavailable { _ = try await api.appleCreditPacks(language: "en", token: "t") }
+        await expectUnavailable { _ = try await api.submitAppleTransaction("jws", token: "t") }
+        await expectUnavailable { _ = try await api.resume(conversationId: "c", runId: "r", token: "t") }
     }
 
     func testEveryConversationRouteUsesTheRealUUIDWithoutDoubleEncoding() async throws {
@@ -542,5 +545,55 @@ extension ChatAPIClientTests {
             try await api.deleteAccount(proof: .init(provider: "password", password: "proof"), token: "access")
             XCTFail("Deletion must be explicitly confirmed by the server")
         } catch { XCTAssertEqual(error as? ChatAPIError, .invalidResponse) }
+    }
+
+    func testAppleCreditPackPurchaseAndResumeWireContracts() async throws {
+        let (api, session, host) = fixture { request, client, proto in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer access")
+            let path = request.url!.path
+            if path.hasSuffix("/me/billing/apple/products") {
+                XCTAssertEqual(request.httpMethod, "GET")
+                XCTAssertEqual(request.url!.query, "lang=zh-CN")
+                self.finish(request, client, proto, body: #"{"code":"OK","data":{"enabled":true,"packs":[{"code":"pack_m","product_id":"app.typeflux.ios.credits.medium","name":"中额包","description":"多送 10%","credits":220000,"valid_days":365,"sort_order":1,"highlight":true},{"code":"pack_s","product_id":"app.typeflux.ios.credits.small","credits":100000}],"credits":{"remaining":3}}}"#)
+            } else if path.hasSuffix("/me/billing/apple/transactions") {
+                XCTAssertEqual(request.httpMethod, "POST")
+                XCTAssertEqual(try self.body(request)["signed_transaction"] as? String, "header.payload.signature")
+                self.finish(request, client, proto, body: #"{"code":"OK","data":{"status":"granted","transaction_id":"2000","pack_code":"pack_m","credits":220000,"expires_at":"2027-10-09T00:00:00Z"}}"#)
+            } else {
+                XCTAssertTrue(request.url!.absoluteString.hasSuffix(
+                    "/proxy/api/v1/ask/conversations/conversation-1/runs/run%201/resume"
+                ))
+                XCTAssertEqual(request.httpMethod, "POST")
+                self.finish(request, client, proto, body: #"{"code":"CREDITS_EXHAUSTED","message":"credits exhausted","details":{"purchasable":true}}"#, status: 402)
+            }
+        }
+        defer { session.invalidateAndCancel(); FixtureProtocol.registry.remove(host) }
+        let packs = try await api.appleCreditPacks(language: "zh-CN", token: "access")
+        XCTAssertTrue(packs.enabled)
+        XCTAssertEqual(packs.packs.map(\.productId), ["app.typeflux.ios.credits.medium", "app.typeflux.ios.credits.small"])
+        XCTAssertEqual(packs.packs[0].name, "中额包")
+        XCTAssertTrue(packs.packs[0].highlight)
+        XCTAssertEqual(packs.packs[1].name, "pack_s", "A pack without a name falls back to its code")
+        XCTAssertEqual(packs.packs[1].validDays, 365)
+        let receipt = try await api.submitAppleTransaction("header.payload.signature", token: "access")
+        XCTAssertEqual(receipt, ChatApplePurchaseReceipt(status: "granted", transactionId: "2000", packCode: "pack_m",
+                                                         credits: 220000))
+        XCTAssertTrue(receipt.isFinal)
+        XCTAssertTrue(ChatApplePurchaseReceipt(status: "revoked", transactionId: "1").isFinal)
+        XCTAssertFalse(ChatApplePurchaseReceipt(status: "pending", transactionId: "1").isFinal)
+        do {
+            _ = try await api.resume(conversationId: "conversation-1", runId: "run 1", token: "access")
+            XCTFail("A run that is still short of credits stays paused")
+        } catch {
+            XCTAssertEqual(error as? ChatAPIError, .server(code: "CREDITS_EXHAUSTED", message: "credits exhausted"))
+        }
+    }
+
+    func testPausedForCreditsRunIsActiveButNotDesktop() throws {
+        let run = ChatRun(id: "r", deviceId: "d", status: "paused_credits")
+        XCTAssertTrue(run.isActive)
+        XCTAssertTrue(run.isPausedForCredits)
+        XCTAssertFalse(run.requiresDesktop)
+        XCTAssertFalse(ChatRun(id: "r", deviceId: "d", status: "running").isPausedForCredits)
     }
 }

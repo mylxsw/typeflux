@@ -130,6 +130,7 @@ struct AskLauncherPluginSettingsView: View {
         }
         .confirmationDialog(L("ask.settings.keywords.restoreTitle"), isPresented: $confirmingRestore) {
             Button(L("ask.settings.keywords.restore"), role: .destructive, action: restoreDefaults)
+            Button(L("common.cancel"), role: .cancel) {}
         } message: {
             Text(L("ask.settings.keywords.restoreMessage"))
         }

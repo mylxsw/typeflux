@@ -117,6 +117,7 @@ final class ChatVerificationTests: XCTestCase {
         copyAnswer.tap()
         XCTAssertEqual(copyAnswer.label, "已复制")
         screenshot(app, "qa-answer-actions")
+        app.buttons["chat.more.rich-answer"].tap()
         app.buttons["chat.quote.rich-answer"].tap()
         XCTAssertTrue((app.textFields["chat.composer"].value as? String)?.contains("> ") == true)
     }
@@ -236,11 +237,13 @@ final class ChatVerificationTests: XCTestCase {
         let app = launch("--synthetic-history")
         openHistory(app)
         screenshot(app, "qa-history-groups")
-        for _ in 0 ..< 3 {
+        // 13 conversations in pages of 5: two loads, then a short page ends the list.
+        for _ in 0 ..< 2 {
             let more = app.buttons["chat.loadMore"]
             reveal(more, in: app.collectionViews.firstMatch, upwards: true)
             more.tap()
         }
+        XCTAssertTrue(app.buttons["chat.loadMore"].waitForNonExistence(timeout: 5))
         let search = app.textFields["chat.search"]
         search.tap(); search.typeText("灵感")
         XCTAssertTrue(app.buttons["chat.history.history-13"].waitForExistence(timeout: 5))
@@ -469,6 +472,9 @@ extension ChatVerificationTests {
         let app = launch("--synthetic-empty")
         enter("A short answer for reporting", in: app)
         app.buttons["chat.send"].tap()
+        let more = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.more.")).firstMatch
+        XCTAssertTrue(more.waitForExistence(timeout: 5))
+        more.tap()
         let report = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.report.")).firstMatch
         XCTAssertTrue(report.waitForExistence(timeout: 5))
         report.tap()
@@ -625,7 +631,7 @@ extension ChatVerificationTests {
         app.buttons["privacy.agree"].tap()
         XCTAssertEqual(composer.value as? String, "Draft before sign-in")
         XCTAssertFalse(app.buttons["guest.login"].exists)
-        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.report.")).firstMatch
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.more.")).firstMatch
             .exists)
         screenshot(app, "gul217-draft-after-login")
     }

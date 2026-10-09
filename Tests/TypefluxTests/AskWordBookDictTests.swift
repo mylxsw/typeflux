@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask dict keyword")
+@Suite("Ask dict keyword", .exclusiveUIState)
 struct AskWordBookDictTests {
     private let dict = AskTranslatePlugin.keywords.first { $0.keyword == "dict" }!
 
@@ -82,7 +82,7 @@ struct AskWordBookDictTests {
     }
 }
 
-@Suite("Ask dict keyword in settings")
+@Suite("Ask dict keyword in settings", .exclusiveUIState)
 struct AskWordBookDictSettingsTests {
     @Test func theEditorSwitchesBetweenTranslatingAndTheWordBook() {
         let dict = AskTranslatePlugin.keywords.first { $0.keyword == "dict" }!

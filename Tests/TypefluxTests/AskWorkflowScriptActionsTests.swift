@@ -84,7 +84,7 @@ struct AskWorkflowScriptOutputTests {
     }
 }
 
-@Suite("Ask workflow script steps and runKeyword")
+@Suite("Ask workflow script steps and runKeyword", .exclusiveUIState)
 @MainActor
 struct AskWorkflowScriptStepTests {
     private let folder = URL(fileURLWithPath: "/tmp/tf-script-steps")
@@ -162,7 +162,7 @@ struct AskWorkflowScriptStepTests {
     }
 }
 
-@Suite("Ask workflow runKeyword")
+@Suite("Ask workflow runKeyword", .exclusiveUIState)
 @MainActor
 struct AskWorkflowRunKeywordTests {
     private let folder = URL(fileURLWithPath: "/tmp/tf-run-keyword")
@@ -345,7 +345,7 @@ struct AskWorkflowImageTests {
     }
 }
 
-@Suite("Ask workflow O4 in the plugin")
+@Suite("Ask workflow O4 in the plugin", .exclusiveUIState)
 @MainActor
 struct AskWorkflowO4PluginTests {
     private func run(_ script: String, output: [String: Any], files: [String: String] = [:], chain: [String] = [],
@@ -472,7 +472,7 @@ struct AskWorkflowO4PluginTests {
     }
 }
 
-@Suite("Ask workflow O4 in the test panel")
+@Suite("Ask workflow O4 in the test panel", .exclusiveUIState)
 @MainActor
 struct AskWorkflowO4TesterTests {
     @Test func `a test run lists the scripts actions`() async throws {

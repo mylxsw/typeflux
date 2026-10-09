@@ -18,9 +18,25 @@ struct AskPluginDisplay: Equatable {
     var comparing = false
     /// 0 is the plugin's row or card, 1 is "Ask AI".
     var highlighted = 0
+    /// False when there is nothing to ask about (no text, selection or result to
+    /// ask on): the "Ask AI" row is left out rather than shown empty.
+    var offersAskAI = true
+    /// ⌘S came while the result streams: the star shows it will be saved.
+    var savesNoteWhenDone = false
 
     var output: AskPluginOutput? { if case let .done(_, output) = phase { output } else { nil } }
-    var asksAI: Bool { highlighted == 1 }
+    var asksAI: Bool { offersAskAI && highlighted == 1 }
+
+    /// Whether "Ask AI" has something to ask: typed text, a selection the plugin
+    /// works on, or a result that offers asking about itself.
+    static func offersAskAI(question: String, selection: String?, usesSelection: Bool,
+                            output: AskPluginOutput?) -> Bool {
+        if !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
+        if usesSelection, let selection, !selection.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+        return output?.askAIAction != nil
+    }
     /// A workflow's actions after this run, success or failure.
     var followUp: AskWorkflowFollowUp? {
         switch phase {
@@ -204,7 +220,8 @@ struct AskPluginResultsView: View {
 
     /// Everything the list adds to the launcher card.
     static func height(for display: AskPluginDisplay) -> CGFloat {
-        1 + listPadding * 2 + (sectionHeight + rowSpacing) * 2 + mainHeight(display) + rowSpacing + askHeight
+        let ask = display.offersAskAI ? sectionHeight + rowSpacing + rowSpacing + askHeight : 0
+        return 1 + listPadding * 2 + sectionHeight + rowSpacing + mainHeight(display) + ask
     }
 
     /// What Return and the other keys do now, for the bottom bar.
@@ -213,9 +230,13 @@ struct AskPluginResultsView: View {
         if display.hint?.pluginID == AskOpenChatPlugin.id {
             return display.asksAI ? L("ask.launcher.hint") : ""
         }
-        if display.hint != nil { return L("ask.plugin.hint.keyword") }
+        // The highlighted row is what Return does; the bar says the same.
+        if display.hint != nil {
+            return display.asksAI ? L("ask.plugin.hint.keyword") : L("ask.plugin.hint.keyword.enter")
+        }
         if display.asksAI { return L("ask.launcher.hint") }
         let option = display.optionName.map { L("ask.plugin.hint.option", $0) }
+        let askAI = display.offersAskAI ? L("ask.plugin.hint.askAI") : nil
         let parts: [String?]
         switch display.phase {
         // Esc always closes the launcher; the bar spends its room on other keys.
@@ -225,7 +246,7 @@ struct AskPluginResultsView: View {
                 if case .openChat = action.kind { return "" }
                 parts = [L("ask.plugin.hint.action", action.title),
                          plan.action(for: .commandC).map { L("ask.plugin.hint.copy", $0.title) },
-                         option, L("ask.plugin.hint.askAI")]
+                         option, askAI]
             } else {
                 parts = [L("ask.plugin.hint.ready"), option]
             }
@@ -235,12 +256,18 @@ struct AskPluginResultsView: View {
             parts = [output.action(for: .enter).map { L("ask.plugin.hint.action", $0.title) },
                      output.action(for: .optionEnter).map { L("ask.plugin.hint.option.enter", $0.title) },
                      output.selected?.autocomplete.map { _ in L("ask.plugin.hint.complete") },
-                     L("ask.plugin.hint.askAI")]
+                     askAI]
         case let .done(_, output):
-            let main = output.action(for: .enter)?.title ?? ""
-            parts = [output.action(for: .optionEnter).map { L("ask.plugin.hint.done", main, $0.title) }
-                ?? L("ask.plugin.hint.action", main), option, L("ask.plugin.hint.askAI")]
-        case let .failed(_, failure): return failure.retry ? L("ask.plugin.hint.failed") : ""
+            // Without a main action Return does nothing, so the bar leaves it out.
+            let main = output.action(for: .enter)?.title
+            let keys = main.map { main in
+                output.action(for: .optionEnter).map { L("ask.plugin.hint.done", main, $0.title) }
+                    ?? L("ask.plugin.hint.action", main)
+            }
+            parts = [keys, option, askAI]
+        case let .failed(_, failure):
+            return failure.action(for: .enter).map { L("ask.plugin.hint.action", $0.title) }
+                ?? (failure.retry ? L("ask.plugin.hint.failed") : "")
         }
         return parts.compactMap { $0 }.joined(separator: " · ")
     }
@@ -254,13 +281,15 @@ struct AskPluginResultsView: View {
                     .onContinuousHover { phase in
                         if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(0) }
                     }
-                section(L("ask.quick.section.ai"))
-                askRow
-                    .modifier(AskLauncherNumberBadge(number: Self.numberedItemCount(display)
-                        .flatMap { AskLauncherNumberShortcuts.number(at: $0) }))
-                    .onContinuousHover { phase in
-                        if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(1) }
-                    }
+                if display.offersAskAI {
+                    section(L("ask.quick.section.ai"))
+                    askRow
+                        .modifier(AskLauncherNumberBadge(number: Self.numberedItemCount(display)
+                            .flatMap { AskLauncherNumberShortcuts.number(at: $0) }))
+                        .onContinuousHover { phase in
+                            if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(1) }
+                        }
+                }
             }
             .padding(Self.listPadding)
             Spacer(minLength: 0)
@@ -339,6 +368,12 @@ struct AskPluginResultsView: View {
         .fixedSize()
     }
 
+    /// What enters the offered keyword: Return when its row is highlighted, otherwise space or ⇥.
+    static func hintRowKeys(_ hint: AskKeyword, highlighted: Bool) -> String {
+        if hint.pluginID == AskOpenChatPlugin.id { return "↩" }
+        return highlighted ? L("ask.plugin.enter.return") : L("ask.plugin.enter")
+    }
+
     static func rowHint(for action: AskPluginAction?) -> String {
         if case .openChat? = action?.kind { return "↩" }
         return action.map { $0.title + "  ↩" } ?? "↩"
@@ -385,7 +420,7 @@ struct AskPluginResultsView: View {
                 Text(hint.keyword).font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer(minLength: 8)
-                Text(hint.pluginID == AskOpenChatPlugin.id ? "↩" : L("ask.plugin.enter"))
+                Text(Self.hintRowKeys(hint, highlighted: highlighted))
                     .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             }
             .padding(.horizontal, 10)
@@ -436,7 +471,7 @@ struct AskPluginResultsView: View {
                         .foregroundStyle(output.sourceIsAI ? AskTheme.accent : StudioTheme.textTertiary)
                         .padding(.horizontal, 6).frame(height: 18)
                         .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(AskTheme.separator))
-                    headerButtons(output, enabled: !running)
+                    headerButtons(output, enabled: !running, streaming: streaming)
                 }
             }
             .frame(height: Self.headerHeight)
@@ -459,7 +494,7 @@ struct AskPluginResultsView: View {
                         Spacer()
                         ForEach(Array(failure.actions.enumerated()), id: \.offset) { _, action in
                             actionButton(title: action.title, symbol: action.symbol, key: Self.key(action.shortcut),
-                                         primary: false) { onAction(action) }
+                                         primary: action.shortcut == .enter) { onAction(action) }
                         }
                         if failure.retry {
                             actionButton(title: L("ask.plugin.action.retry"), symbol: "arrow.clockwise", key: "↩",
@@ -500,21 +535,21 @@ struct AskPluginResultsView: View {
         } else if let image = output.image {
             imageCard(image, dimmed: running)
         } else if output.markdown {
-            ScrollView(.vertical) {
-                AskTranscriptText(text: streaming ? output.body + Self.caret : output.body)
-                    .opacity(running && !streaming ? 0.5 : 1)
+            if display.comparing { original(output) }
+            ScrollViewReader { reader in
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        AskTranscriptText(text: streaming ? output.body + Self.caret : output.body)
+                            .opacity(running && !streaming ? 0.5 : 1)
+                        Color.clear.frame(height: 0).id(Self.bodyID)
+                    }
+                }
+                // Long streams keep their newest line in view.
+                .onChange(of: output.body) { _ in if streaming { reader.scrollTo(Self.bodyID, anchor: .bottom) } }
             }
             .frame(height: Self.markdownHeight(output.body))
         } else {
-            if display.comparing {
-                ScrollView(.vertical) {
-                    Text(output.original).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
-                }
-                .frame(height: Self.originalHeight(output.original))
-                Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 4)
-            }
+            if display.comparing { original(output) }
             ScrollViewReader { reader in
                 ScrollView(.vertical) {
                     // A streaming result is bright with a caret; an old one waiting for its successor is dim.
@@ -532,6 +567,18 @@ struct AskPluginResultsView: View {
         }
     }
 
+    /// The original above the result while comparing (⌘D).
+    @ViewBuilder
+    private func original(_ output: AskPluginOutput) -> some View {
+        ScrollView(.vertical) {
+            Text(output.original).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+        }
+        .frame(height: Self.originalHeight(output.original))
+        Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 4)
+    }
+
     /// Result rows: icon, title and subtitle; the chosen one says what Return does.
     private func itemList(_ output: AskPluginOutput, dimmed: Bool) -> some View {
         ScrollViewReader { reader in
@@ -543,7 +590,7 @@ struct AskPluginResultsView: View {
                             onSelectItem(index)
                             onMain()
                         }
-                        .modifier(AskLauncherNumberBadge(number: Self.numberedItemCount(display) == nil
+                        .modifier(AskLauncherNumberBadge(number: !item.valid || Self.numberedItemCount(display) == nil
                             ? nil : AskLauncherNumberShortcuts.number(at: index)))
                         .id(item.id)
                     }
@@ -568,7 +615,7 @@ struct AskPluginResultsView: View {
             // the star sits in the header.
             ForEach(Array(actions.filter {
                 switch $0.kind {
-                case .askAI, .editWorkflow, .toggleStar, .openWordBook: false
+                case .askAI, .editWorkflow, .toggleStar, .openWordBook, .toggleNote, .openNotes, .openInWindow: false
                 default: true
                 }
             }.enumerated()),
@@ -583,12 +630,27 @@ struct AskPluginResultsView: View {
         .opacity(enabled ? 1 : 0.5)
     }
 
-    /// Small buttons beside the source label: the word book's star (⌘S) and the word book itself (⌘B).
+    /// Small buttons beside the source label: the star (⌘S) and the word book or notes (⌘B); for AI
+    /// prompts also the window (⌘O). The star and the window already work while the result streams.
     @ViewBuilder
-    private func headerButtons(_ output: AskPluginOutput, enabled: Bool) -> some View {
-        if let book = output.actions.first(where: { if case .openWordBook = $0.kind { true } else { false } }) {
+    private func headerButtons(_ output: AskPluginOutput, enabled: Bool, streaming: Bool) -> some View {
+        if let window = output.actions.first(where: { $0.kind == .openInWindow }) {
+            Button { onAction(window) } label: {
+                Image(systemName: "macwindow.on.rectangle").font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 22, height: 20)
+                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(window.title + " ⌘O")
+            .accessibilityLabel(window.title)
+            .accessibilityIdentifier("ask.plugin.openInWindow")
+            .disabled(!enabled && !streaming)
+        }
+        if let book = output.actions.first(where: Self.opensBook) {
             Button { onAction(book) } label: {
-                Image(systemName: "character.book.closed").font(.system(size: 11.5))
+                Image(systemName: book.symbol).font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .frame(width: 22, height: 20)
                     .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -597,14 +659,16 @@ struct AskPluginResultsView: View {
             .buttonStyle(.plain)
             .help(book.title + " ⌘B")
             .accessibilityLabel(book.title)
-            .accessibilityIdentifier("ask.plugin.wordBook")
+            .accessibilityIdentifier(book.kind == .openNotes(id: nil) ? "ask.plugin.notes" : "ask.plugin.wordBook")
             .disabled(!enabled)
         }
-        if let star = output.actions.first(where: { if case .toggleStar = $0.kind { true } else { false } }) {
-            let starred = output.starred == true
+        if let star = output.actions.first(where: Self.stars) {
+            let saving = streaming && display.savesNoteWhenDone
+            let starred = output.starred == true || saving
             Button { onAction(star) } label: {
                 Image(systemName: starred ? "star.fill" : "star").font(.system(size: 12))
                     .foregroundStyle(starred ? Color.yellow : StudioTheme.textSecondary)
+                    .opacity(saving ? 0.55 : 1)
                     .frame(width: 22, height: 20)
                     .background(starred ? Color.yellow.opacity(0.16) : AskTheme.hoverFill,
                                 in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -614,8 +678,26 @@ struct AskPluginResultsView: View {
             .help(star.title + " ⌘S")
             .accessibilityLabel(star.title)
             .accessibilityIdentifier("ask.plugin.star")
-            .disabled(!enabled)
+            .disabled(!enabled && !(streaming && Self.savesNote(star)))
         }
+    }
+
+    static func opensBook(_ action: AskPluginAction) -> Bool {
+        switch action.kind {
+        case .openWordBook, .openNotes: true
+        default: false
+        }
+    }
+
+    static func stars(_ action: AskPluginAction) -> Bool {
+        switch action.kind {
+        case .toggleStar, .toggleNote: true
+        default: false
+        }
+    }
+
+    static func savesNote(_ action: AskPluginAction) -> Bool {
+        if case .toggleNote = action.kind { true } else { false }
     }
 
     /// The language the result's read-aloud action uses.
@@ -636,6 +718,7 @@ struct AskPluginResultsView: View {
         case .commandE: "⌘E"
         case .commandS: "⌘S"
         case .commandB: "⌘B"
+        case .commandO: "⌘O"
         case nil: nil
         }
     }

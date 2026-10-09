@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 /// Opt-in renders of the launcher's header, bottom bar and recording states with
 /// the production views (set TYPEFLUX_ASK_SNAPSHOTS). They never touch real
 /// accounts, screens or microphones.
-@Suite("Ask launcher header snapshots", .serialized)
+@Suite("Ask launcher header snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherHeaderVisualTests {
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL,

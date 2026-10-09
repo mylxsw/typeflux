@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask recovery rendering", .serialized)
+@Suite("Ask recovery rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryRenderTests {
     @Test func `uncertain results show helpful decisions without execution internals`() async throws {

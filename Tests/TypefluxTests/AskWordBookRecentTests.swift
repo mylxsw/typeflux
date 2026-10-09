@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask translate plugin: recent words")
+@Suite("Ask translate plugin: recent words", .exclusiveUIState)
 struct AskTranslateRecentWordsTests {
     private func plugin(_ store: SQLiteAskWordBookStore?) -> AskTranslatePlugin {
         AskTranslatePlugin(onDevice: AskTestTranslationEngine(), ai: nil, wordBook: store, aiName: { "gpt-test" },

@@ -9,7 +9,7 @@ import Testing
 /// with a list and with a Markdown card, and the two list examples in the gallery.
 /// With TYPEFLUX_ASK_SNAPSHOTS set the images are written there in Chinese as
 /// `implemented-*.png`; otherwise the views are only laid out.
-@Suite("Workflow items and Markdown rendering", .serialized)
+@Suite("Workflow items and Markdown rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct WorkflowItemsVisualTests {
     private let size = NSSize(width: 1450, height: 900)

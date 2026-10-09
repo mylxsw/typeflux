@@ -74,8 +74,9 @@ final class StdioMCPClientTests: XCTestCase {
     }
 
     func testStalledRequestTimesOut() async throws {
-        // Generous enough for a slow process start; the fake server stalls for five seconds.
-        let client = makeClient(timeout: .seconds(2))
+        // The timeout also covers the initialize handshake, so it must leave room for a slow
+        // process start on a busy machine; `hang` never answers, so only the timeout ends the call.
+        let client = makeClient(timeout: .seconds(5))
         try await client.connect()
         do {
             _ = try await client.callTool(name: "hang", arguments: [:])
@@ -172,7 +173,8 @@ final class StdioMCPClientTests: XCTestCase {
           fi ;;
         tools/call)
           if printf '%s' "$line" | grep -q '"name":"hang"'; then
-            sleep 5
+            # Stall without answering; `exec` lets the client's terminate() stop it at once.
+            exec sleep 30
           elif printf '%s' "$line" | grep -q '"name":"exit"'; then
             exit 0
           elif printf '%s' "$line" | grep -q '"name":"notify"'; then
