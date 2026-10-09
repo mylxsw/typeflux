@@ -577,6 +577,23 @@ extension FeedbackAPIServiceTests {
         XCTAssertEqual(calls, 1)
     }
 
+    func testProxyUploadFallsBackToTheImageContentType() async throws {
+        let session = FeedbackStubSession()
+        await session.setHandler { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "image/webp")
+            return (Data(), Self.httpResponse(url: request.url!, status: 204))
+        }
+
+        try await FeedbackAPIService.uploadImage(
+            data: Data("webp".utf8),
+            filename: "screen.webp",
+            contentType: "image/webp",
+            to: proxyTarget(url: "/api/v1/feedback/uploads/upload-9", headers: [:]),
+            token: "token-1",
+            session: session
+        )
+    }
+
     func testAnonymousProxyUploadSendsNoAuthorization() async throws {
         let session = FeedbackStubSession()
         await session.setHandler { request in

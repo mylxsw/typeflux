@@ -132,6 +132,21 @@ final class AuthStateTokenRefreshTests: XCTestCase {
         XCTAssertNil(state.accessTokenRefreshTask)
     }
 
+    func testUnexpectedRefreshErrorIsTreatedAsTransient() async {
+        let probe = RefreshProbe()
+        let state = makeState(probe: probe)
+        await state.handleLoginSuccess(token: Self.jwt(lifetime: 900), expiresAt: Self.now + 100, refreshToken: "r1")
+
+        async let refresh = state.refreshStoredAccessToken(force: false)
+        await probe.waitForCalls(1)
+        probe.resolveNext(with: .failure(URLError(.notConnectedToInternet)))
+
+        let result = await refresh
+        XCTAssertEqual(result, .failed)
+        XCTAssertTrue(state.isLoggedIn)
+        XCTAssertEqual(state.cachedRefreshToken, "r1")
+    }
+
     // MARK: - Lifetime-aware scheduling
 
     func testRefreshLeadTimeFollowsTheSignedLifetime() async {
