@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Scoped tool policy")
+@Suite("Scoped tool policy", .exclusiveUIState)
 @MainActor
 struct AskToolPolicyTests {
     let time = Date(timeIntervalSince1970: 1_800_000_000)

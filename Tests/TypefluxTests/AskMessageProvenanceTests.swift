@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask sent message provenance")
+@Suite("Ask sent message provenance", .exclusiveUIState)
 struct AskMessageProvenanceTests {
     private func message(source: String? = nil, selection: String? = nil, image: String? = nil) -> AskMessage {
         AskMessage(id: "sent-question", role: "user", text: "Explain this", selection: selection,

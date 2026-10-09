@@ -1615,7 +1615,8 @@ final class AskConversationModel: ObservableObject {
         } catch { self.error = error.localizedDescription }
     }
 
-    /// Refresh execution evidence before the operation becomes idle and can resume.
+    /// Callers await this before their operation finishes, so a conversation never looks idle
+    /// and resumable while its journal still lacks the execution that just failed.
     func reportOperationError(_ error: Error, id: String, owner expectedOwner: String) async {
         guard owner == expectedOwner else { return }
         if let issue = error as? AskSubmissionIssue, selectedId == id { submissionIssues[false] = issue }

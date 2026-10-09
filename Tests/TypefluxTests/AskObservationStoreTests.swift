@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Trusted observation store")
+@Suite("Trusted observation store", .exclusiveUIState)
 @MainActor
 struct AskObservationStoreTests {
     let scope = AskObservationStore.Scope(owner: "owner", conversation: "c", tool: "browser")

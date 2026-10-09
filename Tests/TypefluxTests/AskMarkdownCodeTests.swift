@@ -2,7 +2,7 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask Markdown code blocks", .serialized)
+@Suite("Ask Markdown code blocks", .serialized, .exclusiveUIState)
 @MainActor struct AskMarkdownCodeTests {
     private let sample = """
     **方式 A：注释掉失效引用**（推荐）

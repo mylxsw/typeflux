@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask responsive composer", .serialized)
+@Suite("Ask responsive composer", .serialized, .exclusiveUIState)
 @MainActor
 struct AskComposerResponsiveTests {
     @Test func workspaceDensityReservesPrimaryControlsAndLauncherKeepsItsChrome() {

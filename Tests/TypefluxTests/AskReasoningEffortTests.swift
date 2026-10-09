@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask user reasoning effort", .serialized)
+@Suite("Ask user reasoning effort", .serialized, .exclusiveUIState)
 @MainActor
 struct AskReasoningEffortTests {
     @Test func catalogCapabilityAndRequestEncodingRemainBackwardCompatible() throws {

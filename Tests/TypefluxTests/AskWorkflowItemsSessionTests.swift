@@ -58,7 +58,7 @@ final class AskListTestPlugin: AskLauncherPlugin, @unchecked Sendable {
     }
 }
 
-@Suite("Ask plugin session lists", .serialized)
+@Suite("Ask plugin session lists", .serialized, .exclusiveUIState)
 @MainActor
 struct AskPluginSessionListTests {
     private func session(_ plugin: AskListTestPlugin) -> AskPluginSession {
@@ -146,7 +146,7 @@ struct AskPluginSessionListTests {
     }
 }
 
-@Suite("Ask workflow lists and Markdown in the plugin")
+@Suite("Ask workflow lists and Markdown in the plugin", .exclusiveUIState)
 @MainActor
 struct AskWorkflowItemPluginTests {
     /// What the run showed while it went on.

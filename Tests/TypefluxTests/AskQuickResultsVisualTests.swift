@@ -5,7 +5,7 @@ import Testing
 
 /// Opt-in renders of the launcher's quick results with the production views
 /// (set TYPEFLUX_ASK_SNAPSHOTS). They never touch real accounts, screens or tools.
-@Suite("Ask quick results snapshots", .serialized)
+@Suite("Ask quick results snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickResultsVisualTests {
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL) async throws {

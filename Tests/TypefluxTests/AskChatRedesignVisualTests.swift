@@ -5,7 +5,7 @@ import Testing
 import Vision
 
 /// Recovery decisions taken from the card and the inspector.
-@Suite("Chat recovery decisions", .serialized)
+@Suite("Chat recovery decisions", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryDecisionTests {
     private func uncertain(_ fixture: AskTestFixture) async throws -> AskConversation {
@@ -92,7 +92,7 @@ struct AskRecoveryDecisionTests {
 
 /// Renders the redesigned chat scenes in both appearances. With
 /// `TYPEFLUX_CHAT_SCREENSHOTS=<dir>` the PNGs are written for review.
-@Suite("Chat redesign rendering", .serialized)
+@Suite("Chat redesign rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskChatRedesignVisualTests {
     private static let title = "帮我创建一个能够查询当前城市天气的 workflow"

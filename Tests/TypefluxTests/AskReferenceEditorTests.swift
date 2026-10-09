@@ -1,7 +1,7 @@
 import Testing
 @testable import Typeflux
 
-@Suite("Ask reference editor")
+@Suite("Ask reference editor", .exclusiveUIState)
 struct AskReferenceEditorTests {
     @Test func suggestionsMatchTheSelectionBarQuestions() {
         #expect(AskReferenceEditor.suggestions == [.explain, .translate])

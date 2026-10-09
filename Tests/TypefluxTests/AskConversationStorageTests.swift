@@ -6,7 +6,7 @@ import Testing
 
 /// Each conversation is kept either in Typeflux Cloud or on this Mac. Signed in, both
 /// kinds share one history; the place is chosen before the first message and then fixed.
-@Suite("Ask conversation storage", .serialized)
+@Suite("Ask conversation storage", .serialized, .exclusiveUIState)
 @MainActor
 struct AskConversationStorageTests {
     /// A signed-in fixture with one of the user's own models, so a private conversation can send.

@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Streaming file reads", .serialized)
+@Suite("Streaming file reads", .serialized, .exclusiveUIState)
 struct AskFileStreamingTests {
     private func fixture() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("file-stream-\(UUID().uuidString)")

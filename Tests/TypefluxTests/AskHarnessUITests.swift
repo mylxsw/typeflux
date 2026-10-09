@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask harness UI")
+@Suite("Ask harness UI", .exclusiveUIState)
 @MainActor
 struct AskHarnessUITests {
     private let now = Date()

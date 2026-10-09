@@ -6,9 +6,7 @@ import XCTest
 final class ClipboardPanelNumberShortcutTests: XCTestCase {
     @MainActor
     private func window() throws -> NSWindow {
-        try XCTUnwrap(NSApplication.shared.windows.first {
-            $0.isVisible && $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.clipboard"
-        })
+        try XCTUnwrap(ClipboardTestSupport.presentedPanel())
     }
 
     @MainActor

@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Workflow authoring in Chat")
+@Suite("Workflow authoring in Chat", .exclusiveUIState)
 @MainActor
 struct AskWorkflowAuthoringTests {
     private func authoring(_ fixture: AskWorkflowFixture, owner: @escaping () -> String = { "alice" }) -> AskWorkflowAuthoringStore {

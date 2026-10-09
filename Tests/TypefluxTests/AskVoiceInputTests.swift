@@ -33,7 +33,7 @@ final class AskTestVoiceWindow: NSWindow {
     override var canBecomeKey: Bool { true }
 }
 
-@Suite("Ask voice transaction", .serialized)
+@Suite("Ask voice transaction", .serialized, .exclusiveUIState)
 @MainActor
 struct AskVoiceInputTests {
     private func setup() async throws -> (AskVoiceInput, AskTestVoiceRecorder, AskComposerTextView.Editor, NSWindow) {

@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask send queue")
+@Suite("Ask send queue", .exclusiveUIState)
 @MainActor
 struct AskSendQueueTests {
     private func draft(_ text: String) -> AskDraft {

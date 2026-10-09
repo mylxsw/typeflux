@@ -8,7 +8,7 @@ import Testing
 /// bottom bar as `docs/design/workflow-gallery-output-actions.html` shows them
 /// (screens ④⑤⑥⑧⑨). With TYPEFLUX_ASK_SNAPSHOTS set the images are written there
 /// in Chinese as `implemented-*.png`; otherwise the views are only laid out.
-@Suite("Workflow output and actions rendering", .serialized)
+@Suite("Workflow output and actions rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct WorkflowOutputActionsVisualTests {
     static let script = """

@@ -57,7 +57,7 @@ final class AskFailingWordLookup: AskWordLookingUp, @unchecked Sendable {
     }
 }
 
-@Suite("Ask word book window model", .serialized)
+@Suite("Ask word book window model", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWordBookViewModelTests {
     /// Friday 15 January 2027, 08:00 UTC.
@@ -485,7 +485,7 @@ struct AskWordBookViewModelTests {
     }
 }
 
-@Suite("Ask word book window", .serialized)
+@Suite("Ask word book window", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWordBookWindowTests {
     @Test func opensOnceShowsTheWordAskedForAndLooksWordsUp() async throws {
@@ -526,7 +526,7 @@ struct AskWordBookWindowTests {
 
 /// Draws the word book window; writes PNGs when TYPEFLUX_ASK_SNAPSHOTS is set
 /// (compare with `docs/design/word-book-studio/`).
-@Suite("Ask word book rendering", .serialized)
+@Suite("Ask word book rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWordBookRenderTests {
     private func render(_ model: AskWordBookViewModel, size: NSSize, dark: Bool, name: String) async throws {

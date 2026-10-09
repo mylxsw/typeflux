@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 /// Hosts the attachment and command views in a real window and drives the
 /// composer with key presses, so the palette flow is checked end to end.
-@Suite("Ask command rendering", .serialized)
+@Suite("Ask command rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskCommandRenderTests {
     @MainActor

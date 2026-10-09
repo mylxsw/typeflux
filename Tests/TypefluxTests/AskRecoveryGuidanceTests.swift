@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask recovery guidance", .serialized)
+@Suite("Ask recovery guidance", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryGuidanceTests {
     @Test(arguments: [true, false], [true, false])

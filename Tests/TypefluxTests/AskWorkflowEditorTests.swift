@@ -187,7 +187,7 @@ struct AskWorkflowJSONLayoutTests {
     }
 }
 
-@Suite("Ask workflow store editing")
+@Suite("Ask workflow store editing", .exclusiveUIState)
 @MainActor
 struct AskWorkflowStoreEditorTests {
     private func readyWorkflow(_ fixture: AskWorkflowFixture, id: String = "local.a") throws -> AskWorkflow {

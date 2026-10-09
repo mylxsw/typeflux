@@ -110,7 +110,9 @@ extension AskConversationModel {
                 logRecovery(entry, event: .acknowledged)
             }
             await refreshRecovery(latest, route: current)
-        } catch is CancellationError {} catch { await reportOperationError(error, id: value.id, owner: current.account) }
+        } catch is CancellationError {} catch {
+            await reportOperationError(error, id: value.id, owner: current.account)
+        }
     }
 
     private func transmit(

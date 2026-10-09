@@ -1,7 +1,7 @@
 import Testing
 @testable import Typeflux
 
-@Suite("Ask screenshot consent")
+@Suite("Ask screenshot consent", .exclusiveUIState)
 @MainActor
 struct AskScreenshotApprovalTests {
     private func call(_ name: String = "computer", arguments: String = "{\"action\":\"screenshot\"}") -> AskToolCall {

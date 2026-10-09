@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask quick results")
+@Suite("Ask quick results", .exclusiveUIState)
 struct AskQuickResultsTests {
     private func resolve(_ text: String, previous: AskQuickResults? = nil, chinese: Bool = true) -> AskQuickResults? {
         AskQuickResults.resolve(text: text, previous: previous, chinese: chinese)

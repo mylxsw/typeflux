@@ -112,7 +112,7 @@ struct AskWordCardTests {
     }
 }
 
-@Suite("Ask word card view")
+@Suite("Ask word card view", .exclusiveUIState)
 @MainActor
 struct AskWordCardViewTests {
     @Test func phoneticsChooseAnAccent() {
@@ -226,7 +226,7 @@ struct AskWordLookupEngineTests {
     }
 }
 
-@Suite("Ask translate plugin word cards")
+@Suite("Ask translate plugin word cards", .exclusiveUIState)
 struct AskTranslatePluginWordCardTests {
     private func request(_ text: String, origin: AskPluginRequest.Origin = .argument,
                          options: [String: String] = [:]) -> AskPluginRequest {
@@ -324,7 +324,7 @@ struct AskTranslatePluginWordCardTests {
     }
 }
 
-@Suite("Ask command keys")
+@Suite("Ask command keys", .exclusiveUIState)
 @MainActor
 struct AskCommandKeyWordCardTests {
     private func key(_ characters: String, code: UInt16, modifiers: NSEvent.ModifierFlags) -> AskCommandKey? {
@@ -417,7 +417,7 @@ struct AskWordCardLooseReplyTests {
     }
 }
 
-@Suite("Ask translate plugin garbled word cards")
+@Suite("Ask translate plugin garbled word cards", .exclusiveUIState)
 struct AskTranslatePluginGarbledCardTests {
     private func request(_ text: String) -> AskPluginRequest {
         AskPluginRequest(text: text, origin: .argument, keyword: AskTranslatePlugin.keywords[0], options: [:],

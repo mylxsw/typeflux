@@ -32,7 +32,7 @@ final class AskProgressRecorder {
     var progress: AskPluginProgress { { [self] output in bodies.append(output.body) } }
 }
 
-@Suite("Ask prompt plugin")
+@Suite("Ask prompt plugin", .exclusiveUIState)
 @MainActor
 struct AskPromptPluginTests {
     private func request(_ text: String = "teh text", origin: AskPluginRequest.Origin = .argument,
@@ -147,7 +147,7 @@ private final class AskTestCompletingLLM: LLMService, @unchecked Sendable {
     func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String { "{}" }
 }
 
-@Suite("Ask web search plugin")
+@Suite("Ask web search plugin", .exclusiveUIState)
 struct AskWebSearchPluginTests {
     private func request(_ text: String = "swift actors", origin: AskPluginRequest.Origin = .argument,
                          options: [String: String] = ["engine": "google"]) -> AskPluginRequest {
@@ -212,7 +212,7 @@ struct AskWebSearchPluginTests {
     }
 }
 
-@Suite("Ask plugin registry")
+@Suite("Ask plugin registry", .exclusiveUIState)
 struct AskPluginRegistryTests {
     @Test func pluginsAddedLaterBringTheirKeywords() throws {
         let fyja = AskKeyword(keyword: "fyja", pluginID: "translate", options: ["target": "ja"])

@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask credit pauses")
+@Suite("Ask credit pauses", .exclusiveUIState)
 @MainActor
 struct AskCreditPauseTests {
     private func pausedRun(pending: [AskToolCall] = []) -> AskRun {

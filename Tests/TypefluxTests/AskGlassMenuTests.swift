@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask glass menu", .serialized)
+@Suite("Ask glass menu", .serialized, .exclusiveUIState)
 @MainActor
 struct AskGlassMenuTests {
     private let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)

@@ -6,7 +6,7 @@ import Testing
 
 /// Five reasoning levels, offered per model; the composer's chip shows the model and
 /// the level, and its card holds the slider and the model list.
-@Suite("Ask effort picker", .serialized)
+@Suite("Ask effort picker", .serialized, .exclusiveUIState)
 @MainActor
 struct AskEffortPickerTests {
     private let five = RegisteredModel(id: "deep", name: "Deep", reference: "cloud:deep", reasoning: true,

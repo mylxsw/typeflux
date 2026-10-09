@@ -75,7 +75,7 @@ private struct ProviderFixture {
     }
 }
 
-@Suite("Ask memory")
+@Suite("Ask memory", .exclusiveUIState)
 @MainActor
 struct AskMemoryTests {
     // MARK: - Value

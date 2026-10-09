@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask first question controls", .serialized)
+@Suite("Ask first question controls", .serialized, .exclusiveUIState)
 @MainActor
 struct AskFirstQuestionInteractionTests {
     @Test(arguments: [true, false])

@@ -7,7 +7,7 @@ import Testing
 /// Renders the workflow editor in its main states. With TYPEFLUX_ASK_SNAPSHOTS set
 /// the images are written there (in Chinese, like the design); otherwise the views
 /// are only laid out.
-@Suite("Ask workflow editor rendering", .serialized)
+@Suite("Ask workflow editor rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWorkflowEditorVisualTests {
     private static let script = """
@@ -317,7 +317,7 @@ struct AskWorkflowEditorVisualTests {
     }
 }
 
-@Suite("Ask workflow editor window and code view")
+@Suite("Ask workflow editor window and code view", .exclusiveUIState)
 @MainActor
 struct AskWorkflowEditorWindowTests {
     @Test func theWindowOpensWorkflowsAndAsksBeforeDroppingEdits() throws {

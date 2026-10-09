@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Workflow author tool contract")
+@Suite("Workflow author tool contract", .exclusiveUIState)
 @MainActor
 struct AskWorkflowAuthorContractTests {
     private func call(_ name: String, _ arguments: [String: Any]) throws -> AskToolCall {

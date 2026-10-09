@@ -10,7 +10,7 @@ import Testing
 /// menu and its row, the image display in the editor and the launcher, and the
 /// launcher's question about a new host. With TYPEFLUX_ASK_SNAPSHOTS set the images
 /// are written there in Chinese as `implemented-*.png`; otherwise only laid out.
-@Suite("Workflow script actions, images and run keyword rendering", .serialized)
+@Suite("Workflow script actions, images and run keyword rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct WorkflowScriptActionsVisualTests {
     private let visual = WorkflowOutputActionsVisualTests()

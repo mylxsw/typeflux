@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask quick results scrolling", .serialized)
+@Suite("Ask quick results scrolling", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickResultsScrollTests {
     private final class State: ObservableObject {
