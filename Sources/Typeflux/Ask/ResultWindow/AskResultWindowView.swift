@@ -142,7 +142,7 @@ struct AskResultWindowView: View {
             toolButton(L("ask.plugin.action.copy"), symbol: "doc.on.doc", key: nil, primary: true,
                        enabled: !document.body.isEmpty, action: document.copy)
             toolButton(L("ask.plugin.action.copyRich"), symbol: "doc.richtext", key: "⇧⌘C", primary: false,
-                       enabled: !document.body.isEmpty, action: document.copyRich)
+                       enabled: !document.body.isEmpty, iconOnly: true, action: document.copyRich)
             if document.sourceBundleID != nil {
                 toolButton(L("ask.result.insert", document.sourceApp ?? L("ask.result.sourceApp")),
                            symbol: "arrow.down.to.line", key: "⌥↩", primary: false, enabled: document.canInsert,
@@ -164,14 +164,18 @@ struct AskResultWindowView: View {
         .overlay(alignment: .top) { Rectangle().fill(StudioTheme.border).frame(height: 1) }
     }
 
+    /// A toolbar button; `iconOnly` keeps the title and key for the tooltip, so the row fits narrow windows.
     private func toolButton(_ title: String, symbol: String, key: String?, primary: Bool, enabled: Bool,
-                            action: @escaping () -> Void) -> some View {
+                            iconOnly: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: symbol).font(.system(size: 11))
-                Text(title).font(.system(size: 12)).lineLimit(1)
-                if let key { Text(key).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary) }
+                if !iconOnly {
+                    Text(title).font(.system(size: 12)).lineLimit(1)
+                    if let key { Text(key).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary) }
+                }
             }
+            .fixedSize()
             .foregroundStyle(primary ? AskTheme.accent : StudioTheme.textSecondary)
             .padding(.horizontal, 9).frame(height: 26)
             .background(primary ? AskTheme.accent.opacity(0.16) : StudioTheme.controlSurface,
@@ -181,6 +185,7 @@ struct AskResultWindowView: View {
         .buttonStyle(.plain)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.45)
+        .help(iconOnly ? title + (key.map { " " + $0 } ?? "") : "")
         .accessibilityLabel(title)
     }
 

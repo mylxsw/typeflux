@@ -343,17 +343,17 @@ struct AskNotesView: View {
                 footerButton(L("ask.notes.edit"), symbol: "pencil", primary: false, action: model.beginEditing)
                 footerButton(L("ask.plugin.action.copy"), symbol: "doc.on.doc", primary: false,
                              action: model.copySelected)
-                footerButton(L("ask.plugin.action.copyRich"), symbol: "doc.richtext", primary: false,
-                             action: model.copySelectedRich)
-                footerButton(L("ask.plugin.action.openInWindow"), symbol: "macwindow.on.rectangle", primary: false,
-                             action: model.openSelectedInWindow)
+                footerButton(L("ask.plugin.action.copyRich") + " ⇧⌘C", symbol: "doc.richtext", primary: false,
+                             iconOnly: true, action: model.copySelectedRich)
+                footerButton(L("ask.plugin.action.openInWindow") + " ⌘O", symbol: "macwindow.on.rectangle",
+                             primary: false, iconOnly: true, action: model.openSelectedInWindow)
                 if model.askAI != nil {
-                    footerButton(L("ask.result.askAI"), symbol: "bubble.left", primary: false,
+                    footerButton(L("ask.result.askAI"), symbol: "bubble.left", primary: false, iconOnly: true,
                                  action: model.askAIAboutSelected)
                 }
             }
             Spacer(minLength: 8)
-            footerButton(L("ask.notes.export"), symbol: "square.and.arrow.up", primary: false,
+            footerButton(L("ask.notes.export"), symbol: "square.and.arrow.up", primary: false, iconOnly: true,
                          action: model.exportSelected)
             footerButton(L("ask.notes.delete"), symbol: "trash", primary: false, danger: true,
                          action: model.deleteSelected)
@@ -362,13 +362,15 @@ struct AskNotesView: View {
         .overlay(alignment: .top) { Rectangle().fill(StudioTheme.border).frame(height: 1) }
     }
 
+    /// A footer button; `iconOnly` moves the title to the tooltip so the row fits.
     private func footerButton(_ title: String, symbol: String, primary: Bool, danger: Bool = false,
-                              action: @escaping () -> Void) -> some View {
+                              iconOnly: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: symbol).font(.system(size: 11))
-                Text(title).font(.system(size: 12)).lineLimit(1)
+                if !iconOnly { Text(title).font(.system(size: 12)).lineLimit(1) }
             }
+            .fixedSize()
             .foregroundStyle(danger ? StudioTheme.danger : primary ? Color.white : StudioTheme.textSecondary)
             .padding(.horizontal, 9).frame(height: 26)
             .background(primary ? StudioTheme.accent : StudioTheme.controlSurface,
@@ -376,6 +378,7 @@ struct AskNotesView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .help(iconOnly ? title : "")
         .accessibilityLabel(title)
     }
 

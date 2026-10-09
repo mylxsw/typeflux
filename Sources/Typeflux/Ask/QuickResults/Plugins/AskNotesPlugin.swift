@@ -1,10 +1,11 @@
 import Foundation
 
-/// Finds saved notes from the launcher: `note` alone lists the latest, `note text`
-/// searches titles, text and inputs on this Mac. Return opens a note in a result window.
+/// Finds saved notes from the launcher: `nb` alone lists the latest, `nb text` searches
+/// titles, text and inputs on this Mac. Return opens a note in a result window. Not `note`:
+/// typing "note" must still open the Notes app.
 struct AskNotesPlugin: AskLauncherPlugin {
     static let id = "notes"
-    static let keywords = [AskKeyword(keyword: "note", pluginID: id), AskKeyword(keyword: "笔记", pluginID: id)]
+    static let keywords = [AskKeyword(keyword: "nb", pluginID: id), AskKeyword(keyword: "笔记", pluginID: id)]
     static let limit = 8
     static let openNotesItemID = "notes.open"
 

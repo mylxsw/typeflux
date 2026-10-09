@@ -115,7 +115,7 @@ struct AskNote: Equatable, Sendable, Identifiable {
     }
 }
 
-/// What the notes window and the `note` keyword ask the store for.
+/// What the notes window and the `nb` keyword ask the store for.
 struct AskNoteQuery: Equatable, Sendable {
     enum Scope: Hashable, Sendable {
         case all

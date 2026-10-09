@@ -142,7 +142,7 @@ struct AskPluginAction: Equatable, Sendable {
         case toggleNote(AskNoteDraft)
         /// Opens the notes window, on this note when there is one (⌘B).
         case openNotes(id: UUID?)
-        /// Opens a saved note in a result window (`note` keyword).
+        /// Opens a saved note in a result window (`nb` keyword).
         case openNote(UUID)
     }
 

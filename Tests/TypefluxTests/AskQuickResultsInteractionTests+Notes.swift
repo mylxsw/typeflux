@@ -71,7 +71,7 @@ extension AskQuickResultsInteractionTests {
             }
             defer { launcher.close() }
             let model = launcher.fixture.model
-            try await typeText("note ", into: launcher)
+            try await typeText("nb ", into: launcher)
             try await waitUntil { model.plugins.output?.items.first?.title == "Saved answer" }
             try await launcher.press(Self.returnKey)
             #expect(windows == [note.id] && launcher.dismissed == 1)

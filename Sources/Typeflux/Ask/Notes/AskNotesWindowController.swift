@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The one notes window. AI prompt results open it (⌘B), as do the `note` keyword
+/// The one notes window. AI prompt results open it (⌘B), as do the `nb` keyword
 /// and saved-result confirmations; see `docs/design/ai-command-results.md`.
 @MainActor
 final class AskNotesWindowController: NSObject, NSWindowDelegate {

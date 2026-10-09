@@ -69,7 +69,7 @@ extension AskConversationModel {
         return .close
     }
 
-    /// Opens a saved note in a result window (`note` keyword). False when it is gone.
+    /// Opens a saved note in a result window (`nb` keyword). False when it is gone.
     func openNoteInWindow(_ id: UUID) -> Bool {
         guard let note = notes?.note(id: id) else { return false }
         finishPluginResult()

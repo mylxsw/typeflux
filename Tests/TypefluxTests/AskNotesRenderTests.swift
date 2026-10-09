@@ -5,7 +5,8 @@ import Testing
 @testable import Typeflux
 
 /// Draws the result card, the result window and the notes window; writes PNGs when
-/// TYPEFLUX_ASK_SNAPSHOTS is set (compare with `docs/design/ai-command-results/`).
+/// TYPEFLUX_ASK_SNAPSHOTS is set (compare with `docs/design/ai-command-results/`). The launcher card is
+/// drawn light: its dark glass comes from the launcher panel, which a bare window lacks.
 @Suite("AI prompt result rendering", .serialized)
 @MainActor
 struct AskNotesRenderTests {
@@ -61,7 +62,7 @@ struct AskNotesRenderTests {
             generator.pieces = [Self.markdown]
             let output = try await AskPromptPlugin(generator: generator, modelName: { "gpt-5-mini" }, savesNotes: true)
                 .run(request, plan: plan).noteSaving(true)
-            for (comparing, dark, name) in [(false, true, "1-card-markdown.png"), (true, false, "2-card-compare-light.png")] {
+            for (comparing, dark, name) in [(false, false, "1-card-markdown.png"), (true, false, "2-card-compare.png")] {
                 let display = AskPluginDisplay(title: plugin.title, symbol: plugin.symbol, phase: .done(plan, output),
                                                comparing: comparing)
                 let view = AskPluginResultsView(display: display, question: "", onMain: {}, onAction: { _ in },
@@ -75,7 +76,7 @@ struct AskNotesRenderTests {
                                              partial: output.noteSaving(false), savesNoteWhenDone: true)
             try await render(AskPluginResultsView(display: streaming, question: "", onMain: {}, onAction: { _ in },
                                                   onAskAI: {}, onHighlight: { _ in }),
-                             size: NSSize(width: AskMetrics.launcherWidth, height: 520), dark: true,
+                             size: NSSize(width: AskMetrics.launcherWidth, height: 520), dark: false,
                              name: "3-card-streaming-save.png")
             #expect(AskPluginResultsView.hint(for: streaming) == L("ask.plugin.hint.running"))
             #expect(AskPluginResultsView.key(.commandO) == "⌘O")

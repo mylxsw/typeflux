@@ -8,7 +8,7 @@ import SwiftUI
 final class AskResultWindowController: NSObject, NSWindowDelegate {
     static let shared = AskResultWindowController()
     static let defaultSize = NSSize(width: 560, height: 640)
-    static let minimumSize = NSSize(width: 420, height: 360)
+    static let minimumSize = NSSize(width: 520, height: 360)
     static let sizeKey = "AskResultWindowSize"
 
     /// What every new window's document can do; `AskConversationWindowController` supplies it.

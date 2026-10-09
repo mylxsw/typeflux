@@ -159,7 +159,7 @@ struct AskNotesPluginTests {
     @Test func describesItself() async {
         let plugin = AskNotesPlugin()
         #expect(plugin.id == "notes" && plugin.title == L("ask.notes.title") && plugin.symbol == "note.text")
-        #expect(plugin.defaultKeywords.map(\.keyword) == ["note", "笔记"])
+        #expect(plugin.defaultKeywords.map(\.keyword) == ["nb", "笔记"])
         #expect(plugin.runsWithoutInput && !plugin.usesSelectionInput && plugin.entersOnReturn)
         #expect(plugin.placeholder(selectionLines: 2) == L("ask.notes.placeholder"))
         #expect(plugin.chipDetail(for: AskNotesPlugin.keywords[0], language: .english) == nil)

@@ -214,10 +214,10 @@
 </style></head>
 <body>
 <h1>AI 指令结果：Markdown 渲染、独立窗口与笔记本</h1>
-<p class="sub">GUL-292 可交互设计稿。四个场景共用一份数据：在 ① 里 ⌘S 收藏的结果，会出现在 ③ 笔记本和 ④ <code>note</code> 关键词里；⌘O 会把结果送到 ② 的独立窗口。点击灰色舞台后可用键盘操作（⌘ 也可用 Ctrl 代替）。方案文档：<code>docs/design/ai-command-results.md</code>。</p>
+<p class="sub">GUL-292 可交互设计稿。四个场景共用一份数据：在 ① 里 ⌘S 收藏的结果，会出现在 ③ 笔记本和 ④ <code>nb</code> 关键词里；⌘O 会把结果送到 ② 的独立窗口。点击灰色舞台后可用键盘操作（⌘ 也可用 Ctrl 代替）。方案文档：<code>docs/design/ai-command-results.md</code>。</p>
 <div class="topbar">
   <div class="pill" id="theme"><button class="on" data-v="dark">深色</button><button data-v="light">浅色</button></div>
-  <span class="notes">跳到：<a href="#s1" style="color:var(--accent-text)">① 结果卡</a> · <a href="#s2" style="color:var(--accent-text)">② 独立窗口</a> · <a href="#s3" style="color:var(--accent-text)">③ 笔记本</a> · <a href="#s4" style="color:var(--accent-text)">④ note 关键词</a></span>
+  <span class="notes">跳到：<a href="#s1" style="color:var(--accent-text)">① 结果卡</a> · <a href="#s2" style="color:var(--accent-text)">② 独立窗口</a> · <a href="#s3" style="color:var(--accent-text)">③ 笔记本</a> · <a href="#s4" style="color:var(--accent-text)">④ nb 关键词</a></span>
 </div>
 
 <!-- ============ 1. result card ============ -->
@@ -324,7 +324,7 @@
 </div>
 
 <!-- ============ 4. note keyword ============ -->
-<h3 id="s4">④ 启动器里找笔记：<code>note</code> / <code>笔记</code></h3>
+<h3 id="s4">④ 启动器里找笔记：<code>nb</code> / <code>笔记</code></h3>
 <div class="grid2">
   <div class="stage" id="stage4" tabindex="0" style="min-height:470px">
     <div class="card">
