@@ -2,9 +2,10 @@ import SwiftUI
 
 /// Formats the secondary line of a clipboard row and file-type colors.
 enum ClipboardEntryFormatter {
-    /// Subtitle parts, e.g. `["PDF", "2.3 MB", "Finder", "12 min. ago"]`.
-    static func details(for entry: ClipboardEntry, now: Date = Date()) -> [String] {
-        var parts = kindDetails(for: entry)
+    /// Subtitle parts, e.g. `["PDF", "12 pages", "2.3 MB", "Finder", "12 min. ago"]`. `info` adds
+    /// what only decoding the file reveals: a video or audio length, a PDF page count.
+    static func details(for entry: ClipboardEntry, info: ClipboardMediaInfo? = nil, now: Date = Date()) -> [String] {
+        var parts = kindDetails(for: entry) + mediaDetails(for: entry, info: info)
         if !entry.kind.isTextual, entry.byteSize > 0 {
             parts.append(ByteCountFormatter.string(fromByteCount: entry.byteSize, countStyle: .file))
         }
@@ -13,6 +14,14 @@ enum ClipboardEntryFormatter {
         }
         parts.append(relativeTime(from: entry.date, to: now))
         return parts
+    }
+
+    private static func mediaDetails(for entry: ClipboardEntry, info: ClipboardMediaInfo?) -> [String] {
+        switch entry.kind {
+        case .video, .audio: [info?.duration.map(duration)].compactMap { $0 }
+        case .pdf: [info?.pageCount.map { L("clipboard.preview.pages", $0) }].compactMap { $0 }
+        default: []
+        }
     }
 
     private static func kindDetails(for entry: ClipboardEntry) -> [String] {
@@ -42,6 +51,16 @@ enum ClipboardEntryFormatter {
         case .files:
             return [L("clipboard.kind.file")]
         }
+    }
+
+    /// A playback length such as `0:17`, `3:42` or `1:05:09`.
+    static func duration(_ seconds: TimeInterval) -> String {
+        let total = max(Int(seconds.rounded()), 0)
+        let hours = total / 3600
+        let minutes = total / 60 % 60
+        let rest = total % 60
+        if hours > 0 { return String(format: "%d:%02d:%02d", hours, minutes, rest) }
+        return String(format: "%d:%02d", minutes, rest)
     }
 
     static func relativeTime(from date: Date, to now: Date) -> String {

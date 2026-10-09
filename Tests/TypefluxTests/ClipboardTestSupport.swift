@@ -1,4 +1,6 @@
 import AppKit
+import AVFoundation
+import PDFKit
 @testable import Typeflux
 
 /// Shared fixtures for clipboard history tests.
@@ -65,6 +67,82 @@ enum ClipboardTestSupport {
         return url
     }
 
+    /// A mono 16-bit WAV of a 440 Hz tone whose loudness ramps from `startLevel` to `endLevel`.
+    static func makeAudioFile(
+        named name: String,
+        in directory: URL,
+        seconds: Double = 1,
+        startLevel: Float = 0.1,
+        endLevel: Float = 0.9
+    ) throws -> URL {
+        let url = directory.appendingPathComponent(name)
+        let sampleRate = 8000.0
+        let format = try unwrap(AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1))
+        let file = try AVAudioFile(forWriting: url, settings: [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: sampleRate,
+            AVNumberOfChannelsKey: 1,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsFloatKey: false
+        ])
+        let frames = AVAudioFrameCount(seconds * sampleRate)
+        let buffer = try unwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames))
+        buffer.frameLength = frames
+        let samples = buffer.floatChannelData![0]
+        for frame in 0 ..< Int(frames) {
+            let position = Float(frame) / Float(frames)
+            let level = startLevel + (endLevel - startLevel) * position
+            samples[frame] = level * sin(2 * .pi * 440 * Float(frame) / Float(sampleRate))
+        }
+        try file.write(from: buffer)
+        return url
+    }
+
+    /// A PDF with `pages` blank pages.
+    static func makePDF(named name: String, in directory: URL, pages: Int) -> URL {
+        let url = directory.appendingPathComponent(name)
+        let document = PDFDocument()
+        let image = NSImage(data: imageData(width: 60, height: 80))!
+        for index in 0 ..< pages {
+            document.insert(PDFPage(image: image)!, at: index)
+        }
+        document.write(to: url)
+        return url
+    }
+
+    /// One entry of every kind, with real image, PDF and audio files where the kind needs one.
+    static func allKindsEntries(in directory: URL) -> [ClipboardEntry] {
+        let png = directory.appendingPathComponent("shot.png")
+        let pngData = imageData(width: 400, height: 150, text: "Typeflux")
+        FileManager.default.createFile(atPath: png.path, contents: pngData)
+        let pdf = makePDF(named: "report.pdf", in: directory, pages: 2)
+        let movie = makeFile(named: "demo.mov", in: directory)
+        let audio = (try? makeAudioFile(named: "talk.wav", in: directory))
+            ?? makeFile(named: "talk.wav", in: directory)
+        let doc = makeFile(named: "plan.docx", in: directory)
+        return [
+            entry(.voice, text: "spoken words", isPinned: true),
+            entry(.text, text: "plain text", sourceBundleID: "com.apple.finder", sourceAppName: "Finder"),
+            entry(.link, text: "https://example.com", sourceBundleID: "com.apple.Safari"),
+            entry(.code, text: "func a() {\n}\n", sourceBundleID: "com.example.uninstalled"),
+            entry(.image, imagePath: png.path, imagePixelSize: CGSize(width: 400, height: 150),
+                  sourceBundleID: "com.apple.Preview", sourceAppName: "Preview"),
+            entry(.images, filePaths: [png.path, png.path, png.path, png.path, png.path]),
+            entry(.pdf, filePaths: [pdf.path], byteSize: 16),
+            entry(.video, filePaths: [movie.path], sourceBundleID: "com.apple.finder"),
+            entry(.audio, filePaths: [audio.path], sourceBundleID: "com.apple.finder"),
+            entry(.document, filePaths: [doc.path]),
+            entry(.files, filePaths: [pdf.path, doc.path, "/missing/archive.zip"])
+        ]
+    }
+
+    struct MissingValue: Error {}
+
+    private static func unwrap<T>(_ value: T?) throws -> T {
+        guard let value else { throw MissingValue() }
+        return value
+    }
+
     static func entry(
         _ kind: ClipboardEntryKind,
         id: UUID = UUID(),
@@ -74,6 +152,7 @@ enum ClipboardTestSupport {
         imagePath: String? = nil,
         imagePixelSize: CGSize? = nil,
         byteSize: Int64 = 0,
+        sourceBundleID: String? = nil,
         sourceAppName: String? = nil,
         isPinned: Bool = false
     ) -> ClipboardEntry {
@@ -86,6 +165,7 @@ enum ClipboardTestSupport {
             imagePath: imagePath,
             imagePixelSize: imagePixelSize,
             byteSize: byteSize,
+            sourceBundleID: sourceBundleID,
             sourceAppName: sourceAppName,
             isPinned: isPinned
         )

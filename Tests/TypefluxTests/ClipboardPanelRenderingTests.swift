@@ -18,26 +18,28 @@ final class ClipboardPanelRenderingTests: XCTestCase {
     }
 
     private func allKindsEntries() -> [ClipboardEntry] {
-        let png = directory.appendingPathComponent("shot.png")
-        let pngData = ClipboardTestSupport.imageData(width: 40, height: 30)
-        FileManager.default.createFile(atPath: png.path, contents: pngData)
-        let pdf = ClipboardTestSupport.makeFile(named: "report.pdf", in: directory)
-        let movie = ClipboardTestSupport.makeFile(named: "demo.mov", in: directory)
-        let audio = ClipboardTestSupport.makeFile(named: "talk.m4a", in: directory)
-        let doc = ClipboardTestSupport.makeFile(named: "plan.docx", in: directory)
-        return [
-            ClipboardTestSupport.entry(.voice, text: "spoken words", isPinned: true),
-            ClipboardTestSupport.entry(.text, text: "plain text", sourceAppName: "Notes"),
-            ClipboardTestSupport.entry(.link, text: "https://example.com"),
-            ClipboardTestSupport.entry(.code, text: "func a() {\n}\n"),
-            ClipboardTestSupport.entry(.image, imagePath: png.path, imagePixelSize: CGSize(width: 40, height: 30)),
-            ClipboardTestSupport.entry(.images, filePaths: [png.path, png.path]),
-            ClipboardTestSupport.entry(.pdf, filePaths: [pdf.path], byteSize: 16),
-            ClipboardTestSupport.entry(.video, filePaths: [movie.path]),
-            ClipboardTestSupport.entry(.audio, filePaths: [audio.path]),
-            ClipboardTestSupport.entry(.document, filePaths: [doc.path]),
-            ClipboardTestSupport.entry(.files, filePaths: [pdf.path, doc.path, "/missing/archive.zip"])
-        ]
+        ClipboardTestSupport.allKindsEntries(in: directory)
+    }
+
+    func testPanelRendersMissingFilesSelectedAndCollapsed() {
+        let model = ClipboardPanelModel()
+        model.fileExists = { _ in false }
+        model.reset(entries: allKindsEntries())
+        for index in model.visibleEntries.indices {
+            model.select(index: index)
+            let host = NSHostingView(rootView: ClipboardPanelView(model: model, focusRequest: index))
+            host.frame = NSRect(x: 0, y: 0, width: ClipboardPanelView.width, height: ClipboardPanelView.height)
+            host.layoutSubtreeIfNeeded()
+            XCTAssertNotNil(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        }
+    }
+
+    func testThumbnailWidthFollowsTheImageShape() {
+        XCTAssertEqual(ClipboardInlineMedia.thumbnailWidth(for: nil), 96)
+        XCTAssertEqual(ClipboardInlineMedia.thumbnailWidth(for: CGSize(width: 0, height: 10)), 96)
+        XCTAssertEqual(ClipboardInlineMedia.thumbnailWidth(for: CGSize(width: 1280, height: 640)), 128)
+        XCTAssertEqual(ClipboardInlineMedia.thumbnailWidth(for: CGSize(width: 4000, height: 500)), 220)
+        XCTAssertEqual(ClipboardInlineMedia.thumbnailWidth(for: CGSize(width: 500, height: 4000)), 48)
     }
 
     func testPanelRendersEveryKindSelected() {
@@ -70,12 +72,13 @@ final class ClipboardPanelRenderingTests: XCTestCase {
             .text, date: Date().addingTimeInterval(-120),
             text: "可以开始开发了。需要注意的是，官方模型只是作为一种方便用户接入和配置的方式。", sourceAppName: "Linear"
         )
-        model.reset(entries: entries)
         for (name, appearance, selection) in [
-            ("dark-text", NSAppearance.Name.darkAqua, 1), ("light-image", .aqua, 4), ("dark-pdf", .darkAqua, 6),
-            ("dark-files", .darkAqua, 10)
+            ("dark-text", NSAppearance.Name.darkAqua, 1), ("light-image", .aqua, 4), ("dark-image", .darkAqua, 4),
+            ("dark-images", .darkAqua, 5), ("dark-pdf", .darkAqua, 6), ("dark-video", .darkAqua, 7),
+            ("dark-audio", .darkAqua, 8), ("dark-files", .darkAqua, 10)
         ] {
-            model.select(index: selection)
+            // Rotate the selected row to the top so it is in view without scrolling.
+            model.reset(entries: Array(entries[selection...] + entries[..<selection]))
             let host = NSHostingView(rootView: ClipboardPanelView(model: model, focusRequest: 0))
             host.appearance = NSAppearance(named: appearance)
             host.frame = NSRect(x: 0, y: 0, width: ClipboardPanelView.width, height: ClipboardPanelView.height)

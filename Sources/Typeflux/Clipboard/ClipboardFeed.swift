@@ -46,7 +46,7 @@ enum ClipboardFeed {
             entries.append(ClipboardEntry(
                 origin: .voice(voice.record.id), kind: .voice, date: voice.date, text: text,
                 filePaths: [], imagePath: nil, imagePixelSize: nil, byteSize: Int64(text.utf8.count),
-                sourceAppName: nil, isPinned: pinnedVoiceRecordIDs.contains(voice.record.id)
+                sourceBundleID: nil, sourceAppName: nil, isPinned: pinnedVoiceRecordIDs.contains(voice.record.id)
             ))
         }
         return entries.sorted { lhs, rhs in
@@ -72,7 +72,8 @@ enum ClipboardFeed {
         return ClipboardEntry(
             origin: .clipboard(item.id), kind: kind, date: item.date, text: item.payload == .text ? item.text : nil,
             filePaths: item.filePaths, imagePath: item.imagePath, imagePixelSize: pixelSize,
-            byteSize: item.byteSize, sourceAppName: item.sourceAppName, isPinned: item.isPinned
+            byteSize: item.byteSize, sourceBundleID: item.sourceBundleID,
+            sourceAppName: item.sourceAppName, isPinned: item.isPinned
         )
     }
 

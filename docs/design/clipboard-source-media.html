@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux 剪贴板面板：来源应用图标 + 媒体内联预览</title>
+<style>
+  :root { --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; font-family: var(--font); background: #0d0d0f; color: #eee; }
+  body.light { background: #dfe3ea; color: #111; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 auto 12px; max-width: 640px; font-size: 12px; }
+  .seg { display: inline-flex; padding: 2px; border-radius: 8px; background: rgba(127,127,127,.18); }
+  .seg button { border: 0; background: transparent; color: inherit; font: inherit; padding: 4px 10px; border-radius: 6px; cursor: pointer; opacity: .7; }
+  .seg button.on { background: rgba(127,127,127,.35); opacity: 1; }
+  .hint { opacity: .6; }
+
+  /* ---------- panel (mirrors ClipboardPanelView: 640 × 560) ---------- */
+  .panel { --surface: #1c1c1c; --text: #f2f2f2; --text2: #b8b8b8; --text3: #808080; --hover: rgba(255,255,255,.08);
+           --accentSoft: #15263e; --raised: #262626; --line: rgba(255,255,255,.08); --chip: rgba(255,255,255,.10);
+           --tile: rgba(255,255,255,.06); --thumbBorder: rgba(255,255,255,.10);
+           width: 100%; max-width: 640px; height: 560px; margin: 0 auto; border-radius: 16px; overflow: hidden;
+           display: flex; flex-direction: column; background: var(--surface); color: var(--text);
+           border: .5px solid rgba(255,255,255,.14); box-shadow: 0 20px 60px rgba(0,0,0,.45); position: relative; }
+  body.light .panel { --surface: #f6f7fa; --text: #161616; --text2: #474747; --text3: #8a8a8a; --hover: rgba(0,0,0,.06);
+           --accentSoft: #e7efff; --raised: #f0f0f0; --line: rgba(0,0,0,.08); --chip: rgba(0,0,0,.08);
+           --tile: rgba(0,0,0,.06); --thumbBorder: rgba(0,0,0,.10); border-color: rgba(0,0,0,.12); box-shadow: 0 20px 50px rgba(0,0,0,.18); }
+
+  .search { height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 18px; border-bottom: .5px solid var(--line); flex: none; }
+  .search svg { flex: none; }
+  .search input { flex: 1; min-width: 60px; border: 0; outline: 0; background: transparent; color: var(--text); font: 17px var(--font); }
+  .search input::placeholder { color: var(--text3); }
+  .tabs { display: flex; padding: 2px; border-radius: 8px; background: var(--tile); flex: none; }
+  .tabs span { font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 6px; color: var(--text2); cursor: pointer; user-select: none; }
+  .tabs span.on { color: var(--text); background: var(--chip); box-shadow: 0 .5px 1px rgba(0,0,0,.12); }
+
+  .list { flex: 1; overflow-y: auto; padding: 6px 8px; }
+  .list::-webkit-scrollbar { width: 0; }
+  .section { font-size: 11px; font-weight: 600; color: var(--text2); padding: 10px 10px 4px; }
+  .row { display: flex; align-items: flex-start; gap: 11px; padding: 8px 10px; border-radius: 10px; cursor: default; margin-bottom: 2px; }
+  .row:hover { background: var(--hover); }
+  .row.sel { background: var(--accentSoft); }
+  .row .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .row .pin { color: #f5c400; font-size: 10px; padding-top: 6px; }
+  .row.missing .lead, .row.missing .title, .row.missing .media { opacity: .55; }
+
+  .lead { width: 32px; height: 32px; flex: none; display: grid; place-items: center; }
+  .lead.tile { border-radius: 8px; background: var(--tile); color: var(--text2); }
+  .lead svg.app { width: 28px; height: 28px; filter: drop-shadow(0 .5px 1px rgba(0,0,0,.25)); }
+  .lead img.app { width: 28px; height: 28px; border-radius: 6px; }
+
+  .title { font-size: 13.5px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row.sel .title.multi { white-space: normal; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+  .title.code { font: 12.5px ui-monospace, "SF Mono", Menlo, monospace; line-height: 18px; }
+  .meta { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text2); white-space: nowrap; overflow: hidden; line-height: 16px; }
+  .meta i { width: 2px; height: 2px; border-radius: 1px; background: currentColor; flex: none; }
+  .meta .name { color: var(--text); font-size: 12px; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+  .meta .warn { color: #ff9f0a; }
+  .meta .src { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* ---------- inline media (new) ---------- */
+  .media { position: relative; border-radius: 7px; overflow: hidden; border: .5px solid var(--thumbBorder);
+           background: var(--raised); transition: height .22s cubic-bezier(.2,.8,.2,1), width .22s cubic-bezier(.2,.8,.2,1); margin: 1px 0 3px; }
+  .media svg.shot { display: block; width: 100%; height: 100%; }
+  .media.img { height: 64px; width: 172px; }
+  .row.sel .media.img { height: 168px; width: 100%; }
+  .row.sel .media.img.gone { height: 64px; width: 120px; }
+  .row.sel .media.img.gone .dim { opacity: 0; }
+  .media .dim { position: absolute; right: 6px; bottom: 6px; font-size: 10.5px; color: #fff; background: rgba(0,0,0,.5); padding: 2px 6px; border-radius: 5px; opacity: 0; transition: opacity .2s; }
+  .row.sel .media .dim { opacity: 1; }
+  .media .dur { position: absolute; right: 4px; bottom: 4px; font-size: 10px; font-weight: 600; color: #fff; background: rgba(0,0,0,.55); padding: 1px 5px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+  .media .playbadge { position: absolute; inset: 0; display: grid; place-items: center; }
+  .media .playbadge b { width: 24px; height: 24px; border-radius: 12px; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); display: grid; place-items: center; border: .5px solid rgba(255,255,255,.35); }
+  .row.sel .media .playbadge b { width: 40px; height: 40px; border-radius: 20px; }
+  .media.vid { height: 64px; width: 114px; }
+  .row.sel .media.vid { height: 190px; width: 100%; background: #000; }
+  .vctl { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 30px; border-radius: 8px; background: rgba(30,30,30,.72); backdrop-filter: blur(10px);
+          display: none; align-items: center; gap: 10px; padding: 0 10px; color: #fff; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .row.sel .vctl { display: flex; }
+  .row.sel .media.vid .dur { display: none; }
+  .track { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.25); position: relative; overflow: hidden; }
+  .track u { position: absolute; left: 0; top: 0; bottom: 0; background: #fff; width: 0; }
+
+  .strip { display: flex; gap: 4px; margin: 1px 0 3px; flex-wrap: wrap; }
+  .strip .media { height: 56px; width: 56px; margin: 0; }
+  .row.sel .strip .media { height: 92px; width: calc((100% - 8px) / 3); }
+  .strip .more { height: 56px; min-width: 40px; padding: 0 8px; display: grid; place-items: center; border-radius: 7px; background: var(--tile); color: var(--text2); font-size: 12px; font-weight: 600; }
+  .row.sel .strip .more { display: none; }
+  .row:not(.sel) .strip .extra { display: none; }
+
+  .media.aud { height: 40px; width: 260px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 6px; background: var(--tile); border-color: transparent; }
+  .row.sel .media.aud { width: 100%; height: 48px; }
+  .aud .pbtn { width: 28px; height: 28px; border-radius: 14px; background: var(--chip); display: grid; place-items: center; flex: none; cursor: pointer; }
+  .wave { flex: 1; height: 26px; display: flex; align-items: center; gap: 2px; overflow: hidden; }
+  .wave s { flex: 1; min-width: 2px; border-radius: 1px; background: var(--text3); }
+  .wave s.on { background: #0a84ff; }
+  .aud .t { font-size: 10.5px; color: var(--text2); font-variant-numeric: tabular-nums; flex: none; }
+
+  .media.doc { height: 64px; width: 50px; background: #fff; }
+
+  .badge { font-size: 8.5px; font-weight: 800; color: #fff; padding: 2px 3px; border-radius: 3px; }
+  .srcmini { width: 13px; height: 13px; display: inline-block; vertical-align: -2px; }
+
+  .footer { height: 40px; flex: none; display: flex; align-items: center; gap: 2px; padding: 0 10px 0 16px; border-top: .5px solid var(--line); font-size: 12px; color: var(--text2); }
+  .footer .sp { flex: 1; }
+  .footer .btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; }
+  .footer .btn.pri { color: var(--text); }
+  .key { font-size: 10.5px; font-weight: 500; padding: 0 5px; min-width: 18px; height: 18px; display: inline-grid; place-items: center; border-radius: 5px; background: var(--chip); color: var(--text2); }
+  .vsep { width: 1px; height: 14px; background: var(--line); margin: 0 4px; }
+  .toast { position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%); font-size: 12px; padding: 7px 12px; border-radius: 8px;
+           background: var(--raised); border: .5px solid var(--line); box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .empty { height: 100%; display: grid; place-items: center; color: var(--text2); font-size: 12.5px; }
+
+  .legend { max-width: 640px; margin: 12px auto 0; font-size: 12px; line-height: 1.6; opacity: .8; }
+  .legend b { font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div class="seg" id="modeSeg"><button data-v="after" class="on">优化后</button><button data-v="before">当前</button></div>
+  <div class="seg" id="themeSeg"><button data-v="dark" class="on">深色</button><button data-v="light">浅色</button></div>
+  <span class="hint">点击条目选中 · ↑↓ 切换 · ↩ 粘贴 · 可搜索 / 切换分类</span>
+</div>
+
+<div class="panel" id="panel">
+  <div class="search">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--text2)"><circle cx="7" cy="7" r="5.2"/><path d="M11 11l3.6 3.6" stroke-linecap="round"/></svg>
+    <input id="q" placeholder="搜索剪贴板" autocomplete="off">
+    <div class="tabs" id="tabs"></div>
+  </div>
+  <div class="list" id="list"></div>
+  <div class="footer" id="footer"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<script>
+const LOGO = "data:image/png;base64,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";
+
+/* ---------- app icons (stylised stand-ins for NSWorkspace icons) ---------- */
+const sq = (fill, inner) => `<svg class="app" viewBox="0 0 28 28"><rect x="1" y="1" width="26" height="26" rx="6.2" fill="${fill}"/>${inner}</svg>`;
+const APPS = {
+  finder:  { name: "Finder" },
+  chatgpt: { name: "ChatGPT" }, chrome: { name: "Google Chrome" }, hapigo: { name: "HapiGo" },
+  memos:   { name: "语音备忘录" }, xcode: { name: "Xcode" }, slack: { name: "Slack" }, typeflux: { name: "Typeflux" },
+};
+function appIcon(id, cls = "app") {
+  switch (id) {
+    case "finder": return `<svg class="${cls}" viewBox="0 0 28 28"><defs><clipPath id="fc"><rect x="1" y="1" width="26" height="26" rx="6.2"/></clipPath></defs>
+      <g clip-path="url(#fc)"><rect x="1" y="1" width="26" height="26" fill="#e8f2fd"/><path d="M1 1h14c-2 5-3 9-2.4 13H15c-.6 4 .2 9 1.5 13H1z" fill="#1e8af0"/></g>
+      <circle cx="9" cy="10.5" r="1.3" fill="#0c2b4d"/><circle cx="19" cy="10.5" r="1.3" fill="#0c2b4d"/><path d="M8 18.5c3.6 2.6 8.4 2.6 12 0" stroke="#0c2b4d" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`;
+    case "chatgpt": return sq("#ffffff", `<g transform="translate(14 14)" fill="none" stroke="#111" stroke-width="1.6">${[0,60,120,180,240,300].map(a=>`<path transform="rotate(${a})" d="M0-7.2c2.6 0 4.4 1.8 4.4 4.2v3.6"/>`).join("")}</g>`);
+    case "chrome": return `<svg class="${cls}" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12.5" fill="#db4437"/><path d="M14 14L3.2 20.3A12.5 12.5 0 0 0 14 26.5z" fill="#0f9d58"/><path d="M14 14l-10.8 6.3A12.5 12.5 0 0 1 3.4 7.4z" fill="#0f9d58"/><path d="M14 14h12.5a12.5 12.5 0 0 1-12.5 12.5z" fill="#f4b400"/><path d="M14 14L26.5 14A12.5 12.5 0 0 0 24.8 7.8z" fill="#f4b400"/><circle cx="14" cy="14" r="5.6" fill="#fff"/><circle cx="14" cy="14" r="4.3" fill="#4285f4"/></svg>`;
+    case "hapigo": return sq("#5b4cf5", `<path d="M9 8v12M19 8v12M9 14h10" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`);
+    case "memos": return sq("#1c1c1e", `<g fill="#ff453a">${[4,8,13,9,15,7,11,5].map((h,i)=>`<rect x="${6.2+i*2.1}" y="${14-h/2}" width="1.3" height="${h}" rx=".6"/>`).join("")}</g>`);
+    case "xcode": return sq("#1475e3", `<path d="M8 20l9-12M12.5 8H19l-2 3" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.6" fill="#fff"/>`);
+    case "slack": return sq("#ffffff", `<g stroke-width="3" stroke-linecap="round"><path d="M10 6v8" stroke="#36c5f0"/><path d="M6 18h8" stroke="#2eb67d"/><path d="M18 22v-8" stroke="#ecb22e"/><path d="M22 10h-8" stroke="#e01e5a"/></g>`);
+    case "typeflux": return `<img class="${cls}" src="${LOGO}" alt="">`;
+  }
+  return "";
+}
+
+/* ---------- SF-symbol-ish glyphs for the old design / fallbacks ---------- */
+const G = {
+  text: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3.5 1.5h4.5l3 3v8h-7.5z"/><path d="M5.5 7h3.5M5.5 9.5h3.5"/></svg>',
+  link: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 8a2.5 2.5 0 0 0 3.6.1l2-2a2.5 2.5 0 0 0-3.6-3.6l-.6.6"/><path d="M8 6a2.5 2.5 0 0 0-3.6-.1l-2 2a2.5 2.5 0 0 0 3.6 3.6l.6-.6"/></svg>',
+  code: '<svg width="15" height="14" viewBox="0 0 15 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5L1.5 7 5 10.5M10 3.5L13.5 7 10 10.5M8.5 2.5l-2 9"/></svg>',
+  voice: '<svg width="15" height="14" viewBox="0 0 15 14" fill="currentColor">'+[3,7,11,6,9,4].map((h,i)=>`<rect x="${1.5+i*2.2}" y="${7-h/2}" width="1.3" height="${h}" rx=".6"/>`).join("")+'</svg>',
+  audio: '<svg width="13" height="14" viewBox="0 0 13 14" fill="currentColor"><path d="M4.5 2.5l7-1.5v8.5a2 2 0 1 1-1.3-1.9V3.6L5.8 4.6v6.4a2 2 0 1 1-1.3-1.9z"/></svg>',
+  play: (s=9) => `<svg width="${s}" height="${s}" viewBox="0 0 10 10" fill="#fff"><path d="M2.5 1.2v7.6L8.8 5z"/></svg>`,
+  pause: (s=9, c="#fff") => `<svg width="${s}" height="${s}" viewBox="0 0 10 10" fill="${c}"><rect x="2" y="1.5" width="2.2" height="7" rx=".5"/><rect x="5.8" y="1.5" width="2.2" height="7" rx=".5"/></svg>`,
+};
+
+/* ---------- fake screenshots / video frames ---------- */
+function shot(seed, kind = "ui", fit = false) {
+  const par = fit ? "xMidYMid meet" : "xMidYMid slice";
+  let r = seed * 9301 + 49297; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280;
+  const bg = ["#1f2430", "#202124", "#2b2b2b", "#17181c"][seed % 4];
+  const acc = ["#0a84ff", "#30d158", "#ff9f0a", "#bf5af2", "#ff375f"][seed % 5];
+  let s = `<svg class="shot" viewBox="0 0 320 180" preserveAspectRatio="${par}"><rect width="320" height="180" fill="${bg}"/>`;
+  if (kind === "photo") {
+    s = `<svg class="shot" viewBox="0 0 320 180" preserveAspectRatio="${par}"><defs><linearGradient id="sky${seed}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${["#f7b267","#89c2d9","#ffafcc","#a0c4ff"][seed%4]}"/><stop offset="1" stop-color="${["#f25c54","#468faf","#cdb4db","#bdb2ff"][seed%4]}"/></linearGradient></defs>
+      <rect width="320" height="180" fill="url(#sky${seed})"/><circle cx="${80+seed*40%160}" cy="60" r="22" fill="rgba(255,255,255,.75)"/>
+      <path d="M0 140 L70 90 L130 130 L200 70 L320 140 V180 H0z" fill="rgba(20,30,40,.55)"/><path d="M0 160 L90 120 L170 150 L260 110 L320 150 V180 H0z" fill="rgba(10,15,20,.75)"/></svg>`;
+    return s;
+  }
+  s += `<rect x="0" y="0" width="320" height="14" fill="rgba(255,255,255,.06)"/>`;
+  [["#ff5f57", 8], ["#febc2e", 17], ["#28c840", 26]].forEach(([c, x]) => s += `<circle cx="${x}" cy="7" r="2.6" fill="${c}"/>`);
+  s += `<rect x="0" y="14" width="${70 + seed % 3 * 10}" height="166" fill="rgba(255,255,255,.035)"/>`;
+  for (let i = 0; i < 11; i++) s += `<rect x="8" y="${24 + i * 13}" width="${30 + rnd() * 40}" height="4" rx="2" fill="rgba(255,255,255,${i === 3 ? .5 : .16})"/>`;
+  const x0 = 90 + seed % 3 * 10;
+  for (let i = 0; i < 9; i++) s += `<rect x="${x0}" y="${28 + i * 14}" width="${80 + rnd() * 140}" height="5" rx="2.5" fill="rgba(255,255,255,${.12 + rnd() * .18})"/>`;
+  s += `<rect x="${x0}" y="150" width="${210 - seed % 3 * 10}" height="20" rx="6" fill="rgba(255,255,255,.07)" stroke="${acc}" stroke-opacity=".6"/>`;
+  s += `<rect x="${x0 + 6}" y="157" width="40" height="6" rx="3" fill="${acc}" fill-opacity=".8"/></svg>`;
+  return s;
+}
+function waveBars(seed, n = 64) {
+  let r = seed; const out = [];
+  for (let i = 0; i < n; i++) { r = (r * 16807) % 2147483647; const env = .35 + .65 * Math.abs(Math.sin(i / 7)); out.push(Math.max(.12, env * (r % 1000) / 1000)); }
+  return out;
+}
+
+/* ---------- data: one entry per ClipboardEntryKind ---------- */
+const NOW = Date.now(); const MIN = 60e3;
+const ENTRIES = [
+  { kind: "text", text: "(100", app: "finder", ago: 1 },
+  { kind: "video", file: "HapiGo_2026-10-09_16.01.09.mp4", size: "13.9 MB", dur: "00:17", durS: 17, app: "hapigo", ago: 22, seed: 2 },
+  { kind: "voice", text: "帮我实现一个查询天气的 workflow，输入城市名，返回未来三天的天气。", app: "typeflux", ago: 30 },
+  { kind: "image", fmt: "PNG", px: "1384×506", size: "132 KB", app: "chatgpt", ago: 39, seed: 1, ratio: 1384 / 506 },
+  { kind: "link", text: "https://github.com/mylxsw/typeflux/pull/384", host: "github.com", app: "chrome", ago: 41 },
+  { kind: "audio", file: "产品周会 10-09.m4a", size: "4.1 MB", dur: "03:42", durS: 222, app: "memos", ago: 55, seed: 7 },
+  { kind: "images", files: 5, app: "finder", ago: 60 * 3, seed: 3 },
+  { kind: "code", text: "func thumbnail(for url: URL) async -> NSImage? {\n    if let cached = cache.object(forKey: key) { return cached }\n    return await Self.quickLookThumbnail(for: url)\n}", app: "xcode", ago: 60 * 5 },
+  { kind: "pdf", file: "Typeflux 合作协议 v3.pdf", size: "2.3 MB", pages: 12, app: "finder", ago: 60 * 26 },
+  { kind: "image", fmt: "JPG", px: "4032×3024", size: "3.8 MB", file: "IMG_2041.JPG", app: "slack", ago: 60 * 27, seed: 0, photo: true, ratio: 4 / 3 },
+  { kind: "text", text: "本周（全部模型）：已用 87%，剩余 13%（100 - 87）。重置时间原文是 Oct 9, 7:59am (UTC)，换到本地时间是 15:59。", app: null, appName: "已卸载的应用", ago: 60 * 28 },
+  { kind: "image", fmt: "PNG", px: "1206×2622", size: "1.1 MB", file: "Simulator Screenshot.png", app: "finder", ago: 60 * 30, seed: 3, missing: true, ratio: 1206 / 2622 },
+].map((e, i) => ({ ...e, id: i, date: NOW - e.ago * MIN }));
+
+const CATS = [["all", "全部"], ["text", "文本"], ["image", "图片"], ["file", "文件"], ["voice", "语音"]];
+const catOf = k => ({ voice: "voice", text: "text", link: "text", code: "text", image: "image", images: "image" }[k] || "file");
+const isTextual = k => ["voice", "text", "link", "code"].includes(k);
+const KIND = { text: "文本", link: "链接", code: "代码", voice: "语音输入", image: "图片", images: "图片", video: "视频", audio: "音频", pdf: "PDF" };
+
+const S = { mode: "after", cat: "all", q: "", sel: 0, playing: null, progress: {} };
+
+function ago(m) { return m < 1 ? "刚刚" : m < 60 ? `${m} 分钟前` : m < 1440 ? `${Math.round(m / 60)} 小时前` : `${Math.round(m / 1440)} 天前`; }
+function section(e) { return e.ago < 60 * 24 ? "今天" : "昨天"; }
+function appName(e) { return e.app ? APPS[e.app].name : (e.appName || ""); }
+function title(e) {
+  if (e.text) return e.text;
+  if (e.kind === "images") return `${e.files} 张图片`;
+  return e.file || "图片";
+}
+function details(e) {
+  const p = [];
+  switch (e.kind) {
+    case "text": p.push("文本", `${[...e.text].length} 字`); break;
+    case "link": p.push("链接", e.host); break;
+    case "code": p.push("代码"); break;
+    case "voice": p.push("语音输入"); break;
+    case "image": p.push(e.fmt, e.px); break;
+    case "images": p.push("图片"); break;
+    case "video": p.push("视频"); if (S.mode === "after") p.push(e.dur); break;
+    case "audio": p.push("音频"); if (S.mode === "after") p.push(e.dur); break;
+    case "pdf": p.push("PDF"); if (S.mode === "after") p.push(`${e.pages} 页`); break;
+  }
+  if (!isTextual(e.kind) && e.size) p.push(e.size);
+  const a = appName(e); if (a && e.kind !== "voice") p.push(a);
+  p.push(ago(e.ago));
+  return p;
+}
+const visible = () => ENTRIES.filter(e => (S.cat === "all" || catOf(e.kind) === S.cat) &&
+  (!S.q || (title(e) + "\n" + appName(e)).toLowerCase().includes(S.q.toLowerCase())));
+
+/* ---------- leading column ---------- */
+function leadBefore(e) {
+  const tile = g => `<div class="lead tile">${g}</div>`;
+  switch (e.kind) {
+    case "image": return `<div class="lead"><div class="media" style="width:32px;height:32px;border-radius:8px;margin:0">${shot(e.seed, e.photo ? "photo" : "ui")}</div></div>`;
+    case "video": return `<div class="lead"><div class="media" style="width:32px;height:32px;border-radius:8px;margin:0">${shot(e.seed)}<div class="playbadge">${G.play(9)}</div></div></div>`;
+    case "images": return `<div class="lead" style="position:relative">${[0, 1, 2].map(i => `<div class="media" style="position:absolute;left:${i * 4.5}px;top:${i * 4}px;width:24px;height:24px;border-radius:6px;margin:0">${shot(e.seed + i, "photo")}</div>`).join("")}</div>`;
+    case "pdf": return `<div class="lead tile"><span class="badge" style="background:#e6474d">PDF</span></div>`;
+    default: return tile(G[e.kind]);
+  }
+}
+function leadAfter(e) {
+  if (e.app) return `<div class="lead" title="${appName(e)}">${appIcon(e.app)}</div>`;
+  // No bundle ID (records captured before the change) or the app is gone: keep today's kind tile.
+  return leadBefore(e);
+}
+
+/* ---------- body ---------- */
+function metaHTML(e, nameFirst) {
+  const parts = details(e).map(t => `<span>${t}</span>`);
+  const head = nameFirst ? [`<span class="name">${nameFirst}</span>`] : [];
+  if (e.missing) parts.push(`<span class="warn">原文件已不存在</span>`);
+  return `<div class="meta">${[...head, ...parts].join("<i></i>")}</div>`;
+}
+function bodyBefore(e, sel) {
+  const tcls = "title" + (e.kind === "code" ? " code" : "") + (isTextual(e.kind) ? " multi" : "");
+  let h = `<div class="${tcls}">${esc(title(e))}</div>` + metaHTML(e);
+  if (sel && !isTextual(e.kind)) h += `<div style="margin-top:6px">${bigPreviewBefore(e)}</div>`;
+  return h;
+}
+function bigPreviewBefore(e) {
+  if (e.missing) return `<div class="meta"><span class="warn">⚠ 原文件已不存在，无法预览</span></div>`;
+  if (e.kind === "image") return `<div class="media" style="height:150px;width:100%">${shot(e.seed, e.photo ? "photo" : "ui")}</div>`;
+  if (e.kind === "video") return `<div class="media" style="height:170px;width:100%;background:#000">${shot(e.seed)}<div class="playbadge"><b>${G.play(14)}</b></div></div>`;
+  if (e.kind === "audio") return `<div class="media aud" style="width:100%">${G.audio}<div class="track" style="flex:1"><u style="width:0"></u></div><span class="t">00:00 / ${e.dur}</span></div>`;
+  if (e.kind === "images") return `<div class="strip">${[0, 1, 2].map(i => `<div class="media" style="height:86px;width:calc((100% - 8px)/3)">${shot(e.seed + i, "photo")}</div>`).join("")}</div>`;
+  return `<div class="meta">${e.pages} 页 · ${e.size}</div>`;
+}
+
+function bodyAfter(e, sel) {
+  const tcls = "title" + (e.kind === "code" ? " code" : "") + (isTextual(e.kind) ? " multi" : "");
+  switch (e.kind) {
+    case "image": {
+      const w = Math.round(Math.min(220, Math.max(48, 64 * e.ratio)));
+      return `<div class="media img${e.missing ? " gone" : ""}" style="${sel && !e.missing ? "" : `width:${w}px`}">${e.missing ? missingThumb() : shot(e.seed, e.photo ? "photo" : "ui", sel)}<span class="dim">${e.px.replace("×", " × ")}</span></div>` + metaHTML(e, e.file);
+    }
+    case "images":
+      return `<div class="strip">${Array.from({ length: e.files }, (_, i) => `<div class="media${i >= 3 ? " extra" : ""}">${shot(e.seed + i, "photo")}</div>`).join("")}${e.files > 3 ? `<div class="more">+${e.files - 3}</div>` : ""}</div>` + metaHTML(e, title(e));
+    case "video": {
+      const p = S.progress[e.id] || 0, playing = S.playing === e.id;
+      return `<div class="media vid">${shot(e.seed, "ui", sel)}<span class="dur">${e.dur}</span>
+        <div class="playbadge" data-play="${e.id}" style="${sel && playing ? "opacity:0" : ""}"><b>${G.play(sel ? 14 : 9)}</b></div>
+        <div class="vctl"><span data-play="${e.id}" style="cursor:pointer">${playing ? G.pause(11) : G.play(11)}</span><span>${fmt(p * e.durS)}</span>
+        <div class="track"><u style="width:${p * 100}%"></u></div><span>${e.dur}</span></div></div>` + metaHTML(e, e.file);
+    }
+    case "audio": {
+      const p = S.progress[e.id] || 0, playing = S.playing === e.id, bars = waveBars(e.seed, sel ? 90 : 52);
+      return `<div class="media aud"><span class="pbtn" data-play="${e.id}">${playing ? G.pause(10, "currentColor") : G.play(10).replace('fill="#fff"', 'fill="currentColor"')}</span>
+        <div class="wave">${bars.map((v, i) => `<s class="${i / bars.length < p ? "on" : ""}" style="height:${Math.round(v * 100)}%"></s>`).join("")}</div>
+        <span class="t">${playing || p ? fmt(p * e.durS) + " / " : ""}${e.dur}</span></div>` + metaHTML(e, e.file);
+    }
+    case "pdf":
+      return `<div style="display:flex;gap:10px;align-items:center"><div class="media doc" ${sel ? 'style="height:120px;width:92px"' : ""}>${pdfPage()}</div>
+        <div style="min-width:0;flex:1"><div class="title">${esc(e.file)}</div>${metaHTML(e)}</div></div>`;
+    default:
+      return `<div class="${tcls}">${esc(title(e))}</div>` + metaHTML(e);
+  }
+}
+function missingThumb() {
+  return `<div style="height:100%;display:grid;place-items:center;color:var(--text3);font-size:11px;gap:2px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M2 3l12 10"/></svg></div>`;
+}
+function pdfPage() {
+  return `<svg class="shot" viewBox="0 0 50 64" preserveAspectRatio="none"><rect width="50" height="64" fill="#fff"/><rect x="6" y="7" width="26" height="4" fill="#222"/>${[16, 21, 26, 31, 36, 41, 46, 51].map(y => `<rect x="6" y="${y}" width="${30 + (y * 7) % 9}" height="2" fill="#bbb"/>`).join("")}<rect x="34" y="54" width="12" height="6" rx="1" fill="#e6474d"/></svg>`;
+}
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const fmt = s => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+/* ---------- render ---------- */
+function render() {
+  document.getElementById("tabs").innerHTML = CATS.map(([k, t]) => `<span data-cat="${k}" class="${S.cat === k ? "on" : ""}">${t}</span>`).join("");
+  const list = visible(); if (S.sel >= list.length) S.sel = Math.max(0, list.length - 1);
+  let prev = null, h = "";
+  list.forEach((e, i) => {
+    const sec = section(e); if (sec !== prev) { h += `<div class="section">${sec}</div>`; prev = sec; }
+    const sel = i === S.sel;
+    h += `<div class="row${sel ? " sel" : ""}${e.missing ? " missing" : ""}" data-i="${i}">
+      ${S.mode === "after" ? leadAfter(e) : leadBefore(e)}
+      <div class="body">${S.mode === "after" ? bodyAfter(e, sel) : bodyBefore(e, sel)}</div></div>`;
+  });
+  const el = document.getElementById("list");
+  el.innerHTML = list.length ? h : `<div class="empty">没有匹配“${esc(S.q)}”的条目</div>`;
+  const e = list[S.sel];
+  document.getElementById("footer").innerHTML = `<span>${list.length} 项</span><span class="sp"></span>` + (e ? `
+    ${isTextual(e.kind) ? "" : `<span class="btn">快速查看 <span class="key">⌘Y</span></span>`}
+    <span class="btn">固定 <span class="key">⌘P</span></span><span class="vsep"></span><span class="btn pri">粘贴 <span class="key">↩</span></span>` : "");
+  document.getElementById("legend").innerHTML = S.mode === "after"
+    ? `<b>优化后</b>：左侧为来源应用图标（NSWorkspace 按 bundle ID 取图标）；没有来源记录的旧条目回退为类型图标（见“已卸载的应用”那一条）。图片、视频、音频、多图、PDF 直接把内容预览放在条目里，选中后原地放大；视频和音频选中后可以直接播放。语音输入的来源统一显示 Typeflux 图标。`
+    : `<b>当前</b>：左侧是类型图标或 32px 小缩略图，标题显示“图片”或文件名，选中后才在下方展开预览；来源应用只以文字出现在副标题里。`;
+  const row = el.querySelector(".row.sel"); if (row) row.scrollIntoView({ block: "nearest" });
+}
+
+/* ---------- interaction ---------- */
+let timer = null;
+function togglePlay(id) {
+  const e = ENTRIES[id];
+  if (S.playing === id) { S.playing = null; clearInterval(timer); render(); return; }
+  clearInterval(timer); S.playing = id; if ((S.progress[id] || 0) >= 1) S.progress[id] = 0;
+  timer = setInterval(() => {
+    S.progress[id] = Math.min(1, (S.progress[id] || 0) + .25 / Math.min(e.durS, 20));
+    if (S.progress[id] >= 1) { S.playing = null; clearInterval(timer); }
+    render();
+  }, 250);
+  render();
+}
+function stopPlayback() { if (S.playing !== null) { S.playing = null; clearInterval(timer); } }
+function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 1400); }
+
+document.getElementById("list").addEventListener("click", ev => {
+  const play = ev.target.closest("[data-play]");
+  const row = ev.target.closest(".row"); if (!row) return;
+  const i = +row.dataset.i;
+  if (play && S.mode === "after" && i === S.sel) { togglePlay(+play.dataset.play); return; }
+  if (i !== S.sel) stopPlayback(); // playback stops when the row collapses, like ClipboardMediaPlayer
+  S.sel = i; render();
+});
+document.getElementById("list").addEventListener("dblclick", ev => { if (ev.target.closest(".row")) toast("已粘贴到前台应用"); });
+document.getElementById("tabs").addEventListener("click", ev => { const c = ev.target.dataset.cat; if (c) { S.cat = c; S.sel = 0; stopPlayback(); render(); } });
+document.getElementById("q").addEventListener("input", ev => { S.q = ev.target.value.trim(); S.sel = 0; stopPlayback(); render(); });
+document.addEventListener("keydown", ev => {
+  const n = visible().length;
+  if (ev.key === "ArrowDown") { S.sel = Math.min(n - 1, S.sel + 1); stopPlayback(); render(); ev.preventDefault(); }
+  else if (ev.key === "ArrowUp") { S.sel = Math.max(0, S.sel - 1); stopPlayback(); render(); ev.preventDefault(); }
+  else if (ev.key === "Enter" && n) { toast("已粘贴到前台应用"); }
+  else if (ev.key === " " && document.activeElement.id !== "q") { const e = visible()[S.sel]; if (e && ["video", "audio"].includes(e.kind) && S.mode === "after") { togglePlay(e.id); ev.preventDefault(); } }
+});
+function seg(id, fn) {
+  const el = document.getElementById(id);
+  el.addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b) return; el.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); fn(b.dataset.v); });
+}
+seg("modeSeg", v => { S.mode = v; stopPlayback(); render(); });
+seg("themeSeg", v => { document.body.classList.toggle("light", v === "light"); });
+render();
+</script>
+</body>
+</html>

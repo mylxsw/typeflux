@@ -41,6 +41,33 @@ final class ClipboardEntryFormatterTests: XCTestCase {
         XCTAssertEqual(details(ClipboardTestSupport.entry(.files, date: now)).first, L("clipboard.kind.file"))
     }
 
+    func testMediaInfoAddsLengthAndPages() {
+        let info = ClipboardMediaInfo(duration: 222, pageCount: 12)
+        let video = ClipboardTestSupport.entry(.video, date: now, byteSize: 1024, sourceAppName: "HapiGo")
+        XCTAssertEqual(
+            ClipboardEntryFormatter.details(for: video, info: ClipboardMediaInfo(duration: 17), now: now),
+            [L("clipboard.kind.video"), "0:17", ByteCountFormatter.string(fromByteCount: 1024, countStyle: .file),
+             "HapiGo", L("clipboard.time.justNow")]
+        )
+        let audio = ClipboardTestSupport.entry(.audio, date: now)
+        XCTAssertEqual(Array(ClipboardEntryFormatter.details(for: audio, info: info, now: now).prefix(2)),
+                       [L("clipboard.kind.audio"), "3:42"])
+        let pdf = ClipboardTestSupport.entry(.pdf, date: now)
+        XCTAssertEqual(Array(ClipboardEntryFormatter.details(for: pdf, info: info, now: now).prefix(2)),
+                       ["PDF", L("clipboard.preview.pages", 12)])
+        // Facts that don't apply to a kind are ignored.
+        let text = ClipboardTestSupport.entry(.text, date: now, text: "hi")
+        XCTAssertEqual(ClipboardEntryFormatter.details(for: text, info: info, now: now), details(text))
+    }
+
+    func testDurationFormatting() {
+        XCTAssertEqual(ClipboardEntryFormatter.duration(0), "0:00")
+        XCTAssertEqual(ClipboardEntryFormatter.duration(16.6), "0:17")
+        XCTAssertEqual(ClipboardEntryFormatter.duration(222), "3:42")
+        XCTAssertEqual(ClipboardEntryFormatter.duration(3909), "1:05:09")
+        XCTAssertEqual(ClipboardEntryFormatter.duration(-4), "0:00")
+    }
+
     func testRelativeTime() {
         let recent = ClipboardEntryFormatter.relativeTime(from: now.addingTimeInterval(-30), to: now)
         XCTAssertEqual(recent, L("clipboard.time.justNow"))
