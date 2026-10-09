@@ -85,7 +85,7 @@ final class AuthStateProfileSessionTests: XCTestCase {
 
         async let result = fixture.state.refreshProfile()
         await fixture.refresh.waitForCalls(1)
-        fixture.refresh.resolveNext(with: .failure(AuthError.serverError(code: "AUTH_REFRESH_TOKEN_REUSED", message: nil)))
+        fixture.refresh.resolveNext(with: .failure(Self.reusedRefreshToken))
 
         let outcome = await result
         XCTAssertEqual(outcome, .unauthenticated)
@@ -242,7 +242,7 @@ final class AuthStateProfileSessionTests: XCTestCase {
         XCTAssertTrue(fixture.state.isLoggedIn)
 
         await fixture.login(token: "b1", refreshToken: "rb", profile: "user-b")
-        fixture.refresh.resolveNext(with: .failure(AuthError.serverError(code: "AUTH_REFRESH_TOKEN_REUSED", message: nil)))
+        fixture.refresh.resolveNext(with: .failure(Self.reusedRefreshToken))
         for _ in 0 ..< 50 { await Task.yield() }
 
         XCTAssertTrue(fixture.state.isLoggedIn)
@@ -257,6 +257,8 @@ final class AuthStateProfileSessionTests: XCTestCase {
     private static var now: Int {
         Int(Date().timeIntervalSince1970)
     }
+
+    private static let reusedRefreshToken = AuthError.serverError(code: "AUTH_REFRESH_TOKEN_REUSED", message: nil)
 
     private static func login(access: String, refresh: String?) -> LoginResponse {
         LoginResponse(accessToken: access, expiresAt: now + 900, refreshToken: refresh)

@@ -6,78 +6,56 @@ import XCTest
 /// under one sign-in is never submitted with another account's feedback.
 final class FeedbackUploadFlowTests: XCTestCase {
     func testTicketAndUploadShareOneCredential() async throws {
-        let recorder = TokenRecorder()
+        let session = UploadStubSession()
         let credential = TypefluxCloudSessionCredential(accessToken: "access-a", session: 3)
 
         let url = try await FeedbackUploadFlow.upload(
-            Self.image,
-            credential: credential,
-            createTarget: { _, token in
-                await recorder.record("ticket", token)
-                return Self.target
-            },
-            upload: { _, target, token in
-                XCTAssertEqual(target.uploadID, "upload-1")
-                await recorder.record("put", token)
-            }
+            Self.image, credential: credential, executor: Self.executor(session), session: session
         )
 
         XCTAssertEqual(url, "https://cdn.example/feedback/upload-1.png")
-        let calls = await recorder.calls
-        XCTAssertEqual(calls, ["ticket:access-a", "put:access-a"])
+        let requests = await session.requests
+        XCTAssertEqual(requests.map(\.path), ["/api/v1/feedback/uploads/presign", "/api/v1/feedback/uploads/upload-1"])
+        XCTAssertEqual(requests.map(\.authorization), ["Bearer access-a", "Bearer access-a"])
     }
 
     func testAnonymousUploadSendsNoToken() async throws {
-        let recorder = TokenRecorder()
+        let session = UploadStubSession()
 
         _ = try await FeedbackUploadFlow.upload(
-            Self.image,
-            credential: nil,
-            createTarget: { _, token in
-                await recorder.record("ticket", token)
-                return Self.target
-            },
-            upload: { _, _, token in await recorder.record("put", token) }
+            Self.image, credential: nil, executor: Self.executor(session), session: session
         )
 
-        let calls = await recorder.calls
-        XCTAssertEqual(calls, ["ticket:-", "put:-"])
+        let requests = await session.requests
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(requests.map(\.authorization), [nil, nil])
     }
 
     func testFailedTicketSkipsTheUpload() async {
-        let recorder = TokenRecorder()
+        let session = UploadStubSession(presignStatus: 401)
 
         do {
             _ = try await FeedbackUploadFlow.upload(
-                Self.image,
-                credential: nil,
-                createTarget: { _, _ in throw FeedbackAPIError.unauthorized },
-                upload: { _, _, token in await recorder.record("put", token) }
+                Self.image, credential: nil, executor: Self.executor(session), session: session
             )
             XCTFail("Expected the ticket failure")
         } catch {
             XCTAssertEqual(error as? FeedbackAPIError, .unauthorized)
         }
-        let calls = await recorder.calls
-        XCTAssertTrue(calls.isEmpty)
+        let requests = await session.requests
+        XCTAssertEqual(requests.map(\.path), ["/api/v1/feedback/uploads/presign"])
     }
 
     func testCancelledUploadReturnsNoImage() async {
-        let gate = Gate()
+        let session = UploadStubSession(holdPresign: true)
         let task = Task {
             try await FeedbackUploadFlow.upload(
-                Self.image,
-                credential: nil,
-                createTarget: { _, _ in
-                    await gate.wait()
-                    return Self.target
-                },
-                upload: { _, _, _ in XCTFail("A cancelled upload must not PUT") }
+                Self.image, credential: nil, executor: Self.executor(session), session: session
             )
         }
-        await gate.waitUntilEntered()
+        await session.waitUntilHolding()
         task.cancel()
-        await gate.open()
+        await session.release()
 
         do {
             _ = try await task.value
@@ -85,6 +63,8 @@ final class FeedbackUploadFlowTests: XCTestCase {
         } catch {
             XCTAssertTrue(error is CancellationError)
         }
+        let requests = await session.requests
+        XCTAssertEqual(requests.map(\.path), ["/api/v1/feedback/uploads/presign"], "a cancelled upload must not PUT")
     }
 
     func testSubmissionUsesImagesFromTheSameSignIn() throws {
@@ -100,14 +80,15 @@ final class FeedbackUploadFlowTests: XCTestCase {
     }
 
     func testSubmissionRefusesImagesFromAnotherSignIn() {
-        let stale = FeedbackImageAttachment(filename: "a.png", state: .uploaded("https://cdn/a"), uploadOwner: .session(3))
-        let anonymous = FeedbackImageAttachment(filename: "b.png", state: .uploaded("https://cdn/b"), uploadOwner: .anonymous)
-        let current = FeedbackImageAttachment(filename: "c.png", state: .uploaded("https://cdn/c"), uploadOwner: .session(4))
+        let stale = Self.uploaded("a", owner: .session(3))
+        let anonymous = Self.uploaded("b", owner: .anonymous)
+        let current = Self.uploaded("c", owner: .session(4))
 
         XCTAssertThrowsError(
             try FeedbackUploadFlow.submissionImageURLs(for: [stale, anonymous, current], submittingAs: .session(4))
         ) { error in
-            XCTAssertEqual(error as? FeedbackUploadOwnerError, FeedbackUploadOwnerError(staleImageIDs: [stale.id, anonymous.id]))
+            let expected = FeedbackUploadOwnerError(staleImageIDs: [stale.id, anonymous.id])
+            XCTAssertEqual(error as? FeedbackUploadOwnerError, expected)
             XCTAssertFalse(error.localizedDescription.isEmpty)
         }
         // After logout the account's image cannot go out anonymously either.
@@ -131,48 +112,77 @@ final class FeedbackUploadFlowTests: XCTestCase {
         thumbnail: NSImage(size: NSSize(width: 1, height: 1))
     )
 
-    private static let target = FeedbackUploadTarget(
-        type: FeedbackAPIService.apiProxyUploadType,
-        method: "PUT",
-        url: "/api/v1/feedback/uploads/upload-1",
-        bucket: "feedback",
-        region: "auto",
-        key: "feedback/upload-1.png",
-        expiresAt: 1_777_961_100,
-        maxSizeBytes: 5_242_880,
-        headers: ["Content-Type": "image/png"],
-        fields: [:],
-        imageURL: "https://cdn.example/feedback/upload-1.png",
-        uploadID: "upload-1",
-        issuingAPIBaseURL: URL(string: "https://api.example")
-    )
-}
+    private static func uploaded(_ name: String, owner: FeedbackUploadOwner) -> FeedbackImageAttachment {
+        FeedbackImageAttachment(filename: "\(name).png", state: .uploaded("https://cdn/\(name)"), uploadOwner: owner)
+    }
 
-private actor TokenRecorder {
-    private(set) var calls: [String] = []
-
-    func record(_ step: String, _ token: String?) {
-        calls.append("\(step):\(token ?? "-")")
+    private static func executor(_ session: UploadStubSession) -> CloudRequestExecutor {
+        CloudRequestExecutor(
+            selector: CloudEndpointSelector(
+                baseURLs: [URL(string: "https://api.example")!],
+                prober: UploadNoOpProber()
+            ),
+            session: session
+        )
     }
 }
 
-private actor Gate {
-    private var waiter: CheckedContinuation<Void, Never>?
-    private var entered = false
-
-    func wait() async {
-        entered = true
-        await withCheckedContinuation { waiter = $0 }
+/// Answers the presign request with a relative ticket and the PUT with 204,
+/// recording the path and authorization of each request.
+private actor UploadStubSession: CloudHTTPSession {
+    struct Request: Equatable {
+        let path: String
+        let authorization: String?
     }
 
-    func waitUntilEntered() async {
-        for _ in 0 ..< 10000 where !entered {
+    private let presignStatus: Int
+    private let holdPresign: Bool
+    private var held: CheckedContinuation<Void, Never>?
+    private var holding = false
+    private(set) var requests: [Request] = []
+
+    init(presignStatus: Int = 200, holdPresign: Bool = false) {
+        self.presignStatus = presignStatus
+        self.holdPresign = holdPresign
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let url = try XCTUnwrap(request.url)
+        requests.append(Request(path: url.path, authorization: request.value(forHTTPHeaderField: "Authorization")))
+        if url.path.hasSuffix("/presign") {
+            if holdPresign {
+                await withCheckedContinuation { continuation in
+                    held = continuation
+                    holding = true
+                }
+            }
+            let body = presignStatus == 200 ? Self.ticket : Data()
+            return (body, HTTPURLResponse(url: url, statusCode: presignStatus, httpVersion: nil, headerFields: nil)!)
+        }
+        return (Data(), HTTPURLResponse(url: url, statusCode: 204, httpVersion: nil, headerFields: nil)!)
+    }
+
+    func waitUntilHolding() async {
+        for _ in 0 ..< 10000 where !holding {
             await Task.yield()
         }
     }
 
-    func open() {
-        waiter?.resume()
-        waiter = nil
+    func release() {
+        held?.resume()
+        held = nil
+    }
+
+    private static let ticket = Data("""
+    {"code":"OK","data":{"type":"bounded_proxy_put","method":"PUT","url":"/api/v1/feedback/uploads/upload-1",\
+    "bucket":"feedback","region":"auto","key":"feedback/upload-1.png","expires_at":1777961100,\
+    "max_size_bytes":5242880,"headers":{"Content-Type":"image/png"},"fields":{},\
+    "image_url":"https://cdn.example/feedback/upload-1.png","upload_id":"upload-1"}}
+    """.utf8)
+}
+
+private struct UploadNoOpProber: CloudEndpointProbing {
+    func probe(baseURL _: URL, nonce _: String, timeout _: TimeInterval) async throws -> CloudEndpointProbeResult {
+        CloudEndpointProbeResult(latencyMs: 1, serverID: nil, serverVersion: nil, nonceMatches: true)
     }
 }

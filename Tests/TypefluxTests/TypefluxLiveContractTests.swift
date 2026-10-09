@@ -154,13 +154,21 @@ final class TypefluxLiveContractTests: XCTestCase {
             failure = error
         }
         state.logout(clearRecentInputMemory: false)
+        await restorePassword(from: changed)
+        if let failure { throw failure }
+    }
+
+    /// Changes the disposable account's password back, reporting a failure
+    /// instead of leaving later tests with an unknown password.
+    private func restorePassword(from changed: String) async {
         do {
-            let again = try await AuthAPIService.login(email: email, password: changed)
-            _ = try await AuthAPIService.changePassword(token: again.accessToken, oldPassword: changed, newPassword: password)
+            let login = try await AuthAPIService.login(email: email, password: changed)
+            _ = try await AuthAPIService.changePassword(
+                token: login.accessToken, oldPassword: changed, newPassword: password
+            )
         } catch {
             XCTFail("Could not restore the disposable account's password: \(error)")
         }
-        if let failure { throw failure }
     }
 
     // MARK: - ASR grants

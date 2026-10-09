@@ -86,7 +86,9 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
     func testRecordingWithoutCredentialDoesNotRequestAGrant() async throws {
         let routing = RecordingRoutingClient(servers: [serverA])
         let transport = ScriptedTransport(failures: [:])
-        let transcriber = makeTranscriber(routing: routing, transport: transport, credentials: CredentialSequence([nil]))
+        let transcriber = makeTranscriber(
+            routing: routing, transport: transport, credentials: CredentialSequence([nil])
+        )
 
         do {
             _ = try await transcriber.transcribeStream(
@@ -136,7 +138,8 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
             )
             XCTFail("Expected the stream failure")
         } catch let error as TypefluxOfficialASRError {
-            XCTAssertEqual(error.errorDescription, TypefluxOfficialASRError.serverError("PROVIDER_FAILED").errorDescription)
+            let expected = TypefluxOfficialASRError.serverError("PROVIDER_FAILED")
+            XCTAssertEqual(error.errorDescription, expected.errorDescription)
         }
 
         XCTAssertEqual(transport.attempts.map(\.baseURL), [serverA.absoluteString])
@@ -165,7 +168,53 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
         XCTAssertTrue(failures.isEmpty)
     }
 
-    // MARK: - Cancellation
+    func testDirectiveAfterAudioFallsBackWithoutBlamingTheEndpoint() async throws {
+        let routing = RecordingRoutingClient(servers: [serverA, serverB])
+        let transport = ScriptedTransport(failures: [serverA.absoluteString: .directiveAfterAudio])
+        let registry = RecordingRegistry()
+        let transcriber = makeTranscriber(routing: routing, transport: transport, registry: registry)
+
+        do {
+            _ = try await transcriber.transcribeStream(
+                audioFile: makeSilentAudioFile(), scenario: .voiceInput, optimize: true, onUpdate: { _ in }
+            )
+            XCTFail("Expected the local fallback directive")
+        } catch {
+            XCTAssertTrue(error is TypefluxCloudASRDirectiveError)
+        }
+        XCTAssertEqual(transport.attempts.count, 1)
+        let failures = await registry.failures
+        XCTAssertTrue(failures.isEmpty)
+    }
+
+    // MARK: - Helpers
+
+    private func makeTranscriber(
+        routing: RecordingRoutingClient,
+        transport: ScriptedTransport,
+        credentials: CredentialSequence = CredentialSequence([
+            TypefluxCloudSessionCredential(accessToken: "cloud-token", session: 1)
+        ]),
+        registry: RecordingRegistry = RecordingRegistry()
+    ) -> TypefluxOfficialTranscriber {
+        TypefluxOfficialTranscriber(
+            routingClient: routing,
+            transport: transport,
+            serverRegistry: registry,
+            credentialProvider: { await credentials.next() }
+        )
+    }
+
+    private func makeSilentAudioFile() throws -> AudioFile {
+        let url = try ASRTestAudio.writeSilentWAV()
+        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+        return AudioFile(fileURL: url, duration: 0.1)
+    }
+}
+
+// MARK: - Cancellation
+
+extension TypefluxOfficialASRAttemptBoundaryTests {
 
     func testCancellationWhileAReplacementGrantIsIssuedOpensNoSecondConnection() async throws {
         let routing = RecordingRoutingClient(servers: [serverA, serverB], parkFetch: 2)
@@ -175,7 +224,9 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
         let audio = try makeSilentAudioFile()
 
         let recording = Task {
-            try await transcriber.transcribeStream(audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in })
+            try await transcriber.transcribeStream(
+                audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
+            )
         }
         await routing.waitUntilParked()
         recording.cancel()
@@ -197,7 +248,9 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
         let audio = try makeSilentAudioFile()
 
         let recording = Task {
-            try await transcriber.transcribeStream(audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in })
+            try await transcriber.transcribeStream(
+                audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
+            )
         }
         await routing.waitUntilParked()
         recording.cancel()
@@ -247,69 +300,18 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
 
     func testReceiveFailureClassification() {
         let reset = NSError(domain: NSPOSIXErrorDomain, code: 54)
-        guard case .unexpectedClose? = TypefluxOfficialASRReceiveFailure.classify(reset) as? TypefluxOfficialASRError else {
+        let classified = TypefluxOfficialASRReceiveFailure.classify(reset) as? TypefluxOfficialASRError
+        guard case .unexpectedClose? = classified else {
             return XCTFail("A dropped connection must surface as an unexpected close")
         }
-        XCTAssertTrue(TypefluxOfficialASRReceiveFailure.classify(TypefluxCloudASRDirectiveError()) is TypefluxCloudASRDirectiveError)
+        let directive = TypefluxOfficialASRReceiveFailure.classify(TypefluxCloudASRDirectiveError())
+        XCTAssertTrue(directive is TypefluxCloudASRDirectiveError)
         let billing = TypefluxCloudBillingError(reason: .quotaExceeded, serverMessage: nil)
         XCTAssertTrue(TypefluxOfficialASRReceiveFailure.classify(billing) is TypefluxCloudBillingError)
     }
 
     func testSessionChangedHasADescription() {
         XCTAssertFalse(TypefluxOfficialASRError.sessionChanged.errorDescription?.isEmpty ?? true)
-    }
-
-    // MARK: - Helpers
-
-    private func makeTranscriber(
-        routing: RecordingRoutingClient,
-        transport: ScriptedTransport,
-        credentials: CredentialSequence = CredentialSequence([
-            TypefluxCloudSessionCredential(accessToken: "cloud-token", session: 1)
-        ]),
-        registry: RecordingRegistry = RecordingRegistry()
-    ) -> TypefluxOfficialTranscriber {
-        TypefluxOfficialTranscriber(
-            routingClient: routing,
-            transport: transport,
-            serverRegistry: registry,
-            credentialProvider: { await credentials.next() }
-        )
-    }
-
-    private func makeSilentAudioFile() throws -> AudioFile {
-        let url = try ASRTestAudio.writeSilentWAV()
-        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
-        return AudioFile(fileURL: url, duration: 0.1)
-    }
-}
-
-/// 100 ms of 16 kHz mono PCM16 silence as a WAV file.
-enum ASRTestAudio {
-    static func writeSilentWAV() throws -> URL {
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("typeflux-asr-boundary-\(UUID().uuidString).wav")
-        let dataByteCount = 3200
-        var data = Data()
-        func append(_ value: some FixedWidthInteger) {
-            var littleEndian = value.littleEndian
-            Swift.withUnsafeBytes(of: &littleEndian) { data.append(contentsOf: $0) }
-        }
-        data.append(contentsOf: "RIFF".utf8)
-        append(UInt32(36 + dataByteCount))
-        data.append(contentsOf: "WAVEfmt ".utf8)
-        append(UInt32(16))
-        append(UInt16(1))
-        append(UInt16(1))
-        append(UInt32(16000))
-        append(UInt32(32000))
-        append(UInt16(2))
-        append(UInt16(16))
-        data.append(contentsOf: "data".utf8)
-        append(UInt32(dataByteCount))
-        data.append(Data(count: dataByteCount))
-        try data.write(to: url)
-        return url
     }
 }
 
@@ -326,69 +328,6 @@ private actor CredentialSequence {
     }
 }
 
-/// Issues a distinct grant per fetch and records the access token used. One
-/// fetch can be parked until the test releases it.
-actor RecordingRoutingClient: TypefluxOfficialASRRoutingClient {
-    private let servers: [URL]
-    private let parkFetch: Int?
-    private(set) var accessTokens: [String] = []
-    private var parked: CheckedContinuation<Void, Never>?
-    private var parkedReached = false
-
-    init(servers: [URL], parkFetch: Int? = nil) {
-        self.servers = servers
-        self.parkFetch = parkFetch
-    }
-
-    func fetchRoute(
-        accessToken: String,
-        scenario _: TypefluxCloudScenario
-    ) async throws -> TypefluxOfficialASRRouteDecision {
-        accessTokens.append(accessToken)
-        let number = accessTokens.count
-        if number == parkFetch {
-            // Like a real request that ignores cancellation, the grant is
-            // still issued once released.
-            await withCheckedContinuation { continuation in
-                parked = continuation
-                parkedReached = true
-            }
-        }
-        return .webSocket(
-            token: "grant-\(number)",
-            tokenType: "Bearer",
-            expiresAt: nil,
-            expiresInSeconds: 300,
-            serverBaseURLs: servers
-        )
-    }
-
-    func waitUntilParked() async {
-        for _ in 0 ..< 10000 where !parkedReached {
-            await Task.yield()
-        }
-    }
-
-    func releaseParked() {
-        parked?.resume()
-        parked = nil
-    }
-}
-
-actor RecordingRegistry: TypefluxASRServerProviding {
-    private(set) var failures: [URL] = []
-
-    func refreshPublicConfig() async {}
-
-    func orderedServers(preferred: [URL]) async -> [URL] {
-        preferred
-    }
-
-    func reportFailure(_ url: URL, error _: Error) async {
-        failures.append(url)
-    }
-}
-
 /// A transport whose attempts fail in a scripted way per endpoint.
 private final class ScriptedTransport: TypefluxOfficialASRTransport, @unchecked Sendable {
     enum Failure {
@@ -398,6 +337,8 @@ private final class ScriptedTransport: TypefluxOfficialASRTransport, @unchecked 
         case afterAudio
         /// The endpoint stops the recording for billing after audio.
         case billingAfterAudio
+        /// The endpoint asks for local fallback after audio.
+        case directiveAfterAudio
         /// URL loading reports the task as cancelled.
         case urlCancelled
     }
@@ -429,11 +370,15 @@ private final class ScriptedTransport: TypefluxOfficialASRTransport, @unchecked 
         case .handshake:
             throw TypefluxOfficialASRError.connectionFailed("ASR_GRANT_REJECTED")
         case .afterAudio:
-            throw TypefluxOfficialASRAdmittedStreamError(underlying: TypefluxOfficialASRError.serverError("PROVIDER_FAILED"))
+            throw TypefluxOfficialASRAdmittedStreamError(
+                underlying: TypefluxOfficialASRError.serverError("PROVIDER_FAILED")
+            )
         case .billingAfterAudio:
             throw TypefluxOfficialASRAdmittedStreamError(
-                underlying: TypefluxCloudBillingError.fromMessage("INSUFFICIENT_CREDITS") ?? TypefluxOfficialASRError.unexpectedClose
+                underlying: TypefluxCloudBillingError(reason: .quotaExceeded, serverMessage: nil)
             )
+        case .directiveAfterAudio:
+            throw TypefluxOfficialASRAdmittedStreamError(underlying: TypefluxCloudASRDirectiveError())
         case .urlCancelled:
             throw URLError(.cancelled)
         case nil:

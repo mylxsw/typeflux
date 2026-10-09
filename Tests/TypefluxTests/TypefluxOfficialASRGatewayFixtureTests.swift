@@ -22,7 +22,8 @@ final class TypefluxOfficialASRGatewayFixtureTests: XCTestCase {
             )
             XCTFail("Expected the gateway error")
         } catch let error as TypefluxOfficialASRError {
-            XCTAssertEqual(error.errorDescription, TypefluxOfficialASRError.serverError("PROVIDER_FAILED").errorDescription)
+            let expected = TypefluxOfficialASRError.serverError("PROVIDER_FAILED")
+            XCTAssertEqual(error.errorDescription, expected.errorDescription)
         }
 
         let texts = await updates.texts
@@ -44,7 +45,8 @@ final class TypefluxOfficialASRGatewayFixtureTests: XCTestCase {
             )
             XCTFail(
                 "Expected the closed connection to fail the recording; got \"\(text)\", " +
-                    "A connections=\(gatewayA.connectionCount) audio=\(gatewayA.audioBytes) stop=\(gatewayA.receivedStop) " +
+                    "A connections=\(gatewayA.connectionCount) audio=\(gatewayA.audioBytes) " +
+                    "stop=\(gatewayA.receivedStop) " +
                     "B connections=\(gatewayB.connectionCount)"
             )
         } catch is CancellationError {
@@ -82,6 +84,48 @@ final class TypefluxOfficialASRGatewayFixtureTests: XCTestCase {
         XCTAssertEqual(gatewayB.connectionCount, 0)
     }
 
+    func testBillingStopBeforeAudioIsReportedWithoutFailover() async throws {
+        let (gatewayA, gatewayB) = try await startGateways(a: .billingStopOnStart)
+        let routing = RecordingRoutingClient(servers: [gatewayA.baseURL, gatewayB.baseURL])
+        let registry = RecordingRegistry()
+
+        do {
+            _ = try await makeTranscriber(routing: routing, registry: registry).transcribeStream(
+                audioFile: makeSilentAudioFile(), scenario: .voiceInput, optimize: true, onUpdate: { _ in }
+            )
+            XCTFail("Expected the billing stop")
+        } catch {
+            XCTAssertNotNil(TypefluxCloudBillingError.fromError(error), "\(error)")
+        }
+        XCTAssertEqual(gatewayB.connectionCount, 0)
+        let failures = await registry.failures
+        XCTAssertTrue(failures.isEmpty)
+    }
+
+    func testLLMBillingStopAfterTranscriptKeepsTheTranscriptWithoutFailover() async throws {
+        let (gatewayA, gatewayB) = try await startGateways(a: .transcriptThenBillingStop)
+        let routing = RecordingRoutingClient(servers: [gatewayA.baseURL, gatewayB.baseURL])
+        let registry = RecordingRegistry()
+
+        do {
+            _ = try await makeTranscriber(routing: routing, registry: registry).transcribeStreamWithLLMRewrite(
+                audioFile: makeSilentAudioFile(),
+                llmConfig: ASRLLMConfig(systemPrompt: "system", userPromptTemplate: "{{transcript}}"),
+                scenario: .voiceInput,
+                onASRUpdate: { _ in },
+                onLLMStart: {},
+                onLLMChunk: { _ in }
+            )
+            XCTFail("Expected the billing stop")
+        } catch let error as TypefluxCloudIntegratedRewriteError {
+            XCTAssertEqual(error.transcript, "hello")
+            XCTAssertNotNil(TypefluxCloudBillingError.fromError(error.underlyingError))
+        }
+        XCTAssertEqual(gatewayB.connectionCount, 0)
+        let failures = await registry.failures
+        XCTAssertTrue(failures.isEmpty)
+    }
+
     // MARK: - Before audio: failover with a new grant
 
     func testHandshakeFailureFailsOverWithAFreshGrant() async throws {
@@ -112,7 +156,9 @@ final class TypefluxOfficialASRGatewayFixtureTests: XCTestCase {
         let audio = try makeSilentAudioFile()
 
         let recording = Task {
-            try await transcriber.transcribeStream(audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in })
+            try await transcriber.transcribeStream(
+                audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
+            )
         }
         try await waitUntil("gateway A received the stop message") { gatewayA.receivedStop }
         recording.cancel()
@@ -137,7 +183,9 @@ final class TypefluxOfficialASRGatewayFixtureTests: XCTestCase {
         let audio = try makeSilentAudioFile()
 
         let recording = Task {
-            try await transcriber.transcribeStream(audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in })
+            try await transcriber.transcribeStream(
+                audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
+            )
         }
         try await waitUntil("gateway A accepted the TCP connection") { gatewayA.connectionCount == 1 }
         recording.cancel()
@@ -155,7 +203,9 @@ final class TypefluxOfficialASRGatewayFixtureTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func startGateways(a behavior: LocalASRGateway.Behavior) async throws -> (LocalASRGateway, LocalASRGateway) {
+    private func startGateways(
+        a behavior: LocalASRGateway.Behavior
+    ) async throws -> (LocalASRGateway, LocalASRGateway) {
         let gatewayA = try await LocalASRGateway.start(behavior: behavior)
         let gatewayB = try await LocalASRGateway.start(behavior: .succeed("ok"))
         addTeardownBlock {
@@ -199,219 +249,5 @@ private actor UpdateRecorder {
 
     func record(_ text: String) {
         texts.append(text)
-    }
-}
-
-/// A WebSocket ASR gateway on 127.0.0.1 with scripted behavior.
-final class LocalASRGateway: @unchecked Sendable {
-    enum Behavior {
-        /// Answers the stop message with a final transcript.
-        case succeed(String)
-        /// Sends a partial result for the first audio, then an error.
-        case partialThenError
-        /// Closes the connection when audio arrives, without any output.
-        case closeOnAudio
-        /// Sends a transcript and part of an LLM rewrite, then an error.
-        case llmThenError
-        /// Accepts the session and never answers.
-        case hold
-        /// Accepts TCP connections and closes them before the upgrade.
-        case rejectConnection
-        /// Accepts TCP connections and never answers the upgrade.
-        case silentTCP
-    }
-
-    private let behavior: Behavior
-    private let listener: NWListener
-    private let queue: DispatchQueue
-    private let lock = NSLock()
-    private var connections: [NWConnection] = []
-    private var state = (connections: 0, disconnects: 0, audioBytes: 0, stop: false)
-    private let authorizationLog: AuthorizationLog
-
-    var baseURL: URL {
-        URL(string: "http://127.0.0.1:\(listener.port?.rawValue ?? 0)")!
-    }
-
-    var connectionCount: Int { locked { state.connections } }
-    var disconnectCount: Int { locked { state.disconnects } }
-    var audioBytes: Int { locked { state.audioBytes } }
-    var receivedStop: Bool { locked { state.stop } }
-    var authorizations: [String] { authorizationLog.values }
-
-    private init(behavior: Behavior) throws {
-        self.behavior = behavior
-        let queue = DispatchQueue(label: "LocalASRGateway")
-        let authorizationLog = AuthorizationLog()
-        self.queue = queue
-        self.authorizationLog = authorizationLog
-        let parameters = NWParameters.tcp
-        switch behavior {
-        case .rejectConnection, .silentTCP:
-            break
-        default:
-            let webSocket = NWProtocolWebSocket.Options()
-            webSocket.autoReplyPing = true
-            webSocket.setClientRequestHandler(queue) { _, headers in
-                authorizationLog.append(headers.first { $0.name.lowercased() == "authorization" }?.value ?? "")
-                return NWProtocolWebSocket.Response(status: .accept, subprotocol: nil)
-            }
-            parameters.defaultProtocolStack.applicationProtocols.insert(webSocket, at: 0)
-        }
-        parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
-        listener = try NWListener(using: parameters)
-    }
-
-    static func start(behavior: Behavior) async throws -> LocalASRGateway {
-        let gateway = try LocalASRGateway(behavior: behavior)
-        try await gateway.listen()
-        return gateway
-    }
-
-    func stop() {
-        listener.cancel()
-        locked { connections }.forEach { $0.cancel() }
-    }
-
-    private func listen() async throws {
-        if case .rejectConnection = behavior {
-            listener.newConnectionHandler = { [weak self] connection in
-                self?.locked { self?.state.connections += 1 }
-                connection.cancel()
-            }
-        } else {
-            listener.newConnectionHandler = { [weak self] connection in
-                self?.accept(connection)
-            }
-        }
-        let resumed = ResumeOnce()
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            listener.stateUpdateHandler = { state in
-                switch state {
-                case .ready:
-                    if resumed.claim() { continuation.resume() }
-                case let .failed(error):
-                    if resumed.claim() { continuation.resume(throwing: error) }
-                default:
-                    break
-                }
-            }
-            listener.start(queue: queue)
-        }
-    }
-
-    private func accept(_ connection: NWConnection) {
-        locked {
-            state.connections += 1
-            connections.append(connection)
-        }
-        connection.stateUpdateHandler = { [weak self] state in
-            switch state {
-            case .cancelled, .failed:
-                self?.locked { self?.state.disconnects += 1 }
-            default:
-                break
-            }
-        }
-        connection.start(queue: queue)
-        if case .silentTCP = behavior { return }
-        receive(on: connection)
-    }
-
-    private func receive(on connection: NWConnection) {
-        connection.receiveMessage { [weak self] data, context, _, error in
-            guard let self else { return }
-            let metadata = context?.protocolMetadata(definition: NWProtocolWebSocket.definition)
-                as? NWProtocolWebSocket.Metadata
-            if error != nil || metadata?.opcode == .close {
-                connection.cancel()
-                return
-            }
-            if metadata?.opcode == .binary {
-                handleAudio(data ?? Data(), on: connection)
-            } else if let data, let text = String(data: data, encoding: .utf8) {
-                handleText(text, on: connection)
-            }
-            receive(on: connection)
-        }
-    }
-
-    private func handleAudio(_ data: Data, on connection: NWConnection) {
-        let first = locked { () -> Bool in
-            let first = state.audioBytes == 0
-            state.audioBytes += data.count
-            return first
-        }
-        guard first else { return }
-        switch behavior {
-        case .partialThenError:
-            send(["type": "partial", "text": "hello"], on: connection)
-            send(["type": "error", "code": "PROVIDER_FAILED", "error": "provider failed"], on: connection)
-        case .closeOnAudio:
-            connection.cancel()
-        default:
-            break
-        }
-    }
-
-    private func handleText(_ text: String, on connection: NWConnection) {
-        guard text.contains("\"stop\"") else { return }
-        locked { state.stop = true }
-        switch behavior {
-        case let .succeed(transcript):
-            send(["type": "final", "text": transcript], on: connection)
-            send(["type": "event", "text": "completed"], on: connection)
-        case .llmThenError:
-            send(["type": "final", "text": "hello"], on: connection)
-            send(["type": "event", "text": "completed"], on: connection)
-            send(["type": "llm_start"], on: connection)
-            send(["type": "llm_chunk", "text": "Hel"], on: connection)
-            send(["type": "error", "code": "LLM_FAILED", "error": "llm failed"], on: connection)
-        default:
-            break
-        }
-    }
-
-    private func send(_ message: [String: String], on connection: NWConnection) {
-        let data = try? JSONSerialization.data(withJSONObject: message)
-        let metadata = NWProtocolWebSocket.Metadata(opcode: .text)
-        let context = NWConnection.ContentContext(identifier: "message", metadata: [metadata])
-        connection.send(content: data, contentContext: context, isComplete: true, completion: .contentProcessed { _ in })
-    }
-
-    private func locked<T>(_ body: () -> T) -> T {
-        lock.lock()
-        defer { lock.unlock() }
-        return body()
-    }
-}
-
-private final class AuthorizationLog: @unchecked Sendable {
-    private let lock = NSLock()
-    private var recorded: [String] = []
-
-    var values: [String] {
-        lock.lock()
-        defer { lock.unlock() }
-        return recorded
-    }
-
-    func append(_ value: String) {
-        lock.lock()
-        recorded.append(value)
-        lock.unlock()
-    }
-}
-
-private final class ResumeOnce: @unchecked Sendable {
-    private let lock = NSLock()
-    private var done = false
-
-    func claim() -> Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        guard !done else { return false }
-        done = true
-        return true
     }
 }
