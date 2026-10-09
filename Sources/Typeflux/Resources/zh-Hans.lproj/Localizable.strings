@@ -3812,3 +3812,8 @@
 "account.addon.title" = "加购额度";
 "account.addon.nextExpiry" = "最近到期：%@ credits，%@";
 "account.addon.expiringSoon" = "%@ credits 将于 %@ 到期，请在此之前用完。";
+
+"ask.submission.models" = "设置 → 模型";
+"ask.usage.empty" = "还没有用量";
+"ask.usage.emptyHelp" = "发送消息后，用量会显示在这里。";
+"ask.submission.signIn" = "登录 Typeflux Cloud";

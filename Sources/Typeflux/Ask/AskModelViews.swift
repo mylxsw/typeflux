@@ -64,6 +64,7 @@ struct AskModelMenu: View {
                 // footer, and a short one hugs its text instead of padding out to the cap.
                 AskCappedWidth(maxWidth: condensed ? 84 : compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
                     Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
+                        .foregroundStyle(currentReason == nil ? StudioTheme.textPrimary : StudioTheme.warning)
                 }
                 if let shownEffort, !condensed {
                     Text(shownEffort.label)

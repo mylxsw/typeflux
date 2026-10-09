@@ -661,7 +661,7 @@ struct AskComposer: View {
     /// send errors in the transcript, next to the answer they belong to.
     private var notices: [AskComposerNotice] {
         AskComposerNotice.resolve(
-            sendError: launcher ? model.error : nil,
+            sendError: launcher && model.submissionIssues[launcher] == nil ? model.error : nil,
             voiceError: voice.error,
             attachment: model.attachmentNotice(launcher: launcher),
             screenshot: launcher ? model.launcherScreenshotNotice : model.screenshotNotice
@@ -718,6 +718,7 @@ struct AskComposer: View {
             }
             .onChange(of: draft.wrappedValue.sentSelection) { _ in if launcher, plugins.isActive { refreshQuickResults() } }
             .onChange(of: noticeRows) { _ in reportHeight() }
+            .onChange(of: submissionIssue) { _ in reportHeight() }
             .onChange(of: showsStrip) { _ in reportHeight() }
             .onChange(of: attachmentHeight) { _ in reportHeight() }
             .onPreferenceChange(AskCapturedStripHeight.self) { height in
@@ -832,13 +833,21 @@ struct AskComposer: View {
         }
     }
 
+    private var submissionIssue: AskSubmissionIssue? { model.submissionIssues[launcher] }
+
     private var hasSupplementalContent: Bool {
-        !notices.isEmpty || (!launcher && !model.queuedMessages.isEmpty) || editingQueued
+        submissionIssue != nil || !notices.isEmpty || (!launcher && !model.queuedMessages.isEmpty) || editingQueued
             || !(draft.wrappedValue.references ?? []).isEmpty || showsStrip
     }
 
     private var supplementalContent: some View {
         VStack(spacing: 0) {
+            if let issue = submissionIssue {
+                AskSubmissionIssueView(issue: issue, onModels: { model.onOpenSettings?(.models) },
+                                       onSignIn: model.onSignIn)
+                    .padding(.top, AskMetrics.bannerSpacing)
+                    .padding(.horizontal, AskMetrics.composerNoticeInset)
+            }
             if !notices.isEmpty {
                 AskComposerNoticeStack(notices: notices, expanded: $noticesExpanded, dismiss: dismiss)
             }
@@ -1606,7 +1615,7 @@ struct AskComposer: View {
 
     private func reportHeight() {
         // Confirmations ride in the footer, so only notice rows add height.
-        let banners = noticeRows
+        let banners = noticeRows + (submissionIssue.map { $0.offersModels || $0.offersSignIn ? 3 : 1 } ?? 0)
         let commands = launcher && paletteOpen ? AskCommandPaletteView.height(for: palette) + 10 : 0
         // Recording shows its panel in the results' place, at least as tall as they were.
         let recording = launcher && active

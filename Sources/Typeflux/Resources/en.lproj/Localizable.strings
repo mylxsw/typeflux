@@ -3812,3 +3812,8 @@
 "account.addon.title" = "Add-on credits";
 "account.addon.nextExpiry" = "Next expiry: %@ credits on %@";
 "account.addon.expiringSoon" = "%@ credits expire on %@. Use them before then.";
+
+"ask.submission.models" = "Settings → Models";
+"ask.usage.empty" = "No usage yet";
+"ask.usage.emptyHelp" = "Usage will appear after you send a message.";
+"ask.submission.signIn" = "Sign in to Typeflux Cloud";
