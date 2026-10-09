@@ -99,6 +99,7 @@ struct AskConversationView: View {
                 if let id = deleteId { Task { await model.delete(id) } }
                 deleteId = nil
             }
+            Button(L("common.cancel"), role: .cancel) { deleteId = nil }
         }
     }
 

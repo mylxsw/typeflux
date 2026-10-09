@@ -1933,7 +1933,7 @@
 "ask.local.modelFailed" = "模型請求失敗，請檢查模型設定後重試。";
 "ask.local.badSummary" = "模型回傳的摘要無效，請重試。";
 "ask.local.regenerateLatest" = "只能重新產生最新的回覆。";
-"ask.local.modelRequired" = "不使用 Typeflux Cloud 時，請選擇你自己設定的模型。可在 設定 → 模型 中加入。";
+"ask.local.modelRequired" = "不使用 Typeflux Cloud 時，請選擇你自己設定的模型。";
 "ask.local.conflict" = "對話已變更，請重新整理後重試。";
 "ask.local.stepLimit" = "已達到 Agent 步數上限。";
 "ask.local.truncated" = "回答達到輸出上限被截斷，請重試或請模型繼續。";
@@ -2561,19 +2561,19 @@
 "ask.plugin.source.device" = "本機";
 "ask.plugin.askAI.selection" = "%@選取的文字";
 "ask.plugin.writeBack.failed" = "無法寫回原 App，結果已拷貝到剪貼簿";
-"ask.plugin.hint.keyword" = "↩ 傳送 · ⇥ 進入關鍵字";
-"ask.plugin.hint.keyword.enter" = "↩ 進入關鍵字 · ⌘↩ 問 AI";
+"ask.plugin.hint.keyword" = "↩ 傳送 · ⇥ 進入關鍵詞";
+"ask.plugin.hint.keyword.enter" = "↩ 進入關鍵詞 · ⌘↩ 問 AI";
 "ask.plugin.hint.ready" = "↩ 執行";
 "ask.plugin.hint.running" = "esc 取消";
 "ask.plugin.hint.done" = "↩ %@ · ⌥↩ %@";
 "ask.plugin.hint.failed" = "↩ 重試";
-"ask.plugin.section" = "關鍵字";
+"ask.plugin.section" = "關鍵詞";
 "ask.plugin.waiting" = "輸入要處理的內容";
 "ask.plugin.enter" = "空白鍵或 ⇥ 進入";
 "ask.plugin.enter.return" = "↩ 進入";
 "ask.plugin.running" = "處理中…";
 "ask.workflow.section" = "工作流程";
-"ask.workflow.footnote" = "用關鍵字觸發你自己的腳本：Python、Node、TypeScript、Shell、AppleScript 或任何程式。它們以你的身分執行，只信任你了解的工作流程。";
+"ask.workflow.footnote" = "用關鍵詞觸發你自己的腳本：Python、Node、TypeScript、Shell、AppleScript 或任何程式。它們以你的身分執行，只信任你了解的工作流程。";
 "ask.workflow.empty" = "還沒有工作流程，可以從範本新增一個。";
 "ask.workflow.new" = "新增工作流程";
 "ask.workflow.revealFolder" = "打開資料夾";
@@ -2589,7 +2589,7 @@
 "ask.workflow.status.modified" = "檔案已修改，需重新確認";
 "ask.workflow.status.invalid" = "清單有誤";
 "ask.workflow.status.disabled" = "已停用";
-"ask.workflow.conflicts" = "關鍵字已被使用，已忽略：%@";
+"ask.workflow.conflicts" = "關鍵詞已被使用，已忽略：%@";
 "ask.workflow.lastRun" = "上次執行：結束碼 %d · %.1f 秒";
 "ask.workflow.lastRun.timedOut" = "上次執行逾時（%.1f 秒）";
 "ask.workflow.template.pythonText" = "Python · 輸出文字";
@@ -2620,7 +2620,7 @@
 "ask.workflow.problem.schema" = "不支援的 schema 版本 %d";
 "ask.workflow.problem.id" = "只能用字母、數字、點、連字號和底線";
 "ask.workflow.problem.name" = "請填寫工作流程名稱";
-"ask.workflow.problem.noKeywords" = "至少需要一個關鍵字";
+"ask.workflow.problem.noKeywords" = "至少需要一個關鍵詞";
 "ask.workflow.problem.live" = "邊打邊出將在下個版本支援，目前請用 onSubmit";
 "ask.workflow.problem.noScript" = "請設定 command.script（zsh 和 bash 也可以用 command.inline）";
 "ask.workflow.problem.scriptAndInline" = "command.script 和 command.inline 只能選一個";
@@ -2636,7 +2636,7 @@
 "ask.workflow.trust.title" = "要信任工作流程「%@」嗎？";
 "ask.workflow.trust.modifiedTitle" = "「%@」的檔案被修改過，要信任現在的版本嗎？";
 "ask.workflow.trust.warning" = "工作流程會以你的身分在這台 Mac 上執行程式碼，可以讀寫你能存取的檔案和網路。只信任你了解來源的工作流程。";
-"ask.workflow.trust.keywords" = "關鍵字";
+"ask.workflow.trust.keywords" = "關鍵詞";
 "ask.workflow.trust.command" = "執行";
 "ask.workflow.trust.selection" = "選取的文字";
 "ask.workflow.trust.files" = "檔案";
@@ -2665,7 +2665,7 @@
 "ask.settings.keywords.sheet.action" = "動作";
 "ask.settings.keywords.sheet.action.translate" = "翻譯";
 "ask.settings.keywords.sheet.action.wordBook" = "打開單字本";
-"ask.settings.keywords.sheet.action.wordBookHint" = "輸入「關鍵字 單字」會打開單字本並查詢；只輸入關鍵字則打開單字本。";
+"ask.settings.keywords.sheet.action.wordBookHint" = "輸入「關鍵詞 單字」會打開單字本並查詢；只輸入關鍵詞則打開單字本。";
 "ask.wordBook.shelf.all" = "全部";
 "ask.wordBook.shelf.starred" = "收藏";
 "ask.wordBook.shelf.today" = "今天";
@@ -2776,7 +2776,7 @@
 "ask.plugin.prompt.placeholder.selection" = "要處理的內容 · 留空處理選取的 %d 行";
 "ask.plugin.prompt.selection" = "%1$@選取的 %2$d 行";
 "ask.plugin.prompt.noModel" = "先在「設定 → 模型」中設定文字處理模型，才能使用 AI 指令";
-"ask.plugin.prompt.noPrompt" = "這個關鍵字還沒有提示詞，請到「設定 → 啟動器 → 啟動器關鍵字」中填寫";
+"ask.plugin.prompt.noPrompt" = "這個關鍵詞還沒有提示詞，請到「設定 → 啟動器 → 啟動器關鍵詞」中填寫";
 "ask.plugin.prompt.empty" = "模型沒有回傳內容";
 "ask.plugin.prompt.askAI" = "我用「%1$@」處理了一段文字，幫我把結果改得更好。\n\n原文：\n%2$@\n\n結果：\n%3$@";
 "ask.plugin.web.title" = "網頁搜尋";
@@ -2795,24 +2795,24 @@
 "ask.settings.plugins.web.problem.url" = "請使用 http 或 https 網址";
 "ask.settings.keywords.name" = "名稱";
 "ask.settings.keywords.save" = "儲存";
-"ask.settings.keywords.restore" = "恢復預設關鍵字";
+"ask.settings.keywords.restore" = "恢復預設關鍵詞";
 "ask.command.group.plugins" = "外掛";
-"ask.settings.plugins.title" = "關鍵字";
-"ask.settings.plugins.footnote" = "在啟動器開頭輸入關鍵字和空白，例如「fy hello」。關鍵字後面沒有內容時，按 ↩ 處理選取的文字。";
+"ask.settings.plugins.title" = "關鍵詞";
+"ask.settings.plugins.footnote" = "在啟動器開頭輸入關鍵詞和空白，例如「fy hello」。關鍵詞後面沒有內容時，按 ↩ 處理選取的文字。";
 "ask.settings.plugins.translate.subtitle" = "優先本機翻譯；需要時用「設定 → 模型」中的文字處理模型";
 "ask.settings.plugins.translate.second" = "第二語言";
 "ask.settings.plugins.translate.secondSubtitle" = "內容已是介面語言時，譯成這種語言";
 "ask.settings.plugins.translate.auto" = "自動判斷方向";
 "ask.settings.plugins.translate.into" = "譯成%@";
 "ask.settings.plugins.translate.target" = "目標語言";
-"ask.settings.keywords.add" = "新增關鍵字";
-"ask.settings.keywords.keyword" = "關鍵字";
+"ask.settings.keywords.add" = "新增關鍵詞";
+"ask.settings.keywords.keyword" = "關鍵詞";
 "ask.settings.keywords.enabled" = "啟用";
-"ask.settings.keywords.problem.empty" = "請輸入關鍵字";
+"ask.settings.keywords.problem.empty" = "請輸入關鍵詞";
 "ask.settings.keywords.problem.tooLong" = "最多 %d 個字元";
 "ask.settings.keywords.problem.whitespace" = "不能包含空白或冒號";
-"ask.settings.keywords.problem.slash" = "關鍵字不能以 / 開頭";
-"ask.settings.keywords.problem.duplicate" = "已有同名關鍵字";
+"ask.settings.keywords.problem.slash" = "關鍵詞不能以 / 開頭";
+"ask.settings.keywords.problem.duplicate" = "已有同名關鍵詞";
 
 /* Workflow editor and assistant (GUL-222) */
 "ask.workflow.action.edit" = "編輯工作流程";
@@ -2839,7 +2839,7 @@
 "ask.workflow.assistant.fix.prompt" = "用「%1$@」試跑失敗了（結束碼 %2$d）。找出原因並修復。";
 "ask.workflow.assistant.fix.location" = "錯誤指向 %1$@ 第 %2$d 行。";
 "ask.workflow.assistant.fix.launcher" = "這個工作流程在啟動器裡處理「%1$@」時出錯了。找出原因並修復。\n\n%2$@";
-"ask.workflow.assistant.generate.prompt" = "幫我做這個工作流程：%1$@\n\n關鍵字用「%2$@」，id 保持「%3$@」。先檢查本機環境，再提交清單和腳本，並試跑。";
+"ask.workflow.assistant.generate.prompt" = "幫我做這個工作流程：%1$@\n\n關鍵詞用「%2$@」，id 保持「%3$@」。先檢查本機環境，再提交清單和腳本，並試跑。";
 "ask.workflow.assistant.generate.runtime" = "\n用 %@ 寫。";
 "ask.workflow.assistant.interrupted" = "助手被中斷了，請再傳一次。";
 "ask.workflow.assistant.noModel" = "沒有可用的模型：請登入 Typeflux Cloud，或在「設定 → 模型」裡新增模型。";
@@ -2853,8 +2853,8 @@
 "ask.workflow.assistant.problem.tooLarge" = "%@ 超過 256 KB。";
 "ask.workflow.assistant.problem.tooManyFiles" = "一個提案最多改 %d 個檔案。";
 "ask.workflow.assistant.tool.environment" = "檢查了本機環境";
-"ask.workflow.assistant.tool.keywordFree" = "關鍵字 %@ 可用";
-"ask.workflow.assistant.tool.keywordTaken" = "關鍵字 %@ 已被佔用";
+"ask.workflow.assistant.tool.keywordFree" = "關鍵詞 %@ 可用";
+"ask.workflow.assistant.tool.keywordTaken" = "關鍵詞 %@ 已被佔用";
 "ask.workflow.assistant.tool.limit" = "這則訊息的工具呼叫已達上限";
 "ask.workflow.assistant.tool.proposeFailed" = "提案有問題，正在修改";
 "ask.workflow.assistant.tool.read" = "讀取了 %@";
@@ -2875,7 +2875,7 @@
 "ask.workflow.editor.new.ai" = "用 AI 產生";
 "ask.workflow.editor.new.template" = "從範本";
 "ask.workflow.editor.duplicate" = "複製工作流程…";
-"ask.workflow.editor.new.duplicateHint" = "複製「%@」，使用新的 id 和關鍵字。";
+"ask.workflow.editor.new.duplicateHint" = "複製「%@」，使用新的 id 和關鍵詞。";
 "ask.workflow.editor.new.copySuffix" = "副本";
 "ask.workflow.editor.new.aiPlaceholder" = "說說它做什麼，例如「輸入 fx 100 usd jpy 時，查即時匯率換算」。";
 "ask.workflow.editor.new.examples" = "試試：";
@@ -2928,17 +2928,17 @@
 "ask.workflow.editor.noScript" = "這個工作流程沒有腳本檔案。";
 "ask.workflow.editor.form" = "表單";
 "ask.workflow.editor.format" = "格式化";
-"ask.workflow.editor.step.keywords" = "關鍵字";
+"ask.workflow.editor.step.keywords" = "關鍵詞";
 "ask.workflow.editor.step.input" = "輸入";
 "ask.workflow.editor.step.script" = "腳本";
 "ask.workflow.editor.step.output" = "輸出";
-"ask.workflow.editor.keywords.hint" = "在啟動器裡輸入關鍵字加空格就會進入這個工作流程。每個關鍵字可以有自己的入口腳本，不選時用預設入口。預設參數在腳本裡用 {option:名稱} 或 TYPEFLUX_OPTION_名稱 讀取。";
+"ask.workflow.editor.keywords.hint" = "在啟動器裡輸入關鍵詞加空格就會進入這個工作流程。每個關鍵詞可以有自己的入口腳本，不選時用預設入口。預設參數在腳本裡用 {option:名稱} 或 TYPEFLUX_OPTION_名稱 讀取。";
 "ask.workflow.editor.keywords.title" = "顯示名稱";
 "ask.workflow.editor.keywords.titlePlaceholder" = "使用工作流程名稱";
 "ask.workflow.editor.keywords.options" = "預設參數（名稱=值）";
-"ask.workflow.editor.keywords.add" = "新增關鍵字";
-"ask.workflow.editor.argument" = "關鍵字後面的內容";
-"ask.workflow.editor.argument.hint" = "使用者在關鍵字後面輸入的參數。";
+"ask.workflow.editor.keywords.add" = "新增關鍵詞";
+"ask.workflow.editor.argument" = "關鍵詞後面的內容";
+"ask.workflow.editor.argument.hint" = "使用者在關鍵詞後面輸入的參數。";
 "ask.workflow.editor.argument.required" = "必須輸入";
 "ask.workflow.editor.argument.optional" = "可以不輸入";
 "ask.workflow.editor.argument.none" = "不需要";
@@ -3022,7 +3022,7 @@
 "ask.workflow.editor.new.tileDetail.shellText" = "呼叫命令列工具最快。";
 "ask.workflow.editor.new.tileDetail.shellAction" = "打開專案、朗讀、切換設定…執行完啟動器關閉。";
 "ask.workflow.editor.argumentDetail.required" = "沒有參數不能執行";
-"ask.workflow.editor.argumentDetail.optional" = "只輸入關鍵字也能執行";
+"ask.workflow.editor.argumentDetail.optional" = "只輸入關鍵詞也能執行";
 "ask.workflow.editor.argumentDetail.none" = "例如 ip、uuid";
 "ask.workflow.editor.selectionDetail.ifEmpty" = "預設";
 "ask.workflow.editor.selectionDetail.always" = "兩者都給";
@@ -3080,13 +3080,13 @@
 "ask.workflow.editor.new.adjust" = "在編輯器裡調整";
 "ask.workflow.editor.new.save" = "儲存";
 "ask.workflow.assistant.steps" = "%d 步";
-"ask.workflow.assistant.generate.promptPickKeyword" = "幫我做這個工作流程：%1$@\n\n自己挑一個好記、好打的短關鍵字，用 workflow_check_keyword 確認可用，id 保持「%2$@」。先檢查本機環境，再提交清單和腳本，並試跑。";
+"ask.workflow.assistant.generate.promptPickKeyword" = "幫我做這個工作流程：%1$@\n\n自己挑一個好記、好打的短關鍵詞，用 workflow_check_keyword 確認可用，id 保持「%2$@」。先檢查本機環境，再提交清單和腳本，並試跑。";
 
 /* Agent and Launcher settings panes */
 "studio.section.launcher" = "啟動器";
 "studio.eyebrow.launcher" = "啟動器";
 "studio.heading.launcher" = "啟動器";
-"studio.subheading.launcher" = "啟動器裡的計算機、應用程式搜尋、關鍵字和你自己的工作流程。它們由啟動器直接觸發，不經過 Agent。";
+"studio.subheading.launcher" = "啟動器裡的計算機、應用程式搜尋、關鍵詞和你自己的工作流程。它們由啟動器直接觸發，不經過 Agent。";
 "studio.search.launcher" = "搜尋啟動器設定...";
 "launcher.pane.basics" = "內建功能";
 "launcher.basics.subtitle" = "在啟動器裡直接得到結果，不傳送給 AI。";
@@ -3112,17 +3112,17 @@
 "ask.settings.keywords.kind.prompt.hint" = "用文字處理模型執行一段提示詞";
 "ask.settings.keywords.kind.web.hint" = "在瀏覽器中開啟搜尋結果";
 "ask.settings.keywords.kind.workflow.hint" = "執行你自己的腳本";
-"ask.settings.keywords.listFootnote" = "點一列編輯。工作流程關鍵字在「工作流程」中管理，儲存時仍會檢查重名。";
+"ask.settings.keywords.listFootnote" = "點一列編輯。工作流程關鍵詞在「工作流程」中管理，儲存時仍會檢查重名。";
 "ask.settings.keywords.newWorkflow" = "新增工作流程…";
-"ask.settings.keywords.noMatch" = "沒有符合「%@」的關鍵字";
-"ask.settings.keywords.restoreTitle" = "還原預設關鍵字？";
-"ask.settings.keywords.restoreMessage" = "你新增和修改過的關鍵字會被替換成預設值。";
-"ask.settings.keywords.search" = "搜尋關鍵字或功能";
+"ask.settings.keywords.noMatch" = "沒有符合「%@」的關鍵詞";
+"ask.settings.keywords.restoreTitle" = "還原預設關鍵詞？";
+"ask.settings.keywords.restoreMessage" = "你新增和修改過的關鍵詞會被替換成預設值。";
+"ask.settings.keywords.search" = "搜尋關鍵詞或功能";
 "ask.settings.keywords.sheet.add" = "新增";
-"ask.settings.keywords.sheet.addTitle" = "新增%@關鍵字";
+"ask.settings.keywords.sheet.addTitle" = "新增%@關鍵詞";
 "ask.settings.keywords.sheet.autoHint" = "「自動判斷方向」：外文譯成介面語言，介面語言譯成第二語言。";
 "ask.settings.keywords.sheet.delete" = "刪除";
-"ask.settings.keywords.sheet.editTitle" = "編輯關鍵字";
+"ask.settings.keywords.sheet.editTitle" = "編輯關鍵詞";
 "ask.settings.keywords.sheet.insertInput" = "插入要處理的內容";
 "ask.settings.keywords.sheet.preview" = "效果";
 "ask.settings.keywords.sheet.promptNamePlaceholder" = "例如：改成正式語氣";
@@ -3131,7 +3131,7 @@
 "ask.settings.keywords.sheet.target" = "翻譯成";
 "ask.settings.keywords.sheet.webNamePlaceholder" = "例如：維基百科";
 "ask.settings.keywords.summary.auto" = "自動判斷方向（%1$@ ↔ %2$@）";
-"ask.settings.keywords.summary.shadowed" = "和內建關鍵字重名，不會生效";
+"ask.settings.keywords.summary.shadowed" = "和內建關鍵詞重名，不會生效";
 "ask.settings.keywords.summary.workflow" = "在工作流程編輯器中編輯";
 "ask.workflow.editor.args.add" = "新增參數";
 "ask.workflow.editor.args.try" = "試一下";
@@ -3148,7 +3148,7 @@
 "ask.workflow.editor.keywords.addOption" = "＋ 參數";
 "ask.workflow.editor.keywords.optionsPlaceholderHint" = "以 名稱=值 新增一個預設參數";
 "ask.workflow.editor.keywords.optionsShort" = "預設參數";
-"ask.workflow.editor.keywords.remove" = "刪除關鍵字";
+"ask.workflow.editor.keywords.remove" = "刪除關鍵詞";
 "ask.workflow.editor.keywords.removeOption" = "刪除 %@";
 "ask.workflow.editor.newWorkflow" = "新增工作流程";
 "ask.workflow.editor.outputShort.text" = "文字";
@@ -3160,7 +3160,7 @@
 "ask.workflow.editor.status.ready" = "已信任";
 "ask.workflow.editor.test.go" = "執行";
 "ask.workflow.editor.test.runButton" = "執行測試";
-"ask.workflow.assistant.suggestion.keyword" = "再加一個只統計字數的關鍵字";
+"ask.workflow.assistant.suggestion.keyword" = "再加一個只統計字數的關鍵詞";
 "ask.workflow.assistant.suggestion.format" = "結果保留兩位小數";
 "ask.workflow.assistant.suggestion.runtime" = "改成用 Node 寫";
 "ask.workflow.editor.interpreterAutoShort" = "自動（%@）";
@@ -3244,9 +3244,9 @@
 "ask.workflow.editor.placeholder.output.line1" = "第一行";
 "ask.workflow.editor.placeholder.output.lastLine" = "最後一行";
 "ask.workflow.editor.placeholder.json" = "JSON 欄位（輸出是 JSON 時）";
-"ask.workflow.editor.placeholder.query" = "關鍵字後面的輸入";
+"ask.workflow.editor.placeholder.query" = "關鍵詞後面的輸入";
 "ask.workflow.editor.placeholder.selection" = "選取的文字";
-"ask.workflow.editor.placeholder.keyword" = "關鍵字";
+"ask.workflow.editor.placeholder.keyword" = "關鍵詞";
 "ask.workflow.editor.placeholder.option" = "預設參數";
 "ask.workflow.editor.placeholder.error" = "失敗原因和 stderr 最後幾行";
 "ask.workflow.editor.placeholder.empty" = "（空）";
@@ -3264,7 +3264,7 @@
 "ask.workflow.editor.test.actionDone" = "✓ 已執行";
 
 /* Workflow gallery and per-keyword entries (GUL-231) */
-"ask.workflow.problem.keywordScriptInline" = "使用內嵌腳本的工作流程不能為關鍵字指定入口";
+"ask.workflow.problem.keywordScriptInline" = "使用內嵌腳本的工作流程不能為關鍵詞指定入口";
 "ask.workflow.editor.keywords.entry" = "入口";
 "ask.workflow.editor.keywords.entryDefault" = "預設（%@）";
 "ask.workflow.editor.files.title" = "檔案";
@@ -3306,7 +3306,7 @@
 "ask.workflow.gallery.fromGallery" = "來自範例庫";
 "ask.workflow.gallery.fromGalleryMenu" = "從範例庫加入…";
 "ask.workflow.gallery.addedNote" = "已加入「%@」。";
-"ask.workflow.gallery.addedRenamed" = "已加入「%1$@」。關鍵字已被佔用，已改名：%2$@。";
+"ask.workflow.gallery.addedRenamed" = "已加入「%1$@」。關鍵詞已被佔用，已改名：%2$@。";
 "ask.workflow.gallery.updatedNote" = "已把「%1$@」更新到 %2$@。";
 "ask.workflow.gallery.update.title" = "更新「%1$@」：%2$@ → %3$@";
 "ask.workflow.gallery.update.hint" = "看看會改什麼。按「覆蓋為新版本」之前不會改動任何檔案，覆蓋後仍是已信任。";
@@ -3335,7 +3335,7 @@
 "ask.workflow.gallery.install.exec" = "找不到 exec";
 "ask.workflow.gallery.fx.name" = "匯率換算";
 "ask.workflow.gallery.fx.summary" = "輸入「100 usd jpy」查即時匯率；rate 列出常用幣別。";
-"ask.workflow.gallery.fx.demonstrates" = "連網請求、參數解析、兩個關鍵字兩個入口、複製 + 通知";
+"ask.workflow.gallery.fx.demonstrates" = "連網請求、參數解析、兩個關鍵詞兩個入口、複製 + 通知";
 "ask.workflow.gallery.fx.keyword.fx" = "匯率";
 "ask.workflow.gallery.fx.keyword.rate" = "匯率表";
 "ask.workflow.gallery.fx.usage.1" = "100 美元換成日圓";
@@ -3355,8 +3355,8 @@
 "ask.workflow.gallery.json.usage.1" = "格式化選取的 JSON 並取代";
 "ask.workflow.gallery.json.usage.2" = "壓縮成一行";
 "ask.workflow.gallery.codec.name" = "URL / Base64 編解碼";
-"ask.workflow.gallery.codec.summary" = "一個工作流程兩個關鍵字，用預設參數區分編碼和解碼。";
-"ask.workflow.gallery.codec.demonstrates" = "一個工作流程多個關鍵字，用預設參數區分";
+"ask.workflow.gallery.codec.summary" = "一個工作流程兩個關鍵詞，用預設參數區分編碼和解碼。";
+"ask.workflow.gallery.codec.demonstrates" = "一個工作流程多個關鍵詞，用預設參數區分";
 "ask.workflow.gallery.codec.keyword.url" = "URL 編解碼";
 "ask.workflow.gallery.codec.keyword.b64" = "Base64 編解碼";
 "ask.workflow.gallery.codec.usage.1" = "URL 編碼；已編碼的會解碼";
@@ -3404,14 +3404,14 @@
 "ask.workflow.gallery.code.usage.2" = "只列出名稱包含「web」的專案";
 
 /* Workflow O4: script actions, image display, run another keyword */
-"ask.workflow.action.kind.runKeyword" = "執行另一個關鍵字";
-"ask.workflow.action.field.keyword" = "關鍵字";
+"ask.workflow.action.kind.runKeyword" = "執行另一個關鍵詞";
+"ask.workflow.action.field.keyword" = "關鍵詞";
 "ask.workflow.action.field.argument" = "輸入";
-"ask.workflow.problem.action.keyword" = "關鍵字只能是一個詞，例如「tr」";
+"ask.workflow.problem.action.keyword" = "關鍵詞只能是一個詞，例如「tr」";
 "ask.workflow.action.scriptNotAllowed" = "未執行：未允許腳本追加";
 "ask.workflow.action.loop" = "未執行：會形成循環（%@）";
-"ask.workflow.action.tooDeep" = "未執行：最多連續執行 %d 個關鍵字";
-"ask.workflow.action.noKeyword" = "沒有關鍵字「%@」";
+"ask.workflow.action.tooDeep" = "未執行：最多連續執行 %d 個關鍵詞";
+"ask.workflow.action.noKeyword" = "沒有關鍵詞「%@」";
 "ask.workflow.action.hostDeclined" = "未執行：沒有允許開啟 %@";
 "ask.workflow.action.done.runKeyword" = "已執行「%@」";
 "ask.plugin.action.copyImage" = "拷貝圖片";
@@ -3587,7 +3587,7 @@
 "ask.home.section.page" = "針對目前網頁";
 "ask.home.section.recent" = "繼續對話";
 "ask.home.section.keywords" = "常用";
-"ask.home.section.tryKeywords" = "試試關鍵字：輸入後加空格";
+"ask.home.section.tryKeywords" = "試試關鍵詞：輸入後加空格";
 "ask.home.text.translate" = "翻譯";
 "ask.home.text.translate.detail" = "保留原格式";
 "ask.home.text.summarize" = "總結重點";
@@ -3614,7 +3614,7 @@
 "ask.home.hint.run" = "↩ 執行";
 "ask.home.hint.ask" = "↩ 傳送";
 "ask.home.hint.open" = "↩ 開啟對話";
-"ask.home.hint.chip" = "↩ 使用關鍵字 · ←→ 切換";
+"ask.home.hint.chip" = "↩ 使用關鍵詞 · ←→ 切換";
 "ask.home.hint.context" = "⌘K 上下文";
 "ask.home.justNow" = "剛剛";
 
@@ -3706,7 +3706,7 @@
 "ask.workflow.chat.saved" = "已儲存到啟動器";
 "ask.workflow.chat.advanced" = "進階編輯";
 "ask.workflow.chat.runNotice" = "允許這個草稿在你的 Mac 上執行程式碼嗎？";
-"ask.workflow.chat.keyword" = "關鍵字 / 預設";
+"ask.workflow.chat.keyword" = "關鍵詞 / 預設";
 "ask.workflow.chat.input" = "輸入測試內容";
 "ask.workflow.chat.selection" = "選取文字（選填）";
 "ask.workflow.chat.back" = "返回預覽";
@@ -3720,7 +3720,7 @@
 "ask.workflow.chat.discardNotice" = "放棄目前對話的草稿？已安裝的工具會保留。";
 "ask.workflow.chat.view" = "查看草稿";
 "ask.workflow.chat.openedBeside" = "已在右側開啟";
-"ask.workflow.chat.keywordLine" = "關鍵字 %@";
+"ask.workflow.chat.keywordLine" = "關鍵詞 %@";
 "ask.workflow.chat.keywordNone" = "未設定";
 "ask.workflow.chat.tab.test" = "試執行";
 "ask.workflow.chat.tab.code" = "程式碼";
@@ -3731,7 +3731,7 @@
 "ask.workflow.chat.check.subtitle" = "問題會直接標在對應的項目上";
 "ask.workflow.chat.check.details" = "名稱與描述";
 "ask.workflow.chat.check.script" = "腳本";
-"ask.workflow.chat.check.keywords" = "觸發關鍵字";
+"ask.workflow.chat.check.keywords" = "觸發關鍵詞";
 "ask.workflow.chat.check.inlineScript" = "內嵌腳本";
 "ask.workflow.chat.check.separator" = "、";
 "ask.workflow.chat.check.addManually" = "手動新增";
@@ -3770,7 +3770,7 @@
 "ask.tool.workflow_list" = "尋找既有工具";
 "ask.tool.workflow_read" = "讀取工具草稿";
 "ask.tool.workflow_environment" = "檢查腳本環境";
-"ask.tool.workflow_check_keyword" = "檢查啟動關鍵字";
+"ask.tool.workflow_check_keyword" = "檢查啟動關鍵詞";
 "ask.tool.workflow_propose" = "更新工具草稿";
 "ask.tool.workflow_test" = "試用工具";
 "ask.tool.workflow_save" = "檢視並儲存工具";
@@ -3786,7 +3786,7 @@
 
 /* Launcher settings and chat history */
 "ask.plugin.setting.title" = "系統設定";
-"ask.settings.keywords.kind.setting.hint" = "開啟 Typeflux 的系統設定";
+"ask.settings.keywords.kind.setting.hint" = "開啟 Typeflux 設定";
 "ask.plugin.history.title" = "聊天歷史";
 "ask.settings.keywords.kind.history.hint" = "搜尋聊天標題，開啟歷史對話";
 "ask.plugin.history.placeholder" = "搜尋聊天標題";
@@ -3834,6 +3834,14 @@
 "ask.files.folder.volumes" = "卷宗";
 "ask.files.folder.icloud" = "iCloud 雲碟";
 "ask.files.folder.cloud" = "雲端儲存空間";
+
+// Launcher localization and accessibility polish
+"cloud.error.llmSignInRequired" = "請登入後使用 Typeflux Cloud 語言模型。";
+"cloud.error.asrSignInRequired" = "請登入後使用 Typeflux Cloud 語音辨識。";
+"ask.plugin.prompt.description.polish" = "改善語法與措辭，保留原意和語氣";
+"ask.plugin.prompt.description.summarize" = "整理文字的重點";
+"ask.plugin.prompt.description.explain" = "用淺顯易懂的語言解釋文字";
+"ask.plugin.translate.signInFallback" = "Typeflux Cloud 需要登入，已改用 %@ 翻譯。";
 
 /* AI command results: windows and notes (GUL-292) */
 "ask.plugin.action.copyRich" = "拷貝為格式化文字";

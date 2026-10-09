@@ -879,7 +879,7 @@ final class AskConversationModel: ObservableObject {
         let needsRefresh = (reference.hasPrefix("cloud:") && reference != "cloud:default")
             || modelLibrary.registry.resolve(reference)?.0.isOllama == true
         if !needsRefresh {
-            if let reason = modelSelectionIssue(reference, token: token, hasImage: hasImage) {
+            if let reason = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage) {
                 rejectSubmission(reason, submitted: submitted, queuedId: queuedId, launcher: launcher)
                 return
             }
@@ -918,7 +918,7 @@ final class AskConversationModel: ObservableObject {
                                 clearsDraft: clearsDraft, launcher: launcher)
             } catch is CancellationError {} catch {
                 guard owner == account.account, session()?.owner == account.account, selectionGeneration == generation else { return }
-                let issue = modelSelectionIssue(reference, token: token, hasImage: hasImage)
+                let issue = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage)
                     ?? AskSubmissionIssue(text: error.localizedDescription, offersModels: true)
                 handled = true
                 rejectSubmission(issue, submitted: submitted, queuedId: queuedId, launcher: launcher)
@@ -936,14 +936,14 @@ final class AskConversationModel: ObservableObject {
         persistDrafts()
     }
 
-    func modelSelectionIssue(_ reference: String, token: String, hasImage: Bool) -> AskSubmissionIssue? {
-        if token.isEmpty, reference.hasPrefix("cloud:") {
+    func modelSelectionIssue(_ reference: String, cloudAvailable: Bool, hasImage: Bool) -> AskSubmissionIssue? {
+        if !cloudAvailable, reference.hasPrefix("cloud:") {
             return .init(text: L("ask.local.modelRequired"), offersModels: true, offersSignIn: !isSignedIn)
         }
         guard let (provider, model) = modelLibrary.registry.resolve(reference) else {
             return .init(text: L("ask.models.unavailable"), offersModels: true)
         }
-        return modelLibrary.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: !token.isEmpty)
+        return modelLibrary.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: cloudAvailable)
             .map { .init(text: $0, offersModels: true) }
     }
 
@@ -1031,7 +1031,7 @@ final class AskConversationModel: ObservableObject {
             await modelLibrary.probeOllama()
             try Task.checkCancellation()
         }
-        if let issue = modelSelectionIssue(reference, token: token, hasImage: hasImage) { throw issue }
+        if let issue = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage) { throw issue }
     }
 
     func refreshImageModels() async {

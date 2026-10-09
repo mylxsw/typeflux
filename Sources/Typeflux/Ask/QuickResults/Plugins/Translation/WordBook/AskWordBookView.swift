@@ -56,6 +56,7 @@ struct AskWordBookView: View {
         .confirmationDialog(L("ask.wordBook.settings.clear.confirm", max(0, (model.counts[.all] ?? 0)
                 - (model.counts[.starred] ?? 0))), isPresented: $confirmsClear) {
             Button(L("ask.wordBook.settings.clear"), role: .destructive) { model.clearHistory() }
+            Button(L("common.cancel"), role: .cancel) {}
         }
         .accessibilityIdentifier("ask.wordBook")
     }

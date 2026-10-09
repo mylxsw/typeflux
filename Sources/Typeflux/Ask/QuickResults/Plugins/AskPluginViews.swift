@@ -265,7 +265,9 @@ struct AskPluginResultsView: View {
                     ?? L("ask.plugin.hint.action", main)
             }
             parts = [keys, option, askAI]
-        case let .failed(_, failure): return failure.retry ? L("ask.plugin.hint.failed") : ""
+        case let .failed(_, failure):
+            return failure.action(for: .enter).map { L("ask.plugin.hint.action", $0.title) }
+                ?? (failure.retry ? L("ask.plugin.hint.failed") : "")
         }
         return parts.compactMap { $0 }.joined(separator: " · ")
     }
@@ -492,7 +494,7 @@ struct AskPluginResultsView: View {
                         Spacer()
                         ForEach(Array(failure.actions.enumerated()), id: \.offset) { _, action in
                             actionButton(title: action.title, symbol: action.symbol, key: Self.key(action.shortcut),
-                                         primary: false) { onAction(action) }
+                                         primary: action.shortcut == .enter) { onAction(action) }
                         }
                         if failure.retry {
                             actionButton(title: L("ask.plugin.action.retry"), symbol: "arrow.clockwise", key: "↩",
@@ -588,7 +590,7 @@ struct AskPluginResultsView: View {
                             onSelectItem(index)
                             onMain()
                         }
-                        .modifier(AskLauncherNumberBadge(number: Self.numberedItemCount(display) == nil
+                        .modifier(AskLauncherNumberBadge(number: !item.valid || Self.numberedItemCount(display) == nil
                             ? nil : AskLauncherNumberShortcuts.number(at: index)))
                         .id(item.id)
                     }

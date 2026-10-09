@@ -103,6 +103,7 @@ struct AskPluginAction: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
         case openChat
         case openSettings
+        case signIn
         case openConversation(String, account: String)
         case copy(String)
         /// Writes into the app the launcher came from, over its selection when there is one.
@@ -227,8 +228,10 @@ struct AskPluginOutput: Equatable, Sendable {
     var detail: String?
 
     var selected: AskPluginItem? {
-        items.indices.contains(selectedItem) ? items[selectedItem] : nil
+        items.indices.contains(selectedItem) && items[selectedItem].valid ? items[selectedItem] : nil
     }
+
+    var selectableIndices: [Int] { items.indices.filter { items[$0].valid } }
 
     /// What a key does. With a list it is the chosen row's (Return, ⌥↩, ⌘C), and
     /// the result's for the rest (⌘R, ⌘E).
@@ -262,5 +265,17 @@ struct AskPluginFailure: Error, Equatable, Sendable {
 
     func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
         actions.first { $0.shortcut == shortcut }
+    }
+
+    static func presenting(_ error: Error) -> Self {
+        if let failure = error as? Self { return failure }
+        let requiresSignIn: Bool = switch error {
+        case TypefluxCloudLLMError.notLoggedIn, TypefluxOfficialASRError.notLoggedIn,
+             TypefluxOfficialASRRoutingError.unauthorized: true
+        default: false
+        }
+        return Self(message: error.localizedDescription, retry: !requiresSignIn,
+                    actions: requiresSignIn ? [.init(kind: .signIn, title: L("ask.submission.signIn"),
+                                                     symbol: "person.crop.circle", shortcut: .enter)] : [])
     }
 }

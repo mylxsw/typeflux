@@ -389,7 +389,7 @@ enum TypefluxOfficialASRError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notLoggedIn:
-            "Please sign in to use Typeflux Cloud speech recognition."
+            L("cloud.error.asrSignInRequired")
         case let .connectionFailed(reason):
             "Failed to connect to Typeflux ASR service: \(reason)"
         case let .serverError(message):

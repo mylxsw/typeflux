@@ -142,8 +142,7 @@ enum AskKeywordListPresentation {
         }
     }
 
-    /// One line on what a built-in keyword does: the target language, the prompt's
-    /// first line, or the search URL without its scheme.
+    /// User-facing descriptions for presets; a short first sentence for custom prompts.
     static func summary(of keyword: AskKeyword, interface: AppLanguage, secondLanguage: String) -> String {
         switch AskKeywordKind(pluginID: keyword.pluginID) {
         case .translate:
@@ -158,10 +157,20 @@ enum AskKeywordListPresentation {
                      AskTranslationLanguages.name(primary, in: interface),
                      AskTranslationLanguages.name(secondLanguage, in: interface))
         case .prompt:
+            let customPrompt = keyword.options[AskPromptPlugin.promptOption]?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if customPrompt?.isEmpty != false,
+               let preset = keyword.options[AskPromptPlugin.presetOption]
+                .flatMap(AskPromptPlugin.Preset.init(rawValue:)) {
+                return L("ask.plugin.prompt.description." + preset.rawValue)
+            }
             let template = AskPromptPlugin.template(of: keyword.options) ?? ""
-            return template.split(whereSeparator: \.isNewline)
+            let first = template.replacingOccurrences(of: AskPromptPlugin.inputToken, with: "")
+                .split(whereSeparator: \.isNewline)
                 .map { $0.trimmingCharacters(in: .whitespaces) }
                 .first { !$0.isEmpty } ?? L("ask.settings.plugins.prompt.placeholder")
+            let sentence = first.firstIndex(where: { ".!?。！？".contains($0) }).map { String(first[...$0]) } ?? first
+            return String(sentence.prefix(120)) + (sentence.count > 120 ? "…" : "")
         case .web:
             return withoutScheme(AskWebSearchPlugin.engine(of: keyword.options).template)
         case .files:
