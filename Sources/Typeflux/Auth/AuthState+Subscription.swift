@@ -21,12 +21,20 @@ extension AuthState {
             subscription = .none
             return nil
         }
-        guard !isLoadingSubscription else { return subscription }
-
-        isLoadingSubscription = true
-        defer { isLoadingSubscription = false }
-
+        // Only a load for the current session is shared; one still running
+        // for a replaced session must not keep the new session unloaded.
         let generation = sessionGeneration
+        guard subscriptionLoadGeneration != generation else { return subscription }
+
+        subscriptionLoadGeneration = generation
+        isLoadingSubscription = true
+        defer {
+            if subscriptionLoadGeneration == generation {
+                subscriptionLoadGeneration = nil
+                isLoadingSubscription = false
+            }
+        }
+
         do {
             let snapshot = try await fetchSubscription(token)
             // A snapshot for a session that was logged out or replaced
@@ -63,13 +71,23 @@ extension AuthState {
             usageCredits = nil
             return nil
         }
-        guard !isLoadingUsage else { return usageStats }
+        let generation = sessionGeneration
+        guard usageLoadGeneration != generation else { return usageStats }
 
+        usageLoadGeneration = generation
         isLoadingUsage = true
-        defer { isLoadingUsage = false }
+        defer {
+            if usageLoadGeneration == generation {
+                usageLoadGeneration = nil
+                isLoadingUsage = false
+            }
+        }
 
         do {
             let snapshot = try await fetchCurrentPeriodUsageStats(token)
+            // Usage of a session that was logged out or replaced meanwhile
+            // must not be shown for the new one.
+            guard generation == sessionGeneration else { return nil }
             usageStats = snapshot.stats
             usageCredits = snapshot.credits
             usagePeriodStart = snapshot.periodStart
@@ -77,6 +95,7 @@ extension AuthState {
             usageError = nil
             return snapshot.stats
         } catch let error as AuthError {
+            guard generation == sessionGeneration else { return nil }
             if error.authErrorCode == "USAGE_PERIOD_UNAVAILABLE" {
                 usageStats = .empty
                 usageCredits = nil
@@ -88,6 +107,7 @@ extension AuthState {
             }
             return nil
         } catch {
+            guard generation == sessionGeneration else { return nil }
             usageError = error.localizedDescription
             return nil
         }
@@ -117,18 +137,27 @@ extension AuthState {
             usageBreakdown = nil
             return nil
         }
-        guard !isLoadingUsageBreakdown else { return usageBreakdown }
+        let generation = sessionGeneration
+        guard usageBreakdownLoadGeneration != generation else { return usageBreakdown }
 
+        usageBreakdownLoadGeneration = generation
         isLoadingUsageBreakdown = true
-        defer { isLoadingUsageBreakdown = false }
+        defer {
+            if usageBreakdownLoadGeneration == generation {
+                usageBreakdownLoadGeneration = nil
+                isLoadingUsageBreakdown = false
+            }
+        }
 
         do {
             let breakdown = try await fetchCurrentPeriodUsageBreakdown(token, timeZone)
+            guard generation == sessionGeneration else { return nil }
             usageBreakdown = breakdown
             return breakdown
         } catch is CancellationError {
             return usageBreakdown
         } catch {
+            guard generation == sessionGeneration else { return nil }
             logger.info("Usage breakdown unavailable: \(error.localizedDescription, privacy: .public)")
             usageBreakdown = nil
             return nil

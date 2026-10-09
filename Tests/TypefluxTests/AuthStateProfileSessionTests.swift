@@ -1,3 +1,4 @@
+// swiftlint:disable file_length type_body_length
 @testable import Typeflux
 import XCTest
 
@@ -234,6 +235,228 @@ final class AuthStateProfileSessionTests: XCTestCase {
         XCTAssertNil(fixture.state.subscriptionError)
     }
 
+    // MARK: - Results that outlive their session after the profile arrived
+
+    func testProfileRefreshWhoseSessionEndsDuringTheSubscriptionIsNotAuthenticated() async {
+        let fixture = Fixture()
+        await fixture.login(token: "a1", refreshToken: "ra", profile: "user-a")
+        fixture.holdSubscriptions = true
+
+        async let old = fixture.state.refreshProfile()
+        await fixture.profiles.waitForCalls(2)
+        fixture.profiles.resolveNext(with: .success(Self.profile("user-a")))
+        await fixture.waitForHeldSubscription()
+        fixture.state.logout(clearRecentInputMemory: false)
+        fixture.releaseSubscription(with: .success(Self.paidSubscription()))
+
+        let outcome = await old
+        XCTAssertEqual(outcome, .failed)
+        XCTAssertFalse(fixture.state.isLoggedIn)
+        XCTAssertNil(fixture.state.userProfile)
+        XCTAssertEqual(fixture.state.subscription, .none)
+        XCTAssertFalse(fixture.state.isLoading)
+    }
+
+    func testProfileRefreshWhoseSessionIsReplacedDuringTheSubscriptionIsNotAuthenticated() async {
+        let fixture = Fixture()
+        await fixture.login(token: "a1", refreshToken: "ra", profile: "user-a")
+        fixture.holdSubscriptions = true
+
+        async let old = fixture.state.refreshProfile()
+        await fixture.profiles.waitForCalls(2)
+        fixture.profiles.resolveNext(with: .success(Self.profile("user-a")))
+        await fixture.waitForHeldSubscription()
+        fixture.holdSubscriptions = false
+        await fixture.login(token: "b1", refreshToken: "rb", profile: "user-b")
+        fixture.releaseSubscription(with: .success(Self.paidSubscription()))
+
+        let outcome = await old
+        XCTAssertEqual(outcome, .failed)
+        XCTAssertEqual(fixture.state.accessToken, "b1")
+        XCTAssertEqual(fixture.state.userProfile?.id, "user-b")
+        // Session B loaded its own subscription although A's was still running.
+        XCTAssertEqual(fixture.subscriptionTokens, ["a1", "a1", "b1"])
+        XCTAssertEqual(fixture.state.subscription, .none)
+        XCTAssertFalse(fixture.state.isLoadingSubscription)
+    }
+
+    func testStaleProfileRefreshDoesNotEndTheNewSessionsLoadingState() async {
+        let fixture = Fixture()
+        await fixture.login(token: "a1", refreshToken: "ra", profile: "user-a")
+
+        async let old = fixture.state.refreshProfile()
+        await fixture.profiles.waitForCalls(2)
+        async let login: Void = fixture.state.handleLoginSuccess(
+            token: "b1", expiresAt: Int(Date().timeIntervalSince1970) + 900, refreshToken: "rb"
+        )
+        await fixture.profiles.waitForCalls(3)
+        fixture.profiles.resolveNext(with: .success(Self.profile("user-a")))
+
+        let outcome = await old
+        XCTAssertEqual(outcome, .failed)
+        XCTAssertTrue(fixture.state.isLoading, "Session B's profile is still loading")
+
+        fixture.profiles.resolveNext(with: .success(Self.profile("user-b")))
+        await login
+        XCTAssertFalse(fixture.state.isLoading)
+        XCTAssertEqual(fixture.state.userProfile?.id, "user-b")
+    }
+
+    func testLoginWhoseSessionEndsDuringItsProfileFetchIsNotAnnounced() async {
+        let fixture = Fixture()
+        var logins = 0
+        let observer = NotificationCenter.default.addObserver(
+            forName: .authDidLogin, object: fixture.state, queue: nil
+        ) { _ in logins += 1 }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        async let login: Void = fixture.state.handleLoginSuccess(
+            token: "a1", expiresAt: Int(Date().timeIntervalSince1970) + 900, refreshToken: "ra"
+        )
+        await fixture.profiles.waitForCalls(1)
+        fixture.state.logout(clearRecentInputMemory: false)
+        fixture.profiles.resolveNext(with: .success(Self.profile("user-a")))
+        await login
+
+        XCTAssertEqual(logins, 0)
+        XCTAssertFalse(fixture.state.isLoggedIn)
+        XCTAssertNil(fixture.state.userProfile)
+
+        await fixture.login(token: "b1", refreshToken: "rb", profile: "user-b")
+        XCTAssertEqual(logins, 1)
+    }
+
+    func testNewSessionLoadsItsSubscriptionWhileALoggedOutLoadIsRunning() async {
+        let fixture = Fixture()
+        await fixture.login(token: "a1", refreshToken: "ra", profile: "user-a")
+        fixture.holdSubscriptions = true
+
+        async let old = fixture.state.refreshSubscription()
+        await fixture.waitForHeldSubscription()
+        XCTAssertTrue(fixture.state.isLoadingSubscription)
+        fixture.state.logout(clearRecentInputMemory: false)
+        XCTAssertFalse(fixture.state.isLoadingSubscription)
+
+        fixture.holdSubscriptions = false
+        await fixture.login(token: "b1", refreshToken: "rb", profile: "user-b")
+        XCTAssertEqual(fixture.subscriptionTokens, ["a1", "a1", "b1"])
+        XCTAssertFalse(fixture.state.isLoadingSubscription)
+
+        fixture.releaseSubscription(with: .success(Self.paidSubscription()))
+        let snapshot = await old
+        XCTAssertNil(snapshot)
+        XCTAssertEqual(fixture.state.subscription, .none)
+        XCTAssertFalse(fixture.state.isLoadingSubscription)
+    }
+
+    func testConcurrentSubscriptionRefreshesOfOneSessionStillShareALoad() async {
+        let fixture = Fixture()
+        await fixture.login(token: "a1", refreshToken: "ra", profile: "user-a")
+        fixture.holdSubscriptions = true
+
+        async let first = fixture.state.refreshSubscription()
+        await fixture.waitForHeldSubscription()
+        let second = await fixture.state.refreshSubscription()
+        fixture.releaseSubscription(with: .success(Self.paidSubscription()))
+
+        let loaded = await first
+        XCTAssertEqual(second, BillingSubscriptionSnapshot.none)
+        XCTAssertEqual(loaded, Self.paidSubscription())
+        XCTAssertEqual(fixture.subscriptionTokens, ["a1", "a1"])
+        XCTAssertFalse(fixture.state.isLoadingSubscription)
+    }
+
+    func testLateUsageFromOldSessionIsNotShown() async {
+        let fixture = Fixture()
+        await fixture.login(token: "a1", refreshToken: "ra", profile: "user-a")
+
+        async let old = fixture.state.refreshUsage()
+        await fixture.usage.waitForCalls(1)
+        await fixture.login(token: "b1", refreshToken: "rb", profile: "user-b")
+
+        // Session B loads its own usage while A's is still running.
+        async let current = fixture.state.refreshUsage()
+        await fixture.usage.waitForCalls(2)
+        XCTAssertEqual(fixture.usage.calls, ["a1", "b1"])
+        fixture.usage.resolveLast(with: .success(Self.usage(period: "period-b")))
+        _ = await current
+        fixture.usage.resolveNext(with: .success(Self.usage(period: "period-a")))
+
+        let stats = await old
+        XCTAssertNil(stats)
+        XCTAssertEqual(fixture.state.usagePeriodStart, "period-b")
+        XCTAssertFalse(fixture.state.isLoadingUsage)
+    }
+
+    func testLateUsageErrorAfterLogoutIsNotShown() async {
+        let fixture = Fixture()
+        await fixture.login(token: "a1", refreshToken: "ra", profile: "user-a")
+
+        async let old = fixture.state.refreshUsage()
+        await fixture.usage.waitForCalls(1)
+        fixture.state.logout(clearRecentInputMemory: false)
+        XCTAssertFalse(fixture.state.isLoadingUsage)
+        fixture.usage.resolveNext(with: .failure(URLError(.timedOut)))
+
+        _ = await old
+        XCTAssertNil(fixture.state.usageError)
+        XCTAssertEqual(fixture.state.usageStats, .empty)
+        XCTAssertFalse(fixture.state.isLoadingUsage)
+    }
+
+    func testLateUsageAuthErrorAfterLogoutIsNotShown() async {
+        let fixture = Fixture()
+        await fixture.login(token: "a1", refreshToken: "ra", profile: "user-a")
+
+        async let old = fixture.state.refreshUsage()
+        await fixture.usage.waitForCalls(1)
+        fixture.state.logout(clearRecentInputMemory: false)
+        fixture.usage.resolveNext(with: .failure(AuthError.serverError(code: "INTERNAL", message: "boom")))
+
+        _ = await old
+        XCTAssertNil(fixture.state.usageError)
+    }
+
+    func testLateUsageBreakdownFromOldSessionIsNotShown() async {
+        let fixture = Fixture()
+        await fixture.login(token: "a1", refreshToken: "ra", profile: "user-a")
+
+        async let old = fixture.state.refreshUsageBreakdown()
+        await fixture.breakdowns.waitForCalls(1)
+        fixture.state.logout(clearRecentInputMemory: false)
+        XCTAssertFalse(fixture.state.isLoadingUsageBreakdown)
+        await fixture.login(token: "b1", refreshToken: "rb", profile: "user-b")
+
+        async let current = fixture.state.refreshUsageBreakdown()
+        await fixture.breakdowns.waitForCalls(2)
+        XCTAssertEqual(fixture.breakdowns.calls, ["a1", "b1"])
+        fixture.breakdowns.resolveNext(with: .success(Self.breakdown(period: "period-a")))
+        let stale = await old
+        XCTAssertNil(stale)
+        XCTAssertNil(fixture.state.usageBreakdown)
+        XCTAssertTrue(fixture.state.isLoadingUsageBreakdown, "Session B's breakdown is still loading")
+
+        fixture.breakdowns.resolveNext(with: .success(Self.breakdown(period: "period-b")))
+        _ = await current
+        XCTAssertEqual(fixture.state.usageBreakdown?.periodStart, "period-b")
+        XCTAssertFalse(fixture.state.isLoadingUsageBreakdown)
+    }
+
+    func testLateUsageBreakdownFailureAfterLogoutIsIgnored() async {
+        let fixture = Fixture()
+        await fixture.login(token: "a1", refreshToken: "ra", profile: "user-a")
+
+        async let old = fixture.state.refreshUsageBreakdown()
+        await fixture.breakdowns.waitForCalls(1)
+        fixture.state.logout(clearRecentInputMemory: false)
+        fixture.breakdowns.resolveNext(with: .failure(URLError(.timedOut)))
+
+        let result = await old
+        XCTAssertNil(result)
+        XCTAssertNil(fixture.state.usageBreakdown)
+        XCTAssertFalse(fixture.state.isLoadingUsageBreakdown)
+    }
+
     // MARK: - Session restore
 
     func testRestoreThatFinishesAfterANewLoginLeavesItAlone() async {
@@ -269,6 +492,17 @@ final class AuthStateProfileSessionTests: XCTestCase {
                     createdAt: "2026-10-01T00:00:00Z", updatedAt: "2026-10-01T00:00:00Z")
     }
 
+    private static func usage(period: String) -> CloudUsageCurrentPeriodStats {
+        CloudUsageCurrentPeriodStats(periodStart: period, periodEnd: "2026-11-01T00:00:00Z", stats: .empty)
+    }
+
+    private static func breakdown(period: String) -> CloudUsageBreakdown {
+        CloudUsageBreakdown(
+            periodStart: period, periodEnd: "2026-11-01T00:00:00Z", timezone: "UTC",
+            days: [], voice: 0, rewrite: 0, ask: 0
+        )
+    }
+
     private static func paidSubscription() -> BillingSubscriptionSnapshot {
         BillingSubscriptionSnapshot(
             planCode: "pro",
@@ -287,6 +521,8 @@ final class AuthStateProfileSessionTests: XCTestCase {
 private final class Fixture {
     let refresh = GatedCalls<LoginResponse>()
     let profiles = GatedCalls<UserProfile>()
+    let usage = GatedCalls<CloudUsageCurrentPeriodStats>()
+    let breakdowns = GatedCalls<CloudUsageBreakdown>()
     private(set) var persistedProfiles: [String] = []
     private(set) var subscriptionTokens: [String] = []
     private(set) var logoutCount = 0
@@ -310,7 +546,9 @@ private final class Fixture {
                 subscriptionTokens.append(token)
                 guard holdSubscriptions else { return .none }
                 return try await withCheckedThrowingContinuation { heldSubscription = $0 }
-            }
+            },
+            fetchCurrentPeriodUsageStats: { [unowned self] token in try await usage.next(token) },
+            fetchCurrentPeriodUsageBreakdown: { [unowned self] token, _ in try await breakdowns.next(token) }
         )
         observer = NotificationCenter.default.addObserver(
             forName: .authDidLogout, object: state, queue: nil

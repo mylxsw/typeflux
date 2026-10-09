@@ -32,7 +32,10 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
 
     func testRecordingStopsWhenTheSessionChangesBeforeAReplacementGrant() async throws {
         let routing = RecordingRoutingClient(servers: [serverA, serverB])
+        // The recording starts, its first grant is checked, then account B
+        // signs in before the replacement grant.
         let credentials = CredentialSequence([
+            TypefluxCloudSessionCredential(accessToken: "account-a", session: 7),
             TypefluxCloudSessionCredential(accessToken: "account-a", session: 7),
             TypefluxCloudSessionCredential(accessToken: "account-b", session: 8)
         ])
@@ -66,6 +69,7 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
     func testRecordingStopsWhenTheSessionEndsBeforeAReplacementGrant() async throws {
         let routing = RecordingRoutingClient(servers: [serverA, serverB])
         let credentials = CredentialSequence([
+            TypefluxCloudSessionCredential(accessToken: "access-1", session: 7),
             TypefluxCloudSessionCredential(accessToken: "access-1", session: 7),
             nil
         ])

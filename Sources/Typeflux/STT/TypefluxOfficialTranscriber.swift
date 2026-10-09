@@ -142,14 +142,13 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
         let credential = try await Self.recordingCredential(from: credentialProvider)
         let pcmData = try CloudASRAudioConverter.convert(url: audioFile.fileURL)
         let route = try await routingClient.fetchRoute(accessToken: credential.accessToken, scenario: scenario)
-        let grants = TypefluxOfficialASRGrantSequence(initial: route) { [routingClient, credentialProvider] in
-            try await Self.fetchReplacementRoute(
-                for: credential,
-                credentialProvider: credentialProvider,
-                routingClient: routingClient,
-                scenario: scenario
-            )
-        }
+        let grants = Self.makeGrantSequence(
+            initial: route,
+            recording: credential,
+            credentialProvider: credentialProvider,
+            routingClient: routingClient,
+            scenario: scenario
+        )
 
         return try await Self.runWithASRServerFailover(
             preferredServers: route.serverBaseURLs,
@@ -179,14 +178,13 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
         let credential = try await Self.recordingCredential(from: credentialProvider)
         let pcmData = try CloudASRAudioConverter.convert(url: audioFile.fileURL)
         let route = try await routingClient.fetchRoute(accessToken: credential.accessToken, scenario: scenario)
-        let grants = TypefluxOfficialASRGrantSequence(initial: route) { [routingClient, credentialProvider] in
-            try await Self.fetchReplacementRoute(
-                for: credential,
-                credentialProvider: credentialProvider,
-                routingClient: routingClient,
-                scenario: scenario
-            )
-        }
+        let grants = Self.makeGrantSequence(
+            initial: route,
+            recording: credential,
+            credentialProvider: credentialProvider,
+            routingClient: routingClient,
+            scenario: scenario
+        )
 
         return try await Self.runWithASRServerFailover(
             preferredServers: route.serverBaseURLs,
@@ -228,14 +226,14 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
             upstream: DeferredPCM16RealtimeTranscriptionSession {
                 [credentialProvider, routingClient, serverRegistry, transportDiagnostics] in
                 transportDiagnostics.markCredentialLookupStarted()
-                let token = await credentialProvider()?.accessToken
+                let credential = await credentialProvider()
                 transportDiagnostics.markCredentialLookupCompleted()
-                guard let token, !token.isEmpty else {
+                guard let credential, !credential.accessToken.isEmpty else {
                     throw TypefluxOfficialASRError.notLoggedIn
                 }
 
                 transportDiagnostics.markRouteLookupStarted()
-                let route = try await routingClient.fetchRoute(accessToken: token, scenario: scenario)
+                let route = try await routingClient.fetchRoute(accessToken: credential.accessToken, scenario: scenario)
                 transportDiagnostics.markRouteLookupCompleted()
                 let asrToken: String
                 let asrProvider: String
@@ -253,6 +251,10 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
                 guard let baseURL = baseURLs.first else {
                     throw TypefluxOfficialASRError.connectionFailed("No Typeflux Cloud endpoint configured.")
                 }
+                // The account may have been logged out or replaced while the
+                // route and servers were resolved; the stream starts right
+                // after this check returns.
+                try await Self.requireRecordingSession(credential, credentialProvider: credentialProvider)
 
                 return TypefluxOfficialRealtimePCMStream(
                     apiBaseURL: baseURL.absoluteString,
@@ -278,14 +280,13 @@ final class TypefluxOfficialTranscriber: ASROptimizeAwareTranscriber, TypefluxCl
         let pcmData = RemoteSTTTestAudio.pcm16MonoSilence()
         let routingClient = TypefluxOfficialASRRoutingHTTPClient()
         let route = try await routingClient.fetchRoute(accessToken: credential.accessToken, scenario: .modelSetup)
-        let grants = TypefluxOfficialASRGrantSequence(initial: route) {
-            try await fetchReplacementRoute(
-                for: credential,
-                credentialProvider: credentialProvider,
-                routingClient: routingClient,
-                scenario: .modelSetup
-            )
-        }
+        let grants = makeGrantSequence(
+            initial: route,
+            recording: credential,
+            credentialProvider: credentialProvider,
+            routingClient: routingClient,
+            scenario: .modelSetup
+        )
 
         return try await runWithASRServerFailover(preferredServers: route.serverBaseURLs) { apiBaseURL in
             let grant = try await grants.next()

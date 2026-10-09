@@ -255,6 +255,7 @@ final class AuthStateTests: XCTestCase {
         )
         await waitForRefreshCompletion(state)
         fetchCount = 0
+        state.subscriptionLoadGeneration = state.sessionGeneration
         state.isLoadingSubscription = true
 
         let snapshot = await state.refreshSubscription()
@@ -844,6 +845,7 @@ final class AuthStateTests: XCTestCase {
             }
         )
         await waitForRefreshCompletion(state)
+        state.usageLoadGeneration = state.sessionGeneration
         state.isLoadingUsage = true
 
         let stats = await state.refreshUsage()
