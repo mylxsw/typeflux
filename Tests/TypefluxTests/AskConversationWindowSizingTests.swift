@@ -9,8 +9,12 @@ struct AskConversationWindowSizingTests {
         let fixture = try WindowFixture()
         defer { fixture.close() }
         let window = try fixture.show()
+        // AppKit keeps a titled window inside the visible screen, so the tall case asks for at most
+        // what this display can hold (a Screen Sharing display can be much shorter than 880pt).
+        let screen = try #require(window.screen ?? NSScreen.main)
+        let tallest = floor(window.contentRect(forFrameRect: screen.visibleFrame).height)
 
-        for size in [NSSize(width: 440, height: 880), NSSize(width: 960, height: 320),
+        for size in [NSSize(width: 440, height: min(880, tallest)), NSSize(width: 960, height: 320),
                      NSSize(width: 440, height: 320), AskWorkspaceLayout.minimumWindowSize] {
             window.setContentSize(size)
             try await settle(window)

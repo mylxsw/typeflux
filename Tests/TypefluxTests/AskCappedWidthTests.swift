@@ -57,7 +57,9 @@ struct AskCappedWidthTests {
         // where `.frame(maxWidth:)` would have grown to the cap.
         let hugged = try await placedWidth(AskCappedWidth(maxWidth: AskMetrics.modelMenuMaxWidth) { text })
         let stretched = try await placedWidth(text.frame(maxWidth: AskMetrics.modelMenuMaxWidth))
-        #expect(abs(hugged - natural) < 0.5)
+        // Layout snaps to device pixels and `fittingSize` does not, so allow one pixel.
+        let pixel = 1 / (NSScreen.main?.backingScaleFactor ?? 1)
+        #expect(abs(hugged - natural) <= pixel)
         #expect(stretched == AskMetrics.modelMenuMaxWidth)
     }
 
