@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("File reliability snapshots", .serialized)
+@Suite("File reliability snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskFileReliabilityVisualTests {
     @Test func renderGuardedSearch() async throws {

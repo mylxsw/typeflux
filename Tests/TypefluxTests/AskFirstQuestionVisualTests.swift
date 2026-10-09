@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// Production surfaces rendered with synthetic accounts and isolated preferences.
-@Suite("Ask first question snapshots", .serialized)
+@Suite("Ask first question snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskFirstQuestionVisualTests {
     @Test func renderFirstQuestionAndUsageStates() async throws {

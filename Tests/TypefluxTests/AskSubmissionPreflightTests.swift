@@ -18,7 +18,7 @@ private actor PreflightCatalog: ProviderModelCatalog {
     }
 }
 
-@Suite("Ask submission preflight", .serialized)
+@Suite("Ask submission preflight", .serialized, .exclusiveUIState)
 @MainActor
 struct AskSubmissionPreflightTests {
     private func makeFixture(catalog: PreflightCatalog? = nil, local: Bool = true) throws -> AskTestFixture {
