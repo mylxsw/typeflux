@@ -206,8 +206,7 @@ final class TypefluxOfficialASRGatewayFixtureTests: XCTestCase {
     private func startGateways(
         a behavior: LocalASRGateway.Behavior
     ) async throws -> (LocalASRGateway, LocalASRGateway) {
-        let gatewayA = try await LocalASRGateway.start(behavior: behavior)
-        let gatewayB = try await LocalASRGateway.start(behavior: .succeed("ok"))
+        let (gatewayA, gatewayB) = try await LocalASRGateway.startPair(behavior, .succeed("ok"))
         addTeardownBlock {
             gatewayA.stop()
             gatewayB.stop()

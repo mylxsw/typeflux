@@ -227,14 +227,15 @@ extension TypefluxOfficialASRAttemptBoundaryTests {
         let transcriber = makeTranscriber(routing: routing, transport: transport, registry: registry)
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = OwnedWorker {
             try await transcriber.transcribeStream(
                 audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
             )
         }
-        await routing.waitUntilParked()
+        addTeardownBlock { await recording.stop(releasing: [routing.gate]) }
+        try await routing.gate.waitUntilParked(unlessFinished: recording)
         recording.cancel()
-        await routing.releaseParked()
+        await routing.gate.release()
 
         do {
             _ = try await recording.value
@@ -251,14 +252,15 @@ extension TypefluxOfficialASRAttemptBoundaryTests {
         let transcriber = makeTranscriber(routing: routing, transport: transport)
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = OwnedWorker {
             try await transcriber.transcribeStream(
                 audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
             )
         }
-        await routing.waitUntilParked()
+        addTeardownBlock { await recording.stop(releasing: [routing.gate]) }
+        try await routing.gate.waitUntilParked(unlessFinished: recording)
         recording.cancel()
-        await routing.releaseParked()
+        await routing.gate.release()
 
         do {
             _ = try await recording.value

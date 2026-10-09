@@ -22,14 +22,14 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         let transcriber = makeTranscriber(routing: routing, transport: transport, session: session)
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = record(releasing: [routing.gate]) {
             try await transcriber.transcribeStream(
                 audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
             )
         }
-        await routing.waitUntilParked()
+        try await routing.gate.waitUntilParked(unlessFinished: recording)
         await session.set(accountB)
-        await routing.releaseParked()
+        await routing.gate.release()
 
         await assertStops(recording, with: .sessionChanged)
         XCTAssertTrue(transport.attempts.isEmpty)
@@ -44,7 +44,7 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         let transcriber = makeTranscriber(routing: routing, transport: transport, session: session)
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = record(releasing: [routing.gate]) {
             try await transcriber.transcribeStreamWithLLMRewrite(
                 audioFile: audio,
                 llmConfig: ASRLLMConfig(systemPrompt: "system", userPromptTemplate: "{{transcript}}"),
@@ -54,9 +54,9 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
                 onLLMChunk: { _ in }
             ).transcript
         }
-        await routing.waitUntilParked()
+        try await routing.gate.waitUntilParked(unlessFinished: recording)
         await session.set(nil)
-        await routing.releaseParked()
+        await routing.gate.release()
 
         await assertStops(recording, with: .notLoggedIn)
         XCTAssertTrue(transport.attempts.isEmpty)
@@ -76,7 +76,7 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         )
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = record(releasing: [registry.gate]) {
             try await transcriber.transcribeStreamWithLLMRewrite(
                 audioFile: audio,
                 llmConfig: ASRLLMConfig(systemPrompt: "system", userPromptTemplate: "{{transcript}}"),
@@ -86,9 +86,9 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
                 onLLMChunk: { _ in }
             ).transcript
         }
-        await registry.waitUntilParked()
+        try await registry.gate.waitUntilParked(unlessFinished: recording)
         await session.set(accountB)
-        await registry.releaseParked()
+        await registry.gate.release()
 
         await assertStops(recording, with: .sessionChanged)
         XCTAssertTrue(transport.attempts.isEmpty)
@@ -108,14 +108,14 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         )
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = record(releasing: [registry.gate]) {
             try await transcriber.transcribeStream(
                 audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
             )
         }
-        await registry.waitUntilParked()
+        try await registry.gate.waitUntilParked(unlessFinished: recording)
         recording.cancel()
-        await registry.releaseParked()
+        await registry.gate.release()
 
         do {
             _ = try await recording.value
@@ -136,14 +136,14 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         )
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = record(releasing: [routing.gate]) {
             try await transcriber.transcribeStream(
                 audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
             )
         }
-        await routing.waitUntilParked()
+        try await routing.gate.waitUntilParked(unlessFinished: recording)
         await session.set(accountB)
-        await routing.releaseParked()
+        await routing.gate.release()
 
         await assertStops(recording, with: .sessionChanged)
         // grant-2 was issued for account A but never used, and no grant was
@@ -163,7 +163,7 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         let transcriber = makeTranscriber(routing: routing, transport: transport, session: session)
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = record(releasing: [routing.gate]) {
             try await transcriber.transcribeStreamWithLLMRewrite(
                 audioFile: audio,
                 llmConfig: ASRLLMConfig(systemPrompt: "system", userPromptTemplate: "{{transcript}}"),
@@ -173,9 +173,9 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
                 onLLMChunk: { _ in }
             ).transcript
         }
-        await routing.waitUntilParked()
+        try await routing.gate.waitUntilParked(unlessFinished: recording)
         await session.set(nil)
-        await routing.releaseParked()
+        await routing.gate.release()
 
         await assertStops(recording, with: .notLoggedIn)
         XCTAssertEqual(transport.attempts.map(\.token), ["grant-1"])
@@ -190,14 +190,14 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         let transcriber = makeTranscriber(routing: routing, transport: transport, session: session)
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = record(releasing: [routing.gate]) {
             try await transcriber.transcribeStream(
                 audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
             )
         }
-        await routing.waitUntilParked()
+        try await routing.gate.waitUntilParked(unlessFinished: recording)
         await session.set(TypefluxCloudSessionCredential(accessToken: "account-a-rotated", session: 7))
-        await routing.releaseParked()
+        await routing.gate.release()
 
         let text = try await recording.value
         XCTAssertEqual(text, "ok")
@@ -226,8 +226,7 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
     // MARK: - Local gateways
 
     func testSessionChangeDuringAReplacementGrantNeverReachesTheNextGateway() async throws {
-        let first = try await LocalASRGateway.start(behavior: .rejectConnection)
-        let second = try await LocalASRGateway.start(behavior: .succeed("hello"))
+        let (first, second) = try await LocalASRGateway.startPair(.rejectConnection, .succeed("hello"))
         defer {
             first.stop()
             second.stop()
@@ -241,14 +240,14 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         )
         let audio = try makeSilentAudioFile()
 
-        let recording = Task {
+        let recording = record(releasing: [routing.gate]) {
             try await transcriber.transcribeStream(
                 audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in }
             )
         }
-        await routing.waitUntilParked()
+        try await routing.gate.waitUntilParked(unlessFinished: recording)
         await session.set(accountB)
-        await routing.releaseParked()
+        await routing.gate.release()
 
         await assertStops(recording, with: .sessionChanged)
         // URL loading may retry the refused connection; only the first
@@ -266,12 +265,12 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         defer { gateway.stop() }
         let session = SessionSource(accountA)
         let routing = RecordingRoutingClient(servers: [gateway.baseURL], parkFetch: 1)
-        let realtime = try await makeRealtimeSession(routing: routing, session: session)
+        let realtime = try await makeRealtimeSession(routing: routing, session: session, releasing: [routing.gate])
 
         await realtime.start()
-        await routing.waitUntilParked()
+        try await routing.gate.waitUntilParked()
         await session.set(accountB)
-        await routing.releaseParked()
+        await routing.gate.release()
 
         await assertConnectionFails(realtime, with: .sessionChanged)
         XCTAssertEqual(gateway.connectionCount, 0)
@@ -285,12 +284,14 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         let session = SessionSource(accountA)
         let routing = RecordingRoutingClient(servers: [gateway.baseURL])
         let registry = ParkingRegistry()
-        let realtime = try await makeRealtimeSession(routing: routing, session: session, registry: registry)
+        let realtime = try await makeRealtimeSession(
+            routing: routing, session: session, registry: registry, releasing: [registry.gate]
+        )
 
         await realtime.start()
-        await registry.waitUntilParked()
+        try await registry.gate.waitUntilParked()
         await session.set(nil)
-        await registry.releaseParked()
+        await registry.gate.release()
 
         await assertConnectionFails(realtime, with: .notLoggedIn)
         XCTAssertEqual(gateway.connectionCount, 0)
@@ -301,12 +302,12 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         defer { gateway.stop() }
         let session = SessionSource(accountA)
         let routing = RecordingRoutingClient(servers: [gateway.baseURL], parkFetch: 1)
-        let realtime = try await makeRealtimeSession(routing: routing, session: session)
+        let realtime = try await makeRealtimeSession(routing: routing, session: session, releasing: [routing.gate])
 
         await realtime.start()
-        await routing.waitUntilParked()
+        try await routing.gate.waitUntilParked()
         await session.set(TypefluxCloudSessionCredential(accessToken: "account-a-rotated", session: 7))
-        await routing.releaseParked()
+        await routing.gate.release()
 
         let awaiting = try XCTUnwrap(realtime as? any RealtimeTranscriptionConnectionAwaiting)
         try await awaiting.waitUntilConnectionReady()
@@ -334,7 +335,8 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
     private func makeRealtimeSession(
         routing: RecordingRoutingClient,
         session: SessionSource,
-        registry: any TypefluxASRServerProviding = RecordingRegistry()
+        registry: any TypefluxASRServerProviding = RecordingRegistry(),
+        releasing gates: [ParkingGate]
     ) async throws -> any RealtimeTranscriptionSession {
         let transcriber = TypefluxOfficialTranscriber(
             routingClient: routing,
@@ -344,12 +346,31 @@ final class TypefluxOfficialASRSessionFenceTests: XCTestCase {
         let realtime = try await transcriber.makeRealtimeTranscriptionSession(
             scenario: .voiceInput, optimize: true, onUpdate: { _ in }
         )
-        addTeardownBlock { await realtime.cancel() }
+        addTeardownBlock {
+            // Cancel, open the gates the connection may be parked at, then
+            // join the connection attempt.
+            await realtime.cancel()
+            for gate in gates {
+                await gate.release()
+            }
+            try? await (realtime as? any RealtimeTranscriptionConnectionAwaiting)?.waitUntilConnectionReady()
+        }
         return realtime
     }
 
+    /// Starts a recording the test owns. On every exit the recording is
+    /// cancelled, its gates are opened and it is joined.
+    private func record(
+        releasing gates: [ParkingGate],
+        _ operation: @escaping @Sendable () async throws -> String
+    ) -> OwnedWorker<String> {
+        let recording = OwnedWorker(operation)
+        addTeardownBlock { await recording.stop(releasing: gates) }
+        return recording
+    }
+
     private func assertStops(
-        _ recording: Task<String, Error>,
+        _ recording: OwnedWorker<String>,
         with expected: TypefluxOfficialASRError,
         file: StaticString = #filePath,
         line: UInt = #line
@@ -408,12 +429,12 @@ private actor SessionSource {
     }
 }
 
-/// A server registry whose first server selection stays open until released.
+/// A server registry whose first server selection parks at `gate` until
+/// released.
 private actor ParkingRegistry: TypefluxASRServerProviding {
+    nonisolated let gate = ParkingGate()
     private let parks: Bool
     private(set) var failures: [URL] = []
-    private var parked: CheckedContinuation<Void, Never>?
-    private var parkedReached = false
     private var hasParked = false
 
     init(parks: Bool = true) {
@@ -425,27 +446,13 @@ private actor ParkingRegistry: TypefluxASRServerProviding {
     func orderedServers(preferred: [URL]) async -> [URL] {
         if parks, !hasParked {
             hasParked = true
-            await withCheckedContinuation { continuation in
-                parked = continuation
-                parkedReached = true
-            }
+            await gate.park()
         }
         return preferred
     }
 
     func reportFailure(_ url: URL, error _: Error) async {
         failures.append(url)
-    }
-
-    func waitUntilParked() async {
-        for _ in 0 ..< 10000 where !parkedReached {
-            await Task.yield()
-        }
-    }
-
-    func releaseParked() {
-        parked?.resume()
-        parked = nil
     }
 }
 

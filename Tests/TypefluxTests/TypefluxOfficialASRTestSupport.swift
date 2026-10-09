@@ -32,13 +32,12 @@ enum ASRTestAudio {
 }
 
 /// Issues a distinct grant per fetch and records the access token used. One
-/// fetch can be parked until the test releases it.
+/// fetch can be parked at `gate` until the test releases it.
 actor RecordingRoutingClient: TypefluxOfficialASRRoutingClient {
+    nonisolated let gate = ParkingGate()
     private let servers: [URL]
     private let parkFetch: Int?
     private(set) var accessTokens: [String] = []
-    private var parked: CheckedContinuation<Void, Never>?
-    private var parkedReached = false
 
     init(servers: [URL], parkFetch: Int? = nil) {
         self.servers = servers
@@ -54,10 +53,7 @@ actor RecordingRoutingClient: TypefluxOfficialASRRoutingClient {
         if number == parkFetch {
             // Like a real request that ignores cancellation, the grant is
             // still issued once released.
-            await withCheckedContinuation { continuation in
-                parked = continuation
-                parkedReached = true
-            }
+            await gate.park()
         }
         return .webSocket(
             token: "grant-\(number)",
@@ -67,16 +63,104 @@ actor RecordingRoutingClient: TypefluxOfficialASRRoutingClient {
             serverBaseURLs: servers
         )
     }
+}
 
-    func waitUntilParked() async {
-        for _ in 0 ..< 10000 where !parkedReached {
-            await Task.yield()
+/// Why a test stopped waiting for its worker to reach a point.
+enum GateWaitError: Error, Equatable {
+    case timedOut
+    case workerFinished
+}
+
+/// A point where a worker parks until the test releases it. A release that
+/// arrives before the worker parks is kept, so the worker then passes
+/// straight through instead of needing a second release.
+actor ParkingGate {
+    private var waiter: CheckedContinuation<Void, Never>?
+    private var reached = false
+    private var released = false
+
+    var isReleased: Bool { released }
+
+    func park() async {
+        reached = true
+        guard !released else { return }
+        await withCheckedContinuation { waiter = $0 }
+    }
+
+    func release() {
+        released = true
+        waiter?.resume()
+        waiter = nil
+    }
+
+    /// Returns once a worker reached `park()`. Throws instead of returning
+    /// when `worker` finished without parking, `timeout` elapses, or the
+    /// waiting task is cancelled.
+    func waitUntilParked(
+        unlessFinished worker: (any FinishReporting)? = nil,
+        timeout: Duration = .seconds(10)
+    ) async throws {
+        let deadline = ContinuousClock.now + timeout
+        while !reached {
+            if worker?.isFinished == true { throw GateWaitError.workerFinished }
+            guard ContinuousClock.now < deadline else { throw GateWaitError.timedOut }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+    }
+}
+
+protocol FinishReporting: Sendable {
+    var isFinished: Bool { get }
+}
+
+/// A worker task the test owns. It records when it finishes, so a wait can
+/// end early, and `stop(releasing:)` cancels it, opens its gates and joins it.
+final class OwnedWorker<Success: Sendable>: FinishReporting {
+    private let task: Task<Success, Error>
+    private let finished: FinishFlag
+
+    init(_ operation: @escaping @Sendable () async throws -> Success) {
+        let finished = FinishFlag()
+        self.finished = finished
+        task = Task {
+            defer { finished.set() }
+            return try await operation()
         }
     }
 
-    func releaseParked() {
-        parked?.resume()
-        parked = nil
+    var isFinished: Bool { finished.value }
+
+    var value: Success {
+        get async throws { try await task.value }
+    }
+
+    func cancel() {
+        task.cancel()
+    }
+
+    func stop(releasing gates: [ParkingGate]) async {
+        task.cancel()
+        for gate in gates {
+            await gate.release()
+        }
+        _ = await task.result
+    }
+}
+
+private final class FinishFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var finished = false
+
+    var value: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return finished
+    }
+
+    func set() {
+        lock.lock()
+        finished = true
+        lock.unlock()
     }
 }
 
@@ -123,7 +207,7 @@ final class LocalASRGateway: @unchecked Sendable {
     private let queue: DispatchQueue
     private let lock = NSLock()
     private var connections: [NWConnection] = []
-    private var state = (connections: 0, disconnects: 0, audioBytes: 0, stop: false)
+    private var state = (connections: 0, disconnects: 0, audioBytes: 0, stop: false, stopped: false)
     private let authorizationLog: AuthorizationLog
 
     var baseURL: URL {
@@ -134,6 +218,7 @@ final class LocalASRGateway: @unchecked Sendable {
     var disconnectCount: Int { locked { state.disconnects } }
     var audioBytes: Int { locked { state.audioBytes } }
     var receivedStop: Bool { locked { state.stop } }
+    var isStopped: Bool { locked { state.stopped } }
     var authorizations: [String] { authorizationLog.values }
 
     private init(behavior: Behavior) throws {
@@ -161,11 +246,33 @@ final class LocalASRGateway: @unchecked Sendable {
 
     static func start(behavior: Behavior) async throws -> LocalASRGateway {
         let gateway = try LocalASRGateway(behavior: behavior)
-        try await gateway.listen()
+        do {
+            try await gateway.listen()
+        } catch {
+            gateway.stop()
+            throw error
+        }
         return gateway
     }
 
+    /// Starts two gateways. When the second cannot start, the first is
+    /// stopped before the error is thrown.
+    static func startPair(
+        _ first: Behavior,
+        _ second: Behavior,
+        start: (Behavior) async throws -> LocalASRGateway = { try await LocalASRGateway.start(behavior: $0) }
+    ) async throws -> (LocalASRGateway, LocalASRGateway) {
+        let firstGateway = try await start(first)
+        do {
+            return try await (firstGateway, start(second))
+        } catch {
+            firstGateway.stop()
+            throw error
+        }
+    }
+
     func stop() {
+        locked { state.stopped = true }
         listener.cancel()
         locked { connections }.forEach { $0.cancel() }
     }
@@ -187,8 +294,10 @@ final class LocalASRGateway: @unchecked Sendable {
                 switch state {
                 case .ready:
                     if resumed.claim() { continuation.resume() }
-                case let .failed(error):
+                case let .failed(error), let .waiting(error):
                     if resumed.claim() { continuation.resume(throwing: error) }
+                case .cancelled:
+                    if resumed.claim() { continuation.resume(throwing: CancellationError()) }
                 default:
                     break
                 }
