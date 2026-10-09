@@ -862,7 +862,7 @@ final class AskConversationModel: ObservableObject {
                 return
             }
             submissionIssues[launcher] = nil
-            submitValidated(submitted, modelRef: reference, newConversation: newConversation, messageId: queuedId,
+            submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
                             clearsDraft: clearsDraft, launcher: launcher)
             return
         }
@@ -892,7 +892,7 @@ final class AskConversationModel: ObservableObject {
                 handled = true
                 submissionIssues[launcher] = nil
                 busyIds.remove(id)
-                submitValidated(submitted, modelRef: reference, newConversation: newConversation, messageId: queuedId,
+                submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
                                 clearsDraft: clearsDraft, launcher: launcher)
             } catch is CancellationError {} catch {
                 guard owner == account.account, session()?.owner == account.account, selectionGeneration == generation else { return }
@@ -925,15 +925,12 @@ final class AskConversationModel: ObservableObject {
             .map { .init(text: $0, offersModels: true) }
     }
 
-    private func submitValidated(_ submitted: AskDraft, modelRef: String, newConversation: Bool, messageId queuedId: String? = nil,
+    private func submitValidated(_ submitted: AskDraft, modelRef: String, local: Bool, newConversation: Bool, messageId queuedId: String? = nil,
                                  clearsDraft: Bool = true, launcher: Bool = false) {
         guard let account = credentials() else { return }
         guard newConversation || selected != nil else { return }
         let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
         guard !busyIds.contains(id) else { return }
-        let local = newConversation
-            ? account.token.isEmpty || (submitted.storesLocally ?? commandSources.privateByDefault())
-            : isLocal(id)
         if newConversation, local { localConversationIds.insert(id) }
         let current = local ? account.local : account
         error = nil; operationErrors[id] = nil; busyIds.insert(id)

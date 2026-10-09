@@ -162,6 +162,32 @@ struct AskSubmissionPreflightTests {
     }
 
     @Test(arguments: [true, false])
+    func submissionPinsStorageBeforeAsyncValidation(initiallyLocal: Bool) async throws {
+        let catalog = PreflightCatalog()
+        await catalog.configure(held: true)
+        let fixture = try makeFixture(catalog: catalog, local: false)
+        defer { fixture.model.resetSession() }
+        var localDefault = initiallyLocal
+        fixture.model.commandSources.privateByDefault = { localDefault }
+        fixture.model.launcherDraft = AskDraft(text: "Original", includeScreenshot: false, modelRef: "custom:fixture")
+        fixture.model.submitLauncher()
+        for _ in 0..<100 {
+            if await catalog.calls > 0 { break }
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        #expect(await catalog.calls == 1)
+        #expect(fixture.model.selectedId == nil)
+        localDefault.toggle()
+        await catalog.release()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        let id = try #require(fixture.model.selectedId)
+        #expect(fixture.model.isLocal(id) == initiallyLocal)
+        #expect(await fixture.api.sends.count == (initiallyLocal ? 0 : 1))
+        #expect(await fixture.localAPI.sends.count == (initiallyLocal ? 1 : 0))
+        #expect(fixture.model.selected?.run?.status == "completed")
+    }
+
+    @Test(arguments: [true, false])
     func changingSelectionOrResettingSessionDropsLatePreflight(reset: Bool) async throws {
         let catalog = PreflightCatalog()
         await catalog.configure(held: true)
