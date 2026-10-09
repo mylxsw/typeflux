@@ -10,7 +10,7 @@ struct ExclusiveUIStateLanguageTests {
     /// A one-way signal whose `wait()` throws when the waiting task is cancelled, so no exit of a
     /// test can hang on it.
     private actor Gate {
-        private var isOpen = false
+        private(set) var isOpen = false
         private var waiters: [UUID: CheckedContinuation<Void, Error>] = [:]
 
         func signal() {
@@ -160,6 +160,44 @@ struct ExclusiveUIStateLanguageTests {
         await expectCleanedUp(lock, reads, original: original)
     }
 
+    /// Runs the race in its own task, so a cancel can arrive from outside it, and waits until the
+    /// reader is queued. `beforeQueued` runs inside the race just before it reports that, and
+    /// `whileQueued` runs here once it has; then the race is cancelled and its result returned.
+    /// Every exit of this function (normal, a throwing `whileQueued`, cancellation of the caller,
+    /// or a race that ends before the reader queues, which also ends the wait) cancels the race if
+    /// it is still running and joins it first.
+    private func cancelRaceOnceQueued(
+        on lock: ExclusiveUIStateLock, original: AppLanguage, switched: AppLanguage, reads: Reads,
+        beforeQueued: @escaping @Sendable () async throws -> Void = {},
+        whileQueued: () async throws -> Void = {}
+    ) async throws -> Result<Void, Error> {
+        let queued = Gate(), raceEnded = Gate()
+        let race = Task {
+            do {
+                try await raceWriterAndReader(on: lock, original: original, switched: switched, reads: reads) {
+                    try await beforeQueued()
+                    await queued.signal()
+                    try await Task.sleep(for: .seconds(60))
+                }
+            } catch {
+                await raceEnded.signal()
+                await queued.signal()
+                throw error
+            }
+        }
+        do {
+            try await queued.wait()
+            if await raceEnded.isOpen { return await race.result }
+            try await whileQueued()
+        } catch {
+            race.cancel()
+            _ = await race.result
+            throw error
+        }
+        race.cancel()
+        return await race.result
+    }
+
     @Test func cancellingTheTestWhileTheReaderIsQueuedStillRestoresTheLanguageAndJoinsBothTasks() async throws {
         let original = AppLocalization.shared.language
         defer { AppLocalization.shared.setLanguage(original) }
@@ -167,28 +205,97 @@ struct ExclusiveUIStateLanguageTests {
         let text = texts(original: original, switched: switched)
         let lock = ExclusiveUIStateLock()
         let reads = Reads()
-        let queued = Gate()
 
-        let parent = Task {
-            try await raceWriterAndReader(on: lock, original: original, switched: switched, reads: reads) {
-                await queued.signal()
-                try await Task.sleep(for: .seconds(60))
+        let result = try await cancelRaceOnceQueued(
+            on: lock, original: original, switched: switched, reads: reads,
+            whileQueued: {
+                // The writer still holds the lock and the reader still waits when the cancel arrives.
+                #expect(await lock.isLocked)
+                #expect(await lock.waiterCount == 1)
+                #expect(AppLocalization.shared.language == switched)
             }
-        }
-        try await queued.wait()
-        // The writer still holds the lock and the reader still waits when the cancel arrives.
-        #expect(await lock.isLocked)
-        #expect(await lock.waiterCount == 1)
-        #expect(AppLocalization.shared.language == switched)
-        parent.cancel()
-        let result = await parent.result
+        )
         #expect(throws: CancellationError.self) { try result.get() }
         #expect(reads.texts == ["unlocked: " + text.switched, "locked: " + text.original])
         await expectCleanedUp(lock, reads, original: original)
     }
 
-    /// Every Swift Testing suite that reads localized text or switches the language must share the
-    /// lock. Extensions in other files count toward the suite they extend.
+    @Test func cancellingTheCallerWhileItWaitsForTheQueuedReaderCancelsAndJoinsTheRace() async throws {
+        let original = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(original) }
+        let switched: AppLanguage = original == .english ? .simplifiedChinese : .english
+        let text = texts(original: original, switched: switched)
+        let lock = ExclusiveUIStateLock()
+        let reads = Reads()
+        let held = Gate()
+
+        // The race queues the reader but never reports it, so the caller is still waiting for
+        // readiness (or about to) when it is cancelled; either way its wait throws.
+        let caller = Task {
+            try await cancelRaceOnceQueued(
+                on: lock, original: original, switched: switched, reads: reads,
+                beforeQueued: {
+                    await held.signal()
+                    try await Task.sleep(for: .seconds(60))
+                },
+                whileQueued: { Issue.record("The caller must not get past the readiness wait") }
+            )
+        }
+        try await held.wait()
+        #expect(await lock.isLocked)
+        #expect(await lock.waiterCount == 1)
+        #expect(AppLocalization.shared.language == switched)
+        caller.cancel()
+        let result = await caller.result
+        #expect(throws: CancellationError.self) { try result.get() }
+        #expect(reads.texts == ["unlocked: " + text.switched, "locked: " + text.original])
+        await expectCleanedUp(lock, reads, original: original)
+    }
+
+    @Test func aFailureWhileTheCallerWaitsForTheQueuedReaderCancelsAndJoinsTheRace() async throws {
+        let original = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(original) }
+        let switched: AppLanguage = original == .english ? .simplifiedChinese : .english
+        let text = texts(original: original, switched: switched)
+        let lock = ExclusiveUIStateLock()
+        let reads = Reads()
+
+        await #expect(throws: Failure.self) {
+            _ = try await cancelRaceOnceQueued(
+                on: lock, original: original, switched: switched, reads: reads,
+                whileQueued: {
+                    #expect(await lock.isLocked)
+                    #expect(await lock.waiterCount == 1)
+                    throw Failure()
+                }
+            )
+        }
+        #expect(reads.texts == ["unlocked: " + text.switched, "locked: " + text.original])
+        await expectCleanedUp(lock, reads, original: original)
+    }
+
+    @Test func aRaceThatFailsBeforeTheReaderIsReportedQueuedEndsTheCallersWait() async throws {
+        let original = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(original) }
+        let switched: AppLanguage = original == .english ? .simplifiedChinese : .english
+        let text = texts(original: original, switched: switched)
+        let lock = ExclusiveUIStateLock()
+        let reads = Reads()
+
+        let result = try await cancelRaceOnceQueued(
+            on: lock, original: original, switched: switched, reads: reads,
+            beforeQueued: { throw Failure() },
+            whileQueued: { Issue.record("A failed race must not be reported queued") }
+        )
+        #expect(throws: Failure.self) { try result.get() }
+        #expect(reads.texts == ["unlocked: " + text.switched, "locked: " + text.original])
+        await expectCleanedUp(lock, reads, original: original)
+    }
+}
+
+extension ExclusiveUIStateLanguageTests {
+    /// Every Swift Testing suite that reads localized text, switches the language, or runs on the
+    /// main actor must share the lock. Extensions in other files count toward the suite they extend.
     @Test func everySuiteThatReadsTheGlobalLanguageIsExclusive() throws {
         let directory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         let files = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
@@ -231,12 +338,12 @@ struct ExclusiveUIStateLanguageTests {
         for (file, lines) in sources {
             for (index, line) in lines.enumerated() {
                 guard let type = name(declaration, line) else { continue }
-                let suiteLines = lines[..<index].reversed()
-                    .prefix { $0.hasPrefix("@") || $0.hasPrefix("//") }
-                    .filter { $0.hasPrefix("@Suite") }
+                let attributes = lines[..<index].reversed().prefix { $0.hasPrefix("@") || $0.hasPrefix("//") }
+                let suiteLines = attributes.filter { $0.hasPrefix("@Suite") }
                 let bodies = [body(lines, after: index)] + extensionBodies[type, default: []]
                 let isSuite = !suiteLines.isEmpty || bodies.contains { matches(testAttribute, $0) }
-                guard isSuite, bodies.contains(where: { matches(readsLanguage, $0) }) else { continue }
+                let isMainActor = line.hasPrefix("@MainActor") || attributes.contains { $0.hasPrefix("@MainActor") }
+                guard isSuite, isMainActor || bodies.contains(where: { matches(readsLanguage, $0) }) else { continue }
                 if !suiteLines.contains(where: { $0.contains(".exclusiveUIState") }) {
                     missing.append("\(file): \(type)")
                 }
