@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Combine
 import Testing
@@ -35,6 +36,27 @@ final class AskControlledSearchIndex: AskAppSearching, AskFileSearching, @unchec
 @Suite("Staged launcher search", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickSearchSessionTests {
+    @Test func searchBatchesPrefetchIconsBeforeRowsAreCreated() async throws {
+        let expected = NSImage(size: .init(width: 28, height: 28))
+        var loaded: [AskResultImageCache.Key] = []
+        let cache = AskResultImageCache { key in
+            loaded.append(key)
+            return expected
+        }
+        let apps = AskControlledSearchIndex(), files = AskControlledSearchIndex()
+        apps.appSearch = { _ in [Self.app] }
+        files.fileSearch = { _ in [Self.file] }
+        let session = AskQuickSearchSession(imageCache: cache)
+        update(session, apps: apps, files: files)
+        try await Self.wait { !session.isSearching }
+        let scale = NSScreen.main?.backingScaleFactor ?? 2
+        #expect(cache.cached(.init(url: Self.app.entry.url, thumbnail: false, scale: scale)) === expected)
+        #expect(cache.cached(.init(url: Self.file.url, thumbnail: false, modified: Self.file.modified,
+                                  scale: scale)) === expected)
+        #expect(loaded.count == 2, "Search must warm both types of rows without waiting for a view task")
+        #expect(loaded.allSatisfy { !$0.thumbnail })
+    }
+
     nonisolated static let app = AskAppMatch(entry: AskTestAppIndex.app("Notes"), score: 0.9)
     nonisolated static let file = AskFileHit(path: "/notes.txt", name: "notes.txt", kind: .file,
                                  modified: Date(), score: 1.06, match: 1)

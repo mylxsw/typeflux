@@ -5,6 +5,49 @@ import Testing
 @Suite("Asynchronous launcher images", .serialized, .exclusiveUIState)
 @MainActor
 struct AskResultImageCacheTests {
+    @Test func prefetchSurvivesRowCancellationAndWarmsRecreatedRows() async throws {
+        var calls = 0
+        var finish: CheckedContinuation<NSImage?, Never>?
+        let expected = NSImage(size: .init(width: 28, height: 28))
+        let cache = AskResultImageCache { _ in
+            calls += 1
+            return await withCheckedContinuation { finish = $0 }
+        }
+        let key = AskResultImageCache.Key(url: URL(fileURLWithPath: "/prefetched.txt"), thumbnail: false)
+        cache.prefetch([key, key])
+        try await AskQuickSearchSessionTests.wait { finish != nil }
+        let row = Task { await cache.image(key) }
+        await Task.yield()
+        row.cancel()
+        finish?.resume(returning: expected)
+        #expect(await row.value == nil)
+        try await AskQuickSearchSessionTests.wait { cache.cached(key) != nil }
+        #expect(cache.cached(key) === expected, "Replacing rows must not discard prefetched icons")
+        cache.prefetch([key])
+        #expect(await cache.image(key) === expected)
+        #expect(calls == 1)
+    }
+
+    @Test(arguments: [CGFloat(1), 2])
+    func finderIconsRasterizeOnlyTheDisplaySize(scale: CGFloat) async throws {
+        let url = URL(fileURLWithPath: "/System/Applications/Calculator.app")
+        let image = try #require(await AskFinderIcon.image(for: url, scale: scale))
+        #expect(image.size == NSSize(width: 28, height: 28))
+        #expect(image.representations.count == 1)
+        #expect(image.representations.first?.pixelsWide == Int(28 * scale))
+        #expect(image.representations.first?.pixelsHigh == Int(28 * scale))
+    }
+
+    @Test func ordinaryFileIconsUseTheFinderImagePath() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".txt")
+        try Data("Launcher icon".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let cache = AskResultImageCache()
+        let image = try #require(await cache.image(.init(url: url, thumbnail: false, scale: 2)))
+        #expect(image.representations.first?.pixelsWide == 56)
+        #expect(image.size == NSSize(width: 28, height: 28))
+    }
+
     @Test func hiddenRelativeApplicationLinksShareTheResolvedCacheAndPendingRequest() async throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
@@ -89,7 +132,7 @@ struct AskResultImageCacheTests {
     @Test func aCancelledApplicationIconLoadDoesNotPublishAnImage() async {
         let task = Task {
             withUnsafeCurrentTask { $0?.cancel() }
-            return await AskAppIcon.image(for: URL(fileURLWithPath: "/missing.app"))
+            return await AskFinderIcon.image(for: URL(fileURLWithPath: "/missing.app"))
         }
         #expect(await task.value == nil)
     }

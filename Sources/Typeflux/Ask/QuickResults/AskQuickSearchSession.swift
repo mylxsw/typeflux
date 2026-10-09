@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 import os
@@ -13,6 +14,7 @@ final class AskQuickSearchSession: ObservableObject {
     @Published private(set) var isSearching = false
     private let apps = AskSearchWorker<[AskAppMatch]>(label: "typeflux.ask.search.apps")
     private let files = AskSearchWorker<FileBatch>(label: "typeflux.ask.search.files")
+    private let imageCache: AskResultImageCache
     private var delay: Task<Void, Never>?
     private var publication: Task<Void, Never>?
     private var generation = 0
@@ -29,6 +31,10 @@ final class AskQuickSearchSession: ObservableObject {
     private var currentSettings = AskLauncherSearchSettings()
     var fileDebounce: Duration = .milliseconds(60)
     private static let log = OSLog(subsystem: "com.typeflux", category: "LauncherSearch")
+
+    init(imageCache: AskResultImageCache = .shared) {
+        self.imageCache = imageCache
+    }
 
     /// Keep the empty, non-executable search placeholder out of the visible list.
     var presentation: AskQuickResults? {
@@ -96,6 +102,7 @@ final class AskQuickSearchSession: ObservableObject {
             }, completion: { [weak self] matches in
                 guard let self, generation == ticket else { return }
                 appResults = matches
+                prefetchIcons(matches.map { .init(url: $0.entry.url, thumbnail: false) })
                 appsReady = true
                 os_signpost(.event, log: Self.log, name: "Applications ready", "%{public}d", ticket)
                 publish()
@@ -112,11 +119,21 @@ final class AskQuickSearchSession: ObservableObject {
                 }, completion: { [weak self] batch in
                     guard let self, generation == ticket else { return }
                     fileResults = batch
+                    prefetchIcons(batch.hits.map { .init(url: $0.url, thumbnail: false, modified: $0.modified) })
                     os_signpost(.event, log: Self.log, name: "Files ready", "%{public}d", ticket)
                     publish()
                 })
             }
         }
+    }
+
+    private func prefetchIcons(_ keys: [AskResultImageCache.Key]) {
+        let scale = NSScreen.main?.backingScaleFactor ?? 2
+        imageCache.prefetch(keys.map { key in
+            var key = key
+            key.scale = scale
+            return key
+        })
     }
 
     private func publish() {

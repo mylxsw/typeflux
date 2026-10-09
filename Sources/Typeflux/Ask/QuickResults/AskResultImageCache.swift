@@ -1,8 +1,8 @@
 import AppKit
 import QuickLookThumbnailing
 
-/// Quick Look supplies file previews; application icons come from their resolved
-/// bundles. Filesystem and Finder work runs off the main thread, never in view bodies.
+/// Quick Look supplies content previews; Finder supplies application and file
+/// icons. Filesystem work runs off the main thread, never in view bodies.
 @MainActor
 final class AskResultImageCache {
     struct Key: Hashable {
@@ -36,6 +36,14 @@ final class AskResultImageCache {
     }
 
     func cached(_ key: Key) -> NSImage? { cache.object(forKey: cacheKey(key)) }
+
+    /// Start while search batches are being assembled, before SwiftUI creates rows.
+    /// These consumers also keep useful loads alive when typing replaces a row.
+    func prefetch(_ keys: [Key]) {
+        for key in Set(keys) where cached(key) == nil {
+            Task { _ = await image(key) }
+        }
+    }
 
     func image(_ key: Key) async -> NSImage? {
         guard !Task.isCancelled else { return nil }
@@ -85,7 +93,7 @@ final class AskResultImageCache {
     /// an icon, while a link retargeted by a macOS update gets a new cache entry.
     private static func resolved(_ key: Key) async -> Key {
         guard key.url.isFileURL, key.url.pathExtension.lowercased() == "app" else { return key }
-        let url = await Task.detached(priority: .utility) { [url = key.url] in
+        let url = await Task.detached(priority: .userInitiated) { [url = key.url] in
             url.resolvingSymlinksInPath()
         }.value
         var resolved = key
@@ -94,11 +102,11 @@ final class AskResultImageCache {
     }
 
     private static func generate(_ key: Key) async -> NSImage? {
-        if key.url.isFileURL, key.url.pathExtension.lowercased() == "app" {
-            return await AskAppIcon.image(for: key.url)
+        if !key.thumbnail || key.url.pathExtension.lowercased() == "app" {
+            return await AskFinderIcon.image(for: key.url, scale: key.scale)
         }
         let request = QLThumbnailGenerator.Request(fileAt: key.url, size: CGSize(width: 56, height: 56),
-                                                   scale: key.scale, representationTypes: key.thumbnail ? .all : .icon)
+                                                   scale: key.scale, representationTypes: .all)
         return await withTaskCancellationHandler {
             guard !Task.isCancelled,
                   let representation = try? await QLThumbnailGenerator.shared.generateBestRepresentation(for: request),
