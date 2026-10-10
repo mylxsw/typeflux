@@ -374,24 +374,19 @@ struct AccountView: View {
         billingActionError = nil
         isOpeningBilling = true
 
-        Task {
-            do {
-                let url = try await AccountBillingFlow.destination(
-                    for: destination,
-                    requestBillingPageToken: { try await authState.requestBillingPageToken() },
-                    createPortalSession: { try await authState.createBillingPortalSession() }
-                )
-                await MainActor.run {
+        Task { @MainActor in
+            await AccountBillingFlow.open(
+                destination,
+                for: authState,
+                onLink: { url in
                     authState.invalidateAccountSummary()
                     NSWorkspace.shared.open(url)
-                    isOpeningBilling = false
-                }
-            } catch {
-                await MainActor.run {
-                    isOpeningBilling = false
+                },
+                onFailure: { error in
                     billingActionError = error.localizedDescription
                 }
-            }
+            )
+            isOpeningBilling = false
         }
     }
 

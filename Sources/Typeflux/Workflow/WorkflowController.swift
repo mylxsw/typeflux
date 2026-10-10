@@ -1549,27 +1549,23 @@ final class WorkflowController {
                         case .openPlans:
                             Task { @MainActor [weak self] in
                                 guard let self else { return }
-                                do {
-                                    let url = try await AccountBillingFlow.destination(
-                                        for: .subscribe,
-                                        requestBillingPageToken: {
-                                            try await AuthState.shared.requestBillingPageToken()
-                                        },
-                                        createPortalSession: {
-                                            try await AuthState.shared.createBillingPortalSession()
-                                        }
-                                    )
-                                    NSWorkspace.shared.open(url)
-                                } catch {
-                                    self.logger.error(
-                                        "Failed to open Typeflux Cloud plans: \(error.localizedDescription, privacy: .public)"
-                                    )
-                                    SettingsWindowController.shared.show(
-                                        settingsStore: self.settingsStore,
-                                        historyStore: self.historyStore,
-                                        initialSection: .account
-                                    )
-                                }
+                                await AccountBillingFlow.open(
+                                    .plans,
+                                    for: AuthState.shared,
+                                    onLink: { url in
+                                        NSWorkspace.shared.open(url)
+                                    },
+                                    onFailure: { error in
+                                        self.logger.error(
+                                            "Failed to open Typeflux Cloud plans: \(error.localizedDescription, privacy: .public)"
+                                        )
+                                        SettingsWindowController.shared.show(
+                                            settingsStore: self.settingsStore,
+                                            historyStore: self.historyStore,
+                                            initialSection: .account
+                                        )
+                                    }
+                                )
                             }
                         }
                     }

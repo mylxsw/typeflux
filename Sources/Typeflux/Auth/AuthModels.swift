@@ -206,3 +206,8 @@ enum AuthError: LocalizedError {
         }
     }
 }
+
+/// A billing link request finished after the session that made it was logged
+/// out or replaced. It carries neither the old account's link nor its error;
+/// billing callers drop it instead of showing, logging or acting on it.
+struct BillingSessionReplacedError: Error, Equatable {}
