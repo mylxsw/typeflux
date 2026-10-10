@@ -74,7 +74,8 @@ final class DIContainer {
         let settingsForClipboard = settingsStore
         clipboardMonitor = ClipboardMonitor(
             store: clipboardHistoryStore,
-            isEnabled: { settingsForClipboard.clipboardHistoryEnabled }
+            isEnabled: { settingsForClipboard.clipboardHistoryEnabled },
+            policy: { settingsForClipboard.clipboardCapturePolicy() }
         )
         clipboardPanelController = ClipboardPanelController(settingsStore: settingsStore)
         mcpRegistry = MCPRegistry()

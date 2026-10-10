@@ -1854,22 +1854,6 @@ struct StudioView: View {
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                     StudioSettingRow(
-                        title: L("history.clipboard.title"),
-                        subtitle: L("history.clipboard.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.clipboardHistoryEnabled },
-                                set: viewModel.setClipboardHistoryEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
                         title: L("history.privacy.title"),
                         subtitle: L("history.privacy.subtitle")
                     ) {
@@ -2917,8 +2901,11 @@ struct StudioView: View {
 
     private func launcherPage(compact: Bool) -> some View {
         SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: $launcherPane, compact: compact) {
-            LauncherSettingsView(settings: viewModel.askToolSettings, pane: launcherPane)
-                .id(launcherPane)
+            LauncherSettingsView(
+                settings: viewModel.askToolSettings, pane: launcherPane,
+                onEditShortcut: { viewModel.navigate(to: .settings) }
+            )
+            .id(launcherPane)
         }
     }
 

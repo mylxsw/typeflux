@@ -318,6 +318,32 @@ final class ClipboardPanelModelTests: XCTestCase {
         XCTAssertNil(ClipboardPanelModel.firstFullyVisibleIndex(frames: [0: 400 ... 450], viewportHeight: 280))
     }
 
+    func testClickSelectsOrPastes() {
+        model.reset(entries: entries)
+        model.click(index: 4)
+        XCTAssertEqual(model.selectedIndex, 4)
+        XCTAssertTrue(performed.isEmpty)
+        model.singleClickPastes = true
+        model.click(index: 1)
+        XCTAssertEqual(model.selectedIndex, 1)
+        XCTAssertEqual(performed.map(\.0), [.paste])
+        XCTAssertEqual(performed.map(\.1), ["https://example.com"])
+    }
+
+    func testResetCanStartBelowPinnedRows() {
+        let pinned = ClipboardTestSupport.entry(.text, text: "pinned", isPinned: true)
+        let fresh = ClipboardTestSupport.entry(.text, text: "fresh")
+        model.previewDelay = 0
+        model.showsPreview = true
+        model.reset(entries: [pinned, fresh], selectFirstUnpinned: true)
+        XCTAssertEqual(model.selectedEntry?.title, "fresh")
+        XCTAssertEqual(model.previewEntry?.title, "fresh")
+        model.reset(entries: [pinned, fresh])
+        XCTAssertEqual(model.selectedIndex, 0)
+        model.reset(entries: [pinned], selectFirstUnpinned: true)
+        XCTAssertEqual(model.selectedIndex, 0, "Only pinned rows: the first one")
+    }
+
     func testSectionsUseTheInjectedClock() {
         let now = Date()
         model.now = { now }

@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// Launcher settings panes: results shown right in the launcher, keywords, translation and workflows.
-/// These run from the launcher without the Agent, so they live on their own page.
+/// Launcher settings panes: results shown right in the launcher, keywords, translation, the
+/// clipboard and workflows. These run from the launcher without the Agent, so they live on their own page.
 struct LauncherSettingsView: View {
     let settings: SettingsStore
     var pane: LauncherSettingsPane = .basics
     var workflows: AskWorkflowStore = .shared
+    /// Opens the shortcut settings from the clipboard pane.
+    var onEditShortcut: () -> Void = {}
 
     @State var quickCalculatorEnabled = true
 
@@ -22,6 +24,9 @@ struct LauncherSettingsView: View {
             case .translation:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 AskTranslationSettingsView(settings: settings)
+            case .clipboard:
+                AgentPaneHeader(symbol: pane.symbol, title: pane.title, subtitle: L("clipboard.settings.subtitle"))
+                ClipboardSettingsView(settings: settings, onEditShortcut: onEditShortcut)
             case .workflows:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 ModelSurface {

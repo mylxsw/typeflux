@@ -53,6 +53,8 @@ final class ClipboardPanelModel: ObservableObject {
     var fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
     var now: () -> Date = Date.init
     var previewDelay: TimeInterval = 0.12
+    /// A single click pastes the row instead of selecting it.
+    var singleClickPastes = false
 
     private var noticeGeneration = 0
     private var previewWorkItem: DispatchWorkItem?
@@ -65,14 +67,28 @@ final class ClipboardPanelModel: ObservableObject {
         visibleEntries.indices.contains(selectedIndex) ? visibleEntries[selectedIndex] : nil
     }
 
-    /// Starts a new session: all entries, no search, first row selected.
-    func reset(entries: [ClipboardEntry]) {
+    /// Starts a new session: all entries, no search, first row selected — or, with
+    /// `selectFirstUnpinned`, the newest row below the pinned ones.
+    func reset(entries: [ClipboardEntry], selectFirstUnpinned: Bool = false) {
         missingCache = [:]
         setEntries(entries)
         notice = nil
         query = ""
         category = .all
         refilter(resetSelection: true)
+        if selectFirstUnpinned, let index = visibleEntries.firstIndex(where: { !$0.isPinned }) {
+            selectedIndex = index
+            refreshPreviewNow()
+        }
+    }
+
+    /// A click on a row: selects it, or pastes it when single clicks paste.
+    func click(index: Int) {
+        if singleClickPastes {
+            perform(.paste, at: index)
+        } else {
+            select(index: index)
+        }
     }
 
     /// Replaces the entries after an edit, keeping the selection on the same row when it still exists.

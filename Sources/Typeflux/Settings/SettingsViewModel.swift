@@ -237,7 +237,6 @@ final class StudioViewModel: ObservableObject {
     @Published var personaHotkey: HotkeyBinding?
     @Published var historyHotkey: HotkeyBinding?
     @Published var historyRetentionPolicy: HistoryRetentionPolicy
-    @Published var clipboardHistoryEnabled: Bool
     @Published private(set) var historyRecords: [HistoryRecord]
     @Published private(set) var playingAudioRecordID: UUID?
     @Published var toastMessage: String?
@@ -432,7 +431,6 @@ final class StudioViewModel: ObservableObject {
         personaHotkey = settingsStore.personaHotkey
         historyHotkey = settingsStore.historyHotkey
         historyRetentionPolicy = settingsStore.historyRetentionPolicy
-        clipboardHistoryEnabled = settingsStore.clipboardHistoryEnabled
         historyRecords = []
         displayedHistory = []
         settingsStore.localSTTModelIdentifier = localSTTModelIdentifier
@@ -1140,11 +1138,6 @@ final class StudioViewModel: ObservableObject {
     func setVoiceProcessingTimeout(_ value: VoiceProcessingTimeout) {
         voiceProcessingTimeout = value
         settingsStore.voiceProcessingTimeout = value
-    }
-
-    func setClipboardHistoryEnabled(_ value: Bool) {
-        clipboardHistoryEnabled = value
-        settingsStore.clipboardHistoryEnabled = value
     }
 
     func setHistoryRetentionPolicy(_ value: HistoryRetentionPolicy) {

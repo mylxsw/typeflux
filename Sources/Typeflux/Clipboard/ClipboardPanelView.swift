@@ -176,7 +176,7 @@ struct ClipboardPanelView: View {
             isHovered: hoveredIndex == index,
             isMissing: model.isMarkedMissing(row.entry),
             number: showingNumberHints ? model.shortcutNumber(at: index) : nil,
-            onSelect: { model.select(index: index) },
+            onSelect: { model.click(index: index) },
             onPerform: { model.perform($0, at: index) },
             onHover: { hovering in
                 if hovering {

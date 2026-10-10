@@ -178,6 +178,7 @@ final class InMemoryClipboardHistoryStore: ClipboardHistoryStore {
     var pinnedVoiceIDs: Set<UUID> = []
     var purgeCutoffs: [Date] = []
     var trimCounts: [Int] = []
+    var trimImageBytes: [Int64] = []
     private let lock = NSLock()
 
     @discardableResult
@@ -232,6 +233,12 @@ final class InMemoryClipboardHistoryStore: ClipboardHistoryStore {
         lock.lock()
         defer { lock.unlock() }
         trimCounts.append(maxCount)
+    }
+
+    func trim(toMaxImageBytes maxBytes: Int64) {
+        lock.lock()
+        defer { lock.unlock() }
+        trimImageBytes.append(maxBytes)
     }
 
     func pinnedVoiceRecordIDs() -> Set<UUID> {

@@ -20,17 +20,19 @@ enum ClipboardCaptureRules {
         !types.isDisjoint(with: ignoredTypes)
     }
 
-    static func capture(from contents: PasteboardContents) -> ClipboardCapture? {
+    /// `plainTextOnly` keeps only text: copied files and images are skipped, and an image that
+    /// comes with its URL is recorded as the URL.
+    static func capture(from contents: PasteboardContents, plainTextOnly: Bool = false) -> ClipboardCapture? {
         guard !shouldIgnore(types: contents.types) else { return nil }
 
         let fileURLs = contents.fileURLs.filter(\.isFileURL)
         if !fileURLs.isEmpty {
-            return .files(fileURLs)
+            return plainTextOnly ? nil : .files(fileURLs)
         }
 
         let text = contents.string.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
         // Apps such as browsers put the image's URL next to the image; the image is what was copied.
-        if let imageData = contents.imageData, text.map(ClipboardContentClassifier.isLink) ?? true {
+        if !plainTextOnly, let imageData = contents.imageData, text.map(ClipboardContentClassifier.isLink) ?? true {
             return image(from: imageData)
         }
 

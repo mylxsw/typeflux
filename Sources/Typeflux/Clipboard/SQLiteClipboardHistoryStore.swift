@@ -389,6 +389,27 @@ private extension SQLiteClipboardHistoryStore {
     }
 }
 
+// MARK: - Limits
+
+extension SQLiteClipboardHistoryStore {
+    func trim(toMaxImageBytes maxBytes: Int64) {
+        mutateIfChanged("Clipboard image trim failed") {
+            let images = try self.fetchItems(
+                sql: "SELECT \(Self.columns) FROM clipboard_items WHERE payload = 'image' ORDER BY date ASC;",
+                bind: { _ in }
+            )
+            var total = images.reduce(Int64(0)) { $0 + $1.byteSize }
+            var removed: [ClipboardItem] = []
+            for image in images where total > max(0, maxBytes) && !image.isPinned {
+                removed.append(image)
+                total -= image.byteSize
+            }
+            try self.delete(removed)
+            return !removed.isEmpty
+        }
+    }
+}
+
 // MARK: - Writes
 
 private extension SQLiteClipboardHistoryStore {
