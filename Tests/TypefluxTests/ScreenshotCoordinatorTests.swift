@@ -20,6 +20,9 @@ final class ScreenshotCoordinatorTests: XCTestCase {
 
         func selectFullScreen() { fullScreenSelections += 1 }
 
+        private(set) var scrollRequests = 0
+        func startScrollCapture() { scrollRequests += 1 }
+
         func dismiss() {
             dismissals += 1
             isShowing = false
@@ -43,6 +46,7 @@ final class ScreenshotCoordinatorTests: XCTestCase {
     private final class Toasts: ScreenshotToastPresenting {
         private(set) var shown: [ScreenshotToast] = []
         func show(_ toast: ScreenshotToast) { shown.append(toast) }
+        func clear() { shown = [] }
     }
 
     private struct SaveFailure: LocalizedError { var errorDescription: String? { "disk full" } }
@@ -90,6 +94,41 @@ final class ScreenshotCoordinatorTests: XCTestCase {
 
     private struct EncodeFailure: Error {}
 
+    private final class LongEditor: ScreenshotLongImagePresenting {
+        private(set) var presented: [(display: ScreenSnapshot.Display, screen: CGRect)] = []
+        private(set) var dismissals = 0
+        var onEvent: ((ScreenshotOverlayEvent) -> Void)?
+
+        func present(_ image: ScreenSnapshot.Display, on screen: CGRect,
+                     onEvent: @escaping (ScreenshotOverlayEvent) -> Void) {
+            presented.append((image, screen))
+            self.onEvent = onEvent
+        }
+
+        func dismiss() {
+            dismissals += 1
+            onEvent = nil
+        }
+    }
+
+    private final class ScrollCapture: ScrollCapturing {
+        let region: ScrollCaptureRegion
+        var onFinish: ((ScrollCaptureResult) -> Void)?
+        private(set) var cancels = 0
+
+        init(region: ScrollCaptureRegion) { self.region = region }
+
+        func start(onFinish: @escaping (ScrollCaptureResult) -> Void) { self.onFinish = onFinish }
+
+        func cancel() {
+            cancels += 1
+            onFinish?(.cancelled)
+        }
+    }
+
+    private let longEditor = LongEditor()
+    private var scrollCaptures: [ScrollCapture] = []
+
     private let overlay = Overlay()
     private let guide = Guide()
     private let toasts = Toasts()
@@ -117,7 +156,13 @@ final class ScreenshotCoordinatorTests: XCTestCase {
             output: output, saveDirectory: { [directory] in directory }, now: { [date] in date },
             relaunch: { [weak self] in self?.relaunches += 1 },
             encode: encode ?? { image, scale in Data("\(image.width)x\(image.height)@\(Int(scale))".utf8) },
-            render: render ?? { try ScreenshotRenderer.render($0, crop: $1, annotations: $2) }
+            render: render ?? { try ScreenshotRenderer.render($0, crop: $1, annotations: $2) },
+            longImageEditor: longEditor,
+            makeScrollCapture: { [unowned self] region in
+                let capture = ScrollCapture(region: region)
+                scrollCaptures.append(capture)
+                return capture
+            }
         )
     }
 
@@ -469,5 +514,136 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         await started(sut)
         XCTAssertEqual(sut.state, .selecting)
         XCTAssertEqual(overlay.presented.count, 2)
+    }
+
+    // MARK: Scrolling capture
+
+    /// The region on the 2× display, then S: the overlay hands it to a scrolling capture.
+    private func scrolling() async -> ScreenshotCoordinator {
+        let sut = makeCoordinator()
+        await started(sut)
+        overlay.onEvent?(.committed)
+        overlay.onEvent?(.scroll(displayID: 1, rect: CGRect(x: 10, y: 20, width: 100, height: 60)))
+        return sut
+    }
+
+    func testScrollingCaptureReplacesTheFrozenOverlay() async throws {
+        let sut = await scrolling()
+
+        XCTAssertEqual(sut.state, .scrolling)
+        XCTAssertFalse(overlay.isShowing)
+        XCTAssertNil(sut.snapshot, "The frozen displays are let go")
+        let capture = try XCTUnwrap(scrollCaptures.first)
+        XCTAssertEqual(capture.region, ScrollCaptureRegion(displayID: 1, displayFrame: CGRect(x: 0, y: 0, width: 200, height: 100),
+                                                           scale: 2, rect: CGRect(x: 10, y: 20, width: 100, height: 60)))
+        XCTAssertNotNil(capture.onFinish)
+
+        sut.start()
+        XCTAssertEqual(toasts.shown, [.busy])
+        XCTAssertEqual(scrollCaptures.count, 1)
+    }
+
+    func testTheLongImageOpensInItsEditorAndIsDeliveredRendered() async throws {
+        let sut = await scrolling()
+        let long = ScreenCaptureTestSupport.image(width: 200, height: 900)
+
+        scrollCaptures[0].onFinish?(.finished(long, .reachedEnd))
+
+        XCTAssertEqual(sut.state, .editingLongImage)
+        XCTAssertNil(sut.scrollCapture)
+        XCTAssertTrue(toasts.shown.isEmpty)
+        let presented = try XCTUnwrap(longEditor.presented.first)
+        XCTAssertEqual(presented.screen, CGRect(x: 0, y: 0, width: 200, height: 100))
+        XCTAssertEqual(presented.display.frame, CGRect(x: 0, y: 0, width: 100, height: 450), "Points at 2×")
+        XCTAssertEqual(presented.display.scale, 2)
+        XCTAssertEqual(presented.display.id, 1)
+        sut.start()
+        XCTAssertEqual(toasts.shown, [.busy])
+
+        let mark = ScreenshotAnnotation(kind: .rect(CGRect(x: 10, y: 400, width: 30, height: 30)))
+        longEditor.onEvent?(.finish(.copy, displayID: 1, rect: presented.display.frame, annotations: [mark]))
+        await sut.pendingTask?.value
+
+        XCTAssertEqual(output.copied, [Data("200x900@2".utf8)])
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertGreaterThanOrEqual(longEditor.dismissals, 1)
+        XCTAssertNil(sut.snapshot)
+    }
+
+    func testEndingsWithANoticeShowIt() async {
+        for (ending, notice) in [(ScrollCaptureEnding.reachedLimit, ScreenshotToast.scrollLimitReached),
+                                 (.cannotScroll, .scrollUnavailable), (.interrupted, .scrollInterrupted)] {
+            toasts.clear()
+            let sut = await scrolling()
+            scrollCaptures.last?.onFinish?(.finished(ScreenCaptureTestSupport.image(width: 20, height: 20), ending))
+            XCTAssertEqual(toasts.shown, [notice])
+            sut.cancel()
+        }
+        XCTAssertNil(ScreenshotCoordinator.toast(for: .user))
+        XCTAssertNil(ScreenshotCoordinator.toast(for: .reachedEnd))
+    }
+
+    func testCancellingOrFailingTheScrollingCaptureEndsTheScreenshot() async {
+        let cancelled = await scrolling()
+        scrollCaptures[0].onFinish?(.cancelled)
+        XCTAssertEqual(cancelled.state, .idle)
+        XCTAssertTrue(toasts.shown.isEmpty)
+
+        let failed = await scrolling()
+        scrollCaptures[1].onFinish?(.failed)
+        XCTAssertEqual(failed.state, .idle)
+        XCTAssertEqual(toasts.shown, [.failed])
+    }
+
+    func testCancellingTheScreenshotStopsTheScrollingCaptureOnce() async {
+        let sut = await scrolling()
+
+        sut.cancel()
+
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(scrollCaptures[0].cancels, 1)
+        XCTAssertNil(sut.scrollCapture)
+        // Its late result belongs to the old session.
+        scrollCaptures[0].onFinish?(.finished(ScreenCaptureTestSupport.image(width: 20, height: 20), .user))
+        XCTAssertTrue(longEditor.presented.isEmpty)
+    }
+
+    func testEscInTheLongImageEditorEndsTheScreenshot() async {
+        let sut = await scrolling()
+        scrollCaptures[0].onFinish?(.finished(ScreenCaptureTestSupport.image(width: 20, height: 20), .user))
+
+        longEditor.onEvent?(.cancelled)
+
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertNil(sut.snapshot)
+    }
+
+    func testScrollRequestsOutsideARegionOrSessionAreIgnored() async {
+        let sut = makeCoordinator()
+        sut.handle(.scroll(displayID: 1, rect: CGRect(x: 0, y: 0, width: 10, height: 10)))
+        XCTAssertEqual(sut.state, .idle)
+
+        await started(sut)
+        overlay.onEvent?(.scroll(displayID: 99, rect: CGRect(x: 0, y: 0, width: 10, height: 10)))
+        overlay.onEvent?(.scroll(displayID: 1, rect: CGRect(x: 500, y: 500, width: 10, height: 10)))
+        XCTAssertEqual(sut.state, .selecting)
+        XCTAssertTrue(scrollCaptures.isEmpty)
+    }
+
+    func testScrollingModeStartsTheCaptureOnceTheRegionIsChosen() async {
+        let sut = makeCoordinator()
+        await started(sut, mode: .scrolling)
+        XCTAssertEqual(sut.state, .selecting)
+        XCTAssertEqual(overlay.scrollRequests, 0)
+
+        overlay.onEvent?(.committed)
+        XCTAssertEqual(overlay.scrollRequests, 1)
+        overlay.onEvent?(.committed)
+        XCTAssertEqual(overlay.scrollRequests, 1, "Only for the first region")
+
+        sut.cancel()
+        await started(sut)
+        overlay.onEvent?(.committed)
+        XCTAssertEqual(overlay.scrollRequests, 1, "A normal screenshot does not scroll")
     }
 }

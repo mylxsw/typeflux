@@ -3,9 +3,10 @@ import Foundation
 
 /// Runs one screenshot at a time, from the shortcut, the launcher or the menu bar.
 ///
-/// `idle → capturing → selecting → editing → finishing → idle`. Every way out
-/// (esc, a failure, a finished copy or save) goes through `teardown()`, which closes
-/// the overlay and drops the frozen images.
+/// `idle → capturing → selecting → editing → finishing → idle`. A scrolling capture goes
+/// `editing → scrolling → editingLongImage → finishing`. Every way out (esc, a failure, a
+/// finished copy or save) goes through `teardown()`, which closes the overlay, stops a
+/// scrolling capture and drops the frozen or joined images.
 @MainActor
 final class ScreenshotCoordinator {
     enum State: Equatable {
@@ -16,6 +17,10 @@ final class ScreenshotCoordinator {
         case selecting
         /// A region is chosen and can still be adjusted and marked up.
         case editing
+        /// The region is captured live while it scrolls.
+        case scrolling
+        /// The joined long image is being marked up.
+        case editingLongImage
         /// The overlay has closed; the image is being encoded and delivered.
         case finishing
     }
@@ -40,6 +45,12 @@ final class ScreenshotCoordinator {
     private let relaunch: () -> Void
     private let encode: Encoder
     private let render: Renderer
+    private let longImageEditor: any ScreenshotLongImagePresenting
+    private let makeScrollCapture: @MainActor (ScrollCaptureRegion) -> any ScrollCapturing
+    /// The scrolling capture in progress.
+    private(set) var scrollCapture: (any ScrollCapturing)?
+    /// `jtgd`: the region goes straight to a scrolling capture once it is chosen.
+    private var scrollsOnCommit = false
     /// Bumped by every teardown, so a capture or delivery from an earlier session is ignored.
     private var session = 0
 
@@ -53,7 +64,10 @@ final class ScreenshotCoordinator {
          now: @escaping () -> Date = Date.init,
          relaunch: @escaping () -> Void = {},
          encode: @escaping Encoder = { try ScreenshotImageExporter.png($0, scale: $1) },
-         render: @escaping Renderer = { try ScreenshotRenderer.render($0, crop: $1, annotations: $2) }) {
+         render: @escaping Renderer = { try ScreenshotRenderer.render($0, crop: $1, annotations: $2) },
+         longImageEditor: (any ScreenshotLongImagePresenting)? = nil,
+         makeScrollCapture: @escaping @MainActor (ScrollCaptureRegion) -> any ScrollCapturing = ScreenshotCoordinator
+             .scrollCapture(for:)) {
         self.capture = capture
         self.permission = permission
         self.overlay = overlay
@@ -65,6 +79,14 @@ final class ScreenshotCoordinator {
         self.relaunch = relaunch
         self.encode = encode
         self.render = render
+        self.longImageEditor = longImageEditor ?? ScreenshotLongImageEditorController()
+        self.makeScrollCapture = makeScrollCapture
+    }
+
+    /// A scrolling capture with the real stream, wheel events and panels.
+    static func scrollCapture(for region: ScrollCaptureRegion) -> any ScrollCapturing {
+        ScrollCaptureSession(region: region, source: ScreenCaptureStreamFrameSource(), driver: ScrollDriver(),
+                             monitor: ScrollUserActivityMonitor(), presenter: ScrollCaptureOverlayController())
     }
 
     /// Starts a screenshot. While framing, starting again selects the whole display;
@@ -77,7 +99,7 @@ final class ScreenshotCoordinator {
             overlay.selectFullScreen()
             state = .editing
             return
-        case .capturing, .finishing:
+        case .capturing, .finishing, .scrolling, .editingLongImage:
             toast.show(.busy)
             return
         }
@@ -109,6 +131,12 @@ final class ScreenshotCoordinator {
         switch event {
         case .committed:
             if state == .selecting { state = .editing }
+            if state == .editing, scrollsOnCommit {
+                scrollsOnCommit = false
+                overlay.startScrollCapture()
+            }
+        case let .scroll(displayID, rect):
+            startScrollCapture(displayID: displayID, rect: rect)
         case .cancelled:
             teardown()
         case let .colorPicked(hex):
@@ -151,6 +179,7 @@ final class ScreenshotCoordinator {
         case let .success(snapshot):
             self.snapshot = snapshot
             state = .selecting
+            scrollsOnCommit = mode == .scrolling
             overlay.present(snapshot) { [weak self] event in self?.handle(event) }
             if mode == .fullScreen {
                 overlay.selectFullScreen()
@@ -168,7 +197,8 @@ final class ScreenshotCoordinator {
 
     private func finish(_ action: ScreenshotOutputAction, displayID: CGDirectDisplayID, rect: CGRect,
                         annotations: [ScreenshotAnnotation]) {
-        guard state == .selecting || state == .editing, let display = snapshot?.display(id: displayID) else { return }
+        guard state == .selecting || state == .editing || state == .editingLongImage,
+              let display = snapshot?.display(id: displayID) else { return }
         let image: CGImage
         do {
             // Only the rendered image leaves the overlay, so nothing under a mosaic is ever copied or saved.
@@ -181,6 +211,7 @@ final class ScreenshotCoordinator {
         // The overlay closes first, so the user is back at once; encoding runs off the main thread.
         state = .finishing
         overlay.dismiss()
+        longImageEditor.dismiss()
         snapshot = nil
         let scale = display.scale, session = session, encode = encode
         pendingTask = Task { [weak self] in
@@ -210,10 +241,64 @@ final class ScreenshotCoordinator {
         }
     }
 
-    private func teardown() {
+    // MARK: Scrolling capture
+
+    private func startScrollCapture(displayID: CGDirectDisplayID, rect: CGRect) {
+        guard state == .selecting || state == .editing, let display = snapshot?.display(id: displayID) else { return }
+        let region = ScrollCaptureRegion(displayID: displayID, displayFrame: display.frame, scale: display.scale,
+                                         rect: rect.intersection(display.frame))
+        guard !region.rect.isEmpty else { return }
+        // The frozen picture goes away: the region is captured live from here.
         overlay.dismiss()
         snapshot = nil
+        state = .scrolling
+        let capture = makeScrollCapture(region)
+        scrollCapture = capture
+        let session = session
+        capture.start { [weak self] result in self?.didScroll(result, region: region, session: session) }
+    }
+
+    private func didScroll(_ result: ScrollCaptureResult, region: ScrollCaptureRegion, session: Int) {
+        guard session == self.session, state == .scrolling else { return }
+        scrollCapture = nil
+        switch result {
+        case let .finished(image, ending):
+            let scale = max(region.scale, 1)
+            let display = ScreenSnapshot.Display(
+                id: region.displayID,
+                frame: CGRect(x: 0, y: 0, width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale),
+                scale: scale, image: image
+            )
+            snapshot = ScreenSnapshot(displays: [display], windows: [])
+            state = .editingLongImage
+            longImageEditor.present(display, on: region.displayFrame) { [weak self] event in self?.handle(event) }
+            if let notice = Self.toast(for: ending) { toast.show(notice) }
+        case .cancelled:
+            teardown()
+        case .failed:
+            teardown()
+            toast.show(.failed)
+        }
+    }
+
+    static func toast(for ending: ScrollCaptureEnding) -> ScreenshotToast? {
+        switch ending {
+        case .user, .reachedEnd: nil
+        case .reachedLimit: .scrollLimitReached
+        case .cannotScroll: .scrollUnavailable
+        case .interrupted: .scrollInterrupted
+        }
+    }
+
+    private func teardown() {
+        overlay.dismiss()
+        longImageEditor.dismiss()
+        snapshot = nil
         state = .idle
+        scrollsOnCommit = false
         session += 1
+        let capture = scrollCapture
+        scrollCapture = nil
+        capture?.cancel()
     }
 }

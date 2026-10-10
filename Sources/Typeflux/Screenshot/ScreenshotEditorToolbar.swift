@@ -16,6 +16,10 @@ final class ScreenshotEditorToolbarModel {
         /// A tool is picked or an annotation selected: the second row shows its options.
         var showsOptions = false
         var showsMosaicOptions = false
+        /// The scrolling capture button; the long image editor has none.
+        var showsScrollCapture = true
+        /// Scrolling capture captures the region again, so it is only offered before anything is marked.
+        var canScrollCapture = true
     }
 
     enum Action: Equatable {
@@ -25,7 +29,7 @@ final class ScreenshotEditorToolbarModel {
         case mosaicEffect(ScreenshotMosaic.Effect)
         case mosaicStrength(ScreenshotMosaic.Strength)
         case mosaicShape(ScreenshotAnnotationEditor.MosaicShape)
-        case undo, redo, cancel, save, copy
+        case undo, redo, cancel, save, copy, scrollCapture
     }
 
     var state = State()
@@ -107,6 +111,11 @@ struct ScreenshotEditorToolbar: View {
                 iconButton(ScreenshotEditorToolbarModel.symbol(for: tool),
                            help: ScreenshotEditorToolbarModel.help(for: tool),
                            isOn: state.tool == tool) { perform(.tool(tool)) }
+            }
+            if state.showsScrollCapture {
+                separator
+                iconButton("rectangle.expand.vertical", help: "\(L("screenshot.tool.scroll"))  S",
+                           isEnabled: state.canScrollCapture) { perform(.scrollCapture) }
             }
             separator
             iconButton("arrow.uturn.backward", help: "\(L("screenshot.edit.undo"))  ⌘Z", isEnabled: state.canUndo) {

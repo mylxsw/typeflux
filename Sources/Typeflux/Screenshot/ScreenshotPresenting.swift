@@ -13,6 +13,8 @@ enum ScreenshotOverlayEvent: Equatable {
     /// Use the region with its annotations, both in global Quartz points on one display.
     case finish(ScreenshotOutputAction, displayID: CGDirectDisplayID, rect: CGRect,
                 annotations: [ScreenshotAnnotation] = [])
+    /// Capture the region (global Quartz points) again while it scrolls.
+    case scroll(displayID: CGDirectDisplayID, rect: CGRect)
     /// ⇧ while the loupe shows: the color under the pointer, as hex.
     case colorPicked(String)
     case cancelled
@@ -24,6 +26,8 @@ protocol ScreenshotOverlayPresenting: AnyObject {
     func present(_ snapshot: ScreenSnapshot, onEvent: @escaping (ScreenshotOverlayEvent) -> Void)
     /// Selects the whole display under the pointer.
     func selectFullScreen()
+    /// Hands the chosen region to a scrolling capture (`.scroll`), unless something is marked on it.
+    func startScrollCapture()
     /// Closes every panel and lets go of the frozen images. Safe to call when nothing shows.
     func dismiss()
 }
@@ -37,6 +41,12 @@ enum ScreenshotToast: Equatable {
     case colorCopied(String)
     /// The shortcut was pressed while a screenshot was still being taken or saved.
     case busy
+    /// A scrolling capture stopped at the size limit.
+    case scrollLimitReached
+    /// The region did not scroll, so only its first frame was kept.
+    case scrollUnavailable
+    /// The live capture stopped; what was joined so far is kept.
+    case scrollInterrupted
     case failed
 }
 

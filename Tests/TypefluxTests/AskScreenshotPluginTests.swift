@@ -12,13 +12,14 @@ struct AskScreenshotPluginTests {
 
     private let region = AskScreenshotPlugin.keywords[0]
     private let fullScreen = AskScreenshotPlugin.keywords[2]
+    private let scrolling = AskScreenshotPlugin.keywords[3]
 
     @Test func keywordsAndRegistration() {
-        #expect(AskScreenshotPlugin.keywords.map(\.keyword) == ["jt", "截图", "jtqp"])
+        #expect(AskScreenshotPlugin.keywords.map(\.keyword) == ["jt", "截图", "jtqp", "jtgd"])
         #expect(AskPluginRegistry.pluginIDs.contains(AskScreenshotPlugin.id))
         let defaults = AskPluginRegistry.defaultKeywords.filter { $0.pluginID == AskScreenshotPlugin.id }
         // `jt` and `截图` do the same thing, so they become one entry with an alias.
-        #expect(defaults.map(\.allKeywords) == [["jt", "截图"], ["jtqp"]])
+        #expect(defaults.map(\.allKeywords) == [["jt", "截图"], ["jtqp"], ["jtgd"]])
         let plugin = AskScreenshotPlugin()
         #expect(plugin.runsWithoutInput && !plugin.usesSelectionInput && plugin.entersOnReturn)
         #expect(plugin.title == L("screenshot.title") && plugin.symbol == "camera.viewfinder")
@@ -45,6 +46,10 @@ struct AskScreenshotPluginTests {
         let fullPlan = await plugin.plan(request(fullScreen))
         #expect(fullPlan.title == L("screenshot.mode.fullScreen"))
         #expect(fullPlan.action(for: .enter)?.kind == .capture(mode: .fullScreen))
+
+        let scrollingPlan = await plugin.plan(request(scrolling))
+        #expect(scrollingPlan.title == L("screenshot.mode.scrolling"))
+        #expect(scrollingPlan.action(for: .enter)?.kind == .capture(mode: .scrolling))
     }
 
     @Test func missingPermissionIsShownOnTheChipAndThePlan() async {
@@ -58,6 +63,7 @@ struct AskScreenshotPluginTests {
         let granted = AskScreenshotPlugin(isPermissionGranted: { true })
         #expect(granted.chipDetail(for: region, language: .english) == nil)
         #expect(granted.chipDetail(for: fullScreen, language: .english) == L("screenshot.mode.fullScreen.short"))
+        #expect(granted.chipDetail(for: scrolling, language: .english) == L("screenshot.mode.scrolling.short"))
         #expect(AskConversationModel.chipTitle(plugin: plugin, keyword: region, language: .english)
             == L("screenshot.title") + " · " + L("screenshot.permission.needed"))
         #expect(AskConversationModel.chipTitle(plugin: granted, keyword: region, language: .english)
@@ -71,9 +77,10 @@ struct AskScreenshotPluginTests {
         let plan = await plugin.plan(request(region))
 
         #expect(plugin.nextOptions(after: plan, request: request(region), step: 1) == ["mode": "fullScreen"])
-        #expect(plugin.nextOptions(after: plan, request: request(fullScreen), step: 1) == ["mode": "region"])
-        #expect(plugin.nextOptions(after: plan, request: request(region), step: -1) == ["mode": "fullScreen"])
-        #expect(plugin.nextOptions(after: plan, request: request(region, options: [:]), step: 2) == ["mode": "region"])
+        #expect(plugin.nextOptions(after: plan, request: request(fullScreen), step: 1) == ["mode": "scrolling"])
+        #expect(plugin.nextOptions(after: plan, request: request(scrolling), step: 1) == ["mode": "region"])
+        #expect(plugin.nextOptions(after: plan, request: request(region), step: -1) == ["mode": "scrolling"])
+        #expect(plugin.nextOptions(after: plan, request: request(region, options: [:]), step: 3) == ["mode": "region"])
     }
 
     @Test func runningDirectlyIsNotPossible() async {
@@ -88,6 +95,7 @@ struct AskScreenshotPluginTests {
         #expect(ScreenshotMode(options: [:]) == .region)
         #expect(ScreenshotMode(options: ["mode": "bogus"]) == .region)
         #expect(ScreenshotMode(options: ["mode": "fullScreen"]) == .fullScreen)
+        #expect(ScreenshotMode(options: ["mode": "scrolling"]) == .scrolling)
     }
 
     @Test func captureActionClosesTheLauncherThenStarts() async throws {

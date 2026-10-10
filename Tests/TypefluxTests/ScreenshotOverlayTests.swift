@@ -88,7 +88,8 @@ final class ScreenshotOverlayTests: XCTestCase {
                                   .finish(.save, all), .cancelled])
 
         XCTAssertFalse(view.handleKeyDown(Key.keyC, modifiers: []), "Plain C means nothing")
-        XCTAssertFalse(view.handleKeyDown(Key.keyS, modifiers: []))
+        XCTAssertTrue(view.handleKeyDown(Key.keyS, modifiers: []), "Plain S starts a scrolling capture")
+        XCTAssertEqual(events().last, .scroll(all))
         XCTAssertFalse(view.handleKeyDown(99, modifiers: []))
         XCTAssertTrue(view.handleKeyDown(Key.keyA, modifiers: []), "Plain A picks the arrow")
         XCTAssertEqual(view.editor.tool, .arrow)
@@ -339,6 +340,14 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertTrue(ScreenshotToastController.content(for: .colorCopied("#ABCDEF")).message.contains("#ABCDEF"))
         XCTAssertEqual(ScreenshotToastController.content(for: .busy).message, L("screenshot.toast.busy"))
         XCTAssertTrue(ScreenshotToastController.content(for: .failed).isError)
+        XCTAssertEqual(ScreenshotToastController.content(for: .scrollLimitReached).message,
+                       L("screenshot.toast.scrollLimit"))
+        XCTAssertFalse(ScreenshotToastController.content(for: .scrollLimitReached).isError)
+        XCTAssertEqual(ScreenshotToastController.content(for: .scrollUnavailable).message,
+                       L("screenshot.toast.scrollUnavailable"))
+        XCTAssertTrue(ScreenshotToastController.content(for: .scrollInterrupted).isError)
+        XCTAssertEqual(ScreenshotToastController.content(for: .scrollInterrupted).message,
+                       L("screenshot.toast.scrollInterrupted"))
     }
 
     func testToastShowsAndHides() throws {
