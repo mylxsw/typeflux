@@ -2995,7 +2995,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(failed.properties["error_kind"], "recording_too_short")
     }
 
-    private func makeWorkflowController(
+    func makeWorkflowController(
         textInjector: TextInjector = MockProcessingTextInjector(),
         hotkeyService: HotkeyService = MockProcessingHotkeyService(),
         audioRecorder: AudioRecorder = MockProcessingAudioRecorder(),
@@ -3013,14 +3013,12 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         sleep: @escaping @Sendable (Duration) async -> Void = { _ in },
         monotonicNow: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
         configureSettings: ((SettingsStore) -> Void)? = nil,
+        settingsStoreOverride: SettingsStore? = nil,
         hasPaidCloudSubscription: @escaping @Sendable () async -> Bool = {
             await MainActor.run { AuthState.shared.canUseCloudASR }
         }
     ) -> WorkflowController {
-        let suiteName = "WorkflowControllerProcessingTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-        let settingsStore = SettingsStore(defaults: defaults)
+        let settingsStore = settingsStoreOverride ?? makeTestSettingsStore()
         configureSettings?(settingsStore)
         let appState = AppStateStore()
         let overlayController = OverlayController(appState: appState)
@@ -3067,6 +3065,13 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             sleep: sleep,
             monotonicNow: monotonicNow
         )
+    }
+
+    private func makeTestSettingsStore() -> SettingsStore {
+        let suiteName = "WorkflowControllerProcessingTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        return SettingsStore(defaults: defaults)
     }
 
     private func configureReadyLLM(settingsStore: SettingsStore) {

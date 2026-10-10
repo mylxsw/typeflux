@@ -11,6 +11,13 @@ struct RecordingStartupContext: Sendable, Equatable {
 final class WorkflowController {
     var composerVoiceInput: AskVoiceInput?
     var onAskRequested: (() -> Void)?
+    @MainActor var billingAuth: () -> AuthState = { .shared }
+    @MainActor var openBillingURL: (URL) -> Void = { NSWorkspace.shared.open($0) }
+    @MainActor var presentBillingSettings: ((StudioSection) -> Void)?
+    @MainActor var reportBillingFailure: ((Error) -> Void)?
+    @MainActor lazy var billingLifetime = BillingActionLifetime()
+    @MainActor private var billingSessionGeneration: Int?
+
     let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "WorkflowController")
     static let recordingTimeoutNanoseconds: UInt64 = 600_000_000_000 // 10 minutes
     /// Last-resort protection while transcription finishes after recording.
@@ -1516,8 +1523,8 @@ final class WorkflowController {
 
     func presentCloudBillingError(_ error: TypefluxCloudBillingError) async {
         await MainActor.run {
-            let hasPaidSubscription = AuthState.shared.subscription.hasPaidSubscription
-            let billingEnabled = AuthState.shared.subscription.billingEnabled
+            let hasPaidSubscription = self.billingAuth().subscription.hasPaidSubscription
+            let billingEnabled = self.billingAuth().subscription.billingEnabled
             guard self.shouldPresentCloudBillingError(
                 error,
                 hasPaidSubscription: hasPaidSubscription
@@ -1545,29 +1552,32 @@ final class WorkflowController {
                         guard let self else { return }
                         switch primaryAction {
                         case .openAccount:
-                            SettingsWindowController.shared.show(
-                                settingsStore: settingsStore,
-                                historyStore: historyStore,
-                                initialSection: .account
-                            )
+                            self.showBillingSettings(.account)
                         case .openPlans:
-                            Task { @MainActor [weak self] in
+                            let auth = self.billingAuth()
+                            let generation = auth.sessionGeneration
+                            if self.billingSessionGeneration != generation {
+                                self.billingLifetime.cancel()
+                                self.billingSessionGeneration = generation
+                            }
+                            billingLifetime.start { [weak self] in
                                 guard let self else { return }
+                                guard auth.sessionGeneration == generation else { return }
                                 await AccountBillingFlow.open(
                                     .plans,
-                                    for: AuthState.shared,
+                                    for: auth,
                                     onLink: { url in
-                                        NSWorkspace.shared.open(url)
+                                        self.openBillingURL(url)
                                     },
                                     onFailure: { error in
-                                        self.logger.error(
-                                            "Failed to open Typeflux Cloud plans: \(error.localizedDescription, privacy: .public)"
-                                        )
-                                        SettingsWindowController.shared.show(
-                                            settingsStore: self.settingsStore,
-                                            historyStore: self.historyStore,
-                                            initialSection: .account
-                                        )
+                                        if let report = self.reportBillingFailure {
+                                            report(error)
+                                        } else {
+                                            self.logger.error(
+                                                "Failed to open Typeflux Cloud plans: \(error.localizedDescription, privacy: .private)"
+                                            )
+                                        }
+                                        self.showBillingSettings(.account)
                                     }
                                 )
                             }
@@ -1580,11 +1590,7 @@ final class WorkflowController {
                     style: .text,
                     handler: { [weak self] in
                         guard let self else { return }
-                        SettingsWindowController.shared.show(
-                            settingsStore: settingsStore,
-                            historyStore: historyStore,
-                            initialSection: .models
-                        )
+                        self.showBillingSettings(.models)
                     }
                 )
             ]
@@ -1594,6 +1600,17 @@ final class WorkflowController {
                 message: error.message(hasPaidSubscription: hasPaidSubscription, billingEnabled: billingEnabled),
                 tone: .billing,
                 actions: actions
+            )
+        }
+    }
+
+    @MainActor
+    private func showBillingSettings(_ section: StudioSection) {
+        if let presentBillingSettings {
+            presentBillingSettings(section)
+        } else {
+            SettingsWindowController.shared.show(
+                settingsStore: settingsStore, historyStore: historyStore, initialSection: section
             )
         }
     }

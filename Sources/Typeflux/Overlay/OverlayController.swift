@@ -317,6 +317,7 @@ final class OverlayController {
     private let appState: AppStateStore
     private let settingsStore: SettingsStore
     private var window: NSPanel?
+    var presentedWindow: NSWindow? { window }
     private var interfaceStyleObserver: NSObjectProtocol?
     private var callbackTarget: OverlayCallbackTarget?
 

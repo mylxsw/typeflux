@@ -35,6 +35,10 @@ final class AskResultWindowController: NSObject, NSWindowDelegate {
         }
     }
 
+    deinit {
+        if let notesObserver { NotificationCenter.default.removeObserver(notesObserver) }
+    }
+
     /// A saved note, to read beside other windows.
     @discardableResult
     func open(_ note: AskNote) -> AskResultDocument {

@@ -36,15 +36,20 @@ enum AccountBillingFlow {
         onLink: (URL) -> Void,
         onFailure: (Error) -> Void
     ) async {
+        guard !Task.isCancelled else { return }
         let url: URL
         do {
             url = try await request()
+        } catch is CancellationError {
+            return
         } catch is BillingSessionReplacedError {
             return
         } catch {
+            guard !Task.isCancelled else { return }
             onFailure(error)
             return
         }
+        guard !Task.isCancelled else { return }
         onLink(url)
     }
 

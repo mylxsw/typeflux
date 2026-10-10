@@ -2,11 +2,13 @@ import AppKit
 import SwiftUI
 
 struct AccountView: View {
+    @Environment(\.openURL) private var openURL
     @ObservedObject var authState: AuthState
     let onLogout: () -> Void
     @ObservedObject private var localization = AppLocalization.shared
     @State private var passwordChangeFlow = PasswordChangeFlow()
-    @State private var isOpeningBilling = false
+    @StateObject var billingLifetime = BillingActionLifetime()
+    private var isOpeningBilling: Bool { billingLifetime.isBusy }
     @State private var billingActionError: String?
     // TODO(GUL-57): Cloud data sync is not stable enough for this release. Keep its
     // account-page entry points commented out so the implementation can be restored later.
@@ -30,6 +32,8 @@ struct AccountView: View {
                 signedOutCard
             }
         }
+        .onDisappear { billingLifetime.cancel() }
+        .onChange(of: authState.sessionGeneration) { _ in billingLifetime.cancel() }
         .onAppear {
             refreshAccountOverview()
         }
@@ -372,21 +376,18 @@ struct AccountView: View {
     private func openBillingFlow(_ destination: AccountStatusPresentation.Destination) {
         guard !isOpeningBilling else { return }
         billingActionError = nil
-        isOpeningBilling = true
-
-        Task { @MainActor in
+        billingLifetime.start {
             await AccountBillingFlow.open(
                 destination,
                 for: authState,
                 onLink: { url in
                     authState.invalidateAccountSummary()
-                    NSWorkspace.shared.open(url)
+                    openURL(url)
                 },
                 onFailure: { error in
                     billingActionError = error.localizedDescription
                 }
             )
-            isOpeningBilling = false
         }
     }
 
