@@ -74,9 +74,6 @@ struct AskWorkflowGallerySheet: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(L("ask.workflow.gallery.title")).font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
-            Text(L("ask.workflow.gallery.subtitle")).font(.system(size: 12.5))
-                .foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 6)
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass").foregroundStyle(StudioTheme.textTertiary)
                 TextField(L("ask.workflow.gallery.search"), text: $search).textFieldStyle(.plain)
@@ -141,7 +138,7 @@ struct AskWorkflowGallerySheet: View {
                     .foregroundStyle(StudioTheme.textSecondary)
                     .frame(maxWidth: .infinity).padding(.top, 80)
             } else {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 3), spacing: 14) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 0), spacing: 14), count: 3), spacing: 14) {
                     ForEach(items) { item in card(item) }
                 }
                 .padding(.top, 14)
@@ -150,38 +147,71 @@ struct AskWorkflowGallerySheet: View {
     }
 
     private func card(_ item: AskWorkflowGallery.Item) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 AskWorkflowGalleryTile(item: item, size: 30)
                 Text(item.name).font(.system(size: 14.5, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1).minimumScaleFactor(0.85)
+                    .lineLimit(2)
+                    .help(item.name)
                 Spacer(minLength: 0)
             }
+            .frame(height: 36, alignment: .leading)
             Text(item.summary).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
                 .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, minHeight: 34, alignment: .topLeading)
             Spacer(minLength: 0)
             HStack(spacing: 6) {
-                ForEach(item.keywords, id: \.self) { AskWorkflowChip(text: $0).fixedSize() }
-                Text(item.runtime.title).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                    .fixedSize()
-                tags(item)
-                Spacer(minLength: 4)
-                if store.installed(item) == nil || store.hasUpdate(item) {
-                    cardButton(item).fixedSize().layoutPriority(1)
+                if missing?.contains(item.runtime) != true {
+                    Text(item.runtime.title).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                        .fixedSize()
                 }
+                tags(item)
             }
-            if store.installed(item) != nil, !store.hasUpdate(item) {
-                cardButton(item).fixedSize()
+            .frame(height: 21, alignment: .leading)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("ask.workflow.gallery.metadata." + item.id)
+            HStack(spacing: 8) {
+                cardKeywords(item)
+                Spacer(minLength: 0)
+                cardButton(item).fixedSize().layoutPriority(1)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("ask.workflow.gallery.action." + item.id)
             }
+            .frame(height: 24)
         }
-        .padding(16).frame(height: 168)
+        .padding(14).frame(maxWidth: .infinity).frame(height: 180)
         .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onTapGesture { selected = item.id }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.workflow.gallery.card." + item.id)
+    }
+
+    /// Keep the action visible; extra keywords remain available in the tooltip and detail page.
+    private func cardKeywords(_ item: AskWorkflowGallery.Item) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 4) {
+                ForEach(item.keywords, id: \.self) { AskWorkflowChip(text: $0) }
+            }
+            .fixedSize()
+            HStack(spacing: 4) {
+                if let first = item.keywords.first {
+                    Text(first).font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                        .padding(.horizontal, 6).frame(height: 18)
+                        .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 5))
+                        .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(StudioTheme.border))
+                }
+                if item.keywords.count > 1 {
+                    AskWorkflowChip(text: "+\(item.keywords.count - 1)")
+                }
+            }
+        }
+        .help(item.keywords.joined(separator: " · "))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(item.keywords.joined(separator: ", "))
+        .accessibilityIdentifier("ask.workflow.gallery.keywords." + item.id)
     }
 
     /// "Network" for examples that reach the network, "Needs Node" when its runtime is missing.

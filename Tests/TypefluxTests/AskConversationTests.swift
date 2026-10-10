@@ -250,6 +250,14 @@ final class AskTestCapture: AskContextCapturing {
 @MainActor
 final class AskTestSession { var owner = "owner" }
 
+/// Conversation tests do not read this Mac's browser data or automation grants.
+private struct AskFixtureBrowserSearch: AskBrowserSearching {
+    func snapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser],
+                  interactive: Bool) async -> AskBrowserSearchSnapshot { .init() }
+
+    func focus(_ target: AskBrowserTabTarget) async throws {}
+}
+
 @MainActor
 struct AskTestFixture {
     let sessionState = AskTestSession()
@@ -277,6 +285,7 @@ struct AskTestFixture {
                                      })
         // Never index this Mac's files from a test.
         model.fileIndex = AskTestFileIndex()
+        model.browserSearch = AskFixtureBrowserSearch()
     }
     func wait(_ predicate: () -> Bool) async throws {
         for _ in 0 ..< 1000 {

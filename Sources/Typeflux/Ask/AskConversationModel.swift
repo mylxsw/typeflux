@@ -32,6 +32,9 @@ final class AskConversationModel: ObservableObject {
     let voiceInput = AskVoiceInput()
     /// Applications the launcher can open; tests supply their own list.
     let quickSearch = AskQuickSearchSession()
+    var browserSearch: any AskBrowserSearching = AskBrowserSearchService()
+    var systemCommandRunner = AskSystemCommandRunner()
+    var confirmSystemCommand: (AskSystemCommand) -> Bool = AskSystemCommandConfirmation.confirm
     var appIndex: any AskAppSearching = AskAppIndex.shared
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared

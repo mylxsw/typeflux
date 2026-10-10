@@ -3,11 +3,11 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher settings polish", .serialized, .exclusiveUIState)
+@Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct LauncherSettingsPolishTests {
     private func render(_ view: some View, size: NSSize, name: String, light: Bool = false,
-                        check: (NSWindow) throws -> Void = { _ in }) async throws {
+                        check: (NSWindow) async throws -> Void = { _ in }) async throws {
         _ = NSApplication.shared
         // SwiftUI publishes its native accessibility nodes when this process-wide flag is enabled.
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
@@ -24,7 +24,7 @@ struct LauncherSettingsPolishTests {
         defer { window.orderOut(nil); window.close() }
         try await Task.sleep(for: .milliseconds(180))
         hosting.layoutSubtreeIfNeeded()
-        try check(window)
+        try await check(window)
         let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         #expect(bitmap.pixelsWide > 0)
@@ -84,7 +84,17 @@ struct LauncherSettingsPolishTests {
                     try await render(StudioView(viewModel: model, launcherPane: pane),
                                      size: NSSize(width: 1100, height: height),
                                      name: "page-\(pane.rawValue)-\(Int(height))-\(light ? "light" : "dark")",
-                                     light: light)
+                                     light: light) { window in
+                        if pane == .basics {
+                            #expect(find("launcher.settings.numberConversions", in: window) != nil)
+                            #expect(!SettingsBehaviorTestSupport.contains(
+                                L("ask.settings.quick.numberConversions.subtitle"), in: window
+                            ))
+                        } else if pane == .search {
+                            #expect(SettingsBehaviorTestSupport.contains(L("launcher.search.fuzzy"), in: window))
+                            #expect(!SettingsBehaviorTestSupport.contains(L("launcher.search.mode"), in: window))
+                        }
+                    }
                 }
             }
         }
@@ -153,6 +163,73 @@ struct LauncherSettingsPolishTests {
         }
     }
 
+    @Test func `workflow header actions fit and switches preserve trust requirements`() async throws {
+        let previous = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let fixture = try fixture()
+        for language in [AppLanguage.simplifiedChinese, .english] {
+            AppLocalization.shared.setLanguage(language)
+            for width in [400.0, 574.0, 800.0] {
+                try await render(ScrollView {
+                    LauncherSettingsView(settings: fixture.settings, pane: .workflows, workflows: fixture.store)
+                }, size: NSSize(width: width, height: 1100),
+                name: "workflow-header-\(language.rawValue)-\(Int(width))") { window in
+                    let actions = try ["ask.workflow.gallery", "ask.workflow.manage", "ask.workflow.new"]
+                        .map { try element($0, in: window).frame }
+                    let bounds = window.convertToScreen(window.contentView!.bounds)
+                    for action in actions {
+                        #expect(action.minX >= bounds.minX - 1 && action.maxX <= bounds.maxX + 1)
+                        #expect(action.height >= SettingsControlMetrics.height)
+                    }
+                    #expect(actions[0].maxX < actions[1].minX && actions[1].maxX < actions[2].minX)
+                    #expect(abs(actions[0].midY - actions[2].midY) < 1)
+                    #expect(find("ellipsis", in: window) == nil, "no persistent more buttons compete with the switches")
+                    let pending = try element("ask.workflow.enabled.untrusted", in: window)
+                    #expect(pending.isOn == false && pending.enabled == false)
+                    let modified = try element("ask.workflow.enabled.modified", in: window)
+                    #expect(modified.isOn == false && modified.enabled == false)
+                    #expect(try element("ask.workflow.enabled.encoding", in: window).isOn == true)
+                }
+            }
+        }
+        try await render(LauncherSettingsView(settings: fixture.settings, pane: .workflows, workflows: fixture.store),
+                         size: NSSize(width: 800, height: 1100), name: "workflow-switch") { window in
+            try click(element("ask.workflow.enabled.encoding", in: window), in: window)
+            try await Task.sleep(for: .milliseconds(100))
+            #expect(!fixture.store.isEnabled("encoding"))
+            try click(element("ask.workflow.enabled.encoding", in: window), in: window)
+            try await Task.sleep(for: .milliseconds(100))
+            #expect(fixture.store.isEnabled("encoding"))
+        }
+    }
+
+    @Test func `workflow rows only emphasize problems and keep failure details reachable`() async throws {
+        let fixture = try fixture()
+        let workflow = try #require(fixture.store.workflow("encoding"))
+        for exitCode in [Int32(0), Int32(2)] {
+            let entry = AskWorkflowLog.Entry(workflowID: workflow.id, keyword: "url", date: Date(), duration: 0.1,
+                                             exitCode: exitCode, timedOut: false, stderr: "Example failure details")
+            let summary = AskWorkflowSummary(workflow, lastRun: entry)
+            var inspected = false
+            try await render(AskWorkflowSettingsRow(symbol: workflow.symbol, summary: summary, edit: {},
+                                                    viewLastRun: { inspected = true }, controls: { EmptyView() }),
+                             size: NSSize(width: 574, height: 200), name: "workflow-run-\(exitCode)") { window in
+                #expect(find("ask.workflow.status", in: window) == nil)
+                #expect((find("ask.workflow.runNotice", in: window) != nil) == (exitCode != 0))
+                if exitCode != 0 {
+                    try click(element("ask.workflow.runDetails", in: window), in: window)
+                    #expect(inspected)
+                } else {
+                    #expect(find("ask.workflow.runDetails", in: window) == nil)
+                }
+            }
+            if exitCode != 0 {
+                try await render(AskWorkflowRunDetails(title: summary.title, entry: entry),
+                                 size: NSSize(width: 560, height: 420), name: "workflow-run-details")
+            }
+        }
+    }
+
     @Test func `shared tabs render counts and write through their binding`() async throws {
         final class Selection { var value: Int? = nil }
         let selection = Selection()
@@ -183,8 +260,8 @@ struct LauncherSettingsPolishTests {
             for width in [400.0, 574.0, 800.0] {
                 for light in [false, true] {
                     try await render(AskLauncherPluginSettingsView(settings: fixture.settings,
-                                                                  workflows: fixture.store,
-                                                                  initialFilter: .history),
+                                                                   workflows: fixture.store,
+                                                                   initialFilter: .history),
                                      size: NSSize(width: width, height: 300),
                                      name: "keyword-toolbar-\(language.rawValue)-\(Int(width))-\(light ? "light" : "dark")",
                                      light: light) { window in
@@ -234,6 +311,66 @@ struct LauncherSettingsPolishTests {
         }
     }
 
+    @Test func `keyword sections collapse and persist while systems start folded`() async throws {
+        let fixture = try fixture()
+        try await render(ScrollView {
+            AskLauncherPluginSettingsView(settings: fixture.settings, workflows: fixture.store)
+        }, size: NSSize(width: 700, height: 1600), name: "keyword-sections") { window in
+            for section in AskKeywordSection.allCases {
+                #expect(find("ask.settings.keywords.section." + section.rawValue, in: window) != nil)
+            }
+            #expect(find("ask.settings.keywords.row.fy", in: window) != nil)
+            #expect(find("ask.settings.keywords.row." + AskSystemCommand.toggleBluetooth.defaultKeyword, in: window) ==
+                nil)
+        }
+        try await render(ScrollView {
+            AskLauncherPluginSettingsView(settings: fixture.settings, workflows: fixture.store, initialFilter: .system)
+        }, size: NSSize(width: 700, height: 600), name: "keyword-system-expanded") { window in
+            try click(element("ask.settings.keywords.section.system", in: window), in: window)
+            try await Task.sleep(for: .milliseconds(100))
+            #expect(find("ask.settings.keywords.row." + AskSystemCommand.toggleBluetooth.defaultKeyword, in: window) !=
+                nil)
+            #expect(fixture.settings.defaults.stringArray(forKey: "ask.keywordCollapsedSections") == [])
+        }
+        try await render(
+            AskLauncherPluginSettingsView(settings: fixture.settings, workflows: fixture.store, initialFilter: .web),
+            size: NSSize(width: 700, height: 600),
+            name: "keyword-search-collapsed"
+        ) { window in
+            try click(element("ask.settings.keywords.section.search", in: window), in: window)
+            try await Task.sleep(for: .milliseconds(100))
+            #expect(find("ask.settings.keywords.row.g", in: window) == nil)
+            #expect(fixture.settings.defaults.stringArray(forKey: "ask.keywordCollapsedSections") == ["search"])
+        }
+        try await render(ScrollView {
+            AskLauncherPluginSettingsView(settings: fixture.settings, workflows: fixture.store, initialFilter: .system)
+        }, size: NSSize(width: 700, height: 600), name: "keyword-sections-restored") { window in
+            #expect(find("ask.settings.keywords.row." + AskSystemCommand.toggleBluetooth.defaultKeyword, in: window) !=
+                nil)
+        }
+    }
+
+    @Test func `keyword rows wrap long aliases within narrow and wide panes`() async throws {
+        let entry = AskKeyword(keyword: "f", pluginID: AskFileSearchPlugin.id,
+                               aliases: [
+                                   "filesearch",
+                                   "searchfilesandfolders",
+                                   "文件搜索",
+                                   String(repeating: "w", count: 48)
+                               ])
+        let row = AskKeywordListPresentation.row(entry, kind: .files, interface: .english, secondLanguage: "en")
+        for width in [320.0, 574.0, 900.0] {
+            try await render(ModelSurface { AskKeywordRowView(row: row, toggle: {}, open: {}) },
+                             size: NSSize(width: width, height: 180),
+                             name: "keyword-alias-row-\(Int(width))") { window in
+                let edit = try element("ask.settings.keywords.edit.f", in: window).frame
+                let bounds = window.convertToScreen(window.contentView!.bounds)
+                #expect(edit.minX >= bounds.minX && edit.maxX <= bounds.maxX)
+                #expect(edit.height < bounds.height)
+            }
+        }
+    }
+
     private struct Element {
         let object: NSObject
         var frame: NSRect {
@@ -247,6 +384,10 @@ struct LauncherSettingsPolishTests {
         var identifier: String? {
             value("accessibilityIdentifier") as? String
         }
+
+        var isOn: Bool? { (value("accessibilityValue") as? NSNumber)?.boolValue }
+
+        var enabled: Bool? { value("isAccessibilityEnabled") as? Bool }
 
         private func value(_ key: String) -> Any? {
             object.responds(to: NSSelectorFromString(key)) ? object.value(forKey: key) : nil

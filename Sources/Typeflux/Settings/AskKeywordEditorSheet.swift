@@ -22,26 +22,52 @@ struct AskKeywordEditorSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header.padding(.horizontal, 22).padding(.top, 20).padding(.bottom, 14)
-            VStack(alignment: .leading, spacing: 12) {
-                field(L("ask.settings.keywords.keyword")) {
-                    TextField(placeholderKeyword, text: $draft.keyword)
-                        .textFieldStyle(ModelFieldStyle())
-                        .focused($keywordFocused)
-                        .overlay(problemBorder(keywordProblem != nil))
-                        .accessibilityIdentifier("ask.settings.keywords.sheet.keyword")
-                    if let keywordProblem {
-                        problem(keywordProblem)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    field(L("ask.settings.keywords.defaultKeyword")) {
+                        TextField(placeholderKeyword, text: $draft.keyword)
+                            .textFieldStyle(ModelFieldStyle())
+                            .focused($keywordFocused)
+                            .overlay(problemBorder(keywordProblem != nil))
+                            .accessibilityIdentifier("ask.settings.keywords.sheet.keyword")
+                        if let keywordProblem {
+                            problem(keywordProblem)
+                        }
                     }
+                    aliasFields
+                    kindFields
+                    field(L("ask.settings.keywords.sheet.preview")) { preview }
                 }
-                kindFields
-                field(L("ask.settings.keywords.sheet.preview")) { preview }
-            }
-            .padding(.horizontal, 22)
+                .padding(.horizontal, 22).padding(.vertical, 2)
+            }.frame(maxHeight: 460)
             footer.padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 20)
         }
         .frame(width: 560)
         .background(ModelVisualStyle.canvas)
         .onAppear { keywordFocused = true }
+    }
+
+    private var aliasFields: some View {
+        field(L("ask.settings.keywords.aliases")) {
+            ForEach(draft.aliases.indices, id: \.self) { index in
+                HStack(spacing: 8) {
+                    TextField(L("ask.settings.keywords.alias"), text: $draft.aliases[index])
+                        .textFieldStyle(ModelFieldStyle())
+                        .accessibilityIdentifier("ask.settings.keywords.sheet.alias.\(index)")
+                    Button { draft.aliases.remove(at: index) } label: {
+                        Image(systemName: "minus.circle").foregroundStyle(StudioTheme.textTertiary)
+                    }
+                    .buttonStyle(.plain).help(L("ask.settings.keywords.removeAlias"))
+                    .accessibilityLabel(L("ask.settings.keywords.removeAlias"))
+                }
+            }
+            Button { draft.aliases.append("") } label: {
+                Label(L("ask.settings.keywords.addAlias"), systemImage: "plus")
+            }
+            .buttonStyle(.plain).foregroundStyle(ModelVisualStyle.accent).font(.system(size: 12))
+            .accessibilityIdentifier("ask.settings.keywords.sheet.addAlias")
+            hint(L("ask.settings.keywords.aliasHint"))
+        }
     }
 
     private var header: some View {
@@ -61,10 +87,13 @@ struct AskKeywordEditorSheet: View {
         case .prompt: "fix"
         case .web: "wiki"
         case .files: "ff"
+        case .tabs: "tab"
+        case .bookmarks: "bmk"
         case .chat: "chat"
         case .prefix: "prefix"
         case .setting: "setting"
         case .history: "history"
+        case .system: ""
         case .workflow: ""
         }
     }
@@ -109,7 +138,7 @@ struct AskKeywordEditorSheet: View {
                     (label: L("ask.settings.keywords.sheet.action.translate"), value: false),
                     (label: L("ask.settings.keywords.sheet.action.wordBook"), value: true)
                 ], selection: $draft.opensWordBook, size: .compact)
-                .accessibilityIdentifier("ask.settings.keywords.sheet.action")
+                    .accessibilityIdentifier("ask.settings.keywords.sheet.action")
                 if draft.opensWordBook { hint(L("ask.settings.keywords.sheet.action.wordBookHint")) }
             }
             if !draft.opensWordBook {
@@ -174,7 +203,16 @@ struct AskKeywordEditorSheet: View {
                     }
                 }
             }
-        case .files, .chat, .prefix, .setting, .history, .workflow:
+        case .system:
+            field(L("ask.system.title")) {
+                Picker("", selection: $draft.systemCommand) {
+                    ForEach(AskSystemCommand.allCases) { command in
+                        Text(command.title).tag(command)
+                    }
+                }.labelsHidden()
+                hint(L("ask.settings.keywords.kind.system.hint"))
+            }
+        case .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .workflow:
             EmptyView()
         }
     }

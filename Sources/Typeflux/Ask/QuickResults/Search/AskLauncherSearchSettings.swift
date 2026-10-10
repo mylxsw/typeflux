@@ -48,7 +48,8 @@ struct AskLauncherSearchSettings: Codable, Equatable, Sendable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let defaults = AskLauncherSearchSettings()
-        mode = try container.decodeIfPresent(Mode.self, forKey: .mode) ?? defaults.mode
+        // Search always uses the built-in application-first mixed policy, including older saves.
+        mode = .mixed
         fuzzy = try container.decodeIfPresent(Bool.self, forKey: .fuzzy) ?? defaults.fuzzy
         limit = try container.decodeIfPresent(Int.self, forKey: .limit) ?? defaults.limit
         fileIcons = try container.decodeIfPresent(FileIcons.self, forKey: .fileIcons) ?? defaults.fileIcons

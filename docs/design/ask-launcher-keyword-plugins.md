@@ -6,7 +6,7 @@
 
 > GUL-235 后续更新：悬浮启动器已移除 `/` 命令面板及 ⌘/ 入口；关键字插件仍通过关键字和 Tab 进入。下文关于启动器 `/` 面板插件分组的内容保留为历史实现说明。
 
-> 关键词目录：输入 `prefix` 后回车，或输入 `prefix `，浏览当前配置的全部关键词；`prefix 翻译` 等输入即时检索关键词、功能、预设说明和工作流名称。别名各占一行，停用及冲突项放在末尾并标注状态。↑↓ 选择，回车或点击进入目标关键词并等待输入，不带入筛选词，也不自动执行选中文字。目录本身忽略选中文字。新增默认词不会覆盖已有同名自定义关键词或工作流；目录可在关键词设置中改名。
+> 关键词目录：输入 `prefix` 后回车，或输入 `prefix `，浏览当前配置的全部关键词；`prefix 翻译` 等输入即时检索关键词、功能、预设说明和工作流名称。相同行为的别名合并展示，目录搜索同时匹配默认关键词和别名；停用及冲突项放在末尾并标注状态。↑↓ 选择，回车或点击进入目标关键词并等待输入，不带入筛选词，也不自动执行选中文字。目录本身忽略选中文字。新增默认词不会覆盖已有同名自定义关键词或工作流；目录可在关键词设置中改名。
 
 > 应用导航：`setting` 回车打开 Typeflux 的系统设置页。`history` 回车展示最近聊天，`history 项目` 按聊天标题即时筛选，选择后回车或点击打开原对话。搜索范围是当前账号已加载的云端聊天标题与本机缓存记录，输入时不请求网络，也不把选中文字作为筛选词。从 `prefix` 选择 `history` 会直接显示记录列表。
 
@@ -330,3 +330,20 @@ struct AskPluginAction: Equatable {
 - `AskCommandTests`：插件分组只在启动器出现、重名前缀、执行后进入关键字；⌘C 的按键映射。
 - `AskQuickResultsInteractionTests+Plugins`：真实启动器里 `g swift actors` → ⌘C 复制链接 → ⇥ 换百度 → ↩ 打开；`rw` → ↩ 流式出字 → 复制（不关闭）→ ⌘R 重新生成 → ↩ 复制并关闭。
 - `LLMRouterTests`：`streamComplete` 按服务商转发，以及不支持流式时的整段回退。
+## 14. Launcher discovery and system commands (2026-10-10)
+
+Normal launcher search includes enabled, reachable keywords and installed workflows. It matches their keywords and names, ranking exact matches before prefixes and substrings. These local features appear before applications and files. Return or Tab enters the chosen feature with an empty query; on-submit workflows still require a subsequent Return to run. Selecting Ask AI continues to submit the original query.
+
+Settings → Launcher → Keywords includes an 18-command system catalog. Commands use their full English names (lowercase, without spaces or punctuation) as default keywords and remain searchable by name. Users can add, edit, disable or delete their own aliases. English and Chinese command names are searchable in either interface language.
+
+The catalog covers Bluetooth, Wi-Fi, disk eject, Finder hidden files, desktop files, dark mode, trackpad gesture reset, Trash, screen saver, computer/display sleep, shutdown, restart, scroll direction, Spotlight rebuild, screen lock, and screen/keyboard cleaning. Trackpad reset restarts Dock to recover a stuck pinch gesture. Finder visibility changes restart Finder. Every system command requires confirmation before execution, both from search results and custom keywords. Cancelling preserves the launcher input and does not execute the command. Shutdown, restart, empty Trash and Spotlight rebuild retain their specific warnings; Spotlight also uses the macOS administrator prompt. Cleaning blocks keyboard and mouse input, exits with Escape, and automatically ends after 30 seconds; it requires Accessibility permission.
+
+Bluetooth power and immediate scroll-direction changes resolve macOS preference functions at runtime. Missing functions or a failed state change produce an error rather than reporting success. System-command tests use a recording process runner and never invoke shutdown, restart, sleep, disk eject or Trash deletion on the test Mac.
+
+## Keyword aliases and collapsible settings (2026-10-10)
+
+Each `AskKeyword` keeps its primary `keyword` and an ordered `aliases` array. The primary word supplies the stable row/action identity; all words trigger the same options and enabled state. Legacy JSON without `aliases` decodes unchanged. Legacy rows with identical plugin, options and enabled state merge in their original order; differing configurations remain separate. The versioned coverage marker `launcher.keywordAliases.v1` adds full English names once, respecting existing words and workflow reservations. Saving records the marker, so removed aliases stay removed.
+
+The editor supports adding/removing aliases, validates every word (including duplicates within the entry and workflow names), and allows up to 48 characters for full English names. Spaces and prefix separators remain invalid. Launcher matching considers every word longest-first, while directory, settings and feature search include aliases. Workflow validation, automatic naming and conflict resolution reserve all words.
+
+Settings use collapsible translation, AI prompt, search, Typeflux settings and system command sections. Search combines web, file, browser tab and bookmark search. Typeflux settings combines chat, keyword directory, settings and chat history. System commands start collapsed; section choices persist in local settings. Function and description occupy a flexible column with wrapping keyword chips underneath, keeping the toggle separate at narrow widths.

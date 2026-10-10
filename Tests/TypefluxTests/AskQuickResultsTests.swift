@@ -5,6 +5,71 @@ import Testing
 
 @Suite("Ask quick results", .exclusiveUIState)
 struct AskQuickResultsTests {
+    @Test func numbersConvertAndSearchWithoutHidingContent() throws {
+        let apps = AskTestAppIndex([AskTestAppIndex.app("2024")])
+        let files = AskTestFileIndex([("/Users/test/Documents/2024-report.pdf", .file, 0),
+                                      ("/Users/test/Documents/2024", .folder, 0)])
+        let sources = AskQuickResults.Sources(apps: apps, files: files)
+        var results = try #require(AskQuickResults.resolve(text: "2024", previous: nil, chinese: true,
+                                                          calculator: true, sources: sources))
+        #expect(results.calculation?.isNumericInput == true)
+        #expect(results.apps.count == 1 && results.files.count == 2)
+        #expect(results.rows.last == .askAI)
+        let calculation = try #require(results.rows.firstIndex(of: .calculation))
+        #expect(calculation == 0)
+        let conversionCount = results.formats.count + 1
+        #expect(Array(results.rows.prefix(conversionCount)) == [.calculation] + results.formats.indices.map(AskQuickResults.Row.format))
+        #expect(try #require(results.rows.firstIndex(of: .app(0))) == conversionCount)
+        #expect(try #require(results.rows.firstIndex(of: .file(0))) > conversionCount)
+        #expect(try #require(results.rows.firstIndex(of: .file(1))) > conversionCount)
+        #expect(results.highlightedRow == .calculation)
+        #expect(results.value(of: .calculation) == "2024")
+        results.highlight(try #require(results.rows.firstIndex(of: .file(0))))
+        let next = try #require(AskQuickResults.resolve(text: "2024", previous: results, chinese: true,
+                                                       calculator: true, sources: sources))
+        #expect(next.highlightedRow == .file(0) && next.chosen)
+        #expect(next.file(at: next.highlightedRow)?.name == "2024-report.pdf")
+        let disabled = try #require(AskQuickResults.resolve(text: "2024", previous: nil, chinese: true,
+                                                           calculator: true, numberConversions: false, sources: sources))
+        #expect(disabled.calculation == nil && disabled.files.count == 2 && disabled.apps.count == 1)
+        let incomplete = try #require(AskQuickResults.resolve(text: "2024+", previous: results, chinese: true,
+                                                             calculator: true, sources: sources))
+        #expect(incomplete.stale && incomplete.files.isEmpty && incomplete.apps.isEmpty)
+        let number = try #require(resolve("2024"))
+        let withBrowser = try #require(AskQuickResults.addingBrowsers([
+            .init(id: "2024-tab", kind: .tab, browser: .safari, title: "2024", url: "https://example.com/2024")
+        ], to: number))
+        #expect(withBrowser.rows.first == .calculation && withBrowser.highlightedRow == .calculation)
+        #expect(withBrowser.rows.firstIndex(of: .browser(0)) == number.formats.count + 1)
+    }
+
+    @Test func numberConversionsAndArithmeticHaveIndependentSwitches() throws {
+        let numberOnly = try #require(AskQuickResults.resolve(text: "255", previous: nil, chinese: true, calculator: false))
+        #expect(numberOnly.calculation?.isNumericInput == true)
+        #expect(AskQuickResults.resolve(text: "2+2", previous: nil, chinese: true, calculator: false) == nil)
+        let arithmeticOnly = try #require(AskQuickResults.resolve(text: "2+2", previous: nil, chinese: true, numberConversions: false))
+        #expect(arithmeticOnly.value(of: .calculation) == "4")
+        #expect(AskQuickResults.resolve(text: "255", previous: numberOnly, chinese: true, numberConversions: false) == nil)
+        #expect(AskQuickResults.resolve(text: "255+", previous: numberOnly, chinese: true, numberConversions: false) == nil)
+        #expect(AskQuickResults.resolve(text: "2+", previous: arithmeticOnly, chinese: true, numberConversions: false)?.stale == true)
+    }
+
+    @Test @MainActor func theBuiltInNumberSwitchPersistsIndependentlyOfOtherFeatures() throws {
+        let suite = "ask.built-in.tests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        #expect(settings.askQuickNumberConversionsEnabled)
+        let view = LauncherSettingsView(settings: settings)
+        view.setQuickNumberConversions(false)
+        let reopened = SettingsStore(defaults: try #require(UserDefaults(suiteName: suite)))
+        #expect(!reopened.askQuickNumberConversionsEnabled)
+        #expect(reopened.askQuickCalculatorEnabled && reopened.askQuickAppSearchEnabled && reopened.askQuickFileSearchEnabled)
+        view.setQuickCalculator(false)
+        view.setQuickNumberConversions(true)
+        #expect(reopened.askQuickNumberConversionsEnabled && !reopened.askQuickCalculatorEnabled)
+    }
+
     private func resolve(_ text: String, previous: AskQuickResults? = nil, chinese: Bool = true) -> AskQuickResults? {
         AskQuickResults.resolve(text: text, previous: previous, chinese: chinese)
     }

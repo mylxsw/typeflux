@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher keyword list", .exclusiveUIState)
+@Suite(.exclusiveUIState)
 struct AskKeywordListPresentationTests {
     private func rows(_ keywords: [AskKeyword] = AskPluginRegistry.defaultKeywords) -> [AskKeywordListRow] {
         AskKeywordListPresentation.rows(keywords: keywords, interface: .english, secondLanguage: "ja")
@@ -34,32 +34,17 @@ struct AskKeywordListPresentationTests {
             AskKeyword(keyword: "custom", pluginID: AskPromptPlugin.id, options: ["prompt": "Say {input}"])
         ]
         let rows = rows(input)
-        #expect(rows.map(\.keyword) == [
-            "fy",
-            "tr",
-            "翻译",
-            "dict",
-            "词典",
-            "rw",
-            "sum",
-            "ex",
-            "custom",
-            "g",
-            "bd",
-            "gh",
-            "f",
-            "chat",
-            "prefix",
-            "setting",
+        #expect(rows.filter { $0.kind != .system }.map(\.keyword) == [
+            "fy", "dict", "rw", "sum", "ex", "custom", "g", "bd", "gh", "f", "tab", "bmk", "chat", "prefix", "setting",
             "history"
         ])
         #expect(rows.allSatisfy { $0.kind != .workflow })
         #expect(Set(rows.map(\.id)).count == rows.count)
         #expect(rows.first { $0.kind == .files }?.summary == L("ask.settings.keywords.kind.files.hint"))
-        #expect(rows.last?.source.pluginID == AskHistoryPlugin.id)
-        #expect(rows.last?.summary == L("ask.settings.keywords.kind.history.hint"))
+        #expect(rows.first { $0.kind == .history }?.source.pluginID == AskHistoryPlugin.id)
+        #expect(rows.first { $0.kind == .history }?.summary == L("ask.settings.keywords.kind.history.hint"))
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "wf").isEmpty)
-        #expect(AskKeywordListPresentation.counts(rows)[nil] == 17)
+        #expect(AskKeywordListPresentation.counts(rows)[nil] == 34)
         #expect(AskKeywordListPresentation.filter(rows, kind: .chat, query: "chat").map(\.keyword) == ["chat"])
         #expect(!AskKeywordKind.editableKinds.contains(.workflow))
         #expect(self.rows([]).isEmpty)
@@ -71,13 +56,13 @@ struct AskKeywordListPresentationTests {
         #expect(rows[0].summary == L("ask.settings.keywords.summary.auto",
                                      AskTranslationLanguages.name("en", in: .english),
                                      AskTranslationLanguages.name("ja", in: .english)))
-        #expect(rows[3].name == L("ask.wordBook.title"))
-        #expect(rows[3].summary == L("ask.settings.keywords.summary.wordBook"))
-        #expect(rows[5].name == AskPromptPlugin.Preset.polish.title)
-        #expect(rows[5].summary == L("ask.plugin.prompt.description.polish"))
-        #expect(!rows[5].summary.contains("\n"), "the preset description is one line")
-        #expect(rows[8].name == "Google" && rows[8].monospacedSummary)
-        #expect(rows[8].summary == "www.google.com/search?q={query}")
+        #expect(rows[1].name == L("ask.wordBook.title"))
+        #expect(rows[1].summary == L("ask.settings.keywords.summary.wordBook"))
+        #expect(rows[2].name == AskPromptPlugin.Preset.polish.title)
+        #expect(rows[2].summary == L("ask.plugin.prompt.description.polish"))
+        #expect(!rows[2].summary.contains("\n"), "the preset description is one line")
+        #expect(rows[5].name == "Google" && rows[5].monospacedSummary)
+        #expect(rows[5].summary == "www.google.com/search?q={query}")
 
         let japanese = AskKeyword(keyword: "fyja", pluginID: AskTranslatePlugin.id, options: ["target": "ja"])
         #expect(AskKeywordListPresentation.summary(of: japanese, interface: .english, secondLanguage: "en")
@@ -113,7 +98,7 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "summarize").map(\.keyword) == ["sum"])
         #expect(AskKeywordListPresentation.filter(rows, kind: .prompt, query: "google").isEmpty)
         let counts = AskKeywordListPresentation.counts(rows)
-        #expect(counts[nil] == 16 && counts[.translate] == 5 && counts[.files] == 1 && counts[.workflow] == nil)
+        #expect(counts[nil] == 33 && counts[.translate] == 2 && counts[.files] == 1 && counts[.workflow] == nil)
         #expect(counts[.chat] == 1)
     }
 
@@ -136,7 +121,7 @@ struct AskKeywordListPresentationTests {
     }
 }
 
-@Suite("Launcher keyword draft", .exclusiveUIState)
+@Suite(.exclusiveUIState)
 struct AskKeywordDraftTests {
     private let defaults = AskPluginRegistry.defaultKeywords
     private let workflows = [AskWorkflowKeywordEntry(keyword: "wf", workflowID: "local.p", workflowName: "Python",
@@ -189,11 +174,11 @@ struct AskKeywordDraftTests {
     }
 
     @Test func `keyword problems name who has the word`() {
-        var draft = AskKeywordDraft(editing: keyword("tr"))
+        var draft = AskKeywordDraft(editing: keyword("dict"))
         #expect(draft.keywordProblem(among: defaults, workflows: workflows) == nil, "its own word is fine")
         draft.keyword = "FY"
         #expect(draft.keywordProblem(among: defaults, workflows: workflows)
-            == L("ask.workflow.editor.keywordTakenBy", "fy", L("ask.plugin.translate.title")))
+            == L("ask.workflow.editor.keywordTakenBy", "FY", L("ask.plugin.translate.title")))
         draft.keyword = "wf"
         #expect(draft.keywordProblem(among: defaults, workflows: workflows)
             == L("ask.workflow.editor.keywordTakenBy", "wf", "Python"))
@@ -264,10 +249,10 @@ struct AskKeywordDraftTests {
         var edited = polish
         edited.keyword = "pol"
         list.save(edited, replacing: polish)
-        #expect(list.keywords[5].keyword == "pol")
+        #expect(list.keywords[2].keyword == "pol")
         let fyja = AskKeyword(keyword: "fyja", pluginID: AskTranslatePlugin.id, options: ["target": "ja"])
         list.save(fyja, replacing: nil)
-        #expect(list.keywords[5] == fyja, "added after the last translation keyword")
+        #expect(list.keywords[2] == fyja, "added after the last translation keyword")
         var empty = AskKeywordList(keywords: [])
         empty.save(fyja, replacing: nil)
         #expect(empty.keywords == [fyja])
@@ -276,7 +261,6 @@ struct AskKeywordDraftTests {
     }
 }
 
-@Suite("Workflow run settings")
 struct AskWorkflowRunSettingsTests {
     @Test func `environment rows become the manifest env`() {
         let rows = [

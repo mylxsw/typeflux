@@ -195,6 +195,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         }
 
         let editor = panel.firstResponder as? NSTextView
+        if [123, 124].contains(event.keyCode), editor?.hasMarkedText() == true { return false }
         let command = ClipboardPanelKeyCommand.command(
             keyCode: event.keyCode,
             modifiers: event.modifierFlags,
@@ -215,7 +216,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         case .previousCategory: model.cycleCategory(forward: false)
         case .cancel: model.cancel()
         case let .action(action): model.perform(action)
-        case .quickPaste, .togglePreview, .togglePause, .openSettings:
+        case .quickPaste, .togglePreview, .showPreview, .hidePreview, .togglePause, .openSettings:
             // Toggles and one-shot commands ignore key repeat.
             if !isRepeat { runOnce(command, on: model) }
         }
@@ -225,6 +226,10 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         switch command {
         case let .quickPaste(number): model.quickPaste(number: number)
         case .togglePreview: model.togglePreview()
+        case .showPreview:
+            if !model.showsPreview { model.showsPreview = true }
+        case .hidePreview:
+            if model.showsPreview { model.showsPreview = false }
         case .togglePause: model.send(.togglePause)
         case .openSettings: model.send(.openSettings)
         default: break

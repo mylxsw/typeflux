@@ -102,6 +102,7 @@ struct AskPluginPlan: Equatable, Sendable {
 struct AskPluginAction: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
         case openChat
+        case systemCommand(AskSystemCommand)
         case openSettings
         case signIn
         case openConversation(String, account: String)
@@ -114,6 +115,7 @@ struct AskPluginAction: Equatable, Sendable {
         case compare
         case askAI(String)
         /// Opens a link, such as a web search, and closes the launcher.
+        case focusBrowserTab(AskBrowserTabTarget)
         case open(URL)
         /// Opens a file or folder in an application (by name or bundle id), like a project in an editor.
         case openIn(URL, application: String)

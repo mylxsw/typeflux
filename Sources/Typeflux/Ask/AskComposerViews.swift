@@ -228,16 +228,19 @@ struct AskComposer: View {
         if refreshPlugins() { quickSearch.cancel(); quickResults = nil; return }
         let sources = AskQuickResults.Sources(apps: model.quickAppsEnabled ? model.appIndex : nil,
                                               files: model.quickFilesEnabled ? model.fileIndex : nil,
-                                              settings: model.launcherSearchSettings)
+                                              settings: model.launcherSearchSettings,
+                                              entries: model.launcherSearchEntries(language: AppLocalization.shared.language),
+                                              browsers: model.browserSearch, browserSettings: model.browserSearchSettings)
         if resetActions { quickActions = nil }
         quickSearch.update(text: draft.wrappedValue.text,
                            chinese: AppLocalization.shared.language == .simplifiedChinese,
-                           calculator: model.quickCalculatorEnabled, sources: sources)
+                           calculator: model.quickCalculatorEnabled,
+                           numberConversions: model.quickNumberConversionsEnabled, sources: sources)
     }
 
     private func refreshSearchIndex(resetActions: Bool = false) {
         guard launcher, searchVisible, quickSearch.isVisible else { return }
-        if plugins.keyword?.pluginID == AskFileSearchPlugin.id {
+        if [AskFileSearchPlugin.id, AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID].contains(plugins.keyword?.pluginID ?? "") {
             plugins.refreshLiveResults(text: draft.wrappedValue.text, selection: draft.wrappedValue.sentSelection,
                                        language: AppLocalization.shared.language)
         } else {
@@ -284,6 +287,22 @@ struct AskComposer: View {
               quickSearch.isCurrent(text: draft.wrappedValue.text), let results = quickResults else { return }
         quickActions = nil
         switch row {
+        case let .feature(index):
+            guard results.features.indices.contains(index) else { return }
+            let entry = results.features[index]
+            if let command = entry.command, close {
+                performPluginAction(.init(kind: .systemCommand(command), title: entry.title, symbol: entry.symbol))
+            } else if close, entry.keyword.pluginID == AskSettingsPlugin.id {
+                performPluginAction(.init(kind: .openSettings, title: entry.title, symbol: entry.symbol))
+            } else if close, entry.keyword.pluginID == AskOpenChatPlugin.id {
+                model.enterLauncherSearchEntry(entry)
+                performPluginAction(.init(kind: .openChat, title: entry.title, symbol: entry.symbol))
+            } else {
+                model.enterLauncherSearchEntry(entry)
+                pluginHighlight = 0
+                pluginReserve = 0
+            }
+            return
         case .askAI: model.submitLauncher(); return
         case .showAllFiles: showAllFiles(); return
         case .app, .pane:
@@ -294,6 +313,11 @@ struct AskComposer: View {
             return
         case .file:
             if let file = results.file(at: row) { runFileAction(.open, file) }
+            return
+        case let .browser(index):
+            guard results.browserEntries.indices.contains(index) else { return }
+            let item = results.browserEntries[index].item(settings: model.browserSearchSettings)
+            if let action = item.actions.first { performPluginAction(action) }
             return
         case .calculation, .format: break
         }
@@ -422,6 +446,10 @@ struct AskComposer: View {
         case .commandEnter:
             model.submitLauncher()
         case .tab:
+            if case .feature = results.highlightedRow {
+                runQuickResult(results.highlightedRow, close: false)
+                return true
+            }
             guard let value = results.value(of: .calculation), !results.stale else { return false }
             draft.wrappedValue.text = value
         case .right:
@@ -445,7 +473,10 @@ struct AskComposer: View {
         case .optionEnter:
             guard let file, file.kind != .folder else { return false }
             runFileAction(.openWith, file)
-        case .escape, .shiftTab, .commandD, .commandC, .commandE, .commandZ, .commandS, .commandB, .commandO:
+        case .commandC:
+            guard case let .browser(index) = results.highlightedRow, results.browserEntries.indices.contains(index) else { return false }
+            AskQuickResults.copy(results.browserEntries[index].url)
+        case .escape, .shiftTab, .commandD, .commandE, .commandZ, .commandS, .commandB, .commandO:
             return false
         }
         return true
@@ -469,7 +500,8 @@ struct AskComposer: View {
                                     comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
                                     offersAskAI: asks, savesNoteWhenDone: plugins.savesNoteWhenDone)
         }
-        if let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
+        if quickSearch.presentation?.features.isEmpty != false,
+           let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
             return AskPluginDisplay(hint: hint, title: plugin.title, symbol: plugin.symbol, phase: .waiting,
                                     highlighted: pluginHighlight)
         }
@@ -542,6 +574,13 @@ struct AskComposer: View {
 
     private func performPluginAction(_ action: AskPluginAction) {
         if case .enterKeyword = action.kind { pluginHighlight = 0; pluginReserve = 0 }
+        if case let .focusBrowserTab(target) = action.kind {
+            Task {
+                if await model.focusBrowserTab(target) { onDismiss() }
+                else { refreshSearchIndex() }
+            }
+            return
+        }
         if model.performPluginAction(action) == .close { onDismiss() }
     }
 
@@ -1180,7 +1219,7 @@ struct AskComposer: View {
             return true
         }
         // Return can arrive before SwiftUI has refreshed the keyword hint.
-        if launcher, key == .enter, !plugins.isActive,
+        if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
            plugins.hint?.pluginID != AskSettingsPlugin.id || pluginHighlight == 0 {
             let match = AskKeywordMatcher.match(draft.wrappedValue.text, keywords: plugins.availableKeywords)
             switch match {
@@ -1191,21 +1230,21 @@ struct AskComposer: View {
             default: break
             }
         }
-        if launcher, key == .enter, !plugins.isActive,
+        if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
            plugins.hint?.pluginID != AskHistoryPlugin.id || pluginHighlight == 0,
            model.enterLauncherKeywordFromText(pluginID: AskHistoryPlugin.id) {
             pluginHighlight = 0
             pluginReserve = 0
             return true
         }
-        if launcher, key == .enter, !plugins.isActive,
+        if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
            plugins.hint?.pluginID != AskPrefixPlugin.id || pluginHighlight == 0,
            model.enterKeywordDirectoryFromLauncher() {
             pluginHighlight = 0
             pluginReserve = 0
             return true
         }
-        if launcher, key == .enter, !plugins.isActive,
+        if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
            plugins.hint?.pluginID != AskOpenChatPlugin.id || pluginHighlight == 0 {
             let match = AskKeywordMatcher.match(draft.wrappedValue.text, keywords: model.launcherKeywords)
             switch match {

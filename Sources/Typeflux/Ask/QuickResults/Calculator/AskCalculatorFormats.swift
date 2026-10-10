@@ -4,6 +4,7 @@ import Foundation
 struct AskCalculatorFormat: Equatable, Identifiable {
     enum Kind: String, CaseIterable {
         case chineseAmount, grouped, englishAmount, hexadecimal, binary
+        case chineseNumber, octal, base36, base64, base64Text, scientific
 
         var title: String { L("ask.quick.format." + rawValue) }
     }
@@ -57,7 +58,7 @@ enum AskCalculatorFormats {
     }
 
     /// Up to 9999 9999 9999 9999: the part above 亿, then the part below it.
-    private static func chineseInteger(_ value: UInt64) -> String {
+    static func chineseInteger(_ value: UInt64) -> String {
         let high = value / 100_000_000, low = value % 100_000_000
         guard high > 0 else { return chineseBelowYi(low) }
         var text = chineseBelowYi(high) + "亿"

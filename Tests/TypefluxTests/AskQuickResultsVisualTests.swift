@@ -8,6 +8,25 @@ import Testing
 @Suite("Ask quick results snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickResultsVisualTests {
+    @Test func renderBuiltInNumberConversionSetting() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let suite = "launcher-built-in-snapshot-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            try await render(LauncherSettingsView(settings: settings).padding(24).background(ModelVisualStyle.canvas),
+                             size: .init(width: 620, height: 270), appearance: appearance,
+                             file: root.appendingPathComponent("built-in-number-conversions-\(name).png"))
+        }
+    }
+
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
                                         backing: .buffered, defer: false)
@@ -32,10 +51,16 @@ struct AskQuickResultsVisualTests {
         let root = URL(fileURLWithPath: directory)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         _ = NSApplication.shared
+        // Snapshot rendering must not wait for access to the user's real keychain.
+        let previousStore = KeychainTokenStore.useInMemoryStoreForTesting
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        _ = AuthState.shared
+        KeychainTokenStore.useInMemoryStoreForTesting = previousStore
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let cases: [(name: String, text: String, height: CGFloat)] = [
+            ("number-conversions", "255", 630), ("number-fraction", "1001.005", 530), ("number-search", "2024", 630),
             ("calculator", "1234567.89*2", 360), ("error", "100/0", 270), ("radix", "0xff+1", 360),
             ("app", "jsq", 250), ("app-question", "ji?", 330), ("safari", "safa", 250)
         ]
@@ -56,6 +81,12 @@ struct AskQuickResultsVisualTests {
                 let fixture = try AskTestFixture()
                 defer { fixture.model.resetSession() }
                 fixture.model.appIndex = apps
+                if item.name == "number-search" {
+                    fixture.model.fileIndex = AskTestFileIndex([
+                        ("/Users/test/Documents/2024 年度报告.pdf", .file, 0),
+                        ("/Users/test/Documents/2024 收支明细.xlsx", .file, 1)
+                    ])
+                }
                 fixture.model.launcherDraft = AskDraft(text: item.text, includeScreenshot: false)
                 try await render(AskLauncherView(model: fixture.model, onDismiss: {})
                                     .environment(\.askGlassMaterialOverride, .opaque),

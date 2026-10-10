@@ -70,7 +70,7 @@ extension AskLauncherToggleTests {
         }
     }
 
-    /// The launcher as the app shows it, with "a" already typed: the empty
+    /// The launcher as the app shows it, with a query already typed: the empty
     /// launcher's suggestions are a different layout on purpose.
     @MainActor fileprivate struct Session {
         let owned: Owned
@@ -109,7 +109,7 @@ extension AskLauncherToggleTests {
         func close() { owned.close() }
     }
 
-    fileprivate func openSteadyLauncher() async throws -> Session {
+    fileprivate func openSteadyLauncher(initialQuery: String = "a") async throws -> Session {
         _ = NSApplication.shared
         let suite = "ask-steady-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
@@ -128,12 +128,12 @@ extension AskLauncherToggleTests {
             // The launcher captures its context (source, selection) when it opens, adding
             // a row above the editor when it arrives. That is not typing: let it land first.
             try await steadily("the launcher's context lands") { fixture.capture.calls > 0 && !fixture.model.capturing }
-            editor.insertText("a", replacementRange: NSRange(location: NSNotFound, length: 0))
+            editor.insertText(initialQuery, replacementRange: NSRange(location: NSNotFound, length: 0))
             let session = Session(owned: owned, panel: panel, editor: editor)
-            // "a" replaces the suggestions, and the panel moves from their height to the
+            // The query replaces the suggestions, and the panel moves from their height to the
             // query's. Typing starts once it has arrived, not partway through that move.
-            try await steadily("the launcher settles on \"a\"") {
-                session.searched("a") && !controller.launcherIsResizing
+            try await steadily("the launcher settles on \"\(initialQuery)\"") {
+                session.searched(initialQuery) && !controller.launcherIsResizing
             }
             return session
         } catch {
@@ -163,7 +163,8 @@ extension AskLauncherToggleTests {
     }
 
     @Test func theListKeepsItsHeightWhileMatchesComeAndGo() async throws {
-        let session = try await openSteadyLauncher()
+        // Start with one app and no feature matches, leaving room for the list to grow.
+        let session = try await openSteadyLauncher(initialQuery: "qq音乐")
         defer { session.close() }
         let container = try #require(session.editor.enclosingScrollView)
         let recorder = Recorder(panel: session.panel, container: container)

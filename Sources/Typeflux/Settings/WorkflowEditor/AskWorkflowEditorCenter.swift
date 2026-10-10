@@ -477,7 +477,7 @@ struct AskWorkflowDiffView<Actions: View>: View {
                 .pickerStyle(.segmented).labelsHidden().fixedSize()
                 actions().padding(.leading, 8)
             }
-            .padding(.trailing, 12).frame(height: 38)
+            .padding(.horizontal, 12).frame(height: 38)
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {

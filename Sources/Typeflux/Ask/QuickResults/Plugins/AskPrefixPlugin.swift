@@ -9,33 +9,64 @@ struct AskPrefixPlugin: AskLauncherPlugin {
         var symbol: String
         var unavailableReason: String?
 
-        var canEnter: Bool { keyword.enabled && unavailableReason == nil }
+        var canEnter: Bool {
+            keyword.enabled && unavailableReason == nil
+        }
     }
 
     static let id = "prefix"
     static let keywords = [AskKeyword(keyword: "prefix", pluginID: id)]
     var entries: @MainActor @Sendable (AppLanguage) -> [Entry]
 
-    var id: String { Self.id }
-    var title: String { L("ask.plugin.prefix.title") }
-    var symbol: String { "list.bullet.rectangle" }
-    var defaultKeywords: [AskKeyword] { Self.keywords }
-    var runsWithoutInput: Bool { true }
-    var usesSelectionInput: Bool { false }
-    var entersOnReturn: Bool { true }
-    func placeholder(selectionLines: Int?) -> String { L("ask.plugin.prefix.placeholder") }
-    func chipDetail(for keyword: AskKeyword, language: AppLanguage) -> String? { nil }
+    var id: String {
+        Self.id
+    }
 
-    func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
+    var title: String {
+        L("ask.plugin.prefix.title")
+    }
+
+    var symbol: String {
+        "list.bullet.rectangle"
+    }
+
+    var defaultKeywords: [AskKeyword] {
+        Self.keywords
+    }
+
+    var runsWithoutInput: Bool {
+        true
+    }
+
+    var usesSelectionInput: Bool {
+        false
+    }
+
+    var entersOnReturn: Bool {
+        true
+    }
+
+    func placeholder(selectionLines _: Int?) -> String {
+        L("ask.plugin.prefix.placeholder")
+    }
+
+    func chipDetail(for _: AskKeyword, language _: AppLanguage) -> String? {
+        nil
+    }
+
+    func plan(_: AskPluginRequest) async -> AskPluginPlan {
         AskPluginPlan(mode: .live, title: title, debounce: .zero)
     }
 
-    func run(_ request: AskPluginRequest, plan: AskPluginPlan,
-             progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
+    func run(_ request: AskPluginRequest, plan _: AskPluginPlan,
+             progress _: @escaping AskPluginProgress) async throws -> AskPluginOutput {
         let query = request.origin == .argument ? request.text : ""
-        let matches = Self.filter(await entries(request.interfaceLanguage), query: query)
+        let matches = await Self.filter(entries(request.interfaceLanguage), query: query)
         let items = matches.map { entry in
             var subtitle = [entry.title, entry.detail].filter { !$0.isEmpty }.joined(separator: " · ")
+            if !entry.keyword.aliases.isEmpty {
+                subtitle = entry.keyword.aliases.joined(separator: " / ") + " · " + subtitle
+            }
             if let reason = entry.unavailableReason {
                 subtitle += " · " + reason
             } else if !entry.keyword.enabled {
@@ -56,7 +87,9 @@ struct AskPrefixPlugin: AskLauncherPlugin {
         )
     }
 
-    func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? { nil }
+    func nextOptions(after _: AskPluginPlan, request _: AskPluginRequest, step _: Int) -> [String: String]? {
+        nil
+    }
 
     /// Exact matches, then starts, then substrings; unavailable rows come last.
     /// Ties preserve the configured order rather than moving while the user browses.
@@ -64,7 +97,7 @@ struct AskPrefixPlugin: AskLauncherPlugin {
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         func rank(_ entry: Entry) -> Int? {
             if query.isEmpty { return 0 }
-            let fields = [entry.keyword.keyword, entry.title, entry.detail].map { $0.lowercased() }
+            let fields = (entry.keyword.allKeywords + [entry.title, entry.detail]).map { $0.lowercased() }
             if fields.contains(query) { return 0 }
             if fields.contains(where: { $0.hasPrefix(query) }) { return 1 }
             if fields.contains(where: { $0.contains(query) }) { return 2 }
@@ -76,6 +109,6 @@ struct AskPrefixPlugin: AskLauncherPlugin {
             if left.1.canEnter != right.1.canEnter { return left.1.canEnter }
             if left.2 != right.2 { return left.2 < right.2 }
             return left.0 < right.0
-        }.map { $0.1 }
+        }.map(\.1)
     }
 }

@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "local.subnet",
+  "name": "@L:subnet.name",
+  "description": "@L:subnet.summary",
+  "icon": "sf:network",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    {
+      "keyword": "subnet",
+      "title": "@L:subnet.keyword.subnet"
+    }
+  ],
+  "input": {
+    "argument": "optional",
+    "selection": "ifEmpty"
+  },
+  "run": {
+    "mode": "onSubmit",
+    "timeoutSeconds": 10
+  },
+  "command": {
+    "runtime": "python3",
+    "script": "main.py",
+    "args": [
+      "{query}"
+    ]
+  },
+  "output": "items"
+}

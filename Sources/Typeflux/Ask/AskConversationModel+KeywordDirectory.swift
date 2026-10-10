@@ -1,6 +1,29 @@
 import Foundation
 
 extension AskConversationModel {
+    func launcherSearchEntries(language: AppLanguage) -> [AskLauncherSearchEntry] {
+        var entries = launcherKeywordDirectory(language: language).filter(\.canEnter).map {
+            AskLauncherSearchEntry(keyword: $0.keyword, title: $0.title, detail: $0.detail, symbol: $0.symbol,
+                                   command: AskSystemCommand(pluginID: $0.keyword.pluginID),
+                                   alternateNames: [$0.keyword.options[AskWorkflowPlugin.titleOption]].compactMap { $0 })
+        }
+        for command in AskSystemCommand.allCases where !entries.contains(where: { $0.command == command }) {
+            entries.append(.init(keyword: .init(keyword: "", pluginID: command.id), title: command.title,
+                                 detail: L("ask.system.title"), symbol: command.symbol, command: command))
+        }
+        return entries
+    }
+
+    /// Searching discovers a feature; entering it never executes an on-submit workflow.
+    func enterLauncherSearchEntry(_ entry: AskLauncherSearchEntry) {
+        guard let current = launcherSearchEntries(language: AppLocalization.shared.language).first(where: { $0.id == entry.id })
+        else { return }
+        let listsAtOnce = [AskPrefixPlugin.id, AskHistoryPlugin.id, AskNotesPlugin.id, AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID]
+        plugins.enter(current.keyword, waitingForInput: !listsAtOnce.contains(current.keyword.pluginID))
+        launcherDraft.text = ""
+        plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language)
+    }
+
     /// Enters the directory even when Return precedes the view's keyword hint update.
     @discardableResult
     func enterKeywordDirectoryFromLauncher() -> Bool {

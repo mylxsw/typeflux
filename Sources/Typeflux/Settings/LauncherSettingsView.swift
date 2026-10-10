@@ -12,6 +12,7 @@ struct LauncherSettingsView: View {
     var onEditShortcut: () -> Void = {}
 
     @State var quickCalculatorEnabled = true
+    @State var quickNumberConversionsEnabled = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -30,10 +31,7 @@ struct LauncherSettingsView: View {
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 ClipboardSettingsView(settings: settings, history: clipboardHistory, onEditShortcut: onEditShortcut)
             case .workflows:
-                AgentPaneHeader(symbol: pane.symbol, title: pane.title)
-                ModelSurface {
-                    AskWorkflowSettingsView(store: workflows, settings: settings)
-                }
+                AskWorkflowSettingsView(store: workflows, settings: settings)
             }
         }
         .onAppear(perform: reload)
@@ -48,16 +46,29 @@ struct LauncherSettingsView: View {
                         .labelsHidden().toggleStyle(.switch)
                         .accessibilityLabel(L("ask.settings.quick.calculator.title"))
                 }
+                ModelRowDivider(leading: 56)
+                AgentSettingsRow(icon: "number", title: L("ask.settings.quick.numberConversions.title")) {
+                    Toggle("", isOn: Binding(get: { quickNumberConversionsEnabled }, set: setQuickNumberConversions))
+                        .labelsHidden().toggleStyle(.switch)
+                        .accessibilityLabel(L("ask.settings.quick.numberConversions.title"))
+                        .accessibilityIdentifier("launcher.settings.numberConversions")
+                }
             }
         }
     }
 
     func reload() {
         quickCalculatorEnabled = settings.askQuickCalculatorEnabled
+        quickNumberConversionsEnabled = settings.askQuickNumberConversionsEnabled
     }
 
     func setQuickCalculator(_ enabled: Bool) {
         quickCalculatorEnabled = enabled
         settings.askQuickCalculatorEnabled = enabled
+    }
+
+    func setQuickNumberConversions(_ enabled: Bool) {
+        quickNumberConversionsEnabled = enabled
+        settings.askQuickNumberConversionsEnabled = enabled
     }
 }

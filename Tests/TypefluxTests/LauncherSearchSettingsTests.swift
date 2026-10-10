@@ -60,8 +60,8 @@ struct LauncherSearchSettingsViewTests {
                                                               object: settings, queue: nil) { _ in posted += 1 }
         defer { NotificationCenter.default.removeObserver(observer) }
         view.reload()
-        view.update { $0.mode = .filesFirst }
-        #expect(settings.askLauncherSearchSettings.mode == .filesFirst)
+        view.update { $0.fuzzy = false }
+        #expect(!settings.askLauncherSearchSettings.fuzzy)
         #expect(posted == 1)
         view.update { _ in }
         #expect(posted == 1, "no change, no save")

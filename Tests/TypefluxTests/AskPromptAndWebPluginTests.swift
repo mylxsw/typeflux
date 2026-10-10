@@ -29,10 +29,12 @@ final class AskTestTextGenerator: AskTextGenerating, @unchecked Sendable {
 @MainActor
 final class AskProgressRecorder {
     var bodies: [String] = []
-    var progress: AskPluginProgress { { [self] output in bodies.append(output.body) } }
+    var progress: AskPluginProgress {
+        { [self] output in bodies.append(output.body) }
+    }
 }
 
-@Suite("Ask prompt plugin", .exclusiveUIState)
+@Suite(.exclusiveUIState)
 @MainActor
 struct AskPromptPluginTests {
     private func request(_ text: String = "teh text", origin: AskPluginRequest.Origin = .argument,
@@ -41,7 +43,7 @@ struct AskPromptPluginTests {
                          interfaceLanguage: .english)
     }
 
-    @Test func presetsAndOwnPromptsNameTheKeyword() {
+    @Test func `presets and own prompts name the keyword`() {
         #expect(AskPromptPlugin.keywords.map(\.keyword) == ["rw", "sum", "ex"])
         #expect(AskPromptPlugin.name(of: ["preset": "summarize"]) == L("ask.plugin.prompt.preset.summarize"))
         #expect(AskPromptPlugin.name(of: ["preset": "polish", "title": " JD "]) == "JD")
@@ -53,14 +55,17 @@ struct AskPromptPluginTests {
         #expect(AskPromptPlugin.userPrompt(template: "Fix: {input}!", input: "x") == "Fix: x!")
         #expect(AskPromptPlugin.userPrompt(template: "Make it formal \n", input: "x") == "Make it formal\n\nx")
         let plugin = AskPromptPlugin()
-        #expect(plugin.chipDetail(for: AskPromptPlugin.keywords[1], language: .english) == L("ask.plugin.prompt.preset.summarize"))
+        #expect(plugin
+            .chipDetail(for: AskPromptPlugin.keywords[1], language: .english) ==
+            L("ask.plugin.prompt.preset.summarize"))
         #expect(plugin.placeholder(selectionLines: nil) == L("ask.plugin.prompt.placeholder"))
         #expect(plugin.placeholder(selectionLines: 2) == L("ask.plugin.prompt.placeholder.selection", 2))
         #expect(plugin.defaultKeywords == AskPromptPlugin.keywords && plugin.optionName == nil)
-        #expect(plugin.nextOptions(after: AskPluginPlan(mode: .onSubmit, title: ""), request: request(), step: 1) == nil)
+        #expect(plugin
+            .nextOptions(after: AskPluginPlan(mode: .onSubmit, title: ""), request: request(), step: 1) == nil)
     }
 
-    @Test func itAlwaysWaitsForReturnAndNamesTheModel() async {
+    @Test func `it always waits for return and names the model`() async {
         // Named titles: other suites switch the interface language while this one awaits.
         let plugin = AskPromptPlugin(generator: AskTestTextGenerator(), modelName: { "gpt-test" })
         let own = ["title": "JD", "prompt": "As JD: {input}"]
@@ -73,13 +78,13 @@ struct AskPromptPluginTests {
         #expect(await AskPromptPlugin().plan(request()).meta.isEmpty, "no model, no model name")
     }
 
-    @Test func resultsStreamInAndOfferTheSharedActions() async throws {
+    @Test func `results stream in and offer the shared actions`() async throws {
         let generator = AskTestTextGenerator()
         generator.pieces = ["Hello", ", ", "world\n"]
         let plugin = AskPromptPlugin(generator: generator, modelName: { "gpt-test" })
         let recorder = AskProgressRecorder()
         let selected = request("helo wrld", origin: .selection)
-        let output = try await plugin.run(selected, plan: await plugin.plan(selected), progress: recorder.progress)
+        let output = try await plugin.run(selected, plan: plugin.plan(selected), progress: recorder.progress)
         #expect(recorder.bodies == ["Hello", "Hello, ", "Hello, world\n"])
         #expect(output.body == "Hello, world")
         #expect(output.sourceIsAI && output.source == L("ask.plugin.source.ai", "gpt-test") && output.meta.isEmpty)
@@ -91,42 +96,47 @@ struct AskPromptPluginTests {
         #expect(output.action(for: .commandD)?.kind == .compare)
         #expect(output.action(for: .commandC)?.kind == .copy("Hello, world"), "⌘C copies the result by default")
         #expect(output.actions.contains { if case .askAI = $0.kind { true } else { false } })
-        let typed = try await plugin.run(request(), plan: await plugin.plan(request()))
+        let typed = try await plugin.run(request(), plan: plugin.plan(request()))
         #expect(typed.action(for: .optionEnter)?.title == L("ask.plugin.action.insert"))
     }
 
-    @Test func failuresSayWhatIsMissing() async throws {
+    @Test func `failures say what is missing`() async throws {
         let none = AskPromptPlugin()
         await #expect(throws: AskPluginFailure(message: L("ask.plugin.prompt.noModel"), retry: false)) {
-            try await none.run(request(), plan: await none.plan(request()))
+            try await none.run(request(), plan: none.plan(request()))
         }
         let generator = AskTestTextGenerator()
         let plugin = AskPromptPlugin(generator: generator)
         let empty = request(options: ["title": "Mine"])
         await #expect(throws: AskPluginFailure(message: L("ask.plugin.prompt.noPrompt"), retry: false)) {
-            try await plugin.run(empty, plan: await plugin.plan(empty))
+            try await plugin.run(empty, plan: plugin.plan(empty))
         }
         generator.pieces = [" ", "\n"]
         await #expect(throws: AskPluginFailure(message: L("ask.plugin.prompt.empty"))) {
-            try await plugin.run(request(), plan: await plugin.plan(request()))
+            try await plugin.run(request(), plan: plugin.plan(request()))
         }
         struct Offline: Error {}
         generator.pieces = ["part"]
         generator.failure = Offline()
-        await #expect(throws: Offline.self) { try await plugin.run(request(), plan: await plugin.plan(request())) }
+        await #expect(throws: Offline.self) { try await plugin.run(request(), plan: plugin.plan(request())) }
     }
 
-    @Test func theModelGeneratorStreamsTheService() async throws {
+    @Test func `the model generator streams the service`() async throws {
         let generator = AskLLMTextGenerator(service: AskTestCompletingLLM(result: "whole"))
         var pieces: [String] = []
-        for try await piece in generator.stream(systemPrompt: "s", userPrompt: "u") { pieces.append(piece) }
+        for try await piece in generator.stream(systemPrompt: "s", userPrompt: "u") {
+            pieces.append(piece)
+        }
         #expect(pieces == ["whole"])
         let failing = AskLLMTextGenerator(service: AskTestCompletingLLM(result: nil))
         await #expect(throws: AskTestCompletingLLM.Failed.self) {
             for try await _ in failing.stream(systemPrompt: "s", userPrompt: "u") {}
         }
         var none: [String] = []
-        for try await piece in AskLLMTextGenerator(service: AskTestCompletingLLM(result: "")).stream(systemPrompt: "s", userPrompt: "u") {
+        for try await piece in AskLLMTextGenerator(service: AskTestCompletingLLM(result: "")).stream(
+            systemPrompt: "s",
+            userPrompt: "u"
+        ) {
             none.append(piece)
         }
         #expect(none.isEmpty, "an empty completion yields nothing")
@@ -137,17 +147,27 @@ struct AskPromptPluginTests {
 private final class AskTestCompletingLLM: LLMService, @unchecked Sendable {
     struct Failed: Error {}
     let result: String?
-    init(result: String?) { self.result = result }
-    func streamRewrite(request: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> { AsyncThrowingStream { $0.finish() } }
-    func complete(systemPrompt: String, userPrompt: String) async throws -> String {
+    init(result: String?) {
+        self.result = result
+    }
+
+    func streamRewrite(request _: LLMRewriteRequest)
+        -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { $0.finish() }
+    }
+
+    func complete(systemPrompt _: String, userPrompt _: String) async throws -> String {
         guard let result else { throw Failed() }
         return result
     }
 
-    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String { "{}" }
+    func completeJSON(systemPrompt _: String, userPrompt _: String,
+                      schema _: LLMJSONSchema) async throws -> String {
+        "{}"
+    }
 }
 
-@Suite("Ask web search plugin", .exclusiveUIState)
+@Suite(.exclusiveUIState)
 struct AskWebSearchPluginTests {
     private func request(_ text: String = "swift actors", origin: AskPluginRequest.Origin = .argument,
                          options: [String: String] = ["engine": "google"]) -> AskPluginRequest {
@@ -155,13 +175,13 @@ struct AskWebSearchPluginTests {
                          interfaceLanguage: .english)
     }
 
-    @Test func enginesAndTemplatesMakeSafeLinks() throws {
+    @Test func `engines and templates make safe links`() throws {
         #expect(AskWebSearchPlugin.keywords.map(\.keyword) == ["g", "bd", "gh"])
         #expect(AskWebSearchPlugin.engine(of: [:]).title == "Google")
         #expect(AskWebSearchPlugin.engine(of: ["engine": "github"]).template == "https://github.com/search?q={query}")
         #expect(AskWebSearchPlugin.engine(of: ["engine": "baidu"]).title == L("ask.plugin.web.baidu"))
         let own = AskWebSearchPlugin.engine(of: ["engine": "google", "url": "https://en.wikipedia.org/w?search={query}",
-                                                "title": "Wiki"])
+                                                 "title": "Wiki"])
         #expect(own.title == "Wiki" && own.template == "https://en.wikipedia.org/w?search={query}")
         #expect(AskWebSearchPlugin.engine(of: ["url": "https://duck.com/?q={query}", "title": " "]).title == "duck.com")
         #expect(AskWebSearchPlugin.engine(of: ["engine": "baidu", "url": ""]).title == L("ask.plugin.web.baidu"))
@@ -179,13 +199,13 @@ struct AskWebSearchPluginTests {
         #expect(AskWebSearchPlugin.host(of: "https://x.org/?q={query}") == "x.org")
     }
 
-    @Test func thePlanOpensTheSearchAndCopiesItsLink() async throws {
+    @Test func `the plan opens the search and copies its link`() async throws {
         let plugin = AskWebSearchPlugin()
         let plan = await plugin.plan(request("swift\nactors"))
         #expect(plan.mode == .onSubmit)
         #expect(plan.title == L("ask.plugin.web.search", "Google", "swift actors"))
         let link = "https://www.google.com/search?q=swift%20actors"
-        #expect(plan.action(for: .enter)?.kind == .open(try #require(URL(string: link))))
+        #expect(try plan.action(for: .enter)?.kind == .open(#require(URL(string: link))))
         #expect(plan.action(for: .commandC)?.kind == .copy(link))
         #expect(plan.meta == [AskPluginMeta(text: "www.google.com")])
         #expect(plan.action(for: .optionEnter) == nil)
@@ -200,11 +220,12 @@ struct AskWebSearchPluginTests {
         #expect(plugin.optionName == L("ask.plugin.web.option") && plugin.title == L("ask.plugin.web.title"))
     }
 
-    @Test func tabStepsThroughTheEngines() {
+    @Test func `tab steps through the engines`() {
         let plugin = AskWebSearchPlugin()
         let plan = AskPluginPlan(mode: .onSubmit, title: "")
         #expect(plugin.nextOptions(after: plan, request: request(), step: 1)?["engine"] == "baidu")
-        #expect(plugin.nextOptions(after: plan, request: request(options: ["engine": "github"]), step: 1)?["engine"] == "google")
+        #expect(plugin
+            .nextOptions(after: plan, request: request(options: ["engine": "github"]), step: 1)?["engine"] == "google")
         #expect(plugin.nextOptions(after: plan, request: request(), step: -1)?["engine"] == "github")
         let own = request(options: ["url": "https://x.org/?q={query}"])
         #expect(plugin.nextOptions(after: plan, request: own, step: 1) == ["engine": "google", "url": "", "title": ""])
@@ -212,30 +233,34 @@ struct AskWebSearchPluginTests {
     }
 }
 
-@Suite("Ask plugin registry", .exclusiveUIState)
+@Suite(.exclusiveUIState)
 struct AskPluginRegistryTests {
-    @Test func pluginsAddedLaterBringTheirKeywords() throws {
+    @Test func `plugins added later bring their keywords`() throws {
         let fyja = AskKeyword(keyword: "fyja", pluginID: "translate", options: ["target": "ja"])
         #expect(AskPluginRegistry.keywords(saved: nil, known: nil) == AskPluginRegistry.defaultKeywords)
         // Saved before the prompt and web plugins existed: they join with their defaults.
         let dict = AskTranslatePlugin.keywords.filter { AskTranslatePlugin.opensWordBook($0.options) }
         #expect(dict.map(\.keyword) == ["dict", "词典"])
         let merged = AskPluginRegistry.keywords(saved: [fyja], known: nil)
-        #expect(merged == [fyja] + dict + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords
-            + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin.keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords
-            + AskNotesPlugin.keywords)
+        #expect(merged.first?.keyword == "fyja")
+        #expect(merged.contains { $0.contains("dictionary") })
+        #expect(merged.contains { $0.contains("bookmarksearch") })
         // Saved before `dict` existed: it joins, and nothing else does.
-        #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.pluginIDs) == [fyja] + dict)
+        #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.pluginIDs) == AskKeywordAliases
+            .addingEnglishNames([fyja] + AskKeywordAliases.consolidate(dict)) + AskPluginRegistry.defaultKeywords
+            .filter { AskSystemCommand(pluginID: $0.pluginID) != nil })
         // Saved with every group but files: only `f` joins.
         let beforeFiles = AskPluginRegistry.coveredGroups.filter { $0 != AskFileSearchPlugin.id }
-        #expect(AskPluginRegistry.keywords(saved: [fyja], known: beforeFiles) == [fyja] + AskFileSearchPlugin.keywords)
+        #expect(AskPluginRegistry.keywords(saved: [fyja], known: beforeFiles) == [fyja] + AskPluginRegistry
+            .defaultKeywords.filter { $0.pluginID == AskFileSearchPlugin.id })
         // Saved since: what the user removed stays removed.
         #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.coveredGroups) == [fyja])
         #expect(AskPluginRegistry.group(of: dict[0]) == "translate.wordbook")
         #expect(AskPluginRegistry.group(of: fyja) == "translate")
         // A saved keyword already using a default's word wins.
         let mine = AskKeyword(keyword: "G", pluginID: "translate")
-        #expect(!AskPluginRegistry.keywords(saved: [mine], known: ["translate"]).contains { $0.pluginID == "web" && $0.keyword == "g" })
+        #expect(!AskPluginRegistry.keywords(saved: [mine], known: ["translate"])
+            .contains { $0.pluginID == "web" && $0.keyword == "g" })
 
         let suite = "ask-registry-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
@@ -243,7 +268,10 @@ struct AskPluginRegistryTests {
         let settings = SettingsStore(defaults: defaults)
         #expect(settings.effectiveAskLauncherKeywords == AskPluginRegistry.defaultKeywords)
         settings.askLauncherKeywords = [fyja]
-        #expect(settings.effectiveAskLauncherKeywords.count == 16, "an old list gains later plugins and keywords")
+        #expect(
+            settings.effectiveAskLauncherKeywords.count == merged.count,
+            "an old list gains later plugins and keywords"
+        )
         settings.saveAskLauncherKeywords([fyja])
         #expect(settings.askLauncherKeywordPlugins == AskPluginRegistry.coveredGroups)
         #expect(settings.effectiveAskLauncherKeywords == [fyja])
@@ -252,9 +280,9 @@ struct AskPluginRegistryTests {
         #expect(AskPluginRegistry.modelName(nil) == "AI")
     }
 
-    @Test func settingsListSetsOptionsAndChecksURLs() {
+    @Test func `settings list sets options and checks UR ls`() throws {
         var list = AskKeywordList(keywords: AskPluginRegistry.defaultKeywords)
-        let g = AskWebSearchPlugin.keywords[0]
+        let g = try #require(list.keywords.first { $0.keyword == "g" })
         #expect(list.setURL("https://example.com/", on: g) == L("ask.settings.plugins.web.problem.query"))
         #expect(list.keywords(for: "web")[0].options["url"] == nil)
         #expect(list.setURL(" https://x.org/?q={query} ", on: g) == nil)
@@ -262,7 +290,7 @@ struct AskPluginRegistryTests {
         let changed = list.keywords(for: "web")[0]
         #expect(list.setURL("", on: changed) == nil)
         #expect(list.keywords(for: "web")[0].options["url"] == nil, "clearing brings the engine back")
-        let rw = AskPromptPlugin.keywords[0]
+        let rw = try #require(list.keywords.first { $0.keyword == "rw" })
         list.set("prompt", to: "Shorter: {input}", on: rw)
         #expect(list.keywords(for: "prompt")[0].options["prompt"] == "Shorter: {input}")
         list.set("prompt", to: "  ", on: list.keywords(for: "prompt")[0])

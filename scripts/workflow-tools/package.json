@@ -1,0 +1,23 @@
+{
+  "dependencies": {
+    "@iarna/toml": "2.2.5",
+    "cldr-annotations-full": "48.2.0",
+    "cronstrue": "3.31.0",
+    "emojilib": "4.0.3",
+    "esbuild": "0.28.2",
+    "fast-xml-parser": "5.11.2",
+    "html-minifier-terser": "7.2.0",
+    "marked": "18.1.0",
+    "prettier": "3.9.9",
+    "qrcode": "1.5.4",
+    "turndown": "7.2.4",
+    "turndown-plugin-gfm": "1.0.2",
+    "yaml": "2.9.1"
+  },
+  "name": "typeflux-workflow-tools",
+  "private": true,
+  "scripts": {
+    "build": "node build.cjs",
+    "test": "node --test ../tests/test_workflow_tools.cjs"
+  }
+}

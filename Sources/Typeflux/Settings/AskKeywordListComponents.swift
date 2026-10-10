@@ -8,10 +8,13 @@ extension AskKeywordKind {
         case .prompt: Color.purple
         case .web: StudioTheme.success
         case .files: Color.teal
+        case .tabs: Color.orange
+        case .bookmarks: Color.blue
         case .chat: Color.blue
         case .prefix: Color.indigo
         case .setting: Color.gray
         case .history: Color.blue
+        case .system: Color.gray
         case .workflow: Color.orange
         }
     }
@@ -34,15 +37,16 @@ struct AskKeywordKindTile: View {
 /// A keyword as the launcher shows it: monospaced on a small plate.
 struct AskKeywordListChip: View {
     let keyword: String
+    var isDefault = false
 
     var body: some View {
         Text(keyword)
             .font(.system(size: 12, design: .monospaced))
-            .foregroundStyle(StudioTheme.textPrimary)
+            .foregroundStyle(isDefault ? ModelVisualStyle.accent : StudioTheme.textSecondary)
             .padding(.horizontal, 7).frame(height: 21)
             .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(ModelVisualStyle.border))
-            .lineLimit(1).fixedSize()
+            .lineLimit(1).fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -63,31 +67,37 @@ struct AskKeywordFilterBar: View {
     }
 }
 
-/// A kind's heading inside the list card, with what the kind does.
-struct AskKeywordGroupHeader: View {
-    let kind: AskKeywordKind
-    var first = false
+/// A whole section header is clickable, including its count and disclosure arrow.
+struct AskKeywordSectionHeader: View {
+    let section: AskKeywordSection
+    let count: Int
+    let expanded: Bool
+    let toggle: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            if !first {
-                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+        Button(action: toggle) {
+            HStack(spacing: 10) {
+                Image(systemName: section.symbol).frame(width: 18).foregroundStyle(ModelVisualStyle.accent)
+                Text(section.title).font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text(String(count)).font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                Spacer()
+                Image(systemName: expanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 10, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
             }
-            HStack(spacing: 6) {
-                Text(kind.title).font(.system(size: 11.5, weight: .semibold))
-                Text("· " + kind.hint).font(.system(size: 11.5))
-            }
-            .foregroundStyle(StudioTheme.textTertiary)
-            .lineLimit(1)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16).frame(height: 32)
-            .background(StudioTheme.textSecondary.opacity(0.04))
+            .padding(.horizontal, 16).frame(height: 44)
+            .background(StudioTheme.textSecondary.opacity(0.035))
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityValue(L(expanded ? "ask.settings.keywords.expanded" : "ask.settings.keywords.collapsed"))
+        .accessibilityIdentifier("ask.settings.keywords.section." + section.rawValue)
     }
 }
 
-/// One keyword: chip, kind and name, one line on what it does, and its switch.
-/// The whole row opens the keyword editor.
+/// Function and description share one flexible column; keywords wrap underneath.
+/// This keeps long aliases readable even in a narrow settings pane.
 struct AskKeywordRowView: View {
     let row: AskKeywordListRow
     let toggle: () -> Void
@@ -95,37 +105,43 @@ struct AskKeywordRowView: View {
     @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 12) {
-            AskKeywordListChip(keyword: row.keyword).frame(width: 96, alignment: .leading)
-            HStack(spacing: 9) {
-                AskKeywordKindTile(kind: row.kind)
-                Text(row.name).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-            }
-            .frame(width: 150, alignment: .leading)
-            Text(row.summary)
-                .font(.system(
-                    size: row.monospacedSummary ? 11.5 : 12,
-                    design: row.monospacedSummary ? .monospaced : .default
-                ))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .lineLimit(1).truncationMode(.tail)
+        HStack(alignment: .top, spacing: 12) {
+            AskKeywordKindTile(kind: row.kind, size: 28).padding(.top, 2)
+            Button(action: open) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(row.name).font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text(row.summary).font(.system(size: 12))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                    if row.keyword.isEmpty {
+                        Text(L("ask.system.setKeyword")).font(.system(size: 12))
+                            .foregroundStyle(ModelVisualStyle.accent)
+                    } else {
+                        AskFlowLayout(spacing: 5) {
+                            ForEach(Array(row.source.allKeywords.enumerated()), id: \.offset) { index, word in
+                                AskKeywordListChip(keyword: word, isDefault: index == 0)
+                                    .help(L(index == 0 ? "ask.settings.keywords.defaultKeyword" :
+                                            "ask.settings.keywords.alias"))
+                            }
+                        }
+                    }
+                }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("ask.settings.keywords.edit." + row.keyword)
             Toggle("", isOn: Binding(get: { row.enabled }, set: { _ in toggle() }))
-                .labelsHidden().toggleStyle(.switch).controlSize(.small)
+                .labelsHidden().toggleStyle(.switch).controlSize(.small).padding(.top, 2)
+                .disabled(row.keyword.isEmpty)
                 .accessibilityLabel(L("ask.settings.keywords.enabled") + " " + row.keyword)
-            Image(systemName: "chevron.right")
-                .font(.system(size: 10, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
-                .opacity(hovering ? 1 : 0)
         }
         .opacity(row.enabled ? 1 : 0.5)
-        .padding(.leading, 16).padding(.trailing, 14).frame(height: 46)
-        .background(hovering ? StudioTheme.textSecondary.opacity(0.06) : .clear)
-        .contentShape(Rectangle())
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .background(hovering ? StudioTheme.textSecondary.opacity(0.04) : .clear)
         .onHover { hovering = $0 }
-        .onTapGesture(perform: open)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.settings.keywords.row." + row.keyword)
     }
 }

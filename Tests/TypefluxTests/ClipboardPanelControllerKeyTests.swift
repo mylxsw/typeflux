@@ -35,7 +35,7 @@ final class ClipboardPanelControllerKeyTests: XCTestCase {
     private func press(
         _ keyCode: UInt16, _ characters: String = "", flags: NSEvent.ModifierFlags = [], repeat isRepeat: Bool = false
     ) throws -> Bool {
-        let panel = try XCTUnwrap(ClipboardTestSupport.presentedPanel())
+        let panel = try XCTUnwrap(controller.presentedWindow)
         let event = try XCTUnwrap(NSEvent.keyEvent(
             with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0,
             windowNumber: panel.windowNumber, context: nil, characters: characters,
@@ -51,6 +51,8 @@ final class ClipboardPanelControllerKeyTests: XCTestCase {
         XCTAssertEqual(model.editingText, "second")
 
         XCTAssertFalse(try press(125), "Arrows move the text cursor, not the selection")
+        XCTAssertFalse(try press(123))
+        XCTAssertFalse(try press(124))
         XCTAssertFalse(try press(0, "a"), "Typing goes to the editor")
         XCTAssertFalse(try press(36), "Return inserts a newline")
         XCTAssertEqual(model.selectedIndex, 1)
@@ -94,5 +96,58 @@ final class ClipboardPanelControllerKeyTests: XCTestCase {
         XCTAssertFalse(model.showsPreview, "A held ⌘\\ does not flicker the pane")
         XCTAssertTrue(try press(14, "e", flags: .command))
         XCTAssertEqual(model.editingText, "first")
+    }
+
+    @MainActor
+    func testHorizontalArrowsSetPreviewVisibilityWithoutTogglingOrRepeating() throws {
+        controller.reduceMotion = { true }
+        controller.present(model)
+        var changes: [Bool] = []
+        model.onPreviewVisibilityChange = { changes.append($0) }
+        XCTAssertTrue(try press(124, repeat: true))
+        XCTAssertFalse(model.showsPreview)
+        for isRepeat in [false, false, true] {
+            XCTAssertTrue(try press(124, repeat: isRepeat))
+            XCTAssertTrue(model.showsPreview)
+        }
+        XCTAssertEqual(controller.presentedWindow?.frame.width, ClipboardPanelView.size(showsPreview: true).width)
+        for isRepeat in [false, false, true] {
+            XCTAssertTrue(try press(123, repeat: isRepeat))
+            XCTAssertFalse(model.showsPreview)
+        }
+        XCTAssertEqual(controller.presentedWindow?.frame.width, ClipboardPanelView.width)
+        XCTAssertEqual(model.selectedIndex, 0)
+        XCTAssertEqual(changes, [true, false])
+    }
+
+    @MainActor
+    func testHorizontalArrowsKeepSearchCursorNavigationAndModifiedKeys() throws {
+        controller.reduceMotion = { true }
+        controller.present(model)
+        model.query = "first"
+        XCTAssertFalse(try press(124))
+        XCTAssertFalse(model.showsPreview)
+        model.showsPreview = true
+        XCTAssertFalse(try press(123))
+        XCTAssertTrue(model.showsPreview)
+        model.query = ""
+        XCTAssertFalse(try press(123, flags: .shift))
+        XCTAssertFalse(try press(124, flags: .command))
+        XCTAssertTrue(model.showsPreview)
+    }
+
+    @MainActor
+    func testHorizontalArrowsDoNotInterruptMarkedTextComposition() throws {
+        controller.present(model)
+        let panel = try XCTUnwrap(controller.presentedWindow)
+        let editor = NSTextView(frame: .zero)
+        panel.contentView?.addSubview(editor)
+        XCTAssertTrue(panel.makeFirstResponder(editor))
+        editor.setMarkedText("中", selectedRange: NSRange(location: 1, length: 0),
+                             replacementRange: NSRange(location: NSNotFound, length: 0))
+        XCTAssertTrue(editor.hasMarkedText())
+        XCTAssertFalse(try press(123))
+        XCTAssertFalse(try press(124))
+        XCTAssertFalse(model.showsPreview)
     }
 }

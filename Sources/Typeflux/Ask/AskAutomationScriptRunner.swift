@@ -4,6 +4,8 @@ import Foundation
 /// Only runs our short-lived AppleScript client. Killing it bounds local work;
 /// it cannot undo an event already delivered to another application.
 struct AskAutomationScriptRunner: ProcessCommandRunning {
+    var timeout: TimeInterval = 22
+    var outputLimit = 200_000
     func run(
         executablePath: String,
         arguments: [String],
@@ -19,7 +21,7 @@ struct AskAutomationScriptRunner: ProcessCommandRunning {
         let result = try await ManagedProcess().run(.init(
             executable: executablePath, arguments: arguments,
             environment: ["PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8"],
-            directoryDescriptor: directory, timeout: 22, outputLimit: 200_000
+            directoryDescriptor: directory, timeout: timeout, outputLimit: outputLimit
         ))
         switch result.termination {
         case .cancelled: throw CancellationError()

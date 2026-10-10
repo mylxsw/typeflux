@@ -4,35 +4,81 @@ import Foundation
 /// The plugins the launcher knows and the keywords they start with.
 enum AskPluginRegistry {
     /// Every built-in plugin, in the order settings and the `/` palette list them.
-    static let pluginIDs = [AskTranslatePlugin.id, AskPromptPlugin.id, AskWebSearchPlugin.id, AskFileSearchPlugin.id, AskOpenChatPlugin.id, AskPrefixPlugin.id, AskSettingsPlugin.id, AskHistoryPlugin.id, AskNotesPlugin.id]
+    static let pluginIDs = [
+        AskTranslatePlugin.id,
+        AskPromptPlugin.id,
+        AskWebSearchPlugin.id,
+        AskFileSearchPlugin.id,
+        AskOpenChatPlugin.id,
+        AskPrefixPlugin.id,
+        AskSettingsPlugin.id,
+        AskHistoryPlugin.id,
+        AskNotesPlugin.id,
+        AskBrowserSearchPlugin.tabsID,
+        AskBrowserSearchPlugin.bookmarksID
+    ] + AskSystemCommand.allCases.map(\.id)
 
     static var defaultKeywords: [AskKeyword] {
-        AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin.keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords + AskNotesPlugin.keywords
+        AskKeywordAliases
+            .addingEnglishNames(AskKeywordAliases
+                .consolidate(AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin
+                    .keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin
+                    .keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords + AskNotesPlugin
+                    .keywords + AskBrowserSearchPlugin.keywords + AskSystemCommand.allCases.map {
+                        AskKeyword(keyword: $0.defaultKeyword, pluginID: $0.id)
+                    }))
     }
 
     /// Default keywords that came after their plugin: `dict` and `词典` joined translation later.
     static let wordBookKeywords = AskTranslatePlugin.id + "." + AskTranslatePlugin.wordBookAction
 
     /// What a saved list records as covered: every plugin, and every later group of keywords.
-    static let coveredGroups = pluginIDs + [wordBookKeywords]
+    static let aliasKeywords = "launcher.keywordAliases.v1"
+    static let coveredGroups = pluginIDs + [wordBookKeywords, aliasKeywords]
 
     /// The group a default keyword belongs to for `keywords(saved:known:)`.
     static func group(of keyword: AskKeyword) -> String {
-        AskTranslatePlugin.opensWordBook(keyword.options) ? wordBookKeywords : keyword.pluginID
+        if AskSystemCommand(pluginID: keyword.pluginID) != nil { return aliasKeywords }
+        return AskTranslatePlugin.opensWordBook(keyword.options) ? wordBookKeywords : keyword.pluginID
     }
 
     /// The keywords in use: the saved ones, plus the defaults of plugins (or later groups
     /// of a plugin's keywords) that came after they were saved. `known` lists what the
     /// saved list covers; lists saved before it existed only knew translation.
     static func keywords(saved: [AskKeyword]?, known: [String]?, reserved: Set<String> = []) -> [AskKeyword] {
-        // A newly introduced directory must not displace an existing workflow.
-        let newEntryPoints = [AskPrefixPlugin.id, AskSettingsPlugin.id, AskHistoryPlugin.id, AskNotesPlugin.id]
-        let defaults = defaultKeywords.filter { !newEntryPoints.contains($0.pluginID) || !reserved.contains($0.id) }
+        let legacyWords = Set((AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin.keywords
+                + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords).flatMap(\.allKeywords)
+            .map { $0.lowercased() })
+        let defaults = defaultKeywords.compactMap { entry -> AskKeyword? in
+            let words = entry.allKeywords
+                .filter { legacyWords.contains($0.lowercased()) || !reserved.contains($0.lowercased()) }
+            guard let first = words.first else { return nil }
+            var entry = entry
+            entry.keyword = first
+            entry.aliases = Array(words.dropFirst())
+            return entry
+        }
         guard let saved else { return defaults }
         let covered = Set(known ?? [AskTranslatePlugin.id])
-        return saved + defaults.filter { keyword in
-            !covered.contains(group(of: keyword)) && !saved.contains { $0.id == keyword.id }
+        var result = AskKeywordAliases.consolidate(saved)
+        var taken = Set(result.flatMap(\.allKeywords).map { $0.lowercased() })
+        for entry in defaults where !covered.contains(group(of: entry)) {
+            if AskSystemCommand(pluginID: entry.pluginID) != nil,
+               result.contains(where: { $0.pluginID == entry.pluginID }) {
+                continue
+            }
+            let words = entry.allKeywords.filter { !taken.contains($0.lowercased()) }
+            guard let first = words.first else { continue }
+            var entry = entry
+            entry.keyword = first
+            entry.aliases = Array(words.dropFirst())
+            result.append(entry)
+            taken.formUnion(words.map { $0.lowercased() })
         }
+        if !covered.contains(aliasKeywords) {
+            result = AskKeywordAliases.addingEnglishNames(result, reserved: reserved)
+        }
+        return result
     }
 
     /// The display name of the text-processing model (the one plugins use) for result cards.
@@ -69,7 +115,11 @@ extension SettingsStore {
 
     func effectiveAskLauncherKeywords(reserving workflows: [AskWorkflow]) -> [AskKeyword] {
         let reserved = Set(workflows.flatMap { $0.manifest?.keywords.map { $0.keyword.lowercased() } ?? [] })
-        return AskPluginRegistry.keywords(saved: askLauncherKeywords, known: askLauncherKeywordPlugins, reserved: reserved)
+        return AskPluginRegistry.keywords(
+            saved: askLauncherKeywords,
+            known: askLauncherKeywordPlugins,
+            reserved: reserved
+        )
     }
 
     /// Saves the keywords as covering every plugin there is now.
@@ -114,25 +164,37 @@ extension AskConversationModel {
                 service: { AskServiceTranslationEngine(client: AskServiceTranslationEngine.client(for: $0)) },
                 signedOutFallback: { [weak settings] in
                     AskTranslationProvider.configuredFallback(credentials: AskKeychainTranslationCredentials(),
-                        preferred: settings?.askTranslationSettings.engine.provider)
+                                                              preferred: settings?.askTranslationSettings.engine
+                                                                  .provider)
                 },
                 secondLanguage: { [weak settings] language in
                     settings?.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
                 }
             ),
-            AskPromptPlugin(generator: promptAI, modelName: { [weak settings] in AskPluginRegistry.modelName(settings) },
-                            savesNotes: notes != nil),
+            AskPromptPlugin(
+                generator: promptAI,
+                modelName: { [weak settings] in AskPluginRegistry.modelName(settings) },
+                savesNotes: notes != nil
+            ),
             AskWebSearchPlugin(),
             AskFileSearchPlugin(
                 index: { [weak self] in self.flatMap { $0.quickFilesEnabled ? $0.fileIndex : nil } },
                 settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() }
             ),
             AskOpenChatPlugin(),
-            AskPrefixPlugin(entries: { [weak self] language in self?.launcherKeywordDirectory(language: language) ?? [] }),
+            AskPrefixPlugin(entries: { [weak self] language in
+                self?.launcherKeywordDirectory(language: language) ?? []
+            }),
             AskSettingsPlugin(),
             AskHistoryPlugin(conversations: { [weak self] in await self?.launcherChatHistory() ?? .empty }),
-            AskNotesPlugin(store: notes)
-        ] + workflowPlugins()
+            AskNotesPlugin(store: notes),
+            AskBrowserSearchPlugin(kind: .tab, service: browserSearch, settings: { [weak settings] in
+                settings?.askBrowserSearchSettings ?? AskBrowserSearchSettings()
+            }),
+            AskBrowserSearchPlugin(kind: .bookmark, service: browserSearch, settings: { [weak settings] in
+                settings?.askBrowserSearchSettings ?? AskBrowserSearchSettings()
+            })
+        ] + AskSystemCommand.allCases.map { AskSystemCommandPlugin(command: $0) } + workflowPlugins()
     }
 
     /// What a plugin result's action needs from the launcher afterwards.
@@ -149,6 +211,8 @@ extension AskConversationModel {
         // Using a result is what makes a word typed on the fly count as looked up.
         plugins.settleWordBook()
         switch action.kind {
+        case let .systemCommand(command):
+            return performSystemCommand(command)
         case .openChat:
             Task { await openChatFromLauncher() }
             return .stay
@@ -186,6 +250,9 @@ extension AskConversationModel {
         case let .askAI(prompt):
             askAIFromPlugin(prompt)
             return .close
+        case let .focusBrowserTab(target):
+            Task { await focusBrowserTab(target) }
+            return .stay
         case let .open(url):
             finishPluginResult()
             if url.isFileURL { fileIndex.recordOpen(url.path) }
@@ -212,8 +279,15 @@ extension AskConversationModel {
                           language: AppLocalization.shared.language)
             return .stay
         case let .enterKeyword(id):
-            guard let keyword = plugins.availableKeywords.first(where: { $0.id == id && $0.enabled }) else { return .stay }
-            let listsAtOnce = [AskPrefixPlugin.id, AskHistoryPlugin.id, AskNotesPlugin.id]
+            guard let keyword = plugins.availableKeywords.first(where: { $0.id == id && $0.enabled })
+            else { return .stay }
+            let listsAtOnce = [
+                AskPrefixPlugin.id,
+                AskHistoryPlugin.id,
+                AskNotesPlugin.id,
+                AskBrowserSearchPlugin.tabsID,
+                AskBrowserSearchPlugin.bookmarksID
+            ]
             plugins.enter(keyword, waitingForInput: !listsAtOnce.contains(keyword.pluginID))
             launcherDraft.text = ""
             plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language)
@@ -273,7 +347,7 @@ extension AskConversationModel {
     /// A workflow's `runKeyword`: puts `keyword argument` in the launcher and runs it,
     /// as if typed. False when no enabled keyword is called that.
     func runLauncherKeyword(_ keyword: String, argument: String, chain: [String]) -> Bool {
-        guard let found = plugins.availableKeywords.first(where: { $0.enabled && $0.id == keyword.lowercased() })
+        guard let found = plugins.availableKeywords.first(where: { $0.enabled && $0.contains(keyword) })
         else { return false }
         launcherDraft.text = argument
         plugins.chain(to: found, text: argument, chain: chain, selection: launcherDraft.sentSelection,
@@ -291,7 +365,8 @@ extension AskConversationModel {
     /// the typed text (the selection rides along with the draft as always).
     func askAIFromPlugin(_ prompt: String? = nil) {
         let argument = launcherDraft.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let text = prompt ?? (argument.isEmpty ? plugins.plugin.map { L("ask.plugin.askAI.selection", $0.title) } ?? "" : argument)
+        let text = prompt ??
+            (argument.isEmpty ? plugins.plugin.map { L("ask.plugin.askAI.selection", $0.title) } ?? "" : argument)
         plugins.deactivate()
         launcherDraft.text = text
         submitLauncher()

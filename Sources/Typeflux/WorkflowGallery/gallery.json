@@ -24,6 +24,9 @@
           "example": "rate",
           "text": "fx.usage.3"
         }
+      ],
+      "hosts": [
+        "open.er-api.com"
       ]
     },
     {
@@ -49,7 +52,8 @@
           "example": "ts",
           "text": "ts.usage.3"
         }
-      ]
+      ],
+      "hosts": []
     },
     {
       "id": "json",
@@ -71,7 +75,8 @@
           "example": "json min",
           "text": "json.usage.2"
         }
-      ]
+      ],
+      "hosts": []
     },
     {
       "id": "codec",
@@ -96,7 +101,8 @@
           "example": "b64 -d aGVsbG8=",
           "text": "codec.usage.3"
         }
-      ]
+      ],
+      "hosts": []
     },
     {
       "id": "uuid",
@@ -121,7 +127,8 @@
           "example": "pwd 32",
           "text": "uuid.usage.3"
         }
-      ]
+      ],
+      "hosts": []
     },
     {
       "id": "wc",
@@ -143,7 +150,8 @@
           "example": "wc some text",
           "text": "wc.usage.2"
         }
-      ]
+      ],
+      "hosts": []
     },
     {
       "id": "ip",
@@ -164,7 +172,8 @@
           "example": "ip 192.168",
           "text": "ip.usage.2"
         }
-      ]
+      ],
+      "hosts": []
     },
     {
       "id": "code",
@@ -185,7 +194,244 @@
           "example": "code web",
           "text": "code.usage.2"
         }
-      ]
+      ],
+      "hosts": []
+    },
+    {
+      "id": "case",
+      "category": "text",
+      "order": 9,
+      "color": "pink",
+      "preview": {
+        "keyword": "case",
+        "query": "helloWorld",
+        "output": "{\"items\": [{\"uid\": \"snakecase\", \"title\": \"hello_world\", \"subtitle\": \"snakecase\", \"arg\": \"hello_world\", \"action\": \"copy\"}, {\"uid\": \"camelcase\", \"title\": \"helloWorld\", \"subtitle\": \"camelcase\", \"arg\": \"helloWorld\", \"action\": \"copy\"}]}"
+      },
+      "usage": [
+        {
+          "example": "case helloWorld",
+          "text": "case.usage.1"
+        },
+        {
+          "example": "case snakecase Hello world",
+          "text": "case.usage.2"
+        }
+      ],
+      "hosts": []
+    },
+    {
+      "id": "data",
+      "category": "dev",
+      "order": 10,
+      "color": "green",
+      "preview": {
+        "keyword": "data",
+        "query": "yaml json name: Typeflux",
+        "output": "{\n  \"name\": \"Typeflux\"\n}"
+      },
+      "usage": [
+        {
+          "example": "data yaml json name: Typeflux",
+          "text": "data.usage.1"
+        },
+        {
+          "example": "data json toml",
+          "text": "data.usage.2"
+        }
+      ],
+      "hosts": []
+    },
+    {
+      "id": "markup",
+      "category": "dev",
+      "order": 11,
+      "color": "orange",
+      "preview": {
+        "keyword": "md2html",
+        "query": "# Hello",
+        "output": "<h1>Hello</h1>"
+      },
+      "usage": [
+        {
+          "example": "md2html # Hello",
+          "text": "markup.usage.1"
+        },
+        {
+          "example": "html2md <h1>Hello</h1>",
+          "text": "markup.usage.2"
+        },
+        {
+          "example": "htmlfmt min <div> hello </div>",
+          "text": "markup.usage.3"
+        },
+        {
+          "example": "xmlfmt min <root><a>1</a></root>",
+          "text": "markup.usage.4"
+        }
+      ],
+      "hosts": []
+    },
+    {
+      "id": "entities",
+      "category": "dev",
+      "order": 12,
+      "color": "purple",
+      "preview": {
+        "keyword": "entities",
+        "query": "-e <b>Tom & Jerry</b>",
+        "output": "&lt;b&gt;Tom &amp; Jerry&lt;/b&gt;"
+      },
+      "usage": [
+        {
+          "example": "entities -e <b>Tom & Jerry</b>",
+          "text": "entities.usage.1"
+        },
+        {
+          "example": "entities -d &lt;b&gt;",
+          "text": "entities.usage.2"
+        }
+      ],
+      "hosts": []
+    },
+    {
+      "id": "jwt",
+      "category": "dev",
+      "order": 13,
+      "color": "indigo",
+      "preview": {
+        "keyword": "jwt",
+        "query": "eyJhbGciOiJub25lIn0.eyJzdWIiOiIxMjMifQ.",
+        "output": "{\n  \"warning\": \"Decoded only; signature, issuer and audience are NOT verified.\",\n  \"header\": {\"alg\": \"none\"},\n  \"payload\": {\"sub\": \"123\"}\n}"
+      },
+      "usage": [
+        {
+          "example": "jwt eyJhbGciOiJub25lIn0.eyJzdWIiOiIxMjMifQ.",
+          "text": "jwt.usage.1"
+        },
+        {
+          "example": "jwt",
+          "text": "jwt.usage.2"
+        }
+      ],
+      "hosts": []
+    },
+    {
+      "id": "qr",
+      "category": "text",
+      "order": 14,
+      "color": "blue",
+      "preview": {
+        "keyword": "qr",
+        "query": "Typeflux",
+        "output": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoCAYAAADlqah4AAAAAklEQVR4AewaftIAAASfSURBVO3B0Y1DBxRCQUDuv2WyDeR+5Mkyds6M+0cAJkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZkUAZr30Ybb1y9rqCdu6tNXFtp5oq4tt/bK2+qQIwKwIwKwIwKwIwKwIwKwIwKwIwKyXxrXVMtt6wraesK1lbbXMtpZFAGZFAGZFAGZFAGZFAGZFAGZFAGa99OVs653a6p3a6mJbl7b6Zrb1Tm31zSIAsyIAsyIAsyIAsyIAsyIAsyIAs17C/5ptXdoKnxMBmBUBmBUBmBUBmBUBmBUBmBUBmPUSPsq2Lm31hG3he0UAZkUAZkUAZkUAZkUAZkUAZkUAZr305drqm7XVxbbeqa0+qa3w7yIAsyIAsyIAsyIAsyIAsyIAsyIAs14aZ1u/zLYubXWxrUtbXWzr0lZP2Bb+uwjArAjArAjArAjArAjArAjArAjALPePMMu2Lm2F3xUBmBUBmBUBmBUBmBUBmBUBmBUBmPXSh9nWpa0utnVpq4ttXdrqYluXtnon27q01cW2Lm31TrZ1aasnbOvSVssiALMiALMiALMiALMiALMiALMiALPcPxpmW5e2utjWO7XVxbaWtdXFtp5oq4ttvVNbXWzr0lafFAGYFQGYFQGYFQGYFQGYFQGYFQGY9dKH2daytrrY1hNtdbGtS1tdbOuJtrrY1sW2Psm2vlkEYFYEYFYEYFYEYFYEYFYEYFYEYNZL49rqYltPtNXFti5t9YRtPWFbT9jWE221zLYubbUsAjArAjArAjArAjArAjArAjArAjDL/aP/Mdu6tNXFtt6prZ6wrUtbPWFbn9RWF9t6oq0+KQIwKwIwKwIwKwIwKwIwKwIwKwIwy/0jfIxtvVNbvZNtXdrqYltPtNUviwDMigDMigDMigDMigDMigDMigDMcv/og2zrl7XVE7Z1aasnbOvSVk/Y1hNtdbGtd2qrT4oAzIoAzIoAzIoAzIoAzIoAzIoAzHppXFsts61v1lZP2NYTbfVEW11s69JWyyIAsyIAsyIAsyIAsyIAsyIAsyIAs176crb1Tm31TrZ1aauLbV3a6mJbl7b6Zm31zSIAsyIAsyIAsyIAsyIAsyIAsyIAs17CR7XVxbYubXWxrUtbXWzr0lYX27rY1qWtnrCtS1stiwDMigDMigDMigDMigDMigDMigDMegkfZVuXtlpmW+9kW0+01cW2Lm31SRGAWRGAWRGAWRGAWRGAWRGAWRGAWS99ubb6Zm31hG09YVtPtNXFtp5oqyds69JWyyIAsyIAsyIAsyIAsyIAsyIAsyIAs14aZ1u/zLaeaKuLbV3a6mJbF9v6ZrZ1aatPigDMigDMigDMigDMigDMigDMigDMcv8IwKQIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKwIwKx/AHj9Fuw/3oFhAAAAAElFTkSuQmCC"
+      },
+      "usage": [
+        {
+          "example": "qr Typeflux",
+          "text": "qr.usage.1"
+        },
+        {
+          "example": "qr",
+          "text": "qr.usage.2"
+        }
+      ],
+      "hosts": []
+    },
+    {
+      "id": "cron",
+      "category": "dev",
+      "order": 15,
+      "color": "teal",
+      "preview": {
+        "keyword": "cron",
+        "query": "*/5 * * * *",
+        "output": "Linux (5 fields)\n*/5 * * * *\nEvery 5 minutes"
+      },
+      "usage": [
+        {
+          "example": "cron every 5 minutes",
+          "text": "cron.usage.1"
+        },
+        {
+          "example": "cron weekdays 09:00",
+          "text": "cron.usage.2"
+        },
+        {
+          "example": "cron */5 * * * *",
+          "text": "cron.usage.3"
+        },
+        {
+          "example": "cron java 0 0 9 ? * MON-FRI",
+          "text": "cron.usage.4"
+        }
+      ],
+      "hosts": []
+    },
+    {
+      "id": "subnet",
+      "category": "network",
+      "order": 16,
+      "color": "teal",
+      "preview": {
+        "keyword": "subnet",
+        "query": "192.168.1.42/24",
+        "output": "{\"items\": [{\"title\": \"192.168.1.0/24\", \"subtitle\": \"CIDR\", \"arg\": \"192.168.1.0/24\", \"action\": \"copy\"}, {\"title\": \"254\", \"subtitle\": \"Usable hosts\", \"arg\": \"254\", \"action\": \"copy\"}]}"
+      },
+      "usage": [
+        {
+          "example": "subnet 192.168.1.42/24",
+          "text": "subnet.usage.1"
+        },
+        {
+          "example": "subnet 192.168.1.42 255.255.255.0",
+          "text": "subnet.usage.2"
+        }
+      ],
+      "hosts": []
+    },
+    {
+      "id": "emoji",
+      "category": "text",
+      "order": 17,
+      "color": "orange",
+      "preview": {
+        "keyword": "emoji",
+        "query": "smile",
+        "output": "{\"items\": [{\"title\": \"😀  grinning_face\", \"subtitle\": \"smile · happy · 笑\", \"arg\": \"😀\", \"action\": \"copy\"}]}"
+      },
+      "usage": [
+        {
+          "example": "emoji smile",
+          "text": "emoji.usage.1"
+        },
+        {
+          "example": "emoji 笑",
+          "text": "emoji.usage.2"
+        }
+      ],
+      "hosts": []
+    },
+    {
+      "id": "obfuscate",
+      "category": "text",
+      "order": 18,
+      "color": "gray",
+      "preview": {
+        "keyword": "obfuscate",
+        "query": "--keep-start 3 --keep-end 4 13812345678",
+        "output": "138****5678"
+      },
+      "usage": [
+        {
+          "example": "obfuscate --keep-start 3 --keep-end 4 13812345678",
+          "text": "obfuscate.usage.1"
+        },
+        {
+          "example": "obfuscate --percent 50 secret",
+          "text": "obfuscate.usage.2"
+        }
+      ],
+      "hosts": []
     }
   ]
 }

@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "local.emoji",
+  "name": "@L:emoji.name",
+  "description": "@L:emoji.summary",
+  "icon": "sf:face.smiling",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    {
+      "keyword": "emoji",
+      "title": "@L:emoji.keyword.emoji"
+    }
+  ],
+  "input": {
+    "argument": "optional",
+    "selection": "ifEmpty"
+  },
+  "run": {
+    "mode": "onSubmit",
+    "timeoutSeconds": 10
+  },
+  "command": {
+    "runtime": "node",
+    "script": "main.js",
+    "args": [
+      "{query}"
+    ]
+  },
+  "output": "items"
+}

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Typeflux uses approved browser actions to read and interact with the current page.</string>
+    <string>Typeflux uses browser automation to search open tabs, switch to a selected tab, insert text, and perform browser actions that you approve in Ask conversations.</string>
     <key>NSScreenCaptureUsageDescription</key>
     <string>Typeflux captures your screen only when you ask it to attach a screenshot to a question.</string>
     <key>NSMicrophoneUsageDescription</key>

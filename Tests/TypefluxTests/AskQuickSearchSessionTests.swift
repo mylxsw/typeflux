@@ -36,6 +36,86 @@ final class AskControlledSearchIndex: AskAppSearching, AskFileSearching, @unchec
 @Suite("Staged launcher search", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickSearchSessionTests {
+    @Test func disablingConversionsDuringSearchRemovesThemAndRejectsThePreviousBatch() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        let apps = AskControlledSearchIndex()
+        apps.appSearch = { _ in _ = gate.wait(timeout: .now() + 5); return [Self.app] }
+        let session = AskQuickSearchSession()
+        session.update(text: "255", chinese: false, calculator: true, numberConversions: true, sources: .init(apps: apps))
+        try await Self.wait { !apps.calls.isEmpty }
+        #expect(session.presentation?.calculation?.isNumericInput == true)
+        session.update(text: "255", chinese: false, calculator: true, numberConversions: false, sources: .init(apps: apps))
+        #expect(session.presentation?.calculation == nil && session.pendingResults == nil)
+        gate.signal()
+        gate.signal()
+        try await Self.wait { !session.isSearching }
+        #expect(session.results?.calculation == nil && session.results?.formats.isEmpty == true)
+        #expect(session.results?.apps.count == 1 && apps.calls == ["255", "255"])
+    }
+
+    @Test func numbersConvertImmediatelyAndKeepTheChosenFormatWhenSearchArrives() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        let apps = AskControlledSearchIndex(), files = AskControlledSearchIndex()
+        apps.appSearch = { _ in _ = gate.wait(timeout: .now() + 5); return [Self.app] }
+        files.fileSearch = { _ in [Self.file] }
+        let session = AskQuickSearchSession()
+        session.fileDebounce = .zero
+        update(session, "2024", apps: apps, files: files, calculator: true)
+        #expect(session.isSearching && session.pendingResults == nil)
+        #expect(session.presentation?.value(of: .calculation) == "2024")
+        let format = try #require(session.results?.rows.firstIndex(of: .format(0)))
+        session.results?.highlight(format)
+        try await Self.wait { !apps.calls.isEmpty && !files.calls.isEmpty }
+        gate.signal()
+        try await Self.wait { !session.isSearching }
+        let result = try #require(session.results)
+        #expect(apps.calls == ["2024"] && files.calls == ["2024"])
+        #expect(!apps.searchedOnMain && !files.searchedOnMain)
+        #expect(result.apps.count == 1 && result.files.count == 1)
+        #expect(result.rows.contains(.calculation) && result.rows.contains(.file(0)))
+        #expect(result.highlightedRow == .format(0) && result.chosen)
+    }
+
+    @Test func numericSearchKeepsConversionsWithNoMatchesOrNoProviders() async throws {
+        let index = AskControlledSearchIndex()
+        let session = AskQuickSearchSession()
+        update(session, "255", apps: index, files: index, calculator: true)
+        try await Self.wait { !session.isSearching }
+        #expect(index.calls == ["255", "255"])
+        #expect(session.results?.value(of: .calculation) == "255")
+        #expect(session.results?.highlightedRow == .calculation)
+        #expect(session.results?.formats.first?.value == "贰佰伍拾伍")
+        update(session, "256", calculator: true)
+        #expect(!session.isSearching)
+        #expect(session.presentation?.value(of: .calculation) == "256")
+    }
+
+    @Test func changingNumbersReplacesConversionsAndRejectsOldSearchBatches() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        let apps = AskControlledSearchIndex()
+        apps.appSearch = { query in
+            if query == "2024" { _ = gate.wait(timeout: .now() + 5) }
+            return [.init(entry: AskTestAppIndex.app(query), score: 1)]
+        }
+        let session = AskQuickSearchSession()
+        update(session, "2024", apps: apps, calculator: true)
+        try await Self.wait { apps.calls == ["2024"] }
+        update(session, "2025", apps: apps, calculator: true)
+        #expect(session.presentation?.value(of: .calculation) == "2025")
+        #expect(session.results?.apps.isEmpty == true && session.pendingResults == nil)
+        gate.signal()
+        try await Self.wait { !session.isSearching }
+        #expect(session.results?.apps.first?.entry.name == "2025")
+        #expect(session.results?.value(of: .calculation) == "2025")
+        update(session, "note", apps: apps, calculator: true)
+        try await Self.wait { !session.isSearching }
+        #expect(session.results?.calculation == nil && session.results?.formats.isEmpty == true)
+        #expect(session.results?.apps.first?.entry.name == "note")
+    }
+
     @Test func searchBatchesPrefetchIconsBeforeRowsAreCreated() async throws {
         let expected = NSImage(size: .init(width: 28, height: 28))
         var loaded: [AskResultImageCache.Key] = []

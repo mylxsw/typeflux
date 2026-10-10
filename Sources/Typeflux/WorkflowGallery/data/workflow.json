@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "local.data",
+  "name": "@L:data.name",
+  "description": "@L:data.summary",
+  "icon": "sf:arrow.triangle.2.circlepath",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    {
+      "keyword": "data",
+      "title": "@L:data.keyword.data"
+    }
+  ],
+  "input": {
+    "argument": "optional",
+    "selection": "always"
+  },
+  "run": {
+    "mode": "onSubmit",
+    "timeoutSeconds": 10
+  },
+  "command": {
+    "runtime": "node",
+    "script": "main.js",
+    "args": [
+      "{query}"
+    ]
+  },
+  "output": "text"
+}

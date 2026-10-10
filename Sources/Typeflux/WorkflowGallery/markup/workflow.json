@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "id": "local.markup",
+  "name": "@L:markup.name",
+  "description": "@L:markup.summary",
+  "icon": "sf:chevron.left.forwardslash.chevron.right",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    {
+      "keyword": "md2html",
+      "title": "@L:markup.keyword.md2html",
+      "options": {
+        "mode": "md2html"
+      }
+    },
+    {
+      "keyword": "html2md",
+      "title": "@L:markup.keyword.html2md",
+      "options": {
+        "mode": "html2md"
+      }
+    },
+    {
+      "keyword": "htmlfmt",
+      "title": "@L:markup.keyword.htmlfmt",
+      "options": {
+        "mode": "htmlfmt"
+      }
+    },
+    {
+      "keyword": "xmlfmt",
+      "title": "@L:markup.keyword.xmlfmt",
+      "options": {
+        "mode": "xmlfmt"
+      }
+    }
+  ],
+  "input": {
+    "argument": "optional",
+    "selection": "always"
+  },
+  "run": {
+    "mode": "onSubmit",
+    "timeoutSeconds": 10
+  },
+  "command": {
+    "runtime": "node",
+    "script": "main.js",
+    "args": [
+      "{option:mode}",
+      "{query}"
+    ]
+  },
+  "output": "text"
+}

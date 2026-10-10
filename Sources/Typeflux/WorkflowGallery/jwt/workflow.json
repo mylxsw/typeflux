@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "local.jwt",
+  "name": "@L:jwt.name",
+  "description": "@L:jwt.summary",
+  "icon": "sf:key",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    {
+      "keyword": "jwt",
+      "title": "@L:jwt.keyword.jwt"
+    }
+  ],
+  "input": {
+    "argument": "optional",
+    "selection": "ifEmpty"
+  },
+  "run": {
+    "mode": "onSubmit",
+    "timeoutSeconds": 10
+  },
+  "command": {
+    "runtime": "node",
+    "script": "main.js",
+    "args": [
+      "{query}"
+    ]
+  },
+  "output": "text"
+}

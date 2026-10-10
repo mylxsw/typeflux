@@ -3,7 +3,7 @@ import Testing
 @testable import Typeflux
 
 extension AskQuickResultsInteractionTests {
-    @Test func nativeCommandNumberShortcutRunsOnceWithoutTypingADigit() async throws {
+    @Test func `native command number shortcut runs once without typing A digit`() async throws {
         try await withPasteboard { pasteboard in
             let launcher = try await Launcher(text: "1234567.89*2")
             defer { launcher.close() }
@@ -11,18 +11,18 @@ extension AskQuickResultsInteractionTests {
             launcher.window.makeFirstResponder(launcher.editor)
             @MainActor func event(repeated: Bool) throws -> NSEvent {
                 try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command, timestamp: 0,
-                                             windowNumber: launcher.window.windowNumber, context: nil, characters: "2",
-                                             charactersIgnoringModifiers: "2", isARepeat: repeated, keyCode: 19))
+                                              windowNumber: launcher.window.windowNumber, context: nil, characters: "2",
+                                              charactersIgnoringModifiers: "2", isARepeat: repeated, keyCode: 19))
             }
-            #expect(launcher.editor.performKeyEquivalent(with: try event(repeated: true)))
+            #expect(try launcher.editor.performKeyEquivalent(with: event(repeated: true)))
             #expect(launcher.dismissed == 0 && pasteboard.string(forType: .string) == nil)
-            #expect(launcher.editor.performKeyEquivalent(with: try event(repeated: false)))
+            #expect(try launcher.editor.performKeyEquivalent(with: event(repeated: false)))
             #expect(pasteboard.string(forType: .string) == "2,469,135.78")
             #expect(launcher.dismissed == 1 && launcher.fixture.model.launcherDraft.text.isEmpty)
         }
     }
 
-    @Test func commandNumberOpensTheCorrespondingAppInsteadOfTheHighlight() async throws {
+    @Test func `command number opens the corresponding app instead of the highlight`() async throws {
         try await withPasteboard { _ in
             let apps = AskTestAppIndex([AskTestAppIndex.app("Tool Alpha"), AskTestAppIndex.app("Tool Beta")])
             let launcher = try await Launcher(text: "tool", apps: apps)
@@ -37,7 +37,7 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func commandNumberCopiesAnotherCalculationFormat() async throws {
+    @Test func `command number copies another calculation format`() async throws {
         try await withPasteboard { pasteboard in
             let launcher = try await Launcher(text: "1234567.89*2")
             defer { launcher.close() }
@@ -48,7 +48,7 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func aMissingNumberLeavesTheResultAndDraftAlone() async throws {
+    @Test func `a missing number leaves the result and draft alone`() async throws {
         try await withPasteboard { pasteboard in
             let launcher = try await Launcher(text: "1+1")
             defer { launcher.close() }
@@ -60,23 +60,23 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func commandNumberEntersTheChosenPluginListItem() async throws {
+    @Test func `command number enters the chosen plugin list item`() async throws {
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "prefix")
             defer { launcher.close() }
             let model = launcher.fixture.model
             try await launcher.press(Self.returnKey)
             try await AskQuickSearchSessionTests.wait { model.plugins.output?.items.isEmpty == false }
-            #expect(model.plugins.output?.items[1].title == "tr")
+            #expect(model.plugins.output?.items[1].title == "dict")
             try await launcher.press(19, .command)
-            #expect(model.plugins.keyword?.keyword == "tr")
+            #expect(model.plugins.keyword?.keyword == "dict")
             #expect(model.launcherDraft.text.isEmpty && model.plugins.phase == .waiting)
             #expect(launcher.dismissed == 0)
             #expect(await launcher.fixture.api.sends.isEmpty)
         }
     }
 
-    @Test func commandNumberCannotRunADisabledPluginItem() async throws {
+    @Test func `command number cannot run A disabled plugin item`() async throws {
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "prefix off", prepare: { model in
                 model.modelLibrary.settings.saveAskLauncherKeywords(AskPrefixPlugin.keywords + [
@@ -93,9 +93,13 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func numberAfterThePluginItemsAsksTheAI() async throws {
+    @Test func `number after the plugin items asks the AI`() async throws {
         try await withPasteboard { _ in
-            let launcher = try await Launcher(text: "prefix gh")
+            let launcher = try await Launcher(text: "prefix fixture-web", prepare: { model in
+                model.modelLibrary.settings.saveAskLauncherKeywords(AskPrefixPlugin.keywords + [
+                    AskKeyword(keyword: "fixture-web", pluginID: AskWebSearchPlugin.id)
+                ])
+            })
             defer { launcher.close() }
             try await AskQuickSearchSessionTests.wait { launcher.fixture.model.plugins.output?.items.count == 1 }
             try await launcher.press(19, .command)

@@ -45,7 +45,7 @@ private final class GalleryFixture {
 struct AskWorkflowGalleryIndexTests {
     @Test func `the bundled examples are valid and keep their keywords apart`() throws {
         let gallery = AskWorkflowGallery.bundled
-        #expect(gallery.items.map(\.id) == ["fx", "ts", "json", "codec", "uuid", "wc", "ip", "code"])
+        #expect(gallery.items.map(\.id) == ["fx", "ts", "json", "codec", "uuid", "wc", "ip", "code", "case", "data", "markup", "entities", "jwt", "qr", "cron", "subnet", "emoji", "obfuscate"])
         var keywords = Set<String>()
         for item in gallery.items {
             #expect(
@@ -77,9 +77,9 @@ struct AskWorkflowGalleryIndexTests {
     @Test func `categories and search narrow the cards`() {
         let gallery = AskWorkflowGallery.bundled
         #expect(gallery.categoryCounts.map(\.category) == [.text, .dev, .network, .system])
-        #expect(gallery.categoryCounts.map(\.count) == [1, 4, 1, 2])
+        #expect(gallery.categoryCounts.map(\.count) == [5, 9, 2, 2])
         #expect(gallery.filtered(category: .system, query: "").map(\.id) == ["ip", "code"])
-        #expect(gallery.filtered(category: .dev, query: "").map(\.id) == ["ts", "json", "codec", "uuid"])
+        #expect(gallery.filtered(category: .dev, query: "").map(\.id) == ["ts", "json", "codec", "uuid", "data", "markup", "entities", "jwt", "cron"])
         #expect(gallery.filtered(category: nil, query: "B64").map(\.id) == ["codec"])
         #expect(gallery.filtered(category: .text, query: "json").isEmpty)
         #expect(gallery.item("nope") == nil)

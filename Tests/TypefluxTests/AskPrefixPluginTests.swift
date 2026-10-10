@@ -2,15 +2,16 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Launcher keyword directory", .serialized, .exclusiveUIState)
+@Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct AskPrefixPluginTests {
-    private func entry(_ word: String, title: String = "Feature", detail: String = "", enabled: Bool = true) -> AskPrefixPlugin.Entry {
+    private func entry(_ word: String, title: String = "Feature", detail: String = "",
+                       enabled: Bool = true) -> AskPrefixPlugin.Entry {
         .init(keyword: AskKeyword(keyword: word, pluginID: "test", enabled: enabled),
               title: title, detail: detail, symbol: "star")
     }
 
-    @Test func searchRanksExactThenStartsThenContainsAndKeepsDisabledLast() {
+    @Test func `search ranks exact then starts then contains and keeps disabled last`() {
         let entries = [entry("afy"), entry("fyja"), entry("fy"), entry("alias", title: "翻译", detail: "Japanese"),
                        entry("FY", enabled: false), entry("workflow", title: "My workflow")]
         #expect(AskPrefixPlugin.filter(entries, query: "  FY \n").map(\.keyword.keyword) == ["fy", "fyja", "afy", "FY"])
@@ -22,7 +23,7 @@ struct AskPrefixPluginTests {
             == ["afy", "fyja", "fy", "alias", "workflow", "FY"])
     }
 
-    @Test func outputListsAliasesAndOnlyOffersEntryForAvailableRows() async throws {
+    @Test func `output lists aliases and only offers entry for available rows`() async throws {
         let rows = [entry("fy", title: "Translate"), entry("tr", title: "Translate"), entry("off", enabled: false),
                     AskPrefixPlugin.Entry(keyword: .init(keyword: "conflict", pluginID: "workflow.x"),
                                           title: "Conflict", symbol: "star", unavailableReason: "Unavailable")]
@@ -48,7 +49,7 @@ struct AskPrefixPluginTests {
         #expect(plugin.chipDetail(for: request.keyword, language: .english) == nil)
     }
 
-    @Test func capturedSelectionNeverFiltersTheDirectoryAndProviderIsReadOnEachRun() async throws {
+    @Test func `captured selection never filters the directory and provider is read on each run`() async throws {
         var rows = [entry("one"), entry("two")]
         let plugin = AskPrefixPlugin(entries: { _ in rows })
         let session = AskPluginSession(plugins: [plugin]) { plugin.defaultKeywords }
@@ -64,28 +65,39 @@ struct AskPrefixPluginTests {
         session.deactivate()
     }
 
-    @Test func upgradeAddsDirectoryWithoutReplacingCustomOrWorkflowNames() {
+    @Test func `upgrade adds directory without replacing custom or workflow names`() {
         let previousGroups = AskPluginRegistry.coveredGroups.filter { $0 != AskPrefixPlugin.id }
         let saved = AskPluginRegistry.defaultKeywords.filter { $0.pluginID != AskPrefixPlugin.id }
-        #expect(AskPluginRegistry.keywords(saved: saved, known: previousGroups) == saved + AskPrefixPlugin.keywords)
+        #expect(AskPluginRegistry.keywords(saved: saved, known: previousGroups) == saved + AskPluginRegistry
+            .defaultKeywords.filter { $0.pluginID == AskPrefixPlugin.id })
         let custom = AskKeyword(keyword: "PREFIX", pluginID: AskPromptPlugin.id, options: ["prompt": "Say {input}"])
         let merged = AskPluginRegistry.keywords(saved: saved + [custom], known: previousGroups)
-        #expect(merged.last == custom && !merged.contains { $0.pluginID == AskPrefixPlugin.id })
+        #expect(merged.contains(custom) && !merged
+            .contains { $0.pluginID == AskPrefixPlugin.id && $0.contains("prefix") })
         #expect(!AskPluginRegistry.keywords(saved: saved, known: previousGroups, reserved: ["prefix"])
-            .contains { $0.pluginID == AskPrefixPlugin.id })
+            .contains { $0.pluginID == AskPrefixPlugin.id && $0.contains("prefix") })
         #expect(!AskPluginRegistry.keywords(saved: nil, known: nil, reserved: ["prefix"])
-            .contains { $0.pluginID == AskPrefixPlugin.id })
+            .contains { $0.pluginID == AskPrefixPlugin.id && $0.contains("prefix") })
         #expect(AskPluginRegistry.keywords(saved: [], known: AskPluginRegistry.coveredGroups).isEmpty)
         #expect(AskKeywordMatcher.match("prefixmore", keywords: AskPrefixPlugin.keywords) == nil)
         #expect(AskKeywordMatcher.match("/prefix", keywords: AskPrefixPlugin.keywords) == nil)
     }
 
-    @Test func directoryReflectsRenamesPresetsAndDisabledWorkflows() throws {
+    @Test func `directory reflects renames presets and disabled workflows`() throws {
         let f = try AskTestFixture()
         let wf = try AskWorkflowFixture()
-        try wf.write("local.enabled", manifest: AskWorkflowFixture.inline("local.enabled", keyword: "work", script: "echo hello",
-                                                                          extra: ["name": "Work search", "description": "Projects"]))
-        try wf.write("local.disabled", manifest: AskWorkflowFixture.inline("local.disabled", keyword: "off", script: "echo bye"))
+        try wf.write(
+            "local.enabled",
+            manifest: AskWorkflowFixture.inline("local.enabled", keyword: "work", script: "echo hello",
+                                                extra: [
+                                                    "name": "Work search",
+                                                    "description": "Projects"
+                                                ])
+        )
+        try wf.write(
+            "local.disabled",
+            manifest: AskWorkflowFixture.inline("local.disabled", keyword: "off", script: "echo bye")
+        )
         wf.store.reload()
         wf.store.trust("local.enabled")
         wf.store.trust("local.disabled")
@@ -95,7 +107,10 @@ struct AskPrefixPluginTests {
         f.model.modelLibrary.settings.saveAskLauncherKeywords([custom] + AskPrefixPlugin.keywords)
         let entries = f.model.launcherKeywordDirectory(language: .english)
         #expect(entries.map(\.keyword.keyword).sorted() == ["fyja", "off", "prefix", "work"])
-        #expect(entries.first { $0.keyword.keyword == "fyja" }?.title.contains(AskTranslationLanguages.name("ja", in: .english)) == true)
+        #expect(entries.first { $0.keyword.keyword == "fyja" }?.title.contains(AskTranslationLanguages.name(
+            "ja",
+            in: .english
+        )) == true)
         #expect(entries.first { $0.keyword.keyword == "work" }?.title == "Work search")
         #expect(entries.first { $0.keyword.keyword == "work" }?.canEnter == true)
         #expect(entries.first { $0.keyword.keyword == "off" }?.canEnter == false)
@@ -107,15 +122,18 @@ struct AskPrefixPluginTests {
         #expect(!f.model.launcherKeywordDirectory(language: .english).contains { $0.keyword.keyword == "fyja" })
     }
 
-    @Test func existingWorkflowKeepsPrefixAndDirectoryCanUseACustomAlias() throws {
+    @Test func `existing workflow keeps prefix and directory can use A custom alias`() throws {
         let f = try AskTestFixture()
         let wf = try AskWorkflowFixture()
-        try wf.write("local.prefix", manifest: AskWorkflowFixture.inline("local.prefix", keyword: "prefix", script: "echo hi"))
+        try wf.write(
+            "local.prefix",
+            manifest: AskWorkflowFixture.inline("local.prefix", keyword: "prefix", script: "echo hi")
+        )
         wf.store.reload()
         wf.store.trust("local.prefix")
         f.model.workflows = wf.store
         #expect(f.model.launcherKeywords.first { $0.id == "prefix" }?.pluginID == "workflow.local.prefix")
-        #expect(!f.model.launcherKeywords.contains { $0.pluginID == AskPrefixPlugin.id })
+        #expect(!f.model.launcherKeywords.contains { $0.pluginID == AskPrefixPlugin.id && $0.contains("prefix") })
         f.model.launcherDraft.text = "prefix"
         #expect(!f.model.enterKeywordDirectoryFromLauncher())
         let alias = AskKeyword(keyword: "keywords", pluginID: AskPrefixPlugin.id)
@@ -127,12 +145,15 @@ struct AskPrefixPluginTests {
         #expect(draft.displayName == L("ask.plugin.prefix.title"))
     }
 
-    @Test func enteringFromDirectoryWaitsAndRevalidatesDisabledOrMissingTargets() async throws {
+    @Test func `entering from directory waits and revalidates disabled or missing targets`() async throws {
         let f = try AskTestFixture()
         let target = AskTestPlugin()
         target.noInput = true
         let directory = AskPrefixPlugin(entries: { _ in [] })
-        f.model.plugins = AskPluginSession(plugins: [directory, target]) { directory.defaultKeywords + target.defaultKeywords }
+        f.model
+            .plugins = AskPluginSession(plugins: [directory, target]) {
+                directory.defaultKeywords + target.defaultKeywords
+            }
         f.model.launcherDraft = AskDraft(text: "prefix tt", selection: "Selected text")
         #expect(f.model.enterKeywordDirectoryFromLauncher())
         let action = AskPluginAction(kind: .enterKeyword("tt"), title: "Enter", symbol: "arrow.right", shortcut: .enter)
@@ -156,7 +177,7 @@ struct AskPrefixPluginTests {
         #expect(await f.localAPI.sends.isEmpty)
     }
 
-    @Test func enteringLiveTargetRunsOnlyAfterTyping() async throws {
+    @Test func `entering live target runs only after typing`() async throws {
         let target = AskTestPlugin()
         target.noInput = true
         let session = AskPluginSession(plugins: [target]) { target.defaultKeywords }

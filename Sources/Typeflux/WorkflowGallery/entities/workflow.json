@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "local.entities",
+  "name": "@L:entities.name",
+  "description": "@L:entities.summary",
+  "icon": "sf:character.cursor.ibeam",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    {
+      "keyword": "entities",
+      "title": "@L:entities.keyword.entities"
+    }
+  ],
+  "input": {
+    "argument": "optional",
+    "selection": "always"
+  },
+  "run": {
+    "mode": "onSubmit",
+    "timeoutSeconds": 10
+  },
+  "command": {
+    "runtime": "python3",
+    "script": "main.py",
+    "args": [
+      "{query}"
+    ]
+  },
+  "output": "text"
+}

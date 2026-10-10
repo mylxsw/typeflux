@@ -7,8 +7,40 @@ struct AskKeyword: Codable, Equatable, Hashable, Identifiable, Sendable {
     var pluginID: String
     var options: [String: String] = [:]
     var enabled = true
+    var aliases: [String] = []
 
-    var id: String { keyword.lowercased() }
+    /// The first word remains the default used by chips, history and actions.
+    var allKeywords: [String] {
+        [keyword] + aliases
+    }
+
+    func contains(_ word: String) -> Bool {
+        allKeywords.contains { $0.caseInsensitiveCompare(word) == .orderedSame }
+    }
+
+    private enum CodingKeys: String, CodingKey { case keyword, pluginID, options, enabled, aliases }
+
+    init(keyword: String, pluginID: String, options: [String: String] = [:], enabled: Bool = true,
+         aliases: [String] = []) {
+        self.keyword = keyword
+        self.pluginID = pluginID
+        self.options = options
+        self.enabled = enabled
+        self.aliases = aliases
+    }
+
+    init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        keyword = try values.decode(String.self, forKey: .keyword)
+        pluginID = try values.decode(String.self, forKey: .pluginID)
+        options = try values.decodeIfPresent([String: String].self, forKey: .options) ?? [:]
+        enabled = try values.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        aliases = try values.decodeIfPresent([String].self, forKey: .aliases) ?? []
+    }
+
+    var id: String {
+        keyword.lowercased()
+    }
 }
 
 /// Finds a keyword at the start of the launcher's text.
@@ -28,14 +60,17 @@ enum AskKeywordMatcher {
     static func match(_ text: String, keywords: [AskKeyword]) -> Match? {
         guard !text.isEmpty else { return nil }
         let lowered = text.lowercased()
-        for keyword in keywords.filter(\.enabled).sorted(by: { $0.keyword.count > $1.keyword.count }) {
-            let word = keyword.keyword.lowercased()
+        let candidates = keywords.filter(\.enabled).flatMap { keyword in
+            keyword.allKeywords.map { (word: $0, keyword: keyword) }
+        }.sorted { $0.word.count > $1.word.count }
+        for candidate in candidates {
+            let word = candidate.word.lowercased()
             guard !word.isEmpty, lowered.hasPrefix(word) else { continue }
             let rest = text.dropFirst(word.count)
-            guard let first = rest.first else { return .hint(keyword) }
+            guard let first = rest.first else { return .hint(candidate.keyword) }
             guard separators.contains(first) else { continue }
             let argument = rest.dropFirst().drop(while: { $0 == " " || $0 == "\u{3000}" })
-            return .active(keyword, argument: String(argument))
+            return .active(candidate.keyword, argument: String(argument))
         }
         return nil
     }
@@ -44,7 +79,7 @@ enum AskKeywordMatcher {
         case empty, tooLong, whitespace, slash, duplicate
     }
 
-    static let maximumLength = 12
+    static let maximumLength = 48
 
     /// Why `keyword` cannot be saved beside `others`, or nil when it can. Two
     /// keywords where one starts the other are fine: the separator decides.
@@ -54,7 +89,57 @@ enum AskKeywordMatcher {
         if word.count > maximumLength { return .tooLong }
         if word.contains(where: { $0.isWhitespace || separators.contains($0) }) { return .whitespace }
         if word.hasPrefix("/") { return .slash }
-        if others.contains(where: { $0.keyword.lowercased() == word.lowercased() }) { return .duplicate }
+        if others.contains(where: { $0.contains(word) }) { return .duplicate }
         return nil
+    }
+}
+
+/// Converts legacy rows with identical behavior into one editable entry.
+/// Different options or enabled states stay separate to preserve user choices.
+enum AskKeywordAliases {
+    static func consolidate(_ keywords: [AskKeyword]) -> [AskKeyword] {
+        keywords.reduce(into: []) { result, keyword in
+            if let index = result.firstIndex(where: {
+                $0.pluginID == keyword.pluginID && $0.options == keyword.options && $0.enabled == keyword.enabled
+            }) {
+                for word in keyword.allKeywords where !result[index].contains(word) {
+                    result[index].aliases.append(word)
+                }
+            } else {
+                result.append(keyword)
+            }
+        }
+    }
+
+    static func englishName(for keyword: AskKeyword) -> String? {
+        switch keyword.pluginID {
+        case AskTranslatePlugin.id:
+            return AskTranslatePlugin.opensWordBook(keyword.options) ? "dictionary" : "translate"
+        case AskPromptPlugin.id:
+            guard let preset = keyword.options[AskPromptPlugin.presetOption] else { return nil }
+            return ["polish": "polish", "summarize": "summarize", "explain": "explain"][preset]
+        case AskWebSearchPlugin.id:
+            return keyword.options[AskWebSearchPlugin.engineOption]
+        case AskFileSearchPlugin.id: return "filesearch"
+        case AskBrowserSearchPlugin.tabsID: return "tabsearch"
+        case AskBrowserSearchPlugin.bookmarksID: return "bookmarksearch"
+        case AskOpenChatPlugin.id: return "openchat"
+        case AskPrefixPlugin.id: return "keyworddirectory"
+        case AskSettingsPlugin.id: return "settings"
+        case AskHistoryPlugin.id: return "chathistory"
+        case AskNotesPlugin.id: return "notebook"
+        default: return AskSystemCommand(pluginID: keyword.pluginID)?.defaultKeyword
+        }
+    }
+
+    static func addingEnglishNames(_ keywords: [AskKeyword], reserved: Set<String> = []) -> [AskKeyword] {
+        var result = keywords
+        var taken = Set(keywords.flatMap(\.allKeywords).map { $0.lowercased() }).union(reserved)
+        for index in result.indices {
+            guard let name = englishName(for: result[index]), !taken.contains(name.lowercased()) else { continue }
+            result[index].aliases.append(name)
+            taken.insert(name.lowercased())
+        }
+        return result
     }
 }

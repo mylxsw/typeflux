@@ -160,4 +160,80 @@ struct WorkflowGalleryVisualTests {
             try await visual.render(starter, size: settingsSize, name: "implemented-settings-starter-added.png")
         }
     }
+
+    @Test(arguments: ["zh-Hans", "en"], [false, true])
+    func `long keyword cards stay within their columns and keep actions beside keywords`(
+        language: String, update: Bool
+    ) async throws {
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(try #require(AppLanguage(rawValue: language)))
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let fixture = try AskWorkflowFixture()
+        let gallery = AskWorkflowGallery(items: AskWorkflowGallery.bundled.items.filter {
+            ["data", "markup", "entities", "uuid", "wc", "fx"].contains($0.id)
+        })
+        for id in ["markup", "uuid", "wc", "fx"] {
+            try fixture.store.add(#require(gallery.item(id)), builtIn: [])
+        }
+        if update {
+            let workflow = try #require(fixture.store.workflow("local.markup"))
+            var draft = AskWorkflowDraft.load(folder: workflow.folder)
+            draft.set(["gallery": "markup", "version": "0.9.0"], at: ["origin"])
+            _ = try fixture.store.save(workflow.id, folder: workflow.folder, writes: draft.pendingWrites,
+                                       expectedHash: workflow.hash)
+            #expect(fixture.store.hasUpdate(try #require(gallery.item("markup"))))
+        }
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        let sheet = AskWorkflowGallerySheet(store: fixture.store, gallery: gallery, builtIn: [],
+                                            missing: [.node, .python3], open: { _ in }, done: {})
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 980, height: 640),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let hosting = NSHostingView(rootView: sheet)
+        window.contentView = hosting
+        window.orderFront(nil)
+        defer { window.orderOut(nil); window.close() }
+        try await Task.sleep(for: .milliseconds(300))
+        hosting.layoutSubtreeIfNeeded()
+        let frames = accessibilityFrames(in: window)
+        var cards: [NSRect] = []
+        for item in gallery.items {
+            let card = try #require(frames["ask.workflow.gallery.card." + item.id])
+            let metadata = try #require(frames["ask.workflow.gallery.metadata." + item.id])
+            let keywords = try #require(frames["ask.workflow.gallery.keywords." + item.id])
+            let action = try #require(frames["ask.workflow.gallery.action." + item.id])
+            #expect(card.width < 240 && card.width > 210)
+            #expect(card.insetBy(dx: -0.5, dy: -0.5).contains(metadata))
+            #expect(card.insetBy(dx: -0.5, dy: -0.5).contains(keywords))
+            #expect(card.insetBy(dx: -0.5, dy: -0.5).contains(action))
+            #expect(keywords.maxX <= action.minX)
+            #expect(abs(keywords.midY - action.midY) < 1)
+            #expect(abs(action.minY - card.minY - 14) < 3)
+            #expect(cards.allSatisfy { !$0.intersects(card) })
+            cards.append(card)
+        }
+        let name = "implemented-g-card-layout-\(language)-\(update ? "update" : "added")"
+        try await visual.render(sheet, size: NSSize(width: 980, height: 640), name: name + ".png")
+        try await visual.render(sheet, size: NSSize(width: 980, height: 640), name: name + "-light.png", light: true)
+    }
+
+    private func accessibilityFrames(in window: NSWindow) -> [String: NSRect] {
+        var seen = Set<ObjectIdentifier>()
+        var frames: [String: NSRect] = [:]
+        func value(_ node: NSObject, _ key: String) -> Any? {
+            node.responds(to: NSSelectorFromString(key)) ? node.value(forKey: key) : nil
+        }
+        func visit(_ node: NSObject) {
+            guard seen.insert(ObjectIdentifier(node)).inserted else { return }
+            if let identifier = value(node, "accessibilityIdentifier") as? String,
+               let frame = value(node, "accessibilityFrame") as? NSValue {
+                frames[identifier] = window.convertFromScreen(frame.rectValue)
+            }
+            for child in value(node, "accessibilityChildren") as? [NSObject] ?? [] { visit(child) }
+        }
+        visit(window)
+        if let content = window.contentView { visit(content) }
+        return frames
+    }
 }

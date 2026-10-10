@@ -45,7 +45,7 @@ struct AskWorkflowGallery: Equatable, Sendable {
         var folder: URL
         /// The manifest with its text in the interface language.
         var manifest: AskWorkflowManifest
-        /// What it reaches over the network, from a scan of its files: "open.er-api.com".
+        /// Reviewed network destinations from the bundled index, or a scan for older entries.
         var hosts: [String] = []
 
         var name: String {
@@ -125,8 +125,12 @@ struct AskWorkflowGallery: Equatable, Sendable {
                 let manifest = localizedManifest(text) else { return nil }
             var item = Item(id: entry.id, category: entry.category, order: entry.order, color: entry.color,
                             preview: entry.preview, usage: entry.usage ?? [], folder: folder, manifest: manifest)
-            let contents = item.files(fileManager: fileManager).values.compactMap { String(data: $0, encoding: .utf8) }
-            item.hosts = hosts(in: contents.joined(separator: "\n"))
+            if let reviewedHosts = entry.hosts {
+                item.hosts = reviewedHosts
+            } else {
+                let contents = item.files(fileManager: fileManager).values.compactMap { String(data: $0, encoding: .utf8) }
+                item.hosts = hosts(in: contents.joined(separator: "\n"))
+            }
             return item
         }
         return AskWorkflowGallery(items: items.sorted { $0.order < $1.order })
@@ -140,6 +144,8 @@ struct AskWorkflowGallery: Equatable, Sendable {
             var color: String?
             var preview: Item.Preview?
             var usage: [Item.Usage]?
+            /// Explicit destinations avoid treating dependency license/documentation URLs as network calls.
+            var hosts: [String]?
         }
 
         var items: [Entry]

@@ -6,6 +6,8 @@ extension AskQuickResultsView {
     static func section(of row: AskQuickResults.Row, in results: AskQuickResults? = nil) -> Section {
         switch row {
         case .calculation, .format: .calculation
+        case .browser(let index): results?.browserEntries[index].kind == .tab ? .tabs : .bookmarks
+        case .feature: .features
         case .app: .apps
         case .pane: .panes
         case .file: results?.file(at: row)?.isFolder == true ? .folders : .files
@@ -29,7 +31,7 @@ extension AskQuickResultsView {
         switch row {
         case .calculation: calculationHeight
         case .format: formatHeight
-        case .app, .pane: appHeight
+        case .feature, .browser, .app, .pane: appHeight
         case .file: fileHeight
         case .showAllFiles: moreHeight
         case .askAI: askHeight
@@ -53,6 +55,8 @@ extension AskQuickResultsView {
     /// Return copies a calculation, opens an application or file, or sends to the AI.
     static func hint(for results: AskQuickResults) -> String {
         switch results.highlightedRow {
+        case .browser: L("ask.browser.hint")
+        case .feature: L("ask.quick.hint.feature")
         case .askAI: L("ask.launcher.hint")
         case .app, .pane: L("ask.quick.hint.app")
         case .file: L("ask.quick.hint.file")

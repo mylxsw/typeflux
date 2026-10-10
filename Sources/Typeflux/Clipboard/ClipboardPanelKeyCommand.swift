@@ -11,6 +11,8 @@ enum ClipboardPanelKeyCommand: Equatable {
     case action(ClipboardEntryAction)
     case quickPaste(Int)
     case togglePreview
+    case showPreview
+    case hidePreview
     case togglePause
     case openSettings
 
@@ -22,7 +24,8 @@ enum ClipboardPanelKeyCommand: Equatable {
         hasTextSelection: Bool
     ) -> ClipboardPanelKeyCommand? {
         let flags = modifiers.intersection([.command, .option, .control, .shift])
-        if let command = navigationCommand(keyCode: keyCode, flags: flags, queryIsEmpty: queryIsEmpty) {
+        if let command = navigationCommand(keyCode: keyCode, flags: flags, queryIsEmpty: queryIsEmpty,
+                                           hasTextSelection: hasTextSelection) {
             return command
         }
         if let number = AskLauncherNumberShortcuts.number(keyCode: keyCode, modifiers: modifiers, characters: characters) {
@@ -51,11 +54,15 @@ enum ClipboardPanelKeyCommand: Equatable {
     private static func navigationCommand(
         keyCode: UInt16,
         flags: NSEvent.ModifierFlags,
-        queryIsEmpty: Bool
+        queryIsEmpty: Bool,
+        hasTextSelection: Bool
     ) -> ClipboardPanelKeyCommand? {
         switch keyCode {
         case 126 where flags.isEmpty: return .moveUp
         case 125 where flags.isEmpty: return .moveDown
+        // Horizontal arrows control the pane only when there is no search text or text selection to edit.
+        case 124 where flags.isEmpty && queryIsEmpty && !hasTextSelection: return .showPreview
+        case 123 where flags.isEmpty && queryIsEmpty && !hasTextSelection: return .hidePreview
         case 53: return .cancel
         case 48 where flags.isEmpty: return .nextCategory
         case 48 where flags == .shift: return .previousCategory

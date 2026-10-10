@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "local.qr",
+  "name": "@L:qr.name",
+  "description": "@L:qr.summary",
+  "icon": "sf:qrcode",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    {
+      "keyword": "qr",
+      "title": "@L:qr.keyword.qr"
+    }
+  ],
+  "input": {
+    "argument": "optional",
+    "selection": "ifEmpty"
+  },
+  "run": {
+    "mode": "onSubmit",
+    "timeoutSeconds": 10
+  },
+  "command": {
+    "runtime": "node",
+    "script": "main.js",
+    "args": [
+      "{query}"
+    ]
+  },
+  "output": "image"
+}

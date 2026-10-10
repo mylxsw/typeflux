@@ -15,6 +15,10 @@ final class AskQuickSearchSession: ObservableObject {
     private let apps = AskSearchWorker<[AskAppMatch]>(label: "typeflux.ask.search.apps")
     private let files = AskSearchWorker<FileBatch>(label: "typeflux.ask.search.files")
     private let imageCache: AskResultImageCache
+    private var browserTask: Task<Void, Never>?
+    private var browserResults: [AskBrowserSearchEntry] = []
+    private var browserReady = true
+    private var currentBrowserSettings = AskBrowserSearchSettings()
     private var delay: Task<Void, Never>?
     private var publication: Task<Void, Never>?
     private var generation = 0
@@ -26,9 +30,12 @@ final class AskQuickSearchSession: ObservableObject {
     private var currentApp: ObjectIdentifier?
     private var currentFile: ObjectIdentifier?
     private var currentCalculator = false
+    private var currentNumberConversions = false
     private var currentChinese = false
     private var currentText = ""
     private var currentSettings = AskLauncherSearchSettings()
+    private var currentEntries: [AskLauncherSearchEntry] = []
+    private var numberResults: AskQuickResults?
     var fileDebounce: Duration = .milliseconds(60)
     private static let log = OSLog(subsystem: "com.typeflux", category: "LauncherSearch")
 
@@ -48,47 +55,79 @@ final class AskQuickSearchSession: ObservableObject {
         var status: AskFileIndexStatus
     }
 
-    func update(text: String, chinese: Bool, calculator: Bool, sources: AskQuickResults.Sources) {
+    func update(text: String, chinese: Bool, calculator: Bool, numberConversions: Bool = true,
+                sources: AskQuickResults.Sources) {
         let previous = results
         let presentation = self.presentation
         let appID = sources.apps.map(ObjectIdentifier.init), fileID = sources.files.map(ObjectIdentifier.init)
-        let sameQuery = currentText == text && currentSettings == sources.settings
-            && currentApp == appID && currentFile == fileID && currentCalculator == calculator && currentChinese == chinese
+        let sameQuery = currentText == text && currentSettings == sources.settings && currentEntries == sources.entries
+            && currentBrowserSettings == sources.browserSettings && currentApp == appID && currentFile == fileID
+            && currentCalculator == calculator && currentNumberConversions == numberConversions && currentChinese == chinese
         cancel()
         currentApp = appID
         currentFile = fileID
         currentCalculator = calculator
+        currentNumberConversions = numberConversions
         currentChinese = chinese
         currentText = text
         currentSettings = sources.settings
+        currentBrowserSettings = sources.browserSettings
+        browserResults = []
+        browserReady = true
+        currentEntries = sources.entries
         previousChoice = previous
         retainedFiles = sameQuery ? previous?.files ?? [] : []
+        numberResults = nil
         os_signpost(.event, log: Self.log, name: "Input accepted", "%{public}d", generation)
 
         guard isVisible else { results = nil; return }
 
-        // Calculation never consults either index, including incomplete expressions.
-        if calculator {
-            switch AskCalculator.read(text) {
+        // Pure numbers convert immediately while both indexes continue searching.
+        // Arithmetic, including incomplete expressions, still only uses the calculator.
+        if calculator || numberConversions {
+            switch AskCalculator.read(text, arithmetic: calculator, numberConversions: numberConversions) {
             case .notExpression: break
+            case let .calculation(calculation) where calculation.isNumericInput:
+                numberResults = AskQuickResults.resolve(text: text, previous: nil, chinese: chinese,
+                                                       calculator: true, sources: .init())
             default:
                 results = AskQuickResults.resolve(text: text, previous: previous, chinese: chinese,
-                                                  calculator: true, sources: .init())
+                                                  calculator: calculator, numberConversions: numberConversions, sources: .init())
                 return
             }
         }
         let query = AskSearchQuery(text)
-        guard query.isSearchable || query.hasFilters else { results = nil; return }
+        guard query.isSearchable || query.hasFilters else {
+            results = numberResults
+            results?.keepChoice(from: previous)
+            return
+        }
         let appIndex = query.hasFilters ? nil : sources.apps
-        guard appIndex != nil || sources.files != nil else { results = nil; return }
+        let features = AskLauncherSearchEntry.search(sources.entries, text: text)
+        let browserEnabled = !query.hasFilters && sources.browsers != nil &&
+            ((sources.browserSettings.tabsEnabled && sources.browserSettings.directTabs) ||
+             (sources.browserSettings.bookmarksEnabled && sources.browserSettings.directBookmarks))
+        guard appIndex != nil || sources.files != nil || browserEnabled else {
+            results = AskQuickResults.addingNumberConversions(numberResults, to:
+                AskQuickResults.assemble(text, matches: [], hits: [], status: nil, settings: sources.settings, entries: sources.entries))
+            results?.keepChoice(from: previous)
+            return
+        }
         let ticket = generation
         appsReady = appIndex == nil
         appResults = []
         fileResults = sources.files == nil ? FileBatch(hits: [], status: .init()) : nil
+        browserReady = !browserEnabled
         isSearching = true
-        pendingResults = sameQuery ? nil : presentation
+        let disabledNumberPresentation = !numberConversions && presentation?.calculation?.isNumericInput == true
+        pendingResults = sameQuery || !features.isEmpty || numberResults != nil || disabledNumberPresentation ? nil : presentation
         // Old-query rows must not remain actionable while the next query runs.
-        results = sameQuery ? previous : AskQuickResults(apps: [], lead: false)
+        var immediate = AskQuickResults.addingNumberConversions(numberResults, to:
+            AskQuickResults.assemble(text, matches: [], hits: [], status: nil,
+                settings: sources.settings, entries: sources.entries))
+        immediate?.keepChoice(from: previous)
+        results = (sameQuery ? previous : nil) ?? immediate ?? AskQuickResults(apps: [], lead: false)
+        if browserEnabled { startBrowserQuery(text: text, sources: sources, ticket: ticket) }
         startQueries(text: text, query: query, appIndex: appIndex, fileIndex: sources.files,
                      fuzzy: sources.settings.fuzzy, ticket: ticket)
     }
@@ -127,6 +166,24 @@ final class AskQuickSearchSession: ObservableObject {
         }
     }
 
+    private func startBrowserQuery(text: String, sources: AskQuickResults.Sources, ticket: Int) {
+        guard let service = sources.browsers else { return }
+        let settings = sources.browserSettings
+        browserTask = Task { [weak self] in
+            do { try await Task.sleep(for: .milliseconds(120)) } catch { return }
+            async let tabs: AskBrowserSearchSnapshot = settings.tabsEnabled && settings.directTabs
+                ? service.snapshot(kind: .tab, browsers: settings.tabBrowsers, interactive: false) : .init()
+            async let bookmarks: AskBrowserSearchSnapshot = settings.bookmarksEnabled && settings.directBookmarks
+                ? service.snapshot(kind: .bookmark, browsers: settings.bookmarkBrowsers, interactive: false) : .init()
+            let (tabBatch, bookmarkBatch) = await (tabs, bookmarks)
+            guard let self, generation == ticket, !Task.isCancelled else { return }
+            browserResults = AskBrowserSearchEntry.search(tabBatch.entries, query: text, limit: 5) +
+                AskBrowserSearchEntry.search(bookmarkBatch.entries, query: text, limit: 5)
+            browserReady = true
+            publish()
+        }
+    }
+
     private func prefetchIcons(_ keys: [AskResultImageCache.Key]) {
         let scale = NSScreen.main?.backingScaleFactor ?? 2
         imageCache.prefetch(keys.map { key in
@@ -152,9 +209,11 @@ final class AskQuickSearchSession: ObservableObject {
 
     private func commitResults() {
         guard appsReady || currentSettings.mode == .filesFirst else { return }
-        isSearching = !appsReady || fileResults == nil
-        var next = AskQuickResults.assemble(currentText, matches: appResults, hits: fileResults?.hits ?? retainedFiles,
-                                            status: fileResults?.status, settings: currentSettings)
+        isSearching = !appsReady || fileResults == nil || !browserReady
+        var next = AskQuickResults.addingNumberConversions(numberResults, to:
+            AskQuickResults.assemble(currentText, matches: appResults, hits: fileResults?.hits ?? retainedFiles,
+                status: fileResults?.status, settings: currentSettings, entries: currentEntries))
+        next = AskQuickResults.addingBrowsers(browserResults, to: next)
         next?.keepChoice(from: results?.chosen == true ? results : previousChoice)
         results = next ?? (isSearching ? AskQuickResults(apps: [], lead: false) : nil)
         // An empty application batch is not the final answer while files are
@@ -171,6 +230,8 @@ final class AskQuickSearchSession: ObservableObject {
 
     func cancel() {
         generation += 1
+        browserTask?.cancel()
+        browserTask = nil
         delay?.cancel()
         delay = nil
         publication?.cancel()
@@ -181,5 +242,5 @@ final class AskQuickSearchSession: ObservableObject {
         pendingResults = nil
     }
 
-    deinit { delay?.cancel(); publication?.cancel() }
+    deinit { delay?.cancel(); browserTask?.cancel(); publication?.cancel() }
 }

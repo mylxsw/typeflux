@@ -13,6 +13,20 @@ struct AskCalculatorNumber: Equatable {
     /// `0.digits × 10^pointPosition`, so 123.4 has digits "1234" and position 3.
     let pointPosition: Int
 
+    /// Validated decimal digits, preserved exactly for numeric conversions.
+    init(numericInput: String) {
+        let unsigned = numericInput.hasPrefix("-") || numericInput.hasPrefix("+")
+            ? String(numericInput.dropFirst()) : numericInput
+        let parts = unsigned.split(separator: ".", omittingEmptySubsequences: false)
+        var digits = Array(parts.joined())
+        var point = parts[0].count
+        while digits.first == "0" { digits.removeFirst(); point -= 1 }
+        while digits.last == "0" { digits.removeLast() }
+        self.digits = digits
+        negative = !digits.isEmpty && numericInput.hasPrefix("-")
+        pointPosition = digits.isEmpty ? 0 : point
+    }
+
     init(_ value: Decimal, significantDigits: Int = Self.significantDigits) {
         let magnitude = value.magnitude
         var digits = Array(magnitude.significand.description)

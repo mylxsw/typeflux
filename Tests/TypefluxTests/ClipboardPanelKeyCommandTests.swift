@@ -36,6 +36,23 @@ final class ClipboardPanelKeyCommandTests: XCTestCase {
         XCTAssertNil(command(42, [.command, .shift], "\\"))
     }
 
+    func testHorizontalArrowsOpenAndCloseThePreview() {
+        XCTAssertEqual(command(124), .showPreview)
+        XCTAssertEqual(command(123), .hidePreview)
+        XCTAssertEqual(command(124, [.numericPad, .function]), .showPreview)
+        XCTAssertEqual(command(123, [.numericPad, .function]), .hidePreview)
+    }
+
+    func testHorizontalArrowsKeepSearchAndTextSelectionNavigation() {
+        for key: UInt16 in [123, 124] {
+            XCTAssertNil(command(key, queryIsEmpty: false))
+            XCTAssertNil(command(key, selection: true))
+            for modifier in [NSEvent.ModifierFlags.command, .shift, .option, .control] {
+                XCTAssertNil(command(key, modifier))
+            }
+        }
+    }
+
     func testPanelShortcuts() {
         XCTAssertEqual(command(14, .command, "e"), .action(.editBeforePaste))
         XCTAssertEqual(command(43, .command, ","), .openSettings)

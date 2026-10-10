@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # json: formats the selected JSON (or JSON typed after the keyword); `json min` compacts it.
-# The result is written back over the selection.
+# Selection-only runs write back automatically; runs with arguments show a preview.
+import re
 import json
 import sys
 
 request = json.loads(sys.stdin.readline() or "{}")
 query = (sys.argv[1] if len(sys.argv) > 1 else "").strip()
-compact = query in ("min", "-c", "compact")
-text = request.get("selection") or "" if compact or not query else query
+mode = re.match(r"^(min|-c|compact|pretty)(?:\s+([\s\S]*))?$", query)
+compact = bool(mode and mode[1] != "pretty")
+text = (mode[2] if mode and mode[2] is not None else request.get("selection") or "") if mode or not query else query
 
 try:
     value = json.loads(text)

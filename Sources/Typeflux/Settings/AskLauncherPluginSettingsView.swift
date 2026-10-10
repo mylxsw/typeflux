@@ -29,7 +29,7 @@ struct AskKeywordList: Equatable {
     mutating func add(pluginID: String) -> AskKeyword {
         let base = keywords(for: pluginID).first?.keyword ?? "kw"
         var number = 2
-        while keywords.contains(where: { $0.keyword.lowercased() == "\(base)\(number)" }) {
+        while keywords.contains(where: { $0.contains("\(base)\(number)") }) {
             number += 1
         }
         let keyword = AskKeyword(keyword: "\(base)\(number)", pluginID: pluginID)
@@ -86,6 +86,7 @@ struct AskLauncherPluginSettingsView: View {
     @State private var editing: AskKeywordSheetItem?
     @State private var adding = false
     @State private var confirmingRestore = false
+    @State private var collapsedSections: Set<AskKeywordSection> = [.system]
 
     init(settings: SettingsStore, workflows: AskWorkflowStore, initialFilter: AskKeywordKind? = nil,
          initialQuery: String = "") {
@@ -104,8 +105,10 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     private var rows: [AskKeywordListRow] {
-        AskKeywordListPresentation.rows(keywords: list.keywords,
-                                        interface: interface, secondLanguage: secondLanguage)
+        AskKeywordListPresentation.rows(keywords: list.keywords + AskSystemCommand.allCases
+            .filter { command in !list.keywords.contains { $0.pluginID == command.id } }
+            .map { AskKeyword(keyword: "", pluginID: $0.id) },
+            interface: interface, secondLanguage: secondLanguage)
     }
 
     var body: some View {
@@ -155,8 +158,15 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     private var filterBar: some View {
-        AskKeywordFilterBar(selection: $filter, counts: AskKeywordListPresentation.counts(rows))
+        AskKeywordFilterBar(selection: $filter, counts: filterCounts)
             .frame(width: 156)
+    }
+
+    private var filterCounts: [AskKeywordKind?: Int] {
+        var counts = AskKeywordListPresentation.counts(rows)
+        counts[.system] = AskSystemCommand.allCases.count
+        counts[nil] = rows.count(where: { $0.kind != .system }) + AskSystemCommand.allCases.count
+        return counts
     }
 
     private var searchAndAdd: some View {
@@ -184,7 +194,7 @@ struct AskLauncherPluginSettingsView: View {
 
     private var addMenu: some View {
         VStack(alignment: .leading, spacing: 2) {
-            ForEach([AskKeywordKind.translate, .prompt, .web], id: \.self) { kind in
+            ForEach([AskKeywordKind.translate, .prompt, .web, .system], id: \.self) { kind in
                 addItem(kind, title: kind.title) {
                     adding = false
                     editing = AskKeywordSheetItem(draft: AskKeywordDraft(adding: kind))
@@ -202,22 +212,25 @@ struct AskLauncherPluginSettingsView: View {
 
     private var listCard: some View {
         let shown = AskKeywordListPresentation.filter(rows, kind: filter, query: query)
-        return ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                if shown.isEmpty {
-                    AgentSettingsEmptyRow(text: L("ask.settings.keywords.noMatch", query))
-                }
-                ForEach(AskKeywordKind.editableKinds, id: \.self) { kind in
-                    let group = shown.filter { $0.kind == kind }
-                    if !group.isEmpty {
-                        if filter == nil {
-                            AskKeywordGroupHeader(kind: kind, first: shown.first?.kind == kind)
-                        }
-                        ForEach(Array(group.enumerated()), id: \.element.id) { index, row in
-                            if index > 0 {
-                                ModelRowDivider(leading: 16)
+        return VStack(alignment: .leading, spacing: 12) {
+            if shown.isEmpty {
+                ModelSurface { AgentSettingsEmptyRow(text: L("ask.settings.keywords.noMatch", query)) }
+            }
+            ForEach(AskKeywordSection.allCases, id: \.self) { section in
+                let group = shown.filter { section.kinds.contains($0.kind) }
+                if !group.isEmpty {
+                    ModelSurface {
+                        VStack(alignment: .leading, spacing: 0) {
+                            AskKeywordSectionHeader(section: section, count: group.count,
+                                                    expanded: !collapsedSections.contains(section)) {
+                                toggleSection(section)
                             }
-                            AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
+                            if !collapsedSections.contains(section) {
+                                ForEach(Array(group.enumerated()), id: \.element.id) { index, row in
+                                    ModelRowDivider(leading: index == 0 ? 0 : 56)
+                                    AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
+                                }
+                            }
                         }
                     }
                 }
@@ -225,10 +238,25 @@ struct AskLauncherPluginSettingsView: View {
         }
     }
 
+    private func toggleSection(_ section: AskKeywordSection) {
+        if collapsedSections.contains(section) {
+            collapsedSections.remove(section)
+        } else {
+            collapsedSections.insert(section)
+        }
+        settings.defaults.set(collapsedSections.map(\.rawValue), forKey: "ask.keywordCollapsedSections")
+    }
+
     // MARK: - Actions
 
     private func open(_ row: AskKeywordListRow) {
-        editing = AskKeywordSheetItem(draft: AskKeywordDraft(editing: row.source))
+        if row.keyword.isEmpty, let command = AskSystemCommand(pluginID: row.source.pluginID) {
+            var draft = AskKeywordDraft(adding: .system)
+            draft.systemCommand = command
+            editing = AskKeywordSheetItem(draft: draft)
+        } else {
+            editing = AskKeywordSheetItem(draft: AskKeywordDraft(editing: row.source))
+        }
     }
 
     private func toggle(_ row: AskKeywordListRow) {
@@ -251,16 +279,20 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     private func restoreDefaults() {
-        list = AskKeywordList(keywords: AskPluginRegistry.defaultKeywords)
         settings.saveAskLauncherKeywords(nil)
+        reload()
     }
 
     private func reload() {
+        if let saved = settings.defaults.stringArray(forKey: "ask.keywordCollapsedSections") {
+            collapsedSections = Set(saved.compactMap(AskKeywordSection.init(rawValue:)))
+        }
         list = AskKeywordList(keywords: settings.effectiveAskLauncherKeywords(reserving: workflows.workflows))
         secondLanguage = settings.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: interface)
     }
 
     private func persist() {
+        list.keywords = AskKeywordAliases.consolidate(list.keywords)
         settings.saveAskLauncherKeywords(list.keywords)
     }
 }

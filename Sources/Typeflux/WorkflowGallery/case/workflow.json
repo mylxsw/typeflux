@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "local.case",
+  "name": "@L:case.name",
+  "description": "@L:case.summary",
+  "icon": "sf:textformat",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    {
+      "keyword": "case",
+      "title": "@L:case.keyword.case"
+    }
+  ],
+  "input": {
+    "argument": "optional",
+    "selection": "always"
+  },
+  "run": {
+    "mode": "onSubmit",
+    "timeoutSeconds": 10
+  },
+  "command": {
+    "runtime": "node",
+    "script": "main.js",
+    "args": [
+      "{query}"
+    ]
+  },
+  "output": "auto"
+}

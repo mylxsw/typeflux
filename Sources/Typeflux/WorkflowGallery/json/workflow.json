@@ -4,18 +4,36 @@
   "name": "@L:json.name",
   "description": "@L:json.summary",
   "icon": "sf:curlybraces",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Typeflux",
   "keywords": [
-    { "keyword": "json", "title": "@L:json.keyword.json" }
+    {
+      "keyword": "json",
+      "title": "@L:json.keyword.json"
+    }
   ],
-  "input": { "argument": "optional", "selection": "always" },
-  "run": { "mode": "onSubmit", "timeoutSeconds": 10 },
-  "command": { "runtime": "python3", "script": "main.py", "args": ["{query}"] },
+  "input": {
+    "argument": "optional",
+    "selection": "always"
+  },
+  "run": {
+    "mode": "onSubmit",
+    "timeoutSeconds": 10
+  },
+  "command": {
+    "runtime": "python3",
+    "script": "main.py",
+    "args": [
+      "{query}"
+    ]
+  },
   "output": {
     "display": "text",
     "onSuccess": [
-      { "action": "writeBack", "value": "{output}" }
+      {
+        "action": "writeBack",
+        "value": "{output}"
+      }
     ]
   }
 }

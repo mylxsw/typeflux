@@ -7,6 +7,8 @@ import AppKit
 struct AskQuickResults: Equatable {
     enum Row: Equatable {
         case calculation
+        case feature(Int)
+        case browser(Int)
         case format(Int)
         case app(Int)
         case pane(Int)
@@ -27,9 +29,11 @@ struct AskQuickResults: Equatable {
         case indexing(found: Int, progress: Double?)
     }
 
-    /// Set for arithmetic; then `apps` is empty.
+    /// Pure numbers offer conversions alongside search; arithmetic has only calculation rows.
     var calculation: AskCalculation?
     var formats: [AskCalculatorFormat] = []
+    var features: [AskLauncherSearchEntry] = []
+    var browserEntries: [AskBrowserSearchEntry] = []
     var apps: [AskAppMatch] = []
     var panes: [AskAppMatch] = []
     /// Files first, then folders, each best first.
@@ -77,8 +81,7 @@ struct AskQuickResults: Equatable {
     }
 
     var rows: [Row] {
-        if calculation != nil { return [.calculation] + formats.indices.map(Row.format) + [.askAI] }
-        var listed: [Row] = []
+        var listed: [Row] = features.indices.map(Row.feature)
         for group in groups {
             switch group {
             case .apps: listed += apps.indices.map(Row.app)
@@ -89,12 +92,16 @@ struct AskQuickResults: Equatable {
             case .folders: listed += files.indices.filter { files[$0].isFolder }.map(Row.file)
             }
         }
-        guard let best else { return listed + [.askAI] }
-        return [best] + listed.filter { $0 != best } + [.askAI]
+        listed += browserEntries.indices.map(Row.browser)
+        if let best { listed = [best] + listed.filter { $0 != best } }
+        let conversions: [Row] = calculation == nil ? [] : [.calculation] + formats.indices.map(Row.format)
+        return conversions + listed + [.askAI]
     }
 
     func identity(of row: Row) -> String {
         switch row {
+        case let .browser(index): return "browser:" + browserEntries[index].id
+        case let .feature(index): return "feature:" + features[index].id
         case let .app(index): return "app:" + apps[index].entry.id
         case let .pane(index): return "pane:" + panes[index].entry.id
         case let .file(index): return "file:" + files[index].path
@@ -118,7 +125,7 @@ struct AskQuickResults: Equatable {
         switch row {
         case .calculation: calculation?.number?.copyText
         case let .format(index): formats.indices.contains(index) ? formats[index].value : nil
-        case .app, .pane, .file, .showAllFiles, .askAI: nil
+        case .feature, .browser, .app, .pane, .file, .showAllFiles, .askAI: nil
         }
     }
 
@@ -165,6 +172,9 @@ struct AskQuickResults: Equatable {
         var apps: (any AskAppSearching)?
         var files: (any AskFileSearching)?
         var settings = AskLauncherSearchSettings()
+        var entries: [AskLauncherSearchEntry] = []
+        var browsers: (any AskBrowserSearching)?
+        var browserSettings = AskBrowserSearchSettings()
     }
 
     /// At most this many of each kind in the launcher; files beyond it are behind "Show all".
@@ -178,35 +188,51 @@ struct AskQuickResults: Equatable {
     static let fileMargin = 0.05
 
     /// The results for the launcher's new text. Arithmetic goes to the
-    /// calculator; other text is matched against applications and files.
+    /// calculator; pure numbers also search applications and files.
     /// `previous` keeps the last answer on screen while an expression is
     /// unfinished, and keeps a row the user chose while the text changes.
     static func resolve(text: String, previous: AskQuickResults?, chinese: Bool,
-                        calculator: Bool = true, apps: (any AskAppSearching)? = nil) -> AskQuickResults? {
+                        calculator: Bool = true, numberConversions: Bool = true, apps: (any AskAppSearching)? = nil) -> AskQuickResults? {
         resolve(text: text, previous: previous, chinese: chinese, calculator: calculator,
-                sources: Sources(apps: apps))
+                numberConversions: numberConversions, sources: Sources(apps: apps))
     }
 
     static func resolve(text: String, previous: AskQuickResults?, chinese: Bool, calculator: Bool,
-                        sources: Sources) -> AskQuickResults? {
-        let reading = calculator ? AskCalculator.read(text) : .notExpression
+                        numberConversions: Bool = true, sources: Sources) -> AskQuickResults? {
+        let reading = AskCalculator.read(text, arithmetic: calculator, numberConversions: numberConversions)
         switch reading {
         case .notExpression:
             guard var results = search(text, sources: sources) else { return nil }
             results.keepChoice(from: previous)
             return results
         case let .incomplete(expression):
-            guard var kept = previous, kept.calculation?.number != nil else { return nil }
-            kept.pendingExpression = expression
+            guard let previous, let calculation = previous.calculation, calculation.number != nil,
+                  !calculation.isNumericInput || numberConversions else { return nil }
+            var kept = AskQuickResults(calculation: calculation, formats: previous.formats, pendingExpression: expression)
+            kept.keepChoice(from: previous)
             return kept
         case let .calculation(calculation):
             let formats = calculation.number.map {
-                AskCalculatorFormats.formats(for: $0, radix: calculation.radix, chinese: chinese)
+                calculation.isNumericInput ? AskNumberConversions.formats(for: $0)
+                    : AskCalculatorFormats.formats(for: $0, radix: calculation.radix, chinese: chinese)
             } ?? []
             var results = AskQuickResults(calculation: calculation, formats: formats)
+            if calculation.isNumericInput {
+                results = addingNumberConversions(results, to: search(text, sources: sources)) ?? results
+            }
             results.keepChoice(from: previous)
             return results
         }
+    }
+
+    /// Conversions lead and take Return by default; search keeps its own ordering below them.
+    static func addingNumberConversions(_ number: AskQuickResults?, to search: AskQuickResults?) -> AskQuickResults? {
+        guard let number, let calculation = number.calculation else { return search }
+        guard var combined = search else { return number }
+        combined.calculation = calculation
+        combined.formats = number.formats
+        combined.highlighted = 0
+        return combined
     }
 
     /// Applications, panes, files and folders for `text`, grouped and with the best one picked.
@@ -215,12 +241,14 @@ struct AskQuickResults: Equatable {
         guard query.isSearchable || query.hasFilters else { return nil }
         let matches = !query.hasFilters ? sources.apps?.search(text, limit: appLimit + paneLimit + 4) ?? [] : []
         let hits = sources.files?.search(query, options: .init(limit: 24, fuzzy: sources.settings.fuzzy)) ?? []
-        return assemble(text, matches: matches, hits: hits, status: sources.files?.status, settings: sources.settings)
+        return assemble(text, matches: matches, hits: hits, status: sources.files?.status, settings: sources.settings, entries: sources.entries)
     }
 
     /// Pure presentation policy shared by synchronous callers and staged search.
     static func assemble(_ text: String, matches: [AskAppMatch], hits: [AskFileHit],
-                         status: AskFileIndexStatus?, settings: AskLauncherSearchSettings) -> AskQuickResults? {
+                         status: AskFileIndexStatus?, settings: AskLauncherSearchSettings,
+                         entries: [AskLauncherSearchEntry] = []) -> AskQuickResults? {
+        let features = AskLauncherSearchEntry.search(entries, text: text)
         let apps = Array(matches.filter { $0.entry.kind == .application }.prefix(appLimit))
         let panes = Array(matches.filter { $0.entry.kind == .settingsPane }.prefix(paneLimit))
         let plain = hits.filter { !$0.isFolder }
@@ -237,7 +265,7 @@ struct AskQuickResults: Equatable {
            !AskSearchQuery(text).hasFilters, !looksLikeName(text) {
             notice = nil
         }
-        guard !apps.isEmpty || !panes.isEmpty || !files.isEmpty || !folders.isEmpty || notice != nil else { return nil }
+        guard !features.isEmpty || !apps.isEmpty || !panes.isEmpty || !files.isEmpty || !folders.isEmpty || notice != nil else { return nil }
         var groups: [(group: Group, top: Double)] = []
         if let top = apps.first?.score { groups.append((.apps, top)) }
         if let top = panes.first?.score { groups.append((.panes, top)) }
@@ -261,8 +289,21 @@ struct AskQuickResults: Equatable {
         } else {
             best = bestRow(text, apps: apps, panes: panes, files: listed)
         }
-        return AskQuickResults(apps: apps, panes: panes, files: listed, moreFiles: moreFiles, groups: groups.map(\.group),
-                               best: best, notice: notice)
+        var result = AskQuickResults(apps: apps, panes: panes, files: listed, moreFiles: moreFiles, groups: groups.map(\.group),
+                                     best: features.isEmpty ? best : .feature(0), notice: notice)
+        result.features = features
+        result.highlighted = result.best == nil ? result.rows.count - 1 : 0
+        return result
+    }
+
+    static func addingBrowsers(_ entries: [AskBrowserSearchEntry], to base: AskQuickResults?) -> AskQuickResults? {
+        guard !entries.isEmpty else { return base }
+        var result = base ?? AskQuickResults(apps: [], lead: false)
+        let previous = result
+        result.browserEntries = entries
+        result.highlighted = result.calculation?.isNumericInput == true || result.best != nil ? 0 : result.rows.count - 1
+        result.keepChoice(from: previous)
+        return result
     }
 
     /// Whether `text` reads like the name of a file rather than a question: short,
@@ -307,6 +348,12 @@ struct AskQuickResults: Equatable {
         guard let previous, previous.chosen else { return }
         let target: Row?
         switch previous.highlightedRow {
+        case let .feature(index):
+            let id = previous.features.indices.contains(index) ? previous.features[index].id : nil
+            target = features.firstIndex { $0.id == id }.map(Row.feature)
+        case let .browser(index):
+            let id = previous.browserEntries.indices.contains(index) ? previous.browserEntries[index].id : nil
+            target = browserEntries.firstIndex { $0.id == id }.map(Row.browser)
         case .askAI: target = .askAI
         case .showAllFiles: target = moreFiles ? .showAllFiles : nil
         case let .format(index): target = index < formats.count ? .format(index) : nil

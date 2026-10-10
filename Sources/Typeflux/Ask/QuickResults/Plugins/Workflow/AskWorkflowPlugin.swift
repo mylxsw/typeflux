@@ -358,11 +358,19 @@ extension AskWorkflowPlugin {
         )
         let chain = request.chain + [request.keyword.keyword]
         let folder = workflow.folder
-        let steps = AskWorkflowActionRunner.steps(for: actions, placeholders: placeholders, folder: folder,
+        var steps = AskWorkflowActionRunner.steps(for: actions, placeholders: placeholders, folder: folder,
                                                   name: title, home: home, chain: chain)
             + AskWorkflowActionRunner.scriptSteps(added, allowed: manifest?.output.scriptActions == true,
                                                   folder: folder, name: title, home: home, chain: chain,
                                                   knownHosts: { AskWorkflowScriptOutput.knownHosts(in: folder) })
+        // A displayed result from a typed argument is a preview, not permission to
+        // insert into the source app. Only selection-only runs write back automatically;
+        // action-only runs and an explicit close retain their configured behavior.
+        // The result's Option-Return action remains available for manual insertion.
+        if !closes, !input.query.isEmpty || input.selection?.isEmpty != false {
+            steps.removeAll { $0.action.kind == .writeBack }
+        }
+        guard !steps.isEmpty || closes else { return nil }
         return AskWorkflowFollowUp(steps: steps, closes: closes)
     }
 

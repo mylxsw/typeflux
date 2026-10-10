@@ -73,14 +73,19 @@ extension AskQuickResultsInteractionTests {
 
     @Test func aShorterListSettlesOnceTypingPauses() async throws {
         try await withPasteboard { _ in
-            let launcher = try await Launcher(text: "prefix")
+            let launcher = try await Launcher(text: "prefix", prepare: { model in
+                model.modelLibrary.settings.saveAskLauncherKeywords(AskPluginRegistry.defaultKeywords + [
+                    AskKeyword(keyword: "fixture-web", pluginID: AskWebSearchPlugin.id)
+                ])
+            })
             defer { launcher.close() }
             let model = launcher.fixture.model
             try await launcher.press(Self.returnKey)
             try await waitFor { (model.plugins.output?.items.count ?? 0) >= AskPluginResultsView.maximumVisibleItems }
             try await Task.sleep(for: .milliseconds(50))
             let tall = try #require(launcher.heights.last)
-            replaceText("gh", in: launcher)
+            // A fixture-only keyword stays unique as the built-in aliases grow.
+            replaceText("fixture-web", in: launcher)
             try await waitFor { model.plugins.output?.items.count == 1 }
             try await Task.sleep(for: .milliseconds(50))
             let typing = try #require(launcher.heights.last)

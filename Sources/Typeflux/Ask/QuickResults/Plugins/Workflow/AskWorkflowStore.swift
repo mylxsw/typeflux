@@ -55,13 +55,17 @@ final class AskWorkflowStore: ObservableObject {
                 return AskWorkflow.load(folder: folder, trusted: trusted[id], disabled: disabled.contains(id),
                                         fileManager: fileManager)
             }
-            .sorted { ($0.manifest?.name ?? $0.id).localizedStandardCompare($1.manifest?.name ?? $1.id) == .orderedAscending }
+            .sorted {
+                ($0.manifest?.name ?? $0.id).localizedStandardCompare($1.manifest?.name ?? $1.id) == .orderedAscending
+            }
         // Two folders claiming one id: the first keeps it, the rest are flagged.
         var seen = Set<String>()
         for index in loaded.indices {
             if seen.contains(loaded[index].id), loaded[index].manifest != nil {
                 loaded[index].status = .invalid([AskWorkflowManifest.Problem(field: "id",
-                                                                            message: L("ask.workflow.problem.duplicateID"))])
+                                                                             message: L(
+                                                                                 "ask.workflow.problem.duplicateID"
+                                                                             ))])
             }
             seen.insert(loaded[index].id)
         }
@@ -74,7 +78,9 @@ final class AskWorkflowStore: ObservableObject {
         return object["id"] as? String
     }
 
-    func workflow(_ id: String) -> AskWorkflow? { workflows.first { $0.id == id } }
+    func workflow(_ id: String) -> AskWorkflow? {
+        workflows.first { $0.id == id }
+    }
 
     // MARK: - Trust and switches
 
@@ -90,13 +96,18 @@ final class AskWorkflowStore: ObservableObject {
         reload()
     }
 
-    func isEnabled(_ id: String) -> Bool { !settings.askDisabledWorkflows.contains(id) }
+    func isEnabled(_ id: String) -> Bool {
+        !settings.askDisabledWorkflows.contains(id)
+    }
 
     /// Moves the workflow's folder to the Trash and forgets it, with its data and cache.
     func delete(_ id: String) throws {
         guard let workflow = workflow(id) else { return }
         try trash(workflow.folder)
-        for directory in [AskWorkflow.dataDirectory(for: id, home: home), AskWorkflow.cacheDirectory(for: id, home: home)] {
+        for directory in [
+            AskWorkflow.dataDirectory(for: id, home: home),
+            AskWorkflow.cacheDirectory(for: id, home: home)
+        ] {
             try? fileManager.removeItem(at: directory)
         }
         settings.askWorkflowTrust[id] = nil
@@ -110,7 +121,8 @@ final class AskWorkflowStore: ObservableObject {
 
     /// The workflows that can be reached from the launcher (switched-off ones cannot),
     /// as plugins, with the run log and source app wired in.
-    func plugins(source: @escaping @MainActor @Sendable () -> (app: String?, bundleID: String?)) -> [AskWorkflowPlugin] {
+    func plugins(source: @escaping @MainActor @Sendable () -> (app: String?, bundleID: String?))
+        -> [AskWorkflowPlugin] {
         let log = AskWorkflowLog.shared
         let home = home
         return workflows.filter { $0.manifest != nil && $0.status != .disabled }.map { workflow in
@@ -122,10 +134,11 @@ final class AskWorkflowStore: ObservableObject {
     /// The workflows' keywords that do not clash with `taken`, and the ones that do.
     static func keywords(of plugins: [AskWorkflowPlugin], excluding taken: [AskKeyword])
         -> (keywords: [AskKeyword], conflicts: [AskKeyword]) {
-        var used = Set(taken.map(\.id))
+        var used = Set(taken.flatMap(\.allKeywords).map { $0.lowercased() })
         var keywords: [AskKeyword] = [], conflicts: [AskKeyword] = []
         for keyword in plugins.flatMap(\.defaultKeywords) {
-            if used.contains(keyword.id) { conflicts.append(keyword) } else { keywords.append(keyword); used.insert(keyword.id) }
+            if used.contains(keyword.id) { conflicts.append(keyword) }
+            else { keywords.append(keyword); used.insert(keyword.id) }
         }
         return (keywords, conflicts)
     }
@@ -142,10 +155,13 @@ final class AskWorkflowStore: ObservableObject {
             number += 1
             id = "local.\(template.slug)-\(number)"
         }
-        let taken = Set(takenKeywords.map(\.id) + workflows.flatMap { $0.manifest?.keywords.map { $0.keyword.lowercased() } ?? [] })
+        let taken = Set(takenKeywords.flatMap(\.allKeywords).map { $0.lowercased() } + workflows
+            .flatMap { $0.manifest?.keywords.map { $0.keyword.lowercased() } ?? [] })
         var keyword = template.keyword
         var suffix = 2
-        while taken.contains(keyword) { keyword = template.keyword + String(suffix); suffix += 1 }
+        while taken.contains(keyword) {
+            keyword = template.keyword + String(suffix); suffix += 1
+        }
         let folder = root.appendingPathComponent(id, isDirectory: true)
         try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
         let manifest = template.manifest(id: id, keyword: keyword)

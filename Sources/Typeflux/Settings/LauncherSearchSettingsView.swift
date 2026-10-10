@@ -5,7 +5,7 @@ import SwiftUI
 /// where it looks, what it leaves out, and how the file index is doing.
 struct LauncherSearchSettingsView: View {
     enum Tab: String, CaseIterable, Identifiable {
-        case general, apps, files, exclude
+        case general, apps, files, browsers, exclude
 
         var id: String {
             rawValue
@@ -24,6 +24,7 @@ struct LauncherSearchSettingsView: View {
     @State var search = AskLauncherSearchSettings()
     @State var appsEnabled = true
     @State var filesEnabled = true
+    @State var browserPreferences = AskBrowserSearchSettings()
     @State var status = AskFileIndexStatus()
     @State var hasFullDiskAccess = false
     @State private var newExtension = ""
@@ -38,6 +39,7 @@ struct LauncherSearchSettingsView: View {
             case .general: generalTab
             case .apps: appsTab
             case .files: filesTab
+            case .browsers: browsersTab
             case .exclude: excludeTab
             }
         }
@@ -49,18 +51,6 @@ struct LauncherSearchSettingsView: View {
 
     @ViewBuilder private var generalTab: some View {
         AgentSettingsSection(title: L("launcher.search.general")) {
-            AgentSettingsRow(icon: "square.stack.3d.up", title: L("launcher.search.mode"),
-                             subtitle: L("launcher.search.mode.subtitle"), subtitleLineLimit: nil) {
-                StudioSegmentedControl(
-                    options: AskLauncherSearchSettings.Mode.allCases.map { (
-                        label: L("launcher.search.mode.\($0.rawValue)"),
-                        value: $0
-                    ) },
-                    selection: binding(\.mode), size: .compact
-                )
-                .accessibilityLabel(L("launcher.search.mode"))
-            }
-            ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "wand.and.stars", title: L("launcher.search.fuzzy"),
                              subtitle: L("launcher.search.fuzzy.subtitle"), subtitleLineLimit: nil) {
                 Toggle("", isOn: binding(\.fuzzy)).labelsHidden().toggleStyle(.switch)
@@ -367,6 +357,7 @@ extension LauncherSearchSettingsView {
 
     func reload() {
         search = settings.askLauncherSearchSettings
+        browserPreferences = settings.askBrowserSearchSettings
         appsEnabled = settings.askQuickAppSearchEnabled
         filesEnabled = settings.askQuickFileSearchEnabled
         status = index.status

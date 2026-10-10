@@ -2,7 +2,7 @@ import Foundation
 
 /// What a launcher keyword reaches: one of the built-in plugins or a workflow.
 enum AskKeywordKind: String, CaseIterable, Sendable {
-    case translate, prompt, web, files, chat, prefix, setting, history, workflow
+    case translate, prompt, web, files, tabs, bookmarks, chat, prefix, setting, history, system, workflow
 
     init?(pluginID: String) {
         switch pluginID {
@@ -10,11 +10,14 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case AskPromptPlugin.id: self = .prompt
         case AskWebSearchPlugin.id: self = .web
         case AskFileSearchPlugin.id: self = .files
+        case AskBrowserSearchPlugin.tabsID: self = .tabs
+        case AskBrowserSearchPlugin.bookmarksID: self = .bookmarks
         case AskOpenChatPlugin.id: self = .chat
         case AskPrefixPlugin.id: self = .prefix
         case AskSettingsPlugin.id: self = .setting
         case AskHistoryPlugin.id: self = .history
         default:
+            if AskSystemCommand(pluginID: pluginID) != nil { self = .system; return }
             guard pluginID.hasPrefix(AskWorkflowPlugin.idPrefix) else { return nil }
             self = .workflow
         }
@@ -23,18 +26,20 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
     /// Kinds managed on the keyword page; workflows have their own page.
     static let editableKinds: [Self] = allCases.filter { $0 != .workflow }
 
-    /// The built-in plugin behind the kind; nil for workflows.
+    /// A fixed plugin behind the kind; workflows and system commands choose one separately.
     var pluginID: String? {
         switch self {
         case .translate: AskTranslatePlugin.id
         case .prompt: AskPromptPlugin.id
         case .web: AskWebSearchPlugin.id
         case .files: AskFileSearchPlugin.id
+        case .tabs: AskBrowserSearchPlugin.tabsID
+        case .bookmarks: AskBrowserSearchPlugin.bookmarksID
         case .chat: AskOpenChatPlugin.id
         case .prefix: AskPrefixPlugin.id
         case .setting: AskSettingsPlugin.id
         case .history: AskHistoryPlugin.id
-        case .workflow: nil
+        case .system, .workflow: nil
         }
     }
 
@@ -44,10 +49,13 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .prompt: L("ask.plugin.prompt.title")
         case .web: L("ask.plugin.web.title")
         case .files: L("ask.plugin.files.title")
+        case .tabs: L("ask.browser.tabs")
+        case .bookmarks: L("ask.browser.bookmarks")
         case .chat: L("ask.openChat")
         case .prefix: L("ask.plugin.prefix.title")
         case .setting: L("ask.plugin.setting.title")
         case .history: L("ask.plugin.history.title")
+        case .system: L("ask.system.title")
         case .workflow: L("ask.settings.keywords.kind.workflow")
         }
     }
@@ -63,10 +71,13 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .prompt: "wand.and.stars"
         case .web: "magnifyingglass"
         case .files: "doc.text.magnifyingglass"
+        case .tabs: "rectangle.on.rectangle"
+        case .bookmarks: "bookmark"
         case .chat: "macwindow"
         case .prefix: "list.bullet.rectangle"
         case .setting: "gearshape"
         case .history: "clock.arrow.circlepath"
+        case .system: "terminal"
         case .workflow: "point.3.connected.trianglepath.dotted"
         }
     }
@@ -94,7 +105,7 @@ struct AskKeywordListRow: Identifiable, Equatable {
     var source: AskKeyword
 
     var id: String {
-        kind.rawValue + "/" + keyword.lowercased()
+        source.pluginID + "/" + keyword.lowercased()
     }
 }
 
@@ -129,6 +140,8 @@ enum AskKeywordListPresentation {
             AskWebSearchPlugin.engine(of: keyword.options).title
         case .files:
             L("ask.plugin.files.title")
+        case .tabs: L("ask.browser.tabs")
+        case .bookmarks: L("ask.browser.bookmarks")
         case .chat:
             L("ask.openChat")
         case .prefix:
@@ -137,6 +150,8 @@ enum AskKeywordListPresentation {
             L("ask.plugin.setting.title")
         case .history:
             L("ask.plugin.history.title")
+        case .system:
+            AskSystemCommand(pluginID: keyword.pluginID)?.title ?? keyword.keyword
         case .workflow, nil:
             keyword.keyword
         }
@@ -161,7 +176,7 @@ enum AskKeywordListPresentation {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             if customPrompt?.isEmpty != false,
                let preset = keyword.options[AskPromptPlugin.presetOption]
-                .flatMap(AskPromptPlugin.Preset.init(rawValue:)) {
+               .flatMap(AskPromptPlugin.Preset.init(rawValue:)) {
                 return L("ask.plugin.prompt.description." + preset.rawValue)
             }
             let template = AskPromptPlugin.template(of: keyword.options) ?? ""
@@ -175,6 +190,10 @@ enum AskKeywordListPresentation {
             return withoutScheme(AskWebSearchPlugin.engine(of: keyword.options).template)
         case .files:
             return L("ask.settings.keywords.kind.files.hint")
+        case .tabs, .bookmarks:
+            return L(
+                "ask.settings.keywords.kind.\(keyword.pluginID == AskBrowserSearchPlugin.tabsID ? "tabs" : "bookmarks").hint"
+            )
         case .chat:
             return L("ask.settings.keywords.kind.chat.hint")
         case .prefix:
@@ -183,6 +202,8 @@ enum AskKeywordListPresentation {
             return L("ask.settings.keywords.kind.setting.hint")
         case .history:
             return L("ask.settings.keywords.kind.history.hint")
+        case .system:
+            return L("ask.settings.keywords.kind.system.hint")
         case .workflow, nil:
             return ""
         }
@@ -200,7 +221,9 @@ enum AskKeywordListPresentation {
         let words = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return rows.filter { row in
             (kind == nil || row.kind == kind)
-                && (words.isEmpty || [row.keyword, row.name, row.summary].contains { $0.lowercased().contains(words) })
+                &&
+                (words.isEmpty || (row.source.allKeywords + [row.name, row.summary])
+                    .contains { $0.lowercased().contains(words) })
         }
     }
 
@@ -208,7 +231,7 @@ enum AskKeywordListPresentation {
     static func counts(_ rows: [AskKeywordListRow]) -> [AskKeywordKind?: Int] {
         var counts: [AskKeywordKind?: Int] = [nil: rows.count]
         for kind in AskKeywordKind.editableKinds {
-            counts[kind] = rows.filter { $0.kind == kind }.count
+            counts[kind] = rows.count(where: { $0.kind == kind })
         }
         return counts
     }
@@ -222,6 +245,41 @@ enum AskKeywordListPresentation {
                                         workflowName: workflow.manifest?.name ?? workflow.id,
                                         enabled: isEnabled(workflow.id) && workflow.status == .ready)
             }
+        }
+    }
+}
+
+/// Display sections combine related capabilities while the filter keeps specific kinds.
+enum AskKeywordSection: String, CaseIterable {
+    case translate, prompt, search, typeflux, system
+
+    var kinds: [AskKeywordKind] {
+        switch self {
+        case .translate: [.translate]
+        case .prompt: [.prompt]
+        case .search: [.web, .files, .tabs, .bookmarks]
+        case .typeflux: [.chat, .prefix, .setting, .history]
+        case .system: [.system]
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .translate: AskKeywordKind.translate.title
+        case .prompt: AskKeywordKind.prompt.title
+        case .search: L("ask.settings.keywords.section.search")
+        case .typeflux: L("ask.settings.keywords.section.typeflux")
+        case .system: AskKeywordKind.system.title
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .translate: "translate"
+        case .prompt: "wand.and.stars"
+        case .search: "magnifyingglass"
+        case .typeflux: "gearshape"
+        case .system: "terminal"
         }
     }
 }

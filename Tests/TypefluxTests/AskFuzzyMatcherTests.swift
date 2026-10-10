@@ -155,11 +155,37 @@ struct AskLauncherSearchSettingsTests {
         #expect(defaults.fileRoots == ["~"])
         #expect(defaults.excludedFolderNames.contains("node_modules"))
         let old = try JSONDecoder().decode(AskLauncherSearchSettings.self, from: Data(#"{"mode":"filesFirst","limit":7}"#.utf8))
-        #expect(old.mode == .filesFirst)
+        #expect(old.mode == .mixed)
         #expect(old.limit == 30, "a limit not offered falls back")
         #expect(old.appRoots == AskLauncherSearchSettings.defaultAppRoots)
         let round = try JSONDecoder().decode(AskLauncherSearchSettings.self, from: JSONEncoder().encode(old))
         #expect(round == old)
+    }
+
+    @Test func legacySearchModesUseMixedWithoutResettingOtherPreferences() throws {
+        let suite = "ask-search-legacy-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = SettingsStore(defaults: defaults)
+        for mode in ["mixed", "appsFirst", "filesFirst", "obsolete"] {
+            let data = try JSONSerialization.data(withJSONObject: [
+                "mode": mode, "fuzzy": false, "limit": 50, "fileIcons": "icons",
+                "appRoots": ["~/Apps"], "fileRoots": ["~/Work"], "includeHidden": true
+            ])
+            defaults.set(data, forKey: "ask.search.settings")
+            let settings = store.askLauncherSearchSettings
+            #expect(settings.mode == .mixed)
+            #expect(!settings.fuzzy && settings.limit == 50 && settings.fileIcons == .icons)
+            #expect(settings.appRoots == ["~/Apps"] && settings.fileRoots == ["~/Work"] && settings.includeHidden)
+            store.askLauncherSearchSettings = settings
+            #expect(SettingsStore(defaults: defaults).askLauncherSearchSettings == settings)
+        }
+        var changed = store.askLauncherSearchSettings
+        changed.mode = .filesFirst
+        store.askLauncherSearchSettings = changed
+        let saved = try #require(defaults.data(forKey: "ask.search.settings"))
+        let object = try #require(JSONSerialization.jsonObject(with: saved) as? [String: Any])
+        #expect(object["mode"] as? String == "mixed")
     }
 
     @Test func pathsExpandAndAbbreviate() {

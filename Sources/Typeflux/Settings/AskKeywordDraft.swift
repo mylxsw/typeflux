@@ -7,6 +7,7 @@ struct AskKeywordDraft: Equatable {
     let original: AskKeyword?
     let kind: AskKeywordKind
     var keyword: String
+    var aliases: [String] = []
     var enabled: Bool
     /// Translation: a language code, empty for "detect the direction".
     var target: String
@@ -22,11 +23,14 @@ struct AskKeywordDraft: Equatable {
     var url: String
     /// Web search: the built-in engine the URL came from.
     var engine: AskWebSearchPlugin.Engine?
+    var systemCommand: AskSystemCommand = .toggleBluetooth
 
     init(editing keyword: AskKeyword) {
         original = keyword
+        systemCommand = AskSystemCommand(pluginID: keyword.pluginID) ?? .toggleBluetooth
         kind = AskKeywordKind(pluginID: keyword.pluginID) ?? .prompt
         self.keyword = keyword.keyword
+        aliases = keyword.aliases
         enabled = keyword.enabled
         target = keyword.options[AskTranslatePlugin.targetOption] ?? ""
         translationService = keyword.options[AskTranslatePlugin.engineOption]
@@ -77,7 +81,7 @@ struct AskKeywordDraft: Equatable {
                 AskWebSearchPlugin.host(of: url).flatMap { $0.isEmpty ? nil : $0 }
                     ?? L("ask.settings.keywords.sheet.webNamePlaceholder")
             }
-        case .translate, .files, .chat, .prefix, .setting, .history, .workflow:
+        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .system, .workflow:
             ""
         }
     }
@@ -91,7 +95,7 @@ struct AskKeywordDraft: Equatable {
             } else {
                 ([L("ask.plugin.translate.title")]
                     + [target.isEmpty ? nil : AskTranslationLanguages.name(target, in: AppLocalization.shared.language),
-                       AskTranslationProvider(rawValue: translationService)?.title].compactMap { $0 })
+                       AskTranslationProvider(rawValue: translationService)?.title].compactMap(\.self))
                     .joined(separator: " · ")
             }
         case .prompt, .web:
@@ -106,6 +110,10 @@ struct AskKeywordDraft: Equatable {
             L("ask.plugin.history.title")
         case .files:
             L("ask.plugin.files.title")
+        case .tabs: L("ask.browser.tabs")
+        case .bookmarks: L("ask.browser.bookmarks")
+        case .system:
+            systemCommand.title
         case .workflow:
             keyword
         }
@@ -128,14 +136,21 @@ struct AskKeywordDraft: Equatable {
     /// workflows', naming who has it when it is taken.
     func keywordProblem(among keywords: [AskKeyword], workflows: [AskWorkflowKeywordEntry]) -> String? {
         let others = keywords.filter { $0 != original }
-        let word = keyword.trimmingCharacters(in: .whitespaces).lowercased()
-        if let owner = others.first(where: { $0.keyword.lowercased() == word }), !word.isEmpty {
-            return L("ask.workflow.editor.keywordTakenBy", owner.keyword, AskKeywordListPresentation.name(of: owner))
+        var checked: [AskKeyword] = []
+        for value in [keyword] + aliases {
+            let word = value.trimmingCharacters(in: .whitespaces).lowercased()
+            if let owner = others.first(where: { $0.contains(word) }), !word.isEmpty {
+                return L("ask.workflow.editor.keywordTakenBy", value, AskKeywordListPresentation.name(of: owner))
+            }
+            if let owner = workflows.first(where: { $0.keyword.lowercased() == word }), !word.isEmpty {
+                return L("ask.workflow.editor.keywordTakenBy", value, owner.workflowName)
+            }
+            if let problem = AskKeywordMatcher.problem(with: value, among: others + checked) {
+                return AskKeywordList.message(for: problem)
+            }
+            checked.append(AskKeyword(keyword: word, pluginID: ""))
         }
-        if let owner = workflows.first(where: { $0.keyword.lowercased() == word }), !word.isEmpty {
-            return L("ask.workflow.editor.keywordTakenBy", owner.keyword, owner.workflowName)
-        }
-        return AskKeywordMatcher.problem(with: keyword, among: others).map(AskKeywordList.message(for:))
+        return nil
     }
 
     /// Why the plugin fields cannot be saved, or nil.
@@ -146,7 +161,7 @@ struct AskKeywordDraft: Equatable {
                 ? L("ask.settings.keywords.sheet.promptRequired") : nil
         case .web:
             AskWebSearchPlugin.problem(with: url)
-        case .translate, .files, .chat, .prefix, .setting, .history, .workflow:
+        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .system, .workflow:
             nil
         }
     }
@@ -180,12 +195,13 @@ struct AskKeywordDraft: Equatable {
             } else {
                 set(AskWebSearchPlugin.urlOption, template)
             }
-        case .files, .chat, .prefix, .setting, .history, .workflow:
+        case .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .system, .workflow:
             break
         }
         return AskKeyword(keyword: keyword.trimmingCharacters(in: .whitespaces),
-                          pluginID: original?.pluginID ?? kind.pluginID ?? "",
-                          options: options, enabled: enabled)
+                          pluginID: kind == .system ? systemCommand.id : original?.pluginID ?? kind.pluginID ?? "",
+                          options: options, enabled: enabled,
+                          aliases: aliases.map { $0.trimmingCharacters(in: .whitespaces) })
     }
 }
 

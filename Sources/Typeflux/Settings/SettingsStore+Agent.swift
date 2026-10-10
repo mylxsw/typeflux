@@ -42,6 +42,15 @@ extension SettingsStore {
         }
     }
 
+    /// Whether plain numeric input offers conversions independently of arithmetic.
+    var askQuickNumberConversionsEnabled: Bool {
+        get { defaults.object(forKey: "ask.quickResults.numberConversions") as? Bool ?? true }
+        set {
+            defaults.set(newValue, forKey: "ask.quickResults.numberConversions")
+            NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)
+        }
+    }
+
     /// Whether the Ask launcher lists applications matching what is typed into it.
     var askQuickAppSearchEnabled: Bool {
         get { defaults.object(forKey: "ask.quickResults.apps") as? Bool ?? true }
@@ -68,7 +77,9 @@ extension SettingsStore {
             return settings
         }
         set {
-            if let data = try? JSONEncoder().encode(newValue) { defaults.set(data, forKey: "ask.search.settings") }
+            var settings = newValue
+            settings.mode = .mixed
+            if let data = try? JSONEncoder().encode(settings) { defaults.set(data, forKey: "ask.search.settings") }
             NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)
         }
     }
@@ -86,6 +97,7 @@ extension SettingsStore {
             } else {
                 defaults.removeObject(forKey: "ask.launcher.keywords")
             }
+            NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)
         }
     }
 

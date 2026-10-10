@@ -123,7 +123,7 @@ extension AskWorkflowStore {
         guard let problem = AskKeywordMatcher.problem(with: keyword, among: others) else { return nil }
         let word = keyword.trimmingCharacters(in: .whitespaces).lowercased()
         // Say who has it: a built-in plugin or another workflow.
-        guard problem == .duplicate, let owner = others.first(where: { $0.keyword.lowercased() == word }),
+        guard problem == .duplicate, let owner = others.first(where: { $0.contains(word) }),
               let name = ownerName(owner.pluginID) else { return AskKeywordList.message(for: problem) }
         return L("ask.workflow.editor.keywordTakenBy", keyword, name)
     }
@@ -139,6 +139,8 @@ extension AskWorkflowStore {
         case AskSettingsPlugin.id: return L("ask.plugin.setting.title")
         case AskHistoryPlugin.id: return L("ask.plugin.history.title")
         case AskNotesPlugin.id: return L("ask.notes.title")
+        case AskBrowserSearchPlugin.tabsID: return L("ask.browser.tabs")
+        case AskBrowserSearchPlugin.bookmarksID: return L("ask.browser.bookmarks")
         default:
             guard pluginID.hasPrefix(AskWorkflowPlugin.idPrefix) else { return nil }
             let id = String(pluginID.dropFirst(AskWorkflowPlugin.idPrefix.count))

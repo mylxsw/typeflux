@@ -42,12 +42,15 @@ struct AskQuickResultsView: View {
     static let maximumHeight: CGFloat = 430
 
     enum Section: Equatable {
-        case calculation, best, apps, panes, files, folders, ai
+        case calculation, best, features, apps, panes, files, folders, tabs, bookmarks, ai
 
         var title: String {
             switch self {
             case .calculation: L("ask.quick.section.calculation")
             case .best: L("ask.quick.section.best")
+            case .tabs: L("ask.browser.tabs")
+            case .bookmarks: L("ask.browser.bookmarks")
+            case .features: L("ask.quick.section.features")
             case .apps: L("ask.quick.section.apps")
             case .panes: L("ask.quick.section.panes")
             case .files: L("ask.quick.section.files")
@@ -137,7 +140,8 @@ struct AskQuickResultsView: View {
     }
 
     private func sectionTitle(_ section: Section) -> some View {
-        Text(section.title)
+        Text(section == .calculation && results.calculation?.isNumericInput == true
+             ? L("ask.quick.numberConversions") : section.title)
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(StudioTheme.textTertiary)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -150,6 +154,8 @@ struct AskQuickResultsView: View {
 
     @ViewBuilder private func content(_ row: AskQuickResults.Row, index: Int, highlighted: Bool) -> some View {
         switch row {
+        case let .feature(featureIndex): featureRow(results.features[featureIndex], row: row, highlighted: highlighted)
+        case let .browser(browserIndex): browserRow(results.browserEntries[browserIndex], row: row, highlighted: highlighted)
         case .calculation: calculationRow(highlighted: highlighted)
         case let .format(formatIndex): formatRow(results.formats[formatIndex], index: index, highlighted: highlighted)
         case let .app(appIndex): appRow(results.apps[appIndex], row: row, highlighted: highlighted)
@@ -160,6 +166,37 @@ struct AskQuickResultsView: View {
         }
     }
 
+    private func browserRow(_ entry: AskBrowserSearchEntry, row: AskQuickResults.Row, highlighted: Bool) -> some View {
+        let icon = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.browser.bundleID).map(AskPluginItem.Icon.fileIcon)
+        return AskPluginItemRow(item: entry.item(settings: .init(), icon: icon), symbol: entry.kind == .tab ? "rectangle.on.rectangle" : "bookmark",
+                               selected: highlighted, emphasized: true, height: Self.appHeight) { onRun(row, true) }
+    }
+
+    private func featureRow(_ entry: AskLauncherSearchEntry, row: AskQuickResults.Row, highlighted: Bool) -> some View {
+        Button { onRun(row, true) } label: {
+            HStack(spacing: 12) {
+                tile(entry.symbol, tint: AskTheme.accent)
+                Text(entry.title).font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                if !entry.keyword.keyword.isEmpty {
+                    Text(entry.keyword.keyword).font(.system(size: 11.5, design: .monospaced))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
+                Spacer(minLength: 8)
+                Text(highlighted ? L(entry.command == nil ? "ask.plugin.prefix.enter" : "ask.system.run") + " ↩" : entry.detail)
+                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+            }
+            .padding(.horizontal, 10).frame(height: Self.appHeight)
+            .background(highlighted ? AskTheme.hoverFill : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(entry.title)
+        .accessibilityValue(entry.keyword.keyword)
+        .accessibilityAddTraits(highlighted ? .isSelected : [])
+        .accessibilityIdentifier("ask.quick.feature")
+    }
+
     @ViewBuilder private func calculationRow(highlighted: Bool) -> some View {
         if let calculation = results.calculation {
             calculationRow(calculation, highlighted: highlighted)
@@ -168,10 +205,11 @@ struct AskQuickResultsView: View {
 
     private func calculationRow(_ calculation: AskCalculation, highlighted: Bool) -> some View {
         let expression = results.pendingExpression.map { $0 + " …" } ?? calculation.expression
+        let title = L(calculation.isNumericInput ? "ask.quick.numberConversions" : "ask.quick.calculator")
         return Button { onRun(.calculation, true) } label: {
             HStack(spacing: 12) {
-                tile("equal", tint: AskTheme.accent)
-                Text(L("ask.quick.calculator")).font(.system(size: 13.5))
+                tile(calculation.isNumericInput ? "number" : "equal", tint: AskTheme.accent)
+                Text(title).font(.system(size: 13.5))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer(minLength: 16)
                 VStack(alignment: .trailing, spacing: 1) {
@@ -204,7 +242,7 @@ struct AskQuickResultsView: View {
         }
         .buttonStyle(.plain)
         .disabled(!results.isEnabled(.calculation))
-        .accessibilityLabel(L("ask.quick.calculator"))
+        .accessibilityLabel(title)
         .accessibilityValue(accessibilityValue)
         .accessibilityAddTraits(highlighted ? .isSelected : [])
         .accessibilityIdentifier("ask.quick.calculation")
@@ -350,7 +388,9 @@ struct AskQuickResultsView: View {
             HStack(spacing: 10) {
                 Text(format.kind.title).font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textTertiary)
-                    .frame(width: 72, alignment: .leading)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                    .frame(width: results.calculation?.isNumericInput == true ? 110 : 72, alignment: .leading)
+                    .help(format.kind == .base64 ? L("ask.quick.format.base64.alphabet") : format.kind.title)
                 Text(format.value).font(.system(size: 12.5).monospacedDigit())
                     .foregroundStyle(results.stale ? StudioTheme.textTertiary : StudioTheme.textPrimary)
                     .lineLimit(1).truncationMode(.tail)

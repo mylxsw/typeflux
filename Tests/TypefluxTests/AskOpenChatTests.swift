@@ -3,10 +3,10 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Open chat from launcher", .serialized, .exclusiveUIState)
+@Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct AskOpenChatTests {
-    @Test func emptyOpenKeepsCurrentConversationAndIgnoresCapturedContext() async throws {
+    @Test func `empty open keeps current conversation and ignores captured context`() async throws {
         let f = try AskTestFixture()
         await f.api.seed(.init(id: "old", title: "Old", revision: 1, updatedAt: Date(), messages: []))
         await f.model.select("old")
@@ -23,7 +23,7 @@ struct AskOpenChatTests {
         #expect(await f.api.sends.isEmpty)
     }
 
-    @Test func argumentTransfersWithoutSendingAndPersistsOldConversationDraft() async throws {
+    @Test func `argument transfers without sending and persists old conversation draft`() async throws {
         let f = try AskTestFixture()
         await f.api.seed(.init(id: "old", title: "Old", revision: 1, updatedAt: Date(), messages: []))
         await f.model.select("old")
@@ -49,7 +49,7 @@ struct AskOpenChatTests {
         #expect(f.model.conversations == originalHistory)
     }
 
-    @Test func displacedNewDraftIsDurableAndCanBeSwappedBack() async throws {
+    @Test func `displaced new draft is durable and can be swapped back`() async throws {
         let f = try AskTestFixture()
         _ = f.model.credentials()
         f.model.draft = AskDraft(text: "Original unsent", storesLocally: true)
@@ -69,7 +69,7 @@ struct AskOpenChatTests {
         #expect(f.model.savedChatDrafts.isEmpty)
     }
 
-    @Test func activeChatUsesOnlyArgumentAndOtherPluginsKeepTheirInput() async throws {
+    @Test func `active chat uses only argument and other plugins keep their input`() async throws {
         let f = try AskTestFixture()
         _ = f.model.credentials()
         f.model.plugins.enter(AskOpenChatPlugin.keywords[0])
@@ -88,7 +88,7 @@ struct AskOpenChatTests {
         #expect(f.model.launcherDraft.text == translation.keyword + " Translate me")
     }
 
-    @Test func renamedAndDisabledKeywordsFollowSettingsAndBoundaries() async throws {
+    @Test func `renamed and disabled keywords follow settings and boundaries`() async throws {
         let f = try AskTestFixture()
         _ = f.model.credentials()
         let renamed = AskKeyword(keyword: "talk", pluginID: AskOpenChatPlugin.id)
@@ -107,30 +107,31 @@ struct AskOpenChatTests {
         #expect(await f.model.openChatFromLauncher())
         #expect(f.model.draft.text == "talk body")
         #expect(AskPluginRegistry.keywords(saved: [], known: AskPluginRegistry.coveredGroups).isEmpty)
-        #expect(AskPluginRegistry.keywords(saved: [], known: [AskTranslatePlugin.id]).contains(AskOpenChatPlugin.keywords[0]))
+        #expect(AskPluginRegistry.keywords(saved: [], known: [AskTranslatePlugin.id])
+            .contains { $0.pluginID == AskOpenChatPlugin.id && $0.contains("chat") })
     }
 
-    @Test func openingWaitsForRecordingCaptureAndAttachmentLoads() async throws {
+    @Test func `opening waits for recording capture and attachment loads`() async throws {
         let f = try AskTestFixture()
         f.model.launcherDraft.text = "Do not lose me"
         var opens = 0
         f.model.onShowConversation = { opens += 1 }
         f.model.recordingIsActive = { true }
-        #expect(!(await f.model.openChatFromLauncher()))
+        #expect(await !(f.model.openChatFromLauncher()))
         f.model.recordingIsActive = { false }
         for launcher in [true, false] {
             let key = f.model.visionDraftKey(launcher: launcher)
             f.model.attachmentLoads[key] = 1
-            #expect(!(await f.model.openChatFromLauncher()))
+            #expect(await !(f.model.openChatFromLauncher()))
             f.model.attachmentLoads[key] = nil
         }
         f.model.isOpeningChat = true
-        #expect(!(await f.model.openChatFromLauncher()))
+        #expect(await !(f.model.openChatFromLauncher()))
         #expect(opens == 0)
         #expect(f.model.launcherDraft.text == "Do not lose me")
     }
 
-    @Test func manualReferencesCountButAutomaticContextDoesNot() {
+    @Test func `manual references count but automatic context does not`() {
         #expect(!AskDraft(selection: "Selected", source: "Safari").hasChatInput)
         #expect(!AskDraft(text: " \n ").hasChatInput)
         #expect(AskDraft(text: "text").hasChatInput)
@@ -138,14 +139,14 @@ struct AskOpenChatTests {
         #expect(AskDraft(mcpServers: ["server"]).hasChatInput)
     }
 
-    @Test func pluginPlanIsAnExplicitLocalActionEvenForEmptyOrSelectedInput() async throws {
+    @Test func `plugin plan is an explicit local action even for empty or selected input`() async throws {
         let plugin = AskOpenChatPlugin()
         #expect(plugin.runsWithoutInput)
         #expect(plugin.id == AskKeywordKind.chat.pluginID)
         #expect(!plugin.title.isEmpty && !plugin.placeholder(selectionLines: 2).isEmpty)
         #expect(plugin.chipDetail(for: plugin.defaultKeywords[0], language: .english) == nil)
         let request = AskPluginRequest(text: "Selected text", origin: .selection,
-                                        keyword: plugin.defaultKeywords[0], options: [:], interfaceLanguage: .english)
+                                       keyword: plugin.defaultKeywords[0], options: [:], interfaceLanguage: .english)
         let plan = await plugin.plan(request)
         #expect(plan.mode == .onSubmit)
         #expect(plan.action(for: .enter)?.kind == .openChat)
@@ -161,7 +162,7 @@ struct AskOpenChatTests {
         #expect(editor.result().keyword == "talk")
     }
 
-    @Test func nativeShortcutHandlesCommandOAndDefersDuringIMEComposition() throws {
+    @Test func `native shortcut handles command O and defers during IME composition`() throws {
         let editor = AskComposerTextView.Editor()
         var opens = 0
         editor.onOpenChat = { opens += 1 }
@@ -173,23 +174,30 @@ struct AskOpenChatTests {
         let commandO = try event(.command)
         editor.keyDown(with: commandO)
         #expect(opens == 1)
-        #expect(!AskComposerTextView.Editor.isOpenChatShortcut(try event([.command, .shift])))
-        editor.setMarkedText("拼", selectedRange: NSRange(location: 1, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
+        #expect(try !AskComposerTextView.Editor.isOpenChatShortcut(event([.command, .shift])))
+        editor.setMarkedText(
+            "拼",
+            selectedRange: NSRange(location: 1, length: 0),
+            replacementRange: NSRange(location: NSNotFound, length: 0)
+        )
         editor.keyDown(with: commandO)
         #expect(opens == 1)
     }
 }
 
 extension AskOpenChatTests {
-    @Test func cacheFailureLeavesBothDraftsAndLauncherIntact() async throws {
+    @Test func `cache failure leaves both drafts and launcher intact`() async throws {
         let f = try AskTestFixture()
         _ = f.model.credentials()
         f.model.draft.text = "Original"
         f.model.launcherDraft.text = "Incoming"
         var opens = 0
         f.model.onShowConversation = { opens += 1 }
-        try await f.cache.execute("CREATE TRIGGER fail_drafts BEFORE INSERT ON ask_drafts BEGIN SELECT RAISE(ABORT, 'unavailable'); END", strings: [])
-        #expect(!(await f.model.openChatFromLauncher()))
+        try await f.cache.execute(
+            "CREATE TRIGGER fail_drafts BEFORE INSERT ON ask_drafts BEGIN SELECT RAISE(ABORT, 'unavailable'); END",
+            strings: []
+        )
+        #expect(await !(f.model.openChatFromLauncher()))
         #expect(f.model.draft.text == "Original")
         #expect(f.model.launcherDraft.text == "Incoming")
         #expect(opens == 0)
@@ -197,7 +205,7 @@ extension AskOpenChatTests {
         #expect(f.model.commandFeedback == L("ask.cache.failed"))
     }
 
-    @Test func simultaneousRequestsDoNotReplaceTheTransferredDraft() async throws {
+    @Test func `simultaneous requests do not replace the transferred draft`() async throws {
         let f = try AskTestFixture()
         _ = f.model.credentials()
         f.model.draft.text = "Original"
@@ -207,11 +215,11 @@ extension AskOpenChatTests {
         let results = await [first, second]
         #expect(results.contains(true))
         #expect(f.model.draft.text == "Incoming")
-        #expect(f.model.savedChatDrafts.filter { $0.draft.text == "Original" }.count == 1)
+        #expect(f.model.savedChatDrafts.count(where: { $0.draft.text == "Original" }) == 1)
         #expect(await f.api.sends.isEmpty)
     }
 
-    @Test func quoteOnlyDraftTransfersAndSavedCopyRestoresIntoEmptyWorkspace() async throws {
+    @Test func `quote only draft transfers and saved copy restores into empty workspace`() async throws {
         let f = try AskTestFixture()
         _ = f.model.credentials()
         let quote = AskReference(messageId: "message", text: "A quote")
@@ -228,9 +236,13 @@ extension AskOpenChatTests {
 }
 
 extension AskOpenChatTests {
-    @Test func launcherReturnAndCommandOOpenWithoutSending() async throws {
+    @Test func `launcher return and command O open without sending`() async throws {
         _ = NSApplication.shared
-        for (text, command, expected) in [("chat", false, ""), ("chat Draft words", false, "Draft words"), ("", true, "")] {
+        for (text, command, expected) in [
+            ("chat", false, ""),
+            ("chat Draft words", false, "Draft words"),
+            ("", true, "")
+        ] {
             let f = try AskTestFixture()
             _ = f.model.credentials()
             f.model.quickSearch.setVisible(true)
@@ -271,14 +283,15 @@ extension AskOpenChatTests {
         }
     }
 
-    @Test func windowReusesAndRestoresMinimizedConversationWithEditorFocus() async throws {
+    @Test func `window reuses and restores minimized conversation with editor focus`() async throws {
         _ = NSApplication.shared
         let f = try AskTestFixture()
         _ = f.model.credentials()
         let controller = AskConversationWindowController(settings: f.model.modelLibrary.settings, model: f.model)
         defer { controller.dismissLauncher(); f.model.resetSession() }
         #expect(await f.model.openChatFromLauncher())
-        let window = try #require(NSApp.windows.first { $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-conversations" && $0.isVisible })
+        let window = try #require(NSApp.windows
+            .first { $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-conversations" && $0.isVisible })
         defer { window.close() }
         window.miniaturize(nil)
         #expect(await f.model.openChatFromLauncher())
@@ -286,21 +299,25 @@ extension AskOpenChatTests {
         #expect(window.isVisible)
         try await Task.sleep(for: .milliseconds(100))
         #expect(window.firstResponder is AskComposerTextView.Editor)
-        #expect(NSApp.windows.filter { $0.identifier == window.identifier && $0.isVisible }.count == 1)
+        #expect(NSApp.windows.count(where: { $0.identifier == window.identifier && $0.isVisible }) == 1)
     }
 }
 
 @MainActor
 private final class OpenChatHeldCapture: AskContextCapturing {
-    var screenCaptureAllowed: Bool { true }
+    var screenCaptureAllowed: Bool {
+        true
+    }
+
     var continuation: CheckedContinuation<AskCapturedContext, Never>?
-    func capture(includeScreenshot: Bool, includeSelection: Bool, request: ReadOnlySelectionRequest) async -> AskCapturedContext {
+    func capture(includeScreenshot _: Bool, includeSelection _: Bool,
+                 request _: ReadOnlySelectionRequest) async -> AskCapturedContext {
         await withCheckedContinuation { continuation = $0 }
     }
 }
 
 extension AskOpenChatTests {
-    @Test func captureMustFinishBeforeDraftHandoff() async throws {
+    @Test func `capture must finish before draft handoff`() async throws {
         let f = try AskTestFixture()
         let capture = OpenChatHeldCapture()
         let model = AskConversationModel(api: f.api, cache: f.cache, tools: f.tools, capture: capture,
@@ -309,14 +326,14 @@ extension AskOpenChatTests {
         let task = Task { await model.prepareLauncher() }
         try await f.wait { capture.continuation != nil }
         #expect(model.capturing)
-        #expect(!(await model.openChatFromLauncher()))
+        #expect(await !(model.openChatFromLauncher()))
         capture.continuation?.resume(returning: .init(selection: "Automatic context"))
         await task.value
         #expect(await model.openChatFromLauncher())
         #expect(model.draft.selection == nil)
     }
 
-    @Test func recordingAndTranscriptionKeepTheirEditorAndContent() async throws {
+    @Test func `recording and transcription keep their editor and content`() async throws {
         _ = NSApplication.shared
         let f = try AskTestFixture()
         _ = f.model.credentials()
@@ -333,10 +350,10 @@ extension AskOpenChatTests {
         defer { window.close(); f.model.resetSession() }
         #expect(f.model.voiceInput.begin(in: editor))
         try await f.wait { f.model.voiceInput.phase == .listening }
-        #expect(!(await f.model.openChatFromLauncher()))
+        #expect(await !(f.model.openChatFromLauncher()))
         f.model.voiceInput.stop()
         try await f.wait { recorder.stops == 1 }
-        #expect(!(await f.model.openChatFromLauncher()))
+        #expect(await !(f.model.openChatFromLauncher()))
         #expect(recorder.cancels == 0)
         recorder.releaseTranscript()
         try await f.wait { !f.model.voiceInput.isOccupied }
@@ -345,7 +362,7 @@ extension AskOpenChatTests {
 }
 
 extension AskOpenChatTests {
-    @Test func attachmentOnlyDraftCarriesAllContextWithoutSending() async throws {
+    @Test func `attachment only draft carries all context without sending`() async throws {
         let f = try AskTestFixture()
         _ = f.model.credentials()
         let attachment = AskAttachment(kind: .file, name: "notes.txt", text: "Notes")
@@ -360,7 +377,7 @@ extension AskOpenChatTests {
         #expect(await f.api.sends.isEmpty)
     }
 
-    @Test func pluginActionOpensAndRawPluginInputIsPreservedBeforeDetection() async throws {
+    @Test func `plugin action opens and raw plugin input is preserved before detection`() async throws {
         let f = try AskTestFixture()
         _ = f.model.credentials()
         var opens = 0
@@ -378,7 +395,7 @@ extension AskOpenChatTests {
 }
 
 extension AskOpenChatTests {
-    @Test func restoringFromConversationPreservesFollowUpAndRejectsStaleAccountEntry() async throws {
+    @Test func `restoring from conversation preserves follow up and rejects stale account entry`() async throws {
         let f = try AskTestFixture()
         _ = f.model.credentials()
         let saved = AskSavedChatDraft(id: "saved-chat:test", draft: AskDraft(text: "Restore me"))
@@ -397,14 +414,17 @@ extension AskOpenChatTests {
         #expect(f.model.draft.text.isEmpty)
     }
 
-    @Test func restoreFailureKeepsVisibleAndSavedDrafts() async throws {
+    @Test func `restore failure keeps visible and saved drafts`() async throws {
         let f = try AskTestFixture()
         _ = f.model.credentials()
         let saved = AskSavedChatDraft(id: "saved-chat:test", draft: AskDraft(text: "Saved"))
         try await f.cache.saveDraft(saved.draft, key: saved.id, owner: "owner")
         await f.model.loadSavedChatDrafts()
         f.model.draft.text = "Visible"
-        try await f.cache.execute("CREATE TRIGGER fail_drafts BEFORE INSERT ON ask_drafts BEGIN SELECT RAISE(ABORT, 'unavailable'); END", strings: [])
+        try await f.cache.execute(
+            "CREATE TRIGGER fail_drafts BEFORE INSERT ON ask_drafts BEGIN SELECT RAISE(ABORT, 'unavailable'); END",
+            strings: []
+        )
         await f.model.restoreChatDraft(saved)
         #expect(f.model.draft.text == "Visible")
         #expect(f.model.savedChatDrafts == [saved])

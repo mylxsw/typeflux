@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 extension AskQuickResultsInteractionTests {
-    @Test func prefixReturnListsAllKeywordsAndArrowsEnterWithoutRunning() async throws {
+    @Test func `prefix return lists all keywords and arrows enter without running`() async throws {
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "prefix", selection: "Captured words")
             defer { launcher.close() }
@@ -15,9 +15,9 @@ extension AskQuickResultsInteractionTests {
             #expect(model.plugins.output?.items.count == AskPluginRegistry.defaultKeywords.count)
             #expect(model.plugins.request?.text == "" && model.plugins.request?.selection == nil)
             try await launcher.press(Self.down)
-            #expect(model.plugins.output?.selected?.title == "tr")
+            #expect(model.plugins.output?.selected?.title == "dict")
             try await launcher.press(Self.returnKey)
-            #expect(model.plugins.keyword?.keyword == "tr")
+            #expect(model.plugins.keyword?.keyword == "dict")
             #expect(model.launcherDraft.text.isEmpty && model.plugins.phase == .waiting)
             #expect(model.plugins.request == nil && launcher.dismissed == 0)
             #expect(await launcher.fixture.api.sends.isEmpty)
@@ -25,7 +25,7 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func prefixFilteringByTypingAndReturnKeepsTheQueryOutOfTheTarget() async throws {
+    @Test func `prefix filtering by typing and return keeps the query out of the target`() async throws {
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "prefix g")
             defer { launcher.close() }
@@ -35,7 +35,7 @@ extension AskQuickResultsInteractionTests {
             launcher.editor.selectAll(nil)
             launcher.editor.insertText("gh", replacementRange: NSRange(location: NSNotFound, length: 0))
             try await AskQuickSearchSessionTests.wait { model.plugins.output?.original == "gh" }
-            #expect(model.plugins.output?.items.map(\.title) == ["gh"])
+            #expect(model.plugins.output?.items.first?.title == "gh", "the exact keyword ranks ahead of alias substrings")
             try await launcher.press(Self.returnKey)
             #expect(model.plugins.keyword?.keyword == "gh" && model.launcherDraft.text.isEmpty)
             #expect(model.plugins.phase == .waiting && launcher.dismissed == 0)
@@ -43,7 +43,7 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func prefixDisabledRowCannotBeEnteredAndEmptySearchHasNoAction() async throws {
+    @Test func `prefix disabled row cannot be entered and empty search has no action`() async throws {
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "prefix off", prepare: { model in
                 model.modelLibrary.settings.saveAskLauncherKeywords(AskPrefixPlugin.keywords + [
@@ -52,7 +52,7 @@ extension AskQuickResultsInteractionTests {
             })
             defer { launcher.close() }
             let model = launcher.fixture.model
-            try await AskQuickSearchSessionTests.wait { model.plugins.output?.items.count == 1 }
+            try await AskQuickSearchSessionTests.wait { model.plugins.output?.items.first?.title == "off" }
             #expect(model.plugins.output?.selected == nil && model.plugins.output?.selectedItem == -1)
             try await launcher.press(Self.returnKey)
             #expect(model.plugins.keyword?.pluginID == AskPrefixPlugin.id && launcher.dismissed == 0)
@@ -66,14 +66,14 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func prefixListClickEntersTheChosenFeature() async throws {
+    @Test func `prefix list click enters the chosen feature`() async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "prefix gh")
             defer { launcher.close() }
             let model = launcher.fixture.model
-            try await AskQuickSearchSessionTests.wait { model.plugins.output?.items.count == 1 }
+            try await AskQuickSearchSessionTests.wait { model.plugins.output?.items.first?.title == "gh" }
             let content = try #require(launcher.window.contentView)
             launcher.window.makeKeyAndOrderFront(nil)
             try await Task.sleep(for: .milliseconds(80))
@@ -87,7 +87,8 @@ extension AskQuickResultsInteractionTests {
             // SwiftUI exposes accessibility selectors without adopting the protocol.
             var seen = Set<ObjectIdentifier>()
             func descendants(_ element: Any) -> [NSObject] {
-                guard let object = element as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return [] }
+                guard let object = element as? NSObject,
+                      seen.insert(ObjectIdentifier(object)).inserted else { return [] }
                 let children = object.responds(to: NSSelectorFromString("accessibilityChildren"))
                     ? object.value(forKey: "accessibilityChildren") as? [Any] ?? [] : []
                 return [object] + children.flatMap(descendants)

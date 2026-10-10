@@ -7,6 +7,8 @@ struct AskCalculation: Equatable {
     var outcome: Result<AskCalculatorNumber, AskCalculatorError>
     /// The expression used `0x` or `0b`, so hexadecimal and binary are worth showing.
     var radix = false
+    /// A plain numeric input offers conversions without rounding its digits.
+    var isNumericInput = false
 
     var number: AskCalculatorNumber? {
         if case let .success(number) = outcome { return number }
@@ -33,9 +35,15 @@ enum AskCalculator {
         #"^\d{3}-\d{4}-\d{4}$"# // 138-1234-5678
     ].map { try! NSRegularExpression(pattern: $0) }
 
-    static func read(_ text: String) -> Reading {
+    static func read(_ text: String, arithmetic: Bool = true, numberConversions: Bool = true) -> Reading {
+        guard arithmetic || numberConversions else { return .notExpression }
         guard text.count <= AskCalculatorLexer.maximumLength, !text.contains(where: \.isNewline) else { return .notExpression }
         let normalized = AskCalculatorLexer.normalize(text)
+        if let number = AskNumberConversions.read(normalized) {
+            guard numberConversions else { return .notExpression }
+            return .calculation(AskCalculation(expression: normalized, outcome: .success(number), isNumericInput: true))
+        }
+        guard arithmetic else { return .notExpression }
         guard !normalized.isEmpty, !looksLikeSomethingElse(normalized),
               let tokens = try? AskCalculatorLexer.tokenize(normalized) else { return .notExpression }
         let expression = display(tokens)

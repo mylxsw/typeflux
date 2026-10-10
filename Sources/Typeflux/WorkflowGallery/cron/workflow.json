@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "local.cron",
+  "name": "@L:cron.name",
+  "description": "@L:cron.summary",
+  "icon": "sf:calendar.badge.clock",
+  "version": "1.0.0",
+  "author": "Typeflux",
+  "keywords": [
+    {
+      "keyword": "cron",
+      "title": "@L:cron.keyword.cron"
+    }
+  ],
+  "input": {
+    "argument": "optional",
+    "selection": "always"
+  },
+  "run": {
+    "mode": "onSubmit",
+    "timeoutSeconds": 10
+  },
+  "command": {
+    "runtime": "node",
+    "script": "main.js",
+    "args": [
+      "{query}"
+    ]
+  },
+  "output": "auto"
+}

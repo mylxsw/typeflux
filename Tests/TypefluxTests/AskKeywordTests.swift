@@ -14,7 +14,9 @@ final class AskTestTranslationEngine: AskTranslationEngine, @unchecked Sendable 
         self.failure = failure
     }
 
-    func canTranslate(from source: String?, to target: String) async -> Bool { available }
+    func canTranslate(from _: String?, to _: String) async -> Bool {
+        available
+    }
 
     func translate(_ text: String, from source: String?, to target: String) async throws -> String {
         requests.append((text, source, target))
@@ -27,7 +29,9 @@ final class AskTestTranslationEngine: AskTranslationEngine, @unchecked Sendable 
 /// Says every text is in one language.
 struct AskTestLanguageDetector: AskLanguageDetecting {
     var language: String?
-    func detect(_ text: String, hints: [String]) -> String? { language }
+    func detect(_: String, hints _: [String]) -> String? {
+        language
+    }
 }
 
 /// An `LLMService` whose completions are scripted.
@@ -36,7 +40,7 @@ final class AskTestLLMService: LLMService, @unchecked Sendable {
     var failure: Error?
     private(set) var prompts: [(system: String, user: String)] = []
 
-    func streamRewrite(request: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
+    func streamRewrite(request _: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { $0.finish() }
     }
 
@@ -62,15 +66,17 @@ final class AskTestWordLookup: AskWordLookingUp, @unchecked Sendable {
     var answer: AskWordLookup
     private(set) var requests: [(text: String, source: String?, target: String, generation: String)] = []
 
-    init(answer: AskWordLookup) { self.answer = answer }
+    init(answer: AskWordLookup) {
+        self.answer = answer
+    }
 
-    func lookUp(_ text: String, from source: String?, to target: String, generation: String) async throws -> AskWordLookup {
+    func lookUp(_ text: String, from source: String?, to target: String,
+                generation: String) async throws -> AskWordLookup {
         requests.append((text, source, target, generation))
         return answer
     }
 }
 
-@Suite("Ask keyword matching")
 struct AskKeywordMatcherTests {
     private let keywords = [
         AskKeyword(keyword: "fy", pluginID: "translate"),
@@ -79,33 +85,39 @@ struct AskKeywordMatcherTests {
         AskKeyword(keyword: "off", pluginID: "translate", enabled: false)
     ]
 
-    private func match(_ text: String) -> AskKeywordMatcher.Match? { AskKeywordMatcher.match(text, keywords: keywords) }
+    private func match(_ text: String) -> AskKeywordMatcher.Match? {
+        AskKeywordMatcher.match(text, keywords: keywords)
+    }
 
     @Test(arguments: [
         ("fy hello", "fy", "hello"), ("FY hello", "fy", "hello"), ("fy:hello", "fy", "hello"), ("fy：你好", "fy", "你好"),
         ("fy　你好", "fy", "你好"), ("fy ", "fy", ""), ("fy    spaced", "fy", "spaced"), ("fyja hi", "fyja", "hi"),
         ("翻译 hello", "翻译", "hello"), ("fy line one\nline two", "fy", "line one\nline two")
     ])
-    func activatesOnKeywordAndSeparator(text: String, keyword: String, argument: String) {
-        guard case let .active(found, found_argument) = match(text) else { Issue.record("no match for \(text)"); return }
+    func `activates on keyword and separator`(text: String, keyword: String, argument: String) {
+        guard case let .active(found, found_argument) = match(text)
+        else { Issue.record("no match for \(text)"); return }
         #expect(found.keyword == keyword)
         #expect(found_argument == argument)
     }
 
-    @Test func aLoneKeywordIsOnlyAHint() {
+    @Test func `a lone keyword is only A hint`() {
         #expect(match("fy") == .hint(keywords[0]))
         #expect(match("FYJA") == .hint(keywords[1]))
         #expect(match("翻译") == .hint(keywords[2]))
     }
 
     @Test(arguments: ["fyi what", "f", "", "hello fy", "off text", "off", "fy\nnext", "/fy x"])
-    func otherTextIsLeftAlone(text: String) {
+    func `other text is left alone`(text: String) {
         #expect(match(text) == nil, "\(text)")
     }
 
-    @Test func problemsAreNamed() {
+    @Test func `problems are named`() {
         #expect(AskKeywordMatcher.problem(with: "  ", among: keywords) == .empty)
-        #expect(AskKeywordMatcher.problem(with: String(repeating: "a", count: 13), among: keywords) == .tooLong)
+        #expect(AskKeywordMatcher.problem(
+            with: String(repeating: "a", count: AskKeywordMatcher.maximumLength + 1),
+            among: keywords
+        ) == .tooLong)
         #expect(AskKeywordMatcher.problem(with: "a b", among: keywords) == .whitespace)
         #expect(AskKeywordMatcher.problem(with: "a:b", among: keywords) == .whitespace)
         #expect(AskKeywordMatcher.problem(with: "/t", among: keywords) == .slash)
@@ -116,9 +128,8 @@ struct AskKeywordMatcherTests {
     }
 }
 
-@Suite("Ask keyword list")
 struct AskKeywordListTests {
-    @Test func renamesAddsAndRemoves() {
+    @Test func `renames adds and removes`() throws {
         var list = AskKeywordList(keywords: AskTranslatePlugin.keywords)
         #expect(list.keywords(for: AskTranslatePlugin.id).map(\.keyword) == ["fy", "tr", "翻译", "dict", "词典"])
         let tr = list.keywords[1]
@@ -134,14 +145,14 @@ struct AskKeywordListTests {
         #expect(list.add(pluginID: "other").keyword == "kw2")
         list.update(added) { $0.options["target"] = "ja"; $0.enabled = false }
         #expect(list.keywords.first { $0.keyword == "fy2" }?.options["target"] == "ja")
-        list.remove(list.keywords.first { $0.keyword == "fy2" }!)
+        try list.remove(#require(list.keywords.first { $0.keyword == "fy2" }))
         #expect(!list.keywords.contains { $0.keyword == "fy2" })
         for problem in [AskKeywordMatcher.Problem.empty, .tooLong, .whitespace, .slash, .duplicate] {
             #expect(!AskKeywordList.message(for: problem).isEmpty)
         }
     }
 
-    @Test func settingsKeepKeywordsAndSecondLanguage() throws {
+    @Test func `settings keep keywords and second language`() throws {
         let suite = "ask-keywords-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -155,8 +166,7 @@ struct AskKeywordListTests {
         #expect(settings.askLauncherKeywords == nil)
         settings.askTranslationSecondLanguage = "ja"
         #expect(settings.askTranslationSecondLanguage == "ja")
-        #expect(AskPluginRegistry.defaultKeywords.map(\.keyword)
-            == ["fy", "tr", "翻译", "dict", "词典", "rw", "sum", "ex", "g", "bd", "gh", "f", "chat", "prefix", "setting", "history",
-                "nb", "笔记"])
+        #expect(AskPluginRegistry.defaultKeywords.first?.allKeywords == ["fy", "tr", "翻译", "translate"])
+        #expect(AskPluginRegistry.defaultKeywords.contains { $0.contains("bookmarksearch") })
     }
 }

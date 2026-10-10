@@ -14,12 +14,29 @@ enum AskQuickActionOutcome: Equatable {
 extension AskConversationModel {
     /// The launcher answers arithmetic itself unless the user turned it off.
     var quickCalculatorEnabled: Bool { modelLibrary.settings.askQuickCalculatorEnabled }
+    /// Plain numbers offer conversions unless the user turned this feature off.
+    var quickNumberConversionsEnabled: Bool { modelLibrary.settings.askQuickNumberConversionsEnabled }
     /// The launcher lists matching applications unless the user turned it off.
     var quickAppsEnabled: Bool { modelLibrary.settings.askQuickAppSearchEnabled }
     /// The launcher lists matching files and folders unless the user turned it off.
     var quickFilesEnabled: Bool { modelLibrary.settings.askQuickFileSearchEnabled }
     /// Settings › Launcher › Search.
     var launcherSearchSettings: AskLauncherSearchSettings { modelLibrary.settings.askLauncherSearchSettings }
+
+    var browserSearchSettings: AskBrowserSearchSettings { modelLibrary.settings.askBrowserSearchSettings }
+
+    @discardableResult
+    func focusBrowserTab(_ target: AskBrowserTabTarget) async -> Bool {
+        do {
+            try await browserSearch.focus(target)
+            finishPluginResult()
+            finishQuickResult()
+            return true
+        } catch {
+            confirm(error.localizedDescription, for: .seconds(3))
+            return false
+        }
+    }
 
     /// A quick result was copied: the expression is done with, so the next
     /// launch starts empty instead of restoring it.

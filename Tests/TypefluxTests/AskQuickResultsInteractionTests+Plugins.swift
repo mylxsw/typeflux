@@ -122,7 +122,7 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func aLoneKeywordStillAsksTheAIOnReturn() async throws {
+    @Test func aLoneKeywordEntersThePrioritizedFeatureOnReturn() async throws {
         try await withPasteboard { _ in
             let translation = Translation()
             let launcher = try await Launcher(text: "", prepare: translation.install)
@@ -130,7 +130,9 @@ extension AskQuickResultsInteractionTests {
             try await type("fy", into: launcher)
             #expect(launcher.fixture.model.plugins.hint != nil)
             try await launcher.press(Self.returnKey)
-            #expect(try await launcher.sentCount() == 1)
+            #expect(launcher.fixture.model.plugins.keyword?.pluginID == AskTranslatePlugin.id)
+            #expect(launcher.fixture.model.launcherDraft.text.isEmpty)
+            #expect(await launcher.fixture.api.sends.isEmpty)
         }
     }
 
