@@ -1046,7 +1046,7 @@ final class SettingsStore {
                 return binding
             }
             let fallback = HotkeyBinding.defaultAuxiliary
-            return [activationHotkey, askHotkey, personaHotkey, historyHotkey]
+            return [activationHotkey, askHotkey, personaHotkey, historyHotkey, screenshotHotkey]
                 .compactMap { $0 }.contains { $0.conflicts(with: fallback) } ? nil : fallback
         }
         set {
@@ -1161,6 +1161,49 @@ final class SettingsStore {
             }
             NotificationCenter.default.post(name: .hotkeySettingsDidChange, object: self)
         }
+    }
+
+    var screenshotHotkeyJSON: String {
+        get { defaults.string(forKey: "hotkey.screenshot.json") ?? "" }
+        set { defaults.set(newValue, forKey: "hotkey.screenshot.json") }
+    }
+
+    var screenshotHotkey: HotkeyBinding? {
+        get {
+            if screenshotHotkeyJSON == "__unset__" { return nil }
+            guard let data = screenshotHotkeyJSON.data(using: .utf8), !screenshotHotkeyJSON.isEmpty else {
+                return .defaultScreenshot
+            }
+
+            return (try? JSONDecoder().decode(HotkeyBinding.self, from: data)) ?? .defaultScreenshot
+        }
+        set {
+            if let newValue {
+                let data = (try? JSONEncoder().encode(newValue)) ?? Data()
+                screenshotHotkeyJSON = String(data: data, encoding: .utf8) ?? ""
+            } else {
+                screenshotHotkeyJSON = "__unset__"
+            }
+            NotificationCenter.default.post(name: .hotkeySettingsDidChange, object: self)
+        }
+    }
+
+    /// Where ⌘S saves screenshots; the Desktop until the user picks a folder.
+    var screenshotSaveDirectory: URL {
+        get {
+            let path = defaults.string(forKey: "screenshot.saveDirectory") ?? ""
+            return path.isEmpty ? Self.defaultScreenshotSaveDirectory : URL(fileURLWithPath: path, isDirectory: true)
+        }
+        set {
+            let path = newValue.standardizedFileURL.path
+            let isDefault = path == Self.defaultScreenshotSaveDirectory.standardizedFileURL.path
+            defaults.set(isDefault ? "" : path, forKey: "screenshot.saveDirectory")
+        }
+    }
+
+    static var defaultScreenshotSaveDirectory: URL {
+        FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop", isDirectory: true)
     }
 
     private var legacyActivationHotkey: HotkeyBinding? {

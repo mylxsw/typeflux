@@ -25,7 +25,7 @@ struct ScreenCaptureContent {
                                scale: ScreenCaptureGeometry.backingScale(pixelWidth: mode?.pixelWidth ?? 0,
                                                                          pointWidth: mode?.width ?? 0))
             },
-            windows: content.windows.map { window in
+            windows: ordered(content.windows.map { window in
                 ScreenSnapshot.Window(
                     id: window.windowID, frame: window.frame,
                     processID: window.owningApplication?.processID ?? 0,
@@ -33,7 +33,7 @@ struct ScreenCaptureContent {
                     applicationName: window.owningApplication?.applicationName,
                     title: window.title, layer: window.windowLayer
                 )
-            },
+            }, frontToBack: onScreenWindowOrder()),
             capture: { display, excluded, size in
                 guard let target = content.displays.first(where: { $0.displayID == display.id }) else {
                     throw ScreenCaptureError.unavailable
@@ -54,5 +54,20 @@ struct ScreenCaptureContent {
                 return legacy
             }
         )
+    }
+
+    /// ScreenCaptureKit does not promise an order; the window server's list is front to back.
+    static func ordered(_ windows: [ScreenSnapshot.Window],
+                        frontToBack order: [CGWindowID]) -> [ScreenSnapshot.Window] {
+        let rank = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        return windows.enumerated().sorted { lhs, rhs in
+            let left = rank[lhs.element.id] ?? Int.max, right = rank[rhs.element.id] ?? Int.max
+            return left == right ? lhs.offset < rhs.offset : left < right
+        }.map(\.element)
+    }
+
+    private static func onScreenWindowOrder() -> [CGWindowID] {
+        let list = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+        return list.compactMap { ($0[kCGWindowNumber as String] as? NSNumber)?.uint32Value }
     }
 }

@@ -38,6 +38,19 @@ final class DIContainer {
     let screenCapturePermission: any ScreenCapturePermissionProviding
     let screenCapture: any ScreenCapturing
     let imageTextRecognizer: any ImageTextRecognizing = VisionImageTextRecognizer()
+    let screenshotOutput: any ScreenshotOutputting = ScreenshotOutput()
+    lazy var screenshotCoordinator: ScreenshotCoordinator = { [settingsStore] in
+        ScreenshotCoordinator(
+            capture: screenCapture,
+            permission: screenCapturePermission,
+            overlay: ScreenshotOverlayController(),
+            permissionGuide: ScreenshotPermissionGuideController(),
+            toast: ScreenshotToastController(),
+            output: screenshotOutput,
+            saveDirectory: { settingsStore.screenshotSaveDirectory },
+            relaunch: { ScreenshotAppRelauncher.relaunch() }
+        )
+    }()
     lazy var askConversationWindowController: AskConversationWindowController? = {
         do { return try AskConversationWindowController(
             settings: settingsStore,

@@ -34,6 +34,8 @@ extension AskConversationModel {
         if plugin.id == AskTranslatePlugin.id, !AskTranslatePlugin.opensWordBook(keyword.options) {
             return plugin.title + " → " + detail
         }
+        // "Screenshot · Full screen", "Screenshot · Needs permission": the detail qualifies, never replaces.
+        if plugin.id == AskScreenshotPlugin.id { return plugin.title + " · " + detail }
         return detail
     }
 

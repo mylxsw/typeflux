@@ -15,6 +15,7 @@ enum AskPluginRegistry {
         AskHistoryPlugin.id,
         AskClipboardPlugin.id,
         AskNotesPlugin.id,
+        AskScreenshotPlugin.id,
         AskBrowserSearchPlugin.tabsID,
         AskBrowserSearchPlugin.bookmarksID
     ] + AskSystemCommand.allCases.map(\.id)
@@ -25,7 +26,7 @@ enum AskPluginRegistry {
                 .consolidate(AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin
                     .keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin
                     .keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
-                    .keywords + AskNotesPlugin.keywords + AskBrowserSearchPlugin.keywords
+                    .keywords + AskNotesPlugin.keywords + AskScreenshotPlugin.keywords + AskBrowserSearchPlugin.keywords
                     + AskSystemCommand.allCases.map {
                         AskKeyword(keyword: $0.defaultKeyword, pluginID: $0.id)
                     }))
@@ -191,6 +192,7 @@ extension AskConversationModel {
             AskHistoryPlugin(conversations: { [weak self] in await self?.launcherChatHistory() ?? .empty }),
             AskClipboardPlugin(entries: { [weak self] in self?.clipboardEntries() ?? [] }),
             AskNotesPlugin(store: notes),
+            AskScreenshotPlugin(),
             AskBrowserSearchPlugin(kind: .tab, service: browserSearch, settings: { [weak settings] in
                 settings?.askBrowserSearchSettings ?? AskBrowserSearchSettings()
             }),
@@ -339,6 +341,12 @@ extension AskConversationModel {
             return .close
         case let .openNote(id):
             return openNoteInWindow(id) ? .close : .stay
+        case let .capture(mode):
+            guard let onStartScreenshot else { return .stay }
+            finishPluginResult()
+            // Let the launcher close first; the capture leaves Typeflux's windows out anyway.
+            DispatchQueue.main.async { onStartScreenshot(mode) }
+            return .close
         }
     }
 
