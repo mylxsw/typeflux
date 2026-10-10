@@ -3920,7 +3920,4 @@
 "ask.title.auto" = "自动";
 "ask.title.cost" = "自动生成 Cloud 标题不消耗 credits；自有服务商按其规则计费。选择服务商后，标题所需的聊天片段会发送给它。";
 "ask.title.rename" = "重命名";
-"ask.title.rename.hint" = "手动命名后，不会再自动覆盖标题。";
-"ask.title.save" = "保存";
-"ask.title.cancel" = "取消";
 "ask.title.invalid" = "请输入 1–60 个字符的单行标题。";

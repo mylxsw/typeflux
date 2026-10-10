@@ -3920,7 +3920,4 @@
 "ask.title.auto" = "Automatic";
 "ask.title.cost" = "Automatic Cloud titles do not use credits. Your own providers charge according to their pricing. Selecting a provider sends the title context to that provider.";
 "ask.title.rename" = "Rename";
-"ask.title.rename.hint" = "A manual title will never be replaced automatically.";
-"ask.title.save" = "Save";
-"ask.title.cancel" = "Cancel";
 "ask.title.invalid" = "Use a single-line title of 1–60 characters.";

@@ -1,4 +1,4 @@
-import AppKit
+import Foundation
 
 extension AskConversationModel {
     func scheduleTitle(_ value: AskConversation, route: AskRoute) {
@@ -82,20 +82,4 @@ extension AskConversationModel {
         try await accept(value, route: route)
     }
 
-    func promptRename(_ id: String, title: String) {
-        let alert = NSAlert()
-        alert.messageText = L("ask.title.rename")
-        alert.informativeText = L("ask.title.rename.hint")
-        alert.addButton(withTitle: L("ask.title.save"))
-        alert.addButton(withTitle: L("ask.title.cancel"))
-        let field = NSTextField(string: title)
-        field.frame = NSRect(x: 0, y: 0, width: 320, height: 24)
-        alert.accessoryView = field
-        alert.window.initialFirstResponder = field
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-        Task {
-            do { try await renameConversation(id, title: field.stringValue) }
-            catch { self.error = error.localizedDescription }
-        }
-    }
 }

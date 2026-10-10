@@ -619,7 +619,7 @@ struct AskConversationView: View {
                 showsSidebarDrawer = false
                 Task { await model.select(item.id) }
             },
-            onRename: { model.promptRename(item.id, title: item.title) },
+            onRename: { try await model.renameConversation(item.id, title: $0) },
             onDelete: { deleteId = item.id }
         )
     }
@@ -1511,84 +1511,6 @@ private struct AskTranscriptFrames: PreferenceKey {
     static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
-}
-
-/// A history row keeps its timestamp visible on hover. Deletion is available
-/// from the conversation header and the row's context menu.
-private struct AskHistoryRow: View {
-    let title: String
-    let updatedAt: Date
-    /// Kept on this Mac; marked only while signed in, when Cloud ones are listed too.
-    var stored = false
-    let selected: Bool
-    let busy: Bool
-    let selectionSpace: Namespace.ID
-    var onSelect: () -> Void
-    var onRename: () -> Void = {}
-    var onDelete: () -> Void
-    @State private var hovering = false
-    @Environment(\.interfaceStyle) private var style
-
-    var body: some View {
-        Button(action: onSelect) {
-            HStack(spacing: 8) {
-                // A conversation still working shows a breathing accent dot.
-                if busy { AskRunToneDot(tone: .running) }
-                if stored {
-                    Image(systemName: "lock").font(.system(size: 10.5, weight: .medium))
-                        .foregroundStyle(AskTheme.privateTint)
-                        .help(L("ask.storage.local"))
-                        .accessibilityLabel(L("ask.storage.local"))
-                }
-                Text(title)
-                    .font(.system(size: 13, weight: selected ? .semibold : .regular))
-                    .foregroundStyle(selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                    .lineLimit(1)
-                Spacer(minLength: 4)
-                if !busy {
-                    Text(AskPresentation.historyTimeLabel(updatedAt))
-                        .font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .monospacedDigit()
-                }
-            }
-            .padding(.leading, style.usesGlass ? 12 : 10)
-            .padding(.trailing, 10)
-            .frame(height: style.ask.sidebarRowHeight)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // Selection is an accent-tinted glass pill, concentric with the panel,
-            // that slides from the previous row to the new one. Classic marks it
-            // with the system's flat grey source-list selection.
-            .background {
-                let shape = RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous)
-                ZStack {
-                    if hovering, !selected { shape.fill(AskTheme.hoverFill).transition(.opacity) }
-                    if selected {
-                        if style.usesGlass {
-                            let tint = stored ? AskTheme.privateTint : AskTheme.accent
-                            shape.fill(tint.opacity(0.18))
-                                .overlay(shape.strokeBorder(tint.opacity(0.4), lineWidth: 0.5))
-                                .shadow(color: tint.opacity(0.18), radius: 6, y: 2)
-                                .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
-                        } else {
-                            shape.fill(AskClassic.selection)
-                                .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
-                        }
-                    }
-                }
-                .animation(.easeOut(duration: 0.15), value: hovering)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous))
-        }
-        .buttonStyle(AskPressableStyle.subtle)
-        .onHover { hovering = $0 }
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .contextMenu {
-            Button(L("ask.title.rename"), action: onRename).disabled(busy)
-            Button(L("ask.delete"), role: .destructive, action: onDelete).disabled(busy)
-        }
-    }
-
 }
 
 /// An empty-state suggestion: one of three glass cards in a row. Hover lifts
