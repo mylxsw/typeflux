@@ -79,16 +79,23 @@ final class ScreenshotLongImageEditorView: NSView {
 
     // MARK: Layout
 
-    /// Where the scroll view goes: under the size line, left of the minimap, above the toolbar.
-    static func scrollFrame(in bounds: CGRect) -> CGRect {
+    /// Where the scroll view goes: under the size line, left of the minimap (and of the sensitive
+    /// information panel, `sidePanel` wide, when it shows), above the toolbar.
+    static func scrollFrame(in bounds: CGRect, sidePanel: CGFloat = 0) -> CGRect {
         let top = bounds.minY + topMargin + infoHeight + 6
         let bottom = bounds.maxY - toolbarRoom
-        let width = bounds.width - sideMargin * 2 - ScreenshotLongImageMinimapView.width - gap
+        let side = sidePanel > 0 ? sidePanel + gap : 0
+        let width = bounds.width - sideMargin * 2 - ScreenshotLongImageMinimapView.width - gap - side
         return CGRect(x: bounds.minX + sideMargin, y: top, width: max(width, 1), height: max(bottom - top, 1))
     }
 
+    /// The sensitive information panel's width while it shows.
+    private var sidePanelWidth: CGFloat {
+        canvas.sensitiveInfo.host?.isHidden == false ? ScreenshotSensitiveInfoPanel.width : 0
+    }
+
     private func layOut() {
-        let frame = Self.scrollFrame(in: bounds)
+        let frame = Self.scrollFrame(in: bounds, sidePanel: sidePanelWidth)
         scrollView.frame = frame
         minimap.frame = CGRect(x: frame.maxX + Self.gap, y: frame.minY, width: ScreenshotLongImageMinimapView.width,
                                height: frame.height)
@@ -99,7 +106,22 @@ final class ScreenshotLongImageEditorView: NSView {
             canvas.scroll(.zero)
         }
         placeToolbar()
+        placeSensitiveInfo()
         visibleAreaChanged()
+    }
+
+    /// Right of the minimap, level with the image. Showing or hiding it narrows or widens the
+    /// image, which stays fitted to the width if it was.
+    private func placeSensitiveInfo() {
+        let wasShowing = sidePanelWidth > 0
+        canvas.sensitiveInfo.layout(in: self, crop: nil) { [minimap, bounds] size in
+            CGRect(x: min(minimap.frame.maxX + Self.gap, bounds.maxX - size.width), y: minimap.frame.minY,
+                   width: size.width, height: size.height)
+        }
+        guard wasShowing != (sidePanelWidth > 0) else { return }
+        let fitted = abs(scrollView.magnification - fittingMagnification) < 0.001
+        layOut()
+        if fitted { zoom(0) }
     }
 
     // MARK: Zoom
@@ -147,6 +169,7 @@ final class ScreenshotLongImageEditorView: NSView {
     // MARK: Toolbar
 
     private func refreshToolbar() {
+        placeSensitiveInfo()
         let state = canvas.toolbarState
         let host: ScreenshotToolbarHostingView
         if let toolbar {
@@ -166,7 +189,7 @@ final class ScreenshotLongImageEditorView: NSView {
         guard let toolbar else { return }
         let size = toolbar.fittingSize
         let inset = ScreenshotOverlayView.toolbarShadowInset
-        let top = Self.scrollFrame(in: bounds).maxY + Self.gap - inset
+        let top = Self.scrollFrame(in: bounds, sidePanel: sidePanelWidth).maxY + Self.gap - inset
         toolbar.frame = CGRect(x: (bounds.width - size.width) / 2, y: top, width: size.width, height: size.height)
     }
 
@@ -199,11 +222,14 @@ final class ScreenshotLongImageEditorController: ScreenshotLongImagePresenting {
     private(set) var editorView: ScreenshotLongImageEditorView?
     private let primaryDisplayHeight: () -> CGFloat
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
+    private let sensitiveScanner: (any ScreenshotSensitiveInfoScanning)?
 
     init(primaryDisplayHeight: @escaping () -> CGFloat = { NSScreen.screens.first?.frame.height ?? 0 },
-         textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil) {
+         textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
+         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil) {
         self.primaryDisplayHeight = primaryDisplayHeight
         self.textMeasurer = textMeasurer
+        self.sensitiveScanner = sensitiveScanner
     }
 
     var isPresented: Bool { panel != nil }
@@ -211,7 +237,8 @@ final class ScreenshotLongImageEditorController: ScreenshotLongImagePresenting {
     func present(_ image: ScreenSnapshot.Display, on screen: CGRect,
                  onEvent: @escaping (ScreenshotOverlayEvent) -> Void) {
         dismiss()
-        let canvas = ScreenshotLongImageCanvas(image: image.image, scale: image.scale, textMeasurer: textMeasurer)
+        let canvas = ScreenshotLongImageCanvas(image: image.image, scale: image.scale, textMeasurer: textMeasurer,
+                                               sensitiveScanner: sensitiveScanner)
         let view = ScreenshotLongImageEditorView(frame: CGRect(origin: .zero, size: screen.size), canvas: canvas)
         canvas.onEvent = { [weak view] event in
             switch event {
@@ -231,6 +258,7 @@ final class ScreenshotLongImageEditorController: ScreenshotLongImagePresenting {
         panel.orderFrontRegardless()
         panel.makeKey()
         panel.makeFirstResponder(canvas)
+        canvas.scanForSensitiveInfo()
         self.panel = panel
         editorView = view
     }

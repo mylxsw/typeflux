@@ -46,6 +46,19 @@ final class ImageTextRecognizerTests: XCTestCase {
         XCTAssertEqual(result.string?.uppercased().contains("TYPEFLUX"), true)
     }
 
+    func testLinesLocatePartsOfTheirTextWithinTheLine() async throws {
+        let result = try await recognizer.recognizeText(in: .image(textNearTopImage()))
+        let line = try XCTUnwrap(result.lines.first { $0.text.uppercased().contains("TYPEFLUX") })
+        let locate = try XCTUnwrap(line.locate)
+        // Vision bounds whole words, so part of one word gets that word: never less than the text.
+        let head = try XCTUnwrap(locate(NSRange(location: 0, length: 4)))
+        XCTAssertGreaterThan(head.width, 0)
+        XCTAssertLessThanOrEqual(head.width, line.boundingBox.width + 0.01)
+        XCTAssertEqual(head.minX, line.boundingBox.minX, accuracy: 0.05)
+        XCTAssertEqual(head.midY, line.boundingBox.midY, accuracy: 0.05)
+        XCTAssertNil(locate(NSRange(location: 400, length: 3)), "Outside the text")
+    }
+
     func testRecognizesTextInFiles() async throws {
         let file = directory.appendingPathComponent("text.png")
         try ClipboardTestSupport.imageData(width: 900, height: 240, text: "TYPEFLUX").write(to: file)

@@ -187,6 +187,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     private func bindCallbacks() {
         model.onShowConversation = { [weak self] in self?.showConversation() }
+        model.onShowLauncher = { [weak self] then in self?.showLauncher(then: then) }
         model.onControlChanged = { [weak self] active in self?.showControl(active) }
         model.onCreditsExhausted = {
             Task { @MainActor in
@@ -209,10 +210,21 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     /// screenshot and memory are captured behind the visible panel (our own
     /// windows are excluded from the screenshot). Capturing first used to hold
     /// the panel back by a few hundred milliseconds on every press.
-    func showLauncher() {
+    /// - Parameter prepared: runs once the launcher has its context, so what it puts in the
+    ///   draft (a screenshot's text or image) is not replaced by a restored draft.
+    func showLauncher(then prepared: (@MainActor () -> Void)? = nil) {
         // Already open (its context may still be arriving): just bring the editor back.
-        if launcher?.isVisible == true { launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher); return }
-        guard launchTask == nil else { return }
+        if launcher?.isVisible == true || launchTask != nil {
+            if launcher?.isVisible == true { launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher) }
+            if let prepared {
+                let pending = launchTask
+                Task { @MainActor in
+                    await pending?.value
+                    prepared()
+                }
+            }
+            return
+        }
         model.quickSearch.setVisible(true)
         model.refreshQuickApps()
         Task { [model] in await model.refreshLauncherWorkflows() }
@@ -243,6 +255,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             defer { if !Task.isCancelled { launchTask = nil } }
             guard !Task.isCancelled else { return }
             await model.prepareLauncher(request: selectionRequest)
+            guard !Task.isCancelled else { return }
+            prepared?()
         }
     }
 

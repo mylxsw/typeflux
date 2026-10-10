@@ -30,6 +30,8 @@ final class ScreenshotEditorToolbarModel {
         case mosaicStrength(ScreenshotMosaic.Strength)
         case mosaicShape(ScreenshotAnnotationEditor.MosaicShape)
         case undo, redo, cancel, save, copy, scrollCapture
+        /// Recognize the text, translate it or ask the AI about the image.
+        case followUp(ScreenshotFollowUp)
     }
 
     var state = State()
@@ -125,12 +127,17 @@ struct ScreenshotEditorToolbar: View {
                 perform(.redo)
             }
             separator
+            ForEach(ScreenshotFollowUp.allCases, id: \.self) { followUp in
+                followUpButton(followUp)
+            }
+            separator
             iconButton("xmark", help: "\(L("screenshot.edit.cancel"))  esc") { perform(.cancel) }
             iconButton("square.and.arrow.down", help: "\(L("screenshot.edit.save"))  ⌘S") { perform(.save) }
             Button { perform(.copy) } label: {
                 HStack(spacing: 5) {
                     Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
                     Text(L("screenshot.edit.copy")).font(.system(size: 12.5, weight: .semibold))
+                        .lineLimit(1).fixedSize()
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 11)
@@ -244,6 +251,23 @@ struct ScreenshotEditorToolbar: View {
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.35)
         .help(help)
+    }
+
+    /// "Recognize text", "Translate", "Ask AI": an icon with its name, as in the design.
+    private func followUpButton(_ followUp: ScreenshotFollowUp) -> some View {
+        Button { perform(.followUp(followUp)) } label: {
+            HStack(spacing: 4) {
+                Image(systemName: followUp.symbol).font(.system(size: 13, weight: .medium))
+                Text(followUp.title).font(.system(size: 12.5)).lineLimit(1).fixedSize()
+            }
+            .foregroundStyle(followUp == .askAI ? AskTheme.accent : Color.primary.opacity(0.75))
+            .padding(.horizontal, 7)
+            .frame(height: 30)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(followUp.title)
+        .accessibilityIdentifier("screenshot.followUp.\(followUp.rawValue)")
     }
 
     private func optionButton(_ symbol: String, help: String, isOn: Bool,

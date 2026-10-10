@@ -85,6 +85,7 @@ final class AskPluginSession: ObservableObject {
     func plugin(for keyword: AskKeyword) -> (any AskLauncherPlugin)? { plugins[keyword.pluginID] }
     var isActive: Bool { keyword != nil }
     var output: AskPluginOutput? { if case let .done(_, output) = phase { output } else { nil } }
+    var failure: AskPluginFailure? { if case let .failed(_, failure) = phase { failure } else { nil } }
     var isRunning: Bool { if case .running = phase { true } else { false } }
 
     /// Keywords whose plugin exists, for matching.

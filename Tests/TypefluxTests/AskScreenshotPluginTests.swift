@@ -15,11 +15,11 @@ struct AskScreenshotPluginTests {
     private let scrolling = AskScreenshotPlugin.keywords[3]
 
     @Test func keywordsAndRegistration() {
-        #expect(AskScreenshotPlugin.keywords.map(\.keyword) == ["jt", "截图", "jtqp", "jtgd"])
+        #expect(AskScreenshotPlugin.keywords.map(\.keyword) == ["jt", "截图", "jtqp", "jtgd", "jtai"])
         #expect(AskPluginRegistry.pluginIDs.contains(AskScreenshotPlugin.id))
         let defaults = AskPluginRegistry.defaultKeywords.filter { $0.pluginID == AskScreenshotPlugin.id }
         // `jt` and `截图` do the same thing, so they become one entry with an alias.
-        #expect(defaults.map(\.allKeywords) == [["jt", "截图"], ["jtqp"], ["jtgd"]])
+        #expect(defaults.map(\.allKeywords) == [["jt", "截图"], ["jtqp"], ["jtgd"], ["jtai"]])
         let plugin = AskScreenshotPlugin()
         #expect(plugin.runsWithoutInput && !plugin.usesSelectionInput && plugin.entersOnReturn)
         #expect(plugin.title == L("screenshot.title") && plugin.symbol == "camera.viewfinder")
@@ -107,7 +107,7 @@ struct AskScreenshotPluginTests {
         #expect(model.performPluginAction(action) == .stay, "Nothing to start without the app's coordinator")
 
         var started: [ScreenshotMode] = []
-        model.onStartScreenshot = { started.append($0) }
+        model.onStartScreenshot = { mode, _ in started.append(mode) }
         #expect(model.performPluginAction(action) == .close)
         #expect(started.isEmpty, "Starts only after the launcher has closed")
         for _ in 0 ..< 100 where started.isEmpty { try await Task.sleep(for: .milliseconds(5)) }

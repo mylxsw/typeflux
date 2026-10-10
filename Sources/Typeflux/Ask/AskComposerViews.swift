@@ -304,8 +304,8 @@ struct AskComposer: View {
                 performPluginAction(.init(kind: .systemCommand(command), title: entry.title, symbol: entry.symbol))
             } else if close, entry.keyword.pluginID == AskSettingsPlugin.id {
                 performPluginAction(.init(kind: .openSettings, title: entry.title, symbol: entry.symbol))
-            } else if close, entry.keyword.pluginID == AskScreenshotPlugin.id {
-                performPluginAction(.init(kind: .capture(mode: ScreenshotMode(options: entry.keyword.options)),
+            } else if close, AskScreenshotPlugin.startsCapture(entry.keyword) {
+                performPluginAction(.init(kind: AskScreenshotPlugin.captureKind(for: entry.keyword),
                                           title: entry.title, symbol: entry.symbol))
             } else if close, entry.keyword.pluginID == AskOpenChatPlugin.id {
                 model.enterLauncherSearchEntry(entry)
@@ -563,10 +563,9 @@ struct AskComposer: View {
             openChat()
             return
         }
-        // `jt` alone starts at once instead of entering the keyword first.
-        if let hint = pluginDisplay?.hint, hint.pluginID == AskScreenshotPlugin.id {
-            performPluginAction(.init(kind: .capture(mode: ScreenshotMode(options: hint.options)), title: "",
-                                      symbol: ""))
+        // `jt` (or `ocr`, `jtai`) alone starts at once instead of entering the keyword first.
+        if let hint = pluginDisplay?.hint, AskScreenshotPlugin.startsCapture(hint) {
+            performPluginAction(.init(kind: AskScreenshotPlugin.captureKind(for: hint), title: "", symbol: ""))
             return
         }
         if pluginDisplay?.hint != nil { _ = acceptPluginHint(); return }
@@ -604,7 +603,7 @@ struct AskComposer: View {
     }
 
     private func askAIFromPlugin() {
-        if let action = plugins.output?.askAIAction {
+        if let action = plugins.output?.askAIAction ?? plugins.failure?.askAIAction {
             performPluginAction(action)
         } else {
             model.askAIFromPlugin()
@@ -641,12 +640,15 @@ struct AskComposer: View {
             // ⇥ on a row that completes goes one level deeper; elsewhere it changes the option.
             if let completion = plugins.output?.selected?.autocomplete {
                 performPluginAction(AskPluginAction(kind: .runWith(completion), title: "", symbol: "", shortcut: nil))
+            } else if plugins.plugin?.optionName == nil, let action = plugins.output?.action(for: .tab) {
+                performPluginAction(action)
             } else {
                 _ = plugins.cycle(1, selection: selection, text: text, language: language)
             }
         case .shiftTab: _ = plugins.cycle(-1, selection: selection, text: text, language: language)
         case .enter: if display.asksAI { askAIFromPlugin() } else { runPluginMain() }
-        case .commandEnter: if display.offersAskAI { askAIFromPlugin() }
+        case .commandEnter:
+            if display.offersAskAI || plugins.failure?.askAIAction != nil { askAIFromPlugin() }
         case .optionEnter, .commandR, .commandD, .shiftCommandC, .commandS, .commandB, .commandO:
             let shortcut: AskPluginAction.Shortcut = switch key {
             case .optionEnter: .optionEnter
@@ -660,7 +662,7 @@ struct AskComposer: View {
             // A result still streaming can already be saved (⌘S) or moved to a window (⌘O).
             let offering = [.commandS, .commandO].contains(key) ? plugins.currentOutput : plugins.output
             // ⇧⌘C, ⌘S, ⌘B and ⌘O fall through to the editor when the result offers nothing for them.
-            guard let action = offering?.action(for: shortcut) else {
+            guard let action = offering?.action(for: shortcut) ?? plugins.failure?.action(for: shortcut) else {
                 return ![.shiftCommandC, .commandS, .commandB, .commandO].contains(key)
             }
             // ⇧⌘C copies and stays, like ⌘C.

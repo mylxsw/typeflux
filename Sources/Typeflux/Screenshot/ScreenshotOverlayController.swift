@@ -32,15 +32,19 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
     private let pointerLocation: () -> CGPoint
     /// Sizes mosaics to the text under them.
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
+    /// Finds sensitive text to suggest mosaics for.
+    private let sensitiveScanner: (any ScreenshotSensitiveInfoScanning)?
 
     init(primaryDisplayHeight: @escaping () -> CGFloat = { NSScreen.screens.first?.frame.height ?? 0 },
          pointerLocation: @escaping () -> CGPoint = {
              CGEvent(source: nil)?.location ?? .zero
          },
-         textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil) {
+         textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
+         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil) {
         self.primaryDisplayHeight = primaryDisplayHeight
         self.pointerLocation = pointerLocation
         self.textMeasurer = textMeasurer
+        self.sensitiveScanner = sensitiveScanner
     }
 
     var isPresented: Bool { !panels.isEmpty }
@@ -50,7 +54,8 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         self.onEvent = onEvent
         let primaryHeight = primaryDisplayHeight()
         for display in snapshot.displays {
-            let view = ScreenshotOverlayView(display: display, windows: snapshot.windows, textMeasurer: textMeasurer)
+            let view = ScreenshotOverlayView(display: display, windows: snapshot.windows, textMeasurer: textMeasurer,
+                                             sensitiveScanner: sensitiveScanner)
             view.onActivate = { [weak self] view in self?.activate(view) ?? true }
             view.onEvent = { [weak self] view, event in self?.forward(event, from: view) }
             let panel = ScreenshotOverlayPanel(
@@ -77,6 +82,10 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
 
     func startScrollCapture() {
         views.first { $0.selection.rect != nil }?.startScrollCapture()
+    }
+
+    func finish(_ action: ScreenshotOutputAction) {
+        views.first { $0.selection.rect != nil }?.finish(action)
     }
 
     func dismiss() {

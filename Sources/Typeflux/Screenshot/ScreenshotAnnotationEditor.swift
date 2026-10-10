@@ -365,6 +365,28 @@ struct ScreenshotAnnotationEditor {
         return true
     }
 
+    /// Covers each rectangle with a mosaic in the current effect and strength, all as one
+    /// undo step; the text height is the rectangle's, as it covers one line of text.
+    /// - Returns: the new annotations' ids, in the order of `rects`.
+    @discardableResult
+    mutating func addMosaics(over rects: [CGRect]) -> [UUID] {
+        guard drag == nil else { return [] }
+        let added = rects.map { rect in
+            ScreenshotAnnotation(kind: .mosaic(ScreenshotMosaic(shape: .rect(rect), effect: mosaicEffect,
+                                                                strength: mosaicStrength, textHeight: rect.height)))
+        }
+        document.add(added)
+        return added.map(\.id)
+    }
+
+    /// Removes these annotations as one undo step.
+    @discardableResult
+    mutating func removeAnnotations(_ ids: Set<UUID>) -> Bool {
+        guard drag == nil, document.remove(ids: ids) else { return false }
+        dropMissingSelection()
+        return true
+    }
+
     private mutating func dropMissingSelection() {
         if let selectedID, document.annotation(id: selectedID) == nil { self.selectedID = nil }
     }

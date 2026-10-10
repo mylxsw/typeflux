@@ -4,6 +4,8 @@ import Foundation
 enum ScreenshotOutputAction: Equatable {
     case copy
     case save
+    /// Hand the image to the launcher: recognize its text, translate it or ask about it.
+    case followUp(ScreenshotFollowUp)
 }
 
 /// What happens in the full-screen overlay, reported to the coordinator.
@@ -28,6 +30,8 @@ protocol ScreenshotOverlayPresenting: AnyObject {
     func selectFullScreen()
     /// Hands the chosen region to a scrolling capture (`.scroll`), unless something is marked on it.
     func startScrollCapture()
+    /// Uses the chosen region as the toolbar would (`.finish`); nothing happens without one.
+    func finish(_ action: ScreenshotOutputAction)
     /// Closes every panel and lets go of the frozen images. Safe to call when nothing shows.
     func dismiss()
 }

@@ -59,14 +59,18 @@ final class ScreenshotOverlayView: NSView {
     private(set) var textField: NSTextField?
     private var textOrigin: CGPoint = .zero
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
+    /// Finds sensitive text once a region is chosen and keeps the panel that suggests mosaics.
+    let sensitiveInfo: ScreenshotSensitiveInfoController
 
     /// Room around the toolbar for its shadow.
     static let toolbarShadowInset: CGFloat = 18
 
     init(display: ScreenSnapshot.Display, windows: [ScreenSnapshot.Window],
-         textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil) {
+         textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
+         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil) {
         self.display = display
         self.textMeasurer = textMeasurer
+        sensitiveInfo = ScreenshotSensitiveInfoController(scanner: sensitiveScanner)
         selection = ScreenshotSelection(displayFrame: display.frame, scale: display.scale, windows: windows)
         let bounds = CGRect(origin: .zero, size: display.frame.size)
         canvas = ScreenshotAnnotationCanvasView(frame: bounds, source: display.image)
@@ -88,6 +92,7 @@ final class ScreenshotOverlayView: NSView {
         addSubview(chrome)
         editor.measureTextHeight = { [weak self] mosaic in self?.measureTextHeight(under: mosaic) }
         toolbarModel.onAction = { [weak self] action in self?.perform(action) }
+        connectSensitiveInfo()
         refresh()
     }
 
@@ -108,6 +113,7 @@ final class ScreenshotOverlayView: NSView {
 
     /// Lets go of the frozen image as soon as the overlay closes.
     func releaseImage() {
+        sensitiveInfo.cancel()
         imageLayer.contents = nil
         canvas.releaseImage()
     }
@@ -187,6 +193,7 @@ final class ScreenshotOverlayView: NSView {
         if editor.isDragging {
             editor.mouseUp(at: point, shift: shift)
         } else if selection.mouseUp(at: point) == .committed {
+            scanForSensitiveInfo()
             onEvent?(self, .committed)
         }
         updateCursor(at: point)
@@ -302,6 +309,7 @@ final class ScreenshotOverlayView: NSView {
     func selectAll() {
         guard onActivate?(self) ?? true else { return }
         _ = selection.selectAll()
+        scanForSensitiveInfo()
         onEvent?(self, .committed)
         refresh()
     }
@@ -327,7 +335,8 @@ final class ScreenshotOverlayView: NSView {
         onEvent?(self, .scroll(rect))
     }
 
-    private func finish(_ action: ScreenshotOutputAction) {
+    /// Uses the region as the toolbar or a key would; nothing happens while it is being dragged.
+    func finish(_ action: ScreenshotOutputAction) {
         endTextEditing()
         guard let rect = selection.rect, !selection.isDragging, !editor.isDragging else { return }
         onEvent?(self, .finish(action, rect, editor.document.annotations))
@@ -349,6 +358,7 @@ final class ScreenshotOverlayView: NSView {
         case .cancel: onEvent?(self, .cancelled)
         case .save: finish(.save)
         case .copy: finish(.copy)
+        case let .followUp(followUp): finish(.followUp(followUp))
         case .scrollCapture: startScrollCapture()
         }
         // Keys go back to the overlay after a click on the toolbar.
@@ -452,7 +462,7 @@ final class ScreenshotOverlayView: NSView {
         return ScreenshotMagnifier.color(of: display.image, at: pixel)
     }
 
-    private func refresh() {
+    func refresh() {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         let path = CGMutablePath()
@@ -474,6 +484,7 @@ final class ScreenshotOverlayView: NSView {
                                                             selection: selected?.frame,
                                                             handles: editor.selectionHandles)
         refreshToolbar()
+        layOutSensitiveInfo()
     }
 
     private func refreshToolbar() {
@@ -560,6 +571,36 @@ final class ScreenshotOverlayView: NSView {
 
     private func location(of event: NSEvent) -> CGPoint {
         convert(event.locationInWindow, from: nil)
+    }
+}
+
+// MARK: - Sensitive information
+
+extension ScreenshotOverlayView {
+    /// The panel edits the same document as the toolbar, so its mosaics undo like any other.
+    private func connectSensitiveInfo() {
+        sensitiveInfo.annotations = { [weak self] in self?.editor.document.annotations ?? [] }
+        sensitiveInfo.addMosaics = { [weak self] rects in self?.editor.addMosaics(over: rects) ?? [] }
+        sensitiveInfo.removeAnnotations = { [weak self] ids in self?.editor.removeAnnotations(ids) }
+        sensitiveInfo.onChange = { [weak self] in
+            guard let self else { return }
+            refresh()
+            // Keys go back to the overlay after a click on the panel.
+            window?.makeFirstResponder(self)
+        }
+    }
+
+    /// Reads the whole display once a region is first chosen, so moving the region later
+    /// only changes which findings the panel lists.
+    func scanForSensitiveInfo() {
+        sensitiveInfo.scan(display.image, scale: display.scale)
+    }
+
+    private func layOutSensitiveInfo() {
+        let crop = selection.isDragging ? nil : selection.rect
+        sensitiveInfo.layout(in: self, crop: crop, hidden: crop == nil) { [bounds] size in
+            ScreenshotSensitiveInfoController.panelFrame(beside: crop ?? .zero, size: size, in: bounds)
+        }
     }
 }
 

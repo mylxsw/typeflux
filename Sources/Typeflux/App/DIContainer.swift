@@ -39,17 +39,23 @@ final class DIContainer {
     let screenCapture: any ScreenCapturing
     let imageTextRecognizer: any ImageTextRecognizing = VisionImageTextRecognizer()
     let screenshotOutput: any ScreenshotOutputting = ScreenshotOutput()
-    lazy var screenshotCoordinator: ScreenshotCoordinator = { [settingsStore] in
+    /// Suggests mosaics over phone numbers, card numbers and the like, read on this Mac.
+    lazy var sensitiveInfoScanner: any ScreenshotSensitiveInfoScanning = VisionSensitiveInfoScanner(
+        recognizer: TiledImageTextRecognizer(base: imageTextRecognizer)
+    )
+    lazy var screenshotCoordinator: ScreenshotCoordinator = { [settingsStore, sensitiveInfoScanner] in
         ScreenshotCoordinator(
             capture: screenCapture,
             permission: screenCapturePermission,
-            overlay: ScreenshotOverlayController(textMeasurer: VisionTextHeightMeasurer()),
+            overlay: ScreenshotOverlayController(textMeasurer: VisionTextHeightMeasurer(),
+                                                 sensitiveScanner: sensitiveInfoScanner),
             permissionGuide: ScreenshotPermissionGuideController(),
             toast: ScreenshotToastController(),
             output: screenshotOutput,
             saveDirectory: { settingsStore.screenshotSaveDirectory },
             relaunch: { ScreenshotAppRelauncher.relaunch() },
-            longImageEditor: ScreenshotLongImageEditorController(textMeasurer: VisionTextHeightMeasurer()),
+            longImageEditor: ScreenshotLongImageEditorController(textMeasurer: VisionTextHeightMeasurer(),
+                                                                 sensitiveScanner: sensitiveInfoScanner),
             makeScrollCapture: ScreenshotCoordinator.scrollCapture(for:)
         )
     }()

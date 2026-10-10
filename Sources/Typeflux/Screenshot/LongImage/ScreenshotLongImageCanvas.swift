@@ -23,14 +23,19 @@ final class ScreenshotLongImageCanvas: NSView {
     private(set) var textField: NSTextField?
     private var textOrigin: CGPoint = .zero
 
+    /// Finds sensitive text on the whole image and keeps the panel that suggests mosaics.
+    let sensitiveInfo: ScreenshotSensitiveInfoController
+
     var onEvent: ((Event) -> Void)?
     /// Called after every change, so the toolbar and the minimap can follow.
     var onChange: (() -> Void)?
 
-    init(image: CGImage, scale: CGFloat, textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil) {
+    init(image: CGImage, scale: CGFloat, textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
+         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil) {
         self.image = image
         self.scale = max(scale, 1)
         self.textMeasurer = textMeasurer
+        sensitiveInfo = ScreenshotSensitiveInfoController(scanner: sensitiveScanner)
         let bounds = CGRect(x: 0, y: 0, width: CGFloat(image.width) / self.scale,
                             height: CGFloat(image.height) / self.scale)
         canvas = ScreenshotAnnotationCanvasView(frame: bounds, source: image)
@@ -39,6 +44,7 @@ final class ScreenshotLongImageCanvas: NSView {
         canvas.autoresizingMask = [.width, .height]
         addSubview(canvas)
         editor.measureTextHeight = { [weak self] mosaic in self?.measureTextHeight(under: mosaic) }
+        connectSensitiveInfo()
         refresh()
     }
 
@@ -50,6 +56,7 @@ final class ScreenshotLongImageCanvas: NSView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     func releaseImage() {
+        sensitiveInfo.cancel()
         canvas.releaseImage()
     }
 
@@ -203,6 +210,7 @@ final class ScreenshotLongImageCanvas: NSView {
         case .cancel: onEvent?(.cancelled)
         case .save: finish(.save)
         case .copy: finish(.copy)
+        case let .followUp(followUp): finish(.followUp(followUp))
         case .scrollCapture: break
         }
         window?.makeFirstResponder(self)
@@ -247,6 +255,25 @@ final class ScreenshotLongImageCanvas: NSView {
         editor.cancelText()
         window?.makeFirstResponder(self)
         refresh()
+    }
+
+    // MARK: Sensitive information
+
+    /// Suggested mosaics go into the same document, in the image's points, so they undo like any other.
+    private func connectSensitiveInfo() {
+        sensitiveInfo.annotations = { [weak self] in self?.editor.document.annotations ?? [] }
+        sensitiveInfo.addMosaics = { [weak self] rects in self?.editor.addMosaics(over: rects) ?? [] }
+        sensitiveInfo.removeAnnotations = { [weak self] ids in self?.editor.removeAnnotations(ids) }
+        sensitiveInfo.onChange = { [weak self] in
+            guard let self else { return }
+            refresh()
+            window?.makeFirstResponder(self)
+        }
+    }
+
+    /// Reads the whole long image, band by band, in the background.
+    func scanForSensitiveInfo() {
+        sensitiveInfo.scan(image, scale: scale)
     }
 
     // MARK: Mosaic

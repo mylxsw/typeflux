@@ -35,7 +35,9 @@ extension AskConversationModel {
             return plugin.title + " → " + detail
         }
         // "Screenshot · Full screen", "Screenshot · Needs permission": the detail qualifies, never replaces.
-        if plugin.id == AskScreenshotPlugin.id { return plugin.title + " · " + detail }
+        if plugin.id == AskScreenshotPlugin.id || plugin.id == AskScreenshotTextPlugin.id {
+            return plugin.title + " · " + detail
+        }
         return detail
     }
 

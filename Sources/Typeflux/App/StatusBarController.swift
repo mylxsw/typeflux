@@ -8,6 +8,7 @@ final class StatusBarController: NSObject {
         static let personas = 9003
         static let textTransformation = 9004
         static let screenshot = 9005
+        static let screenshotText = 9006
     }
 
     private enum MenuValue {
@@ -34,6 +35,7 @@ final class StatusBarController: NSObject {
     private let onOpenOnboarding: () -> Void
     private let onOpenAskConversations: () -> Void
     private let onScreenshot: () -> Void
+    private let onScreenshotText: () -> Void
 
     private var statusItem: NSStatusItem?
     private(set) var menu: NSMenu?
@@ -54,7 +56,8 @@ final class StatusBarController: NSObject {
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
         onOpenOnboarding: @escaping () -> Void = {},
         onOpenAskConversations: @escaping () -> Void = {},
-        onScreenshot: @escaping () -> Void = {}
+        onScreenshot: @escaping () -> Void = {},
+        onScreenshotText: @escaping () -> Void = {}
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
@@ -66,6 +69,7 @@ final class StatusBarController: NSObject {
         self.onOpenOnboarding = onOpenOnboarding
         self.onOpenAskConversations = onOpenAskConversations
         self.onScreenshot = onScreenshot
+        self.onScreenshotText = onScreenshotText
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
     }
 
@@ -193,6 +197,7 @@ final class StatusBarController: NSObject {
         menu.addItem(makeItem(title: L("menu.addVocabulary"), action: #selector(addVocabularyTerm)))
         menu.addItem(makeItem(title: L("menu.notes"), action: #selector(openNotes)))
         menu.addItem(makeScreenshotItem())
+        menu.addItem(makeScreenshotTextItem())
         let historyItem = NSMenuItem(title: L("menu.transcriptionHistory"), action: nil, keyEquivalent: "")
         historyItem.tag = MenuTag.transcriptionHistory
         historyItem.submenu = buildTranscriptionHistoryMenu()
@@ -405,6 +410,17 @@ final class StatusBarController: NSObject {
     @objc private func takeScreenshot() {
         // Let the menu close before the displays freeze.
         DispatchQueue.main.async { [onScreenshot] in onScreenshot() }
+    }
+
+    /// "Screenshot to text": frames a region and shows its text in the launcher.
+    func makeScreenshotTextItem() -> NSMenuItem {
+        let item = makeItem(title: L("menu.screenshotText"), action: #selector(takeScreenshotText))
+        item.tag = MenuTag.screenshotText
+        return item
+    }
+
+    @objc private func takeScreenshotText() {
+        DispatchQueue.main.async { [onScreenshotText] in onScreenshotText() }
     }
 
     private func makeSettingsItem() -> NSMenuItem {

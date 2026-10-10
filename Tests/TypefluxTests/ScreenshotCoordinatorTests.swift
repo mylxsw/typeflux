@@ -18,10 +18,22 @@ final class ScreenshotCoordinatorTests: XCTestCase {
             isShowing = true
         }
 
-        func selectFullScreen() { fullScreenSelections += 1 }
+        /// The real overlay commits the region it selects.
+        var commitsOnFullScreen = false
+        func selectFullScreen() {
+            fullScreenSelections += 1
+            if commitsOnFullScreen { onEvent?(.committed) }
+        }
 
         private(set) var scrollRequests = 0
         func startScrollCapture() { scrollRequests += 1 }
+
+        /// Finishes as the real overlay would: the region on the 2× display.
+        private(set) var finishes: [ScreenshotOutputAction] = []
+        func finish(_ action: ScreenshotOutputAction) {
+            finishes.append(action)
+            onEvent?(.finish(action, displayID: 1, rect: CGRect(x: 10, y: 20, width: 50, height: 30)))
+        }
 
         func dismiss() {
             dismissals += 1
@@ -126,6 +138,14 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         }
     }
 
+    private final class FollowUps: ScreenshotFollowUpHandling {
+        private(set) var handled: [(followUp: ScreenshotFollowUp, image: ScreenshotFollowUpImage)] = []
+        func handle(_ followUp: ScreenshotFollowUp, image: ScreenshotFollowUpImage) {
+            handled.append((followUp, image))
+        }
+    }
+
+    private let followUps = FollowUps()
     private let longEditor = LongEditor()
     private var scrollCaptures: [ScrollCapture] = []
 
@@ -645,5 +665,125 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         await started(sut)
         overlay.onEvent?(.committed)
         XCTAssertEqual(overlay.scrollRequests, 1, "A normal screenshot does not scroll")
+    }
+
+    // MARK: Follow-ups
+
+    private func followingUp(_ followUp: ScreenshotFollowUp?, mode: ScreenshotMode = .region) async
+        -> ScreenshotCoordinator {
+        let sut = makeCoordinator()
+        sut.followUpHandler = followUps
+        sut.start(mode: mode, followUp: followUp)
+        await sut.pendingTask?.value
+        return sut
+    }
+
+    func testAFollowUpKeywordFinishesTheRegionOnceItIsChosen() async throws {
+        let sut = await followingUp(.recognizeText)
+        XCTAssertEqual(sut.followUpOnCommit, .recognizeText)
+        XCTAssertEqual(sut.state, .selecting)
+
+        overlay.onEvent?(.committed)
+
+        XCTAssertEqual(overlay.finishes, [.followUp(.recognizeText)])
+        XCTAssertEqual(sut.state, .idle, "The overlay closes at once")
+        XCTAssertNil(sut.snapshot)
+        XCTAssertNil(sut.followUpOnCommit)
+        XCTAssertTrue(output.copied.isEmpty, "Nothing goes to the clipboard")
+        let handed = try XCTUnwrap(followUps.handled.first)
+        XCTAssertEqual(handed.followUp, .recognizeText)
+        XCTAssertEqual(handed.image.image.width, 100, "The rendered region at 2×")
+        XCTAssertEqual(handed.image.image.height, 60)
+        XCTAssertEqual(handed.image.scale, 2)
+        XCTAssertFalse(handed.image.isLongImage)
+        XCTAssertEqual(handed.image.pixelSize, CGSize(width: 100, height: 60))
+    }
+
+    func testAToolbarFollowUpHandsTheMarkedUpImageOver() async throws {
+        let sut = await followingUp(nil)
+        overlay.onEvent?(.committed)
+        XCTAssertTrue(overlay.finishes.isEmpty, "A plain screenshot stays in the editor")
+        XCTAssertEqual(sut.state, .editing)
+
+        overlay.onEvent?(.finish(.followUp(.askAI), displayID: 1, rect: CGRect(x: 0, y: 0, width: 20, height: 10)))
+
+        XCTAssertEqual(followUps.handled.map(\.followUp), [.askAI])
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertTrue(output.copied.isEmpty && output.saved.isEmpty, "No encoding or delivery for a follow-up")
+    }
+
+    func testAFollowUpWithoutAHandlerFails() async {
+        let sut = makeCoordinator()
+        await started(sut)
+        overlay.onEvent?(.committed)
+
+        overlay.onEvent?(.finish(.followUp(.translate), displayID: 1, rect: CGRect(x: 0, y: 0, width: 20, height: 10)))
+
+        XCTAssertEqual(toasts.shown, [.failed])
+        XCTAssertEqual(sut.state, .idle)
+    }
+
+    func testAFullScreenFollowUpEndsInIdleWhenSelectingCommits() async {
+        let sut = makeCoordinator()
+        sut.followUpHandler = followUps
+        overlay.commitsOnFullScreen = true
+        sut.start(mode: .fullScreen, followUp: .askAI)
+        await sut.pendingTask?.value
+
+        XCTAssertEqual(followUps.handled.map(\.followUp), [.askAI])
+        XCTAssertEqual(sut.state, .idle, "Not left in editing after the hand-over")
+    }
+
+    func testCancellingDropsTheFollowUp() async {
+        let sut = await followingUp(.askAI)
+        sut.cancel()
+        XCTAssertNil(sut.followUpOnCommit)
+
+        await started(sut)
+        overlay.onEvent?(.committed)
+        XCTAssertTrue(followUps.handled.isEmpty)
+        XCTAssertEqual(sut.state, .editing)
+    }
+
+    func testAFollowUpWaitsForPermissionAndStartsOnRecheck() async {
+        let permission = FakeScreenCapturePermission(granted: false)
+        let sut = makeCoordinator(permission: permission)
+        sut.followUpHandler = followUps
+        sut.start(mode: .region, followUp: .recognizeText)
+        XCTAssertEqual(guide.shown, 1)
+        XCTAssertNil(sut.followUpOnCommit)
+
+        permission.granted = true
+        XCTAssertEqual(guide.actions?.recheck(), true)
+        await sut.pendingTask?.value
+        XCTAssertEqual(sut.followUpOnCommit, .recognizeText)
+    }
+
+    func testAScrollingFollowUpHandsTheLongImageOverWithoutTheEditor() async throws {
+        let sut = await followingUp(.askAI, mode: .scrolling)
+        overlay.onEvent?(.committed)
+        XCTAssertEqual(overlay.scrollRequests, 1, "Scrolling comes first")
+        overlay.onEvent?(.scroll(displayID: 1, rect: CGRect(x: 10, y: 20, width: 100, height: 60)))
+
+        scrollCaptures[0].onFinish?(.finished(ScreenCaptureTestSupport.image(width: 200, height: 900), .reachedEnd))
+
+        XCTAssertTrue(longEditor.presented.isEmpty)
+        let handed = try XCTUnwrap(followUps.handled.first)
+        XCTAssertEqual(handed.followUp, .askAI)
+        XCTAssertTrue(handed.image.isLongImage)
+        XCTAssertEqual(handed.image.pixelSize, CGSize(width: 200, height: 900))
+        XCTAssertEqual(sut.state, .idle)
+    }
+
+    func testTheLongImageEditorsFollowUpIsMarkedLong() async throws {
+        let sut = await scrolling()
+        sut.followUpHandler = followUps
+        scrollCaptures[0].onFinish?(.finished(ScreenCaptureTestSupport.image(width: 200, height: 900), .reachedEnd))
+        let display = try XCTUnwrap(longEditor.presented.first?.display)
+
+        longEditor.onEvent?(.finish(.followUp(.recognizeText), displayID: 1, rect: display.frame))
+
+        XCTAssertEqual(followUps.handled.first?.image.isLongImage, true)
+        XCTAssertEqual(sut.state, .idle)
     }
 }

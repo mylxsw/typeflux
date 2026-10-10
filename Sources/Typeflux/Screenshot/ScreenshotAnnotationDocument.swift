@@ -52,6 +52,23 @@ struct ScreenshotAnnotationDocument: Equatable {
         annotations.append(annotation)
     }
 
+    /// Adds several annotations as one undo step.
+    mutating func add(_ added: [ScreenshotAnnotation]) {
+        guard !added.isEmpty else { return }
+        record()
+        annotations.append(contentsOf: added)
+    }
+
+    /// Removes the annotations with these ids as one undo step.
+    /// - Returns: false when none of them is in the document.
+    @discardableResult
+    mutating func remove(ids: Set<UUID>) -> Bool {
+        guard annotations.contains(where: { ids.contains($0.id) }) else { return false }
+        record()
+        annotations.removeAll { ids.contains($0.id) }
+        return true
+    }
+
     /// - Returns: false when no annotation has that id.
     @discardableResult
     mutating func remove(id: UUID) -> Bool {
