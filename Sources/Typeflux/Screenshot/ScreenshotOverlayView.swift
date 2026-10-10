@@ -43,6 +43,8 @@ final class ScreenshotOverlayView: NSView {
         case committed
         /// Use the region with these annotations, all in this display's points.
         case finish(ScreenshotOutputAction, CGRect, [ScreenshotAnnotation] = [])
+        /// Capture the region again while it scrolls, in this display's points.
+        case scroll(CGRect)
         case colorPicked(String)
         case cancelled
     }
@@ -238,6 +240,8 @@ final class ScreenshotOverlayView: NSView {
             finish(.save)
         case Key.keyA where command:
             selectAll()
+        case Key.keyS where !command && selection.rect != nil:
+            startScrollCapture()
         case Key.space:
             spaceHeld = true
         default:
@@ -312,6 +316,17 @@ final class ScreenshotOverlayView: NSView {
         if selection.nudge(by: offset) == .changed { refresh() }
     }
 
+    /// Nothing is marked yet: a scrolling capture would drop the marks, since it captures again.
+    var canScrollCapture: Bool {
+        editor.document.isEmpty && textField == nil
+    }
+
+    /// S or the toolbar button: hands the region over to a scrolling capture.
+    func startScrollCapture() {
+        guard canScrollCapture, let rect = selection.rect, !selection.isDragging, !editor.isDragging else { return }
+        onEvent?(self, .scroll(rect))
+    }
+
     private func finish(_ action: ScreenshotOutputAction) {
         endTextEditing()
         guard let rect = selection.rect, !selection.isDragging, !editor.isDragging else { return }
@@ -334,6 +349,7 @@ final class ScreenshotOverlayView: NSView {
         case .cancel: onEvent?(self, .cancelled)
         case .save: finish(.save)
         case .copy: finish(.copy)
+        case .scrollCapture: startScrollCapture()
         }
         // Keys go back to the overlay after a click on the toolbar.
         window?.makeFirstResponder(self)
@@ -344,19 +360,8 @@ final class ScreenshotOverlayView: NSView {
 
     private func beginTextEditing(at origin: CGPoint, text: String, fontSize: CGFloat,
                                   color: ScreenshotAnnotationStyle.Color) {
-        let field = NSTextField(string: text)
-        field.isBordered = false
-        field.isBezeled = false
-        field.drawsBackground = false
-        field.focusRingType = .none
-        field.font = ScreenshotAnnotation.font(size: fontSize)
-        field.textColor = NSColor(cgColor: color.cgColor())
-        field.cell?.wraps = false
-        field.cell?.isScrollable = true
+        let field = Self.makeTextField(text: text, fontSize: fontSize, color: color)
         field.delegate = self
-        field.wantsLayer = true
-        field.layer?.borderWidth = 1
-        field.layer?.borderColor = ScreenshotOverlayChromeView.accent.cgColor
         textOrigin = origin
         textField = field
         addSubview(field, positioned: .below, relativeTo: chrome)
@@ -366,11 +371,33 @@ final class ScreenshotOverlayView: NSView {
 
     /// Keeps the field as wide as its text, with the text where the annotation will draw it.
     private func resizeTextField() {
-        guard let field = textField, let font = field.font else { return }
-        let size = ScreenshotAnnotation.textSize(field.stringValue, fontSize: font.pointSize)
-        field.frame = CGRect(x: textOrigin.x - Self.textFieldInset, y: textOrigin.y,
-                             width: max(size.width, font.pointSize) + Self.textFieldInset * 2 + 4,
-                             height: size.height)
+        guard let field = textField else { return }
+        field.frame = Self.textFieldFrame(for: field, at: textOrigin)
+    }
+
+    /// A borderless field for typing a text annotation, outlined in the accent color.
+    static func makeTextField(text: String, fontSize: CGFloat, color: ScreenshotAnnotationStyle.Color) -> NSTextField {
+        let field = NSTextField(string: text)
+        field.isBordered = false
+        field.isBezeled = false
+        field.drawsBackground = false
+        field.focusRingType = .none
+        field.font = ScreenshotAnnotation.font(size: fontSize)
+        field.textColor = NSColor(cgColor: color.cgColor())
+        field.cell?.wraps = false
+        field.cell?.isScrollable = true
+        field.wantsLayer = true
+        field.layer?.borderWidth = 1
+        field.layer?.borderColor = ScreenshotOverlayChromeView.accent.cgColor
+        return field
+    }
+
+    /// As wide as the field's text, with the text where the annotation at `origin` draws it.
+    static func textFieldFrame(for field: NSTextField, at origin: CGPoint) -> CGRect {
+        let fontSize = field.font?.pointSize ?? ScreenshotAnnotationStyle().fontSize
+        let size = ScreenshotAnnotation.textSize(field.stringValue, fontSize: fontSize)
+        return CGRect(x: origin.x - textFieldInset, y: origin.y,
+                      width: max(size.width, fontSize) + textFieldInset * 2 + 4, height: size.height)
     }
 
     /// How far a borderless field indents its text.
@@ -460,7 +487,8 @@ final class ScreenshotOverlayView: NSView {
             mosaicShape: mosaic.map { if case .brush = $0.shape { .brush } else { .rect } } ?? editor.mosaicShape,
             canUndo: editor.document.canUndo, canRedo: editor.document.canRedo,
             showsOptions: editor.tool != nil || editor.selected != nil,
-            showsMosaicOptions: editor.showsMosaicOptions
+            showsMosaicOptions: editor.showsMosaicOptions,
+            canScrollCapture: canScrollCapture
         )
         toolbarModel.state = state
         guard let rect = selection.rect, !selection.isDragging else {

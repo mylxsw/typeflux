@@ -48,7 +48,9 @@ final class DIContainer {
             toast: ScreenshotToastController(),
             output: screenshotOutput,
             saveDirectory: { settingsStore.screenshotSaveDirectory },
-            relaunch: { ScreenshotAppRelauncher.relaunch() }
+            relaunch: { ScreenshotAppRelauncher.relaunch() },
+            longImageEditor: ScreenshotLongImageEditorController(textMeasurer: VisionTextHeightMeasurer()),
+            makeScrollCapture: ScreenshotCoordinator.scrollCapture(for:)
         )
     }()
     lazy var askConversationWindowController: AskConversationWindowController? = {

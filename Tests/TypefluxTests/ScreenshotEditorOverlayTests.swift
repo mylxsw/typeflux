@@ -420,4 +420,63 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         XCTAssertEqual(view.toolbarModel.state.mosaicShape, .brush)
         XCTAssertEqual(view.toolbarModel.state.mosaicEffect, .blur)
     }
+
+    // MARK: Scrolling capture
+
+    func testSHandsTheRegionToAScrollingCaptureOnlyBeforeMarking() {
+        let (view, events) = makeView()
+        XCTAssertFalse(view.handleKeyDown(Key.keyS, modifiers: []), "No region yet")
+        frame(view, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 250, y: 150))
+        let region = CGRect(x: 50, y: 50, width: 200, height: 100)
+        XCTAssertTrue(view.canScrollCapture)
+        XCTAssertTrue(view.toolbarModel.state.canScrollCapture)
+        XCTAssertTrue(view.toolbarModel.state.showsScrollCapture)
+
+        XCTAssertTrue(view.handleKeyDown(Key.keyS, modifiers: []))
+        view.toolbarModel.perform(.scrollCapture)
+        XCTAssertEqual(events(), [.committed, .scroll(region), .scroll(region)])
+
+        // A tool alone is fine; a mark is not, since the capture starts over.
+        view.handleKeyDown(ScreenshotAnnotationTool.rect.keyCode, modifiers: [])
+        XCTAssertTrue(view.canScrollCapture)
+        drag(view, from: CGPoint(x: 60, y: 60), to: CGPoint(x: 120, y: 100))
+        XCTAssertFalse(view.canScrollCapture)
+        XCTAssertFalse(view.toolbarModel.state.canScrollCapture)
+        XCTAssertTrue(view.handleKeyDown(Key.keyS, modifiers: []))
+        view.toolbarModel.perform(.scrollCapture)
+        XCTAssertEqual(events().filter { if case .scroll = $0 { true } else { false } }.count, 2)
+    }
+
+    func testControllerStartsAScrollingCaptureInGlobalPoints() {
+        let snapshot = ScreenSnapshot(displays: [
+            .init(id: 1, frame: CGRect(x: 0, y: 0, width: 200, height: 100), scale: 1,
+                  image: ScreenCaptureTestSupport.image(width: 200, height: 100)),
+            .init(id: 2, frame: CGRect(x: 200, y: 0, width: 300, height: 150), scale: 1,
+                  image: ScreenCaptureTestSupport.image(width: 300, height: 150))
+        ], windows: [])
+        let controller = ScreenshotOverlayController(primaryDisplayHeight: { 150 }, pointerLocation: { .zero })
+        var events: [ScreenshotOverlayEvent] = []
+        controller.present(snapshot) { events.append($0) }
+        defer { controller.dismiss() }
+
+        controller.startScrollCapture()
+        XCTAssertTrue(events.isEmpty, "No region yet")
+        frame(controller.views[1], from: CGPoint(x: 10, y: 10), to: CGPoint(x: 110, y: 60))
+        controller.startScrollCapture()
+
+        XCTAssertEqual(events.last, .scroll(displayID: 2, rect: CGRect(x: 210, y: 10, width: 100, height: 50)))
+    }
+
+    func testTheScrollingCaptureButtonCanBeLeftOut() {
+        func width(_ state: ScreenshotEditorToolbarModel.State) -> CGFloat {
+            NSHostingView(rootView: ScreenshotEditorToolbar(state: state) { _ in }).fittingSize.width
+        }
+        var state = ScreenshotEditorToolbarModel.State()
+        let with = width(state)
+        state.canScrollCapture = false
+        XCTAssertEqual(width(state), with, accuracy: 0.5, "Disabled, still there")
+        state.showsScrollCapture = false
+        XCTAssertLessThan(width(state), with)
+        XCTAssertNotEqual(L("screenshot.tool.scroll"), "screenshot.tool.scroll")
+    }
 }

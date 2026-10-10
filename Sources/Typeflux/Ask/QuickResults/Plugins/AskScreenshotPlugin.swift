@@ -2,14 +2,17 @@ import CoreGraphics
 import Foundation
 
 /// Starts a screenshot from the launcher: `jt` / `截图` frame a region, `jtqp` takes the
-/// whole display. Return closes the launcher first, then the displays freeze.
+/// whole display, `jtgd` frames a region and captures it while it scrolls. Return closes the
+/// launcher first, then the displays freeze.
 struct AskScreenshotPlugin: AskLauncherPlugin {
     static let id = "screenshot"
     static let keywords = [
         AskKeyword(keyword: "jt", pluginID: id, options: [ScreenshotMode.option: ScreenshotMode.region.rawValue]),
         AskKeyword(keyword: "截图", pluginID: id, options: [ScreenshotMode.option: ScreenshotMode.region.rawValue]),
         AskKeyword(keyword: "jtqp", pluginID: id,
-                   options: [ScreenshotMode.option: ScreenshotMode.fullScreen.rawValue])
+                   options: [ScreenshotMode.option: ScreenshotMode.fullScreen.rawValue]),
+        AskKeyword(keyword: "jtgd", pluginID: id,
+                   options: [ScreenshotMode.option: ScreenshotMode.scrolling.rawValue])
     ]
 
     /// A read-only Screen Recording check; never prompts.
@@ -29,7 +32,11 @@ struct AskScreenshotPlugin: AskLauncherPlugin {
     /// "Needs permission" until Screen Recording is granted; otherwise the mode, when not the usual one.
     func chipDetail(for keyword: AskKeyword, language: AppLanguage) -> String? {
         guard isPermissionGranted() else { return L("screenshot.permission.needed") }
-        return ScreenshotMode(options: keyword.options) == .region ? nil : L("screenshot.mode.fullScreen.short")
+        return switch ScreenshotMode(options: keyword.options) {
+        case .region: nil
+        case .fullScreen: L("screenshot.mode.fullScreen.short")
+        case .scrolling: L("screenshot.mode.scrolling.short")
+        }
     }
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
@@ -48,7 +55,7 @@ struct AskScreenshotPlugin: AskLauncherPlugin {
         throw CancellationError()
     }
 
-    /// ⇥ switches between framing a region and the whole display.
+    /// ⇥ cycles through framing a region, the whole display and a scrolling capture.
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? {
         let modes = ScreenshotMode.allCases
         let current = modes.firstIndex(of: ScreenshotMode(options: request.options)) ?? 0
@@ -59,6 +66,7 @@ struct AskScreenshotPlugin: AskLauncherPlugin {
         switch mode {
         case .region: L("screenshot.mode.region")
         case .fullScreen: L("screenshot.mode.fullScreen")
+        case .scrolling: L("screenshot.mode.scrolling")
         }
     }
 }

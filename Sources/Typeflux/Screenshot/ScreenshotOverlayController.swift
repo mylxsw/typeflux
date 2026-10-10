@@ -75,6 +75,10 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         view.selectAll()
     }
 
+    func startScrollCapture() {
+        views.first { $0.selection.rect != nil }?.startScrollCapture()
+    }
+
     func dismiss() {
         for panel in panels {
             panel.orderOut(nil)
@@ -116,6 +120,8 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         case let .finish(action, rect, annotations):
             onEvent?(.finish(action, displayID: view.display.id, rect: rect.offsetBy(dx: origin.x, dy: origin.y),
                              annotations: annotations.map { $0.offsetBy(dx: origin.x, dy: origin.y) }))
+        case let .scroll(rect):
+            onEvent?(.scroll(displayID: view.display.id, rect: rect.offsetBy(dx: origin.x, dy: origin.y)))
         case let .colorPicked(hex):
             onEvent?(.colorPicked(hex))
         case .cancelled:
