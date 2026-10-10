@@ -78,6 +78,44 @@ struct WorkflowBillingOperationTests {
         }
     }
 
+    @Test func newLoginCanStartPlansWhileTheOldOutcomeIsHeld() async throws {
+        for succeeds in [true, false] {
+            try await withOverlay { fixture, controller, button in
+                try button.press()
+                let old = try await started(fixture, controller)
+                await fixture.auth.handleLoginSuccess(token: "b1", expiresAt: fixture.expiry)
+                await controller.presentCloudBillingError(.init(reason: .subscriptionRequired, serverMessage: nil))
+                let host = try #require(controller.overlayController.presentedWindow?.contentView)
+                let fresh = try SettingsBehaviorTestSupport.button(L("cloud.billing.action.subscribe"), in: host)
+                try fresh.press()
+                let current = try await started(fixture, controller, count: 2)
+                #expect(old.isCancelled)
+                #expect(fixture.calls == ["a1", "b1"])
+                if succeeds { fixture.succeed("old-session") } else { fixture.fail() }
+                await old.value
+                #expect(controller.billingLifetime.isBusy)
+                #expect(fixture.links.isEmpty)
+                fixture.succeed("new-session")
+                await current.value
+                #expect(fixture.links == [fixture.expectedURL("new-session")])
+                #expect(!controller.billingLifetime.isBusy)
+            }
+        }
+    }
+
+    @Test func loginBeforeTheQueuedActionStartsDoesNotSubmitForTheNewAccount() async throws {
+        try await withOverlay(expectFailure: false) { fixture, controller, button in
+            try button.press()
+            let queued = try #require(controller.billingLifetime.task)
+            fixture.track(queued)
+            await fixture.auth.handleLoginSuccess(token: "b1", expiresAt: fixture.expiry)
+            await queued.value
+            #expect(fixture.calls.isEmpty)
+            #expect(fixture.links.isEmpty)
+            #expect(!controller.billingLifetime.isBusy)
+        }
+    }
+
     private func started(_ fixture: BillingOperationFixture, _ controller: WorkflowController,
                          count: Int = 1) async throws -> Task<Void, Never> {
         try await fixture.pages.waitForCalls(count)

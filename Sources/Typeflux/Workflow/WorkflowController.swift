@@ -16,6 +16,7 @@ final class WorkflowController {
     @MainActor var presentBillingSettings: ((StudioSection) -> Void)?
     @MainActor var reportBillingFailure: ((Error) -> Void)?
     @MainActor lazy var billingLifetime = BillingActionLifetime()
+    @MainActor private var billingSessionGeneration: Int?
 
     let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "WorkflowController")
     static let recordingTimeoutNanoseconds: UInt64 = 600_000_000_000 // 10 minutes
@@ -1553,11 +1554,18 @@ final class WorkflowController {
                         case .openAccount:
                             self.showBillingSettings(.account)
                         case .openPlans:
+                            let auth = self.billingAuth()
+                            let generation = auth.sessionGeneration
+                            if self.billingSessionGeneration != generation {
+                                self.billingLifetime.cancel()
+                                self.billingSessionGeneration = generation
+                            }
                             billingLifetime.start { [weak self] in
                                 guard let self else { return }
+                                guard auth.sessionGeneration == generation else { return }
                                 await AccountBillingFlow.open(
                                     .plans,
-                                    for: self.billingAuth(),
+                                    for: auth,
                                     onLink: { url in
                                         self.openBillingURL(url)
                                     },
