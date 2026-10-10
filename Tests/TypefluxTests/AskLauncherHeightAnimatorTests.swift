@@ -49,4 +49,21 @@ struct AskLauncherHeightAnimatorTests {
         try await Task.sleep(for: .milliseconds(60))
         #expect(samples.count == count, "cancelled animation cannot overwrite the new height")
     }
+
+    @Test func reportsAMotionUntilItLandsOnItsTarget() async throws {
+        let animator = AskLauncherHeightAnimator()
+        var applied: [CGFloat] = []
+        #expect(!animator.isAnimating)
+        animator.update(from: 120, to: 120.05, animated: true) { applied.append($0) }
+        #expect(!animator.isAnimating, "a height already in place is applied at once")
+        animator.update(from: 120, to: 300, animated: true, rate: 60) { applied.append($0) }
+        #expect(animator.isAnimating)
+        for _ in 0 ..< 500 where animator.isAnimating { try await Task.sleep(for: .milliseconds(5)) }
+        #expect(!animator.isAnimating)
+        #expect(applied.last == 300, "the motion ends exactly on its target")
+        animator.update(from: 300, to: 120, animated: true) { applied.append($0) }
+        #expect(animator.isAnimating)
+        animator.stop()
+        #expect(!animator.isAnimating)
+    }
 }
