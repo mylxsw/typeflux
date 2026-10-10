@@ -243,20 +243,6 @@ enum AppearanceMode: String, CaseIterable, Codable {
     }
 }
 
-enum OverlayStyle: String, CaseIterable, Codable {
-    case liquidGlass
-    case classic
-
-    var displayName: String {
-        switch self {
-        case .liquidGlass:
-            L("overlayStyle.liquidGlass")
-        case .classic:
-            L("overlayStyle.classic")
-        }
-    }
-}
-
 enum PersonaProfileKind: String, Codable {
     case system
     case custom

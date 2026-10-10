@@ -8,11 +8,11 @@ final class ProcessingProgressCapsuleRenderingTests: XCTestCase {
     func testThinkingCapsuleRendersEachProcessingStageFurtherForward() throws {
         let stages: [CGFloat] = [0.5, 0.7, 0.95, 1]
 
-        for style in OverlayStyle.allCases {
+        for style in InterfaceStyle.allCases {
             let images = try stages.map { progress in
                 try render(
                     ThinkingProgressCapsule(title: "Thinking", progress: progress)
-                        .environment(\.overlayStyle, style)
+                        .environment(\.interfaceStyle, style)
                         .frame(width: 132, height: 35),
                     size: CGSize(width: 132, height: 35)
                 )
@@ -27,7 +27,7 @@ final class ProcessingProgressCapsuleRenderingTests: XCTestCase {
     func testTranscriptCapsuleRendersEachProcessingStageFurtherForward() throws {
         let stages: [CGFloat] = [0.5, 0.7, 0.95, 1]
 
-        for style in OverlayStyle.allCases {
+        for style in InterfaceStyle.allCases {
             let images = try stages.map { progress in
                 try render(
                     ProcessingTranscriptCapsule(
@@ -35,7 +35,7 @@ final class ProcessingProgressCapsuleRenderingTests: XCTestCase {
                         title: "Thinking",
                         progress: progress
                     )
-                    .environment(\.overlayStyle, style),
+                    .environment(\.interfaceStyle, style),
                     size: CGSize(width: 360, height: 127)
                 )
             }
@@ -49,11 +49,11 @@ final class ProcessingProgressCapsuleRenderingTests: XCTestCase {
     func testThinkingCapsuleVisiblyMovesDuringFirstFiveSecondsOfLLMProcessing() throws {
         let progress = typicalLLMProgressCheckpoints()
 
-        for style in OverlayStyle.allCases {
+        for style in InterfaceStyle.allCases {
             let images = try progress.map { value in
                 try render(
                     ThinkingProgressCapsule(title: "Thinking", progress: value)
-                        .environment(\.overlayStyle, style)
+                        .environment(\.interfaceStyle, style)
                         .frame(width: 132, height: 35),
                     size: CGSize(width: 132, height: 35)
                 )
@@ -67,7 +67,7 @@ final class ProcessingProgressCapsuleRenderingTests: XCTestCase {
     func testTranscriptCapsuleVisiblyMovesDuringFirstFiveSecondsOfLLMProcessing() throws {
         let progress = typicalLLMProgressCheckpoints()
 
-        for style in OverlayStyle.allCases {
+        for style in InterfaceStyle.allCases {
             let images = try progress.map { value in
                 try render(
                     ProcessingTranscriptCapsule(
@@ -75,7 +75,7 @@ final class ProcessingProgressCapsuleRenderingTests: XCTestCase {
                         title: "Thinking",
                         progress: value
                     )
-                    .environment(\.overlayStyle, style),
+                    .environment(\.interfaceStyle, style),
                     size: CGSize(width: 360, height: 127)
                 )
             }

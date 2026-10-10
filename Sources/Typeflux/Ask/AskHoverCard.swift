@@ -55,7 +55,9 @@ final class AskHoverCardPresenter {
         guard let window = anchor.window, window.isVisible else { return }
         let panel = self.panel ?? Self.makePanel()
         self.panel = panel
-        let hosting = NSHostingView(rootView: AnyView(AskGlassCardSurface { content }.askPopIn(anchor: .bottom)))
+        let hosting = NSHostingView(rootView: AnyView(AskGlassCardSurface { content }.askPopIn(anchor: .bottom)
+                // The panel is outside the anchor's view tree, so it takes the anchor's style.
+                .environment(\.interfaceStyle, AskHoverAnchor.style(of: anchor))))
         panel.contentView = hosting
         panel.appearance = window.effectiveAppearance
         let anchorRect = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))
@@ -82,7 +84,9 @@ final class AskHoverCardPresenter {
 }
 
 /// Locates a SwiftUI view in its window for `AskHoverCardPresenter`. Invisible
-/// to the mouse, so it never takes a click from the view it sits behind.
+/// to the mouse, so it never takes a click from the view it sits behind. It also
+/// records the interface style where it sits, for the cards and menus that open
+/// from it in panels of their own.
 struct AskHoverAnchor: NSViewRepresentable {
     final class Holder {
         weak var view: NSView?
@@ -92,15 +96,23 @@ struct AskHoverAnchor: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSView {
         let view = Passthrough()
+        view.style = context.environment.interfaceStyle
         holder.view = view
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
+        (nsView as? Passthrough)?.style = context.environment.interfaceStyle
         holder.view = nsView
     }
 
+    /// The style of the view tree `anchor` sits in; Liquid Glass for any other view.
+    static func style(of anchor: NSView) -> InterfaceStyle {
+        (anchor as? Passthrough)?.style ?? .liquidGlass
+    }
+
     private final class Passthrough: NSView {
+        var style = InterfaceStyle.liquidGlass
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }

@@ -7,8 +7,8 @@
 "appearance.system" = "跟隨系統";
 "appearance.light" = "淺色";
 "appearance.dark" = "深色";
-"overlayStyle.liquidGlass" = "Liquid Glass";
-"overlayStyle.classic" = "經典樣式";
+"interfaceStyle.liquidGlass" = "Liquid Glass";
+"interfaceStyle.classic" = "經典";
 
 "window.voiceStudio" = "Typeflux";
 "window.about" = "關於 Typeflux";
@@ -127,8 +127,8 @@
 "settings.activationHotkey" = "語音快捷鍵";
 "settings.identity" = "身份與互動";
 "settings.appearance.title" = "明暗模式";
-"settings.overlayStyle.title" = "膠囊樣式";
-"settings.overlayStyle.subtitle" = "選擇膠囊和對話框的視覺樣式。";
+"settings.interfaceStyle.title" = "介面風格";
+"settings.interfaceStyle.subtitle" = "統一控制膠囊、啟動器、對話視窗和彈出選單的視覺風格。";
 "settings.appearance.subtitle" = "在淺色、深色或跟隨系統主題之間切換整個介面。";
 "settings.language.title" = "語言";
 "settings.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";

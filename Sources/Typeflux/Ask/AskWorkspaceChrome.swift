@@ -37,7 +37,8 @@ struct AskRunToneDot: View {
 }
 
 /// Glass controls give way under the pointer with a short spring, like the
-/// system's Liquid Glass buttons. Reduce Motion keeps them still.
+/// system's Liquid Glass buttons. Reduce Motion and the classic style, whose
+/// controls never moved, keep them still.
 struct AskPressableStyle: ButtonStyle {
     static let pressedScale: CGFloat = 0.92
     /// For wide rows, where a deep press would shift the text noticeably.
@@ -53,10 +54,11 @@ struct AskPressableStyle: ButtonStyle {
         let configuration: Configuration
         let scale: CGFloat
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        @Environment(\.interfaceStyle) private var style
 
         var body: some View {
             configuration.label
-                .scaleEffect(configuration.isPressed && !reduceMotion ? scale : 1)
+                .scaleEffect(configuration.isPressed && !reduceMotion && style.usesGlass ? scale : 1)
                 .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.55),
                            value: configuration.isPressed)
         }
@@ -71,6 +73,7 @@ struct AskHeaderIconButton: View {
     var active = false
     var action: () -> Void
     @State private var hovering = false
+    @Environment(\.interfaceStyle) private var style
 
     static func ink(active: Bool, hovering: Bool) -> Color {
         if active { return AskTheme.accent }
@@ -82,8 +85,8 @@ struct AskHeaderIconButton: View {
             Image(systemName: symbol).font(.system(size: 13.5, weight: .regular))
                 .foregroundStyle(AskHeaderIconButton.ink(active: active, hovering: hovering))
                 .frame(width: 30, height: 28)
-                .background(hovering || active ? AskTheme.hoverFill : Color.clear, in: Capsule())
-                .contentShape(Capsule())
+                .background(hovering || active ? AskTheme.hoverFill : Color.clear, in: style.controlShape(height: 28))
+                .contentShape(style.controlShape(height: 28))
         }
         .buttonStyle(AskPressableStyle())
         .onHover { hovering = $0 }
@@ -99,14 +102,15 @@ struct AskHeaderLineButton: View {
     var active = false
     var action: () -> Void
     @State private var hovering = false
+    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
         Button(action: action) {
             AskLineIcon(kind: kind, size: 15)
                 .foregroundStyle(AskHeaderIconButton.ink(active: active, hovering: hovering))
                 .frame(width: 30, height: 28)
-                .background(hovering || active ? AskTheme.hoverFill : Color.clear, in: Capsule())
-                .contentShape(Capsule())
+                .background(hovering || active ? AskTheme.hoverFill : Color.clear, in: style.controlShape(height: 28))
+                .contentShape(style.controlShape(height: 28))
         }
         .buttonStyle(AskPressableStyle())
         .onHover { hovering = $0 }
@@ -123,6 +127,7 @@ struct AskIconGhostButton: View {
     var active = false
     var action: () -> Void
     @State private var hovering = false
+    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
         Button(action: action) {
@@ -130,8 +135,8 @@ struct AskIconGhostButton: View {
                 .foregroundStyle(active ? StudioTheme.success
                     : (hovering ? StudioTheme.textPrimary : StudioTheme.textTertiary))
                 .frame(width: 28, height: 28)
-                .background(hovering ? AskTheme.hoverFill : Color.clear, in: Capsule())
-                .contentShape(Capsule())
+                .background(hovering ? AskTheme.hoverFill : Color.clear, in: style.controlShape(height: 28))
+                .contentShape(style.controlShape(height: 28))
         }
         .buttonStyle(AskPressableStyle())
         .onHover { hovering = $0 }

@@ -68,12 +68,8 @@ private struct RoundedVisualEffectBlur: NSViewRepresentable {
     }
 }
 
-extension EnvironmentValues {
-    @Entry var overlayStyle: OverlayStyle = .liquidGlass
-}
-
 private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
-    @Environment(\.overlayStyle) private var overlayStyle
+    @Environment(\.interfaceStyle) private var interfaceStyle
     let shape: S
     let cornerRadius: CGFloat?
     let tintOpacity: Double
@@ -102,7 +98,7 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
 
     var body: some View {
         Group {
-            if overlayStyle == .classic {
+            if interfaceStyle == .classic {
                 shape.fill(Color.black)
             } else {
                 liquidGlassBackground
@@ -122,7 +118,7 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
                     ),
                     lineWidth: lineWidth
                 )
-                .opacity(overlayStyle == .liquidGlass ? 1 : 0)
+                .opacity(interfaceStyle == .liquidGlass ? 1 : 0)
         )
         .overlay(
             shape
@@ -140,7 +136,7 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
                     lineWidth: 0.6
                 )
                 .blendMode(.screen)
-                .opacity(overlayStyle == .liquidGlass ? 1 : 0)
+                .opacity(interfaceStyle == .liquidGlass ? 1 : 0)
         )
     }
 
@@ -321,7 +317,7 @@ final class OverlayController {
     private let appState: AppStateStore
     private let settingsStore: SettingsStore
     private var window: NSPanel?
-    private var overlayStyleObserver: NSObjectProtocol?
+    private var interfaceStyleObserver: NSObjectProtocol?
     private var callbackTarget: OverlayCallbackTarget?
 
     private let model = OverlayViewModel()
@@ -352,17 +348,17 @@ final class OverlayController {
     init(appState: AppStateStore, settingsStore: SettingsStore) {
         self.appState = appState
         self.settingsStore = settingsStore
-        model.overlayStyle = settingsStore.overlayStyle
+        model.interfaceStyle = settingsStore.interfaceStyle
         model.onDismissRequested = { [weak self] in
             self?.dismiss(after: 0)
         }
-        overlayStyleObserver = NotificationCenter.default.addObserver(
-            forName: .overlayStyleDidChange,
+        interfaceStyleObserver = NotificationCenter.default.addObserver(
+            forName: .interfaceStyleDidChange,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             guard let self else { return }
-            model.overlayStyle = self.settingsStore.overlayStyle
+            model.interfaceStyle = self.settingsStore.interfaceStyle
             configureWindowAppearance()
         }
         callbackTarget = OverlayCallbackTarget(self)
@@ -376,7 +372,7 @@ final class OverlayController {
         // Copy resources to locals before cleanup. Calling instance methods from deinit can
         // transiently retain `self` under Swift's ownership lowering and abort destruction.
         // This also makes every AppKit/CoreGraphics registration visibly symmetric.
-        let styleObserver = overlayStyleObserver
+        let styleObserver = interfaceStyleObserver
         let queuedWork = [
             dismissWorkItem,
             pendingFrameAnimationWorkItem,
@@ -1076,8 +1072,8 @@ final class OverlayController {
             contentView.layer?.backgroundColor = chrome.background.cgColor
             contentView.layer?.cornerRadius = chrome.cornerRadius
             contentView.layer?.masksToBounds = true
-            contentView.layer?.borderWidth = model.overlayStyle == .classic ? 0 : 1
-            contentView.layer?.borderColor = model.overlayStyle == .classic
+            contentView.layer?.borderWidth = model.interfaceStyle == .classic ? 0 : 1
+            contentView.layer?.borderColor = model.interfaceStyle == .classic
                 ? nil
                 : NSColor.white.withAlphaComponent(0.12).cgColor
         } else {
@@ -1090,7 +1086,7 @@ final class OverlayController {
     }
 
     private func windowChrome(for presentation: OverlayViewModel.Presentation) -> WindowChromeStyle? {
-        let background = model.overlayStyle == .classic
+        let background = model.interfaceStyle == .classic
             ? NSColor.black
             : NSColor(calibratedRed: 0.13, green: 0.11, blue: 0.11, alpha: 0.96)
 
@@ -1564,7 +1560,7 @@ final class OverlayViewModel: ObservableObject {
     @Published var failureActions: [OverlayFailureAction] = []
     @Published var failureTone: OverlayFailureTone = .error
     @Published var noticeDismissible = true
-    @Published var overlayStyle: OverlayStyle = .liquidGlass
+    @Published var interfaceStyle: InterfaceStyle = .liquidGlass
     /// Stretches capsule motion durations; only rendering tests set it above 1.
     var motionScale: Double = 1
     var onDismissRequested: (() -> Void)?
@@ -1643,7 +1639,7 @@ private struct OverlayView: View {
         .scaleEffect(isHiddenCapsule && !reduceMotion ? 0.96 : 1, anchor: .bottom)
         .offset(y: isHiddenCapsule && !reduceMotion ? 6 : 0)
         .opacity(isHiddenCapsule ? 0 : 1)
-        .environment(\.overlayStyle, model.overlayStyle)
+        .environment(\.interfaceStyle, model.interfaceStyle)
     }
 
     private var isHiddenCapsule: Bool { model.presentation.isCapsule && !model.isPresented }
@@ -1943,7 +1939,7 @@ private struct OverlayView: View {
     private var personaPickerGlassBackground: some View {
         let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
 
-        if model.overlayStyle == .classic {
+        if model.interfaceStyle == .classic {
             shape.fill(Color.black)
         } else {
             ZStack {

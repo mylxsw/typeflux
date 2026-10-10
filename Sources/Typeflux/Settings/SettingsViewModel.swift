@@ -104,7 +104,7 @@ final class StudioViewModel: ObservableObject {
     @Published var llmProvider: LLMProvider
     @Published var llmRemoteProvider: LLMRemoteProvider
     @Published var appearanceMode: AppearanceMode
-    @Published var overlayStyle: OverlayStyle
+    @Published var interfaceStyle: InterfaceStyle
     @Published var appLanguage: AppLanguage
     @Published var availableMicrophones: [AudioInputDevice] = []
     @Published var preferredMicrophoneID: String
@@ -342,7 +342,7 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .typefluxOfficial
         }
         appearanceMode = settingsStore.appearanceMode
-        overlayStyle = settingsStore.overlayStyle
+        interfaceStyle = settingsStore.interfaceStyle
         appLanguage = settingsStore.appLanguage
         preferredMicrophoneID = settingsStore.preferredMicrophoneID
         instantVoiceInputEnabled = settingsStore.instantVoiceInputEnabled
@@ -1080,9 +1080,9 @@ final class StudioViewModel: ObservableObject {
         settingsStore.appearanceMode = mode
     }
 
-    func setOverlayStyle(_ style: OverlayStyle) {
-        overlayStyle = style
-        settingsStore.overlayStyle = style
+    func setInterfaceStyle(_ style: InterfaceStyle) {
+        interfaceStyle = style
+        settingsStore.interfaceStyle = style
     }
 
     func setAppLanguage(_ language: AppLanguage) {

@@ -8,6 +8,8 @@ struct ClipboardPanelView: View {
 
     @ObservedObject var model: ClipboardPanelModel
     let focusRequest: Int
+    /// Read from settings each time the panel opens.
+    var interfaceStyle: InterfaceStyle = .liquidGlass
     @FocusState private var searchFocused: Bool
     @Namespace private var tabNamespace
     @State private var hoveredIndex: Int?
@@ -27,7 +29,8 @@ struct ClipboardPanelView: View {
         .frame(width: Self.width, height: Self.height)
         .foregroundStyle(StudioTheme.textPrimary)
         .background(AskGlassBackground(
-            material: materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency),
+            material: materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
+                                                                   style: interfaceStyle),
             corner: 16, opaqueFill: AskTheme.launcherSurface
         ))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -37,6 +40,7 @@ struct ClipboardPanelView: View {
         )
         .overlay(alignment: .bottom) { noticeToast }
         .environment(\.askLauncherNumberHints, showingNumberHints)
+        .environment(\.interfaceStyle, interfaceStyle)
         .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
         .onAppear { searchFocused = true }
         .onChange(of: focusRequest) { _ in searchFocused = true }

@@ -191,6 +191,7 @@ struct AskShimmer: ViewModifier {
 // MARK: - Cards
 
 /// A card that lifts toward the pointer and gives way when pressed, on springs.
+/// Classic cards stay put and answer the pointer with their fill instead.
 struct AskLiftingCardStyle: ButtonStyle {
     static let hoverLift: CGFloat = 3
     static let pressedScale: CGFloat = 0.97
@@ -204,11 +205,13 @@ struct AskLiftingCardStyle: ButtonStyle {
         @State private var hovering = false
         @Environment(\.isEnabled) private var isEnabled
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        @Environment(\.interfaceStyle) private var style
 
         var body: some View {
+            let moves = !reduceMotion && style.usesGlass
             configuration.label
-                .scaleEffect(configuration.isPressed && !reduceMotion ? AskLiftingCardStyle.pressedScale : 1)
-                .offset(y: hovering && isEnabled && !reduceMotion ? -AskLiftingCardStyle.hoverLift : 0)
+                .scaleEffect(configuration.isPressed && moves ? AskLiftingCardStyle.pressedScale : 1)
+                .offset(y: hovering && isEnabled && moves ? -AskLiftingCardStyle.hoverLift : 0)
                 .animation(.spring(response: 0.38, dampingFraction: 0.62), value: hovering)
                 .animation(.spring(response: 0.26, dampingFraction: 0.6), value: configuration.isPressed)
                 .onHover { hovering = $0 }

@@ -31,6 +31,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private var launchTask: Task<Void, Never>?
     private var clickMonitor: Any?
     private var localClickMonitor: Any?
+    /// Restyles the launcher, the conversation window and the control panel
+    /// as soon as the interface style changes in Settings.
+    private lazy var interfaceStyle = InterfaceStyleObserver(settings: settings)
 
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary,
          llmService: LLMService? = nil, dockVisibility: DockVisibilityController = .shared,
@@ -240,7 +243,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             end: { [weak self] in self?.finishLauncherDrag() },
             reset: { [weak self] in self?.recenterLauncher() }
         )
-        let hosting = FirstMouseHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }, drag: drag))
+        let hosting = FirstMouseHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }, drag: drag)
+            .interfaceStyle(following: interfaceStyle))
         // Only `resizeLauncher` sizes the panel. Left to itself, the hosting view resizes the
         // window from its bottom edge as content changes, moving the top edge while typing.
         hosting.sizingOptions = []
@@ -361,7 +365,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.ask-conversations.toolbar")
             window.toolbarStyle = .unified
             window.titlebarSeparatorStyle = .none
-            let hosting = TransparentAskHostingView(rootView: AskConversationView(model: model))
+            let hosting = TransparentAskHostingView(rootView: AskConversationView(model: model)
+                .interfaceStyle(following: interfaceStyle))
             // The window owns its size: without this, resizing content (e.g. hiding
             // the sidebar) can make the hosting view resize or zoom the window.
             hosting.sizingOptions = []
@@ -437,7 +442,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 380, height: 60), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
             panel.level = .floating; panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
             panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-            panel.contentView = NSHostingView(rootView: AskControlView(model: model))
+            panel.contentView = NSHostingView(rootView: AskControlView(model: model)
+                .interfaceStyle(following: interfaceStyle))
             controlPanel = panel
         }
         if let frame = NSScreen.main?.visibleFrame { controlPanel?.setFrameOrigin(NSPoint(x: frame.midX - 190, y: frame.minY + 24)) }

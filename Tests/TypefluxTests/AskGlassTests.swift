@@ -101,10 +101,13 @@ struct AskGlassTests {
 
     @Test func menuCornerIsConcentricWithItsRows() {
         // The design board's menu: 18pt card corners around 10pt rows inset 6pt.
-        #expect(AskGlassCardSurface<EmptyView>.menuCorner == 18)
-        #expect(AskPopoverRow<EmptyView>.corner == 10)
-        #expect(AskPopoverRow<EmptyView>.corner + 6 <= AskGlassCardSurface<EmptyView>.menuCorner)
-        #expect(AskGlassCardSurface<EmptyView>.hoverCardCorner < AskGlassCardSurface<EmptyView>.menuCorner)
+        #expect(AskGlassCardSurface<EmptyView>.corner(.menu, style: .liquidGlass) == 18)
+        #expect(AskPopoverRow<EmptyView>.corner(style: .liquidGlass) == 10)
+        for style in InterfaceStyle.allCases {
+            let menu = AskGlassCardSurface<EmptyView>.corner(.menu, style: style)
+            #expect(AskPopoverRow<EmptyView>.corner(style: style) + 6 <= menu)
+            #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: style) < menu)
+        }
     }
 
     @Test func modelRowsShowOnlyImageCapability() {

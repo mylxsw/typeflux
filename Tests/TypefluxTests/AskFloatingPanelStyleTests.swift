@@ -116,7 +116,7 @@ struct AskFloatingPanelStyleTests {
     }
 
     private func writeMenuSnapshot(appearance: NSAppearance.Name, file: URL) async throws {
-        let menu = AskGlassCardSurface(corner: AskGlassCardSurface<EmptyView>.menuCorner) {
+        let menu = AskGlassCardSurface(kind: .menu) {
             VStack(spacing: 2) {
                 AskPopoverRow(title: "MiniMax M3", caption: "205K 上下文 · 16.4K 输出", selected: true, action: {})
                 AskPopoverRow(title: "DeepSeek Pro", caption: "205K 上下文 · 16.4K 输出", selected: false, action: {})

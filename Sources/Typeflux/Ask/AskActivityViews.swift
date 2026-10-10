@@ -24,6 +24,9 @@ struct AskActivityBlock: View {
     var startsExpanded: Bool?
     @State private var userExpanded: Bool?
     @State private var hovering = false
+    @Environment(\.interfaceStyle) private var style
+    /// The waiting card's corner: the glass card's, or the flat design's tighter one.
+    private var cardCorner: CGFloat { style.usesGlass ? Self.corner : 10 }
 
     /// Folded by default, even while working: the line itself names the step under way.
     private var expanded: Bool { userExpanded ?? startsExpanded ?? (status == .attention) }
@@ -132,13 +135,13 @@ struct AskActivityBlock: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: cardCorner, style: .continuous))
         // The card scrolls with the transcript, so it takes the glass card's
         // shape and hairline on an opaque surface: live glass belongs to the
         // floating controls layer.
-        .askInWindowGlass(corner: Self.corner, opaqueFill: AskTheme.raisedSurface)
+        .askInWindowGlass(corner: cardCorner, opaqueFill: AskTheme.raisedSurface)
         .environment(\.askGlassMaterialOverride, .opaque)
-        .overlay(RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
+        .overlay(RoundedRectangle(cornerRadius: cardCorner, style: .continuous)
             .strokeBorder(StudioTheme.warning.opacity(0.55)))
     }
 

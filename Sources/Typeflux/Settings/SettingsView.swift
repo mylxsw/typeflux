@@ -2052,16 +2052,16 @@ struct StudioView: View {
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
 
                     StudioSettingRow(
-                        title: L("settings.overlayStyle.title"),
-                        subtitle: L("settings.overlayStyle.subtitle")
+                        title: L("settings.interfaceStyle.title"),
+                        subtitle: L("settings.interfaceStyle.subtitle")
                     ) {
                         StudioSegmentedPicker(
-                            options: OverlayStyle.allCases.map {
+                            options: InterfaceStyle.allCases.map {
                                 (label: $0.displayName, value: $0)
                             },
                             selection: Binding(
-                                get: { viewModel.overlayStyle },
-                                set: viewModel.setOverlayStyle
+                                get: { viewModel.interfaceStyle },
+                                set: viewModel.setInterfaceStyle
                             )
                         )
                         .frame(width: StudioTheme.Layout.appearancePickerWidth)

@@ -586,6 +586,35 @@ covered by `AskHarnessUITests`. `renderToolActivityStates` (opt-in with
 `TYPEFLUX_ASK_SNAPSHOTS`) captures every state:
 `docs/images/ask-tool-activity-{dark,light}.png`.
 
+## Interface style: Liquid Glass or Classic (GUL-309)
+
+Settings › General › **Interface style** (界面风格; formerly "capsule style") picks
+the visual language of every Typeflux surface outside the settings window: the
+recording capsule, the launcher, the conversation window, the clipboard panel
+and their menus and hover cards. It is stored under the existing
+`ui.overlayStyle` key (`liquidGlass` / `classic`), so earlier choices carry over,
+and `InterfaceStyleObserver` applies a change to open windows at once.
+
+Classic is the flat design macOS used before Liquid Glass. The layout is the glass
+design's; only the material changes (`AskClassicStyle.swift`):
+
+- Every surface is opaque: `AskGlassMaterial.resolve(…, style: .classic)` is
+  always `.opaque`, the window canvas is `AskClassic.canvas` with no desktop blur,
+  and there is no rim light, frost or press/lift spring.
+- The sidebar, usage and workflow panels are flush, full-height columns divided by
+  a hairline instead of inset glass panels (`askSidePanel`). As drawers over the
+  conversation they keep a shadow.
+- The title row is an opaque bar ruled off from the transcript; title and
+  actions stand on it without glass pills, with square hover washes.
+- Cards, the composer, menus and the ⌘K palette are solid with a hairline
+  border and tighter corners (`AskStyleMetrics.classic`: composer 12, cards 10,
+  menus 10, palette 12, history rows 32pt tall with 6pt corners and a grey
+  selection). Only floating surfaces (menus, palette, drawers) cast shadows.
+
+`AskClassicStyleVisualTests` renders both styles in both appearances (opt-in with
+`TYPEFLUX_CLASSIC_SCREENSHOTS=<dir>`); `InterfaceStyleTests` covers the mapping,
+the observer and the settings copy.
+
 ## Model and reasoning-effort chip (GUL-193)
 
 The composer shows one chip, "model · level" (only the model for Auto); the

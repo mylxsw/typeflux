@@ -72,8 +72,10 @@ final class AskGlassMenuPresenter {
         self.panel = panel
         let hosting = HostingView(rootView: AnyView(
             // Menus open above their button, so they grow out of its corner.
-            AskGlassCardSurface(corner: AskGlassCardSurface<EmptyView>.menuCorner) { content }
+            AskGlassCardSurface(kind: .menu) { content }
                 .askPopIn(anchor: .bottomLeading)
+                // The panel is outside the anchor's view tree, so it takes the anchor's style.
+                .environment(\.interfaceStyle, AskHoverAnchor.style(of: anchor))
         ))
         hosting.onResize = { [weak self] in self?.place() }
         panel.contentView = hosting

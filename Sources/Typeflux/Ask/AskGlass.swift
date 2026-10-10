@@ -3,18 +3,18 @@ import SwiftUI
 
 /// What the launcher card is made of. Liquid Glass exists only on macOS 26, so
 /// earlier systems fall back to the adaptive popover blur, and Reduce Transparency
-/// restores the opaque surface on every version.
+/// or the classic interface style restores the opaque surface on every version.
 enum AskGlassMaterial: Equatable {
     /// macOS 26+: system Liquid Glass with its own refraction and highlights.
     case liquidGlass
     /// macOS 13–15: `NSVisualEffectView(.popover)` blending with the desktop behind the panel.
     case visualEffect
-    /// Reduce Transparency: the surface's opaque fill.
+    /// Reduce Transparency or the classic style: the surface's opaque fill.
     case opaque
 
-    static func resolve(reduceTransparency: Bool,
+    static func resolve(reduceTransparency: Bool, style: InterfaceStyle = .liquidGlass,
                         supportsLiquidGlass: Bool = systemSupportsLiquidGlass) -> AskGlassMaterial {
-        if reduceTransparency { return .opaque }
+        if reduceTransparency || !style.usesGlass { return .opaque }
         return supportsLiquidGlass ? .liquidGlass : .visualEffect
     }
 
@@ -182,23 +182,29 @@ struct AskGlassBackground: View {
 /// Glass on macOS 26 and the adaptive popover blur before it; with Reduce Transparency an
 /// opaque popover surface with a hairline border.
 struct AskGlassCardSurface<Content: View>: View {
-    static var hoverCardCorner: CGFloat { 14 }
-    /// Concentric with the 12pt menu rows inset by 6.
-    static var menuCorner: CGFloat { 18 }
+    enum Kind { case hoverCard, menu }
 
-    var corner: CGFloat
+    var kind: Kind
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var materialOverride
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.interfaceStyle) private var style
     let content: Content
 
-    init(corner: CGFloat = Self.hoverCardCorner, @ViewBuilder content: () -> Content) {
-        self.corner = corner
+    init(kind: Kind = .hoverCard, @ViewBuilder content: () -> Content) {
+        self.kind = kind
         self.content = content()
     }
 
+    /// Menus are concentric with their rows at a 6pt inset; hover cards are tighter.
+    static func corner(_ kind: Kind, style: InterfaceStyle) -> CGFloat {
+        kind == .menu ? style.ask.menuCorner : style.ask.hoverCardCorner
+    }
+
     var body: some View {
-        let material = materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
+        let corner = Self.corner(kind, style: style)
+        let material = materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
+                                                                    style: style)
         content
             .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
             .background(AskGlassBackground(material: material, corner: corner, opaqueFill: AskTheme.popoverSurface,
@@ -223,12 +229,39 @@ struct AskInWindowGlass: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var materialOverride
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.interfaceStyle) private var style
 
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: corner, style: cornerStyle) }
 
+    /// Classic surfaces are flat: only what floats above the window keeps a shadow.
+    static func elevation(_ elevation: AskElevation?, style: InterfaceStyle) -> AskElevation? {
+        style.usesGlass || elevation == .popover ? elevation : nil
+    }
+
+    @ViewBuilder
     func body(content: Content) -> some View {
-        let material = materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
+        if style.usesGlass {
+            glass(content)
+        } else {
+            classic(content)
+        }
+    }
+
+    /// A solid fill with a hairline edge; no frost and no rim light.
+    private func classic(_ content: Content) -> some View {
         content
+            .background(shape.fill(opaqueFill).allowsHitTesting(false))
+            .background {
+                if let elevation = Self.elevation(elevation, style: style) {
+                    AskOuterShadow(shape: shape, elevation: elevation)
+                }
+            }
+            .overlay(shape.strokeBorder(AskClassic.cardBorder).allowsHitTesting(false))
+    }
+
+    private func glass(_ content: Content) -> some View {
+        let material = materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
+        return content
             .background(AskGlassBackground(material: material, corner: corner, opaqueFill: opaqueFill,
                                            placement: .inWindow, cornerStyle: cornerStyle))
             .background {
@@ -265,9 +298,24 @@ extension View {
         modifier(AskInWindowGlass(corner: corner, opaqueFill: opaqueFill, elevation: elevation))
     }
 
-    /// A pill of the given height: header capsules and the stop button.
+    /// A glass pill of the given height around title-row controls. Classic
+    /// title rows are flat, so there the controls stand on the row itself.
     func askInWindowGlassPill(height: CGFloat) -> some View {
-        modifier(AskInWindowGlass(corner: height / 2, opaqueFill: AskTheme.glassFill, cornerStyle: .circular,
-                                  elevation: .control))
+        modifier(AskInWindowGlassPill(height: height))
+    }
+}
+
+struct AskInWindowGlassPill: ViewModifier {
+    var height: CGFloat
+    @Environment(\.interfaceStyle) private var style
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if style.usesGlass {
+            content.modifier(AskInWindowGlass(corner: height / 2, opaqueFill: AskTheme.glassFill,
+                                              cornerStyle: .circular, elevation: .control))
+        } else {
+            content
+        }
     }
 }
