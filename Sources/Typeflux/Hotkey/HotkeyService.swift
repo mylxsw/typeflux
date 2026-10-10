@@ -6,6 +6,7 @@ enum HotkeyAction {
     case ask
     case personaPicker
     case history
+    case screenshot
 }
 
 struct HotkeyEventContext: Sendable, Equatable {
@@ -33,6 +34,7 @@ protocol HotkeyService: AnyObject {
     var onAskPressEnded: (() -> Void)? { get set }
     var onPersonaPickerRequested: (() -> Void)? { get set }
     var onHistoryRequested: (() -> Void)? { get set }
+    var onScreenshotRequested: (() -> Void)? { get set }
     var onError: ((String) -> Void)? { get set }
 
     func start()
@@ -46,5 +48,6 @@ extension HotkeyService {
     var onAuxiliaryPressBegan: ((HotkeyEventContext) -> Void)? { get { nil } set {} }
     var onAuxiliaryPressEnded: ((HotkeyEventContext) -> Void)? { get { nil } set {} }
     var onAuxiliaryPromoted: ((HotkeyEventContext) -> Void)? { get { nil } set {} }
+    var onScreenshotRequested: (() -> Void)? { get { nil } set {} }
     func settleActivationGesture() {}
 }

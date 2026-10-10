@@ -28,7 +28,7 @@ struct ScreenSnapshot {
     }
 
     var displays: [Display]
-    /// On-screen windows, never including Typeflux's own.
+    /// On-screen windows front to back, never including Typeflux's own.
     var windows: [Window]
 
     func display(containing point: CGPoint) -> Display? {

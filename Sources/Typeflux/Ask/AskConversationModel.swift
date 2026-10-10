@@ -302,6 +302,8 @@ final class AskConversationModel: ObservableObject {
 
     var onShowConversation: (() -> Void)?
     var onOpenSettings: ((StudioSection) -> Void)?
+    /// Starts a screenshot; set by the app, which owns the screenshot coordinator.
+    var onStartScreenshot: ((ScreenshotMode) -> Void)?
     var onSignIn: () -> Void = { LoginWindowController.shared.show() }
     var onControlChanged: ((Bool) -> Void)?
     /// Called when Typeflux Cloud reports no credits left, so the account balance can refresh.

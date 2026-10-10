@@ -116,6 +116,12 @@ struct HotkeyBinding: Codable, Equatable, Identifiable {
         modifierFlags: UInt(NSEvent.ModifierFlags.command.union(.option).rawValue)
     )
 
+    /// ⌥⌘A: free in most apps, and the default the screenshot design settled on.
+    static let defaultScreenshot = HotkeyBinding(
+        keyCode: 0,
+        modifierFlags: UInt(NSEvent.ModifierFlags.command.union(.option).rawValue)
+    )
+
     static let rightCommandActivation = HotkeyBinding(
         keyCode: rightCommandKeyCode,
         modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue)

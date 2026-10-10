@@ -136,6 +136,14 @@ final class AppCoordinator {
             }
         }
 
+        let screenshotCoordinator = di.screenshotCoordinator
+        di.hotkeyService.onScreenshotRequested = { [weak screenshotCoordinator] in
+            screenshotCoordinator?.start(mode: .region)
+        }
+        di.askConversationWindowController?.model.onStartScreenshot = { [weak screenshotCoordinator] mode in
+            screenshotCoordinator?.start(mode: mode)
+        }
+
         let mouseVoiceInputController = MouseVoiceInputController(
             settingsStore: settingsStore,
             targetResolver: MouseVoiceTargetResolver(injector: di.textInjector)
@@ -173,6 +181,9 @@ final class AppCoordinator {
             },
             onOpenAskConversations: { [weak self] in
                 self?.di.askConversationWindowController?.showConversation()
+            },
+            onScreenshot: { [weak screenshotCoordinator] in
+                screenshotCoordinator?.start(mode: .region)
             }
         )
         statusBarController?.start()

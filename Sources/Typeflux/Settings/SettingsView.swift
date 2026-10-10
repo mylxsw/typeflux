@@ -355,6 +355,7 @@ struct StudioView: View {
         case ask
         case persona
         case history
+        case screenshot
     }
 
     private enum PersonaAppPickerScope: String, CaseIterable, Sendable {
@@ -2255,6 +2256,34 @@ struct StudioView: View {
                             viewModel.unsetHistoryHotkey()
                         }
                     )
+
+                    shortcutConfigurationRow(
+                        configuration: ShortcutConfiguration(
+                            title: L("settings.shortcuts.screenshot.title"),
+                            subtitle: L("settings.shortcuts.screenshot.subtitle"),
+                            footnote: L("settings.shortcuts.screenshot.footnote"),
+                            icon: "camera.viewfinder",
+                            badgeSymbol: "crop",
+                            binding: viewModel.screenshotHotkey,
+                            isDefault: viewModel.screenshotHotkey?.signature
+                                == HotkeyBinding.defaultScreenshot.signature,
+                            isThisRecording: recordingTarget == .screenshot
+                        ),
+                        onStartRecording: {
+                            recordingTarget = .screenshot
+                            recorder.start { binding in
+                                viewModel.setScreenshotHotkey(binding)
+                                recordingTarget = nil
+                            }
+                        },
+                        onReset: {
+                            viewModel.resetScreenshotHotkey()
+                        },
+                        onUnset: {
+                            viewModel.unsetScreenshotHotkey()
+                        },
+                        showsScreenshotSaveLocation: true
+                    )
                 }
 
                 if recorder.isRecording {
@@ -3103,7 +3132,8 @@ struct StudioView: View {
         onReset: @escaping () -> Void,
         onUnset: @escaping () -> Void,
         showsQuickInputSetting: Bool = false,
-        showsLauncherPositionSetting: Bool = false
+        showsLauncherPositionSetting: Bool = false,
+        showsScreenshotSaveLocation: Bool = false
     ) -> some View {
         StudioCard(padding: StudioTheme.Insets.cardDense) {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
@@ -3171,6 +3201,34 @@ struct StudioView: View {
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
                     launcherPositionSetting
                 }
+
+                if showsScreenshotSaveLocation {
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    screenshotSaveLocationSetting
+                }
+            }
+        }
+    }
+
+    /// The folder ⌘S saves screenshots into.
+    private var screenshotSaveLocationSetting: some View {
+        StudioSettingRow(
+            title: L("settings.shortcuts.screenshot.saveLocation.title"),
+            subtitle: viewModel.screenshotSaveDirectory.path
+        ) {
+            HStack(spacing: StudioTheme.Spacing.medium) {
+                if viewModel.screenshotSaveDirectory.standardizedFileURL
+                    != SettingsStore.defaultScreenshotSaveDirectory.standardizedFileURL {
+                    Button(L("settings.shortcuts.screenshot.saveLocation.reset")) {
+                        viewModel.resetScreenshotSaveDirectory()
+                    }
+                    .buttonStyle(.link)
+                    .fixedSize()
+                }
+                Button(L("settings.shortcuts.screenshot.saveLocation.choose")) {
+                    viewModel.chooseScreenshotSaveDirectory()
+                }
+                .fixedSize()
             }
         }
     }
@@ -3270,6 +3328,8 @@ struct StudioView: View {
             L("settings.shortcuts.recordingPersona")
         case .history:
             L("settings.shortcuts.recordingHistory")
+        case .screenshot:
+            L("settings.shortcuts.recordingScreenshot")
         case nil:
             L("settings.shortcuts.recordingGeneric")
         }

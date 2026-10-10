@@ -304,6 +304,9 @@ struct AskComposer: View {
                 performPluginAction(.init(kind: .systemCommand(command), title: entry.title, symbol: entry.symbol))
             } else if close, entry.keyword.pluginID == AskSettingsPlugin.id {
                 performPluginAction(.init(kind: .openSettings, title: entry.title, symbol: entry.symbol))
+            } else if close, entry.keyword.pluginID == AskScreenshotPlugin.id {
+                performPluginAction(.init(kind: .capture(mode: ScreenshotMode(options: entry.keyword.options)),
+                                          title: entry.title, symbol: entry.symbol))
             } else if close, entry.keyword.pluginID == AskOpenChatPlugin.id {
                 model.enterLauncherSearchEntry(entry)
                 performPluginAction(.init(kind: .openChat, title: entry.title, symbol: entry.symbol))
@@ -558,6 +561,12 @@ struct AskComposer: View {
         }
         if pluginDisplay?.hint?.pluginID == AskOpenChatPlugin.id || plugins.keyword?.pluginID == AskOpenChatPlugin.id {
             openChat()
+            return
+        }
+        // `jt` alone starts at once instead of entering the keyword first.
+        if let hint = pluginDisplay?.hint, hint.pluginID == AskScreenshotPlugin.id {
+            performPluginAction(.init(kind: .capture(mode: ScreenshotMode(options: hint.options)), title: "",
+                                      symbol: ""))
             return
         }
         if pluginDisplay?.hint != nil { _ = acceptPluginHint(); return }

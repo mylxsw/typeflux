@@ -150,6 +150,8 @@ struct AskPluginAction: Equatable, Sendable {
         case openNotes(id: UUID?)
         /// Opens a saved note in a result window (`nb` keyword).
         case openNote(UUID)
+        /// Closes the launcher, then starts a screenshot (`jt` keyword).
+        case capture(mode: ScreenshotMode)
     }
 
     enum Shortcut: Equatable, Sendable {

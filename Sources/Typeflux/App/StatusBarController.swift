@@ -7,6 +7,7 @@ final class StatusBarController: NSObject {
         static let transcriptionHistory = 9002
         static let personas = 9003
         static let textTransformation = 9004
+        static let screenshot = 9005
     }
 
     private enum MenuValue {
@@ -32,6 +33,7 @@ final class StatusBarController: NSObject {
     private let onRetryHistory: (HistoryRecord) -> Void
     private let onOpenOnboarding: () -> Void
     private let onOpenAskConversations: () -> Void
+    private let onScreenshot: () -> Void
 
     private var statusItem: NSStatusItem?
     private(set) var menu: NSMenu?
@@ -51,7 +53,8 @@ final class StatusBarController: NSObject {
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
         onOpenOnboarding: @escaping () -> Void = {},
-        onOpenAskConversations: @escaping () -> Void = {}
+        onOpenAskConversations: @escaping () -> Void = {},
+        onScreenshot: @escaping () -> Void = {}
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
@@ -62,6 +65,7 @@ final class StatusBarController: NSObject {
         self.onRetryHistory = onRetryHistory
         self.onOpenOnboarding = onOpenOnboarding
         self.onOpenAskConversations = onOpenAskConversations
+        self.onScreenshot = onScreenshot
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
     }
 
@@ -188,6 +192,7 @@ final class StatusBarController: NSObject {
         menu.addItem(makeItem(title: L("menu.openVoiceStudio"), action: #selector(openAskConversations)))
         menu.addItem(makeItem(title: L("menu.addVocabulary"), action: #selector(addVocabularyTerm)))
         menu.addItem(makeItem(title: L("menu.notes"), action: #selector(openNotes)))
+        menu.addItem(makeScreenshotItem())
         let historyItem = NSMenuItem(title: L("menu.transcriptionHistory"), action: nil, keyEquivalent: "")
         historyItem.tag = MenuTag.transcriptionHistory
         historyItem.submenu = buildTranscriptionHistoryMenu()
@@ -383,6 +388,25 @@ final class StatusBarController: NSObject {
         return item
     }
 
+    /// "Screenshot", showing its global shortcut when it is a plain key chord.
+    func makeScreenshotItem() -> NSMenuItem {
+        let item = makeItem(title: L("menu.screenshot"), action: #selector(takeScreenshot))
+        item.tag = MenuTag.screenshot
+        applyScreenshotShortcut(to: item)
+        return item
+    }
+
+    private func applyScreenshotShortcut(to item: NSMenuItem) {
+        let equivalent = settingsStore.screenshotHotkey.flatMap(StatusBarMenuSupport.keyEquivalent(for:))
+        item.keyEquivalent = equivalent?.key ?? ""
+        item.keyEquivalentModifierMask = equivalent?.modifiers ?? []
+    }
+
+    @objc private func takeScreenshot() {
+        // Let the menu close before the displays freeze.
+        DispatchQueue.main.async { [onScreenshot] in onScreenshot() }
+    }
+
     private func makeSettingsItem() -> NSMenuItem {
         makeItem(title: L("menu.settings"), action: #selector(showConfiguration))
     }
@@ -553,6 +577,11 @@ final class StatusBarController: NSObject {
 
 extension StatusBarController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
+        // The shortcut may have changed in Settings since the menu was built.
+        if let item = menu.item(withTag: MenuTag.screenshot) {
+            applyScreenshotShortcut(to: item)
+        }
+
         if menu.title == L("menu.transcriptionHistory") {
             menu.removeAllItems()
             populateTranscriptionHistoryMenu(menu)
@@ -573,6 +602,19 @@ extension StatusBarController: NSMenuDelegate {
 
 enum StatusBarMenuSupport {
     private static let titleTextLimit = 42
+
+    /// A menu key equivalent for a shortcut that is modifiers plus one letter or digit;
+    /// nil for modifier-only, double-press and other keys a menu cannot show.
+    static func keyEquivalent(for binding: HotkeyBinding) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
+        guard (binding.pressCount ?? 1) == 1, binding.modifierKeyCodes == nil, !binding.isModifierOnlyTrigger,
+              let key = HotkeyFormat.components(binding).last, key.count == 1,
+              key.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) })
+        else { return nil }
+        let flags = NSEvent.ModifierFlags(rawValue: binding.modifierFlags)
+            .intersection([.command, .option, .control, .shift])
+        guard !flags.isEmpty else { return nil }
+        return (key.lowercased(), flags)
+    }
 
     static func localModelDownloadTitle(for status: LocalModelDownloadProgressStatus) -> String? {
         switch status {

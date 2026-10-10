@@ -14,6 +14,7 @@ enum HotkeyGestureEvent: Equatable {
     case cancel(HotkeyAction)
     case personaRequested
     case historyRequested
+    case screenshotRequested
 }
 
 struct HotkeyGestureArbiter {
@@ -60,6 +61,7 @@ struct HotkeyGestureArbiter {
         askHotkey: HotkeyBinding?,
         personaHotkey: HotkeyBinding?,
         historyHotkey: HotkeyBinding? = nil,
+        screenshotHotkey: HotkeyBinding? = nil,
         auxiliaryHotkey: HotkeyBinding? = nil
     ) -> Bool {
         if let auxiliaryHotkey {
@@ -93,17 +95,10 @@ struct HotkeyGestureArbiter {
                keyCode == askHotkey.keyCode {
                 return true
             }
-            if let personaHotkey,
-               personaHotkey.isModifierOnlyTrigger,
-               keyCode == personaHotkey.keyCode {
-                return true
+            // One-shot shortcuts: the persona picker, history and screenshot.
+            return [personaHotkey, historyHotkey, screenshotHotkey].contains { hotkey in
+                hotkey.map { $0.isModifierOnlyTrigger && keyCode == $0.keyCode } ?? false
             }
-            if let historyHotkey,
-               historyHotkey.isModifierOnlyTrigger,
-               keyCode == historyHotkey.keyCode {
-                return true
-            }
-            return false
         case .keyDown:
             if let askHotkey, askHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags) {
                 return true
@@ -113,10 +108,9 @@ struct HotkeyGestureArbiter {
                activationHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags) {
                 return true
             }
-            if let personaHotkey, personaHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags) {
-                return true
-            }
-            if let historyHotkey, historyHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags) {
+            if [personaHotkey, historyHotkey, screenshotHotkey].contains(where: {
+                $0?.matches(keyCode: keyCode, modifierFlags: modifierFlags) == true
+            }) {
                 return true
             }
             if case .active(.ask) = phase, let askHotkey, askHotkey.keyCode == keyCode {
@@ -151,6 +145,7 @@ struct HotkeyGestureArbiter {
         askHotkey: HotkeyBinding?,
         personaHotkey: HotkeyBinding?,
         historyHotkey: HotkeyBinding? = nil,
+        screenshotHotkey: HotkeyBinding? = nil,
         auxiliaryHotkey: HotkeyBinding? = nil,
         timestamp: TimeInterval = ProcessInfo.processInfo.systemUptime
     ) -> [HotkeyGestureEvent] {
@@ -192,6 +187,10 @@ struct HotkeyGestureArbiter {
                 : [.historyRequested]
         }
 
+        if let screenshotHotkey, screenshotHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags) {
+            return requestDiscreteAction(.screenshotRequested)
+        }
+
         return []
     }
 
@@ -229,6 +228,7 @@ struct HotkeyGestureArbiter {
         askHotkey: HotkeyBinding?,
         personaHotkey: HotkeyBinding? = nil,
         historyHotkey: HotkeyBinding? = nil,
+        screenshotHotkey: HotkeyBinding? = nil,
         auxiliaryHotkey: HotkeyBinding? = nil,
         timestamp: TimeInterval = Date().timeIntervalSinceReferenceDate
     ) -> [HotkeyGestureEvent] {
@@ -260,9 +260,7 @@ struct HotkeyGestureArbiter {
             suppressCurrentModifierTap = false
             if shouldDeferModifierActivation(
                 activationHotkey: activationHotkey,
-                askHotkey: askHotkey,
-                personaHotkey: personaHotkey,
-                historyHotkey: historyHotkey,
+                competingHotkeys: [askHotkey, personaHotkey, historyHotkey, screenshotHotkey].compactMap(\.self),
                 auxiliaryHotkey: auxiliaryHotkey
             ) {
                 phase = .pendingModifierActivation
@@ -304,6 +302,12 @@ struct HotkeyGestureArbiter {
             return shouldCancelPendingActivation
                 ? [.cancel(.activation), .historyRequested]
                 : [.historyRequested]
+        }
+
+        if let screenshotHotkey,
+           screenshotHotkey.isModifierOnlyTrigger,
+           screenshotHotkey.matches(keyCode: keyCode, modifierFlags: modifierFlags) {
+            return requestDiscreteAction(.screenshotRequested)
         }
 
         if case .active(.ask) = phase,
@@ -353,6 +357,15 @@ struct HotkeyGestureArbiter {
         }
     }
 
+    /// A one-shot shortcut (no press and release phases) fires while idle, and
+    /// wins over a modifier activation still waiting to settle.
+    private mutating func requestDiscreteAction(_ event: HotkeyGestureEvent) -> [HotkeyGestureEvent] {
+        guard phase == .idle || phase == .pendingModifierActivation else { return [] }
+        let shouldCancelPendingActivation = phase == .pendingModifierActivation
+        phase = .idle
+        return shouldCancelPendingActivation ? [.cancel(.activation), event] : [event]
+    }
+
     mutating func handlePendingModifierActivationTimeout() -> [HotkeyGestureEvent] {
         guard phase == .pendingModifierActivation else { return [] }
         phase = .active(.activation)
@@ -361,9 +374,7 @@ struct HotkeyGestureArbiter {
 
     private func shouldDeferModifierActivation(
         activationHotkey: HotkeyBinding,
-        askHotkey: HotkeyBinding?,
-        personaHotkey: HotkeyBinding?,
-        historyHotkey: HotkeyBinding?,
+        competingHotkeys: [HotkeyBinding],
         auxiliaryHotkey: HotkeyBinding?
     ) -> Bool {
         guard activationHotkey.isModifierOnlyTrigger else { return false }
@@ -371,7 +382,6 @@ struct HotkeyGestureArbiter {
            auxiliaryHotkey.modifierFlags & activationHotkey.modifierFlags == activationHotkey.modifierFlags {
             return true
         }
-        let competingHotkeys = [askHotkey, personaHotkey, historyHotkey].compactMap(\.self)
         return competingHotkeys.contains { hotkey in
             hotkey.modifierFlags == activationHotkey.modifierFlags
                 && (hotkey.keyCode != activationHotkey.keyCode || hotkey.isModifierDoubleTapTrigger)
