@@ -111,4 +111,27 @@ final class AccountBillingFlowTests: XCTestCase {
         XCTAssertTrue(links.isEmpty)
         XCTAssertTrue(failures.isEmpty)
     }
+
+    func testCancellationErrorIsSilent() async {
+        await AccountBillingFlow.open(
+            { throw CancellationError() },
+            onLink: { _ in XCTFail("Cancellation must not open a browser") },
+            onFailure: { _ in XCTFail("Cancellation must not display an error") }
+        )
+    }
+
+    func testAlreadyCancelledCallerDoesNotSubmitARequest() async {
+        let task = Task { @MainActor in
+            await AccountBillingFlow.open(
+                {
+                    XCTFail("An already cancelled caller must not start a request")
+                    return URL(string: "https://billing.example")!
+                },
+                onLink: { _ in XCTFail("Cancellation must not open a browser") },
+                onFailure: { _ in XCTFail("Cancellation must not display an error") }
+            )
+        }
+        task.cancel()
+        await task.value
+    }
 }

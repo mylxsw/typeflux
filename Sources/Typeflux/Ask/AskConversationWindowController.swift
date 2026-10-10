@@ -15,6 +15,7 @@ private final class FirstMouseHostingView<Content: View>: NSHostingView<Content>
 
 @MainActor
 final class AskConversationWindowController: NSObject, NSWindowDelegate {
+    var confirmRunningClose: (NSAlert) -> NSApplication.ModalResponse = { $0.runModal() }
     let model: AskConversationModel
     private let dockVisibility: DockVisibilityController
     private let settings: SettingsStore
@@ -26,9 +27,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private let launcherHeightAnimator = AskLauncherHeightAnimator()
     /// The top edge the launcher opened with; every resize keeps it.
     private var launcherTop: CGFloat?
-    private var conversationWindow: NSWindow?
+    private(set) var conversationWindow: NSWindow?
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
+    private(set) var conversationRefreshTask: Task<Void, Never>?
+    private(set) var maintenanceTasks: [Task<Void, Never>] = []
     private var clickMonitor: Any?
     private var localClickMonitor: Any?
     /// Restyles the launcher, the conversation window and the control panel
@@ -37,21 +40,22 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary,
          llmService: LLMService? = nil, dockVisibility: DockVisibilityController = .shared,
-         launcherInputSource: any AskLauncherInputSourceSelecting = SystemAskLauncherInputSourceSelector()) throws {
+         launcherInputSource: any AskLauncherInputSourceSelecting = SystemAskLauncherInputSourceSelector(),
+         services: AskConversationWindowServices? = nil) throws {
         self.dockVisibility = dockVisibility
         self.settings = settings
         self.launcherInputSource = launcherInputSource
-        conversationFrameAutosaveName = "AskConversationWorkspace"
-        let tools = AskLocalTools(registry: registry, settings: settings)
+        conversationFrameAutosaveName = services?.frameAutosaveName ?? "AskConversationWorkspace"
+        let tools = services?.tools ?? AskLocalTools(registry: registry, settings: settings)
         let sandbox = tools.sandbox
-        Task.detached(priority: .utility) { sandbox.pruneWorkspaces() }
         self.tools = tools
-        let cache = try AskConversationCache(url: AskConversationCache.defaultURL())
+        let cache = try services?.cache ?? AskConversationCache(url: AskConversationCache.defaultURL())
         let deviceKey = "ask.deviceId"
         let deviceId = settings.defaults.string(forKey: deviceKey) ?? UUID().uuidString
         settings.defaults.set(deviceId, forKey: deviceKey)
         let search = AskSearchSettings(defaults: settings.defaults)
-        let api = AskRoutedAPI(cloud: AskAPIClient(), local: AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
+        let api: any AskAPI = services?.api ?? AskRoutedAPI(
+            cloud: AskAPIClient(), local: AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
             search.configuration
         }), budgetEnabled: settings.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
             let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
@@ -60,14 +64,15 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                                     known: model?.contextWindowTokens != nil)
         }))
         model = AskConversationModel(api: api, cache: cache, tools: tools,
-                                     capture: AskContextCapture(injector: injector,
+                                     capture: services?.capture ?? AskContextCapture(injector: injector,
                                                                 memory: AskMemoryProvider(settings: settings)),
                                      deviceId: deviceId,
-                                     modelLibrary: modelLibrary) {
+                                     modelLibrary: modelLibrary, session: services?.session ?? {
             // Signing in is optional: without a Cloud session every conversation stays on this Mac.
             AskRoutedAPI.session(token: AuthState.shared.accessToken, owner: AuthState.shared.userProfile?.id)
-        }
+        })
         super.init()
+        maintenanceTasks.append(Task.detached(priority: .utility) { sandbox.pruneWorkspaces() })
         // Keyword plugins: translation falls back to the text-processing model, and
         // ⌥Return types results into the app the launcher came from.
         if let llmService {
@@ -79,21 +84,23 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
             model.promptAI = AskLLMTextGenerator(service: llmService)
         }
-        model.workflows = AskWorkflowStore.shared
-        let authoring = AskWorkflowAuthoringStore(workflows: .shared, owner: { GlobalSoulOwner.currentID })
+        let workflows = services?.workflows ?? AskWorkflowStore.shared
+        model.workflows = workflows
+        let authoring = AskWorkflowAuthoringStore(workflows: workflows, owner: { GlobalSoulOwner.currentID })
         tools.workflowAuthoring = authoring
         model.workflowAuthoring = authoring
         authoring.onChange = { [weak model] in model?.objectWillChange.send() }
         // The word book: words the translation plugin looked up, and the ones starred.
-        let wordBook = SQLiteAskWordBookStore(url: SQLiteAskWordBookStore.defaultURL())
+        let wordBook = services?.wordBook ?? SQLiteAskWordBookStore(url: SQLiteAskWordBookStore.defaultURL())
         // Forever keeps everything; `purgeHistory(before: nil)` would clear it instead.
         if let cutoff = settings.askWordBookRetention.cutoff(now: Date()) {
-            DispatchQueue.global(qos: .utility).async { wordBook.purgeHistory(before: cutoff) }
+            maintenanceTasks.append(Task.detached(priority: .utility) { wordBook.purgeHistory(before: cutoff) })
         }
         model.wordBook = AskWordBookRecorder(store: wordBook) { [weak settings] in
             settings?.askWordBookRecordsHistory ?? true
         }
-        AskWordBookWindowController.shared.configure(
+        let wordBookWindow = services?.wordBookWindow ?? AskWordBookWindowController.shared
+        wordBookWindow.configure(
             store: wordBook, dictionary: model.translationAI as? any AskWordLookingUp, settings: settings,
             askAI: { [weak model] prompt in
                 // A new conversation about the word, without the launcher's selection or screenshot.
@@ -106,20 +113,22 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             if case .notApplied = result { throw TextDeliveryError.noInput }
         }
         // Saved AI prompt results, and the windows results and notes open in.
-        let notes = SQLiteAskNoteStore(url: SQLiteAskNoteStore.defaultURL())
+        let notes = services?.notes ?? SQLiteAskNoteStore(url: SQLiteAskNoteStore.defaultURL())
         model.notes = notes
         let askAboutResult: @MainActor (String) -> Void = { [weak model] prompt in
             // A new conversation about the result, without the launcher's selection or screenshot.
             model?.launcherDraft = AskDraft(text: prompt, includeScreenshot: false, selection: nil)
             model?.submitLauncher()
         }
-        AskNotesWindowController.shared.configure(store: notes, askAI: askAboutResult) { [weak settings] in
+        let notesWindow = services?.notesWindow ?? AskNotesWindowController.shared
+        notesWindow.configure(store: notes, askAI: askAboutResult) { [weak settings] in
             settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
         }
-        AskResultWindowController.shared.appearance = { [weak settings] in
+        let resultWindow = services?.resultWindow ?? AskResultWindowController.shared
+        resultWindow.appearance = { [weak settings] in
             settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
         }
-        AskResultWindowController.shared.services = AskResultDocument.Services(
+        resultWindow.services = AskResultDocument.Services(
             saveNote: { draft in
                 let note = AskNote(draft: draft, at: Date())
                 return notes.save(note) ? note.id : nil
@@ -130,7 +139,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 return true
             },
             noteExists: { notes.note(id: $0) != nil },
-            openNotes: { AskNotesWindowController.shared.show(selecting: $0) },
+            openNotes: { notesWindow.show(selecting: $0) },
             insert: { text, bundleID in
                 guard let bundleID,
                       let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first
@@ -294,6 +303,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     /// The launcher panel once it has been shown, for tests that move it.
     var launcherWindow: NSWindow? { launcher }
 
+    var controlWindow: NSWindow? { controlPanel }
+
     /// Whether the launcher is still moving to the height its content last asked for.
     var launcherIsResizing: Bool { launcherHeightAnimator.isAnimating }
 
@@ -398,7 +409,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
         conversationWindow.makeKeyAndOrderFront(nil)
         focusEditor(in: conversationWindow)
-        Task { await model.refreshHistory(); await model.loadSavedChatDrafts() }
+        conversationRefreshTask = Task { await model.refreshHistory(); await model.loadSavedChatDrafts() }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -410,7 +421,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             alert.addButton(withTitle: L("ask.close.continue"))
             alert.addButton(withTitle: L("ask.close.stop"))
             alert.addButton(withTitle: L("ask.close.cancel"))
-            switch alert.runModal() {
+            switch confirmRunningClose(alert) {
             case .alertSecondButtonReturn:
                 var ids = model.busyIds
                 if let selected = model.selected, selected.run?.isActive == true { ids.insert(selected.id) }

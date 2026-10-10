@@ -133,9 +133,11 @@ struct AskCreditPauseCard: View {
 /// run waits (on appear, when Typeflux is active again, after returning from the
 /// billing page) and turns the card's buttons into billing pages or `resume`.
 struct AskCreditPauseSection: View {
+    @Environment(\.openURL) private var openURL
     @ObservedObject var model: AskConversationModel
     @ObservedObject var auth: AuthState
-    @State private var openingBilling = false
+    @StateObject var billingLifetime = BillingActionLifetime()
+    private var openingBilling: Bool { billingLifetime.isBusy }
     @State private var billingError: String?
 
     private var presentation: AskCreditPausePresentation? {
@@ -155,6 +157,8 @@ struct AskCreditPauseSection: View {
                                    errorMessage: billingError, perform: perform)
             }
         }
+        .onDisappear { billingLifetime.cancel() }
+        .onChange(of: auth.sessionGeneration) { _ in billingLifetime.cancel() }
         .task(id: model.selected?.run?.id) { await syncBalance() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             Task { await syncBalance() }
@@ -184,15 +188,13 @@ struct AskCreditPauseSection: View {
     private func openBilling(tab: String?) {
         guard !openingBilling else { return }
         billingError = nil
-        openingBilling = true
-        Task {
-            defer { openingBilling = false }
+        billingLifetime.start {
             await AccountBillingFlow.open(
                 { try await auth.requestBillingPageToken(tab: tab) },
                 onLink: { url in
                     // Coming back from the browser fetches the new balance right away.
                     auth.invalidateAccountSummary()
-                    NSWorkspace.shared.open(url)
+                    openURL(url)
                 },
                 onFailure: { error in
                     billingError = error.localizedDescription

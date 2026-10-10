@@ -5,13 +5,15 @@ import SwiftUI
 /// period, what was used, the one next step, and links to the account page and
 /// billing.
 struct AskAccountCard: View {
+    @Environment(\.openURL) private var openURL
     static let width: CGFloat = 300
 
     @ObservedObject var auth: AuthState
     let onOpenAccount: () -> Void
     let onDismiss: () -> Void
     @ObservedObject private var localization = AppLocalization.shared
-    @State private var openingBilling = false
+    @StateObject var billingLifetime = BillingActionLifetime()
+    private var openingBilling: Bool { billingLifetime.isBusy }
     @State private var billingError: String?
 
     private var presentation: AccountStatusPresentation {
@@ -39,6 +41,8 @@ struct AskAccountCard: View {
         }
         .padding(6)
         .frame(width: Self.width)
+        .onDisappear { billingLifetime.cancel() }
+        .onChange(of: auth.sessionGeneration) { _ in billingLifetime.cancel() }
         .task { await auth.refreshAccountSummary() }
     }
 
@@ -237,16 +241,14 @@ struct AskAccountCard: View {
     private func openBilling(_ destination: AccountStatusPresentation.Destination) {
         guard !openingBilling else { return }
         billingError = nil
-        openingBilling = true
-        Task {
-            defer { openingBilling = false }
+        billingLifetime.start {
             await AccountBillingFlow.open(
                 destination,
                 for: auth,
                 onLink: { url in
                     // Coming back from the browser should show the new plan right away.
                     auth.invalidateAccountSummary()
-                    NSWorkspace.shared.open(url)
+                    openURL(url)
                     onDismiss()
                 },
                 onFailure: { error in
