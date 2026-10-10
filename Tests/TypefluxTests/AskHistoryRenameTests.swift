@@ -100,6 +100,7 @@ struct AskHistoryRenameTests {
             let handler = try #require(rename.handler)
             #expect(handler())
         }
+
     }
 
     private func settle() async throws { try await Task.sleep(for: .milliseconds(150)) }
@@ -214,6 +215,63 @@ struct AskHistoryRenameTests {
         try host.beginRename()
         try await settle()
         #expect(host.field == nil)
+        #expect(host.recorder.saves.isEmpty)
+    }
+
+    @Test func restoringTheComposerFocusDuringMenuDismissalDoesNotEndAnUntouchedRename() async throws {
+        let host = Host()
+        defer { host.close() }
+        let composer = AskComposerTextView.Editor(frame: host.button.frame)
+        host.window.contentView?.addSubview(composer)
+        host.window.makeFirstResponder(composer)
+        _ = try await begin(host)
+        // Native context menus restore the responder that was active before
+        // tracking. This is a system handoff, without a click or text edit.
+        host.window.makeFirstResponder(composer)
+        for _ in 0..<60 {
+            host.draw()
+            if host.field?.currentEditor() != nil { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let editor = try #require(host.field?.currentEditor() as? NSTextView)
+        #expect(host.recorder.saves.isEmpty)
+        editor.insertText("Renamed after closing the menu", replacementRange: editor.selectedRange())
+        try await key("\r", code: 36, editor: editor)
+        #expect(host.recorder.saves == ["Renamed after closing the menu"])
+    }
+
+    @Test func losingFocusAfterTypingStillSavesTheEditedTitle() async throws {
+        let host = Host()
+        defer { host.close() }
+        let composer = AskComposerTextView.Editor(frame: host.button.frame)
+        host.window.contentView?.addSubview(composer)
+        let editor = try await begin(host)
+        editor.insertText("Typed title", replacementRange: editor.selectedRange())
+        host.window.makeFirstResponder(composer)
+        try await settle()
+        #expect(host.recorder.saves == ["Typed title"])
+        #expect(host.field == nil)
+        #expect(host.window.firstResponder === composer)
+    }
+
+    @Test func menuSelectionMouseEventsCannotSaveBeforeTheEditorAcquiresFocus() async throws {
+        let host = Host()
+        defer { host.close() }
+        try await settle()
+        try host.beginRename()
+        host.draw()
+        #expect(host.field != nil)
+        let point = host.button.convert(NSPoint(x: 40, y: 14), to: nil)
+        let event = try #require(NSEvent.mouseEvent(with: .leftMouseDown, location: point, modifierFlags: [], timestamp: 0,
+            windowNumber: host.window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        // Deliver the menu's closing click before the default-mode focus block.
+        NSApp.sendEvent(event)
+        for _ in 0..<60 {
+            host.draw()
+            if host.field?.currentEditor() != nil { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(host.field?.currentEditor() != nil)
         #expect(host.recorder.saves.isEmpty)
     }
 

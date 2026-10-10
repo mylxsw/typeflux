@@ -23,6 +23,10 @@ struct AskHistoryTitleEditor: NSViewRepresentable {
         field.usesSingleLineMode = true
         field.cell?.isScrollable = true
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        field.onOutsideClick = { [weak field, weak coordinator = context.coordinator] in
+            guard let field else { return }
+            coordinator?.finish(field.currentEditor()?.string ?? field.stringValue, field: field)
+        }
         updateNSView(field, context: context)
         return field
     }
@@ -35,33 +39,57 @@ struct AskHistoryTitleEditor: NSViewRepresentable {
     }
 
     static func dismantleNSView(_ field: Field, coordinator: Coordinator) {
+        field.isFinished = true
         field.stopMonitoringClicks()
     }
 
     final class Field: NSTextField {
-        private var focusedOnce = false
+        var hasUserInteracted = false
+        var isFinished = false
+        var onOutsideClick: () -> Void = {}
+        private var selectedInitialTitle = false
+        private var focusScheduled = false
         private var clickMonitor: Any?
+        private var resignObserver: NSObjectProtocol?
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             stopMonitoringClicks()
-            guard window != nil, !focusedOnce else { return }
+            guard let window, !isFinished else { return }
             // SwiftUI buttons do not always take keyboard focus. End editing
             // before delivering an outside click, so its original action still runs.
-            clickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+            clickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .keyDown]) { [weak self] event in
                 guard let self, let window = self.window, event.window === window,
-                      self.currentEditor() != nil else { return event }
-                if !self.bounds.contains(self.convert(event.locationInWindow, from: nil)) {
-                    window.makeFirstResponder(nil)
+                      !self.isFinished else { return event }
+                if event.type == .keyDown {
+                    if self.currentEditor() != nil { self.hasUserInteracted = true }
+                } else if self.bounds.contains(self.convert(event.locationInWindow, from: nil)) {
+                    self.hasUserInteracted = true
+                } else if self.selectedInitialTitle || self.hasUserInteracted {
+                    self.onOutsideClick()
+                    if self.currentEditor() != nil { window.makeFirstResponder(nil) }
                 }
                 return event
             }
-            DispatchQueue.main.async { [weak self] in
-                guard let self, let window = self.window, !self.focusedOnce else { return }
-                if window.makeFirstResponder(self) {
-                    self.focusedOnce = true
-                    // selectText(_:) would begin another field-editing session
-                    // and emit an end-edit notification for this one.
+            resignObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification,
+                                                                    object: window, queue: .main) { [weak self] _ in
+                self?.onOutsideClick()
+            }
+            requestInitialFocus()
+        }
+
+        func requestInitialFocus() {
+            guard window != nil, !isFinished, !hasUserInteracted, !focusScheduled else { return }
+            focusScheduled = true
+            // Main-queue blocks also run inside native menu tracking. Default
+            // run-loop mode waits until menu dismissal has handed focus back.
+            RunLoop.main.perform(inModes: [.default]) { [weak self] in
+                guard let self else { return }
+                self.focusScheduled = false
+                guard let window = self.window, window.isKeyWindow,
+                      !self.isFinished, !self.hasUserInteracted else { return }
+                if window.makeFirstResponder(self), !self.selectedInitialTitle {
+                    self.selectedInitialTitle = true
                     (self.currentEditor() as? NSTextView)?.setSelectedRange(
                         NSRange(location: 0, length: self.stringValue.utf16.count))
                 }
@@ -71,6 +99,8 @@ struct AskHistoryTitleEditor: NSViewRepresentable {
         func stopMonitoringClicks() {
             if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
             clickMonitor = nil
+            if let resignObserver { NotificationCenter.default.removeObserver(resignObserver) }
+            resignObserver = nil
         }
     }
 
@@ -80,24 +110,36 @@ struct AskHistoryTitleEditor: NSViewRepresentable {
 
         init(onFinish: @escaping (String?) -> Void) { self.onFinish = onFinish }
 
-        private func finish(_ title: String?) {
+        func finish(_ title: String?, field: Field?) {
             guard !finished else { return }
             finished = true
+            field?.isFinished = true
             onFinish(title)
         }
 
+        func controlTextDidChange(_ notification: Notification) {
+            (notification.object as? Field)?.hasUserInteracted = true
+        }
+
         func controlTextDidEndEditing(_ notification: Notification) {
-            guard let field = notification.object as? NSTextField else { return }
-            finish(field.stringValue)
+            guard let field = notification.object as? Field, !finished else { return }
+            let movement = notification.userInfo?["NSTextMovement"] as? Int
+            if field.hasUserInteracted || movement == NSReturnTextMovement || movement == NSTabTextMovement {
+                finish(field.stringValue, field: field)
+            } else {
+                // Closing a context menu can restore the previous responder.
+                // Keep an untouched rename open through that system handoff.
+                field.requestInitialFocus()
+            }
         }
 
         func control(_ control: NSControl, textView: NSTextView, doCommandBy command: Selector) -> Bool {
             guard !textView.hasMarkedText() else { return false }
             switch command {
             case #selector(NSResponder.insertNewline(_:)):
-                finish(textView.string)
+                finish(textView.string, field: control as? Field)
             case #selector(NSResponder.cancelOperation(_:)):
-                finish(nil)
+                finish(nil, field: control as? Field)
             default:
                 return false
             }
