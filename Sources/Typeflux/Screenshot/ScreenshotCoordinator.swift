@@ -14,13 +14,14 @@ final class ScreenshotCoordinator {
         case capturing
         /// Framing: nothing chosen yet.
         case selecting
-        /// A region is chosen and can still be adjusted.
+        /// A region is chosen and can still be adjusted and marked up.
         case editing
         /// The overlay has closed; the image is being encoded and delivered.
         case finishing
     }
 
     typealias Encoder = @Sendable (CGImage, CGFloat) throws -> Data
+    typealias Renderer = (ScreenSnapshot.Display, CGRect, [ScreenshotAnnotation]) throws -> CGImage
 
     private(set) var state: State = .idle
     /// The frozen displays, held only while the overlay shows.
@@ -38,6 +39,7 @@ final class ScreenshotCoordinator {
     private let now: () -> Date
     private let relaunch: () -> Void
     private let encode: Encoder
+    private let render: Renderer
     /// Bumped by every teardown, so a capture or delivery from an earlier session is ignored.
     private var session = 0
 
@@ -50,7 +52,8 @@ final class ScreenshotCoordinator {
          saveDirectory: @escaping () -> URL,
          now: @escaping () -> Date = Date.init,
          relaunch: @escaping () -> Void = {},
-         encode: @escaping Encoder = { try ScreenshotImageExporter.png($0, scale: $1) }) {
+         encode: @escaping Encoder = { try ScreenshotImageExporter.png($0, scale: $1) },
+         render: @escaping Renderer = { try ScreenshotRenderer.render($0, crop: $1, annotations: $2) }) {
         self.capture = capture
         self.permission = permission
         self.overlay = overlay
@@ -61,6 +64,7 @@ final class ScreenshotCoordinator {
         self.now = now
         self.relaunch = relaunch
         self.encode = encode
+        self.render = render
     }
 
     /// Starts a screenshot. While framing, starting again selects the whole display;
@@ -111,8 +115,8 @@ final class ScreenshotCoordinator {
             guard state == .selecting || state == .editing else { return }
             output.copy(text: hex)
             toast.show(.colorCopied(hex))
-        case let .finish(action, displayID, rect):
-            finish(action, displayID: displayID, rect: rect)
+        case let .finish(action, displayID, rect, annotations):
+            finish(action, displayID: displayID, rect: rect, annotations: annotations)
         }
     }
 
@@ -162,11 +166,13 @@ final class ScreenshotCoordinator {
         }
     }
 
-    private func finish(_ action: ScreenshotOutputAction, displayID: CGDirectDisplayID, rect: CGRect) {
+    private func finish(_ action: ScreenshotOutputAction, displayID: CGDirectDisplayID, rect: CGRect,
+                        annotations: [ScreenshotAnnotation]) {
         guard state == .selecting || state == .editing, let display = snapshot?.display(id: displayID) else { return }
         let image: CGImage
         do {
-            image = try ScreenshotImageExporter.crop(display, to: rect)
+            // Only the rendered image leaves the overlay, so nothing under a mosaic is ever copied or saved.
+            image = try render(display, rect, annotations)
         } catch {
             teardown()
             toast.show(.failed)

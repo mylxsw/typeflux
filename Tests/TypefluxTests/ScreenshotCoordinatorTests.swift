@@ -110,12 +110,14 @@ final class ScreenshotCoordinatorTests: XCTestCase {
 
     private func makeCoordinator(capturer: any ScreenCapturing = FakeScreenCapturer(.success(snapshot())),
                                  permission: FakeScreenCapturePermission = FakeScreenCapturePermission(granted: true),
-                                 encode: ScreenshotCoordinator.Encoder? = nil) -> ScreenshotCoordinator {
+                                 encode: ScreenshotCoordinator.Encoder? = nil,
+                                 render: ScreenshotCoordinator.Renderer? = nil) -> ScreenshotCoordinator {
         ScreenshotCoordinator(
             capture: capturer, permission: permission, overlay: overlay, permissionGuide: guide, toast: toasts,
             output: output, saveDirectory: { [directory] in directory }, now: { [date] in date },
             relaunch: { [weak self] in self?.relaunches += 1 },
-            encode: encode ?? { image, scale in Data("\(image.width)x\(image.height)@\(Int(scale))".utf8) }
+            encode: encode ?? { image, scale in Data("\(image.width)x\(image.height)@\(Int(scale))".utf8) },
+            render: render ?? { try ScreenshotRenderer.render($0, crop: $1, annotations: $2) }
         )
     }
 
@@ -344,6 +346,43 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         XCTAssertEqual(saved.date, date)
         XCTAssertEqual(toasts.shown, [.saved(directory.appendingPathComponent("shot.png"))])
         XCTAssertTrue(output.copied.isEmpty)
+    }
+
+    func testCopyDeliversTheImageWithItsMosaicsApplied() async {
+        // The encoder reports the center pixel, so the test sees what would reach the clipboard.
+        let sut = makeCoordinator(encode: { image, _ in
+            Data((ScreenshotMagnifier.color(of: image, at: CGPoint(x: image.width / 2, y: image.height / 2))?.hex
+                    ?? "none").utf8)
+        })
+        await started(sut)
+        let region = CGRect(x: 10, y: 10, width: 50, height: 25)
+        let cover = ScreenshotAnnotation(kind: .mosaic(ScreenshotMosaic(shape: .rect(region), effect: .solid)),
+                                         style: ScreenshotAnnotationStyle(color: .white))
+
+        overlay.onEvent?(.finish(.copy, displayID: 1, rect: region, annotations: [cover]))
+        await sut.pendingTask?.value
+
+        XCTAssertEqual(output.copied, [Data("#FFFFFF".utf8)], "Not the gray screenshot under the mosaic")
+        XCTAssertEqual(toasts.shown, [.copied])
+    }
+
+    func testRenderFailureNeverFallsBackToTheUnmaskedImage() async {
+        var rendered: [[ScreenshotAnnotation]] = []
+        let sut = makeCoordinator(render: { _, _, annotations in
+            rendered.append(annotations)
+            throw ScreenshotExportError.encodingFailed
+        })
+        await started(sut)
+        let mark = ScreenshotAnnotation(kind: .counter(center: CGPoint(x: 20, y: 20)))
+
+        overlay.onEvent?(.finish(.save, displayID: 1, rect: CGRect(x: 0, y: 0, width: 50, height: 50),
+                                 annotations: [mark]))
+
+        XCTAssertEqual(rendered, [[mark]])
+        XCTAssertTrue(output.copied.isEmpty)
+        XCTAssertTrue(output.saved.isEmpty)
+        XCTAssertEqual(toasts.shown, [.failed])
+        XCTAssertEqual(sut.state, .idle)
     }
 
     func testFailedSaveFallsBackToCopy() async {

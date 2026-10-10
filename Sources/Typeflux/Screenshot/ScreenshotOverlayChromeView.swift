@@ -1,7 +1,7 @@
 import AppKit
 
 /// Draws the framing interface over a frozen display: outline, handles, size label,
-/// guides, loupe and key hint. It only draws; the overlay view under it takes the input.
+/// guides and loupe. It only draws; the overlay view under it takes the input.
 @MainActor
 final class ScreenshotOverlayChromeView: NSView {
     struct Loupe: Equatable {
@@ -24,7 +24,6 @@ final class ScreenshotOverlayChromeView: NSView {
         /// Where the guides cross; nil hides them.
         var pointer: CGPoint?
         var loupe: Loupe?
-        var hint: String?
     }
 
     static let accent = NSColor(srgbRed: 0x2F / 255, green: 0x8C / 255, blue: 0xFF / 255, alpha: 1)
@@ -61,14 +60,12 @@ final class ScreenshotOverlayChromeView: NSView {
             origin.x = min(max(origin.x, bounds.minX), bounds.maxX - size.width)
             drawPill(label, in: CGRect(origin: origin, size: size))
         }
-        if let hint = model.hint, let selection = model.selection {
-            drawPill(hint, in: Self.hintFrame(for: selection, size: Self.pillSize(for: hint), in: bounds))
-        }
         if let loupe = model.loupe { drawLoupe(loupe, in: context) }
     }
 
-    /// Below the region, or above it, or inside its bottom-right corner when neither fits.
-    static func hintFrame(for selection: CGRect, size: CGSize, in bounds: CGRect) -> CGRect {
+    /// Where the editing toolbar goes: below the region, or above it, or inside its
+    /// bottom-right corner when neither fits.
+    static func toolbarFrame(for selection: CGRect, size: CGSize, in bounds: CGRect) -> CGRect {
         let gap: CGFloat = 8
         var origin = CGPoint(x: selection.maxX - size.width, y: selection.maxY + gap)
         if origin.y + size.height > bounds.maxY {

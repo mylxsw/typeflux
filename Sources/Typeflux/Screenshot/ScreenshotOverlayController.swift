@@ -30,13 +30,17 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
     private let primaryDisplayHeight: () -> CGFloat
     /// The pointer in global Quartz points.
     private let pointerLocation: () -> CGPoint
+    /// Sizes mosaics to the text under them.
+    private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
 
     init(primaryDisplayHeight: @escaping () -> CGFloat = { NSScreen.screens.first?.frame.height ?? 0 },
          pointerLocation: @escaping () -> CGPoint = {
              CGEvent(source: nil)?.location ?? .zero
-         }) {
+         },
+         textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil) {
         self.primaryDisplayHeight = primaryDisplayHeight
         self.pointerLocation = pointerLocation
+        self.textMeasurer = textMeasurer
     }
 
     var isPresented: Bool { !panels.isEmpty }
@@ -46,8 +50,8 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         self.onEvent = onEvent
         let primaryHeight = primaryDisplayHeight()
         for display in snapshot.displays {
-            let view = ScreenshotOverlayView(display: display, windows: snapshot.windows)
-            view.onActivate = { [weak self] view in self?.activate(view) }
+            let view = ScreenshotOverlayView(display: display, windows: snapshot.windows, textMeasurer: textMeasurer)
+            view.onActivate = { [weak self] view in self?.activate(view) ?? true }
             view.onEvent = { [weak self] view, event in self?.forward(event, from: view) }
             let panel = ScreenshotOverlayPanel(
                 frame: ScreenCaptureGeometry.flipped(display.frame, primaryDisplayHeight: primaryHeight)
@@ -88,11 +92,14 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         return views.first { $0.display.frame.contains(pointer) } ?? views.first
     }
 
-    private func activate(_ view: ScreenshotOverlayView) {
+    /// - Returns: false while another display is being marked up; it keeps its region.
+    private func activate(_ view: ScreenshotOverlayView) -> Bool {
+        if views.contains(where: { $0 !== view && $0.isAnnotating }) { return false }
         for other in views where other !== view && other.selection.rect != nil {
             other.clearSelection()
         }
         focus(view)
+        return true
     }
 
     private func focus(_ view: ScreenshotOverlayView) {
@@ -106,8 +113,9 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         switch event {
         case .committed:
             onEvent?(.committed)
-        case let .finish(action, rect):
-            onEvent?(.finish(action, displayID: view.display.id, rect: rect.offsetBy(dx: origin.x, dy: origin.y)))
+        case let .finish(action, rect, annotations):
+            onEvent?(.finish(action, displayID: view.display.id, rect: rect.offsetBy(dx: origin.x, dy: origin.y),
+                             annotations: annotations.map { $0.offsetBy(dx: origin.x, dy: origin.y) }))
         case let .colorPicked(hex):
             onEvent?(.colorPicked(hex))
         case .cancelled:

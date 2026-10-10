@@ -23,12 +23,12 @@ final class ScreenshotOverlayTests: XCTestCase {
     }
 
     private func chrome(of view: ScreenshotOverlayView) throws -> ScreenshotOverlayChromeView {
-        try XCTUnwrap(view.subviews.first as? ScreenshotOverlayChromeView)
+        try XCTUnwrap(view.subviews.lazy.compactMap { $0 as? ScreenshotOverlayChromeView }.first)
     }
 
     // MARK: View
 
-    func testFramingDrawsTheLoupeThenHandlesAndHint() throws {
+    func testFramingDrawsTheLoupeThenHandlesAndToolbar() throws {
         let (view, events) = makeView()
         XCTAssertTrue(view.isFlipped)
         XCTAssertTrue(view.acceptsFirstResponder)
@@ -41,7 +41,7 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertEqual(loupe.coordinates, "50, 40")
         XCTAssertEqual(loupe.color, "#000000")
         XCTAssertEqual(loupe.imageSize, CGSize(width: 11, height: 9))
-        XCTAssertNil(model.hint)
+        XCTAssertNil(view.toolbar, "No toolbar before a region is chosen")
 
         view.mouseDown(at: CGPoint(x: 10, y: 10), clickCount: 1)
         view.mouseDragged(to: CGPoint(x: 110, y: 60))
@@ -49,12 +49,13 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertEqual(model.selection, CGRect(x: 10, y: 10, width: 100, height: 50))
         XCTAssertFalse(model.handles, "No handles while drawing")
         XCTAssertNotNil(model.loupe, "The loupe stays while drawing")
+        XCTAssertNil(view.toolbar)
 
         view.mouseUp(at: CGPoint(x: 110, y: 60))
         model = try chrome(of: view).model
         XCTAssertEqual(events(), [.committed])
         XCTAssertTrue(model.handles)
-        XCTAssertEqual(model.hint, L("screenshot.overlay.hint"))
+        XCTAssertEqual(view.toolbar?.isHidden, false)
         XCTAssertEqual(model.sizeLabel, "100 × 50 pt · 200 × 100 px")
         XCTAssertNil(model.loupe)
         XCTAssertNil(model.pointer)
@@ -88,8 +89,9 @@ final class ScreenshotOverlayTests: XCTestCase {
 
         XCTAssertFalse(view.handleKeyDown(Key.keyC, modifiers: []), "Plain C means nothing")
         XCTAssertFalse(view.handleKeyDown(Key.keyS, modifiers: []))
-        XCTAssertFalse(view.handleKeyDown(Key.keyA, modifiers: []))
         XCTAssertFalse(view.handleKeyDown(99, modifiers: []))
+        XCTAssertTrue(view.handleKeyDown(Key.keyA, modifiers: []), "Plain A picks the arrow")
+        XCTAssertEqual(view.editor.tool, .arrow)
     }
 
     func testArrowsNudge() {
@@ -208,8 +210,7 @@ final class ScreenshotOverlayTests: XCTestCase {
                              sizeLabel: "200 × 280", pointer: CGPoint(x: 100, y: 100),
                              loupe: .init(frame: CGRect(x: 120, y: 120, width: 110, height: 128), image: image,
                                           imageOffset: .zero, imageSize: CGSize(width: 11, height: 9),
-                                          coordinates: "100, 100", color: "#808080"),
-                             hint: "↩ Copy")
+                                          coordinates: "100, 100", color: "#808080"))
         let bitmap = try XCTUnwrap(chrome.bitmapImageRepForCachingDisplay(in: chrome.bounds))
         chrome.cacheDisplay(in: chrome.bounds, to: bitmap)
         let scale = CGFloat(bitmap.pixelsWide) / chrome.bounds.width
@@ -224,15 +225,15 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertEqual(hovered.colorAt(x: Int(35 * scale), y: Int(50 * scale))?.alphaComponent ?? 1, 0)
     }
 
-    func testHintGoesBelowAboveOrInside() {
+    func testToolbarGoesBelowAboveOrInside() {
         let bounds = CGRect(x: 0, y: 0, width: 400, height: 300)
         let size = CGSize(width: 100, height: 22)
 
-        XCTAssertEqual(ScreenshotOverlayChromeView.hintFrame(for: CGRect(x: 100, y: 50, width: 200, height: 100),
+        XCTAssertEqual(ScreenshotOverlayChromeView.toolbarFrame(for: CGRect(x: 100, y: 50, width: 200, height: 100),
                                                              size: size, in: bounds).origin, CGPoint(x: 200, y: 158))
-        XCTAssertEqual(ScreenshotOverlayChromeView.hintFrame(for: CGRect(x: 100, y: 200, width: 200, height: 95),
+        XCTAssertEqual(ScreenshotOverlayChromeView.toolbarFrame(for: CGRect(x: 100, y: 200, width: 200, height: 95),
                                                              size: size, in: bounds).origin, CGPoint(x: 200, y: 170))
-        XCTAssertEqual(ScreenshotOverlayChromeView.hintFrame(for: bounds, size: size, in: bounds).origin,
+        XCTAssertEqual(ScreenshotOverlayChromeView.toolbarFrame(for: bounds, size: size, in: bounds).origin,
                        CGPoint(x: 292, y: 270))
         XCTAssertGreaterThan(ScreenshotOverlayChromeView.pillSize(for: "100 × 50").width, 16)
     }
