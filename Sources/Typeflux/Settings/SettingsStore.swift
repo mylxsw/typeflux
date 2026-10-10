@@ -319,6 +319,12 @@ final class SettingsStore {
         set { defaults.set(newValue, forKey: "clipboard.historyEnabled") }
     }
 
+    /// Whether the clipboard panel shows its preview pane; `⌘\` in the panel toggles it.
+    var clipboardShowsPreview: Bool {
+        get { defaults.bool(forKey: "clipboard.showsPreview") }
+        set { defaults.set(newValue, forKey: "clipboard.showsPreview") }
+    }
+
     var llmBaseURL: String {
         get { llmBaseURL(for: llmRemoteProvider) }
         set { setLLMBaseURL(newValue, for: llmRemoteProvider) }

@@ -1,3 +1,4 @@
+import Combine
 @testable import Typeflux
 import XCTest
 
@@ -171,6 +172,150 @@ final class ClipboardPanelModelTests: XCTestCase {
         XCTAssertEqual(dismissCount, 0)
         model.cancel()
         XCTAssertEqual(dismissCount, 1)
+    }
+
+    func testRowsAreBuiltOnceWithSectionHeaders() {
+        let now = Date()
+        model.now = { now }
+        let pinned = ClipboardTestSupport.entry(.text, date: now.addingTimeInterval(-9 * 86400), text: "pinned", isPinned: true)
+        let today = ClipboardTestSupport.entry(.text, date: now, text: "today")
+        let today2 = ClipboardTestSupport.entry(.text, date: now.addingTimeInterval(-1), text: "today 2")
+        let old = ClipboardTestSupport.entry(.text, date: now.addingTimeInterval(-9 * 86400), text: "old")
+        model.reset(entries: [pinned, today, today2, old])
+        XCTAssertEqual(model.rows.map(\.index), [0, 1, 2, 3])
+        XCTAssertEqual(model.rows.map(\.header), [.pinned, .today, nil, .earlier])
+        XCTAssertEqual(model.rows.map(\.id), [pinned.id, today.id, today2.id, old.id])
+
+        model.query = "today 2"
+        XCTAssertEqual(model.rows.map(\.entry.title), ["today 2"])
+        XCTAssertEqual(model.rows.first?.header, .today)
+        XCTAssertEqual(model.rows.first?.index, 0)
+    }
+
+    func testMissingChecksAreCachedForRenderingButFreshForActions() {
+        var checks = 0
+        model.fileExists = { [unowned self] path in
+            checks += 1
+            return !missingPaths.contains(path)
+        }
+        model.reset(entries: entries)
+        let pdf = model.visibleEntries[3]
+        let text = model.visibleEntries[4]
+        XCTAssertFalse(model.isMarkedMissing(pdf))
+        XCTAssertFalse(model.isMarkedMissing(pdf))
+        XCTAssertFalse(model.isMarkedMissing(text))
+        XCTAssertEqual(checks, 1, "Rendering asks the disk once per entry; text never")
+
+        // The file disappears while the panel is open: rendering keeps the cached state, but
+        // the action checks again, refuses and updates the cache.
+        missingPaths = ["/tmp/report.pdf"]
+        XCTAssertTrue(model.isEnabled(.paste, for: pdf))
+        model.perform(.paste, at: 3)
+        XCTAssertTrue(performed.isEmpty)
+        XCTAssertTrue(model.isMarkedMissing(pdf))
+        XCTAssertFalse(model.isEnabled(.paste, for: pdf))
+
+        // A new session forgets the cache.
+        missingPaths = []
+        model.reset(entries: entries)
+        XCTAssertFalse(model.isMarkedMissing(pdf))
+    }
+
+    func testReplacingWithTheSameEntriesChangesNothing() {
+        model.reset(entries: entries)
+        model.select(index: 2)
+        var rowChanges = 0
+        let cancellable = model.$rows.dropFirst().sink { _ in rowChanges += 1 }
+        model.replaceEntries(model.entries)
+        XCTAssertEqual(rowChanges, 0)
+        XCTAssertEqual(model.selectedIndex, 2)
+        cancellable.cancel()
+    }
+
+    func testPreviewFollowsTheSelectionAfterADelay() {
+        model.previewDelay = 0.05
+        model.reset(entries: entries)
+        XCTAssertNil(model.previewEntry, "The pane is hidden")
+
+        model.showsPreview = true
+        XCTAssertEqual(model.previewEntry?.title, "spoken words", "Opening the pane shows the selection at once")
+
+        model.moveSelection(by: 1)
+        model.moveSelection(by: 1)
+        XCTAssertEqual(model.previewEntry?.title, "spoken words", "Moving through rows does not load each preview")
+        let settled = expectation(description: "preview settles")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            XCTAssertEqual(self.model.previewEntry?.id, self.model.visibleEntries[2].id)
+            settled.fulfill()
+        }
+        wait(for: [settled], timeout: 2)
+
+        model.query = "plain"
+        XCTAssertEqual(model.previewEntry?.title, "plain words", "A new search shows its first row immediately")
+
+        var toggles: [Bool] = []
+        model.onPreviewVisibilityChange = { toggles.append($0) }
+        model.togglePreview()
+        XCTAssertNil(model.previewEntry)
+        model.togglePreview()
+        XCTAssertEqual(toggles, [false, true])
+    }
+
+    func testPreviewWithoutDelayIsImmediate() {
+        model.previewDelay = 0
+        model.reset(entries: entries)
+        model.showsPreview = true
+        model.select(index: 4)
+        XCTAssertEqual(model.previewEntry?.title, "plain words")
+    }
+
+    func testNumberShortcutsCountFromTheFirstVisibleRow() {
+        model.reset(entries: entries)
+        XCTAssertEqual(model.shortcutNumber(at: 0), 1)
+        XCTAssertEqual(model.shortcutNumber(at: 4), 5)
+
+        model.updateFirstVisibleIndex(2)
+        XCTAssertNil(model.shortcutNumber(at: 1), "Rows scrolled above the viewport have no number")
+        XCTAssertEqual(model.shortcutNumber(at: 2), 1)
+        XCTAssertEqual(model.shortcutNumber(at: 4), 3)
+
+        model.quickPaste(number: 1)
+        model.quickPaste(number: 3)
+        model.quickPaste(number: 4)
+        XCTAssertEqual(performed.map(\.1), [model.visibleEntries[2].title, "plain words"])
+
+        model.updateFirstVisibleIndex(99)
+        XCTAssertEqual(model.firstVisibleIndex, 4, "Clamped to the last row")
+        model.updateFirstVisibleIndex(-3)
+        XCTAssertEqual(model.firstVisibleIndex, 0)
+
+        model.updateFirstVisibleIndex(3)
+        model.query = "words"
+        XCTAssertEqual(model.firstVisibleIndex, 0, "A new search starts at the top")
+    }
+
+    func testANewSearchScrollsBackToTheTop() {
+        model.reset(entries: entries)
+        let before = model.scrollToTopRequest
+        model.moveSelection(by: 2)
+        XCTAssertEqual(model.scrollToTopRequest, before)
+        model.category = .text
+        XCTAssertEqual(model.scrollToTopRequest, before + 1)
+    }
+
+    func testFirstFullyVisibleIndexIgnoresRowsCutOffAtTheTop() {
+        let frames: [Int: ClosedRange<CGFloat>] = [3: -20 ... 36, 4: 38 ... 94, 5: 96 ... 152, 6: 154 ... 300]
+        XCTAssertEqual(ClipboardPanelModel.firstFullyVisibleIndex(frames: frames, viewportHeight: 280), 4)
+        XCTAssertEqual(ClipboardPanelModel.firstFullyVisibleIndex(frames: [0: 0 ... 56], viewportHeight: 280), 0)
+        XCTAssertEqual(
+            ClipboardPanelModel.firstFullyVisibleIndex(frames: [2: -400 ... 400], viewportHeight: 280), 2,
+            "A row taller than the viewport still counts"
+        )
+        XCTAssertEqual(
+            ClipboardPanelModel.firstFullyVisibleIndex(frames: [0: -120 ... -60, 1: -58 ... 0.5, 2: 2 ... 58], viewportHeight: 280), 2
+        )
+        XCTAssertNil(ClipboardPanelModel.firstFullyVisibleIndex(frames: [:], viewportHeight: 280))
+        XCTAssertNil(ClipboardPanelModel.firstFullyVisibleIndex(frames: [0: 400 ... 450], viewportHeight: 280))
     }
 
     func testSectionsUseTheInjectedClock() {

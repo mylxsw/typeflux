@@ -2,11 +2,11 @@ import AVKit
 import SwiftUI
 
 /// The content a media row shows in place of a title: image thumbnails, a video frame or an
-/// audio waveform. It grows in place when the row is selected; video and audio then play inline.
+/// audio waveform. The preview pane shows it expanded, where video and audio play inline.
 struct ClipboardInlineMedia: View {
     let entry: ClipboardEntry
     let info: ClipboardMediaInfo?
-    let isSelected: Bool
+    let isExpanded: Bool
     let isMissing: Bool
 
     static let height: CGFloat = 64
@@ -34,7 +34,7 @@ struct ClipboardInlineMedia: View {
     // MARK: - Kinds
 
     private var image: some View {
-        let expanded = isSelected && !isMissing
+        let expanded = isExpanded && !isMissing
         return ZStack(alignment: .bottomTrailing) {
             if isMissing {
                 ClipboardMissingThumbnail()
@@ -58,7 +58,7 @@ struct ClipboardInlineMedia: View {
     @ViewBuilder
     private var images: some View {
         let urls = Array(entry.fileURLs.enumerated())
-        if isSelected {
+        if isExpanded {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
                 ForEach(urls.prefix(6), id: \.offset) { _, url in
                     ClipboardThumbnailView(url: url, maxPixelSize: 300, placeholder: "photo")
@@ -89,7 +89,7 @@ struct ClipboardInlineMedia: View {
 
     @ViewBuilder
     private var video: some View {
-        if isSelected, !isMissing, let url = entry.fileURLs.first {
+        if isExpanded, !isMissing, let url = entry.fileURLs.first {
             ClipboardMediaPlayer(url: url)
                 .frame(maxWidth: .infinity)
                 .frame(height: Self.selectedVideoHeight)
@@ -121,7 +121,7 @@ struct ClipboardInlineMedia: View {
 
     @ViewBuilder
     private var audio: some View {
-        if isSelected, !isMissing, let url = entry.fileURLs.first {
+        if isExpanded, !isMissing, let url = entry.fileURLs.first {
             ClipboardAudioPlayerView(url: url, duration: info?.duration)
         } else {
             HStack(spacing: 8) {

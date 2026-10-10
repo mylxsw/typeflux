@@ -30,6 +30,12 @@ final class ClipboardPanelKeyCommandTests: XCTestCase {
         XCTAssertEqual(command(53, .command), .cancel)
     }
 
+    func testCommandBackslashTogglesThePreview() {
+        XCTAssertEqual(command(42, .command, "\\"), .togglePreview)
+        XCTAssertNil(command(42, [], "\\"))
+        XCTAssertNil(command(42, [.command, .shift], "\\"))
+    }
+
     func testReturnPastes() {
         XCTAssertEqual(command(36), .action(.paste))
         XCTAssertEqual(command(76), .action(.paste))

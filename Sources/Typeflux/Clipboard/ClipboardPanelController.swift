@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import Quartz
 import SwiftUI
 
@@ -13,6 +14,7 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
     private var clickMonitor: Any?
     private var focusRequest = 0
     private var quickLookURLs: [URL] = []
+    private var previewObservation: AnyCancellable?
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
@@ -27,12 +29,31 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
         focusRequest += 1
         let panel = panel(for: model)
         applyAppearance(to: panel)
+        panel.setContentSize(ClipboardPanelView.size(showsPreview: model.showsPreview))
         position(panel)
         panel.makeKeyAndOrderFront(nil)
         installMonitors()
+        previewObservation = model.$showsPreview.dropFirst().removeDuplicates().sink { [weak self] shows in
+            self?.resizeForPreview(shows)
+        }
+    }
+
+    /// The preview pane widens the panel to the right; the list stays where it was.
+    private func resizeForPreview(_ shows: Bool) {
+        guard let panel, let hostingView else { return }
+        let size = ClipboardPanelView.size(showsPreview: shows)
+        var frame = panel.frame
+        frame.origin.y += frame.height - size.height
+        frame.size = size
+        if let screen = panel.screen ?? NSScreen.main {
+            frame = AskLauncherPlacement.clamped(frame, screen: screen.visibleFrame)
+        }
+        panel.setFrame(frame, display: true)
+        hostingView.frame = NSRect(origin: .zero, size: size)
     }
 
     func dismiss() {
+        previewObservation = nil
         closeQuickLook()
         removeMonitors()
         panel?.orderOut(nil)
@@ -145,6 +166,12 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
             queryIsEmpty: model.query.isEmpty,
             hasTextSelection: (editor?.selectedRange().length ?? 0) > 0
         )
+        guard let command else { return false }
+        Self.run(command, on: model, isRepeat: event.isARepeat)
+        return true
+    }
+
+    private static func run(_ command: ClipboardPanelKeyCommand, on model: ClipboardPanelModel, isRepeat: Bool) {
         switch command {
         case .moveUp: model.moveSelection(by: -1)
         case .moveDown: model.moveSelection(by: 1)
@@ -153,10 +180,10 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
         case .cancel: model.cancel()
         case let .action(action): model.perform(action)
         case let .quickPaste(number):
-            if !event.isARepeat { model.quickPaste(number: number) }
-        case nil: return false
+            if !isRepeat { model.quickPaste(number: number) }
+        case .togglePreview:
+            if !isRepeat { model.togglePreview() }
         }
-        return true
     }
 
     // MARK: - Quick Look

@@ -423,6 +423,11 @@
 "clipboard.notice.noImageText" = "이미지에서 텍스트를 찾지 못했습니다";
 "clipboard.preview.missing" = "원본 파일이 이동되었거나 삭제되어 기록만 볼 수 있습니다";
 "clipboard.preview.pages" = "%d페이지";
+"clipboard.preview.type" = "유형";
+"clipboard.preview.source" = "출처";
+"clipboard.preview.copiedAt" = "복사한 시간";
+"clipboard.preview.size" = "크기";
+"clipboard.preview.location" = "위치";
 "history.clipboard.title" = "클립보드 기록 저장";
 "history.clipboard.subtitle" = "복사한 텍스트, 이미지, 파일을 기록하고 기록 단축키로 엽니다. 암호는 기록되지 않으며 모든 내용은 이 Mac에만 저장됩니다.";
 

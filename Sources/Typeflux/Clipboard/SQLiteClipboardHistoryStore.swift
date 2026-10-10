@@ -92,17 +92,18 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
     }
 
     func purge(olderThan cutoff: Date) {
-        mutate("Clipboard purge failed") {
+        mutateIfChanged("Clipboard purge failed") {
             let stale = try self.fetchItems(
                 sql: "SELECT \(Self.columns) FROM clipboard_items WHERE pinned = 0 AND date < ?;",
                 bind: { sqlite3_bind_double($0, 1, cutoff.timeIntervalSince1970) }
             )
             try self.delete(stale)
+            return !stale.isEmpty
         }
     }
 
     func trim(toMaxCount maxCount: Int) {
-        mutate("Clipboard trim failed") {
+        mutateIfChanged("Clipboard trim failed") {
             let overflow = try self.fetchItems(
                 sql: "SELECT \(Self.columns) FROM clipboard_items WHERE pinned = 0 ORDER BY date DESC LIMIT -1 OFFSET ?;",
                 bind: { sqlite3_bind_int64($0, 1, Int64(max(0, maxCount))) }
@@ -116,6 +117,7 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
                 bind: { sqlite3_bind_int64($0, 1, Int64(max(0, self.maximumImageCount))) }
             )
             try self.delete(imageOverflow)
+            return !overflow.isEmpty || !imageOverflow.isEmpty
         }
     }
 
@@ -241,26 +243,6 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
     private func removeImageFile(of item: ClipboardItem) {
         guard let path = item.imagePath, path.hasPrefix(imagesDirectory.path) else { return }
         try? FileManager.default.removeItem(atPath: path)
-    }
-
-    private func mutate(_ failureMessage: String, _ work: @escaping () throws -> Void) {
-        let succeeded: Bool = queue.sync {
-            do {
-                try work()
-                return true
-            } catch {
-                ErrorLogStore.shared.log("\(failureMessage): \(error.localizedDescription)")
-                return false
-            }
-        }
-        if succeeded { notifyChange() }
-    }
-
-    private func notifyChange() {
-        let center = notificationCenter
-        DispatchQueue.main.async {
-            center.post(name: .clipboardHistoryDidChange, object: nil)
-        }
     }
 
     // MARK: - Schema
@@ -404,5 +386,37 @@ private extension SQLiteClipboardHistoryStore {
         return NSError(domain: "SQLiteClipboardHistoryStore", code: Int(sqlite3_errcode(database)), userInfo: [
             NSLocalizedDescriptionKey: "\(message): \(detail)"
         ])
+    }
+}
+
+// MARK: - Writes
+
+private extension SQLiteClipboardHistoryStore {
+    func mutate(_ failureMessage: String, _ work: @escaping () throws -> Void) {
+        mutateIfChanged(failureMessage) {
+            try work()
+            return true
+        }
+    }
+
+    /// Runs `work` on the store queue and announces a change only when it reports one, so routine
+    /// purges that delete nothing don't make an open panel reload.
+    func mutateIfChanged(_ failureMessage: String, _ work: @escaping () throws -> Bool) {
+        let changed: Bool = queue.sync {
+            do {
+                return try work()
+            } catch {
+                ErrorLogStore.shared.log("\(failureMessage): \(error.localizedDescription)")
+                return false
+            }
+        }
+        if changed { notifyChange() }
+    }
+
+    func notifyChange() {
+        let center = notificationCenter
+        DispatchQueue.main.async {
+            center.post(name: .clipboardHistoryDidChange, object: nil)
+        }
     }
 }

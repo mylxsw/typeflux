@@ -427,6 +427,11 @@
 "clipboard.notice.noImageText" = "图片中没有识别到文字";
 "clipboard.preview.missing" = "原文件已被移动或删除，只能查看记录";
 "clipboard.preview.pages" = "%d 页";
+"clipboard.preview.type" = "类型";
+"clipboard.preview.source" = "来源";
+"clipboard.preview.copiedAt" = "复制时间";
+"clipboard.preview.size" = "大小";
+"clipboard.preview.location" = "位置";
 "history.clipboard.title" = "记录剪贴板历史";
 "history.clipboard.subtitle" = "记录你复制的文本、图片和文件，用历史快捷键打开。密码不会被记录，所有内容只存在这台 Mac 上。";
 
