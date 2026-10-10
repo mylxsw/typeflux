@@ -3910,3 +3910,17 @@
 "menu.notes" = "Notes…";
 
 "ask.capture.optIn" = "Attach screenshot · Requires screen recording access";
+
+// Conversation titles
+"ask.title.section" = "Chat titles";
+"ask.title.enabled" = "Automatically name chats";
+"ask.title.enabled.subtitle" = "Generate once after two completed answers.";
+"ask.title.model" = "Title model";
+"ask.title.model.subtitle" = "Automatic uses the Cloud title model for Cloud chats and the conversation model for local chats.";
+"ask.title.auto" = "Automatic";
+"ask.title.cost" = "Automatic Cloud titles do not use credits. Your own providers charge according to their pricing. Selecting a provider sends the title context to that provider.";
+"ask.title.rename" = "Rename";
+"ask.title.rename.hint" = "A manual title will never be replaced automatically.";
+"ask.title.save" = "Save";
+"ask.title.cancel" = "Cancel";
+"ask.title.invalid" = "Use a single-line title of 1–60 characters.";

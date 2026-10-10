@@ -110,6 +110,10 @@ struct AskPlanItem: Codable, Equatable, Sendable, Hashable {
 }
 
 struct AskConversation: Codable, Identifiable, Equatable, Sendable {
+    var titleRevision: Int64? = nil
+    var titlePolicy: AskTitlePolicy? = nil
+    var titleSource: String? = nil
+    var titleGeneration: AskTitleGeneration? = nil
     /// Optional, inert contract metadata. Legacy snapshots have no envelope.
     var harness: AskHarnessContract? = nil
     @AskConversationID var id: String
@@ -132,6 +136,7 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
 typealias AskConversationSummary = ChatConversationSummary
 
 struct AskSendRequest: Codable, Equatable, Sendable {
+    var titlePolicy: AskTitlePolicy? = nil
     var clientToolApproval: Bool? = nil
     var imageResults: Bool? = true
     var id: String

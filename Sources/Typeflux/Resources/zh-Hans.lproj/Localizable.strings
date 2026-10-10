@@ -3910,3 +3910,17 @@
 "menu.notes" = "笔记本…";
 
 "ask.capture.optIn" = "附带截图 · 开启后需要屏幕录制授权";
+
+// Conversation titles
+"ask.title.section" = "聊天标题";
+"ask.title.enabled" = "自动生成聊天标题";
+"ask.title.enabled.subtitle" = "完成两轮回答后自动生成一次。";
+"ask.title.model" = "标题生成模型";
+"ask.title.model.subtitle" = "自动：云端聊天使用后台配置的标题模型，本地聊天使用原聊天模型。";
+"ask.title.auto" = "自动";
+"ask.title.cost" = "自动生成 Cloud 标题不消耗 credits；自有服务商按其规则计费。选择服务商后，标题所需的聊天片段会发送给它。";
+"ask.title.rename" = "重命名";
+"ask.title.rename.hint" = "手动命名后，不会再自动覆盖标题。";
+"ask.title.save" = "保存";
+"ask.title.cancel" = "取消";
+"ask.title.invalid" = "请输入 1–60 个字符的单行标题。";

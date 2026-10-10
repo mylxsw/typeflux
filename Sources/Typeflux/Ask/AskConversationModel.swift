@@ -308,6 +308,8 @@ final class AskConversationModel: ObservableObject {
     let session: () -> (owner: String, token: String)?
     let deviceId: String
     var owner = ""
+    var titleTasks: [String: Task<Void, Never>] = [:]
+    var titleRetryAfter: [String: Date] = [:]
     private var operations: [String: Task<Void, Never>] = [:]
     private var operationIds: [String: UUID] = [:]
     private var approvals: [String: CheckedContinuation<String?, Never>] = [:]
@@ -466,6 +468,7 @@ final class AskConversationModel: ObservableObject {
         voiceInput.cancel()
         historyErrorTask?.cancel(); historyRefreshError = nil
         pullRefreshID = nil; isRefreshingHistory = false
+        titleTasks.values.forEach { $0.cancel() }; titleTasks = [:]; titleRetryAfter = [:]
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]
         submissionPreflights = [:]; submissionIssues = [:]
         approvals.values.forEach { $0.resume(returning: nil) }; approvals = [:]; approvalRequests = [:]; approvalStore.reset()
@@ -794,6 +797,8 @@ final class AskConversationModel: ObservableObject {
             if latest.run?.isActive == true, !busyIds.contains(id) {
                 selectionObservation = monitorConversation(id: id, current: current)
             }
+            updateSummary(selected ?? latest)
+            scheduleTitle(selected ?? latest, route: current)
             // Loading a conversation never resumes desktop tools automatically.
         } catch {
             if generation == selectionGeneration, owner == current.account {
@@ -980,6 +985,7 @@ final class AskConversationModel: ObservableObject {
         var value = newConversation ? AskConversation(id: id, title: String(submitted.title.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = queuedId ?? UUID().uuidString
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
+        request.titlePolicy = .init(enabled: modelLibrary.settings.askAutomaticTitles, modelRef: modelLibrary.settings.askTitleModelReference)
         request.clientToolApproval = true
         request.skills = skillUses(submitted.skills)
         request.modelRef = modelRef
@@ -1210,7 +1216,10 @@ final class AskConversationModel: ObservableObject {
         var value = snapshots[value.id]?.reconciling(value, preservingEqualRevisionContent: true) ?? value
         value = sanitizedMemory(value, account: route.account, local: route.token.isEmpty)
         // Persist meaningful message/state changes, not every transient preview.
-        if snapshots[value.id]?.messages != value.messages || snapshots[value.id]?.run?.status != value.run?.status || snapshots[value.id]?.usage != value.usage {
+        if snapshots[value.id]?.title != value.title || snapshots[value.id]?.titleGeneration != value.titleGeneration
+            || snapshots[value.id]?.titleSource != value.titleSource || snapshots[value.id]?.titlePolicy != value.titlePolicy
+            || snapshots[value.id]?.messages != value.messages || snapshots[value.id]?.run?.status != value.run?.status
+            || snapshots[value.id]?.usage != value.usage {
             try await cache.save(value, owner: route.owner)
         }
         guard owner == route.account else { throw CancellationError() }
@@ -1225,6 +1234,7 @@ final class AskConversationModel: ObservableObject {
             inferenceProgress[value.id] = nil; progressInferenceIDs[value.id] = nil
         }
         updateSummary(value)
+        scheduleTitle(value, route: route)
         await refreshRecovery(value, route: route)
         if value.run?.isActive == false, sendQueue.messages(value.id).isEmpty == false || sendQueue.steeredMessages(value.id).isEmpty == false {
             queueDidSettle(value.id)
@@ -1611,6 +1621,7 @@ final class AskConversationModel: ObservableObject {
             try tools.deleteArtifacts(ownerId: current.account, conversationId: id)
             try workflowAuthoring?.remove(id)
             deletedConversationIDs.insert(id)
+            titleTasks[id]?.cancel(); titleTasks[id] = nil; titleRetryAfter[id] = nil
             // Drain a writer already inside the cache before deleting its draft.
             // New writers check the tombstone immediately before saving.
             if draftSaveConversationID == id {

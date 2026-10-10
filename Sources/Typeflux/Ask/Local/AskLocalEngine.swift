@@ -122,6 +122,20 @@ actor AskLocalEngine: AskAPI {
         return record
     }
 
+    /// Metadata edits preserve the activity date and never replace messages.
+    func updateTitle(id: String, request: AskTitleRequest, token _: String) async throws -> AskConversation {
+        var value = try record(id)
+        let changed = try AskConversationTitle.apply(request, to: &value.conversation, now: now())
+        if changed {
+            value.conversation.titleRevision = (value.conversation.titleRevision ?? 0) + 1
+            value.conversation.revision += 1
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try AskCoding.encoder().encode(value).write(to: file(value.conversation.id), options: [.atomic, .completeFileProtection])
+            records[value.conversation.id] = value
+        }
+        return value.conversation
+    }
+
     // MARK: - AskAPI
 
     func list(token _: String, offset: Int) async throws -> [AskConversationSummary] {
@@ -187,6 +201,7 @@ actor AskLocalEngine: AskAPI {
         c.messages.append(AskMessage(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source,
                                      image: request.image, createdAt: now(), reasoningEffort: request.reasoningEffort, references: request.references,
                                      attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
+        c.titlePolicy = request.titlePolicy ?? c.titlePolicy
         c.modelRef = modelRef
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
                        tools: request.tools, pending: [], modelRef: modelRef, reasoningEffort: request.reasoningEffort)

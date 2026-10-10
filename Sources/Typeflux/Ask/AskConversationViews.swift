@@ -619,6 +619,7 @@ struct AskConversationView: View {
                 showsSidebarDrawer = false
                 Task { await model.select(item.id) }
             },
+            onRename: { model.promptRename(item.id, title: item.title) },
             onDelete: { deleteId = item.id }
         )
     }
@@ -1523,6 +1524,7 @@ private struct AskHistoryRow: View {
     let busy: Bool
     let selectionSpace: Namespace.ID
     var onSelect: () -> Void
+    var onRename: () -> Void = {}
     var onDelete: () -> Void
     @State private var hovering = false
     @Environment(\.interfaceStyle) private var style
@@ -1582,6 +1584,7 @@ private struct AskHistoryRow: View {
         .onHover { hovering = $0 }
         .accessibilityAddTraits(selected ? .isSelected : [])
         .contextMenu {
+            Button(L("ask.title.rename"), action: onRename).disabled(busy)
             Button(L("ask.delete"), role: .destructive, action: onDelete).disabled(busy)
         }
     }

@@ -2,6 +2,7 @@ import Foundation
 import TypefluxChat
 
 protocol AskAPI: Sendable {
+    func updateTitle(id: String, request: AskTitleRequest, token: String) async throws -> AskConversation
     func featureModels(feature: String, token: String) async throws -> [AskCloudModel]?
     func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage
     func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token: String) async throws -> AskConversation
@@ -27,6 +28,9 @@ protocol AskAPI: Sendable {
 }
 
 extension AskAPI {
+    func updateTitle(id: String, request: AskTitleRequest, token: String) async throws -> AskConversation {
+        throw AskLocalError.message(L("ask.models.requestError"))
+    }
     func featureModels(feature: String, token: String) async throws -> [AskCloudModel]? { nil }
     /// Services without steering reject it; the device then sends the message as a new turn.
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
@@ -57,6 +61,9 @@ extension AskAPI {
 }
 
 struct AskAPIClient: AskAPI {
+    func updateTitle(id: String, request: AskTitleRequest, token: String) async throws -> AskConversation {
+        try await execute(path: "/\(id)/title", method: "POST", body: AskCoding.encoder().encode(request), token: token)
+    }
     func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage {
         var path = "/\(id)/usage?cursor=\(cursor ?? 0)"
         if let runId { path += "&run_id=" + (runId.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "") }

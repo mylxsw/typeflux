@@ -25,6 +25,7 @@ extension AskToolsSettingsView {
                 ) { setNewConversationsStayLocal(true) }
             }
         }
+        AskTitleSettingsView(settings: settings)
         let attention = statuses.filter { $0.level == .attention }
         AgentSettingsSection(title: L("agent.overview.attention.title"),
                              detail: attention.isEmpty ? nil : L("agent.overview.attention.count", attention.count)) {

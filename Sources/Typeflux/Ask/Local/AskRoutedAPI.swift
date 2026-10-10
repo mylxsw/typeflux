@@ -11,6 +11,10 @@ struct AskRoutedAPI: AskAPI {
 
     private func api(_ token: String) -> any AskAPI { token.isEmpty ? local : cloud }
 
+    func updateTitle(id: String, request: AskTitleRequest, token: String) async throws -> AskConversation {
+        try await api(token).updateTitle(id: id, request: request, token: token)
+    }
+
     func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage {
         try await api(token).usage(id: id, runId: runId, cursor: cursor, token: token)
     }
