@@ -27,6 +27,8 @@ struct AskOpenChatTests {
         let f = try AskTestFixture()
         await f.api.seed(.init(id: "old", title: "Old", revision: 1, updatedAt: Date(), messages: []))
         await f.model.select("old")
+        let originalHistory = f.model.conversations
+        #expect(originalHistory.map(\.id) == ["old"])
         f.model.draft.text = "Keep this"
         f.model.launcherDraft = AskDraft(text: "chat Help me think", includeScreenshot: false,
                                          selection: "Context", source: "Notes", modelRef: "custom:test",
@@ -41,9 +43,10 @@ struct AskOpenChatTests {
         #expect(try await f.cache.draft(key: "old", owner: "owner")?.text == "Keep this")
         #expect(await f.api.sends.isEmpty)
         #expect(await f.localAPI.sends.isEmpty)
-        #expect(f.model.conversations.count == 0)
+        #expect(f.model.conversations == originalHistory)
         await f.model.select("old")
         #expect(f.model.draft.text == "Keep this")
+        #expect(f.model.conversations == originalHistory)
     }
 
     @Test func displacedNewDraftIsDurableAndCanBeSwappedBack() async throws {
