@@ -240,19 +240,19 @@ struct AskAccountCard: View {
         openingBilling = true
         Task {
             defer { openingBilling = false }
-            do {
-                let url = try await AccountBillingFlow.destination(
-                    for: destination,
-                    requestBillingPageToken: { try await auth.requestBillingPageToken() },
-                    createPortalSession: { try await auth.createBillingPortalSession() }
-                )
-                // Coming back from the browser should show the new plan right away.
-                auth.invalidateAccountSummary()
-                NSWorkspace.shared.open(url)
-                onDismiss()
-            } catch {
-                billingError = error.localizedDescription
-            }
+            await AccountBillingFlow.open(
+                destination,
+                for: auth,
+                onLink: { url in
+                    // Coming back from the browser should show the new plan right away.
+                    auth.invalidateAccountSummary()
+                    NSWorkspace.shared.open(url)
+                    onDismiss()
+                },
+                onFailure: { error in
+                    billingError = error.localizedDescription
+                }
+            )
         }
     }
 }

@@ -68,4 +68,47 @@ final class AccountBillingFlowTests: XCTestCase {
 
         XCTAssertEqual(portalRequests, 0)
     }
+
+    func testOpenHandsTheLinkToOnLink() async {
+        var links: [URL] = []
+        var failures: [Error] = []
+
+        await AccountBillingFlow.open(
+            { URL(string: "https://billing.example/plans")! },
+            onLink: { links.append($0) },
+            onFailure: { failures.append($0) }
+        )
+
+        XCTAssertEqual(links.map(\.absoluteString), ["https://billing.example/plans"])
+        XCTAssertTrue(failures.isEmpty)
+    }
+
+    func testOpenReportsTheCurrentSessionsFailureUnchanged() async {
+        var links: [URL] = []
+        var failures: [Error] = []
+
+        await AccountBillingFlow.open(
+            { throw AuthError.serverError(code: "BILLING_NOT_CONFIGURED", message: "not yet") },
+            onLink: { links.append($0) },
+            onFailure: { failures.append($0) }
+        )
+
+        XCTAssertTrue(links.isEmpty)
+        XCTAssertEqual(failures.count, 1)
+        XCTAssertEqual((failures.first as? AuthError)?.authErrorCode, "BILLING_NOT_CONFIGURED")
+    }
+
+    func testOpenDropsAReplacedSessionsOutcome() async {
+        var links: [URL] = []
+        var failures: [Error] = []
+
+        await AccountBillingFlow.open(
+            { throw BillingSessionReplacedError() },
+            onLink: { links.append($0) },
+            onFailure: { failures.append($0) }
+        )
+
+        XCTAssertTrue(links.isEmpty)
+        XCTAssertTrue(failures.isEmpty)
+    }
 }

@@ -187,9 +187,7 @@ extension AuthState {
         guard let token = accessToken else {
             throw AuthError.unauthorized
         }
-        let generation = sessionGeneration
-        let session = try await createCheckoutSession(token, planCode)
-        try requireSession(generation)
+        let session = try await withinSession { try await createCheckoutSession(token, planCode) }
         if !subscription.hasPaidSubscription {
             pendingCheckoutSubscriptionEntitlement = true
         }
@@ -201,20 +199,14 @@ extension AuthState {
         guard let token = accessToken else {
             throw AuthError.unauthorized
         }
-        let generation = sessionGeneration
-        let session = try await createPortalSession(token)
-        try requireSession(generation)
-        return session.url
+        return try await withinSession { try await createPortalSession(token) }.url
     }
 
     func requestBillingPageToken() async throws -> URL {
         guard let token = accessToken else {
             throw AuthError.unauthorized
         }
-        let generation = sessionGeneration
-        let response = try await issueBillingPageToken(token)
-        try requireSession(generation)
-        return response.plansURL
+        return try await withinSession { try await issueBillingPageToken(token) }.plansURL
     }
 
     /// The billing page opened on `tab`, e.g. `BillingPlansLink.creditsTab`.
@@ -222,14 +214,26 @@ extension AuthState {
         try await BillingPlansLink.url(requestBillingPageToken(), tab: tab)
     }
 
-    /// A billing link is signed for the account that requested it. One that
-    /// arrives after that session was logged out or replaced must not be
-    /// opened (or start checkout polling) for whoever is signed in now.
-    private func requireSession(_ generation: Int) throws {
-        guard generation == sessionGeneration else {
-            logger.info("Discarding billing link for a replaced session")
-            throw AuthError.unauthorized
+    /// Runs a billing link request for the current session. A link is signed
+    /// for the account that requested it, and its failure describes that
+    /// account: when the session was logged out or replaced meanwhile, the
+    /// outcome is neither returned (so no old link is opened and no checkout
+    /// polling starts) nor reported to whoever is signed in now; the request
+    /// ends in `BillingSessionReplacedError` instead. A token refresh keeps
+    /// the session, so it does not discard the outcome.
+    private func withinSession<T>(_ request: () async throws -> T) async throws -> T {
+        let generation = sessionGeneration
+        let outcome: Result<T, Error>
+        do {
+            outcome = try .success(await request())
+        } catch {
+            outcome = .failure(error)
         }
+        guard generation == sessionGeneration else {
+            logger.info("Discarding billing link outcome for a replaced session")
+            throw BillingSessionReplacedError()
+        }
+        return try outcome.get()
     }
 
     private func startCheckoutPolling() {

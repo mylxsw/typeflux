@@ -187,14 +187,17 @@ struct AskCreditPauseSection: View {
         openingBilling = true
         Task {
             defer { openingBilling = false }
-            do {
-                let url = try await auth.requestBillingPageToken(tab: tab)
-                // Coming back from the browser fetches the new balance right away.
-                auth.invalidateAccountSummary()
-                NSWorkspace.shared.open(url)
-            } catch {
-                billingError = error.localizedDescription
-            }
+            await AccountBillingFlow.open(
+                { try await auth.requestBillingPageToken(tab: tab) },
+                onLink: { url in
+                    // Coming back from the browser fetches the new balance right away.
+                    auth.invalidateAccountSummary()
+                    NSWorkspace.shared.open(url)
+                },
+                onFailure: { error in
+                    billingError = error.localizedDescription
+                }
+            )
         }
     }
 }
