@@ -10,8 +10,9 @@ enum ScreenshotOutputAction: Equatable {
 enum ScreenshotOverlayEvent: Equatable {
     /// A region was chosen; the overlay now adjusts it instead of framing a new one.
     case committed
-    /// Use the region, given in global Quartz points on one display.
-    case finish(ScreenshotOutputAction, displayID: CGDirectDisplayID, rect: CGRect)
+    /// Use the region with its annotations, both in global Quartz points on one display.
+    case finish(ScreenshotOutputAction, displayID: CGDirectDisplayID, rect: CGRect,
+                annotations: [ScreenshotAnnotation] = [])
     /// ⇧ while the loupe shows: the color under the pointer, as hex.
     case colorPicked(String)
     case cancelled

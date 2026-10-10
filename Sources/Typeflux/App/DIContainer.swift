@@ -43,7 +43,7 @@ final class DIContainer {
         ScreenshotCoordinator(
             capture: screenCapture,
             permission: screenCapturePermission,
-            overlay: ScreenshotOverlayController(),
+            overlay: ScreenshotOverlayController(textMeasurer: VisionTextHeightMeasurer()),
             permissionGuide: ScreenshotPermissionGuideController(),
             toast: ScreenshotToastController(),
             output: screenshotOutput,

@@ -402,3 +402,25 @@ extension LocalizationResourceTests {
         }
     }
 }
+
+extension LocalizationResourceTests {
+    func testScreenshotEditorCopyExistsInEveryLanguage() throws {
+        var keys = ScreenshotAnnotationTool.allCases.map { "screenshot.tool.\($0.rawValue)" }
+        keys += ["undo", "redo", "cancel", "save", "copy", "color", "size"].map { "screenshot.edit.\($0)" }
+        keys += ScreenshotAnnotationStyle.Color.allCases.map { "screenshot.color.\($0.rawValue)" }
+        keys += ["thin", "medium", "thick"].map { "screenshot.width.\($0)" }
+        keys += ScreenshotAnnotationEditor.MosaicShape.allCases.map { "screenshot.mosaic.shape.\($0.rawValue)" }
+        keys += ScreenshotMosaic.Effect.allCases.map { "screenshot.mosaic.effect.\($0.rawValue)" }
+        keys += ["", ".low", ".medium", ".high"].map { "screenshot.mosaic.strength\($0)" }
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            let tableURL = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))
+            let table = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: tableURL),
+                options: [], format: nil) as? [String: String])
+            for key in keys {
+                XCTAssertFalse(try XCTUnwrap(table[key], "Missing \(key) in \(language.rawValue)").isEmpty)
+            }
+            XCTAssertNil(table["screenshot.overlay.hint"], "The toolbar replaced the hint")
+        }
+    }
+}
