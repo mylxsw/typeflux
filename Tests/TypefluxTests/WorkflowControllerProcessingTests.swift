@@ -4938,6 +4938,48 @@ extension WorkflowControllerProcessingTests {
         XCTAssertEqual(harness.store.trimImageBytes.count, imageTrims)
     }
 
+    func testPanelCommandsPauseClearDeleteAndPasteEditedText() async {
+        let harness = makeClipboardPanelHarness { store in
+            store.record(.text("from safari"), source: ClipboardSource(bundleID: "com.apple.Safari", appName: "Safari"),
+                         at: Date().addingTimeInterval(-30))
+            store.record(.text("from notes"), source: ClipboardSource(bundleID: "com.apple.Notes", appName: "Notes"),
+                         at: Date().addingTimeInterval(-20))
+            store.record(.text("kept"), source: nil, at: Date().addingTimeInterval(-10))
+            if let index = store.storedItems.firstIndex(where: { $0.text == "kept" }) {
+                store.storedItems[index].isPinned = true
+            }
+        }
+        let settings = harness.controller.settingsStore
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertFalse(harness.model.isRecordingPaused)
+
+        harness.model.send(.togglePause)
+        XCTAssertTrue(settings.isClipboardRecordingPaused())
+        XCTAssertTrue(harness.model.isRecordingPaused)
+        XCTAssertEqual(harness.model.notice, L("clipboard.notice.paused"))
+        harness.model.send(.togglePause)
+        XCTAssertFalse(settings.isClipboardRecordingPaused())
+        XCTAssertFalse(harness.model.isRecordingPaused)
+
+        harness.model.perform(.showOnlyApp, at: harness.index(of: "from safari"))
+        harness.model.perform(.deleteAllFromApp, at: 0)
+        harness.model.confirmPending()
+        XCTAssertNil(harness.model.appFilter)
+        XCTAssertEqual(Set(harness.model.visibleEntries.map(\.title)), ["from notes", "kept"])
+
+        harness.model.requestClearUnpinned()
+        harness.model.confirmPending()
+        XCTAssertEqual(harness.model.visibleEntries.map(\.title), ["kept"])
+
+        harness.model.perform(.editBeforePaste, at: 0)
+        harness.model.editingText = "kept, edited"
+        harness.model.commitEdit()
+        XCTAssertEqual(harness.clipboard.storedText, "kept, edited")
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        await waitUntil { harness.textInjector.insertedTexts == ["kept, edited"] }
+        XCTAssertEqual(harness.store.storedItems.compactMap(\.text), ["kept"], "The stored item is unchanged")
+    }
+
     func testOpeningThePanelAppliesPanelSettings() {
         let harness = makeClipboardPanelHarness { store in
             self.seed(store)

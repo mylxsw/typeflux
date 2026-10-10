@@ -82,11 +82,13 @@ enum ClipboardFeed {
         _ entries: [ClipboardEntry],
         category: ClipboardCategory,
         query: String,
+        sourceBundleID: String? = nil,
         searchText: (ClipboardEntry) -> String = searchableText(of:)
     ) -> [ClipboardEntry] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
         return entries.filter { entry in
             guard category == .all || entry.kind.category == category else { return false }
+            guard sourceBundleID == nil || entry.sourceBundleID == sourceBundleID else { return false }
             guard !needle.isEmpty else { return true }
             return searchText(entry).localizedCaseInsensitiveContains(needle)
         }

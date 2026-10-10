@@ -159,6 +159,12 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
             return handleQuickLookKeyDown(event)
         }
         guard event.window === panel else { return false }
+        if model.editingText != nil {
+            return handleEditorKeyDown(event, model: model)
+        }
+        if model.pendingConfirmation != nil {
+            return handleConfirmationKeyDown(event, model: model)
+        }
 
         let editor = panel.firstResponder as? NSTextView
         let command = ClipboardPanelKeyCommand.command(
@@ -181,11 +187,45 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
         case .previousCategory: model.cycleCategory(forward: false)
         case .cancel: model.cancel()
         case let .action(action): model.perform(action)
-        case let .quickPaste(number):
-            if !isRepeat { model.quickPaste(number: number) }
-        case .togglePreview:
-            if !isRepeat { model.togglePreview() }
+        case .quickPaste, .togglePreview, .togglePause, .openSettings:
+            // Toggles and one-shot commands ignore key repeat.
+            if !isRepeat { runOnce(command, on: model) }
         }
+    }
+
+    private static func runOnce(_ command: ClipboardPanelKeyCommand, on model: ClipboardPanelModel) {
+        switch command {
+        case let .quickPaste(number): model.quickPaste(number: number)
+        case .togglePreview: model.togglePreview()
+        case .togglePause: model.send(.togglePause)
+        case .openSettings: model.send(.openSettings)
+        default: break
+        }
+    }
+
+    /// While editing before paste the text view gets the keys; Escape cancels and ⌘↩ pastes.
+    private func handleEditorKeyDown(_ event: NSEvent, model: ClipboardPanelModel) -> Bool {
+        let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
+        if event.keyCode == 53 {
+            model.cancelEdit()
+            return true
+        }
+        if [36, 76].contains(event.keyCode), flags == .command {
+            model.commitEdit()
+            return true
+        }
+        return false
+    }
+
+    /// A pending confirmation takes Return and Escape and holds the list still.
+    private func handleConfirmationKeyDown(_ event: NSEvent, model: ClipboardPanelModel) -> Bool {
+        switch event.keyCode {
+        case 36, 76: model.confirmPending()
+        case 53: model.cancelPending()
+        case 125, 126, 48: break
+        default: return false
+        }
+        return true
     }
 
     // MARK: - Quick Look

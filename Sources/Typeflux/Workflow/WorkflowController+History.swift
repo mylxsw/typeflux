@@ -16,6 +16,17 @@ extension WorkflowController {
         historyPanelModel.onPreviewVisibilityChange = { [weak self] shows in
             self?.settingsStore.clipboardShowsPreview = shows
         }
+        historyPanelModel.onCommand = { [weak self] command in
+            self?.performHistoryPanelCommand(command)
+        }
+        clipboardPauseObserver = NotificationCenter.default.addObserver(
+            forName: .clipboardRecordingPauseDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            historyPanelModel.isRecordingPaused = settingsStore.isClipboardRecordingPaused()
+        }
         clipboardHistoryObserver = NotificationCenter.default.addObserver(
             forName: .clipboardHistoryDidChange,
             object: nil,
@@ -46,6 +57,7 @@ extension WorkflowController {
         }
 
         historyPanelModel.showsPreview = settingsStore.clipboardShowsPreview
+        historyPanelModel.isRecordingPaused = settingsStore.isClipboardRecordingPaused()
         historyPanelModel.singleClickPastes = settingsStore.clipboardSingleClickPastes
         historyPanelModel.reset(entries: entries, selectFirstUnpinned: settingsStore.clipboardSelectsFirstUnpinned)
         isHistoryPickerPresented = true
@@ -102,12 +114,58 @@ extension WorkflowController {
             saveHistoryImageToDownloads(entry)
         case .copyImageText:
             copyHistoryImageText(entry)
+        case .retryTranscription, .togglePin, .delete, .editBeforePaste, .showOnlyApp, .deleteAllFromApp:
+            performHistoryManagementAction(action, on: entry)
+        }
+    }
+
+    private func performHistoryManagementAction(_ action: ClipboardEntryAction, on entry: ClipboardEntry) {
+        switch action {
         case .retryTranscription:
             retryHistoryEntry(entry)
         case .togglePin:
             toggleHistoryEntryPin(entry)
         case .delete:
             deleteHistoryEntry(entry)
+        default:
+            // Editing, the app filter and deleting an app's items are handled by the panel model,
+            // which reports their results as panel commands.
+            break
+        }
+    }
+
+    func performHistoryPanelCommand(_ command: ClipboardPanelCommand) {
+        switch command {
+        case .togglePause:
+            if settingsStore.isClipboardRecordingPaused() {
+                settingsStore.resumeClipboardRecording()
+            } else {
+                settingsStore.pauseClipboardRecording(for: .untilResumed)
+            }
+            let paused = settingsStore.isClipboardRecordingPaused()
+            historyPanelModel.isRecordingPaused = paused
+            historyPanelModel.showNotice(L(paused ? "clipboard.notice.paused" : "clipboard.notice.resumed"))
+        case .openSettings:
+            dismissHistoryPicker()
+            let settingsStore = settingsStore
+            let historyStore = historyStore
+            Task { @MainActor in
+                SettingsWindowController.shared.show(
+                    settingsStore: settingsStore,
+                    historyStore: historyStore,
+                    initialSection: .launcher,
+                    launcherPane: .clipboard
+                )
+            }
+        case .clearUnpinned:
+            clipboardHistoryStore?.deleteUnpinned(sourceBundleID: nil)
+            reloadHistoryPanel()
+        case let .deleteApp(bundleID):
+            clipboardHistoryStore?.deleteUnpinned(sourceBundleID: bundleID)
+            historyPanelModel.setAppFilter(nil)
+            reloadHistoryPanel()
+        case let .pasteText(text):
+            pasteHistoryText(text)
         }
     }
 
@@ -134,16 +192,7 @@ extension WorkflowController {
         dismissHistoryPicker()
 
         if entry.kind.isTextual, let text = entry.text {
-            clipboard.write(text: text)
-            Task { [weak self] in
-                guard let self else { return }
-                await sleep(Self.historyPanelFocusReturnDelay)
-                _ = await applyText(
-                    text,
-                    replace: false,
-                    fallbackTitle: L("overlay.historyPicker.pasteFallbackTitle")
-                )
-            }
+            deliverHistoryText(text)
             return
         }
 
@@ -153,6 +202,27 @@ extension WorkflowController {
             guard let self else { return }
             await sleep(Self.historyPanelFocusReturnDelay)
             actions.sendPasteShortcut()
+        }
+    }
+
+    /// Pastes text edited in the panel.
+    private func pasteHistoryText(_ text: String) {
+        soundEffectPlayer.playAsync(.tip)
+        dismissHistoryPicker()
+        deliverHistoryText(text)
+    }
+
+    /// Puts text on the clipboard and inserts it into the app that was frontmost.
+    private func deliverHistoryText(_ text: String) {
+        clipboard.write(text: text)
+        Task { [weak self] in
+            guard let self else { return }
+            await sleep(Self.historyPanelFocusReturnDelay)
+            _ = await applyText(
+                text,
+                replace: false,
+                fallbackTitle: L("overlay.historyPicker.pasteFallbackTitle")
+            )
         }
     }
 

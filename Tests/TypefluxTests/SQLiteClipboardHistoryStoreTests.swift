@@ -191,6 +191,22 @@ final class SQLiteClipboardHistoryStoreTests: XCTestCase {
         XCTAssertEqual(observed.items(limit: 10).compactMap(\.text), ["b"])
     }
 
+    func testDeleteUnpinnedForOneAppOrAll() throws {
+        let safari = ClipboardSource(bundleID: "com.apple.Safari", appName: "Safari")
+        let notes = ClipboardSource(bundleID: "com.apple.Notes", appName: "Notes")
+        store.record(.text("safari"), source: safari, at: date(0))
+        let pinned = try XCTUnwrap(store.record(.text("safari pinned"), source: safari, at: date(1)))
+        store.setPinned(true, id: pinned.id)
+        store.record(.text("notes"), source: notes, at: date(2))
+        store.record(.text("unknown"), source: nil, at: date(3))
+
+        store.deleteUnpinned(sourceBundleID: "com.apple.Safari")
+        XCTAssertEqual(Set(store.items(limit: 10).compactMap(\.text)), ["safari pinned", "notes", "unknown"])
+
+        store.deleteUnpinned(sourceBundleID: nil)
+        XCTAssertEqual(store.items(limit: 10).compactMap(\.text), ["safari pinned"])
+    }
+
     func testUnwritableDatabaseFailsSoftly() {
         let file = directory.appendingPathComponent("not-a-directory")
         FileManager.default.createFile(atPath: file.path, contents: Data())
@@ -202,5 +218,7 @@ final class SQLiteClipboardHistoryStoreTests: XCTestCase {
         broken.delete(id: UUID())
         broken.purge(olderThan: date(0))
         broken.trim(toMaxCount: 1)
+        broken.trim(toMaxImageBytes: 1)
+        broken.deleteUnpinned(sourceBundleID: nil)
     }
 }

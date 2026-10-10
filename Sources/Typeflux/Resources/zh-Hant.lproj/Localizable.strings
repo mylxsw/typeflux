@@ -471,6 +471,27 @@
 "clipboard.settings.position.launcher" = "與啟動器一致";
 "clipboard.settings.position.center" = "螢幕中央";
 "clipboard.settings.position.mouse" = "游標所在位置";
+"clipboard.action.editBeforePaste" = "編輯後貼上";
+"clipboard.action.showOnlyApp" = "只看 %@";
+"clipboard.action.deleteAllFromApp" = "刪除 %@ 的全部記錄…";
+"clipboard.confirm.clearUnpinned" = "刪除 %d 筆未釘選的剪貼簿內容？語音輸入結果會保留。";
+"clipboard.confirm.deleteApp" = "刪除從 %2$@ 拷貝的 %1$d 筆未釘選內容？";
+"clipboard.notice.nothingToClear" = "沒有可刪除的未釘選內容";
+"clipboard.notice.paused" = "已暫停記錄剪貼簿";
+"clipboard.notice.resumed" = "已恢復記錄剪貼簿";
+"clipboard.filter.clear" = "顯示全部 App";
+"clipboard.toolbar.pause" = "暫停記錄 (⌘⇧P)";
+"clipboard.toolbar.resume" = "恢復記錄 (⌘⇧P)";
+"clipboard.toolbar.preview" = "預覽欄 (⌘\\)";
+"clipboard.toolbar.settings" = "剪貼簿設定 (⌘,)";
+"clipboard.toolbar.more" = "更多";
+"clipboard.menu.showPreview" = "顯示預覽欄";
+"clipboard.menu.hidePreview" = "隱藏預覽欄";
+"clipboard.menu.clearUnpinned" = "刪除全部未釘選內容…";
+"clipboard.footer.paused" = "已暫停記錄 · 點擊恢復";
+"clipboard.edit.title" = "編輯後貼上";
+"clipboard.edit.hint" = "⌘↩ 貼上 · Esc 取消 · 不會修改原記錄";
+"clipboard.edit.cancel" = "取消";
 "history.clipboard.title" = "記錄剪貼簿歷史";
 "history.clipboard.subtitle" = "記錄你拷貝的文字、圖片與檔案，用歷史快速鍵開啟。密碼不會被記錄，所有內容只保存在這台 Mac 上。";
 

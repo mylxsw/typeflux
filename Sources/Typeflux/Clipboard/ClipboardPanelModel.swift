@@ -30,6 +30,13 @@ final class ClipboardPanelModel: ObservableObject {
     }
 
     @Published private(set) var notice: String?
+    /// Only entries copied from this app are shown.
+    @Published private(set) var appFilter: ClipboardAppFilter?
+    /// Text being edited before pasting (`⌘E`); `nil` when not editing.
+    @Published var editingText: String?
+    @Published private(set) var pendingConfirmation: ClipboardPanelConfirmation?
+    /// Mirrors the recording pause, shown in the footer.
+    @Published var isRecordingPaused = false
     /// Whether the side preview pane is shown.
     @Published var showsPreview = false {
         didSet {
@@ -48,6 +55,7 @@ final class ClipboardPanelModel: ObservableObject {
     @Published private(set) var scrollToTopRequest = 0
 
     var onAction: ((ClipboardEntryAction, ClipboardEntry) -> Void)?
+    var onCommand: ((ClipboardPanelCommand) -> Void)?
     var onDismiss: (() -> Void)?
     var onPreviewVisibilityChange: ((Bool) -> Void)?
     var fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
@@ -73,6 +81,9 @@ final class ClipboardPanelModel: ObservableObject {
         missingCache = [:]
         setEntries(entries)
         notice = nil
+        editingText = nil
+        pendingConfirmation = nil
+        appFilter = nil
         query = ""
         category = .all
         refilter(resetSelection: true)
@@ -154,10 +165,27 @@ final class ClipboardPanelModel: ObservableObject {
         !(action.requiresContent && isMarkedMissing(entry))
     }
 
-    /// Runs an action on the entry at `index`, or on the selected entry.
+    /// Runs an action on the entry at `index`, or on the selected entry. Panel-side actions
+    /// (editing, filtering by app, deleting an app's items) are handled here.
     func perform(_ action: ClipboardEntryAction, at index: Int? = nil) {
         if let index { select(index: index) }
         guard let entry = selectedEntry, actions(for: entry).contains(action) else { return }
+        switch action {
+        case .editBeforePaste:
+            editingText = entry.text
+            return
+        case .showOnlyApp:
+            setAppFilter(ClipboardAppFilter(entry: entry))
+            return
+        case .deleteAllFromApp:
+            if let app = ClipboardAppFilter(entry: entry) {
+                let count = entries.filter { $0.sourceBundleID == app.bundleID && !$0.isPinned }.count
+                pendingConfirmation = .deleteApp(app, count: count)
+            }
+            return
+        default:
+            break
+        }
         if action.requiresContent {
             let missing = isMissing(entry)
             missingCache[entry.id] = missing
@@ -203,15 +231,6 @@ final class ClipboardPanelModel: ObservableObject {
         return ordered.first { $0.value.upperBound > 0 && $0.value.lowerBound < viewportHeight }?.key
     }
 
-    /// Escape clears the search first, then closes the panel.
-    func cancel() {
-        if query.isEmpty {
-            onDismiss?()
-        } else {
-            query = ""
-        }
-    }
-
     func showNotice(_ message: String) {
         notice = message
         noticeGeneration += 1
@@ -235,7 +254,9 @@ final class ClipboardPanelModel: ObservableObject {
     private func refilter(resetSelection: Bool) {
         let signpost = ClipboardPerformance.begin("refilter")
         defer { ClipboardPerformance.end("refilter", signpost) }
-        visibleEntries = ClipboardFeed.filter(entries, category: category, query: query) { [searchIndex] entry in
+        visibleEntries = ClipboardFeed.filter(
+            entries, category: category, query: query, sourceBundleID: appFilter?.bundleID
+        ) { [searchIndex] entry in
             searchIndex[entry.id] ?? ClipboardFeed.searchableText(of: entry)
         }
         rows = Self.rows(for: visibleEntries, now: now())
@@ -279,5 +300,67 @@ final class ClipboardPanelModel: ObservableObject {
 
     private func clampedIndex(_ index: Int) -> Int {
         max(0, min(index, visibleEntries.count - 1))
+    }
+}
+
+// MARK: - Panel commands
+
+extension ClipboardPanelModel {
+    func setAppFilter(_ filter: ClipboardAppFilter?) {
+        guard filter != appFilter else { return }
+        appFilter = filter
+        refilter(resetSelection: true)
+    }
+
+    /// Pastes the edited text and leaves editing; empty text is not pasted.
+    func commitEdit() {
+        guard let text = editingText else { return }
+        editingText = nil
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        onCommand?(.pasteText(text))
+    }
+
+    func cancelEdit() {
+        editingText = nil
+    }
+
+    /// Asks to delete every unpinned clipboard item; voice results stay.
+    func requestClearUnpinned() {
+        let count = entries.filter { !$0.isPinned && $0.kind != .voice }.count
+        guard count > 0 else {
+            showNotice(L("clipboard.notice.nothingToClear"))
+            return
+        }
+        pendingConfirmation = .clearUnpinned(count: count)
+    }
+
+    func confirmPending() {
+        guard let pending = pendingConfirmation else { return }
+        pendingConfirmation = nil
+        onCommand?(pending.command)
+    }
+
+    func cancelPending() {
+        pendingConfirmation = nil
+    }
+
+    func send(_ command: ClipboardPanelCommand) {
+        onCommand?(command)
+    }
+
+    /// Escape backs out one step: a confirmation, the editor, the search, the app filter, then
+    /// the panel itself.
+    func cancel() {
+        if pendingConfirmation != nil {
+            pendingConfirmation = nil
+        } else if editingText != nil {
+            editingText = nil
+        } else if !query.isEmpty {
+            query = ""
+        } else if appFilter != nil {
+            setAppFilter(nil)
+        } else {
+            onDismiss?()
+        }
     }
 }

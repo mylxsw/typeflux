@@ -535,6 +535,9 @@ struct StudioView: View {
         .onReceive(NotificationCenter.default.publisher(for: .authDidLogin)) { _ in
             Task { await refreshSidebarAccountStatus() }
         }
+        .onReceive(viewModel.$launcherPaneRequest.compactMap { $0 }) { pane in
+            launcherPane = pane
+        }
         .overlay(alignment: .bottom) {
             if let toast = viewModel.toastMessage {
                 Text(toast)

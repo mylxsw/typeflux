@@ -5,20 +5,26 @@ enum ClipboardEntryAction: Equatable, CaseIterable {
     case paste
     /// Text: same as paste. Files: pastes their paths as text.
     case pastePlainText
+    /// Text: edit in the panel, then paste; the stored entry is unchanged.
+    case editBeforePaste
     case copy
     case quickLook
     case revealInFinder
     case saveToDownloads
     case copyImageText
     case retryTranscription
+    /// Filters the panel to entries copied from the same app.
+    case showOnlyApp
     case togglePin
     case delete
+    /// Deletes every unpinned entry copied from the same app, after confirming.
+    case deleteAllFromApp
 
     /// Actions that need the entry's files to still exist.
     var requiresContent: Bool {
         switch self {
         case .paste, .pastePlainText, .copy, .quickLook, .revealInFinder, .saveToDownloads, .copyImageText: true
-        case .retryTranscription, .togglePin, .delete: false
+        case .editBeforePaste, .retryTranscription, .showOnlyApp, .togglePin, .delete, .deleteAllFromApp: false
         }
     }
 
@@ -28,7 +34,25 @@ enum ClipboardEntryAction: Equatable, CaseIterable {
         if entry.kind.isTextual || !entry.filePaths.isEmpty {
             actions.append(.pastePlainText)
         }
+        if entry.kind.isTextual, entry.text != nil {
+            actions.append(.editBeforePaste)
+        }
         actions.append(.copy)
+        actions += contentActions(for: entry)
+        let fromApp = ClipboardAppFilter(entry: entry) != nil
+        if fromApp {
+            actions.append(.showOnlyApp)
+        }
+        actions.append(contentsOf: [.togglePin, .delete])
+        if fromApp {
+            actions.append(.deleteAllFromApp)
+        }
+        return actions
+    }
+
+    /// Previews and file actions, between copying and pinning.
+    private static func contentActions(for entry: ClipboardEntry) -> [ClipboardEntryAction] {
+        var actions: [ClipboardEntryAction] = []
         if !entry.kind.isTextual {
             actions.append(.quickLook)
         }
@@ -44,24 +68,22 @@ enum ClipboardEntryAction: Equatable, CaseIterable {
         if entry.kind == .voice {
             actions.append(.retryTranscription)
         }
-        actions.append(contentsOf: [.togglePin, .delete])
         return actions
     }
 
     func title(for entry: ClipboardEntry) -> String {
         if self == .pastePlainText, !entry.kind.isTextual { return L("clipboard.action.pastePath") }
         if self == .togglePin, entry.isPinned { return L("clipboard.action.unpin") }
-        return switch self {
-        case .paste: L("clipboard.action.paste")
-        case .pastePlainText: L("clipboard.action.pastePlainText")
-        case .copy: L("clipboard.action.copy")
-        case .quickLook: L("clipboard.action.quickLook")
-        case .revealInFinder: L("clipboard.action.revealInFinder")
-        case .saveToDownloads: L("clipboard.action.saveToDownloads")
-        case .copyImageText: L("clipboard.action.copyImageText")
-        case .retryTranscription: L("clipboard.action.retryTranscription")
-        case .togglePin: L("clipboard.action.pin")
-        case .delete: L("clipboard.action.delete")
+        if self == .showOnlyApp || self == .deleteAllFromApp {
+            return L(titleKey, entry.sourceAppName ?? entry.sourceBundleID ?? "")
+        }
+        return L(titleKey)
+    }
+
+    private var titleKey: String {
+        switch self {
+        case .togglePin: "clipboard.action.pin"
+        default: "clipboard.action.\(self)"
         }
     }
 
@@ -70,11 +92,13 @@ enum ClipboardEntryAction: Equatable, CaseIterable {
         switch self {
         case .paste: "↩"
         case .pastePlainText: "⌘↩"
+        case .editBeforePaste: "⌘E"
         case .copy: "⌘C"
         case .quickLook: "⌘Y"
         case .togglePin: "⌘P"
         case .delete: "⌘⌫"
-        case .revealInFinder, .saveToDownloads, .copyImageText, .retryTranscription: nil
+        case .revealInFinder, .saveToDownloads, .copyImageText, .retryTranscription, .showOnlyApp,
+             .deleteAllFromApp: nil
         }
     }
 }
