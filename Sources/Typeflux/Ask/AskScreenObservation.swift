@@ -10,8 +10,11 @@ final class AskScreenObservation {
     }
 
     var target: () throws -> Target = AskScreenObservation.currentTarget
-    var capture: (CGDirectDisplayID) async throws -> AskContextCapture.Screenshot = {
-        try await AskContextCapture.screenshot(displayId: $0)
+    var capture: (CGDirectDisplayID) async throws -> AskContextCapture.Screenshot
+
+    init(capturer: any ScreenCapturing = ScreenCaptureService(),
+         permission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live) {
+        capture = { try await AskContextCapture.screenshot(displayId: $0, permission: permission, capturer: capturer) }
     }
 
     static func currentTarget() throws -> Target {

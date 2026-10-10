@@ -112,7 +112,7 @@ final class AskLocalTools: AskToolExecuting {
     let browserExecutor: AskBrowserExecutor
     let computerExecutor: AskComputerExecutor
     let computerProbe = AskComputerTargetProbe()
-    let screenObservation = AskScreenObservation()
+    let screenObservation: AskScreenObservation
     var conversationEpochs: [String: UUID] = [:]
     /// Native environment override for controlled integration tests.
     var computerEnvironment: ((NSRunningApplication?) -> AskComputerExecutor.Environment)?
@@ -126,8 +126,10 @@ final class AskLocalTools: AskToolExecuting {
          artifactStore: AskArtifactStore = AskArtifactStore(), artifactCreationEnabled: Bool = false,
          artifactPreviewEnabled: Bool = false,
          projectRuntime: AskProjectRuntime? = nil,
+         screenObservation: AskScreenObservation? = nil,
          owner: @escaping @MainActor () -> String = { GlobalSoulOwner.currentID }) {
         self.registry = registry; self.settings = settings
+        self.screenObservation = screenObservation ?? AskScreenObservation()
         let store = AskObservationStore()
         observationStore = store
         browserExecutor = AskBrowserExecutor(store: store, runner: runner)

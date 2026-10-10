@@ -115,6 +115,9 @@ final class AppCoordinator {
         self.workflowController = workflowController
         workflowController.clipboardHistoryStore = di.clipboardHistoryStore
         workflowController.clipboardPanelPresenter = di.clipboardPanelController
+        workflowController.clipboardContentActions = SystemClipboardContentActions(
+            textRecognizer: di.imageTextRecognizer
+        )
         workflowController.enforceClipboardRetentionPolicy()
         di.clipboardMonitor.start()
         if let ask = di.askConversationWindowController {

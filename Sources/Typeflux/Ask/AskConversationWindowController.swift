@@ -41,13 +41,18 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary,
          llmService: LLMService? = nil, dockVisibility: DockVisibilityController = .shared,
          launcherInputSource: any AskLauncherInputSourceSelecting = SystemAskLauncherInputSourceSelector(),
+         screenCapture: any ScreenCapturing = ScreenCaptureService(),
+         screenCapturePermission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live,
          services: AskConversationWindowServices? = nil,
          clipboardHistoryStore: (any ClipboardHistoryStore)? = nil) throws {
         self.dockVisibility = dockVisibility
         self.settings = settings
         self.launcherInputSource = launcherInputSource
         conversationFrameAutosaveName = services?.frameAutosaveName ?? "AskConversationWorkspace"
-        let tools = services?.tools ?? AskLocalTools(registry: registry, settings: settings)
+        let tools = services?.tools ?? AskLocalTools(
+            registry: registry, settings: settings,
+            screenObservation: AskScreenObservation(capturer: screenCapture, permission: screenCapturePermission)
+        )
         let sandbox = tools.sandbox
         self.tools = tools
         let cache = try services?.cache ?? AskConversationCache(url: AskConversationCache.defaultURL())
@@ -65,8 +70,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                                     known: model?.contextWindowTokens != nil)
         }))
         model = AskConversationModel(api: api, cache: cache, tools: tools,
-                                     capture: services?.capture ?? AskContextCapture(injector: injector,
-                                                                memory: AskMemoryProvider(settings: settings)),
+                                     capture: services?.capture ?? AskContextCapture(
+                                         injector: injector, memory: AskMemoryProvider(settings: settings),
+                                         permission: screenCapturePermission, capturer: screenCapture
+                                     ),
                                      deviceId: deviceId,
                                      modelLibrary: modelLibrary, session: services?.session ?? {
             // Signing in is optional: without a Cloud session every conversation stays on this Mac.

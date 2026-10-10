@@ -6,19 +6,20 @@ import Testing
 /// Exercises the production capture service with only operating-system calls replaced.
 @MainActor
 final class ScreenshotPermissionProbe {
-    var allowed = false
-    var grantsRequest = false
-    var requests = 0
+    let permission = FakeScreenCapturePermission()
+    var allowed: Bool {
+        get { permission.granted }
+        set { permission.granted = newValue }
+    }
+    var grantsRequest: Bool {
+        get { permission.grantsRequest }
+        set { permission.grantsRequest = newValue }
+    }
+    var requests: Int { permission.requests }
     var captures = 0
     lazy var capture = AskContextCapture(
         injector: ContextTextInjector(),
-        preflightScreenCapture: { [weak self] in self?.allowed ?? false },
-        requestScreenCapture: { [weak self] in
-            guard let self else { return false }
-            requests += 1
-            allowed = grantsRequest
-            return allowed
-        },
+        permission: permission,
         accessibilityTrusted: { false }, frontmostProcessID: { 42 },
         captureScreenshot: { [weak self] _ in
             guard let self else { throw CancellationError() }

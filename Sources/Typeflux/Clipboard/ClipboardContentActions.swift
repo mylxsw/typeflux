@@ -1,21 +1,23 @@
 import AppKit
 import Foundation
-import Vision
 
-/// Performs clipboard panel actions with the pasteboard, Finder and Vision.
+/// Performs clipboard panel actions with the pasteboard, Finder and on-device text recognition.
 final class SystemClipboardContentActions: ClipboardContentActing {
     private let pasteboard: NSPasteboard
     private let fileManager: FileManager
     private let downloadsDirectory: URL?
+    private let textRecognizer: any ImageTextRecognizing
 
     init(
         pasteboard: NSPasteboard = .general,
         fileManager: FileManager = .default,
-        downloadsDirectory: URL? = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+        downloadsDirectory: URL? = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first,
+        textRecognizer: any ImageTextRecognizing = VisionImageTextRecognizer()
     ) {
         self.pasteboard = pasteboard
         self.fileManager = fileManager
         self.downloadsDirectory = downloadsDirectory
+        self.textRecognizer = textRecognizer
     }
 
     @discardableResult
@@ -73,21 +75,11 @@ final class SystemClipboardContentActions: ClipboardContentActing {
     }
 
     func recognizeText(in imageURL: URL) async -> String? {
-        await Task.detached(priority: .userInitiated) {
-            let request = VNRecognizeTextRequest()
-            request.recognitionLevel = .accurate
-            request.usesLanguageCorrection = true
-            request.automaticallyDetectsLanguage = true
-            let handler = VNImageRequestHandler(url: imageURL)
-            do {
-                try handler.perform([request])
-            } catch {
-                ErrorLogStore.shared.log("Clipboard text recognition failed: \(error.localizedDescription)")
-                return nil
-            }
-            let lines = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
-            let text = lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
-            return text.isEmpty ? nil : text
-        }.value
+        do {
+            return try await textRecognizer.recognizeText(in: .url(imageURL)).string
+        } catch {
+            ErrorLogStore.shared.log("Clipboard text recognition failed: \(error.localizedDescription)")
+            return nil
+        }
     }
 }

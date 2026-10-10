@@ -1810,11 +1810,7 @@ struct AskComposer: View {
             if !permission && model.capturing { return nil }
             return {
                 if permission {
-                    // Registers the app in the list first, otherwise the pane shows no Typeflux entry.
-                    AskContextCapture.requestScreenCaptureAccess()
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
-                        NSWorkspace.shared.open(url)
-                    }
+                    model.openScreenCaptureSettings()
                 } else {
                     Task { await model.refreshScreenshot(launcher: launcher) }
                 }
