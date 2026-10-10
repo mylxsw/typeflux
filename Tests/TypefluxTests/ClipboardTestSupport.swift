@@ -235,6 +235,12 @@ final class InMemoryClipboardHistoryStore: ClipboardHistoryStore {
         trimCounts.append(maxCount)
     }
 
+    func deleteUnpinned(sourceBundleID: String?) {
+        lock.lock()
+        defer { lock.unlock() }
+        storedItems.removeAll { !$0.isPinned && (sourceBundleID == nil || $0.sourceBundleID == sourceBundleID) }
+    }
+
     func trim(toMaxImageBytes maxBytes: Int64) {
         lock.lock()
         defer { lock.unlock() }

@@ -70,9 +70,11 @@ final class ClipboardMonitor {
         lastChangeCount = changeCount
         let policy = policy()
         guard isEnabled(), policy.isRecording, !suppression.isSuppressed else { return false }
+        // An ignored app's copy is never read, not just never stored.
+        let source = sourceProvider()
+        if let bundleID = source?.bundleID, policy.ignoredBundleIDs.contains(bundleID) { return false }
         let contents = pasteboard.readContents()
         guard !ClipboardCaptureRules.shouldIgnore(types: contents.types) else { return false }
-        let source = sourceProvider()
         let date = now()
         let store = store
         workQueue.async {

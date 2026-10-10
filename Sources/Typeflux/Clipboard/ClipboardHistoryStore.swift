@@ -20,6 +20,8 @@ protocol ClipboardHistoryStore: AnyObject {
     /// Keeps at most `maxCount` unpinned items, removing the oldest first. Implementations may
     /// keep fewer unpinned images to bound disk use.
     func trim(toMaxCount maxCount: Int)
+    /// Deletes unpinned items, all of them or only those copied from one app.
+    func deleteUnpinned(sourceBundleID: String?)
     /// Removes the oldest unpinned images until the stored images take at most `maxBytes`.
     func trim(toMaxImageBytes maxBytes: Int64)
     func pinnedVoiceRecordIDs() -> Set<UUID>

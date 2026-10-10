@@ -39,7 +39,8 @@ final class ClipboardSettingsTests: XCTestCase {
         XCTAssertNil(settings.clipboardPausedUntil)
         XCTAssertFalse(settings.isClipboardRecordingPaused())
         XCTAssertEqual(settings.clipboardCapturePolicy(), ClipboardCapturePolicy(
-            isRecording: true, plainTextOnly: false, maxItemCount: 500, maxImageBytes: 1024 * 1024 * 1024
+            isRecording: true, plainTextOnly: false, maxItemCount: 500, maxImageBytes: 1024 * 1024 * 1024,
+            ignoredBundleIDs: Set(ClipboardIgnoredApp.defaults.map(\.bundleID))
         ))
     }
 
@@ -75,7 +76,8 @@ final class ClipboardSettingsTests: XCTestCase {
         XCTAssertFalse(settings.clipboardSelectsFirstUnpinned)
         XCTAssertEqual(settings.clipboardPanelPosition, .mouse)
         XCTAssertEqual(settings.clipboardCapturePolicy(), ClipboardCapturePolicy(
-            isRecording: false, plainTextOnly: true, maxItemCount: 2000, maxImageBytes: nil
+            isRecording: false, plainTextOnly: true, maxItemCount: 2000, maxImageBytes: nil,
+            ignoredBundleIDs: Set(ClipboardIgnoredApp.defaults.map(\.bundleID))
         ))
 
         settings.clipboardMaxItems = 7
@@ -217,6 +219,18 @@ final class ClipboardSettingsTests: XCTestCase {
                     .appendingPathComponent("clipboard-settings-\(appearance == .aqua ? "light" : "dark").png"))
             }
         }
+    }
+
+    @MainActor
+    func testSettingsCanOpenAtTheClipboardPane() {
+        let viewModel = StudioViewModel(
+            settingsStore: settings, historyStore: SQLiteHistoryStore(baseDir: directory.appendingPathComponent("history")),
+            initialSection: .settings
+        )
+        XCTAssertNil(viewModel.launcherPaneRequest)
+        viewModel.navigate(toLauncherPane: .clipboard)
+        XCTAssertEqual(viewModel.currentSection, .launcher)
+        XCTAssertEqual(viewModel.launcherPaneRequest, .clipboard)
     }
 
     // MARK: - Applying the settings

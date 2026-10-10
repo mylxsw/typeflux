@@ -11,6 +11,8 @@ enum ClipboardPanelKeyCommand: Equatable {
     case action(ClipboardEntryAction)
     case quickPaste(Int)
     case togglePreview
+    case togglePause
+    case openSettings
 
     static func command(
         keyCode: UInt16,
@@ -26,15 +28,25 @@ enum ClipboardPanelKeyCommand: Equatable {
         if let number = AskLauncherNumberShortcuts.number(keyCode: keyCode, modifiers: modifiers, characters: characters) {
             return .quickPaste(number)
         }
-        guard flags == .command, let key = characters?.lowercased() else { return nil }
-        switch key {
-        case "p": return .action(.togglePin)
-        case "y": return .action(.quickLook)
-        case "c" where !hasTextSelection: return .action(.copy)
-        case "\\": return .togglePreview
-        default: return nil
+        guard let key = characters?.lowercased() else { return nil }
+        if flags == [.command, .shift] {
+            return key == "p" ? .togglePause : nil
         }
+        guard flags == .command else { return nil }
+        if key == "c" {
+            return hasTextSelection ? nil : .action(.copy)
+        }
+        return commandLetterShortcuts[key]
     }
+
+    /// `⌘` + key shortcuts other than copy, which yields to a text selection.
+    private static let commandLetterShortcuts: [String: ClipboardPanelKeyCommand] = [
+        "p": .action(.togglePin),
+        "e": .action(.editBeforePaste),
+        "y": .action(.quickLook),
+        ",": .openSettings,
+        "\\": .togglePreview
+    ]
 
     private static func navigationCommand(
         keyCode: UInt16,

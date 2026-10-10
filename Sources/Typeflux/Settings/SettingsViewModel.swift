@@ -876,6 +876,15 @@ final class StudioViewModel: ObservableObject {
         }
     }
 
+    /// The Launcher page pane an outside caller asked for, e.g. the clipboard panel's settings button.
+    @Published private(set) var launcherPaneRequest: LauncherSettingsPane?
+
+    /// Opens the Launcher page at one of its panes.
+    func navigate(toLauncherPane pane: LauncherSettingsPane) {
+        launcherPaneRequest = pane
+        navigate(to: .launcher)
+    }
+
     func navigate(to section: StudioSection) {
         currentSection = section
         searchQuery = ""

@@ -32,7 +32,9 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
 
     convenience init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        self.init(baseDir: appSupport.appendingPathComponent("Typeflux", isDirectory: true))
+        // The image storage limit in settings decides how much image data is kept; the count cap
+        // only guards against an unlimited setting filling the list with images.
+        self.init(baseDir: appSupport.appendingPathComponent("Typeflux", isDirectory: true), maximumImageCount: 1000)
     }
 
     deinit {
@@ -389,9 +391,21 @@ private extension SQLiteClipboardHistoryStore {
     }
 }
 
-// MARK: - Limits
+// MARK: - Limits and bulk deletes
 
 extension SQLiteClipboardHistoryStore {
+    func deleteUnpinned(sourceBundleID: String?) {
+        mutateIfChanged("Clipboard bulk delete failed") {
+            // `?1 IS NULL` makes a missing app mean every app.
+            let filter = "pinned = 0 AND (?1 IS NULL OR source_bundle_id = ?1)"
+            let doomed = try self.fetchItems(sql: "SELECT \(Self.columns) FROM clipboard_items WHERE \(filter);") {
+                self.bind(sourceBundleID, at: 1, in: $0)
+            }
+            try self.delete(doomed)
+            return !doomed.isEmpty
+        }
+    }
+
     func trim(toMaxImageBytes maxBytes: Int64) {
         mutateIfChanged("Clipboard image trim failed") {
             let images = try self.fetchItems(

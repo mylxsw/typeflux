@@ -6,6 +6,8 @@ struct LauncherSettingsView: View {
     let settings: SettingsStore
     var pane: LauncherSettingsPane = .basics
     var workflows: AskWorkflowStore = .shared
+    /// The clipboard history whose space the clipboard pane shows; `nil` hides that section.
+    var clipboardHistory: ClipboardHistoryStore?
     /// Opens the shortcut settings from the clipboard pane.
     var onEditShortcut: () -> Void = {}
 
@@ -26,7 +28,7 @@ struct LauncherSettingsView: View {
                 AskTranslationSettingsView(settings: settings)
             case .clipboard:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title, subtitle: L("clipboard.settings.subtitle"))
-                ClipboardSettingsView(settings: settings, onEditShortcut: onEditShortcut)
+                ClipboardSettingsView(settings: settings, history: clipboardHistory, onEditShortcut: onEditShortcut)
             case .workflows:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 ModelSurface {

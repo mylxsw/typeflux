@@ -535,6 +535,9 @@ struct StudioView: View {
         .onReceive(NotificationCenter.default.publisher(for: .authDidLogin)) { _ in
             Task { await refreshSidebarAccountStatus() }
         }
+        .onReceive(viewModel.$launcherPaneRequest.compactMap { $0 }) { pane in
+            launcherPane = pane
+        }
         .overlay(alignment: .bottom) {
             if let toast = viewModel.toastMessage {
                 Text(toast)
@@ -2903,6 +2906,7 @@ struct StudioView: View {
         SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: $launcherPane, compact: compact) {
             LauncherSettingsView(
                 settings: viewModel.askToolSettings, pane: launcherPane,
+                clipboardHistory: SettingsWindowController.shared.clipboardHistoryStore,
                 onEditShortcut: { viewModel.navigate(to: .settings) }
             )
             .id(launcherPane)

@@ -12,6 +12,8 @@ final class SettingsWindowController: NSObject {
     static let shared = SettingsWindowController()
 
     var modelLibrary: AskModelLibrary?
+    /// The clipboard history, for Launcher → Clipboard's data usage.
+    var clipboardHistoryStore: ClipboardHistoryStore?
     private var settingsStore: SettingsStore?
     private var window: NSWindow?
     private var viewModel: StudioViewModel?
@@ -45,6 +47,7 @@ final class SettingsWindowController: NSObject {
         historyStore: HistoryStore,
         initialSection: StudioSection = .settings,
         initialModelDomain: StudioModelDomain? = nil,
+        launcherPane: LauncherSettingsPane? = nil,
         modelManager: OllamaModelManaging = OllamaLocalModelManager(),
         localModelManager: LocalSTTModelManaging = LocalModelManager(),
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
@@ -55,7 +58,11 @@ final class SettingsWindowController: NSObject {
         Task { await AuthState.shared.refreshTokenIfNeeded() }
 
         if let window {
-            viewModel?.navigate(to: initialSection)
+            if let launcherPane {
+                viewModel?.navigate(toLauncherPane: launcherPane)
+            } else {
+                viewModel?.navigate(to: initialSection)
+            }
             if let initialModelDomain { viewModel?.setModelDomain(initialModelDomain) }
             refreshAppearance()
             DockVisibilityController.shared.windowDidShow(window)
@@ -77,7 +84,7 @@ final class SettingsWindowController: NSObject {
         )
         if let initialModelDomain { viewModel.setModelDomain(initialModelDomain) }
         AppLocalization.shared.setLanguage(viewModel.appLanguage)
-        let view = StudioView(viewModel: viewModel)
+        let view = StudioView(viewModel: viewModel, launcherPane: launcherPane ?? .basics)
         let hosting = TransparentSettingsHostingView(rootView: view)
 
         let window = NSWindow(

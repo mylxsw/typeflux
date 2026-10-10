@@ -159,4 +159,17 @@ final class ClipboardFeedTests: XCTestCase {
         XCTAssertEqual(ClipboardTestSupport.entry(.voice, id: id).id, "voice-\(id.uuidString)")
         XCTAssertEqual(ClipboardTestSupport.entry(.text, id: id).id, "clipboard-\(id.uuidString)")
     }
+
+    func testFilterBySourceApp() {
+        let safari = ClipboardTestSupport.entry(.text, text: "a", sourceBundleID: "com.apple.Safari")
+        let notes = ClipboardTestSupport.entry(.text, text: "b", sourceBundleID: "com.apple.Notes")
+        let voice = ClipboardTestSupport.entry(.voice, text: "c")
+        let all = [safari, notes, voice]
+        XCTAssertEqual(ClipboardFeed.filter(all, category: .all, query: "").count, 3)
+        XCTAssertEqual(
+            ClipboardFeed.filter(all, category: .all, query: "", sourceBundleID: "com.apple.Safari").map(\.id), [safari.id]
+        )
+        XCTAssertTrue(ClipboardFeed.filter(all, category: .voice, query: "", sourceBundleID: "com.apple.Safari").isEmpty)
+    }
+
 }
