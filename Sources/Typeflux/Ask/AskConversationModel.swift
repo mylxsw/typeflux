@@ -104,6 +104,10 @@ final class AskConversationModel: ObservableObject {
     lazy var keywordUsage = AskKeywordUsageStore(defaults: defaults)
     /// Types text into the app the launcher came from; the window controller supplies it.
     var deliverText: ((String) async throws -> Void)?
+    /// The existing clipboard history; supplied by the app's shared store.
+    var clipboardEntries: @MainActor @Sendable () -> [ClipboardEntry] = { [] }
+    var clipboardContentActions: any ClipboardContentActing = SystemClipboardContentActions()
+    @Published var launcherClipboardPreview: ClipboardEntry?
     /// Reads text aloud in a language; tests record it instead.
     var speak: @MainActor (String, String) -> Void = { text, language in AskSpeaker.shared.speak(text, language: language) }
     /// Sends a workflow's notification; false when notifications are not allowed. Tests record it instead.

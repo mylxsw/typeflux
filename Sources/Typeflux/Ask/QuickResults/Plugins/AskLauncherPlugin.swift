@@ -107,6 +107,9 @@ struct AskPluginAction: Equatable, Sendable {
         case signIn
         case openConversation(String, account: String)
         case copy(String)
+        case pasteClipboard(String)
+        case copyClipboard(String)
+        case previewClipboard(String)
         /// Writes into the app the launcher came from, over its selection when there is one.
         case writeBack(String)
         case speak(String, language: String)

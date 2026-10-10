@@ -6,6 +6,50 @@ import Testing
 @Suite("Ask plugin views", .exclusiveUIState)
 struct AskPluginViewTests {
     @MainActor
+    @Test func largeListsScrollToKeyboardSelectionBeyondTheViewport() async throws {
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        let plan = AskPluginPlan(mode: .live, title: "History")
+        var output = AskPluginOutput(body: "", original: "", meta: [], source: "", actions: [], items:
+            (0..<300).map { AskPluginItem(id: "row-\($0)", title: "History row \($0)") })
+        func view() -> some View {
+            AskPluginResultsView(display: AskPluginDisplay(title: "History", symbol: "doc.text",
+                                                           phase: .done(plan, output), offersAskAI: false),
+                                 question: "", onMain: {}, onAction: { _ in }, onAskAI: {}, onHighlight: { _ in })
+        }
+        let host = NSHostingView(rootView: view())
+        let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 620, height: 400),
+                                        styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(100))
+        output.selectedItem = 299
+        host.rootView = view()
+        try await Task.sleep(for: .milliseconds(150))
+        host.layoutSubtreeIfNeeded()
+        var seen = Set<ObjectIdentifier>()
+        func frame(of label: String, in node: Any) -> NSRect? {
+            guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
+            if object.responds(to: NSSelectorFromString("accessibilityLabel")),
+               object.value(forKey: "accessibilityLabel") as? String == label,
+               object.responds(to: NSSelectorFromString("accessibilityFrame")) {
+                return (object.value(forKey: "accessibilityFrame") as? NSValue)?.rectValue
+            }
+            guard object.responds(to: NSSelectorFromString("accessibilityChildren")) else { return nil }
+            for child in object.value(forKey: "accessibilityChildren") as? [Any] ?? [] {
+                if let found = frame(of: label, in: child) { return found }
+            }
+            return nil
+        }
+        let selectedFrame = try #require(frame(of: "History row 299", in: window))
+        #expect(selectedFrame.height > 0 && window.frame.intersects(selectedFrame),
+                "Keyboard selection must bring an initially unbuilt row into the visible window")
+    }
+
+    @MainActor
     @Test func liveListKeepsTheSamePixelsWhileItsNextQueryRuns() async throws {
         _ = NSApplication.shared
         let plan = AskPluginPlan(mode: .live, title: "Keywords")

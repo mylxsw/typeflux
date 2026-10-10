@@ -4134,3 +4134,11 @@
 "ask.settings.keywords.addAlias" = "キーワードを追加";
 "ask.settings.keywords.removeAlias" = "キーワードを削除";
 "ask.settings.keywords.aliasHint" = "すべてのキーワードで同じ機能を実行できます。最初のキーワードが既定です。";
+
+// Launcher clipboard history
+"ask.plugin.clip.title" = "クリップボード履歴";
+"ask.plugin.clip.placeholder" = "内容、ファイル名、コピー元のアプリを検索";
+"ask.plugin.clip.empty" = "クリップボード履歴はまだありません";
+"ask.plugin.clip.noMatch" = "一致する履歴はありません";
+"ask.plugin.clip.unavailable" = "この履歴は利用できなくなりました";
+"ask.settings.keywords.kind.clip.hint" = "クリップボード履歴を検索して貼り付け";

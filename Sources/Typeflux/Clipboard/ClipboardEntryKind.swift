@@ -1,7 +1,7 @@
 import Foundation
 
 /// What a clipboard panel row shows; derived from the payload and its file types.
-enum ClipboardEntryKind: Equatable {
+enum ClipboardEntryKind: Equatable, Sendable {
     case voice
     case text
     case link

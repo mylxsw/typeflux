@@ -592,7 +592,8 @@ struct AskPluginResultsView: View {
     private func itemList(_ output: AskPluginOutput, pending: Bool, dimmed: Bool) -> some View {
         ScrollViewReader { reader in
             ScrollView(.vertical) {
-                VStack(spacing: Self.itemSpacing) {
+                // Histories can contain hundreds of images. Build and decode rows only as they enter the viewport.
+                LazyVStack(spacing: Self.itemSpacing) {
                     ForEach(Array(output.items.enumerated()), id: \.element.id) { index, item in
                         AskPluginItemRow(item: item, symbol: display.symbol, selected: index == output.selectedItem,
                                          emphasized: highlighted, height: Self.itemHeight) {

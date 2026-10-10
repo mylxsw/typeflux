@@ -4141,3 +4141,11 @@
 "ask.settings.keywords.addAlias" = "新增關鍵詞";
 "ask.settings.keywords.removeAlias" = "移除關鍵詞";
 "ask.settings.keywords.aliasHint" = "所有關鍵詞都能觸發同一功能，第一個為預設關鍵詞。";
+
+// Launcher clipboard history
+"ask.plugin.clip.title" = "剪貼簿歷史";
+"ask.plugin.clip.placeholder" = "搜尋剪貼簿內容、檔案名稱或來源應用程式";
+"ask.plugin.clip.empty" = "尚無剪貼簿歷史";
+"ask.plugin.clip.noMatch" = "沒有符合的剪貼簿記錄";
+"ask.plugin.clip.unavailable" = "這筆剪貼簿記錄已無法使用";
+"ask.settings.keywords.kind.clip.hint" = "搜尋並貼上剪貼簿歷史";

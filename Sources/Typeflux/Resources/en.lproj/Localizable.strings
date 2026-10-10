@@ -4156,3 +4156,11 @@
 "ask.settings.keywords.addAlias" = "Add keyword";
 "ask.settings.keywords.removeAlias" = "Remove keyword";
 "ask.settings.keywords.aliasHint" = "Every keyword triggers the same function. The first is the default.";
+
+// Launcher clipboard history
+"ask.plugin.clip.title" = "Clipboard history";
+"ask.plugin.clip.placeholder" = "Search clipboard text, file names or source apps";
+"ask.plugin.clip.empty" = "No clipboard history yet";
+"ask.plugin.clip.noMatch" = "No matching clipboard items";
+"ask.plugin.clip.unavailable" = "This clipboard item is no longer available";
+"ask.settings.keywords.kind.clip.hint" = "Search and paste clipboard history";

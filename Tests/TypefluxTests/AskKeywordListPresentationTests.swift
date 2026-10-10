@@ -36,7 +36,7 @@ struct AskKeywordListPresentationTests {
         let rows = rows(input)
         #expect(rows.filter { $0.kind != .system }.map(\.keyword) == [
             "fy", "dict", "rw", "sum", "ex", "custom", "g", "bd", "gh", "f", "tab", "bmk", "chat", "prefix", "setting",
-            "history"
+            "history", "clip"
         ])
         #expect(rows.allSatisfy { $0.kind != .workflow })
         #expect(Set(rows.map(\.id)).count == rows.count)
@@ -44,7 +44,7 @@ struct AskKeywordListPresentationTests {
         #expect(rows.first { $0.kind == .history }?.source.pluginID == AskHistoryPlugin.id)
         #expect(rows.first { $0.kind == .history }?.summary == L("ask.settings.keywords.kind.history.hint"))
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "wf").isEmpty)
-        #expect(AskKeywordListPresentation.counts(rows)[nil] == 34)
+        #expect(AskKeywordListPresentation.counts(rows)[nil] == 35)
         #expect(AskKeywordListPresentation.filter(rows, kind: .chat, query: "chat").map(\.keyword) == ["chat"])
         #expect(!AskKeywordKind.editableKinds.contains(.workflow))
         #expect(self.rows([]).isEmpty)
@@ -98,7 +98,8 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "summarize").map(\.keyword) == ["sum"])
         #expect(AskKeywordListPresentation.filter(rows, kind: .prompt, query: "google").isEmpty)
         let counts = AskKeywordListPresentation.counts(rows)
-        #expect(counts[nil] == 33 && counts[.translate] == 2 && counts[.files] == 1 && counts[.workflow] == nil)
+        #expect(counts[nil] == 34 && counts[.translate] == 2 && counts[.files] == 1 && counts[.workflow] == nil)
+        #expect(counts[.clip] == 1)
         #expect(counts[.chat] == 1)
     }
 

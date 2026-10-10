@@ -18,7 +18,10 @@ extension AskConversationModel {
     func enterLauncherSearchEntry(_ entry: AskLauncherSearchEntry) {
         guard let current = launcherSearchEntries(language: AppLocalization.shared.language).first(where: { $0.id == entry.id })
         else { return }
-        let listsAtOnce = [AskPrefixPlugin.id, AskHistoryPlugin.id, AskNotesPlugin.id, AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID]
+        let listsAtOnce = [
+            AskPrefixPlugin.id, AskHistoryPlugin.id, AskClipboardPlugin.id, AskNotesPlugin.id,
+            AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID
+        ]
         plugins.enter(current.keyword, waitingForInput: !listsAtOnce.contains(current.keyword.pluginID))
         launcherDraft.text = ""
         plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language)

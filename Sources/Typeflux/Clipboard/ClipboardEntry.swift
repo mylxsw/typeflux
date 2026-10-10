@@ -1,8 +1,8 @@
 import Foundation
 
 /// One row of the clipboard panel: a voice history record or a captured clipboard item.
-struct ClipboardEntry: Identifiable, Equatable {
-    enum Origin: Equatable {
+struct ClipboardEntry: Identifiable, Equatable, Sendable {
+    enum Origin: Equatable, Sendable {
         case voice(UUID)
         case clipboard(UUID)
     }

@@ -13,6 +13,7 @@ enum AskPluginRegistry {
         AskPrefixPlugin.id,
         AskSettingsPlugin.id,
         AskHistoryPlugin.id,
+        AskClipboardPlugin.id,
         AskNotesPlugin.id,
         AskBrowserSearchPlugin.tabsID,
         AskBrowserSearchPlugin.bookmarksID
@@ -23,8 +24,9 @@ enum AskPluginRegistry {
             .addingEnglishNames(AskKeywordAliases
                 .consolidate(AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin
                     .keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin
-                    .keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords + AskNotesPlugin
-                    .keywords + AskBrowserSearchPlugin.keywords + AskSystemCommand.allCases.map {
+                    .keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
+                    .keywords + AskNotesPlugin.keywords + AskBrowserSearchPlugin.keywords
+                    + AskSystemCommand.allCases.map {
                         AskKeyword(keyword: $0.defaultKeyword, pluginID: $0.id)
                     }))
     }
@@ -187,6 +189,7 @@ extension AskConversationModel {
             }),
             AskSettingsPlugin(),
             AskHistoryPlugin(conversations: { [weak self] in await self?.launcherChatHistory() ?? .empty }),
+            AskClipboardPlugin(entries: { [weak self] in self?.clipboardEntries() ?? [] }),
             AskNotesPlugin(store: notes),
             AskBrowserSearchPlugin(kind: .tab, service: browserSearch, settings: { [weak settings] in
                 settings?.askBrowserSearchSettings ?? AskBrowserSearchSettings()
@@ -228,6 +231,14 @@ extension AskConversationModel {
             return .close
         case .signIn:
             onSignIn()
+            return .stay
+        case let .pasteClipboard(id):
+            return applyLauncherClipboard(id: id, paste: true)
+        case let .copyClipboard(id):
+            return applyLauncherClipboard(id: id, paste: false)
+        case let .previewClipboard(id):
+            launcherClipboardPreview = clipboardEntries().first { $0.id == id }
+            if launcherClipboardPreview == nil { confirm(L("ask.plugin.clip.unavailable")) }
             return .stay
         case let .copy(text):
             AskQuickResults.copy(text)
@@ -284,6 +295,7 @@ extension AskConversationModel {
             let listsAtOnce = [
                 AskPrefixPlugin.id,
                 AskHistoryPlugin.id,
+                AskClipboardPlugin.id,
                 AskNotesPlugin.id,
                 AskBrowserSearchPlugin.tabsID,
                 AskBrowserSearchPlugin.bookmarksID
@@ -374,6 +386,7 @@ extension AskConversationModel {
 
     /// The result was used: the next launch starts empty, out of keyword mode.
     func finishPluginResult() {
+        launcherClipboardPreview = nil
         answerWorkflowApproval(false)
         plugins.deactivate()
         finishQuickResult()
@@ -382,6 +395,7 @@ extension AskConversationModel {
     /// Closing the launcher in keyword mode puts the keyword back in front of
     /// its text, so the saved draft opens in the same mode next time.
     func foldLauncherKeyword() {
+        launcherClipboardPreview = nil
         answerWorkflowApproval(false)
         guard plugins.isActive else { return }
         if let text = plugins.deactivate(argument: launcherDraft.text) { launcherDraft.text = text }

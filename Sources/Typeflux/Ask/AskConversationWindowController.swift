@@ -41,7 +41,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary,
          llmService: LLMService? = nil, dockVisibility: DockVisibilityController = .shared,
          launcherInputSource: any AskLauncherInputSourceSelecting = SystemAskLauncherInputSourceSelector(),
-         services: AskConversationWindowServices? = nil) throws {
+         services: AskConversationWindowServices? = nil,
+         clipboardHistoryStore: (any ClipboardHistoryStore)? = nil) throws {
         self.dockVisibility = dockVisibility
         self.settings = settings
         self.launcherInputSource = launcherInputSource
@@ -108,6 +109,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 model?.submitLauncher()
             }
         ) { [weak settings] in AskPluginRegistry.translationModelName(settings) }
+        model.clipboardEntries = {
+            (clipboardHistoryStore?.items(limit: Int(Int32.max)) ?? []).map(ClipboardFeed.entry(for:))
+        }
         model.deliverText = { text in
             let result = try await injector.deliver(text: text, to: .currentInput)
             if case .notApplied = result { throw TextDeliveryError.noInput }

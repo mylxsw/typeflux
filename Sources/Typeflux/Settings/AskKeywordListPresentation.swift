@@ -2,7 +2,7 @@ import Foundation
 
 /// What a launcher keyword reaches: one of the built-in plugins or a workflow.
 enum AskKeywordKind: String, CaseIterable, Sendable {
-    case translate, prompt, web, files, tabs, bookmarks, chat, prefix, setting, history, system, workflow
+    case translate, prompt, web, files, tabs, bookmarks, chat, prefix, setting, history, clip, system, workflow
 
     init?(pluginID: String) {
         switch pluginID {
@@ -16,6 +16,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case AskPrefixPlugin.id: self = .prefix
         case AskSettingsPlugin.id: self = .setting
         case AskHistoryPlugin.id: self = .history
+        case AskClipboardPlugin.id: self = .clip
         default:
             if AskSystemCommand(pluginID: pluginID) != nil { self = .system; return }
             guard pluginID.hasPrefix(AskWorkflowPlugin.idPrefix) else { return nil }
@@ -39,6 +40,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .prefix: AskPrefixPlugin.id
         case .setting: AskSettingsPlugin.id
         case .history: AskHistoryPlugin.id
+        case .clip: AskClipboardPlugin.id
         case .system, .workflow: nil
         }
     }
@@ -55,6 +57,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .prefix: L("ask.plugin.prefix.title")
         case .setting: L("ask.plugin.setting.title")
         case .history: L("ask.plugin.history.title")
+        case .clip: L("ask.plugin.clip.title")
         case .system: L("ask.system.title")
         case .workflow: L("ask.settings.keywords.kind.workflow")
         }
@@ -77,6 +80,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .prefix: "list.bullet.rectangle"
         case .setting: "gearshape"
         case .history: "clock.arrow.circlepath"
+        case .clip: "doc.on.clipboard"
         case .system: "terminal"
         case .workflow: "point.3.connected.trianglepath.dotted"
         }
@@ -150,6 +154,8 @@ enum AskKeywordListPresentation {
             L("ask.plugin.setting.title")
         case .history:
             L("ask.plugin.history.title")
+        case .clip:
+            L("ask.plugin.clip.title")
         case .system:
             AskSystemCommand(pluginID: keyword.pluginID)?.title ?? keyword.keyword
         case .workflow, nil:
@@ -202,6 +208,8 @@ enum AskKeywordListPresentation {
             return L("ask.settings.keywords.kind.setting.hint")
         case .history:
             return L("ask.settings.keywords.kind.history.hint")
+        case .clip:
+            return L("ask.settings.keywords.kind.clip.hint")
         case .system:
             return L("ask.settings.keywords.kind.system.hint")
         case .workflow, nil:
@@ -258,7 +266,7 @@ enum AskKeywordSection: String, CaseIterable {
         case .translate: [.translate]
         case .prompt: [.prompt]
         case .search: [.web, .files, .tabs, .bookmarks]
-        case .typeflux: [.chat, .prefix, .setting, .history]
+        case .typeflux: [.chat, .prefix, .setting, .history, .clip]
         case .system: [.system]
         }
     }

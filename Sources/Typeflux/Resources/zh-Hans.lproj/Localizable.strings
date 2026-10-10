@@ -4156,3 +4156,11 @@
 "ask.settings.keywords.addAlias" = "添加关键词";
 "ask.settings.keywords.removeAlias" = "移除关键词";
 "ask.settings.keywords.aliasHint" = "所有关键词都能触发同一功能，第一个为默认关键词。";
+
+// Launcher clipboard history
+"ask.plugin.clip.title" = "剪贴板历史";
+"ask.plugin.clip.placeholder" = "搜索剪贴板内容、文件名或来源应用";
+"ask.plugin.clip.empty" = "暂无剪贴板历史";
+"ask.plugin.clip.noMatch" = "没有匹配的剪贴板记录";
+"ask.plugin.clip.unavailable" = "这条剪贴板记录已不可用";
+"ask.settings.keywords.kind.clip.hint" = "搜索并粘贴剪贴板历史";

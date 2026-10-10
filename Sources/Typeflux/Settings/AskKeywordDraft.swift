@@ -81,7 +81,7 @@ struct AskKeywordDraft: Equatable {
                 AskWebSearchPlugin.host(of: url).flatMap { $0.isEmpty ? nil : $0 }
                     ?? L("ask.settings.keywords.sheet.webNamePlaceholder")
             }
-        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .system, .workflow:
+        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .system, .workflow:
             ""
         }
     }
@@ -108,6 +108,8 @@ struct AskKeywordDraft: Equatable {
             L("ask.plugin.setting.title")
         case .history:
             L("ask.plugin.history.title")
+        case .clip:
+            L("ask.plugin.clip.title")
         case .files:
             L("ask.plugin.files.title")
         case .tabs: L("ask.browser.tabs")
@@ -161,7 +163,7 @@ struct AskKeywordDraft: Equatable {
                 ? L("ask.settings.keywords.sheet.promptRequired") : nil
         case .web:
             AskWebSearchPlugin.problem(with: url)
-        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .system, .workflow:
+        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .system, .workflow:
             nil
         }
     }
@@ -195,7 +197,7 @@ struct AskKeywordDraft: Equatable {
             } else {
                 set(AskWebSearchPlugin.urlOption, template)
             }
-        case .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .system, .workflow:
+        case .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .system, .workflow:
             break
         }
         return AskKeyword(keyword: keyword.trimmingCharacters(in: .whitespaces),

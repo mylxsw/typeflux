@@ -93,6 +93,7 @@ struct AskKeywordEditorSheet: View {
         case .prefix: "prefix"
         case .setting: "setting"
         case .history: "history"
+        case .clip: "clip"
         case .system: ""
         case .workflow: ""
         }
@@ -212,7 +213,7 @@ struct AskKeywordEditorSheet: View {
                 }.labelsHidden()
                 hint(L("ask.settings.keywords.kind.system.hint"))
             }
-        case .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .workflow:
+        case .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .workflow:
             EmptyView()
         }
     }

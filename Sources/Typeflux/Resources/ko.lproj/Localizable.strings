@@ -4134,3 +4134,11 @@
 "ask.settings.keywords.addAlias" = "키워드 추가";
 "ask.settings.keywords.removeAlias" = "키워드 삭제";
 "ask.settings.keywords.aliasHint" = "모든 키워드로 같은 기능을 실행합니다. 첫 번째 키워드가 기본입니다.";
+
+// Launcher clipboard history
+"ask.plugin.clip.title" = "클립보드 기록";
+"ask.plugin.clip.placeholder" = "내용, 파일 이름 또는 원본 앱 검색";
+"ask.plugin.clip.empty" = "클립보드 기록이 없습니다";
+"ask.plugin.clip.noMatch" = "일치하는 클립보드 항목이 없습니다";
+"ask.plugin.clip.unavailable" = "이 클립보드 항목을 더 이상 사용할 수 없습니다";
+"ask.settings.keywords.kind.clip.hint" = "클립보드 기록 검색 및 붙여넣기";

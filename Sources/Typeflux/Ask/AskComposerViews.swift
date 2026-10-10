@@ -10,6 +10,7 @@ struct AskLauncherView: View {
     var drag: AskWindowDragHandlers?
     @State private var hovering = false
     @State private var showingNumberHints = false
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         GeometryReader { geometry in
@@ -28,6 +29,15 @@ struct AskLauncherView: View {
             .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
             .tint(AskTheme.accent)
             .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
+            .popover(item: $model.launcherClipboardPreview) { entry in
+                ClipboardPreviewPane(entry: entry, isMissing: entry.contentURLs.contains {
+                    !FileManager.default.fileExists(atPath: $0.path)
+                })
+                    .frame(height: 420)
+                    .background(StudioTheme.surface)
+                    .preferredColorScheme(colorScheme)
+            }
+            .onDisappear { model.launcherClipboardPreview = nil }
     }
 
     /// A strip along the top edge, above the editor's controls, marked by a short
@@ -1181,6 +1191,10 @@ struct AskComposer: View {
 
     /// Esc steps back one layer (`AskLauncherEscape`); false closes the launcher.
     private func escapeKey() -> Bool {
+        if model.launcherClipboardPreview != nil {
+            model.launcherClipboardPreview = nil
+            return true
+        }
         let step = AskLauncherEscape.resolve(.init(
             quickLook: AskQuickLook.shared.isVisible, menu: AskGlassMenuPresenter.shared.isShowing || contextPanelOpen,
             actions: quickActions != nil, approval: model.workflowApproval != nil,
@@ -1229,6 +1243,13 @@ struct AskComposer: View {
                 return true
             default: break
             }
+        }
+        if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
+           plugins.hint?.pluginID != AskClipboardPlugin.id || pluginHighlight == 0,
+           model.enterLauncherKeywordFromText(pluginID: AskClipboardPlugin.id) {
+            pluginHighlight = 0
+            pluginReserve = 0
+            return true
         }
         if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
            plugins.hint?.pluginID != AskHistoryPlugin.id || pluginHighlight == 0,
