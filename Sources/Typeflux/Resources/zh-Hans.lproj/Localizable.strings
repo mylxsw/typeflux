@@ -473,6 +473,27 @@
 "clipboard.settings.position.launcher" = "与启动器一致";
 "clipboard.settings.position.center" = "屏幕中央";
 "clipboard.settings.position.mouse" = "鼠标所在位置";
+"clipboard.action.editBeforePaste" = "编辑后粘贴";
+"clipboard.action.showOnlyApp" = "只看 %@";
+"clipboard.action.deleteAllFromApp" = "删除 %@ 的全部记录…";
+"clipboard.confirm.clearUnpinned" = "删除 %d 条未固定的剪贴板内容？语音输入结果会保留。";
+"clipboard.confirm.deleteApp" = "删除从 %2$@ 复制的 %1$d 条未固定内容？";
+"clipboard.notice.nothingToClear" = "没有可删除的未固定内容";
+"clipboard.notice.paused" = "已暂停记录剪贴板";
+"clipboard.notice.resumed" = "已恢复记录剪贴板";
+"clipboard.filter.clear" = "显示全部应用";
+"clipboard.toolbar.pause" = "暂停记录 (⌘⇧P)";
+"clipboard.toolbar.resume" = "恢复记录 (⌘⇧P)";
+"clipboard.toolbar.preview" = "预览栏 (⌘\\)";
+"clipboard.toolbar.settings" = "剪贴板设置 (⌘,)";
+"clipboard.toolbar.more" = "更多";
+"clipboard.menu.showPreview" = "显示预览栏";
+"clipboard.menu.hidePreview" = "隐藏预览栏";
+"clipboard.menu.clearUnpinned" = "删除全部未固定内容…";
+"clipboard.footer.paused" = "已暂停记录 · 点击恢复";
+"clipboard.edit.title" = "编辑后粘贴";
+"clipboard.edit.hint" = "⌘↩ 粘贴 · Esc 取消 · 不会修改原记录";
+"clipboard.edit.cancel" = "取消";
 "history.clipboard.title" = "记录剪贴板历史";
 "history.clipboard.subtitle" = "记录你复制的文本、图片和文件，用历史快捷键打开。密码不会被记录，所有内容只存在这台 Mac 上。";
 

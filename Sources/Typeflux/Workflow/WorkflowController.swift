@@ -206,6 +206,7 @@ final class WorkflowController {
     var clipboardPanelPresenter: ClipboardPanelPresenting?
     var clipboardContentActions: ClipboardContentActing = SystemClipboardContentActions()
     var clipboardHistoryObserver: NSObjectProtocol?
+    var clipboardPauseObserver: NSObjectProtocol?
     var lastPaidCreditExhaustedPromptPresentedAt: Date?
     let analyticsLock = NSLock()
     var pendingDictationAnalyticsContext: DictationAnalyticsContext?
@@ -308,6 +309,9 @@ final class WorkflowController {
     }
 
     deinit {
+        if let clipboardPauseObserver {
+            NotificationCenter.default.removeObserver(clipboardPauseObserver)
+        }
         if let clipboardHistoryObserver {
             NotificationCenter.default.removeObserver(clipboardHistoryObserver)
         }

@@ -112,6 +112,16 @@ struct ClipboardPanelRow: View, Equatable {
         .lineLimit(1)
     }
 
+    /// Separators before previews, the app filter and pinning: paste and copy come first,
+    /// destructive actions last.
+    static func startsMenuGroup(_ action: ClipboardEntryAction, after previous: ClipboardEntryAction) -> Bool {
+        switch action {
+        case .togglePin: true
+        case .quickLook, .showOnlyApp: previous == .copy
+        default: false
+        }
+    }
+
     private func loadInfo() async {
         info = await ClipboardMediaInfoProvider.shared.loadInfo(for: entry)
     }
@@ -120,7 +130,7 @@ struct ClipboardPanelRow: View, Equatable {
     private var contextMenu: some View {
         let actions = ClipboardEntryAction.available(for: entry)
         ForEach(Array(actions.enumerated()), id: \.offset) { offset, action in
-            if offset > 0, action == .togglePin || (action == .quickLook && actions[offset - 1] == .copy) {
+            if offset > 0, Self.startsMenuGroup(action, after: actions[offset - 1]) {
                 Divider()
             }
             Button {

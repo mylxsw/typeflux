@@ -344,6 +344,125 @@ final class ClipboardPanelModelTests: XCTestCase {
         XCTAssertEqual(model.selectedIndex, 0, "Only pinned rows: the first one")
     }
 
+    private var appEntries: [ClipboardEntry] {
+        [
+            ClipboardTestSupport.entry(.text, text: "safari one", sourceBundleID: "com.apple.Safari", sourceAppName: "Safari"),
+            ClipboardTestSupport.entry(.text, text: "notes one", sourceBundleID: "com.apple.Notes", sourceAppName: "Notes"),
+            ClipboardTestSupport.entry(
+                .text, text: "safari pinned", sourceBundleID: "com.apple.Safari", sourceAppName: "Safari", isPinned: true
+            ),
+            ClipboardTestSupport.entry(.voice, text: "spoken")
+        ]
+    }
+
+    func testShowOnlyAppFiltersAndEscapeClearsIt() {
+        var commands: [ClipboardPanelCommand] = []
+        model.onCommand = { commands.append($0) }
+        model.reset(entries: appEntries)
+        model.perform(.showOnlyApp, at: 0)
+        XCTAssertEqual(model.appFilter, ClipboardAppFilter(bundleID: "com.apple.Safari", name: "Safari"))
+        XCTAssertEqual(model.visibleEntries.map(\.title), ["safari one", "safari pinned"])
+        XCTAssertTrue(performed.isEmpty, "Handled in the panel")
+
+        model.query = "pinned"
+        XCTAssertEqual(model.visibleEntries.map(\.title), ["safari pinned"])
+        model.cancel()
+        XCTAssertEqual(model.query, "")
+        XCTAssertNotNil(model.appFilter, "Escape clears the search before the app filter")
+        model.cancel()
+        XCTAssertNil(model.appFilter)
+        XCTAssertEqual(model.visibleEntries.count, 4)
+        XCTAssertEqual(dismissCount, 0)
+        model.cancel()
+        XCTAssertEqual(dismissCount, 1)
+
+        // Voice results have no source app: the actions are not offered.
+        model.perform(.showOnlyApp, at: 3)
+        XCTAssertNil(model.appFilter)
+        model.setAppFilter(ClipboardAppFilter(bundleID: "com.apple.Notes", name: "Notes"))
+        model.reset(entries: appEntries)
+        XCTAssertNil(model.appFilter, "A new session shows every app")
+        XCTAssertTrue(commands.isEmpty)
+    }
+
+    func testDeletingAnAppsItemsAsksFirst() {
+        var commands: [ClipboardPanelCommand] = []
+        model.onCommand = { commands.append($0) }
+        model.reset(entries: appEntries)
+        model.perform(.deleteAllFromApp, at: 0)
+        let safari = ClipboardAppFilter(bundleID: "com.apple.Safari", name: "Safari")
+        XCTAssertEqual(model.pendingConfirmation, .deleteApp(safari, count: 1), "Pinned items are kept")
+        XCTAssertEqual(model.pendingConfirmation?.message, L("clipboard.confirm.deleteApp", 1, "Safari"))
+        model.cancel()
+        XCTAssertNil(model.pendingConfirmation)
+        XCTAssertTrue(commands.isEmpty)
+
+        model.perform(.deleteAllFromApp, at: 0)
+        model.confirmPending()
+        XCTAssertEqual(commands, [.deleteApp(bundleID: "com.apple.Safari")])
+        XCTAssertNil(model.pendingConfirmation)
+        model.confirmPending()
+        XCTAssertEqual(commands.count, 1)
+    }
+
+    func testClearingUnpinnedItemsAsksFirstAndSkipsVoice() {
+        var commands: [ClipboardPanelCommand] = []
+        model.onCommand = { commands.append($0) }
+        model.reset(entries: appEntries)
+        model.requestClearUnpinned()
+        XCTAssertEqual(model.pendingConfirmation, .clearUnpinned(count: 2))
+        XCTAssertEqual(model.pendingConfirmation?.message, L("clipboard.confirm.clearUnpinned", 2))
+        model.cancelPending()
+        XCTAssertNil(model.pendingConfirmation)
+        model.requestClearUnpinned()
+        model.confirmPending()
+        XCTAssertEqual(commands, [.clearUnpinned])
+
+        model.reset(entries: [ClipboardTestSupport.entry(.voice, text: "only voice")])
+        model.requestClearUnpinned()
+        XCTAssertNil(model.pendingConfirmation)
+        XCTAssertEqual(model.notice, L("clipboard.notice.nothingToClear"))
+    }
+
+    func testEditingBeforePaste() {
+        var commands: [ClipboardPanelCommand] = []
+        model.onCommand = { commands.append($0) }
+        model.reset(entries: entries)
+        model.perform(.editBeforePaste, at: 4)
+        XCTAssertEqual(model.editingText, "plain words")
+        model.editingText = "plain words, edited"
+        model.cancel()
+        XCTAssertNil(model.editingText, "Escape leaves the editor first")
+        XCTAssertEqual(dismissCount, 0)
+
+        model.perform(.editBeforePaste, at: 4)
+        model.editingText = "plain words, edited"
+        model.commitEdit()
+        XCTAssertEqual(commands, [.pasteText("plain words, edited")])
+        XCTAssertNil(model.editingText)
+        XCTAssertTrue(performed.isEmpty, "The stored entry is not pasted")
+
+        model.perform(.editBeforePaste, at: 4)
+        model.editingText = "   "
+        model.commitEdit()
+        XCTAssertEqual(commands.count, 1, "Blank text is not pasted")
+        model.commitEdit()
+        model.perform(.editBeforePaste, at: 2)
+        XCTAssertNil(model.editingText, "Images cannot be edited")
+        model.send(.openSettings)
+        XCTAssertEqual(commands.last, .openSettings)
+    }
+
+    func testAppFilterOnlyComesFromClipboardEntriesWithASource() {
+        XCTAssertNil(ClipboardAppFilter(entry: ClipboardTestSupport.entry(.voice, text: "x", sourceBundleID: "a")))
+        XCTAssertNil(ClipboardAppFilter(entry: ClipboardTestSupport.entry(.text, text: "x", sourceBundleID: "")))
+        XCTAssertEqual(
+            ClipboardAppFilter(entry: ClipboardTestSupport.entry(.text, text: "x", sourceBundleID: "com.a")),
+            ClipboardAppFilter(bundleID: "com.a", name: "com.a"), "Falls back to the bundle ID for a name"
+        )
+        XCTAssertEqual(ClipboardPanelConfirmation.clearUnpinned(count: 3).command, .clearUnpinned)
+    }
+
     func testSectionsUseTheInjectedClock() {
         let now = Date()
         model.now = { now }

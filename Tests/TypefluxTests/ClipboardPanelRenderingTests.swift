@@ -34,6 +34,48 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         }
     }
 
+    /// The toolbar, pause chip, app filter, editor and confirmation draw; snapshots are written
+    /// when `TYPEFLUX_CLIPBOARD_SNAPSHOT_DIR` is set.
+    @MainActor
+    func testPanelStatesDraw() throws {
+        let output = ProcessInfo.processInfo.environment["TYPEFLUX_CLIPBOARD_SNAPSHOT_DIR"]
+        let entries = [
+            ClipboardTestSupport.entry(.text, text: "Pinned note", sourceBundleID: "com.apple.Notes",
+                                       sourceAppName: "Notes", isPinned: true),
+            ClipboardTestSupport.entry(.text, text: "https://example.com/very/long/path", sourceBundleID: "com.apple.Safari",
+                                       sourceAppName: "Safari"),
+            ClipboardTestSupport.entry(.text, text: "Meeting at 10", sourceBundleID: "com.apple.Safari",
+                                       sourceAppName: "Safari")
+        ]
+        let states: [(String, (ClipboardPanelModel) -> Void)] = [
+            ("paused", { $0.isRecordingPaused = true }),
+            ("filtered", { $0.setAppFilter(ClipboardAppFilter(bundleID: "com.apple.Safari", name: "Safari")) }),
+            ("editing", { $0.perform(.editBeforePaste, at: 2) }),
+            ("confirm", { $0.requestClearUnpinned() })
+        ]
+        for (name, configure) in states {
+            let model = ClipboardPanelModel()
+            model.reset(entries: entries)
+            configure(model)
+            let host = NSHostingView(rootView: ClipboardPanelView(model: model, focusRequest: 0))
+            host.appearance = NSAppearance(named: .darkAqua)
+            host.frame = NSRect(x: 0, y: 0, width: ClipboardPanelView.width, height: ClipboardPanelView.height)
+            host.layoutSubtreeIfNeeded()
+            let rep = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: rep)
+            guard let output else { continue }
+            let canvas = NSImage(size: host.bounds.size)
+            canvas.lockFocus()
+            NSColor(white: 0.13, alpha: 1).setFill()
+            NSBezierPath(roundedRect: host.bounds, xRadius: 16, yRadius: 16).fill()
+            rep.draw(in: host.bounds)
+            canvas.unlockFocus()
+            let png = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(canvas.tiffRepresentation))?
+                .representation(using: .png, properties: [:]))
+            try png.write(to: URL(fileURLWithPath: output).appendingPathComponent("clipboard-state-\(name).png"))
+        }
+    }
+
     func testThumbnailWidthFollowsTheImageShape() {
         XCTAssertEqual(ClipboardInlineMedia.thumbnailWidth(for: nil), 96)
         XCTAssertEqual(ClipboardInlineMedia.thumbnailWidth(for: CGSize(width: 0, height: 10)), 96)

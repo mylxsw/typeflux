@@ -219,6 +219,18 @@ final class ClipboardSettingsTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testSettingsCanOpenAtTheClipboardPane() {
+        let viewModel = StudioViewModel(
+            settingsStore: settings, historyStore: SQLiteHistoryStore(baseDir: directory.appendingPathComponent("history")),
+            initialSection: .settings
+        )
+        XCTAssertNil(viewModel.launcherPaneRequest)
+        viewModel.navigate(toLauncherPane: .clipboard)
+        XCTAssertEqual(viewModel.currentSection, .launcher)
+        XCTAssertEqual(viewModel.launcherPaneRequest, .clipboard)
+    }
+
     // MARK: - Applying the settings
 
     func testPlainTextOnlySkipsFilesAndImages() {

@@ -389,9 +389,21 @@ private extension SQLiteClipboardHistoryStore {
     }
 }
 
-// MARK: - Limits
+// MARK: - Limits and bulk deletes
 
 extension SQLiteClipboardHistoryStore {
+    func deleteUnpinned(sourceBundleID: String?) {
+        mutateIfChanged("Clipboard bulk delete failed") {
+            // `?1 IS NULL` makes a missing app mean every app.
+            let filter = "pinned = 0 AND (?1 IS NULL OR source_bundle_id = ?1)"
+            let doomed = try self.fetchItems(sql: "SELECT \(Self.columns) FROM clipboard_items WHERE \(filter);") {
+                self.bind(sourceBundleID, at: 1, in: $0)
+            }
+            try self.delete(doomed)
+            return !doomed.isEmpty
+        }
+    }
+
     func trim(toMaxImageBytes maxBytes: Int64) {
         mutateIfChanged("Clipboard image trim failed") {
             let images = try self.fetchItems(

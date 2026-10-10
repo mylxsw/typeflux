@@ -473,6 +473,27 @@
 "clipboard.settings.position.launcher" = "With the launcher";
 "clipboard.settings.position.center" = "Center of the screen";
 "clipboard.settings.position.mouse" = "At the pointer";
+"clipboard.action.editBeforePaste" = "Edit Before Pasting";
+"clipboard.action.showOnlyApp" = "Show Only %@";
+"clipboard.action.deleteAllFromApp" = "Delete All from %@…";
+"clipboard.confirm.clearUnpinned" = "Delete %d unpinned clipboard items? Voice results stay.";
+"clipboard.confirm.deleteApp" = "Delete %1$d unpinned items copied from %2$@?";
+"clipboard.notice.nothingToClear" = "No unpinned clipboard items to delete";
+"clipboard.notice.paused" = "Clipboard recording paused";
+"clipboard.notice.resumed" = "Clipboard recording resumed";
+"clipboard.filter.clear" = "Show all apps";
+"clipboard.toolbar.pause" = "Pause recording (⌘⇧P)";
+"clipboard.toolbar.resume" = "Resume recording (⌘⇧P)";
+"clipboard.toolbar.preview" = "Preview pane (⌘\\)";
+"clipboard.toolbar.settings" = "Clipboard settings (⌘,)";
+"clipboard.toolbar.more" = "More";
+"clipboard.menu.showPreview" = "Show Preview Pane";
+"clipboard.menu.hidePreview" = "Hide Preview Pane";
+"clipboard.menu.clearUnpinned" = "Delete All Unpinned Items…";
+"clipboard.footer.paused" = "Recording paused · click to resume";
+"clipboard.edit.title" = "Edit before pasting";
+"clipboard.edit.hint" = "⌘↩ pastes · Esc cancels · the saved item is not changed";
+"clipboard.edit.cancel" = "Cancel";
 "history.clipboard.title" = "Record clipboard history";
 "history.clipboard.subtitle" = "Keep text, images and files you copy, and open them with the history shortcut. Passwords are never recorded and everything stays on this Mac.";
 

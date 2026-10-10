@@ -57,11 +57,22 @@ struct ClipboardPanelView: View {
                 .strokeBorder(AskTheme.floatingBorder, lineWidth: contrast == .increased ? 1 : 0.5)
         )
         .overlay(alignment: .bottom) { noticeToast }
+        .overlay { if model.editingText != nil { ClipboardEditBeforePaste(model: model) } }
+        .overlay(alignment: .bottom) {
+            if let pending = model.pendingConfirmation {
+                ClipboardConfirmationBar(
+                    message: pending.message, onCancel: model.cancelPending, onConfirm: model.confirmPending
+                )
+            }
+        }
         .environment(\.askLauncherNumberHints, showingNumberHints)
         .environment(\.interfaceStyle, interfaceStyle)
         .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
         .onAppear { searchFocused = true }
         .onChange(of: focusRequest) { _ in searchFocused = true }
+        .onChange(of: model.editingText == nil) { closed in
+            if closed { searchFocused = true }
+        }
     }
 
     // MARK: - Search bar
@@ -71,6 +82,12 @@ struct ClipboardPanelView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(StudioTheme.textSecondary)
+            if let app = model.appFilter {
+                ClipboardAppFilterChip(app: app) {
+                    model.setAppFilter(nil)
+                    searchFocused = true
+                }
+            }
             TextField(L("clipboard.search.placeholder"), text: $model.query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 17))
@@ -88,9 +105,10 @@ struct ClipboardPanelView: View {
                 .help(L("clipboard.search.clear"))
             }
             categoryTabs
+            ClipboardPanelToolbar(model: model)
         }
         .padding(.leading, 18)
-        .padding(.trailing, 12)
+        .padding(.trailing, 10)
         .frame(height: 54)
     }
 
@@ -121,6 +139,8 @@ struct ClipboardPanelView: View {
         .padding(2)
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
         .animation(.spring(response: 0.25, dampingFraction: 0.85), value: model.category)
+        // The search field shrinks before the tab titles wrap.
+        .fixedSize()
     }
 
     // MARK: - List
@@ -213,13 +233,19 @@ struct ClipboardPanelView: View {
         .foregroundStyle(StudioTheme.textSecondary)
     }
 
-    // MARK: - Footer
+}
 
+// MARK: - Footer
+
+extension ClipboardPanelView {
     private var footer: some View {
         HStack(spacing: 2) {
             Text(L("clipboard.footer.count", model.visibleEntries.count))
                 .font(.system(size: 11.5))
                 .foregroundStyle(StudioTheme.textSecondary)
+            if model.isRecordingPaused {
+                ClipboardPausedChip { model.send(.togglePause) }
+            }
             Spacer()
             if let entry = model.selectedEntry {
                 if entry.kind.isTextual == false {
