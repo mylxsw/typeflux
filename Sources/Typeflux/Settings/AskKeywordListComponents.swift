@@ -46,7 +46,7 @@ struct AskKeywordListChip: View {
     }
 }
 
-/// All and the plugin kinds managed here, each with its count.
+/// A compact menu for all plugin kinds, each with its count.
 struct AskKeywordFilterBar: View {
     @Binding var selection: AskKeywordKind?
     let counts: [AskKeywordKind?: Int]
@@ -56,10 +56,10 @@ struct AskKeywordFilterBar: View {
     }
 
     var body: some View {
-        StudioSegmentedControl(options: options.map { (label: $0.1, value: $0.0) }, selection: $selection,
-                               counts: counts, optionIdentifier: {
-                                   "ask.settings.keywords.filter." + ($0?.rawValue ?? "all")
-                               })
+        SettingsMenuPicker(title: options.first { $0.0 == selection }?.1 ?? L("ask.settings.keywords.filter.all"),
+                           options: options.map { (label: "\($0.1) · \(counts[$0.0] ?? 0)", value: $0.0) },
+                           selection: $selection)
+            .accessibilityIdentifier("ask.settings.keywords.filter")
     }
 }
 

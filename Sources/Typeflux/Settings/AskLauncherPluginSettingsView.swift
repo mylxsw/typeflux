@@ -138,40 +138,48 @@ struct AskLauncherPluginSettingsView: View {
 
     // MARK: - Toolbar
 
-    /// Filters, search and "Add keyword" on one row, or the filters above the
-    /// other two when the pane is narrow (the settings window's default width).
+    /// Keep the category menu compact and the add action at the trailing edge.
+    /// Narrow panes place the category above the expanding search field.
     private var toolbar: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 8) {
                 filterBar
-                Spacer(minLength: 8)
-                searchAndAdd
+                searchBox.frame(minWidth: 160)
+                addButton
             }
             VStack(alignment: .leading, spacing: 8) {
-                ViewThatFits(in: .horizontal) {
-                    filterBar
-                    ScrollView(.horizontal, showsIndicators: false) { filterBar }.frame(height: 30)
-                }
-                HStack(spacing: 8) {
-                    searchAndAdd
-                }
+                filterBar
+                searchAndAdd
             }
         }
-        .popover(isPresented: $adding, arrowEdge: .bottom) { addMenu }
     }
 
     private var filterBar: some View {
         AskKeywordFilterBar(selection: $filter, counts: AskKeywordListPresentation.counts(rows))
+            .frame(width: 156)
     }
 
-    @ViewBuilder private var searchAndAdd: some View {
-        SettingsSearchBox(placeholder: L("ask.settings.keywords.search"), text: $query, width: 200)
+    private var searchAndAdd: some View {
+        HStack(spacing: 8) {
+            searchBox
+            addButton
+        }
+    }
+
+    private var searchBox: some View {
+        SettingsSearchBox(placeholder: L("ask.settings.keywords.search"), text: $query, width: nil)
+            .frame(maxWidth: .infinity)
+            .accessibilityIdentifier("ask.settings.keywords.search")
+    }
+
+    private var addButton: some View {
         Button { adding = true } label: {
             Label(L("ask.settings.keywords.add"), systemImage: "plus")
         }
         .buttonStyle(ModelActionStyle(primary: true))
         .fixedSize()
         .accessibilityIdentifier("ask.settings.keywords.add")
+        .popover(isPresented: $adding, arrowEdge: .bottom) { addMenu }
     }
 
     private var addMenu: some View {

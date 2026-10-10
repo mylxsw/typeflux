@@ -174,6 +174,41 @@ struct LauncherSettingsPolishTests {
         }
     }
 
+    @Test func `keyword toolbar stays inside the pane with the add action on the right`() async throws {
+        let previous = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let fixture = try fixture()
+        for language in [AppLanguage.simplifiedChinese, .english] {
+            AppLocalization.shared.setLanguage(language)
+            for width in [400.0, 574.0, 800.0] {
+                for light in [false, true] {
+                    try await render(AskLauncherPluginSettingsView(settings: fixture.settings,
+                                                                  workflows: fixture.store,
+                                                                  initialFilter: .history),
+                                     size: NSSize(width: width, height: 300),
+                                     name: "keyword-toolbar-\(language.rawValue)-\(Int(width))-\(light ? "light" : "dark")",
+                                     light: light) { window in
+                        let filter = try element("ask.settings.keywords.filter", in: window).frame
+                        let search = try element("ask.settings.keywords.search", in: window).frame
+                        let add = try element("ask.settings.keywords.add", in: window).frame
+                        let bounds = window.convertToScreen(window.contentView!.bounds)
+                        for frame in [filter, search, add] {
+                            #expect(frame.width > 0 && frame.height > 0)
+                            #expect(frame.minX >= bounds.minX - 1 && frame.maxX <= bounds.maxX + 1)
+                        }
+                        #expect(filter.width <= 156)
+                        #expect(!filter.intersects(search) && !filter.intersects(add))
+                        #expect(search.maxX < add.minX)
+                        #expect(abs(search.midY - add.midY) < 1)
+                        #expect(abs(add.maxX - bounds.maxX) < 1, "the add action stays at the trailing edge")
+                        #expect(find("ask.settings.keywords.row.history", in: window) != nil)
+                        #expect(find("ask.settings.keywords.row.fy", in: window) == nil)
+                    }
+                }
+            }
+        }
+    }
+
     @Test func `every keyword sheet renders without the repeated heading hint`() async throws {
         let fixture = try fixture()
         for light in [false, true] {
