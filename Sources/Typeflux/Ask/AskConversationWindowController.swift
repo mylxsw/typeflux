@@ -290,6 +290,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     /// The launcher panel once it has been shown, for tests that move it.
     var launcherWindow: NSWindow? { launcher }
 
+    /// Whether the launcher is still moving to the height its content last asked for.
+    var launcherIsResizing: Bool { launcherHeightAnimator.isAnimating }
+
     /// The screen the launcher is on, or the main one before it has been shown.
     private var launcherScreen: NSScreen? { launcher?.screen ?? NSScreen.main }
 

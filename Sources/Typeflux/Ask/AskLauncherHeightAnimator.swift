@@ -25,6 +25,9 @@ final class AskLauncherHeightAnimator {
     private var timer: Timer?
     private var motion: Motion?
 
+    /// Whether a motion is still on its way to its target.
+    var isAnimating: Bool { motion != nil }
+
     func update(from height: CGFloat, to target: CGFloat, animated: Bool,
                 framesPerSecond: Int = 60, rate: CGFloat = 28, apply: @escaping (CGFloat) -> Void) {
         guard animated, abs(height - target) > 0.1 else {
