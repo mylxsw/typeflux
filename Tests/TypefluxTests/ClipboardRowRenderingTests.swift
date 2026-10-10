@@ -22,13 +22,12 @@ final class ClipboardRowRenderingTests: XCTestCase {
     func testEveryRowDrawsInEveryState() async throws {
         let entries = ClipboardTestSupport.allKindsEntries(in: directory)
         for missing in [false, true] {
-            let model = ClipboardPanelModel()
-            model.fileExists = { _ in !missing }
-            model.reset(entries: entries)
             for selected in [false, true] {
                 let hosts = entries.enumerated().map { index, entry in
                     NSHostingView(rootView: ClipboardPanelRow(
-                        model: model, entry: entry, index: index, isSelected: selected, isHovered: false
+                        entry: entry, index: index, isSelected: selected, isHovered: !selected,
+                        isMissing: missing && (entry.imagePath != nil || !entry.filePaths.isEmpty),
+                        number: selected ? index + 1 : nil
                     ).frame(width: ClipboardPanelView.width - 16))
                 }
                 for host in hosts {
@@ -44,6 +43,41 @@ final class ClipboardRowRenderingTests: XCTestCase {
                 }
             }
         }
+    }
+
+    /// Rows keep one height whether or not they are selected, so moving the selection never
+    /// re-lays out the list.
+    @MainActor
+    func testSelectionDoesNotChangeRowHeight() throws {
+        for entry in ClipboardTestSupport.allKindsEntries(in: directory) {
+            let heights = [false, true].map { selected in
+                let host = NSHostingView(rootView: ClipboardPanelRow(
+                    entry: entry, index: 0, isSelected: selected, isHovered: false, isMissing: false
+                ).frame(width: ClipboardPanelView.width - 16))
+                return host.fittingSize.height
+            }
+            XCTAssertEqual(heights[0], heights[1], accuracy: 0.5, "\(entry.kind)")
+        }
+    }
+
+    func testRowsCompareOnlyWhatTheyDraw() {
+        let entry = ClipboardTestSupport.entry(.text, text: "same")
+        func row(selected: Bool = false, hovered: Bool = false, missing: Bool = false, number: Int? = nil) -> ClipboardPanelRow {
+            ClipboardPanelRow(entry: entry, index: 0, isSelected: selected, isHovered: hovered, isMissing: missing, number: number)
+        }
+        XCTAssertEqual(row(), row())
+        XCTAssertNotEqual(row(), row(selected: true))
+        XCTAssertNotEqual(row(), row(hovered: true))
+        XCTAssertNotEqual(row(), row(missing: true))
+        XCTAssertNotEqual(row(), row(number: 1))
+        var performed: [ClipboardEntryAction] = []
+        let withCallbacks = ClipboardPanelRow(
+            entry: entry, index: 0, isSelected: false, isHovered: false, isMissing: false,
+            onPerform: { performed.append($0) }
+        )
+        XCTAssertEqual(withCallbacks, row(), "Callbacks never make a row redraw")
+        withCallbacks.onPerform(.paste)
+        XCTAssertEqual(performed, [.paste])
     }
 
     @MainActor

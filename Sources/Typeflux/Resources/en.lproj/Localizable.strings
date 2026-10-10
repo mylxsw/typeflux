@@ -427,6 +427,11 @@
 "clipboard.notice.noImageText" = "No text found in the image";
 "clipboard.preview.missing" = "The original file was moved or deleted; only the record remains";
 "clipboard.preview.pages" = "%d pages";
+"clipboard.preview.type" = "Type";
+"clipboard.preview.source" = "Source";
+"clipboard.preview.copiedAt" = "Copied";
+"clipboard.preview.size" = "Size";
+"clipboard.preview.location" = "Location";
 "history.clipboard.title" = "Record clipboard history";
 "history.clipboard.subtitle" = "Keep text, images and files you copy, and open them with the history shortcut. Passwords are never recorded and everything stays on this Mac.";
 

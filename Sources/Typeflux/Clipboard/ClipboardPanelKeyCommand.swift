@@ -10,6 +10,7 @@ enum ClipboardPanelKeyCommand: Equatable {
     case cancel
     case action(ClipboardEntryAction)
     case quickPaste(Int)
+    case togglePreview
 
     static func command(
         keyCode: UInt16,
@@ -30,6 +31,7 @@ enum ClipboardPanelKeyCommand: Equatable {
         case "p": return .action(.togglePin)
         case "y": return .action(.quickLook)
         case "c" where !hasTextSelection: return .action(.copy)
+        case "\\": return .togglePreview
         default: return nil
         }
     }

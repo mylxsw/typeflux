@@ -161,6 +161,36 @@ final class SQLiteClipboardHistoryStoreTests: XCTestCase {
         wait(for: [expectation], timeout: 2)
     }
 
+    func testPurgeAndTrimThatRemoveNothingStayQuiet() {
+        let center = NotificationCenter()
+        let observed = SQLiteClipboardHistoryStore(baseDir: directory, notificationCenter: center)
+        observed.record(.text("recent"), source: nil, at: date(100))
+        // Let the record's own notification go out before counting.
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        var posts = 0
+        let token = center.addObserver(forName: .clipboardHistoryDidChange, object: nil, queue: nil) { _ in posts += 1 }
+        defer { center.removeObserver(token) }
+
+        observed.purge(olderThan: date(0))
+        observed.trim(toMaxCount: 10)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(posts, 0)
+
+        observed.purge(olderThan: date(200))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(posts, 1)
+        XCTAssertTrue(observed.items(limit: 10).isEmpty)
+
+        observed.record(.text("a"), source: nil, at: date(300))
+        observed.record(.text("b"), source: nil, at: date(301))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        posts = 0
+        observed.trim(toMaxCount: 1)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(posts, 1)
+        XCTAssertEqual(observed.items(limit: 10).compactMap(\.text), ["b"])
+    }
+
     func testUnwritableDatabaseFailsSoftly() {
         let file = directory.appendingPathComponent("not-a-directory")
         FileManager.default.createFile(atPath: file.path, contents: Data())

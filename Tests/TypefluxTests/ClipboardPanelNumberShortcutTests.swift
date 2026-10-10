@@ -56,6 +56,46 @@ final class ClipboardPanelNumberShortcutTests: XCTestCase {
     }
 
     @MainActor
+    private func scrollView(in view: NSView) -> NSScrollView? {
+        (view as? NSScrollView) ?? view.subviews.lazy.compactMap { self.scrollView(in: $0) }.first
+    }
+
+    /// Scrolling the real list renumbers the rows: `⌘1` pastes the first row fully on screen.
+    @MainActor
+    func testNumbersFollowTheScrolledList() async throws {
+        let suite = "ClipboardNumbersScroll.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let controller = ClipboardPanelController(settingsStore: SettingsStore(defaults: defaults))
+        defer { controller.dismiss() }
+        let model = ClipboardPanelModel()
+        model.reset(entries: (1 ... 40).map { ClipboardTestSupport.entry(.text, text: "Row \($0)") })
+        var pasted: [String] = []
+        model.onAction = { _, entry in pasted.append(entry.title) }
+        controller.present(model)
+        let panel = try window()
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(model.firstVisibleIndex, 0)
+
+        let scroll = try XCTUnwrap(scrollView(in: try XCTUnwrap(panel.contentView)))
+        let clip = scroll.contentView
+        clip.scroll(to: NSPoint(x: 0, y: clip.bounds.minY + 600))
+        scroll.reflectScrolledClipView(clip)
+        try await Task.sleep(for: .milliseconds(150))
+        let first = model.firstVisibleIndex
+        XCTAssertGreaterThan(first, 5, "About ten rows scrolled out of view")
+        XCTAssertEqual(model.shortcutNumber(at: first), 1)
+        XCTAssertNil(model.shortcutNumber(at: first - 1))
+
+        model.quickPaste(number: 1)
+        XCTAssertEqual(pasted, ["Row \(first + 1)"])
+
+        // A new search starts numbering from the top again.
+        model.query = "Row"
+        XCTAssertEqual(model.firstVisibleIndex, 0)
+    }
+
+    @MainActor
     func testCommandHintsAppearReleaseAndClearOnDismiss() async throws {
         let suite = "ClipboardNumberHints.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

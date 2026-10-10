@@ -1,32 +1,43 @@
 import SwiftUI
 
 /// One clipboard panel row: the source app's icon, then the content. Media rows show the content
-/// itself (thumbnails, a video frame, a waveform); the selected row expands its text or preview.
-struct ClipboardPanelRow: View {
-    @ObservedObject var model: ClipboardPanelModel
+/// itself (thumbnails, a video frame, a waveform). Rows keep their height when selected; the
+/// preview pane shows the full text or a large preview instead, so moving the selection never
+/// re-lays out the list.
+///
+/// The row takes plain values rather than the panel model and compares them in `==`, so a
+/// selection change redraws only the two rows whose highlight changed.
+struct ClipboardPanelRow: View, Equatable {
     let entry: ClipboardEntry
     let index: Int
     let isSelected: Bool
     let isHovered: Bool
+    let isMissing: Bool
+    /// The `⌘` number badge while the hints are showing.
+    var number: Int?
+    var onSelect: () -> Void = {}
+    var onPerform: (ClipboardEntryAction) -> Void = { _ in }
+    var onHover: (Bool) -> Void = { _ in }
     @State private var info: ClipboardMediaInfo?
 
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.entry == rhs.entry && lhs.index == rhs.index && lhs.isSelected == rhs.isSelected
+            && lhs.isHovered == rhs.isHovered && lhs.isMissing == rhs.isMissing && lhs.number == rhs.number
+    }
+
     var body: some View {
-        let missing = model.isMissing(entry)
-        HStack(alignment: .top, spacing: 11) {
+        HStack(alignment: .center, spacing: 11) {
             ClipboardEntryLeadingIcon(entry: entry)
-                .opacity(missing ? 0.55 : 1)
+                .opacity(isMissing ? 0.55 : 1)
             VStack(alignment: .leading, spacing: 2) {
-                content(missing: missing)
+                content
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(spacing: 6) {
-                if entry.isPinned {
-                    Image(systemName: "pin.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.yellow)
-                }
+            if entry.isPinned {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.yellow)
             }
-            .padding(.top, 6)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
@@ -35,62 +46,47 @@ struct ClipboardPanelRow: View {
                 .fill(isSelected ? AskTheme.accentSoft : isHovered ? AskTheme.hoverFill : Color.clear)
         )
         .contentShape(Rectangle())
-        .onTapGesture(count: 2) { model.perform(.paste, at: index) }
-        .onTapGesture { model.select(index: index) }
+        .onTapGesture(count: 2) { onPerform(.paste) }
+        .onTapGesture { onSelect() }
+        .onHover(perform: onHover)
         .contextMenu { contextMenu }
-        .modifier(AskLauncherNumberBadge(number: AskLauncherNumberShortcuts.number(at: index)))
+        .modifier(AskLauncherNumberBadge(number: number))
         .task(id: entry.id) { await loadInfo() }
     }
 
     @ViewBuilder
-    private func content(missing: Bool) -> some View {
+    private var content: some View {
         if entry.hasInlineMedia {
-            ClipboardInlineMedia(entry: entry, info: info, isSelected: isSelected, isMissing: missing)
-                .opacity(missing ? 0.55 : 1)
+            ClipboardInlineMedia(entry: entry, info: info, isExpanded: false, isMissing: isMissing)
+                .opacity(isMissing ? 0.55 : 1)
                 .padding(.top, 1)
                 .padding(.bottom, 3)
-            subtitle(missing: missing, caption: entry.mediaCaption)
-            if isSelected, missing {
-                ClipboardEntryPreview(entry: entry, isMissing: true)
-                    .padding(.top, 4)
-            }
+            subtitle(caption: entry.mediaCaption)
         } else if entry.kind == .pdf {
             HStack(alignment: .center, spacing: 10) {
-                ClipboardPDFThumbnail(url: missing ? nil : entry.fileURLs.first, isExpanded: isSelected)
+                ClipboardPDFThumbnail(url: isMissing ? nil : entry.fileURLs.first, isExpanded: false)
                 VStack(alignment: .leading, spacing: 2) {
-                    title(missing: missing)
-                    subtitle(missing: missing)
-                    if isSelected, let path = entry.filePaths.first {
-                        Text(path)
-                            .font(.system(size: 11))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .lineLimit(3)
-                            .textSelection(.enabled)
-                            .padding(.top, 4)
-                    }
+                    title
+                    subtitle()
                 }
             }
         } else {
-            title(missing: missing)
-            subtitle(missing: missing)
-            if isSelected, !entry.kind.isTextual {
-                ClipboardEntryPreview(entry: entry, isMissing: missing)
-                    .padding(.top, 6)
-            }
+            title
+            subtitle()
         }
     }
 
-    private func title(missing: Bool) -> some View {
-        // A row never shows more than a few lines; don't lay out megabytes of text.
-        Text(String(entry.title.prefix(2000)))
+    private var title: some View {
+        // A row shows one line; don't lay out megabytes of text.
+        Text(String(entry.title.prefix(300)))
             .font(entry.kind == .code ? .system(size: 12.5, design: .monospaced) : .system(size: 13.5))
-            .lineLimit(isSelected && entry.kind.isTextual ? 4 : 1)
+            .lineLimit(1)
             .truncationMode(.tail)
-            .opacity(missing ? 0.55 : 1)
+            .opacity(isMissing ? 0.55 : 1)
     }
 
     /// Kind, size, source and time; media rows lead with the file name, which truncates first.
-    private func subtitle(missing: Bool, caption: String? = nil) -> some View {
+    private func subtitle(caption: String? = nil) -> some View {
         HStack(spacing: 6) {
             if let caption {
                 Text(caption)
@@ -106,7 +102,7 @@ struct ClipboardPanelRow: View {
                 }
                 Text(part).layoutPriority(1)
             }
-            if missing {
+            if isMissing {
                 Circle().frame(width: 2, height: 2)
                 Text(L("clipboard.entry.missing")).foregroundStyle(Color.orange)
             }
@@ -117,26 +113,22 @@ struct ClipboardPanelRow: View {
     }
 
     private func loadInfo() async {
-        guard [.video, .audio, .pdf].contains(entry.kind), let url = entry.fileURLs.first else { return }
-        info = ClipboardMediaInfoProvider.shared.cachedInfo(for: url)
-        if info == nil {
-            info = await ClipboardMediaInfoProvider.shared.info(for: url, kind: entry.kind)
-        }
+        info = await ClipboardMediaInfoProvider.shared.loadInfo(for: entry)
     }
 
     @ViewBuilder
     private var contextMenu: some View {
-        let actions = model.actions(for: entry)
+        let actions = ClipboardEntryAction.available(for: entry)
         ForEach(Array(actions.enumerated()), id: \.offset) { offset, action in
             if offset > 0, action == .togglePin || (action == .quickLook && actions[offset - 1] == .copy) {
                 Divider()
             }
             Button {
-                model.perform(action, at: index)
+                onPerform(action)
             } label: {
                 Text(action.title(for: entry))
             }
-            .disabled(!model.isEnabled(action, for: entry))
+            .disabled(action.requiresContent && isMissing)
         }
     }
 }

@@ -57,6 +57,12 @@ final class ClipboardMediaInfoProvider {
         return info
     }
 
+    /// The info a row or the preview pane shows for an entry: its first file's duration or page count.
+    func loadInfo(for entry: ClipboardEntry) async -> ClipboardMediaInfo? {
+        guard [.video, .audio, .pdf].contains(entry.kind), let url = entry.fileURLs.first else { return nil }
+        return await info(for: url, kind: entry.kind)
+    }
+
     func cachedWaveform(for url: URL, bars: Int) -> [Float]? {
         guard bars > 0, let levels = waveformCache.object(forKey: url.path as NSString)?.value else { return nil }
         return Self.resample(levels, to: bars)

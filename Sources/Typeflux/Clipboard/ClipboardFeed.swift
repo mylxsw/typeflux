@@ -77,12 +77,18 @@ enum ClipboardFeed {
         )
     }
 
-    static func filter(_ entries: [ClipboardEntry], category: ClipboardCategory, query: String) -> [ClipboardEntry] {
+    /// `searchText` lets callers pass text built once per entry instead of joining it on every keystroke.
+    static func filter(
+        _ entries: [ClipboardEntry],
+        category: ClipboardCategory,
+        query: String,
+        searchText: (ClipboardEntry) -> String = searchableText(of:)
+    ) -> [ClipboardEntry] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
         return entries.filter { entry in
             guard category == .all || entry.kind.category == category else { return false }
             guard !needle.isEmpty else { return true }
-            return searchableText(of: entry).localizedCaseInsensitiveContains(needle)
+            return searchText(entry).localizedCaseInsensitiveContains(needle)
         }
     }
 
@@ -103,7 +109,7 @@ enum ClipboardFeed {
         return text
     }
 
-    private static func searchableText(of entry: ClipboardEntry) -> String {
+    static func searchableText(of entry: ClipboardEntry) -> String {
         let fileNames = entry.filePaths.map { ($0 as NSString).lastPathComponent }
         return ([entry.text ?? entry.title, entry.sourceAppName ?? ""] + fileNames).joined(separator: "\n")
     }

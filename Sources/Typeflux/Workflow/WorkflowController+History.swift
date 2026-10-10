@@ -13,6 +13,9 @@ extension WorkflowController {
         historyPanelModel.onDismiss = { [weak self] in
             self?.dismissHistoryPicker()
         }
+        historyPanelModel.onPreviewVisibilityChange = { [weak self] shows in
+            self?.settingsStore.clipboardShowsPreview = shows
+        }
         clipboardHistoryObserver = NotificationCenter.default.addObserver(
             forName: .clipboardHistoryDidChange,
             object: nil,
@@ -42,6 +45,7 @@ extension WorkflowController {
             return
         }
 
+        historyPanelModel.showsPreview = settingsStore.clipboardShowsPreview
         historyPanelModel.reset(entries: entries)
         isHistoryPickerPresented = true
         clipboardPanelPresenter?.present(historyPanelModel)

@@ -1,10 +1,18 @@
 import AppKit
 import SwiftUI
 
-/// The clipboard panel: search, type tabs, the grouped list and an action footer.
+/// The clipboard panel: search, type tabs, the grouped list with an optional preview pane, and
+/// an action footer.
 struct ClipboardPanelView: View {
+    /// Width of the list; the preview pane adds `ClipboardPreviewPane.width` to its right.
     static let width: CGFloat = 640
     static let height: CGFloat = 560
+
+    static func size(showsPreview: Bool) -> NSSize {
+        NSSize(width: width + (showsPreview ? ClipboardPreviewPane.width : 0), height: height)
+    }
+
+    private static let listSpace = "ClipboardPanelView.list"
 
     @ObservedObject var model: ClipboardPanelModel
     let focusRequest: Int
@@ -14,6 +22,7 @@ struct ClipboardPanelView: View {
     @Namespace private var tabNamespace
     @State private var hoveredIndex: Int?
     @State private var showingNumberHints = false
+    @State private var rowFrames = ClipboardRowFrames()
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.askGlassMaterialOverride) private var materialOverride
@@ -22,11 +31,20 @@ struct ClipboardPanelView: View {
         VStack(spacing: 0) {
             searchBar
             Divider().opacity(0.6)
-            list
+            HStack(spacing: 0) {
+                list.frame(width: Self.width)
+                if model.showsPreview {
+                    Divider().opacity(0.6)
+                    ClipboardPreviewPane(
+                        entry: model.previewEntry,
+                        isMissing: model.previewEntry.map(model.isMarkedMissing) ?? false
+                    )
+                }
+            }
             Divider().opacity(0.6)
             footer
         }
-        .frame(width: Self.width, height: Self.height)
+        .frame(width: Self.size(showsPreview: model.showsPreview).width, height: Self.height)
         .foregroundStyle(StudioTheme.textPrimary)
         .background(AskGlassBackground(
             material: materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
@@ -108,56 +126,81 @@ struct ClipboardPanelView: View {
     // MARK: - List
 
     private var list: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 2) {
-                    ForEach(rows) { row in
-                        if let header = row.header {
-                            Text(header.title)
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(StudioTheme.textSecondary)
-                                .padding(.horizontal, 10)
-                                .padding(.top, 10)
-                                .padding(.bottom, 4)
+        GeometryReader { geometry in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 2) {
+                        ForEach(model.rows) { row in
+                            if let header = row.header {
+                                Text(header.title)
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(StudioTheme.textSecondary)
+                                    .padding(.horizontal, 10)
+                                    .padding(.top, 10)
+                                    .padding(.bottom, 4)
+                            }
+                            rowView(row)
+                                .id(row.entry.id)
                         }
-                        ClipboardPanelRow(
-                            model: model,
-                            entry: row.entry,
-                            index: row.index,
-                            isSelected: row.index == model.selectedIndex,
-                            isHovered: hoveredIndex == row.index
-                        )
-                        .id(row.entry.id)
-                        .onHover { hovering in hoveredIndex = hovering ? row.index : nil }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                }
+                .coordinateSpace(name: Self.listSpace)
+                .overlay { if model.visibleEntries.isEmpty { emptyState } }
+                .onPreferenceChange(ClipboardRowFramesKey.self) { frames in
+                    rowFrames.frames = frames
+                    rowFrames.viewportHeight = geometry.size.height
+                    if let first = ClipboardPanelModel.firstFullyVisibleIndex(
+                        frames: frames, viewportHeight: geometry.size.height
+                    ) {
+                        model.updateFirstVisibleIndex(first)
                     }
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-            }
-            .overlay { if model.visibleEntries.isEmpty { emptyState } }
-            .onChange(of: model.selectedIndex) { index in
-                guard model.visibleEntries.indices.contains(index) else { return }
-                proxy.scrollTo(model.visibleEntries[index].id)
+                .onChange(of: model.selectedIndex) { index in
+                    reveal(index, proxy: proxy)
+                }
+                .onChange(of: model.scrollToTopRequest) { _ in
+                    if let first = model.rows.first { proxy.scrollTo(first.id, anchor: .top) }
+                }
             }
         }
     }
 
-    private struct Row: Identifiable {
-        let entry: ClipboardEntry
-        let index: Int
-        /// Set on the first row of each section.
-        let header: ClipboardFeed.Section?
-
-        var id: String { entry.id }
+    private func rowView(_ row: ClipboardPanelModel.Row) -> some View {
+        let index = row.index
+        return ClipboardPanelRow(
+            entry: row.entry,
+            index: index,
+            isSelected: index == model.selectedIndex,
+            isHovered: hoveredIndex == index,
+            isMissing: model.isMarkedMissing(row.entry),
+            number: showingNumberHints ? model.shortcutNumber(at: index) : nil,
+            onSelect: { model.select(index: index) },
+            onPerform: { model.perform($0, at: index) },
+            onHover: { hovering in
+                if hovering {
+                    hoveredIndex = index
+                } else if hoveredIndex == index {
+                    hoveredIndex = nil
+                }
+            }
+        )
+        .equatable()
+        .background(GeometryReader { proxy in
+            let frame = proxy.frame(in: .named(Self.listSpace))
+            Color.clear.preference(key: ClipboardRowFramesKey.self, value: [index: frame.minY ... frame.maxY])
+        })
     }
 
-    private var rows: [Row] {
-        var previous: ClipboardFeed.Section?
-        return model.visibleEntries.enumerated().map { index, entry in
-            let section = model.section(for: entry)
-            defer { previous = section }
-            return Row(entry: entry, index: index, header: section == previous ? nil : section)
+    /// Scrolls only when the row is not already fully on screen, without animation.
+    private func reveal(_ index: Int, proxy: ScrollViewProxy) {
+        guard model.visibleEntries.indices.contains(index) else { return }
+        if let frame = rowFrames.frames[index], frame.lowerBound >= 0, frame.upperBound <= rowFrames.viewportHeight {
+            return
         }
+        let anchor: UnitPoint = index >= model.firstVisibleIndex ? .bottom : .top
+        proxy.scrollTo(model.visibleEntries[index].id, anchor: anchor)
     }
 
     private var emptyState: some View {

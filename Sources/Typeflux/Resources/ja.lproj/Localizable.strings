@@ -423,6 +423,11 @@
 "clipboard.notice.noImageText" = "画像にテキストが見つかりません";
 "clipboard.preview.missing" = "元のファイルは移動または削除されました。記録のみ表示できます";
 "clipboard.preview.pages" = "%d ページ";
+"clipboard.preview.type" = "種類";
+"clipboard.preview.source" = "コピー元";
+"clipboard.preview.copiedAt" = "コピー日時";
+"clipboard.preview.size" = "サイズ";
+"clipboard.preview.location" = "場所";
 "history.clipboard.title" = "クリップボード履歴を記録";
 "history.clipboard.subtitle" = "コピーしたテキスト・画像・ファイルを記録し、履歴ショートカットで開けます。パスワードは記録されず、すべてこの Mac にのみ保存されます。";
 
