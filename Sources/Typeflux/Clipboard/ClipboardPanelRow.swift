@@ -15,7 +15,7 @@ struct ClipboardPanelRow: View, Equatable {
     let isMissing: Bool
     /// The `⌘` number badge while the hints are showing.
     var number: Int?
-    var onSelect: () -> Void = {}
+    var onClick: (Int) -> Void = { _ in }
     var onPerform: (ClipboardEntryAction) -> Void = { _ in }
     var onHover: (Bool) -> Void = { _ in }
     @State private var info: ClipboardMediaInfo?
@@ -46,8 +46,8 @@ struct ClipboardPanelRow: View, Equatable {
                 .fill(isSelected ? AskTheme.accentSoft : isHovered ? AskTheme.hoverFill : Color.clear)
         )
         .contentShape(Rectangle())
-        .onTapGesture(count: 2) { onPerform(.paste) }
-        .onTapGesture { onSelect() }
+        .overlay(ClipboardRowClickArea(onClick: onClick))
+        .accessibilityAction { onClick(1) }
         .onHover(perform: onHover)
         .contextMenu { contextMenu }
         .modifier(AskLauncherNumberBadge(number: number))

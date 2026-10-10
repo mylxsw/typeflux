@@ -18,6 +18,7 @@ struct ClipboardPanelView: View {
     let focusRequest: Int
     /// Read from settings each time the panel opens.
     var interfaceStyle: InterfaceStyle = .liquidGlass
+    @ObservedObject var layout = ClipboardPanelLayout()
     @FocusState private var searchFocused: Bool
     @Namespace private var tabNamespace
     @State private var hoveredIndex: Int?
@@ -33,18 +34,14 @@ struct ClipboardPanelView: View {
             Divider().opacity(0.6)
             HStack(spacing: 0) {
                 list.frame(width: Self.width)
-                if model.showsPreview {
-                    Divider().opacity(0.6)
-                    ClipboardPreviewPane(
-                        entry: model.previewEntry,
-                        isMissing: model.previewEntry.map(model.isMarkedMissing) ?? false
-                    )
+                if model.showsPreview || previewWidth > 0 {
+                    preview
                 }
             }
             Divider().opacity(0.6)
             footer
         }
-        .frame(width: Self.size(showsPreview: model.showsPreview).width, height: Self.height)
+        .frame(width: viewportWidth, height: Self.height)
         .foregroundStyle(StudioTheme.textPrimary)
         .background(AskGlassBackground(
             material: materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
@@ -73,6 +70,26 @@ struct ClipboardPanelView: View {
         .onChange(of: model.editingText == nil) { closed in
             if closed { searchFocused = true }
         }
+    }
+
+    private var viewportWidth: CGFloat {
+        layout.width ?? Self.size(showsPreview: model.showsPreview).width
+    }
+
+    private var previewWidth: CGFloat { max(0, viewportWidth - Self.width) }
+
+    /// Keep the content mounted during collapse and reveal it from the list's right edge.
+    private var preview: some View {
+        let entry = model.previewEntry ?? model.selectedEntry
+        return ClipboardPreviewPane(entry: entry, isMissing: entry.map(model.isMarkedMissing) ?? false)
+            .overlay(alignment: .leading) {
+                Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 0.5)
+            }
+            .opacity(min(1, previewWidth / ClipboardPreviewPane.width))
+            .frame(width: previewWidth, alignment: .leading)
+            .clipped()
+            .allowsHitTesting(model.showsPreview)
+            .accessibilityHidden(!model.showsPreview)
     }
 
     // MARK: - Search bar
@@ -196,7 +213,7 @@ struct ClipboardPanelView: View {
             isHovered: hoveredIndex == index,
             isMissing: model.isMarkedMissing(row.entry),
             number: showingNumberHints ? model.shortcutNumber(at: index) : nil,
-            onSelect: { model.click(index: index) },
+            onClick: { model.click(index: index, clickCount: $0) },
             onPerform: { model.perform($0, at: index) },
             onHover: { hovering in
                 if hovering {

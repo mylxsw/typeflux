@@ -1433,18 +1433,7 @@ private struct AskMessageView: View {
             AskIconGhostButton(label: L("ask.quote"), systemImage: "text.quote") {
                 onReference(AskReference(messageId: message.id, text: message.text, question: ""))
             }
-            // The answer's cost is a quiet caption that opens the usage panel.
-            Button(action: onUsage) {
-                Text(usageLabel)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .monospacedDigit()
-                    .padding(.horizontal, 8)
-                    .frame(height: 28)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help(L("ask.usage.title"))
+            AskIconGhostButton(label: usageHelp, systemImage: "chart.bar.xaxis", action: onUsage)
             .accessibilityLabel(L("ask.usage.title"))
             .accessibilityValue(usageLabel)
         }
@@ -1455,6 +1444,11 @@ private struct AskMessageView: View {
     private var usageLabel: String {
         guard let usage else { return L("ask.usage.title") }
         return usage.creditsText + " credits"
+    }
+
+    private var usageHelp: String {
+        guard usage != nil else { return L("ask.usage.title") }
+        return L("ask.usage.title") + " · " + usageLabel
     }
 }
 

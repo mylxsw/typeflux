@@ -1,25 +1,11 @@
 import SwiftUI
 
-/// Pause, preview pane, settings and more, right of the clipboard panel's type tabs.
+/// The more menu, right of the clipboard panel's type tabs.
 struct ClipboardPanelToolbar: View {
     @ObservedObject var model: ClipboardPanelModel
 
     var body: some View {
-        HStack(spacing: 2) {
-            button(
-                symbol: model.isRecordingPaused ? "pause.circle.fill" : "pause.circle",
-                help: L(model.isRecordingPaused ? "clipboard.toolbar.resume" : "clipboard.toolbar.pause"),
-                tint: model.isRecordingPaused ? Color.orange : nil
-            ) { model.send(.togglePause) }
-            button(
-                symbol: "sidebar.right", help: L("clipboard.toolbar.preview"),
-                tint: model.showsPreview ? Color.accentColor : nil
-            ) { model.togglePreview() }
-            button(symbol: "gearshape", help: L("clipboard.toolbar.settings"), tint: nil) {
-                model.send(.openSettings)
-            }
-            moreMenu
-        }
+        moreMenu
     }
 
     private var moreMenu: some View {
@@ -37,27 +23,15 @@ struct ClipboardPanelToolbar: View {
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .frame(width: 26, height: 26)
+                .foregroundStyle(model.isRecordingPaused ? Color.orange : StudioTheme.textSecondary)
+                .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
         .help(L("clipboard.toolbar.more"))
-    }
-
-    private func button(symbol: String, help: String, tint: Color?, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(tint ?? StudioTheme.textSecondary)
-                .frame(width: 26, height: 26)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help(help)
-        .accessibilityLabel(help)
+        .accessibilityLabel(L("clipboard.toolbar.more"))
     }
 }
 
@@ -87,7 +61,7 @@ struct ClipboardAppFilterChip: View {
     }
 }
 
-/// The footer's pause notice — the only place the pause shows besides the toolbar. Clicking resumes.
+/// The footer's pause notice. Clicking resumes recording.
 struct ClipboardPausedChip: View {
     let onResume: () -> Void
 

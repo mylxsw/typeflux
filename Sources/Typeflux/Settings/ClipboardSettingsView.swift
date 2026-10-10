@@ -17,13 +17,13 @@ struct ClipboardSettingsView: View {
             ModelSurface {
                 VStack(alignment: .leading, spacing: 0) {
                     toggleRow(icon: "doc.on.clipboard", title: "history.clipboard.title",
-                              subtitle: "history.clipboard.subtitle",
+                              subtitle: nil,
                               isOn: Binding(get: { model.historyEnabled }, set: model.setHistoryEnabled))
                     ModelRowDivider(leading: 66)
                     shortcutRow
                     ModelRowDivider(leading: 66)
                     row(icon: "pause.circle", title: "clipboard.settings.pause",
-                        subtitle: "clipboard.settings.pause.subtitle") {
+                        subtitle: nil) {
                         SettingsMenuPicker(title: L("clipboard.settings.pause"), options: model.pauseOptions,
                                            selection: Binding(get: { model.pause }, set: model.setPause))
                             .frame(width: 200)
@@ -34,7 +34,7 @@ struct ClipboardSettingsView: View {
             ModelSurface {
                 VStack(alignment: .leading, spacing: 0) {
                     row(icon: "calendar", title: "clipboard.settings.retention",
-                        subtitle: "clipboard.settings.retention.subtitle") {
+                        subtitle: nil) {
                         SettingsMenuPicker(title: L("clipboard.settings.retention"),
                                            options: ClipboardRetention.allCases.map { ($0.title, $0) },
                                            selection: Binding(get: { model.retention }, set: model.setRetention))
@@ -66,15 +66,15 @@ struct ClipboardSettingsView: View {
             ModelSurface {
                 VStack(alignment: .leading, spacing: 0) {
                     toggleRow(icon: "cursorarrow.click", title: "clipboard.settings.singleClick",
-                              subtitle: "clipboard.settings.singleClick.subtitle",
+                              subtitle: nil,
                               isOn: Binding(get: { model.singleClickPastes }, set: model.setSingleClickPastes))
                     ModelRowDivider(leading: 66)
                     toggleRow(icon: "sidebar.right", title: "clipboard.settings.preview",
-                              subtitle: "clipboard.settings.preview.subtitle",
+                              subtitle: nil,
                               isOn: Binding(get: { model.showsPreview }, set: model.setShowsPreview))
                     ModelRowDivider(leading: 66)
                     toggleRow(icon: "pin.slash", title: "clipboard.settings.firstUnpinned",
-                              subtitle: "clipboard.settings.firstUnpinned.subtitle",
+                              subtitle: nil,
                               isOn: Binding(get: { model.selectsFirstUnpinned }, set: model.setSelectsFirstUnpinned))
                     ModelRowDivider(leading: 66)
                     row(icon: "macwindow", title: "clipboard.settings.position", subtitle: nil) {
@@ -118,8 +118,8 @@ struct ClipboardSettingsView: View {
                          trailing: trailing)
     }
 
-    private func toggleRow(icon: String, title: String, subtitle: String, isOn: Binding<Bool>) -> some View {
-        AgentSettingsRow(icon: icon, title: L(title), subtitle: L(subtitle), subtitleLineLimit: nil) {
+    private func toggleRow(icon: String, title: String, subtitle: String?, isOn: Binding<Bool>) -> some View {
+        AgentSettingsRow(icon: icon, title: L(title), subtitle: subtitle.map { L($0) }, subtitleLineLimit: nil) {
             Toggle("", isOn: isOn).labelsHidden().toggleStyle(.switch).accessibilityLabel(L(title))
         }
     }

@@ -100,10 +100,10 @@ final class ClipboardPreviewPaneTests: XCTestCase {
         let model = ClipboardPanelModel()
         model.reset(entries: (1 ... 3).map { ClipboardTestSupport.entry(.text, text: "item \($0)") })
         controller.present(model)
-        let panel = try XCTUnwrap(ClipboardTestSupport.presentedPanel())
+        let panel = try XCTUnwrap(controller.presentedWindow)
         XCTAssertEqual(panel.frame.width, ClipboardPanelView.width)
         let top = panel.frame.maxY
-        let left = panel.frame.minX
+        let center = panel.frame.midX
 
         let toggle = try XCTUnwrap(NSEvent.keyEvent(
             with: .keyDown, location: .zero, modifierFlags: .command, timestamp: 0,
@@ -112,18 +112,22 @@ final class ClipboardPreviewPaneTests: XCTestCase {
         ))
         XCTAssertTrue(controller.handleKeyDown(toggle))
         XCTAssertTrue(model.showsPreview)
+        for _ in 0 ..< 150 where controller.isResizingPreview { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertFalse(controller.isResizingPreview)
         XCTAssertEqual(panel.frame.width, ClipboardPanelView.size(showsPreview: true).width)
         XCTAssertEqual(panel.frame.maxY, top, accuracy: 1)
-        XCTAssertLessThanOrEqual(abs(panel.frame.minX - left), 1, "The list stays put; the pane opens to the right")
+        XCTAssertEqual(panel.frame.midX, center, accuracy: 1, "The whole panel stays centred")
 
         model.togglePreview()
+        for _ in 0 ..< 150 where controller.isResizingPreview { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertEqual(panel.frame.width, ClipboardPanelView.width)
+        XCTAssertEqual(panel.frame.midX, center, accuracy: 1)
 
         // Presenting again with the pane on opens wide straight away.
         controller.dismiss()
         model.showsPreview = true
         controller.present(model)
-        XCTAssertEqual(try XCTUnwrap(ClipboardTestSupport.presentedPanel()).frame.width,
+        XCTAssertEqual(try XCTUnwrap(controller.presentedWindow).frame.width,
                        ClipboardPanelView.size(showsPreview: true).width)
     }
 

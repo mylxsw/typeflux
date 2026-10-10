@@ -1,11 +1,13 @@
 import AppKit
 import Combine
 import Quartz
+import QuartzCore
 import SwiftUI
 
 /// Hosts the clipboard panel in a non-activating panel that still takes keyboard focus, so the
 /// app the user was typing in stays frontmost and receives the paste after the panel closes.
-final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
+@preconcurrency @MainActor
+final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPresenting {
     private let settingsStore: SettingsStore
     private var panel: ClipboardPanelWindow?
     private var hostingView: NSHostingView<ClipboardPanelView>?
@@ -15,6 +17,11 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
     private var focusRequest = 0
     private var quickLookURLs: [URL] = []
     private var previewObservation: AnyCancellable?
+    private let layout = ClipboardPanelLayout()
+    /// The launcher's scalar spring also drives the clipboard's width.
+    private let previewWidthAnimator = AskLauncherHeightAnimator()
+    private var previewCenterX: CGFloat?
+    var reduceMotion: () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
@@ -24,13 +31,20 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
         panel?.isVisible == true
     }
 
+    var presentedWindow: NSWindow? { isPresented ? panel : nil }
+    var isResizingPreview: Bool { previewWidthAnimator.isAnimating }
+
     func present(_ model: ClipboardPanelModel) {
+        previewWidthAnimator.stop()
+        previewObservation = nil
         self.model = model
         focusRequest += 1
+        layout.setWidth(ClipboardPanelView.size(showsPreview: model.showsPreview).width)
         let panel = panel(for: model)
         applyAppearance(to: panel)
         panel.setContentSize(ClipboardPanelView.size(showsPreview: model.showsPreview))
         position(panel)
+        previewCenterX = settingsStore.clipboardPanelPosition == .mouse ? panel.frame.midX : panel.screen?.visibleFrame.midX
         panel.makeKeyAndOrderFront(nil)
         installMonitors()
         previewObservation = model.$showsPreview.dropFirst().removeDuplicates().sink { [weak self] shows in
@@ -38,21 +52,33 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
         }
     }
 
-    /// The preview pane widens the panel to the right; the list stays where it was.
+    /// One spring drives the native frame and content viewport around the same horizontal centre.
     private func resizeForPreview(_ shows: Bool) {
         guard let panel, let hostingView else { return }
-        let size = ClipboardPanelView.size(showsPreview: shows)
-        var frame = panel.frame
-        frame.origin.y += frame.height - size.height
-        frame.size = size
-        if let screen = panel.screen ?? NSScreen.main {
-            frame = AskLauncherPlacement.clamped(frame, screen: screen.visibleFrame)
+        let screen = panel.screen ?? NSScreen.main
+        previewWidthAnimator.update(
+            from: panel.frame.width, to: ClipboardPanelView.size(showsPreview: shows).width,
+            animated: panel.isVisible && !reduceMotion(), framesPerSecond: screen?.maximumFramesPerSecond ?? 60
+        ) { [weak self, weak panel, weak hostingView] width in
+            guard let self, let panel, let hostingView else { return }
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            let frame = ClipboardPanelPlacement.resized(
+                panel.frame, width: ClipboardPanelLayout.boundedWidth(width),
+                screen: screen?.visibleFrame, centerX: self.previewCenterX
+            )
+            panel.setFrame(frame, display: false)
+            // AppKit rounds window frames to pixels; the viewport must use the committed size.
+            self.layout.setWidth(panel.frame.width)
+            hostingView.frame = NSRect(origin: .zero, size: panel.frame.size)
+            hostingView.layoutSubtreeIfNeeded()
+            panel.displayIfNeeded()
+            CATransaction.commit()
         }
-        panel.setFrame(frame, display: true)
-        hostingView.frame = NSRect(origin: .zero, size: size)
     }
 
     func dismiss() {
+        previewWidthAnimator.stop()
         previewObservation = nil
         closeQuickLook()
         removeMonitors()
@@ -77,7 +103,7 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
 
     private func panel(for model: ClipboardPanelModel) -> ClipboardPanelWindow {
         let rootView = ClipboardPanelView(model: model, focusRequest: focusRequest,
-                                          interfaceStyle: settingsStore.interfaceStyle)
+                                          interfaceStyle: settingsStore.interfaceStyle, layout: layout)
         if let panel, let hostingView {
             hostingView.rootView = rootView
             return panel
@@ -99,6 +125,8 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
         panel.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.clipboard")
         let hostingView = NSHostingView(rootView: rootView)
+        // The controller owns sizing; SwiftUI must not independently move the native window.
+        hostingView.sizingOptions = []
         hostingView.frame = NSRect(origin: .zero, size: size)
         panel.contentView = hostingView
         self.panel = panel
@@ -258,7 +286,7 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
     }
 }
 
-extension ClipboardPanelController: QLPreviewPanelDataSource {
+extension ClipboardPanelController: @preconcurrency QLPreviewPanelDataSource {
     func numberOfPreviewItems(in _: QLPreviewPanel!) -> Int {
         quickLookURLs.count
     }

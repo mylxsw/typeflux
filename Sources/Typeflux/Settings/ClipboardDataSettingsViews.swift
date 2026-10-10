@@ -32,10 +32,6 @@ struct ClipboardIgnoredAppsSection: View {
                 if !model.ignoredApps.isEmpty { ModelRowDivider() }
                 HStack(spacing: 10) {
                     Button(L("clipboard.settings.ignored.add"), action: chooseApp)
-                    Text(L("clipboard.settings.ignored.footnote"))
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, 18)
                 .padding(.vertical, 12)

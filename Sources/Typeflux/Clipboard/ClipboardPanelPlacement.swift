@@ -3,6 +3,14 @@ import AppKit
 /// Aligns the clipboard search card with the launcher's visible card while
 /// keeping the clipboard centred horizontally and inside the usable screen.
 enum ClipboardPanelPlacement {
+    /// Keep the top edge and horizontal centre fixed throughout preview expansion and collapse.
+    static func resized(_ frame: NSRect, width: CGFloat, screen: NSRect?, centerX: CGFloat? = nil) -> NSRect {
+        let next = NSRect(x: (centerX ?? screen?.midX ?? frame.midX) - width / 2,
+                          y: frame.minY, width: width, height: frame.height)
+        guard let screen else { return next }
+        return AskLauncherPlacement.clamped(next, screen: screen)
+    }
+
     static func frame(size: NSSize, screen: NSRect, launcherAnchor: AskLauncherPlacement.Anchor? = nil) -> NSRect {
         // The launcher has a transparent gutter above its card; the clipboard does not.
         let top = AskLauncherPlacement.top(on: screen, anchor: launcherAnchor) - AskMetrics.launcherGutter

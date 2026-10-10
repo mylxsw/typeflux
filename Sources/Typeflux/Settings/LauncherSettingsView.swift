@@ -27,7 +27,7 @@ struct LauncherSettingsView: View {
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 AskTranslationSettingsView(settings: settings)
             case .clipboard:
-                AgentPaneHeader(symbol: pane.symbol, title: pane.title, subtitle: L("clipboard.settings.subtitle"))
+                AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 ClipboardSettingsView(settings: settings, history: clipboardHistory, onEditShortcut: onEditShortcut)
             case .workflows:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
