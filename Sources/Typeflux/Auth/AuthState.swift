@@ -115,6 +115,9 @@ final class AuthState: ObservableObject {
     var subscriptionLoadGeneration: Int?
     var usageLoadGeneration: Int?
     var usageBreakdownLoadGeneration: Int?
+    /// The session whose subscription sync is running, if any;
+    /// `isSyncingSubscription` belongs to that sync.
+    var subscriptionSyncGeneration: Int?
 
     var accessToken: String? {
         if let inMemorySessionToken,
@@ -247,6 +250,7 @@ final class AuthState: ObservableObject {
         userProfile = nil
         subscription = .none
         subscriptionError = nil
+        subscriptionSyncGeneration = nil
         isSyncingSubscription = false
         // Loads still running for the old session no longer own these flags.
         subscriptionLoadGeneration = nil

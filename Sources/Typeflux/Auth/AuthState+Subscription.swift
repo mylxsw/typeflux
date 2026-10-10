@@ -49,17 +49,36 @@ extension AuthState {
         }
     }
 
+    /// Asks the server to reconcile the subscription and applies the result.
+    /// Like `refreshSubscription`, a sync belongs to the session that started
+    /// it: its snapshot or error is dropped when that session was logged out
+    /// or replaced meanwhile, and the current session's subscription is
+    /// returned instead.
     @discardableResult
     func syncSubscription() async throws -> BillingSubscriptionSnapshot {
         guard let token = accessToken else {
             throw AuthError.unauthorized
         }
-        guard !isSyncingSubscription else { return subscription }
+        let generation = sessionGeneration
+        guard subscriptionSyncGeneration != generation else { return subscription }
 
+        subscriptionSyncGeneration = generation
         isSyncingSubscription = true
-        defer { isSyncingSubscription = false }
+        defer {
+            if subscriptionSyncGeneration == generation {
+                subscriptionSyncGeneration = nil
+                isSyncingSubscription = false
+            }
+        }
 
-        let snapshot = try await syncBillingSubscription(token)
+        let snapshot: BillingSubscriptionSnapshot
+        do {
+            snapshot = try await syncBillingSubscription(token)
+        } catch {
+            guard generation == sessionGeneration else { return subscription }
+            throw error
+        }
+        guard generation == sessionGeneration else { return subscription }
         applySubscriptionSnapshot(snapshot)
         return snapshot
     }
@@ -168,7 +187,9 @@ extension AuthState {
         guard let token = accessToken else {
             throw AuthError.unauthorized
         }
+        let generation = sessionGeneration
         let session = try await createCheckoutSession(token, planCode)
+        try requireSession(generation)
         if !subscription.hasPaidSubscription {
             pendingCheckoutSubscriptionEntitlement = true
         }
@@ -180,7 +201,9 @@ extension AuthState {
         guard let token = accessToken else {
             throw AuthError.unauthorized
         }
+        let generation = sessionGeneration
         let session = try await createPortalSession(token)
+        try requireSession(generation)
         return session.url
     }
 
@@ -188,13 +211,25 @@ extension AuthState {
         guard let token = accessToken else {
             throw AuthError.unauthorized
         }
+        let generation = sessionGeneration
         let response = try await issueBillingPageToken(token)
+        try requireSession(generation)
         return response.plansURL
     }
 
     /// The billing page opened on `tab`, e.g. `BillingPlansLink.creditsTab`.
     func requestBillingPageToken(tab: String?) async throws -> URL {
         try await BillingPlansLink.url(requestBillingPageToken(), tab: tab)
+    }
+
+    /// A billing link is signed for the account that requested it. One that
+    /// arrives after that session was logged out or replaced must not be
+    /// opened (or start checkout polling) for whoever is signed in now.
+    private func requireSession(_ generation: Int) throws {
+        guard generation == sessionGeneration else {
+            logger.info("Discarding billing link for a replaced session")
+            throw AuthError.unauthorized
+        }
     }
 
     private func startCheckoutPolling() {
