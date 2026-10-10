@@ -602,6 +602,8 @@ final class AskConversationModel: ObservableObject {
         persistDrafts()
     }
 
+    func openScreenCaptureSettings() { capture.openScreenCaptureSettings() }
+
     func refreshScreenshot(launcher: Bool) async {
         guard !Task.isCancelled, !capturing || capturingScreenshot,
               screenshotCapability(launcher: launcher).canAttach else { return }

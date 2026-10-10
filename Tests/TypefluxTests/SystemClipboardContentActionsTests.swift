@@ -86,3 +86,25 @@ final class SystemClipboardContentActionsTests: XCTestCase {
         XCTAssertNil(missing)
     }
 }
+
+final class SystemClipboardContentActionsRecognizerTests: XCTestCase {
+    private struct UnreadableImage: Error {}
+
+    private struct FixedRecognizer: ImageTextRecognizing {
+        var result: Result<RecognizedText, Error>
+        func recognizeText(in _: ImageTextSource) async throws -> RecognizedText { try result.get() }
+    }
+
+    func testUsesTheInjectedRecognizer() async {
+        let lines = [RecognizedText.Line(text: "Injected", confidence: 1, boundingBox: .zero)]
+        let actions = SystemClipboardContentActions(textRecognizer: FixedRecognizer(result: .success(RecognizedText(lines: lines))))
+        let text = await actions.recognizeText(in: URL(fileURLWithPath: "/unused.png"))
+        XCTAssertEqual(text, "Injected")
+    }
+
+    func testRecognitionFailuresBecomeNil() async {
+        let actions = SystemClipboardContentActions(textRecognizer: FixedRecognizer(result: .failure(UnreadableImage())))
+        let text = await actions.recognizeText(in: URL(fileURLWithPath: "/unused.png"))
+        XCTAssertNil(text)
+    }
+}

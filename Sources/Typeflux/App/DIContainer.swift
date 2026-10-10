@@ -35,6 +35,9 @@ final class DIContainer {
     let cloudLoginSyncCoordinator: CloudLoginSyncCoordinator
     let cloudDataSyncCoordinator: CloudDataSyncCoordinator
     let outputPostProcessor: OutputPostProcessing
+    let screenCapturePermission: any ScreenCapturePermissionProviding
+    let screenCapture: any ScreenCapturing
+    let imageTextRecognizer: any ImageTextRecognizing = VisionImageTextRecognizer()
     lazy var askConversationWindowController: AskConversationWindowController? = {
         do { return try AskConversationWindowController(
             settings: settingsStore,
@@ -42,6 +45,8 @@ final class DIContainer {
             registry: mcpRegistry,
             modelLibrary: modelLibrary,
             llmService: llmService,
+            screenCapture: screenCapture,
+            screenCapturePermission: screenCapturePermission,
             clipboardHistoryStore: clipboardHistoryStore
         ) } catch {
             ErrorLogStore.shared
@@ -52,6 +57,9 @@ final class DIContainer {
     // swiftlint:disable:next function_body_length
     init() {
         modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)
+        let screenCapturePermission = ScreenCapturePermission.live
+        self.screenCapturePermission = screenCapturePermission
+        screenCapture = ScreenCaptureService(permission: screenCapturePermission)
         SettingsWindowController.shared.modelLibrary = modelLibrary
         hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
         audioRecorder = SwitchableAudioRecorder(

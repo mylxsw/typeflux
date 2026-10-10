@@ -1,5 +1,4 @@
 import AppKit
-import ScreenCaptureKit
 
 struct AskCapturedContext: Sendable {
     var selection: String?
@@ -26,6 +25,8 @@ protocol AskContextCapturing {
     /// Why a screenshot is missing when none was taken: no permission, or unavailable.
     /// Reads the permission without asking for it.
     func missingScreenshotWarning() -> String
+    /// Lists Typeflux in System Settings → Screen & System Audio Recording and opens it.
+    func openScreenCaptureSettings()
 }
 
 extension AskContextCapturing {
@@ -33,6 +34,7 @@ extension AskContextCapturing {
     func globalMemory() -> AskMemory? { nil }
     func missingScreenshotWarning() -> String { AskContextCapture.missingScreenshotWarning(allowed: false) }
     func makeSelectionRequest() -> ReadOnlySelectionRequest { .frontmost() }
+    func openScreenCaptureSettings() {}
 
     func capture(includeScreenshot: Bool, includeSelection: Bool = true) async -> AskCapturedContext {
         await capture(includeScreenshot: includeScreenshot, includeSelection: includeSelection,
@@ -42,9 +44,7 @@ extension AskContextCapturing {
 
 @MainActor
 final class AskContextCapture: AskContextCapturing {
-    private static let screenCaptureRequestedKey = "ask.screenCaptureAccessRequested"
-    private let preflightScreenCapture: () -> Bool
-    private let requestScreenCapture: () -> Bool
+    private let permission: any ScreenCapturePermissionProviding
     private let injector: TextInjector
     private let memory: (any AskMemoryProviding)?
     private let frontmostProcessID: @MainActor () -> pid_t?
@@ -52,25 +52,26 @@ final class AskContextCapture: AskContextCapturing {
     private let captureScreenshot: (CGDirectDisplayID?) async throws -> String
     private let sourceTracker: AskSourceApplicationTracker
 
+    /// - Parameter captureScreenshot: replaces the capture through `capturer`.
     init(
         injector: TextInjector, memory: (any AskMemoryProviding)? = nil,
-        preflightScreenCapture: @escaping () -> Bool = { CGPreflightScreenCaptureAccess() },
-        requestScreenCapture: @escaping () -> Bool = { CGRequestScreenCaptureAccess() },
+        permission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live,
+        capturer: any ScreenCapturing = ScreenCaptureService(),
         accessibilityTrusted: @escaping () -> Bool = { AXIsProcessTrusted() },
         frontmostProcessID: (@MainActor () -> pid_t?)? = nil,
         sourceTracker: AskSourceApplicationTracker? = nil,
-        captureScreenshot: @escaping (CGDirectDisplayID?) async throws -> String = {
-            try await AskContextCapture.screenshot(displayId: $0, requestAccessIfNeeded: false).dataURL
-        }
+        captureScreenshot: ((CGDirectDisplayID?) async throws -> String)? = nil
     ) {
-        self.preflightScreenCapture = preflightScreenCapture
-        self.requestScreenCapture = requestScreenCapture
+        self.permission = permission
         self.injector = injector
         self.memory = memory
         let tracker = sourceTracker ?? AskSourceApplicationTracker.shared
         self.frontmostProcessID = frontmostProcessID ?? { tracker.resolve(.frontmost()).processID }
         self.accessibilityTrusted = accessibilityTrusted
-        self.captureScreenshot = captureScreenshot
+        self.captureScreenshot = captureScreenshot ?? {
+            try await AskContextCapture.screenshot(displayId: $0, requestAccessIfNeeded: false,
+                                                   permission: permission, capturer: capturer).dataURL
+        }
         self.sourceTracker = tracker
     }
 
@@ -78,10 +79,14 @@ final class AskContextCapture: AskContextCapturing {
         memory?.memory(bundleIdentifier: nil, appName: nil)
     }
 
-    var screenCaptureAllowed: Bool { preflightScreenCapture() }
+    var screenCaptureAllowed: Bool { permission.isGranted }
 
     func requestScreenCapturePermission() -> Bool {
-        screenCaptureAllowed || requestScreenCapture()
+        permission.request()
+    }
+
+    func openScreenCaptureSettings() {
+        permission.registerAndOpenSettings()
     }
 
     func missingScreenshotWarning() -> String {
@@ -153,55 +158,45 @@ final class AskContextCapture: AskContextCapturing {
         var height: Int
     }
 
-    /// `CGPreflightScreenCaptureAccess` only reads the current state; it never adds
-    /// the app to System Settings → Screen & System Audio Recording. The app is
-    /// listed only after `CGRequestScreenCaptureAccess` (or a capture attempt), so
-    /// send the request before pointing the user at the settings pane.
-    /// - Returns: whether access is already granted.
-    @discardableResult
-    static func requestScreenCaptureAccess() -> Bool {
-        CGPreflightScreenCaptureAccess() || CGRequestScreenCaptureAccess()
-    }
-
-    static func screenshot(displayId: CGDirectDisplayID? = nil, requestAccessIfNeeded: Bool = true) async throws -> Screenshot {
-        guard CGPreflightScreenCaptureAccess() else {
-            // Registers Typeflux in the Screen Recording list the first time; the
-            // system only shows its prompt while the decision is still undetermined.
-            if requestAccessIfNeeded && !UserDefaults.standard.bool(forKey: screenCaptureRequestedKey) {
-                UserDefaults.standard.set(true, forKey: screenCaptureRequestedKey)
-                _ = CGRequestScreenCaptureAccess()
-            }
+    /// One display (`displayId`, or the first one), downscaled to at most 1600 px and
+    /// encoded as a JPEG data URL. Typeflux's own windows are left out of the capture.
+    /// - Parameter requestAccessIfNeeded: on the first missing-permission failure, asks
+    ///   once so Typeflux is listed in System Settings → Screen & System Audio Recording.
+    static func screenshot(
+        displayId: CGDirectDisplayID? = nil, requestAccessIfNeeded: Bool = true,
+        permission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live,
+        capturer: any ScreenCapturing = ScreenCaptureService()
+    ) async throws -> Screenshot {
+        guard permission.isGranted else {
+            if requestAccessIfNeeded { permission.requestOnce() }
             throw AskLocalError.message(L("ask.capture.permission"))
         }
-        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
-        guard let display = content.displays.first(where: { $0.displayID == displayId }) ?? content.displays.first else {
-            throw AskLocalError.message(L("ask.capture.unavailable"))
+        let snapshot: ScreenSnapshot
+        do {
+            snapshot = try await capturer.snapshot(ScreenCaptureRequest(
+                displays: .preferred(displayId), resolution: .fitting(maxDimension: 1600), includesWindows: false
+            ))
+        } catch let error as ScreenCaptureError {
+            let key = error == .permissionDenied ? "ask.capture.permission" : "ask.capture.unavailable"
+            throw AskLocalError.message(L(key))
         }
-        let ownWindows = content.windows.filter { $0.owningApplication?.processID == ProcessInfo.processInfo.processIdentifier }
-        let filter = SCContentFilter(display: display, excludingWindows: ownWindows)
-        let config = SCStreamConfiguration()
-        let scale = min(1, 1600 / Double(max(display.width, display.height)))
-        config.width = max(1, Int(Double(display.width) * scale))
-        config.height = max(1, Int(Double(display.height) * scale))
-        config.showsCursor = false
-        let image: CGImage
-        if #available(macOS 14.0, *) {
-            image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
-        } else {
-            guard let legacy = CGWindowListCreateImage(CGDisplayBounds(display.displayID), .optionOnScreenOnly, kCGNullWindowID, .bestResolution) else {
-                throw AskLocalError.message(L("ask.capture.unavailable"))
-            }
-            image = legacy
-        }
-        let target = NSImage(size: NSSize(width: config.width, height: config.height))
+        guard let display = snapshot.displays.first,
+              let dataURL = jpegDataURL(display.image)
+        else { throw AskLocalError.message(L("ask.capture.unavailable")) }
+        return Screenshot(dataURL: dataURL, displayId: display.id,
+                          width: display.image.width, height: display.image.height)
+    }
+
+    /// JPEG at quality 0.6; nil when encoding fails or the result exceeds 2 MB.
+    static func jpegDataURL(_ image: CGImage) -> String? {
+        let target = NSImage(size: NSSize(width: image.width, height: image.height))
         target.lockFocus()
         NSImage(cgImage: image, size: .zero).draw(in: NSRect(origin: .zero, size: target.size))
         target.unlockFocus()
         guard let tiff = target.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff),
-              let data = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.6]), data.count <= 2_000_000 else {
-            throw AskLocalError.message(L("ask.capture.unavailable"))
-        }
-        return Screenshot(dataURL: "data:image/jpeg;base64," + data.base64EncodedString(), displayId: display.displayID, width: config.width, height: config.height)
+              let data = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.6]),
+              data.count <= 2_000_000 else { return nil }
+        return "data:image/jpeg;base64," + data.base64EncodedString()
     }
 }
 
