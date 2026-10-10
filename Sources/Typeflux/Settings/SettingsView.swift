@@ -2906,6 +2906,7 @@ struct StudioView: View {
         SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: $launcherPane, compact: compact) {
             LauncherSettingsView(
                 settings: viewModel.askToolSettings, pane: launcherPane,
+                clipboardHistory: SettingsWindowController.shared.clipboardHistoryStore,
                 onEditShortcut: { viewModel.navigate(to: .settings) }
             )
             .id(launcherPane)

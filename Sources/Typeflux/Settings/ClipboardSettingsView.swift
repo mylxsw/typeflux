@@ -6,8 +6,8 @@ struct ClipboardSettingsView: View {
     /// Opens the shortcut settings, where the panel's shortcut is recorded.
     var onEditShortcut: () -> Void
 
-    init(settings: SettingsStore, onEditShortcut: @escaping () -> Void = {}) {
-        _model = StateObject(wrappedValue: ClipboardSettingsModel(store: settings))
+    init(settings: SettingsStore, history: ClipboardHistoryStore? = nil, onEditShortcut: @escaping () -> Void = {}) {
+        _model = StateObject(wrappedValue: ClipboardSettingsModel(store: settings, history: history))
         self.onEditShortcut = onEditShortcut
     }
 
@@ -87,8 +87,17 @@ struct ClipboardSettingsView: View {
                     }
                 }
             }
+            ModelSectionLabel(title: L("clipboard.settings.section.ignored")).padding(.top, 14)
+            ClipboardIgnoredAppsSection(model: model)
+            if model.history != nil {
+                ModelSectionLabel(title: L("clipboard.settings.section.usage")).padding(.top, 14)
+                ClipboardUsageSection(model: model)
+            }
         }
-        .onAppear(perform: model.reloadPause)
+        .onAppear {
+            model.reloadPause()
+            model.reloadUsage()
+        }
     }
 
     private var shortcutRow: some View {

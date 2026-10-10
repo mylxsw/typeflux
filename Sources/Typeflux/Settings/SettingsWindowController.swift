@@ -12,6 +12,8 @@ final class SettingsWindowController: NSObject {
     static let shared = SettingsWindowController()
 
     var modelLibrary: AskModelLibrary?
+    /// The clipboard history, for Launcher → Clipboard's data usage.
+    var clipboardHistoryStore: ClipboardHistoryStore?
     private var settingsStore: SettingsStore?
     private var window: NSWindow?
     private var viewModel: StudioViewModel?

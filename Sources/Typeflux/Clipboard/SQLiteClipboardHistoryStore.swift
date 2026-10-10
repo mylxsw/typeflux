@@ -32,7 +32,9 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
 
     convenience init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        self.init(baseDir: appSupport.appendingPathComponent("Typeflux", isDirectory: true))
+        // The image storage limit in settings decides how much image data is kept; the count cap
+        // only guards against an unlimited setting filling the list with images.
+        self.init(baseDir: appSupport.appendingPathComponent("Typeflux", isDirectory: true), maximumImageCount: 1000)
     }
 
     deinit {

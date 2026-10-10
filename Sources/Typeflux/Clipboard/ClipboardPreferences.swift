@@ -110,6 +110,8 @@ struct ClipboardCapturePolicy: Equatable {
     var plainTextOnly = false
     var maxItemCount = ClipboardMonitor.maximumItemCount
     var maxImageBytes: Int64?
+    /// Copies made while one of these apps is frontmost are not recorded.
+    var ignoredBundleIDs: Set<String> = []
 
     static let `default` = ClipboardCapturePolicy()
 }

@@ -21,14 +21,21 @@ final class ClipboardSettingsModel: ObservableObject {
     @Published private(set) var selectsFirstUnpinned: Bool
     @Published private(set) var panelPosition: ClipboardPanelPosition
     @Published private(set) var pause: PauseChoice
+    @Published private(set) var ignoredApps: [ClipboardIgnoredApp]
+    /// `nil` until loaded, or when there is no history store.
+    @Published private(set) var usage: ClipboardUsage?
 
     let store: SettingsStore
+    let history: ClipboardHistoryStore?
     var now: () -> Date
     private var pauseObserver: NSObjectProtocol?
+    private var historyObserver: NSObjectProtocol?
 
-    init(store: SettingsStore, now: @escaping () -> Date = Date.init) {
+    init(store: SettingsStore, history: ClipboardHistoryStore? = nil, now: @escaping () -> Date = Date.init) {
         self.store = store
+        self.history = history
         self.now = now
+        ignoredApps = store.clipboardIgnoredApps
         historyEnabled = store.clipboardHistoryEnabled
         retention = store.clipboardRetention
         maxItems = store.clipboardMaxItems
@@ -44,10 +51,45 @@ final class ClipboardSettingsModel: ObservableObject {
         ) { [weak self] _ in
             self?.reloadPause()
         }
+        historyObserver = NotificationCenter.default.addObserver(
+            forName: .clipboardHistoryDidChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.reloadUsage()
+        }
     }
 
     deinit {
         if let pauseObserver { NotificationCenter.default.removeObserver(pauseObserver) }
+        if let historyObserver { NotificationCenter.default.removeObserver(historyObserver) }
+    }
+
+    // MARK: - Ignored apps
+
+    /// Adds an app chosen in an open panel; returns false when it is not an app bundle.
+    @discardableResult
+    func addIgnoredApp(at url: URL) -> Bool {
+        guard let app = ClipboardIgnoredApp(appURL: url) else { return false }
+        guard !ignoredApps.contains(where: { $0.bundleID == app.bundleID }) else { return true }
+        ignoredApps.append(app)
+        store.clipboardIgnoredApps = ignoredApps
+        return true
+    }
+
+    func removeIgnoredApp(_ bundleID: String) {
+        ignoredApps.removeAll { $0.bundleID == bundleID }
+        store.clipboardIgnoredApps = ignoredApps
+    }
+
+    // MARK: - Data usage
+
+    func reloadUsage() {
+        usage = history?.usage()
+    }
+
+    /// Deletes the unpinned items from one app, or from every app.
+    func deleteUnpinned(bundleID: String?) {
+        history?.deleteUnpinned(sourceBundleID: bundleID)
+        reloadUsage()
     }
 
     /// Options for the pause menu; a running timed pause shows its end time as the current choice.
