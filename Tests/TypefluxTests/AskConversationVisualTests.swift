@@ -638,7 +638,7 @@ struct AskConversationVisualTests {
             var body: some View {
                 ZStack(alignment: .bottomLeading) {
                     AskConversationView(model: model)
-                    AskGlassCardSurface(corner: AskGlassCardSurface<EmptyView>.menuCorner) {
+                    AskGlassCardSurface(kind: .menu) {
                         AskModelEffortCard(library: model.modelLibrary, reference: $scene.reference,
                                            effort: $scene.effort, loggedIn: true, page: scene.page)
                             // The card keeps its own state once open, as in the menu; a new

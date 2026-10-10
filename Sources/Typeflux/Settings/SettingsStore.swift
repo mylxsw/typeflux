@@ -8,7 +8,7 @@ extension Notification.Name {
     )
     static let hotkeySettingsDidChange = Notification.Name("SettingsStore.hotkeySettingsDidChange")
     static let appearanceModeDidChange = Notification.Name("SettingsStore.appearanceModeDidChange")
-    static let overlayStyleDidChange = Notification.Name("SettingsStore.overlayStyleDidChange")
+    static let interfaceStyleDidChange = Notification.Name("SettingsStore.interfaceStyleDidChange")
     static let preferredMicrophoneDidChange = Notification.Name("SettingsStore.preferredMicrophoneDidChange")
     static let instantVoiceInputDidChange = Notification.Name("SettingsStore.instantVoiceInputDidChange")
     static let mouseVoiceInputDidChange = Notification.Name("SettingsStore.mouseVoiceInputDidChange")
@@ -185,16 +185,16 @@ final class SettingsStore {
         }
     }
 
-    var overlayStyle: OverlayStyle {
+    var interfaceStyle: InterfaceStyle {
         get {
-            let raw = defaults.string(forKey: "ui.overlayStyle") ?? OverlayStyle.liquidGlass.rawValue
-            return OverlayStyle(rawValue: raw) ?? .liquidGlass
+            let raw = defaults.string(forKey: "ui.overlayStyle") ?? InterfaceStyle.liquidGlass.rawValue
+            return InterfaceStyle(rawValue: raw) ?? .liquidGlass
         }
         set {
-            let currentValue = overlayStyle
+            let currentValue = interfaceStyle
             guard currentValue != newValue else { return }
             defaults.set(newValue.rawValue, forKey: "ui.overlayStyle")
-            NotificationCenter.default.post(name: .overlayStyleDidChange, object: self)
+            NotificationCenter.default.post(name: .interfaceStyleDidChange, object: self)
         }
     }
 

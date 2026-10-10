@@ -4,8 +4,8 @@ import Testing
 
 @Suite(.serialized, .exclusiveUIState)
 struct OverlayTransitionRenderingTests {
-    @Test(arguments: OverlayStyle.allCases) @MainActor
-    func noticesAndFailuresFitTheirContentAfterCapsuleTransitions(style: OverlayStyle) async throws {
+    @Test(arguments: InterfaceStyle.allCases) @MainActor
+    func noticesAndFailuresFitTheirContentAfterCapsuleTransitions(style: InterfaceStyle) async throws {
         let previousWindows = Set(NSApplication.shared.windows.map(\.windowNumber))
         let suiteName = "OverlaySharedLayoutTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -54,8 +54,8 @@ struct OverlayTransitionRenderingTests {
         #expect(window.frame.height == shortHeight)
     }
 
-    @Test(arguments: OverlayStyle.allCases) @MainActor
-    func resultDialogFitsShortTextAndCapsLongTextAfterRecording(style: OverlayStyle) async throws {
+    @Test(arguments: InterfaceStyle.allCases) @MainActor
+    func resultDialogFitsShortTextAndCapsLongTextAfterRecording(style: InterfaceStyle) async throws {
         let application = NSApplication.shared
         let previousWindows = Set(application.windows.map(\.windowNumber))
         let suiteName = "OverlayResultLayoutTests.\(UUID().uuidString)"
@@ -110,7 +110,7 @@ struct OverlayTransitionRenderingTests {
         let suiteName = "OverlayHintMotionTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
-        defaults.set(OverlayStyle.classic.rawValue, forKey: "ui.overlayStyle")
+        defaults.set(InterfaceStyle.classic.rawValue, forKey: "ui.overlayStyle")
         let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
         defer { controller.dismissImmediately() }
         controller.showLockedRecording(hintText: "Using the structured writing expert persona")
@@ -144,8 +144,8 @@ struct OverlayTransitionRenderingTests {
         }
     }
 
-    @Test(arguments: OverlayStyle.allCases) @MainActor
-    func recordingHintsKeepTheirRoundedEndsInsideTheWindow(style: OverlayStyle) async throws {
+    @Test(arguments: InterfaceStyle.allCases) @MainActor
+    func recordingHintsKeepTheirRoundedEndsInsideTheWindow(style: InterfaceStyle) async throws {
         let application = NSApplication.shared
         let previousWindows = Set(application.windows.map(\.windowNumber))
         let suiteName = "OverlayHintRenderingTests.\(UUID().uuidString)"
@@ -195,8 +195,8 @@ struct OverlayTransitionRenderingTests {
         }
     }
 
-    @Test(arguments: OverlayStyle.allCases) @MainActor
-    func captionsRenderIntermediateSizesInBothDirections(style: OverlayStyle) async throws {
+    @Test(arguments: InterfaceStyle.allCases) @MainActor
+    func captionsRenderIntermediateSizesInBothDirections(style: InterfaceStyle) async throws {
         guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
         let application = NSApplication.shared
         let previousWindows = Set(application.windows.map(\.windowNumber))

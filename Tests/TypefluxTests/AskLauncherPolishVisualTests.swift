@@ -231,7 +231,7 @@ struct AskLauncherPolishVisualTests {
             let launcher = AskLauncherView(model: fixture.model, onDismiss: {})
                 .environment(\.askGlassMaterialOverride, .opaque)
                 .frame(width: 680, height: 240, alignment: .top)
-            let menu = AskGlassCardSurface(corner: AskGlassCardSurface<EmptyView>.menuCorner) {
+            let menu = AskGlassCardSurface(kind: .menu) {
                 AskAttachChoices(clipboardHasImage: false, choose: { _ in })
             }
             .environment(\.askGlassMaterialOverride, .visualEffect)

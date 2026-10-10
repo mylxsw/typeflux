@@ -77,6 +77,7 @@ struct AskComposer: View {
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.askWindowDrag) private var windowDrag
+    @Environment(\.interfaceStyle) private var interfaceStyle
 
     init(model: AskConversationModel, compact: Bool = false, availableWidth: CGFloat? = nil,
          availableHeight: CGFloat? = nil,
@@ -170,10 +171,11 @@ struct AskComposer: View {
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
     /// The launcher is the workspace composer summoned by a hotkey: the same
     /// controls and states on a glass card, so it sits on whatever window it floats over.
-    private var chrome: AskComposerChrome { .of(launcher: launcher) }
+    private var chrome: AskComposerChrome { .of(launcher: launcher, style: interfaceStyle) }
     /// Nil for the opaque workspace card.
     private var glass: AskGlassMaterial? {
-        chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency) : nil
+        chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
+                                                                 style: interfaceStyle) : nil
     }
     private func submit() {
         if model.consumeModeCommand(launcher: launcher) { closePalette(); return }
@@ -888,7 +890,7 @@ struct AskComposer: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
-        .modifier(AskWorkspaceCardDepth(enabled: !launcher, corner: chrome.corner))
+        .modifier(AskWorkspaceCardDepth(enabled: !launcher && interfaceStyle.usesGlass, corner: chrome.corner))
         .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
                                  idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased),
                                  sheen: !launcher))

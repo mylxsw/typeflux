@@ -81,6 +81,7 @@ enum AskHistoryFilter: String, CaseIterable {
 struct AskHistoryFilterBar: View {
     @Binding var selection: AskHistoryFilter
     static let height: CGFloat = 28
+    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
         HStack(spacing: 2) {
@@ -98,11 +99,12 @@ struct AskHistoryFilterBar: View {
                     .frame(height: Self.height - 4)
                     .background {
                         if chosen {
-                            RoundedRectangle(cornerRadius: 7, style: .continuous).fill(AskTheme.controlSurface)
+                            RoundedRectangle(cornerRadius: style.ask.filterCorner - 2, style: .continuous)
+                                .fill(style.usesGlass ? AskTheme.controlSurface : AskClassic.card)
                                 .shadow(color: .black.opacity(0.18), radius: 1.5, y: 1)
                         }
                     }
-                    .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .contentShape(RoundedRectangle(cornerRadius: style.ask.filterCorner - 2, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(chosen ? .isSelected : [])
@@ -110,7 +112,7 @@ struct AskHistoryFilterBar: View {
         }
         .padding(2)
         .frame(height: Self.height)
-        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: style.ask.filterCorner, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L("ask.history.filter"))
     }

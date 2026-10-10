@@ -9,6 +9,8 @@ struct AskCommandPaletteView: View {
     var onPick: (Int) -> Void
     var onHighlight: (Int) -> Void
     var onManage: (() -> Void)?
+    @Environment(\.interfaceStyle) private var style
+    private var corner: CGFloat { style.usesGlass ? 16 : 10 }
 
     static let rowHeight: CGFloat = 44
     static let groupHeight: CGFloat = 26
@@ -73,8 +75,9 @@ struct AskCommandPaletteView: View {
                 footer
             }
         }
-        .background(AskTheme.popoverSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(AskTheme.border, lineWidth: 0.5))
+        .background(AskTheme.popoverSurface, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous)
+            .strokeBorder(AskTheme.border, lineWidth: 0.5))
         .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L("ask.command.title"))

@@ -29,6 +29,7 @@ struct AskConversationView: View {
     @AppStorage("ask.sidebarCollapsed") private var storedSidebarCollapsed = false
     @AppStorage(AskCloudPromo.dismissedKey) private var cloudPromoDismissedAt: Double = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.interfaceStyle) private var style
     @State private var windowSize = AskWorkspaceLayout.minimumWindowSize
     @State private var showsSidebarDrawer = false
     @FocusState private var drawerCloseFocused: Bool
@@ -112,7 +113,8 @@ struct AskConversationView: View {
 
     @ViewBuilder private var rightPanel: some View {
         if showsWorkflow, let session = model.authoringSession {
-            AskWorkflowAuthoringPanel(session: session, focusCloseOnAppear: layout.usageOverlay, close: {
+            AskWorkflowAuthoringPanel(session: session, focusCloseOnAppear: layout.usageOverlay,
+                                      floating: layout.usageOverlay, close: {
                 session.isPresented = false
                 model.objectWillChange.send()
             }, discard: {
@@ -124,7 +126,7 @@ struct AskConversationView: View {
             .frame(width: layout.usageInline ? layout.usageWidth : layout.drawerWidth)
         } else {
             AskUsagePanel(model: model, compact: layout.isShort, focusCloseOnAppear: layout.usageOverlay,
-                          runId: $usageRunId, close: { setUsage(false) })
+                          floating: layout.usageOverlay, runId: $usageRunId, close: { setUsage(false) })
         }
     }
 
@@ -187,21 +189,23 @@ struct AskConversationView: View {
                             .accessibilityIdentifier("ask.workspace.drawer.close")
                             .focused($drawerCloseFocused)
                     }
-                    .padding(.leading, AskMetrics.trafficLightInset - 8)
-                    .padding(.trailing, 12).frame(height: 40)
+                    // Beside the traffic lights: the glass panel is inset 8pt from
+                    // the window's top-leading corner, the flush classic one is not.
+                    .padding(.leading, AskMetrics.trafficLightInset - (style.usesGlass ? 8 : 0))
+                    .padding(.trailing, 12)
+                    .frame(height: style.usesGlass ? 40 : AskMetrics.titleBarRowHeight)
                     sidebarSearchField.padding(.horizontal, 10).padding(.bottom, 8)
                     if showsHistoryFilter { historyFilterPicker.padding(.horizontal, 10).padding(.bottom, 8) }
                     historyList
                     accountFooter
                 }
                 .frame(width: min(AskMetrics.sidebarWidth, layout.drawerWidth))
-                .askInWindowGlass(corner: AskMetrics.sidebarPanelCorner, opaqueFill: AskTheme.glassFill)
-                .padding(8)
+                .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: .all, floating: true)
                 .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
             } else {
                 rightPanel
                     .frame(width: layout.drawerWidth)
-                    .padding(.leading, 8)
+                    .padding(.leading, style.usesGlass ? 8 : 0)
                     .padding(.top, layout.usageOverlayTopInset)
                     .transition(AskMotion.panel(edge: .trailing, reduceMotion: reduceMotion))
             }
@@ -222,12 +226,13 @@ struct AskConversationView: View {
     }
 
     /// A glass panel floating inset from the window edges, with the traffic
-    /// lights inside its top strip, instead of a full-height column split off by a rule.
+    /// lights inside its top strip, instead of a full-height column split off by
+    /// a rule. Classic is that full-height column, flush with the window edge.
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
             // The window uses a full-size content view; this strip clears the
             // traffic lights. The compose and toggle buttons float above it.
-            Color.clear.frame(height: AskMetrics.sidebarTopInset - AskMetrics.sidebarPanelInset)
+            Color.clear.frame(height: AskMetrics.sidebarTopInset - (style.usesGlass ? AskMetrics.sidebarPanelInset : 0))
             sidebarSearchField.padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 8)
             if showsHistoryFilter {
                 historyFilterPicker.padding(.horizontal, 10).padding(.bottom, 8)
@@ -235,8 +240,7 @@ struct AskConversationView: View {
             historyList
             accountFooter
         }
-        .askInWindowGlass(corner: AskMetrics.sidebarPanelCorner, opaqueFill: AskTheme.glassFill)
-        .padding([.leading, .top, .bottom], AskMetrics.sidebarPanelInset)
+        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: [.leading, .top, .bottom])
     }
 
     /// New chat and the sidebar toggle live in the title bar row, like Notes and
@@ -259,7 +263,7 @@ struct AskConversationView: View {
             }
         }
         .padding(.leading, sidebarHidden ? AskMetrics.trafficLightInset : 0)
-        .padding(.trailing, sidebarHidden ? 0 : 6 + AskMetrics.sidebarPanelInset)
+        .padding(.trailing, sidebarHidden ? 0 : (style.usesGlass ? 6 + AskMetrics.sidebarPanelInset : 8))
         .frame(width: sidebarHidden ? nil : AskMetrics.sidebarWidth, alignment: .leading)
         .frame(height: AskMetrics.titleBarRowHeight)
         .background {
@@ -364,13 +368,18 @@ struct AskConversationView: View {
                 AskKeyHint(text: "⌘K")
             }
             .foregroundStyle(StudioTheme.textTertiary)
-            .padding(.horizontal, 10)
-            .frame(height: 34)
+            .padding(.horizontal, style.usesGlass ? 10 : 8)
+            .frame(height: style.ask.searchFieldHeight)
             .background(searchHover ? AskTheme.pressFill : AskTheme.hoverFill,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(AskTheme.separator, lineWidth: 0.5))
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: style.ask.searchFieldCorner, style: .continuous))
+            .overlay {
+                // A classic field is a plain well; the hairline belongs to the glass.
+                if style.usesGlass {
+                    RoundedRectangle(cornerRadius: style.ask.searchFieldCorner, style: .continuous)
+                        .strokeBorder(AskTheme.separator, lineWidth: 0.5)
+                }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: style.ask.searchFieldCorner, style: .continuous))
         }
         .buttonStyle(.plain)
         .onHover { searchHover = $0 }
@@ -636,10 +645,11 @@ struct AskConversationView: View {
             }
             .animation(AskMotion.revealAnimation(reduceMotion: reduceMotion), value: model.selectedId == nil)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .mask(AskEdgeFade(topClear: layout.compactContent || layout.isShort
+            .mask(AskEdgeFade(topClear: layout.compactContent || layout.isShort || !style.usesGlass
                 ? AskMetrics.titleBarRowHeight : AskMetrics.headerCapsuleTop,
                 bottomClear: layout.composerBottomInset,
-                              fade: AskMetrics.transcriptEdgeFade))
+                fade: AskMetrics.transcriptEdgeFade,
+                topFade: style.usesGlass ? nil : 0))
             .overlay {
                 if transcriptDropTargeted {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -666,9 +676,21 @@ struct AskConversationView: View {
     /// transcript: the title carries the run's state as a dot and a summary;
     /// the actions capsule appears only for an existing conversation and carries
     /// the credits this conversation spent ("Used here"), usage, and delete.
+    /// Classic puts the same controls on an opaque title row ruled off from the transcript.
     @ViewBuilder private var header: some View {
-        if layout.compactContent { compactHeader } else { spaciousHeader }
+        Group {
+            if layout.compactContent { compactHeader } else { spaciousHeader }
+        }
+        .background {
+            if !style.usesGlass {
+                AskClassic.canvas
+                    .overlay(alignment: .bottom) { AskClassicDivider(axis: .horizontal) }
+                    .allowsHitTesting(false)
+            }
+        }
     }
+
+    private var titleFontSize: CGFloat { style.usesGlass ? 13.5 : 13 }
 
     /// Keep the essential actions in one row; the title yields before controls do.
     private var compactHeader: some View {
@@ -709,7 +731,7 @@ struct AskConversationView: View {
                     Text(model.selected?.title
                         ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
                         ?? L("ask.new"))
-                        .font(.system(size: 13.5, weight: .semibold))
+                        .font(.system(size: titleFontSize, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
                         .lineLimit(1)
                     if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
@@ -725,15 +747,15 @@ struct AskConversationView: View {
                         }
                     }
                 }
-                .padding(.leading, 14)
-                .padding(.trailing, 16)
+                .padding(.leading, style.usesGlass ? 14 : 6)
+                .padding(.trailing, style.usesGlass ? 16 : 6)
                 .frame(height: AskMetrics.headerCapsuleHeight)
                 .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             } else {
                 Text(L("ask.new"))
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .font(.system(size: titleFontSize, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, style.usesGlass ? 16 : 6)
                     .frame(height: AskMetrics.headerCapsuleHeight)
                     .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
@@ -760,8 +782,9 @@ struct AskConversationView: View {
                             }
                             .padding(.horizontal, 10)
                             .frame(height: 28)
-                            .background(showsUsage ? AskTheme.hoverFill : Color.clear, in: Capsule())
-                            .contentShape(Capsule())
+                            .background(showsUsage ? AskTheme.hoverFill : Color.clear,
+                                        in: style.controlShape(height: 28))
+                            .contentShape(style.controlShape(height: 28))
                         }
                         .buttonStyle(.plain)
                         .help(L("ask.usage.conversationSpentHelp"))
@@ -796,8 +819,8 @@ struct AskConversationView: View {
         .labelStyle(.titleAndIcon)
         .lineLimit(1)
         .fixedSize()
-        .padding(.horizontal, 12)
-        .frame(height: AskMetrics.headerCapsuleHeight)
+        .padding(.horizontal, style.usesGlass ? 12 : 9)
+        .frame(height: style.ask.headerChipHeight)
         .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
         .overlay {
             Capsule().fill(AskTheme.privateTint.opacity(0.12))
@@ -1502,6 +1525,7 @@ private struct AskHistoryRow: View {
     var onSelect: () -> Void
     var onDelete: () -> Void
     @State private var hovering = false
+    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
         Button(action: onSelect) {
@@ -1526,27 +1550,33 @@ private struct AskHistoryRow: View {
                         .monospacedDigit()
                 }
             }
-            .padding(.leading, 12)
+            .padding(.leading, style.usesGlass ? 12 : 10)
             .padding(.trailing, 10)
-            .frame(height: 38)
+            .frame(height: style.ask.sidebarRowHeight)
             .frame(maxWidth: .infinity, alignment: .leading)
             // Selection is an accent-tinted glass pill, concentric with the panel,
-            // that slides from the previous row to the new one.
+            // that slides from the previous row to the new one. Classic marks it
+            // with the system's flat grey source-list selection.
             .background {
-                let shape = RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous)
+                let shape = RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous)
                 ZStack {
                     if hovering, !selected { shape.fill(AskTheme.hoverFill).transition(.opacity) }
                     if selected {
-                        let tint = stored ? AskTheme.privateTint : AskTheme.accent
-                        shape.fill(tint.opacity(0.18))
-                            .overlay(shape.strokeBorder(tint.opacity(0.4), lineWidth: 0.5))
-                            .shadow(color: tint.opacity(0.18), radius: 6, y: 2)
-                            .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
+                        if style.usesGlass {
+                            let tint = stored ? AskTheme.privateTint : AskTheme.accent
+                            shape.fill(tint.opacity(0.18))
+                                .overlay(shape.strokeBorder(tint.opacity(0.4), lineWidth: 0.5))
+                                .shadow(color: tint.opacity(0.18), radius: 6, y: 2)
+                                .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
+                        } else {
+                            shape.fill(AskClassic.selection)
+                                .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
+                        }
                     }
                 }
                 .animation(.easeOut(duration: 0.15), value: hovering)
             }
-            .contentShape(RoundedRectangle(cornerRadius: AskMetrics.sidebarRowCorner, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous))
         }
         .buttonStyle(AskPressableStyle.subtle)
         .onHover { hovering = $0 }
@@ -1575,9 +1605,10 @@ private struct AskSuggestionCard: View {
     var action: () -> Void
     @State private var hovering = false
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.interfaceStyle) private var style
     private var available: Bool { isEnabled && !dimmed }
 
-    static var corner: CGFloat { 18 }
+    static func corner(style: InterfaceStyle) -> CGFloat { style.ask.suggestionCorner }
 
     var body: some View {
         Button(action: action) {
@@ -1608,8 +1639,8 @@ private struct AskSuggestionCard: View {
                             .foregroundStyle(hovering && available ? Color.white : iconTint)
                             .frame(width: 30, height: 30)
                             .background(hovering && available ? iconTint : iconTint.opacity(0.14),
-                                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        in: RoundedRectangle(cornerRadius: style.usesGlass ? 10 : 7, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: style.usesGlass ? 10 : 7, style: .continuous)
                                 .strokeBorder(iconTint.opacity(0.35), lineWidth: 0.5))
                         Text(title).font(.system(size: 13.5, weight: .semibold))
                             .foregroundStyle(available ? StudioTheme.textPrimary : StudioTheme.textTertiary)
@@ -1626,8 +1657,10 @@ private struct AskSuggestionCard: View {
                     .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
                 }
             }
-            .askInWindowGlass(corner: Self.corner, opaqueFill: AskTheme.composerSurface)
-            .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
+            .askInWindowGlass(corner: Self.corner(style: style),
+                              opaqueFill: style.usesGlass ? AskTheme.composerSurface
+                                  : (hovering && available ? AskClassic.cardHover : AskClassic.card))
+            .contentShape(RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
             .opacity(available ? 1 : 0.7)
             .animation(.easeOut(duration: 0.18), value: hovering)
         }

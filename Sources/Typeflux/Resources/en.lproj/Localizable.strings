@@ -7,8 +7,8 @@
 "appearance.system" = "System";
 "appearance.light" = "Light";
 "appearance.dark" = "Dark";
-"overlayStyle.liquidGlass" = "Liquid Glass";
-"overlayStyle.classic" = "Classic";
+"interfaceStyle.liquidGlass" = "Liquid Glass";
+"interfaceStyle.classic" = "Classic";
 
 "window.voiceStudio" = "Typeflux";
 "window.about" = "About Typeflux";
@@ -127,8 +127,8 @@
 "settings.activationHotkey" = "Voice Shortcuts";
 "settings.identity" = "Identity & Interaction";
 "settings.appearance.title" = "Appearance";
-"settings.overlayStyle.title" = "Capsule style";
-"settings.overlayStyle.subtitle" = "Choose the visual style for capsules and dialogs.";
+"settings.interfaceStyle.title" = "Interface style";
+"settings.interfaceStyle.subtitle" = "Choose the visual style for capsules, the launcher, the chat window and menus.";
 "settings.appearance.subtitle" = "Switch the component system between light, dark, or system-following themes.";
 "settings.language.title" = "Language";
 "settings.language.subtitle" = "Choose the display language used across the Typeflux interface.";

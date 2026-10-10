@@ -7,8 +7,8 @@
 "appearance.system" = "システム";
 "appearance.light" = "ライト";
 "appearance.dark" = "ダーク";
-"overlayStyle.liquidGlass" = "Liquid Glass";
-"overlayStyle.classic" = "クラシック";
+"interfaceStyle.liquidGlass" = "Liquid Glass";
+"interfaceStyle.classic" = "クラシック";
 
 "window.voiceStudio" = "Typeflux";
 "window.about" = "Typeflux について";
@@ -127,8 +127,8 @@
 "settings.activationHotkey" = "音声ショートカット";
 "settings.identity" = "アイデンティティとインタラクション";
 "settings.appearance.title" = "外観";
-"settings.overlayStyle.title" = "カプセルスタイル";
-"settings.overlayStyle.subtitle" = "カプセルとダイアログの表示スタイルを選択します。";
+"settings.interfaceStyle.title" = "インターフェーススタイル";
+"settings.interfaceStyle.subtitle" = "カプセル、ランチャー、チャットウインドウ、メニューの表示スタイルをまとめて選択します。";
 "settings.appearance.subtitle" = "コンポーネント システムを明るいテーマ、暗いテーマ、またはシステムに従うテーマの間で切り替えます。";
 "settings.language.title" = "言語";
 "settings.language.subtitle" = "Typeflux インターフェイス全体で使用される表示言語を選択します。";

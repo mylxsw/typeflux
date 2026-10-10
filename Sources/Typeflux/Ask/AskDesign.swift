@@ -388,7 +388,21 @@ struct AskComposerChrome: Equatable {
         return chrome
     }()
 
-    static func of(launcher: Bool) -> AskComposerChrome { launcher ? .launcher : .workspace }
+    /// The workspace card in the classic style: a solid card with a hairline,
+    /// in the tighter corners of the flat design. The launcher keeps its shape
+    /// in both styles; only its material changes.
+    static let classicWorkspace: AskComposerChrome = {
+        var chrome = workspace
+        chrome.corner = AskStyleMetrics.classic.composerCorner
+        chrome.fill = AskClassic.card
+        chrome.idleBorder = AskClassic.cardBorder
+        return chrome
+    }()
+
+    static func of(launcher: Bool, style: InterfaceStyle = .liquidGlass) -> AskComposerChrome {
+        if launcher { return .launcher }
+        return style.usesGlass ? .workspace : .classicWorkspace
+    }
 
     /// The card's outline at rest. A floating panel's glass lights its own edge;
     /// in-window glass is frosted with the window's own colours and would
@@ -1209,10 +1223,12 @@ enum AskPresentation {
 /// both windows read as one app.
 /// The workspace's canvas: frosted glass over the desktop. The window blurs
 /// whatever is behind it and lays the app's own tint over that, so a colourful
-/// wallpaper reads only as a soft cast, never as the window's colour.
+/// wallpaper reads only as a soft cast, never as the window's colour. The
+/// classic style is an opaque canvas instead.
 struct AskWindowBackdrop: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.interfaceStyle) private var style
 
     /// The app's own tint over the blurred desktop.
     static func base(dark: Bool) -> Color {
@@ -1229,8 +1245,12 @@ struct AskWindowBackdrop: View {
     var body: some View {
         let dark = colorScheme == .dark
         ZStack {
-            StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
-            Self.base(dark: dark).opacity(Self.tintOpacity(dark: dark, reduceTransparency: reduceTransparency))
+            if style.usesGlass {
+                StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
+                Self.base(dark: dark).opacity(Self.tintOpacity(dark: dark, reduceTransparency: reduceTransparency))
+            } else {
+                AskClassic.canvas
+            }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -1306,7 +1326,7 @@ struct AskPopoverHeader: View {
 /// row aligned, title over caption, then an optional trailing accessory. The
 /// selection is the checkmark alone; only the pointer fills a row.
 struct AskPopoverRow<Accessory: View>: View {
-    static var corner: CGFloat { 10 }
+    static func corner(style: InterfaceStyle) -> CGFloat { style.ask.menuRowCorner }
 
     var title: String
     /// Quiet text after the title, such as "Default".
@@ -1319,6 +1339,7 @@ struct AskPopoverRow<Accessory: View>: View {
     var action: () -> Void
     @ViewBuilder var accessory: () -> Accessory
     @State private var hovering = false
+    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
         Button(action: action) {
@@ -1356,8 +1377,8 @@ struct AskPopoverRow<Accessory: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             // A soft hover wash matches the launcher and keeps text colours stable.
             .background(hovering ? AskTheme.accentSoft : Color.clear,
-                        in: RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
@@ -1516,11 +1537,14 @@ struct AskEdgeFade: View {
     var topClear: CGFloat = 0
     var bottomClear: CGFloat = 0
     var fade: CGFloat
+    /// The top edge's fade when it differs: a classic title row is an opaque
+    /// bar with a rule, so the transcript is cut cleanly under it.
+    var topFade: CGFloat?
 
     var body: some View {
         VStack(spacing: 0) {
             Color.clear.frame(height: topClear)
-            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: fade)
+            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: topFade ?? fade)
             Rectangle().fill(Color.black)
             LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: fade)
             Color.clear.frame(height: bottomClear)
@@ -1537,6 +1561,7 @@ struct AskTitleBarButton: View {
     var shortcut: String?
     var action: () -> Void
     @State private var hovering = false
+    @Environment(\.interfaceStyle) private var style
 
     static var size: CGSize { CGSize(width: AskMetrics.titleBarButtonWidth, height: 28) }
 
@@ -1549,8 +1574,8 @@ struct AskTitleBarButton: View {
             Image(systemName: symbol).font(.system(size: 14, weight: .regular))
                 .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                 .frame(width: Self.size.width, height: Self.size.height)
-                .background(hovering ? AskTheme.hoverFill : .clear, in: Capsule())
-                .contentShape(Capsule())
+                .background(hovering ? AskTheme.hoverFill : .clear, in: style.controlShape(height: Self.size.height))
+                .contentShape(style.controlShape(height: Self.size.height))
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }

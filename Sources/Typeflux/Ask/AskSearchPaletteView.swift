@@ -12,6 +12,7 @@ struct AskSearchPaletteView: View {
     var onClose: () -> Void
     @State private var query = ""
     @State private var state = AskPaletteState(actions: [], conversations: [], highlighted: nil)
+    @Environment(\.interfaceStyle) private var style
     @FocusState private var focused: Bool
 
     static let width: CGFloat = 560
@@ -77,7 +78,7 @@ struct AskSearchPaletteView: View {
             list(maxHeight: listHeight)
         }
         .frame(maxWidth: Self.width)
-        .askInWindowGlass(corner: AskMetrics.paletteCorner, opaqueFill: AskTheme.popoverSurface,
+        .askInWindowGlass(corner: style.ask.paletteCorner, opaqueFill: AskTheme.popoverSurface,
                           elevation: .popover)
     }
 
@@ -145,7 +146,7 @@ struct AskSearchPaletteView: View {
             .frame(height: Self.rowHeight)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(highlighted ? AskTheme.accent : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: style.usesGlass ? 10 : 6, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

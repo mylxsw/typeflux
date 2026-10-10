@@ -107,31 +107,31 @@ final class SettingsStoreTests: XCTestCase {
 
     // MARK: - Overlay Style
 
-    func testDefaultOverlayStyle() {
-        XCTAssertEqual(store.overlayStyle, .liquidGlass)
+    func testDefaultInterfaceStyle() {
+        XCTAssertEqual(store.interfaceStyle, .liquidGlass)
     }
 
-    func testSetOverlayStyle() {
-        store.overlayStyle = .classic
-        XCTAssertEqual(store.overlayStyle, .classic)
+    func testSetInterfaceStyle() {
+        store.interfaceStyle = .classic
+        XCTAssertEqual(store.interfaceStyle, .classic)
     }
 
-    func testInvalidOverlayStyleFallsBackToLiquidGlass() {
+    func testInvalidInterfaceStyleFallsBackToLiquidGlass() {
         defaults.set("nonexistent", forKey: "ui.overlayStyle")
-        XCTAssertEqual(store.overlayStyle, .liquidGlass)
+        XCTAssertEqual(store.interfaceStyle, .liquidGlass)
     }
 
-    func testOverlayStyleChangePostsNotification() {
+    func testInterfaceStyleChangePostsNotification() {
         let expectation = XCTestExpectation(description: "Notification posted")
         let observer = NotificationCenter.default.addObserver(
-            forName: .overlayStyleDidChange,
+            forName: .interfaceStyleDidChange,
             object: nil,
             queue: nil
         ) { _ in
             expectation.fulfill()
         }
 
-        store.overlayStyle = .classic
+        store.interfaceStyle = .classic
         wait(for: [expectation], timeout: 1.0)
         NotificationCenter.default.removeObserver(observer)
     }

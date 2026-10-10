@@ -55,7 +55,8 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
     // MARK: - Window
 
     private func panel(for model: ClipboardPanelModel) -> ClipboardPanelWindow {
-        let rootView = ClipboardPanelView(model: model, focusRequest: focusRequest)
+        let rootView = ClipboardPanelView(model: model, focusRequest: focusRequest,
+                                          interfaceStyle: settingsStore.interfaceStyle)
         if let panel, let hostingView {
             hostingView.rootView = rootView
             return panel

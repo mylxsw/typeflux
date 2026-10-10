@@ -69,6 +69,8 @@ struct AskWorkflowAuthoringPanel: View {
 
     @ObservedObject var session: AskWorkflowAuthoringSession
     var focusCloseOnAppear = false
+    /// Shown as a drawer over the conversation rather than beside it.
+    var floating = false
     var close: () -> Void
     var discard: (() -> Void)?
     /// Asks the conversation's AI to finish what is missing; nil where there is no conversation.
@@ -90,6 +92,7 @@ struct AskWorkflowAuthoringPanel: View {
     @State private var testTask: Task<Void, Never>?
     @FocusState private var closeFocused: Bool
     @FocusState private var inputFocused: Bool
+    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
         let checklist = session.checklist
@@ -115,8 +118,7 @@ struct AskWorkflowAuthoringPanel: View {
             }
             footer(status: status)
         }
-        .background(AskTheme.glassFill, in: RoundedRectangle(cornerRadius: 18))
-        .padding(8)
+        .modifier(AskWorkflowPanelChrome(style: style, floating: floating))
         .confirmationDialog(L("ask.workflow.chat.runNotice"), isPresented: $confirmsRun, titleVisibility: .visible) {
             Button(L("ask.workflow.chat.run")) {
                 guard approvedRevision == session.revision else { return }
@@ -752,5 +754,24 @@ private struct AskWorkflowKeywordChips: View {
             }
         }
         .accessibilityLabel(L("ask.workflow.chat.keyword"))
+    }
+}
+
+/// The authoring panel's card: an inset rounded card on glass, a flush column
+/// ruled off from the conversation in classic.
+private struct AskWorkflowPanelChrome: ViewModifier {
+    var style: InterfaceStyle
+    var floating: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if style.usesGlass {
+            content
+                .background(AskTheme.glassFill, in: RoundedRectangle(cornerRadius: 18))
+                .padding(8)
+        } else {
+            content.askSidePanel(edge: .trailing, glassFill: AskTheme.glassFill, classicFill: AskClassic.canvas,
+                                 glassInset: [], floating: floating)
+        }
     }
 }
