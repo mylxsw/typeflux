@@ -71,6 +71,7 @@ final class DIContainer {
             .debug("DIContainer initialized — Logger test message")
         historyStore = SQLiteHistoryStore()
         clipboardHistoryStore = SQLiteClipboardHistoryStore()
+        SettingsWindowController.shared.clipboardHistoryStore = clipboardHistoryStore
         let settingsForClipboard = settingsStore
         clipboardMonitor = ClipboardMonitor(
             store: clipboardHistoryStore,

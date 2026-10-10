@@ -494,6 +494,21 @@
 "clipboard.edit.title" = "编辑后粘贴";
 "clipboard.edit.hint" = "⌘↩ 粘贴 · Esc 取消 · 不会修改原记录";
 "clipboard.edit.cancel" = "取消";
+"clipboard.settings.section.ignored" = "不记录这些应用";
+"clipboard.settings.section.usage" = "数据占用";
+"clipboard.settings.ignored.remove" = "移除";
+"clipboard.settings.ignored.add" = "添加应用…";
+"clipboard.settings.ignored.footnote" = "这些应用在前台时复制的内容不会被读取。标记为隐藏或临时的内容（例如密码管理器）始终不会记录。";
+"clipboard.settings.ignored.choose" = "不记录";
+"clipboard.settings.usage.reveal" = "在访达中显示";
+"clipboard.settings.usage.clearAll.title" = "删除全部未固定的剪贴板内容？";
+"clipboard.settings.usage.clearAll.message" = "已固定的内容和语音输入结果会保留。此操作无法撤销。";
+"clipboard.settings.usage.deleteApp.title" = "删除来自 %@ 的未固定内容？";
+"clipboard.settings.usage.deleteApp.message" = "已固定的内容会保留。此操作无法撤销。";
+"clipboard.settings.usage.deleteApp.help" = "删除此应用的未固定内容";
+"clipboard.settings.usage.items" = "共 %d 条";
+"clipboard.settings.usage.row" = "%1$@ · %2$d 条";
+"clipboard.settings.usage.unknownApp" = "未知应用";
 "history.clipboard.title" = "记录剪贴板历史";
 "history.clipboard.subtitle" = "记录你复制的文本、图片和文件，用历史快捷键打开。密码不会被记录，所有内容只存在这台 Mac 上。";
 

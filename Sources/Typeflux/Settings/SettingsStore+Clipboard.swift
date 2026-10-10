@@ -84,6 +84,17 @@ extension SettingsStore {
         }
     }
 
+    /// Apps whose copies are never recorded. Unset: the password apps in `ClipboardIgnoredApp.defaults`.
+    var clipboardIgnoredApps: [ClipboardIgnoredApp] {
+        get {
+            guard let data = defaults.data(forKey: "clipboard.ignoredApps"),
+                  let apps = try? JSONDecoder().decode([ClipboardIgnoredApp].self, from: data)
+            else { return ClipboardIgnoredApp.defaults }
+            return apps
+        }
+        set { defaults.set(try? JSONEncoder().encode(newValue), forKey: "clipboard.ignoredApps") }
+    }
+
     func isClipboardRecordingPaused(now: Date = Date()) -> Bool {
         guard let until = clipboardPausedUntil else { return false }
         return until > now
@@ -103,7 +114,8 @@ extension SettingsStore {
             isRecording: clipboardHistoryEnabled && !isClipboardRecordingPaused(now: now),
             plainTextOnly: clipboardPlainTextOnly,
             maxItemCount: clipboardMaxItems,
-            maxImageBytes: clipboardStorageLimit.bytes
+            maxImageBytes: clipboardStorageLimit.bytes,
+            ignoredBundleIDs: Set(clipboardIgnoredApps.map(\.bundleID))
         )
     }
 }
