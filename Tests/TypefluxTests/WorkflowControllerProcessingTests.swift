@@ -4914,6 +4914,57 @@ extension WorkflowControllerProcessingTests {
         harness.controller.enforceClipboardRetentionPolicy(now: now)
         XCTAssertEqual(harness.store.trimCounts.count, 3)
     }
+
+    func testClipboardSettingsDriveRetentionAndLimits() {
+        let harness = makeClipboardPanelHarness()
+        let settings = harness.controller.settingsStore
+        let now = Date(timeIntervalSince1970: 400 * 86400)
+        settings.historyRetentionPolicy = .oneDay
+        settings.clipboardRetention = .threeMonths
+        settings.clipboardMaxItems = 2000
+        settings.clipboardStorageLimit = .megabytes500
+
+        harness.controller.enforceClipboardRetentionPolicy(now: now)
+        XCTAssertEqual(harness.store.purgeCutoffs.last, Date(timeIntervalSince1970: 310 * 86400))
+        XCTAssertEqual(harness.store.trimCounts.last, 2000)
+        XCTAssertEqual(harness.store.trimImageBytes.last, 500 * 1024 * 1024)
+
+        settings.clipboardStorageLimit = .unlimited
+        settings.clipboardRetention = .forever
+        let purges = harness.store.purgeCutoffs.count
+        let imageTrims = harness.store.trimImageBytes.count
+        harness.controller.enforceClipboardRetentionPolicy(now: now)
+        XCTAssertEqual(harness.store.purgeCutoffs.count, purges)
+        XCTAssertEqual(harness.store.trimImageBytes.count, imageTrims)
+    }
+
+    func testOpeningThePanelAppliesPanelSettings() {
+        let harness = makeClipboardPanelHarness { store in
+            self.seed(store)
+            if let index = store.storedItems.firstIndex(where: { $0.text == "copied text" }) {
+                store.storedItems[index].isPinned = true
+            }
+        }
+        let settings = harness.controller.settingsStore
+        settings.clipboardSingleClickPastes = true
+        settings.clipboardShowsPreview = true
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertEqual(harness.model.visibleEntries.first?.title, "copied text")
+        XCTAssertEqual(harness.model.selectedEntry?.isPinned, false, "Starts below the pinned row by default")
+        XCTAssertTrue(harness.model.showsPreview)
+        XCTAssertTrue(harness.model.singleClickPastes)
+
+        harness.model.togglePreview()
+        XCTAssertFalse(settings.clipboardShowsPreview, "Toggling the pane in the panel is remembered")
+
+        harness.controller.dismissHistoryPicker()
+        settings.clipboardSelectsFirstUnpinned = false
+        settings.clipboardSingleClickPastes = false
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertEqual(harness.model.selectedIndex, 0)
+        XCTAssertFalse(harness.model.singleClickPastes)
+        harness.controller.dismissHistoryPicker()
+    }
 }
 
 /// Parks callers of `pass()` until `open()`; `open()` is synchronous so a `defer` can release it.

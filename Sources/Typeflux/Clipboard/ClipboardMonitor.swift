@@ -11,6 +11,7 @@ final class ClipboardMonitor {
     private let pasteboard: PasteboardReading
     private let store: ClipboardHistoryStore
     private let isEnabled: () -> Bool
+    private let policy: () -> ClipboardCapturePolicy
     private let sourceProvider: () -> ClipboardSource?
     private let now: () -> Date
     private let suppression: ClipboardCaptureSuppression
@@ -23,6 +24,7 @@ final class ClipboardMonitor {
         pasteboard: PasteboardReading = SystemPasteboardReader(),
         store: ClipboardHistoryStore,
         isEnabled: @escaping () -> Bool,
+        policy: @escaping () -> ClipboardCapturePolicy = { .default },
         sourceProvider: @escaping () -> ClipboardSource? = ClipboardMonitor.frontmostApplicationSource,
         now: @escaping () -> Date = Date.init,
         suppression: ClipboardCaptureSuppression = .shared,
@@ -31,6 +33,7 @@ final class ClipboardMonitor {
         self.pasteboard = pasteboard
         self.store = store
         self.isEnabled = isEnabled
+        self.policy = policy
         self.sourceProvider = sourceProvider
         self.now = now
         self.suppression = suppression
@@ -65,18 +68,28 @@ final class ClipboardMonitor {
         let changeCount = pasteboard.changeCount
         guard changeCount != lastChangeCount else { return false }
         lastChangeCount = changeCount
-        guard isEnabled(), !suppression.isSuppressed else { return false }
+        let policy = policy()
+        guard isEnabled(), policy.isRecording, !suppression.isSuppressed else { return false }
         let contents = pasteboard.readContents()
         guard !ClipboardCaptureRules.shouldIgnore(types: contents.types) else { return false }
         let source = sourceProvider()
         let date = now()
         let store = store
         workQueue.async {
-            guard let capture = ClipboardCaptureRules.capture(from: contents) else { return }
+            guard let capture = ClipboardCaptureRules.capture(from: contents, plainTextOnly: policy.plainTextOnly)
+            else { return }
             store.record(capture, source: source, at: date)
-            store.trim(toMaxCount: Self.maximumItemCount)
+            Self.applyLimits(of: policy, to: store)
         }
         return true
+    }
+
+    /// Removes the oldest unpinned items beyond the item and image storage limits.
+    static func applyLimits(of policy: ClipboardCapturePolicy, to store: ClipboardHistoryStore) {
+        store.trim(toMaxCount: policy.maxItemCount)
+        if let bytes = policy.maxImageBytes {
+            store.trim(toMaxImageBytes: bytes)
+        }
     }
 
     /// Waits for queued writes; used by tests.

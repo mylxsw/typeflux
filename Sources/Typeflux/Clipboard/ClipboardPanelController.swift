@@ -113,7 +113,8 @@ final class ClipboardPanelController: NSObject, ClipboardPanelPresenting {
         let anchor = settingsStore.askLauncherPosition == .lastPosition
             ? settingsStore.askLauncherAnchors[AskLauncherPlacement.key(for: screen)] : nil
         panel.setFrameOrigin(ClipboardPanelPlacement.frame(
-            size: panel.frame.size, screen: screen.visibleFrame, launcherAnchor: anchor
+            size: panel.frame.size, screen: screen.visibleFrame, position: settingsStore.clipboardPanelPosition,
+            launcherAnchor: anchor, mouse: NSEvent.mouseLocation
         ).origin)
     }
 

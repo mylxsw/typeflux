@@ -46,7 +46,8 @@ extension WorkflowController {
         }
 
         historyPanelModel.showsPreview = settingsStore.clipboardShowsPreview
-        historyPanelModel.reset(entries: entries)
+        historyPanelModel.singleClickPastes = settingsStore.clipboardSingleClickPastes
+        historyPanelModel.reset(entries: entries, selectFirstUnpinned: settingsStore.clipboardSelectsFirstUnpinned)
         isHistoryPickerPresented = true
         clipboardPanelPresenter?.present(historyPanelModel)
     }
@@ -62,7 +63,8 @@ extension WorkflowController {
             limit: Self.historyPanelVoiceLimit
         )
         return ClipboardFeed.entries(
-            clipboardItems: clipboardHistoryStore?.items(limit: ClipboardMonitor.maximumItemCount) ?? [],
+            // Trimming bounds the store; pinned items come on top of the unpinned limit.
+            clipboardItems: clipboardHistoryStore?.items(limit: Int(Int32.max)) ?? [],
             voiceRecords: records,
             pinnedVoiceRecordIDs: clipboardHistoryStore?.pinnedVoiceRecordIDs() ?? []
         )
@@ -115,14 +117,14 @@ extension WorkflowController {
         clipboardPanelPresenter?.dismiss()
     }
 
-    /// Clipboard items follow the history retention setting. "Don't keep history" still keeps
-    /// one day, because the panel is useless without a short buffer; recording itself has its own switch.
+    /// Applies the clipboard's own retention, item limit and image storage limit
+    /// (Settings → Launcher → Clipboard).
     func enforceClipboardRetentionPolicy(now: Date = Date()) {
         guard let store = clipboardHistoryStore else { return }
-        if let days = settingsStore.historyRetentionPolicy.days {
+        if let days = settingsStore.clipboardRetention.days {
             store.purge(olderThan: now.addingTimeInterval(-TimeInterval(max(1, days)) * 24 * 3600))
         }
-        store.trim(toMaxCount: ClipboardMonitor.maximumItemCount)
+        ClipboardMonitor.applyLimits(of: settingsStore.clipboardCapturePolicy(now: now), to: store)
     }
 
     // MARK: - Actions
