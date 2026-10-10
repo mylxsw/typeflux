@@ -2,8 +2,8 @@ import CoreGraphics
 import Foundation
 
 /// Starts a screenshot from the launcher: `jt` / `截图` frame a region, `jtqp` takes the
-/// whole display, `jtgd` frames a region and captures it while it scrolls. Return closes the
-/// launcher first, then the displays freeze.
+/// whole display, `jtgd` frames a region and captures it while it scrolls, `jtai` frames a
+/// region and asks the AI about it. Return closes the launcher first, then the displays freeze.
 struct AskScreenshotPlugin: AskLauncherPlugin {
     static let id = "screenshot"
     static let keywords = [
@@ -12,8 +12,25 @@ struct AskScreenshotPlugin: AskLauncherPlugin {
         AskKeyword(keyword: "jtqp", pluginID: id,
                    options: [ScreenshotMode.option: ScreenshotMode.fullScreen.rawValue]),
         AskKeyword(keyword: "jtgd", pluginID: id,
-                   options: [ScreenshotMode.option: ScreenshotMode.scrolling.rawValue])
+                   options: [ScreenshotMode.option: ScreenshotMode.scrolling.rawValue]),
+        AskKeyword(keyword: "jtai", pluginID: id,
+                   options: [ScreenshotMode.option: ScreenshotMode.region.rawValue,
+                             ScreenshotFollowUp.option: ScreenshotFollowUp.askAI.rawValue])
     ]
+
+    /// Keywords that start a screenshot at once on Return, even before they are entered.
+    static func startsCapture(_ keyword: AskKeyword) -> Bool {
+        keyword.pluginID == id || keyword.pluginID == AskScreenshotTextPlugin.id
+    }
+
+    /// What Return on such a keyword does: `ocr` reads the region's text, the rest follow their options.
+    static func captureKind(for keyword: AskKeyword) -> AskPluginAction.Kind {
+        if keyword.pluginID == AskScreenshotTextPlugin.id {
+            return .capture(mode: .region, followUp: .recognizeText)
+        }
+        return .capture(mode: ScreenshotMode(options: keyword.options),
+                        followUp: ScreenshotFollowUp(options: keyword.options))
+    }
 
     /// A read-only Screen Recording check; never prompts.
     var isPermissionGranted: @Sendable () -> Bool = { CGPreflightScreenCaptureAccess() }
@@ -32,6 +49,7 @@ struct AskScreenshotPlugin: AskLauncherPlugin {
     /// "Needs permission" until Screen Recording is granted; otherwise the mode, when not the usual one.
     func chipDetail(for keyword: AskKeyword, language: AppLanguage) -> String? {
         guard isPermissionGranted() else { return L("screenshot.permission.needed") }
+        if ScreenshotFollowUp(options: keyword.options) == .askAI { return L("screenshot.followUp.askAI") }
         return switch ScreenshotMode(options: keyword.options) {
         case .region: nil
         case .fullScreen: L("screenshot.mode.fullScreen.short")
@@ -41,11 +59,13 @@ struct AskScreenshotPlugin: AskLauncherPlugin {
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
         let mode = ScreenshotMode(options: request.options)
+        let followUp = ScreenshotFollowUp(options: request.options)
         let meta = isPermissionGranted() ? [] : [AskPluginMeta(text: L("screenshot.permission.needed"),
                                                                emphasized: true)]
-        return AskPluginPlan(mode: .onSubmit, title: Self.title(of: mode), meta: meta, actions: [
-            AskPluginAction(kind: .capture(mode: mode), title: L("screenshot.action.start"), symbol: symbol,
-                            shortcut: .enter)
+        let title = followUp == .askAI ? L("screenshot.mode.askAI") : Self.title(of: mode)
+        return AskPluginPlan(mode: .onSubmit, title: title, meta: meta, actions: [
+            AskPluginAction(kind: .capture(mode: mode, followUp: followUp), title: L("screenshot.action.start"),
+                            symbol: symbol, shortcut: .enter)
         ])
     }
 

@@ -264,7 +264,9 @@ struct AskPluginResultsView: View {
                 output.action(for: .optionEnter).map { L("ask.plugin.hint.done", main, $0.title) }
                     ?? L("ask.plugin.hint.action", main)
             }
-            parts = [keys, option, askAI]
+            // ⇥ changes the option, or does what the result offers for it (translate the text read).
+            let tab = option ?? output.action(for: .tab).map { L("ask.plugin.hint.option", $0.title) }
+            parts = [keys, tab, askAI]
         case let .failed(_, failure):
             return failure.action(for: .enter).map { L("ask.plugin.hint.action", $0.title) }
                 ?? (failure.retry ? L("ask.plugin.hint.failed") : "")
@@ -730,6 +732,7 @@ struct AskPluginResultsView: View {
         case .commandS: "⌘S"
         case .commandB: "⌘B"
         case .commandO: "⌘O"
+        case .tab: "⇥"
         case nil: nil
         }
     }

@@ -245,10 +245,14 @@ struct AskPluginRegistryTests {
         #expect(merged.first?.keyword == "fyja")
         #expect(merged.contains { $0.contains("dictionary") })
         #expect(merged.contains { $0.contains("bookmarksearch") })
-        // Saved before `dict` existed: it joins, and nothing else does.
+        // Saved before `dict` and `jtai` existed: they join, and nothing else does.
+        let jtai = AskPluginRegistry.defaultKeywords.filter {
+            AskPluginRegistry.group(of: $0) == AskPluginRegistry.screenshotAskKeywords
+        }
+        #expect(jtai.map(\.keyword) == ["jtai"])
         #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.pluginIDs) == AskKeywordAliases
-            .addingEnglishNames([fyja] + AskKeywordAliases.consolidate(dict)) + AskPluginRegistry.defaultKeywords
-            .filter { AskSystemCommand(pluginID: $0.pluginID) != nil })
+            .addingEnglishNames([fyja] + AskKeywordAliases.consolidate(dict) + jtai) + AskPluginRegistry
+            .defaultKeywords.filter { AskSystemCommand(pluginID: $0.pluginID) != nil })
         // Saved with every group but files: only `f` joins.
         let beforeFiles = AskPluginRegistry.coveredGroups.filter { $0 != AskFileSearchPlugin.id }
         #expect(AskPluginRegistry.keywords(saved: [fyja], known: beforeFiles) == [fyja] + AskPluginRegistry

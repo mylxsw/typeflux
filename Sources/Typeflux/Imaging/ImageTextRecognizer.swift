@@ -21,6 +21,17 @@ struct VisionImageTextRecognizer: ImageTextRecognizing {
         }.value
     }
 
+    /// Vision's own bounds for part of a line, which follow the glyphs exactly.
+    static func locator(for candidate: VNRecognizedText) -> RecognizedText.Line.RangeLocator {
+        let candidate = UncheckedSendable(candidate)
+        return { range in
+            let string = candidate.value.string
+            guard let swiftRange = Range(range, in: string),
+                  let box = try? candidate.value.boundingBox(for: swiftRange)?.boundingBox else { return nil }
+            return RecognizedText.topLeftBox(fromVision: box)
+        }
+    }
+
     private static func recognize(_ source: ImageTextSource) throws -> RecognizedText {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
@@ -35,7 +46,14 @@ struct VisionImageTextRecognizer: ImageTextRecognizing {
         return RecognizedText(lines: (request.results ?? []).compactMap { observation in
             guard let candidate = observation.topCandidates(1).first else { return nil }
             return RecognizedText.Line(text: candidate.string, confidence: candidate.confidence,
-                                       boundingBox: RecognizedText.topLeftBox(fromVision: observation.boundingBox))
+                                       boundingBox: RecognizedText.topLeftBox(fromVision: observation.boundingBox),
+                                       locate: Self.locator(for: candidate))
         })
     }
+}
+
+/// Carries a value Vision made and never changes again across concurrency domains.
+struct UncheckedSendable<Value>: @unchecked Sendable {
+    let value: Value
+    init(_ value: Value) { self.value = value }
 }

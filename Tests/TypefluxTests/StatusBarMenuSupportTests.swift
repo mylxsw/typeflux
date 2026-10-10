@@ -37,6 +37,32 @@ final class StatusBarMenuSupportTests: XCTestCase {
         XCTAssertNotEqual(settingsItem.action, menu.items[index].action)
     }
 
+    @MainActor
+    func testScreenshotToTextMenuEntryStartsTheTextScreenshot() throws {
+        if ProcessInfo.processInfo.environment["CI"] == "true" {
+            throw XCTSkip("Requires a GUI WindowServer session")
+        }
+        let suite = "ScreenshotTextMenuTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var started = 0
+        let controller = StatusBarController(
+            appState: AppStateStore(),
+            settingsStore: SettingsStore(defaults: defaults),
+            historyStore: EmptyHistoryStore(),
+            onScreenshotText: { started += 1 }
+        )
+        controller.start()
+        defer { controller.stop() }
+        let menu = try XCTUnwrap(controller.menu)
+        let index = try XCTUnwrap(menu.items.firstIndex { $0.title == L("menu.screenshotText") })
+        XCTAssertEqual(menu.items[index - 1].title, L("menu.screenshot"), "Right after Screenshot")
+        menu.performActionForItem(at: index)
+        // It starts once the menu has closed.
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(started, 1)
+    }
+
     func testStatusBarIconUsesBoundedMenuBarDimensions() {
         XCTAssertEqual(StatusBarController.IconLayout.imageSize, NSSize(width: 22, height: 22))
         XCTAssertEqual(StatusBarController.IconLayout.statusItemLength, NSStatusItem.squareLength)

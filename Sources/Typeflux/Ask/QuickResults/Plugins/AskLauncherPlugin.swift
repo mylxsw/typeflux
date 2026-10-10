@@ -150,12 +150,27 @@ struct AskPluginAction: Equatable, Sendable {
         case openNotes(id: UUID?)
         /// Opens a saved note in a result window (`nb` keyword).
         case openNote(UUID)
-        /// Closes the launcher, then starts a screenshot (`jt` keyword).
-        case capture(mode: ScreenshotMode)
+        /// Closes the launcher, then starts a screenshot (`jt` keyword); with a follow-up, the
+        /// chosen region goes straight to it (`ocr`, `jtai`).
+        case capture(mode: ScreenshotMode, followUp: ScreenshotFollowUp? = nil)
+        /// Does something with the screenshot waiting in the launcher, such as asking the AI about it.
+        case screenshotFollowUp(ScreenshotFollowUp)
+        /// Translates this text with the translation keyword, in the launcher.
+        case translate(String)
     }
 
     enum Shortcut: Equatable, Sendable {
         case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE, commandS, commandB, commandO
+        /// ⇥ on a result whose plugin has no options to cycle through.
+        case tab
+    }
+
+    /// What ⌘↩ does: asks the AI, about text or about a screenshot.
+    var asksAI: Bool {
+        switch kind {
+        case .askAI, .screenshotFollowUp(.askAI): true
+        default: false
+        }
     }
 
     var kind: Kind
@@ -256,8 +271,7 @@ struct AskPluginOutput: Equatable, Sendable {
 
     /// What ⌘↩ asks the AI: about the chosen row, or the whole result.
     var askAIAction: AskPluginAction? {
-        let isAsk: (AskPluginAction) -> Bool = { if case .askAI = $0.kind { true } else { false } }
-        return selected?.actions.first(where: isAsk) ?? actions.first(where: isAsk)
+        selected?.actions.first(where: \.asksAI) ?? actions.first(where: \.asksAI)
     }
 }
 
@@ -272,6 +286,11 @@ struct AskPluginFailure: Error, Equatable, Sendable {
 
     func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
         actions.first { $0.shortcut == shortcut }
+    }
+
+    /// What ⌘↩ does on the failure card, if it offers asking the AI.
+    var askAIAction: AskPluginAction? {
+        actions.first(where: \.asksAI)
     }
 
     static func presenting(_ error: Error) -> Self {

@@ -16,6 +16,7 @@ enum AskPluginRegistry {
         AskClipboardPlugin.id,
         AskNotesPlugin.id,
         AskScreenshotPlugin.id,
+        AskScreenshotTextPlugin.id,
         AskBrowserSearchPlugin.tabsID,
         AskBrowserSearchPlugin.bookmarksID
     ] + AskSystemCommand.allCases.map(\.id)
@@ -26,7 +27,9 @@ enum AskPluginRegistry {
                 .consolidate(AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin
                     .keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin
                     .keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
-                    .keywords + AskNotesPlugin.keywords + AskScreenshotPlugin.keywords + AskBrowserSearchPlugin.keywords
+                    .keywords + AskNotesPlugin.keywords + AskScreenshotPlugin.keywords
+                    + AskScreenshotTextPlugin.keywords
+                    + AskBrowserSearchPlugin.keywords
                     + AskSystemCommand.allCases.map {
                         AskKeyword(keyword: $0.defaultKeyword, pluginID: $0.id)
                     }))
@@ -34,14 +37,19 @@ enum AskPluginRegistry {
 
     /// Default keywords that came after their plugin: `dict` and `词典` joined translation later.
     static let wordBookKeywords = AskTranslatePlugin.id + "." + AskTranslatePlugin.wordBookAction
+    /// `jtai` joined the screenshot keywords later.
+    static let screenshotAskKeywords = AskScreenshotPlugin.id + "." + ScreenshotFollowUp.askAI.rawValue
 
     /// What a saved list records as covered: every plugin, and every later group of keywords.
     static let aliasKeywords = "launcher.keywordAliases.v1"
-    static let coveredGroups = pluginIDs + [wordBookKeywords, aliasKeywords]
+    static let coveredGroups = pluginIDs + [wordBookKeywords, screenshotAskKeywords, aliasKeywords]
 
     /// The group a default keyword belongs to for `keywords(saved:known:)`.
     static func group(of keyword: AskKeyword) -> String {
         if AskSystemCommand(pluginID: keyword.pluginID) != nil { return aliasKeywords }
+        if keyword.pluginID == AskScreenshotPlugin.id, ScreenshotFollowUp(options: keyword.options) == .askAI {
+            return screenshotAskKeywords
+        }
         return AskTranslatePlugin.opensWordBook(keyword.options) ? wordBookKeywords : keyword.pluginID
     }
 
@@ -193,6 +201,8 @@ extension AskConversationModel {
             AskClipboardPlugin(entries: { [weak self] in self?.clipboardEntries() ?? [] }),
             AskNotesPlugin(store: notes),
             AskScreenshotPlugin(),
+            AskScreenshotTextPlugin(screenshot: { [weak self] in self?.launcherScreenshot?.source },
+                                    savesNotes: notes != nil),
             AskBrowserSearchPlugin(kind: .tab, service: browserSearch, settings: { [weak settings] in
                 settings?.askBrowserSearchSettings ?? AskBrowserSearchSettings()
             }),
@@ -341,12 +351,17 @@ extension AskConversationModel {
             return .close
         case let .openNote(id):
             return openNoteInWindow(id) ? .close : .stay
-        case let .capture(mode):
+        case let .capture(mode, followUp):
             guard let onStartScreenshot else { return .stay }
             finishPluginResult()
             // Let the launcher close first; the capture leaves Typeflux's windows out anyway.
-            DispatchQueue.main.async { onStartScreenshot(mode) }
+            DispatchQueue.main.async { onStartScreenshot(mode, followUp) }
             return .close
+        case let .screenshotFollowUp(followUp):
+            return performScreenshotFollowUp(followUp)
+        case let .translate(text):
+            translateInLauncher(text)
+            return .stay
         }
     }
 
@@ -394,6 +409,7 @@ extension AskConversationModel {
 
     /// The result was used: the next launch starts empty, out of keyword mode.
     func finishPluginResult() {
+        releaseLauncherScreenshot()
         launcherClipboardPreview = nil
         answerWorkflowApproval(false)
         plugins.deactivate()
@@ -403,6 +419,7 @@ extension AskConversationModel {
     /// Closing the launcher in keyword mode puts the keyword back in front of
     /// its text, so the saved draft opens in the same mode next time.
     func foldLauncherKeyword() {
+        releaseLauncherScreenshot()
         launcherClipboardPreview = nil
         answerWorkflowApproval(false)
         guard plugins.isActive else { return }

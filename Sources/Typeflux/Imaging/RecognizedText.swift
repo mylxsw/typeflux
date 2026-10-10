@@ -4,10 +4,26 @@ import Foundation
 /// Text found in an image, one entry per line in reading order.
 struct RecognizedText: Equatable {
     struct Line: Equatable {
+        /// Where a range of `text` (UTF-16) is, normalized like `boundingBox`; nil when unknown.
+        typealias RangeLocator = @Sendable (NSRange) -> CGRect?
+
         var text: String
         var confidence: Float
         /// Normalized to the image (0...1) with the origin at the top-left corner.
         var boundingBox: CGRect
+        /// Exact bounds of part of the line, from the recognizer that read it. Not compared.
+        var locate: RangeLocator?
+
+        init(text: String, confidence: Float, boundingBox: CGRect, locate: RangeLocator? = nil) {
+            self.text = text
+            self.confidence = confidence
+            self.boundingBox = boundingBox
+            self.locate = locate
+        }
+
+        static func == (lhs: Line, rhs: Line) -> Bool {
+            lhs.text == rhs.text && lhs.confidence == rhs.confidence && lhs.boundingBox == rhs.boundingBox
+        }
 
         /// The line's bounds in pixels of an image of the given size.
         func pixelRect(imageWidth: Int, imageHeight: Int) -> CGRect {

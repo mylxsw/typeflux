@@ -6,7 +6,8 @@ import Foundation
 /// `idle → capturing → selecting → editing → finishing → idle`. A scrolling capture goes
 /// `editing → scrolling → editingLongImage → finishing`. Every way out (esc, a failure, a
 /// finished copy or save) goes through `teardown()`, which closes the overlay, stops a
-/// scrolling capture and drops the frozen or joined images.
+/// scrolling capture and drops the frozen or joined images. Recognizing text, translating and
+/// asking the AI hand the rendered image to `followUpHandler` (the launcher) instead of the clipboard.
 @MainActor
 final class ScreenshotCoordinator {
     enum State: Equatable {
@@ -51,6 +52,10 @@ final class ScreenshotCoordinator {
     private(set) var scrollCapture: (any ScrollCapturing)?
     /// `jtgd`: the region goes straight to a scrolling capture once it is chosen.
     private var scrollsOnCommit = false
+    /// `ocr`, `jtai`: the region goes straight to this follow-up once it is chosen.
+    private(set) var followUpOnCommit: ScreenshotFollowUp?
+    /// Recognizes text, translates and asks the AI; set by the app.
+    weak var followUpHandler: (any ScreenshotFollowUpHandling)?
     /// Bumped by every teardown, so a capture or delivery from an earlier session is ignored.
     private var session = 0
 
@@ -90,8 +95,9 @@ final class ScreenshotCoordinator {
     }
 
     /// Starts a screenshot. While framing, starting again selects the whole display;
-    /// while capturing or finishing, it is ignored with a notice.
-    func start(mode: ScreenshotMode = .region) {
+    /// while capturing or finishing, it is ignored with a notice. With a `followUp`, the chosen
+    /// region goes straight to it instead of the editor.
+    func start(mode: ScreenshotMode = .region, followUp: ScreenshotFollowUp? = nil) {
         switch state {
         case .idle:
             break
@@ -104,11 +110,12 @@ final class ScreenshotCoordinator {
             return
         }
         guard permission.isGranted else {
-            presentPermissionGuide(mode: mode)
+            presentPermissionGuide(mode: mode, followUp: followUp)
             return
         }
         permissionGuide.dismiss()
         state = .capturing
+        followUpOnCommit = followUp
         let session = session
         let capture = capture
         pendingTask = Task { [weak self] in
@@ -118,7 +125,7 @@ final class ScreenshotCoordinator {
             } catch {
                 result = .failure(error)
             }
-            self?.didCapture(result, mode: mode, session: session)
+            self?.didCapture(result, mode: mode, followUp: followUp, session: session)
         }
     }
 
@@ -134,6 +141,9 @@ final class ScreenshotCoordinator {
             if state == .editing, scrollsOnCommit {
                 scrollsOnCommit = false
                 overlay.startScrollCapture()
+            } else if state == .editing, let followUp = followUpOnCommit {
+                followUpOnCommit = nil
+                overlay.finish(.followUp(followUp))
             }
         case let .scroll(displayID, rect):
             startScrollCapture(displayID: displayID, rect: rect)
@@ -152,27 +162,28 @@ final class ScreenshotCoordinator {
 
     /// Asks the system once (its prompt also lists Typeflux in System Settings) and
     /// shows the guide every time access is missing.
-    private func presentPermissionGuide(mode: ScreenshotMode) {
+    private func presentPermissionGuide(mode: ScreenshotMode, followUp: ScreenshotFollowUp? = nil) {
         permission.requestOnce()
         permissionGuide.show(actions: ScreenshotPermissionGuideActions(
             openSettings: { [weak self] in self?.permission.openSystemSettings() },
-            recheck: { [weak self] in self?.recheckPermission(mode: mode) ?? false },
+            recheck: { [weak self] in self?.recheckPermission(mode: mode, followUp: followUp) ?? false },
             restart: { [weak self] in self?.relaunch() },
             later: { [weak self] in self?.permissionGuide.dismiss() }
         ))
     }
 
     /// "Check again" in the guide: starts the screenshot once access is there.
-    func recheckPermission(mode: ScreenshotMode = .region) -> Bool {
+    func recheckPermission(mode: ScreenshotMode = .region, followUp: ScreenshotFollowUp? = nil) -> Bool {
         guard permission.isGranted else { return false }
         permissionGuide.dismiss()
-        start(mode: mode)
+        start(mode: mode, followUp: followUp)
         return true
     }
 
     // MARK: Session
 
-    private func didCapture(_ result: Result<ScreenSnapshot, Error>, mode: ScreenshotMode, session: Int) {
+    private func didCapture(_ result: Result<ScreenSnapshot, Error>, mode: ScreenshotMode,
+                            followUp: ScreenshotFollowUp?, session: Int) {
         // Esc during the capture ends the session; its late result is dropped.
         guard session == self.session, state == .capturing else { return }
         switch result {
@@ -183,12 +194,13 @@ final class ScreenshotCoordinator {
             overlay.present(snapshot) { [weak self] event in self?.handle(event) }
             if mode == .fullScreen {
                 overlay.selectFullScreen()
-                state = .editing
+                // Selecting may already have committed the region, and even finished it for a follow-up.
+                if state == .selecting { state = .editing }
             }
         case let .failure(error):
             teardown()
             if (error as? ScreenCaptureError) == .permissionDenied {
-                presentPermissionGuide(mode: mode)
+                presentPermissionGuide(mode: mode, followUp: followUp)
             } else {
                 toast.show(.failed)
             }
@@ -206,6 +218,17 @@ final class ScreenshotCoordinator {
         } catch {
             teardown()
             toast.show(.failed)
+            return
+        }
+        if case let .followUp(followUp) = action {
+            let isLongImage = state == .editingLongImage
+            teardown()
+            guard let followUpHandler else {
+                toast.show(.failed)
+                return
+            }
+            followUpHandler.handle(followUp, image: ScreenshotFollowUpImage(image: image, scale: display.scale,
+                                                                           isLongImage: isLongImage))
             return
         }
         // The overlay closes first, so the user is back at once; encoding runs off the main thread.
@@ -230,6 +253,9 @@ final class ScreenshotCoordinator {
         switch action {
         case .copy:
             toast.show(output.copy(png) ? .copied : .failed)
+        case .followUp:
+            // Handed over in `finish` without encoding; never delivered here.
+            break
         case .save:
             do {
                 let url = try output.save(png, in: saveDirectory(), date: now())
@@ -271,6 +297,12 @@ final class ScreenshotCoordinator {
             )
             snapshot = ScreenSnapshot(displays: [display], windows: [])
             state = .editingLongImage
+            // `jtai` with a scrolling capture: the long image goes to the AI as it is.
+            if let followUp = followUpOnCommit {
+                followUpOnCommit = nil
+                finish(.followUp(followUp), displayID: display.id, rect: display.frame, annotations: [])
+                return
+            }
             longImageEditor.present(display, on: region.displayFrame) { [weak self] event in self?.handle(event) }
             if let notice = Self.toast(for: ending) { toast.show(notice) }
         case .cancelled:
@@ -296,6 +328,7 @@ final class ScreenshotCoordinator {
         snapshot = nil
         state = .idle
         scrollsOnCommit = false
+        followUpOnCommit = nil
         session += 1
         let capture = scrollCapture
         scrollCapture = nil

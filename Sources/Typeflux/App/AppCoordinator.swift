@@ -140,8 +140,13 @@ final class AppCoordinator {
         di.hotkeyService.onScreenshotRequested = { [weak screenshotCoordinator] in
             screenshotCoordinator?.start(mode: .region)
         }
-        di.askConversationWindowController?.model.onStartScreenshot = { [weak screenshotCoordinator] mode in
-            screenshotCoordinator?.start(mode: mode)
+        if let model = di.askConversationWindowController?.model {
+            model.onStartScreenshot = { [weak screenshotCoordinator] mode, followUp in
+                screenshotCoordinator?.start(mode: mode, followUp: followUp)
+            }
+            model.screenshotTextRecognizer = TiledImageTextRecognizer(base: di.imageTextRecognizer)
+            // Text, translation and questions after a screenshot happen in the launcher.
+            screenshotCoordinator.followUpHandler = model
         }
 
         let mouseVoiceInputController = MouseVoiceInputController(
@@ -184,6 +189,9 @@ final class AppCoordinator {
             },
             onScreenshot: { [weak screenshotCoordinator] in
                 screenshotCoordinator?.start(mode: .region)
+            },
+            onScreenshotText: { [weak screenshotCoordinator] in
+                screenshotCoordinator?.start(mode: .region, followUp: .recognizeText)
             }
         )
         statusBarController?.start()
