@@ -416,9 +416,19 @@ struct LauncherSettingsPolishTests {
 
     private func click(_ element: Element, in window: NSWindow) throws {
         let frame = window.convertFromScreen(element.frame)
+        let point = NSPoint(x: frame.midX, y: frame.midY)
+        var target = window.contentView?.hitTest(point)
+        while let view = target {
+            if let control = view as? NSControl {
+                // Native switches track mouseDown synchronously. Exercise their
+                // press action without entering AppKit's interactive event loop.
+                _ = control.accessibilityPerformPress()
+                return
+            }
+            target = view.superview
+        }
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: type, location: NSPoint(x: frame.midX, y: frame.midY),
-                                                        modifierFlags: [],
+            let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
                                                         timestamp: ProcessInfo.processInfo.systemUptime,
                                                         windowNumber: window.windowNumber,
                                                         context: nil, eventNumber: 0, clickCount: 1,
