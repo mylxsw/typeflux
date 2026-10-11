@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Settings → Shortcuts: every global shortcut in one place — voice input, the launcher,
-/// content tools and keyword shortcuts. The older shortcut cards on the Settings page stay.
+/// Settings → Shortcuts: compact, aligned tables for global and keyword shortcuts.
 struct HotkeySettingsView: View {
     @ObservedObject var viewModel: StudioViewModel
     @StateObject private var model: HotkeySettingsModel
@@ -9,16 +8,18 @@ struct HotkeySettingsView: View {
     @State private var recordingTarget: HotkeyTarget?
     @State private var query = ""
     @State private var editing: KeywordHotkeyDraftItem?
+    var compact = false
 
-    init(viewModel: StudioViewModel, settingsStore: SettingsStore) {
+    init(viewModel: StudioViewModel, settingsStore: SettingsStore, compact: Bool = false) {
+        self.compact = compact
         self.viewModel = viewModel
         _model = StateObject(wrappedValue: HotkeySettingsModel(settingsStore: settingsStore, workflows: .shared))
     }
 
     var body: some View {
         let shown = HotkeySettingsPresentation.filter(model.rows, query: query)
-        VStack(alignment: .leading, spacing: 16) {
-            toolbar
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+            header
             if shown.isEmpty, !query.isEmpty {
                 ModelSurface { AgentSettingsEmptyRow(text: L("hotkeys.noMatch", query)) }
             }
@@ -26,25 +27,24 @@ struct HotkeySettingsView: View {
                 let rows = shown.filter { $0.group == group }
                 if !rows.isEmpty || (group == .keywords && query.isEmpty) {
                     VStack(alignment: .leading, spacing: 8) {
-                        ModelSectionLabel(title: group.title, detail: rows.isEmpty ? nil : "\(rows.count)")
+                        sectionHeader(group, count: rows.count)
                         ModelSurface {
                             VStack(alignment: .leading, spacing: 0) {
                                 if rows.isEmpty {
                                     keywordEmptyState
                                 }
-                                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                                    if index > 0 {
-                                        ModelRowDivider(leading: 56)
+                                if !rows.isEmpty {
+                                    HotkeySettingsTableHeader(group: group, keyColumnWidth: keyColumnWidth)
+                                    ForEach(rows) { row in
+                                        ModelRowDivider(leading: 14)
+                                        rowView(row)
                                     }
-                                    rowView(row)
                                 }
                             }
                         }
                     }
                 }
             }
-            Text(L("hotkeys.footnote")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .padding(.horizontal, 4)
         }
         .onAppear(perform: model.reload)
         .onDisappear(perform: stopRecording)
@@ -53,37 +53,61 @@ struct HotkeySettingsView: View {
         }
     }
 
-    // MARK: - Toolbar
+    // MARK: - Header and tables
 
-    private var toolbar: some View {
-        HStack(spacing: 8) {
-            SettingsSearchBox(placeholder: L("hotkeys.search"), text: $query, width: nil)
-                .frame(maxWidth: .infinity)
-                .accessibilityIdentifier("hotkeys.search")
-            Button { add(nil) } label: {
-                Label(L("hotkeys.keyword.add"), systemImage: "plus")
-            }
-            .buttonStyle(ModelActionStyle(primary: true))
-            .fixedSize()
-            .accessibilityIdentifier("hotkeys.keyword.add")
+    private var header: some View {
+        HStack(spacing: 12) {
+            StudioHeroHeader(eyebrow: StudioSection.hotkeys.eyebrow, title: StudioSection.hotkeys.heading)
+            Spacer(minLength: 8)
+            HotkeySettingsSearch(text: $query, width: compact ? 180 : 240, onOpen: stopRecording)
         }
     }
+
+    private func sectionHeader(_ group: HotkeyGroup, count: Int) -> some View {
+        HStack(spacing: 8) {
+            ModelSectionLabel(title: group.title, detail: count == 0 ? nil : "\(count)")
+            Spacer(minLength: 8)
+            if group == .keywords {
+                Button { add(nil) } label: {
+                    Label(L("hotkeys.keyword.add"), systemImage: "plus")
+                }
+                .buttonStyle(ModelActionStyle())
+                .fixedSize()
+                .accessibilityIdentifier("hotkeys.keyword.add")
+            }
+        }
+    }
+
+    private var keyColumnWidth: CGFloat {
+        compact ? 180 : 210
+    }
+
+    private let enabledColumnWidth: CGFloat = 44
 
     // MARK: - Rows
 
     private func rowView(_ row: HotkeyRow) -> some View {
-        AgentSettingsRow(icon: row.icon, title: row.title, subtitle: subtitle(of: row)) {
-            HStack(spacing: 10) {
-                if let status = row.status, let message = HotkeySettingsPresentation.statusMessage(status),
-                   status != .unset {
-                    Text(message).font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning).lineLimit(1)
+        HStack(spacing: 10) {
+            HotkeySettingsName(row: row) { id in
+                if let hotkey = model.keywordHotkey(id) {
+                    stopRecording()
+                    editing = KeywordHotkeyDraftItem(draft: KeywordHotkeyDraft(editing: hotkey))
                 }
-                Button { toggleRecording(row) } label: {
-                    HotkeyKeysView(binding: row.binding, isRecording: recordingTarget == row.target)
-                }
-                .buttonStyle(.plain)
-                .help(L("hotkeys.recordHelp"))
-                .accessibilityLabel(L("hotkeys.recordAccessibility", row.title))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button { toggleRecording(row) } label: {
+                HotkeyKeysView(binding: row.binding, isRecording: recordingTarget == row.target)
+                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .frame(width: keyColumnWidth)
+            .help(recordingHelp(for: row))
+            .accessibilityLabel(L("hotkeys.recordAccessibility", row.title))
+            .accessibilityValue(recordingTarget == row.target
+                ? L("hotkeys.recording") : row.binding.map(HotkeyFormat.display) ?? L("settings.shortcuts.none"))
+            .accessibilityIdentifier("hotkeys.binding." + identifier(row.target))
+            Group {
                 if case let .keyword(id) = row.target {
                     Toggle("", isOn: Binding(
                         get: { model.keywordHotkey(id)?.enabled ?? false },
@@ -91,24 +115,30 @@ struct HotkeySettingsView: View {
                     ))
                     .labelsHidden().toggleStyle(.switch).controlSize(.small)
                     .accessibilityLabel(L("ask.settings.keywords.enabled"))
+                    .accessibilityIdentifier("hotkeys.enabled." + id.uuidString)
+                } else {
+                    Color.clear.frame(height: 1)
                 }
-                menu(for: row)
             }
+            .frame(width: enabledColumnWidth)
+            menu(for: row).frame(width: 24)
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if case let .keyword(id) = row.target, let hotkey = model.keywordHotkey(id) {
-                editing = KeywordHotkeyDraftItem(draft: KeywordHotkeyDraft(editing: hotkey))
-            }
-        }
+        .padding(.horizontal, 14).frame(minHeight: 44)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hotkeys.row." + identifier(row.target))
     }
 
-    private func subtitle(of row: HotkeyRow) -> String {
-        guard recordingTarget == row.target else { return row.subtitle }
-        if case .builtIn = row.target {
-            return L("settings.shortcuts.recordingGeneric")
+    private func recordingHelp(for row: HotkeyRow) -> String {
+        guard recordingTarget == row.target else { return L("hotkeys.recordHelp") }
+        return L(row.group == .keywords ? "hotkeys.recording.hint" : "settings.shortcuts.recordingGeneric")
+    }
+
+    private func identifier(_ target: HotkeyTarget) -> String {
+        switch target {
+        case let .builtIn(value): "builtIn." + value.rawValue
+        case let .action(value): "action." + value.rawValue
+        case let .keyword(id): "keyword." + id.uuidString
         }
-        return L("hotkeys.recording.hint")
     }
 
     private func menu(for row: HotkeyRow) -> some View {
@@ -149,16 +179,26 @@ struct HotkeySettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(L("hotkeys.keyword.empty")).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 8) {
-                ForEach(HotkeySettingsPresentation.templates(in: model.options)) { option in
-                    Button { add(option) } label: {
-                        Label("\(option.keyword.keyword) · \(option.name)", systemImage: "plus")
-                    }
-                    .buttonStyle(ModelActionStyle())
-                }
+            ViewThatFits(in: .horizontal) {
+                templateButtons(horizontal: true)
+                templateButtons(horizontal: false)
             }
         }
-        .padding(.horizontal, 18).padding(.vertical, 16)
+        .padding(.horizontal, 14).padding(.vertical, 14)
+    }
+
+    private func templateButtons(horizontal: Bool) -> some View {
+        let layout = horizontal
+            ? AnyLayout(HStackLayout(spacing: 8))
+            : AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+        return layout {
+            ForEach(HotkeySettingsPresentation.templates(in: model.options)) { option in
+                Button { add(option) } label: {
+                    Label("\(option.keyword.keyword) · \(option.name)", systemImage: "plus")
+                }
+                .buttonStyle(ModelActionStyle())
+            }
+        }
     }
 
     // MARK: - Actions

@@ -253,13 +253,18 @@ struct AskNotebookVisualTests {
         }
     }
 
-    @Test func resultWindowKeepsItsIconToolbarReachableWhileResizing() async throws {
+    @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
+    func resultWindowKeepsItsIconToolbarReachableWhileResizing(style: InterfaceStyle) async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         let recorder = AskResultServicesRecorder()
         let controller = AskResultWindowController()
         controller.defaults = UserDefaults(suiteName: "result-resizing-\(UUID().uuidString)")!
+        let settings = SettingsStore(defaults: controller.defaults)
+        settings.interfaceStyle = style
+        controller.interfaceStyle = InterfaceStyleObserver(settings: settings)
+        controller.appearance = { NSAppearance(named: .darkAqua) }
         let document = AskResultDocument(title: "Explain", keyword: "ex", model: "A long model name",
             input: "hell cat", body: Self.answer, state: .done,
             sourceApp: "An application with a very long name", sourceBundleID: "com.apple.Notes",
@@ -272,7 +277,15 @@ struct AskNotebookVisualTests {
         defer { window.close() }
         for width in [900, 580, 480, 360, 580] {
             window.setContentSize(NSSize(width: width, height: 420))
-            try await capture(window, "result-resize-\(width).png")
+            try await capture(window, "result-resize-\(style.rawValue)-\(width).png")
+            let close = try #require(window.standardWindowButton(.closeButton))
+            let pin = try #require(accessibilityElement("ask.result.pin", in: window))
+            let closeFrame = screenFrame(close, in: window)
+            let pinFrame = accessibilityFrame(pin)
+            #expect(abs(closeFrame.midY - pinFrame.midY) <= 2,
+                    "native window controls and title actions share one row, without an empty title strip")
+            #expect(window.frame.maxY - pinFrame.midY <= AskResultWindowView.titleBarHeight,
+                    "title actions stay at the top of the window")
             var lastMaxX = window.frame.minX
             for identifier in ["copy", "copyRich", "insert", "regenerate", "askAI"] {
                 let button = try #require(accessibilityElement("ask.result." + identifier, in: window))
@@ -293,6 +306,28 @@ struct AskNotebookVisualTests {
         try click(accessibilityFrame(ask), in: window)
         try await waitForUI { !recorder.asked.isEmpty }
         #expect(!recorder.asked.isEmpty, "the last action remains clickable")
+        window.appearance = NSAppearance(named: .aqua)
+        try await capture(window, "result-titlebar-\(style.rawValue)-light.png")
+        settings.interfaceStyle = style == .classic ? .liquidGlass : .classic
+        #expect(controller.interfaceStyle?.style == settings.interfaceStyle,
+                "an open result window follows the app-wide interface setting")
+        settings.interfaceStyle = style
+        window.close()
+        var note = makeTestNote("小名推荐（男女通用）", body: "## 小名推荐\n\n- 糯糯：软糯可爱\n- 岁岁：岁岁平安")
+        note.command = ""
+        note.source = .manual
+        let noteDocument = controller.open(note)
+        let noteWindow = try #require(NSApp.windows.first {
+            $0.delegate === controller
+                && ($0.contentView as? NSHostingView<AskResultWindowView>)?.rootView.document === noteDocument
+        })
+        defer { noteWindow.close() }
+        #expect(noteWindow.title == note.title)
+        noteWindow.setContentSize(NSSize(width: 580, height: 420))
+        for dark in [true, false] {
+            noteWindow.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            try await capture(noteWindow, "note-titlebar-\(style.rawValue)-\(dark ? "dark" : "light").png")
+        }
     }
 
     private func checkReadControls(_ window: NSWindow) throws {

@@ -56,6 +56,14 @@ struct AskConversationWindowServicesTests {
         let window = try #require(fixture.notesWindow.window)
         try await SettingsBehaviorTestSupport.wait { window.isVisible && fixture.notesWindow.model?.selectedID == id }
         #expect(fixture.notesWindow.model?.selected?.body == draft.body)
+        let controller = try #require(fixture.controller)
+        fixture.notesWindow.model?.askAIAboutSelected()
+        try await SettingsBehaviorTestSupport.wait { controller.model.draft.references?.first?.noteId == id }
+        #expect(controller.conversationWindow?.isVisible == true)
+        #expect(controller.model.selectedId == nil && controller.model.draft.text.isEmpty)
+        #expect(!controller.model.draft.canSend)
+        #expect(await fixture.api.sends.isEmpty)
+        #expect(controller.model.savedChatDrafts.contains { $0.draft.text == "Keep the workspace draft." })
         note.editedAt = Date()
         #expect(fixture.notes.save(note))
         #expect(!services.removeNote(id), "An edited note must survive unstar from its original result")

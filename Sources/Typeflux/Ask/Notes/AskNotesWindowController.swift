@@ -11,7 +11,7 @@ final class AskNotesWindowController: NSObject, NSWindowDelegate {
     static let minimumSize = NSSize(width: 680, height: 500)
 
     private(set) var store: (any AskNoteStoring)?
-    private var askAI: (@MainActor (String) -> Void)?
+    private var askAI: (@MainActor (AskNote) -> Void)?
     private var openConversation: (@MainActor (String) -> Void)?
     private var appearance: () -> NSAppearance? = { nil }
     private var interfaceStyle: InterfaceStyleObserver?
@@ -21,7 +21,7 @@ final class AskNotesWindowController: NSObject, NSWindowDelegate {
 
     /// The notes and what the window can hand back to the conversation window;
     /// `AskConversationWindowController` supplies them.
-    func configure(store: any AskNoteStoring, settings: SettingsStore? = nil, askAI: (@MainActor (String) -> Void)?,
+    func configure(store: any AskNoteStoring, settings: SettingsStore? = nil, askAI: (@MainActor (AskNote) -> Void)?,
                    openConversation: (@MainActor (String) -> Void)? = nil,
                    appearance: @escaping () -> NSAppearance?) {
         self.store = store

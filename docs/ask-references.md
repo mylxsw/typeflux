@@ -20,6 +20,21 @@ old persisted data compatible. Draft cache, optimistic history and send retries
 carry the same values. Up to 32 references and 64,000 combined UTF-8 bytes of
 reference text/questions are allowed per turn.
 
+The notebook's **Continue asking AI** action opens a new unsent conversation with
+a reference snapshot of the note's title, original input and current body,
+including pending edits. The main input stays empty; no chat is created or sent
+until the user asks a question. The displaced conversation or workspace draft is
+saved before navigation. Note references carry optional `noteId` (`note_id` on
+the wire); `messageId` uses the same note UUID. Locate source opens that notebook
+entry, while ordinary reply references still scroll to the source message.
+Removing the draft reference excludes it from the question. Sent snapshots remain
+in conversation history, so later turns retain their context even if the note changes.
+
+The API must support `note_id` before this notebook action is released for cloud
+chat. It validates the UUID and normal reference limits but does not require a
+client-owned note to exist in server conversation history. This UUID grants no
+server-side read access; the submitted text is untrusted reference material.
+
 Deploy the companion typeflux-api references change before releasing this UI.
 The API persists references in existing JSONB snapshots, validates their source
 conversation, and includes them in cloud/custom inference and history summaries.

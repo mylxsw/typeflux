@@ -1176,7 +1176,7 @@ struct AskConversationView: View {
         case let .message(message):
             AskMessageView(message: message,
                            onReference: { model.addReference($0) },
-                           onLocate: { model.referenceLocation = $0 },
+                           onLocate: model.locateReference,
                            usage: message.runId.flatMap { model.selected?.usage?.runs[$0] },
                            onUsage: { usageRunId = message.runId; setUsage(true) },
                            isStreaming: message.id == streamingId,

@@ -172,8 +172,10 @@ struct AskWordBookView: View {
             }
         } label: {
             Image(systemName: "square.and.arrow.up").font(.system(size: 12))
+                .foregroundStyle(StudioTheme.textSecondary)
         }
         .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+        .tint(StudioTheme.textSecondary)
         .frame(width: 26, height: 26)
         .help(L("ask.wordBook.export"))
         .accessibilityLabel(L("ask.wordBook.export"))

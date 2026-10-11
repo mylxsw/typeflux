@@ -470,7 +470,8 @@ struct StudioView: View {
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                if viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
+                if viewModel.currentSection != .hotkeys,
+                   viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
                     pageHeader
                 }
 
@@ -980,7 +981,8 @@ struct StudioView: View {
         case .launcher:
             launcherPage(compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
         case .hotkeys:
-            HotkeySettingsView(viewModel: viewModel, settingsStore: viewModel.askToolSettings)
+            HotkeySettingsView(viewModel: viewModel, settingsStore: viewModel.askToolSettings,
+                               compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
         case .account:
             AccountView(authState: AuthState.shared) {
                 viewModel.navigate(to: .home)

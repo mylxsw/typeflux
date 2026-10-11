@@ -1138,7 +1138,7 @@ struct AskComposer: View {
                     .padding(.top, 10)
             }
             if !(draft.wrappedValue.references ?? []).isEmpty {
-                AskReferenceStrip(references: draft.references, locate: { model.referenceLocation = $0 })
+                AskReferenceStrip(references: draft.references, locate: model.locateReference)
                     .padding(.horizontal, chrome.horizontalInset - 4)
                     .padding(.top, 10)
             }
@@ -1424,9 +1424,8 @@ struct AskComposer: View {
             return plugin.placeholder(selectionLines: lines)
         }
         if launcher { return L("ask.launcher.placeholder") }
-        if model.selectedId == nil { return L("ask.input.placeholder") }
         return AskReferenceStrip.placeholder(count: draft.wrappedValue.references?.count ?? 0)
-            ?? L("ask.followup.placeholder")
+            ?? L(model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder")
     }
 
     private var editorField: some View {

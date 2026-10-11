@@ -4626,3 +4626,6 @@
 "hotkeys.search" = "ショートカットを検索";
 "hotkeys.footnote" = "設定ページとランチャー設定のショートカットもそのまま使えます。どちらで変更しても反映されます。";
 "hotkeys.updated" = "ショートカットを %@ に設定しました";
+
+"hotkeys.column.name" = "名前";
+"hotkeys.search.close" = "検索を閉じる";

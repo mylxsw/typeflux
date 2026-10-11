@@ -35,6 +35,8 @@ final class AskResultDocument: ObservableObject, Identifiable {
     let id = UUID()
     /// The keyword's name: "Explain".
     let title: String
+    /// A saved note keeps its own title while `title` retains the source command.
+    let displayTitle: String
     let keyword: String
     let model: String?
     /// The text the prompt worked on.
@@ -66,8 +68,10 @@ final class AskResultDocument: ObservableObject, Identifiable {
 
     init(title: String, keyword: String, model: String?, input: String, body: String, state: State,
          sourceApp: String? = nil, sourceBundleID: String? = nil, noteID: UUID? = nil, fromNote: Bool = false,
-         regenerate: Regenerate? = nil, services: Services = Services()) {
+         regenerate: Regenerate? = nil, services: Services = Services(), displayTitle: String? = nil) {
         self.title = title
+        let heading = (displayTitle ?? title).trimmingCharacters(in: .whitespacesAndNewlines)
+        self.displayTitle = heading.isEmpty ? L("ask.notes.title") : heading
         self.keyword = keyword
         self.model = model
         self.input = input
@@ -86,7 +90,7 @@ final class AskResultDocument: ObservableObject, Identifiable {
     convenience init(note: AskNote, services: Services) {
         self.init(title: note.command, keyword: note.keyword, model: note.model, input: note.input, body: note.body,
                   state: .done, sourceApp: note.sourceApp, sourceBundleID: note.sourceBundleID, noteID: note.id,
-                  fromNote: true, services: services)
+                  fromNote: true, services: services, displayTitle: note.title)
         updatedAt = note.updatedAt
     }
 

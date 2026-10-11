@@ -519,7 +519,7 @@ struct AskReferenceStrip: View {
                     cancel: { if editing == reference.id { editing = nil } },
                     byteBudget: Self.byteBudget(for: reference, in: references),
                     position: total > 1 ? L("ask.references.position", index + 1, total) : nil,
-                    locate: { editing = nil; locate(reference.messageId) },
+                    locate: { editing = nil; locate(reference.locationId) },
                     remove: { remove(reference.id) }
                 )
             }
@@ -561,7 +561,7 @@ struct AskSentReferences: View {
         AskFlowLayout(spacing: AskReferenceStrip.spacing, alignment: .trailing,
                       itemMaxWidth: Self.itemMaxWidth) {
             ForEach(references) { reference in
-                AskReferenceChip(reference: reference, style: .sent, action: { locate(reference.messageId) })
+                AskReferenceChip(reference: reference, style: .sent, action: { locate(reference.locationId) })
             }
         }
     }

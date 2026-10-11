@@ -4626,3 +4626,6 @@
 "hotkeys.search" = "단축키 검색";
 "hotkeys.footnote" = "설정 페이지와 런처 설정의 단축키 항목도 그대로 유지되며, 어디서 바꿔도 함께 반영됩니다.";
 "hotkeys.updated" = "단축키를 %@(으)로 설정했습니다";
+
+"hotkeys.column.name" = "이름";
+"hotkeys.search.close" = "검색 닫기";

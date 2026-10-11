@@ -89,7 +89,7 @@ final class AskNotesViewModel: ObservableObject {
     /// Notes with these tags do not exist for the agent.
     @Published private(set) var agentHiddenTags: [String] = []
     var openInWindow: @MainActor (AskNote) -> Void = { AskResultWindowController.shared.open($0) }
-    var askAI: (@MainActor (String) -> Void)?
+    var askAI: (@MainActor (AskNote) -> Void)?
     /// Brings the conversation a note was saved from to the front; nil when that is not possible.
     var openConversation: (@MainActor (String) -> Void)?
     var copy: @MainActor (String) -> Void = { AskQuickResults.copy($0) }
@@ -769,7 +769,7 @@ final class AskNotesViewModel: ObservableObject {
 
     func askAIAboutSelected() {
         guard let note = selectedContent, let askAI else { return }
-        askAI(L("ask.plugin.prompt.askAI", note.command.isEmpty ? note.title : note.command, note.input, note.body))
+        askAI(note)
     }
 
     func openSelectedInWindow() {

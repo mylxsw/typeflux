@@ -195,9 +195,21 @@ struct AskResultDocumentTests {
         recorder.existing.insert(note.id)
         let doc = AskResultDocument(note: note, services: recorder.services)
         #expect(doc.fromNote && doc.noteID == note.id && doc.body == note.body && doc.title == note.command)
+        #expect(doc.displayTitle == note.title)
         #expect(doc.updatedAt == note.updatedAt && !doc.canRegenerate)
         doc.openNotes()
         #expect(recorder.openedNotes == [note.id])
+    }
+
+    @Test func manualNotesUseTheirTitleWithoutChangingSourceMetadata() {
+        var note = makeTestNote("My reading notes")
+        note.command = ""
+        note.source = .manual
+        let doc = AskResultDocument(note: note, services: AskResultDocument.Services())
+        #expect(doc.displayTitle == "My reading notes")
+        #expect(doc.title.isEmpty && doc.draft.command.isEmpty)
+        note.title = " \n "
+        #expect(AskResultDocument(note: note, services: .init()).displayTitle == L("ask.notes.title"))
     }
 
     @Test func aHandoffBecomesADocument() async throws {
@@ -261,6 +273,8 @@ struct AskResultDocumentTests {
             window.delegate === controller
                 && (window.contentView as? NSHostingView<AskResultWindowView>)?.rootView.document === third
         }
+        #expect(sized?.title == third.displayTitle)
+        #expect(sized?.toolbarStyle == .unified && sized?.toolbar != nil)
         #expect(sized?.frame.width ?? 0 >= AskResultWindowController.minimumSize.width, "too small a size is widened")
         #expect(sized?.frame.height == savedHeight, "the saved height is remembered")
         for window in NSApp.windows where window.delegate === controller { window.close() }

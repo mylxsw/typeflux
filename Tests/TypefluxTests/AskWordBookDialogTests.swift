@@ -495,6 +495,9 @@ struct AskWordBookWindowTests {
         store.record(AskWordBookLookup(headword: "alpha", source: "en", target: "zh-Hans", translation: "a"),
                      at: Date(), counts: true)
         let controller = AskWordBookWindowController()
+        let frameName = "wordbook-window-frame-\(UUID().uuidString)"
+        controller.frameAutosaveName = frameName
+        defer { NSWindow.removeFrame(usingName: frameName) }
         controller.show()
         controller.show(lookingUp: "nothing")
         #expect(controller.window == nil, "nothing to show before the launcher configures it")
@@ -508,6 +511,12 @@ struct AskWordBookWindowTests {
         #expect(window.styleMask.contains(.fullSizeContentView) && window.titleVisibility == .hidden)
         #expect(window.toolbarStyle == .unified && window.toolbar != nil, "title rows align with the workspace")
         #expect(window.contentMinSize == AskWordBookWindowController.minimumSize)
+        let content = try #require(window.contentView)
+        #expect(content.bounds.width == AskWordBookWindowController.defaultSize.width)
+        let layout = AskLibraryLayout(width: content.bounds.width)
+        #expect(layout.sidebarInline, "a fresh window shows the library sidebar alongside the word list")
+        #expect(layout.detailWidth >= AskLibraryLayout.readingWidth,
+                "the default window leaves enough room to read a word card with its sidebar visible")
         settings.interfaceStyle = .classic
         #expect(controller.interfaceStyle?.style == .classic)
         settings.interfaceStyle = .liquidGlass
@@ -526,6 +535,28 @@ struct AskWordBookWindowTests {
         #expect(dictionary.requests.first?.text == "serendipity")
         window.close()
         #expect(controller.window == nil && controller.model == nil)
+    }
+
+    @Test func reopeningRestoresTheSizeChosenByTheUser() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let frameName = "wordbook-restored-frame-\(UUID().uuidString)"
+            let controller = AskWordBookWindowController()
+            controller.frameAutosaveName = frameName
+            defer {
+                controller.window?.close()
+                NSWindow.removeFrame(usingName: frameName)
+            }
+            controller.configure(store: makeTestWordBook(), dictionary: nil, settings: settings, modelName: { "AI" })
+            controller.show()
+            let window = try #require(controller.window)
+            window.setContentSize(NSSize(width: 900, height: 600))
+            window.saveFrame(usingName: frameName)
+            window.close()
+            controller.show()
+            let restored = try #require(controller.window?.contentView)
+            #expect(restored.bounds.width == 900, "the initial size migration does not override later manual resizing")
+            #expect(!AskLibraryLayout(width: restored.bounds.width).sidebarInline)
+        }
     }
 }
 

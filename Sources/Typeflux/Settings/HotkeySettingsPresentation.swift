@@ -28,6 +28,8 @@ struct HotkeyRow: Identifiable, Equatable {
     var defaultBinding: HotkeyBinding?
     /// Keyword shortcuts only.
     var status: KeywordHotkeyStatus?
+    /// A useful function name for keyword rows, displayed beside the keyword.
+    var keywordName: String?
 
     var id: HotkeyTarget {
         target
@@ -109,7 +111,8 @@ enum HotkeySettingsPresentation {
         return HotkeyRow(target: .keyword(hotkey.id), group: .keywords, icon: "character.cursor.ibeam",
                          title: keyword?.keyword ?? hotkey.keyword,
                          subtitle: L("hotkeys.keyword.subtitle", name),
-                         binding: hotkey.binding, status: KeywordHotkeyStatus(hotkey, keywords: keywords))
+                         binding: hotkey.binding, status: KeywordHotkeyStatus(hotkey, keywords: keywords),
+                         keywordName: keyword.map(keywordName))
     }
 
     static func keywordName(_ keyword: AskKeyword) -> String {

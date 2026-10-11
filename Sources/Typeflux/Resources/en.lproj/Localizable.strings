@@ -4648,3 +4648,6 @@
 "hotkeys.search" = "Search shortcuts";
 "hotkeys.footnote" = "The shortcut cards on the Settings and Launcher pages stay; a change in either place shows up in both.";
 "hotkeys.updated" = "Shortcut set to %@";
+
+"hotkeys.column.name" = "Name";
+"hotkeys.search.close" = "Close search";

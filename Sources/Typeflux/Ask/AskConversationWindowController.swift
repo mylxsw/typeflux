@@ -134,7 +134,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             model?.submitLauncher()
         }
         let notesWindow = services?.notesWindow ?? AskNotesWindowController.shared
-        notesWindow.configure(store: notes, settings: settings, askAI: askAboutResult,
+        notesWindow.configure(store: notes, settings: settings, askAI: { [weak model] note in
+                                  Task { await model?.openChat(referencing: note) }
+                              },
                               openConversation: { [weak self] id in
                                   guard let self else { return }
                                   self.showConversation()
@@ -147,6 +149,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             notes.purgeTrash(before: Date().addingTimeInterval(-AskNoteQuery.trashRetention))
         })
         let resultWindow = services?.resultWindow ?? AskResultWindowController.shared
+        resultWindow.interfaceStyle = interfaceStyle
         resultWindow.appearance = { [weak settings] in
             settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
         }

@@ -15,6 +15,7 @@ final class AskResultWindowController: NSObject, NSWindowDelegate {
     var services = AskResultDocument.Services()
     var appearance: () -> NSAppearance? = { nil }
     var defaults: UserDefaults = .standard
+    var interfaceStyle: InterfaceStyleObserver?
 
     private struct Entry {
         var window: NSWindow
@@ -59,13 +60,16 @@ final class AskResultWindowController: NSObject, NSWindowDelegate {
                               backing: .buffered, defer: false)
         window.isOpaque = false
         window.backgroundColor = .clear
-        window.title = document.title
+        window.title = document.displayTitle
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.titlebarSeparatorStyle = .none
-        let hosting = TransparentAskHostingView(rootView: AskResultWindowView(document: document) { [weak window] in
-            window?.performClose(nil)
-        })
+        // Match the workspace's title row and traffic-light centre line.
+        window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.result.toolbar")
+        window.toolbarStyle = .unified
+        let hosting = TransparentAskHostingView(rootView: AskResultWindowView(document: document, onClose: {
+            [weak window] in window?.performClose(nil)
+        }, interfaceStyle: interfaceStyle))
         hosting.sizingOptions = []
         window.contentView = hosting
         window.minSize = Self.minimumSize

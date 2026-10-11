@@ -4648,3 +4648,6 @@
 "hotkeys.search" = "搜索快捷键";
 "hotkeys.footnote" = "设置页和启动器设置里的快捷键入口仍然保留，在任何一处修改都会同步。";
 "hotkeys.updated" = "快捷键已设为 %@";
+
+"hotkeys.column.name" = "名称";
+"hotkeys.search.close" = "收起搜索";

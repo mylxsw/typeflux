@@ -304,7 +304,7 @@ struct AskNotesViewModelTests {
         store.save(first)
         store.save(second)
         let notes = model(store)
-        var copied: [String] = [], rich: [String] = [], asked: [String] = [], windows: [UUID] = []
+        var copied: [String] = [], rich: [String] = [], asked: [AskNote] = [], windows: [UUID] = []
         notes.copy = { copied.append($0) }
         notes.copyRich = { rich.append($0) }
         notes.openInWindow = { windows.append($0.id) }
@@ -316,7 +316,7 @@ struct AskNotesViewModelTests {
         notes.askAIAboutSelected()
         notes.openSelectedInWindow()
         #expect(copied == ["One"] && rich == ["One"] && windows == [first.id])
-        #expect(asked == [L("ask.plugin.prompt.askAI", first.command, first.input, first.body)])
+        #expect(asked == [first])
         notes.beginEditing()
         notes.deleteSelected()
         #expect(store.count(.all) == 1 && notes.selectedID == second.id && !notes.editing)

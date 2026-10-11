@@ -7,8 +7,10 @@ import SwiftUI
 @MainActor
 final class AskWordBookWindowController: NSObject, NSWindowDelegate {
     static let shared = AskWordBookWindowController()
-    static let defaultSize = NSSize(width: 1120, height: 720)
+    static let defaultSize = NSSize(width: 1320, height: 800)
     static let minimumSize = NSSize(width: 720, height: 480)
+    // Start the wider three-column layout fresh instead of restoring an old compact frame.
+    var frameAutosaveName: NSWindow.FrameAutosaveName = "AskWordBook.v2"
 
     private var store: (any AskWordBookStoring)?
     private var dictionary: (any AskWordLookingUp)?
@@ -89,7 +91,8 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         hosting.sizingOptions = []
         window.contentView = hosting
         window.contentMinSize = Self.minimumSize
-        window.setFrameAutosaveName("AskWordBook")
+        window.setFrameAutosaveName(frameAutosaveName)
+        window.setFrameUsingName(frameAutosaveName)
         if window.frame.width < Self.minimumSize.width { window.setContentSize(Self.defaultSize) }
         if window.frame.origin == .zero { window.center() }
         window.isReleasedWhenClosed = false

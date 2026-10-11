@@ -384,7 +384,7 @@ struct AskNotebookViewModelTests {
         notes.autosaveDelay = .seconds(60)
         notes.beginEditing()
         notes.draftBody = "fresh draft"
-        var copied = "", rich = "", asked = "", opened = ""
+        var copied = "", rich = "", asked: AskNote?, opened = ""
         notes.copy = { copied = $0 }
         notes.copyRich = { rich = $0 }
         notes.askAI = { asked = $0 }
@@ -393,7 +393,7 @@ struct AskNotebookViewModelTests {
         notes.copySelectedRich()
         notes.askAIAboutSelected()
         notes.openSelectedInWindow()
-        #expect(copied == "fresh draft" && rich == copied && opened == copied && asked.contains(copied))
+        #expect(copied == "fresh draft" && rich == copied && opened == copied && asked?.body == copied)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("draft-\(UUID().uuidString).md")
         defer { try? FileManager.default.removeItem(at: url) }
         notes.chooseExportURL = { _ in url }

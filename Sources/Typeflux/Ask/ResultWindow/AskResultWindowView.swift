@@ -5,13 +5,23 @@ import SwiftUI
 struct AskResultWindowView: View {
     @ObservedObject var document: AskResultDocument
     var onClose: () -> Void
+    var interfaceStyle: InterfaceStyleObserver? = nil
 
     static let readingWidth: CGFloat = 680
     /// Room for the traffic lights at the left of the title bar.
     static let trafficLightClearance: CGFloat = 78
+    static let titleBarHeight: CGFloat = 52
     private static let bottomID = "ask.result.bottom"
 
-    var body: some View {
+    @ViewBuilder var body: some View {
+        if let interfaceStyle {
+            windowContent.interfaceStyle(following: interfaceStyle)
+        } else {
+            windowContent
+        }
+    }
+
+    private var windowContent: some View {
         VStack(spacing: 0) {
             titleBar
             if !document.input.isEmpty { original }
@@ -19,6 +29,8 @@ struct AskResultWindowView: View {
             toolbar
         }
         .background(AskWindowBackdrop())
+        // The title row and its backdrop must cover the native title-bar area.
+        .ignoresSafeArea(.container, edges: .top)
         .overlay(alignment: .bottom) { noticeView }
         .background(shortcuts)
         .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
@@ -32,7 +44,8 @@ struct AskResultWindowView: View {
             Color.clear.frame(width: Self.trafficLightClearance)
             Spacer(minLength: 0)
             HStack(spacing: 6) {
-                Text(document.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                Text(document.displayTitle).font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary).layoutPriority(1)
                 Text(subtitle).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
             }
             .lineLimit(1)
@@ -50,8 +63,10 @@ struct AskResultWindowView: View {
                 .accessibilityIdentifier("ask.result.notes")
         }
         .padding(.trailing, 10)
-        .frame(height: 40)
-        .overlay(alignment: .bottom) { Rectangle().fill(StudioTheme.border).frame(height: 1) }
+        .frame(height: Self.titleBarHeight)
+        .overlay(alignment: .bottom) { Rectangle().fill(AskTheme.separator).frame(height: 0.5) }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.result.titlebar")
     }
 
     private var subtitle: String {
@@ -68,7 +83,7 @@ struct AskResultWindowView: View {
                 .foregroundStyle(saved || pending ? AskWordBookStyle.star : StudioTheme.textSecondary)
                 .opacity(pending ? 0.55 : 1)
                 .frame(width: 28, height: 26)
-                .background(saved || pending ? AskWordBookStyle.star.opacity(0.16) : StudioTheme.controlSurface,
+                .background(saved || pending ? AskWordBookStyle.star.opacity(0.16) : AskTheme.controlSurface,
                             in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .contentShape(Rectangle())
         }
@@ -83,7 +98,7 @@ struct AskResultWindowView: View {
             Image(systemName: symbol).font(.system(size: 12))
                 .foregroundStyle(active ? StudioTheme.accent : StudioTheme.textSecondary)
                 .frame(width: 28, height: 26)
-                .background(active ? StudioTheme.accent.opacity(0.16) : StudioTheme.controlSurface,
+                .background(active ? AskTheme.accent.opacity(0.16) : AskTheme.controlSurface,
                             in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .contentShape(Rectangle())
         }
@@ -180,7 +195,7 @@ struct AskResultWindowView: View {
             Image(systemName: symbol).font(.system(size: 12.5))
             .foregroundStyle(primary ? AskTheme.accent : StudioTheme.textSecondary)
             .frame(width: 32, height: 30)
-            .background(primary ? AskTheme.accent.opacity(0.16) : StudioTheme.controlSurface,
+            .background(primary ? AskTheme.accent.opacity(0.16) : AskTheme.controlSurface,
                         in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .contentShape(Rectangle())
         }

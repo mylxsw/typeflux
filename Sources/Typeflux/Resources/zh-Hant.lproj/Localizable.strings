@@ -4633,3 +4633,6 @@
 "hotkeys.search" = "搜尋快捷鍵";
 "hotkeys.footnote" = "設定頁和啟動器設定裡的快捷鍵入口仍然保留，在任何一處修改都會同步。";
 "hotkeys.updated" = "快捷鍵已設為 %@";
+
+"hotkeys.column.name" = "名稱";
+"hotkeys.search.close" = "收起搜尋";

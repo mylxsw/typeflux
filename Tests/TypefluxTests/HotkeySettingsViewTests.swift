@@ -82,10 +82,114 @@ struct HotkeySettingsViewTests {
                           keyword: "gone", pluginID: "workflow.gone")
         ]
         for light in [false, true] {
-            try await render(StudioView(viewModel: model), size: NSSize(width: 1100, height: 1300),
+            try await render(StudioView(viewModel: model), size: NSSize(width: 1100, height: 1000),
                              name: "hotkeys-page-\(light ? "light" : "dark")", light: light) { window in
                 #expect(SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.status.missing"), in: window))
                 #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.empty"), in: window))
+            }
+        }
+    }
+
+    @Test func `compact tables remove descriptions and keep columns aligned`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { store in
+            let shortcut = KeywordHotkey(binding: binding, keyword: "fy", pluginID: AskTranslatePlugin.id)
+            store.keywordHotkeys = [shortcut]
+            let viewModel = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
+                baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-compact-\(UUID())")
+            ), initialSection: .hotkeys)
+            for width: CGFloat in [520, 820] {
+                store.keywordHotkeys = [shortcut]
+                try await render(HotkeySettingsView(viewModel: viewModel, settingsStore: store, compact: width < 720),
+                                 size: NSSize(width: width, height: 1000),
+                                 name: "hotkeys-table-\(Int(width))") { window in
+                    let elements = SettingsBehaviorTestSupport.elements(in: window)
+                    func element(_ identifier: String) throws -> SettingsBehaviorTestSupport.Element {
+                        try #require(elements.first { $0.value("accessibilityIdentifier") as? String == identifier })
+                    }
+                    #expect(!SettingsBehaviorTestSupport.contains(L("studio.subheading.hotkeys"), in: window))
+                    #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.builtIn.activation.subtitle"), in: window))
+                    #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.action.openChat.subtitle"), in: window))
+                    let voice = try element("hotkeys.row.builtIn.activation").frame
+                    let keyword = try element("hotkeys.row.keyword." + shortcut.id.uuidString).frame
+                    #expect(abs(voice.height - keyword.height) < 1)
+                    let voiceKeys = try element("hotkeys.binding.builtIn.activation").frame
+                    let keywordKeys = try element("hotkeys.binding.keyword." + shortcut.id.uuidString).frame
+                    #expect(abs(voiceKeys.minX - keywordKeys.minX) < 1)
+                    let auxiliaryKeys = try element("hotkeys.binding.builtIn.auxiliary").frame
+                    let rowSpacing = abs(voiceKeys.midY - auxiliaryKeys.midY)
+                    #expect(rowSpacing >= 44 && rowSpacing <= 46)
+                    let add = try element("hotkeys.keyword.add").frame
+                    let search = try element("hotkeys.search.toggle").frame
+                    #expect(search.minY > voice.maxY)
+                    #expect(add.maxY < voice.minY)
+                    #expect(add.minY > keyword.maxY)
+                    #expect(!elements.contains { $0.value("accessibilityIdentifier") as? String == "hotkeys.search" })
+                    let toggle = try element("hotkeys.enabled." + shortcut.id.uuidString)
+                    try toggle.press()
+                    try await SettingsBehaviorTestSupport.wait { store.keywordHotkeys.first?.enabled == false }
+                    let keys = try element("hotkeys.binding.builtIn.activation")
+                    try keys.press()
+                    try await SettingsBehaviorTestSupport.wait {
+                        SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window)
+                    }
+                    try keys.press()
+                    try await SettingsBehaviorTestSupport.wait {
+                        !SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func `title search expands focuses filters and clears on close`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { store in
+            let viewModel = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
+                baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-search-\(UUID())")
+            ), initialSection: .hotkeys)
+            try await SettingsBehaviorTestSupport.withWindow(
+                HotkeySettingsView(viewModel: viewModel, settingsStore: store, compact: true), width: 520, height: 980
+            ) { window, _ in
+                let originalBinding = store.hotkey(.activation)
+                try SettingsBehaviorTestSupport.button(
+                    L("hotkeys.recordAccessibility", BuiltInHotkey.activation.title), in: window
+                ).press()
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window)
+                }
+                try SettingsBehaviorTestSupport.button(L("hotkeys.search"), in: window).press()
+                #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window))
+                try await SettingsBehaviorTestSupport.wait {
+                    window.firstResponder is NSTextView
+                }
+                let editor = try #require(window.firstResponder as? NSTextView)
+                editor.insertText("screenshot", replacementRange: NSRange(location: NSNotFound, length: 0))
+                try await SettingsBehaviorTestSupport.wait {
+                    !SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window)
+                }
+                #expect(SettingsBehaviorTestSupport.contains(BuiltInHotkey.screenshot.title, in: window))
+                #expect(store.hotkey(.activation) == originalBinding)
+                try SettingsBehaviorTestSupport.button(L("hotkeys.search.close"), in: window).press()
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window)
+                }
+                #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.search.close"), in: window))
+                try SettingsBehaviorTestSupport.button(L("hotkeys.search"), in: window).press()
+                try await SettingsBehaviorTestSupport.wait { window.firstResponder is NSTextView }
+                let reopened = try #require(window.firstResponder as? NSTextView)
+                #expect(reopened.string.isEmpty)
+                reopened.insertText("unmatched-shortcut", replacementRange: NSRange(location: NSNotFound, length: 0))
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains(L("hotkeys.noMatch", "unmatched-shortcut"), in: window)
+                }
+                let escape = try #require(NSEvent.keyEvent(
+                    with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                    windowNumber: window.windowNumber, context: nil,
+                    characters: "\u{1b}", charactersIgnoringModifiers: "\u{1b}", isARepeat: false, keyCode: 53
+                ))
+                window.sendEvent(escape)
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window)
+                }
             }
         }
     }

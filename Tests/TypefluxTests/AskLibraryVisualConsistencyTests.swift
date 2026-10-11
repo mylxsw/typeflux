@@ -29,12 +29,19 @@ struct AskLibraryVisualConsistencyTests {
                              at: .now.addingTimeInterval(-60), counts: true)
             }
             let wordController = AskWordBookWindowController()
+            let wordFrameName = "wordbook-visual-frame-\(UUID().uuidString)"
+            wordController.frameAutosaveName = wordFrameName
+            defer { NSWindow.removeFrame(usingName: wordFrameName) }
             wordController.configure(store: words, dictionary: AskTestWordLookup(answer: .card(card)),
                                      settings: settings, askAI: { _ in }, modelName: { "AI" })
             wordController.show(selecting: lookup.key)
             let wordWindow = try #require(wordController.window)
             let wordModel = try #require(wordController.model)
             defer { wordWindow.close() }
+            try await Task.sleep(for: .milliseconds(180))
+            let defaultHost = try #require(wordWindow.contentView)
+            let defaultLayout = AskLibraryLayout(width: defaultHost.bounds.width)
+            #expect(defaultLayout.sidebarInline, "the actual default window opens with its sidebar visible")
 
             let notes = makeTestNotes()
             let note = AskNote(title: "解释 · hell cat",
@@ -48,7 +55,7 @@ struct AskLibraryVisualConsistencyTests {
             let noteWindow = try #require(noteController.window)
             defer { noteWindow.close() }
 
-            for width in [1120, 1090, 1100, 900, 720, 1440, 1120] {
+            for width in [1320, 1120, 1090, 1100, 900, 720, 1440, 1120] {
                 let size = NSSize(width: width, height: 620)
                 let layout = AskLibraryLayout(width: CGFloat(width))
                 wordWindow.setContentSize(size)
@@ -56,7 +63,7 @@ struct AskLibraryVisualConsistencyTests {
                 wordWindow.setFrameOrigin(NSPoint(x: 80, y: 80))
                 noteWindow.setFrameOrigin(NSPoint(x: 80, y: 80))
                 try await Task.sleep(for: .milliseconds(180))
-                if width == 1120 || width == 720 {
+                if width == 1320 || width == 1120 || width == 720 {
                     try await capture(wordWindow, "wordbook-\(style.rawValue)-\(width)-dark.png", hiding: noteWindow)
                     try await capture(noteWindow, "notebook-\(style.rawValue)-\(width)-dark.png", hiding: wordWindow)
                 }
