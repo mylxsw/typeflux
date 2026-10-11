@@ -44,6 +44,27 @@ provider or account is used. The known report contains 1,240 input tokens,
 - `plutil -lint` passes for all five modified localization files;
   `git diff --check` passes.
 
+### Merge validation (2026-10-11)
+
+Merged `main` at `7643ff2d` and resolved conflicts in the launcher header,
+typing motion and settings fixtures. The shared hover helper now waits for a
+visible panel; motion retains context preparation and checks the settled home
+height. Native controls retain their accessibility press action, with the
+shared settings helper used for accessibility elements.
+
+```sh
+NSUnbufferedIO=YES TYPEFLUX_LOCAL_USAGE_SNAPSHOTS="$PWD/.build/gul320-merge-snapshots" \
+swift test --no-parallel --enable-code-coverage \
+  --filter 'AskLauncherHeaderTests|AskLauncherMotionTests|LauncherSettingsPolishTests|AskLocalUsageTests|AskLocalEngineTests|AskLocalLateUsageTests|AskUsage.*Tests|AskConversationVisualTests/renderLocalUsageSurfaces|LocalizationResourceTests|ExclusiveUIStateLanguageTests|AskScreenshotTextOrganizationTests|StatusBarWordBookMenuTests|DirectionalScrollStitcherTests'
+```
+
+Passed 42 XCTest cases and 76 Swift Testing tests in 10 suites, including all
+three resolved fixtures, local token accounting and rendering, and incoming
+screenshot text organization, word book and scroll stitcher regressions.
+`plutil -lint` passed for all five localization files and
+`git diff --cached --check` passed. Self-review confirmed both branches'
+changes and the original behavior assertions remain intact.
+
 ## Self-review
 
 Reviewed inference registration, receipt validation, aggregation, paging,

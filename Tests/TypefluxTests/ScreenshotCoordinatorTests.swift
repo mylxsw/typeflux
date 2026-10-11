@@ -590,6 +590,30 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         XCTAssertNil(sut.snapshot)
     }
 
+    func testManualHorizontalImageIsEditedAndCopiedAtItsFullSize() async throws {
+        let sut = await scrolling()
+        let page = ScrollCaptureFixtures.page(width: 120)
+        var stitcher = DirectionalScrollStitcher()
+        for offset in [0, 100, 180] {
+            let horizontal = ScrollCaptureFixtures.transpose(page.frameImage(offset: offset, scrollingHeight: 200))
+            _ = try stitcher.add(XCTUnwrap(ScrollFrame(image: horizontal)))
+        }
+        let image = try XCTUnwrap(stitcher.makeImage())
+        scrollCaptures[0].onFinish?(.finished(image, .user))
+        XCTAssertEqual(sut.state, .editingLongImage)
+        let presented = try XCTUnwrap(longEditor.presented.first)
+        XCTAssertEqual(presented.display.frame, CGRect(x: 0, y: 0, width: 190, height: 60))
+        XCTAssertEqual(presented.display.image.width, 380)
+        XCTAssertEqual(presented.display.image.height, 120)
+        let mark = ScreenshotAnnotation(kind: .rect(CGRect(x: 160, y: 10, width: 20, height: 20)))
+        longEditor.onEvent?(.finish(.copy, displayID: 1, rect: presented.display.frame, annotations: [mark]))
+        await sut.pendingTask?.value
+        XCTAssertEqual(output.copied, [Data("380x120@2".utf8)])
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertNil(sut.snapshot)
+        XCTAssertEqual(toasts.shown, [.copied])
+    }
+
     func testEndingsWithANoticeShowIt() async {
         for (ending, notice) in [(ScrollCaptureEnding.reachedLimit, ScreenshotToast.scrollLimitReached),
                                  (.cannotScroll, .scrollUnavailable), (.interrupted, .scrollInterrupted)] {

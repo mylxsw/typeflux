@@ -71,6 +71,8 @@ struct AskLauncherMotionTests {
             left: ((visible.width - min(AskMetrics.launcherWidth, visible.width - 40)) / 2).rounded(),
             fromTop: AskLauncherPlacement.screenMargin
         )]
+        // This test measures typing motion; give its baseline the already captured context.
+        await fixture.model.prepareLauncher()
         let controller = AskConversationWindowController(
             settings: settings,
             model: fixture.model,
@@ -89,7 +91,8 @@ struct AskLauncherMotionTests {
         let expectedHomeHeight = AskMetrics.launcherHeight(editor: 32, banners: 0,
             suggestions: AskLauncherSuggestions.height(for: fixture.model.launcherHome()))
         try await fixture.wait {
-            !controller.launcherIsResizing && abs(window.frame.height - expectedHomeHeight) < 1
+            content.layoutSubtreeIfNeeded()
+            return !controller.launcherIsResizing && abs(window.frame.height - expectedHomeHeight) < 1
         }
         #expect(abs(window.frame.height - expectedHomeHeight) < 1, "The captured home must finish its first layout")
         let homeHeight = window.frame.height

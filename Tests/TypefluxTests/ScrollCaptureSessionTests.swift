@@ -15,14 +15,18 @@ final class ScrollCaptureSessionTests: XCTestCase {
         private(set) var stops = 0
         var onError: (@Sendable (Error) -> Void)?
 
-        func start(_ region: ScrollCaptureRegion, onFrame: @escaping @Sendable (CGImage) -> Void,
+        func start(_ region: ScrollCaptureRegion, onFrame _: @escaping @Sendable (CGImage) -> Void,
                    onError: @escaping @Sendable (Error) -> Void) async throws {
             started.append(region)
             self.onError = onError
-            if let startError { throw startError }
+            if let startError {
+                throw startError
+            }
         }
 
-        func stop() { stops += 1 }
+        func stop() {
+            stops += 1
+        }
     }
 
     private final class Driver: ScrollDriving {
@@ -30,6 +34,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         var anchor: CGPoint?
         private(set) var begins: [CGRect] = []
         private(set) var scrolls: [CGFloat] = []
+        private(set) var axes: [ScrollCaptureAxis] = []
         private(set) var ends = 0
 
         func begin(in region: CGRect) {
@@ -37,15 +42,24 @@ final class ScrollCaptureSessionTests: XCTestCase {
             anchor = CGPoint(x: region.midX, y: region.midY)
         }
 
-        func scroll(by points: CGFloat) { scrolls.append(points) }
-        func end() { ends += 1 }
+        func scroll(by points: CGFloat, axis: ScrollCaptureAxis) {
+            scrolls.append(points)
+            axes.append(axis)
+        }
+
+        func end() {
+            ends += 1
+        }
     }
 
     private final class Monitor: ScrollUserActivityMonitoring {
         var handler: ((ScrollUserActivity) -> Void)?
         private(set) var stops = 0
 
-        func start(_ handler: @escaping (ScrollUserActivity) -> Void) { self.handler = handler }
+        func start(_ handler: @escaping (ScrollUserActivity) -> Void) {
+            self.handler = handler
+        }
+
         func stop() {
             stops += 1
             handler = nil
@@ -69,7 +83,9 @@ final class ScrollCaptureSessionTests: XCTestCase {
             previews.append(preview)
         }
 
-        func dismiss() { dismissals += 1 }
+        func dismiss() {
+            dismissals += 1
+        }
     }
 
     private let source = Source()
@@ -157,6 +173,10 @@ final class ScrollCaptureSessionTests: XCTestCase {
         advance(ScrollCaptureSession.quietInterval)
         await tick(session)
 
+        XCTAssertEqual(session.state.status, .manual)
+        XCTAssertTrue(driver.begins.isEmpty)
+        presenter.actions?.togglePause()
+        await tick(session)
         XCTAssertEqual(session.state.status, .scrolling)
         XCTAssertEqual(driver.begins, [region.rect])
         // 60% of 125 points.
@@ -188,6 +208,8 @@ final class ScrollCaptureSessionTests: XCTestCase {
         let session = makeSession()
         await start(session)
         await settle(session, 0)
+        presenter.actions?.togglePause()
+        await tick(session)
         await settle(session, 120)
 
         await settle(session, 120)
@@ -202,6 +224,8 @@ final class ScrollCaptureSessionTests: XCTestCase {
         let session = makeSession()
         await start(session)
         await settle(session, 0)
+        presenter.actions?.togglePause()
+        await tick(session)
 
         await timeOut(session)
         await timeOut(session)
@@ -218,6 +242,8 @@ final class ScrollCaptureSessionTests: XCTestCase {
         await start(session)
         session.receive(page.frameImage(offset: 0, scrollingHeight: 200))
         advance(ScrollCaptureSession.quietInterval)
+        await tick(session)
+        presenter.actions?.togglePause()
         await tick(session)
         XCTAssertEqual(session.stepPoints, 75, "The whole region before the bars are known")
 
@@ -240,7 +266,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
             await tick(session)
         }
 
-        XCTAssertEqual(session.state.status, .scrolling)
+        XCTAssertEqual(session.state.status, .manual)
     }
 
     // MARK: The user
@@ -249,6 +275,8 @@ final class ScrollCaptureSessionTests: XCTestCase {
         let session = makeSession()
         await start(session)
         await settle(session, 0)
+        presenter.actions?.togglePause()
+        await tick(session)
         let anchor = try? XCTUnwrap(driver.anchor)
 
         monitor.handler?(.moved(CGPoint(x: (anchor?.x ?? 0) + 3, y: anchor?.y ?? 0)))
@@ -280,6 +308,8 @@ final class ScrollCaptureSessionTests: XCTestCase {
         presenter.actions?.togglePause()
         XCTAssertEqual(session.state.status, .starting, "Nothing to pause before the first frame")
         await settle(session, 0)
+        presenter.actions?.togglePause()
+        await tick(session)
 
         monitor.handler?(.scrolled)
         XCTAssertEqual(session.state.status, .pausedByMouse)
@@ -302,8 +332,8 @@ final class ScrollCaptureSessionTests: XCTestCase {
         await start(session)
         await settle(session, 0)
 
-        XCTAssertEqual(session.state.status, .needsAccessibility)
-        XCTAssertFalse(session.state.canToggleAutomatic)
+        XCTAssertEqual(session.state.status, .manual)
+        XCTAssertTrue(session.state.canToggleAutomatic)
         presenter.actions?.togglePause()
         XCTAssertEqual(session.state.status, .needsAccessibility)
         presenter.actions?.openAccessibilitySettings()
@@ -339,12 +369,146 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
     }
 
+    func testManualIsTheDefaultAndIdleNeverFinishesOrMovesThePointer() async throws {
+        let session = makeSession()
+        await start(session)
+        await settle(session, 0)
+        XCTAssertEqual(session.state.status, .manual)
+        XCTAssertTrue(session.state.canToggleAutomatic)
+        await settle(session, 100)
+        await settle(session, 98)
+        await settle(session, 100)
+        for _ in 0 ..< 5 {
+            await timeOut(session)
+        }
+        XCTAssertTrue(driver.scrolls.isEmpty)
+        XCTAssertTrue(driver.begins.isEmpty)
+        XCTAssertTrue(session.isActive)
+        XCTAssertEqual(session.stitcher.segments.count, 2)
+        presenter.actions?.finish()
+        XCTAssertEqual(try XCTUnwrap(finishedImage).0.height, 350)
+    }
+
+    func testWheelBurstsAreDebouncedButContinuousScrollingKeepsOverlap() async {
+        let session = makeSession()
+        await start(session)
+        await settle(session, 0)
+        monitor.handler?(.scrolled)
+        session.receive(frame(40))
+        advance(0.1)
+        monitor.handler?(.scrolled)
+        session.receive(frame(80))
+        await tick(session)
+        XCTAssertEqual(session.stitcher.segments.count, 1)
+        advance(0.1)
+        monitor.handler?(.scrolled)
+        session.receive(frame(120))
+        await tick(session)
+        XCTAssertEqual(session.stitcher.segments.count, 1)
+        advance(0.1)
+        monitor.handler?(.scrolled)
+        session.receive(frame(150))
+        await tick(session)
+        XCTAssertEqual(session.state.pixelSize.height, 400, "Intermediate sample retains overlap during a gesture")
+        XCTAssertEqual(session.stitcher.segments.count, 2)
+        XCTAssertTrue(driver.scrolls.isEmpty)
+    }
+
+    func testManualHorizontalCaptureCanFinishOrOptIntoHorizontalAutomaticAndUndo() async throws {
+        let session = makeSession()
+        await start(session)
+        for offset in [0, 100, 180] {
+            session.receive(Fixtures.transpose(frame(offset)))
+            advance(ScrollCaptureSession.quietInterval)
+            await tick(session)
+        }
+        XCTAssertEqual(session.state.axis, .horizontal)
+        XCTAssertEqual(session.state.pixelSize, ScreenPixelSize(width: 430, height: page.width))
+        XCTAssertEqual(presenter.previews.last?.axis, .horizontal)
+        XCTAssertTrue(driver.scrolls.isEmpty)
+        presenter.actions?.togglePause()
+        await tick(session)
+        XCTAssertEqual(driver.axes, [.horizontal])
+        presenter.actions?.undo()
+        XCTAssertEqual(driver.scrolls.last, -40, "Undo rewinds columns in points")
+        XCTAssertEqual(driver.axes.last, .horizontal)
+        XCTAssertEqual(session.state.pixelSize.width, 350)
+        presenter.actions?.finish()
+        XCTAssertEqual(try XCTUnwrap(finishedImage).0.width, 350)
+    }
+
+    func testManualUndoDoesNotSendScrollEvents() async {
+        let session = makeSession()
+        await start(session)
+        await settle(session, 0)
+        await settle(session, 100)
+        presenter.actions?.undo()
+        XCTAssertEqual(session.state.pixelSize.height, 250)
+        XCTAssertTrue(driver.scrolls.isEmpty)
+        XCTAssertTrue(driver.begins.isEmpty)
+        await settle(session, 100)
+        XCTAssertEqual(session.state.pixelSize.height, 250, "Idle frames do not restore the removed segment")
+        monitor.handler?(.scrolled)
+        await settle(session, 60)
+        XCTAssertEqual(session.state.pixelSize.height, 310)
+    }
+
+    func testStartingAutomaticDuringHorizontalAnalysisKeepsItsResult() async {
+        let session = makeSession()
+        await start(session)
+        session.receive(Fixtures.transpose(frame(0)))
+        await tick(session)
+        session.receive(Fixtures.transpose(frame(100)))
+        advance(ScrollCaptureSession.quietInterval)
+        session.tick()
+        presenter.actions?.togglePause()
+        await session.analysis?.value
+        XCTAssertEqual(session.state.axis, .horizontal)
+        XCTAssertEqual(session.state.pixelSize.width, 350)
+        XCTAssertEqual(driver.axes, [.horizontal])
+    }
+
+    func testCancellingBeforeStreamStartCancelsTheStartTask() async {
+        let session = makeSession()
+        session.start { [unowned self] in results.append($0) }
+        session.cancel()
+        await session.startTask?.value
+        XCTAssertTrue(session.startTask?.isCancelled == true)
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(source.stops, 1)
+    }
+
+    func testAccessibilityCanBeGrantedAfterAutomaticWasRequested() async {
+        driver.canScroll = false
+        let session = makeSession()
+        await start(session)
+        await settle(session, 0)
+        presenter.actions?.togglePause()
+        XCTAssertEqual(session.state.status, .needsAccessibility)
+        driver.canScroll = true
+        presenter.actions?.togglePause()
+        await tick(session)
+        XCTAssertEqual(session.state.status, .scrolling)
+        XCTAssertEqual(driver.scrolls, [75])
+    }
+
+    func testAnAlreadyFullInitialFrameFinishesAtTheLimit() async throws {
+        let session = makeSession(maxPixels: page.width * 250)
+        await start(session)
+        await settle(session, 0)
+        XCTAssertEqual(try XCTUnwrap(finishedImage).1, .reachedLimit)
+        XCTAssertFalse(session.isActive)
+        XCTAssertTrue(driver.scrolls.isEmpty)
+    }
+
     // MARK: Problems
 
     func testFramesThatDoNotLineUpPauseAutomaticScrolling() async {
         let session = makeSession()
         await start(session)
         await settle(session, 0)
+        presenter.actions?.togglePause()
+        await tick(session)
         let noise = { (seed: UInt64) in Fixtures.noise(width: self.page.width, height: 250, seed: seed) }
 
         for seed: UInt64 in 1 ... 3 {
@@ -358,17 +522,21 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertEqual(session.state.status, .scrolling, "Space tries again")
     }
 
-    func testAFlaggedSegmentShowsAndUndoScrollsBack() async {
+    func testAFlaggedSegmentShowsAndUndoScrollsBack() async throws {
         let session = makeSession()
         await start(session)
         await settle(session, 0)
+        presenter.actions?.togglePause()
+        await tick(session)
         await settle(session, 150)
         var bytes = Fixtures.bytes(of: page.frameImage(offset: 300, scrollingHeight: 250))
         // Rows in the middle of the overlap, so they cannot pass for a band under a pinned header.
         for index in stride(from: page.width * 4 * 40, to: page.width * 4 * 65, by: 1) where index % 4 != 3 {
             bytes[index] = 255 - bytes[index]
         }
-        session.receive(Fixtures.Pixels(width: page.width, height: 250, bytes: bytes).makeImage(space: Fixtures.space)!)
+        try session
+            .receive(XCTUnwrap(Fixtures.Pixels(width: page.width, height: 250, bytes: bytes)
+                    .makeImage(space: Fixtures.space)))
         advance(ScrollCaptureSession.quietInterval)
         await tick(session)
         XCTAssertTrue(session.state.lastSegmentSuspicious)
@@ -391,6 +559,8 @@ final class ScrollCaptureSessionTests: XCTestCase {
         let session = makeSession()
         await start(session)
         await settle(session, 0)
+        presenter.actions?.togglePause()
+        await tick(session)
         presenter.actions?.undo()
         XCTAssertFalse(session.state.canUndo, "Nothing to undo yet")
         await settle(session, 150)
@@ -467,7 +637,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
     }
 
-    func testTheTimerTicksOnTheMainRunLoop() async {
+    func testTheTimerTicksOnTheMainRunLoop() {
         var ticks = 0
         let stop = ScrollCaptureSession.repeatingTimer(0.01) { ticks += 1 }
         let deadline = Date().addingTimeInterval(2)
@@ -538,6 +708,8 @@ final class ScrollCaptureSessionTests: XCTestCase {
         let session = makeSession()
         await start(session)
         await settle(session, 0)
+        presenter.actions?.togglePause()
+        await tick(session)
         XCTAssertEqual(driver.scrolls.count, 1)
         session.receive(frame(150))
         advance(ScrollCaptureSession.quietInterval)

@@ -1,7 +1,7 @@
 import AppKit
 
-/// The joined image so far, scaled to the strip's width and pinned to its newest rows. The newest
-/// segment is outlined, doubtful segments are tinted orange and a pinned header green.
+/// The joined image so far, scaled across the capture axis and pinned to its newest edge. The newest
+/// segment is outlined, doubtful segments are tinted orange and a pinned top or left bar green.
 @MainActor
 final class ScrollCapturePreviewView: NSView {
     static let inset: CGFloat = 8
@@ -15,39 +15,58 @@ final class ScrollCapturePreviewView: NSView {
         var isNewest: Bool
     }
 
+    struct Layout {
+        var segments: [Placement]
+        var header: CGRect?
+        var footer: CGRect?
+    }
+
     var preview = ScrollCapturePreview() {
         didSet { needsDisplay = true }
     }
 
-    override var isFlipped: Bool { true }
+    override var isFlipped: Bool {
+        true
+    }
 
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    override func hitTest(_: NSPoint) -> NSView? {
+        nil
+    }
 
-    /// Where the segments, the header and the bottom bar go: scaled to the width and, when taller
-    /// than the strip, shifted up so the newest rows show.
-    static func layout(_ preview: ScrollCapturePreview,
-                       in bounds: CGRect) -> (segments: [Placement], header: CGRect?, footer: CGRect?) {
+    /// Places the segments and fixed bars along the capture axis, keeping the newest pixels visible.
+    static func layout(_ preview: ScrollCapturePreview, in bounds: CGRect) -> Layout {
         let area = bounds.insetBy(dx: inset, dy: inset)
-        guard preview.width > 0, area.width > 0, area.height > 0 else { return ([], nil, nil) }
-        let scale = area.width / CGFloat(preview.width)
-        let footerHeight = CGFloat(preview.footer?.height ?? 0) * scale
-        let total = preview.segments.reduce(CGFloat(0)) { $0 + CGFloat($1.height) * scale } + footerHeight
-        var top = area.minY - max(0, total - area.height)
+        guard preview.width > 0, area.width > 0, area.height > 0 else {
+            return Layout(segments: [], header: nil, footer: nil)
+        }
+        let horizontal = preview.axis == .horizontal
+        let crossLength = horizontal ? preview.segments.first?.image.height ?? 0 : preview.width
+        guard crossLength > 0 else { return Layout(segments: [], header: nil, footer: nil) }
+        let scale = (horizontal ? area.height : area.width) / CGFloat(crossLength)
+        func length(_ image: CGImage) -> CGFloat {
+            CGFloat(horizontal ? image.width : image.height) * scale
+        }
+        func rect(at position: CGFloat, length: CGFloat) -> CGRect {
+            horizontal
+                ? CGRect(x: position, y: area.minY, width: length, height: area.height)
+                : CGRect(x: area.minX, y: position, width: area.width, height: length)
+        }
+        let footerLength = preview.footer.map(length) ?? 0
+        let total = preview.segments.reduce(CGFloat(0)) { $0 + length($1.image) } + footerLength
+        var position = (horizontal ? area.minX : area.minY) - max(0, total - (horizontal ? area.width : area.height))
         var placements: [Placement] = []
         for (index, segment) in preview.segments.enumerated() {
-            let height = CGFloat(segment.height) * scale
-            placements.append(Placement(frame: CGRect(x: area.minX, y: top, width: area.width, height: height),
+            let extent = length(segment.image)
+            placements.append(Placement(frame: rect(at: position, length: extent),
                                         isSuspicious: segment.isSuspicious,
                                         isNewest: index > 0 && index == preview.segments.count - 1))
-            top += height
+            position += extent
         }
         let header = preview.headerHeight > 0 ? placements.first.map {
-            CGRect(x: $0.frame.minX, y: $0.frame.minY, width: $0.frame.width,
-                   height: CGFloat(preview.headerHeight) * scale)
+            rect(at: horizontal ? $0.frame.minX : $0.frame.minY, length: CGFloat(preview.headerHeight) * scale)
         } : nil
-        let footer = preview.footer == nil ? nil
-            : CGRect(x: area.minX, y: top, width: area.width, height: footerHeight)
-        return (placements, header, footer)
+        let footer = preview.footer == nil ? nil : rect(at: position, length: footerLength)
+        return Layout(segments: placements, header: header, footer: footer)
     }
 
     override func draw(_ dirtyRect: NSRect) {

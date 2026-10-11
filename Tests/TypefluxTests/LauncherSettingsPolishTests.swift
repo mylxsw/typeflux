@@ -427,13 +427,6 @@ struct LauncherSettingsPolishTests {
             }
             target = view.superview
         }
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                        timestamp: ProcessInfo.processInfo.systemUptime,
-                                                        windowNumber: window.windowNumber,
-                                                        context: nil, eventNumber: 0, clickCount: 1,
-                                                        pressure: type == .leftMouseDown ? 1 : 0))
-            NSApp.sendEvent(event)
-        }
+        try SettingsBehaviorTestSupport.Element(object: element.object).press()
     }
 }

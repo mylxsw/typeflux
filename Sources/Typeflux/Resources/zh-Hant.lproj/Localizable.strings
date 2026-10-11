@@ -4225,6 +4225,8 @@
 "screenshot.mode.scrolling" = "滾動截圖";
 "screenshot.mode.scrolling.short" = "滾動";
 "screenshot.tool.scroll" = "滾動截圖";
+"screenshot.scroll.status.manual" = "手動向下或向右捲動 · 空白鍵開啟自動";
+"screenshot.scroll.automatic" = "自動捲動";
 "screenshot.scroll.status.starting" = "正在準備…";
 "screenshot.scroll.status.scrolling" = "正在自動滾動 · 動滑鼠即可接管";
 "screenshot.scroll.status.paused" = "已暫停 · 可以手動滾動，按空白鍵繼續";
@@ -4253,6 +4255,9 @@
 "screenshot.text.askAI" = "關於這段截圖中的文字：\n\n%@";
 "screenshot.text.meta" = "%d 行 · %@";
 "screenshot.text.source" = "本機辨識";
+"screenshot.text.organize" = "一鍵整理";
+"screenshot.text.original" = "顯示原文";
+"screenshot.text.organize.empty" = "AI 未傳回整理結果，請重試或顯示原文。";
 "screenshot.translate.unavailable" = "翻譯沒有可用的關鍵詞，請在啟動器的關鍵詞設定中新增";
 "screenshot.ask.attachmentName" = "截圖";
 "screenshot.ask.attachmentPart" = "截圖 %d/%d";

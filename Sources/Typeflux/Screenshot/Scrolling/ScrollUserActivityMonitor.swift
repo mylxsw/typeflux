@@ -6,6 +6,7 @@ enum ScrollUserActivity: Equatable {
     case clicked
     /// The pointer moved, to this point in global Quartz points.
     case moved(CGPoint)
+    case dragged(CGPoint)
 }
 
 /// Watches for the user's own mouse input in other apps, so automatic scrolling can step aside.
@@ -33,7 +34,9 @@ final class ScrollUserActivityMonitor: ScrollUserActivityMonitoring {
     }
 
     func stop() {
-        if let monitor { NSEvent.removeMonitor(monitor) }
+        if let monitor {
+            NSEvent.removeMonitor(monitor)
+        }
         monitor = nil
     }
 
@@ -44,7 +47,8 @@ final class ScrollUserActivityMonitor: ScrollUserActivityMonitoring {
         switch type {
         case .scrollWheel: return .scrolled
         case .leftMouseDown, .rightMouseDown, .otherMouseDown: return .clicked
-        case .mouseMoved, .leftMouseDragged: return .moved(location)
+        case .mouseMoved: return .moved(location)
+        case .leftMouseDragged: return .dragged(location)
         default: return nil
         }
     }

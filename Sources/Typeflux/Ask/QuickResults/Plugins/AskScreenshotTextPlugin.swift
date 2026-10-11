@@ -12,7 +12,8 @@ struct AskScreenshotTextSource: Sendable {
 
 /// `ocr` / `取字`: frames a region and shows its text in the launcher. Return copies it, ⌥↩
 /// types it into the app, ⇥ translates it, ⌘↩ asks the AI about the screenshot, ⌘S saves it
-/// to the notes and ⌘R takes a new screenshot. With no screenshot waiting, Return starts one.
+/// to the notes and ⌘R takes a new screenshot. Organize sends the recognized text to the
+/// text-processing model and displays Markdown. With no screenshot waiting, Return starts one.
 struct AskScreenshotTextPlugin: AskLauncherPlugin {
     static let id = "screenshot.text"
     static let keywords = [
@@ -24,6 +25,8 @@ struct AskScreenshotTextPlugin: AskLauncherPlugin {
 
     /// The screenshot waiting in the launcher, if any.
     var screenshot: @MainActor @Sendable () -> AskScreenshotTextSource? = { nil }
+    var generator: (any AskTextGenerating)?
+    var modelName: @Sendable () -> String = { "AI" }
     var savesNotes = false
     /// A read-only Screen Recording check; never prompts.
     var isPermissionGranted: @Sendable () -> Bool = { CGPreflightScreenCaptureAccess() }
@@ -44,6 +47,11 @@ struct AskScreenshotTextPlugin: AskLauncherPlugin {
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
         if let source = await screenshot() {
+            if request.options[Self.organizeOption] == source.id.uuidString {
+                return AskPluginPlan(mode: .onSubmit, title: L("screenshot.text.organize"),
+                                     values: [Self.sourceValue: source.id.uuidString,
+                                              Self.organizeOption: source.id.uuidString])
+            }
             return AskPluginPlan(mode: .live, title: title, values: [Self.sourceValue: source.id.uuidString],
                                  debounce: .zero)
         }
@@ -58,6 +66,11 @@ struct AskScreenshotTextPlugin: AskLauncherPlugin {
             throw CancellationError()
         }
         let recognized = try await source.recognition.value
+        try Task.checkCancellation()
+        if plan.values[Self.organizeOption] == source.id.uuidString {
+            return try await organize(recognized, source: source, keyword: request.keyword.keyword,
+                                      progress: progress)
+        }
         return try Self.output(recognized, source: source, keyword: request.keyword.keyword, savesNotes: savesNotes)
     }
 
@@ -75,6 +88,7 @@ struct AskScreenshotTextPlugin: AskLauncherPlugin {
         var actions = [
             AskPluginAction(kind: .copy(text), title: L("ask.plugin.action.copy"), symbol: "doc.on.doc",
                             shortcut: .enter),
+            organizeAction(source.id),
             AskPluginAction(kind: .writeBack(text), title: L("screenshot.text.writeBack"), symbol: "text.insert",
                             shortcut: .optionEnter),
             AskPluginAction(kind: .translate(text), title: L("screenshot.followUp.translate"),

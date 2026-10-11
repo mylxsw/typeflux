@@ -12,8 +12,8 @@ protocol ScrollDriving: AnyObject {
     /// Puts the pointer inside the region (global Quartz points) when it is elsewhere, so the wheel
     /// events reach the app there; `end()` puts it back.
     func begin(in region: CGRect)
-    /// Scrolls the content down by about `points`; negative scrolls back up.
-    func scroll(by points: CGFloat)
+    /// Scrolls forward along `axis` by about `points`; negative scrolls back.
+    func scroll(by points: CGFloat, axis: ScrollCaptureAxis)
     /// Puts the pointer back where it was, unless the user has moved it since.
     func end()
 }
@@ -49,7 +49,9 @@ final class ScrollDriver: ScrollDriving {
         self.post = post
     }
 
-    var canScroll: Bool { isTrusted() }
+    var canScroll: Bool {
+        isTrusted()
+    }
 
     func begin(in region: CGRect) {
         let pointer = pointerLocation()
@@ -63,8 +65,8 @@ final class ScrollDriver: ScrollDriving {
         warp(center)
     }
 
-    func scroll(by points: CGFloat) {
-        guard let event = Self.wheelEvent(points: points, at: anchor ?? pointerLocation()) else { return }
+    func scroll(by points: CGFloat, axis: ScrollCaptureAxis = .vertical) {
+        guard let event = Self.wheelEvent(points: points, axis: axis, at: anchor ?? pointerLocation()) else { return }
         post(event)
     }
 
@@ -79,12 +81,13 @@ final class ScrollDriver: ScrollDriving {
         warp(restoreLocation)
     }
 
-    /// A pixel wheel event that scrolls the content down by `points` (up when negative), marked as Typeflux's.
-    static func wheelEvent(points: CGFloat, at location: CGPoint) -> CGEvent? {
+    /// A pixel wheel event along the selected axis, marked as Typeflux's; negative points rewind.
+    static func wheelEvent(points: CGFloat, axis: ScrollCaptureAxis = .vertical, at location: CGPoint) -> CGEvent? {
         guard points.isFinite else { return nil }
-        let delta = Int32(clamping: Int(-points.rounded()))
-        guard let event = CGEvent(scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 1, wheel1: delta,
-                                  wheel2: 0, wheel3: 0) else { return nil }
+        let delta = Int32(min(max(-points.rounded(), CGFloat(Int32.min)), CGFloat(Int32.max)))
+        guard let event = CGEvent(scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 2,
+                                  wheel1: axis == .vertical ? delta : 0,
+                                  wheel2: axis == .horizontal ? delta : 0, wheel3: 0) else { return nil }
         event.location = location
         event.setIntegerValueField(.eventSourceUserData, value: ScrollDriverEventMark.userData)
         return event

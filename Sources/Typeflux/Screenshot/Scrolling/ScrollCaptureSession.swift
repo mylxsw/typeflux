@@ -1,99 +1,18 @@
 import CoreGraphics
 import Foundation
 
-/// How a scrolling capture ended with an image.
-enum ScrollCaptureEnding: Equatable {
-    /// ↩ or the Done button.
-    case user
-    /// Several scrolls in a row changed nothing: the bottom.
-    case reachedEnd
-    case reachedLimit
-    /// The region never scrolled; only the first frame is there.
-    case cannotScroll
-    /// The stream stopped (a display went away, the window closed); what was joined so far is kept.
-    case interrupted
-}
-
-enum ScrollCaptureResult {
-    case finished(CGImage, ScrollCaptureEnding)
-    case cancelled
-    /// Nothing was captured.
-    case failed
-}
-
-/// What the bar under the region shows.
-struct ScrollCaptureViewState: Equatable {
-    enum Status: Equatable {
-        /// Waiting for the first frame.
-        case starting
-        case scrolling
-        /// ␣ paused it; the user can scroll by hand.
-        case paused
-        /// The user used the mouse, so automatic scrolling stepped aside.
-        case pausedByMouse
-        /// Several frames in a row did not line up; scrolling by hand from here.
-        case misaligned
-        /// No Accessibility access: only scrolling by hand.
-        case needsAccessibility
-    }
-
-    var status: Status = .starting
-    var pixelSize = ScreenPixelSize(width: 0, height: 0)
-    var canUndo = false
-    /// The newest segment did not line up well.
-    var lastSegmentSuspicious = false
-
-    var isAutomatic: Bool { status == .scrolling }
-    /// ␣ resumes from any pause; without Accessibility there is nothing to resume.
-    var canToggleAutomatic: Bool { status != .needsAccessibility && status != .starting }
-}
-
-/// The stitched image so far, for the preview strip.
-struct ScrollCapturePreview {
-    var segments: [ScrollStitcher.Segment] = []
-    var footer: CGImage?
-    var headerHeight = 0
-    var width = 0
-}
-
-/// The buttons and keys of the scrolling capture bar.
-struct ScrollCaptureActions {
-    var togglePause: () -> Void
-    var undo: () -> Void
-    var cancel: () -> Void
-    var finish: () -> Void
-    var openAccessibilitySettings: () -> Void
-}
-
-/// The dimmed surroundings, the region's outline, the bar and the preview.
+/// Live frames are joined after the wheel and picture settle. Captures start in manual mode;
+/// automatic scrolling is an explicit action, and mouse input returns control to the user.
+/// A bounded sampling interval retains overlap during continuous scrolling or animated content.
 @MainActor
-protocol ScrollCapturePresenting: AnyObject {
-    func present(_ region: ScrollCaptureRegion, actions: ScrollCaptureActions)
-    func update(_ state: ScrollCaptureViewState, preview: ScrollCapturePreview)
-    func dismiss()
-}
-
-/// The scrolling capture that `ScreenshotCoordinator` runs.
-@MainActor
-protocol ScrollCapturing: AnyObject {
-    func start(onFinish: @escaping (ScrollCaptureResult) -> Void)
-    func cancel()
-}
-
-/// One scrolling capture: live frames of the region go to `ScrollStitcher`, the region is scrolled
-/// step by step (about 60% of its height each), and the session ends at the bottom, at the size
-/// limit, or when the user finishes or cancels.
-///
-/// A frame is only joined once the picture holds still for `quietInterval`, or after `maxWait` for
-/// pages that never hold still. Only that frame is analyzed, off the main thread; while it is, no
-/// step is sent or timed out. The user's own mouse input pauses automatic scrolling; frames from
-/// scrolling by hand are joined the same way.
-@MainActor
+// swiftlint:disable:next type_body_length
 final class ScrollCaptureSession: ScrollCapturing {
     /// Each automatic step scrolls this share of the scrolling part of the region.
     static let stepShare: CGFloat = 0.6
     static let quietInterval: TimeInterval = 0.25
     static let maxWait: TimeInterval = 1.2
+    /// Retain overlapping intermediate frames while the user keeps scrolling.
+    static let manualSampleInterval: TimeInterval = 0.25
     /// After a step, nothing at all arriving for this long means nothing moved.
     static let stepTimeout: TimeInterval = 0.7
     /// This many steps in a row without change end the capture.
@@ -106,12 +25,24 @@ final class ScrollCaptureSession: ScrollCapturing {
 
     private enum Step {
         case forward
-        /// Scrolling back up after an undo: its result is not a step that "changed nothing".
+        /// Scrolling back after an undo: its result is not a step that "changed nothing".
         case rewind
     }
 
+    private struct PendingFrame {
+        let image: CGImage
+        let arrived: Date
+        let since: Date
+    }
+
+    private struct StepFlight {
+        let kind: Step
+        let sent: Date
+        let points: CGFloat
+    }
+
     let region: ScrollCaptureRegion
-    private(set) var stitcher: ScrollStitcher
+    private(set) var stitcher: DirectionalScrollStitcher
     private(set) var state = ScrollCaptureViewState()
     private(set) var isActive = false
 
@@ -128,7 +59,9 @@ final class ScrollCaptureSession: ScrollCapturing {
     private var onFinish: ((ScrollCaptureResult) -> Void)?
     private var stopTicking: (() -> Void)?
     /// The newest image not joined yet, when it arrived, and when the first unjoined one arrived.
-    private var pending: (image: CGImage, arrived: Date, since: Date)?
+    private var pending: PendingFrame?
+    private var lastScroll: Date?
+    private var awaitingScrollAfterUndo = false
     /// The settled image being analyzed.
     private var analyzing: CGImage?
     /// Its analysis, so tests can wait for it.
@@ -136,7 +69,7 @@ final class ScrollCaptureSession: ScrollCapturing {
     /// Bumped by every change to the stitcher, so an analysis started before an undo is dropped.
     private var stitcherVersion = 0
     /// The step in flight: its kind, when it went out and how far it scrolls, in points.
-    private var step: (kind: Step, sent: Date, points: CGFloat)?
+    private var step: StepFlight?
     private var unchangedSteps = 0
     private var failures = 0
     private var hasDriven = false
@@ -151,7 +84,8 @@ final class ScrollCaptureSession: ScrollCapturing {
          estimator: (any ScrollOffsetEstimating)? = VisionScrollOffsetEstimator(),
          maxPixels: Int = ScrollStitcher.defaultMaxPixels,
          now: @escaping () -> Date = Date.init,
-         schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> () -> Void = ScrollCaptureSession
+         schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> ()
+             -> Void = ScrollCaptureSession
              .repeatingTimer,
          openAccessibilitySettings: @escaping () -> Void = {
              Task { await PrivacyGuard.requestPermission(.accessibility) }
@@ -166,7 +100,7 @@ final class ScrollCaptureSession: ScrollCapturing {
         self.schedule = schedule
         self.openAccessibilitySettings = openAccessibilitySettings
         self.analyze = analyze
-        stitcher = ScrollStitcher(maxPixels: maxPixels, estimator: estimator)
+        stitcher = DirectionalScrollStitcher(maxPixels: maxPixels, estimator: estimator)
     }
 
     func start(onFinish: @escaping (ScrollCaptureResult) -> Void) {
@@ -186,9 +120,9 @@ final class ScrollCaptureSession: ScrollCapturing {
         let source = source, region = region
         startTask = Task { [weak self] in
             do {
-                try await source.start(region, onFrame: { image in
+                try await source.start(region, onFrame: { [weak self] image in
                     Task { @MainActor [weak self] in self?.receive(image) }
-                }, onError: { _ in
+                }, onError: { [weak self] _ in
                     Task { @MainActor [weak self] in self?.streamStopped() }
                 })
             } catch {
@@ -206,24 +140,33 @@ final class ScrollCaptureSession: ScrollCapturing {
     // MARK: Frames
 
     func receive(_ image: CGImage) {
-        guard isActive else { return }
+        guard isActive, !awaitingScrollAfterUndo else { return }
         let time = now()
-        pending = (image, time, pending?.since ?? time)
+        pending = PendingFrame(image: image, arrived: time, since: pending?.since ?? time)
     }
 
     /// Joins a frame once the picture holds still, and sends the next automatic step.
     func tick() {
         guard isActive, analysis == nil else { return }
+        if stitcher.isEmpty, let pending {
+            self.pending = nil
+            startAnalysis(of: pending.image)
+            return
+        }
         let time = now()
-        if let pending, time.timeIntervalSince(pending.arrived) >= Self.quietInterval
-            || time.timeIntervalSince(pending.since) >= Self.maxWait {
+        let wait = state.isAutomatic ? Self.maxWait : Self.manualSampleInterval
+        if let pending, (time.timeIntervalSince(pending.arrived) >= Self.quietInterval
+            && lastScroll.map { time.timeIntervalSince($0) >= Self.quietInterval } != false)
+            || time.timeIntervalSince(pending.since) >= wait {
             self.pending = nil
             startAnalysis(of: pending.image)
             return
         } else if pending == nil, let step, time.timeIntervalSince(step.sent) >= Self.stepTimeout {
             // The step moved nothing on screen, so no frame came.
             self.step = nil
-            if step.kind == .forward { countUnchangedStep() }
+            if step.kind == .forward {
+                countUnchangedStep()
+            }
         }
         stepIfReady()
     }
@@ -232,6 +175,7 @@ final class ScrollCaptureSession: ScrollCapturing {
     /// (a blinking caret, a spinner, a video); they do not hold scrolling up.
     private func stepIfReady() {
         guard isActive, state.status == .scrolling, step == nil, analysis == nil, !stitcher.isEmpty else { return }
+        stitcher.lockAxisForAutomatic()
         sendStep(.forward, points: stepPoints)
     }
 
@@ -243,7 +187,10 @@ final class ScrollCaptureSession: ScrollCapturing {
         // In pixels; the step's own distance is usually exactly how far the content moved.
         let expected = step.map { Int(($0.kind == .forward ? $0.points : -$0.points) * max(region.scale, 1)) }
         analysis = Task { [weak self] in
-            let result = await Task.detached(priority: .userInitiated) { () -> (ScrollStitcher.Outcome, ScrollStitcher)? in
+            let result = await Task.detached(priority: .userInitiated) { () -> (
+                ScrollStitcher.Outcome,
+                DirectionalScrollStitcher
+            )? in
                 guard let frame = analyze(image) else { return nil }
                 var stitcher = copy
                 let outcome = stitcher.add(frame, expectedShift: expected)
@@ -267,12 +214,18 @@ final class ScrollCaptureSession: ScrollCapturing {
         step = nil
         switch outcome {
         case .started:
-            state.status = driver.canScroll ? .scrolling : .needsAccessibility
+            state.status = .manual
+            if stitcher.isFull {
+                finish(.reachedLimit)
+                return
+            }
         case let .appended(_, suspicious):
             unchangedSteps = 0
             failures = suspicious ? failures + 1 : 0
         case .unchanged:
-            if finishedStep?.kind == .forward { countUnchangedStep() }
+            if finishedStep?.kind == .forward {
+                countUnchangedStep()
+            }
         case .scrolledBack:
             break
         case .unaligned:
@@ -308,8 +261,8 @@ final class ScrollCaptureSession: ScrollCapturing {
         }
         // Only what the screen shows after this step counts for it.
         pending = nil
-        driver.scroll(by: kind == .forward ? points : -points)
-        step = (kind, now(), points)
+        driver.scroll(by: kind == .forward ? points : -points, axis: stitcher.axis ?? .vertical)
+        step = StepFlight(kind: kind, sent: now(), points: points)
     }
 
     // MARK: Controls
@@ -319,7 +272,19 @@ final class ScrollCaptureSession: ScrollCapturing {
         switch state.status {
         case .scrolling:
             state.status = .paused
-        case .paused, .pausedByMouse, .misaligned:
+            step = nil
+            unchangedSteps = 0
+        case .manual, .paused, .pausedByMouse, .misaligned, .needsAccessibility:
+            guard driver.canScroll else {
+                state.status = .needsAccessibility
+                publish()
+                return
+            }
+            // An analysis already in flight chooses the axis before the first automatic step.
+            if analysis == nil {
+                stitcher.lockAxisForAutomatic()
+            }
+            awaitingScrollAfterUndo = false
             failures = 0
             unchangedSteps = 0
             step = nil
@@ -327,7 +292,7 @@ final class ScrollCaptureSession: ScrollCapturing {
             // The user may have moved the pointer away; put it back in the region.
             driver.begin(in: region.rect)
             hasDriven = true
-        case .starting, .needsAccessibility:
+        case .starting:
             return
         }
         publish()
@@ -337,20 +302,38 @@ final class ScrollCaptureSession: ScrollCapturing {
     /// next frame lines up with the one before.
     func undo() {
         guard isActive else { return }
-        let removed = stitcher.segments.last?.height ?? 0
+        let removed = stitcher.segments.last.map {
+            stitcher.axis == .horizontal ? $0.image.width : $0.height
+        } ?? 0
         guard stitcher.removeLastSegment() else { return }
         stitcherVersion += 1
+        pending = nil
+        analyzing = nil
         failures = 0
         unchangedSteps = 0
         if state.status == .scrolling {
-            pending = nil
             sendStep(.rewind, points: CGFloat(removed) / max(region.scale, 1))
+        } else {
+            // The unchanged viewport must not immediately restore the segment just removed.
+            awaitingScrollAfterUndo = true
         }
         publish()
     }
 
     func userActivity(_ activity: ScrollUserActivity) {
-        guard isActive, state.status == .scrolling else { return }
+        guard isActive else { return }
+        if activity == .scrolled {
+            lastScroll = now()
+            awaitingScrollAfterUndo = false
+        }
+        if case .dragged = activity {
+            lastScroll = now()
+            awaitingScrollAfterUndo = false
+        }
+        if activity == .clicked {
+            awaitingScrollAfterUndo = false
+        }
+        guard state.status == .scrolling else { return }
         if case let .moved(point) = activity, let anchor = driver.anchor,
            hypot(point.x - anchor.x, point.y - anchor.y) <= Self.pointerTolerance {
             return
@@ -364,8 +347,10 @@ final class ScrollCaptureSession: ScrollCapturing {
     func finish(_ ending: ScrollCaptureEnding) {
         guard isActive else { return }
         if ending == .user {
-            for image in [analyzing, pending?.image].compactMap({ $0 }) where !stitcher.isFull {
-                if let frame = analyze(image) { _ = stitcher.add(frame) }
+            for image in [analyzing, pending?.image].compactMap(\.self) where !stitcher.isFull {
+                if let frame = analyze(image) {
+                    _ = stitcher.add(frame)
+                }
             }
             stitcherVersion += 1
             pending = nil
@@ -386,6 +371,7 @@ final class ScrollCaptureSession: ScrollCapturing {
 
     private func stop() {
         isActive = false
+        startTask?.cancel()
         stopTicking?()
         stopTicking = nil
         source.stop()
@@ -393,6 +379,7 @@ final class ScrollCaptureSession: ScrollCapturing {
         driver.end()
         presenter.dismiss()
         pending = nil
+        lastScroll = nil
         analyzing = nil
         step = nil
     }
@@ -404,12 +391,16 @@ final class ScrollCaptureSession: ScrollCapturing {
     }
 
     private func publish() {
+        state.axis = stitcher.axis ?? .vertical
         state.pixelSize = ScreenPixelSize(width: stitcher.width, height: stitcher.height)
         state.canUndo = stitcher.segments.count > 1
         state.lastSegmentSuspicious = stitcher.segments.count > 1 && stitcher.segments.last?.isSuspicious == true
-        presenter.update(state, preview: ScrollCapturePreview(segments: stitcher.segments, footer: stitcher.footer,
-                                                              headerHeight: stitcher.headerHeight,
-                                                              width: stitcher.width))
+        presenter.update(
+            state,
+            preview: ScrollCapturePreview(axis: state.axis, segments: stitcher.segments, footer: stitcher.footer,
+                                          headerHeight: stitcher.headerHeight,
+                                          width: stitcher.width)
+        )
     }
 
     static func repeatingTimer(_ interval: TimeInterval,

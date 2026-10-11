@@ -4240,6 +4240,8 @@
 "screenshot.mode.scrolling" = "Scrolling capture";
 "screenshot.mode.scrolling.short" = "Scrolling";
 "screenshot.tool.scroll" = "Scrolling capture";
+"screenshot.scroll.status.manual" = "Scroll down or right by hand · Space starts Auto";
+"screenshot.scroll.automatic" = "Auto";
 "screenshot.scroll.status.starting" = "Getting ready…";
 "screenshot.scroll.status.scrolling" = "Scrolling automatically · use the mouse to take over";
 "screenshot.scroll.status.paused" = "Paused · scroll by hand, or press Space to resume";
@@ -4268,6 +4270,9 @@
 "screenshot.text.askAI" = "About this text from a screenshot:\n\n%@";
 "screenshot.text.meta" = "%d lines · %@";
 "screenshot.text.source" = "On this Mac";
+"screenshot.text.organize" = "Organize";
+"screenshot.text.original" = "Show original";
+"screenshot.text.organize.empty" = "AI returned no organized text. Try again or show the original.";
 "screenshot.translate.unavailable" = "Translation has no keyword; add one in the launcher’s keyword settings";
 "screenshot.ask.attachmentName" = "Screenshot";
 "screenshot.ask.attachmentPart" = "Screenshot %d of %d";
