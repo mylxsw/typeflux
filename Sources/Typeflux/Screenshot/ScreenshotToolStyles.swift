@@ -8,6 +8,7 @@ extension ScreenshotAnnotationTool {
         case .rect, .ellipse, .line, .arrow, .pen: 1...16
         case .highlighter: 8...36
         case .text: 10...64
+        case .callout: 11...40
         case .counter: 18...44
         case .mosaic: 8...60
         }
@@ -16,21 +17,37 @@ extension ScreenshotAnnotationTool {
     /// How much `[` and `]` change the size.
     var sizeStep: CGFloat {
         switch self {
-        case .rect, .ellipse, .line, .arrow, .pen: 1
+        case .rect, .ellipse, .line, .arrow, .pen, .callout: 1
         case .highlighter, .text, .counter, .mosaic: 2
         }
     }
 
     /// The style a tool starts with before the user changes it.
     var defaultStyle: ScreenshotAnnotationStyle {
+        var style: ScreenshotAnnotationStyle
         switch self {
-        case .rect, .ellipse, .line, .arrow, .pen: ScreenshotAnnotationStyle(color: .red, size: 4)
-        case .highlighter: ScreenshotAnnotationStyle(color: .yellow, size: 18)
-        case .text: ScreenshotAnnotationStyle(color: .red, size: 20)
-        case .counter: ScreenshotAnnotationStyle(color: .red, size: 24)
+        case .rect, .ellipse, .line: style = ScreenshotAnnotationStyle(color: .red, size: 4)
+        case .arrow:
+            style = ScreenshotAnnotationStyle(color: .red, size: 4)
+            style.outlined = true
+        case .pen:
+            style = ScreenshotAnnotationStyle(color: .red, size: 4)
+            style.smoothed = true
+        case .highlighter:
+            style = ScreenshotAnnotationStyle(color: .yellow, size: 18)
+            style.highlighterMode = .straight
+            style.highlighterTip = .square
+        case .text:
+            style = ScreenshotAnnotationStyle(color: .red, size: 20)
+            style.textStyle = .background
+        case .counter: style = ScreenshotAnnotationStyle(color: .red, size: 24)
+        case .callout:
+            style = ScreenshotAnnotationStyle(color: .red, size: 15)
+            style.textStyle = .background
         // The color of a solid mosaic.
-        case .mosaic: ScreenshotAnnotationStyle(color: .black, size: 28)
+        case .mosaic: style = ScreenshotAnnotationStyle(color: .black, size: 28)
         }
+        return style
     }
 
     /// Whether the options bar offers a color for this tool (a mosaic only when it is solid).
@@ -46,6 +63,7 @@ struct ScreenshotToolStyles: Equatable, Codable {
     var mosaicEffect: ScreenshotMosaic.Effect = .pixelate
     var mosaicStrength: ScreenshotMosaic.Strength = .medium
     var mosaicShape: ScreenshotAnnotationEditor.MosaicShape = .rect
+    var mosaicScope: ScreenshotMosaic.Scope = .all
     /// Most recent first; never more than `recentColorLimit`.
     private(set) var recentColors: [ScreenshotAnnotationStyle.Color] = []
 
@@ -72,6 +90,10 @@ struct ScreenshotToolStyles: Equatable, Codable {
         style.size = clamp(style.size, to: tool.sizeRange)
         style.opacity = clamp(style.opacity, to: ScreenshotAnnotationStyle.opacityRange)
         style.cornerRadius = clamp(style.cornerRadius, to: ScreenshotAnnotationStyle.cornerRadiusRange)
+        let starts = ScreenshotAnnotationStyle.counterStartRange
+        style.counterStart = min(max(style.counterStart, starts.lowerBound), starts.upperBound)
+        if !style.arrowBend.isFinite { style.arrowBend = 0 }
+        if !style.counterAngle.isFinite { style.counterAngle = ScreenshotAnnotationStyle().counterAngle }
         return style
     }
 
@@ -81,7 +103,7 @@ struct ScreenshotToolStyles: Equatable, Codable {
 
     // Tools are stored by name; unknown names and missing fields fall back to the defaults.
     private enum CodingKeys: String, CodingKey {
-        case styles, mosaicEffect, mosaicStrength, mosaicShape, recentColors
+        case styles, mosaicEffect, mosaicStrength, mosaicShape, mosaicScope, recentColors
     }
 
     init(from decoder: Decoder) throws {
@@ -97,6 +119,7 @@ struct ScreenshotToolStyles: Equatable, Codable {
             ?? .medium
         mosaicShape = (try? container.decodeIfPresent(ScreenshotAnnotationEditor.MosaicShape.self,
                                                       forKey: .mosaicShape)) ?? .rect
+        mosaicScope = (try? container.decodeIfPresent(ScreenshotMosaic.Scope.self, forKey: .mosaicScope)) ?? .all
         let recent = (try? container.decodeIfPresent([ScreenshotAnnotationStyle.Color].self,
                                                      forKey: .recentColors)) ?? []
         recentColors = Array(recent.prefix(Self.recentColorLimit))
@@ -109,6 +132,7 @@ struct ScreenshotToolStyles: Equatable, Codable {
         try container.encode(mosaicEffect, forKey: .mosaicEffect)
         try container.encode(mosaicStrength, forKey: .mosaicStrength)
         try container.encode(mosaicShape, forKey: .mosaicShape)
+        try container.encode(mosaicScope, forKey: .mosaicScope)
         try container.encode(recentColors, forKey: .recentColors)
     }
 }

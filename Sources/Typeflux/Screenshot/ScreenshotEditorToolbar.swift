@@ -17,7 +17,10 @@ final class ScreenshotEditorToolbarModel {
         var mosaicEffect: ScreenshotMosaic.Effect = .pixelate
         var mosaicStrength: ScreenshotMosaic.Strength = .medium
         var mosaicShape: ScreenshotAnnotationEditor.MosaicShape = .rect
+        var mosaicScope: ScreenshotMosaic.Scope = .all
         var recentColors: [ScreenshotAnnotationStyle.Color] = []
+        /// What the counters count from.
+        var counterStart = 1
         var canUndo = false
         var canRedo = false
         /// A tool is picked or an annotation selected: the second row shows its options.
@@ -46,8 +49,16 @@ final class ScreenshotEditorToolbarModel {
             size = editor.shownSize ?? style.size
             mosaicEffect = mosaic?.effect ?? editor.mosaicEffect
             mosaicStrength = mosaic?.strength ?? editor.mosaicStrength
-            mosaicShape = mosaic.map { if case .brush = $0.shape { .brush } else { .rect } } ?? editor.mosaicShape
+            mosaicShape = mosaic.map { mosaic in
+                switch mosaic.shape {
+                case .rect: .rect
+                case .ellipse: .ellipse
+                case .brush: .brush
+                }
+            } ?? editor.mosaicShape
+            mosaicScope = editor.mosaicScope
             recentColors = editor.toolStyles.recentColors
+            counterStart = editor.counterStart
             canUndo = editor.document.canUndo
             canRedo = editor.document.canRedo
             showsOptions = editor.optionsTool != nil
@@ -77,6 +88,19 @@ final class ScreenshotEditorToolbarModel {
         case mosaicEffect(ScreenshotMosaic.Effect)
         case mosaicStrength(ScreenshotMosaic.Strength)
         case mosaicShape(ScreenshotAnnotationEditor.MosaicShape)
+        case arrowHead(ScreenshotAnnotationStyle.ArrowHead)
+        case arrowPath(ScreenshotAnnotationStyle.ArrowPath)
+        case outlined(Bool)
+        case smoothed(Bool)
+        case highlighterMode(ScreenshotAnnotationStyle.HighlighterMode)
+        case highlighterTip(ScreenshotAnnotationStyle.HighlighterTip)
+        case font(ScreenshotAnnotationStyle.TextFont)
+        case textStyle(ScreenshotAnnotationStyle.TextStyle)
+        case counterLabel(ScreenshotAnnotationStyle.CounterLabel)
+        case counterShape(ScreenshotAnnotationStyle.CounterShape)
+        case counterStart(Int)
+        case calloutAnchor(ScreenshotAnnotationStyle.CalloutAnchor)
+        case mosaicScope(ScreenshotMosaic.Scope)
         case undo, redo, cancel, save, copy, scrollCapture
         /// Recognize the text, translate it or ask the AI about the image.
         case followUp(ScreenshotFollowUp)
@@ -99,6 +123,7 @@ final class ScreenshotEditorToolbarModel {
         case .highlighter: "highlighter"
         case .text: "textformat"
         case .counter: "1.circle"
+        case .callout: "text.bubble"
         case .mosaic: "checkerboard.rectangle"
         }
     }
@@ -114,6 +139,7 @@ final class ScreenshotEditorToolbarModel {
     static func symbol(for shape: ScreenshotAnnotationEditor.MosaicShape) -> String {
         switch shape {
         case .rect: "rectangle.dashed"
+        case .ellipse: "circle.dashed"
         case .brush: "paintbrush.pointed"
         }
     }
@@ -133,6 +159,42 @@ final class ScreenshotEditorToolbarModel {
         }
     }
 
+    static func symbol(for head: ScreenshotAnnotationStyle.ArrowHead) -> String {
+        switch head {
+        case .open: "arrow.right"
+        case .filled: "arrowtriangle.right.fill"
+        case .double: "arrow.left.and.right"
+        }
+    }
+
+    static func symbol(for path: ScreenshotAnnotationStyle.ArrowPath) -> String {
+        switch path {
+        case .straight: "line.diagonal"
+        case .curve: "arrow.turn.up.right"
+        case .elbow: "arrow.turn.right.up"
+        }
+    }
+
+    static func symbol(for anchor: ScreenshotAnnotationStyle.CalloutAnchor) -> String {
+        switch anchor {
+        case .dot: "smallcircle.filled.circle"
+        case .arrow: "arrow.up.left"
+        case .plain: "line.diagonal"
+        }
+    }
+
+    static func symbol(for shape: ScreenshotAnnotationStyle.CounterShape) -> String {
+        switch shape {
+        case .circle: "circle.fill"
+        case .bubble: "bubble.left.fill"
+        }
+    }
+
+    /// How a counter labelled this way reads: "1 2 3" or "A B C".
+    static func sample(for label: ScreenshotAnnotationStyle.CounterLabel) -> String {
+        (1 ... 3).map { ScreenshotAnnotation.counterLabel($0, as: label) }.joined(separator: " ")
+    }
+
     /// "Rectangle  R"
     static func help(for tool: ScreenshotAnnotationTool) -> String {
         "\(L("screenshot.tool.\(tool.rawValue)"))  \(tool.shortcut)"
@@ -148,7 +210,7 @@ final class ScreenshotEditorToolbarModel {
     /// The caption of the size slider: font size for text, size for counters, line width for the rest.
     static func sizeCaption(for tool: ScreenshotAnnotationTool) -> String {
         switch tool {
-        case .text: L("screenshot.edit.fontSize")
+        case .text, .callout: L("screenshot.edit.fontSize")
         case .counter: L("screenshot.edit.counterSize")
         default: L("screenshot.edit.size")
         }
@@ -170,6 +232,7 @@ final class ScreenshotToolbarHostingView: NSHostingView<AnyView> {
 }
 
 /// The editing toolbar under the region, styled like the launcher's glass controls.
+// swiftlint:disable:next type_body_length
 struct ScreenshotEditorToolbar: View {
     let state: ScreenshotEditorToolbarModel.State
     let perform: (ScreenshotEditorToolbarModel.Action) -> Void
@@ -247,6 +310,7 @@ struct ScreenshotEditorToolbar: View {
                 mosaicOptions
             } else if let tool = state.optionsTool {
                 shapeOptions(for: tool)
+                toolOptions(for: tool)
                 sizeSlider(for: tool)
                 if tool == .rect {
                     slider(value: state.style.cornerRadius, in: ScreenshotAnnotationStyle.cornerRadiusRange,
@@ -283,12 +347,202 @@ struct ScreenshotEditorToolbar: View {
         }
     }
 
+    /// Arrow heads and paths, pen smoothing, highlighter strokes, text fonts and counter labels.
+    @ViewBuilder
+    private func toolOptions(for tool: ScreenshotAnnotationTool) -> some View {
+        let style = state.style
+        switch tool {
+        case .arrow:
+            segment {
+                ForEach(ScreenshotAnnotationStyle.ArrowHead.allCases, id: \.self) { head in
+                    optionButton(ScreenshotEditorToolbarModel.symbol(for: head),
+                                 help: L("screenshot.arrow.head.\(head.rawValue)"),
+                                 isOn: style.arrowHead == head) { perform(.arrowHead(head)) }
+                }
+            }
+            segment {
+                ForEach(ScreenshotAnnotationStyle.ArrowPath.allCases, id: \.self) { path in
+                    optionButton(ScreenshotEditorToolbarModel.symbol(for: path),
+                                 help: L("screenshot.arrow.path.\(path.rawValue)"),
+                                 isOn: style.arrowPath == path) { perform(.arrowPath(path)) }
+                }
+            }
+            toggle(L("screenshot.arrow.outline"), isOn: style.outlined) { perform(.outlined(!style.outlined)) }
+            separator
+        case .pen:
+            segment {
+                textOption(L("screenshot.pen.smooth"), isOn: style.smoothed) { perform(.smoothed(true)) }
+                textOption(L("screenshot.pen.raw"), isOn: !style.smoothed) { perform(.smoothed(false)) }
+            }
+            separator
+        case .highlighter:
+            segment {
+                ForEach(ScreenshotAnnotationStyle.HighlighterMode.allCases, id: \.self) { mode in
+                    textOption(L("screenshot.highlighter.\(mode.rawValue)"), isOn: style.highlighterMode == mode) {
+                        perform(.highlighterMode(mode))
+                    }
+                }
+            }
+            segment {
+                ForEach(ScreenshotAnnotationStyle.HighlighterTip.allCases, id: \.self) { tip in
+                    textOption(L("screenshot.highlighter.tip.\(tip.rawValue)"), isOn: style.highlighterTip == tip) {
+                        perform(.highlighterTip(tip))
+                    }
+                }
+            }
+            separator
+        case .callout:
+            caption(L("screenshot.callout.anchor"))
+            segment {
+                ForEach(ScreenshotAnnotationStyle.CalloutAnchor.allCases, id: \.self) { anchor in
+                    optionButton(ScreenshotEditorToolbarModel.symbol(for: anchor),
+                                 help: L("screenshot.callout.anchor.\(anchor.rawValue)"),
+                                 isOn: style.calloutAnchor == anchor) { perform(.calloutAnchor(anchor)) }
+                }
+            }
+            segment {
+                ForEach(ScreenshotAnnotationStyle.TextStyle.allCases, id: \.self) { textStyle in
+                    textStyleButton(textStyle, isOn: style.textStyle == textStyle)
+                }
+            }
+            separator
+        case .text:
+            segment {
+                ForEach(ScreenshotAnnotationStyle.TextFont.allCases, id: \.self) { font in
+                    fontButton(font, isOn: style.font == font)
+                }
+            }
+            segment {
+                ForEach(ScreenshotAnnotationStyle.TextStyle.allCases, id: \.self) { textStyle in
+                    textStyleButton(textStyle, isOn: style.textStyle == textStyle)
+                }
+            }
+            separator
+        case .counter:
+            segment {
+                ForEach(ScreenshotAnnotationStyle.CounterLabel.allCases, id: \.self) { label in
+                    textOption(ScreenshotEditorToolbarModel.sample(for: label), isOn: style.counterLabel == label) {
+                        perform(.counterLabel(label))
+                    }
+                }
+            }
+            segment {
+                ForEach(ScreenshotAnnotationStyle.CounterShape.allCases, id: \.self) { shape in
+                    optionButton(ScreenshotEditorToolbarModel.symbol(for: shape),
+                                 help: L("screenshot.counter.shape.\(shape.rawValue)"),
+                                 isOn: style.counterShape == shape) { perform(.counterShape(shape)) }
+                }
+            }
+            counterStepper
+            separator
+        default:
+            EmptyView()
+        }
+    }
+
+    /// The first counter's number (or letter), one up or down.
+    private var counterStepper: some View {
+        let range = ScreenshotAnnotationStyle.counterStartRange
+        return HStack(spacing: 2) {
+            caption(L("screenshot.counter.start"))
+            optionButton("minus", help: L("screenshot.counter.start"), isOn: false) {
+                perform(.counterStart(state.counterStart - 1))
+            }
+            .disabled(state.counterStart <= range.lowerBound)
+            Text(ScreenshotAnnotation.counterLabel(state.counterStart, as: state.style.counterLabel))
+                .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                .frame(minWidth: 20)
+            optionButton("plus", help: L("screenshot.counter.start"), isOn: false) {
+                perform(.counterStart(state.counterStart + 1))
+            }
+            .disabled(state.counterStart >= range.upperBound)
+        }
+    }
+
+    private func fontButton(_ font: ScreenshotAnnotationStyle.TextFont, isOn: Bool) -> some View {
+        Button { perform(.font(font)) } label: {
+            Text("Aa")
+                .font(Font(ScreenshotAnnotation.font(size: 12, family: font) as CTFont))
+                .foregroundStyle(isOn ? AskTheme.accent : Color.secondary)
+                .frame(width: 26, height: 22)
+                .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? AskTheme.accentSoft : Color.clear))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(L("screenshot.text.font.\(font.rawValue)"))
+    }
+
+    private func textStyleButton(_ textStyle: ScreenshotAnnotationStyle.TextStyle, isOn: Bool) -> some View {
+        Button { perform(.textStyle(textStyle)) } label: {
+            Group {
+                switch textStyle {
+                case .plain:
+                    Text("Aa").foregroundStyle(isOn ? AskTheme.accent : Color.secondary)
+                case .background:
+                    Text("Aa").foregroundStyle(Color(nsColor: .windowBackgroundColor))
+                        .padding(.horizontal, 3)
+                        .background(RoundedRectangle(cornerRadius: 3).fill(isOn ? AskTheme.accent : Color.secondary))
+                case .outline:
+                    Text("Aa").foregroundStyle(isOn ? AskTheme.accent : Color.secondary)
+                        .padding(.horizontal, 2)
+                        .overlay(RoundedRectangle(cornerRadius: 3)
+                            .strokeBorder(isOn ? AskTheme.accent : Color.secondary, lineWidth: 1))
+                }
+            }
+            .font(.system(size: 11, weight: .bold))
+            .frame(width: 28, height: 22)
+            .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? AskTheme.accentSoft : Color.clear))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(L("screenshot.text.style.\(textStyle.rawValue)"))
+    }
+
+    private func textOption(_ title: String, isOn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12, weight: isOn ? .semibold : .regular))
+                .lineLimit(1).fixedSize()
+                .foregroundStyle(isOn ? AskTheme.accent : Color.secondary)
+                .padding(.horizontal, 7)
+                .frame(height: 22)
+                .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? AskTheme.accentSoft : Color.clear))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func toggle(_ title: String, isOn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Capsule()
+                    .fill(isOn ? AskTheme.accent : AskTheme.pressFill)
+                    .frame(width: 24, height: 14)
+                    .overlay(Circle().fill(.white).frame(width: 10, height: 10).offset(x: isOn ? 5 : -5))
+                Text(title).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1).fixedSize()
+            }
+            .frame(height: 22)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     @ViewBuilder
     private var mosaicOptions: some View {
         ForEach(ScreenshotAnnotationEditor.MosaicShape.allCases, id: \.self) { shape in
             optionButton(ScreenshotEditorToolbarModel.symbol(for: shape),
                          help: L("screenshot.mosaic.shape.\(shape.rawValue)"),
                          isOn: state.mosaicShape == shape) { perform(.mosaicShape(shape)) }
+        }
+        if state.mosaicShape != .brush {
+            caption(L("screenshot.mosaic.scope"))
+            segment {
+                ForEach(ScreenshotMosaic.Scope.allCases, id: \.self) { scope in
+                    textOption(L("screenshot.mosaic.scope.\(scope.rawValue)"), isOn: state.mosaicScope == scope) {
+                        perform(.mosaicScope(scope))
+                    }
+                }
+            }
         }
         separator
         ForEach(ScreenshotMosaic.Effect.allCases, id: \.self) { effect in

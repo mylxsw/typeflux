@@ -88,9 +88,11 @@ enum ScreenshotRenderer {
         var toPiece = CGAffineTransform(translationX: -sourceFrame.minX, y: -sourceFrame.minY)
             .concatenating(CGAffineTransform(scaleX: scale.width, y: scale.height))
             .concatenating(CGAffineTransform(translationX: -pixels.minX, y: -pixels.minY))
-        guard let mask = mosaic.maskPath.copy(using: &toPiece) else { return nil }
-        context.addPath(mask)
-        context.clip()
+        for path in mosaic.clipPaths {
+            guard let mask = path.copy(using: &toPiece) else { return nil }
+            context.addPath(mask)
+            context.clip()
+        }
         drawImage(effected, in: CGRect(x: 0, y: 0, width: piece.width, height: piece.height), context: context)
         guard let image = context.makeImage() else { return nil }
         let rect = CGRect(x: sourceFrame.minX + pixels.minX / scale.width,
@@ -140,33 +142,98 @@ enum ScreenshotRenderer {
             context.addLine(to: to)
             context.strokePath()
         case let .arrow(from, to):
-            drawArrow(from: from, to: to, lineWidth: style.lineWidth, in: context)
+            if style.outlined {
+                drawArrow(from: from, to: to, style: style, outline: arrowOutlineWidth(style.lineWidth),
+                          color: CGColor(gray: 1, alpha: style.opacity), in: context)
+            }
+            drawArrow(from: from, to: to, style: style, outline: 0, color: style.cgColor(), in: context)
         case let .path(points):
             context.addPath(ScreenshotAnnotation.polyline(points))
             context.strokePath()
         case let .highlight(points):
             context.setStrokeColor(style.cgColor(alpha: ScreenshotAnnotationStyle.highlighterAlpha))
             context.setLineWidth(style.highlighterWidth)
+            if style.highlighterTip == .square { context.setLineCap(.butt) }
             context.addPath(ScreenshotAnnotation.polyline(points))
             context.strokePath()
         case let .text(origin, text, fontSize):
-            drawText(text, at: origin,
-                     attributes: ScreenshotAnnotation.textAttributes(fontSize: fontSize, color: style.cgColor()),
-                     in: context)
+            drawStyledText(text, at: origin, fontSize: fontSize, frame: annotation.frame, style: style, in: context)
         case .counter:
             let frame = annotation.frame
+            if style.counterShape == .bubble {
+                context.addPath(counterTail(in: frame, angle: style.counterAngle))
+                context.fillPath()
+            }
             context.fillEllipse(in: frame)
-            let label = "\(number)"
+            let label = ScreenshotAnnotation.counterLabel(number, as: style.counterLabel)
             let textColor = style.color.contrastingTextColor.copy(alpha: style.opacity)
                 ?? style.color.contrastingTextColor
-            let attributes = ScreenshotAnnotation.textAttributes(fontSize: (frame.height * 0.55).rounded(),
+            let shrink: CGFloat = label.count > 2 ? 0.38 : label.count > 1 ? 0.45 : 0.55
+            let attributes = ScreenshotAnnotation.textAttributes(fontSize: (frame.height * shrink).rounded(),
                                                                  color: textColor)
             let size = (label as NSString).size(withAttributes: attributes)
             drawText(label, at: CGPoint(x: frame.midX - size.width / 2, y: frame.midY - size.height / 2),
                      attributes: attributes, in: context)
+        case let .callout(anchor, origin, text, fontSize):
+            drawCallout(annotation, anchor: anchor, text: text, at: origin, fontSize: fontSize, in: context)
         case .mosaic:
             break
         }
+    }
+
+    /// The line out to the anchor, its end, then the box and its text on top.
+    private static func drawCallout(_ annotation: ScreenshotAnnotation, anchor: CGPoint, text: String,
+                                    at origin: CGPoint, fontSize: CGFloat, in context: CGContext) {
+        let style = annotation.style
+        guard let box = annotation.calloutBox else { return }
+        let lineWidth = ScreenshotAnnotation.calloutLineWidth(fontSize: fontSize)
+        if let start = annotation.calloutLineStart {
+            context.setLineWidth(lineWidth)
+            context.move(to: start)
+            context.addLine(to: anchor)
+            context.strokePath()
+            switch style.calloutAnchor {
+            case .dot:
+                let radius = lineWidth * 1.8
+                context.fillEllipse(in: CGRect(x: anchor.x - radius, y: anchor.y - radius, width: radius * 2,
+                                               height: radius * 2))
+            case .arrow:
+                let length = hypot(anchor.x - start.x, anchor.y - start.y)
+                guard length > 0 else { break }
+                let direction = CGPoint(x: (anchor.x - start.x) / length, y: (anchor.y - start.y) / length)
+                let head = min(ScreenshotAnnotation.arrowHeadLength(lineWidth: lineWidth), length)
+                let base = point(anchor, back: direction, by: head)
+                context.move(to: anchor)
+                context.addLine(to: CGPoint(x: base.x - direction.y * head / 2, y: base.y + direction.x * head / 2))
+                context.addLine(to: CGPoint(x: base.x + direction.y * head / 2, y: base.y - direction.x * head / 2))
+                context.closePath()
+                context.fillPath()
+            case .plain:
+                break
+            }
+        }
+        let radius = min(fontSize * 0.3, box.height / 2)
+        let boxPath = CGPath(roundedRect: box, cornerWidth: radius, cornerHeight: radius, transform: nil)
+        let textColor: CGColor
+        switch style.textStyle {
+        case .background:
+            context.addPath(boxPath)
+            context.fillPath()
+            textColor = style.color.contrastingTextColor.copy(alpha: style.opacity) ?? style.color.contrastingTextColor
+        case .outline:
+            // A dark box with a colored edge: white text reads on any background.
+            context.setFillColor(CGColor(gray: 0, alpha: 0.6 * style.opacity))
+            context.addPath(boxPath)
+            context.fillPath()
+            context.setLineWidth(2)
+            context.addPath(boxPath)
+            context.strokePath()
+            textColor = CGColor(gray: 1, alpha: style.opacity)
+        case .plain:
+            textColor = style.cgColor()
+        }
+        drawText(text, at: origin, attributes: ScreenshotAnnotation.textAttributes(fontSize: fontSize, color: textColor,
+                                                                                   font: style.font), in: context)
     }
 
     /// Dashed outlines and lines; dashes keep round ends, so the gaps are a little longer.
@@ -175,25 +242,108 @@ enum ScreenshotRenderer {
         context.setLineDash(phase: 0, lengths: ScreenshotAnnotationStyle.dashLengths(lineWidth: style.lineWidth))
     }
 
-    private static func drawArrow(from: CGPoint, to: CGPoint, lineWidth: CGFloat, in context: CGContext) {
-        let dx = to.x - from.x, dy = to.y - from.y
-        let length = hypot(dx, dy)
+    /// How much wider the white outline under an arrow is than the arrow.
+    static func arrowOutlineWidth(_ lineWidth: CGFloat) -> CGFloat {
+        max(3, lineWidth * 0.75)
+    }
+
+    /// The shaft and heads, `outline` points wider all round when drawing the white outline under them.
+    private static func drawArrow(from: CGPoint, to: CGPoint, style: ScreenshotAnnotationStyle, outline: CGFloat,
+                                  color: CGColor, in context: CGContext) {
+        let length = hypot(to.x - from.x, to.y - from.y)
         guard length > 0 else { return }
-        let head = min(ScreenshotAnnotation.arrowHeadLength(lineWidth: lineWidth), length)
-        let unit = CGPoint(x: dx / length, y: dy / length)
-        let base = CGPoint(x: to.x - unit.x * head, y: to.y - unit.y * head)
-        let half = head * 0.5
-        if length > head {
-            context.move(to: from)
-            // Into the head a little, so no gap shows between them.
-            context.addLine(to: CGPoint(x: base.x + unit.x, y: base.y + unit.y))
-            context.strokePath()
+        context.saveGState()
+        defer { context.restoreGState() }
+        context.setStrokeColor(color)
+        context.setFillColor(color)
+        let lineWidth = style.lineWidth
+        // Two heads share the length.
+        let room = style.arrowHead == .double ? length / 2 : length
+        let head = min(ScreenshotAnnotation.arrowHeadLength(lineWidth: lineWidth), room)
+        let directions = ScreenshotAnnotation.arrowDirections(from: from, to: to, style: style)
+        // Filled heads cover the shaft's ends, so the shaft stops inside them and no square end pokes out.
+        let filled = style.arrowHead != .open
+        let shaft = ScreenshotAnnotation.arrowShaft(
+            from: style.arrowHead == .double ? point(from, back: directions.start, by: head * 0.6) : from,
+            to: filled ? point(to, back: directions.end, by: head * 0.6) : to, style: style
+        )
+        context.setLineWidth(lineWidth + outline * 2)
+        context.addPath(shaft)
+        context.strokePath()
+        var heads = [(to, directions.end)]
+        if style.arrowHead == .double { heads.append((from, directions.start)) }
+        for (tip, direction) in heads {
+            let base = point(tip, back: direction, by: head)
+            let half = head * 0.5
+            let left = CGPoint(x: base.x - direction.y * half, y: base.y + direction.x * half)
+            let right = CGPoint(x: base.x + direction.y * half, y: base.y - direction.x * half)
+            if filled {
+                context.move(to: tip)
+                context.addLine(to: left)
+                context.addLine(to: right)
+                context.closePath()
+                if outline > 0 {
+                    context.setLineWidth(outline * 2)
+                    context.drawPath(using: .fillStroke)
+                } else {
+                    context.fillPath()
+                }
+            } else {
+                context.setLineWidth(lineWidth + outline * 2)
+                context.addLines(between: [left, tip, right])
+                context.strokePath()
+            }
         }
-        context.move(to: to)
-        context.addLine(to: CGPoint(x: base.x - unit.y * half, y: base.y + unit.x * half))
-        context.addLine(to: CGPoint(x: base.x + unit.y * half, y: base.y - unit.x * half))
-        context.closePath()
-        context.fillPath()
+    }
+
+    private static func point(_ point: CGPoint, back direction: CGPoint, by distance: CGFloat) -> CGPoint {
+        CGPoint(x: point.x - direction.x * distance, y: point.y - direction.y * distance)
+    }
+
+    /// A bubble counter's point: a triangle from the circle out to 1.7 radii along `angle`.
+    static func counterTail(in frame: CGRect, angle: CGFloat) -> CGPath {
+        let radius = frame.width / 2
+        let center = CGPoint(x: frame.midX, y: frame.midY)
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: center.x + cos(angle + 0.75) * radius, y: center.y + sin(angle + 0.75) * radius))
+        path.addLine(to: CGPoint(x: center.x + cos(angle) * radius * 1.7, y: center.y + sin(angle) * radius * 1.7))
+        path.addLine(to: CGPoint(x: center.x + cos(angle - 0.75) * radius, y: center.y + sin(angle - 0.75) * radius))
+        path.closeSubpath()
+        return path
+    }
+
+    /// The outline of outlined text, as a percentage of the font size (positive: stroke only).
+    static let outlineStrokePercent: CGFloat = 24
+
+    /// Plain colored text, text on a block of the color, or white text outlined in the color.
+    private static func drawStyledText(_ text: String, at origin: CGPoint, fontSize: CGFloat, frame: CGRect,
+                                       style: ScreenshotAnnotationStyle, in context: CGContext) {
+        switch style.textStyle {
+        case .plain:
+            drawText(text, at: origin, attributes: ScreenshotAnnotation.textAttributes(
+                fontSize: fontSize, color: style.cgColor(), font: style.font
+            ), in: context)
+        case .background:
+            let radius = min(fontSize * 0.3, frame.height / 2)
+            context.addPath(CGPath(roundedRect: frame, cornerWidth: radius, cornerHeight: radius, transform: nil))
+            context.fillPath()
+            let textColor = style.color.contrastingTextColor.copy(alpha: style.opacity)
+                ?? style.color.contrastingTextColor
+            drawText(text, at: origin, attributes: ScreenshotAnnotation.textAttributes(
+                fontSize: fontSize, color: textColor, font: style.font
+            ), in: context)
+        case .outline:
+            // A wide stroke in the color first, then the white letters over it, so only the outer
+            // half of the stroke shows and the letters stay clean. The width is a percentage of the font size.
+            var outline = ScreenshotAnnotation.textAttributes(fontSize: fontSize, color: style.cgColor(),
+                                                              font: style.font)
+            outline[.strokeColor] = NSColor(cgColor: style.cgColor())
+            outline[.strokeWidth] = outlineStrokePercent
+            drawText(text, at: origin, attributes: outline, in: context)
+            drawText(text, at: origin, attributes: ScreenshotAnnotation.textAttributes(
+                fontSize: fontSize, color: CGColor(gray: 1, alpha: style.opacity), font: style.font
+            ), in: context)
+        }
     }
 
     /// Text in a top-down context: AppKit is told the context is flipped so glyphs stay upright.

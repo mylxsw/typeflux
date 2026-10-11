@@ -104,6 +104,7 @@ final class ScreenshotOverlayView: NSView {
         chrome.autoresizingMask = [.width, .height]
         addSubview(chrome)
         editor.measureTextHeight = { [weak self] mosaic in self?.measureTextHeight(under: mosaic) }
+        editor.locateText = { [weak self] rect in self?.textLines(in: rect) ?? [] }
         toolbarModel.onAction = { [weak self] action in self?.perform(action) }
         connectSensitiveInfo()
         refresh()
@@ -172,13 +173,17 @@ final class ScreenshotOverlayView: NSView {
                 refresh()
                 return
             case let .beginText(origin):
-                beginTextEditing(at: origin, text: "", fontSize: editor.style.fontSize, color: editor.style.color)
+                beginTextEditing(at: origin, text: "", fontSize: editor.style.fontSize,
+                                 color: ScreenshotAnnotation.editingTextColor(editor.style, callout: false),
+                                 font: editor.style.font)
                 refresh()
                 return
             case let .editText(id):
-                if let annotation = editor.document.annotation(id: id),
-                   case let .text(origin, text, fontSize) = annotation.kind {
-                    beginTextEditing(at: origin, text: text, fontSize: fontSize, color: annotation.style.color)
+                if let annotation = editor.document.annotation(id: id), let editable = annotation.editableText {
+                    let isCallout = annotation.tool == .callout
+                    beginTextEditing(at: editable.origin, text: editable.text, fontSize: editable.fontSize,
+                                     color: ScreenshotAnnotation.editingTextColor(annotation.style, callout: isCallout),
+                                     font: annotation.style.font)
                 }
                 refresh()
                 return
@@ -209,6 +214,7 @@ final class ScreenshotOverlayView: NSView {
     func mouseUp(at point: CGPoint, shift: Bool = false) {
         if editor.isDragging {
             editor.mouseUp(at: point, shift: shift)
+            beginCalloutText()
         } else if selection.mouseUp(at: point) == .committed {
             scanForSensitiveInfo()
             onEvent?(self, .committed)
@@ -399,8 +405,8 @@ final class ScreenshotOverlayView: NSView {
     // MARK: Text
 
     private func beginTextEditing(at origin: CGPoint, text: String, fontSize: CGFloat,
-                                  color: ScreenshotAnnotationStyle.Color) {
-        let field = Self.makeTextField(text: text, fontSize: fontSize, color: color)
+                                  color: CGColor, font: ScreenshotAnnotationStyle.TextFont) {
+        let field = Self.makeTextField(text: text, fontSize: fontSize, color: color, font: font)
         field.delegate = self
         textOrigin = origin
         textField = field
@@ -416,14 +422,15 @@ final class ScreenshotOverlayView: NSView {
     }
 
     /// A borderless field for typing a text annotation, outlined in the accent color.
-    static func makeTextField(text: String, fontSize: CGFloat, color: ScreenshotAnnotationStyle.Color) -> NSTextField {
+    static func makeTextField(text: String, fontSize: CGFloat, color: CGColor,
+                              font: ScreenshotAnnotationStyle.TextFont = .system) -> NSTextField {
         let field = NSTextField(string: text)
         field.isBordered = false
         field.isBezeled = false
         field.drawsBackground = false
         field.focusRingType = .none
-        field.font = ScreenshotAnnotation.font(size: fontSize)
-        field.textColor = NSColor(cgColor: color.cgColor())
+        field.font = ScreenshotAnnotation.font(size: fontSize, family: font)
+        field.textColor = NSColor(cgColor: color)
         field.cell?.wraps = false
         field.cell?.isScrollable = true
         field.wantsLayer = true
@@ -465,7 +472,30 @@ final class ScreenshotOverlayView: NSView {
         refresh()
     }
 
+    /// A callout was just drawn: type its text in its box.
+    private func beginCalloutText() {
+        guard textField == nil, let callout = editor.calloutDraft, let editable = callout.editableText else { return }
+        beginTextEditing(at: editable.origin, text: "", fontSize: editable.fontSize,
+                         color: ScreenshotAnnotation.editingTextColor(callout.style, callout: true),
+                         font: callout.style.font)
+    }
+
     // MARK: Mosaic
+
+    /// The lines of text inside `rect`, in points, read from the frozen image inside the region.
+    private func textLines(in rect: CGRect) -> [CGRect] {
+        guard let textMeasurer, let crop = selection.rect else { return [] }
+        let region = rect.intersection(crop)
+        guard !region.isNull,
+              let pixels = ScreenCaptureGeometry.pixelRect(for: region, displayFrame: bounds,
+                                                           imageSize: display.pixelSize),
+              let piece = display.image.cropping(to: pixels) else { return [] }
+        let scale = max(CGFloat(display.image.width) / max(bounds.width, 1), 1)
+        return textMeasurer.textLines(in: piece).map { line in
+            CGRect(x: pixels.minX / scale + line.minX / scale, y: pixels.minY / scale + line.minY / scale,
+                   width: line.width / scale, height: line.height / scale)
+        }
+    }
 
     /// The text height under a new mosaic, in points, from the frozen image inside the region.
     private func measureTextHeight(under mosaic: ScreenshotMosaic) -> CGFloat? {
@@ -524,7 +554,8 @@ final class ScreenshotOverlayView: NSView {
         canvas.model = ScreenshotAnnotationCanvasView.Model(crop: selection.rect,
                                                             annotations: editor.visibleAnnotations,
                                                             selection: selected?.frame,
-                                                            handles: editor.selectionHandles)
+                                                            handles: editor.selectionHandles,
+                                                            bendHandle: editor.bendHandle)
         refreshToolbar()
         layOutSensitiveInfo()
         if editor.toolStyles != syncedStyles {

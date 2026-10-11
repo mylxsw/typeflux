@@ -87,7 +87,8 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertEqual(events(), [.committed, .finish(.copy, all), .finish(.copy, all), .finish(.copy, all),
                                   .finish(.save, all), .cancelled])
 
-        XCTAssertFalse(view.handleKeyDown(Key.keyC, modifiers: []), "Plain C means nothing")
+        XCTAssertTrue(view.handleKeyDown(Key.keyC, modifiers: []), "Plain C picks the callout")
+        XCTAssertEqual(view.editor.tool, .callout)
         XCTAssertTrue(view.handleKeyDown(Key.keyS, modifiers: []), "Plain S starts a scrolling capture")
         XCTAssertEqual(events().last, .scroll(all))
         XCTAssertFalse(view.handleKeyDown(99, modifiers: []))

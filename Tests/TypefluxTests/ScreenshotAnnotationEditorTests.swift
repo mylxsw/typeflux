@@ -23,7 +23,7 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
 
     func testToolKeysAndShortcuts() {
         let letters = ScreenshotAnnotationTool.allCases.map(\.shortcut)
-        XCTAssertEqual(letters, ["R", "O", "L", "A", "P", "H", "T", "N", "M"])
+        XCTAssertEqual(letters, ["R", "O", "L", "A", "P", "H", "T", "N", "C", "M"])
         for tool in ScreenshotAnnotationTool.allCases {
             XCTAssertEqual(ScreenshotAnnotationTool(keyCode: tool.keyCode), tool)
         }
@@ -47,8 +47,9 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
             .ellipse: .ellipse(CGRect(x: 10, y: 10, width: 50, height: 30)),
             .line: .line(from: start, to: end),
             .arrow: .arrow(from: start, to: end),
-            .pen: .path([start, CGPoint(x: 35, y: 25), end]),
-            .highlighter: .highlight([start, CGPoint(x: 35, y: 25), end]),
+            // The pen smooths a straight stroke down to its ends; the highlighter draws straight.
+            .pen: .path([start, end]),
+            .highlighter: .highlight([start, end]),
             .counter: .counter(center: end)
         ]
         for (tool, kind) in expected {
@@ -352,6 +353,8 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
 
     func testResizingTextScalesTheFontAndWidthChangesSetIt() throws {
         var editor = self.editor(with: .text)
+        // Plain text: its frame is its text, with no block around it.
+        editor.setTextStyle(.plain)
         editor.commitText("Hello", at: CGPoint(x: 20, y: 30))
         _ = editor.mouseDown(at: CGPoint(x: 25, y: 35), crop: crop, cropHit: .inside)
         editor.mouseUp(at: CGPoint(x: 25, y: 35))

@@ -52,6 +52,7 @@ final class ScreenshotLongImageCanvas: NSView {
         canvas.autoresizingMask = [.width, .height]
         addSubview(canvas)
         editor.measureTextHeight = { [weak self] mosaic in self?.measureTextHeight(under: mosaic) }
+        editor.locateText = { [weak self] rect in self?.textLines(in: rect) ?? [] }
         connectSensitiveInfo()
         refresh()
     }
@@ -110,11 +111,15 @@ final class ScreenshotLongImageCanvas: NSView {
         let hit: ScreenshotSelection.Hit = bounds.contains(point) ? .inside : .outside
         switch editor.mouseDown(at: point, clickCount: clickCount, shift: shift, crop: bounds, cropHit: hit) {
         case let .beginText(origin):
-            beginTextEditing(at: origin, text: "", fontSize: editor.style.fontSize, color: editor.style.color)
+            beginTextEditing(at: origin, text: "", fontSize: editor.style.fontSize,
+                             color: ScreenshotAnnotation.editingTextColor(editor.style, callout: false),
+                             font: editor.style.font)
         case let .editText(id):
-            if let annotation = editor.document.annotation(id: id),
-               case let .text(origin, text, fontSize) = annotation.kind {
-                beginTextEditing(at: origin, text: text, fontSize: fontSize, color: annotation.style.color)
+            if let annotation = editor.document.annotation(id: id), let editable = annotation.editableText {
+                let isCallout = annotation.tool == .callout
+                beginTextEditing(at: editable.origin, text: editable.text, fontSize: editable.fontSize,
+                                 color: ScreenshotAnnotation.editingTextColor(annotation.style, callout: isCallout),
+                                 font: annotation.style.font)
             }
         case .handled, .ignored:
             break
@@ -133,6 +138,12 @@ final class ScreenshotLongImageCanvas: NSView {
     func mouseUp(at point: CGPoint, shift: Bool = false) {
         guard editor.isDragging else { return }
         editor.mouseUp(at: point, shift: shift)
+        // A callout was just drawn: type its text in its box.
+        if textField == nil, let callout = editor.calloutDraft, let editable = callout.editableText {
+            beginTextEditing(at: editable.origin, text: "", fontSize: editable.fontSize,
+                             color: ScreenshotAnnotation.editingTextColor(callout.style, callout: true),
+                             font: callout.style.font)
+        }
         refresh()
     }
 
@@ -242,8 +253,8 @@ final class ScreenshotLongImageCanvas: NSView {
     // MARK: Text
 
     private func beginTextEditing(at origin: CGPoint, text: String, fontSize: CGFloat,
-                                  color: ScreenshotAnnotationStyle.Color) {
-        let field = ScreenshotOverlayView.makeTextField(text: text, fontSize: fontSize, color: color)
+                                  color: CGColor, font: ScreenshotAnnotationStyle.TextFont) {
+        let field = ScreenshotOverlayView.makeTextField(text: text, fontSize: fontSize, color: color, font: font)
         field.delegate = self
         textOrigin = origin
         textField = field
@@ -294,6 +305,19 @@ final class ScreenshotLongImageCanvas: NSView {
 
     // MARK: Mosaic
 
+    /// The lines of text inside `rect`, in the image's points.
+    private func textLines(in rect: CGRect) -> [CGRect] {
+        let region = rect.intersection(bounds)
+        let size = ScreenPixelSize(width: image.width, height: image.height)
+        guard let textMeasurer, !region.isNull,
+              let pixels = ScreenCaptureGeometry.pixelRect(for: region, displayFrame: bounds, imageSize: size),
+              let piece = image.cropping(to: pixels) else { return [] }
+        return textMeasurer.textLines(in: piece).map { line in
+            CGRect(x: (pixels.minX + line.minX) / scale, y: (pixels.minY + line.minY) / scale,
+                   width: line.width / scale, height: line.height / scale)
+        }
+    }
+
     /// The text height under a new mosaic, in points.
     private func measureTextHeight(under mosaic: ScreenshotMosaic) -> CGFloat? {
         let region = mosaic.frame.intersection(bounds)
@@ -312,7 +336,8 @@ final class ScreenshotLongImageCanvas: NSView {
         let selected = editor.editingTextID == nil ? editor.selected : nil
         canvas.model = ScreenshotAnnotationCanvasView.Model(crop: bounds, annotations: editor.visibleAnnotations,
                                                             selection: selected?.frame,
-                                                            handles: editor.selectionHandles)
+                                                            handles: editor.selectionHandles,
+                                                            bendHandle: editor.bendHandle)
         if toolStyles.styles != editor.toolStyles { toolStyles.styles = editor.toolStyles }
         window?.invalidateCursorRects(for: self)
         onChange?()
