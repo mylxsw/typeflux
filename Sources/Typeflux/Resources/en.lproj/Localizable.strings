@@ -2095,7 +2095,10 @@
 "ask.local.identity" = "Not signed in";
 "ask.local.identity.detail" = "%@ · Stays on this Mac";
 "ask.local.identity.storage" = "Chats stay on this Mac";
-"ask.cloudPromo.body" = "Sign in to use Cloud models that read images and search the web, with conversations on all your devices.";
+"ask.local.identity.localMode" = "Local mode";
+"ask.cloudPromo.vision" = "Images";
+"ask.cloudPromo.search" = "Web Search";
+"ask.cloudPromo.sync" = "Sync";
 "ask.cloudPromo.signIn" = "Sign In";
 "ask.cloudPromo.dismiss" = "Hide for 30 days";
 "ask.vision.willUse" = "Uses %@";

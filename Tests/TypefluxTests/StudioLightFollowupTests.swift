@@ -38,12 +38,12 @@ struct StudioLightFollowupTests {
     }
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
-    func `sidebar promo uses seventy percent white in light`(style: InterfaceStyle) async throws {
+    func `sidebar promo uses the content card fill in light`(style: InterfaceStyle) async throws {
         try await SettingsBehaviorTestSupport.withFixture { _ in
             let backdrop = Color(red: 0.2, green: 0.4, blue: 0.6)
             let actual = try await render(AskCloudPromoCard(onSignIn: {}, onDismiss: {}), style: style,
                                           dark: false, backdrop: backdrop)
-            let expected = try await render(Color.white.opacity(0.70), style: style,
+            let expected = try await render(StudioTheme.cardFill, style: style,
                                             dark: false, backdrop: backdrop)
             try expectPixel(actual, expected, x: 274, y: 90)
             // Both actions remain reachable after restyling the card.

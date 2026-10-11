@@ -2085,7 +2085,10 @@
 "ask.local.identity" = "未サインイン";
 "ask.local.identity.detail" = "%@ · このMacに保存";
 "ask.local.identity.storage" = "チャットはこのMacに保存";
-"ask.cloudPromo.body" = "サインインすると、画像認識やWeb検索に対応したクラウドのモデルを使え、会話がデバイス間で同期されます。";
+"ask.local.identity.localMode" = "ローカルモード";
+"ask.cloudPromo.vision" = "画像認識";
+"ask.cloudPromo.search" = "Web検索";
+"ask.cloudPromo.sync" = "同期";
 "ask.cloudPromo.signIn" = "サインイン";
 "ask.cloudPromo.dismiss" = "30日間表示しない";
 "ask.vision.willUse" = "%@ を使用";

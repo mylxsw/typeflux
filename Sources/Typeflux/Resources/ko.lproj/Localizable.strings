@@ -2085,7 +2085,10 @@
 "ask.local.identity" = "로그인 안 됨";
 "ask.local.identity.detail" = "%@ · 이 Mac에만 저장";
 "ask.local.identity.storage" = "대화는 이 Mac에만 저장";
-"ask.cloudPromo.body" = "로그인하면 이미지 인식과 웹 검색을 지원하는 클라우드 모델을 사용하고 여러 기기에서 대화를 동기화할 수 있습니다.";
+"ask.local.identity.localMode" = "로컬 모드";
+"ask.cloudPromo.vision" = "이미지 인식";
+"ask.cloudPromo.search" = "웹 검색";
+"ask.cloudPromo.sync" = "동기화";
 "ask.cloudPromo.signIn" = "로그인";
 "ask.cloudPromo.dismiss" = "30일 동안 숨기기";
 "ask.vision.willUse" = "%@ 사용";
