@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("System monitor store", .serialized)
+@Suite("System monitor store", .serialized, .exclusiveUIState)
 @MainActor
 struct SystemMonitorStoreTests {
     typealias F = SystemMonitorFixtures

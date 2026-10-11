@@ -37,8 +37,21 @@ extension AskLocalTools {
             definition = AskMemoryNoteStore.definition
             target = .init(kind: "workspace", id: "memory:" + owner())
             summary = "Memory / " + owner(); reusable = true
+        case AskNotebookTool.name:
+            guard let tool = notebookTool else { throw AskLocalError.message(L("ask.tool.unavailable")) }
+            definition = AskNotebookTool.definition
+            // Reads may repeat for the conversation; each change is approved on its own.
+            let action = args["action"] as? String ?? ""
+            let id = args["id"] as? String
+            target = try tool.approvalTarget(args)
+            summary = L("ask.tool.notebook") + " / " + action + (id.map { " / " + $0 } ?? "")
+            reusable = AskNotebookTool.readActions.contains(action)
         case "skill":
-            definition = skills.definition(enabledSkills)
+            let available = enabledSkills
+            guard let name = args["name"] as? String, available.contains(where: { $0.name == name }) else {
+                throw AskLocalError.message(L("ask.skills.missing"))
+            }
+            definition = skills.definition(available)
             target = .init(kind: "workspace", id: "skills:" + owner())
             summary = args["name"] as? String ?? "Skill"
         case "run_code":
@@ -121,6 +134,13 @@ extension AskLocalTools {
                 guard Self.fileApprovalTarget(path) == binding.target else { throw AskLocalError.message(L("ask.approval.changed")) }
                 return .init(content: try files.execute(args))
             }.value
+        case AskNotebookTool.name:
+            // Recheck after authorization too; a setting or note may have changed while consent was pending.
+            guard var tool = notebookTool, try tool.approvalTarget(args) == binding.target else {
+                throw AskLocalError.message(L("ask.approval.changed"))
+            }
+            tool.approvedTarget = binding.target
+            return .init(content: try tool.execute(args))
         default: return try await execute(call, conversationId: conversationId)
         }
     }

@@ -3,9 +3,11 @@ import SQLite3
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
-/// The notes in `notes.sqlite`, next to the history database. Search uses LIKE rather
-/// than FTS5: SQLite's tokenizers do not split Chinese or Japanese into words, and a
-/// personal notebook stays small enough to scan.
+// The notes in `notes.sqlite`, next to the history database. Search uses LIKE rather
+// than FTS5: SQLite's tokenizers do not split Chinese or Japanese into words, and a
+// personal notebook stays small enough to scan.
+// Keep schema, transactions and connection access together under one private serial queue.
+// swiftlint:disable:next type_body_length
 final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
     private let queue = DispatchQueue(label: "ask.notes.sqlite")
     private var db: OpaquePointer?
@@ -16,8 +18,10 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         do {
             guard sqlite3_open(url.path, &db) == SQLITE_OK else { throw StoreError.sqlite(message) }
+            sqlite3_busy_timeout(db, 5000)
             try execute("PRAGMA journal_mode = WAL;")
             try execute("PRAGMA synchronous = NORMAL;")
+            try execute("BEGIN IMMEDIATE;")
             try execute("""
             CREATE TABLE IF NOT EXISTS notes (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -38,8 +42,22 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
             """)
             try execute("CREATE INDEX IF NOT EXISTS idx_notes_updated ON notes(updated_at DESC);")
             try execute("CREATE INDEX IF NOT EXISTS idx_notes_created ON notes(created_at DESC);")
+            try migrate()
+            try execute("""
+            CREATE TABLE IF NOT EXISTS note_revisions (
+                note_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                body TEXT NOT NULL,
+                created_at REAL NOT NULL
+            );
+            """)
+            try execute("CREATE INDEX IF NOT EXISTS idx_note_revisions ON note_revisions(note_id, created_at DESC);")
+            try execute("COMMIT;")
         } catch {
             ErrorLogStore.shared.log("Notes database initialization failed: \(error.localizedDescription)")
+            try? execute("ROLLBACK;")
+            if let connection = db { sqlite3_close(connection) }
+            db = nil
         }
     }
 
@@ -53,6 +71,38 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
         if let db { sqlite3_close(db) }
     }
 
+    /// Columns added after the first release (GUL-322). Notes saved before keep their
+    /// defaults; screenshot text, told apart then only by its command name, is marked as such.
+    private func migrate() throws {
+        var existing = Set<String>()
+        try query("PRAGMA table_info(notes)", []) { statement in
+            if let name = Self.text(statement, 1) { existing.insert(name) }
+        }
+        let added: [(String, String)] = [
+            ("source_kind", "TEXT NOT NULL DEFAULT 'command'"), ("conversation_id", "TEXT"), ("message_id", "TEXT"),
+            ("original_body", "TEXT"), ("deleted_at", "REAL"), ("author", "TEXT NOT NULL DEFAULT 'user'")
+        ]
+        for (column, type) in added where !existing.contains(column) {
+            try execute("ALTER TABLE notes ADD COLUMN \(column) \(type);")
+            if column == "source_kind" {
+                let titles = Self.screenshotCommandNames
+                let marks = titles.map { _ in "?" }.joined(separator: ", ")
+                try run("UPDATE notes SET source_kind = 'screenshot' WHERE command IN (\(marks))", titles.map { .text($0) })
+            }
+        }
+        try execute("CREATE INDEX IF NOT EXISTS idx_notes_deleted ON notes(deleted_at);")
+        try execute("CREATE INDEX IF NOT EXISTS idx_notes_conversation ON notes(conversation_id);")
+    }
+
+    /// "Screenshot to Text" in every language the app ships.
+    static var screenshotCommandNames: [String] {
+        var names: Set<String> = [L("screenshot.text.title")]
+        for language in AppLanguage.allCases {
+            names.insert(AppLocalization.shared.string("screenshot.text.title", in: language))
+        }
+        return names.sorted()
+    }
+
     // MARK: - AskNoteStoring
 
     func note(id: UUID) -> AskNote? {
@@ -64,10 +114,37 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
         write("save") { try upsert(note); return true } ?? false
     }
 
+    @discardableResult
+    func save(_ note: AskNote, replacing previous: AskNote, revisionAt date: Date?) -> Bool {
+        write("replace") {
+            let stored = try fetch(where: "id = ?", [.text(previous.id.uuidString)]).first
+            guard note.id == previous.id, stored == Self.persistedSnapshot(previous) else {
+                throw StoreError.sqlite("The note changed before it could be saved.")
+            }
+            if let date { try insertRevision(previous, at: date) }
+            try upsert(note)
+            return true
+        } ?? false
+    }
+
+    /// SQLite stores Unix timestamps; converting Date's reference epoch can round a
+    /// submicrosecond away. Compare the same representation without weakening text checks.
+    private static func persistedSnapshot(_ note: AskNote) -> AskNote {
+        var snapshot = note
+        snapshot.createdAt = Date(timeIntervalSince1970: note.createdAt.timeIntervalSince1970)
+        snapshot.updatedAt = Date(timeIntervalSince1970: note.updatedAt.timeIntervalSince1970)
+        snapshot.editedAt = note.editedAt.map { Date(timeIntervalSince1970: $0.timeIntervalSince1970) }
+        snapshot.deletedAt = note.deletedAt.map { Date(timeIntervalSince1970: $0.timeIntervalSince1970) }
+        return snapshot
+    }
+
     func delete(ids: [UUID]) {
         guard !ids.isEmpty else { return }
         write("delete") {
-            for id in ids { try run("DELETE FROM notes WHERE id = ?", [.text(id.uuidString)]) }
+            for id in ids {
+                try run("DELETE FROM note_revisions WHERE note_id = ?", [.text(id.uuidString)])
+                try run("DELETE FROM notes WHERE id = ?", [.text(id.uuidString)])
+            }
         }
     }
 
@@ -79,9 +156,15 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
     func list(_ query: AskNoteQuery) -> [AskNote] {
         read("list") {
             let (condition, filters) = Self.conditions(query)
-            let order = query.sort == .created ? "created_at DESC" : "updated_at DESC"
+            let order = switch query.sort {
+            case .created: "created_at DESC"
+            case .updated: "updated_at DESC"
+            case .title: "title COLLATE NOCASE ASC, updated_at DESC"
+            }
+            // Recently Deleted lists what went last first, pins aside.
+            let pins = query.scope == .trash ? "deleted_at DESC" : "pinned DESC"
             let values = filters + [.integer(Int64(max(0, query.limit))), .integer(Int64(max(0, query.offset)))]
-            return try fetch(where: condition, values, suffix: "ORDER BY pinned DESC, \(order) LIMIT ? OFFSET ?")
+            return try fetch(where: condition, values, suffix: "ORDER BY \(pins), \(order) LIMIT ? OFFSET ?")
         } ?? []
     }
 
@@ -94,30 +177,106 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
 
     func commands() -> [AskNoteFacet] {
         facets("commands", """
-        SELECT command, COUNT(*) FROM notes GROUP BY command ORDER BY COUNT(*) DESC, command COLLATE NOCASE ASC
+        SELECT command, COUNT(*) FROM notes WHERE deleted_at IS NULL AND source_kind = 'command' AND command != ''
+        GROUP BY command ORDER BY COUNT(*) DESC, command COLLATE NOCASE ASC
+        """)
+    }
+
+    func sources() -> [AskNoteFacet] {
+        facets("sources", """
+        SELECT source_kind, COUNT(*) FROM notes WHERE deleted_at IS NULL GROUP BY source_kind
         """)
     }
 
     func tags() -> [AskNoteFacet] {
         facets("tags", """
-        SELECT tag.value, COUNT(*) FROM notes, json_each(notes.tags_json) AS tag
+        SELECT tag.value, COUNT(*) FROM notes, json_each(notes.tags_json) AS tag WHERE notes.deleted_at IS NULL
         GROUP BY tag.value ORDER BY COUNT(*) DESC, tag.value COLLATE NOCASE ASC
         """)
     }
 
+    func trash(ids: [UUID], at date: Date) {
+        guard !ids.isEmpty else { return }
+        write("trash") {
+            for id in ids {
+                try run("UPDATE notes SET deleted_at = ? WHERE id = ?",
+                        [.double(date.timeIntervalSince1970), .text(id.uuidString)])
+            }
+        }
+    }
+
+    func purgeTrash(before date: Date) {
+        write("purge") {
+            let cutoff = Value.double(date.timeIntervalSince1970)
+            try run("DELETE FROM note_revisions WHERE note_id IN (SELECT id FROM notes WHERE deleted_at < ?)", [cutoff])
+            try run("DELETE FROM notes WHERE deleted_at < ?", [cutoff])
+        }
+    }
+
+    func saveRevision(_ note: AskNote, at date: Date) {
+        write("revision") { try insertRevision(note, at: date) }
+    }
+
+    private func insertRevision(_ note: AskNote, at date: Date) throws {
+        try run("INSERT INTO note_revisions (note_id, title, body, created_at) VALUES (?, ?, ?, ?)",
+                [.text(note.id.uuidString), .text(note.title), .text(note.body), .double(date.timeIntervalSince1970)])
+        try run("""
+        DELETE FROM note_revisions WHERE note_id = ? AND rowid NOT IN (
+            SELECT rowid FROM note_revisions WHERE note_id = ? ORDER BY created_at DESC, rowid DESC LIMIT \(Self.revisionLimit))
+        """, [.text(note.id.uuidString), .text(note.id.uuidString)])
+    }
+
+    func revisions(of id: UUID) -> [AskNoteRevision] {
+        read("revisions") {
+            var result: [AskNoteRevision] = []
+            try query("""
+            SELECT title, body, created_at FROM note_revisions WHERE note_id = ? ORDER BY created_at DESC, rowid DESC
+            """,
+                      [.text(id.uuidString)]) { statement in
+                let date = Date(timeIntervalSince1970: sqlite3_column_double(statement, 2))
+                result.append(AskNoteRevision(noteID: id, title: Self.text(statement, 0) ?? "",
+                                              body: Self.text(statement, 1) ?? "",
+                                              createdAt: date))
+            }
+            return result
+        } ?? []
+    }
+
+    func deleteRevision(of id: UUID, at date: Date) {
+        write("revision delete") {
+            try run("""
+            DELETE FROM note_revisions WHERE rowid = (
+                SELECT rowid FROM note_revisions WHERE note_id = ? AND created_at = ? ORDER BY rowid DESC LIMIT 1)
+            """,
+                    [.text(id.uuidString), .double(date.timeIntervalSince1970)])
+        }
+    }
+
+    static let revisionLimit = 20
+
     /// The WHERE clause and its values for a query's scope and text.
     private static func conditions(_ query: AskNoteQuery) -> (String, [Value]) {
-        var conditions: [String] = []
+        var conditions: [String] = [query.scope == .trash ? "deleted_at IS NOT NULL" : "deleted_at IS NULL"]
         var values: [Value] = []
         switch query.scope {
-        case .all: break
+        case .all, .trash: break
         case .pinned: conditions.append("pinned = 1")
+        case .recent:
+            conditions.append("updated_at >= ?")
+            values.append(.double(Date().timeIntervalSince1970 - AskNoteQuery.recentInterval))
         case let .command(name):
-            conditions.append("command = ?")
+            conditions.append("source_kind = 'command' AND command = ?")
             values.append(.text(name))
+        case let .source(source):
+            conditions.append("source_kind = ?")
+            values.append(.text(source.rawValue))
         case let .tag(tag):
             conditions.append("EXISTS (SELECT 1 FROM json_each(notes.tags_json) WHERE json_each.value = ?)")
             values.append(.text(tag))
+        }
+        if let conversationID = query.conversationID {
+            conditions.append("conversation_id = ?")
+            values.append(.text(conversationID))
         }
         let text = query.text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !text.isEmpty {
@@ -125,7 +284,7 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
             let pattern = "%" + SQLiteAskWordBookStore.escapeLike(text) + "%"
             values += [.text(pattern), .text(pattern), .text(pattern)]
         }
-        return (conditions.isEmpty ? "1" : conditions.joined(separator: " AND "), values)
+        return (conditions.joined(separator: " AND "), values)
     }
 
     // MARK: - SQLite
@@ -143,7 +302,7 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
 
     private static let columns = """
     id, title, body, command, keyword, input, model, source_app, source_bundle_id, tags_json, pinned,
-    created_at, updated_at, edited_at
+    created_at, updated_at, edited_at, source_kind, conversation_id, message_id, original_body, deleted_at, author
     """
 
     private var message: String { db.map { String(cString: sqlite3_errmsg($0)) } ?? "no database" }
@@ -160,11 +319,18 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
     @discardableResult
     private func write<T>(_ what: String, _ body: () throws -> T) -> T? {
         let result: T? = queue.sync {
-            do { return try body() } catch {
+            do {
+                try execute("BEGIN IMMEDIATE;")
+                let result = try body()
+                try execute("COMMIT;")
+                return result
+            } catch {
+                try? execute("ROLLBACK;")
                 ErrorLogStore.shared.log("Notes \(what) failed: \(error.localizedDescription)")
                 return nil
             }
         }
+        guard result != nil else { return nil }
         let center = notificationCenter
         DispatchQueue.main.async { center.post(name: .askNotesDidChange, object: nil) }
         return result
@@ -184,17 +350,22 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
     private func upsert(_ note: AskNote) throws {
         let tags = String(data: try JSONEncoder().encode(note.tags), encoding: .utf8) ?? "[]"
         try run("""
-        INSERT INTO notes (\(Self.columns)) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO notes (\(Self.columns)) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             title = excluded.title, body = excluded.body, command = excluded.command, keyword = excluded.keyword,
             input = excluded.input, model = excluded.model, source_app = excluded.source_app,
             source_bundle_id = excluded.source_bundle_id, tags_json = excluded.tags_json, pinned = excluded.pinned,
-            created_at = excluded.created_at, updated_at = excluded.updated_at, edited_at = excluded.edited_at
+            created_at = excluded.created_at, updated_at = excluded.updated_at, edited_at = excluded.edited_at,
+            source_kind = excluded.source_kind, conversation_id = excluded.conversation_id,
+            message_id = excluded.message_id, original_body = excluded.original_body,
+            deleted_at = excluded.deleted_at, author = excluded.author
         """, [
             .text(note.id.uuidString), .text(note.title), .text(note.body), .text(note.command), .text(note.keyword),
             .text(note.input), .text(note.model), .text(note.sourceApp), .text(note.sourceBundleID), .text(tags),
             .integer(note.pinned ? 1 : 0), .double(note.createdAt.timeIntervalSince1970),
-            .double(note.updatedAt.timeIntervalSince1970), .double(note.editedAt?.timeIntervalSince1970)
+            .double(note.updatedAt.timeIntervalSince1970), .double(note.editedAt?.timeIntervalSince1970),
+            .text(note.source.rawValue), .text(note.conversationID), .text(note.messageID), .text(note.originalBody),
+            .double(note.deletedAt?.timeIntervalSince1970), .text(note.author.rawValue)
         ])
     }
 
@@ -212,8 +383,11 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
                 pinned: sqlite3_column_int64(statement, 10) != 0,
                 createdAt: Date(timeIntervalSince1970: sqlite3_column_double(statement, 11)),
                 updatedAt: Date(timeIntervalSince1970: sqlite3_column_double(statement, 12)),
-                editedAt: sqlite3_column_type(statement, 13) == SQLITE_NULL
-                    ? nil : Date(timeIntervalSince1970: sqlite3_column_double(statement, 13))
+                editedAt: Self.date(statement, 13),
+                source: Self.text(statement, 14).flatMap(AskNoteSource.init(rawValue:)) ?? .command,
+                conversationID: Self.text(statement, 15), messageID: Self.text(statement, 16),
+                originalBody: Self.text(statement, 17), deletedAt: Self.date(statement, 18),
+                author: Self.text(statement, 19).flatMap(AskNoteAuthor.init(rawValue:)) ?? .user
             ))
         }
         return notes
@@ -240,23 +414,7 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
         }
         defer { sqlite3_finalize(statement) }
         for (offset, value) in values.enumerated() {
-            let index = Int32(offset + 1)
-            switch value {
-            case let .text(text):
-                if let text {
-                    sqlite3_bind_text(statement, index, text, -1, SQLITE_TRANSIENT)
-                } else {
-                    sqlite3_bind_null(statement, index)
-                }
-            case let .double(number):
-                if let number {
-                    sqlite3_bind_double(statement, index, number)
-                } else {
-                    sqlite3_bind_null(statement, index)
-                }
-            case let .integer(number):
-                sqlite3_bind_int64(statement, index, number)
-            }
+            try bind(value, to: statement, at: Int32(offset + 1))
         }
         while true {
             switch sqlite3_step(statement) {
@@ -267,8 +425,37 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
         }
     }
 
+    private func bind(_ value: Value, to statement: OpaquePointer, at index: Int32) throws {
+        let status: Int32
+        switch value {
+        case let .text(text):
+            if let text {
+                status = sqlite3_bind_text(statement, index, text, Int32(text.utf8.count), SQLITE_TRANSIENT)
+            } else {
+                status = sqlite3_bind_null(statement, index)
+            }
+        case let .double(number):
+            if let number {
+                status = sqlite3_bind_double(statement, index, number)
+            } else {
+                status = sqlite3_bind_null(statement, index)
+            }
+        case let .integer(number):
+            status = sqlite3_bind_int64(statement, index, number)
+        }
+        guard status == SQLITE_OK else { throw StoreError.sqlite(message) }
+    }
+
+    private static func date(_ statement: OpaquePointer, _ column: Int32) -> Date? {
+        sqlite3_column_type(statement, column) == SQLITE_NULL
+            ? nil : Date(timeIntervalSince1970: sqlite3_column_double(statement, column))
+    }
+
     private static func text(_ statement: OpaquePointer, _ column: Int32) -> String? {
         guard let pointer = sqlite3_column_text(statement, column) else { return nil }
-        return String(cString: pointer)
+        let bytes = UnsafeBufferPointer(start: pointer, count: Int(sqlite3_column_bytes(statement, column)))
+        // Repair invalid stored UTF-8 while preserving the rest of the note, including embedded NULs.
+        // swiftlint:disable:next optional_data_string_conversion
+        return String(decoding: bytes, as: UTF8.self)
     }
 }

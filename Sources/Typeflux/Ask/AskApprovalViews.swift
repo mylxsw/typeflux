@@ -12,6 +12,7 @@ enum AskApprovalPresentation {
 
     static func preview(_ call: AskToolCall) -> Preview {
         let args = (try? AskLocalTools.jsonArguments(call.function.arguments)) ?? [:]
+        if call.function.name == AskNotebookTool.name { return notebookPreview(call, args: args) }
         switch (call.function.name, args["action"] as? String ?? "") {
         case ("project_terminal", "start"):
             if let request = try? AskLocalTools.launchRequest(args),
@@ -35,12 +36,28 @@ enum AskApprovalPresentation {
         }
     }
 
+    private static func notebookPreview(_ call: AskToolCall, args: [String: Any]) -> Preview {
+        switch args["action"] as? String ?? "" {
+        case "update" where args["find"] != nil:
+            return .diff(removed: args["find"] as? String ?? "", added: args["replace"] as? String ?? "")
+        case "create", "append", "update":
+            let title = (args["title"] as? String).map { "# " + $0 + "\n\n" } ?? ""
+            return .content(clip(title + (args["body"] as? String ?? "")))
+        default:
+            return AskLocalTools.builtinRisk(call) >= .write ? .content(clip(call.function.arguments)) : .none
+        }
+    }
+
     /// The full path for file calls, which the row title shortens to a name.
     static func detail(_ call: AskToolCall) -> String? {
         guard ["files", "project_files"].contains(call.function.name),
               let path = (try? AskLocalTools.jsonArguments(call.function.arguments))?["path"] as? String,
               !path.isEmpty else { return nil }
         return path
+    }
+
+    static func disclosure(_ call: AskToolCall) -> String? {
+        call.function.name == AskNotebookTool.name ? L("ask.notes.agent.hint") : nil
     }
 
     static func riskLabel(_ risk: AskToolRisk) -> String {
@@ -119,6 +136,9 @@ struct AskApprovalCard: View {
                 Spacer(minLength: 0)
             }
             preview
+            if let disclosure = AskApprovalPresentation.disclosure(call) {
+                Text(disclosure).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+            }
             Text(AskToolPolicy.action(call)).font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(StudioTheme.textSecondary)
             Text(L(canAllowForConversation ? "ask.approval.exactScope" : "ask.approval.singleUse"))

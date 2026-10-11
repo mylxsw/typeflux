@@ -229,7 +229,7 @@ struct AskLauncherHeaderTests {
         let restingHeight = reported.height
         let screenshot = try element("ask.context.screenshot.toggle", in: window)
         try hover(screenshot, in: window, inside: true)
-        let card = try await hoverCard(in: window, fixture: fixture)
+        let card = try await hoverCard(in: window, fixture: fixture, phase: "initial capture hover")
         #expect(find("ask.context.screenshot.hoverPreview", in: card) != nil)
         #expect(card.ignoresMouseEvents && !card.canBecomeKey)
         #expect(window.firstResponder === editor)
@@ -247,8 +247,12 @@ struct AskLauncherHeaderTests {
         #expect(fixture.model.launcherDraft.screenshot != nil, "the captured image can still be restored")
         #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).image == nil)
         try hover(try element("ask.context.screenshot.toggle", in: window), in: window, inside: false)
+        // Separate synthetic exit/entry events by a render cycle so SwiftUI commits the exit
+        // instead of coalescing both events into an unchanged hover state.
+        try await Task.sleep(for: .milliseconds(20))
+        window.contentView?.layoutSubtreeIfNeeded()
         try hover(try element("ask.context.screenshot.toggle", in: window), in: window, inside: true)
-        _ = try await hoverCard(in: window, fixture: fixture)
+        _ = try await hoverCard(in: window, fixture: fixture, phase: "disabled capture exit/reentry")
         #expect(find("ask.context.screenshot.hoverPreview", in: card) != nil,
                 "a screenshot switched off can be previewed before restoring it")
         fixture.model.launcherDraft.screenshot = nil
@@ -412,13 +416,20 @@ struct AskLauncherHeaderTests {
         #expect(!card.isVisible)
     }
 
-    private func hoverCard(in window: NSWindow, fixture: AskTestFixture) async throws -> NSWindow {
+    private func hoverCard(in window: NSWindow, fixture: AskTestFixture,
+                           phase: String = "hover") async throws -> NSWindow {
         // Observe the rendered panel rather than assuming its asynchronous layout finished after 300 ms.
         try await fixture.wait {
             window.contentView?.layoutSubtreeIfNeeded()
             return window.childWindows?.contains { $0 is AskHoverCardPresenter.Panel && $0.isVisible } == true
         }
-        return try #require(window.childWindows?.first { $0 is AskHoverCardPresenter.Panel && $0.isVisible })
+        let children = window.childWindows?.map {
+            "\(type(of: $0)) visible=\($0.isVisible) frame=\($0.frame)"
+        }.joined(separator: "; ") ?? "none"
+        let state = "\(phase): parentVisible=\(window.isVisible), children=\(children), "
+            + "includeScreenshot=\(fixture.model.launcherDraft.includeScreenshot), "
+            + "hasCapture=\(fixture.model.launcherDraft.screenshot != nil)"
+        return try #require(window.childWindows?.first { $0 is AskHoverCardPresenter.Panel && $0.isVisible }, "\(state)")
     }
 
     private func saveSnapshot(_ view: NSView, name: String) throws {

@@ -8,6 +8,7 @@ struct AskNotesPlugin: AskLauncherPlugin {
     static let keywords = [AskKeyword(keyword: "nb", pluginID: id), AskKeyword(keyword: "笔记", pluginID: id)]
     static let limit = 8
     static let openNotesItemID = "notes.open"
+    static let newNoteItemID = "notes.new"
 
     var store: (any AskNoteStoring)?
 
@@ -45,6 +46,12 @@ struct AskNotesPlugin: AskLauncherPlugin {
         if items.isEmpty {
             let notice = L(query.isEmpty ? "ask.notes.empty" : "ask.notes.noMatch")
             items = [AskPluginItem(id: "notice.notes", title: notice, icon: .symbol("note.text"), valid: false)]
+        }
+        if !query.isEmpty {
+            items.append(AskPluginItem(id: Self.newNoteItemID, title: L("ask.notes.newTitled", query),
+                                       icon: .symbol("square.and.pencil"),
+                                       actions: [AskPluginAction(kind: .createNote(query), title: L("ask.notes.new"),
+                                                                 symbol: "square.and.pencil", shortcut: .enter)]))
         }
         items.append(AskPluginItem(id: Self.openNotesItemID, title: L("ask.notes.openWindow"),
                                    icon: .symbol("sidebar.left"),

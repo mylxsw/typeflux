@@ -278,9 +278,10 @@ struct AskNotesViewModelTests {
         let edited = try #require(store.note(id: note.id))
         #expect(!notes.editing && edited.body == "Changed" && edited.editedAt == Date(timeIntervalSince1970: 5000))
         notes.beginEditing()
-        notes.draftBody = "Discarded"
+        notes.draftBody = "Kept"
         notes.cancelEditing()
-        #expect(store.note(id: note.id)?.body == "Changed" && notes.draftBody == "Changed")
+        #expect(store.note(id: note.id)?.body == "Kept" && !notes.editing, "edits save as they are typed")
+        #expect(store.note(id: note.id)?.originalBody == "Body", "the AI text is kept for Restore Original")
         notes.beginEditing()
         notes.finishEditing()
         #expect(store.note(id: note.id)?.updatedAt == Date(timeIntervalSince1970: 5000))

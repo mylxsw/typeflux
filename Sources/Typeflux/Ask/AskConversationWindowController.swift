@@ -126,15 +126,26 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // Saved AI prompt results, and the windows results and notes open in.
         let notes = services?.notes ?? SQLiteAskNoteStore(url: SQLiteAskNoteStore.defaultURL())
         model.notes = notes
+        // The agent's `notebook` tool reads and writes the same notes.
+        tools.notebook = notes
         let askAboutResult: @MainActor (String) -> Void = { [weak model] prompt in
             // A new conversation about the result, without the launcher's selection or screenshot.
             model?.launcherDraft = AskDraft(text: prompt, includeScreenshot: false, selection: nil)
             model?.submitLauncher()
         }
         let notesWindow = services?.notesWindow ?? AskNotesWindowController.shared
-        notesWindow.configure(store: notes, askAI: askAboutResult) { [weak settings] in
-            settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
-        }
+        notesWindow.configure(store: notes, settings: settings, askAI: askAboutResult,
+                              openConversation: { [weak self] id in
+                                  guard let self else { return }
+                                  self.showConversation()
+                                  Task { await self.model.select(id) }
+                              }, appearance: { [weak settings] in
+                                  settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
+                              })
+        // Recently Deleted keeps notes for 30 days.
+        maintenanceTasks.append(Task.detached(priority: .utility) {
+            notes.purgeTrash(before: Date().addingTimeInterval(-AskNoteQuery.trashRetention))
+        })
         let resultWindow = services?.resultWindow ?? AskResultWindowController.shared
         resultWindow.appearance = { [weak settings] in
             settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
@@ -145,11 +156,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 return notes.save(note) ? note.id : nil
             },
             removeNote: { id in
-                guard let note = notes.note(id: id), !note.isEdited else { return false }
-                notes.delete(ids: [id])
-                return true
+                guard let note = notes.note(id: id), !note.isEdited, !note.isDeleted else { return false }
+                var removed = note
+                removed.deletedAt = Date()
+                return notes.save(removed, replacing: note, revisionAt: nil)
             },
-            noteExists: { notes.note(id: $0) != nil },
+            noteExists: { notes.note(id: $0).map { !$0.isDeleted } ?? false },
             openNotes: { notesWindow.show(selecting: $0) },
             insert: { text, bundleID in
                 guard let bundleID,

@@ -1,6 +1,6 @@
 # 笔记本改版与 Agent 笔记本技能 设计方案
 
-> 状态：设计（GUL-322），未实现。可交互设计稿：`docs/design/notebook-redesign.html`，截图在 `docs/design/notebook-redesign/`。
+> 状态：已实现（GUL-322），一个 PR 交付 P1–P5 的主体，差异见第 12 节。可交互设计稿：`docs/design/notebook-redesign.html`，截图在 `docs/design/notebook-redesign/`。
 > 前置：笔记本 v1 已上线（GUL-292，`docs/design/ai-command-results.md` §4），代码在 `Sources/Typeflux/Ask/Notes/`。外观沿用单词本改版（`docs/design/word-book-redesign.md`）的 Liquid Glass 窗口。
 
 ## 0. 一页结论
@@ -245,3 +245,31 @@
 2. **「Agent 不可见的标签」默认值**：默认提供「私密」标签，还是由用户自己建？
 3. **MCP 服务**：是否需要放在本期（P5）？还是先只做内置工具，MCP 等有外部客户端需求时再加？
 4. **文件夹**：标签加来源是否够用？还是需要「笔记本 / 文件夹」这一层？
+
+## 12. 实现说明
+
+一个 PR 交付了第 10 节 P1–P5 的主体。与上面设计不同、或没有做的地方：
+
+- **外观跟随对话窗口和「界面风格」设置**：窗口用对话窗口的背景（`AskWindowBackdrop`）、侧栏（`askSidePanel`）和玻璃控件（`askInWindowGlass`），并跟随 设置 › 界面风格。选 Liquid Glass 时，侧栏和浮动操作条是玻璃；选经典时，是不透明的平面样式，侧栏贴边，用分隔线隔开。标题栏和对话窗口一样高 52pt。
+- **Agent 的设置放在笔记本窗口里，不新增设置页**：
+  - 侧栏底部的 ✦ 菜单可以打开或关闭「允许 Agent 使用笔记本」。
+  - 在标签上右键，可以选择「对 Agent 隐藏」。被隐藏的标签显示 👁 斜线图标，默认隐藏 `私密` 和 `private`。
+  - 设置 › 技能 里关闭 `notebook` 技能，工具也会一起关闭。
+  - 第 6.4 节设计的「读取 / 写入询问方式」下拉框没有做，沿用现有的确认机制：读取和写入目前都逐次确认（包括自动执行模式），读取确认提示内容会提供给当前模型；写入确认卡显示改动内容或 diff。现有执行链未启用可复用授权，因此没有宣称“每个对话只询问一次”。
+- **回答里的引用**：没有做可点击的引用卡片。技能只要求模型在回答里写出「笔记标题 › 小标题」。
+- **MCP 服务 `typeflux-notebook`**：没有做。它是第 11 节待确认的第 3 项。
+- **标签颜色**：由标签名固定算出，不能自己设置，所以没有建 `tags` 表。
+- **编辑**：输入停止 0.6 秒后自动保存，切换笔记、筛选或关闭前会保存；保存失败时保留草稿。用户与 Agent 同时修改正文时拒绝覆盖，并支持“保存副本”。「取消」不再丢弃修改。⌘C 和 ⌘A 保留给正文里选中的文字。复制整条笔记用操作条上的按钮，全选笔记用多选模式下的 ⌘A。
+- **一致性与隐私**：笔记替换和 Agent 文本修订记录在同一事务中保存（修订还原标题/正文，保留当前标签和置顶；删除通过“最近删除”恢复），审批后再次校验内容版本和权限；私密笔记不参与搜索、列表或标签统计。聊天和快捷入口取消收藏也会移入“最近删除”，收藏标记随恢复/删除更新。
+- **PDF**：用 `NSPrintOperation` 生成 A4 分页的 PDF，深色模式下导出的颜色也会按浅色处理。
+- **截图**：`docs/design/notebook-redesign/impl-*.png` 是用 `AskNotebookVisualTests` 打开真实窗口、再用 `screencapture` 截下来的，包含玻璃效果。重新生成的方法：设置 `TYPEFLUX_NOTEBOOK_SNAPSHOTS=<目录>`，然后运行 `swift test --filter AskNotebookVisualTests`。
+
+实际窗口截图（测试样例数据）：Liquid Glass [深色阅读](notebook-redesign/impl-glass-1-read-dark.png)、[浅色阅读](notebook-redesign/impl-glass-2-read-light.png)、[编辑](notebook-redesign/impl-glass-3-edit.png)、[分栏](notebook-redesign/impl-glass-4-split.png)；经典外观 [深色](notebook-redesign/impl-classic-1-read-dark.png)、[浅色](notebook-redesign/impl-classic-2-read-light.png)。
+
+最小窗口为 940 × 560pt。窄详情栏会收起来源和操作条的文字标签，保留完整的模式名称、悬停提示和辅助功能标签；分栏编辑器的格式工具条可以横向滚动。真实点击回归覆盖返回来源、复制、切换分栏和滚动到末尾插入表格，并检查控件没有超出详情栏：Liquid Glass [阅读](notebook-redesign/impl-glass-11-minimum-read.png)、[分栏](notebook-redesign/impl-glass-12-minimum-split.png)，经典外观 [阅读](notebook-redesign/impl-classic-11-minimum-read.png)、[分栏](notebook-redesign/impl-classic-12-minimum-split.png)。
+
+2026-10-11 在 macOS 工作机完成编译和全量验证（Swift 6.4）：
+
+- `swift test --skip-build --no-parallel --enable-code-coverage`：XCTest 3,681 个用例（17 个跳过），Swift Testing 2,458 个用例 / 367 个套件，全部执行完成，0 失败。此前已编译当前源码并通过针对性回归。
+- LLVM 行覆盖率：`Sources/Typeflux/Ask/Notes/` 的 15 个文件合计 5,312 / 5,727，**92.75%**；这是笔记本模块统计，不是整个应用的覆盖率。
+- SwiftLint 0.65.1 严格检查仍报告仓库既有问题（全 Sources 1,759 项）。对比相同工具和配置下本次修改的已有文件，问题数从 188 降到 183，没有增加的文件 / 规则组合；新增笔记本源文件没有 lint 问题。`git diff --check` 通过。

@@ -157,6 +157,20 @@ extension SettingsStore {
         set { defaults.set(newValue.sorted(), forKey: "ask.disabledSkills") }
     }
 
+    /// Whether the agent gets the `notebook` tool and skill for the user's notes.
+    var askNotebookAgentEnabled: Bool {
+        get { defaults.object(forKey: "ask.notebook.agentEnabled") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "ask.notebook.agentEnabled") }
+    }
+
+    /// Notes with these tags do not exist for the agent.
+    var askNotebookHiddenTags: [String] {
+        get { defaults.stringArray(forKey: "ask.notebook.hiddenTags") ?? Self.defaultNotebookHiddenTags }
+        set { defaults.set(newValue, forKey: "ask.notebook.hiddenTags") }
+    }
+
+    static let defaultNotebookHiddenTags = ["私密", "private"]
+
     /// New Ask conversations are kept on this Mac instead of Typeflux Cloud. The key
     /// predates per-conversation storage, when it switched all of Ask to this Mac,
     /// so users who had that on keep starting private conversations.

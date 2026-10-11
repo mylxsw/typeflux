@@ -79,11 +79,13 @@ final class AskConversationModel: ObservableObject {
         AskWordBookWindowController.shared.show(lookingUp: text)
     }
     /// Saved AI prompt results; the window controller supplies them (`AskConversationModel+Notes`).
-    var notes: (any AskNoteStoring)?
+    var notes: (any AskNoteStoring)? { didSet { refreshAnswerNotes() } }
     /// The shown result's text and the note it was saved as, so ⌘S again takes it out.
     var launcherNote: (body: String, id: UUID)?
     /// Opens the notes window on a note; tests record it instead.
     var openNotes: @MainActor (UUID?) -> Void = { id in AskNotesWindowController.shared.show(selecting: id) }
+    /// Opens the notes window on a new note with this title; tests record it instead.
+    var createNote: @MainActor (String) -> Void = { AskNotesWindowController.shared.showNewNote(title: $0) }
     /// Shows a result moved out of the launcher (⌘O); tests record it instead.
     var presentResultWindow: @MainActor (AskResultDocument) -> Void = { AskResultWindowController.shared.present($0) }
     /// Opens a saved note in a result window; tests record it instead.
@@ -263,7 +265,9 @@ final class AskConversationModel: ObservableObject {
     /// Conversations stored on this Mac. Signed in, they are listed beside the Cloud ones.
     @Published private(set) var localConversationIds: Set<String> = []
     @Published private(set) var selected: AskConversation?
-    @Published private(set) var selectedId: String?
+    @Published private(set) var selectedId: String? { didSet { if selectedId != oldValue { refreshAnswerNotes() } } }
+    /// Answers of the shown conversation that are in the notebook, by message id.
+    @Published var answerNoteIDs: [String: UUID] = [:]
     @Published private(set) var isLoadingSelection = false
     @Published private(set) var selectionLoadFailed = false
     private(set) var snapshots: [String: AskConversation] = [:]
@@ -350,6 +354,7 @@ final class AskConversationModel: ObservableObject {
     private var authObserver: AnyCancellable?
     private var modelObserver: AnyCancellable?
     private var memoryObserver: AnyCancellable?
+    private var notesObserver: AnyCancellable?
     private let defaults: UserDefaults
     private let memoryInvalidations: MemoryInvalidationStore
     private var memoryPurgeTask: Task<Void, Never>?
@@ -379,6 +384,16 @@ final class AskConversationModel: ObservableObject {
         }
         authObserver = NotificationCenter.default.publisher(for: .authDidLogout).sink { [weak self] _ in
             Task { @MainActor in self?.resetSession() }
+        }
+        notesObserver = NotificationCenter.default.publisher(for: .askNotesDidChange).sink { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.refreshAnswerNotes()
+                if let saved = self.launcherNote, self.notes?.note(id: saved.id).map({ !$0.isDeleted }) != true {
+                    self.launcherNote = nil
+                    self.plugins.showNoteSaved(false)
+                }
+            }
         }
         memoryObserver = NotificationCenter.default.publisher(for: .askMemoryDidClear)
             .sink { [weak self] notification in
@@ -1562,6 +1577,8 @@ final class AskConversationModel: ObservableObject {
 
     /// Screen capture needs an opened data scope in standard mode, just like files need a root.
     func automaticallyApproves(_ call: AskToolCall, risk: AskToolRisk, conversationId: String) -> Bool {
+        // Reading exposes personal notes to the current model; every mutation needs explicit consent too.
+        if call.function.name == AskNotebookTool.name { return false }
         let mode = permissionMode(conversationId: conversationId)
         if mode == .standard, call.function.name == "computer",
            (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot" {

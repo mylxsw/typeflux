@@ -8,6 +8,8 @@ struct AskTranscriptText: NSViewRepresentable {
     var text: String
     var markdown = true
     var onAsk: ((String, String) -> Void)? = nil
+    /// Saves the selected text to the notebook; nil leaves the action out.
+    var onSaveNote: ((String) -> Void)?
     @Environment(\.colorScheme) private var colorScheme
 
     func makeNSView(context _: Context) -> Editor {
@@ -28,6 +30,7 @@ struct AskTranscriptText: NSViewRepresentable {
 
     func updateNSView(_ editor: Editor, context _: Context) {
         editor.onAsk = onAsk
+        editor.onSaveNote = onSaveNote
         editor.setContent(text, markdown: markdown, dark: colorScheme == .dark)
     }
 
@@ -48,6 +51,7 @@ struct AskTranscriptText: NSViewRepresentable {
         var onAsk: ((String, String) -> Void)? {
             didSet { if onAsk == nil { askPopover.close() } }
         }
+        var onSaveNote: ((String) -> Void)?
         let askPopover = NSPopover()
 
         var selectedExcerpt: String? {
@@ -72,8 +76,11 @@ struct AskTranscriptText: NSViewRepresentable {
             anchor.size.height = min(anchor.height, 18)
             askPopover.behavior = .transient
             askPopover.animates = false
+            let actions = AskSelectionAction.standard + (onSaveNote == nil ? [] : [.note])
             let host = NSHostingController(rootView:
-                AskSelectionActionBar { [weak self] action in self?.perform(action, excerpt: excerpt) }
+                AskSelectionActionBar(actions: actions) { [weak self] action in
+                    self?.perform(action, excerpt: excerpt)
+                }
                     .onCopyCommand { [NSItemProvider(object: excerpt as NSString)] }
             )
             // The popover otherwise sizes itself before SwiftUI has measured the
@@ -93,6 +100,8 @@ struct AskTranscriptText: NSViewRepresentable {
             case .copy:
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(excerpt, forType: .string)
+            case .note:
+                onSaveNote?(excerpt)
             default:
                 onAsk?(excerpt, action.question)
             }

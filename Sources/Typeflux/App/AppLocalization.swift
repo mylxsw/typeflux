@@ -127,6 +127,11 @@ final class AppLocalization: ObservableObject {
         return String(format: localized, locale: locale, arguments: arguments)
     }
 
+    /// The text for `key` in `language`, whatever the interface language is.
+    func string(_ key: String, in language: AppLanguage) -> String {
+        localizedString(for: key, language: language)
+    }
+
     private func localizedString(for key: String, language: AppLanguage) -> String {
         for localizationName in language.bundleLocalizationCandidates {
             if let cached = cachedTable(localizationName), let localized = cached[key] {
