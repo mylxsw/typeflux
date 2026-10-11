@@ -187,6 +187,25 @@ struct AskComposer: View {
 
     private var draft: Binding<AskDraft> { launcher ? $model.launcherDraft : $model.draft }
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
+    private var launcherChatAction: AskLauncherChatAction {
+        .resolve(draft: model.launcherDraft, pluginOffersAskAI: pluginDisplay?.offersAskAI == true,
+                 loadingAttachments: model.isLoadingAttachments(launcher: true))
+    }
+    private var launcherChatActionEnabled: Bool {
+        if launcherChatAction == .openChat { return model.canOpenChatFromLauncher }
+        if plugins.isActive {
+            return pluginDisplay?.offersAskAI == true && model.canOpenChatFromLauncher
+                && model.submissionPreflights[true] == nil
+        }
+        return model.canSendLauncher
+    }
+
+    private func runLauncherChatAction() {
+        guard launcherChatActionEnabled else { return }
+        if launcherChatAction == .openChat { openChat() }
+        else if plugins.isActive { askAIFromPlugin() }
+        else { model.submitLauncher() }
+    }
     /// The launcher is the workspace composer summoned by a hotkey: the same
     /// controls and states on a glass card, so it sits on whatever window it floats over.
     private var chrome: AskComposerChrome {
@@ -475,7 +494,7 @@ struct AskComposer: View {
             results.move(key == .up ? -1 : 1)
             quickResults = results
         case let .number(number):
-            guard quickActions == nil, results.rows.indices.contains(number - 1) else { return false }
+            guard quickActions == nil, results.listRows.indices.contains(number - 1) else { return false }
             let row = results.rows[number - 1]
             guard results.isEnabled(row) else { return true }
             self.quickResults?.highlight(number - 1)
@@ -523,7 +542,7 @@ struct AskComposer: View {
     }
     // MARK: - Keyword plugins
 
-    /// Which row in keyword mode is highlighted: 0 the plugin's, 1 "Ask AI".
+    /// Return targets the plugin (0) or defaults to the header's AI action (1).
     @State private var pluginHighlight = 0
     /// Like `quickReserve`: the tallest the plugin's results have been in this keyword mode.
     @State private var pluginReserve: CGFloat = 0
@@ -647,7 +666,7 @@ struct AskComposer: View {
         let language = AppLocalization.shared.language
         if display.hint != nil {
             switch key {
-            case .up, .down: pluginHighlight = pluginHighlight == 0 ? 1 : 0
+            case .up, .down: pluginHighlight = 0
             case .tab: return acceptPluginHint()
             case .enter: if pluginHighlight == 0 { runPluginMain(); return true } else { return false }
             default: return false
@@ -655,17 +674,13 @@ struct AskComposer: View {
             return true
         }
         switch key {
-        case .up, .down: movePluginHighlight(key == .up ? -1 : 1, offersAskAI: display.offersAskAI)
+        case .up, .down: movePluginHighlight(key == .up ? -1 : 1)
         case let .number(number):
             guard let count = AskPluginResultsView.numberedItemCount(display) else { return false }
-            if number == count + 1, display.offersAskAI {
-                askAIFromPlugin()
-            } else {
-                guard number <= count else { return false }
-                pluginHighlight = 0
-                guard plugins.selectItem(number - 1) else { return true }
-                runPluginMain()
-            }
+            guard number <= count else { return false }
+            pluginHighlight = 0
+            guard plugins.selectItem(number - 1) else { return true }
+            runPluginMain()
         case .tab:
             // ⇥ on a row that completes goes one level deeper; elsewhere it changes the option.
             if let completion = plugins.output?.selected?.autocomplete {
@@ -771,20 +786,11 @@ struct AskComposer: View {
         return true
     }
 
-    /// The arrows move through a list's rows, then on to "Ask AI" (when offered) and back around.
-    private func movePluginHighlight(_ delta: Int, offersAskAI: Bool) {
+    /// Arrows wrap through visible plugin items; the header owns the AI action.
+    private func movePluginHighlight(_ delta: Int) {
         if pluginHighlight == 0, plugins.moveSelection(delta) { return }
-        guard offersAskAI else {
-            // Without "Ask AI" the list wraps around on itself.
-            pluginHighlight = 0
-            if let indices = plugins.output?.selectableIndices, let index = delta < 0 ? indices.last : indices.first {
-                plugins.selectItem(index)
-            }
-            return
-        }
-        pluginHighlight = pluginHighlight == 0 ? 1 : 0
-        if pluginHighlight == 0, let indices = plugins.output?.selectableIndices {
-            guard let index = delta < 0 ? indices.last : indices.first else { pluginHighlight = 1; return }
+        pluginHighlight = 0
+        if let indices = plugins.output?.selectableIndices, let index = delta < 0 ? indices.last : indices.first {
             plugins.selectItem(index)
         }
     }
@@ -1514,7 +1520,7 @@ struct AskComposer: View {
 
     /// The launcher's first row: the recording dot while dictating,
     /// the editor (the words being recognised), then the microphone
-    /// and open-chat buttons, or the elapsed time, cancel and stop while recording.
+    /// and chat/AI button, or the elapsed time, cancel and stop while recording.
     private var launcherHeader: some View {
         HStack(alignment: .top, spacing: 10) {
             if active {
@@ -1556,7 +1562,9 @@ struct AskComposer: View {
                 .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
                 .accessibilityIdentifier("ask.composer.voice")
             if !active {
-                AskLauncherOpenChatButton(enabled: model.canOpenChatFromLauncher, action: openChat)
+                AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
+                                         tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
+                                          action: runLauncherChatAction)
             }
         }
         .padding(.horizontal, chrome.horizontalInset)

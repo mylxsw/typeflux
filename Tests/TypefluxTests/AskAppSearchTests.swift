@@ -322,14 +322,14 @@ struct AskQuickResultsAppTests {
         asked.move(1)
         asked.move(-1)
         let still = try #require(resolve("wechat? ", previous: asked))
-        #expect(still.highlightedRow == .askAI)
+        #expect(still.highlightedRow == .app(0), "Arrows wrap through visible results without an AI row")
     }
 
     @Test func viewMetricsFollowTheRows() throws {
         let one = try #require(resolve("wx"))
         let two = try #require(resolve("wechat?"))
         #expect(AskQuickResultsView.height(for: one) == AskQuickResultsView.height(for: two))
-        let bare: CGFloat = 1 + 12 + 42 + 42 + 2 + 2 * (AskQuickResultsView.sectionHeight + AskQuickResultsView.rowSpacing)
+        let bare: CGFloat = 1 + 12 + 42 + AskQuickResultsView.sectionHeight + AskQuickResultsView.rowSpacing
         #expect(AskQuickResultsView.height(for: one) == bare)
         #expect(AskQuickResultsView.hint(for: one) == L("ask.quick.hint.app"))
         #expect(AskQuickResultsView.hint(for: two) == L("ask.launcher.hint"))

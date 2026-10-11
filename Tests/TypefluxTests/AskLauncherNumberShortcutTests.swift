@@ -6,6 +6,19 @@ import Testing
 @Suite("Launcher number hints", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherNumberShortcutTests {
+    @Test func chatActionUsesIntentionalInputAndShowsTheMatchingShortcut() {
+        let empty = AskDraft(text: " \n ", screenshot: "captured", selection: "Automatic selection", source: "Safari")
+        #expect(AskLauncherChatAction.resolve(draft: empty) == .openChat)
+        #expect(AskLauncherChatAction.openChat.shortcut == "O")
+        #expect(AskLauncherChatAction.resolve(draft: AskDraft(text: "ss")) == .askAI)
+        let attached = AskDraft(attachments: [AskAttachment(kind: .file, name: "notes.txt", text: "Notes")])
+        #expect(AskLauncherChatAction.resolve(draft: attached) == .askAI)
+        #expect(AskLauncherChatAction.resolve(draft: empty, pluginOffersAskAI: true) == .askAI)
+        #expect(AskLauncherChatAction.resolve(draft: empty, loadingAttachments: true) == .askAI)
+        #expect(AskLauncherChatAction.askAI.shortcut == "↩")
+        #expect(AskLauncherChatAction.askAI.hint.contains("⌘↩"))
+    }
+
     @Test func numbersRequireCommandAloneAndStopAtNine() {
         typealias Shortcuts = AskLauncherNumberShortcuts
         for (index, code) in [UInt16(18), 19, 20, 21, 23, 22, 26, 28, 25].enumerated() {
@@ -43,7 +56,8 @@ struct AskLauncherNumberShortcutTests {
         #expect(changes.last == false)
     }
 
-    @Test func openChatHintRendersInBothThemesAndCompactLayouts() async throws {
+    @Test(arguments: [AskLauncherChatAction.openChat, .askAI])
+    func chatActionHintRendersInBothThemesAndCompactLayouts(mode: AskLauncherChatAction) async throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer {
@@ -59,7 +73,7 @@ struct AskLauncherNumberShortcutTests {
                     let hosting = NSHostingView(rootView:
                         HStack {
                             Spacer(minLength: 0)
-                            AskLauncherOpenChatButton(enabled: true, action: {})
+                            AskLauncherOpenChatButton(mode: mode, enabled: true, action: {})
                         }
                             .padding(.horizontal, 14)
                             .frame(height: 50)
@@ -81,9 +95,9 @@ struct AskLauncherNumberShortcutTests {
                     let png = try #require(bitmap.representation(using: .png, properties: [:]))
                     renders.append(png)
                     if let directory {
-                        let mode = appearance == .aqua ? "light" : "dark"
+                        let theme = appearance == .aqua ? "light" : "dark"
                         try png.write(to: URL(fileURLWithPath: directory)
-                            .appendingPathComponent("chat-\(Int(width))-\(mode)-\(visible ? "held" : "idle").png"))
+                            .appendingPathComponent("chat-\(mode)-\(Int(width))-\(theme)-\(visible ? "held" : "idle").png"))
                     }
                 }
                 #expect(renders[0] != renders[1], "The open-chat shortcut must appear while Command is held")
@@ -122,8 +136,8 @@ struct AskLauncherNumberShortcutTests {
                 let png = try #require(bitmap.representation(using: .png, properties: [:]))
                 renders.append(png)
                 if let directory {
-                    let mode = appearance == .aqua ? "light" : "dark"
-                    try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("\(mode)-\(visible ? "held" : "idle").png"))
+                    let theme = appearance == .aqua ? "light" : "dark"
+                    try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("\(theme)-\(visible ? "held" : "idle").png"))
                 }
             }
             #expect(renders[0] != renders[1], "Command hints must become visible in both appearances")

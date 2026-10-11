@@ -5,7 +5,7 @@ import SwiftUI
 /// an action footer.
 struct ClipboardPanelView: View {
     /// Width of the list; the preview pane adds `ClipboardPreviewPane.width` to its right.
-    static let width: CGFloat = 640
+    static let width: CGFloat = 512
     static let height: CGFloat = 560
 
     static func size(showsPreview: Bool) -> NSSize {

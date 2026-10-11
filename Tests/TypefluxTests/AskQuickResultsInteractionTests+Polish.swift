@@ -66,8 +66,8 @@ extension AskQuickResultsInteractionTests {
             replaceText("gh", in: launcher)
             try await waitFor { model.plugins.output?.original == "gh" }
             try await launcher.press(Self.up)
-            try await launcher.press(Self.returnKey)
-            #expect(try await launcher.sentCount() == 1, "with text typed, Ask AI is back and takes Return")
+            try await launcher.press(Self.returnKey, .command)
+            #expect(try await launcher.sentCount() == 1, "with text typed, the header offers AI through Command-Return")
         }
     }
 

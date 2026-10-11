@@ -30,7 +30,7 @@ struct AskQuickResultsScrollTests {
     }
 
     @Test(arguments: [NSAppearance.Name.aqua, .darkAqua])
-    func replacementRowsHaveNoGhostsAndAIStaysAtTheBottom(appearance: NSAppearance.Name) async throws {
+    func replacementRowsHaveNoGhostsOrAIFooter(appearance: NSAppearance.Name) async throws {
         // The rows are located through their AX nodes, which SwiftUI creates on demand.
         let accessibility = AskWorkspaceTestAccessibility()
         defer { accessibility.restore() }
@@ -83,9 +83,8 @@ struct AskQuickResultsScrollTests {
         state.results = results("Before", count: 12)
         try await Task.sleep(for: .milliseconds(100))
         // Wait, at most two seconds, for the first rows' AX nodes; later lookups must find them at once.
-        for _ in 0 ..< 100 where lookup("ask.quick.askAI") == nil { try await Task.sleep(for: .milliseconds(20)) }
-        let anchored = try frame("ask.quick.askAI")
-        #expect(anchored.height > 0 && anchored.minY >= window.frame.minY)
+        for _ in 0 ..< 100 where lookup("ask.quick.app") == nil { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(lookup("ask.quick.askAI") == nil, "AI is available in the launcher header only")
         let before = try snapshot("before")
         var weak = results("After", count: 2)
         weak.best = nil
@@ -93,7 +92,7 @@ struct AskQuickResultsScrollTests {
         state.results = weak
         try await Task.sleep(for: .milliseconds(32))
         let immediate = try snapshot("replacement-32ms")
-        #expect(try frame("ask.quick.askAI") == anchored, "AI must not move when a query loses its best match")
+        #expect(lookup("ask.quick.askAI") == nil)
         let first = try frame("ask.quick.app")
         #expect(abs(first.maxY - (window.frame.maxY - 29)) < 1,
                 "Reset to the heading and show the entire first result after replacing groups")

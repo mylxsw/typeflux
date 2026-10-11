@@ -117,7 +117,7 @@ struct AskQuickResultsTests {
         var results = try #require(resolve("1+1"))
         #expect(results.rows == [.calculation, .format(0), .format(1), .askAI])
         results.move(-1)
-        #expect(results.highlightedRow == .askAI)
+        #expect(results.highlightedRow == .format(1))
         #expect(results.chosen)
         results.move(1)
         #expect(results.highlightedRow == .calculation)
@@ -169,9 +169,8 @@ struct AskQuickResultsTests {
         let none = try #require(resolve("1/0"))
         let rowAndSpacing = AskQuickResultsView.formatHeight + AskQuickResultsView.rowSpacing
         #expect(AskQuickResultsView.height(for: three) - AskQuickResultsView.height(for: none) == rowAndSpacing * 3)
-        // Hairline, list padding, calculation, "Ask AI" and one gap between them,
-        // plus a heading for each; the hint sits in the launcher's bottom bar.
-        let bare: CGFloat = 123 + 2 * (AskQuickResultsView.sectionHeight + AskQuickResultsView.rowSpacing)
+        // Hairline, list padding, calculation and its heading; AI lives in the header.
+        let bare: CGFloat = 1 + 12 + 66 + 20 + 2
         #expect(AskQuickResultsView.height(for: none) == bare)
     }
 

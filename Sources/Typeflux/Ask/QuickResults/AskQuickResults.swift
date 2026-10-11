@@ -2,7 +2,7 @@ import AppKit
 
 /// What the launcher shows under its controls when the text has a local
 /// answer: a calculation with other ways to write it, or applications, System
-/// Settings panes, files and folders to open, and always the way back to the AI.
+/// Settings panes, files and folders to open. AI remains the fallback Return action.
 /// See `docs/design/launcher-content-search.md` §2.
 struct AskQuickResults: Equatable {
     enum Row: Equatable {
@@ -16,6 +16,7 @@ struct AskQuickResults: Equatable {
         case file(Int)
         /// "Show all N files": opens file mode with the same text.
         case showAllFiles
+        /// A fallback action, presented in the header rather than as a result row.
         case askAI
     }
 
@@ -42,7 +43,7 @@ struct AskQuickResults: Equatable {
     var moreFiles = false
     /// Applications precede files unless file-first mode was explicitly selected.
     var groups: [Group] = []
-    /// The clear winner, listed first and taking Return. Without one "Ask AI" takes Return from its fixed footer.
+    /// The clear winner, listed first and taking Return. Without one the header's AI action takes Return.
     var best: Row?
     var notice: Notice?
     /// The expression being typed while the last result stays on screen, dimmed.
@@ -97,6 +98,9 @@ struct AskQuickResults: Equatable {
         let conversions: [Row] = calculation == nil ? [] : [.calculation] + formats.indices.map(Row.format)
         return conversions + listed + [.askAI]
     }
+
+    /// Only visible results receive a height, number badge or arrow-key selection.
+    var listRows: [Row] { rows.filter { $0 != .askAI } }
 
     func identity(of row: Row) -> String {
         switch row {
@@ -156,7 +160,7 @@ struct AskQuickResults: Equatable {
         var next = highlighted
         for _ in 0 ..< count {
             next = ((next + delta) % count + count) % count
-            if isEnabled(rows[next]) { highlighted = next; chosen = true; return }
+            if rows[next] != .askAI, isEnabled(rows[next]) { highlighted = next; chosen = true; return }
         }
     }
 

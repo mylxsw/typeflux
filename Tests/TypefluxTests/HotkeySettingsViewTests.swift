@@ -159,7 +159,9 @@ struct HotkeySettingsViewTests {
                 let template = try #require(templates.first {
                     $0.value("accessibilityIdentifier") as? String == "hotkeys.keyword.template.rw"
                 })
-                #expect(template.frame.height >= 44)
+                for item in templates {
+                    #expect(abs(item.frame.height - 32) < 1)
+                }
                 try template.press()
                 try await SettingsBehaviorTestSupport.wait { window.attachedSheet != nil }
                 let sheet = try #require(window.attachedSheet)

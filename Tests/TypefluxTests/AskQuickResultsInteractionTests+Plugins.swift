@@ -136,15 +136,27 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func commandReturnTakesTheResultToTheAI() async throws {
+    @Test(arguments: [false, true])
+    func headerAndCommandReturnTakeTheResultToTheAI(clickHeader: Bool) async throws {
         try await withPasteboard { _ in
+            let accessibility = AskWorkspaceTestAccessibility()
+            defer { accessibility.restore() }
             let translation = Translation()
             let launcher = try await Launcher(text: "", prepare: translation.install)
             defer { launcher.close() }
             let model = launcher.fixture.model
             try await type("fy hello", into: launcher)
             try await settle { model.plugins.output?.body.contains("[zh-Hans] hello") == true }
-            try await launcher.press(Self.returnKey, .command)
+            if clickHeader {
+                let point = try AskWorkspaceTestAccessibility.center(identifier: "ask.launcher.openChat", in: launcher.window)
+                for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                    NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                        timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: launcher.window.windowNumber,
+                        context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)))
+                }
+            } else {
+                try await launcher.press(Self.returnKey, .command)
+            }
             #expect(try await launcher.sentCount() == 1)
             #expect(await launcher.fixture.api.sends.first?.text.contains("[zh-Hans] hello") == true)
             #expect(!model.plugins.isActive)

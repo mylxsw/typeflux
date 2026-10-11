@@ -22,8 +22,8 @@ struct ClipboardPreviewMotionTests {
                 for _ in 0 ..< 150 where controller.isResizingPreview {
                     try await Task.sleep(for: .milliseconds(10))
                     checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
-                    if panel.frame.width > 640 && panel.frame.width < 920 { intermediate += 1 }
-                    if !captured, (740 ... 840).contains(panel.frame.width) {
+                    if panel.frame.width > 512 && panel.frame.width < 792 { intermediate += 1 }
+                    if !captured, (612 ... 712).contains(panel.frame.width) {
                         try snapshot(host, name: shows ? "opening" : "closing")
                         captured = true
                     }
@@ -43,7 +43,7 @@ struct ClipboardPreviewMotionTests {
             model.togglePreview()
             try await Task.sleep(for: .milliseconds(80))
             let middle = panel.frame
-            #expect(middle.width > 640 && middle.width < 920)
+            #expect(middle.width > 512 && middle.width < 792)
             model.togglePreview()
             #expect(panel.frame == middle, "Reversing cannot snap to either endpoint")
             try await Task.sleep(for: .milliseconds(40))
@@ -55,7 +55,7 @@ struct ClipboardPreviewMotionTests {
                 checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
             }
             #expect(!controller.isResizingPreview)
-            #expect(panel.frame.width == 920)
+            #expect(panel.frame.width == 792)
             #expect(model.showsPreview)
         }
     }
@@ -66,11 +66,11 @@ struct ClipboardPreviewMotionTests {
             let center = panel.frame.midX
             let top = panel.frame.maxY
             model.togglePreview()
-            #expect(panel.frame.width == 920)
+            #expect(panel.frame.width == 792)
             #expect(!controller.isResizingPreview)
             checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
             model.togglePreview()
-            #expect(panel.frame.width == 640)
+            #expect(panel.frame.width == 512)
             checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
         }
     }
@@ -86,7 +86,7 @@ struct ClipboardPreviewMotionTests {
             #expect(panel.frame == stopped)
             controller.present(model)
             #expect(controller.presentedWindow === panel)
-            #expect(panel.frame.width == 920)
+            #expect(panel.frame.width == 792)
             #expect(!controller.isResizingPreview)
             checkSynchronized(controller: controller, panel: panel, host: host, center: try #require(panel.screen).visibleFrame.midX,
                               top: panel.frame.maxY)
@@ -97,13 +97,13 @@ struct ClipboardPreviewMotionTests {
         let layout = ClipboardPanelLayout()
         #expect(layout.width == nil)
         layout.setWidth(100)
-        #expect(layout.width == 640)
+        #expect(layout.width == 512)
         layout.setWidth(780)
         #expect(layout.width == 780)
         layout.setWidth(780)
         #expect(layout.width == 780)
         layout.setWidth(1200)
-        #expect(layout.width == 920)
+        #expect(layout.width == 792)
     }
 
     private func checkSynchronized(controller: ClipboardPanelController, panel: NSWindow, host: NSHostingView<AnyView>,

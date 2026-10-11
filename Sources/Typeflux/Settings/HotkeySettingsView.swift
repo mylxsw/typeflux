@@ -172,7 +172,7 @@ struct HotkeySettingsView: View {
                                 .foregroundStyle(StudioTheme.textSecondary)
                         }
                         .foregroundStyle(StudioTheme.textPrimary)
-                        .padding(.horizontal, 10).frame(height: 44)
+                        .padding(.horizontal, 10).frame(height: 32)
                         .background(ModelVisualStyle.control,
                                     in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius))
                         .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius)

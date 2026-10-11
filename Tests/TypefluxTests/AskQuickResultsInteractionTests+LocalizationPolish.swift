@@ -45,8 +45,7 @@ extension AskQuickResultsInteractionTests {
             #expect(model.plugins.output?.selectedItem == 3)
             try await launcher.press(Self.up)
             #expect(model.plugins.output?.selectedItem == 1)
-            try await launcher.press(Self.up) // Wrap through Ask AI.
-            try await launcher.press(Self.up)
+            try await launcher.press(Self.up) // Wrap directly to the last executable row.
             #expect(model.plugins.output?.selectedItem == 3)
             try await launcher.press(Self.returnKey)
             #expect(pasteboard.string(forType: .string) == "3" && launcher.dismissed == 1)

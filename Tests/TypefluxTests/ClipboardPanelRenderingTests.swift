@@ -237,13 +237,13 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         // frame the window server allows rather than assume the host display fits 560pt.
         func placed(top: CGFloat) -> NSRect {
             let visible = screen.visibleFrame
-            let wanted = NSRect(x: (visible.midX - 320).rounded(), y: top - 560, width: 640, height: 560)
+            let wanted = NSRect(x: (visible.midX - 256).rounded(), y: top - 560, width: 512, height: 560)
             return window.constrainFrameRect(AskLauncherPlacement.clamped(wanted, screen: visible), to: screen)
         }
         XCTAssertEqual(window.frame,
                        placed(top: AskLauncherPlacement.top(on: screen.visibleFrame) - AskMetrics.launcherGutter))
         XCTAssertEqual(window.frame.midX, screen.visibleFrame.midX, accuracy: 0.5)
-        XCTAssertEqual(window.frame.size, NSSize(width: 640, height: 560))
+        XCTAssertEqual(window.frame.size, NSSize(width: 512, height: 560))
 
         // Reopening follows the launcher's saved vertical position on this display.
         settings.askLauncherPosition = .lastPosition

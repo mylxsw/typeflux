@@ -76,7 +76,7 @@ struct AskLauncherPolishTests {
         #expect(asks("", nil, false, output))
     }
 
-    @Test func withoutAskAITheListIsShorterAndTheBarLeavesItOut() {
+    @Test func withoutAskAITheHeightStaysTheSameAndTheBarLeavesItOut() {
         let item = AskPluginItem(id: "a", title: "a", actions: [
             AskPluginAction(kind: .enterKeyword("a"), title: "Use", symbol: "arrow.right", shortcut: .enter)
         ])
@@ -85,9 +85,9 @@ struct AskLauncherPolishTests {
         let offered = AskPluginResultsView.height(for: display)
         #expect(display.asksAI)
         display.offersAskAI = false
-        #expect(!display.asksAI, "Return falls back to the list when there is no Ask AI row")
+        #expect(!display.asksAI, "Return falls back to the list when the header offers no AI action")
         #expect(offered - AskPluginResultsView.height(for: display)
-            == AskPluginResultsView.sectionHeight + AskPluginResultsView.rowSpacing * 2 + AskPluginResultsView.askHeight)
+            == 0, "The header owns AI; offering it never changes the results height")
         #expect(AskPluginResultsView.hint(for: display) == L("ask.plugin.hint.action", "Use"))
         display.phase = .ready(AskPluginPlan(mode: .onSubmit, title: "Search", actions: [
             AskPluginAction(kind: .open(URL(string: "https://example.com")!), title: "Open", symbol: "safari", shortcut: .enter)

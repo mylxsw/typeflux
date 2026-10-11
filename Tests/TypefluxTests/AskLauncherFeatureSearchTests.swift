@@ -104,13 +104,12 @@ struct AskLauncherFeatureSearchTests {
         }
     }
 
-    @Test func `selecting ask AI after exact keyword does not force local entry`() async throws {
+    @Test func `command Return asks AI after exact keyword without forcing local entry`() async throws {
         let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "prefix")
         defer { launcher.close() }
         let results = try #require(launcher.fixture.model.quickSearch.results)
         #expect(results.features.count == 1)
-        try await launcher.press(125)
-        try await launcher.press(36)
+        try await launcher.press(36, .command)
         #expect(try await launcher.sentCount() == 1)
         #expect(!launcher.fixture.model.plugins.isActive)
     }

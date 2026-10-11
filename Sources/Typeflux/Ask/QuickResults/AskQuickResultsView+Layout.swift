@@ -34,7 +34,7 @@ extension AskQuickResultsView {
         case .feature, .browser, .app, .pane: appHeight
         case .file: fileHeight
         case .showAllFiles: moreHeight
-        case .askAI: askHeight
+        case .askAI: 0
         }
     }
 
@@ -44,7 +44,7 @@ extension AskQuickResultsView {
     }
 
     static func contentHeight(for results: AskQuickResults) -> CGFloat {
-        let rows = results.rows
+        let rows = results.listRows
         let content = rows.reduce(CGFloat(0)) { $0 + rowHeight($1) }
         let sections = CGFloat(rows.indices.filter { sectionStart(at: $0, in: rows, results: results) != nil }.count)
         let notice = results.notice == nil ? 0 : noticeHeight + rowSpacing

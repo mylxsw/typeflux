@@ -4,7 +4,7 @@ import SwiftUI
 /// The launcher's quick results in place of its starting points: the
 /// calculation with its expression and large value and a few other spellings
 /// that copy on their own, or the applications, settings, files and folders to
-/// open; then the way back to the AI. Each kind of result starts with a small
+/// open. The header owns the AI action. Each kind of result starts with a small
 /// heading, so the list reads as search results; the keyboard hint for the
 /// highlighted row sits in the bottom bar.
 struct AskQuickResultsView: View {
@@ -70,11 +70,11 @@ struct AskQuickResultsView: View {
     var body: some View {
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
-            if results.rows.count > 1 || results.notice != nil {
+            if !results.listRows.isEmpty || results.notice != nil {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: Self.contentHeight(for: results) > visibleHeight) {
                         VStack(spacing: Self.rowSpacing) {
-                            ForEach(results.rows.filter { $0 != .askAI }.map {
+                            ForEach(results.listRows.map {
                                 (id: results.identity(of: $0), row: $0)
                             }, id: \.id) { item in
                                 let index = results.rows.firstIndex(of: item.row) ?? 0
@@ -92,6 +92,7 @@ struct AskQuickResultsView: View {
                         }
                         .padding(.horizontal, Self.listPadding)
                         .padding(.top, Self.listPadding)
+                        .padding(.bottom, Self.listPadding)
                         .id(Self.topID)
                     }
                     .scrollDisabled(Self.contentHeight(for: results) <= visibleHeight)
@@ -108,15 +109,6 @@ struct AskQuickResultsView: View {
             } else {
                 Spacer(minLength: 0)
             }
-            // Keep the AI action visible and anchored, even when matching strength
-            // changes or a second provider extends the scrolling list.
-            VStack(spacing: Self.rowSpacing) {
-                sectionTitle(.ai)
-                resultRow(.askAI, index: results.rows.count - 1)
-            }
-            .padding(.horizontal, Self.listPadding)
-            .padding(.top, results.rows.count > 1 || results.notice != nil ? Self.rowSpacing : Self.listPadding)
-            .padding(.bottom, Self.listPadding)
         }
         .frame(height: visibleHeight, alignment: .top)
         .overlay(alignment: .topTrailing) {
@@ -162,7 +154,7 @@ struct AskQuickResultsView: View {
         case let .pane(paneIndex): appRow(results.panes[paneIndex], row: row, highlighted: highlighted)
         case let .file(fileIndex): fileRow(results.files[fileIndex], row: row, highlighted: highlighted)
         case .showAllFiles: moreRow(highlighted: highlighted)
-        case .askAI: askRow(highlighted: highlighted)
+        case .askAI: EmptyView()
         }
     }
 
@@ -412,30 +404,6 @@ struct AskQuickResultsView: View {
         .accessibilityValue(format.value)
         .accessibilityHint(L("ask.quick.copy"))
         .accessibilityAddTraits(highlighted ? .isSelected : [])
-    }
-
-    private func askRow(highlighted: Bool) -> some View {
-        Button { onRun(.askAI, true) } label: {
-            HStack(spacing: 12) {
-                tile("sparkles", tint: AskTheme.accent)
-                Text(L("ask.quick.askAI")).font(.system(size: 13.5))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text("“" + question + "”").font(.system(size: 13))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(1).truncationMode(.middle)
-                Spacer(minLength: 8)
-                Text("⌘↩").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-            }
-            .padding(.horizontal, 10)
-            .frame(height: Self.askHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L("ask.quick.askAI"))
-        .accessibilityAddTraits(highlighted ? .isSelected : [])
-        .accessibilityIdentifier("ask.quick.askAI")
     }
 
     private func tile(_ symbol: String, tint: Color) -> some View {

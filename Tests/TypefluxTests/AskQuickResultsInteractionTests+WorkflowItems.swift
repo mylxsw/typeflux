@@ -65,9 +65,7 @@ extension AskQuickResultsInteractionTests {
                 "an invalid row does nothing"
             )
             try await launcher.press(Self.down)
-            try await launcher.press(Self.down)
-            #expect(model.plugins.output?.selectedItem == 0, "past Ask AI the arrows come back to the first row")
-            try await launcher.press(Self.up)
+            #expect(model.plugins.output?.selectedItem == 0, "arrows wrap directly to the first visible row")
             try await launcher.press(Self.up)
             #expect(model.plugins.output?.selectedItem == 1, "up from the first row skips the invalid last row")
             #expect(model.plugins.output?.selected?.autocomplete == "deeper")

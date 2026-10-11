@@ -60,6 +60,18 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
+    @Test func `number after the quick results does not invoke the removed AI row`() async throws {
+        try await withPasteboard { _ in
+            let launcher = try await Launcher(text: "1+1")
+            defer { launcher.close() }
+            let results = try #require(launcher.fixture.model.quickSearch.results)
+            #expect(results.listRows.count == 3)
+            try await launcher.press(21, .command)
+            #expect(await launcher.fixture.api.sends.isEmpty)
+            #expect(launcher.fixture.model.launcherDraft.text == "1+1")
+        }
+    }
+
     @Test func `command number enters the chosen plugin list item`() async throws {
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "prefix")
@@ -93,7 +105,7 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func `number after the plugin items asks the AI`() async throws {
+    @Test func `number after the plugin items does not send to AI`() async throws {
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "prefix fixture-web", prepare: { model in
                 model.modelLibrary.settings.saveAskLauncherKeywords(AskPrefixPlugin.keywords + [
@@ -103,6 +115,8 @@ extension AskQuickResultsInteractionTests {
             defer { launcher.close() }
             try await AskQuickSearchSessionTests.wait { launcher.fixture.model.plugins.output?.items.count == 1 }
             try await launcher.press(19, .command)
+            #expect(await launcher.fixture.api.sends.isEmpty)
+            try await launcher.press(Self.returnKey, .command)
             #expect(try await launcher.sentCount() == 1)
         }
     }

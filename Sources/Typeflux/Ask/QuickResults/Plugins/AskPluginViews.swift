@@ -16,10 +16,10 @@ struct AskPluginDisplay: Equatable {
     /// The result so far while it streams in.
     var partial: AskPluginOutput?
     var comparing = false
-    /// 0 is the plugin's row or card, 1 is "Ask AI".
+    /// 0 is the plugin's row or card, 1 defaults Return to the header's AI action.
     var highlighted = 0
     /// False when there is nothing to ask about (no text, selection or result to
-    /// ask on): the "Ask AI" row is left out rather than shown empty.
+    /// ask on): the header does not offer sending on the plugin's behalf.
     var offersAskAI = true
     /// ⌘S came while the result streams: the star shows it will be saved.
     var savesNoteWhenDone = false
@@ -78,7 +78,7 @@ struct AskKeywordChip: View {
     }
 }
 
-/// The results area in keyword mode: a plugin row, flat list or result card, then "Ask AI".
+/// The results area in keyword mode: a plugin row, flat list or result card.
 struct AskPluginResultsView: View {
     @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
     var display: AskPluginDisplay
@@ -223,8 +223,7 @@ struct AskPluginResultsView: View {
     /// Everything the list adds to the launcher card.
     static func height(for display: AskPluginDisplay) -> CGFloat {
         if display.systemMonitor { return SystemMonitorLauncherView.height }
-        let ask = display.offersAskAI ? sectionHeight + rowSpacing + rowSpacing + askHeight : 0
-        return 1 + listPadding * 2 + sectionHeight + rowSpacing + mainHeight(display) + ask
+        return 1 + listPadding * 2 + sectionHeight + rowSpacing + mainHeight(display)
     }
 
     /// What Return and the other keys do now, for the bottom bar.
@@ -288,15 +287,6 @@ struct AskPluginResultsView: View {
                     .onContinuousHover { phase in
                         if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(0) }
                     }
-                if display.offersAskAI {
-                    section(L("ask.quick.section.ai"))
-                    askRow
-                        .modifier(AskLauncherNumberBadge(number: Self.numberedItemCount(display)
-                            .flatMap { AskLauncherNumberShortcuts.number(at: $0) }))
-                        .onContinuousHover { phase in
-                            if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(1) }
-                        }
-                }
             }
             .padding(Self.listPadding)
             Spacer(minLength: 0)
@@ -760,32 +750,7 @@ struct AskPluginResultsView: View {
         .accessibilityLabel(title)
     }
 
-    private var askRow: some View {
-        Button(action: onAskAI) {
-            HStack(spacing: 12) {
-                Image(systemName: "sparkles").font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(AskTheme.accent)
-                    .frame(width: 28, height: 28)
-                    .background(AskTheme.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                Text(L("ask.quick.askAI")).font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary)
-                if !question.isEmpty {
-                    Text("“" + question + "”").font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
-                        .lineLimit(1).truncationMode(.middle)
-                }
-                Spacer(minLength: 8)
-                Text(display.asksAI ? "↩" : "⌘↩").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-            }
-            .padding(.horizontal, 10)
-            .frame(height: Self.askHeight)
-            .background(display.asksAI ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L("ask.quick.askAI"))
-        .accessibilityAddTraits(display.asksAI ? .isSelected : [])
-        .accessibilityIdentifier("ask.plugin.askAI")
-    }
+
 }
 
 /// A workflow's image result (`display: image`).

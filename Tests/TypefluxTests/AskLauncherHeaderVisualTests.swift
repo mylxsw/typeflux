@@ -10,6 +10,40 @@ import UniformTypeIdentifiers
 @Suite("Ask launcher header snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherHeaderVisualTests {
+    @Test func renderUnifiedChatButton() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let previousStore = KeychainTokenStore.useInMemoryStoreForTesting
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        _ = AuthState.shared
+        KeychainTokenStore.useInMemoryStoreForTesting = previousStore
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        for (theme, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            for (name, text, held) in [("empty", "", true), ("search", "ss", false), ("search-command", "ss", true)] {
+                let fixture = try AskTestFixture()
+                defer { fixture.model.resetSession() }
+                fixture.model.appIndex = AskTestAppIndex([
+                    AskAppEntry(name: "System Settings", url: URL(fileURLWithPath: "/System/Applications/System Settings.app"),
+                                bundleID: "com.apple.systempreferences", names: [])
+                ])
+                fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false)
+                // Inject the hint state for stable snapshots; native modifier/focus behavior
+                // is covered by AskLauncherNumberShortcutTests.
+                let view = GeometryReader { geometry in
+                    AskComposer(model: fixture.model, availableHeight: geometry.size.height, launcher: true)
+                }
+                    .padding(AskMetrics.launcherGutter)
+                    .environment(\.askLauncherNumberHints, held)
+                    .environment(\.askGlassMaterialOverride, .opaque)
+                try await render(view, size: NSSize(width: AskMetrics.launcherWidth, height: 320),
+                                 appearance: appearance, file: root.appendingPathComponent("chat-\(name)-\(theme).png"))
+            }
+        }
+    }
+
     private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL,
                                  prepare: (NSWindow) async throws -> Void = { _ in }) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],

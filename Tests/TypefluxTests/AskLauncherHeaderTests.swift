@@ -86,7 +86,7 @@ struct AskLauncherHeaderTests {
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == nil }
     }
 
-    @Test func openChatReplacesSendInTheHeaderAndTransfersTheDraftWithoutSending() async throws {
+    @Test func headerSendsTheQuestionInsteadOfTransferringAnUnsentDraft() async throws {
         let fixture = try AskTestFixture()
         fixture.model.launcherDraft.text = "Help me think"
         var opens = 0
@@ -102,12 +102,84 @@ struct AskLauncherHeaderTests {
         #expect(button.frame.minX > voice.frame.maxX)
         #expect(button.frame.minY > model.frame.maxY)
         #expect(button.frame.width == AskSendButton.size)
+        #expect(button.value("accessibilityLabel") as? String == L("ask.quick.askAI"))
+        try click(button, in: window)
+        try await fixture.wait { opens == 1 }
+        #expect(fixture.model.launcherDraft.text.isEmpty)
+        for _ in 0 ..< 100 where await fixture.api.sends.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(await fixture.api.sends.count == 1)
+        #expect(await fixture.api.sends.first?.text == "Help me think")
+    }
+
+    @Test func emptyHeaderOpensChatAndTypingChangesTheSameButton() async throws {
+        let fixture = try AskTestFixture()
+        captured(fixture)
+        fixture.model.draft.text = "Existing draft"
+        var opens = 0
+        fixture.model.onShowConversation = { opens += 1 }
+        let (window, _) = host(fixture)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(200))
+        let button = try element("ask.launcher.openChat", in: window)
         #expect(button.value("accessibilityLabel") as? String == L("ask.openChat"))
         try click(button, in: window)
         try await fixture.wait { opens == 1 }
-        #expect(fixture.model.draft.text == "Help me think")
-        #expect(fixture.model.launcherDraft.text.isEmpty)
+        #expect(fixture.model.draft.text == "Existing draft")
         #expect(await fixture.api.sends.isEmpty)
+
+        fixture.model.launcherDraft.text = "New question"
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(try element("ask.launcher.openChat", in: window).value("accessibilityLabel") as? String == L("ask.quick.askAI"))
+        fixture.model.launcherDraft.text = " \n "
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(try element("ask.launcher.openChat", in: window).value("accessibilityLabel") as? String == L("ask.openChat"))
+    }
+
+    @Test(arguments: [false, true])
+    func commandOOpensChatWithAnUnsentDraftAndKeepsItOnAnEmptyOpen(attachmentOnly: Bool) async throws {
+        let fixture = try AskTestFixture()
+        let incoming = attachmentOnly
+            ? AskDraft(includeScreenshot: false, attachments: [AskAttachment(kind: .file, name: "notes.txt", text: "Notes")])
+            : AskDraft(text: "Unsent question", includeScreenshot: false)
+        fixture.model.launcherDraft = incoming
+        var opens = 0
+        fixture.model.onShowConversation = { opens += 1 }
+        let (window, _) = host(fixture)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(200))
+        let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
+        window.makeFirstResponder(editor)
+        let event = try key("o", code: 31, modifiers: .command, in: window)
+        editor.keyDown(with: event)
+        try await fixture.wait { opens == 1 }
+        #expect(fixture.model.draft == incoming)
+        #expect(!fixture.model.launcherDraft.hasChatInput)
+        #expect(await fixture.api.sends.isEmpty)
+        try await Task.sleep(for: .milliseconds(100))
+        editor.keyDown(with: event)
+        try await fixture.wait { opens == 2 }
+        #expect(fixture.model.draft == incoming)
+        #expect(await fixture.api.sends.isEmpty)
+    }
+
+    @Test func attachmentOnlyHeaderSendsAndNeverFallsBackToOpeningWhileBusy() async throws {
+        let fixture = try AskTestFixture()
+        fixture.model.launcherDraft = AskDraft(includeScreenshot: false)
+        let loadingKey = fixture.model.visionDraftKey(launcher: true)
+        fixture.model.attachmentLoads[loadingKey] = 1
+        let (window, _) = host(fixture)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(200))
+        let disabled = try element("ask.launcher.openChat", in: window)
+        #expect(disabled.value("accessibilityLabel") as? String == L("ask.quick.askAI"))
+        #expect(disabled.value("isAccessibilityEnabled") as? Bool == false)
+        fixture.model.launcherDraft.attachments = [AskAttachment(kind: .file, name: "notes.txt", text: "Notes")]
+        fixture.model.attachmentLoads[loadingKey] = nil
+        try await Task.sleep(for: .milliseconds(100))
+        try click(try element("ask.launcher.openChat", in: window), in: window)
+        for _ in 0 ..< 100 where await fixture.api.sends.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(await fixture.api.sends.count == 1)
+        #expect(await fixture.api.sends.first?.attachments?.first?.name == "notes.txt")
     }
 
     @Test(arguments: [true, false])
