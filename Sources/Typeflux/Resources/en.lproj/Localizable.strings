@@ -4239,6 +4239,8 @@
 "screenshot.mode.scrolling" = "Scrolling capture";
 "screenshot.mode.scrolling.short" = "Scrolling";
 "screenshot.tool.scroll" = "Scrolling capture";
+"screenshot.scroll.status.manual" = "Scroll down or right by hand · Space starts Auto";
+"screenshot.scroll.automatic" = "Auto";
 "screenshot.scroll.status.starting" = "Getting ready…";
 "screenshot.scroll.status.scrolling" = "Scrolling automatically · use the mouse to take over";
 "screenshot.scroll.status.paused" = "Paused · scroll by hand, or press Space to resume";

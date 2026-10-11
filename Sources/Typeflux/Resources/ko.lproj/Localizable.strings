@@ -4217,6 +4217,8 @@
 "screenshot.mode.scrolling" = "스크롤 캡처";
 "screenshot.mode.scrolling.short" = "스크롤";
 "screenshot.tool.scroll" = "스크롤 캡처";
+"screenshot.scroll.status.manual" = "직접 아래 또는 오른쪽으로 스크롤 · Space로 자동 시작";
+"screenshot.scroll.automatic" = "자동";
 "screenshot.scroll.status.starting" = "준비 중…";
 "screenshot.scroll.status.scrolling" = "자동으로 스크롤하는 중 · 마우스를 움직이면 직접 조작할 수 있습니다";
 "screenshot.scroll.status.paused" = "일시 정지됨 · 직접 스크롤하거나 스페이스로 다시 시작";

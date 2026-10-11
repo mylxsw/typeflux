@@ -234,6 +234,25 @@ final class ScreenshotLongImageEditorTests: XCTestCase {
         XCTAssertEqual(events, [.cancelled, .finish(.save, displayID: 4, rect: display.frame, annotations: [])])
     }
 
+    func testHorizontalLongImageCanBeNavigatedAndSavedInFull() throws {
+        let controller = ScreenshotLongImageEditorController(primaryDisplayHeight: { 700 })
+        var events: [ScreenshotOverlayEvent] = []
+        let display = ScreenSnapshot.Display(id: 4, frame: CGRect(x: 0, y: 0, width: 2000, height: 200), scale: 2,
+                                             image: ScreenCaptureTestSupport.image(width: 4000, height: 400))
+        controller.present(display, on: CGRect(x: 0, y: 0, width: 900, height: 700)) { events.append($0) }
+        defer { controller.dismiss() }
+        let view = try XCTUnwrap(controller.editorView)
+        XCTAssertTrue(view.scrollView.hasHorizontalScroller)
+        view.scrollView.setMagnification(1, centeredAt: CGPoint(x: 0, y: 100))
+        let before = view.canvas.visibleRect.maxX
+        view.show(centeredAt: CGPoint(x: 1800, y: 100))
+        XCTAssertGreaterThan(view.canvas.visibleRect.maxX, before)
+        XCTAssertLessThanOrEqual(view.canvas.visibleRect.maxX, 2000)
+        XCTAssertEqual(view.minimap.viewport, view.canvas.visibleRect)
+        view.canvas.handleKeyDown(Key.keyS, modifiers: .command)
+        XCTAssertEqual(events, [.finish(.save, displayID: 4, rect: display.frame, annotations: [])])
+    }
+
     func testZoomStepsAndLimits() throws {
         let controller = ScreenshotLongImageEditorController(primaryDisplayHeight: { 700 })
         let display = ScreenSnapshot.Display(id: 1, frame: CGRect(x: 0, y: 0, width: 200, height: 3000), scale: 1,

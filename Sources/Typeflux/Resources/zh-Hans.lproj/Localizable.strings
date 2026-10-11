@@ -4239,6 +4239,8 @@
 "screenshot.mode.scrolling" = "滚动截图";
 "screenshot.mode.scrolling.short" = "滚动";
 "screenshot.tool.scroll" = "滚动截图";
+"screenshot.scroll.status.manual" = "手动向下或向右滚动 · 空格开启自动";
+"screenshot.scroll.automatic" = "自动滚动";
 "screenshot.scroll.status.starting" = "正在准备…";
 "screenshot.scroll.status.scrolling" = "正在自动滚动 · 动鼠标即可接管";
 "screenshot.scroll.status.paused" = "已暂停 · 可以手动滚动，按空格继续";
