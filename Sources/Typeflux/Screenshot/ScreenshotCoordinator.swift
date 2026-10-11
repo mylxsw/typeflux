@@ -34,6 +34,8 @@ final class ScreenshotCoordinator {
     private(set) var snapshot: ScreenSnapshot?
     /// The capture or delivery in flight, so tests can wait for it.
     private(set) var pendingTask: Task<Void, Never>?
+    /// A pin's copy or save in flight, so tests can wait for it.
+    private(set) var pinTask: Task<Void, Never>?
 
     private let capture: any ScreenCapturing
     private let permission: any ScreenCapturePermissionProviding
@@ -47,6 +49,8 @@ final class ScreenshotCoordinator {
     private let encode: Encoder
     private let render: Renderer
     private let longImageEditor: any ScreenshotLongImagePresenting
+    /// Screenshots pinned above other windows; they outlive the session that made them.
+    let pins: any ScreenshotPinPresenting
     private let makeScrollCapture: @MainActor (ScrollCaptureRegion) -> any ScrollCapturing
     /// The scrolling capture in progress.
     private(set) var scrollCapture: (any ScrollCapturing)?
@@ -71,6 +75,7 @@ final class ScreenshotCoordinator {
          encode: @escaping Encoder = { try ScreenshotImageExporter.png($0, scale: $1) },
          render: @escaping Renderer = { try ScreenshotRenderer.render($0, crop: $1, annotations: $2) },
          longImageEditor: (any ScreenshotLongImagePresenting)? = nil,
+         pins: (any ScreenshotPinPresenting)? = nil,
          makeScrollCapture: @escaping @MainActor (ScrollCaptureRegion) -> any ScrollCapturing = ScreenshotCoordinator
              .scrollCapture(for:)) {
         self.capture = capture
@@ -85,6 +90,7 @@ final class ScreenshotCoordinator {
         self.encode = encode
         self.render = render
         self.longImageEditor = longImageEditor ?? ScreenshotLongImageEditorController()
+        self.pins = pins ?? ScreenshotPinController()
         self.makeScrollCapture = makeScrollCapture
     }
 
@@ -220,6 +226,13 @@ final class ScreenshotCoordinator {
             toast.show(.failed)
             return
         }
+        if action == .pin {
+            // A long image has no place on screen to pin to; the long image editor offers no pin.
+            guard state != .editingLongImage else { return }
+            teardown()
+            pins.pin(image, scale: display.scale, at: rect) { [weak self] event in self?.handlePin(event) }
+            return
+        }
         if case let .followUp(followUp) = action {
             let isLongImage = state == .editingLongImage
             teardown()
@@ -250,20 +263,66 @@ final class ScreenshotCoordinator {
             toast.show(.failed)
             return
         }
+        send(png, action: action)
+    }
+
+    /// Copies or saves an encoded screenshot and says how it went.
+    private func send(_ png: Data, action: ScreenshotOutputAction) {
         switch action {
         case .copy:
             toast.show(output.copy(png) ? .copied : .failed)
-        case .followUp:
+        case .followUp, .pin:
             // Handed over in `finish` without encoding; never delivered here.
             break
-        case .save:
+        case .save, .copyAndSave:
+            let copied = action == .copyAndSave && output.copy(png)
             do {
                 let url = try output.save(png, in: saveDirectory(), date: now())
                 toast.show(.saved(url))
             } catch {
                 // Never lose the shot: it goes to the clipboard instead, with the reason.
-                toast.show(output.copy(png) ? .savedAsCopy(reason: error.localizedDescription) : .failed)
+                toast.show(copied || output.copy(png) ? .savedAsCopy(reason: error.localizedDescription) : .failed)
             }
+        }
+    }
+
+    // MARK: Pins
+
+    /// A pin's copy, save and "mark up again". Pins live on after their session, so copying and saving
+    /// do not depend on it; marking up waits until no other screenshot is in progress.
+    func handlePin(_ event: ScreenshotPinEvent) {
+        switch event {
+        case let .copy(image, scale):
+            encodeThenOutput(image, scale: scale, action: .copy)
+        case let .save(image, scale):
+            encodeThenOutput(image, scale: scale, action: .save)
+        case let .edit(image, scale, screen):
+            guard state == .idle else {
+                toast.show(.busy)
+                return
+            }
+            let scale = max(scale, 1)
+            let display = ScreenSnapshot.Display(
+                id: 0, frame: CGRect(x: 0, y: 0, width: CGFloat(image.width) / scale,
+                                     height: CGFloat(image.height) / scale),
+                scale: scale, image: image
+            )
+            snapshot = ScreenSnapshot(displays: [display], windows: [])
+            state = .editingLongImage
+            longImageEditor.present(display, on: screen) { [weak self] event in self?.handle(event) }
+        }
+    }
+
+    private func encodeThenOutput(_ image: CGImage, scale: CGFloat, action: ScreenshotOutputAction) {
+        let encode = encode
+        pinTask = Task { [weak self] in
+            let png = await Task.detached(priority: .userInitiated) { try? encode(image, scale) }.value
+            guard let self else { return }
+            guard let png else {
+                self.toast.show(.failed)
+                return
+            }
+            self.send(png, action: action)
         }
     }
 

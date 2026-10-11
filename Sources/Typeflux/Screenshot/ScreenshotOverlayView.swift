@@ -17,6 +17,7 @@ final class ScreenshotOverlayView: NSView {
         static let keyA: UInt16 = 0
         static let keyS: UInt16 = 1
         static let keyC: UInt16 = 8
+        static let keyF: UInt16 = 3
         static let keyZ: UInt16 = 6
         static let delete: UInt16 = 51
         static let forwardDelete: UInt16 = 117
@@ -38,6 +39,11 @@ final class ScreenshotOverlayView: NSView {
     private(set) var showsColorPanel = false
     /// The eyedropper is on: the next click takes the color under the pointer.
     private(set) var isPickingColor = false
+    private(set) var showsMoreMenu = false
+    /// How far the toolbar was dragged from its place, for the rest of this screenshot.
+    private(set) var toolbarOffset: CGSize = .zero
+    /// The offset when the current drag of the grip began.
+    private var toolbarDragStart: CGSize?
     /// Space is held: dragging moves the region instead of growing it.
     private(set) var spaceHeld = false
     private var shiftHeld = false
@@ -265,8 +271,12 @@ final class ScreenshotOverlayView: NSView {
             refresh()
         case Key.escape:
             onEvent?(self, .cancelled)
+        case Key.returnKey where modifiers.contains(.option), Key.enter where modifiers.contains(.option):
+            finish(.copyAndSave)
         case Key.returnKey, Key.enter:
             finish(.copy)
+        case Key.keyF where !command && selection.rect != nil:
+            finish(.pin)
         case Key.keyC where command:
             finish(.copy)
         case Key.keyS where command:
@@ -390,8 +400,30 @@ final class ScreenshotOverlayView: NSView {
         case .cancel: onEvent?(self, .cancelled)
         case .save: finish(.save)
         case .copy: finish(.copy)
+        case .copyAndSave: finish(.copyAndSave)
+        case .pin: finish(.pin)
         case let .followUp(followUp): finish(.followUp(followUp))
         case .scrollCapture: startScrollCapture()
+        case .toggleMoreMenu:
+            showsMoreMenu.toggle()
+            showsColorPanel = false
+        case .toggleSensitivePanel:
+            sensitiveInfo.setPanelShown(!sensitiveInfo.isPanelShown)
+            showsMoreMenu = false
+        case let .dragToolbar(translation, ended):
+            let start = toolbarDragStart ?? toolbarOffset
+            toolbarOffset = CGSize(width: start.width + translation.width, height: start.height + translation.height)
+            toolbarDragStart = ended ? nil : start
+            // Moving the toolbar is not editing: keys stay where they were.
+            refresh()
+            return
+        case .toggleToolbarPlacement:
+            editor.apply(action)
+            toolbarOffset = .zero
+            showsMoreMenu = false
+        case .resetStyles:
+            editor.apply(action)
+            showsMoreMenu = false
         default:
             editor.apply(action)
             // A swatch is the choice: the panel closes, as a menu would.
@@ -568,7 +600,10 @@ final class ScreenshotOverlayView: NSView {
         // A selected mark shows its own options; changing them restyles it.
         let state = ScreenshotEditorToolbarModel.State(editor: editor, showsColorPanel: showsColorPanel,
                                                        isPickingColor: isPickingColor,
-                                                       canScrollCapture: canScrollCapture)
+                                                       canScrollCapture: canScrollCapture,
+                                                       showsMoreMenu: showsMoreMenu,
+                                                       canShowSensitivePanel: sensitiveInfo.hasFindings,
+                                                       showsSensitivePanel: sensitiveInfo.isPanelShown)
         toolbarModel.state = state
         guard let rect = selection.rect, !selection.isDragging else {
             toolbar?.isHidden = true
@@ -589,8 +624,17 @@ final class ScreenshotOverlayView: NSView {
         let inset = Self.toolbarShadowInset
         let fitting = host.fittingSize
         let content = CGSize(width: max(fitting.width - inset * 2, 0), height: max(fitting.height - inset * 2, 0))
-        host.frame = ScreenshotOverlayChromeView.toolbarFrame(for: rect, size: content, in: bounds)
-            .insetBy(dx: -inset, dy: -inset)
+        host.frame = Self.toolbarFrame(placed: ScreenshotOverlayChromeView.toolbarFrame(
+            for: rect, size: content, in: bounds, prefersAbove: editor.toolStyles.prefersToolbarAbove
+        ), offset: toolbarOffset, in: bounds).insetBy(dx: -inset, dy: -inset)
+    }
+
+    /// The toolbar where it was placed, moved by the grip's offset and kept on the display.
+    static func toolbarFrame(placed frame: CGRect, offset: CGSize, in bounds: CGRect) -> CGRect {
+        var moved = frame.offsetBy(dx: offset.width, dy: offset.height)
+        moved.origin.x = min(max(moved.minX, bounds.minX), max(bounds.maxX - moved.width, bounds.minX))
+        moved.origin.y = min(max(moved.minY, bounds.minY), max(bounds.maxY - moved.height, bounds.minY))
+        return moved
     }
 
     private func loupe() -> ScreenshotOverlayChromeView.Loupe? {

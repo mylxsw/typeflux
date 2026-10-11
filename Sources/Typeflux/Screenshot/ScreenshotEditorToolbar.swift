@@ -36,12 +36,20 @@ final class ScreenshotEditorToolbarModel {
         var showsScrollCapture = true
         /// Scrolling capture captures the region again, so it is only offered before anything is marked.
         var canScrollCapture = true
+        /// Pinning, the toolbar's grip and its placement are for the region overlay only.
+        var showsPin = true
+        var showsMoreMenu = false
+        var prefersToolbarAbove = false
+        /// Sensitive information was found, so the More menu can show or hide its panel.
+        var canShowSensitivePanel = false
+        var showsSensitivePanel = false
 
         init() {}
 
         /// The toolbar for an editor's current state.
         init(editor: ScreenshotAnnotationEditor, showsColorPanel: Bool, isPickingColor: Bool,
-             showsScrollCapture: Bool = true, canScrollCapture: Bool = true) {
+             showsScrollCapture: Bool = true, canScrollCapture: Bool = true, showsPin: Bool = true,
+             showsMoreMenu: Bool = false, canShowSensitivePanel: Bool = false, showsSensitivePanel: Bool = false) {
             let mosaic = editor.selected?.mosaic
             tool = editor.tool
             optionsTool = editor.optionsTool
@@ -68,6 +76,11 @@ final class ScreenshotEditorToolbarModel {
             self.isPickingColor = isPickingColor
             self.showsScrollCapture = showsScrollCapture
             self.canScrollCapture = canScrollCapture
+            self.showsPin = showsPin
+            self.showsMoreMenu = showsMoreMenu
+            prefersToolbarAbove = editor.toolStyles.prefersToolbarAbove
+            self.canShowSensitivePanel = canShowSensitivePanel
+            self.showsSensitivePanel = showsSensitivePanel
         }
     }
 
@@ -104,6 +117,15 @@ final class ScreenshotEditorToolbarModel {
         case undo, redo, cancel, save, copy, scrollCapture
         /// Recognize the text, translate it or ask the AI about the image.
         case followUp(ScreenshotFollowUp)
+        /// Keep the screenshot above other windows.
+        case pin
+        case copyAndSave
+        case toggleMoreMenu
+        case toggleSensitivePanel
+        case toggleToolbarPlacement
+        case resetStyles
+        /// The grip is dragged by `translation` since the drag began; `ended` when it is let go.
+        case dragToolbar(CGSize, ended: Bool)
     }
 
     var state = State()
@@ -250,6 +272,12 @@ struct ScreenshotEditorToolbar: View {
             if state.showsOptions, state.showsColorPanel {
                 colorPanel
             }
+            if state.showsMoreMenu {
+                // As wide as its rows, under the More button at the right end.
+                moreMenu
+                    .fixedSize()
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
         }
         .fixedSize()
     }
@@ -261,10 +289,16 @@ struct ScreenshotEditorToolbar: View {
                            help: ScreenshotEditorToolbarModel.help(for: tool),
                            isOn: state.tool == tool) { perform(.tool(tool)) }
             }
-            if state.showsScrollCapture {
+            if state.showsScrollCapture || state.showsPin {
                 separator
+            }
+            if state.showsScrollCapture {
                 iconButton("rectangle.expand.vertical", help: "\(L("screenshot.tool.scroll"))  S",
                            isEnabled: state.canScrollCapture) { perform(.scrollCapture) }
+            }
+            if state.showsPin {
+                iconButton("pin", help: "\(L("screenshot.tool.pin"))  F") { perform(.pin) }
+                    .accessibilityIdentifier("screenshot.pin")
             }
             separator
             iconButton("arrow.uturn.backward", help: "\(L("screenshot.edit.undo"))  ⌘Z", isEnabled: state.canUndo) {
@@ -280,6 +314,10 @@ struct ScreenshotEditorToolbar: View {
             separator
             iconButton("xmark", help: "\(L("screenshot.edit.cancel"))  esc") { perform(.cancel) }
             iconButton("square.and.arrow.down", help: "\(L("screenshot.edit.save"))  ⌘S") { perform(.save) }
+            iconButton("ellipsis", help: L("screenshot.edit.more"), isOn: state.showsMoreMenu) {
+                perform(.toggleMoreMenu)
+            }
+            .accessibilityIdentifier("screenshot.more")
             Button { perform(.copy) } label: {
                 HStack(spacing: 5) {
                     Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
@@ -294,9 +332,67 @@ struct ScreenshotEditorToolbar: View {
             }
             .buttonStyle(.plain)
             .help("\(L("screenshot.edit.copy"))  ↩")
+            if state.showsPin {
+                grip
+            }
         }
         .padding(4)
         .background(glass(cornerRadius: 12))
+    }
+
+    /// Drags the toolbar out of the way; the drag is measured on screen, so it holds while the toolbar moves.
+    private var grip: some View {
+        Image(systemName: "line.3.horizontal")
+            .rotationEffect(.degrees(90))
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.secondary)
+            .frame(width: 16, height: 30)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                .onChanged { perform(.dragToolbar($0.translation, ended: false)) }
+                .onEnded { perform(.dragToolbar($0.translation, ended: true)) })
+            .help(L("screenshot.edit.dragToolbar"))
+    }
+
+    /// Less used actions, as a short list under the toolbar.
+    private var moreMenu: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            menuRow("square.and.arrow.down.on.square", L("screenshot.more.copyAndSave"), shortcut: "⌥↩") {
+                perform(.copyAndSave)
+            }
+            if state.canShowSensitivePanel {
+                menuRow("checkmark.shield", L("screenshot.more.sensitive"),
+                        shortcut: state.showsSensitivePanel ? "✓" : "") { perform(.toggleSensitivePanel) }
+            }
+            if state.showsPin {
+                menuRow(state.prefersToolbarAbove ? "dock.arrow.down.rectangle" : "dock.arrow.up.rectangle",
+                        L(state.prefersToolbarAbove ? "screenshot.more.toolbarBelow" : "screenshot.more.toolbarAbove"))
+                {
+                    perform(.toggleToolbarPlacement)
+                }
+            }
+            menuRow("arrow.counterclockwise", L("screenshot.more.resetStyles")) { perform(.resetStyles) }
+        }
+        .padding(5)
+        .frame(minWidth: 220, alignment: .leading)
+        .background(glass(cornerRadius: 10))
+    }
+
+    private func menuRow(_ symbol: String, _ title: String, shortcut: String = "",
+                         action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: symbol).font(.system(size: 12, weight: .medium)).frame(width: 16)
+                Text(title).font(.system(size: 12.5)).lineLimit(1).fixedSize()
+                Spacer(minLength: 12)
+                Text(shortcut).font(.system(size: 12)).foregroundStyle(.secondary)
+            }
+            .foregroundStyle(Color.primary.opacity(0.85))
+            .padding(.horizontal, 8)
+            .frame(height: 26)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
