@@ -121,7 +121,7 @@ enum ScreenshotSnapshotSupport {
         let marked = try ScreenshotRenderer.render(display, crop: display.frame, annotations: annotations)
         let margin: CGFloat = 40
         let toolbarSize = toolbar.size
-        let width = max(screenSize.width, toolbarSize.width) + margin * 2
+        let width = max(screenSize.width + margin * 2, toolbarSize.width + margin)
         let height = margin + screenSize.height + 4 + toolbarSize.height + margin / 2
         let scale: CGFloat = 2
         let context = CGContext(data: nil, width: Int(width * scale), height: Int(height * scale), bitsPerComponent: 8,
@@ -139,7 +139,8 @@ enum ScreenshotSnapshotSupport {
         context.stroke(region)
         extra?(context)
         if let toolbarImage = toolbar.cgImage {
-            let frame = CGRect(x: region.maxX - toolbarSize.width + 14, y: region.maxY + 4 - 14,
+            // Right-aligned under the region, kept on the picture as the overlay keeps it on the display.
+            let frame = CGRect(x: max(region.maxX - toolbarSize.width + 14, margin / 2), y: region.maxY + 4 - 14,
                                width: toolbarSize.width, height: toolbarSize.height)
             ScreenshotRenderer.drawImage(toolbarImage, in: frame, context: context)
         }

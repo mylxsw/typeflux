@@ -622,6 +622,15 @@ struct ScreenshotAnnotationEditor {
         toolStyles.mosaicShape = shape
     }
 
+    /// "Reset styles" in the More menu.
+    mutating func resetToolStyles() {
+        toolStyles.resetStyles()
+    }
+
+    mutating func toggleToolbarPlacement() {
+        toolStyles.prefersToolbarAbove.toggle()
+    }
+
     /// A selected box or ellipse mosaic is covered again over everything, or over its text only.
     mutating func setMosaicScope(_ scope: ScreenshotMosaic.Scope) {
         guard let annotation = selected, let mosaic = annotation.mosaic else {
@@ -774,7 +783,11 @@ extension ScreenshotAnnotationEditor {
         case let .mosaicScope(scope): setMosaicScope(scope)
         case .undo: undo()
         case .redo: redo()
-        case .toggleColorPanel, .pickColor, .cancel, .save, .copy, .scrollCapture, .followUp: return false
+        case .resetStyles: resetToolStyles()
+        case .toggleToolbarPlacement: toggleToolbarPlacement()
+        case .toggleColorPanel, .pickColor, .cancel, .save, .copy, .copyAndSave, .pin, .scrollCapture, .followUp,
+             .toggleMoreMenu, .toggleSensitivePanel, .dragToolbar:
+            return false
         }
         return true
     }
