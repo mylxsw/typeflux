@@ -398,30 +398,14 @@ struct AskConversationView: View {
         withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) { isSearching = false }
     }
 
-    /// The name and plan badge (hover or click for the account card), or a
-    /// sign-in link; the letter badge that used to lead it pointed at nothing.
     private var accountFooter: some View {
-        AskSidebarAccountFooter(signedIn: auth.isLoggedIn, compact: layout.isShort,
-                                onSignIn: { LoginWindowController.shared.show() },
-                                onOpenSettings: { model.onOpenSettings?(.settings) }) {
-            footerIdentity
-        }
-    }
-
-    /// Signed out, the footer says where Ask runs; the Cloud card above it carries the sign-in.
-    @ViewBuilder private var footerIdentity: some View {
-        if auth.isLoggedIn {
-            AskAccountFooterIdentity(auth: auth, name: accountName) {
-                model.onOpenSettings?(.account)
-            }
-        } else {
+        SidebarAccountFooter(auth: auth, compact: layout.isShort,
+                             defaults: model.modelLibrary.settings.defaults,
+                             onSignIn: { LoginWindowController.shared.show() },
+                             onOpenAccount: { model.onOpenSettings?(.account) },
+                             onOpenSettings: { model.onOpenSettings?(.settings) }) {
             AskLocalModeIdentity(model: model)
         }
-    }
-
-    private var accountName: String {
-        AskPresentation.accountName(name: auth.userProfile?.name, email: auth.userProfile?.email)
-            ?? L("sidebar.appName")
     }
 
     // MARK: - Search palette

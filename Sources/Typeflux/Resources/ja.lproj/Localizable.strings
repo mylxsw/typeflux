@@ -174,7 +174,8 @@
 "settings.permissionStatus.subtitle" = "Typeflux が依存する macOS 権限を確認し、必要に応じてアクセスを許可します。";
 
 "menu.openVoiceStudio" = "Typeflux を開く";
-"menu.commonFeatures" = "よく使う機能";
+"menu.toolbox" = "ツールボックス";
+"menu.feedback" = "フィードバック";
 "menu.voiceInput" = "音声入力";
 "menu.history" = "歴史";
 "menu.addVocabulary" = "単語を追加";
@@ -4597,20 +4598,17 @@
 "hotkeys.keyword.status.unset" = "キー未設定";
 "hotkeys.keyword.status.missing" = "キーワードが削除されました";
 "hotkeys.keyword.status.keywordDisabled" = "キーワードがオフです";
-"hotkeys.keyword.add" = "キーワードショートカットを追加";
+"hotkeys.keyword.add" = "追加";
 "hotkeys.keyword.delete" = "削除";
-"hotkeys.keyword.empty" = "よく使うキーワードにショートカットを設定：テキストを選択して押すと、ランチャーが開いてすぐに実行します。";
-"hotkeys.keyword.sheet.addTitle" = "キーワードショートカットを追加";
-"hotkeys.keyword.sheet.editTitle" = "キーワードショートカットを編集";
+"hotkeys.keyword.empty" = "テキストを選択し、ショートカットでキーワードを実行。";
+"hotkeys.keyword.sheet.addTitle" = "ショートカットを追加";
+"hotkeys.keyword.sheet.editTitle" = "ショートカットを編集";
 "hotkeys.keyword.sheet.keyword" = "キーワード";
 "hotkeys.keyword.sheet.shortcut" = "ショートカット";
-"hotkeys.keyword.sheet.effect" = "動作";
 "hotkeys.keyword.sheet.choose" = "キーワードを選択";
 "hotkeys.keyword.sheet.keywordOff" = "オフ";
-"hotkeys.keyword.sheet.takeKeys" = "こちらで使う（もう一方のショートカットのキーは解除されます）";
-"hotkeys.keyword.sheet.shortcutHint" = "⌘、⌥、⌃ のいずれかを含めるか、F1–F19 を使ってください。";
-"hotkeys.keyword.sheet.effectNone" = "キーワードを選ぶと、押したときの動作がここに表示されます。";
-"hotkeys.keyword.sheet.effectLauncher" = "ランチャーを「%1$@」（%2$@）で開き、選択したテキストで実行します。選択がなければ入力を待ちます。";
+"hotkeys.keyword.sheet.takeKeys" = "このキーを使い、元の割り当てを解除";
+"hotkeys.keyword.sheet.shortcutHint" = "⌘・⌥・⌃ + キー、または F1–F19。";
 "hotkeys.conflict.usedBy" = "「%@」で使用中です。";
 "hotkeys.conflict.gesture" = "修飾キーのみやダブルタップは音声入力用です。";
 "hotkeys.conflict.needsModifier" = "入力中に誤動作しないよう ⌘、⌥、⌃ のいずれかを含めてください（F1–F19 は可）。";
@@ -4624,12 +4622,11 @@
 "hotkeys.menu.duplicate" = "複製";
 "hotkeys.menu.reset" = "デフォルトに戻す";
 "hotkeys.menu.more" = "その他";
-"hotkeys.noMatch" = "「%@」に一致するショートカットはありません";
-"hotkeys.search" = "機能やショートカットを検索";
 "hotkeys.footnote" = "設定ページとランチャー設定のショートカットもそのまま使えます。どちらで変更しても反映されます。";
 "hotkeys.updated" = "ショートカットを %@ に設定しました";
 
 "hotkeys.column.name" = "名前";
-"hotkeys.search.close" = "検索を閉じる";
 
 "settings.list.itemCount" = "%d 件";
+"hotkeys.keyword.sheet.hint" = "選択したテキストで実行。未選択なら入力を待ちます。";
+"hotkeys.keyword.sheet.record" = "ショートカットを記録";

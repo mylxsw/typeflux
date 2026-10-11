@@ -65,21 +65,24 @@ final class StudioThemeTests: XCTestCase {
 
     // MARK: - Overview Layout
 
-    func testOverviewLayoutUsesStackedArrangementForNarrowContent() {
-        let layout = StudioOverviewPanelLayoutCalculator.layout(for: 700)
-
-        XCTAssertEqual(layout.arrangement, .stacked)
-        XCTAssertEqual(layout.activityWidth, 700)
-        XCTAssertEqual(layout.metricsWidth, 700)
-        XCTAssertGreaterThan(layout.height, StudioTheme.Layout.overviewPrimaryMinHeight)
+    func testOverviewLayoutKeepsStatisticsBesideActivityAtSupportedWindowSizes() {
+        for windowWidth: CGFloat in [720, 900, 1039, 1040, 1100, 1160, 1200, 1440] {
+            let width = StudioShellLayout(width: windowWidth).contentWidth
+            let layout = StudioOverviewPanelLayoutCalculator.layout(for: width)
+            XCTAssertEqual(layout.height, 260)
+            XCTAssertEqual(layout.activityWidth + layout.metricsWidth + StudioTheme.Spacing.large, width, accuracy: 0.01)
+            XCTAssertGreaterThan(layout.activityWidth, layout.metricsWidth)
+            XCTAssertGreaterThanOrEqual(layout.donutSize, 104)
+            XCTAssertLessThanOrEqual(layout.donutSize, 154)
+        }
     }
 
-    func testOverviewLayoutUsesSideBySideArrangementForWideContent() {
-        let layout = StudioOverviewPanelLayoutCalculator.layout(for: 1100)
-
-        XCTAssertEqual(layout.arrangement, .sideBySide)
-        XCTAssertEqual(layout.height, StudioTheme.Layout.overviewPrimaryMinHeight)
-        XCTAssertLessThan(layout.metricsWidth, 1100)
-        XCTAssertGreaterThan(layout.activityWidth, layout.metricsWidth)
+    func testOverviewLayoutDoesNotJumpAtFormerBreakpoint() {
+        let before = StudioOverviewPanelLayoutCalculator.layout(for: 839)
+        let after = StudioOverviewPanelLayoutCalculator.layout(for: 840)
+        XCTAssertEqual(before.height, after.height)
+        XCTAssertLessThan(abs(before.activityWidth - after.activityWidth), 1)
+        XCTAssertLessThan(abs(before.metricsWidth - after.metricsWidth), 1)
+        XCTAssertLessThan(abs(before.donutSize - after.donutSize), 1)
     }
 }

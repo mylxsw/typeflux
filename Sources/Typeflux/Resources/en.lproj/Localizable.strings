@@ -174,7 +174,8 @@
 "settings.permissionStatus.subtitle" = "Review the macOS permissions Typeflux depends on, then grant access where needed.";
 
 "menu.openVoiceStudio" = "Open Typeflux";
-"menu.commonFeatures" = "Common Features";
+"menu.toolbox" = "Toolbox";
+"menu.feedback" = "Feedback";
 "menu.voiceInput" = "Voice Input";
 "menu.history" = "History";
 "menu.addVocabulary" = "Add Word";
@@ -4619,20 +4620,17 @@
 "hotkeys.keyword.status.unset" = "No keys set";
 "hotkeys.keyword.status.missing" = "Keyword deleted";
 "hotkeys.keyword.status.keywordDisabled" = "Keyword turned off";
-"hotkeys.keyword.add" = "Add keyword shortcut";
+"hotkeys.keyword.add" = "Add";
 "hotkeys.keyword.delete" = "Delete";
-"hotkeys.keyword.empty" = "Give a keyword you use often a shortcut: select text, press it, and the launcher opens and runs the keyword right away.";
-"hotkeys.keyword.sheet.addTitle" = "Add keyword shortcut";
-"hotkeys.keyword.sheet.editTitle" = "Edit keyword shortcut";
+"hotkeys.keyword.empty" = "Select text and press a shortcut to run a keyword.";
+"hotkeys.keyword.sheet.addTitle" = "Add shortcut";
+"hotkeys.keyword.sheet.editTitle" = "Edit shortcut";
 "hotkeys.keyword.sheet.keyword" = "Keyword";
 "hotkeys.keyword.sheet.shortcut" = "Shortcut";
-"hotkeys.keyword.sheet.effect" = "Effect";
 "hotkeys.keyword.sheet.choose" = "Choose a keyword";
 "hotkeys.keyword.sheet.keywordOff" = "off";
-"hotkeys.keyword.sheet.takeKeys" = "Use it here instead (the other shortcut loses these keys)";
-"hotkeys.keyword.sheet.shortcutHint" = "Include ⌘, ⌥ or ⌃, or use F1–F19.";
-"hotkeys.keyword.sheet.effectNone" = "Choose a keyword to see what the shortcut does.";
-"hotkeys.keyword.sheet.effectLauncher" = "Opens the launcher in “%1$@” (%2$@) and runs it on the selected text; with nothing selected, it waits for input.";
+"hotkeys.keyword.sheet.takeKeys" = "Use these keys and clear the original binding";
+"hotkeys.keyword.sheet.shortcutHint" = "⌘, ⌥ or ⌃ + a key, or F1–F19.";
 "hotkeys.conflict.usedBy" = "Already used by %@.";
 "hotkeys.conflict.gesture" = "A modifier alone or a double tap is reserved for voice input.";
 "hotkeys.conflict.needsModifier" = "Include ⌘, ⌥ or ⌃ so typing never sets it off (F1–F19 are fine).";
@@ -4646,12 +4644,11 @@
 "hotkeys.menu.duplicate" = "Duplicate";
 "hotkeys.menu.reset" = "Restore default";
 "hotkeys.menu.more" = "More";
-"hotkeys.noMatch" = "No shortcuts match “%@”";
-"hotkeys.search" = "Search features or shortcuts";
 "hotkeys.footnote" = "The shortcut cards on the Settings and Launcher pages stay; a change in either place shows up in both.";
 "hotkeys.updated" = "Shortcut set to %@";
 
 "hotkeys.column.name" = "Name";
-"hotkeys.search.close" = "Close search";
 
 "settings.list.itemCount" = "Items: %d";
+"hotkeys.keyword.sheet.hint" = "Runs on selected text; otherwise waits for input.";
+"hotkeys.keyword.sheet.record" = "Record shortcut";

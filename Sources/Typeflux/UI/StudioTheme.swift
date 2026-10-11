@@ -42,7 +42,7 @@ enum StudioTheme {
         static let overviewDonutSize: CGFloat = 178
         static let overviewActivityMinHeight: CGFloat = 178
         static let promoCardMinHeight: CGFloat = 154
-        static let overviewPrimaryMinHeight: CGFloat = 300
+        static let overviewPrimaryMinHeight: CGFloat = 260
         static let historyTimestampColumnWidth: CGFloat = 170
         static let historySourceColumnWidth: CGFloat = 280
         static let modelTabsMinHeight: CGFloat = 44

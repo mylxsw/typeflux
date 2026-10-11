@@ -209,9 +209,9 @@ final class StatusBarController: NSObject {
         menu.delegate = self
 
         menu.addItem(makeItem(title: L("menu.openVoiceStudio"), action: #selector(openAskConversations)))
-        let commonFeaturesItem = NSMenuItem(title: L("menu.commonFeatures"), action: nil, keyEquivalent: "")
-        commonFeaturesItem.submenu = buildCommonFeaturesMenu()
-        menu.addItem(commonFeaturesItem)
+        let toolboxItem = NSMenuItem(title: L("menu.toolbox"), action: nil, keyEquivalent: "")
+        toolboxItem.submenu = buildToolboxMenu()
+        menu.addItem(toolboxItem)
         let voiceInputItem = NSMenuItem(title: L("menu.voiceInput"), action: nil, keyEquivalent: "")
         voiceInputItem.submenu = buildVoiceInputMenu()
         menu.addItem(voiceInputItem)
@@ -220,6 +220,9 @@ final class StatusBarController: NSObject {
 
         menu.addItem(makeItem(title: L("menu.setupGuide"), action: #selector(openOnboarding)))
         menu.addItem(makeUpdateMenuItem())
+        let feedbackItem = NSMenuItem(title: L("menu.feedback"), action: nil, keyEquivalent: "")
+        feedbackItem.submenu = buildFeedbackMenu()
+        menu.addItem(feedbackItem)
         menu.addItem(makeItem(title: L("menu.about"), action: #selector(openAbout)))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(makeItem(title: L("menu.quit"), action: #selector(quit), keyEquivalent: "q"))
@@ -228,8 +231,17 @@ final class StatusBarController: NSObject {
         statusItem?.menu = menu
     }
 
-    private func buildCommonFeaturesMenu() -> NSMenu {
-        let menu = NSMenu(title: L("menu.commonFeatures"))
+    private func buildFeedbackMenu() -> NSMenu {
+        let menu = NSMenu(title: L("menu.feedback"))
+        menu.autoenablesItems = false
+        menu.addItem(makeItem(title: L("sidebar.feedback.directOption"), action: #selector(openDirectFeedback)))
+        menu.addItem(makeItem(title: L("sidebar.feedback.emailOption"), action: #selector(sendFeedbackEmail)))
+        menu.addItem(makeItem(title: L("sidebar.feedback.githubOption"), action: #selector(openGitHubIssue)))
+        return menu
+    }
+
+    private func buildToolboxMenu() -> NSMenu {
+        let menu = NSMenu(title: L("menu.toolbox"))
         menu.autoenablesItems = false
         menu.delegate = self
         menu.addItem(makeScreenshotItem())
@@ -573,6 +585,38 @@ final class StatusBarController: NSObject {
         guard let rule = sender.representedObject as? String else { return }
         settingsStore.outputOpenCCConfig = rule
         rebuildMenu()
+    }
+
+    @objc private func openDirectFeedback() {
+        SettingsWindowController.shared.show(
+            settingsStore: settingsStore,
+            historyStore: historyStore,
+            presentFeedback: true,
+            modelManager: modelManager,
+            localModelManager: localModelManager,
+            notificationService: notificationService,
+            onRetryHistory: onRetryHistory
+        )
+    }
+
+    @objc private func sendFeedbackEmail() {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = "mylxsw@aicode.cc"
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: "Typeflux Feedback"),
+            URLQueryItem(
+                name: "body", value: "Hi,\n\nI want to share some feedback about Typeflux:\n"
+            )
+        ]
+
+        guard let url = components.url else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    @objc private func openGitHubIssue() {
+        guard let url = URL(string: "https://github.com/mylxsw/typeflux/issues/new") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     @objc private func checkUpdates() {

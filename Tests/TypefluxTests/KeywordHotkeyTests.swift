@@ -286,7 +286,7 @@ final class HotkeySettingsModelTests: XCTestCase {
         }
     }
 
-    func testOptionsTemplatesAndFilter() throws {
+    func testOptionsAndTemplates() throws {
         let model = try makeModel()
         XCTAssertFalse(model.options.isEmpty)
         XCTAssertTrue(model.options.allSatisfy { !$0.keyword.keyword.isEmpty })
@@ -319,13 +319,6 @@ final class HotkeySettingsModelTests: XCTestCase {
         XCTAssertEqual(options.last?.keyword.pluginID, AskWorkflowPlugin.idPrefix + "local.demo")
         XCTAssertEqual(options.last?.name, "Demo")
         XCTAssertEqual(options.last?.keyword.enabled, false)
-
-        XCTAssertEqual(HotkeySettingsPresentation.filter(model.rows, query: "  ").count, model.rows.count)
-        let screenshot = HotkeySettingsPresentation.filter(model.rows, query: HotkeyFormat.display(.defaultScreenshot))
-        XCTAssertEqual(screenshot.map(\.target), [.builtIn(.screenshot)])
-        XCTAssertTrue(HotkeySettingsPresentation.filter(model.rows, query: "zzz-no-match").isEmpty)
-        let byName = HotkeySettingsPresentation.filter(model.rows, query: AppHotkeyAction.openNotes.title.uppercased())
-        XCTAssertEqual(byName.map(\.target), [.action(.openNotes)])
     }
 
     func testConflictMessagesKeepTheOlderCardsWording() throws {

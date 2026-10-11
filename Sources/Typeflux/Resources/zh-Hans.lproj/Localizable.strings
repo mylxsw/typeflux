@@ -174,7 +174,8 @@
 "settings.output.opencc.config.t2s" = "繁体 → 简体";
 
 "menu.openVoiceStudio" = "打开 Typeflux";
-"menu.commonFeatures" = "常用功能";
+"menu.toolbox" = "工具箱";
+"menu.feedback" = "问题反馈";
 "menu.voiceInput" = "语音输入";
 "menu.history" = "历史";
 "menu.addVocabulary" = "添加生词";
@@ -4619,20 +4620,17 @@
 "hotkeys.keyword.status.unset" = "未设置按键";
 "hotkeys.keyword.status.missing" = "关键词已删除";
 "hotkeys.keyword.status.keywordDisabled" = "关键词已停用";
-"hotkeys.keyword.add" = "添加关键词快捷键";
+"hotkeys.keyword.add" = "添加";
 "hotkeys.keyword.delete" = "删除";
-"hotkeys.keyword.empty" = "给常用的关键词设一个快捷键：选中文字后按下，就会打开启动器并直接运行这个关键词。";
-"hotkeys.keyword.sheet.addTitle" = "添加关键词快捷键";
-"hotkeys.keyword.sheet.editTitle" = "编辑关键词快捷键";
+"hotkeys.keyword.empty" = "选中文字，按快捷键即可运行关键词。";
+"hotkeys.keyword.sheet.addTitle" = "添加快捷键";
+"hotkeys.keyword.sheet.editTitle" = "编辑快捷键";
 "hotkeys.keyword.sheet.keyword" = "关键词";
 "hotkeys.keyword.sheet.shortcut" = "快捷键";
-"hotkeys.keyword.sheet.effect" = "效果";
 "hotkeys.keyword.sheet.choose" = "选择关键词";
 "hotkeys.keyword.sheet.keywordOff" = "已停用";
-"hotkeys.keyword.sheet.takeKeys" = "改为给这里用（对方的快捷键会被清除）";
-"hotkeys.keyword.sheet.shortcutHint" = "需要包含 ⌘、⌥ 或 ⌃，或者使用 F1–F19。";
-"hotkeys.keyword.sheet.effectNone" = "选择一个关键词后，这里会说明按下快捷键时发生什么。";
-"hotkeys.keyword.sheet.effectLauncher" = "按下后打开启动器，进入「%1$@」（%2$@），并用选中的文字运行；没有选中文字时等待输入。";
+"hotkeys.keyword.sheet.takeKeys" = "使用此按键，并清除原绑定";
+"hotkeys.keyword.sheet.shortcutHint" = "⌘、⌥、⌃ + 按键，或 F1–F19。";
 "hotkeys.conflict.usedBy" = "已被「%@」使用。";
 "hotkeys.conflict.gesture" = "不能只用修饰键或连按两次，这类手势留给语音输入。";
 "hotkeys.conflict.needsModifier" = "需要包含 ⌘、⌥ 或 ⌃，否则打字时会误触发（F1–F19 除外）。";
@@ -4646,12 +4644,11 @@
 "hotkeys.menu.duplicate" = "复制一份";
 "hotkeys.menu.reset" = "恢复默认";
 "hotkeys.menu.more" = "更多";
-"hotkeys.noMatch" = "没有找到“%@”相关的快捷键";
-"hotkeys.search" = "搜索功能或快捷键";
 "hotkeys.footnote" = "设置页和启动器设置里的快捷键入口仍然保留，在任何一处修改都会同步。";
 "hotkeys.updated" = "快捷键已设为 %@";
 
 "hotkeys.column.name" = "名称";
-"hotkeys.search.close" = "收起搜索";
 
 "settings.list.itemCount" = "%d 项";
+"hotkeys.keyword.sheet.hint" = "运行选中文字；未选中时等待输入。";
+"hotkeys.keyword.sheet.record" = "录制快捷键";

@@ -50,7 +50,7 @@ struct KeywordHotkeyOption: Identifiable, Equatable {
     }
 }
 
-/// Builds and filters the Shortcuts page. Pure, so it is tested without the settings window.
+/// Builds the Shortcuts page. Pure, so it is tested without the settings window.
 enum HotkeySettingsPresentation {
     static func group(of builtIn: BuiltInHotkey) -> HotkeyGroup {
         switch builtIn {
@@ -117,17 +117,6 @@ enum HotkeySettingsPresentation {
 
     static func keywordName(_ keyword: AskKeyword) -> String {
         AskKeywordListPresentation.name(of: keyword)
-    }
-
-    /// Rows whose name, description or keys contain `query`; all rows when it is empty.
-    static func filter(_ rows: [HotkeyRow], query: String) -> [HotkeyRow] {
-        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !needle.isEmpty else { return rows }
-        return rows.filter { row in
-            [row.title, row.subtitle, row.binding.map(HotkeyFormat.display) ?? ""].contains {
-                $0.localizedCaseInsensitiveContains(needle)
-            }
-        }
     }
 
     /// The keywords a shortcut can run: the launcher's own (built-in and custom) and the

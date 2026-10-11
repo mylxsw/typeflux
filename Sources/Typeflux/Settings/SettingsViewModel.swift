@@ -85,6 +85,9 @@ enum MCPConnectionTestState: Equatable {
 final class StudioViewModel: ObservableObject {
     private static let historyPageSize = 100
 
+    /// Opens the existing feedback form from the menu bar, including on first presentation.
+    @Published var directFeedbackRequestID: UUID?
+
     @Published var currentSection: StudioSection
     @Published var searchQuery = "" {
         didSet {

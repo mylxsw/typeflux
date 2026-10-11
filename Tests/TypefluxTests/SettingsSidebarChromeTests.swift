@@ -14,10 +14,9 @@ struct SettingsSidebarChromeTests {
             var logins = 0
             var settingsOpened = 0
             func footer(compact: Bool) -> some View {
-                AskSidebarAccountFooter(signedIn: false, compact: compact, defaults: settings.defaults,
-                                        onSignIn: { logins += 1 }, onOpenSettings: { settingsOpened += 1 }) {
-                    AskSignedOutIdentity(detail: L("ask.local.identity.storage")) { logins += 1 }
-                }.environment(\.interfaceStyle, style)
+                SidebarAccountFooter(auth: AuthState.shared, compact: compact, defaults: settings.defaults,
+                                     onSignIn: { logins += 1 }, onOpenAccount: {},
+                                     onOpenSettings: { settingsOpened += 1 }).environment(\.interfaceStyle, style)
             }
             try await UI.withWindow(footer(compact: false), width: 256, height: 240) { _, host in
                 try await UI.wait { UI.contains("Typeflux Cloud", in: host) }
@@ -42,6 +41,64 @@ struct SettingsSidebarChromeTests {
                 }
                 try UI.button(L("ask.local.identity"), in: host).press()
                 #expect(logins == 3)
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
+    func `dismissal updates both open sidebar footers`(style: InterfaceStyle) async throws {
+        try await UI.withFixture { settings in
+            var localModeOpened = 0
+            let settingsFooter = SidebarAccountFooter(
+                auth: AuthState.shared, compact: false, defaults: settings.defaults,
+                onSignIn: {}, onOpenAccount: {}, onOpenSettings: {}
+            ).environment(\.interfaceStyle, style)
+            let chatFooter = SidebarAccountFooter(
+                auth: AuthState.shared, compact: false, defaults: settings.defaults,
+                onSignIn: {}, onOpenAccount: {}, onOpenSettings: {}
+            ) {
+                AskSignedOutIdentity(detail: "Chat local mode") { localModeOpened += 1 }
+            }.environment(\.interfaceStyle, style)
+            try await UI.withWindow(settingsFooter, width: 256, height: 240) { _, settingsHost in
+                try await UI.withWindow(chatFooter, width: 256, height: 240) { _, chatHost in
+                    try await UI.wait {
+                        UI.contains("Typeflux Cloud", in: settingsHost) && UI.contains("Typeflux Cloud", in: chatHost)
+                    }
+                    try UI.button(L("ask.cloudPromo.dismiss"), in: settingsHost).press()
+                    try await UI.wait {
+                        !UI.contains("Typeflux Cloud", in: settingsHost) && !UI.contains("Typeflux Cloud", in: chatHost)
+                    }
+                    try UI.button(L("ask.local.identity"), in: chatHost).press()
+                    #expect(localModeOpened == 1)
+                }
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
+    func `shared footer owns login transitions and account identity`(style: InterfaceStyle) async throws {
+        try await UI.withFixture { settings in
+            let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil },
+                                 loadStoredUserProfile: { nil }, clearStoredSession: {})
+            var logins = 0
+            let footer = SidebarAccountFooter(
+                auth: auth, compact: false, defaults: settings.defaults,
+                onSignIn: { logins += 1 }, onOpenAccount: {}, onOpenSettings: {}
+            ).environment(\.interfaceStyle, style)
+            try await UI.withWindow(footer, width: 256, height: 240) { _, host in
+                try await UI.wait { UI.contains("Typeflux Cloud", in: host) }
+                auth.userProfile = UserProfile(id: "u", email: "demir@example.com", name: "Demir Von",
+                                               status: 1, provider: "google", createdAt: "", updatedAt: "")
+                auth.isLoggedIn = true
+                try await UI.wait { UI.contains("Demir Von", in: host) && !UI.contains("Typeflux Cloud", in: host) }
+                #expect(!UI.contains(L("ask.local.identity"), in: host))
+                auth.userProfile = nil
+                try await UI.wait { UI.contains(L("sidebar.appName"), in: host) }
+                auth.isLoggedIn = false
+                try await UI.wait { UI.contains("Typeflux Cloud", in: host) && UI.contains(L("ask.local.identity"), in: host) }
+                try UI.button(L("ask.local.identity"), in: host).press()
+                #expect(logins == 1)
+                #expect(settings.defaults.double(forKey: AskCloudPromo.dismissedKey) == 0)
             }
         }
     }

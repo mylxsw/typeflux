@@ -7,29 +7,33 @@ struct HotkeySettingsName: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: row.icon)
-                .font(.system(size: 14))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .frame(width: 18)
-                .accessibilityHidden(true)
             if case let .keyword(id) = row.target {
                 Button {
                     edit(id)
                 } label: {
-                    HStack(spacing: 6) {
-                        Text(row.title).font(.system(size: 12.5, weight: .medium, design: .monospaced))
+                    HStack(spacing: 8) {
+                        KeywordHotkeyBadge(keyword: row.title)
                         if let name = row.keywordName, name != row.title {
-                            Text(name).font(.system(size: 13))
-                                .foregroundStyle(StudioTheme.textSecondary)
+                            Text(name).font(.system(size: 13, weight: .medium))
                         }
+                        Image(systemName: "pencil").font(.system(size: 11))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .accessibilityHidden(true)
                     }
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help(row.keywordName ?? row.title)
+                .help(L("hotkeys.menu.edit"))
+                .accessibilityLabel(L("hotkeys.keyword.sheet.editTitle") + " " + (row.keywordName ?? row.title))
+                .accessibilityIdentifier("hotkeys.keyword.edit." + id.uuidString)
             } else {
+                Image(systemName: row.icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 18)
+                    .accessibilityHidden(true)
                 Text(row.title).font(.system(size: 13, weight: .medium)).lineLimit(1)
             }
             if let status = row.status, status != .disabled, status != .unset,
@@ -42,5 +46,22 @@ struct HotkeySettingsName: View {
             }
         }
         .foregroundStyle(StudioTheme.textPrimary)
+    }
+}
+
+/// Distinguishes a typed keyword from the action it runs.
+struct KeywordHotkeyBadge: View {
+    let keyword: String
+
+    var body: some View {
+        Text(keyword)
+            .font(.system(size: 12, weight: .medium, design: .monospaced))
+            .foregroundStyle(StudioTheme.textSecondary)
+            .lineLimit(1)
+            .padding(.horizontal, 7).frame(minWidth: 36, minHeight: 24)
+            .background(ModelVisualStyle.input,
+                        in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .strokeBorder(ModelVisualStyle.border))
     }
 }

@@ -111,51 +111,6 @@ private func vocabularySourceLogoURL(for resourceName: String) -> URL? {
     return nil
 }
 
-enum StudioOverviewPanelArrangement: Equatable {
-    case sideBySide
-    case stacked
-}
-
-struct StudioOverviewPanelLayout: Equatable {
-    let arrangement: StudioOverviewPanelArrangement
-    let activityWidth: CGFloat
-    let metricsWidth: CGFloat
-    let height: CGFloat
-}
-
-enum StudioOverviewPanelLayoutCalculator {
-    static let compactBreakpoint: CGFloat = 840
-    static let compactActivityHeight: CGFloat = 240
-
-    static func layout(for availableWidth: CGFloat) -> StudioOverviewPanelLayout {
-        let width = max(availableWidth, 0)
-        let spacing = StudioTheme.Spacing.large
-        let primaryHeight = StudioTheme.Layout.overviewPrimaryMinHeight
-
-        guard width >= compactBreakpoint else {
-            return StudioOverviewPanelLayout(
-                arrangement: .stacked,
-                activityWidth: width,
-                metricsWidth: width,
-                height: compactActivityHeight + spacing + primaryHeight
-            )
-        }
-
-        let metricsWidth = min(
-            StudioTheme.Layout.overviewSideMetricsWidth,
-            max((width - spacing) * 0.46, 0)
-        )
-        let activityWidth = max(width - metricsWidth - spacing, 0)
-
-        return StudioOverviewPanelLayout(
-            arrangement: .sideBySide,
-            activityWidth: activityWidth,
-            metricsWidth: metricsWidth,
-            height: primaryHeight
-        )
-    }
-}
-
 private struct StudioAutoHidingScrollIndicatorConfigurator: NSViewRepresentable {
     func makeNSView(context _: Context) -> NSView {
         NSView(frame: .zero)
@@ -458,10 +413,6 @@ struct StudioView: View {
         StudioShell(
             currentSection: viewModel.currentSection,
             onSelect: viewModel.navigate,
-            onOpenAbout: { AboutWindowController.shared.show() },
-            onSendDirectFeedback: openDirectFeedback,
-            onSendFeedbackEmail: sendFeedbackEmail,
-            onOpenGitHubIssue: openGitHubIssue,
             onAccountAction: handleAccountAction,
             searchText: $viewModel.searchQuery,
             searchPlaceholder: viewModel.currentSection.searchPlaceholder,
@@ -528,6 +479,10 @@ struct StudioView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .authDidLogin)) { _ in
             Task { await refreshSidebarAccountStatus() }
+        }
+        .onReceive(viewModel.$directFeedbackRequestID.compactMap { $0 }.receive(on: RunLoop.main)) { _ in
+            viewModel.directFeedbackRequestID = nil
+            openDirectFeedback()
         }
         .onReceive(viewModel.$launcherPaneRequest.compactMap { $0 }) { pane in
             launcherPane = pane
@@ -670,6 +625,7 @@ struct StudioView: View {
     }
 
     private func openDirectFeedback() {
+        guard !isDirectFeedbackPresented else { return }
         cancelAllFeedbackImageUploads()
         feedbackContent = ""
         feedbackContact = authState.userProfile?.email ?? ""
@@ -678,26 +634,6 @@ struct StudioView: View {
         feedbackSubmissionError = nil
         isSubmittingFeedback = false
         isDirectFeedbackPresented = true
-    }
-
-    private func sendFeedbackEmail() {
-        var components = URLComponents()
-        components.scheme = "mailto"
-        components.path = "mylxsw@aicode.cc"
-        components.queryItems = [
-            URLQueryItem(name: "subject", value: "Typeflux Feedback"),
-            URLQueryItem(
-                name: "body", value: "Hi,\n\nI want to share some feedback about Typeflux:\n"
-            )
-        ]
-
-        guard let url = components.url else { return }
-        NSWorkspace.shared.open(url)
-    }
-
-    private func openGitHubIssue() {
-        guard let url = URL(string: "https://github.com/mylxsw/typeflux/issues/new") else { return }
-        NSWorkspace.shared.open(url)
     }
 
     private func submitDirectFeedback() {
@@ -992,7 +928,14 @@ struct StudioView: View {
 
     private func homePage(viewportWidth: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            overviewPanel(width: viewportWidth)
+            StudioOverviewPanel(
+                width: viewportWidth,
+                completionRate: viewModel.statsCompletionRate,
+                transcriptionMinutesText: viewModel.transcriptionMinutesText,
+                totalCharacters: viewModel.statsTotalCharacters,
+                savedMinutes: viewModel.statsSavedMinutes,
+                averagePaceWPM: viewModel.statsAveragePaceWPM
+            )
 
             HStack {
                 Text(L("home.recentTranscriptions"))
@@ -4112,216 +4055,6 @@ struct StudioView: View {
                 }
             }
         }
-    }
-
-    private func overviewPanel(width: CGFloat) -> some View {
-        let layout = StudioOverviewPanelLayoutCalculator.layout(for: width)
-
-        return Group {
-            if layout.arrangement == .stacked {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
-                    overviewActivityCard(availableWidth: layout.activityWidth, compact: true)
-                        .frame(
-                            width: layout.activityWidth,
-                            height: StudioOverviewPanelLayoutCalculator.compactActivityHeight
-                        )
-
-                    overviewMetricsGrid(width: layout.metricsWidth)
-                }
-            } else {
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-                    overviewActivityCard(availableWidth: layout.activityWidth, compact: false)
-                        .frame(width: layout.activityWidth)
-                        .frame(minHeight: StudioTheme.Layout.overviewPrimaryMinHeight)
-
-                    overviewMetricsGrid(width: layout.metricsWidth)
-                }
-            }
-        }
-        .frame(width: width, height: layout.height, alignment: .topLeading)
-    }
-
-    private func overviewActivityCard(availableWidth: CGFloat, compact: Bool) -> some View {
-        let donutSize = compact
-            ? min(128, max(104, availableWidth * 0.24))
-            : StudioTheme.Layout.overviewDonutSize
-        let donutLineWidth = compact
-            ? StudioTheme.BorderWidth.overviewDonut * 0.62
-            : StudioTheme.BorderWidth.overviewDonut
-
-        return StudioCard(padding: StudioTheme.Insets.cardDense) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                HStack(
-                    alignment: .center,
-                    spacing: compact ? StudioTheme.Spacing.medium : StudioTheme.Spacing.xxLarge
-                ) {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            RoundedRectangle(
-                                cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous
-                            )
-                            .fill(StudioTheme.iconTileSurface)
-                            .frame(
-                                width: StudioTheme.ControlSize.overviewBadge,
-                                height: StudioTheme.ControlSize.overviewBadge
-                            )
-                            .overlay(
-                                Image(systemName: "waveform.and.magnifyingglass")
-                                    .font(
-                                        .system(
-                                            size: StudioTheme.Typography.iconSmall,
-                                            weight: .semibold
-                                        )
-                                    )
-                                    .foregroundStyle(StudioTheme.accent)
-                            )
-
-                            Text(L("home.activity.title"))
-                                .font(
-                                    .studioBody(StudioTheme.Typography.bodySmall, weight: .semibold)
-                                )
-                                .foregroundStyle(StudioTheme.textSecondary)
-                                .lineLimit(1)
-                        }
-
-                        Text("\(viewModel.statsCompletionRate)%")
-                            .font(.studioDisplay(StudioTheme.Typography.displayLarge, weight: .bold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                            .minimumScaleFactor(0.72)
-                            .lineLimit(1)
-
-                        Text(L("home.activity.completionRate"))
-                            .font(.studioBody(StudioTheme.Typography.body))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Spacer(minLength: StudioTheme.Spacing.medium)
-
-                    Circle()
-                        .stroke(
-                            StudioTheme.controlSurface,
-                            lineWidth: donutLineWidth
-                        )
-                        .frame(
-                            width: donutSize,
-                            height: donutSize
-                        )
-                        .overlay(
-                            Circle()
-                                .trim(from: 0, to: CGFloat(viewModel.statsCompletionRate) / 100)
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [
-                                            StudioTheme.accent.opacity(0.52),
-                                            StudioTheme.accent.opacity(StudioTheme.Opacity.overviewProgress)
-                                        ],
-                                        startPoint: .bottomLeading,
-                                        endPoint: .topTrailing
-                                    ),
-                                    style: StrokeStyle(
-                                        lineWidth: donutLineWidth,
-                                        lineCap: .round
-                                    )
-                                )
-                                .rotationEffect(.degrees(StudioTheme.Angles.overviewProgressStart))
-                        )
-                        .padding(
-                            .trailing,
-                            compact ? StudioTheme.Spacing.none : StudioTheme.Spacing.smallMedium
-                        )
-                        .padding(
-                            .vertical,
-                            compact ? StudioTheme.Spacing.none : StudioTheme.Spacing.smallMedium
-                        )
-                }
-
-                Spacer(minLength: StudioTheme.Spacing.smallMedium)
-
-                Text(L("home.activity.privacy"))
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-
-    private func overviewMetricsGrid(width: CGFloat) -> some View {
-        let spacing = StudioTheme.Spacing.large
-        let cardWidth = max((width - spacing) / 2, 0)
-        let cardHeight = max((StudioTheme.Layout.overviewPrimaryMinHeight - spacing) / 2, 0)
-
-        return VStack(spacing: spacing) {
-            HStack(spacing: spacing) {
-                homeMiniMetric(
-                    icon: "clock",
-                    value: "\(viewModel.transcriptionMinutesText) min",
-                    title: L("home.metric.totalDictation"),
-                    size: CGSize(width: cardWidth, height: cardHeight)
-                )
-                homeMiniMetric(
-                    icon: "mic",
-                    value: "\(viewModel.statsTotalCharacters)",
-                    title: L("home.metric.charactersDictated"),
-                    size: CGSize(width: cardWidth, height: cardHeight)
-                )
-            }
-
-            HStack(spacing: spacing) {
-                homeMiniMetric(
-                    icon: "hourglass",
-                    value: "\(viewModel.statsSavedMinutes) min",
-                    title: L("home.metric.timeSaved"),
-                    size: CGSize(width: cardWidth, height: cardHeight)
-                )
-                homeMiniMetric(
-                    icon: "bolt",
-                    value: viewModel.statsAveragePaceWPM > 0
-                        ? "\(viewModel.statsAveragePaceWPM) wpm" : "--",
-                    title: L("home.metric.averagePace"),
-                    size: CGSize(width: cardWidth, height: cardHeight)
-                )
-            }
-        }
-        .frame(
-            width: width,
-            height: StudioTheme.Layout.overviewPrimaryMinHeight,
-            alignment: .top
-        )
-    }
-
-    private func homeMiniMetric(icon: String, value: String, title: String, size: CGSize)
-        -> some View {
-        StudioCard(padding: StudioTheme.Insets.cardCompact) {
-            VStack(alignment: .center, spacing: StudioTheme.Spacing.smallMedium) {
-                RoundedRectangle(
-                    cornerRadius: StudioTheme.CornerRadius.miniMetricIcon, style: .continuous
-                )
-                .fill(StudioTheme.iconTileSurface)
-                .frame(
-                    width: StudioTheme.ControlSize.overviewMiniIcon,
-                    height: StudioTheme.ControlSize.overviewMiniIcon
-                )
-                .overlay(
-                    Image(systemName: icon)
-                        .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                        .foregroundStyle(StudioTheme.accent)
-                )
-
-                Text(value)
-                    .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .multilineTextAlignment(.center)
-
-                Text(title)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        }
-        .frame(width: size.width, height: size.height, alignment: .center)
     }
 
     private func sectionHeader(

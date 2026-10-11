@@ -565,10 +565,6 @@ struct StudioShell<Content: View>: View {
 
     let currentSection: StudioSection
     let onSelect: (StudioSection) -> Void
-    let onOpenAbout: () -> Void
-    let onSendDirectFeedback: () -> Void
-    let onSendFeedbackEmail: () -> Void
-    let onOpenGitHubIssue: () -> Void
     let onAccountAction: () -> Void
     let searchText: Binding<String>
     let searchPlaceholder: String
@@ -578,10 +574,6 @@ struct StudioShell<Content: View>: View {
     init(
         currentSection: StudioSection,
         onSelect: @escaping (StudioSection) -> Void,
-        onOpenAbout: @escaping () -> Void,
-        onSendDirectFeedback: @escaping () -> Void,
-        onSendFeedbackEmail: @escaping () -> Void,
-        onOpenGitHubIssue: @escaping () -> Void,
         onAccountAction: @escaping () -> Void,
         searchText: Binding<String>,
         searchPlaceholder: String,
@@ -590,10 +582,6 @@ struct StudioShell<Content: View>: View {
     ) {
         self.currentSection = currentSection
         self.onSelect = onSelect
-        self.onOpenAbout = onOpenAbout
-        self.onSendDirectFeedback = onSendDirectFeedback
-        self.onSendFeedbackEmail = onSendFeedbackEmail
-        self.onOpenGitHubIssue = onOpenGitHubIssue
         self.onAccountAction = onAccountAction
         self.searchText = searchText
         self.searchPlaceholder = searchPlaceholder
@@ -636,8 +624,6 @@ struct StudioShell<Content: View>: View {
 
     private func sidebar(compact: Bool) -> some View {
         StudioSidebar(currentSection: currentSection, onSelect: onSelect,
-                      onSendDirectFeedback: onSendDirectFeedback, onSendFeedbackEmail: onSendFeedbackEmail,
-                      onOpenGitHubIssue: onOpenGitHubIssue, onOpenAbout: onOpenAbout,
                       onAccountAction: onAccountAction, defaults: accountDefaults, compact: compact)
     }
 
@@ -723,10 +709,6 @@ struct StudioSidebar: View {
     @Environment(\.interfaceStyle) private var style
     let currentSection: StudioSection
     let onSelect: (StudioSection) -> Void
-    let onSendDirectFeedback: () -> Void
-    let onSendFeedbackEmail: () -> Void
-    let onOpenGitHubIssue: () -> Void
-    let onOpenAbout: () -> Void
     let onAccountAction: () -> Void
     let defaults: UserDefaults
     let compact: Bool
@@ -744,7 +726,6 @@ struct StudioSidebar: View {
                     .font(.system(size: 9))
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer(minLength: 0)
-                utilityMenu
             }
             .padding(.horizontal, 16)
             .padding(.top, AskMetrics.titleBarRowHeight)
@@ -758,97 +739,17 @@ struct StudioSidebar: View {
                 .padding(.horizontal, 10)
             }
 
-            AskSidebarAccountFooter(signedIn: auth.isLoggedIn, compact: compact, defaults: defaults,
-                                    onSignIn: onAccountAction, onOpenSettings: { onSelect(.settings) }) {
-                if auth.isLoggedIn {
-                    AskAccountFooterIdentity(auth: auth, name:
-                        AskPresentation.accountName(name: auth.userProfile?.name, email: auth.userProfile?.email)
-                            ?? L("sidebar.appName"), onOpenAccount: onAccountAction)
-                } else {
-                    AskSignedOutIdentity(detail: L("ask.local.identity.storage"), action: onAccountAction)
-                }
-            }
+            SidebarAccountFooter(auth: auth, compact: compact, defaults: defaults,
+                                 onSignIn: onAccountAction, onOpenAccount: onAccountAction,
+                                 onOpenSettings: { onSelect(.settings) })
         }
         .environment(\.locale, localization.locale)
-    }
-
-    private var utilityMenu: some View {
-        StudioSidebarIconMenuButton(systemImage: "ellipsis", accessibilityLabel: L("history.action.more"),
-                                    size: 28, symbolSize: 13) {
-            Button(L("sidebar.feedback.directOption"), action: onSendDirectFeedback)
-            Button(L("sidebar.feedback.emailOption"), action: onSendFeedbackEmail)
-            Button(L("sidebar.feedback.githubOption"), action: onOpenGitHubIssue)
-            Divider()
-            Button(L("sidebar.aboutAccessibility"), action: onOpenAbout)
-        }
-        .accessibilityIdentifier("studio.supportMenu")
     }
 
     private var appVersionBadge: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
     }
 
-}
-
-private struct StudioSidebarIconMenuButton<MenuContent: View>: View {
-    let systemImage: String
-    let accessibilityLabel: String
-    var size: CGFloat = StudioTheme.ControlSize.sidebarUtilityButton
-    var symbolSize: CGFloat = StudioTheme.Typography.iconSmall
-    @ViewBuilder let menuContent: () -> MenuContent
-    @State private var isHovered = false
-
-    var body: some View {
-        Menu {
-            menuContent()
-        } label: {
-            StudioSidebarIconLabel(
-                systemImage: systemImage,
-                accessibilityLabel: accessibilityLabel,
-                isActive: false,
-                isHovered: isHovered,
-                size: size,
-                symbolSize: symbolSize
-            )
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .buttonStyle(StudioInteractiveButtonStyle())
-        .tint(StudioTheme.textSecondary)
-        .frame(
-            width: size,
-            height: size
-        )
-        .contentShape(Circle())
-        .accessibilityLabel(accessibilityLabel)
-        .studioTooltip(accessibilityLabel, yOffset: 34)
-        .onHover { isHovered = $0 }
-    }
-}
-
-private struct StudioSidebarIconLabel: View {
-    let systemImage: String
-    let accessibilityLabel: String
-    let isActive: Bool
-    var isHovered: Bool = false
-    var size: CGFloat = StudioTheme.ControlSize.sidebarUtilityButton
-    var symbolSize: CGFloat = StudioTheme.Typography.iconSmall
-
-    var body: some View {
-        Image(systemName: systemImage)
-            .font(.system(size: symbolSize, weight: .semibold))
-            .foregroundStyle(isActive ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-            .frame(
-                width: size,
-                height: size
-            )
-            .background(
-                Circle()
-                    .fill((isHovered || isActive) ? StudioTheme.sidebarSelection.opacity(0.86) : Color.clear)
-            )
-            .contentShape(Circle())
-            .accessibilityLabel(accessibilityLabel)
-    }
 }
 
 extension StudioSidebar {

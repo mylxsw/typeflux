@@ -174,7 +174,8 @@
 "settings.permissionStatus.subtitle" = "Typeflux이 의존하는 macOS 권한을 검토한 후 필요한 경우 액세스 권한을 부여하세요.";
 
 "menu.openVoiceStudio" = "Typeflux 열기";
-"menu.commonFeatures" = "자주 사용하는 기능";
+"menu.toolbox" = "도구 상자";
+"menu.feedback" = "문제 피드백";
 "menu.voiceInput" = "음성 입력";
 "menu.history" = "역사";
 "menu.addVocabulary" = "단어 추가";
@@ -4597,20 +4598,17 @@
 "hotkeys.keyword.status.unset" = "키 미설정";
 "hotkeys.keyword.status.missing" = "키워드 삭제됨";
 "hotkeys.keyword.status.keywordDisabled" = "키워드 꺼짐";
-"hotkeys.keyword.add" = "키워드 단축키 추가";
+"hotkeys.keyword.add" = "추가";
 "hotkeys.keyword.delete" = "삭제";
-"hotkeys.keyword.empty" = "자주 쓰는 키워드에 단축키를 지정하세요: 텍스트를 선택하고 누르면 런처가 열리고 바로 실행됩니다.";
-"hotkeys.keyword.sheet.addTitle" = "키워드 단축키 추가";
-"hotkeys.keyword.sheet.editTitle" = "키워드 단축키 편집";
+"hotkeys.keyword.empty" = "텍스트를 선택하고 단축키로 키워드를 실행하세요.";
+"hotkeys.keyword.sheet.addTitle" = "단축키 추가";
+"hotkeys.keyword.sheet.editTitle" = "단축키 편집";
 "hotkeys.keyword.sheet.keyword" = "키워드";
 "hotkeys.keyword.sheet.shortcut" = "단축키";
-"hotkeys.keyword.sheet.effect" = "동작";
 "hotkeys.keyword.sheet.choose" = "키워드 선택";
 "hotkeys.keyword.sheet.keywordOff" = "꺼짐";
-"hotkeys.keyword.sheet.takeKeys" = "여기서 사용(다른 단축키의 키는 해제됨)";
-"hotkeys.keyword.sheet.shortcutHint" = "⌘, ⌥, ⌃ 중 하나를 포함하거나 F1–F19를 사용하세요.";
-"hotkeys.keyword.sheet.effectNone" = "키워드를 선택하면 단축키를 눌렀을 때의 동작이 여기에 표시됩니다.";
-"hotkeys.keyword.sheet.effectLauncher" = "런처를 “%1$@”(%2$@)로 열고 선택한 텍스트로 실행합니다. 선택이 없으면 입력을 기다립니다.";
+"hotkeys.keyword.sheet.takeKeys" = "이 키를 사용하고 기존 할당 해제";
+"hotkeys.keyword.sheet.shortcutHint" = "⌘, ⌥, ⌃ + 키 또는 F1–F19.";
 "hotkeys.conflict.usedBy" = "이미 “%@”에서 사용 중입니다.";
 "hotkeys.conflict.gesture" = "수정 키만 누르거나 두 번 누르기는 음성 입력용입니다.";
 "hotkeys.conflict.needsModifier" = "입력 중 잘못 실행되지 않도록 ⌘, ⌥, ⌃ 중 하나를 포함하세요(F1–F19는 가능).";
@@ -4624,12 +4622,11 @@
 "hotkeys.menu.duplicate" = "복제";
 "hotkeys.menu.reset" = "기본값 복원";
 "hotkeys.menu.more" = "더 보기";
-"hotkeys.noMatch" = "“%@”와(과) 일치하는 단축키가 없습니다";
-"hotkeys.search" = "기능 또는 단축키 검색";
 "hotkeys.footnote" = "설정 페이지와 런처 설정의 단축키 항목도 그대로 유지되며, 어디서 바꿔도 함께 반영됩니다.";
 "hotkeys.updated" = "단축키를 %@(으)로 설정했습니다";
 
 "hotkeys.column.name" = "이름";
-"hotkeys.search.close" = "검색 닫기";
 
 "settings.list.itemCount" = "%d개 항목";
+"hotkeys.keyword.sheet.hint" = "선택한 텍스트로 실행하며, 선택이 없으면 입력을 기다립니다.";
+"hotkeys.keyword.sheet.record" = "단축키 기록";

@@ -317,9 +317,6 @@ struct ScreenshotEditorToolbar: View {
                 perform(.toggleMoreMenu)
             }
             .accessibilityIdentifier("screenshot.more")
-            if state.showsPin {
-                grip
-            }
             separator
             iconButton("xmark", help: "\(L("screenshot.edit.cancel"))  esc", tint: .red) { perform(.cancel) }
                 .accessibilityLabel(L("screenshot.edit.cancel"))
@@ -327,6 +324,9 @@ struct ScreenshotEditorToolbar: View {
             iconButton("checkmark", help: "\(L("screenshot.edit.copy"))  ↩", tint: .green) { perform(.copy) }
                 .accessibilityLabel(L("screenshot.edit.copy"))
                 .accessibilityIdentifier("screenshot.copy")
+            if state.showsPin {
+                grip
+            }
         }
         .padding(4)
         .background(glass(cornerRadius: 12))

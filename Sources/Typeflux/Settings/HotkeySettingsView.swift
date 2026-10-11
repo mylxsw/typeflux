@@ -6,7 +6,6 @@ struct HotkeySettingsView: View {
     @StateObject private var model: HotkeySettingsModel
     @StateObject private var recorder = HotkeyRecorder()
     @State private var recordingTarget: HotkeyTarget?
-    @State private var query = ""
     @State private var editing: KeywordHotkeyDraftItem?
     var compact = false
 
@@ -17,15 +16,11 @@ struct HotkeySettingsView: View {
     }
 
     var body: some View {
-        let shown = HotkeySettingsPresentation.filter(model.rows, query: query)
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-            header
-            if shown.isEmpty, !query.isEmpty {
-                ModelSurface { AgentSettingsEmptyRow(text: L("hotkeys.noMatch", query)) }
-            }
+            StudioHeroHeader(eyebrow: StudioSection.hotkeys.eyebrow, title: StudioSection.hotkeys.heading)
             ForEach(HotkeyGroup.allCases) { group in
-                let rows = shown.filter { $0.group == group }
-                if !rows.isEmpty || (group == .keywords && query.isEmpty) {
+                let rows = model.rows.filter { $0.group == group }
+                if !rows.isEmpty || group == .keywords {
                     VStack(alignment: .leading, spacing: 8) {
                         sectionHeader(group, count: rows.count)
                         ModelSurface {
@@ -35,7 +30,7 @@ struct HotkeySettingsView: View {
                                 }
                                 if !rows.isEmpty {
                                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                                        if index > 0 { ModelRowDivider(leading: 40) }
+                                        if index > 0 { ModelRowDivider(leading: group == .keywords ? 14 : 40) }
                                         rowView(row)
                                     }
                                 }
@@ -53,13 +48,6 @@ struct HotkeySettingsView: View {
     }
 
     // MARK: - Header and tables
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            StudioHeroHeader(eyebrow: StudioSection.hotkeys.eyebrow, title: StudioSection.hotkeys.heading)
-            HotkeySettingsSearch(text: $query, onFocus: stopRecording)
-        }
-    }
 
     private func sectionHeader(_ group: HotkeyGroup, count: Int) -> some View {
         HStack(spacing: 8) {
@@ -86,13 +74,8 @@ struct HotkeySettingsView: View {
 
     private func rowView(_ row: HotkeyRow) -> some View {
         HStack(spacing: 10) {
-            HotkeySettingsName(row: row) { id in
-                if let hotkey = model.keywordHotkey(id) {
-                    stopRecording()
-                    editing = KeywordHotkeyDraftItem(draft: KeywordHotkeyDraft(editing: hotkey))
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            HotkeySettingsName(row: row, edit: edit)
+                .frame(maxWidth: .infinity, alignment: .leading)
             Button { toggleRecording(row) } label: {
                 HotkeyKeysView(binding: row.binding, isRecording: recordingTarget == row.target)
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
@@ -145,11 +128,10 @@ struct HotkeySettingsView: View {
             Button(L("hotkeys.menu.record")) { startRecording(row) }
             if case let .keyword(id) = row.target {
                 Button(L("hotkeys.menu.edit")) {
-                    if let hotkey = model.keywordHotkey(id) {
-                        editing = KeywordHotkeyDraftItem(draft: KeywordHotkeyDraft(editing: hotkey))
-                    }
+                    edit(id)
                 }
                 Button(L("hotkeys.menu.duplicate")) {
+                    stopRecording()
                     if let copy = model.duplicate(id) {
                         model.save(copy)
                         editing = KeywordHotkeyDraftItem(draft: KeywordHotkeyDraft(editing: copy))
@@ -175,32 +157,45 @@ struct HotkeySettingsView: View {
     }
 
     private var keywordEmptyState: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(L("hotkeys.keyword.empty")).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            ViewThatFits(in: .horizontal) {
-                templateButtons(horizontal: true)
-                templateButtons(horizontal: false)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 8)], spacing: 8) {
+                ForEach(HotkeySettingsPresentation.templates(in: model.options)) { option in
+                    Button { add(option) } label: {
+                        HStack(spacing: 8) {
+                            KeywordHotkeyBadge(keyword: option.keyword.keyword)
+                            Text(option.name).font(.system(size: 13, weight: .medium))
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                            Image(systemName: "plus").font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(StudioTheme.textSecondary)
+                        }
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .padding(.horizontal, 10).frame(height: 44)
+                        .background(ModelVisualStyle.control,
+                                    in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius))
+                        .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius)
+                            .strokeBorder(ModelVisualStyle.border))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(L("hotkeys.recordAccessibility", option.name))
+                    .accessibilityLabel(L("hotkeys.recordAccessibility", option.name))
+                    .accessibilityIdentifier("hotkeys.keyword.template." + option.keyword.keyword)
+                }
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 14)
     }
 
-    private func templateButtons(horizontal: Bool) -> some View {
-        let layout = horizontal
-            ? AnyLayout(HStackLayout(spacing: 8))
-            : AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
-        return layout {
-            ForEach(HotkeySettingsPresentation.templates(in: model.options)) { option in
-                Button { add(option) } label: {
-                    Label("\(option.keyword.keyword) · \(option.name)", systemImage: "plus")
-                }
-                .buttonStyle(ModelActionStyle())
-            }
-        }
-    }
-
     // MARK: - Actions
+
+    private func edit(_ id: UUID) {
+        guard let hotkey = model.keywordHotkey(id) else { return }
+        stopRecording()
+        editing = KeywordHotkeyDraftItem(draft: KeywordHotkeyDraft(editing: hotkey))
+    }
 
     private func add(_ option: KeywordHotkeyOption?) {
         stopRecording()

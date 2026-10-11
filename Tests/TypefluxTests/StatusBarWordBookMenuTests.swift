@@ -22,7 +22,7 @@ struct StatusBarWordBookMenuTests {
         )
         controller.start()
         defer { controller.stop() }
-        let menu = try #require(controller.menu?.items.first { $0.title == L("menu.commonFeatures") }?.submenu)
+        let menu = try #require(controller.menu?.items.first { $0.title == L("menu.toolbox") }?.submenu)
         let screenshot = try #require(menu.items.first { $0.title == L("menu.screenshot") })
         #expect(!screenshot.keyEquivalent.isEmpty)
         settings.screenshotHotkey = nil
@@ -90,9 +90,9 @@ struct StatusBarWordBookMenuTests {
         controller.start()
         defer { controller.stop() }
         let rootMenu = try #require(controller.menu)
-        let commonTitle = L("menu.commonFeatures")
+        let commonTitle = L("menu.toolbox")
         let voiceTitle = L("menu.voiceInput")
-        #expect(commonTitle != "menu.commonFeatures")
+        #expect(commonTitle != "menu.toolbox")
         #expect(voiceTitle != "menu.voiceInput")
         #expect(rootMenu.items.prefix(4).map(\.title) == [
             L("menu.openVoiceStudio"), commonTitle, voiceTitle, L("menu.settings")
@@ -102,6 +102,8 @@ struct StatusBarWordBookMenuTests {
         #expect(title != "ask.wordBook.title")
         if language == .simplifiedChinese {
             #expect(title == "单词本")
+            #expect(commonTitle == "工具箱")
+            #expect(L("menu.feedback") == "问题反馈")
         }
         #expect(menu.items.filter { $0.title == title }.count == 1)
         #expect(!menu.items.contains { $0.title == L("menu.addVocabulary") })
@@ -145,7 +147,7 @@ struct StatusBarWordBookMenuTests {
         controller.start()
         defer { controller.stop() }
         let rootMenu = try #require(controller.menu)
-        let menu = try #require(rootMenu.items.first { $0.title == L("menu.commonFeatures") }?.submenu)
+        let menu = try #require(rootMenu.items.first { $0.title == L("menu.toolbox") }?.submenu)
         let index = try #require(menu.items.firstIndex { $0.title == L("ask.wordBook.title") })
         menu.performActionForItem(at: index)
         let window = try #require(wordBook.window)

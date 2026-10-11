@@ -20,18 +20,17 @@ struct KeywordHotkeyEditorSheet: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(L(draft.isNew ? "hotkeys.keyword.sheet.addTitle" : "hotkeys.keyword.sheet.editTitle"))
                 .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                .padding(.horizontal, 22).padding(.top, 20).padding(.bottom, 14)
+                .padding(.horizontal, 22).padding(.top, 20).padding(.bottom, 6)
+            hint(L("hotkeys.keyword.sheet.hint"))
+                .padding(.horizontal, 22).padding(.bottom, 18)
             VStack(alignment: .leading, spacing: 14) {
                 field(L("hotkeys.keyword.sheet.keyword")) { keywordPicker }
                 field(L("hotkeys.keyword.sheet.shortcut")) { shortcutField }
-                field(L("hotkeys.keyword.sheet.effect")) {
-                    hint(effect)
-                }
             }
             .padding(.horizontal, 22)
             footer.padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 20)
         }
-        .frame(width: 540)
+        .frame(width: 480)
         .background(ModelVisualStyle.canvas)
         .onDisappear { recorder.stop() }
     }
@@ -66,10 +65,28 @@ struct KeywordHotkeyEditorSheet: View {
     @ViewBuilder private var shortcutField: some View {
         HStack(spacing: 8) {
             Button(action: toggleRecording) {
-                HotkeyKeysView(binding: draft.hotkey.binding, isRecording: recorder.isRecording)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 8) {
+                    if draft.hotkey.binding == nil, !recorder.isRecording {
+                        Image(systemName: "keyboard").foregroundStyle(StudioTheme.textSecondary)
+                        Text(L("hotkeys.keyword.sheet.record"))
+                            .font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                    } else {
+                        HotkeyKeysView(binding: draft.hotkey.binding, isRecording: recorder.isRecording)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 10).frame(minHeight: 40)
+                .background(ModelVisualStyle.input,
+                            in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius))
+                .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius)
+                    .strokeBorder(recorder.isRecording ? StudioTheme.accent : ModelVisualStyle.border))
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .help(L("hotkeys.recordHelp"))
+            .accessibilityLabel(L("hotkeys.keyword.sheet.record"))
+            .accessibilityValue(recorder.isRecording ? L("hotkeys.recording")
+                : draft.hotkey.binding.map(HotkeyFormat.display) ?? L("settings.shortcuts.none"))
             .accessibilityIdentifier("hotkeys.keyword.sheet.record")
             if draft.hotkey.binding != nil, !recorder.isRecording {
                 Button { draft.hotkey.binding = nil } label: {
@@ -92,11 +109,6 @@ struct KeywordHotkeyEditorSheet: View {
         } else {
             hint(L("hotkeys.keyword.sheet.shortcutHint"))
         }
-    }
-
-    private var effect: String {
-        guard let selected else { return L("hotkeys.keyword.sheet.effectNone") }
-        return L("hotkeys.keyword.sheet.effectLauncher", selected.keyword.keyword, selected.name)
     }
 
     private var footer: some View {

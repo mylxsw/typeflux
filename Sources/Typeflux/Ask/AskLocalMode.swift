@@ -42,17 +42,6 @@ struct AskLocalModeStatus: Equatable {
     }
 }
 
-/// Whether the sidebar's Typeflux Cloud card shows: until the user closes it,
-/// then again after a quiet period.
-enum AskCloudPromo {
-    static let dismissedKey = "ask.cloudPromo.dismissedAt"
-    static let quietPeriod: TimeInterval = 30 * 24 * 60 * 60
-
-    static func isVisible(dismissedAt: TimeInterval, now: Date = Date()) -> Bool {
-        dismissedAt <= 0 || now.timeIntervalSince1970 - dismissedAt >= quietPeriod
-    }
-}
-
 /// The sidebar's filter while conversations are kept both in Typeflux Cloud and on this Mac.
 enum AskHistoryFilter: String, CaseIterable {
     case all, cloud, local
@@ -356,85 +345,5 @@ struct AskLocalModeIdentity: View {
         .accessibilityLabel(L("ask.local.identity"))
         .accessibilityValue(Self.detail(source: status.source))
         .accessibilityHint(L("ask.location.local.help"))
-    }
-}
-
-/// Reusable signed-out identity; each window supplies its own account action.
-struct AskSignedOutIdentity: View {
-    var active = false
-    var detail: String
-    let action: () -> Void
-    @State private var hovering = false
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 9) {
-                Image(systemName: "desktopcomputer").font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .frame(width: 30, height: 30)
-                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(L("ask.local.identity")).font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text(L("ask.local.identity.storage"))
-                        .font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .lineLimit(1).minimumScaleFactor(0.85)
-                }
-            }
-            .padding(.leading, 4).padding(.trailing, 8)
-            .frame(height: 40)
-            .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(hovering || active ? AskTheme.hoverFill : .clear))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .padding(.leading, -4)
-        .onHover { hovering = $0 }
-        .help(detail)
-        .accessibilityLabel(L("ask.local.identity"))
-        .accessibilityValue(detail)
-        .accessibilityIdentifier("sidebar.signedOutIdentity")
-    }
-}
-
-/// What Typeflux Cloud adds, above the signed-out footer. Closing it keeps it
-/// away for `AskCloudPromo.quietPeriod`.
-struct AskCloudPromoCard: View {
-    var onSignIn: () -> Void
-    var onDismiss: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: "cloud").font(.system(size: 12, weight: .semibold))
-                    .accessibilityHidden(true)
-                Text(verbatim: "Typeflux Cloud").font(.system(size: 12.5, weight: .semibold))
-                Spacer(minLength: 4)
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark").font(.system(size: 9.5, weight: .bold))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .frame(width: 18, height: 18)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help(L("ask.cloudPromo.dismiss"))
-                .accessibilityLabel(L("ask.cloudPromo.dismiss"))
-            }
-            .foregroundStyle(StudioTheme.textPrimary)
-            Text(L("ask.cloudPromo.body"))
-                .font(.system(size: 11.5))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Button(L("ask.cloudPromo.signIn"), action: onSignIn)
-                .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
-                .padding(.top, 2)
-        }
-        .padding(.horizontal, 12).padding(.vertical, 11)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(LinearGradient(colors: [AskTheme.accent.opacity(0.16), Color.purple.opacity(0.1)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.separator, lineWidth: 0.5))
     }
 }
