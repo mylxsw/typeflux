@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 系统监控（可交互设计稿）</title>
+<style>
+:root {
+  --bg: #1b1b1d; --card: rgba(255,255,255,.045); --card-hover: rgba(255,255,255,.075);
+  --border: rgba(255,255,255,.115); --border-soft: rgba(255,255,255,.07);
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16);
+  --ok: #29c76e; --ok-soft: rgba(41,199,110,.14); --warn: #eb8040; --warn-soft: rgba(235,128,64,.15);
+  --danger: #dc5252; --danger-soft: rgba(220,82,82,.14); --tile: rgba(255,255,255,.07); --key: rgba(255,255,255,.09);
+  --c-cpu: #3d95ff; --c-mem: #b07cff; --c-disk: #2bb3aa; --c-down: #34c759; --c-up: #ff9f40;
+  --stage: #0e0e10; --pop: #2a2a2d; --glass: rgba(34,34,38,.90); --glass-strong: rgba(30,30,34,.94);
+  --desk: radial-gradient(1200px 700px at 20% 10%, #2a3f63 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #4a2e3e 0%, transparent 60%), linear-gradient(135deg, #1b2538 0%, #271d33 55%, #33241f 100%);
+  --shadow: 0 30px 80px rgba(0,0,0,.5);
+}
+body.light {
+  --bg: #f4f5f7; --card: rgba(255,255,255,.75); --card-hover: rgba(0,0,0,.045);
+  --border: rgba(97,115,143,.18); --border-soft: rgba(97,115,143,.11);
+  --text: #141414; --text2: #474747; --text3: #85868a; --accent: #1f6fe0; --accent-soft: rgba(31,111,224,.12);
+  --ok: #1fab63; --ok-soft: rgba(31,171,99,.12); --warn: #e0662a; --warn-soft: rgba(224,102,42,.12);
+  --danger: #d23f3f; --danger-soft: rgba(210,63,63,.10); --tile: rgba(0,0,0,.05); --key: #fff;
+  --c-cpu: #1f6fe0; --c-mem: #8a4fe8; --c-disk: #1c9a92; --c-down: #1fab63; --c-up: #e0782a;
+  --stage: #d9dde3; --pop: #fff; --glass: rgba(250,250,252,.90); --glass-strong: rgba(250,250,252,.95);
+  --desk: radial-gradient(1200px 700px at 20% 10%, #c7d8f2 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #ecd3df 0%, transparent 60%), linear-gradient(135deg, #b9cbe6 0%, #d8c8e8 55%, #ecd6c6 100%);
+  --shadow: 0 30px 80px rgba(30,40,60,.22);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button, input { font: inherit; color: inherit; }
+svg { flex: none; display: block; }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1200px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pill.tog.on { background: var(--danger); border-color: var(--danger); }
+.caption { width: 1200px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 34px; }
+.caption b { color: var(--text2); font-weight: 600; }
+body.solo .stagebar, body.solo .caption { display: none; }
+
+/* ---------- Desktop ---------- */
+.desk { position: relative; width: 1200px; height: 800px; border-radius: 14px; overflow: hidden; background: var(--desk); box-shadow: var(--shadow); user-select: none; }
+.menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 12.5px; background: rgba(0,0,0,.22); color: rgba(255,255,255,.92); backdrop-filter: blur(20px); }
+body.light .menubar { background: rgba(255,255,255,.45); color: #1a1a1a; }
+.menubar b { font-weight: 700; }
+.menubar .sp { flex: 1; }
+.menubar .tf { display: inline-flex; align-items: center; gap: 5px; padding: 1px 6px; border-radius: 5px; cursor: pointer; }
+.menubar .tf:hover { background: rgba(255,255,255,.15); }
+
+/* A stand-in app the user keeps working in */
+.app { position: absolute; left: 60px; top: 70px; width: 700px; height: 520px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: 0 22px 60px rgba(0,0,0,.35); overflow: hidden; display: flex; flex-direction: column; z-index: 10; }
+.app .tb { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--border-soft); color: var(--text3); font-size: 12px; }
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.app .code { padding: 16px 20px; font: 12.5px/1.75 ui-monospace, Menlo, monospace; color: var(--text2); white-space: pre; }
+.app .code .k { color: #c678dd; } .app .code .s { color: #98c379; } .app .code .c { color: var(--text3); }
+body.light .app .code .k { color: #a626a4; } body.light .app .code .s { color: #50a14f; }
+.app.front { z-index: 40; }
+
+/* ---------- Launcher ---------- */
+.scrim { position: absolute; inset: 26px 0 0; z-index: 50; display: none; }
+.scrim.show { display: block; }
+.launcher { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); width: 680px; background: var(--glass); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: 0 26px 70px rgba(0,0,0,.45); backdrop-filter: blur(28px) saturate(1.4); z-index: 60; display: none; overflow: hidden; }
+.launcher.show { display: block; animation: lin .16s ease-out; }
+.launcher.leaving { animation: lout .22s ease-in forwards; }
+@keyframes lin { from { opacity: 0; transform: translateX(-50%) scale(.98); } }
+@keyframes lout { to { opacity: 0; transform: translateX(-30%) translateY(-30px) scale(.6); } }
+.lin { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
+.lin input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 17px; }
+.lin input::placeholder { color: var(--text3); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; flex: none; font-size: 13px; font-weight: 600; white-space: nowrap;
+  background: rgba(43,179,170,.18); color: #7fe0d8; }
+body.light .chip { color: #138a83; }
+.chip .g { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: #2bb3aa; color: #fff; }
+.chip .opt { font-weight: 500; opacity: .8; }
+.hbtn { height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-size: 12.5px; white-space: nowrap; }
+.hbtn:hover { background: var(--card-hover); }
+.hbtn .s { color: var(--text3); font-size: 11px; }
+.hbtn.flash { animation: flash .6s ease 2; }
+@keyframes flash { 50% { background: var(--accent-soft); border-color: var(--accent); } }
+.lbody { padding: 0 14px; }
+.lbar { display: flex; align-items: center; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text3); white-space: nowrap; }
+.lbar .sp { flex: 1; }
+.lbar kbd, .kbd { font: 11px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; margin-right: 3px; color: var(--text2); }
+
+/* home / hint lists */
+.sec { font-size: 11.5px; font-weight: 600; color: var(--text3); padding: 10px 4px 4px; }
+.item { display: flex; align-items: center; gap: 11px; padding: 0 10px; height: 46px; border-radius: 10px; cursor: pointer; }
+.item.on { background: var(--card-hover); box-shadow: inset 0 0 0 1px rgba(43,179,170,.55); }
+.item:hover { background: var(--card-hover); }
+.item .ic { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; flex: none; color: #fff; }
+.item .t { font-weight: 600; white-space: nowrap; }
+.item .d { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; gap: 10px; align-items: center; }
+.item .r { margin-left: auto; color: var(--text3); font-size: 11.5px; display: flex; gap: 8px; align-items: center; white-space: nowrap; }
+.mini-spark { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ---------- Monitor (shared by launcher and window) ---------- */
+.mstat { display: flex; align-items: center; gap: 12px; font-size: 11.5px; color: var(--text3); padding: 10px 2px 8px; white-space: nowrap; }
+.mstat .sp { flex: 1; }
+.mstat .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); display: inline-block; margin-right: 5px; animation: live 2s infinite; }
+@keyframes live { 50% { opacity: .35; } }
+.mstat .paused .dot { background: var(--text3); animation: none; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.mt { position: relative; border-radius: 12px; background: var(--card); border: 1px solid var(--border-soft); padding: 9px 11px 0; cursor: pointer; overflow: hidden; height: 98px; display: flex; flex-direction: column; transition: border-color .15s, background .15s; }
+.mt:hover { background: var(--card-hover); }
+.mt.on { border-color: var(--mc); box-shadow: inset 0 0 0 1px var(--mc); }
+.mt .lb { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text2); font-weight: 600; }
+.mt .lb .k { margin-left: auto; font: 10.5px ui-monospace, Menlo, monospace; color: var(--text3); font-weight: 400; }
+.mt .v { font-size: 22px; font-weight: 650; letter-spacing: -.3px; line-height: 1.15; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.mt .v small { font-size: 12px; font-weight: 500; color: var(--text3); margin-left: 2px; }
+.mt .s { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.mt .sk { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; opacity: .95; }
+.mt.warn .v { color: var(--warn); } .mt.bad .v { color: var(--danger); }
+.mt.bad { background: var(--danger-soft); }
+.pdot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+
+.alert { display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin-top: 8px; border-radius: 10px; background: var(--danger-soft); color: var(--danger); font-size: 12.5px; }
+.alert .t { color: var(--text); }
+.alert .sp { flex: 1; }
+.alert .hbtn { height: 24px; font-size: 12px; }
+
+/* focus detail */
+.detail { margin-top: 8px; border-radius: 12px; background: var(--card); border: 1px solid var(--border-soft); padding: 11px 13px; display: grid; grid-template-columns: 1fr 230px; gap: 16px; }
+.detail h4 { margin: 0 0 6px; font-size: 12px; color: var(--text2); display: flex; gap: 8px; align-items: center; }
+.detail h4 .x { margin-left: auto; color: var(--text3); font-weight: 400; cursor: pointer; }
+.bigchart { height: 92px; position: relative; }
+.bigchart .ax { position: absolute; right: 0; font-size: 10px; color: var(--text3); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 12px; align-content: start; }
+.kv span:nth-child(odd) { color: var(--text3); }
+.kv span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+.cores { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; height: 50px; align-items: end; margin-top: 6px; }
+.cores .c { position: relative; height: 100%; border-radius: 3px; background: var(--tile); overflow: hidden; }
+.cores .c i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--c-cpu); border-radius: 3px; transition: height .4s; }
+.cores .c.e i { background: color-mix(in srgb, var(--c-cpu) 55%, #9ad); }
+.coreslb { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text3); margin-top: 3px; }
+.stack { display: flex; height: 12px; border-radius: 6px; overflow: hidden; margin: 6px 0 8px; background: var(--tile); }
+.stack i { display: block; height: 100%; transition: width .4s; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--text2); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.vol { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 12px; margin-bottom: 7px; }
+.vol .bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--tile); overflow: hidden; }
+.vol .bar i { display: block; height: 100%; background: var(--c-disk); }
+.vol .m { color: var(--text3); font-size: 11.5px; }
+
+/* processes */
+.phead { display: flex; align-items: center; gap: 8px; padding: 12px 2px 6px; font-size: 11.5px; color: var(--text3); font-weight: 600; }
+.phead .sp { flex: 1; }
+.phead .frozen { font-weight: 500; color: var(--text3); display: inline-flex; gap: 4px; align-items: center; }
+.seg { display: inline-flex; background: var(--tile); border-radius: 7px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 1px 9px; border-radius: 5px; cursor: pointer; color: var(--text2); font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px; }
+.seg button.on { background: var(--card-hover); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+body.light .seg button.on { background: #fff; }
+.plist { border-radius: 10px; }
+.prow { display: grid; grid-template-columns: 1fr 74px 82px 78px 56px; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border-radius: 8px; cursor: default; font-size: 12.5px; }
+.prow.h { height: 22px; font-size: 11px; color: var(--text3); }
+.prow.h > div { cursor: pointer; }
+.prow.h > div.on { color: var(--text); font-weight: 600; }
+.prow > div:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prow:not(.h):hover { background: var(--card-hover); }
+.prow.sel { background: var(--accent-soft); }
+.prow .nm { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.prow .nm .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow .nm .tag { font-size: 10.5px; color: var(--text3); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; flex: none; }
+.pic { width: 20px; height: 20px; border-radius: 5px; display: grid; place-items: center; font-size: 10.5px; font-weight: 700; color: #fff; flex: none; }
+.pic.sys { background: var(--tile); color: var(--text3); }
+.bar-in { position: relative; }
+.hot { color: var(--warn); } .vhot { color: var(--danger); font-weight: 600; }
+.pacts { display: flex; gap: 5px; justify-content: flex-end; }
+.pact { height: 22px; border-radius: 6px; padding: 0 7px; border: 0; background: var(--tile); color: var(--text2); font-size: 11.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.pact:hover { background: var(--card-hover); color: var(--text); }
+.pact.danger { color: var(--danger); }
+.pact.danger.solid { background: var(--danger); color: #fff; }
+.pact:disabled { opacity: .45; cursor: default; }
+.pact .s { color: var(--text3); font-size: 10.5px; }
+.pact.solid .s { color: rgba(255,255,255,.75); }
+.confirm { grid-column: 1 / -1; }
+.prow.cf { grid-template-columns: 1fr auto; background: var(--danger-soft); height: 40px; }
+.prow.cf .q { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.prow.cf .q .d { color: var(--text3); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.empty { padding: 18px; text-align: center; color: var(--text3); font-size: 12.5px; }
+
+/* ---------- Standalone window ---------- */
+.mwin { position: absolute; z-index: 30; display: none; background: var(--glass-strong); border: 1px solid var(--border); box-shadow: 0 22px 60px rgba(0,0,0,.42); backdrop-filter: blur(28px) saturate(1.4); }
+.mwin.show { display: block; }
+.mwin.pinned { z-index: 45; }
+.mwin.appear { animation: win .32s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes win { from { opacity: 0; transform: translate(-260px, -60px) scale(.55); } }
+.mwin.ring { box-shadow: 0 0 0 3px var(--accent), 0 22px 60px rgba(0,0,0,.42); transition: box-shadow .3s; }
+.mwin.full { width: 380px; border-radius: 14px; }
+.mwin.compact { width: 272px; border-radius: 14px; }
+.mwin.mini { border-radius: 999px; }
+.wtb { height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; cursor: grab; }
+.wtb:active { cursor: grabbing; }
+.wtb .ttl { font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.wtb .sp { flex: 1; }
+.ib { width: 24px; height: 24px; border-radius: 6px; border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text3); }
+.ib:hover { background: var(--card-hover); color: var(--text); }
+.ib.on { color: var(--accent); }
+.mwin.compact .wtb { height: 30px; opacity: 0; transition: opacity .15s; position: absolute; left: 0; right: 0; top: 0; z-index: 2; background: var(--glass-strong); border-radius: 14px 14px 0 0; }
+.mwin.compact:hover .wtb, .mwin.compact.menuopen .wtb { opacity: 1; }
+.wbody { padding: 0 12px 12px; }
+.wrow { display: grid; grid-template-columns: 54px 1fr 116px; align-items: center; gap: 10px; height: 46px; border-top: 1px solid var(--border-soft); cursor: pointer; }
+.wrow:first-child { border-top: 0; }
+.wrow .lb { font-size: 11.5px; color: var(--text2); font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.wrow .v { text-align: right; font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.wrow .v small { display: block; white-space: nowrap; font-size: 10.5px; font-weight: 400; color: var(--text3); }
+.wrow.warn .v { color: var(--warn); } .wrow.bad .v { color: var(--danger); }
+.wproc { margin-top: 6px; border-top: 1px solid var(--border-soft); padding-top: 4px; }
+.wproc .prow { grid-template-columns: 1fr 56px 66px; height: 28px; font-size: 12px; padding: 0 4px; }
+.wproc .prow.h { height: 24px; }
+.ctiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; }
+.ct { position: relative; border-radius: 10px; background: var(--card); padding: 7px 9px 0; height: 76px; overflow: hidden; }
+.ct .lb { font-size: 10.5px; color: var(--text3); font-weight: 600; }
+.ct .v { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.ct .v small { font-size: 10.5px; color: var(--text3); font-weight: 500; }
+.ct .sk { position: absolute; left: 0; right: 0; bottom: 0; height: 24px; }
+.ct.warn .v { color: var(--warn); } .ct.bad .v { color: var(--danger); } .ct.bad { background: var(--danger-soft); }
+.mbar { display: flex; align-items: center; gap: 12px; height: 32px; padding: 0 8px 0 14px; font-size: 12px; white-space: nowrap; cursor: grab; }
+.mbar .m { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.mbar .m b { font-weight: 650; }
+.mbar .m .l { color: var(--text3); font-size: 11px; }
+.mbar .m.warn b { color: var(--warn); } .mbar .m.bad b { color: var(--danger); }
+.mbar .sep { width: 1px; height: 14px; background: var(--border); }
+.mbar .ctl { display: flex; gap: 2px; width: 0; overflow: hidden; transition: width .15s; }
+.mwin.mini:hover .mbar .ctl, .mwin.mini.menuopen .mbar .ctl { width: 52px; }
+.mbar .ib { width: 22px; height: 22px; }
+.rsz { position: absolute; right: 2px; bottom: 2px; width: 12px; height: 12px; cursor: nwse-resize; opacity: .5; }
+
+/* window menu */
+.wmenu { position: absolute; width: 236px; background: var(--pop); border: 1px solid var(--border); border-radius: 10px; padding: 5px; box-shadow: 0 16px 40px rgba(0,0,0,.35); z-index: 90; display: none; font-size: 12.5px; }
+.wmenu.show { display: block; }
+.wmenu .mi { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; }
+.wmenu .mi:hover { background: var(--accent); color: #fff; }
+.wmenu .mi:hover .s, .wmenu .mi:hover .ck { color: #fff; }
+.wmenu .mi .ck { width: 14px; color: var(--accent); flex: none; }
+.wmenu .mi .s { margin-left: auto; color: var(--text3); font-size: 11.5px; }
+.wmenu .grp { font-size: 11px; color: var(--text3); padding: 6px 8px 2px; font-weight: 600; }
+.wmenu .seg { margin: 2px 8px 4px; display: flex; }
+.wmenu .seg button { flex: 1; justify-content: center; }
+.wmenu hr { border: 0; border-top: 1px solid var(--border-soft); margin: 4px 2px; }
+
+/* toast + key hint */
+.toast { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); background: var(--pop); border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.3); font-size: 12.5px; display: none; z-index: 100; white-space: nowrap; }
+.toast.show { display: block; }
+.openhint { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 20; font-size: 12px; color: rgba(255,255,255,.75); background: rgba(0,0,0,.25); padding: 6px 12px; border-radius: 999px; cursor: pointer; backdrop-filter: blur(10px); }
+body.light .openhint { color: #333; background: rgba(255,255,255,.5); }
+</style>
+</head>
+<body>
+
+<div class="stagebar">
+  <b>系统监控</b>
+  <button class="pill" data-s="hint">① 输入关键字</button>
+  <button class="pill" data-s="overview">② 启动器 · 概览</button>
+  <button class="pill" data-s="cpu">③ 聚焦 CPU</button>
+  <button class="pill" data-s="mem">④ 聚焦内存</button>
+  <button class="pill" data-s="kill">⑤ 结束进程</button>
+  <button class="pill" data-s="alert">⑥ 高负载</button>
+  <button class="pill" data-s="full">⑦ 独立窗口</button>
+  <button class="pill" data-s="compact">⑧ 紧凑</button>
+  <button class="pill" data-s="mini">⑨ 迷你条</button>
+  <button class="pill" data-s="menu">⑩ 窗口选项</button>
+  <span class="sp"></span>
+  <button class="pill tog" id="stressBtn">模拟高负载</button>
+  <button class="pill" id="lightBtn">浅色</button>
+</div>
+<div class="caption" id="caption"></div>
+
+<div class="desk" id="desk">
+  <div class="menubar"><b></b><b>Code</b><span>文件</span><span>编辑</span><span>显示</span><span>窗口</span><span class="sp"></span>
+    <span class="tf" id="mbTf" title="Typeflux"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M12 7v12"/></svg></span>
+    <span>10月11日 周日 10:24</span></div>
+
+  <div class="app" id="app">
+    <div class="tb"><div class="lights"><i></i><i></i><i></i></div><span style="margin-left:8px">monitor.swift — Typeflux</span></div>
+    <div class="code"><span class="c">// 用户在这里继续工作；监控窗口浮在旁边，不抢焦点</span>
+<span class="k">struct</span> SystemSample {
+    <span class="k">var</span> cpu: Double
+    <span class="k">var</span> memory: MemoryUsage
+    <span class="k">var</span> disks: [VolumeUsage]
+    <span class="k">var</span> network: NetworkRate
+}
+
+<span class="k">func</span> render() {
+    print(<span class="s">"点击这个窗口：未置顶的监控窗口会被盖住"</span>)
+}</div>
+  </div>
+
+  <div class="mwin" id="mwin"></div>
+  <div class="wmenu" id="wmenu"></div>
+
+  <div class="openhint" id="openhint">按 ⌘Space 打开启动器</div>
+  <div class="scrim" id="scrim"></div>
+  <div class="launcher" id="launcher">
+    <div class="lin">
+      <span id="chipSlot"></span>
+      <input id="q" autocomplete="off" spellcheck="false" placeholder="随便问，或输入关键字…">
+      <span id="headRight"></span>
+    </div>
+    <div class="lbody" id="lbody"></div>
+    <div class="lbar" id="lbar"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const params = new URLSearchParams(location.search);
+const KEYWORDS = ['top', '监控'];
+
+/* ---------- Icons ---------- */
+const P = {
+  gauge: '<path d="M12 14l4-4"/><path d="M3.3 17a9 9 0 1 1 17.4 0"/>',
+  cpu: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+  mem: '<rect x="3" y="7" width="18" height="10" rx="1.5"/><path d="M7 7v10M11 7v10M15 7v10M3 20h18"/>',
+  disk: '<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  net: '<path d="M7 17V5M3 9l4-4 4 4M17 7v12M13 15l4 4 4-4"/>',
+  popout: '<rect x="3" y="7" width="13" height="13" rx="2"/><path d="M11 3h10v10M21 3l-9 9"/>',
+  pin: '<path d="M12 17v5M9 3h6l-1 6 4 4H6l4-4z"/>',
+  more: '<circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  full: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  compact: '<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>',
+  mini: '<rect x="2" y="9" width="20" height="6" rx="3"/>',
+  expand: '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',
+  warn: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
+  freeze: '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
+  apps: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+  spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+};
+const ic = (n, s = 14, w = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
+
+/* ---------- Simulated machine ---------- */
+const N = 60;
+const MACHINE = { model: 'MacBook Pro', chip: 'M3 Pro', cores: 12, pCores: 6, memGB: 36, uptime: '3 天 4 小时', battery: '82% · 充电中', ip: '192.168.1.23', iface: 'Wi-Fi' };
+const H = { cpu: [], mem: [], dr: [], dw: [], nd: [], nu: [] };
+let cores = Array(MACHINE.cores).fill(0).map((_, i) => i < MACHINE.pCores ? 30 : 15);
+let cur = { cpu: 23, user: 15, sys: 8, mem: 68, pressure: 22, dr: 12, dw: 3.2, nd: 2400, nu: 180, load: [3.21, 2.88, 2.60], swap: 0.4, thermal: '正常' };
+const PROCS = [
+  { pid: 4821, name: 'node', bg: '#3c873a', l: 'N', kind: 'cli', cpu: 42, mem: 1180, disk: 120 },
+  { pid: 912, name: 'Google Chrome', bg: '#1a73e8', l: 'C', kind: 'app', cpu: 18, mem: 3420, disk: 60 },
+  { pid: 1288, name: 'Xcode', bg: '#147efb', l: 'X', kind: 'app', cpu: 9.5, mem: 2860, disk: 340 },
+  { pid: 344, name: 'WindowServer', l: 'W', kind: 'sys', cpu: 8.1, mem: 640, disk: 0 },
+  { pid: 2210, name: 'Slack', bg: '#4a154b', l: 'S', kind: 'app', cpu: 4.2, mem: 980, disk: 12 },
+  { pid: 0, name: 'kernel_task', l: 'K', kind: 'sys', cpu: 6.4, mem: 2100, disk: 80 },
+  { pid: 3301, name: 'Typeflux', bg: '#111', l: 'T', kind: 'app', cpu: 1.6, mem: 310, disk: 4 },
+  { pid: 1502, name: 'Docker Desktop', bg: '#1d63ed', l: 'D', kind: 'app', cpu: 3.4, mem: 2240, disk: 210 },
+  { pid: 1777, name: 'Figma', bg: '#a259ff', l: 'F', kind: 'app', cpu: 2.8, mem: 1460, disk: 8 },
+  { pid: 511, name: 'mds_stores', l: 'M', kind: 'sys', cpu: 2.2, mem: 180, disk: 1600 },
+  { pid: 2689, name: '微信', bg: '#07c160', l: '微', kind: 'app', cpu: 0.9, mem: 720, disk: 2 },
+  { pid: 4410, name: 'Spotify', bg: '#1db954', l: 'S', kind: 'app', cpu: 1.1, mem: 540, disk: 30 },
+  { pid: 129, name: 'backupd', l: 'B', kind: 'sys', cpu: 0.6, mem: 96, disk: 820 },
+  { pid: 5012, name: 'Terminal', bg: '#333', l: '>', kind: 'app', cpu: 0.4, mem: 120, disk: 0 },
+  { pid: 5233, name: 'python3', bg: '#3776ab', l: 'P', kind: 'cli', cpu: 0.3, mem: 260, disk: 6 },
+];
+PROCS.forEach(p => { p.base = { cpu: p.cpu, mem: p.mem, disk: p.disk }; });
+let procCount = 412, threadCount = 2873;
+
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const walk = (v, base, spread, lo, hi) => clamp(v + (base - v) * .25 + rnd(-spread, spread), lo, hi);
+
+function sample() {
+  const stress = state.stress;
+  cores = cores.map((c, i) => walk(c, stress ? (i < MACHINE.pCores ? 97 : 93) : (i < MACHINE.pCores ? 30 : 12), 12, 1, 100));
+  cur.cpu = cores.reduce((a, b) => a + b, 0) / cores.length;
+  cur.user = cur.cpu * .66; cur.sys = cur.cpu - cur.user;
+  cur.mem = walk(cur.mem, stress ? 90 : 68, 1.2, 30, 98);
+  cur.pressure = walk(cur.pressure, stress ? 78 : 22, 3, 5, 100);
+  cur.swap = stress ? Math.min(6.2, cur.swap + .15) : Math.max(.4, cur.swap - .1);
+  cur.dr = walk(cur.dr, 14, 9, 0, 900) + (Math.random() < .08 ? rnd(80, 300) : 0);
+  cur.dw = walk(cur.dw, 4, 3, 0, 600) + (Math.random() < .06 ? rnd(30, 120) : 0);
+  cur.nd = walk(cur.nd, 2200, 900, 0, 90000) + (Math.random() < .1 ? rnd(4000, 12000) : 0);
+  cur.nu = walk(cur.nu, 180, 120, 0, 40000);
+  cur.load = cur.load.map((l, i) => clamp(l + ((stress ? 11 : 3) - l) * (.15 / (i + 1)) + rnd(-.1, .1), .2, 20));
+  cur.thermal = stress && cur.cpu > 88 ? '偏高' : '正常';
+  [['cpu', cur.cpu], ['mem', cur.mem], ['dr', cur.dr], ['dw', cur.dw], ['nd', cur.nd], ['nu', cur.nu]].forEach(([k, v]) => { H[k].push(v); if (H[k].length > N) H[k].shift(); });
+  PROCS.forEach(p => {
+    const hog = stress && p.name === 'node';
+    p.cpu = clamp(walk(p.cpu, hog ? 388 : p.base.cpu, Math.max(.3, p.base.cpu * .25), 0, 1200), 0, 1200);
+    p.mem = walk(p.mem, hog ? 6400 : p.base.mem, p.base.mem * .01, 20, 99999);
+    p.disk = Math.max(0, walk(p.disk, p.base.disk, Math.max(1, p.base.disk * .4), 0, 99999));
+  });
+  procCount += Math.round(rnd(-1, 1)); threadCount += Math.round(rnd(-6, 6));
+  stressTicks = cur.cpu > 90 ? stressTicks + 1 : Math.max(0, stressTicks - 2);
+}
+let stressTicks = 0;
+
+/* ---------- Formatting ---------- */
+const pct = v => `${Math.round(v)}`;
+const rate = kb => kb >= 1024 ? `${(kb / 1024).toFixed(kb >= 10240 ? 0 : 1)} MB/s` : `${Math.round(kb)} KB/s`;
+const rateS = kb => kb >= 1024 ? `${(kb / 1024).toFixed(kb >= 10240 ? 0 : 1)}M` : `${Math.round(kb)}K`;
+const mbs = mb => mb >= 100 ? `${Math.round(mb)} MB/s` : `${mb.toFixed(1)} MB/s`;
+const memF = mb => mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${Math.round(mb)} MB`;
+const diskF = kb => kb < 1 ? '—' : kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB/s` : `${Math.round(kb)} KB/s`;
+const level = (v, warn = 80, bad = 90) => v >= bad ? 'bad' : v >= warn ? 'warn' : '';
+const memUsedGB = () => MACHINE.memGB * cur.mem / 100;
+const pressureColor = () => cur.pressure >= 70 ? 'var(--danger)' : cur.pressure >= 45 ? 'var(--warn)' : 'var(--ok)';
+const pressureText = () => cur.pressure >= 70 ? '紧张' : cur.pressure >= 45 ? '偏高' : '正常';
+
+/* Sparkline: area + line, max auto or fixed */
+function spark(series, color, { w = 160, h = 30, max = null, fill = true, sw = 1.5 } = {}) {
+  const data = series.slice(-N);
+  const m = max ?? Math.max(1, ...data) * 1.15;
+  const step = w / (N - 1), off = (N - data.length) * step;
+  const pts = data.map((v, i) => [off + i * step, h - (v / m) * (h - 2) - 1]);
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('');
+  const area = `${line}L${w},${h}L${pts[0][0].toFixed(1)},${h}Z`;
+  const id = 'g' + Math.random().toString(36).slice(2, 8);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" width="100%" height="100%">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".35"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    ${fill ? `<path d="${area}" fill="url(#${id})"/>` : ''}<path d="${line}" fill="none" stroke="${color}" stroke-width="${sw}" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function dualSpark(a, b, ca, cb, opts = {}) {
+  const max = Math.max(1, ...a.slice(-N), ...b.slice(-N)) * 1.15;
+  return `<div style="position:relative;width:100%;height:100%"><div style="position:absolute;inset:0">${spark(a, ca, { ...opts, max })}</div><div style="position:absolute;inset:0">${spark(b, cb, { ...opts, max, fill: false })}</div></div>`;
+}
+const cssVar = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+
+/* ---------- State ---------- */
+const state = {
+  launcher: true, view: 'home', focus: null, sort: 'cpu', sel: null, confirm: null, force: false, frozenUntil: 0, hoverList: false,
+  win: { open: false, mode: 'full', pinned: true, allSpaces: true, opacity: 1, interval: 1, show: { cpu: true, mem: true, disk: true, net: true }, restore: true, x: 790, y: 70, menu: false, sort: 'cpu' },
+  stress: false, light: false,
+};
+for (let i = 0; i < N; i++) { sample(); }
+const METRICS = ['cpu', 'mem', 'disk', 'net'];
+const MNAME = { cpu: 'CPU', mem: '内存', disk: '磁盘', net: '网络' };
+const MCOLOR = { cpu: '--c-cpu', mem: '--c-mem', disk: '--c-disk', net: '--c-down' };
+
+function metricInfo(k) {
+  switch (k) {
+    case 'cpu': return { v: pct(cur.cpu), unit: '%', s: `${MACHINE.cores} 核 · 负载 ${cur.load[0].toFixed(2)}`, lv: level(cur.cpu), sk: () => spark(H.cpu, cssVar('--c-cpu'), { max: 100 }) };
+    case 'mem': return { v: pct(cur.mem), unit: '%', s: `${memUsedGB().toFixed(1)} / ${MACHINE.memGB} GB`, lv: cur.pressure >= 70 ? 'bad' : cur.pressure >= 45 ? 'warn' : '', sk: () => spark(H.mem, cssVar('--c-mem'), { max: 100 }), dot: true };
+    case 'disk': return { v: '62', unit: '%', s: `读 ${rateS(cur.dr * 1024)}/s · 写 ${rateS(cur.dw * 1024)}/s`, lv: '', sk: () => dualSpark(H.dr, H.dw, cssVar('--c-disk'), cssVar('--c-up')) };
+    case 'net': return { v: rateS(cur.nd).replace(/[MK]$/, ''), unit: cur.nd >= 1024 ? 'MB/s ↓' : 'KB/s ↓', s: `↑ ${rate(cur.nu)} · ${MACHINE.iface}`, lv: '', sk: () => dualSpark(H.nd, H.nu, cssVar('--c-down'), cssVar('--c-up')) };
+  }
+}
+
+/* ---------- Processes ---------- */
+let order = [];
+function sortedProcs(sort, filter) {
+  const key = sort === 'mem' ? 'mem' : sort === 'disk' ? 'disk' : 'cpu';
+  const frozen = Date.now() < state.frozenUntil || state.hoverList || state.confirm != null;
+  let list = PROCS.filter(p => !filter || p.name.toLowerCase().includes(filter.toLowerCase()) || String(p.pid) === filter.trim());
+  if (frozen && order.length) {
+    list.sort((a, b) => (order.indexOf(a.pid) + 1 || 999) - (order.indexOf(b.pid) + 1 || 999));
+  } else {
+    list.sort((a, b) => b[key] - a[key]);
+    order = list.map(p => p.pid);
+  }
+  return { list, frozen };
+}
+const pIcon = p => p.kind === 'sys' ? `<span class="pic sys">${ic('gauge', 11)}</span>` : `<span class="pic" style="background:${p.bg}">${esc(p.l)}</span>`;
+const cpuCls = v => v >= 100 ? 'vhot' : v >= 40 ? 'hot' : '';
+
+/* ---------- Launcher rendering ---------- */
+function launcherFilter() {
+  const v = $('#q').value;
+  return state.view === 'monitor' ? v : '';
+}
+function matchKeyword(text) {
+  const t = text.trim().toLowerCase();
+  return KEYWORDS.find(k => t === k) || null;
+}
+
+function renderLauncher() {
+  const L = $('#launcher');
+  L.classList.toggle('show', state.launcher);
+  $('#scrim').classList.toggle('show', state.launcher);
+  $('#openhint').style.display = state.launcher ? 'none' : '';
+  if (!state.launcher) return;
+  const q = $('#q');
+  if (state.view === 'monitor') {
+    $('#chipSlot').innerHTML = `<span class="chip"><span class="g">${ic('gauge', 13, 2.4)}</span>系统监控${state.focus ? `<span class="opt">→ ${MNAME[state.focus]}</span>` : ''}</span>`;
+    q.placeholder = '筛选进程：名称或 PID';
+    const winOpen = state.win.open;
+    $('#headRight').innerHTML = `<button class="hbtn" id="popBtn" title="${winOpen ? '前往独立窗口' : '在独立窗口中常驻显示'}">${ic(winOpen ? 'expand' : 'popout', 13)}${winOpen ? '前往窗口' : '独立窗口'}<span class="s">⌘O</span></button>`;
+  } else {
+    $('#chipSlot').innerHTML = '';
+    q.placeholder = '随便问，或输入关键字…';
+    $('#headRight').innerHTML = '';
+  }
+  renderLauncherBody();
+}
+
+function renderLauncherBody() {
+  if (!state.launcher) return;
+  const body = $('#lbody'), bar = $('#lbar');
+  if (state.view === 'monitor') { body.innerHTML = monitorHTML(); bar.innerHTML = monitorBarHTML(); return; }
+  const text = $('#q').value;
+  const kw = matchKeyword(text);
+  if (state.view === 'hint' && kw) {
+    body.innerHTML = `
+      <div class="sec">关键字</div>
+      <div class="item on" data-act="enter">
+        <span class="ic" style="background:#2bb3aa">${ic('gauge', 16, 2.2)}</span>
+        <div style="min-width:0"><div class="t">系统监控</div>
+          <div class="d"><span>CPU <b class="num" style="color:var(--text)">${pct(cur.cpu)}%</b></span><span>内存 <b class="num" style="color:var(--text)">${pct(cur.mem)}%</b></span><span>磁盘 <b style="color:var(--text)">62%</b></span><span class="num">↓ ${rate(cur.nd)} ↑ ${rate(cur.nu)}</span></div></div>
+        <div class="r"><span style="width:90px;height:22px;display:inline-block">${spark(H.cpu, cssVar('--c-cpu'), { max: 100, h: 22 })}</span><span><span class="kbd">↩</span>打开</span></div>
+      </div>
+      <div class="sec">应用</div>
+      <div class="item"><span class="ic" style="background:#444">${ic('gauge', 16)}</span><div><div class="t">活动监视器</div><div class="d">/System/Applications/Utilities</div></div><div class="r"><span class="kbd">⌘2</span></div></div>
+      <div class="sec">AI</div>
+      <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${ic('spark', 16)}</span><div><div class="t">问 AI “${esc(text)}”</div></div><div class="r"><span class="kbd">⌘↩</span></div></div>`;
+    bar.innerHTML = `<span><kbd>↩</kbd>打开系统监控</span><span><kbd>空格</kbd>进入并筛选进程</span><span class="sp"></span><span><kbd>esc</kbd>关闭</span>`;
+    return;
+  }
+  body.innerHTML = `
+    <div class="sec">试试</div>
+    <div class="item" data-act="type-top"><span class="ic" style="background:#2bb3aa">${ic('gauge', 16, 2.2)}</span><div><div class="t">系统监控</div><div class="d">输入 <span class="kbd">top</span> 或 <span class="kbd">监控</span> 后按 ↩：CPU、内存、磁盘、网络和进程</div></div><div class="r"><span class="kbd">top</span></div></div>
+    <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${ic('spark', 16)}</span><div><div class="t">随便问</div><div class="d">直接输入问题，⌘↩ 发给 AI</div></div></div>`;
+  bar.innerHTML = `<span>输入 <kbd>top</kbd> 试试</span><span class="sp"></span><span><kbd>esc</kbd>关闭</span>`;
+}
+
+function tileHTML(k, { keys = true } = {}) {
+  const m = metricInfo(k);
+  const on = state.focus === k;
+  return `<div class="mt ${m.lv} ${on ? 'on' : ''}" data-focus="${k}" style="--mc:var(${MCOLOR[k]})">
+    <div class="lb"><span style="color:var(${MCOLOR[k]})">${ic(k, 13)}</span>${MNAME[k]}${m.dot ? `<span class="pdot" title="内存压力：${pressureText()}" style="background:${pressureColor()}"></span>` : ''}${keys ? `<span class="k">⌘${METRICS.indexOf(k) + 1}</span>` : ''}</div>
+    <div class="v">${m.v}<small>${m.unit}</small></div>
+    <div class="s">${m.s}</div>
+    <div class="sk">${m.sk()}</div></div>`;
+}
+
+function detailHTML(k) {
+  const close = `<span class="x" data-focus="${k}">收起 esc</span>`;
+  if (k === 'cpu') {
+    const coreBars = cores.map((c, i) => `<div class="c ${i >= MACHINE.pCores ? 'e' : ''}" title="核心 ${i + 1}：${Math.round(c)}%"><i style="height:${c}%"></i></div>`).join('');
+    return `<div class="detail"><div><h4>${ic('cpu', 13)}CPU 使用率 · 最近 60 秒 ${close}</h4>
+      <div class="bigchart">${spark(H.cpu, cssVar('--c-cpu'), { max: 100, h: 92, w: 360 })}<span class="ax" style="top:0">100%</span><span class="ax" style="bottom:0">0</span></div></div>
+      <div><h4>每个核心</h4><div class="cores">${coreBars}</div><div class="coreslb"><span>性能核 × ${MACHINE.pCores}</span><span>能效核 × ${MACHINE.cores - MACHINE.pCores}</span></div>
+      <div class="kv" style="margin-top:8px"><span>用户 / 系统</span><span>${pct(cur.user)}% / ${pct(cur.sys)}%</span><span>平均负载</span><span>${cur.load.map(l => l.toFixed(2)).join('  ')}</span><span>进程 / 线程</span><span>${procCount} / ${threadCount}</span><span>散热</span><span style="color:${cur.thermal === '正常' ? 'var(--ok)' : 'var(--warn)'}">${cur.thermal}</span></div></div></div>`;
+  }
+  if (k === 'mem') {
+    const used = memUsedGB(), total = MACHINE.memGB;
+    const parts = [['App 内存', used * .58, 'var(--c-mem)'], ['联动内存', used * .17, '#e5a43a'], ['被压缩', used * .25, '#d96aa7'], ['缓存文件', (total - used) * .55, 'color-mix(in srgb, var(--c-mem) 30%, transparent)']];
+    return `<div class="detail"><div><h4>${ic('mem', 13)}内存压力 · 最近 60 秒 ${close}</h4>
+      <div class="bigchart">${spark(H.mem, cssVar('--c-mem'), { max: 100, h: 92, w: 360 })}<span class="ax" style="top:0">100%</span><span class="ax" style="bottom:0">0</span></div></div>
+      <div><h4>已用 ${used.toFixed(1)} GB / ${total} GB</h4>
+      <div class="stack">${parts.map(p => `<i style="width:${p[1] / total * 100}%;background:${p[2]}"></i>`).join('')}</div>
+      <div class="legend">${parts.map(p => `<span><i style="background:${p[2]}"></i>${p[0]} ${p[1].toFixed(1)}G</span>`).join('')}</div>
+      <div class="kv" style="margin-top:8px"><span>内存压力</span><span style="color:${pressureColor()}">● ${pressureText()} ${pct(cur.pressure)}%</span><span>已用交换</span><span>${cur.swap.toFixed(1)} GB</span></div></div></div>`;
+  }
+  if (k === 'disk') {
+    return `<div class="detail"><div><h4>${ic('disk', 13)}读写速度 · 最近 60 秒 <span style="color:var(--c-disk)">● 读 ${mbs(cur.dr)}</span><span style="color:var(--c-up)">● 写 ${mbs(cur.dw)}</span>${close}</h4>
+      <div class="bigchart">${dualSpark(H.dr, H.dw, cssVar('--c-disk'), cssVar('--c-up'), { h: 92, w: 360 })}</div></div>
+      <div><h4>宗卷</h4>
+      <div class="vol"><span>Macintosh HD</span><span class="m">剩 382 GB</span><div class="bar"><i style="width:62%"></i></div></div>
+      <div class="vol"><span>T7 Shield</span><span class="m">剩 1.2 TB</span><div class="bar"><i style="width:40%"></i></div></div>
+      <div class="vol"><span>Time Machine</span><span class="m">剩 640 GB</span><div class="bar"><i style="width:68%"></i></div></div></div></div>`;
+  }
+  return `<div class="detail"><div><h4>${ic('net', 13)}网络 · 最近 60 秒 <span style="color:var(--c-down)">● 下载 ${rate(cur.nd)}</span><span style="color:var(--c-up)">● 上传 ${rate(cur.nu)}</span>${close}</h4>
+    <div class="bigchart">${dualSpark(H.nd, H.nu, cssVar('--c-down'), cssVar('--c-up'), { h: 92, w: 360 })}</div></div>
+    <div><h4>${MACHINE.iface} · 已连接</h4><div class="kv"><span>本机 IP</span><span class="mono">${MACHINE.ip}</span><span>开机以来下载</span><span>48.2 GB</span><span>开机以来上传</span><span>6.9 GB</span><span>峰值（60 秒）</span><span>↓ ${rate(Math.max(...H.nd))}</span></div></div></div>`;
+}
+
+function processRows(list, { compact = false, limit = 8 } = {}) {
+  const rows = list.slice(0, limit);
+  if (!rows.length) return `<div class="empty">没有名称或 PID 匹配「${esc(launcherFilter())}」的进程</div>`;
+  return rows.map(p => {
+    const sel = state.sel === p.pid && !compact;
+    if (sel && state.confirm === p.pid) {
+      return `<div class="prow cf"><div class="q">${pIcon(p)}<b>${state.force ? '强制结束' : '结束'}「${esc(p.name)}」？</b><span class="d">${p.kind === 'app' ? (state.force ? '会立即退出，未保存的内容会丢失' : '会请它正常退出，可能弹出保存提示') : '会向它发送结束信号（PID ' + p.pid + '）'}</span></div>
+        <div class="pacts"><button class="pact" data-act="cancel">取消 <span class="s">esc</span></button><button class="pact danger solid" data-act="do-kill">${state.force ? '强制结束' : '结束'} <span class="s">↩</span></button></div></div>`;
+    }
+    if (sel) {
+      const sys = p.kind === 'sys';
+      return `<div class="prow sel" data-pid="${p.pid}" style="grid-template-columns:1fr auto">
+        <div class="nm">${pIcon(p)}<span class="n">${esc(p.name)}</span><span class="tag">PID ${p.pid}</span><span class="num" style="color:var(--text3);font-size:11.5px">CPU ${p.cpu.toFixed(1)}% · ${memF(p.mem)}</span></div>
+        <div class="pacts">
+          <button class="pact" data-act="show">${p.kind === 'app' ? '切换到应用' : '在访达中显示'} <span class="s">↩</span></button>
+          <button class="pact" data-act="copy">复制 PID <span class="s">⌘C</span></button>
+          <button class="pact danger" data-act="kill" ${sys ? 'disabled title="系统进程不能从这里结束"' : ''}>结束 <span class="s">⌘⌫</span></button></div></div>`;
+    }
+    return `<div class="prow" data-pid="${p.pid}">
+      <div class="nm">${pIcon(p)}<span class="n">${esc(p.name)}</span>${p.kind === 'sys' ? '<span class="tag">系统</span>' : ''}</div>
+      <div class="${cpuCls(p.cpu)}">${p.cpu.toFixed(1)}%</div><div>${memF(p.mem)}</div><div>${diskF(p.disk)}</div><div style="color:var(--text3)">${p.pid}</div></div>`;
+  }).join('');
+}
+
+function monitorHTML() {
+  const filter = launcherFilter();
+  const { list, frozen } = sortedProcs(state.sort, filter);
+  const hog = PROCS.find(p => p.name === 'node');
+  const alert = stressTicks >= 4 ? `<div class="alert">${ic('warn', 15)}<span class="t">CPU 已持续 ${stressTicks * state.win.interval} 秒高于 90%，主要来自 <b>node</b>（PID ${hog.pid}，${Math.round(hog.cpu)}%）</span><span class="sp"></span><button class="hbtn" data-act="pick-hog">查看进程</button></div>` : '';
+  const lim = state.focus ? 5 : 8;
+  return `
+    <div class="mstat"><span class="live"><span class="dot"></span>实时 · 每 ${state.win.interval} 秒</span><span>${MACHINE.model} · ${MACHINE.chip} · ${MACHINE.memGB} GB</span><span class="sp"></span><span>已运行 ${MACHINE.uptime}</span><span>电池 ${MACHINE.battery}</span><span>散热 <span style="color:${cur.thermal === '正常' ? 'var(--ok)' : 'var(--warn)'}">${cur.thermal}</span></span></div>
+    <div class="tiles">${METRICS.map(k => tileHTML(k)).join('')}</div>
+    ${alert}
+    ${state.focus ? detailHTML(state.focus) : ''}
+    <div class="phead">进程 <span style="font-weight:400">· ${filter ? `匹配 ${list.length} 个` : `共 ${procCount} 个`}</span>
+      ${frozen ? `<span class="frozen">${ic('freeze', 10)}排序已暂停</span>` : ''}<span class="sp"></span>
+      <div class="seg">${['cpu', 'mem', 'disk'].map(s => `<button class="${state.sort === s ? 'on' : ''}" data-sort="${s}">按${MNAME[s]}</button>`).join('')}</div></div>
+    <div class="plist" id="plist">
+      <div class="prow h"><div>名称</div><div data-sort="cpu" class="${state.sort === 'cpu' ? 'on' : ''}">CPU</div><div data-sort="mem" class="${state.sort === 'mem' ? 'on' : ''}">内存</div><div data-sort="disk" class="${state.sort === 'disk' ? 'on' : ''}">磁盘</div><div>PID</div></div>
+      ${processRows(list, { limit: lim })}
+    </div><div style="height:8px"></div>`;
+}
+
+function monitorBarHTML() {
+  if (state.confirm != null) return `<span><kbd>↩</kbd>${state.force ? '强制结束' : '结束'}</span><span><kbd>esc</kbd>取消</span><span class="sp"></span>`;
+  return `<span><kbd>↑↓</kbd>选择进程</span><span><kbd>⌘⌫</kbd>结束</span><span><kbd>⇥</kbd>切换指标</span><span class="sp"></span><span><kbd>⌘O</kbd>${state.win.open ? '前往独立窗口' : '独立窗口'}</span><span><kbd>esc</kbd>返回</span>`;
+}
+
+/* ---------- Standalone window ---------- */
+function winRowHTML(k) {
+  const m = metricInfo(k);
+  return `<div class="wrow ${m.lv}" data-wfocus="${k}"><div class="lb"><span style="color:var(${MCOLOR[k]})">${ic(k, 12)}</span>${MNAME[k]}</div>
+    <div style="height:30px">${m.sk()}</div><div class="v">${m.v}<span style="font-size:11px;font-weight:500;color:var(--text3)">${m.unit.replace(' ↓', '')}</span><small>${k === 'net' ? '↑ ' + rate(cur.nu) : k === 'disk' ? '读 ' + mbs(cur.dr) : k === 'mem' ? `${memUsedGB().toFixed(1)} GB · ${pressureText()}` : `负载 ${cur.load[0].toFixed(2)}`}</small></div></div>`;
+}
+function renderWindow() {
+  const w = state.win, el = $('#mwin');
+  el.className = `mwin ${w.open ? 'show' : ''} ${w.mode} ${w.pinned ? 'pinned' : ''} ${w.menu ? 'menuopen' : ''} ${el.classList.contains('appear') ? 'appear' : ''} ${el.classList.contains('ring') ? 'ring' : ''}`;
+  el.style.left = w.x + 'px'; el.style.top = w.y + 'px'; el.style.opacity = w.opacity;
+  if (!w.open) { renderMenu(); return; }
+  const shown = METRICS.filter(k => w.show[k]);
+  const modeSeg = `<div class="seg" style="padding:1px">${[['full', '完整'], ['compact', '紧凑'], ['mini', '迷你条']].map(([m, t]) => `<button class="${w.mode === m ? 'on' : ''}" data-mode="${m}" title="${t}" style="padding:2px 6px">${ic(m, 12)}</button>`).join('')}</div>`;
+  const ctrls = `<button class="ib ${w.pinned ? 'on' : ''}" data-act="pin" title="${w.pinned ? '已置顶，点击取消' : '置顶显示'}">${ic('pin', 13)}</button><button class="ib" data-act="wmenu" title="选项">${ic('more', 14)}</button>`;
+  if (w.mode === 'full') {
+    const { list } = sortedProcs(w.sort, '');
+    el.innerHTML = `<div class="wtb" data-drag><div class="lights" data-act="close" title="关闭"><i></i><i style="background:var(--tile)"></i><i style="background:var(--tile)"></i></div><span class="ttl" style="margin-left:6px">系统监控</span><span class="sp"></span>${modeSeg}${ctrls}</div>
+      <div class="wbody">${shown.map(winRowHTML).join('') || '<div class="empty">在 ··· 里选择要显示的项目</div>'}
+        <div class="wproc"><div class="phead" style="padding:6px 4px 2px">进程<span class="sp"></span><div class="seg">${['cpu', 'mem'].map(s => `<button class="${w.sort === s ? 'on' : ''}" data-wsort="${s}">按${MNAME[s]}</button>`).join('')}</div></div>
+          <div class="plist">${list.slice(0, 6).map(p => `<div class="prow" data-wpid="${p.pid}"><div class="nm">${pIcon(p)}<span class="n">${esc(p.name)}</span></div><div class="${cpuCls(p.cpu)}">${p.cpu.toFixed(1)}%</div><div>${memF(p.mem)}</div></div>`).join('')}</div>
+        </div></div>
+      <svg class="rsz" viewBox="0 0 12 12"><path d="M11 3L3 11M11 7L7 11" stroke="currentColor" stroke-width="1.2"/></svg>`;
+  } else if (w.mode === 'compact') {
+    el.innerHTML = `<div class="wtb" data-drag><div class="lights" data-act="close"><i></i></div><span class="sp"></span>${modeSeg}${ctrls}</div>
+      <div class="ctiles" data-drag>${shown.map(k => { const m = metricInfo(k); return `<div class="ct ${m.lv}"><div class="lb" style="color:var(${MCOLOR[k]})">${MNAME[k]}</div><div class="v">${m.v}<small>${m.unit.replace(' ↓', '')}</small></div><div class="sk">${m.sk()}</div></div>`; }).join('')}</div>`;
+  } else {
+    const parts = [];
+    if (w.show.cpu) parts.push(`<span class="m ${level(cur.cpu)}"><span class="l">CPU</span><b>${pct(cur.cpu)}%</b><span style="width:42px;height:14px;display:inline-block">${spark(H.cpu, cssVar('--c-cpu'), { max: 100, h: 14, fill: false })}</span></span>`);
+    if (w.show.mem) parts.push(`<span class="m ${cur.pressure >= 70 ? 'bad' : cur.pressure >= 45 ? 'warn' : ''}"><span class="l">内存</span><b>${pct(cur.mem)}%</b></span>`);
+    if (w.show.disk) parts.push(`<span class="m"><span class="l">磁盘</span><b>${rateS(cur.dr * 1024)}</b></span>`);
+    if (w.show.net) parts.push(`<span class="m"><span class="l">↓</span><b>${rateS(cur.nd)}</b><span class="l">↑</span><b>${rateS(cur.nu)}</b></span>`);
+    el.innerHTML = `<div class="mbar" data-drag title="双击展开">${parts.join('<span class="sep"></span>')}<span class="ctl"><button class="ib" data-mode="full" title="展开">${ic('expand', 12)}</button><button class="ib" data-act="wmenu" title="选项">${ic('more', 13)}</button></span></div>`;
+  }
+  renderMenu();
+}
+function renderMenu() {
+  const w = state.win, m = $('#wmenu');
+  m.classList.toggle('show', w.open && w.menu);
+  if (!(w.open && w.menu)) return;
+  const el = $('#mwin');
+  const left = Math.min(w.x + el.offsetWidth - 236, 1200 - 246);
+  m.style.left = Math.max(10, left) + 'px'; m.style.top = (w.y + (w.mode === 'mini' ? 38 : 36)) + 'px';
+  const ck = on => `<span class="ck">${on ? '✓' : ''}</span>`;
+  m.innerHTML = `
+    <div class="mi" data-opt="pinned">${ck(w.pinned)}置顶显示<span class="s">⌘⇧T</span></div>
+    <div class="mi" data-opt="allSpaces">${ck(w.allSpaces)}在所有桌面上显示</div>
+    <div class="mi" data-opt="restore">${ck(w.restore)}下次启动时恢复此窗口</div>
+    <hr><div class="grp">显示项目</div>
+    ${METRICS.map(k => `<div class="mi" data-show="${k}">${ck(w.show[k])}${MNAME[k]}</div>`).join('')}
+    <hr><div class="grp">刷新频率</div>
+    <div class="seg">${[1, 2, 5].map(s => `<button class="${w.interval === s ? 'on' : ''}" data-interval="${s}">${s} 秒</button>`).join('')}</div>
+    <div class="grp">不透明度</div>
+    <div class="seg">${[1, .85, .7].map(s => `<button class="${w.opacity === s ? 'on' : ''}" data-opacity="${s}">${Math.round(s * 100)}%</button>`).join('')}</div>
+    <hr><div class="mi" data-act="open-launcher"><span class="ck"></span>在启动器中打开<span class="s">top ↩</span></div>
+    <div class="mi" data-act="activity"><span class="ck"></span>打开「活动监视器」</div>
+    <div class="mi" data-act="close"><span class="ck"></span>关闭窗口<span class="s">⌘W</span></div>`;
+}
+
+/* ---------- Actions ---------- */
+let toastTimer;
+function toast(t) { const el = $('#toast'); el.innerHTML = t; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2200); }
+function freeze() { state.frozenUntil = Date.now() + 3000; }
+function enterMonitor() { state.view = 'monitor'; state.sel = null; state.confirm = null; $('#q').value = ''; renderLauncher(); $('#q').focus(); }
+function leaveMonitor() { state.view = 'home'; state.focus = null; state.sel = null; state.confirm = null; $('#q').value = ''; renderLauncher(); $('#q').focus(); }
+function openLauncher() { state.launcher = true; renderLauncher(); setTimeout(() => $('#q').focus(), 0); }
+function closeLauncher() { state.launcher = false; renderLauncher(); }
+function popOut() {
+  if (state.win.open) {
+    closeLauncher();
+    const el = $('#mwin'); el.classList.add('ring'); setTimeout(() => el.classList.remove('ring'), 900);
+    return;
+  }
+  const L = $('#launcher');
+  L.classList.add('leaving');
+  setTimeout(() => {
+    L.classList.remove('leaving');
+    state.win.open = true; state.win.menu = false;
+    if (state.focus && state.win.mode === 'full') state.win.sort = state.focus === 'mem' ? 'mem' : 'cpu';
+    closeLauncher();
+    const el = $('#mwin'); el.classList.add('appear'); renderWindow(); setTimeout(() => el.classList.remove('appear'), 400);
+    toast('已在独立窗口中常驻显示 · 再次输入 <b>top</b> 后按 ⌘O 会跳到这个窗口');
+  }, 200);
+}
+function visibleProcs() { return sortedProcs(state.sort, launcherFilter()).list.slice(0, state.focus ? 5 : 8); }
+function moveSel(d) {
+  const list = visibleProcs(); if (!list.length) return;
+  freeze();
+  const i = list.findIndex(p => p.pid === state.sel);
+  const n = i < 0 ? (d > 0 ? 0 : list.length - 1) : clamp(i + d, 0, list.length - 1);
+  state.sel = list[n].pid; state.confirm = null; renderLauncherBody();
+}
+function askKill(force) {
+  const p = PROCS.find(x => x.pid === state.sel); if (!p) return;
+  if (p.kind === 'sys') { toast(`「${esc(p.name)}」是系统进程，不能从这里结束`); return; }
+  state.confirm = p.pid; state.force = force; renderLauncherBody(); $('#lbar').innerHTML = monitorBarHTML();
+}
+function doKill() {
+  const i = PROCS.findIndex(x => x.pid === state.confirm); if (i < 0) return;
+  const p = PROCS[i]; PROCS.splice(i, 1); procCount--;
+  toast(`已${state.force ? '强制' : ''}结束「${esc(p.name)}」`);
+  state.confirm = null; state.sel = null; renderLauncherBody(); $('#lbar').innerHTML = monitorBarHTML();
+}
+function setFocus(k) { state.focus = state.focus === k ? null : k; if (k && state.focus) state.sort = k === 'mem' ? 'mem' : k === 'disk' ? 'disk' : 'cpu'; renderLauncher(); }
+
+/* Launcher input */
+$('#q').addEventListener('input', e => {
+  const v = e.target.value;
+  if (state.view !== 'monitor') {
+    const t = v.toLowerCase();
+    const withSep = KEYWORDS.find(k => t.startsWith(k + ' ') || t.startsWith(k + ':'));
+    if (withSep) { state.view = 'monitor'; e.target.value = v.slice(withSep.length + 1); renderLauncher(); return; }
+    state.view = matchKeyword(v) ? 'hint' : 'home';
+  } else { state.sel = null; state.confirm = null; }
+  renderLauncherBody();
+});
+document.addEventListener('keydown', e => {
+  const mod = e.metaKey || e.ctrlKey;
+  if (!state.launcher) {
+    if (mod && e.key === ' ') { e.preventDefault(); openLauncher(); }
+    if (mod && e.key.toLowerCase() === 'w' && state.win.open) { e.preventDefault(); state.win.open = false; renderWindow(); }
+    return;
+  }
+  if (state.view === 'hint' && e.key === 'Enter') { e.preventDefault(); enterMonitor(); return; }
+  if (state.view !== 'monitor') { if (e.key === 'Escape') { e.preventDefault(); if ($('#q').value) { $('#q').value = ''; state.view = 'home'; renderLauncherBody(); } else closeLauncher(); } return; }
+  if (state.confirm != null) {
+    if (e.key === 'Enter') { e.preventDefault(); doKill(); }
+    else if (e.key === 'Escape') { e.preventDefault(); state.confirm = null; renderLauncherBody(); $('#lbar').innerHTML = monitorBarHTML(); }
+    return;
+  }
+  if (e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); moveSel(-1); }
+  else if (mod && e.key === 'Backspace') { e.preventDefault(); if (state.sel != null) askKill(e.altKey); }
+  else if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); popOut(); }
+  else if (mod && /^[1-4]$/.test(e.key)) { e.preventDefault(); setFocus(METRICS[+e.key - 1]); }
+  else if (mod && e.key.toLowerCase() === 'c' && state.sel != null && !window.getSelection().toString()) { e.preventDefault(); toast(`已复制 PID ${state.sel}`); }
+  else if (e.key === 'Tab') { e.preventDefault(); const cycle = [null, ...METRICS]; const next = cycle[(cycle.indexOf(state.focus) + (e.shiftKey ? 4 : 1)) % 5]; state.focus = null; setFocus(next); }
+  else if (e.key === 'Enter' && state.sel != null) { e.preventDefault(); const p = PROCS.find(x => x.pid === state.sel); toast(p.kind === 'app' ? `切换到「${esc(p.name)}」` : `在访达中显示「${esc(p.name)}」`); }
+  else if (e.key === 'Backspace' && !$('#q').value) { e.preventDefault(); leaveMonitor(); }
+  else if (e.key === 'Escape') {
+    e.preventDefault();
+    if (state.sel != null) { state.sel = null; renderLauncherBody(); }
+    else if (state.focus) { state.focus = null; renderLauncher(); }
+    else if ($('#q').value) { $('#q').value = ''; renderLauncherBody(); }
+    else leaveMonitor();
+  }
+});
+
+/* Launcher clicks */
+$('#launcher').addEventListener('click', e => {
+  const t = e.target.closest('[data-act],[data-focus],[data-sort],[data-pid]');
+  if (!t) return;
+  if (t.id === 'popBtn' || t.closest('#popBtn')) return;
+  if (t.dataset.focus) { setFocus(t.dataset.focus); return; }
+  if (t.dataset.sort) { state.sort = t.dataset.sort; order = []; state.frozenUntil = 0; renderLauncherBody(); return; }
+  const a = t.dataset.act;
+  if (a === 'enter') enterMonitor();
+  else if (a === 'type-top') { $('#q').value = 'top'; state.view = 'hint'; renderLauncherBody(); $('#q').focus(); }
+  else if (a === 'kill') askKill(e.altKey);
+  else if (a === 'do-kill') doKill();
+  else if (a === 'cancel') { state.confirm = null; renderLauncherBody(); }
+  else if (a === 'copy') toast(`已复制 PID ${state.sel}`);
+  else if (a === 'show') { const p = PROCS.find(x => x.pid === state.sel); toast(p.kind === 'app' ? `切换到「${esc(p.name)}」` : `在访达中显示「${esc(p.name)}」`); }
+  else if (a === 'pick-hog') { state.sort = 'cpu'; order = []; state.frozenUntil = 0; state.sel = 4821; freeze(); renderLauncherBody(); }
+  else if (t.dataset.pid) { state.sel = +t.dataset.pid; state.confirm = null; freeze(); renderLauncherBody(); }
+  $('#q').focus();
+});
+$('#launcher').addEventListener('mousedown', e => { if (e.target.closest('#popBtn')) { e.preventDefault(); popOut(); } });
+$('#lbody').addEventListener('mouseover', e => { const inList = !!e.target.closest('#plist'); if (inList !== state.hoverList) { state.hoverList = inList; } });
+$('#lbody').addEventListener('mouseleave', () => { state.hoverList = false; });
+$('#scrim').addEventListener('click', closeLauncher);
+$('#openhint').addEventListener('click', openLauncher);
+$('#mbTf').addEventListener('click', openLauncher);
+
+/* Window interactions */
+$('#app').addEventListener('mousedown', () => { $('#app').classList.add('front'); });
+$('#mwin').addEventListener('mousedown', e => {
+  $('#app').classList.remove('front');
+  const t = e.target.closest('[data-act],[data-mode],[data-wsort],[data-wfocus]');
+  if (t) {
+    if (t.dataset.mode) { state.win.mode = t.dataset.mode; state.win.menu = false; clampWin(); renderWindow(); return; }
+    if (t.dataset.wsort) { state.win.sort = t.dataset.wsort; renderWindow(); return; }
+    if (t.dataset.wfocus) { openLauncher(); state.view = 'monitor'; state.focus = t.dataset.wfocus; $('#q').value = ''; renderLauncher(); return; }
+    const a = t.dataset.act;
+    if (a === 'close') { state.win.open = false; state.win.menu = false; renderWindow(); toast('已关闭监控窗口 · 在启动器输入 <b>top</b> 可再次打开'); }
+    if (a === 'pin') { state.win.pinned = !state.win.pinned; renderWindow(); toast(state.win.pinned ? '已置顶：始终浮在其他窗口上方' : '已取消置顶：会被其他窗口盖住'); }
+    if (a === 'wmenu') { state.win.menu = !state.win.menu; renderWindow(); }
+    return;
+  }
+  const drag = e.target.closest('[data-drag]'); if (!drag) return;
+  const sx = e.clientX, sy = e.clientY, ox = state.win.x, oy = state.win.y;
+  const mv = ev => { state.win.x = ox + ev.clientX - sx; state.win.y = oy + ev.clientY - sy; clampWin(); const el = $('#mwin'); el.style.left = state.win.x + 'px'; el.style.top = state.win.y + 'px'; renderMenu(); };
+  const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
+  document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+});
+$('#mwin').addEventListener('dblclick', e => { if (state.win.mode === 'mini') { state.win.mode = 'full'; clampWin(); renderWindow(); } });
+function clampWin() { const el = $('#mwin'); const w = el.offsetWidth || 380, h = el.offsetHeight || 40; state.win.x = clamp(state.win.x, 4, 1200 - w - 4); state.win.y = clamp(state.win.y, 30, 800 - Math.min(h, 200)); }
+$('#wmenu').addEventListener('mousedown', e => {
+  const t = e.target.closest('[data-opt],[data-show],[data-interval],[data-opacity],[data-act]'); if (!t) return;
+  const w = state.win;
+  if (t.dataset.opt) w[t.dataset.opt] = !w[t.dataset.opt];
+  else if (t.dataset.show) w.show[t.dataset.show] = !w.show[t.dataset.show];
+  else if (t.dataset.interval) { w.interval = +t.dataset.interval; restartTimer(); }
+  else if (t.dataset.opacity) w.opacity = +t.dataset.opacity;
+  else if (t.dataset.act === 'close') { w.open = false; w.menu = false; }
+  else if (t.dataset.act === 'activity') { w.menu = false; toast('已打开「活动监视器」'); }
+  else if (t.dataset.act === 'open-launcher') { w.menu = false; openLauncher(); enterMonitor(); }
+  renderWindow();
+});
+document.addEventListener('mousedown', e => { if (state.win.menu && !e.target.closest('#wmenu') && !e.target.closest('[data-act="wmenu"]')) { state.win.menu = false; renderWindow(); } });
+
+/* ---------- Tick ---------- */
+let timer;
+function tick() { sample(); renderLauncherBody(); if (state.view === 'monitor' && state.launcher) $('#lbar').innerHTML = monitorBarHTML(); renderWindow(); }
+function restartTimer() { clearInterval(timer); if (!params.has('still')) timer = setInterval(tick, state.win.interval * 1000); }
+
+/* ---------- Screens ---------- */
+const CAPTIONS = {
+  hint: '<b>① 输入关键字</b>：输入 <b>top</b> 或 <b>监控</b>，第一行就是「系统监控」，行内直接显示实时的 CPU / 内存 / 磁盘 / 网络摘要和 CPU 折线。↩ 打开；输入「top 空格」直接进入并开始筛选进程。「活动监视器」照常出现在应用结果里。',
+  overview: '<b>② 启动器 · 概览</b>：顶部 4 张指标卡（带最近 60 秒折线），下面是按 CPU 排序的进程。输入框变成进程筛选（名称或 PID）。鼠标停在列表上或用 ↑↓ 选择时，<b>排序暂停</b>，数值继续刷新，行不会跳走。右上角「独立窗口 ⌘O」把监控拿出启动器。',
+  cpu: '<b>③ 聚焦 CPU</b>：点指标卡、⌘1–⌘4 或 ⇥ 切换聚焦，卡片下展开详情：60 秒大图、每个核心（性能核 / 能效核）、用户 / 系统占比、平均负载、进程与线程数、散热状态；进程列表自动按这一项排序。再点一次或 esc 收起。',
+  mem: '<b>④ 聚焦内存</b>：颜色跟 macOS 一样看「内存压力」而不是占用百分比（占满缓存是正常的）。详情里是 App 内存 / 联动内存 / 被压缩 / 缓存文件的分布和已用交换；进程按内存排序。磁盘聚焦显示各宗卷剩余空间和读写，网络聚焦显示上下行、IP 和累计流量。',
+  kill: '<b>⑤ 结束进程</b>：选中一行后出现行内操作：切换到应用（↩）、复制 PID（⌘C）、结束（⌘⌫，按住 ⌥ 是强制结束）。结束前在同一行确认，↩ 确认、esc 取消；系统进程和其他用户的进程不能结束。',
+  alert: '<b>⑥ 高负载</b>：CPU 持续 30 秒以上高于 90% 时，指标卡变红，卡片下出现一行说明主要来源进程，点「查看进程」直接选中它。只在监控界面里提示，不弹系统通知（第一版）。打开右上角「模拟高负载」可以随时看到这个状态。',
+  full: '<b>⑦ 独立窗口 · 完整</b>：按 ⌘O 后启动器收起，监控变成一个独立的小窗口，默认<b>置顶</b>、在所有桌面显示、不抢焦点。可以拖动；点左侧代码窗口试试：置顶时监控仍在上面，取消置顶（📌）后会被盖住。点任何一项回到启动器看详情。',
+  compact: '<b>⑧ 紧凑</b>：只留 4 张小卡片，标题栏在鼠标移上去时才出现，适合放在屏幕角落常驻。',
+  mini: '<b>⑨ 迷你条</b>：一条胶囊，只显示数字和 CPU 折线，适合贴在菜单栏下方。鼠标移上去出现展开和选项按钮；双击展开成完整窗口。',
+  menu: '<b>⑩ 窗口选项</b>：置顶、所有桌面、下次启动时恢复、显示哪些项目、刷新频率（1 / 2 / 5 秒）、不透明度。窗口位置、大小和形态都会记住。',
+};
+function show(id) {
+  document.querySelectorAll('.pill[data-s]').forEach(p => p.classList.toggle('on', p.dataset.s === id));
+  $('#caption').innerHTML = CAPTIONS[id] || '';
+  state.stress = id === 'alert';
+  if (id === 'alert') { for (let i = 0; i < 12; i++) sample(); stressTicks = Math.max(stressTicks, 30); }
+  $('#stressBtn').classList.toggle('on', state.stress);
+  Object.assign(state, { focus: null, sel: null, confirm: null, force: false, frozenUntil: 0 });
+  state.win.menu = false;
+  const L = ['hint', 'overview', 'cpu', 'mem', 'kill', 'alert'].includes(id);
+  state.launcher = L;
+  if (L) {
+    state.win.open = false;
+    if (id === 'hint') { state.view = 'hint'; $('#q').value = 'top'; }
+    else { state.view = 'monitor'; $('#q').value = ''; }
+    if (id === 'cpu') { state.focus = 'cpu'; state.sort = 'cpu'; }
+    else if (id === 'mem') { state.focus = 'mem'; state.sort = 'mem'; }
+    else state.sort = 'cpu';
+    if (id === 'kill') { order = []; state.sel = 912; state.confirm = 912; freeze(); state.frozenUntil = Date.now() + 1e9; }
+  } else {
+    state.win.open = true;
+    state.win.mode = id === 'menu' ? 'full' : id;
+    state.win.x = id === 'mini' ? 700 : id === 'compact' ? 900 : 790;
+    state.win.y = id === 'mini' ? 34 : 70;
+    if (id === 'menu') state.win.menu = true;
+  }
+  renderLauncher(); renderWindow(); clampWin(); renderWindow();
+  if (L) setTimeout(() => $('#q').focus(), 0);
+  history.replaceState(null, '', '?' + new URLSearchParams({ ...Object.fromEntries(params), s: id }).toString());
+}
+document.querySelectorAll('.pill[data-s]').forEach(p => p.onclick = () => show(p.dataset.s));
+$('#stressBtn').onclick = () => { state.stress = !state.stress; if (!state.stress) stressTicks = 0; $('#stressBtn').classList.toggle('on', state.stress); };
+$('#lightBtn').onclick = () => { state.light = !state.light; document.body.classList.toggle('light', state.light); $('#lightBtn').classList.toggle('on', state.light); renderLauncher(); renderWindow(); };
+
+if (params.get('light') === '1') { state.light = true; document.body.classList.add('light'); $('#lightBtn').classList.add('on'); }
+if (params.get('solo') === '1') document.body.classList.add('solo');
+show(params.get('s') || 'hint');
+restartTimer();
+</script>
+</body>
+</html>
