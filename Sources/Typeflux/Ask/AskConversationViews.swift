@@ -778,7 +778,7 @@ struct AskConversationView: View {
         .frame(height: style.ask.headerChipHeight)
         .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
         .overlay {
-            Capsule().fill(AskTheme.privateTint.opacity(0.12))
+            Capsule().fill(AskTheme.privateHeaderFill)
                 .overlay(Capsule().strokeBorder(AskTheme.privateTint.opacity(0.35), lineWidth: 0.5))
                 .allowsHitTesting(false)
         }
@@ -1312,9 +1312,9 @@ private struct AskMessageView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 15)
                         .padding(.vertical, 9)
-                        .background(AskTheme.accent.opacity(0.18), in: AskBubbleShape(radius: 20, tail: 6))
+                        .background(AskTheme.userBubble, in: AskBubbleShape(radius: 20, tail: 6))
                         .overlay(AskBubbleShape(radius: 20, tail: 6)
-                            .strokeBorder(AskTheme.accent.opacity(0.42), lineWidth: 0.5))
+                            .strokeBorder(AskTheme.userBubbleEdge, lineWidth: 0.5))
                 }
                 AskMessageProvenanceView(message: message)
                 if message.steered == true {
@@ -1481,7 +1481,7 @@ private struct AskTranscriptFrames: PreferenceKey {
     }
 }
 
-/// An empty-state suggestion: one of three glass cards in a row. Hover lifts
+/// An empty-state suggestion: one of three content cards in a row. Hover lifts
 /// it and fills its icon tile, so the starting points read as buttons.
 private struct AskSuggestionCard: View {
     let title: String
@@ -1550,9 +1550,10 @@ private struct AskSuggestionCard: View {
                     .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
                 }
             }
-            .askInWindowGlass(corner: Self.corner(style: style),
-                              opaqueFill: style.usesGlass ? AskTheme.composerSurface
-                                  : (hovering && available ? AskClassic.cardHover : AskClassic.card))
+            .askContentCard(corner: Self.corner(style: style),
+                            opaqueFill: style.usesGlass ? AskTheme.composerSurface
+                                : (hovering && available ? AskClassic.cardHover : AskClassic.card),
+                            elevatedInLight: false)
             .contentShape(RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
             .opacity(available ? 1 : 0.7)
             .animation(.easeOut(duration: 0.18), value: hovering)

@@ -12,6 +12,7 @@ struct AskNotesView: View {
     @FocusState private var focus: AskNotesField?
     @State private var dropTargeted = false
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.colorScheme) private var colorScheme
 
     static let sidebarWidth = AskLibraryLayout.sidebarWidth
     static let listWidth = AskLibraryLayout.maximumListWidth
@@ -30,7 +31,9 @@ struct AskNotesView: View {
                 AskNotesList(model: model, focus: $focus, sidebarCollapsed: !layout.sidebarInline)
                     .frame(width: layout.listWidth, height: geometry.size.height)
                     .clipped()
-                    .overlay(alignment: .trailing) { Rectangle().fill(AskTheme.separator).frame(width: 0.5) }
+                    .overlay(alignment: .trailing) {
+                        Rectangle().fill(AskTheme.librarySeparator).frame(width: colorScheme == .light ? 1 : 0.5)
+                    }
                 AskNoteDetailView(model: model, focus: $focus)
                     .frame(width: layout.detailWidth, height: geometry.size.height)
                     .clipped()

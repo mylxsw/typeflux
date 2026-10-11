@@ -31,11 +31,11 @@ enum AskTheme {
         dark: NSColor(calibratedWhite: 0.180, alpha: 1)
     )
     static let border = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.886, green: 0.898, blue: 0.918, alpha: 1),
+        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.08),
         dark: NSColor(calibratedWhite: 1.0, alpha: 0.10)
     )
     static let separator = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.910, green: 0.922, blue: 0.937, alpha: 1),
+        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.08),
         dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
     )
     static let accentSoft = StudioTheme.dynamic(
@@ -43,9 +43,28 @@ enum AskTheme {
         dark: NSColor(calibratedRed: 0.082, green: 0.149, blue: 0.243, alpha: 1)
     )
     /// Marks conversations kept on this Mac (the lock icon, the header chip).
-    static let privateTint = Color(nsColor: .systemPurple)
+    static let privateTint = privateColor(lightAlpha: 1, darkAlpha: 1)
+    static let privateFill = privateColor(lightAlpha: 0.10, darkAlpha: 0.13)
+    static let privateHeaderFill = privateColor(lightAlpha: 0.10, darkAlpha: 0.12)
+
+    /// Resolve the system colour in the requested appearance before returning
+    /// it from a dynamic provider; a nested semantic colour can retain Aqua.
+    private static func privateColor(lightAlpha: CGFloat, darkAlpha: CGFloat) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            guard appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua else {
+                return NSColor(srgbRed: 147 / 255, green: 51 / 255, blue: 234 / 255, alpha: lightAlpha)
+            }
+            var resolved = NSColor.systemPurple
+            appearance.performAsCurrentDrawingAppearance {
+                resolved = (NSColor.systemPurple.usingColorSpace(.sRGB) ?? .systemPurple)
+                    .withAlphaComponent(darkAlpha)
+            }
+            return resolved
+        })
+    }
+
     static let accentText = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.106, green: 0.341, blue: 0.839, alpha: 1),
+        light: NSColor(srgbRed: 29 / 255, green: 78 / 255, blue: 216 / 255, alpha: 1),
         dark: NSColor(calibratedRed: 0.557, green: 0.741, blue: 1.0, alpha: 1)
     )
     static let successSoft = StudioTheme.dynamic(
@@ -110,21 +129,21 @@ enum AskTheme {
 
     /// Rules inside the launcher: under the editor and above its bottom bar.
     static let launcherSeparator = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.07),
+        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.08),
         dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
     )
     /// The highlighted home row or keyword chip, outlined by `launcherSelectionEdge`.
     static let launcherSelection = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.18, green: 0.43, blue: 0.94, alpha: 0.13),
+        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.09),
         dark: NSColor(calibratedRed: 0.082, green: 0.149, blue: 0.243, alpha: 1)
     )
     static let launcherSelectionEdge = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.18, green: 0.43, blue: 0.94, alpha: 0.18),
+        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.20),
         dark: .clear
     )
     /// The `fy`, `dict` keyword labels.
     static let launcherKeyword = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.18, green: 0.43, blue: 0.94, alpha: 0.11),
+        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.10),
         dark: NSColor(calibratedRed: 0.082, green: 0.149, blue: 0.243, alpha: 1)
     )
     /// A neutral row icon's tile: a raised white chip in light mode instead of a grey wash.
@@ -145,29 +164,29 @@ enum AskTheme {
         light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.07),
         dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
     )
-    /// The ⌘1…⌘9 badges: a faint well in light mode, an outline in dark.
+    /// The ⌘1…⌘9 badges: white keycaps in light mode, an outline in dark.
     static let launcherShortcutFill = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.045),
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
         dark: .clear
     )
     static let launcherShortcutEdge = StudioTheme.dynamic(
-        light: .clear,
+        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.14),
         dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
     )
     /// Times, shortcut badges and the key hint: a step below secondary text in
     /// light mode so titles lead. Dark mode keeps secondary text.
     static let launcherMetaText = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0.40, alpha: 1),
+        light: NSColor(srgbRed: 110 / 255, green: 110 / 255, blue: 115 / 255, alpha: 1),
         dark: NSColor(calibratedWhite: 0.720, alpha: 1)
     )
     /// A footer switch that is on (screenshot, memory): a tinted well behind the
     /// accent icon, so "on" reads by shape as well as colour.
     static let switchOnFill = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.18, green: 0.43, blue: 0.94, alpha: 0.14),
+        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.10),
         dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1.00, alpha: 0.22)
     )
     static let switchOnEdge = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.18, green: 0.43, blue: 0.94, alpha: 0.30),
+        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.20),
         dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1.00, alpha: 0.35)
     )
     /// The design board's glass tint for in-window panels (sidebar, header
@@ -190,6 +209,32 @@ enum AskTheme {
     static let monoSurface = StudioTheme.dynamic(
         light: NSColor(calibratedRed: 0.957, green: 0.965, blue: 0.976, alpha: 1),
         dark: NSColor(calibratedRed: 0.063, green: 0.071, blue: 0.086, alpha: 1)
+    )
+
+    /// Hairlines group white cards and divide the library's reading column.
+    static let cardBorder = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.09),
+        dark: NSColor(calibratedWhite: 1, alpha: 0.10)
+    )
+    static let librarySeparator = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.06),
+        dark: NSColor(calibratedWhite: 1, alpha: 0.07)
+    )
+    static let noteQuestionSurface = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
+        dark: NSColor(calibratedWhite: 1, alpha: 0.048)
+    )
+    static let keycapSurface = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
+        dark: NSColor(calibratedWhite: 1, alpha: 0.08)
+    )
+    static let userBubble = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.08),
+        dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1, alpha: 0.18)
+    )
+    static let userBubbleEdge = StudioTheme.dynamic(
+        light: .clear,
+        dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1, alpha: 0.42)
     )
 
     /// A readable title for a tool call; raw tool names never reach the transcript.

@@ -229,7 +229,15 @@ struct AskWorkspaceCardDepth: ViewModifier {
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
-        if enabled {
+        if enabled, colorScheme == .light {
+            content.background(
+                shape.fill(.white)
+                    .shadow(color: Color(red: 15 / 255, green: 23 / 255, blue: 42 / 255).opacity(0.04), radius: 1, y: 1)
+                    .shadow(color: Color(red: 15 / 255, green: 23 / 255, blue: 42 / 255).opacity(0.10),
+                            radius: 10, y: 4)
+                    .allowsHitTesting(false)
+            )
+        } else if enabled {
             content
                 .background(AskOuterShadow(shape: shape, elevation: .panel))
                 .overlay(shape.strokeBorder(AskRimLight.gradient(dark: colorScheme == .dark), lineWidth: 1)

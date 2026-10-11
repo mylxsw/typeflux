@@ -196,8 +196,9 @@ struct AskChatRedesignVisualTests {
         hosting.needsLayout = true
         hosting.layoutSubtreeIfNeeded()
         hosting.displayIfNeeded()
+        // Small CJK labels need more raster detail for reliable native OCR.
         let bitmap = try #require(NSBitmapImageRep(
-            bitmapDataPlanes: nil, pixelsWide: Int(size.width * 2), pixelsHigh: Int(size.height * 2),
+            bitmapDataPlanes: nil, pixelsWide: Int(size.width * 3), pixelsHigh: Int(size.height * 3),
             bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
             colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
         bitmap.size = size

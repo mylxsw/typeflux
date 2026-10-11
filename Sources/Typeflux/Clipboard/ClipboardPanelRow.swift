@@ -43,8 +43,15 @@ struct ClipboardPanelRow: View, Equatable {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isSelected ? AskTheme.accentSoft : isHovered ? AskTheme.hoverFill : Color.clear)
+                .fill(isSelected ? AskTheme.launcherSelection : isHovered ? AskTheme.hoverFill : Color.clear)
         )
+        .overlay {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5)
+                    .allowsHitTesting(false)
+            }
+        }
         .contentShape(Rectangle())
         .overlay(ClipboardRowClickArea(onClick: onClick))
         .accessibilityAction { onClick(1) }

@@ -155,7 +155,7 @@ struct AskKeyHint: View {
             .foregroundStyle(StudioTheme.textTertiary)
             .padding(.horizontal, 6)
             .frame(height: 18)
-            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .background(AskTheme.keycapSurface, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .strokeBorder(AskTheme.separator, lineWidth: 0.5))
             .accessibilityHidden(true)

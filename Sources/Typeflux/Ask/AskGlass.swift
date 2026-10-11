@@ -56,15 +56,16 @@ enum AskGlassPlacement: Equatable {
     /// How much of the surface's own fill frosts the glass. Clear glass over the
     /// transcript let black text show through the composer and made the header
     /// pills vanish on a white window. Menus need a stable light backplate over
-    /// busy windows; floating panels keep enough frost for primary text and let
-    /// the backdrop show through, so the light card no longer reads as paper.
+    /// busy windows; floating panels keep a stable light surface over both
+    /// bright windows and dark desktops. Light 0.92 reaches #F0F1F3 over black
+    /// in the native compositor, while preserving the tint over white.
     /// A menu opens over the launcher, so it is never clearer than the card under
     /// it: the card's chips must not show through its rows.
     func frost(dark: Bool) -> Double {
         switch self {
-        case .floating: return dark ? 0.78 : 0.70
+        case .floating: return dark ? 0.78 : 0.92
         case .inWindow: return 0.45
-        case .menu: return 0.9
+        case .menu: return dark ? 0.90 : 0.92
         }
     }
     /// Adaptive popover material avoids the HUD's grey cast in light mode.
@@ -312,8 +313,8 @@ struct AskInWindowGlassPill: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if style.usesGlass {
-            content.modifier(AskInWindowGlass(corner: height / 2, opaqueFill: AskTheme.glassFill,
-                                              cornerStyle: .circular, elevation: .control))
+            content.modifier(AskContentCardSurface(corner: height / 2, opaqueFill: AskTheme.glassFill,
+                                                   cornerStyle: .circular, elevation: .control))
         } else {
             content
         }

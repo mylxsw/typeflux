@@ -317,6 +317,7 @@ extension ClipboardPanelView {
 /// A small rounded key label such as `⌘P`.
 struct ClipboardKeycap: View {
     let text: String
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Text(text)
@@ -324,6 +325,14 @@ struct ClipboardKeycap: View {
             .foregroundStyle(StudioTheme.textSecondary)
             .padding(.horizontal, 5)
             .frame(minWidth: 18, minHeight: 18)
-            .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(Color.primary.opacity(0.1)))
+            .background(RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(colorScheme == .light ? AskTheme.keycapSurface : Color.primary.opacity(0.1)))
+            .overlay {
+                if colorScheme == .light {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .strokeBorder(AskTheme.separator, lineWidth: 0.5)
+                        .allowsHitTesting(false)
+                }
+            }
     }
 }

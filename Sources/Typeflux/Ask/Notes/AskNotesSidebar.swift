@@ -27,13 +27,15 @@ enum AskNotesStyle {
     }
 }
 
-/// A row's hover wash and selection, drawn like the conversation history's:
-/// an accent glass pill, or the flat source-list grey in the classic style.
+/// Library selection uses the same light wash as floating lists. Dark keeps
+/// its accent glass pill or classic source-list grey.
 struct AskNotesRowBackground: ViewModifier {
     var selected: Bool
     var hovering: Bool
     var corner: CGFloat
+    var sidebar = false
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         content.background {
@@ -41,7 +43,14 @@ struct AskNotesRowBackground: ViewModifier {
             ZStack {
                 if hovering, !selected { shape.fill(AskTheme.hoverFill) }
                 if selected {
-                    if style.usesGlass {
+                    if colorScheme == .light, sidebar {
+                        shape.fill(.white)
+                            .overlay(shape.strokeBorder(AskTheme.librarySeparator, lineWidth: 0.5))
+                            .shadow(color: .black.opacity(0.08), radius: 1, y: 1)
+                    } else if colorScheme == .light {
+                        shape.fill(AskTheme.launcherSelection)
+                            .overlay(shape.strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5))
+                    } else if style.usesGlass {
                         shape.fill(AskTheme.accent.opacity(0.18))
                             .overlay(shape.strokeBorder(AskTheme.accent.opacity(0.4), lineWidth: 0.5))
                     } else {
@@ -54,8 +63,8 @@ struct AskNotesRowBackground: ViewModifier {
 }
 
 extension View {
-    func askNotesRow(selected: Bool, hovering: Bool, corner: CGFloat) -> some View {
-        modifier(AskNotesRowBackground(selected: selected, hovering: hovering, corner: corner))
+    func askNotesRow(selected: Bool, hovering: Bool, corner: CGFloat, sidebar: Bool = false) -> some View {
+        modifier(AskNotesRowBackground(selected: selected, hovering: hovering, corner: corner, sidebar: sidebar))
     }
 }
 
@@ -202,6 +211,7 @@ struct AskNotesShelfRow: View {
     var action: () -> Void
     @State private var hovering = false
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button(action: action) {
@@ -214,7 +224,8 @@ struct AskNotesShelfRow: View {
                         .frame(width: 18)
                 }
                 Text(title).font(.system(size: child ? 12.5 : 13, weight: active ? .semibold : .regular))
-                    .foregroundStyle(active || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .foregroundStyle(active && colorScheme == .light ? AskTheme.accentText
+                        : active || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                     .lineLimit(1)
                 if locked {
                     Image(systemName: "eye.slash").font(.system(size: 9.5)).foregroundStyle(StudioTheme.textTertiary)
@@ -227,7 +238,7 @@ struct AskNotesShelfRow: View {
             .padding(.trailing, 10)
             .frame(height: child ? 26 : (style.usesGlass ? 32 : 28))
             .frame(maxWidth: .infinity, alignment: .leading)
-            .askNotesRow(selected: active, hovering: hovering, corner: style.ask.sidebarRowCorner)
+            .askNotesRow(selected: active, hovering: hovering, corner: style.ask.sidebarRowCorner, sidebar: true)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

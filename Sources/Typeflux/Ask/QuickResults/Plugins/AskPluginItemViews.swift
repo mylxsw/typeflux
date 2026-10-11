@@ -14,6 +14,7 @@ struct AskPluginItemRow: View {
     var emphasized: Bool
     var height: CGFloat
     var onPick: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     private var filled: Bool {
         item.valid && selected && emphasized
@@ -41,9 +42,17 @@ struct AskPluginItemRow: View {
             }
             .padding(.horizontal, 8)
             .frame(height: height)
-            .background(filled ? AskTheme.accentSoft : item.valid && selected ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(item.valid && selected && (filled || colorScheme == .light)
+                ? AskTheme.launcherSelection : item.valid && selected ? AskTheme.hoverFill : Color.clear,
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .contentShape(Rectangle())
+            .overlay {
+                if item.valid, selected, filled || colorScheme == .light {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5)
+                        .allowsHitTesting(false)
+                }
+            }
         }
         .buttonStyle(.plain)
         .disabled(!item.valid)

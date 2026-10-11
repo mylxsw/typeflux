@@ -10,9 +10,8 @@ struct AskFloatingPanelStyleTests {
     @Test func `light panels shield text from dark and saturated backdrops`() async throws {
         let size = NSSize(width: 160, height: 100)
         for placement in [AskGlassPlacement.floating, .menu] {
-            // Menus keep a near-opaque backplate. The launcher's clearer light glass
-            // keeps the frost's share of it; its text contrast over a black window is
-            // checked in `AskLauncherLightPaletteTests`.
+            // Bitmap captures include the frost but not Window Server refraction.
+            // Native review captures additionally check the composite over a desktop.
             let frost = placement.frost(dark: false)
             let floor = placement == .menu ? 0.84 : frost * 0.96 - 0.02
             let cast = placement == .menu ? 0.14 : 1 - frost + 0.04

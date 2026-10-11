@@ -321,7 +321,7 @@ struct AskStorageButton: View {
     /// Kept on this Mac is a state, so it sits in a private-tinted well like an
     /// on switch; the cloud only gets the hover wash.
     static func wellFill(local: Bool, active: Bool) -> Color {
-        if local { return AskTheme.privateTint.opacity(0.13) }
+        if local { return AskTheme.privateFill }
         return active ? AskTheme.hoverFill : .clear
     }
 }

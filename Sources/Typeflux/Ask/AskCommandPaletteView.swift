@@ -122,8 +122,13 @@ struct AskCommandPaletteView: View {
 private struct AskCommandRow: View {
     let match: AskCommandMatcher.Match
     var highlighted: Bool
+    @Environment(\.colorScheme) private var colorScheme
 
     private var command: AskCommand { match.command }
+    private var selectionFill: Color {
+        guard highlighted else { return .clear }
+        return colorScheme == .light ? AskTheme.launcherSelection : AskTheme.accent.opacity(0.14)
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -155,8 +160,14 @@ private struct AskCommandRow: View {
         }
         .padding(.horizontal, 8)
         .frame(height: AskCommandPaletteView.rowHeight)
-        .background(highlighted ? AskTheme.accent.opacity(0.14) : Color.clear,
-                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(selectionFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            if highlighted, colorScheme == .light {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5)
+                    .allowsHitTesting(false)
+            }
+        }
         .opacity(command.enabled ? 1 : 0.45)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(highlighted ? [.isSelected, .isButton] : .isButton)
@@ -175,7 +186,7 @@ private struct AskCommandRow: View {
         }
         return Text(text)
             .font(.system(size: 13, weight: .semibold, design: command.plain ? .default : .monospaced))
-            .foregroundStyle(highlighted ? AskTheme.accentText : StudioTheme.textPrimary)
+            .foregroundStyle(highlighted && colorScheme == .dark ? AskTheme.accentText : StudioTheme.textPrimary)
             .lineLimit(1)
     }
 
