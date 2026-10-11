@@ -24,7 +24,9 @@ struct ScreenCaptureServiceTests {
             ScreenCaptureTestSupport.window(11, processID: 300, title: "Document")
         ]
         var loads = 0
-        var captures: [Capture] = []
+        private let captureLock = NSLock()
+        private var recordedCaptures: [Capture] = []
+        var captures: [Capture] { captureLock.withLock { recordedCaptures } }
         /// Returns an image of a different size, as the macOS 13 fallback does.
         var nativeOverride: ScreenPixelSize?
         var failure: Error?
@@ -32,7 +34,10 @@ struct ScreenCaptureServiceTests {
         func content() -> ScreenCaptureContent {
             loads += 1
             return ScreenCaptureContent(displays: displays, windows: windows) { [self] display, excluded, size in
-                captures.append(Capture(display: display.id, excluded: excluded, size: size))
+                // Displays are captured concurrently by the service's task group.
+                captureLock.withLock {
+                    recordedCaptures.append(Capture(display: display.id, excluded: excluded, size: size))
+                }
                 if let failure { throw failure }
                 let actual = nativeOverride ?? size
                 return ScreenCaptureTestSupport.image(width: actual.width, height: actual.height)

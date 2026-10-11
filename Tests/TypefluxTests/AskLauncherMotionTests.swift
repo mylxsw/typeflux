@@ -71,6 +71,8 @@ struct AskLauncherMotionTests {
             left: ((visible.width - min(AskMetrics.launcherWidth, visible.width - 40)) / 2).rounded(),
             fromTop: AskLauncherPlacement.screenMargin
         )]
+        // This test measures typing motion; give its baseline the already captured context.
+        await fixture.model.prepareLauncher()
         let controller = AskConversationWindowController(
             settings: settings,
             model: fixture.model,
@@ -84,6 +86,8 @@ struct AskLauncherMotionTests {
         let content = try #require(window.contentView)
         try await fixture.wait { !fixture.model.capturing && !fixture.model.quickSearch.isSearching }
         try await Task.sleep(for: .milliseconds(700))
+        content.layoutSubtreeIfNeeded()
+        try await fixture.wait { !controller.launcherIsResizing }
         let homeHeight = window.frame.height
         let editor = try #require(editor(in: content))
         let openChat = try element("ask.launcher.openChat", in: window)

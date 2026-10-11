@@ -229,8 +229,7 @@ struct AskLauncherHeaderTests {
         let restingHeight = reported.height
         let screenshot = try element("ask.context.screenshot.toggle", in: window)
         try hover(screenshot, in: window, inside: true)
-        try await Task.sleep(for: .milliseconds(300))
-        let card = try #require(window.childWindows?.first { $0 is AskHoverCardPresenter.Panel })
+        let card = try await hoverCard(in: window, fixture: fixture)
         #expect(find("ask.context.screenshot.hoverPreview", in: card) != nil)
         #expect(card.ignoresMouseEvents && !card.canBecomeKey)
         #expect(window.firstResponder === editor)
@@ -249,7 +248,7 @@ struct AskLauncherHeaderTests {
         #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).image == nil)
         try hover(try element("ask.context.screenshot.toggle", in: window), in: window, inside: false)
         try hover(try element("ask.context.screenshot.toggle", in: window), in: window, inside: true)
-        try await Task.sleep(for: .milliseconds(300))
+        _ = try await hoverCard(in: window, fixture: fixture)
         #expect(find("ask.context.screenshot.hoverPreview", in: card) != nil,
                 "a screenshot switched off can be previewed before restoring it")
         fixture.model.launcherDraft.screenshot = nil
@@ -388,8 +387,7 @@ struct AskLauncherHeaderTests {
         let png = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 320, height: 200), type: .png)
         fixture.model.launcherDraft.screenshot = "data:image/png;base64," + png.base64EncodedString()
         fixture.model.launcherDraft.capturedAt = Date()
-        try await Task.sleep(for: .milliseconds(300))
-        let card = try #require(window.childWindows?.first { $0 is AskHoverCardPresenter.Panel })
+        let card = try await hoverCard(in: window, fixture: fixture)
         #expect(find("ask.context.screenshot.hoverPreview", in: card) != nil,
                 "the hover task must use the latest capture, not its initial empty snapshot")
         try hover(screenshot, in: window, inside: false)
@@ -407,12 +405,20 @@ struct AskLauncherHeaderTests {
         try await Task.sleep(for: .milliseconds(300))
         let screenshot = try element("ask.context.screenshot.toggle", in: window)
         try hover(screenshot, in: window, inside: true)
-        try await Task.sleep(for: .milliseconds(300))
-        let card = try #require(window.childWindows?.first { $0 is AskHoverCardPresenter.Panel })
+        let card = try await hoverCard(in: window, fixture: fixture)
         #expect(find("ask.context.screenshot.hoverPreview", in: card) == nil)
         #expect(card.frame.height < 180, "no empty image placeholder")
         try hover(screenshot, in: window, inside: false)
         #expect(!card.isVisible)
+    }
+
+    private func hoverCard(in window: NSWindow, fixture: AskTestFixture) async throws -> NSWindow {
+        // Observe the rendered panel rather than assuming its asynchronous layout finished after 300 ms.
+        try await fixture.wait {
+            window.contentView?.layoutSubtreeIfNeeded()
+            return window.childWindows?.contains { $0 is AskHoverCardPresenter.Panel } == true
+        }
+        return try #require(window.childWindows?.first { $0 is AskHoverCardPresenter.Panel })
     }
 
     private func saveSnapshot(_ view: NSView, name: String) throws {

@@ -25,8 +25,7 @@ TYPEFLUX_ASK_SNAPSHOTS=docs/validation/gul-318/rendered \
 ```
 
 See [the validation record](VALIDATION.md) for executed checks, coverage, and the
-existing launcher UI failures reproduced on the clean base commit. Full-suite
-acceptance remains blocked by those failures.
+UI test fixture repairs needed for reliable validation.
 
 `AskScreenshotTextOrganizationTests` covers model-free OCR, explicit submission,
 streaming and Markdown exports, note persistence, original restoration, missing
