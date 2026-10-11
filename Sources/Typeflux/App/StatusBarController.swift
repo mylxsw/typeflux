@@ -28,6 +28,7 @@ final class StatusBarController: NSObject {
     private let appState: AppStateStore
     private let settingsStore: SettingsStore
     private let historyStore: HistoryStore
+    private let wordBookWindow: AskWordBookWindowController?
     private let modelManager: OllamaModelManaging
     private let localModelManager: LocalSTTModelManaging
     private let notificationService: LocalNotificationSending
@@ -50,6 +51,7 @@ final class StatusBarController: NSObject {
         appState: AppStateStore,
         settingsStore: SettingsStore,
         historyStore: HistoryStore,
+        wordBookWindow: AskWordBookWindowController? = nil,
         modelManager: OllamaModelManaging = OllamaLocalModelManager(),
         localModelManager: LocalSTTModelManaging = LocalModelManager(),
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
@@ -62,6 +64,7 @@ final class StatusBarController: NSObject {
         self.appState = appState
         self.settingsStore = settingsStore
         self.historyStore = historyStore
+        self.wordBookWindow = wordBookWindow
         self.modelManager = modelManager
         self.localModelManager = localModelManager
         self.notificationService = notificationService
@@ -194,7 +197,7 @@ final class StatusBarController: NSObject {
         menu.delegate = self
 
         menu.addItem(makeItem(title: L("menu.openVoiceStudio"), action: #selector(openAskConversations)))
-        menu.addItem(makeItem(title: L("menu.addVocabulary"), action: #selector(addVocabularyTerm)))
+        menu.addItem(makeItem(title: L("ask.wordBook.title"), action: #selector(openWordBook)))
         menu.addItem(makeItem(title: L("menu.notes"), action: #selector(openNotes)))
         menu.addItem(makeScreenshotItem())
         menu.addItem(makeScreenshotTextItem())
@@ -485,31 +488,6 @@ final class StatusBarController: NSObject {
         )
     }
 
-    @objc private func addVocabularyTerm() {
-        let alert = NSAlert()
-        alert.messageText = L("menu.addVocabulary.dialog.title")
-        alert.informativeText = L("menu.addVocabulary.dialog.message")
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: L("menu.addVocabulary.dialog.confirm"))
-        alert.addButton(withTitle: L("common.cancel"))
-
-        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
-        textField.placeholderString = L("vocabulary.sheet.placeholder")
-        alert.accessoryView = textField
-        alert.window.initialFirstResponder = textField
-
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-
-        let terms = textField.stringValue
-            .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        for term in terms {
-            VocabularyStore.add(term: term, source: .manual)
-        }
-    }
-
     @objc private func copyRecentHistoryResult(_ sender: NSMenuItem) {
         guard
             let text = sender.representedObject as? String,
@@ -577,6 +555,10 @@ final class StatusBarController: NSObject {
         onOpenAskConversations()
     }
 
+    @objc private func openWordBook() {
+        (wordBookWindow ?? .shared).show()
+    }
+
     @objc private func openNotes() {
         AskNotesWindowController.shared.show()
     }
@@ -588,7 +570,6 @@ final class StatusBarController: NSObject {
     @objc private func quit() {
         NSApp.terminate(nil)
     }
-
 }
 
 extension StatusBarController: NSMenuDelegate {
@@ -613,7 +594,6 @@ extension StatusBarController: NSMenuDelegate {
             populateTextTransformationMenu(menu)
         }
     }
-
 }
 
 enum StatusBarMenuSupport {
