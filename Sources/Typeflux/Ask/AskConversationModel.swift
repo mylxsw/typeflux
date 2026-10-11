@@ -36,6 +36,7 @@ final class AskConversationModel: ObservableObject {
     var systemCommandRunner = AskSystemCommandRunner()
     var confirmSystemCommand: (AskSystemCommand) -> Bool = AskSystemCommandConfirmation.confirm
     var appIndex: any AskAppSearching = AskAppIndex.shared
+    var launcherHomeFallbackKeywordIDs: [String] = []
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
     /// Whether a found file is still there; tests decide instead.
@@ -218,6 +219,7 @@ final class AskConversationModel: ObservableObject {
     @Published var isOpeningChat = false
     @Published var savedChatDrafts: [AskSavedChatDraft] = []
     @Published var referenceLocation: String?
+    @Published var launcherWindowMode: AskLauncherWindowMode = .complete
     @Published var launcherDraft = AskDraft(includeScreenshot: false) {
         didSet {
             if launcherDraft.includeScreenshot, !screenshotCapability(launcher: true).canAttach {
@@ -546,13 +548,13 @@ final class AskConversationModel: ObservableObject {
         let expectedSessionOwner = session()?.owner
         // Invalidate an older preparation before awaiting the draft cache.
         let generation = UUID(); captureGeneration = generation; capturing = false; capturingScreenshot = false
-        let typedBefore = !launcherDraft.text.isEmpty
+        let typedBefore = launcherDraft.hasText
         var restored = false
         if !typedBefore, let cached = try? await cache.draft(key: "launcher", owner: owner) {
             guard !Task.isCancelled, generation == captureGeneration,
                   owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
             // The panel is already open: never replace anything typed meanwhile.
-            if launcherDraft.text.isEmpty, !cached.text.isEmpty { launcherDraft = cached; restored = true }
+            if !launcherDraft.hasText, cached.hasText { launcherDraft = cached; restored = true }
         }
         guard !Task.isCancelled, generation == captureGeneration,
               owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }

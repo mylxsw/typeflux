@@ -69,11 +69,13 @@ private struct RoundedVisualEffectBlur: NSViewRepresentable {
 }
 
 private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
+    @Environment(\.liquidGlassIntensity) private var intensity
     @Environment(\.interfaceStyle) private var interfaceStyle
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
     let shape: S
     let cornerRadius: CGFloat?
     let tintOpacity: Double
-    let scrimOpacity: Double
     let strokeOpacity: Double
     let lineWidth: CGFloat
     let interactive: Bool
@@ -82,7 +84,6 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
         shape: S,
         cornerRadius: CGFloat? = nil,
         tintOpacity: Double = 0.08,
-        scrimOpacity: Double = 0.18,
         strokeOpacity: Double = 0.16,
         lineWidth: CGFloat = 0.9,
         interactive: Bool = false
@@ -90,7 +91,6 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
         self.shape = shape
         self.cornerRadius = cornerRadius
         self.tintOpacity = tintOpacity
-        self.scrimOpacity = scrimOpacity
         self.strokeOpacity = strokeOpacity
         self.lineWidth = lineWidth
         self.interactive = interactive
@@ -98,7 +98,7 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
 
     var body: some View {
         Group {
-            if interfaceStyle == .classic {
+            if interfaceStyle == .classic || reduceTransparency || contrast == .increased {
                 shape.fill(Color.black)
             } else {
                 liquidGlassBackground
@@ -144,20 +144,15 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
     private var liquidGlassBackground: some View {
         #if compiler(>=6.2)
             if #available(macOS 26.0, *) {
-                ZStack {
-                    shape
-                        .fill(Color.clear)
-                        .glassEffect(
-                            Glass.clear
-                                .interactive(interactive)
-                                .tint(Color.white.opacity(tintOpacity)),
-                            in: shape
-                        )
-
-                    shape
-                        .fill(Color.black.opacity(scrimOpacity))
-                        .allowsHitTesting(false)
-                }
+                shape
+                    .fill(Color.clear)
+                    .glassEffect(
+                        Glass.regular
+                            .interactive(interactive)
+                            .tint(Color.white.opacity(intensity.nativeFrostOpacity(tintOpacity))),
+                        in: shape
+                    )
+                    .overlay(shape.fill(Color.black.opacity(intensity.extraTintOpacity)))
             } else {
                 fallbackBackground
             }
@@ -176,7 +171,7 @@ private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
             .allowsHitTesting(false)
 
             shape
-                .fill(Color.black.opacity(tintOpacity))
+                .fill(Color.black.opacity(intensity.legacyFrostOpacity(tintOpacity)))
         }
     }
 }
@@ -350,6 +345,7 @@ final class OverlayController {
         self.appState = appState
         self.settingsStore = settingsStore
         model.interfaceStyle = settingsStore.interfaceStyle
+        model.glassIntensity = LiquidGlassIntensity(settingsStore.liquidGlassIntensity)
         model.onDismissRequested = { [weak self] in
             self?.dismiss(after: 0)
         }
@@ -359,8 +355,10 @@ final class OverlayController {
             queue: .main
         ) { [weak self] _ in
             guard let self else { return }
+            let previousStyle = model.interfaceStyle
             model.interfaceStyle = self.settingsStore.interfaceStyle
-            configureWindowAppearance()
+            model.glassIntensity = LiquidGlassIntensity(self.settingsStore.liquidGlassIntensity)
+            if previousStyle != model.interfaceStyle { configureWindowAppearance() }
         }
         callbackTarget = OverlayCallbackTarget(self)
     }
@@ -1562,6 +1560,7 @@ final class OverlayViewModel: ObservableObject {
     @Published var failureTone: OverlayFailureTone = .error
     @Published var noticeDismissible = true
     @Published var interfaceStyle: InterfaceStyle = .liquidGlass
+    @Published var glassIntensity = LiquidGlassIntensity()
     /// Stretches capsule motion durations; only rendering tests set it above 1.
     var motionScale: Double = 1
     var onDismissRequested: (() -> Void)?
@@ -1641,6 +1640,7 @@ private struct OverlayView: View {
         .offset(y: isHiddenCapsule && !reduceMotion ? 6 : 0)
         .opacity(isHiddenCapsule ? 0 : 1)
         .environment(\.interfaceStyle, model.interfaceStyle)
+        .environment(\.liquidGlassIntensity, model.glassIntensity)
     }
 
     private var isHiddenCapsule: Bool { model.presentation.isCapsule && !model.isPresented }

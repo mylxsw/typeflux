@@ -72,10 +72,8 @@ final class AskGlassMenuPresenter {
         self.panel = panel
         let hosting = HostingView(rootView: AnyView(
             // Menus open above their button, so they grow out of its corner.
-            AskGlassCardSurface(kind: .menu) { content }
-                .askPopIn(anchor: .bottomLeading)
-                // The panel is outside the anchor's view tree, so it takes the anchor's style.
-                .environment(\.interfaceStyle, AskHoverAnchor.style(of: anchor))
+            AskHoverAnchor.styled(AskGlassCardSurface(kind: .menu) { content }
+                .askPopIn(anchor: .bottomLeading), of: anchor)
         ))
         hosting.onResize = { [weak self] in self?.place() }
         panel.contentView = hosting
@@ -174,6 +172,13 @@ struct AskGlassMenu<Menu: View>: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(AskHoverAnchor(holder: anchor))
+            .task {
+                // A conditional footer can arrive with its menu already requested.
+                guard isPresented else { return }
+                await Task.yield()
+                guard !Task.isCancelled, isPresented, let view = anchor.view else { return }
+                AskGlassMenuPresenter.shared.show(menu(), owner: id, anchor: view) { isPresented = false }
+            }
             .onChange(of: isPresented) { show in
                 if show {
                     guard let view = anchor.view else { isPresented = false; return }

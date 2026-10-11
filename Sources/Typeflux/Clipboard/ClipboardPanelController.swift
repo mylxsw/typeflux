@@ -10,7 +10,8 @@ import SwiftUI
 final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPresenting {
     private let settingsStore: SettingsStore
     private var panel: ClipboardPanelWindow?
-    private var hostingView: NSHostingView<ClipboardPanelView>?
+    private var hostingView: NSHostingView<AnyView>?
+    private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: settingsStore)
     private weak var model: ClipboardPanelModel?
     private var keyMonitor: Any?
     private var clickMonitor: Any?
@@ -33,6 +34,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
 
     var presentedWindow: NSWindow? { isPresented ? panel : nil }
     var isResizingPreview: Bool { previewWidthAnimator.isAnimating }
+    var contentViewportWidth: CGFloat? { layout.width }
 
     func present(_ model: ClipboardPanelModel) {
         previewWidthAnimator.stop()
@@ -102,8 +104,8 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     // MARK: - Window
 
     private func panel(for model: ClipboardPanelModel) -> ClipboardPanelWindow {
-        let rootView = ClipboardPanelView(model: model, focusRequest: focusRequest,
-                                          interfaceStyle: settingsStore.interfaceStyle, layout: layout)
+        let rootView = AnyView(ClipboardPanelView(model: model, focusRequest: focusRequest, layout: layout)
+            .interfaceStyle(following: interfaceStyleObserver))
         if let panel, let hostingView {
             hostingView.rootView = rootView
             return panel

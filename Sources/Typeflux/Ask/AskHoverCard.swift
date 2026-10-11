@@ -55,9 +55,8 @@ final class AskHoverCardPresenter {
         guard let window = anchor.window, window.isVisible else { return }
         let panel = self.panel ?? Self.makePanel()
         self.panel = panel
-        let hosting = NSHostingView(rootView: AnyView(AskGlassCardSurface { content }.askPopIn(anchor: .bottom)
-                // The panel is outside the anchor's view tree, so it takes the anchor's style.
-                .environment(\.interfaceStyle, AskHoverAnchor.style(of: anchor))))
+        let hosting = NSHostingView(rootView: AnyView(AskHoverAnchor.styled(
+            AskGlassCardSurface { content }.askPopIn(anchor: .bottom), of: anchor)))
         panel.contentView = hosting
         panel.appearance = window.effectiveAppearance
         let anchorRect = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))
@@ -97,12 +96,16 @@ struct AskHoverAnchor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = Passthrough()
         view.style = context.environment.interfaceStyle
+        view.intensity = context.environment.liquidGlassIntensity
+        view.appearanceObserver = context.environment.interfaceAppearanceObserver
         holder.view = view
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
         (nsView as? Passthrough)?.style = context.environment.interfaceStyle
+        (nsView as? Passthrough)?.intensity = context.environment.liquidGlassIntensity
+        (nsView as? Passthrough)?.appearanceObserver = context.environment.interfaceAppearanceObserver
         holder.view = nsView
     }
 
@@ -111,8 +114,25 @@ struct AskHoverAnchor: NSViewRepresentable {
         (anchor as? Passthrough)?.style ?? .liquidGlass
     }
 
+    static func intensity(of anchor: NSView) -> LiquidGlassIntensity {
+        (anchor as? Passthrough)?.intensity ?? .init()
+    }
+
+    /// Panels live outside the anchor's SwiftUI tree. Carry its observation as
+    /// well as its appearance so an already-open menu follows the slider live.
+    @ViewBuilder static func styled(_ content: some View, of anchor: NSView) -> some View {
+        if let observer = (anchor as? Passthrough)?.appearanceObserver {
+            content.interfaceStyle(following: observer)
+        } else {
+            content.environment(\.interfaceStyle, style(of: anchor))
+                .environment(\.liquidGlassIntensity, intensity(of: anchor))
+        }
+    }
+
     private final class Passthrough: NSView {
         var style = InterfaceStyle.liquidGlass
+        var intensity = LiquidGlassIntensity()
+        weak var appearanceObserver: InterfaceStyleObserver?
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }

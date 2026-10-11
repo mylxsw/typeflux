@@ -225,11 +225,12 @@ struct AskLiftingCardStyle: ButtonStyle {
 struct AskWorkspaceCardDepth: ViewModifier {
     var enabled: Bool
     var corner: CGFloat
+    var material: AskGlassMaterial? = nil
     @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
-        if enabled, colorScheme == .light {
+        if enabled, colorScheme == .light, material?.drawsOwnEdge != true {
             content.background(
                 shape.fill(.white)
                     .shadow(color: Color(red: 15 / 255, green: 23 / 255, blue: 42 / 255).opacity(0.04), radius: 1, y: 1)
@@ -240,8 +241,12 @@ struct AskWorkspaceCardDepth: ViewModifier {
         } else if enabled {
             content
                 .background(AskOuterShadow(shape: shape, elevation: .panel))
-                .overlay(shape.strokeBorder(AskRimLight.gradient(dark: colorScheme == .dark), lineWidth: 1)
-                    .allowsHitTesting(false))
+                .overlay {
+                    if material == .visualEffect {
+                        shape.strokeBorder(AskRimLight.gradient(dark: colorScheme == .dark), lineWidth: 1)
+                            .allowsHitTesting(false)
+                    }
+                }
         } else {
             content
         }

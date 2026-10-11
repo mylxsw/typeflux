@@ -95,17 +95,8 @@ struct StudioLightPaletteTests {
     @Test func backdropIsWhiteInLight() {
         let light = NSColor(AskWindowBackdrop.base(dark: false)).usingColorSpace(.sRGB)!
         #expect(light.redComponent == 1 && light.greenComponent == 1 && light.blueComponent == 1)
-        #expect(AskWindowBackdrop.tintOpacity(dark: false, reduceTransparency: false) == 0.95)
-        #expect(AskWindowBackdrop.tintOpacity(dark: true, reduceTransparency: false) == 0.78)
-    }
-
-    @Test func sidePanelIsFlatOnlyInLightGlass() {
-        #expect(AskSidePanelChrome.usesFlatLightPanel(glass: true, dark: false))
-        #expect(!AskSidePanelChrome.usesFlatLightPanel(glass: true, dark: true))
-        #expect(!AskSidePanelChrome.usesFlatLightPanel(glass: false, dark: false))
-        #expect(!AskSidePanelChrome.usesFlatLightPanel(glass: false, dark: true))
-        #expect(AskSidePanelChrome.flatPanelOpacity(reduceTransparency: false) == 0.94)
-        #expect(AskSidePanelChrome.flatPanelOpacity(reduceTransparency: true) == 1)
+        #expect(AskWindowBackdrop.tintOpacity(dark: false, reduceTransparency: false) == 0.22)
+        #expect(AskWindowBackdrop.tintOpacity(dark: true, reduceTransparency: false) == 0.68)
     }
 
     @Test func cardIsFlatOnlyInLightGlass() {

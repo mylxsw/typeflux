@@ -71,6 +71,8 @@ struct AskLauncherHeaderTests {
         #expect(find("ask.context.settings", in: window) == nil)
         #expect(abs(memory.frame.midY - model.frame.midY) < 2)
         #expect(abs(screenshot.frame.midY - model.frame.midY) < 2)
+        let footerCenter = window.frame.minY + AskMetrics.launcherGutter + AskComposerChrome.launcher.footerHeight / 2
+        #expect(abs(screenshot.frame.midY - footerCenter) <= 2, "controls stay centred in the taller bottom bar")
         #expect(memory.frame.width == AskMetrics.composerControlHeight)
         #expect(abs(memory.frame.minX - screenshot.frame.maxX - AskContextChips.spacing) < 1)
         let request = fixture.model.launcherDraft.request(deviceId: "device", tools: [])
@@ -150,6 +152,7 @@ struct AskLauncherHeaderTests {
 
     @Test func recordingSwapsTheResultsForTheVoicePanel() async throws {
         let fixture = try AskTestFixture()
+        fixture.model.appIndex = AskTestAppIndex(AskTestAppIndex.sample.entries)
         captured(fixture)
         let recorder = AskTestVoiceRecorder()
         recorder.holdTranscript = true
@@ -281,8 +284,10 @@ struct AskLauncherHeaderTests {
         try await fixture.wait { !NSApp.windows.contains { $0.isVisible && find("ask.context.panel", in: $0) != nil } }
     }
 
-    @Test func escapeClosesTheContextPanelBeforeTheLauncher() async throws {
+    @Test(arguments: AskLauncherWindowMode.allCases)
+    func escapeClosesTheContextPanelBeforeTheLauncher(_ mode: AskLauncherWindowMode) async throws {
         let fixture = try AskTestFixture()
+        fixture.model.launcherWindowMode = mode
         captured(fixture)
         var dismissed = 0
         let (window, _) = host(fixture, onDismiss: { dismissed += 1 })

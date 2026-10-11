@@ -13,6 +13,7 @@ struct LauncherSettingsView: View {
 
     @State var quickCalculatorEnabled = true
     @State var quickNumberConversionsEnabled = true
+    @State var windowMode: AskLauncherWindowMode = .complete
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -40,6 +41,9 @@ struct LauncherSettingsView: View {
     @ViewBuilder private var basicsPane: some View {
         AgentPaneHeader(symbol: pane.symbol, title: pane.title)
         ModelSurface {
+            LauncherWindowModeSetting(selection: Binding(get: { windowMode }, set: setWindowMode))
+        }
+        ModelSurface {
             VStack(alignment: .leading, spacing: 0) {
                 AgentSettingsRow(icon: "plus.forwardslash.minus", title: L("ask.settings.quick.calculator.title")) {
                     Toggle("", isOn: Binding(get: { quickCalculatorEnabled }, set: setQuickCalculator))
@@ -58,6 +62,7 @@ struct LauncherSettingsView: View {
     }
 
     func reload() {
+        windowMode = settings.askLauncherWindowMode
         quickCalculatorEnabled = settings.askQuickCalculatorEnabled
         quickNumberConversionsEnabled = settings.askQuickNumberConversionsEnabled
     }
@@ -65,6 +70,11 @@ struct LauncherSettingsView: View {
     func setQuickCalculator(_ enabled: Bool) {
         quickCalculatorEnabled = enabled
         settings.askQuickCalculatorEnabled = enabled
+    }
+
+    func setWindowMode(_ mode: AskLauncherWindowMode) {
+        windowMode = mode
+        settings.askLauncherWindowMode = mode
     }
 
     func setQuickNumberConversions(_ enabled: Bool) {

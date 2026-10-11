@@ -123,7 +123,7 @@ struct AskLauncherPositionTests {
         controller.dismissLauncher()
         controller.showLauncher()
         let reopened = try #require(controller.launcherWindow).frame
-        #expect(reopened.minX == visible.minX + 40)
+        #expect(reopened.minX == AskLauncherPlacement.preferredFrame(on: visible, anchor: anchor).minX)
         #expect(reopened.maxY == visible.maxY - anchor.fromTop)
     }
 
@@ -186,11 +186,12 @@ struct AskLauncherPositionTests {
 
         controller.showLauncher()
         let launcher = try #require(controller.launcherWindow)
-        #expect(launcher.frame.minX == screen.visibleFrame.minX + 30)
+        #expect(launcher.frame == AskLauncherPlacement.preferredFrame(on: screen.visibleFrame,
+                                                                     anchor: .init(left: 30, fromTop: 30)))
 
         controller.recenterLauncher()
         #expect(abs(launcher.frame.midX - screen.visibleFrame.midX) <= 1)
-        #expect(launcher.frame.maxY == AskLauncherPlacement.top(on: screen.visibleFrame))
+        #expect(launcher.frame == AskLauncherPlacement.preferredFrame(on: screen.visibleFrame))
         #expect(settings.askLauncherAnchors[key] == nil)
         #expect(settings.askLauncherAnchors["another display"] != nil, "other displays keep theirs")
     }

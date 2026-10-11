@@ -10,6 +10,12 @@ import SwiftUI
 ///
 /// Colours are specified in sRGB, like the design board's.
 enum AskClassic {
+    /// Opaque launchers need a quiet outline rather than a bright glass rim.
+    static let launcherBorder = StudioTheme.dynamic(
+        light: NSColor(calibratedWhite: 0, alpha: 0.12),
+        dark: NSColor(calibratedWhite: 1, alpha: 0.06)
+    )
+
     /// The conversation column and the title row above it.
     static let canvas = StudioTheme.dynamic(
         light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
@@ -123,29 +129,13 @@ struct AskSidePanelChrome: ViewModifier {
     var floating = false
     @Environment(\.interfaceStyle) private var style
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-    /// In light Liquid Glass the panel is a flat, slightly translucent grey:
-    /// no frost, no drop shadow, only a hairline. Dark keeps the frosted glass.
-    static func usesFlatLightPanel(glass: Bool, dark: Bool) -> Bool { glass && !dark }
-
-    /// The flat light panel's fill opacity; solid with Reduce Transparency.
-    static func flatPanelOpacity(reduceTransparency: Bool) -> Double {
-        reduceTransparency ? 1 : StudioTheme.Opacity.sidePanelFill
-    }
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if Self.usesFlatLightPanel(glass: style.usesGlass, dark: colorScheme == .dark) {
-            let shape = RoundedRectangle(cornerRadius: AskMetrics.sidebarPanelCorner, style: .continuous)
+        if style.usesGlass {
             content
-                .background(shape.fill(StudioTheme.sidePanelFill.opacity(Self.flatPanelOpacity(reduceTransparency: reduceTransparency)))
-                    .allowsHitTesting(false))
-                .overlay(shape.strokeBorder(StudioTheme.sidePanelStroke, lineWidth: 0.5).allowsHitTesting(false))
-                .padding(glassInset, AskMetrics.sidebarPanelInset)
-        } else if style.usesGlass {
-            content
-                .askInWindowGlass(corner: AskMetrics.sidebarPanelCorner, opaqueFill: glassFill)
+                .askInWindowGlass(corner: AskMetrics.sidebarPanelCorner, opaqueFill: glassFill,
+                                  placement: colorScheme == .light ? .windowEdge : .inWindow)
                 .padding(glassInset, AskMetrics.sidebarPanelInset)
         } else {
             content

@@ -108,6 +108,7 @@ final class StudioViewModel: ObservableObject {
     @Published var llmRemoteProvider: LLMRemoteProvider
     @Published var appearanceMode: AppearanceMode
     @Published var interfaceStyle: InterfaceStyle
+    @Published var liquidGlassIntensity: Double
     @Published var appLanguage: AppLanguage
     @Published var availableMicrophones: [AudioInputDevice] = []
     @Published var preferredMicrophoneID: String
@@ -347,6 +348,7 @@ final class StudioViewModel: ObservableObject {
         }
         appearanceMode = settingsStore.appearanceMode
         interfaceStyle = settingsStore.interfaceStyle
+        liquidGlassIntensity = settingsStore.liquidGlassIntensity
         appLanguage = settingsStore.appLanguage
         preferredMicrophoneID = settingsStore.preferredMicrophoneID
         instantVoiceInputEnabled = settingsStore.instantVoiceInputEnabled
@@ -1097,6 +1099,12 @@ final class StudioViewModel: ObservableObject {
     func setInterfaceStyle(_ style: InterfaceStyle) {
         interfaceStyle = style
         settingsStore.interfaceStyle = style
+    }
+
+    func setLiquidGlassIntensity(_ value: Double) {
+        let normalized = LiquidGlassIntensity.normalized(value)
+        liquidGlassIntensity = normalized
+        settingsStore.liquidGlassIntensity = normalized
     }
 
     func setAppLanguage(_ language: AppLanguage) {

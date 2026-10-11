@@ -198,6 +198,19 @@ final class SettingsStore {
         }
     }
 
+    var liquidGlassIntensity: Double {
+        get {
+            LiquidGlassIntensity.normalized(defaults.object(forKey: "ui.liquidGlassIntensity") as? Double
+                ?? LiquidGlassIntensity.defaultValue)
+        }
+        set {
+            let value = LiquidGlassIntensity.normalized(newValue)
+            guard liquidGlassIntensity != value else { return }
+            defaults.set(value, forKey: "ui.liquidGlassIntensity")
+            NotificationCenter.default.post(name: .interfaceStyleDidChange, object: self)
+        }
+    }
+
     var preferredMicrophoneID: String {
         get {
             defaults.string(forKey: "audio.input.preferredMicrophoneID")

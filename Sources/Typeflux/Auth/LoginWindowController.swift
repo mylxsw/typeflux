@@ -7,7 +7,8 @@ final class LoginWindowController: NSObject {
     static let defaultWindowSize = NSSize(width: 520, height: 620)
 
     private var window: NSWindow?
-    private var hostingView: NSHostingView<LoginView>?
+    private var hostingView: NSHostingView<AnyView>?
+    private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: settingsStore)
     private var appearanceObserver: NSObjectProtocol?
     private let settingsStore = SettingsStore()
 
@@ -45,7 +46,7 @@ final class LoginWindowController: NSObject {
                 self?.window?.close()
             }
         )
-        let hosting = NSHostingView(rootView: loginView)
+        let hosting = NSHostingView(rootView: AnyView(loginView.interfaceStyle(following: interfaceStyleObserver)))
         // Prevent NSHostingView from driving the window size via intrinsic content size
         hosting.sizingOptions = []
         hosting.translatesAutoresizingMaskIntoConstraints = true

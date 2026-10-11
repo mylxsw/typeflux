@@ -263,9 +263,12 @@ struct AskDraft: Codable, Equatable, Sendable {
     /// Source metadata is independent of selected text, screenshots and memory.
     var sentSource: String? { sourceOff == true ? nil : source }
 
+    /// Whitespace alone does not count as typed content; preserve the editor's original text.
+    var hasText: Bool { !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
     /// Attachments alone are a question too: "what is in this file" is implied.
     var canSend: Bool {
-        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        hasText ||
             (references ?? []).contains { !$0.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } ||
             !(attachments ?? []).isEmpty
     }

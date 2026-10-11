@@ -310,6 +310,11 @@ struct StudioVisualEffectBlur: NSViewRepresentable {
 }
 
 private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
+    @Environment(\.liquidGlassIntensity) private var intensity
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.interfaceStyle) private var style
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
     let shape: S
     let cornerRadius: CGFloat?
     let material: NSVisualEffectView.Material
@@ -317,6 +322,9 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
     let scrimOpacity: Double
     let strokeOpacity: Double
     let interactive: Bool
+
+    private var usesMaterial: Bool { style.usesGlass && !reduceTransparency && contrast != .increased }
+    private var usesNativeGlass: Bool { usesMaterial && AskGlassMaterial.systemSupportsLiquidGlass }
 
     init(
         shape: S,
@@ -338,28 +346,29 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
 
     var body: some View {
         Group {
-            #if compiler(>=6.2)
-                if #available(macOS 26.0, *) {
-                    ZStack {
+            if !usesMaterial {
+                shape.fill(StudioTheme.controlSurface)
+            } else {
+                #if compiler(>=6.2)
+                    if #available(macOS 26.0, *) {
                         shape
                             .fill(Color.clear)
                             .glassEffect(
-                                Glass.clear
+                                Glass.regular
                                     .interactive(interactive)
-                                    .tint(StudioTheme.glassTint.opacity(tintOpacity)),
+                                    .tint(StudioTheme.glassTint.opacity(intensity.nativeFrostOpacity(tintOpacity))),
                                 in: shape
                             )
+                            .overlay(shape.fill(AskWindowBackdrop.base(dark: colorScheme == .dark)
+                                .opacity(intensity.extraTintOpacity)))
 
-                        shape
-                            .fill(StudioTheme.glassScrim.opacity(scrimOpacity))
-                            .allowsHitTesting(false)
+                    } else {
+                        fallbackBackground
                     }
-                } else {
+                #else
                     fallbackBackground
-                }
-            #else
-                fallbackBackground
-            #endif
+                #endif
+            }
         }
         .clipShape(shape)
         .overlay(
@@ -376,6 +385,7 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
                     ),
                     lineWidth: StudioTheme.BorderWidth.thin
                 )
+                .opacity(usesMaterial && !usesNativeGlass ? 1 : 0)
         )
         .overlay(
             shape
@@ -393,6 +403,7 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
                     lineWidth: 0.6
                 )
                 .blendMode(.screen)
+                .opacity(usesMaterial && !usesNativeGlass ? 1 : 0)
         )
     }
 
@@ -406,9 +417,9 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
             .allowsHitTesting(false)
 
             shape
-                .fill(StudioTheme.glassScrim.opacity(scrimOpacity))
+                .fill(StudioTheme.glassScrim.opacity(intensity.legacyFrostOpacity(scrimOpacity)))
             shape
-                .fill(StudioTheme.glassTint.opacity(tintOpacity))
+                .fill(StudioTheme.glassTint.opacity(intensity.legacyFrostOpacity(tintOpacity)))
         }
     }
 }
@@ -420,6 +431,9 @@ struct StudioButtonChromeModifier: ViewModifier {
     let isPressed: Bool
     let minWidth: CGFloat?
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.interfaceStyle) private var style
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
     @State private var isHovering = false
 
     /// Light primary buttons are solid accent, #1D4ED8 under the pointer; dark keeps its gradient.
@@ -478,6 +492,8 @@ struct StudioButtonChromeModifier: ViewModifier {
 
                 buttonShape
                     .fill(isPressed ? StudioTheme.selectionSurface : StudioTheme.controlSurface)
+                    .opacity(style.usesGlass && !reduceTransparency && contrast != .increased
+                        ? (isPressed ? 0.22 : 0.08) : 1)
             }
             .brightness(isPressed ? -0.03 : (isLoading ? -0.015 : 0))
         case .ghost:
@@ -675,26 +691,32 @@ struct StudioShell<Content: View>: View {
 }
 
 struct StudioGlassBackground: View {
+    @Environment(\.liquidGlassIntensity) private var intensity
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.interfaceStyle) private var style
 
     let tintOpacity: Double
 
     var body: some View {
-        if colorScheme == .dark {
+        if !style.usesGlass || reduceTransparency || contrast == .increased {
+            StudioTheme.windowBackground
+                .background(AskWindowBackdrop.base(dark: colorScheme == .dark))
+        } else if colorScheme == .dark {
             ZStack {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
+                StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
 
                 StudioTheme.windowBackground
-                    .opacity(tintOpacity)
+                    .opacity(intensity.nativeFrostOpacity(tintOpacity))
+                AskWindowBackdrop.base(dark: true).opacity(intensity.extraTintOpacity)
             }
         } else {
             ZStack {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
+                StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
 
                 StudioTheme.windowBackground
-                    .opacity(tintOpacity)
+                    .opacity(intensity.nativeFrostOpacity(tintOpacity))
 
                 LinearGradient(
                     colors: [
@@ -713,6 +735,7 @@ struct StudioGlassBackground: View {
                     startPoint: .bottomLeading,
                     endPoint: .topTrailing
                 )
+                AskWindowBackdrop.base(dark: false).opacity(intensity.extraTintOpacity)
             }
         }
     }

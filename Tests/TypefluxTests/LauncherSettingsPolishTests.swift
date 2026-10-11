@@ -60,6 +60,35 @@ struct LauncherSettingsPolishTests {
         return fixture
     }
 
+    @Test func `window mode previews fit narrow panes and selection persists`() async throws {
+        let previous = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let fixture = try fixture()
+        for language in [AppLanguage.simplifiedChinese, .english] {
+            AppLocalization.shared.setLanguage(language)
+            for width in [320.0, 574.0] {
+                for light in [false, true] {
+                    fixture.settings.askLauncherWindowMode = .complete
+                    try await render(LauncherSettingsView(settings: fixture.settings),
+                                     size: NSSize(width: width, height: 520),
+                                     name: "window-mode-\(language.rawValue)-\(Int(width))-\(light ? "light" : "dark")",
+                                     light: light) { window in
+                        let bounds = window.convertToScreen(window.contentView!.bounds)
+                        let simple = try element("launcher.settings.windowMode.simple", in: window)
+                        let complete = try element("launcher.settings.windowMode.complete", in: window)
+                        #expect(bounds.contains(simple.frame) && bounds.contains(complete.frame))
+                        #expect(!simple.frame.intersects(complete.frame))
+                        try click(simple, in: window)
+                        #expect(fixture.settings.askLauncherWindowMode == .simple)
+                        try await Task.sleep(for: .milliseconds(80))
+                        try click(complete, in: window)
+                        #expect(fixture.settings.askLauncherWindowMode == .complete)
+                    }
+                }
+            }
+        }
+    }
+
     @Test func `pages render at default and minimum window sizes`() async throws {
         let previous = AppLocalization.shared.language
         let snapshots = ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_SNAPSHOTS"] != nil

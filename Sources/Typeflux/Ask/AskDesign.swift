@@ -300,7 +300,10 @@ enum AskTheme {
 /// Fixed metrics shared by the launcher panel and the workspace. The native
 /// window geometry depends on them, so they live next to the views that use them.
 enum AskMetrics {
-    static let launcherWidth: CGFloat = 680
+    /// AppKit dimensions use logical points.
+    static let launcherWidth: CGFloat = 700
+    /// The home suggestions' height budget; the panel follows its content height.
+    static let launcherWindowHeight: CGFloat = 600
     /// Breathing room around the launcher card.
     static let launcherGutter: CGFloat = 6
     /// Compact corners for the floating launcher, shared by its glass and content clip.
@@ -421,7 +424,7 @@ struct AskComposerChrome: Equatable {
         glass: true,
         editorTopInset: 12,
         editorBottomInset: 12,
-        footerHeight: 42,
+        footerHeight: 48,
         footerLeadingInset: 7
     )
 
@@ -1303,8 +1306,10 @@ enum AskPresentation {
 /// wallpaper reads only as a soft cast, never as the window's colour. The
 /// classic style is an opaque canvas instead.
 struct AskWindowBackdrop: View {
+    @Environment(\.liquidGlassIntensity) private var intensity
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.interfaceStyle) private var style
 
     /// The app's own tint over the blurred desktop.
@@ -1316,15 +1321,19 @@ struct AskWindowBackdrop: View {
     /// and legible on any wallpaper, light enough that it still reads as frosted.
     static func tintOpacity(dark: Bool, reduceTransparency: Bool) -> Double {
         if reduceTransparency { return 1 }
-        return dark ? 0.78 : 0.95
+        // The system material already supplies a readable light backplate.
+        // A heavy white overlay erased its behind-window colour completely.
+        return dark ? 0.68 : 0.22
     }
 
     var body: some View {
         let dark = colorScheme == .dark
         ZStack {
-            if style.usesGlass {
+            if style.usesGlass && !reduceTransparency && contrast != .increased {
                 StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
-                Self.base(dark: dark).opacity(Self.tintOpacity(dark: dark, reduceTransparency: reduceTransparency))
+                Self.base(dark: dark).opacity(intensity.backdropOpacity(Self.tintOpacity(dark: dark, reduceTransparency: false)))
+            } else if style.usesGlass {
+                Self.base(dark: dark)
             } else {
                 AskClassic.canvas
             }

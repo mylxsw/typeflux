@@ -13,7 +13,8 @@ final class AboutWindowController: NSObject {
 
     private let settingsStore = SettingsStore()
     private var window: NSWindow?
-    private var hostingView: NSHostingView<AboutView>?
+    private var hostingView: NSHostingView<AnyView>?
+    private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: settingsStore)
     private var languageObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
 
@@ -26,7 +27,7 @@ final class AboutWindowController: NSObject {
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self, let window = self.window else { return }
-                self.hostingView?.rootView = AboutView(appearanceMode: self.settingsStore.appearanceMode)
+                self.hostingView?.rootView = self.rootView()
                 window.title = L("window.about")
             }
         }
@@ -37,7 +38,7 @@ final class AboutWindowController: NSObject {
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self, let window = self.window else { return }
-                self.hostingView?.rootView = AboutView(appearanceMode: self.settingsStore.appearanceMode)
+                self.hostingView?.rootView = self.rootView()
                 self.applyAppearance(to: window)
             }
         }
@@ -45,7 +46,7 @@ final class AboutWindowController: NSObject {
 
     func show() {
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
-        let rootView = AboutView(appearanceMode: settingsStore.appearanceMode)
+        let rootView = rootView()
 
         if let window {
             hostingView?.rootView = rootView
@@ -87,6 +88,10 @@ final class AboutWindowController: NSObject {
 
     private func applyAppearance(to window: NSWindow) {
         window.appearance = AppAppearance.nsAppearance(for: settingsStore.appearanceMode)
+    }
+
+    private func rootView() -> AnyView {
+        AnyView(AboutView(appearanceMode: settingsStore.appearanceMode).interfaceStyle(following: interfaceStyleObserver))
     }
 }
 

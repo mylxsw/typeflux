@@ -453,6 +453,7 @@ struct StudioView: View {
         }
         .interfaceStyle(following: interfaceStyleObserver)
         .onChange(of: interfaceStyleObserver.style) { viewModel.interfaceStyle = $0 }
+        .onChange(of: interfaceStyleObserver.glassIntensity) { viewModel.liquidGlassIntensity = $0.value }
         .onAppear {
             AppLocalization.shared.setLanguage(viewModel.appLanguage)
             viewModel.schedulePermissionRefresh()
@@ -1976,6 +1977,13 @@ struct StudioView: View {
                             )
                         )
                         .frame(width: StudioTheme.Layout.appearancePickerWidth)
+                    }
+
+                    if viewModel.interfaceStyle.usesGlass {
+                        LiquidGlassIntensitySetting(value: Binding(
+                            get: { viewModel.liquidGlassIntensity },
+                            set: viewModel.setLiquidGlassIntensity
+                        ))
                     }
 
                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))

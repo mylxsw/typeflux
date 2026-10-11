@@ -5,6 +5,26 @@ import Testing
 
 @Suite("Ask workspace glass")
 struct AskWorkspaceGlassTests {
+    @Test(arguments: [false, true]) func nativeGlassKeepsItsOpticsAndMenuHierarchy(dark: Bool) {
+        for placement in [AskGlassPlacement.floating, .inWindow, .windowEdge, .menu] {
+            let native = placement.frost(dark: dark, material: .liquidGlass)
+            #expect(native > 0 && native < 0.35)
+            #expect(native < placement.frost(dark: dark, material: .visualEffect))
+        }
+        #expect(AskGlassPlacement.menu.frost(dark: dark, material: .liquidGlass)
+            > AskGlassPlacement.floating.frost(dark: dark, material: .liquidGlass))
+    }
+
+    @Test(arguments: [AskGlassMaterial.liquidGlass, .visualEffect, .opaque])
+    func accessibilitySettingsOverrideEvenPinnedGlass(material: AskGlassMaterial) {
+        #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: true,
+                                                   increasedContrast: false) == .opaque)
+        #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: false,
+                                                   increasedContrast: true) == .opaque)
+        #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: false,
+                                                   increasedContrast: false) == material)
+    }
+
     @Test func floatingGlassBlursWhatIsBehindThePanel() {
         #expect(AskGlassPlacement.floating.blending == .behindWindow)
         #expect(AskGlassPlacement.floating.fallbackMaterial == .popover)

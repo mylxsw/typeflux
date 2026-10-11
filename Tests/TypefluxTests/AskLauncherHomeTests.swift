@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 import Testing
 @testable import Typeflux
 
@@ -64,85 +65,16 @@ struct AskLauncherHomeTests {
         AskConversationSummary(id: id, title: title ?? "Conversation " + id, updatedAt: Self.now.addingTimeInterval(-ago))
     }
 
-    // MARK: - Context section
-
-    @Test func selectedTextOffersItsKeywordsWithThePreview() throws {
-        let sections = Home.build(context(selection: "first line\nsecond line", bundle: "com.apple.Notes"))
-        let section = try #require(contextRows(sections))
-        #expect(section.title == L("ask.home.section.selection", 2))
-        #expect(section.subtitle == "“first line second line”")
-        #expect(section.rows.map(\.id) == ["text.translate", "text.polish", "text.explain"])
-        #expect(section.rows.map(\.keyword) == ["fy", "rw", "ex"])
-        #expect(section.rows[0].action == .keyword(Self.translate))
-        #expect(section.rows.allSatisfy { $0.title != $0.id && !$0.title.hasPrefix("ask.home") })
-    }
-
-    @Test func longSelectionsAreWorthSummarisingAndTheListStaysShort() throws {
-        let lines = Array(repeating: "A sentence that goes on.", count: 4).joined(separator: "\n")
-        let rows = try #require(contextRows(Home.build(context(selection: lines)))).rows
-        #expect(rows.map(\.id) == ["text.translate", "text.summarize", "text.polish", "text.explain"])
-        #expect(rows.count == Home.maximumContextRows)
-        let long = String(repeating: "word ", count: 50)
-        let single = try #require(contextRows(Home.build(context(selection: long)))).rows
-        #expect(single.map(\.id).contains("text.summarize"))
-    }
-
-    @Test func aSelectedWordIsLookedUpFirst() throws {
-        let section = try #require(contextRows(Home.build(context(selection: "  ephemeral \n"))))
-        #expect(section.title == L("ask.home.section.word"))
-        #expect(section.subtitle == nil)
-        #expect(section.rows.map(\.id) == ["word.lookup", "word.examples", "word.explain"])
-        #expect(section.rows[0].title == L("ask.home.word.lookup", "ephemeral"))
-        #expect(section.rows[0].action == .keyword(Self.translate))
-        #expect(section.rows[1].action == .ask(L("ask.home.word.examples.prompt")))
-        // Without the keywords only the question is left.
-        let bare = try #require(contextRows(Home.build(context(selection: "ephemeral", keywords: []))))
-        #expect(bare.rows.map(\.id) == ["word.examples"])
-    }
-
-    @Test func codeInAnEditorGetsDeveloperActions() throws {
-        let code = "func a() {\n  return 1\n}"
-        let section = try #require(contextRows(Home.build(context(selection: code, bundle: "com.apple.dt.Xcode"))))
-        #expect(section.title == L("ask.home.section.code", 3))
-        #expect(section.rows.map(\.id) == ["code.explain", "code.review", "code.tests"])
-        #expect(section.rows[1].action == .ask(L("ask.home.code.review.prompt")))
-        #expect(section.rows[2].action == .ask(L("ask.home.code.tests.prompt")))
-        let withoutExplain = try #require(contextRows(Home.build(context(selection: code, bundle: "com.jetbrains.goland",
-                                                                         keywords: []))))
-        #expect(withoutExplain.rows.map(\.id) == ["code.review", "code.tests"])
-    }
-
-    @Test func aBrowserWithoutSelectionOffersItsPage() throws {
-        let section = try #require(contextRows(Home.build(context(bundle: "com.google.Chrome", window: " Pricing – Linear "))))
-        #expect(section.title == L("ask.home.section.page"))
-        #expect(section.subtitle == "Pricing – Linear")
-        #expect(section.rows.map(\.action) == [.ask(L("ask.home.page.summary.prompt"))])
-        let untitled = try #require(contextRows(Home.build(context(bundle: "com.apple.Safari", window: " "))))
-        #expect(untitled.subtitle == nil)
-        // Browsers Ask cannot read, and other apps, offer nothing for the context.
-        #expect(contextRows(Home.build(context(bundle: "org.mozilla.firefox"))) == nil)
-        #expect(contextRows(Home.build(context(bundle: "com.tencent.xinWeChat"))) == nil)
-        #expect(contextRows(Home.build(context(selection: " \n ", bundle: "com.apple.Notes"))) == nil)
-    }
-
-    @Test func textWithNoUsableKeywordOffersNoContextSection() {
-        #expect(contextRows(Home.build(context(selection: "one\ntwo", keywords: []))) == nil)
-    }
-
-    @Test func keywordLookupPrefersPlainAndUnchangedKeywords() {
-        let custom = AskKeyword(keyword: "rw2", pluginID: AskPromptPlugin.id,
-                                options: [AskPromptPlugin.presetOption: "polish", AskPromptPlugin.promptOption: "Shout {input}"])
-        #expect(Home.promptKeyword(.polish, in: [custom].map(Self.choice)) == nil)
-        #expect(Home.promptKeyword(.polish, in: [custom, Self.polish].map(Self.choice))?.keyword == Self.polish)
-        #expect(Home.translateKeyword([Self.dict, Self.translateJapanese, Self.translate].map(Self.choice))?.keyword
-            == Self.translate)
-        #expect(Home.translateKeyword([Self.dict, Self.translateJapanese].map(Self.choice))?.keyword == Self.translateJapanese)
-        #expect(Home.translateKeyword([Self.dict].map(Self.choice)) == nil)
+    @Test func capturedSelectionKeepsHistoryAtTheTop() {
+        let sections = Home.build(context(selection: "first line\nsecond line", bundle: "com.apple.Notes",
+                                          conversations: [conversation("a", ago: 60)]))
+        #expect(contextRows(sections) == nil)
+        #expect(recentRows(sections).map(\.id) == ["conversation.a"])
     }
 
     // MARK: - Recent conversations
 
-    @Test func recentConversationsAreFreshNewestFirstAndFitTheSpaceLeft() {
+    @Test func recentConversationsAreNewestFirstAndLimitedToThree() {
         let conversations = [conversation("old", ago: 2 * 24 * 3600), conversation("b", ago: 3600),
                              conversation("a", ago: 60), conversation("c", ago: 7200), conversation("untitled", title: "", ago: 10),
                              conversation("d", ago: 9000)]
@@ -150,27 +82,39 @@ struct AskLauncherHomeTests {
         #expect(alone.map(\.id) == ["conversation.a", "conversation.b", "conversation.c"])
         #expect(alone[0].action == .conversation(id: "a"))
         #expect(alone[0].date == Self.now.addingTimeInterval(-60))
-        // Beside a page's actions there is room for two.
+        // Browser context keeps the same three recent conversations.
         let beside = recentRows(Home.build(context(bundle: "com.google.Chrome", conversations: conversations)))
-        #expect(beside.map(\.id) == ["conversation.a", "conversation.b"])
-        // Selected text leaves them out, even when no keyword can act on it.
-        #expect(recentRows(Home.build(context(selection: "one\ntwo", conversations: conversations))).isEmpty)
-        #expect(recentRows(Home.build(context(selection: "one", keywords: [], conversations: conversations))).isEmpty)
+        #expect(beside.map(\.id) == ["conversation.a", "conversation.b", "conversation.c"])
+        // Captured selections do not replace the default home.
+        #expect(recentRows(Home.build(context(selection: "one\ntwo", conversations: conversations))).count == 3)
+        #expect(recentRows(Home.build(context(selection: "one", keywords: [], conversations: conversations))).count == 3)
         // A blank selection is no selection.
         #expect(recentRows(Home.build(context(selection: "  \n", conversations: conversations))).count == 3)
         #expect(recentRows(Home.build(context())).isEmpty)
-        #expect(Home.recentBudget(contextRows: 0) == 3)
-        #expect(Home.recentBudget(contextRows: 3) == 2)
-        #expect(Home.recentBudget(contextRows: 9) == 1)
+        #expect(recentRows(Home.build(context(conversations: [conversation("old", ago: 3 * 24 * 3600)]))).count == 1)
     }
 
     // MARK: - Keywords
 
-    @Test func newUsersAreTaughtTheBuiltInKeywords() throws {
-        let taught = try #require(chips(Home.build(context(usage: [Self.google.id: 2]))))
-        #expect(taught.teaching)
-        #expect(taught.chips.map(\.keyword.keyword) == ["fy", "rw", "sum", "g"])
+    @Test func unusedKeywordsFollowTheSessionShuffleAndOneUseAlreadyRanksFirst() throws {
+        var input = context()
+        input.fallbackKeywordIDs = Self.builtIn.reversed().map { $0.keyword.id }
+        let fallback = try #require(chips(Home.build(input)))
+        #expect(fallback.teaching)
+        #expect(fallback.chips.map(\.keyword.id) == Array(input.fallbackKeywordIDs.prefix(Home.maximumChips)))
+        input.usage = [Self.translate.id: 1]
+        let used = try #require(chips(Home.build(input)))
+        #expect(!used.teaching)
+        #expect(used.chips.first?.keyword == Self.translate)
+        #expect(used.chips.count == Home.maximumChips)
         #expect(chips(Home.build(context(keywords: []))) == nil)
+    }
+
+    @Test func equalUsageCountsPreferTheMostRecentlyUsedKeyword() throws {
+        var input = context(usage: [Self.translate.id: 10, Self.google.id: 10, Self.polish.id: 11])
+        input.lastUsed = [Self.translate.id: Self.now, Self.google.id: Self.now.addingTimeInterval(60)]
+        let ranked = try #require(chips(Home.build(input)))
+        #expect(Array(ranked.chips.prefix(3).map(\.keyword.keyword)) == ["rw", "g", "fy"])
     }
 
     @Test func usedKeywordsAreRankedByUsageThenTheUsersOrder() throws {
@@ -178,7 +122,7 @@ struct AskLauncherHomeTests {
         let usage = [Self.ip.id: 5.0, Self.google.id: 1.0, Self.translate.id: 1.0, Self.polish.id: 3.0, "gone": 9.0]
         let ranked = try #require(chips(Home.build(context(keywords: keywords, usage: usage))))
         #expect(!ranked.teaching)
-        #expect(ranked.chips.map(\.keyword.keyword) == ["ip", "rw", "fy", "g"])
+        #expect(Array(ranked.chips.prefix(4).map(\.keyword.keyword)) == ["ip", "rw", "fy", "g"])
         #expect(ranked.chips[0].title == "IP")
         let everything = Dictionary(uniqueKeysWithValues: keywords.map { ($0.keyword.id, 1.0) })
         #expect(try #require(chips(Home.build(context(keywords: keywords, usage: everything)))).chips.count
@@ -189,19 +133,52 @@ struct AskLauncherHomeTests {
         #expect(Home.build(context(keywords: [])).isEmpty)
     }
 
+    @Test func applicationsFillTheSpaceBetweenHistoryAndKeywords() throws {
+        var input = context(conversations: [conversation("a", ago: 60), conversation("b", ago: 120), conversation("c", ago: 180)])
+        input.applications = (0 ..< 20).map { AskTestAppIndex.app("App \($0)", id: "test.app.\($0)") }
+        let sections = Home.build(input)
+        guard case .recent = sections.first, case .applications = sections[1], case .keywords = sections.last else {
+            Issue.record("History, applications and keywords must stay in display order")
+            return
+        }
+        for height in [CGFloat(320), 380, 480] {
+            let fitted = AskLauncherSuggestions.fitting(sections, height: height)
+            let rows = Home.items(fitted).compactMap { item -> Home.Row? in
+                guard case let .row(row) = item, case .application = row.action else { return nil }
+                return row
+            }
+            #expect(!rows.isEmpty)
+            #expect(rows.first?.action == .application(input.applications[0]))
+            #expect(AskLauncherSuggestions.height(for: fitted) <= height)
+            #expect(height - AskLauncherSuggestions.height(for: fitted)
+                < AskLauncherSuggestions.rowHeight + AskLauncherSuggestions.rowSpacing)
+            #expect(recentRows(fitted).count == 3)
+            #expect(try #require(chips(fitted)).chips.count == Home.maximumChips)
+        }
+        let short = AskLauncherSuggestions.fitting(sections, height: 280)
+        #expect(!short.contains { if case .applications = $0 { true } else { false } })
+        #expect(recentRows(short).count == 3)
+        #expect(chips(short) != nil)
+        input.conversations = []
+        let withoutHistory = AskLauncherSuggestions.fitting(Home.build(input), height: 380)
+        #expect(Home.numberedRows(withoutHistory).count > Home.numberedRows(AskLauncherSuggestions.fitting(sections, height: 380)).count - 3)
+    }
+
     // MARK: - Navigation
 
     @Test func theArrowsMoveThroughRowsAndTheChipRowIsOneStop() {
-        // A selection's actions with a conversation between them and the chips, which `build`
-        // never puts together (a selection leaves conversations out), to walk every kind of stop.
-        let selection = Home.build(context(selection: "one\ntwo"))
+        let actions = ["translate", "polish", "explain"].map {
+            Home.Row(id: "text." + $0, title: $0, symbol: "star", tint: .accent, action: .ask($0))
+        }
+        let selection: [Home.Section] = [.context(title: "Actions", subtitle: nil, rows: actions)]
+            + Home.build(context())
         let recent = Home.build(context(conversations: [conversation("a", ago: 60)])).filter {
             if case .recent = $0 { true } else { false }
         }
         let sections = [selection[0]] + recent + selection.dropFirst()
         let items = Home.items(sections)
-        // Three actions, a conversation, four chips.
-        #expect(items.count == 8)
+        // Three actions, a conversation, six chips.
+        #expect(items.count == 10)
         #expect(items.map(\.id).prefix(4) == ["text.translate", "text.polish", "text.explain", "conversation.a"])
         #expect(items[4].id == "chip." + Self.translate.id)
         #expect(Home.move(0, by: 1, in: items) == 1)
@@ -210,7 +187,7 @@ struct AskLauncherHomeTests {
         #expect(Home.move(6, by: -1, in: items) == 3, "from any chip, ↑ goes to the last row")
         #expect(Home.move(0, by: -1, in: items) == 4, "↑ from the first row lands on the chips")
         #expect(Home.move(4, by: 1, in: items, horizontal: true) == 5)
-        #expect(Home.move(4, by: -1, in: items, horizontal: true) == 7)
+        #expect(Home.move(4, by: -1, in: items, horizontal: true) == 9)
         #expect(Home.move(1, by: 1, in: items, horizontal: true) == 1, "←/→ do nothing on a row")
         #expect(Home.move(42, by: 1, in: items) == 0)
         #expect(Home.move(3, by: 1, in: []) == 0)
@@ -264,7 +241,7 @@ struct AskLauncherHomeTests {
         #expect(AskLauncherSuggestions.height(for: [.recent(rows: [row])])
             == base + AskLauncherSuggestions.headerHeight + AskLauncherSuggestions.rowHeight)
         #expect(AskLauncherSuggestions.height(for: [.keywords(chips: [], teaching: false)])
-            == base + AskLauncherSuggestions.headerHeight + AskLauncherSuggestions.chipRowHeight)
+            == base + AskLauncherSuggestions.chipRowHeight)
         #expect(AskLauncherSuggestions.typicalHeight > AskVoicePanel.minimumHeight)
     }
 
@@ -293,9 +270,19 @@ struct AskLauncherHomeTests {
         let store = AskKeywordUsageStore(defaults: defaults)
         #expect(store.scores().isEmpty)
         store.record(Self.translate, at: Self.now)
-        #expect(AskKeywordUsageStore(defaults: defaults).scores(at: Self.now)[Self.translate.id] == 1)
+        store.record(Self.translate, at: Self.now.addingTimeInterval(AskKeywordUsage.halfLife * 3))
+        #expect(AskKeywordUsageStore(defaults: defaults).usage.entries[Self.translate.id]?.count == 2)
         defaults.set(Data("not json".utf8), forKey: AskKeywordUsageStore.defaultsKey)
         #expect(AskKeywordUsageStore(defaults: defaults).usage == AskKeywordUsage())
+    }
+
+    @Test func olderUsageWithoutCountsMigratesAndKeepsRecording() throws {
+        let json = Data("{\"entries\":{\"fy\":{\"score\":2.2,\"lastUsed\":0}}}".utf8)
+        var usage = try JSONDecoder().decode(AskKeywordUsage.self, from: json)
+        #expect(usage.entries["fy"]?.count == 3)
+        usage.record("fy", at: Self.now)
+        #expect(usage.entries["fy"]?.count == 4)
+        #expect(try JSONDecoder().decode(AskKeywordUsage.self, from: JSONEncoder().encode(usage)) == usage)
     }
 
     // MARK: - Model
@@ -321,7 +308,7 @@ struct AskLauncherHomeTests {
         #expect(context.selection == nil)
         #expect(context.keywords.contains { $0.keyword.keyword == "fy" && $0.title == L("ask.plugin.translate.title") })
         #expect(context.keywords.contains { $0.keyword.keyword == "rw" && $0.title == AskPromptPlugin.Preset.polish.title })
-        #expect(contextRows(f.model.launcherHome(now: Self.now))?.title == L("ask.home.section.page"))
+        #expect(contextRows(f.model.launcherHome(now: Self.now)) == nil)
         // Source switched off: the home no longer knows the app.
         f.model.launcherDraft.sourceOff = true
         context = f.model.launcherHomeContext(now: Self.now)
@@ -362,6 +349,65 @@ struct AskLauncherHomeTests {
         #expect(f.model.plugins.detect(in: "sum hello") == "hello")
         #expect((store.scores()[Self.summarize.id] ?? 0) > 0.99)
         f.model.plugins.deactivate()
+    }
+
+    @Test func theModelUsesExactCountsAndAppPreferences() throws {
+        let f = try AskTestFixture()
+        let (store, defaults, suite) = try usageStore()
+        defer { defaults.removePersistentDomain(forName: suite); f.model.resetSession() }
+        f.model.keywordUsage = store
+        let app = AskTestAppIndex.app("Notes")
+        let index = AskTestAppIndex([app])
+        f.model.appIndex = index
+        store.record(Self.translate, at: Self.now.addingTimeInterval(-AskKeywordUsage.halfLife * 10))
+        store.record(Self.translate, at: Self.now.addingTimeInterval(-AskKeywordUsage.halfLife * 9))
+        store.record(Self.google, at: Self.now)
+        let input = f.model.launcherHomeContext(now: Self.now)
+        #expect(input.usage[Self.translate.id] == 2)
+        #expect(input.applications == [app])
+        #expect(f.model.launcherHomeContext(now: Self.now).fallbackKeywordIDs == input.fallbackKeywordIDs)
+        f.model.modelLibrary.settings.askQuickAppSearchEnabled = false
+        #expect(f.model.launcherHomeContext(now: Self.now).applications.isEmpty)
+        f.model.openApplication = { _ in }
+        f.model.openQuickApp(app)
+        #expect(index.launched == [app.id])
+    }
+
+    @Test func renderFilledHome() async throws {
+        guard let folder = ProcessInfo.processInfo.environment["TYPEFLUX_HOME_SNAPSHOTS"] else { return }
+        let f = try AskTestFixture()
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { f.model.resetSession(); AppLocalization.shared.setLanguage(previousLanguage) }
+        for (id, title, age) in [("a", "帮我整理这周的工作安排", 600.0), ("b", "解释一下这段代码", 3600.0),
+                                 ("c", "写一个简洁的产品介绍", 7200.0)] {
+            await f.api.seed(.init(id: id, title: title, revision: 1, updatedAt: Date().addingTimeInterval(-age), messages: []))
+        }
+        await f.model.refreshHistory()
+        let appIDs = ["com.apple.Safari", "com.apple.Notes", "com.apple.Terminal", "com.apple.iCal",
+                      "com.apple.calculator", "com.apple.MobileSMS", "com.apple.Music", "com.apple.Photos",
+                      "com.apple.reminders", "com.apple.mail", "com.apple.TextEdit", "com.apple.iBooksX"]
+        f.model.appIndex = AskTestAppIndex(appIDs.compactMap { id in
+            NSWorkspace.shared.urlForApplication(withBundleIdentifier: id).flatMap(AskAppIndex.entry(at:))
+        })
+        let output = URL(fileURLWithPath: folder)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        for (name, appearance, scheme) in [("dark", NSAppearance.Name.darkAqua, ColorScheme.dark), ("light", .aqua, .light)] {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600), styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.appearance = NSAppearance(named: appearance)
+            let view = NSHostingView(rootView: AskLauncherView(model: f.model, onDismiss: {})
+                .preferredColorScheme(scheme))
+            window.contentView = view
+            window.orderFront(nil)
+            defer { window.orderOut(nil); window.close() }
+            try await Task.sleep(for: .milliseconds(300))
+            view.layoutSubtreeIfNeeded()
+            let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+            view.cacheDisplay(in: view.bounds, to: bitmap)
+            let png = try #require(bitmap.representation(using: .png, properties: [:]))
+            try png.write(to: output.appendingPathComponent("launcher-home-\(name).png"))
+        }
     }
 
     @Test func aQuestionRowSendsWithTheCapturedContext() async throws {

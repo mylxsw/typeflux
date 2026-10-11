@@ -17,7 +17,8 @@ struct ClipboardPanelView: View {
     @ObservedObject var model: ClipboardPanelModel
     let focusRequest: Int
     /// Read from settings each time the panel opens.
-    var interfaceStyle: InterfaceStyle = .liquidGlass
+    var interfaceStyle: InterfaceStyle? = nil
+    @Environment(\.interfaceStyle) private var environmentStyle
     @ObservedObject var layout = ClipboardPanelLayout()
     @FocusState private var searchFocused: Bool
     @Namespace private var tabNamespace
@@ -27,6 +28,8 @@ struct ClipboardPanelView: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.askGlassMaterialOverride) private var materialOverride
+
+    private var effectiveStyle: InterfaceStyle { interfaceStyle ?? environmentStyle }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,7 +48,7 @@ struct ClipboardPanelView: View {
         .foregroundStyle(StudioTheme.textPrimary)
         .background(AskGlassBackground(
             material: materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
-                                                                   style: interfaceStyle),
+                                                                   style: effectiveStyle),
             corner: 16, opaqueFill: AskTheme.launcherSurface
         ))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -63,7 +66,7 @@ struct ClipboardPanelView: View {
             }
         }
         .environment(\.askLauncherNumberHints, showingNumberHints)
-        .environment(\.interfaceStyle, interfaceStyle)
+        .environment(\.interfaceStyle, effectiveStyle)
         .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
         .onAppear { searchFocused = true }
         .onChange(of: focusRequest) { _ in searchFocused = true }

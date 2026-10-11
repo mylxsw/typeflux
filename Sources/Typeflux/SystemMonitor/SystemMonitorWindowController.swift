@@ -29,7 +29,8 @@ final class SystemMonitorWindowController: NSObject, NSWindowDelegate {
     var screens: () -> [NSScreen] = { NSScreen.screens }
 
     private(set) var panel: SystemMonitorPanel?
-    private var hosting: NSHostingView<SystemMonitorWindowView>?
+    private var hosting: NSHostingView<AnyView>?
+    private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: SettingsStore(defaults: defaults))
     private var client: UUID?
     private var flashTask: Task<Void, Never>?
 
@@ -158,7 +159,8 @@ final class SystemMonitorWindowController: NSObject, NSWindowDelegate {
         panel.setAccessibilityTitle(L("system.monitor.title"))
         panel.onClose = { [weak self] in self?.close() }
         panel.delegate = self
-        let hosting = NSHostingView(rootView: SystemMonitorWindowView(controller: self, model: model, store: store))
+        let hosting = NSHostingView(rootView: AnyView(SystemMonitorWindowView(controller: self, model: model, store: store)
+            .interfaceStyle(following: interfaceStyleObserver)))
         // Measured for `fittingSize`; the controller sizes the panel itself.
         hosting.sizingOptions = [.intrinsicContentSize]
         panel.contentView = hosting

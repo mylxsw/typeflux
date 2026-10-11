@@ -1,12 +1,28 @@
 import Foundation
 
-/// How much each launcher keyword has been used lately, so the launcher can
-/// offer the ones a person actually reaches for. Each use adds one to a score
-/// that halves every two weeks, so habits that changed fade out on their own.
+/// Usage counts and last-use times rank the launcher keywords. The older
+/// decaying score remains available for compatibility with existing callers.
 struct AskKeywordUsage: Codable, Equatable {
     struct Entry: Codable, Equatable {
         var score: Double
         var lastUsed: Date
+        var count: Int = 0
+
+        private enum CodingKeys: String, CodingKey { case score, lastUsed, count }
+
+        init(score: Double, lastUsed: Date, count: Int = 0) {
+            self.score = score
+            self.lastUsed = lastUsed
+            self.count = count
+        }
+
+        init(from decoder: Decoder) throws {
+            let values = try decoder.container(keyedBy: CodingKeys.self)
+            score = try values.decode(Double.self, forKey: .score)
+            lastUsed = try values.decode(Date.self, forKey: .lastUsed)
+            // Older versions stored a decaying score only; keep its best available estimate.
+            count = try values.decodeIfPresent(Int.self, forKey: .count) ?? max(1, Int(score.rounded(.up)))
+        }
     }
 
     /// By `AskKeyword.id`.
@@ -23,9 +39,13 @@ struct AskKeywordUsage: Codable, Equatable {
 
     mutating func record(_ id: String, at date: Date) {
         let previous = entries[id].map { Self.decayed($0, at: date) } ?? 0
-        entries[id] = Entry(score: previous + 1, lastUsed: max(date, entries[id]?.lastUsed ?? date))
+        entries[id] = Entry(score: previous + 1, lastUsed: max(date, entries[id]?.lastUsed ?? date),
+                            count: (entries[id]?.count ?? 0) + 1)
         guard entries.count > Self.maximumEntries else { return }
-        let ranked = entries.sorted { Self.decayed($0.value, at: date) > Self.decayed($1.value, at: date) }
+        let ranked = entries.sorted {
+            if $0.value.count != $1.value.count { return $0.value.count > $1.value.count }
+            return $0.value.lastUsed > $1.value.lastUsed
+        }
         entries = Dictionary(uniqueKeysWithValues: ranked.prefix(Self.maximumEntries).map { ($0.key, $0.value) })
     }
 

@@ -47,6 +47,7 @@ struct AskLauncherSuggestions: View {
     @Binding var highlighted: Int
     var onPick: (AskLauncherHome.Item) -> Void
     var now = Date()
+    var viewportHeight: CGFloat?
 
     static let rowHeight: CGFloat = 44
     static let rowSpacing: CGFloat = 2
@@ -66,14 +67,25 @@ struct AskLauncherSuggestions: View {
         guard !sections.isEmpty else { return 0 }
         let content = sections.reduce(CGFloat(0)) { total, section in
             switch section {
-            case let .context(_, _, rows), let .recent(rows):
+            case let .context(_, _, rows), let .recent(rows), let .applications(rows):
                 let count = CGFloat(rows.count)
                 return total + headerHeight + count * rowHeight + max(0, count - 1) * rowSpacing
             case .keywords:
-                return total + headerHeight + chipRowHeight
+                return total + chipRowHeight
             }
         }
         return 1 + listPadding * 2 + content
+    }
+
+    /// Keep complete app rows between the top section and the single keyword row.
+    static func fitting(_ sections: [AskLauncherHome.Section], height: CGFloat) -> [AskLauncherHome.Section] {
+        let fixed = sections.filter { if case .applications = $0 { false } else { true } }
+        let space = height - Self.height(for: fixed) - (fixed.isEmpty ? 1 + listPadding * 2 : 0) - headerHeight
+        let count = max(0, Int(floor((space + rowSpacing) / (rowHeight + rowSpacing))))
+        return sections.compactMap {
+            guard case let .applications(rows) = $0 else { return $0 }
+            return count > 0 ? .applications(rows: Array(rows.prefix(count))) : nil
+        }
     }
 
     /// A typical home (three rows — a selection's actions or the recent conversations —
@@ -95,6 +107,7 @@ struct AskLauncherSuggestions: View {
             case .keyword: action = L("ask.home.hint.run")
             case .ask: action = L("ask.home.hint.ask")
             case .conversation: action = L("ask.home.hint.open")
+            case .application: action = L("ask.quick.hint.app")
             }
         case .chip: action = L("ask.home.hint.chip")
         case nil: return L(hasContext ? "ask.launcher.hint.context" : "ask.launcher.hint")
@@ -122,11 +135,13 @@ struct AskLauncherSuggestions: View {
             Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
+                    if case .keywords = section, viewportHeight != nil { Spacer(minLength: 0) }
                     sectionView(section, items: items, numbers: numbers, current: current)
                 }
             }
             .padding(Self.listPadding)
         }
+        .frame(height: viewportHeight ?? Self.height(for: sections), alignment: .top)
         .background(AskLauncherHomeKeyMonitor { key in handle(key, items: items) })
         .onAppear { clampHighlight(items.count) }
         .onChange(of: items.count) { clampHighlight($0) }
@@ -163,17 +178,27 @@ struct AskLauncherSuggestions: View {
         case let .recent(rows):
             header(L("ask.home.section.recent"), subtitle: nil)
             rowList(rows, items: items, numbers: numbers, current: current)
-        case let .keywords(chips, teaching):
-            header(L(teaching ? "ask.home.section.tryKeywords" : "ask.home.section.keywords"), subtitle: nil)
-            HStack(spacing: 6) {
-                ForEach(chips) { chip in
-                    let item = AskLauncherHome.Item.chip(chip)
-                    chipView(chip, highlighted: item.id == current)
-                        .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
+        case let .applications(rows):
+            header(L("ask.home.section.apps"), subtitle: nil)
+            rowList(rows, items: items, numbers: numbers, current: current)
+        case let .keywords(chips, _):
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(chips) { chip in
+                            let item = AskLauncherHome.Item.chip(chip)
+                            chipView(chip, highlighted: item.id == current)
+                                .id(item.id)
+                                .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
+                        }
+                    }
+                    .padding(.horizontal, Self.contentInset)
+                    .frame(height: Self.chipRowHeight)
                 }
-                Spacer(minLength: 0)
+                .onChange(of: current) { id in
+                    if let id, id.hasPrefix("chip.") { proxy.scrollTo(id) }
+                }
             }
-            .padding(.horizontal, Self.contentInset)
             .frame(height: Self.chipRowHeight)
             .clipped()
         }
@@ -264,13 +289,19 @@ struct AskLauncherSuggestions: View {
         .accessibilityAddTraits(highlighted ? .isSelected : [])
     }
 
+    @ViewBuilder
     private func tile(_ row: AskLauncherHome.Row) -> some View {
-        Image(systemName: row.symbol).font(.system(size: 12.5))
+        if case let .application(app) = row.action {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: app.url.path))
+                .resizable().interpolation(.high).scaledToFit().frame(width: 28, height: 28)
+        } else {
+            Image(systemName: row.symbol).font(.system(size: 12.5))
             .foregroundStyle(Self.tint(row.tint))
             .frame(width: 28, height: 28)
             .background(Self.tileFill(row.tint), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
                 .strokeBorder(Self.tileEdge(row.tint), lineWidth: 0.5))
+        }
     }
 
     private func keywordLabel(_ keyword: String) -> some View {

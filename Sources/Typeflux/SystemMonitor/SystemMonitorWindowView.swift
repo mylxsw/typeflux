@@ -21,7 +21,7 @@ struct SystemMonitorWindowView: View {
             .background(AskWindowDragArea(handlers: AskWindowDragHandlers(reset: {
                 if settings.mode == .mini { controller.setMode(.full) }
             })))
-            .background(SystemMonitorWindowBackground())
+            .background(SystemMonitorWindowBackground(corner: settings.mode == .mini ? 16 : 14))
             .clipShape(shape)
             .overlay {
                 shape.strokeBorder(model.flashing ? AskTheme.accent : AskTheme.border,
@@ -347,15 +347,18 @@ struct SystemMonitorWindowView: View {
     }
 }
 
-/// Frosted glass behind the window's content, like a HUD.
-struct SystemMonitorWindowBackground: NSViewRepresentable {
-    func makeNSView(context _: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = .popover
-        view.blendingMode = .behindWindow
-        view.state = .active
-        return view
-    }
+/// Shares the floating panels' native material and accessibility fallbacks.
+struct SystemMonitorWindowBackground: View {
+    var corner: CGFloat = 14
+    @Environment(\.interfaceStyle) private var style
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.askGlassMaterialOverride) private var materialOverride
 
-    func updateNSView(_: NSVisualEffectView, context _: Context) {}
+    var body: some View {
+        let material = style.usesGlass
+            ? materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency, style: style)
+            : .opaque
+        AskGlassBackground(material: material,
+                           corner: corner, opaqueFill: AskTheme.launcherSurface)
+    }
 }

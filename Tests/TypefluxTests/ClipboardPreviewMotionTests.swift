@@ -21,7 +21,7 @@ struct ClipboardPreviewMotionTests {
                 var captured = false
                 for _ in 0 ..< 150 where controller.isResizingPreview {
                     try await Task.sleep(for: .milliseconds(10))
-                    checkSynchronized(panel: panel, host: host, center: center, top: top)
+                    checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
                     if panel.frame.width > 640 && panel.frame.width < 920 { intermediate += 1 }
                     if !captured, (740 ... 840).contains(panel.frame.width) {
                         try snapshot(host, name: shows ? "opening" : "closing")
@@ -52,7 +52,7 @@ struct ClipboardPreviewMotionTests {
             #expect(panel.frame == reversing)
             for _ in 0 ..< 150 where controller.isResizingPreview {
                 try await Task.sleep(for: .milliseconds(10))
-                checkSynchronized(panel: panel, host: host, center: center, top: top)
+                checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
             }
             #expect(!controller.isResizingPreview)
             #expect(panel.frame.width == 920)
@@ -68,10 +68,10 @@ struct ClipboardPreviewMotionTests {
             model.togglePreview()
             #expect(panel.frame.width == 920)
             #expect(!controller.isResizingPreview)
-            checkSynchronized(panel: panel, host: host, center: center, top: top)
+            checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
             model.togglePreview()
             #expect(panel.frame.width == 640)
-            checkSynchronized(panel: panel, host: host, center: center, top: top)
+            checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
         }
     }
 
@@ -88,7 +88,7 @@ struct ClipboardPreviewMotionTests {
             #expect(controller.presentedWindow === panel)
             #expect(panel.frame.width == 920)
             #expect(!controller.isResizingPreview)
-            checkSynchronized(panel: panel, host: host, center: try #require(panel.screen).visibleFrame.midX,
+            checkSynchronized(controller: controller, panel: panel, host: host, center: try #require(panel.screen).visibleFrame.midX,
                               top: panel.frame.maxY)
         }
     }
@@ -106,15 +106,15 @@ struct ClipboardPreviewMotionTests {
         #expect(layout.width == 920)
     }
 
-    private func checkSynchronized(panel: NSWindow, host: NSHostingView<ClipboardPanelView>,
+    private func checkSynchronized(controller: ClipboardPanelController, panel: NSWindow, host: NSHostingView<AnyView>,
                                    center: CGFloat, top: CGFloat) {
         #expect(abs(panel.frame.midX - center) <= 0.5)
         #expect(abs(panel.frame.maxY - top) <= 0.5)
         #expect(host.frame.size == panel.frame.size)
-        #expect(host.rootView.layout.width == panel.frame.width)
+        #expect(controller.contentViewportWidth == panel.frame.width)
     }
 
-    private func snapshot(_ host: NSHostingView<ClipboardPanelView>, name: String) throws {
+    private func snapshot(_ host: NSHostingView<AnyView>, name: String) throws {
         guard let output = ProcessInfo.processInfo.environment["TYPEFLUX_CLIPBOARD_SNAPSHOT_DIR"] else { return }
         host.layoutSubtreeIfNeeded()
         let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
@@ -132,7 +132,7 @@ struct ClipboardPreviewMotionTests {
     }
 
     private func withPanel(
-        _ body: (ClipboardPanelController, ClipboardPanelModel, NSWindow, NSHostingView<ClipboardPanelView>) async throws -> Void
+        _ body: (ClipboardPanelController, ClipboardPanelModel, NSWindow, NSHostingView<AnyView>) async throws -> Void
     ) async throws {
         let suite = "ClipboardPreviewMotionTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
@@ -146,7 +146,7 @@ struct ClipboardPreviewMotionTests {
         controller.present(model)
         defer { controller.dismiss() }
         let panel = try #require(controller.presentedWindow)
-        let host = try #require(panel.contentView as? NSHostingView<ClipboardPanelView>)
+        let host = try #require(panel.contentView as? NSHostingView<AnyView>)
         #expect(abs(panel.frame.midX - (panel.screen?.visibleFrame.midX ?? panel.frame.midX)) < 1)
         try await body(controller, model, panel, host)
     }

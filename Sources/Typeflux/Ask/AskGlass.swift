@@ -39,8 +39,8 @@ enum AskGlassMaterial: Equatable {
     }
 }
 
-/// Where a glass surface sits, which decides what the pre-macOS 26 blur samples.
-/// Liquid Glass picks this up on its own; `NSVisualEffectView` has to be told.
+/// Where a glass surface sits. The edge columns keep their own desktop backdrop;
+/// other in-window controls sample the content underneath them.
 enum AskGlassPlacement: Equatable {
     /// A panel of its own over other apps (the launcher, menus, hover cards):
     /// it blurs the desktop and windows behind it.
@@ -48,6 +48,9 @@ enum AskGlassPlacement: Equatable {
     /// Chrome floating over the conversation window's own content (the
     /// workspace composer, sidebar, header and palette): it blurs the transcript.
     case inWindow
+    /// An inset column at the window edge. In light mode it samples the desktop
+    /// directly instead of inheriting the reading canvas's white backplate.
+    case windowEdge
     /// The composer's menus and hover cards: a panel over the window, frosted
     /// enough that the rows stay legible over a busy transcript.
     case menu
@@ -61,10 +64,20 @@ enum AskGlassPlacement: Equatable {
     /// in the native compositor, while preserving the tint over white.
     /// A menu opens over the launcher, so it is never clearer than the card under
     /// it: the card's chips must not show through its rows.
-    func frost(dark: Bool) -> Double {
+    func frost(dark: Bool, material: AskGlassMaterial = .visualEffect) -> Double {
+        // Regular Liquid Glass already adapts its luminance and blurs busy
+        // content. A light backplate below it preserves the native optics;
+        // legacy blur still needs the stronger readability scrim.
+        if material == .liquidGlass {
+            switch self {
+            case .floating: return dark ? 0.14 : 0.06
+            case .inWindow, .windowEdge: return dark ? 0.18 : 0.08
+            case .menu: return dark ? 0.32 : 0.28
+            }
+        }
         switch self {
         case .floating: return dark ? 0.78 : 0.92
-        case .inWindow: return 0.45
+        case .inWindow, .windowEdge: return 0.45
         case .menu: return dark ? 0.90 : 0.92
         }
     }
@@ -73,6 +86,7 @@ enum AskGlassPlacement: Equatable {
         switch self {
         case .floating: return .popover
         case .inWindow: return .popover
+        case .windowEdge: return .sidebar
         case .menu: return .menu
         }
     }
@@ -87,7 +101,10 @@ extension EnvironmentValues {
 /// The launcher's floating card. It replaces the opaque `launcherSurface`
 /// with glass so the panel reads as part of whatever window it floats over.
 struct AskGlassBackground: View {
+    @Environment(\.liquidGlassIntensity) private var intensity
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
     var material: AskGlassMaterial
     var corner: CGFloat
     /// Frosts translucent glass and fills the card when transparency is reduced.
@@ -99,12 +116,29 @@ struct AskGlassBackground: View {
 
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: corner, style: cornerStyle) }
 
+    private var effectiveMaterial: AskGlassMaterial {
+        Self.effectiveMaterial(material, reduceTransparency: reduceTransparency,
+                               increasedContrast: contrast == .increased)
+    }
+
+    static func effectiveMaterial(_ material: AskGlassMaterial, reduceTransparency: Bool,
+                                  increasedContrast: Bool) -> AskGlassMaterial {
+        reduceTransparency || increasedContrast ? .opaque : material
+    }
+
     var body: some View {
         ZStack {
-            switch material {
+            switch effectiveMaterial {
             case .liquidGlass:
-                liquidGlass
+                if placement == .windowEdge, colorScheme == .light {
+                    // Keep the edge column's backdrop independent of the canvas.
+                    // The native glass above supplies adaptive contrast and optics.
+                    StudioVisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow,
+                                           cornerRadius: corner)
+                }
                 frosting
+                liquidGlass
+                shape.fill(opaqueFill.opacity(intensity.extraTintOpacity))
             case .visualEffect:
                 fallback
                 frosting
@@ -114,8 +148,14 @@ struct AskGlassBackground: View {
         }
         .clipShape(shape)
         .overlay {
-            // macOS 26 glass lights its own edge; the fallback blur gets a drawn specular rim instead.
-            if material == .visualEffect { rim }
+            // A floating panel also needs a fine specular edge over flat dark
+            // windows. In-window native glass keeps the system's own highlights.
+            if effectiveMaterial == .visualEffect || (effectiveMaterial == .liquidGlass && placement == .floating) {
+                rim
+            }
+            if effectiveMaterial == .opaque, contrast == .increased {
+                shape.strokeBorder(AskTheme.border, lineWidth: 1)
+            }
         }
         .allowsHitTesting(false)
     }
@@ -133,7 +173,9 @@ struct AskGlassBackground: View {
     }
 
     @ViewBuilder private var frosting: some View {
-        shape.fill(opaqueFill.opacity(placement.frost(dark: colorScheme == .dark)))
+        let base = placement.frost(dark: colorScheme == .dark, material: effectiveMaterial)
+        shape.fill(opaqueFill.opacity(effectiveMaterial == .liquidGlass
+            ? intensity.nativeFrostOpacity(base) : intensity.legacyFrostOpacity(base)))
     }
 
     private var fallback: some View {
@@ -146,10 +188,10 @@ struct AskGlassBackground: View {
         shape.strokeBorder(
             LinearGradient(
                 stops: [
-                    .init(color: StudioTheme.glassStrokeHighlight, location: 0),
+                    .init(color: Color.white.opacity(colorScheme == .dark ? 0.30 : 0.72), location: 0),
                     .init(color: .clear, location: 0.3),
                     .init(color: .clear, location: 0.7),
-                    .init(color: StudioTheme.glassStrokeHighlight.opacity(0.4), location: 1)
+                    .init(color: Color.white.opacity(colorScheme == .dark ? 0.10 : 0.24), location: 1)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -169,6 +211,7 @@ struct AskGlassBackground: View {
 
         func makeNSView(context _: Context) -> NSGlassEffectView {
             let view = NSGlassEffectView()
+            view.style = .regular
             view.cornerRadius = cornerRadius
             return view
         }
@@ -224,12 +267,14 @@ struct AskGlassCardSurface<Content: View>: View {
 struct AskInWindowGlass: ViewModifier {
     var corner: CGFloat
     var opaqueFill: Color
+    var placement: AskGlassPlacement = .inWindow
     var cornerStyle: RoundedCornerStyle = .continuous
     /// The drop shadow it floats on; nil for glass that sits inside another surface.
     var elevation: AskElevation? = .panel
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var materialOverride
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.interfaceStyle) private var style
 
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: corner, style: cornerStyle) }
@@ -261,19 +306,26 @@ struct AskInWindowGlass: ViewModifier {
     }
 
     private func glass(_ content: Content) -> some View {
-        let material = materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
+        let material = AskGlassBackground.effectiveMaterial(
+            materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency),
+            reduceTransparency: reduceTransparency, increasedContrast: contrast == .increased
+        )
         return content
             .background(AskGlassBackground(material: material, corner: corner, opaqueFill: opaqueFill,
-                                           placement: .inWindow, cornerStyle: cornerStyle))
+                                           placement: placement, cornerStyle: cornerStyle))
             .background {
                 if let elevation { AskOuterShadow(shape: shape, elevation: elevation) }
             }
             // Always outlined, unlike the launcher: frosted with the window's own
             // colours, the pills and cards would otherwise vanish on a white window.
             .overlay(shape.strokeBorder(AskTheme.border).allowsHitTesting(false))
-            // The rim catches the light on its top-leading edge, as glass does.
-            .overlay(shape.strokeBorder(AskRimLight.gradient(dark: colorScheme == .dark), lineWidth: 1)
-                .allowsHitTesting(false))
+            .overlay {
+                // Native glass owns its highlights; draw a rim only for legacy blur.
+                if material == .visualEffect {
+                    shape.strokeBorder(AskRimLight.gradient(dark: colorScheme == .dark), lineWidth: 1)
+                        .allowsHitTesting(false)
+                }
+            }
     }
 }
 
@@ -295,8 +347,8 @@ enum AskRimLight {
 
 extension View {
     func askInWindowGlass(corner: CGFloat, opaqueFill: Color = AskTheme.glassFill,
-                          elevation: AskElevation? = .panel) -> some View {
-        modifier(AskInWindowGlass(corner: corner, opaqueFill: opaqueFill, elevation: elevation))
+                          elevation: AskElevation? = .panel, placement: AskGlassPlacement = .inWindow) -> some View {
+        modifier(AskInWindowGlass(corner: corner, opaqueFill: opaqueFill, placement: placement, elevation: elevation))
     }
 
     /// A glass pill of the given height around title-row controls. Classic
@@ -313,8 +365,8 @@ struct AskInWindowGlassPill: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if style.usesGlass {
-            content.modifier(AskContentCardSurface(corner: height / 2, opaqueFill: AskTheme.glassFill,
-                                                   cornerStyle: .circular, elevation: .control))
+            content.modifier(AskInWindowGlass(corner: height / 2, opaqueFill: AskTheme.glassFill,
+                                              cornerStyle: .circular, elevation: .control))
         } else {
             content
         }

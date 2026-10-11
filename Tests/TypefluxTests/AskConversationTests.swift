@@ -283,7 +283,8 @@ struct AskTestFixture {
                                          if localOnly { return (AskRoutedAPI.localOwner, "") }
                                          return authenticated ? (sessionState.owner, "token") : nil
                                      })
-        // Never index this Mac's files from a test.
+        // Keep launcher results independent of this Mac's installed apps and files.
+        model.appIndex = AskTestAppIndex([])
         model.fileIndex = AskTestFileIndex()
         model.browserSearch = AskFixtureBrowserSearch()
     }

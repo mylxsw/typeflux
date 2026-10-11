@@ -176,7 +176,8 @@ extension AskLauncherToggleTests {
                 "the matches came and went: \(shown)")
         let heights = recorder.heights
         #expect(heights.count >= 5)
-        #expect((heights.max() ?? 0) > (heights.first ?? 0), "the list opened under the editor")
+        #expect((heights.max() ?? 0) - (heights.min() ?? 0) < 0.5,
+                "the launcher size stays fixed while matches come and go")
         for (before, after) in zip(heights, heights.dropFirst()) {
             #expect(after >= before - 0.5, "the panel shrank from \(before) to \(after)")
         }

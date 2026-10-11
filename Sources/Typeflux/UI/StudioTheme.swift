@@ -153,13 +153,13 @@ enum StudioTheme {
         static let historyAccentStrong: Double = 0.82
         static let segmentedControlFill: Double = 1
         static let pressedFade: Double = 0.86
-        static let glassBackgroundTint: Double = 0.96
+        static let glassBackgroundTint: Double = 0.72
         static let glassSurfaceTint: Double = 0.96
         static let glassSurfaceScrim: Double = 0.96
         static let glassCardTint: Double = 0.94
         static let glassCardScrim: Double = 0.92
-        static let glassControlTint: Double = 0.92
-        static let glassControlScrim: Double = 0.88
+        static let glassControlTint: Double = 0.28
+        static let glassControlScrim: Double = 0.56
         static let glassHighlight: Double = 1
         /// The light Liquid Glass sidebar panel's fill (#F3F4F6 at ~94%).
         static let sidePanelFill: Double = 0.94

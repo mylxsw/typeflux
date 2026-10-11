@@ -25,8 +25,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private var launcher: AskFloatingPanel?
     private var launcherHeight = AskMetrics.launcherHeight(editor: 32, banners: 0)
     private let launcherHeightAnimator = AskLauncherHeightAnimator()
-    /// The top edge the launcher opened with; every resize keeps it.
-    private var launcherTop: CGFloat?
+    private var launcherOpeningTop: CGFloat?
     private(set) var conversationWindow: NSWindow?
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
@@ -240,6 +239,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
             return
         }
+        model.launcherWindowMode = settings.askLauncherWindowMode
         model.quickSearch.setVisible(true)
         model.refreshQuickApps()
         Task { [model] in await model.refreshLauncherWorkflows() }
@@ -252,11 +252,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         applyAppearance(panel)
         if let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main {
             let frame = screen.visibleFrame
-            let width = min(AskMetrics.launcherWidth, frame.width - 40)
             let anchor = launcherAnchor(on: screen)
-            panel.setFrame(AskLauncherPlacement.frame(height: launcherHeight, width: width, screen: frame, anchor: anchor),
+            panel.setFrame(AskLauncherPlacement.preferredFrame(on: frame, anchor: anchor,
+                           height: model.launcherIsCollapsed ? AskLauncherWindowMode.simpleHeight : launcherHeight),
                            display: true)
-            launcherTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
+            launcherOpeningTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
         }
         // Take keyboard focus without activating the app and raising its other windows.
         panel.makeKeyAndOrderFront(nil)
@@ -292,10 +292,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             end: { [weak self] in self?.finishLauncherDrag() },
             reset: { [weak self] in self?.recenterLauncher() }
         )
-        let hosting = FirstMouseHostingView(rootView: AskLauncherView(model: model, onDismiss: { [weak self] in self?.dismissLauncher() }, onHeightChange: { [weak self] height in self?.resizeLauncher(height: height) }, drag: drag)
+        let hosting = FirstMouseHostingView(rootView: AskLauncherView(model: model,
+            onDismiss: { [weak self] in self?.dismissLauncher() },
+            onWindowHeightChange: { [weak self] height in self?.updateLauncherHeight(height) }, drag: drag)
             .interfaceStyle(following: interfaceStyle))
-        // Only `resizeLauncher` sizes the panel. Left to itself, the hosting view resizes the
-        // window from its bottom edge as content changes, moving the top edge while typing.
+        // The height animator sizes the panel while preserving its top edge.
         hosting.sizingOptions = []
         panel.contentView = hosting
         launcher = panel
@@ -304,32 +305,13 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     /// Builds the launcher panel and lays out its view while the app is idle.
     func prewarmLauncher() {
+        if launcher?.isVisible != true { model.launcherWindowMode = settings.askLauncherWindowMode }
         model.quickSearch.setVisible(launcher?.isVisible == true)
         model.refreshQuickApps()
         Task { [model] in await model.refreshLauncherWorkflows() }
         Task { [model] in await model.loadCachedHistoryIfNeeded() }
         let panel = launcherPanel()
         panel.contentView?.layoutSubtreeIfNeeded()
-    }
-
-    private func resizeLauncher(height: CGFloat) {
-        launcherHeight = height
-        guard let launcher else { return }
-        launcherHeightAnimator.update(from: launcher.frame.height, to: height,
-                                      animated: launcher.isVisible && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
-                                      framesPerSecond: launcher.screen?.maximumFramesPerSecond ?? 60,
-                                      rate: model.launcherDraft.text.isEmpty ? 60 : 28) { [weak self, weak launcher] height in
-            guard let self, let launcher else { return }
-            // Commit bounds and content together; controls must never animate their
-            // layer positions separately from the window's changing coordinate space.
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height, top: self.launcherTop,
-                                                           screen: launcher.screen?.visibleFrame), display: false)
-            launcher.contentView?.layoutSubtreeIfNeeded()
-            launcher.displayIfNeeded()
-            CATransaction.commit()
-        }
     }
 
     // MARK: - Launcher position
@@ -345,29 +327,49 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     var controlWindow: NSWindow? { controlPanel }
 
-    /// Whether the launcher is still moving to the height its content last asked for.
+    /// Whether the panel is still moving toward its content's requested height.
     var launcherIsResizing: Bool { launcherHeightAnimator.isAnimating }
+
+    /// Follow the content height, keeping the editor at the opening top edge.
+    private func updateLauncherHeight(_ requestedHeight: CGFloat) {
+        launcherHeight = requestedHeight
+        guard let launcher else { return }
+        let screen = launcherScreen?.visibleFrame
+        let height = min(requestedHeight, screen.map { max(1, $0.height - AskLauncherPlacement.screenMargin * 2) }
+                         ?? requestedHeight)
+        launcherHeightAnimator.update(from: launcher.frame.height, to: height,
+                                      animated: launcher.isVisible && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+                                      framesPerSecond: launcher.screen?.maximumFramesPerSecond ?? 60,
+                                      rate: model.launcherDraft.text.isEmpty ? 60 : 28) { [weak self, weak launcher] height in
+            guard let self, let launcher else { return }
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height,
+                              top: self.launcherOpeningTop, screen: launcher.screen?.visibleFrame), display: false)
+            launcher.contentView?.layoutSubtreeIfNeeded()
+            launcher.displayIfNeeded()
+            CATransaction.commit()
+        }
+    }
 
     /// The screen the launcher is on, or the main one before it has been shown.
     private var launcherScreen: NSScreen? { launcher?.screen ?? NSScreen.main }
 
     /// While dragged the launcher follows the pointer, snapping to its screen's centre line.
-    /// Results arriving mid-drag grow it down from where it is now, not where it opened.
     func dragLauncher(to origin: NSPoint) -> NSPoint {
         guard let launcher, let screen = launcherScreen else { return origin }
         let snapped = AskLauncherPlacement.snapped(origin: origin, width: launcher.frame.width, screen: screen.visibleFrame)
-        launcherTop = snapped.y + launcher.frame.height
+        launcherOpeningTop = snapped.y + launcher.frame.height
         return snapped
     }
 
-    /// Let go: back inside the screen, growing down from its new top edge, and
-    /// remembered for next time when the user chose that.
+    /// Let go: back inside the screen, and remembered for next time when requested.
     func finishLauncherDrag() {
         guard let launcher, let screen = launcherScreen else { return }
         let visible = screen.visibleFrame
         let frame = AskLauncherPlacement.clamped(launcher.frame, screen: visible)
         if frame != launcher.frame { launcher.setFrame(frame, display: true) }
-        launcherTop = frame.maxY
+        launcherOpeningTop = frame.maxY
         guard settings.askLauncherPosition == .lastPosition else { return }
         settings.askLauncherAnchors[AskLauncherPlacement.key(for: screen)] = AskLauncherPlacement.anchor(of: frame, on: visible)
     }
@@ -377,9 +379,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         guard let launcher, let screen = launcherScreen else { return }
         settings.askLauncherAnchors[AskLauncherPlacement.key(for: screen)] = nil
         let visible = screen.visibleFrame
-        launcher.setFrame(AskLauncherPlacement.frame(height: launcher.frame.height, width: launcher.frame.width,
-                                                     screen: visible), display: true)
-        launcherTop = AskLauncherPlacement.top(on: visible)
+        launcher.setFrame(AskLauncherPlacement.preferredFrame(on: visible, height: launcher.frame.height), display: true)
+        launcherOpeningTop = AskLauncherPlacement.top(on: visible)
     }
 
     func dismissLauncher() {

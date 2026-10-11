@@ -7,6 +7,11 @@ protocol AskAppSearching: AnyObject, Sendable {
     func refreshIfStale()
     /// Remembers an application opened from the launcher, to rank it higher.
     func recordLaunch(_ entry: AskAppEntry)
+    func recentApplications(limit: Int) -> [AskAppEntry]
+}
+
+extension AskAppSearching {
+    func recentApplications(limit: Int) -> [AskAppEntry] { [] }
 }
 
 /// The applications installed on this Mac, and System Settings' panes, kept in
@@ -19,6 +24,7 @@ final class AskAppIndex: AskAppSearching, @unchecked Sendable {
     static let didChange = Notification.Name("AskAppIndex.didChange")
     static let maximumAge: TimeInterval = 300
     private static let launchesKey = "ask.quickResults.appLaunches"
+    private static let lastUsedKey = "ask.quickResults.appLastUsed"
     /// Where macOS 13 and later keep the System Settings panes.
     static let settingsExtensions = URL(fileURLWithPath: "/System/Library/ExtensionKit/Extensions", isDirectory: true)
     static let settingsExtensionPoint = "com.apple.Settings.extension.ui"
@@ -31,12 +37,14 @@ final class AskAppIndex: AskAppSearching, @unchecked Sendable {
     private let lock = NSLock()
     private var entries: [AskAppEntry] = []
     private var launches: [String: Int]
+    private var lastUsed: [String: Double]
     private var scannedAt: Date?
     private var scannedFor: AskLauncherSearchSettings?
     private var scanning = false
     private var watcher: AskFileWatching?
     private var watchedFolders: [String] = []
     private var observer: NSObjectProtocol?
+    private var activationObserver: NSObjectProtocol?
 
     /// `roots` fixes the folders (tests); otherwise they come from the search settings.
     init(roots: [URL]? = nil, defaults: UserDefaults = .standard,
@@ -48,14 +56,22 @@ final class AskAppIndex: AskAppSearching, @unchecked Sendable {
         self.defaults = defaults
         watches = watch
         launches = defaults.dictionary(forKey: Self.launchesKey) as? [String: Int] ?? [:]
+        lastUsed = defaults.dictionary(forKey: Self.lastUsedKey) as? [String: Double] ?? [:]
         if watch {
             observer = NotificationCenter.default.addObserver(forName: .askLauncherSearchSettingsDidChange, object: nil,
                                                               queue: nil) { [weak self] _ in self?.refreshIfStale() }
+            recordActivation(NSWorkspace.shared.frontmostApplication)
+            activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+                forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+            ) { [weak self] notification in
+                self?.recordActivation(notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)
+            }
         }
     }
 
     deinit {
         if let observer { NotificationCenter.default.removeObserver(observer) }
+        if let activationObserver { NSWorkspace.shared.notificationCenter.removeObserver(activationObserver) }
         watcher?.stop()
     }
 
@@ -132,6 +148,40 @@ final class AskAppIndex: AskAppSearching, @unchecked Sendable {
             return launches
         }
         defaults.set(snapshot, forKey: Self.launchesKey)
+        recordUse(entry.id)
+    }
+
+    /// Includes apps used outside the launcher, without requesting extra permissions.
+    private func recordActivation(_ app: NSRunningApplication?) {
+        guard let app, app.activationPolicy == .regular,
+              app.processIdentifier != ProcessInfo.processInfo.processIdentifier,
+              let id = app.bundleIdentifier else { return }
+        recordUse(id)
+    }
+
+    func recordUse(_ id: String, at date: Date = Date()) {
+        let snapshot = lock.withLock { () -> [String: Double] in
+            lastUsed[id] = max(lastUsed[id] ?? 0, date.timeIntervalSince1970)
+            // Keep defaults bounded even after many applications have been removed.
+            if lastUsed.count > 256 {
+                lastUsed = Dictionary(uniqueKeysWithValues: lastUsed.sorted { $0.value > $1.value }.prefix(256)
+                    .map { ($0.key, $0.value) })
+            }
+            return lastUsed
+        }
+        defaults.set(snapshot, forKey: Self.lastUsedKey)
+        DispatchQueue.main.async { NotificationCenter.default.post(name: Self.didChange, object: self) }
+    }
+
+    func recentApplications(limit: Int) -> [AskAppEntry] {
+        let (entries, recent, launches) = lock.withLock { (self.entries, lastUsed, self.launches) }
+        return Array(entries.filter { $0.kind == .application && $0.bundleID != Bundle.main.bundleIdentifier }.sorted {
+            let left = recent[$0.id] ?? 0, right = recent[$1.id] ?? 0
+            if left != right { return left > right }
+            let leftCount = launches[$0.id] ?? 0, rightCount = launches[$1.id] ?? 0
+            if leftCount != rightCount { return leftCount > rightCount }
+            return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }.prefix(max(0, limit)))
     }
 
     // MARK: - Scanning

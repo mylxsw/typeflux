@@ -15,7 +15,9 @@ struct AskFloatingPanelStyleTests {
             let frost = placement.frost(dark: false)
             let floor = placement == .menu ? 0.84 : frost * 0.96 - 0.02
             let cast = placement == .menu ? 0.14 : 1 - frost + 0.04
-            for material in [AskGlassMaterial.visualEffect, .liquidGlass, .opaque] {
+            // Native glass is checked in LiquidGlassSurfaceTests: bitmap caching
+            // omits its Window Server optics, so this measures legacy scrims only.
+            for material in [AskGlassMaterial.visualEffect, .opaque] {
                 let panel = AskGlassBackground(material: material, corner: 16,
                                                opaqueFill: AskTheme.launcherSurface, placement: placement)
                 let black = try await render(panel.background(Color.black), size: size, appearance: .aqua)

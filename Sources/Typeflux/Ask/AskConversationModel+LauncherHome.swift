@@ -14,6 +14,10 @@ extension AskConversationModel {
             return .init(keyword: keyword, title: Self.chipTitle(plugin: plugin, keyword: keyword, language: language),
                          symbol: plugin.symbol)
         }
+        let ids = keywords.map { $0.keyword.id }
+        if Set(launcherHomeFallbackKeywordIDs) != Set(ids) {
+            launcherHomeFallbackKeywordIDs = ids.shuffled()
+        }
         // Source metadata the user switched off says nothing about where the question comes from.
         let source = draft.sentSource.map(AskContextChips.sourceParts)
         return AskLauncherHome.Context(
@@ -21,7 +25,10 @@ extension AskConversationModel {
             sourceBundleID: source == nil ? nil : draft.sourceBundleID,
             windowTitle: source.map { AskLauncherContext.shortTitle(app: $0.app, window: $0.window) },
             keywords: keywords,
-            usage: keywordUsage.scores(at: now),
+            usage: keywordUsage.usage.entries.mapValues { Double($0.count) },
+            lastUsed: keywordUsage.usage.entries.mapValues(\.lastUsed),
+            fallbackKeywordIDs: launcherHomeFallbackKeywordIDs,
+            applications: quickAppsEnabled ? appIndex.recentApplications(limit: AskLauncherHome.maximumRecentApplications) : [],
             conversations: conversations,
             now: now
         )

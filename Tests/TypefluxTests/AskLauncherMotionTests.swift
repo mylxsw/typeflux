@@ -42,14 +42,13 @@ struct AskLauncherMotionTests {
     }
 
     @Test(arguments: [NSAppearance.Name.aqua, .darkAqua])
-    func controlsStayAttachedToTheirEdgesAcrossEveryResize(appearance: NSAppearance.Name) async throws {
+    func controlsStayAttachedToTheirEdgesAsResultsChange(appearance: NSAppearance.Name) async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
-        // Few enough results that the tallest list fits under the top of a short display: a
-        // launcher taller than the usable area moves up by design, which is not what this checks.
+        // Exercise changing result counts within the fixed launcher viewport.
         fixture.model.appIndex = AskTestAppIndex((0 ..< 2).map { AskTestAppIndex.app(
             "Alpha \($0)",
             id: "test.alpha\($0)"
@@ -68,7 +67,7 @@ struct AskLauncherMotionTests {
         let visible = screen.visibleFrame
         settings.askLauncherPosition = .lastPosition
         settings.askLauncherAnchors = [AskLauncherPlacement.key(for: screen): .init(
-            left: ((visible.width - min(AskMetrics.launcherWidth, visible.width - 40)) / 2).rounded(),
+            left: AskLauncherPlacement.preferredFrame(on: visible).minX - visible.minX,
             fromTop: AskLauncherPlacement.screenMargin
         )]
         // This test measures typing motion; give its baseline the already captured context.
@@ -88,8 +87,8 @@ struct AskLauncherMotionTests {
             fixture.model.launcherDraft.source == "Safari"
                 && !fixture.model.capturing && !fixture.model.quickSearch.isSearching
         }
-        let expectedHomeHeight = AskMetrics.launcherHeight(editor: 32, banners: 0,
-            suggestions: AskLauncherSuggestions.height(for: fixture.model.launcherHome()))
+        let expectedHomeHeight = AskLauncherPlacement.preferredFrame(on: visible).height
+        #expect(window.frame.size == AskLauncherPlacement.preferredFrame(on: visible).size)
         try await fixture.wait {
             content.layoutSubtreeIfNeeded()
             return !controller.launcherIsResizing && abs(window.frame.height - expectedHomeHeight) < 1
@@ -143,7 +142,8 @@ struct AskLauncherMotionTests {
             try await Task.sleep(for: .milliseconds(12))
             try sample()
         }
-        #expect((heights.max() ?? 0) - (heights.min() ?? 0) > 100, "exercise real changes in result count")
+        #expect((heights.max() ?? 0) - (heights.min() ?? 0) < 0.5,
+                "changing results must preserve the fixed launcher size")
     }
 
     @Test func returnAndNumberShortcutsCannotRunTheDisplayedOldBatch() async throws {

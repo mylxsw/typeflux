@@ -17,6 +17,7 @@ final class AskTestAppIndex: AskAppSearching, @unchecked Sendable {
 
     func refreshIfStale() { refreshes += 1 }
     func recordLaunch(_ entry: AskAppEntry) { launched.append(entry.id) }
+    func recentApplications(limit: Int) -> [AskAppEntry] { Array(entries.prefix(limit)) }
 
     static func app(_ name: String, _ names: [String] = [], id: String? = nil) -> AskAppEntry {
         AskAppEntry(name: name, url: URL(fileURLWithPath: "/Applications/\(name).app"),
@@ -206,6 +207,27 @@ struct AskAppIndexTests {
         let reopened = AskAppIndex(roots: [root], defaults: defaults)
         reopened.refreshNow()
         #expect(try #require(reopened.search("wx", limit: 5).first).score > match.score, "launch counts persist")
+    }
+
+    @Test func homeApplicationsPreferLastUseAndPersistAcrossRestarts() throws {
+        let root = try makeApps()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let suite = "ask-recent-apps-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let index = AskAppIndex(roots: [root], defaults: defaults)
+        index.refreshNow()
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        index.recordUse("com.apple.calculator", at: date)
+        index.recordUse("com.tencent.xinWeChat", at: date.addingTimeInterval(60))
+        index.recordUse("removed.application", at: date.addingTimeInterval(120))
+        index.recordUse("com.apple.calculator", at: date.addingTimeInterval(-60))
+        #expect(index.recentApplications(limit: 20).map(\.id) == ["com.tencent.xinWeChat", "com.apple.calculator"])
+        #expect(index.recentApplications(limit: 1).count == 1)
+        #expect(index.recentApplications(limit: 0).isEmpty)
+        let reopened = AskAppIndex(roots: [root], defaults: defaults)
+        reopened.refreshNow()
+        #expect(reopened.recentApplications(limit: 20) == index.recentApplications(limit: 20))
     }
 
     @Test func refreshIfStaleScansInTheBackgroundOnce() async throws {

@@ -4630,3 +4630,20 @@
 "settings.list.itemCount" = "%d 件";
 "hotkeys.keyword.sheet.hint" = "選択したテキストで実行。未選択なら入力を待ちます。";
 "hotkeys.keyword.sheet.record" = "ショートカットを記録";
+
+// Liquid Glass intensity
+"settings.glassIntensity.title" = "Liquid Glass の濃さ";
+"settings.glassIntensity.subtitle" = "すべてのウインドウの透明度を調整します。変更はすぐに反映されます。";
+"settings.glassIntensity.clear" = "クリア";
+"settings.glassIntensity.tinted" = "色付き";
+"settings.glassIntensity.accessibility" = "現在のシステムのアクセシビリティ設定では、不透明な表示が優先されます。";
+"settings.glassIntensity.previewSearch" = "検索";
+
+// Launcher default window mode
+"ask.settings.windowMode.title" = "デフォルトのウインドウ表示";
+"ask.settings.windowMode.simple" = "シンプル";
+"ask.settings.windowMode.complete" = "フル";
+"ask.settings.windowMode.detail" = "シンプルは入力欄だけで開き、入力や機能の使用時に展開します。フルは候補と下部のコントロールを表示します。ウインドウの高さは内容に合わせて自動調整されます。次回ランチャーを開くときに適用されます。";
+"ask.settings.windowMode.selected" = "選択済み";
+
+"ask.home.section.apps" = "最近使ったアプリ";

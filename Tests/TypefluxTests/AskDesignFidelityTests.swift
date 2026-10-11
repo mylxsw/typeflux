@@ -13,8 +13,8 @@ struct AskDesignFidelityTests {
         // The desktop shows through as a soft cast; the window keeps its own tint.
         for dark in [true, false] {
             let tint = AskWindowBackdrop.tintOpacity(dark: dark, reduceTransparency: false)
-            // Dark stays frosted; light is nearly opaque white so the content area reads as pure white.
-            #expect(dark ? (tint > 0.6 && tint < 0.9) : tint == 0.95)
+            // The reading surface remains calm while letting ambient colour through.
+            #expect(dark ? (tint > 0.6 && tint < 0.8) : (tint > 0.1 && tint < 0.3))
             #expect(AskWindowBackdrop.tintOpacity(dark: dark, reduceTransparency: true) == 1)
         }
         #expect(AskWindowBackdrop.base(dark: true) != AskWindowBackdrop.base(dark: false))

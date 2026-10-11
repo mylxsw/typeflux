@@ -25,6 +25,8 @@ enum InterfaceStyle: String, CaseIterable, Codable {
 
 extension EnvironmentValues {
     @Entry var interfaceStyle: InterfaceStyle = .liquidGlass
+    @Entry var liquidGlassIntensity: LiquidGlassIntensity = .init()
+    @Entry var interfaceAppearanceObserver: InterfaceStyleObserver? = nil
 }
 
 /// Publishes the stored interface style and follows changes made in Settings,
@@ -32,6 +34,7 @@ extension EnvironmentValues {
 @MainActor
 final class InterfaceStyleObserver: ObservableObject {
     @Published private(set) var style: InterfaceStyle
+    @Published private(set) var glassIntensity: LiquidGlassIntensity
     private let settings: SettingsStore
     private let center: NotificationCenter
     private var token: NSObjectProtocol?
@@ -40,6 +43,7 @@ final class InterfaceStyleObserver: ObservableObject {
         self.settings = settings
         self.center = center
         style = settings.interfaceStyle
+        glassIntensity = LiquidGlassIntensity(settings.liquidGlassIntensity)
         // Any store may post: they all write the same defaults.
         token = center.addObserver(forName: .interfaceStyleDidChange, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
@@ -53,6 +57,8 @@ final class InterfaceStyleObserver: ObservableObject {
     func refresh() {
         let next = settings.interfaceStyle
         if next != style { style = next }
+        let intensity = LiquidGlassIntensity(settings.liquidGlassIntensity)
+        if intensity != glassIntensity { glassIntensity = intensity }
     }
 }
 
@@ -62,6 +68,8 @@ struct InterfaceStyleRoot: ViewModifier {
 
     func body(content: Content) -> some View {
         content.environment(\.interfaceStyle, observer.style)
+            .environment(\.liquidGlassIntensity, observer.glassIntensity)
+            .environment(\.interfaceAppearanceObserver, observer)
     }
 }
 

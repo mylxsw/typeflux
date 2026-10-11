@@ -18,6 +18,17 @@ enum AskLauncherPlacement {
         var fromTop: CGFloat
     }
 
+    /// Both modes share the resting launcher's opening top and grow downward.
+    static func preferredFrame(on screen: NSRect, anchor: Anchor? = nil,
+                               height requestedHeight: CGFloat = restingHeight) -> NSRect {
+        let width = min(AskMetrics.launcherWidth, max(1, screen.width - screenMargin * 2))
+        let height = min(requestedHeight, max(1, screen.height - screenMargin * 2))
+        let left = anchor.map { screen.minX + $0.left } ?? screen.midX - width / 2
+        let top = top(on: screen, anchor: anchor)
+        return clamped(NSRect(x: left.rounded(), y: (top - height).rounded(), width: width, height: height),
+                       screen: screen)
+    }
+
     /// An empty launcher with a typical home under it is centred on the screen; the
     /// home's height follows the captured context, so the top edge stays fixed instead.
     static var restingHeight: CGFloat {

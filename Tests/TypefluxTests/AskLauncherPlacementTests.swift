@@ -6,6 +6,34 @@ import Testing
 struct AskLauncherPlacementTests {
     private let screen = NSRect(x: 0, y: 40, width: 1512, height: 900)
 
+    @Test func fixedLauncherIs800By600PointsAndCentredOnALargeDisplay() {
+        let display = NSRect(x: -2400, y: 100, width: 2400, height: 1600)
+        let frame = AskLauncherPlacement.preferredFrame(on: display)
+        #expect(frame.size == NSSize(width: 800, height: 600))
+        #expect(frame.midX == display.midX && frame.midY == display.midY)
+    }
+
+    @Test func fixedLauncherFitsInsideASmallerDisplay() {
+        let screen = NSRect(x: -640, y: 40, width: 640, height: 480)
+        let frame = AskLauncherPlacement.preferredFrame(on: screen)
+        let margin = AskLauncherPlacement.screenMargin
+        #expect(frame.width == screen.width - margin * 2)
+        #expect(frame.height == screen.height - margin * 2)
+        #expect(frame.minX == screen.minX + margin && frame.maxX == screen.maxX - margin)
+        #expect(frame.minY == screen.minY + margin && frame.maxY == screen.maxY - margin)
+    }
+
+    @Test func fixedLauncherRestoresAnAnchorAndClampsOutOfBoundsPositions() {
+        let display = NSRect(x: 200, y: -100, width: 2400, height: 1600)
+        let anchor = AskLauncherPlacement.Anchor(left: 100, fromTop: 80)
+        let frame = AskLauncherPlacement.preferredFrame(on: display, anchor: anchor)
+        #expect(AskLauncherPlacement.anchor(of: frame, on: display) == anchor)
+        #expect(frame.size == NSSize(width: 800, height: 600))
+        let outside = AskLauncherPlacement.preferredFrame(on: display, anchor: .init(left: 3000, fromTop: -100))
+        #expect(outside.maxX == display.maxX - AskLauncherPlacement.screenMargin)
+        #expect(outside.maxY == display.maxY - AskLauncherPlacement.screenMargin)
+    }
+
     @Test func emptyLauncherIsCentredOnTheScreen() {
         let height = AskLauncherPlacement.restingHeight
         let frame = AskLauncherPlacement.frame(height: height, width: 680, screen: screen)

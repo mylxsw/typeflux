@@ -24,10 +24,11 @@ struct AskLauncherGlassVisualTests {
                                                             suggestions: AskLauncherSuggestions.typicalHeight) + 36)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for (surface, material) in [("system", AskGlassMaterial.resolve(reduceTransparency: false)),
-                                        ("fallback", .visualEffect), ("opaque", .opaque)] {
+                                        ("fallback", .visualEffect), ("opaque", .opaque), ("classic", .opaque)] {
                 let fixture = try AskTestFixture()
                 defer { fixture.model.resetSession() }
                 let view = AskLauncherView(model: fixture.model, onDismiss: {})
+                    .environment(\.interfaceStyle, surface == "classic" ? .classic : .liquidGlass)
                     .environment(\.askGlassMaterialOverride, material)
                     .padding(18)
                     .background {
