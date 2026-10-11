@@ -1948,6 +1948,7 @@
 "ask.usage.summary" = "自動摘要";
 "ask.usage.inference" = "回答 / 工具決策";
 "ask.usage.externalShort" = "自有 API";
+"ask.usage.localHelp" = "用量來自自有模型回傳的 token 資訊，儲存在本機，不消耗 Typeflux credits。";
 
 /* GUL-151 Ask tools */
 "ask.files.denied" = "該路徑不在授權給 Ask 的資料夾中。請在 設定 → Agent → 檔案存取 中加入該資料夾。";

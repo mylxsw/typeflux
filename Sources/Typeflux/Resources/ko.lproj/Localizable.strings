@@ -1941,6 +1941,7 @@
 "ask.usage.summary" = "자동 요약";
 "ask.usage.inference" = "답변 / 도구 판단";
 "ask.usage.externalShort" = "개인 API";
+"ask.usage.localHelp" = "개인 모델이 보고한 토큰 사용량입니다. 사용량은 이 Mac에 저장되며 Typeflux credits는 사용하지 않습니다.";
 
 /* GUL-151 Ask tools */
 "ask.files.denied" = "이 경로는 Ask에 허용된 폴더 밖에 있습니다. 설정 → Agent → 파일 접근에서 폴더를 추가하세요.";

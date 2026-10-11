@@ -84,10 +84,17 @@ struct AskLauncherMotionTests {
         let window = try #require(controller.launcherWindow)
         window.appearance = NSAppearance(named: appearance)
         let content = try #require(window.contentView)
-        try await fixture.wait { !fixture.model.capturing && !fixture.model.quickSearch.isSearching }
-        try await Task.sleep(for: .milliseconds(700))
-        content.layoutSubtreeIfNeeded()
-        try await fixture.wait { !controller.launcherIsResizing }
+        try await fixture.wait {
+            fixture.model.launcherDraft.source == "Safari"
+                && !fixture.model.capturing && !fixture.model.quickSearch.isSearching
+        }
+        let expectedHomeHeight = AskMetrics.launcherHeight(editor: 32, banners: 0,
+            suggestions: AskLauncherSuggestions.height(for: fixture.model.launcherHome()))
+        try await fixture.wait {
+            content.layoutSubtreeIfNeeded()
+            return !controller.launcherIsResizing && abs(window.frame.height - expectedHomeHeight) < 1
+        }
+        #expect(abs(window.frame.height - expectedHomeHeight) < 1, "The captured home must finish its first layout")
         let homeHeight = window.frame.height
         let editor = try #require(editor(in: content))
         let openChat = try element("ask.launcher.openChat", in: window)
@@ -129,7 +136,7 @@ struct AskLauncherMotionTests {
             }
             if text.isEmpty {
                 #expect(abs(window.frame.height - homeHeight) < 1,
-                        "Clearing input must close the empty result gap promptly")
+                        "Clearing input left height \(window.frame.height), expected \(homeHeight)")
             }
         }
         for _ in 0 ..< 55 {

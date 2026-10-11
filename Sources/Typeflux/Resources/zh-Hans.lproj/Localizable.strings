@@ -1951,6 +1951,7 @@
 "ask.usage.summary" = "自动摘要";
 "ask.usage.inference" = "回答 / 工具决策";
 "ask.usage.externalShort" = "自有 API";
+"ask.usage.localHelp" = "用量来自自有模型返回的 token 信息，保存在本机，不消耗 Typeflux credits。";
 
 /* GUL-151 Ask tools */
 "ask.files.denied" = "该路径不在授权给 Ask 的文件夹中。请在 设置 → Agent → 文件访问 中添加该文件夹。";

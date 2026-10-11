@@ -414,8 +414,19 @@ struct LauncherSettingsPolishTests {
         try #require(find(id, in: window), "Missing accessibility element: \(id)")
     }
 
-    private func click(_ element: Element, in _: NSWindow) throws {
-        // Use the rendered control's press action instead of entering AppKit's synchronous mouse tracking loop.
+    private func click(_ element: Element, in window: NSWindow) throws {
+        let frame = window.convertFromScreen(element.frame)
+        let point = NSPoint(x: frame.midX, y: frame.midY)
+        var target = window.contentView?.hitTest(point)
+        while let view = target {
+            if let control = view as? NSControl {
+                // Native switches track mouseDown synchronously. Exercise their
+                // press action without entering AppKit's interactive event loop.
+                _ = control.accessibilityPerformPress()
+                return
+            }
+            target = view.superview
+        }
         try SettingsBehaviorTestSupport.Element(object: element.object).press()
     }
 }
