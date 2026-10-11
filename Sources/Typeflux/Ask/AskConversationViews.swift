@@ -1088,6 +1088,11 @@ struct AskConversationView: View {
                                                            value: [item.id: geometry.frame(in: .named("ask-transcript"))])
                                 })
                         }
+                        if model.showsResponseWaiting {
+                            AskResponseWaitingView()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .id("response-waiting")
+                        }
                         // A decision for a step in a tool card sits inside that card.
                         if let id = model.selected?.id, let call = model.pendingApprovals[id],
                            !Self.groupContains(items, callId: call.id) {
@@ -1182,6 +1187,7 @@ struct AskConversationView: View {
                 .onChange(of: model.selected?.run?.preview) { _ in followBottom(proxy) }
                 .onChange(of: model.inferenceProgress) { _ in followBottom(proxy) }
                 .onChange(of: model.selected?.messages.count) { _ in followBottom(proxy) }
+                .onChange(of: model.showsResponseWaiting) { _ in followBottom(proxy) }
                 .onChange(of: model.selectedId.flatMap { model.pendingApprovals[$0]?.id }) { _ in followBottom(proxy) }
                 .onChange(of: model.steeredMessages.count) { _ in followBottom(proxy) }
                 .onChange(of: hasStatus) { _ in followBottom(proxy) }
