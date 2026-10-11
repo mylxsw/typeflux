@@ -16,9 +16,36 @@ enum StudioSection: String, CaseIterable, Identifiable {
         rawValue
     }
 
-    /// Sections that appear in the upper sidebar group.
+    /// Sections that appear in the upper sidebar group. `.home` stands for the whole Voice Input group.
     static var sidebarUpperCases: [StudioSection] {
-        [.home, .vocabulary, .history, .personas, .models, .agent, .launcher, .hotkeys]
+        [.home, .models, .agent, .launcher, .hotkeys]
+    }
+
+    /// Voice Input pages, in tab order. They share one sidebar entry and switch through tabs.
+    static var voiceInputCases: [StudioSection] {
+        [.home, .vocabulary, .history, .personas]
+    }
+
+    var isVoiceInput: Bool {
+        Self.voiceInputCases.contains(self)
+    }
+
+    /// The sidebar entry that is selected while this section is shown.
+    var sidebarSection: StudioSection {
+        isVoiceInput ? .home : self
+    }
+
+    var sidebarTitle: String {
+        self == .home ? L("studio.section.voiceInput") : title
+    }
+
+    var sidebarIconName: String {
+        self == .home ? "waveform" : iconName
+    }
+
+    /// The title shown in the compact navigation bar.
+    var shellTitle: String {
+        isVoiceInput ? L("studio.section.voiceInput") : heading
     }
 
     /// Sections that appear in the lower sidebar group.

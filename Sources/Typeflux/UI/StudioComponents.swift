@@ -667,7 +667,7 @@ struct StudioShell<Content: View>: View {
                 sidebar(compact: height < 600).frame(width: StudioTheme.sidebarWidth, height: min(600, max(240, height - 60)))
                     .background(AskWindowBackdrop())
             }
-            Text(currentSection.heading).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+            Text(currentSection.shellTitle).font(.system(size: 13, weight: .semibold)).lineLimit(1)
             Spacer(minLength: 0)
             AskIconGhostButton(label: L("sidebar.settingsAccessibility"), systemImage: "gearshape") {
                 onSelect(.settings)
@@ -790,21 +790,22 @@ struct StudioSidebar: View {
 
 extension StudioSidebar {
     private func sidebarNavigationButton(for section: StudioSection) -> some View {
-        Button(action: { onSelect(section) }) {
+        let isSelected = section == currentSection.sidebarSection
+        return Button(action: { onSelect(section) }) {
             HStack(spacing: StudioTheme.Spacing.medium) {
-                Image(systemName: section.iconName)
+                Image(systemName: section.sidebarIconName)
                     .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
                     .frame(width: StudioTheme.ControlSize.sidebarNavigationIcon)
 
-                Text(section.title)
+                Text(section.sidebarTitle)
                     .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
 
                 Spacer()
             }
-            .foregroundStyle(section == currentSection ? StudioTheme.accentText : StudioTheme.textSecondary)
+            .foregroundStyle(isSelected ? StudioTheme.accentText : StudioTheme.textSecondary)
             .padding(.horizontal, StudioTheme.Insets.sidebarItemHorizontal)
             .padding(.vertical, StudioTheme.Insets.sidebarItemVertical)
-            .modifier(StudioSidebarRowBackground(selected: section == currentSection,
+            .modifier(StudioSidebarRowBackground(selected: isSelected,
                                                  corner: style.ask.sidebarRowCorner))
             .contentShape(Rectangle())
         }

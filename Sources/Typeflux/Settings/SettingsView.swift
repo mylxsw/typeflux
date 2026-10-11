@@ -413,7 +413,7 @@ struct StudioView: View {
     var body: some View {
         StudioShell(
             currentSection: viewModel.currentSection,
-            onSelect: viewModel.navigate,
+            onSelect: viewModel.navigateFromSidebar,
             onAccountAction: handleAccountAction,
             searchText: $viewModel.searchQuery,
             searchPlaceholder: viewModel.currentSection.searchPlaceholder,
@@ -422,8 +422,10 @@ struct StudioView: View {
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                if viewModel.currentSection != .hotkeys,
-                   viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
+                if viewModel.currentSection.isVoiceInput {
+                    voiceInputHeader
+                } else if viewModel.currentSection != .hotkeys,
+                          viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
                     pageHeader
                 }
 
@@ -811,6 +813,33 @@ struct StudioView: View {
                 subtitle: viewModel.currentSection == .agent ? nil : viewModel.currentSection.subheading
             )
 
+            pageHeaderActions
+        }
+    }
+
+    /// Voice Input pages share one header: their tabs, with the shown page's actions on the right.
+    private var voiceInputHeader: some View {
+        VStack(spacing: StudioTheme.Spacing.none) {
+            VoiceInputTabBar(
+                selection: viewModel.currentSection,
+                count: viewModel.voiceInputTabCount,
+                onSelect: viewModel.navigate
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // Overlaid so taller buttons keep the tab underline on the divider, centred on the tab titles.
+            .overlay {
+                HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
+                    .padding(.bottom, StudioTheme.Spacing.xxxSmall)
+            }
+            Rectangle()
+                .fill(StudioTheme.border)
+                .frame(height: 1)
+        }
+    }
+
+    /// Actions on the right of the page header, including the spacer that pushes them there.
+    private var pageHeaderActions: some View {
+        Group {
             if viewModel.currentSection == .vocabulary {
                 Spacer()
 
@@ -894,6 +923,8 @@ struct StudioView: View {
                 }
                 .studioTooltip(L("models.addEndpoint"), yOffset: 34)
             } else if viewModel.currentSection == .account {
+                Spacer()
+            } else if viewModel.currentSection.isVoiceInput {
                 Spacer()
             }
         }

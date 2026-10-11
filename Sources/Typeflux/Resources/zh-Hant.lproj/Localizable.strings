@@ -72,6 +72,7 @@
 "feedback.error.invalidResponse" = "收到的回饋回應無效。";
 
 "studio.section.home" = "總覽";
+"studio.section.voiceInput" = "語音輸入";
 "studio.section.models" = "模型";
 "studio.section.personas" = "人設";
 "studio.section.vocabulary" = "詞庫";
