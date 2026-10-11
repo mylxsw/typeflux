@@ -8,9 +8,12 @@ struct ScrollCaptureBar: View {
     let actions: ScrollCaptureActions
 
     static func message(for state: ScrollCaptureViewState) -> String {
-        if state.lastSegmentSuspicious { return L("screenshot.scroll.status.suspicious") }
+        if state.lastSegmentSuspicious {
+            return L("screenshot.scroll.status.suspicious")
+        }
         return switch state.status {
         case .starting: L("screenshot.scroll.status.starting")
+        case .manual: L("screenshot.scroll.status.manual")
         case .scrolling: L("screenshot.scroll.status.scrolling")
         case .paused: L("screenshot.scroll.status.paused")
         case .pausedByMouse: L("screenshot.scroll.status.pausedByMouse")
@@ -28,7 +31,7 @@ struct ScrollCaptureBar: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: state.lastSegmentSuspicious ? "exclamationmark.triangle.fill"
-                : "arrow.down.to.line.compact")
+                : (state.axis == .horizontal ? "arrow.right.to.line.compact" : "arrow.down.to.line.compact"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(state.lastSegmentSuspicious ? Color.orange : AskTheme.accent)
                 .padding(.leading, 6)
@@ -47,8 +50,8 @@ struct ScrollCaptureBar: View {
             }
             Rectangle().fill(AskTheme.border).frame(width: 1, height: 18).padding(.horizontal, 4)
             button(state.isAutomatic ? "pause.fill" : "play.fill",
-                   title: L(state.isAutomatic ? "screenshot.scroll.pause" : "screenshot.scroll.resume"),
-                   key: "␣", isEnabled: state.canToggleAutomatic, action: actions.togglePause)
+                   title: L(state.isAutomatic ? "screenshot.scroll.pause" : "screenshot.scroll.automatic"),
+                   key: "␣", showsTitle: true, isEnabled: state.canToggleAutomatic, action: actions.togglePause)
             button("arrow.uturn.backward", title: L("screenshot.scroll.undo"), key: "⌫", isEnabled: state.canUndo,
                    action: actions.undo)
             button("xmark", title: L("screenshot.edit.cancel"), key: "esc", action: actions.cancel)
@@ -76,11 +79,14 @@ struct ScrollCaptureBar: View {
         .fixedSize()
     }
 
-    private func button(_ symbol: String, title: String, key: String, isEnabled: Bool = true,
+    private func button(_ symbol: String, title: String, key: String, showsTitle: Bool = false, isEnabled: Bool = true,
                         action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Image(systemName: symbol).font(.system(size: 12, weight: .medium))
+                if showsTitle {
+                    Text(title).font(.system(size: 12, weight: .medium))
+                }
                 Text(key).font(.system(size: 11)).foregroundStyle(.secondary)
             }
             .foregroundStyle(Color.primary.opacity(0.8))
@@ -110,10 +116,17 @@ final class ScrollCaptureBarView: NSView {
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
-    override var acceptsFirstResponder: Bool { true }
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override var acceptsFirstResponder: Bool {
+        true
+    }
+
+    override func acceptsFirstMouse(for _: NSEvent?) -> Bool {
+        true
+    }
 
     /// The bar's size for `state`.
     func show(_ state: ScrollCaptureViewState) -> CGSize {
@@ -124,7 +137,9 @@ final class ScrollCaptureBarView: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
-        if !handleKey(event.keyCode) { super.keyDown(with: event) }
+        if !handleKey(event.keyCode) {
+            super.keyDown(with: event)
+        }
     }
 
     /// - Returns: whether the key meant something here.
@@ -133,13 +148,19 @@ final class ScrollCaptureBarView: NSView {
         guard let actions else { return false }
         switch keyCode {
         case ScreenshotOverlayView.Key.space:
-            if state.canToggleAutomatic { actions.togglePause() }
+            if state.canToggleAutomatic {
+                actions.togglePause()
+            }
         case ScreenshotOverlayView.Key.delete, ScreenshotOverlayView.Key.forwardDelete:
-            if state.canUndo { actions.undo() }
+            if state.canUndo {
+                actions.undo()
+            }
         case ScreenshotOverlayView.Key.escape:
             actions.cancel()
         case ScreenshotOverlayView.Key.returnKey, ScreenshotOverlayView.Key.enter:
-            if state.pixelSize.width > 0 { actions.finish() }
+            if state.pixelSize.width > 0 {
+                actions.finish()
+            }
         default:
             return false
         }

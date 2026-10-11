@@ -59,12 +59,11 @@ enum ScrollCaptureFixtures {
             let line = row / 20, inLine = row % 20
             for column in 0 ..< width {
                 let offset = (row * width + column) * 4
-                let value: UInt8
-                if inLine < 14 {
-                    value = generator.next() % 3 == 0 ? UInt8(generator.next() % 120) : 250
+                let value: UInt8 = if inLine < 14 {
+                    generator.next() % 3 == 0 ? UInt8(generator.next() % 120) : 250
                 } else {
                     // Light and nearly flat: too little detail to align on.
-                    value = UInt8(240 - (line + inLine) % 12)
+                    UInt8(240 - (line + inLine) % 12)
                 }
                 bytes[offset] = value
                 bytes[offset + 1] = value
@@ -103,8 +102,25 @@ enum ScrollCaptureFixtures {
 
     /// One flat color.
     static func solid(width: Int, height: Int, gray: UInt8) -> CGImage {
-        let bytes = [UInt8](repeating: gray, count: width * height * 4).enumerated().map { $0.offset % 4 == 3 ? 255 : $0.element }
+        let bytes = [UInt8](repeating: gray, count: width * height * 4).enumerated()
+            .map { $0.offset % 4 == 3 ? 255 : $0.element }
         return Pixels(width: width, height: height, bytes: bytes).makeImage(space: space)!
+    }
+
+    /// Transpose the fixture's pixels independently of the production Core Graphics transform.
+    static func transpose(_ image: CGImage) -> CGImage {
+        let input = bytes(of: image)
+        var output = [UInt8](repeating: 0, count: input.count)
+        for row in 0 ..< image.height {
+            for column in 0 ..< image.width {
+                let source = (row * image.width + column) * 4
+                let target = (column * image.height + row) * 4
+                for channel in 0 ..< 4 {
+                    output[target + channel] = input[source + channel]
+                }
+            }
+        }
+        return Pixels(width: image.height, height: image.width, bytes: output).makeImage(space: space)!
     }
 
     static func bytes(of image: CGImage) -> [UInt8] {

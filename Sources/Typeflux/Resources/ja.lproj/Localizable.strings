@@ -4217,6 +4217,8 @@
 "screenshot.mode.scrolling" = "スクロールキャプチャ";
 "screenshot.mode.scrolling.short" = "スクロール";
 "screenshot.tool.scroll" = "スクロールキャプチャ";
+"screenshot.scroll.status.manual" = "手動で下または右にスクロール · Spaceで自動開始";
+"screenshot.scroll.automatic" = "自動";
 "screenshot.scroll.status.starting" = "準備中…";
 "screenshot.scroll.status.scrolling" = "自動スクロール中 · マウスを動かすと手動に切り替わります";
 "screenshot.scroll.status.paused" = "一時停止中 · 手動でスクロールするか、スペースで再開";

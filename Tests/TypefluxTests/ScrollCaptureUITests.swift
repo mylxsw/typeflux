@@ -86,7 +86,7 @@ final class ScrollCaptureUITests: XCTestCase {
         let bounds = CGRect(x: 0, y: 0, width: 66, height: 116)
         // 50 points wide inside the insets: half size.
         let short = ScrollCapturePreviewView.layout(preview(segmentHeights: [100, 40], header: 20, footer: 10),
-                                                       in: bounds)
+                                                    in: bounds)
         XCTAssertEqual(short.segments.map(\.frame), [CGRect(x: 8, y: 8, width: 50, height: 50),
                                                      CGRect(x: 8, y: 58, width: 50, height: 20)])
         XCTAssertEqual(short.segments.map(\.isNewest), [false, true])
@@ -94,7 +94,7 @@ final class ScrollCaptureUITests: XCTestCase {
         XCTAssertEqual(short.footer, CGRect(x: 8, y: 78, width: 50, height: 5))
 
         let tall = ScrollCapturePreviewView.layout(preview(segmentHeights: [100, 100, 100], suspicious: [1]),
-                                                      in: bounds)
+                                                   in: bounds)
         XCTAssertEqual(tall.segments.last?.frame.maxY, 108, "Pinned to the newest rows")
         XCTAssertEqual(tall.segments.map(\.isSuspicious), [false, true, false])
         XCTAssertNil(tall.header)
@@ -115,6 +115,28 @@ final class ScrollCaptureUITests: XCTestCase {
         XCTAssertNotNil(bitmap.colorAt(x: 66, y: 100))
     }
 
+    func testHorizontalPreviewKeepsTheNewestColumnsVisible() throws {
+        let preview = ScrollCapturePreview(
+            axis: .horizontal,
+            segments: [200, 100, 100].map {
+                ScrollStitcher.Segment(image: ScreenCaptureTestSupport.image(width: $0, height: 100),
+                                       isSuspicious: false)
+            },
+            footer: ScreenCaptureTestSupport.image(width: 20, height: 100), headerHeight: 30, width: 420
+        )
+        let layout = ScrollCapturePreviewView.layout(preview, in: CGRect(x: 0, y: 0, width: 216, height: 116))
+        XCTAssertEqual(layout.segments.map(\.frame), [CGRect(x: -212, y: 8, width: 200, height: 100),
+                                                      CGRect(x: -12, y: 8, width: 100, height: 100),
+                                                      CGRect(x: 88, y: 8, width: 100, height: 100)])
+        XCTAssertEqual(layout.header, CGRect(x: -212, y: 8, width: 30, height: 100))
+        XCTAssertEqual(layout.footer, CGRect(x: 188, y: 8, width: 20, height: 100))
+        let view = ScrollCapturePreviewView(frame: CGRect(x: 0, y: 0, width: 216, height: 116))
+        view.preview = preview
+        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        XCTAssertNotNil(bitmap.colorAt(x: 100, y: 50))
+    }
+
     // MARK: Bar
 
     func testTheBarSaysWhatIsHappening() {
@@ -122,7 +144,7 @@ final class ScrollCaptureUITests: XCTestCase {
         XCTAssertEqual(ScrollCaptureBar.message(for: state), L("screenshot.scroll.status.starting"))
         XCTAssertNil(ScrollCaptureBar.sizeText(for: state))
         let statuses: [(ScrollCaptureViewState.Status, String)] = [
-            (.scrolling, "scrolling"), (.paused, "paused"), (.pausedByMouse, "pausedByMouse"),
+            (.manual, "manual"), (.scrolling, "scrolling"), (.paused, "paused"), (.pausedByMouse, "pausedByMouse"),
             (.misaligned, "misaligned"), (.needsAccessibility, "needsAccessibility")
         ]
         for (status, key) in statuses {
@@ -145,7 +167,9 @@ final class ScrollCaptureUITests: XCTestCase {
 
         // Before the first frame only esc does something.
         _ = bar.show(ScrollCaptureViewState())
-        for key in [Key.space, Key.delete, Key.returnKey, Key.escape] { XCTAssertTrue(bar.handleKey(key)) }
+        for key in [Key.space, Key.delete, Key.returnKey, Key.escape] {
+            XCTAssertTrue(bar.handleKey(key))
+        }
         XCTAssertEqual([calls.pauses, calls.undos, calls.finishes, calls.cancels], [0, 0, 0, 1])
         XCTAssertFalse(bar.handleKey(Key.keyA))
 
@@ -154,14 +178,35 @@ final class ScrollCaptureUITests: XCTestCase {
         let size = bar.show(state)
         XCTAssertGreaterThan(size.width, 200)
         XCTAssertEqual(bar.state, state)
-        for key in [Key.space, Key.forwardDelete, Key.enter] { bar.handleKey(key) }
+        for key in [Key.space, Key.forwardDelete, Key.enter] {
+            bar.handleKey(key)
+        }
         XCTAssertEqual([calls.pauses, calls.undos, calls.finishes], [1, 1, 1])
 
         state.status = .needsAccessibility
         _ = bar.show(state)
         bar.handleKey(Key.space)
-        XCTAssertEqual(calls.pauses, 1)
+        XCTAssertEqual(calls.pauses, 2)
         XCTAssertTrue(bar.acceptsFirstResponder)
+    }
+
+    func testManualAndAutomaticBarsRenderForReview() throws {
+        guard let output = ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_REVIEW_DIR"] else { return }
+        let calls = Calls()
+        let bar = ScrollCaptureBarView(frame: .zero)
+        bar.actions = actions(calls)
+        for status: ScrollCaptureViewState.Status in [.manual, .scrolling] {
+            let state = ScrollCaptureViewState(status: status, pixelSize: ScreenPixelSize(width: 1280, height: 3200),
+                                               canUndo: true)
+            let size = bar.show(state)
+            bar.frame.size = size
+            bar.layoutSubtreeIfNeeded()
+            let bitmap = try XCTUnwrap(bar.bitmapImageRepForCachingDisplay(in: bar.bounds))
+            bar.cacheDisplay(in: bar.bounds, to: bitmap)
+            let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            let name = status == .manual ? "manual-scroll-bar.png" : "automatic-scroll-bar.png"
+            try png.write(to: URL(fileURLWithPath: output).appendingPathComponent(name))
+        }
     }
 
     // MARK: Panels
@@ -268,11 +313,22 @@ final class ScrollCaptureUITests: XCTestCase {
         let up = ScrollDriver.wheelEvent(points: -30.4, at: CGPoint(x: 1, y: 2))
         XCTAssertEqual(up?.getIntegerValueField(.scrollWheelEventPointDeltaAxis1), 30)
         XCTAssertNil(ScrollDriver.wheelEvent(points: .infinity, at: .zero))
+        let downLimit = ScrollDriver.wheelEvent(points: .greatestFiniteMagnitude, at: .zero)
+        let upLimit = ScrollDriver.wheelEvent(points: -.greatestFiniteMagnitude, axis: .horizontal, at: .zero)
+        XCTAssertEqual(downLimit?.getIntegerValueField(.scrollWheelEventPointDeltaAxis1), Int64(Int32.min))
+        XCTAssertEqual(upLimit?.getIntegerValueField(.scrollWheelEventPointDeltaAxis2), Int64(Int32.max))
         var posted = 0
         let driver = ScrollDriver(isTrusted: { true }, pointerLocation: { .zero }, warp: { _ in },
                                   post: { _ in posted += 1 })
         driver.scroll(by: .nan)
         XCTAssertEqual(posted, 0)
+    }
+
+    func testHorizontalWheelEventsUseOnlyTheHorizontalAxis() {
+        let event = ScrollDriver.wheelEvent(points: 42, axis: .horizontal, at: CGPoint(x: 12, y: 24))
+        XCTAssertEqual(event?.getIntegerValueField(.scrollWheelEventPointDeltaAxis1), 0)
+        XCTAssertEqual(event?.getIntegerValueField(.scrollWheelEventPointDeltaAxis2), -42)
+        XCTAssertEqual(event?.getIntegerValueField(.eventSourceUserData), ScrollDriverEventMark.userData)
     }
 
     // MARK: Monitor
@@ -288,7 +344,7 @@ final class ScrollCaptureUITests: XCTestCase {
         XCTAssertEqual(ScrollUserActivityMonitor.activity(type: .mouseMoved, userData: 0, location: point),
                        .moved(point))
         XCTAssertEqual(ScrollUserActivityMonitor.activity(type: .leftMouseDragged, userData: 0, location: point),
-                       .moved(point))
+                       .dragged(point))
         XCTAssertNil(ScrollUserActivityMonitor.activity(type: .keyDown, userData: 0, location: point))
 
         let monitor = ScrollUserActivityMonitor()
@@ -301,8 +357,12 @@ final class ScrollCaptureUITests: XCTestCase {
     // MARK: Stream
 
     func testTheStreamCapturesTheRegionAtNativePixels() {
-        let region = ScrollCaptureRegion(displayID: 3, displayFrame: CGRect(x: 1440, y: -200, width: 1920, height: 1080),
-                                         scale: 2, rect: CGRect(x: 1540, y: -100, width: 400.5, height: 300))
+        let region = ScrollCaptureRegion(
+            displayID: 3,
+            displayFrame: CGRect(x: 1440, y: -200, width: 1920, height: 1080),
+            scale: 2,
+            rect: CGRect(x: 1540, y: -100, width: 400.5, height: 300)
+        )
         XCTAssertEqual(region.localRect, CGRect(x: 100, y: 100, width: 400.5, height: 300))
         XCTAssertEqual(region.pixelSize, ScreenPixelSize(width: 801, height: 600))
 
@@ -315,6 +375,25 @@ final class ScrollCaptureUITests: XCTestCase {
         XCTAssertEqual(config.minimumFrameInterval.seconds, 1.0 / 15, accuracy: 0.0001)
         XCTAssertEqual(config.pixelFormat, kCVPixelFormatType_32BGRA)
         let source = ScreenCaptureStreamFrameSource(ownProcessID: 1)
+        source.stop()
+    }
+
+    func testCancelledStreamDoesNotQueryScreenRecordingAccess() async {
+        let source = ScreenCaptureStreamFrameSource()
+        let region = ScrollCaptureRegion(displayID: 1, displayFrame: display, scale: 1, rect: display)
+        let start = Task { @MainActor in
+            do {
+                try await source.start(region, onFrame: { _ in }, onError: { _ in })
+                return false
+            } catch is CancellationError {
+                return true
+            } catch {
+                return false
+            }
+        }
+        start.cancel()
+        let cancelled = await start.value
+        XCTAssertTrue(cancelled)
         source.stop()
     }
 

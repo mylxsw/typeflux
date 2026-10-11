@@ -13,7 +13,9 @@ struct ScrollCaptureRegion: Equatable {
     var rect: CGRect
 
     /// The region in the display's own points.
-    var localRect: CGRect { rect.offsetBy(dx: -displayFrame.minX, dy: -displayFrame.minY) }
+    var localRect: CGRect {
+        rect.offsetBy(dx: -displayFrame.minX, dy: -displayFrame.minY)
+    }
 
     var pixelSize: ScreenPixelSize {
         ScreenPixelSize(width: max(1, Int((rect.width * scale).rounded())),
@@ -49,7 +51,9 @@ final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStrea
 
     func start(_ region: ScrollCaptureRegion, onFrame: @escaping @Sendable (CGImage) -> Void,
                onError: @escaping @Sendable (Error) -> Void) async throws {
+        try Task.checkCancellation()
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        try Task.checkCancellation()
         guard let display = content.displays.first(where: { $0.displayID == region.displayID }) else {
             throw ScreenCaptureError.unavailable
         }
@@ -63,6 +67,10 @@ final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStrea
             self.onError = onError
         }
         try await stream.startCapture()
+        // Cancellation can happen while the native start operation is in flight.
+        if Task.isCancelled {
+            stop()
+        }
     }
 
     func stop() {
@@ -93,7 +101,7 @@ final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStrea
 
     // MARK: SCStreamOutput
 
-    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+    func stream(_: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
         guard type == .screen, Self.isComplete(sampleBuffer),
               let buffer = sampleBuffer.imageBuffer,
               let image = Self.copyImage(of: buffer) else { return }
@@ -101,7 +109,7 @@ final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStrea
         handler?(image)
     }
 
-    func stream(_ stream: SCStream, didStopWithError error: Error) {
+    func stream(_: SCStream, didStopWithError error: Error) {
         let handler = lock.withLock { onError }
         handler?(error)
     }
