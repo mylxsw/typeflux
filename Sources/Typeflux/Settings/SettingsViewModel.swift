@@ -109,6 +109,7 @@ final class StudioViewModel: ObservableObject {
     @Published var appearanceMode: AppearanceMode
     @Published var interfaceStyle: InterfaceStyle
     @Published var liquidGlassIntensity: Double
+    @Published var launcherWindowMode: AskLauncherWindowMode
     @Published var appLanguage: AppLanguage
     @Published var availableMicrophones: [AudioInputDevice] = []
     @Published var preferredMicrophoneID: String
@@ -349,6 +350,7 @@ final class StudioViewModel: ObservableObject {
         appearanceMode = settingsStore.appearanceMode
         interfaceStyle = settingsStore.interfaceStyle
         liquidGlassIntensity = settingsStore.liquidGlassIntensity
+        launcherWindowMode = settingsStore.askLauncherWindowMode
         appLanguage = settingsStore.appLanguage
         preferredMicrophoneID = settingsStore.preferredMicrophoneID
         instantVoiceInputEnabled = settingsStore.instantVoiceInputEnabled
@@ -1115,6 +1117,11 @@ final class StudioViewModel: ObservableObject {
             loadPersonaDraft()
         }
         refreshPermissionRows()
+    }
+
+    func setLauncherWindowMode(_ mode: AskLauncherWindowMode) {
+        launcherWindowMode = mode
+        settingsStore.askLauncherWindowMode = mode
     }
 
     func refreshAvailableMicrophones() {

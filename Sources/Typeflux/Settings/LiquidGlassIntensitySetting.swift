@@ -5,7 +5,15 @@ struct LiquidGlassIntensitySetting: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
 
-    private var accessibilityOverride: Bool { reduceTransparency || contrast == .increased }
+    var body: some View {
+        LiquidGlassIntensityControl(value: $value, accessibilityOverride: reduceTransparency || contrast == .increased)
+    }
+}
+
+/// The environment adapter supplies the system accessibility policy to the control.
+struct LiquidGlassIntensityControl: View {
+    @Binding var value: Double
+    let accessibilityOverride: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -20,7 +28,7 @@ struct LiquidGlassIntensitySetting: View {
                 .environment(\.liquidGlassIntensity, LiquidGlassIntensity(value))
             HStack(spacing: 12) {
                 Image(systemName: "rectangle.on.rectangle").accessibilityHidden(true)
-                Slider(value: $value, in: 0...1)
+                Slider(value: $value, in: 0 ... 1)
                     .disabled(accessibilityOverride)
                     .accessibilityLabel(L("settings.glassIntensity.title"))
                     .accessibilityHint(L("settings.glassIntensity.subtitle"))
@@ -33,9 +41,11 @@ struct LiquidGlassIntensitySetting: View {
                 Spacer()
                 Text(L("settings.glassIntensity.tinted"))
             }.font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-            Text(L(accessibilityOverride ? "settings.glassIntensity.accessibility" : "settings.glassIntensity.subtitle"))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if accessibilityOverride {
+                Text(L("settings.glassIntensity.accessibility"))
+                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }
@@ -81,7 +91,11 @@ struct LiquidGlassIntensityPreview: View {
 
     private func previewControl(@ViewBuilder content: () -> some View) -> some View {
         content().frame(height: 44).foregroundStyle(StudioTheme.textPrimary)
-            .background(AskGlassBackground(material: AskGlassMaterial.resolve(reduceTransparency: reduceTransparency, style: style),
-                                           corner: 22, opaqueFill: AskTheme.glassFill, placement: .inWindow))
+            .background(AskGlassBackground(
+                material: AskGlassMaterial.resolve(reduceTransparency: reduceTransparency, style: style),
+                corner: 22,
+                opaqueFill: AskTheme.glassFill,
+                placement: .inWindow
+            ))
     }
 }

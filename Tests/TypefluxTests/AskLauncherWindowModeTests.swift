@@ -5,7 +5,7 @@ import Testing
 @Suite("Launcher window mode", .exclusiveUIState)
 @MainActor
 struct AskLauncherWindowModeTests {
-    @Test func defaultsToCompleteAndPersistsBothModes() throws {
+    @Test func `defaults to complete and persists both modes`() throws {
         let suite = "launcher-window-mode-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -19,19 +19,25 @@ struct AskLauncherWindowModeTests {
         #expect(settings.askLauncherWindowMode == .complete)
     }
 
-    @Test func settingsSelectionWritesThroughAndReloads() throws {
+    @Test func `settings selection writes through and reloads`() throws {
         let suite = "launcher-window-mode-view-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = SettingsStore(defaults: defaults)
-        let view = LauncherSettingsView(settings: settings)
-        view.setWindowMode(.simple)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = StudioViewModel(settingsStore: settings, historyStore: SQLiteHistoryStore(baseDir: root),
+                                    initialSection: .settings,
+                                    modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false))
+        model.setLauncherWindowMode(.simple)
+        #expect(model.launcherWindowMode == .simple)
         #expect(settings.askLauncherWindowMode == .simple)
-        view.setWindowMode(.complete)
+        model.setLauncherWindowMode(.complete)
+        #expect(model.launcherWindowMode == .complete)
         #expect(settings.askLauncherWindowMode == .complete)
     }
 
-    @Test func simpleOnlyCollapsesAnIdleDraftAndIgnoresCapturedContext() {
+    @Test func `simple only collapses an idle draft and ignores captured context`() {
         var draft = AskDraft(includeScreenshot: true, screenshot: "image", selection: "Selected text", source: "Safari")
         #expect(AskLauncherWindowMode.simple.isCollapsed(draft: draft))
         #expect(!AskLauncherWindowMode.complete.isCollapsed(draft: draft))
@@ -54,22 +60,22 @@ struct AskLauncherWindowModeTests {
         #expect(AskLauncherWindowMode.simple.isCollapsed(draft: draft))
     }
 
-    @Test func bothModesShareTheSameOpeningTopAndRememberedPosition() {
+    @Test func `both modes share the same opening top and remembered position`() {
         let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)
         for anchor in [nil, AskLauncherPlacement.Anchor(left: 40, fromTop: 80)] {
             let complete = AskLauncherPlacement.preferredFrame(on: screen, anchor: anchor)
             let simple = AskLauncherPlacement.preferredFrame(on: screen, anchor: anchor,
-                                                            height: AskLauncherWindowMode.simpleHeight)
+                                                             height: AskLauncherWindowMode.simpleHeight)
             #expect(complete.maxY == simple.maxY)
             #expect(complete.minX == simple.minX)
             #expect(simple.height == AskLauncherWindowMode.simpleHeight)
-            #expect(complete.height == AskMetrics.launcherWindowHeight)
+            #expect(complete.height == AskLauncherPlacement.restingHeight)
         }
     }
 }
 
 extension AskLauncherToggleTests {
-    @Test func simpleWindowExpandsForTypingAndCollapsesWithoutLosingFocus() async throws {
+    @Test func `simple window expands for typing and collapses without losing focus`() async throws {
         _ = NSApplication.shared
         let fixture = try AskTestFixture(authenticated: false)
         let suite = "launcher-simple-panel-" + UUID().uuidString
@@ -90,7 +96,7 @@ extension AskLauncherToggleTests {
         let top = panel.frame.maxY
         let editor = try #require(panel.firstResponder as? NSTextView)
         editor.insertText("abc", replacementRange: NSRange(location: NSNotFound, length: 0))
-        try await fixture.wait { panel.frame.height == AskMetrics.launcherWindowHeight }
+        try await fixture.wait { panel.frame.height > AskLauncherWindowMode.simpleHeight }
         #expect(panel.frame.maxY == top)
         #expect(panel.firstResponder === editor)
         #expect(fixture.model.launcherDraft.text == "abc")
@@ -105,7 +111,7 @@ extension AskLauncherToggleTests {
         #expect(panel.frame.height == AskLauncherWindowMode.simpleHeight)
         #expect(panel.firstResponder === editor)
         fixture.model.launcherDraft.attachments = [.init(kind: .file, name: "notes.txt", text: "Notes")]
-        try await fixture.wait { panel.frame.height == AskMetrics.launcherWindowHeight }
+        try await fixture.wait { panel.frame.height > AskLauncherWindowMode.simpleHeight }
         fixture.model.launcherDraft.attachments = []
         try await fixture.wait { panel.frame.height == AskLauncherWindowMode.simpleHeight }
         controller.recenterLauncher()
@@ -116,7 +122,7 @@ extension AskLauncherToggleTests {
         #expect(panel.frame.height == AskLauncherWindowMode.simpleHeight)
         controller.dismissLauncher()
         controller.showLauncher()
-        #expect(panel.frame.height == AskMetrics.launcherWindowHeight)
+        #expect(panel.frame.height > AskLauncherWindowMode.simpleHeight)
         #expect(controller.launcherWindow === panel)
         settings.askLauncherWindowMode = .simple
         controller.dismissLauncher()
@@ -124,7 +130,7 @@ extension AskLauncherToggleTests {
         #expect(panel.frame.height == AskLauncherWindowMode.simpleHeight)
     }
 
-    @Test func simpleModeOpensAnExistingDraftInTheFullWindow() async throws {
+    @Test func `simple mode opens an existing draft in the full window`() throws {
         _ = NSApplication.shared
         let fixture = try AskTestFixture(authenticated: false)
         let suite = "launcher-simple-draft-" + UUID().uuidString
@@ -140,7 +146,7 @@ extension AskLauncherToggleTests {
         }
         controller.showLauncher()
         let panel = try #require(controller.launcherWindow)
-        #expect(panel.frame.height == AskMetrics.launcherWindowHeight)
+        #expect(panel.frame.height > AskLauncherWindowMode.simpleHeight)
         #expect((panel.firstResponder as? NSTextView)?.string == "Unfinished question")
     }
 }

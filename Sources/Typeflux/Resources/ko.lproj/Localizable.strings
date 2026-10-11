@@ -126,11 +126,11 @@
 "settings.launchAtLogin.subtitle" = "Mac에 로그인한 후 자동으로 Typeflux을 시작하세요.";
 "settings.activationHotkey" = "음성 단축키";
 "settings.identity" = "정체성과 상호작용";
-"settings.appearance.title" = "외관";
+"settings.appearance.title" = "색상 모드";
 "settings.interfaceStyle.title" = "인터페이스 스타일";
 "settings.interfaceStyle.subtitle" = "앱 창, 오버레이, 메뉴의 표시 스타일을 선택합니다.";
 "settings.appearance.subtitle" = "밝은 테마, 어두운 테마 또는 시스템 테마에 따라 구성 요소 시스템을 전환합니다.";
-"settings.language.title" = "언어";
+"settings.language.title" = "표시 언어";
 "settings.language.subtitle" = "Typeflux 인터페이스에서 사용되는 표시 언어를 선택하세요.";
 "settings.output.title" = "출력";
 "settings.output.opencc.title" = "중국어 출력 변환";
@@ -4632,18 +4632,20 @@
 "hotkeys.keyword.sheet.record" = "단축키 기록";
 
 // Liquid Glass intensity
-"settings.glassIntensity.title" = "Liquid Glass 강도";
+"settings.glassIntensity.title" = "유리 질감";
 "settings.glassIntensity.subtitle" = "모든 윈도우의 투명도를 조절합니다. 변경 사항은 즉시 적용됩니다.";
 "settings.glassIntensity.clear" = "투명하게";
-"settings.glassIntensity.tinted" = "진하게";
-"settings.glassIntensity.accessibility" = "현재 시스템 손쉬운 사용 설정에 따라 불투명하게 표시됩니다.";
+"settings.glassIntensity.tinted" = "짙게";
+"settings.glassIntensity.accessibility" = "시스템 손쉬운 사용 설정으로 투명 효과가 제한됩니다.";
 "settings.glassIntensity.previewSearch" = "검색";
 
 // Launcher default window mode
-"ask.settings.windowMode.title" = "기본 창 모드";
+"ask.settings.windowMode.title" = "실행기 기본 창";
 "ask.settings.windowMode.simple" = "간단";
 "ask.settings.windowMode.complete" = "전체";
-"ask.settings.windowMode.detail" = "간단 모드는 입력창만 표시하며 입력하거나 기능을 사용할 때 확장됩니다. 전체 모드는 추천 항목과 하단 컨트롤을 표시합니다. 창 높이는 내용에 맞게 자동으로 조절됩니다. 다음에 런처를 열 때 적용됩니다.";
+"ask.settings.windowMode.detail" = "다음에 실행기를 열 때 적용됩니다.";
 "ask.settings.windowMode.selected" = "선택됨";
 
 "ask.home.section.apps" = "최근 사용한 앱";
+
+"settings.pane.appearance" = "외관";

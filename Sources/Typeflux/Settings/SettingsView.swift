@@ -393,16 +393,20 @@ struct StudioView: View {
     @State private var agentPane: AgentSettingsPane = .overview
     @StateObject private var interfaceStyleObserver: InterfaceStyleObserver
     @State private var launcherPane: LauncherSettingsPane
+    @State private var settingsPane: AppSettingsPane
 
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
-    init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics) {
+    init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics,
+         settingsPane: AppSettingsPane = .general) {
         self.viewModel = viewModel
         _interfaceStyleObserver = StateObject(wrappedValue: InterfaceStyleObserver(settings: viewModel.askToolSettings))
         _imageSettings = StateObject(wrappedValue: AskImageSettingsModel(
             store: AskImageSettings(defaults: viewModel.askToolSettings.defaults)
         ))
         _launcherPane = State(initialValue: launcherPane)
+        _settingsPane = State(initialValue: settingsPane)
     }
+
     @State private var agentStatuses: [AgentCapabilityStatus] = []
     @State private var isMCPImportPresented = false
     @State private var mcpImportText = ""
@@ -913,7 +917,7 @@ struct StudioView: View {
         case .history:
             historyPage
         case .settings:
-            settingsPage
+            settingsPage(compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
         case .agent:
             agentPage(compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
         case .launcher:
@@ -1922,7 +1926,18 @@ struct StudioView: View {
         }
     }
 
-    private var settingsPage: some View {
+    private func settingsPage(compact: Bool) -> some View {
+        SettingsPaneLayout(sections: AppSettingsPane.sections, selection: $settingsPane, compact: compact) {
+            switch settingsPane {
+            case .general:
+                generalSettingsPage
+            case .appearance:
+                AppearanceSettingsView(viewModel: viewModel)
+            }
+        }
+    }
+
+    private var generalSettingsPage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
             StudioSectionTitle(title: L("settings.general"))
 
@@ -1941,67 +1956,6 @@ struct StudioView: View {
                         )
                         .labelsHidden()
                         .toggleStyle(.switch)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.appearance.title"),
-                        subtitle: L("settings.appearance.subtitle")
-                    ) {
-                        StudioSegmentedPicker(
-                            options: AppearanceMode.allCases.map {
-                                (label: $0.displayName, value: $0)
-                            },
-                            selection: Binding(
-                                get: { viewModel.appearanceMode },
-                                set: viewModel.setAppearanceMode
-                            )
-                        )
-                        .frame(width: StudioTheme.Layout.appearancePickerWidth)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.interfaceStyle.title"),
-                        subtitle: L("settings.interfaceStyle.subtitle")
-                    ) {
-                        StudioSegmentedPicker(
-                            options: InterfaceStyle.allCases.map {
-                                (label: $0.displayName, value: $0)
-                            },
-                            selection: Binding(
-                                get: { viewModel.interfaceStyle },
-                                set: viewModel.setInterfaceStyle
-                            )
-                        )
-                        .frame(width: StudioTheme.Layout.appearancePickerWidth)
-                    }
-
-                    if viewModel.interfaceStyle.usesGlass {
-                        LiquidGlassIntensitySetting(value: Binding(
-                            get: { viewModel.liquidGlassIntensity },
-                            set: viewModel.setLiquidGlassIntensity
-                        ))
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.language.title"),
-                        subtitle: L("settings.language.subtitle")
-                    ) {
-                        StudioMenuPicker(
-                            options: AppLanguage.allCases.map {
-                                (label: $0.displayName, value: $0)
-                            },
-                            selection: Binding(
-                                get: { viewModel.appLanguage },
-                                set: viewModel.setAppLanguage
-                            ),
-                            width: StudioTheme.Layout.appearancePickerWidth
-                        )
                     }
                 }
             }

@@ -126,11 +126,11 @@
 "settings.launchAtLogin.subtitle" = "Start Typeflux automatically after you sign in to your Mac.";
 "settings.activationHotkey" = "Voice Shortcuts";
 "settings.identity" = "Identity & Interaction";
-"settings.appearance.title" = "Appearance";
+"settings.appearance.title" = "Color mode";
 "settings.interfaceStyle.title" = "Interface style";
 "settings.interfaceStyle.subtitle" = "Choose the visual style for app windows, overlays, and menus.";
 "settings.appearance.subtitle" = "Switch the component system between light, dark, or system-following themes.";
-"settings.language.title" = "Language";
+"settings.language.title" = "Interface language";
 "settings.language.subtitle" = "Choose the display language used across the Typeflux interface.";
 "settings.output.title" = "Output";
 "settings.output.opencc.title" = "Text Transformation & Optimization";
@@ -4654,18 +4654,20 @@
 "hotkeys.keyword.sheet.record" = "Record shortcut";
 
 // Liquid Glass intensity
-"settings.glassIntensity.title" = "Liquid Glass intensity";
+"settings.glassIntensity.title" = "Glass texture";
 "settings.glassIntensity.subtitle" = "Adjust transparency across all windows. Changes apply immediately.";
 "settings.glassIntensity.clear" = "Clear";
-"settings.glassIntensity.tinted" = "Tinted";
-"settings.glassIntensity.accessibility" = "System accessibility settings currently keep surfaces opaque.";
+"settings.glassIntensity.tinted" = "Dense";
+"settings.glassIntensity.accessibility" = "System accessibility settings limit transparency.";
 "settings.glassIntensity.previewSearch" = "Search";
 
 // Launcher default window mode
-"ask.settings.windowMode.title" = "Default window mode";
+"ask.settings.windowMode.title" = "Default launcher window";
 "ask.settings.windowMode.simple" = "Simple";
 "ask.settings.windowMode.complete" = "Complete";
-"ask.settings.windowMode.detail" = "Simple opens with just the input bar and expands when you type or use a feature. Complete shows suggestions and bottom controls. The window height adjusts to its content. Applies the next time you open the launcher.";
+"ask.settings.windowMode.detail" = "Applies the next time you open the launcher.";
 "ask.settings.windowMode.selected" = "Selected";
 
 "ask.home.section.apps" = "Recent apps";
+
+"settings.pane.appearance" = "Appearance";

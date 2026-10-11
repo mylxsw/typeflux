@@ -11,7 +11,7 @@ struct SettingsBehaviorTests {
     @Test func `appearance and interface buttons persist only the fixture preferences`() async throws {
         try await RenderedUI.withFixture { settings in
             let model = makeModel(settings)
-            try await RenderedUI.withWindow(StudioView(viewModel: model), width: 1100, height: 900) { _, host in
+            try await RenderedUI.withWindow(StudioView(viewModel: model, settingsPane: .appearance), width: 1100, height: 900) { _, host in
                 try await RenderedUI.wait { RenderedUI.contains(L("settings.appearance.title"), in: host) }
                 try await RenderedUI.wait { !model.permissionRows.isEmpty }
                 try RenderedUI.button(AppearanceMode.dark.displayName, in: host).press()
@@ -24,7 +24,7 @@ struct SettingsBehaviorTests {
                 try RenderedUI.button(AppearanceMode.light.displayName, in: host).press()
                 try await RenderedUI.wait { model.appearanceMode == .light }
                 #expect(SettingsStore(defaults: settings.defaults).appearanceMode == .light)
-                try RenderedUI.snapshot(host, name: "settings-general")
+                try RenderedUI.snapshot(host, name: "settings-appearance")
             }
         }
     }
@@ -146,7 +146,7 @@ extension SettingsBehaviorTests {
             for style in InterfaceStyle.allCases {
                 model.setInterfaceStyle(style)
                 for width: CGFloat in [720, 900, 1100, 1440] {
-                    try await RenderedUI.withWindow(StudioView(viewModel: model), width: width, height: 900) { window, host in
+                    try await RenderedUI.withWindow(StudioView(viewModel: model, settingsPane: .appearance), width: width, height: 900) { window, host in
                         try await RenderedUI.wait { RenderedUI.contains(L("settings.interfaceStyle.title"), in: host) }
                         let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
                         for choice in InterfaceStyle.allCases {

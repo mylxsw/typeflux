@@ -7,32 +7,37 @@ import Testing
 @Suite("Liquid Glass intensity", .serialized, .exclusiveUIState)
 @MainActor
 struct LiquidGlassIntensityTests {
-    @Test func storedIntensityIsBoundedAndSurvivesStyleChanges() throws {
+    @Test func `stored intensity is bounded and survives style changes`() throws {
         let defaults = try #require(UserDefaults(suiteName: "glass-intensity-" + UUID().uuidString))
         let settings = SettingsStore(defaults: defaults)
-        #expect(settings.liquidGlassIntensity == 0.5)
+        #expect(settings.liquidGlassIntensity == LiquidGlassIntensity.defaultValue)
         settings.liquidGlassIntensity = 0.8
         settings.interfaceStyle = .classic
         #expect(SettingsStore(defaults: defaults).liquidGlassIntensity == 0.8)
         settings.interfaceStyle = .liquidGlass
         #expect(settings.liquidGlassIntensity == 0.8)
-        for (input, expected) in [(Double(-1), 0.0), (2.0, 1.0), (.nan, 0.5), (.infinity, 0.5)] {
+        for (input, expected) in [
+            (Double(-1), 0.0),
+            (2.0, 1.0),
+            (.nan, LiquidGlassIntensity.defaultValue),
+            (.infinity, LiquidGlassIntensity.defaultValue)
+        ] {
             settings.liquidGlassIntensity = input
             #expect(settings.liquidGlassIntensity == expected)
         }
         defaults.set("invalid", forKey: "ui.liquidGlassIntensity")
-        #expect(settings.liquidGlassIntensity == 0.5)
+        #expect(settings.liquidGlassIntensity == LiquidGlassIntensity.defaultValue)
         defaults.set(-4.0, forKey: "ui.liquidGlassIntensity")
         #expect(settings.liquidGlassIntensity == 0)
     }
 
-    @Test func densityIsContinuousAndKeepsTheExistingMidpoint() {
+    @Test func `density is continuous and keeps the existing midpoint`() {
         for base in [0.06, 0.18, 0.22, 0.68, 0.92] {
-            #expect(LiquidGlassIntensity().nativeFrostOpacity(base) == base)
-            #expect(LiquidGlassIntensity().backdropOpacity(base) == base)
-            #expect(LiquidGlassIntensity().legacyFrostOpacity(base) == base)
+            #expect(LiquidGlassIntensity(0.5).nativeFrostOpacity(base) == base)
+            #expect(LiquidGlassIntensity(0.5).backdropOpacity(base) == base)
+            #expect(LiquidGlassIntensity(0.5).legacyFrostOpacity(base) == base)
             var previous = -1.0
-            for step in 0...100 {
+            for step in 0 ... 100 {
                 let intensity = LiquidGlassIntensity(Double(step) / 100)
                 let density = intensity.backdropOpacity(base)
                 #expect(density >= previous && density <= 1)
@@ -45,7 +50,7 @@ struct LiquidGlassIntensityTests {
         #expect(LiquidGlassIntensity(0.5 + 0.00001).extraTintOpacity < 0.0001)
     }
 
-    @Test func existingRootsAndDetachedMenusFollowChangesFromAnotherStore() async throws {
+    @Test func `existing roots and detached menus follow changes from another store`() async throws {
         _ = NSApplication.shared
         let defaults = try #require(UserDefaults(suiteName: "glass-live-" + UUID().uuidString))
         let settings = SettingsStore(defaults: defaults)
@@ -59,13 +64,13 @@ struct LiquidGlassIntensityTests {
         let child = NSHostingView(rootView: AskHoverAnchor.styled(IntensityProbe { seen.append($0) }, of: anchor))
         child.frame = parent.frame
         child.layoutSubtreeIfNeeded()
-        #expect(seen.last == 0.5)
+        #expect(seen.last == LiquidGlassIntensity.defaultValue)
         var updates = 0
         let subscription = observer.objectWillChange.sink { updates += 1 }
         let otherStore = SettingsStore(defaults: defaults)
         otherStore.liquidGlassIntensity = 0.8
         otherStore.liquidGlassIntensity = 0.8
-        for _ in 0..<50 where seen.last != 0.8 {
+        for _ in 0 ..< 50 where seen.last != 0.8 {
             parent.layoutSubtreeIfNeeded()
             child.layoutSubtreeIfNeeded()
             try await Task.sleep(for: .milliseconds(10))
@@ -77,7 +82,7 @@ struct LiquidGlassIntensityTests {
         subscription.cancel()
     }
 
-    @Test func settingsPersistTheSliderValue() throws {
+    @Test func `settings persist the slider value`() throws {
         let defaults = try #require(UserDefaults(suiteName: "glass-settings-" + UUID().uuidString))
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -85,7 +90,7 @@ struct LiquidGlassIntensityTests {
         let model = StudioViewModel(settingsStore: settings, historyStore: SQLiteHistoryStore(baseDir: root),
                                     initialSection: .settings,
                                     modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false))
-        #expect(model.liquidGlassIntensity == 0.5)
+        #expect(model.liquidGlassIntensity == LiquidGlassIntensity.defaultValue)
         model.setLiquidGlassIntensity(0.2)
         #expect(model.liquidGlassIntensity == 0.2)
         #expect(SettingsStore(defaults: defaults).liquidGlassIntensity == 0.2)
@@ -94,7 +99,7 @@ struct LiquidGlassIntensityTests {
         #expect(model.liquidGlassIntensity == 0.2)
     }
 
-    @Test func previewFitsNarrowSettingsAndRendersAllDensities() async throws {
+    @Test func `preview fits narrow settings and renders all densities`() async throws {
         _ = NSApplication.shared
         let language = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
@@ -121,7 +126,8 @@ struct LiquidGlassIntensityTests {
                 if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_GLASS_INTENSITY_SNAPSHOTS"] {
                     let root = URL(fileURLWithPath: directory)
                     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-                    let file = root.appendingPathComponent("intensity-\(dark ? "dark" : "light")-\(Int(value * 100)).png")
+                    let file = root
+                        .appendingPathComponent("intensity-\(dark ? "dark" : "light")-\(Int(value * 100)).png")
                     let capture = Process()
                     capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
                     capture.arguments = ["-x", "-o", "-l", String(window.windowNumber), file.path]
@@ -133,7 +139,7 @@ struct LiquidGlassIntensityTests {
         }
     }
 
-    @Test func settingsHideTheSliderInClassicAndRestoreItsValue() async throws {
+    @Test func `settings hide the slider in classic and restore its value`() async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
@@ -148,7 +154,7 @@ struct LiquidGlassIntensityTests {
         let model = StudioViewModel(settingsStore: settings, historyStore: SQLiteHistoryStore(baseDir: root),
                                     initialSection: .settings,
                                     modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false))
-        let host = NSHostingView(rootView: StudioView(viewModel: model))
+        let host = NSHostingView(rootView: StudioView(viewModel: model, settingsPane: .appearance))
         let window = NSWindow(contentRect: .init(x: 0, y: 0, width: 1060, height: 860),
                               styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -167,7 +173,10 @@ struct LiquidGlassIntensityTests {
             #expect(model.liquidGlassIntensity == 0.8)
         }
         if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_GLASS_INTENSITY_SNAPSHOTS"] {
-            try FileManager.default.createDirectory(at: URL(fileURLWithPath: directory), withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(
+                at: URL(fileURLWithPath: directory),
+                withIntermediateDirectories: true
+            )
             let capture = Process()
             capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
             capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),

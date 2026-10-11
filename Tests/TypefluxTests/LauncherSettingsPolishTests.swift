@@ -64,13 +64,22 @@ struct LauncherSettingsPolishTests {
         let previous = AppLocalization.shared.language
         defer { AppLocalization.shared.setLanguage(previous) }
         let fixture = try fixture()
+        let historyRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: historyRoot) }
+        let model = StudioViewModel(
+            settingsStore: fixture.settings,
+            historyStore: SQLiteHistoryStore(baseDir: historyRoot),
+            initialSection: .settings,
+            modelLibrary: AskModelLibrary(defaults: fixture.settings.defaults, automaticallyLoadsCatalog: false)
+        )
+        model.setInterfaceStyle(.classic)
         for language in [AppLanguage.simplifiedChinese, .english] {
             AppLocalization.shared.setLanguage(language)
             for width in [320.0, 574.0] {
                 for light in [false, true] {
-                    fixture.settings.askLauncherWindowMode = .complete
-                    try await render(LauncherSettingsView(settings: fixture.settings),
-                                     size: NSSize(width: width, height: 520),
+                    model.setLauncherWindowMode(.complete)
+                    try await render(AppearanceSettingsView(viewModel: model),
+                                     size: NSSize(width: width, height: 600),
                                      name: "window-mode-\(language.rawValue)-\(Int(width))-\(light ? "light" : "dark")",
                                      light: light) { window in
                         let bounds = window.convertToScreen(window.contentView!.bounds)
@@ -445,7 +454,9 @@ struct LauncherSettingsPolishTests {
                 return element
             }
             for child in element.children {
-                if let found = walk(child) { return found }
+                if let found = walk(child) {
+                    return found
+                }
             }
             return nil
         }

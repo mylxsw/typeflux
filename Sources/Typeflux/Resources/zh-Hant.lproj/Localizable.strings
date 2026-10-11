@@ -130,7 +130,7 @@
 "settings.interfaceStyle.title" = "介面風格";
 "settings.interfaceStyle.subtitle" = "統一切換應用程式視窗、浮層和選單的顯示樣式。";
 "settings.appearance.subtitle" = "在淺色、深色或跟隨系統主題之間切換整個介面。";
-"settings.language.title" = "語言";
+"settings.language.title" = "介面語言";
 "settings.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";
 "settings.audio" = "音訊";
 "settings.microphone.title" = "麥克風";
@@ -4639,18 +4639,20 @@
 "hotkeys.keyword.sheet.record" = "錄製快速鍵";
 
 // Liquid Glass intensity
-"settings.glassIntensity.title" = "Liquid Glass 強度";
+"settings.glassIntensity.title" = "玻璃質感";
 "settings.glassIntensity.subtitle" = "調整所有視窗的通透程度，修改立即生效。";
 "settings.glassIntensity.clear" = "通透";
-"settings.glassIntensity.tinted" = "濃厚";
-"settings.glassIntensity.accessibility" = "目前系統輔助使用設定會保持不透明外觀。";
+"settings.glassIntensity.tinted" = "厚重";
+"settings.glassIntensity.accessibility" = "系統輔助顯示設定已限制透明效果。";
 "settings.glassIntensity.previewSearch" = "搜尋";
 
 // Launcher default window mode
-"ask.settings.windowMode.title" = "預設視窗模式";
+"ask.settings.windowMode.title" = "啟動器預設視窗";
 "ask.settings.windowMode.simple" = "簡約";
 "ask.settings.windowMode.complete" = "完整";
-"ask.settings.windowMode.detail" = "簡約模式開啟時只顯示輸入列，輸入或使用功能時自動展開；完整模式顯示建議和底部控制項。視窗高度隨內容自動調整。下次開啟啟動器時生效。";
+"ask.settings.windowMode.detail" = "下次開啟啟動器時生效。";
 "ask.settings.windowMode.selected" = "已選取";
 
 "ask.home.section.apps" = "最近使用的應用程式";
+
+"settings.pane.appearance" = "外觀";
