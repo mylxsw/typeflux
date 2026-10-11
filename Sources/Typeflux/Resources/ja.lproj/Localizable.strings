@@ -1941,6 +1941,7 @@
 "ask.usage.summary" = "自動要約";
 "ask.usage.inference" = "回答 / ツール判断";
 "ask.usage.externalShort" = "独自 API";
+"ask.usage.localHelp" = "独自モデルが報告したトークン数です。使用量はこの Mac に保存され、Typeflux credits は消費しません。";
 
 /* GUL-151 Ask tools */
 "ask.files.denied" = "このパスは Ask に許可されたフォルダの外にあります。設定 → Agent → ファイルアクセス でフォルダを追加してください。";

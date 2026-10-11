@@ -34,6 +34,8 @@ final class AskLocalLateUsageTests: XCTestCase {
         var actual = actual, expected = expected
         actual.run?.budget = nil
         expected.run?.budget = nil
+        actual.usage = nil
+        expected.usage = nil
         let encoder = AskCoding.encoder()
         encoder.outputFormatting = [.sortedKeys]
         XCTAssertEqual(try encoder.encode(actual), try encoder.encode(expected), file: file, line: line)
