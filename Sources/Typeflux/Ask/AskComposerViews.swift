@@ -27,6 +27,7 @@ struct AskLauncherView: View {
             .environment(\.askWindowDrag, drag)
             .environment(\.askLauncherNumberHints, showingNumberHints)
             .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
+            .background(AskLauncherEscapeMonitor())
             .tint(AskTheme.accent)
             .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
             .popover(item: $model.launcherClipboardPreview) { entry in
