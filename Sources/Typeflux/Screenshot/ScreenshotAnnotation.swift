@@ -1,51 +1,5 @@
 import AppKit
 
-/// Color and size shared by every annotation tool.
-struct ScreenshotAnnotationStyle: Equatable {
-    enum Color: String, CaseIterable, Equatable {
-        case red, yellow, green, blue, white
-
-        /// sRGB components, matching the design's swatches.
-        var rgb: (red: CGFloat, green: CGFloat, blue: CGFloat) {
-            switch self {
-            case .red: (0xFF / 255, 0x4D / 255, 0x4F / 255)
-            case .yellow: (0xFF / 255, 0xB0 / 255, 0x20 / 255)
-            case .green: (0x29 / 255, 0xC7 / 255, 0x6E / 255)
-            case .blue: (0x2F / 255, 0x8C / 255, 0xFF / 255)
-            case .white: (1, 1, 1)
-            }
-        }
-
-        func cgColor(alpha: CGFloat = 1) -> CGColor {
-            CGColor(srgbRed: rgb.red, green: rgb.green, blue: rgb.blue, alpha: alpha)
-        }
-
-        /// The color of a number drawn on a filled counter of this color.
-        var contrastingTextColor: CGColor {
-            self == .white || self == .yellow
-                ? CGColor(srgbRed: 0.08, green: 0.08, blue: 0.08, alpha: 1)
-                : CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)
-        }
-    }
-
-    enum Width: Int, CaseIterable, Equatable {
-        case thin, medium, thick
-    }
-
-    var color: Color = .red
-    var width: Width = .medium
-
-    /// Outline of rectangles, ellipses and arrows, and the pen.
-    var lineWidth: CGFloat { [2, 4, 6][width.rawValue] }
-    var highlighterWidth: CGFloat { [12, 18, 26][width.rawValue] }
-    var fontSize: CGFloat { [14, 18, 24][width.rawValue] }
-    var counterDiameter: CGFloat { [20, 24, 30][width.rawValue] }
-    /// How wide a mosaic brush paints.
-    var brushWidth: CGFloat { [16, 28, 44][width.rawValue] }
-
-    static let highlighterAlpha: CGFloat = 0.4
-}
-
 /// A region blurred, pixelated or covered on the original screenshot.
 struct ScreenshotMosaic: Equatable {
     enum Shape: Equatable {
@@ -54,11 +8,11 @@ struct ScreenshotMosaic: Equatable {
         case brush([CGPoint], width: CGFloat)
     }
 
-    enum Effect: String, CaseIterable, Equatable {
+    enum Effect: String, CaseIterable, Equatable, Codable {
         case pixelate, blur, solid
     }
 
-    enum Strength: Int, CaseIterable, Equatable {
+    enum Strength: Int, CaseIterable, Equatable, Codable {
         case low, medium, high
     }
 
@@ -130,6 +84,7 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
     enum Kind: Equatable {
         case rect(CGRect)
         case ellipse(CGRect)
+        case line(from: CGPoint, to: CGPoint)
         case arrow(from: CGPoint, to: CGPoint)
         /// A freehand pen stroke.
         case path([CGPoint])
@@ -146,10 +101,12 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
     var kind: Kind
     var style: ScreenshotAnnotationStyle
 
-    init(id: UUID = UUID(), kind: Kind, style: ScreenshotAnnotationStyle = .init()) {
+    /// - Parameter style: nil gives the plain default style at the size the kind's tool starts with.
+    init(id: UUID = UUID(), kind: Kind, style: ScreenshotAnnotationStyle? = nil) {
         self.id = id
         self.kind = kind
-        self.style = style
+        self.style = ScreenshotAnnotationStyle()
+        if let style { self.style = style } else { self.style.size = tool.defaultStyle.size }
     }
 
     static let minimumFontSize: CGFloat = 6
@@ -162,6 +119,49 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
     var mosaic: ScreenshotMosaic? {
         if case let .mosaic(mosaic) = kind { return mosaic }
         return nil
+    }
+
+    /// The tool that draws this kind of annotation, for its options and size range.
+    var tool: ScreenshotAnnotationTool {
+        switch kind {
+        case .rect: .rect
+        case .ellipse: .ellipse
+        case .line: .line
+        case .arrow: .arrow
+        case .path: .pen
+        case .highlight: .highlighter
+        case .text: .text
+        case .counter: .counter
+        case .mosaic: .mosaic
+        }
+    }
+
+    /// What the size slider changes: the font size of text, the width of a mosaic brush, and
+    /// the style's size for the rest. Setting it keeps the style and the kind in step.
+    var size: CGFloat {
+        get {
+            switch kind {
+            case let .text(_, _, fontSize): return fontSize
+            case let .mosaic(mosaic):
+                if case let .brush(_, width) = mosaic.shape { return width }
+                return style.size
+            default: return style.size
+            }
+        }
+        set {
+            style.size = newValue
+            switch kind {
+            case let .text(origin, text, _):
+                kind = .text(origin: origin, text, fontSize: newValue)
+            case var .mosaic(mosaic):
+                if case let .brush(points, _) = mosaic.shape {
+                    mosaic.shape = .brush(points, width: newValue)
+                    kind = .mosaic(mosaic)
+                }
+            default:
+                break
+            }
+        }
     }
 
     /// Text and counters keep their size; everything else can be stretched by its handles.
@@ -177,7 +177,7 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
         switch kind {
         case let .rect(rect), let .ellipse(rect):
             return rect.standardized
-        case let .arrow(from, to):
+        case let .line(from, to), let .arrow(from, to):
             return ScreenshotSelection.rect(from: from, to: to)
         case let .path(points), let .highlight(points):
             return Self.boundingBox(of: points)
@@ -217,6 +217,7 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
         switch kind {
         case let .rect(rect): copy.kind = .rect(mapRect(rect))
         case let .ellipse(rect): copy.kind = .ellipse(mapRect(rect))
+        case let .line(from, to): copy.kind = .line(from: map(from), to: map(to))
         case let .arrow(from, to): copy.kind = .arrow(from: map(from), to: map(to))
         case let .path(points): copy.kind = .path(points.map(map))
         case let .highlight(points): copy.kind = .highlight(points.map(map))
@@ -237,16 +238,13 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
     /// anywhere on filled ones.
     func contains(_ point: CGPoint, tolerance: CGFloat = 4) -> Bool {
         switch kind {
-        case let .rect(rect):
-            let reach = style.lineWidth / 2 + tolerance
-            let rect = rect.standardized
-            let inner = rect.insetBy(dx: reach, dy: reach)
-            return rect.insetBy(dx: -reach, dy: -reach).contains(point) && (inner.isNull || !inner.contains(point))
-        case let .ellipse(rect):
-            return CGPath(ellipseIn: rect.standardized, transform: nil)
-                .copy(strokingWithWidth: style.lineWidth + tolerance * 2, lineCap: .round, lineJoin: .round,
-                      miterLimit: 10)
-                .contains(point)
+        case .rect, .ellipse:
+            guard let outline = shapePath else { return false }
+            if style.fill != .stroke, outline.contains(point) { return true }
+            return outline.copy(strokingWithWidth: style.lineWidth + tolerance * 2, lineCap: .round,
+                                lineJoin: .round, miterLimit: 10).contains(point)
+        case let .line(from, to):
+            return Self.distance(from: point, toSegment: from, to) <= style.lineWidth / 2 + tolerance
         case let .arrow(from, to):
             let reach = max(style.lineWidth, Self.arrowHeadLength(lineWidth: style.lineWidth) / 2) + tolerance
             return Self.distance(from: point, toSegment: from, to) <= reach
@@ -268,6 +266,21 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
                 return Self.polyline(points).copy(strokingWithWidth: width + tolerance * 2, lineCap: .round,
                                                   lineJoin: .round, miterLimit: 10).contains(point)
             }
+        }
+    }
+
+    /// The outline of a rectangle (with its rounded corners) or an ellipse; nil for other kinds.
+    var shapePath: CGPath? {
+        switch kind {
+        case let .rect(rect):
+            let rect = rect.standardized
+            let radius = min(style.cornerRadius, rect.width / 2, rect.height / 2)
+            guard radius > 0 else { return CGPath(rect: rect, transform: nil) }
+            return CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+        case let .ellipse(rect):
+            return CGPath(ellipseIn: rect.standardized, transform: nil)
+        default:
+            return nil
         }
     }
 

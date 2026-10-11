@@ -201,16 +201,19 @@ final class ScreenshotRendererTests: XCTestCase {
                 shape: .brush([CGPoint(x: 130, y: 30), CGPoint(x: 150, y: 28)], width: 8), effect: .blur
             ))),
             ScreenshotAnnotation(kind: .rect(CGRect(x: 110, y: 8, width: 20, height: 12)),
-                                 style: .init(color: .green, width: .thin)),
-            ScreenshotAnnotation(kind: .ellipse(CGRect(x: 130, y: 8, width: 20, height: 12))),
+                                 style: .init(color: .green, size: 2, fill: .soft, cornerRadius: 4)),
+            ScreenshotAnnotation(kind: .ellipse(CGRect(x: 130, y: 8, width: 20, height: 12)),
+                                 style: .init(opacity: 0.6, dash: .dashed, fill: .solid)),
+            ScreenshotAnnotation(kind: .line(from: CGPoint(x: 106, y: 6), to: CGPoint(x: 150, y: 6)),
+                                 style: .init(color: .purple, size: 2, dash: .dashed)),
             ScreenshotAnnotation(kind: .arrow(from: CGPoint(x: 108, y: 34), to: CGPoint(x: 140, y: 22)),
-                                 style: .init(color: .yellow, width: .thick)),
+                                 style: .init(color: .yellow, size: 6)),
             ScreenshotAnnotation(kind: .path([CGPoint(x: 112, y: 25), CGPoint(x: 118, y: 30), CGPoint(x: 125, y: 24)])),
             ScreenshotAnnotation(kind: .highlight([CGPoint(x: 135, y: 15), CGPoint(x: 152, y: 15)]),
-                                 style: .init(color: .yellow)),
+                                 style: .init(color: .yellow, size: 18)),
             ScreenshotAnnotation(kind: .text(origin: CGPoint(x: 120, y: 4), "Q3", fontSize: 12),
                                  style: .init(color: .blue)),
-            ScreenshotAnnotation(kind: .counter(center: CGPoint(x: 148, y: 30)), style: .init(color: .white))
+            ScreenshotAnnotation(kind: .counter(center: CGPoint(x: 148, y: 30)), style: .init(color: .white, size: 24))
         ]
 
         let exported = Self.pixels(try ScreenshotRenderer.render(display, crop: crop, annotations: annotations))

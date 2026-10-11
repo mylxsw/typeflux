@@ -223,13 +223,16 @@ final class ScreenshotLongImageEditorController: ScreenshotLongImagePresenting {
     private let primaryDisplayHeight: () -> CGFloat
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
     private let sensitiveScanner: (any ScreenshotSensitiveInfoScanning)?
+    private let toolStyles: ScreenshotToolStyleStore
 
     init(primaryDisplayHeight: @escaping () -> CGFloat = { NSScreen.screens.first?.frame.height ?? 0 },
          textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
-         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil) {
+         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil,
+         toolStyles: ScreenshotToolStyleStore = ScreenshotToolStyleStore()) {
         self.primaryDisplayHeight = primaryDisplayHeight
         self.textMeasurer = textMeasurer
         self.sensitiveScanner = sensitiveScanner
+        self.toolStyles = toolStyles
     }
 
     var isPresented: Bool { panel != nil }
@@ -238,7 +241,7 @@ final class ScreenshotLongImageEditorController: ScreenshotLongImagePresenting {
                  onEvent: @escaping (ScreenshotOverlayEvent) -> Void) {
         dismiss()
         let canvas = ScreenshotLongImageCanvas(image: image.image, scale: image.scale, textMeasurer: textMeasurer,
-                                               sensitiveScanner: sensitiveScanner)
+                                               sensitiveScanner: sensitiveScanner, toolStyles: toolStyles)
         let view = ScreenshotLongImageEditorView(frame: CGRect(origin: .zero, size: screen.size), canvas: canvas)
         canvas.onEvent = { [weak view] event in
             switch event {

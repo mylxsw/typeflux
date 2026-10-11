@@ -28,7 +28,16 @@ final class ScreenshotOverlayView: NSView {
 
     let display: ScreenSnapshot.Display
     private(set) var selection: ScreenshotSelection
-    private(set) var editor = ScreenshotAnnotationEditor()
+    private(set) var editor: ScreenshotAnnotationEditor
+    /// Keeps each tool's style for the next screenshot.
+    private let toolStyles: ScreenshotToolStyleStore
+    /// The styles last written to or read from the store, so a display that is not being marked
+    /// up never writes its old styles over the ones just picked on another display.
+    private var syncedStyles: ScreenshotToolStyles
+    /// The color button's panel is open.
+    private(set) var showsColorPanel = false
+    /// The eyedropper is on: the next click takes the color under the pointer.
+    private(set) var isPickingColor = false
     /// Space is held: dragging moves the region instead of growing it.
     private(set) var spaceHeld = false
     private var shiftHeld = false
@@ -67,9 +76,13 @@ final class ScreenshotOverlayView: NSView {
 
     init(display: ScreenSnapshot.Display, windows: [ScreenSnapshot.Window],
          textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
-         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil) {
+         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil,
+         toolStyles: ScreenshotToolStyleStore = ScreenshotToolStyleStore()) {
         self.display = display
         self.textMeasurer = textMeasurer
+        self.toolStyles = toolStyles
+        syncedStyles = toolStyles.styles
+        editor = ScreenshotAnnotationEditor(toolStyles: toolStyles.styles)
         sensitiveInfo = ScreenshotSensitiveInfoController(scanner: sensitiveScanner)
         selection = ScreenshotSelection(displayFrame: display.frame, scale: display.scale, windows: windows)
         let bounds = CGRect(origin: .zero, size: display.frame.size)
@@ -148,6 +161,10 @@ final class ScreenshotOverlayView: NSView {
     func mouseDown(at point: CGPoint, clickCount: Int, shift: Bool = false) {
         guard onActivate?(self) ?? true else { return }
         endTextEditing()
+        if isPickingColor {
+            pickColor(at: point)
+            return
+        }
         if let crop = selection.rect, !selection.isDragging {
             let cropHit = selection.hit(at: point)
             switch editor.mouseDown(at: point, clickCount: clickCount, crop: crop, cropHit: cropHit) {
@@ -237,6 +254,9 @@ final class ScreenshotOverlayView: NSView {
             return true
         }
         switch keyCode {
+        case Key.escape where isPickingColor:
+            isPickingColor = false
+            refresh()
         case Key.escape:
             onEvent?(self, .cancelled)
         case Key.returnKey, Key.enter:
@@ -270,6 +290,8 @@ final class ScreenshotOverlayView: NSView {
             handled = true
         } else if !command, let tool = ScreenshotAnnotationTool(keyCode: keyCode) {
             editor.selectTool(tool)
+            handled = true
+        } else if !command, editor.handleStyleKey(keyCode) {
             handled = true
         } else if editor.selected != nil, let offset = Self.nudgeOffset(for: keyCode, modifiers: modifiers) {
             editor.nudgeSelected(by: offset)
@@ -314,6 +336,14 @@ final class ScreenshotOverlayView: NSView {
         refresh()
     }
 
+    /// This display is about to be marked up: it takes the styles picked on another display.
+    func adoptStoredStyles() {
+        guard toolStyles.styles != syncedStyles else { return }
+        editor.replaceToolStyles(toolStyles.styles)
+        syncedStyles = toolStyles.styles
+        refresh()
+    }
+
     /// Another display took the selection.
     func clearSelection() {
         selection.clear()
@@ -347,19 +377,19 @@ final class ScreenshotOverlayView: NSView {
     func perform(_ action: ScreenshotEditorToolbarModel.Action) {
         endTextEditing()
         switch action {
-        case let .tool(tool): editor.selectTool(tool)
-        case let .color(color): editor.setColor(color)
-        case let .width(width): editor.setWidth(width)
-        case let .mosaicEffect(effect): editor.setMosaicEffect(effect)
-        case let .mosaicStrength(strength): editor.setMosaicStrength(strength)
-        case let .mosaicShape(shape): editor.setMosaicShape(shape)
-        case .undo: editor.undo()
-        case .redo: editor.redo()
+        case .toggleColorPanel:
+            showsColorPanel.toggle()
+            isPickingColor = false
+        case .pickColor: isPickingColor.toggle()
         case .cancel: onEvent?(self, .cancelled)
         case .save: finish(.save)
         case .copy: finish(.copy)
         case let .followUp(followUp): finish(.followUp(followUp))
         case .scrollCapture: startScrollCapture()
+        default:
+            editor.apply(action)
+            // A swatch is the choice: the panel closes, as a menu would.
+            if case .color = action { showsColorPanel = false }
         }
         // Keys go back to the overlay after a click on the toolbar.
         window?.makeFirstResponder(self)
@@ -451,9 +481,21 @@ final class ScreenshotOverlayView: NSView {
 
     // MARK: Drawing
 
-    /// The loupe and guides help aim, so they show until a region is chosen and while one is drawn.
+    /// The loupe and guides help aim, so they show until a region is chosen, while one is drawn,
+    /// and while the eyedropper is on.
     var showsLoupe: Bool {
-        selection.pointer != nil && (selection.rect == nil || selection.isDragging)
+        selection.pointer != nil && (selection.rect == nil || selection.isDragging || isPickingColor)
+    }
+
+    /// The eyedropper's click: the color under the pointer becomes the color.
+    private func pickColor(at point: CGPoint) {
+        isPickingColor = false
+        showsColorPanel = false
+        let pixel = ScreenshotMagnifier.pixel(at: point, displaySize: bounds.size, imageSize: display.pixelSize)
+        if let rgb = ScreenshotMagnifier.color(of: display.image, at: pixel) {
+            editor.setColor(ScreenshotAnnotationStyle.Color(rgb))
+        }
+        refresh()
     }
 
     var pickedColor: ScreenshotMagnifier.RGB? {
@@ -485,22 +527,17 @@ final class ScreenshotOverlayView: NSView {
                                                             handles: editor.selectionHandles)
         refreshToolbar()
         layOutSensitiveInfo()
+        if editor.toolStyles != syncedStyles {
+            toolStyles.styles = editor.toolStyles
+            syncedStyles = editor.toolStyles
+        }
     }
 
     private func refreshToolbar() {
-        // A selected mark shows its own color, size and mosaic options; changing them restyles it.
-        let selected = editor.selected
-        let mosaic = selected?.mosaic
-        let state = ScreenshotEditorToolbarModel.State(
-            tool: editor.tool, style: selected?.style ?? editor.style,
-            mosaicEffect: mosaic?.effect ?? editor.mosaicEffect,
-            mosaicStrength: mosaic?.strength ?? editor.mosaicStrength,
-            mosaicShape: mosaic.map { if case .brush = $0.shape { .brush } else { .rect } } ?? editor.mosaicShape,
-            canUndo: editor.document.canUndo, canRedo: editor.document.canRedo,
-            showsOptions: editor.tool != nil || editor.selected != nil,
-            showsMosaicOptions: editor.showsMosaicOptions,
-            canScrollCapture: canScrollCapture
-        )
+        // A selected mark shows its own options; changing them restyles it.
+        let state = ScreenshotEditorToolbarModel.State(editor: editor, showsColorPanel: showsColorPanel,
+                                                       isPickingColor: isPickingColor,
+                                                       canScrollCapture: canScrollCapture)
         toolbarModel.state = state
         guard let rect = selection.rect, !selection.isDragging else {
             toolbar?.isHidden = true
@@ -546,6 +583,10 @@ final class ScreenshotOverlayView: NSView {
     }
 
     private func updateCursor(at point: CGPoint) {
+        if isPickingColor {
+            NSCursor.crosshair.set()
+            return
+        }
         if let crop = selection.rect, !selection.isDragging, crop.contains(point) {
             if editor.document.hit(at: point) != nil {
                 NSCursor.pointingHand.set()

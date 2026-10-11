@@ -115,40 +115,64 @@ enum ScreenshotRenderer {
         defer { context.restoreGState() }
         context.setLineCap(.round)
         context.setLineJoin(.round)
-        context.setStrokeColor(style.color.cgColor())
-        context.setFillColor(style.color.cgColor())
+        context.setStrokeColor(style.cgColor())
+        context.setFillColor(style.cgColor())
         context.setLineWidth(style.lineWidth)
         switch annotation.kind {
-        case let .rect(rect):
-            context.stroke(rect.standardized)
-        case let .ellipse(rect):
-            context.strokeEllipse(in: rect.standardized)
+        case .rect, .ellipse:
+            guard let outline = annotation.shapePath else { break }
+            switch style.fill {
+            case .stroke: break
+            case .soft:
+                context.setFillColor(style.cgColor(alpha: ScreenshotAnnotationStyle.softFillAlpha))
+                context.addPath(outline)
+                context.fillPath()
+            case .solid:
+                context.addPath(outline)
+                context.fillPath()
+            }
+            applyDash(style, in: context)
+            context.addPath(outline)
+            context.strokePath()
+        case let .line(from, to):
+            applyDash(style, in: context)
+            context.move(to: from)
+            context.addLine(to: to)
+            context.strokePath()
         case let .arrow(from, to):
             drawArrow(from: from, to: to, lineWidth: style.lineWidth, in: context)
         case let .path(points):
             context.addPath(ScreenshotAnnotation.polyline(points))
             context.strokePath()
         case let .highlight(points):
-            context.setStrokeColor(style.color.cgColor(alpha: ScreenshotAnnotationStyle.highlighterAlpha))
+            context.setStrokeColor(style.cgColor(alpha: ScreenshotAnnotationStyle.highlighterAlpha))
             context.setLineWidth(style.highlighterWidth)
             context.addPath(ScreenshotAnnotation.polyline(points))
             context.strokePath()
         case let .text(origin, text, fontSize):
             drawText(text, at: origin,
-                     attributes: ScreenshotAnnotation.textAttributes(fontSize: fontSize, color: style.color.cgColor()),
+                     attributes: ScreenshotAnnotation.textAttributes(fontSize: fontSize, color: style.cgColor()),
                      in: context)
         case .counter:
             let frame = annotation.frame
             context.fillEllipse(in: frame)
             let label = "\(number)"
+            let textColor = style.color.contrastingTextColor.copy(alpha: style.opacity)
+                ?? style.color.contrastingTextColor
             let attributes = ScreenshotAnnotation.textAttributes(fontSize: (frame.height * 0.55).rounded(),
-                                                                 color: style.color.contrastingTextColor)
+                                                                 color: textColor)
             let size = (label as NSString).size(withAttributes: attributes)
             drawText(label, at: CGPoint(x: frame.midX - size.width / 2, y: frame.midY - size.height / 2),
                      attributes: attributes, in: context)
         case .mosaic:
             break
         }
+    }
+
+    /// Dashed outlines and lines; dashes keep round ends, so the gaps are a little longer.
+    private static func applyDash(_ style: ScreenshotAnnotationStyle, in context: CGContext) {
+        guard style.dash == .dashed else { return }
+        context.setLineDash(phase: 0, lengths: ScreenshotAnnotationStyle.dashLengths(lineWidth: style.lineWidth))
     }
 
     private static func drawArrow(from: CGPoint, to: CGPoint, lineWidth: CGFloat, in context: CGContext) {

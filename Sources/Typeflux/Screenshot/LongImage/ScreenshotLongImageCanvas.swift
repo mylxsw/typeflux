@@ -16,7 +16,12 @@ final class ScreenshotLongImageCanvas: NSView {
     let image: CGImage
     /// Pixels per point of the image.
     let scale: CGFloat
-    private(set) var editor = ScreenshotAnnotationEditor()
+    private(set) var editor: ScreenshotAnnotationEditor
+    private let toolStyles: ScreenshotToolStyleStore
+    /// The color button's panel is open.
+    private(set) var showsColorPanel = false
+    /// The eyedropper is on: the next click takes the color under the pointer.
+    private(set) var isPickingColor = false
     private let canvas: ScreenshotAnnotationCanvasView
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
     /// The field for typing a text annotation, while one is typed.
@@ -31,8 +36,11 @@ final class ScreenshotLongImageCanvas: NSView {
     var onChange: (() -> Void)?
 
     init(image: CGImage, scale: CGFloat, textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
-         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil) {
+         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil,
+         toolStyles: ScreenshotToolStyleStore = ScreenshotToolStyleStore()) {
         self.image = image
+        self.toolStyles = toolStyles
+        editor = ScreenshotAnnotationEditor(toolStyles: toolStyles.styles)
         self.scale = max(scale, 1)
         self.textMeasurer = textMeasurer
         sensitiveInfo = ScreenshotSensitiveInfoController(scanner: sensitiveScanner)
@@ -95,6 +103,10 @@ final class ScreenshotLongImageCanvas: NSView {
     func mouseDown(at point: CGPoint, clickCount: Int, shift: Bool = false) {
         endTextEditing()
         window?.makeFirstResponder(self)
+        if isPickingColor {
+            pickColor(at: point)
+            return
+        }
         let hit: ScreenshotSelection.Hit = bounds.contains(point) ? .inside : .outside
         switch editor.mouseDown(at: point, clickCount: clickCount, shift: shift, crop: bounds, cropHit: hit) {
         case let .beginText(origin):
@@ -153,6 +165,8 @@ final class ScreenshotLongImageCanvas: NSView {
             return true
         }
         switch keyCode {
+        case Key.escape where isPickingColor:
+            isPickingColor = false
         case Key.escape:
             onEvent?(.cancelled)
         case Key.returnKey, Key.enter:
@@ -169,6 +183,8 @@ final class ScreenshotLongImageCanvas: NSView {
         default:
             if !command, let tool = ScreenshotAnnotationTool(keyCode: keyCode) {
                 editor.selectTool(tool)
+            } else if !command, editor.handleStyleKey(keyCode) {
+                // A preset color or a size step.
             } else if !command, editor.selected != nil,
                       let offset = ScreenshotOverlayView.nudgeOffset(for: keyCode, modifiers: modifiers) {
                 editor.nudgeSelected(by: offset)
@@ -199,19 +215,19 @@ final class ScreenshotLongImageCanvas: NSView {
     func perform(_ action: ScreenshotEditorToolbarModel.Action) {
         endTextEditing()
         switch action {
-        case let .tool(tool): editor.selectTool(tool)
-        case let .color(color): editor.setColor(color)
-        case let .width(width): editor.setWidth(width)
-        case let .mosaicEffect(effect): editor.setMosaicEffect(effect)
-        case let .mosaicStrength(strength): editor.setMosaicStrength(strength)
-        case let .mosaicShape(shape): editor.setMosaicShape(shape)
-        case .undo: editor.undo()
-        case .redo: editor.redo()
+        case .toggleColorPanel:
+            showsColorPanel.toggle()
+            isPickingColor = false
+        case .pickColor: isPickingColor.toggle()
         case .cancel: onEvent?(.cancelled)
         case .save: finish(.save)
         case .copy: finish(.copy)
         case let .followUp(followUp): finish(.followUp(followUp))
         case .scrollCapture: break
+        default:
+            editor.apply(action)
+            // A swatch is the choice: the panel closes, as a menu would.
+            if case .color = action { showsColorPanel = false }
         }
         window?.makeFirstResponder(self)
         refresh()
@@ -297,23 +313,31 @@ final class ScreenshotLongImageCanvas: NSView {
         canvas.model = ScreenshotAnnotationCanvasView.Model(crop: bounds, annotations: editor.visibleAnnotations,
                                                             selection: selected?.frame,
                                                             handles: editor.selectionHandles)
+        if toolStyles.styles != editor.toolStyles { toolStyles.styles = editor.toolStyles }
+        window?.invalidateCursorRects(for: self)
         onChange?()
     }
 
     /// The toolbar for the editor's current state; there is no scrolling capture from a long image.
     var toolbarState: ScreenshotEditorToolbarModel.State {
-        let selected = editor.selected
-        let mosaic = selected?.mosaic
-        return ScreenshotEditorToolbarModel.State(
-            tool: editor.tool, style: selected?.style ?? editor.style,
-            mosaicEffect: mosaic?.effect ?? editor.mosaicEffect,
-            mosaicStrength: mosaic?.strength ?? editor.mosaicStrength,
-            mosaicShape: mosaic.map { if case .brush = $0.shape { .brush } else { .rect } } ?? editor.mosaicShape,
-            canUndo: editor.document.canUndo, canRedo: editor.document.canRedo,
-            showsOptions: editor.tool != nil || editor.selected != nil,
-            showsMosaicOptions: editor.showsMosaicOptions,
-            showsScrollCapture: false
-        )
+        ScreenshotEditorToolbarModel.State(editor: editor, showsColorPanel: showsColorPanel,
+                                           isPickingColor: isPickingColor, showsScrollCapture: false)
+    }
+
+    /// The eyedropper's click: the color of the image under the pointer becomes the color.
+    private func pickColor(at point: CGPoint) {
+        isPickingColor = false
+        showsColorPanel = false
+        let pixel = ScreenshotMagnifier.pixel(at: point, displaySize: bounds.size,
+                                              imageSize: ScreenPixelSize(width: image.width, height: image.height))
+        if let rgb = ScreenshotMagnifier.color(of: image, at: pixel) {
+            editor.setColor(ScreenshotAnnotationStyle.Color(rgb))
+        }
+        refresh()
+    }
+
+    override func resetCursorRects() {
+        if isPickingColor { addCursorRect(visibleRect, cursor: .crosshair) }
     }
 
     private func location(of event: NSEvent) -> CGPoint {
