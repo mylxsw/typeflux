@@ -90,6 +90,10 @@ final class AskConversationModel: ObservableObject {
     var openNoteWindow: @MainActor (AskNote) -> Void = { AskResultWindowController.shared.open($0) }
     /// What result windows opened from the launcher can do.
     var resultWindowServices: AskResultDocument.Services { AskResultWindowController.shared.services }
+    /// The system monitor in the launcher (`top`); see `AskConversationModel+SystemMonitor`.
+    let systemMonitor = SystemMonitorLauncherModel()
+    /// The monitor's own window (⌘O from the launcher); tests use their own.
+    lazy var systemMonitorWindow: SystemMonitorWindowController = .shared
     /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.
     lazy var plugins: AskPluginSession = {
         let session = AskPluginSession(plugins: makeLauncherPlugins()) { [weak self] in

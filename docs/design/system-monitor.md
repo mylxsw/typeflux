@@ -2,7 +2,7 @@
 
 > 状态：设计稿，待确认。配套可交互设计稿：`docs/design/system-monitor.html`（`?s=<id>` 打开某一屏，`?light=1` 浅色，`?solo=1` 只显示一屏，`?still=1` 停止刷新便于截图）。截图在 `docs/design/system-monitor/`：`hint` `overview` `cpu` `mem` `kill` `alert` `full` `compact` `mini` `menu`，以及 `light-*`。
 >
-> 这一阶段只出设计，不改代码。设计稿里的数据是模拟的，每秒刷新一次。
+> 设计已确认并实现，代码在 `Sources/Typeflux/SystemMonitor/` 和 `Ask/QuickResults/Plugins/SystemMonitor/`。设计稿里的数据是模拟的，每秒刷新一次。
 
 ## 0. 一页结论
 
@@ -62,7 +62,7 @@
 
 | 聚焦 | 左：60 秒大图 | 右：明细 |
 |---|---|---|
-| CPU | 使用率 | 每个核心的柱状图（分性能核和能效核）、用户 / 系统占比、1 / 5 / 15 分钟平均负载、进程数 / 线程数、散热状态 |
+| CPU | 使用率 | 每个核心的柱状图（分性能核和能效核）、用户 / 系统占比、1 / 5 / 15 分钟平均负载、进程数、散热状态 |
 | 内存 | 使用率 | App 内存 / 联动内存 / 被压缩 / 缓存文件的堆叠条、内存压力、已用交换 |
 | 磁盘 | 读写速度 | 每个宗卷的容量条和剩余空间（包括外接盘和 Time Machine） |
 | 网络 | 上下行速度 | 网络接口、本机 IP、开机以来的累计流量、60 秒内的峰值 |
@@ -92,7 +92,7 @@ esc 按下面的顺序逐层退出：取消结束进程的确认 → 取消选�
 ### 4.1 拿出来（截图 `full`）
 
 - 在启动器里按 **⌘O**，或者点右上角「独立窗口」：启动器收起，同时出现监控窗口（带缩放动画），并提示「已在独立窗口中常驻显示」。窗口会继承当前聚焦的指标，用来决定进程列表的排序。
-- 默认放在屏幕右上角；之后都放在用户上次拖到的位置（按显示器分别记住）。
+- 默认放在屏幕右上角；之后放在用户上次拖到的位置（每种形态分别记住）。如果那个位置已经不在任何屏幕上，就回到右上角。
 - 窗口已经打开时，再进入 `top`，按钮会变成「**前往窗口** ⌘O」：启动器收起，窗口描边闪一下，提示它在哪里。监控窗口**只有一个**。
 - 窗口特性：`NSPanel` + `.nonactivatingPanel`（点它不会抢走当前应用的焦点）、默认 `.floating`（置顶）、`collectionBehavior` 包含 `.canJoinAllSpaces` 和 `.fullScreenAuxiliary`（切换桌面、全屏时都在）、按住任意位置都能拖动。
 
@@ -102,7 +102,7 @@ esc 按下面的顺序逐层退出：取消结束进程的确认 → 取消选�
 
 | 形态 | 尺寸 | 内容 | 适合 |
 |---|---|---|---|
-| **完整**（`full`） | 380 宽，可以调整大小 | 4 行指标（名称 · 折线 · 数值 + 补充说明）+ 前 6 个进程（按 CPU / 内存排序） | 排查问题时放在旁边 |
+| **完整**（`full`） | 380 宽，高度随内容 | 4 行指标（名称 · 折线 · 数值 + 补充说明）+ 前 6 个进程（按 CPU / 内存排序） | 排查问题时放在旁边 |
 | **紧凑**（`compact`） | 272 × 约 170 | 2×2 小卡片：数值 + 折线。标题栏平时隐藏，鼠标移上去才显示 | 长期放在屏幕角落 |
 | **迷你条**（`mini`） | 一条胶囊，约 32 高 | `CPU 15% ～ · 内存 68% · 磁盘 26M · ↓ 3.0M ↑ 109K`。鼠标移上去会出现「展开」和「选项」按钮，双击展开成完整形态 | 贴在菜单栏下面，几乎不占地方 |
 
@@ -111,7 +111,7 @@ esc 按下面的顺序逐层退出：取消结束进程的确认 → 取消选�
 
 ### 4.3 置顶与窗口选项（截图 `menu`）
 
-- 标题栏的 📌 用来切换置顶（`⌘⇧T`）。取消置顶后，监控窗口就是普通窗口，会被其他窗口盖住。在设计稿里点左侧的代码窗口可以看到区别。
+- 标题栏的 📌 用来切换置顶。取消置顶后，监控窗口就是普通窗口，会被其他窗口盖住。在设计稿里点左侧的代码窗口可以看到区别。
 - `···` 菜单：
   - 置顶显示 ✓
   - 在所有桌面上显示 ✓
@@ -144,11 +144,11 @@ esc 按下面的顺序逐层退出：取消结束进程的确认 → 取消选�
 | 步骤 | 改动 | 主要文件 |
 |---|---|---|
 | M1 采样 | 协议 `SystemMetricsSampling`，生产实现 `DarwinSystemMetricsSampler`；纯逻辑的 `SystemMetricsCalculator` 负责把两次原始计数换算成速度和百分比（方便测试） | `Sources/Typeflux/SystemMonitor/` 新目录 |
-| M2 共享数据 | `SystemMonitorStore`（`@MainActor ObservableObject`）：60 个点的环形缓冲、阈值状态、持续高负载检测、排序和暂停排序逻辑。启动器和独立窗口**共用同一份**数据 | 同上 |
+| M2 共享数据 | `SystemMonitorStore`（`@MainActor ObservableObject`）：60 个点的历史（`SystemMonitorHistory`）、持续高负载检测（`SystemMonitorCPUAlert`），按「谁在显示」决定是否采样、是否读进程。启动器和独立窗口**共用同一份**数据 | 同上 |
 | M3 插件 | `AskSystemMonitorPlugin`（`entersOnReturn = true`，`runsWithoutInput = true`，`usesSelectionInput = false`），默认关键字 `top` / `监控`，英文名 `systemmonitor`；hint 行显示实时摘要 | `Ask/QuickResults/Plugins/SystemMonitor/` |
-| M4 启动器界面 | `SystemMonitorLauncherView`：指标卡、聚焦详情、进程列表、按键处理（↑↓ ⇥ ⌘1–4 ⌘⌫ ⌘C ⌘O esc） | 同上 |
-| M5 独立窗口 | `SystemMonitorWindowController`（只有一个实例的 `NSPanel`）+ 三种形态的视图；位置、形态、选项存到 `SettingsStore`（`systemMonitor.window.json`）；启动时按「恢复」选项打开 | `SystemMonitor/` |
-| M6 结束进程 | `ProcessTerminator`：判断进程能不能结束（系统进程、其他用户的进程、Typeflux 自己都不能），然后选择 terminate 或 signal | `SystemMonitor/` |
+| M4 启动器界面 | `SystemMonitorLauncherView` 画指标卡、聚焦详情、进程列表；`SystemMonitorLauncherModel` 管聚焦、排序、选中、暂停排序和确认，处理按键（↑↓ ⇥ ⌘1–4 ⌘⌫ ⌘C ⌘O esc）；`AskComposerViews` 把启动器的按键交给它 | `SystemMonitor/`、`Ask/AskComposerViews.swift` |
+| M5 独立窗口 | `SystemMonitorWindowController`（只有一个实例的 `NSPanel`）+ `SystemMonitorWindowView` 的三种形态；位置、形态、选项以 JSON 存在 UserDefaults 的 `SystemMonitorWindow` 键（`SystemMonitorWindowSettings`）；启动时按「恢复」选项打开 | `SystemMonitor/` |
+| M6 结束进程 | `SystemProcessTerminator`：判断进程能不能结束（系统进程、其他用户的进程、Typeflux 自己都不能），然后选择 terminate 或 signal | `SystemMonitor/` |
 
 ### 5.3 性能与资源
 

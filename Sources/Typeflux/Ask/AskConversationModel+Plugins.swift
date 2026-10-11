@@ -18,7 +18,8 @@ enum AskPluginRegistry {
         AskScreenshotPlugin.id,
         AskScreenshotTextPlugin.id,
         AskBrowserSearchPlugin.tabsID,
-        AskBrowserSearchPlugin.bookmarksID
+        AskBrowserSearchPlugin.bookmarksID,
+        AskSystemMonitorPlugin.id
     ] + AskSystemCommand.allCases.map(\.id)
 
     static var defaultKeywords: [AskKeyword] {
@@ -30,6 +31,7 @@ enum AskPluginRegistry {
                     .keywords + AskNotesPlugin.keywords + AskScreenshotPlugin.keywords
                     + AskScreenshotTextPlugin.keywords
                     + AskBrowserSearchPlugin.keywords
+                    + AskSystemMonitorPlugin.keywords
                     + AskSystemCommand.allCases.map {
                         AskKeyword(keyword: $0.defaultKeyword, pluginID: $0.id)
                     }))
@@ -208,7 +210,8 @@ extension AskConversationModel {
             }),
             AskBrowserSearchPlugin(kind: .bookmark, service: browserSearch, settings: { [weak settings] in
                 settings?.askBrowserSearchSettings ?? AskBrowserSearchSettings()
-            })
+            }),
+            AskSystemMonitorPlugin()
         ] + AskSystemCommand.allCases.map { AskSystemCommandPlugin(command: $0) } + workflowPlugins()
     }
 

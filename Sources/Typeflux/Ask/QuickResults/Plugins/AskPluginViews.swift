@@ -23,6 +23,8 @@ struct AskPluginDisplay: Equatable {
     var offersAskAI = true
     /// ⌘S came while the result streams: the star shows it will be saved.
     var savesNoteWhenDone = false
+    /// The system monitor (`top`) takes the results' place.
+    var systemMonitor = false
 
     var output: AskPluginOutput? { if case let .done(_, output) = phase { output } else { nil } }
     var asksAI: Bool { offersAskAI && highlighted == 1 }
@@ -220,12 +222,15 @@ struct AskPluginResultsView: View {
 
     /// Everything the list adds to the launcher card.
     static func height(for display: AskPluginDisplay) -> CGFloat {
+        if display.systemMonitor { return SystemMonitorLauncherView.height }
         let ask = display.offersAskAI ? sectionHeight + rowSpacing + rowSpacing + askHeight : 0
         return 1 + listPadding * 2 + sectionHeight + rowSpacing + mainHeight(display) + ask
     }
 
     /// What Return and the other keys do now, for the bottom bar.
     static func hint(for display: AskPluginDisplay) -> String {
+        // The monitor names its keys in its own footer.
+        if display.systemMonitor { return "" }
         // The chat button already names this action in the bottom bar.
         if display.hint?.pluginID == AskOpenChatPlugin.id {
             return display.asksAI ? L("ask.launcher.hint") : ""
@@ -430,6 +435,9 @@ struct AskPluginResultsView: View {
                 Text(display.title).font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary)
                 Text(hint.keyword).font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(StudioTheme.textTertiary)
+                if hint.pluginID == AskSystemMonitorPlugin.id {
+                    SystemMonitorHintSummary(store: .shared).layoutPriority(-1)
+                }
                 Spacer(minLength: 8)
                 Text(Self.hintRowKeys(hint, highlighted: highlighted))
                     .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)

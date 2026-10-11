@@ -396,6 +396,8 @@ enum AskCommandKey: Equatable {
     /// with the caret at the end), ⌘Y Quick Look, ⌥⌘C copies the file, ⇧⌘Return asks the AI
     /// about it, ⌘↓ shows all the files.
     case right, commandY, optionCommandC, shiftCommandEnter, commandDown
+    /// ⌘⌫ and ⌥⌘⌫: end the chosen process in the system monitor; the editor's own delete otherwise.
+    case commandDelete, optionCommandDelete
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
@@ -421,6 +423,8 @@ enum AskCommandKey: Equatable {
         if modifiers == .command, event.keyCode == 31 { self = .commandO; return }
         if modifiers == .command, event.keyCode == 8 { self = .commandC; return }
         if modifiers == [.command, .shift], event.keyCode == 8 { self = .shiftCommandC; return }
+        if modifiers == .command, event.keyCode == 51 { self = .commandDelete; return }
+        if modifiers == [.command, .option], event.keyCode == 51 { self = .optionCommandDelete; return }
         guard modifiers.isEmpty else { return nil }
         switch event.keyCode {
         case 126: self = .up
