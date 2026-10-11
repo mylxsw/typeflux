@@ -153,6 +153,10 @@ final class AppCoordinator {
             screenshotCoordinator.followUpHandler = model
         }
 
+        di.hotkeyService.onShortcutRequested = { [weak self, weak screenshotCoordinator] target in
+            self?.handleShortcut(target, screenshotCoordinator: screenshotCoordinator)
+        }
+
         let mouseVoiceInputController = MouseVoiceInputController(
             settingsStore: settingsStore,
             targetResolver: MouseVoiceTargetResolver(injector: di.textInjector)
@@ -254,6 +258,29 @@ final class AppCoordinator {
         workflowController?.stop()
         mouseVoiceInputController?.stop()
         statusBarController?.stop()
+    }
+
+    /// A feature or keyword shortcut from Settings → Shortcuts.
+    private func handleShortcut(_ target: HotkeyTarget, screenshotCoordinator: ScreenshotCoordinator?) {
+        switch target {
+        case .builtIn:
+            break
+        case .action(.openChat):
+            di.askConversationWindowController?.showConversation()
+        case .action(.screenshotText):
+            screenshotCoordinator?.start(mode: .region, followUp: .recognizeText)
+        case .action(.openNotes):
+            AskNotesWindowController.shared.show()
+        case .action(.openWordBook):
+            AskWordBookWindowController.shared.show()
+        case .action(.openStudio):
+            statusBarController?.showSettings(section: .home)
+        case let .keyword(id):
+            guard let hotkey = di.settingsStore.keywordHotkeys.first(where: { $0.id == id }), hotkey.enabled,
+                  let model = di.askConversationWindowController?.model else { return }
+            workflowController?.cancelRecording()
+            model.runKeywordShortcut(hotkey)
+        }
     }
 
     private func presentOnboarding() {

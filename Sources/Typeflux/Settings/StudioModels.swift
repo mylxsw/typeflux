@@ -8,6 +8,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
     case models
     case agent
     case launcher
+    case hotkeys
     case settings
     case account
 
@@ -17,7 +18,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     /// Sections that appear in the upper sidebar group.
     static var sidebarUpperCases: [StudioSection] {
-        [.home, .vocabulary, .history, .personas, .models, .agent, .launcher]
+        [.home, .vocabulary, .history, .personas, .models, .agent, .launcher, .hotkeys]
     }
 
     /// Sections that appear in the lower sidebar group.
@@ -34,6 +35,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .history: L("studio.section.history")
         case .agent: L("studio.section.agent")
         case .launcher: L("studio.section.launcher")
+        case .hotkeys: L("studio.section.hotkeys")
         case .settings: L("studio.section.settings")
         case .account: L("studio.section.account")
         }
@@ -48,6 +50,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .history: "clock.arrow.circlepath"
         case .agent: "puzzlepiece.extension"
         case .launcher: "command"
+        case .hotkeys: "keyboard"
         case .settings: "gearshape.fill"
         case .account: "person.circle"
         }
@@ -62,6 +65,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .history: L("studio.eyebrow.history")
         case .agent: L("studio.eyebrow.agent")
         case .launcher: L("studio.eyebrow.launcher")
+        case .hotkeys: L("studio.eyebrow.hotkeys")
         case .settings: L("studio.eyebrow.settings")
         case .account: L("studio.eyebrow.account")
         }
@@ -76,6 +80,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .history: L("studio.heading.history")
         case .agent: L("studio.heading.agent")
         case .launcher: L("studio.heading.launcher")
+        case .hotkeys: L("studio.heading.hotkeys")
         case .settings: L("studio.heading.settings")
         case .account: L("studio.heading.account")
         }
@@ -97,6 +102,8 @@ enum StudioSection: String, CaseIterable, Identifiable {
             L("studio.subheading.agent")
         case .launcher:
             nil
+        case .hotkeys:
+            L("studio.subheading.hotkeys")
         case .settings:
             nil
         case .account:
@@ -113,6 +120,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         case .history: L("studio.search.history")
         case .agent: L("studio.search.agent")
         case .launcher: L("studio.search.launcher")
+        case .hotkeys: L("studio.search.hotkeys")
         case .settings: L("studio.search.settings")
         case .account: L("studio.search.account")
         }

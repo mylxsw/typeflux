@@ -999,6 +999,8 @@ struct StudioView: View {
             agentPage(compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
         case .launcher:
             launcherPage(compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
+        case .hotkeys:
+            HotkeySettingsView(viewModel: viewModel, settingsStore: viewModel.askToolSettings)
         case .account:
             AccountView(authState: AuthState.shared) {
                 viewModel.navigate(to: .home)

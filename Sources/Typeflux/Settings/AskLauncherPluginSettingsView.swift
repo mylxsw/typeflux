@@ -265,6 +265,7 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     private func save(_ keyword: AskKeyword, replacing original: AskKeyword?) {
+        if let original { settings.renameKeywordHotkeys(from: original, to: keyword) }
         list.save(keyword, replacing: original)
         persist()
         editing = nil
