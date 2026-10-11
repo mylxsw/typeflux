@@ -108,6 +108,12 @@ struct AskNotesRenderTests {
             let note = AskResultDocument(note: makeTestNote(body: Self.markdown), services: recorder.services)
             try await render(AskResultWindowView(document: note) {}, size: NSSize(width: 480, height: 400),
                              dark: true, name: "7-window-note.png")
+            for width in [360, 480, 900] {
+                try await render(AskResultWindowView(document: note) {}, size: NSSize(width: width, height: 420),
+                                 dark: true, name: "result-note-\(width).png")
+                try await render(AskResultWindowView(document: done) {}, size: NSSize(width: width, height: 420),
+                                 dark: false, name: "result-command-\(width).png")
+            }
         }
     }
 
@@ -128,6 +134,16 @@ struct AskNotesRenderTests {
             model.reveal(model.notes.first { $0.command == "解释" }?.id)
             try await render(AskNotesView(model: model) {}, size: NSSize(width: 1080, height: 700), dark: true,
                              name: "8-notes.png")
+            for width in [1320, 1100, 1090, 940, 780, 680] {
+                try await render(AskNotesView(model: model) {}, size: NSSize(width: width, height: 620), dark: true,
+                                 name: "notes-read-\(width).png")
+            }
+            model.setMode(.split)
+            for width in [1320, 940, 680] {
+                try await render(AskNotesView(model: model) {}, size: NSSize(width: width, height: 620), dark: true,
+                                 name: "notes-split-\(width).png")
+            }
+            model.setMode(.read)
             model.beginEditing()
             model.draftBody = "## 编辑\n\n- **一** 二"
             try await render(AskNotesView(model: model) {}, size: NSSize(width: 1080, height: 700), dark: false,

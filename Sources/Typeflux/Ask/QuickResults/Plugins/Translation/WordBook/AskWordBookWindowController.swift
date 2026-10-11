@@ -8,13 +8,14 @@ import SwiftUI
 final class AskWordBookWindowController: NSObject, NSWindowDelegate {
     static let shared = AskWordBookWindowController()
     static let defaultSize = NSSize(width: 1120, height: 720)
-    static let minimumSize = NSSize(width: 900, height: 560)
+    static let minimumSize = NSSize(width: 720, height: 480)
 
     private var store: (any AskWordBookStoring)?
     private var dictionary: (any AskWordLookingUp)?
     private var modelName: () -> String = { "AI" }
     private var askAI: (@MainActor (String) -> Void)?
     private var settings = SettingsStore()
+    private(set) var interfaceStyle: InterfaceStyleObserver?
     private(set) var window: NSWindow?
     private(set) var model: AskWordBookViewModel?
 
@@ -25,6 +26,9 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         self.store = store
         self.dictionary = dictionary
         self.settings = settings
+        if let interfaceStyle { interfaceStyle.refresh() } else {
+            interfaceStyle = InterfaceStyleObserver(settings: settings)
+        }
         self.askAI = askAI
         self.modelName = modelName
         model?.dictionary = dictionary
@@ -77,12 +81,14 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.titlebarSeparatorStyle = .none
-        let hosting = TransparentAskHostingView(rootView: AskWordBookView(model: model) { [weak window] in
-            window?.performClose(nil)
-        })
+        window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.wordBook.toolbar")
+        window.toolbarStyle = .unified
+        let root = AskWordBookView(model: model) { [weak window] in window?.performClose(nil) }
+        let content = interfaceStyle.map { AnyView(root.interfaceStyle(following: $0)) } ?? AnyView(root)
+        let hosting = TransparentAskHostingView(rootView: content)
         hosting.sizingOptions = []
         window.contentView = hosting
-        window.minSize = Self.minimumSize
+        window.contentMinSize = Self.minimumSize
         window.setFrameAutosaveName("AskWordBook")
         if window.frame.width < Self.minimumSize.width { window.setContentSize(Self.defaultSize) }
         if window.frame.origin == .zero { window.center() }
@@ -92,6 +98,8 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         self.window = window
         DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
+        // AppKit can recalculate content limits when the unified toolbar first attaches.
+        window.contentMinSize = Self.minimumSize
         NSApp.activate(ignoringOtherApps: true)
     }
 

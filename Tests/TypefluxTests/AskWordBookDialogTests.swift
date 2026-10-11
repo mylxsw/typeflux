@@ -506,7 +506,12 @@ struct AskWordBookWindowTests {
         let window = try #require(controller.window)
         #expect(window.title == L("ask.wordBook.title"))
         #expect(window.styleMask.contains(.fullSizeContentView) && window.titleVisibility == .hidden)
-        #expect(window.toolbar == nil, "a plain title bar like the main window")
+        #expect(window.toolbarStyle == .unified && window.toolbar != nil, "title rows align with the workspace")
+        #expect(window.contentMinSize == AskWordBookWindowController.minimumSize)
+        settings.interfaceStyle = .classic
+        #expect(controller.interfaceStyle?.style == .classic)
+        settings.interfaceStyle = .liquidGlass
+        #expect(controller.interfaceStyle?.style == .liquidGlass)
         #expect(controller.model?.selectedKey == lookup.key)
         controller.show()
         #expect(controller.window === window, "one window")
@@ -529,13 +534,15 @@ struct AskWordBookWindowTests {
 @Suite("Ask word book rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWordBookRenderTests {
-    private func render(_ model: AskWordBookViewModel, size: NSSize, dark: Bool, name: String) async throws {
+    private func render(_ model: AskWordBookViewModel, size: NSSize, dark: Bool, name: String,
+                        style: InterfaceStyle = .liquidGlass, checksBounds: Bool = false) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
                                         backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.backgroundColor = dark ? NSColor(white: 0.1, alpha: 1) : NSColor(white: 0.93, alpha: 1)
-        let hosting = NSHostingView(rootView: AskWordBookView(model: model) {}.frame(width: size.width, height: size.height))
+        let hosting = NSHostingView(rootView: AskWordBookView(model: model) {}.environment(\.interfaceStyle, style)
+            .frame(width: size.width, height: size.height))
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
         window.orderFront(nil)
@@ -543,6 +550,21 @@ struct AskWordBookRenderTests {
         try await Task.sleep(for: .milliseconds(300))
         hosting.layoutSubtreeIfNeeded()
         #expect(hosting.fittingSize.height > 0)
+        if checksBounds {
+            let bounds = window.convertToScreen(hosting.bounds)
+            for label in [L("ask.plugin.action.copyDefinition"), L("ask.quick.askAI"),
+                          L("ask.plugin.action.regenerate"), L("ask.wordBook.delete")] {
+                let button = try SettingsBehaviorTestSupport.button(label, in: hosting)
+                #expect(button.frame.width >= 20 && button.frame.height >= 20)
+                #expect(button.frame.minX >= bounds.minX - 1 && button.frame.maxX <= bounds.maxX + 1,
+                        "every detail action must remain inside the window")
+            }
+            let meaning = try #require(SettingsBehaviorTestSupport.elements(in: hosting).first {
+                $0.text == "交付速度；软件功能从开发到上线的效率和速度"
+            })
+            #expect(meaning.frame.width <= size.width - 350,
+                    "a long meaning wraps within the detail column")
+        }
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
         try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
         let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
@@ -589,4 +611,57 @@ struct AskWordBookRenderTests {
         model.notice = nil
         try await render(model, size: NSSize(width: 1120, height: 720), dark: true, name: "word-book-empty.png")
     }
+    @Test func longMeaningsWrapInsideTheOfferedWidth() async throws {
+        let text = String(repeating: "交付速度；软件功能从开发到上线发布的效率。", count: 4)
+        func measure(_ width: CGFloat) -> NSSize {
+            let hosting = NSHostingView(rootView: AskWordBookFlow {
+                Text(text).font(.system(size: 14)).fixedSize(horizontal: false, vertical: true)
+                Text("delivery speed")
+            }.frame(width: width).fixedSize(horizontal: false, vertical: true))
+            hosting.frame = NSRect(x: 0, y: 0, width: width, height: 1000)
+            hosting.layoutSubtreeIfNeeded()
+            return hosting.fittingSize
+        }
+        let narrow = measure(180)
+        let wide = measure(600)
+        #expect(narrow.width <= 180.5, "a single long meaning must not expand its column")
+        #expect(narrow.height > wide.height, "long text wraps instead of being clipped")
+    }
+
+    @Test func longWordCardsFitEveryWindowSizeAndStyle() async throws {
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let suite = "wordbook-responsive-\(UUID().uuidString)"
+        defer { UserDefaults().removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: try #require(UserDefaults(suiteName: suite)))
+        let store = makeTestWordBook()
+        let card = AskWordCard(headword: "Shipping Velocity",
+            senses: [.init(pos: "n.", meanings: ["交付速度；软件功能从开发到上线的效率和速度",
+                                                  "发货速度；商品从仓库出库到送达客户的效率",
+                                                  "（口语）团队推进工作并交付成果的速度"])],
+            forms: [.init(label: "phrase", value: "continuous delivery and release velocity")],
+            examples: [.init(source: "The team improved its **shipping velocity** by automating the release pipeline.",
+                             target: "该团队通过自动化发布流程提高了交付效率。")],
+            synonyms: ["delivery speed", "release frequency", "software deployment throughput"])
+        let lookup = AskWordBookLookup(headword: card.headword, source: "en", target: "zh-Hans", card: card, model: "AI")
+        store.record(lookup, at: Date(), counts: true)
+        let model = AskWordBookViewModel(store: store, settings: settings)
+        model.askAI = { _ in }
+        model.dictionary = AskTestWordLookup(answer: .card(card))
+        model.reload()
+        model.reveal(lookup.key)
+        for style in InterfaceStyle.allCases {
+            for width in [720.0, 900.0, 1120.0, 1440.0] {
+                try await render(model, size: NSSize(width: width, height: 600), dark: true,
+                                 name: "responsive-\(style.rawValue)-\(Int(width)).png", style: style, checksBounds: true)
+            }
+            try await render(model, size: NSSize(width: 720, height: 480), dark: false,
+                             name: "responsive-\(style.rawValue)-minimum-light.png", style: style, checksBounds: true)
+        }
+    }
+
 }

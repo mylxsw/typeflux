@@ -12,13 +12,14 @@ struct AskWordBookView: View {
     @State private var confirmsClear = false
     @State private var regenerating: AskWordBookEntry?
     @FocusState private var focus: Field?
+    @Environment(\.interfaceStyle) private var style
 
     enum Field: Hashable { case lookup, filter }
 
     static let sidebarWidth = StudioTheme.sidebarWidth
-    static let compactSidebarWidth: CGFloat = 60
+    static let compactSidebarWidth: CGFloat = 76
     static let listWidth: CGFloat = 300
-    static let compactListWidth: CGFloat = 260
+    static let compactListWidth: CGFloat = 228
     static let lookupWidth: CGFloat = 380
     static let compactLookupWidth: CGFloat = 330
     /// Narrower windows fold the sidebar into a column of icons.
@@ -34,15 +35,17 @@ struct AskWordBookView: View {
             let compact = Self.isCompact(proxy.size.width)
             HStack(spacing: 0) {
                 sidebar(compact: compact)
-                    .frame(width: compact ? Self.compactSidebarWidth : Self.sidebarWidth)
                     .frame(maxHeight: .infinity)
-                    .background(AskWordBookBackground(fill: StudioTheme.sidebar))
-                    .overlay(alignment: .trailing) { Rectangle().fill(StudioTheme.border).frame(width: 1) }
-                page(compact: compact)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(AskWordBookBackground(fill: StudioTheme.shellSurface))
+                    .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill,
+                                  glassInset: [.leading, .top, .bottom])
+                    .frame(width: compact ? Self.compactSidebarWidth : Self.sidebarWidth)
+                page(compact: compact, width: max(0, proxy.size.width - (compact ? Self.compactSidebarWidth : Self.sidebarWidth)))
+                    .frame(width: max(0, proxy.size.width - (compact ? Self.compactSidebarWidth : Self.sidebarWidth)),
+                           height: proxy.size.height)
+                    .clipped()
             }
         }
+        .background(AskWindowBackdrop())
         .ignoresSafeArea(.container, edges: .top)
         .background(shortcuts)
         .alert(L("ask.wordBook.regenerate.title"), isPresented: Binding(
@@ -130,8 +133,7 @@ struct AskWordBookView: View {
             .padding(.horizontal, compact ? 0 : 10)
             .frame(maxWidth: .infinity, alignment: compact ? .center : .leading)
             .frame(height: 34)
-            .background(active ? AskWordBookStyle.selection : Color.clear,
-                        in: RoundedRectangle(cornerRadius: AskWordBookStyle.fieldCorner, style: .continuous))
+            .askNotesRow(selected: active, hovering: false, corner: style.ask.sidebarRowCorner)
             .contentShape(Rectangle())
         }
         .buttonStyle(StudioInteractiveButtonStyle())
@@ -165,10 +167,7 @@ struct AskWordBookView: View {
             .overlay(alignment: .top) { Rectangle().fill(StudioTheme.border).frame(height: 1) }
         }
         .padding(.horizontal, 12).padding(.top, 11).padding(.bottom, 6)
-        .background(StudioTheme.cardSurface,
-                    in: RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-            .strokeBorder(StudioTheme.border))
+        .askInWindowGlass(corner: StudioTheme.CornerRadius.medium, elevation: nil)
         .padding(12)
     }
 
@@ -266,36 +265,50 @@ struct AskWordBookView: View {
 
     // MARK: - Page
 
-    private func page(compact: Bool) -> some View {
-        VStack(spacing: 0) {
-            header(compact: compact)
-                .padding(.horizontal, StudioTheme.contentInset)
+    private func page(compact: Bool, width: CGFloat) -> some View {
+        let inset: CGFloat = compact ? 12 : StudioTheme.contentInset
+        let contentWidth = max(0, width - inset * 2)
+        let columnSpacing: CGFloat = compact ? 12 : 16
+        let listWidth = compact ? Self.compactListWidth : Self.listWidth
+        let detailWidth = max(0, contentWidth - listWidth - columnSpacing)
+        return VStack(spacing: 0) {
+            header(width: contentWidth)
+                .padding(.horizontal, inset)
                 .padding(.top, 22)
                 .zIndex(2)
-            HStack(alignment: .top, spacing: 16) {
-                list.frame(width: compact ? Self.compactListWidth : Self.listWidth).askWordBookCard()
-                detailColumn.frame(maxWidth: .infinity, maxHeight: .infinity).askWordBookCard()
+            HStack(alignment: .top, spacing: columnSpacing) {
+                list.frame(width: listWidth).askWordBookCard()
+                detailColumn.frame(width: detailWidth).frame(maxHeight: .infinity).askWordBookCard()
             }
-            .padding(.horizontal, StudioTheme.contentInset)
+            .padding(.horizontal, inset)
             .padding(.top, 14)
-            .padding(.bottom, StudioTheme.contentInset)
+            .padding(.bottom, inset)
         }
     }
 
-    private func header(compact: Bool) -> some View {
-        HStack(alignment: .center, spacing: 10) {
+    private func header(width: CGFloat) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                shelfTitle
+                Spacer(minLength: 12)
+                lookupField.frame(width: Self.lookupWidth)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                shelfTitle
+                lookupField.frame(width: width)
+            }
+        }
+    }
+
+    private var shelfTitle: some View {
+        HStack(spacing: 10) {
             Text(model.title(of: model.shelf))
                 .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .bold))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1)
+                .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
             Text(L("ask.wordBook.wordCount", model.entries.count)).font(.system(size: 13))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .lineLimit(1)
-                .fixedSize()
-            Spacer(minLength: 12)
-            lookupField.frame(width: compact ? Self.compactLookupWidth : Self.lookupWidth)
+                .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
         }
-        .frame(height: 40)
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     // MARK: - Lookup field
@@ -322,8 +335,7 @@ struct AskWordBookView: View {
                 .foregroundStyle(StudioTheme.textSecondary)
                 .padding(.horizontal, 8).frame(height: 24)
                 .frame(maxWidth: 160)
-                .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(StudioTheme.border))
+                .askWordBookControl()
                 .fixedSize(horizontal: true, vertical: false)
                 .contentShape(Rectangle())
             }
@@ -366,7 +378,7 @@ struct AskWordBookView: View {
             .background(AskWordBookStyle.hover, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             .padding(5)
             .askWordBookPopover(corner: StudioTheme.CornerRadius.medium)
-            .frame(width: Self.lookupWidth)
+            .frame(maxWidth: .infinity)
             .transition(.opacity)
             .accessibilityIdentifier("ask.wordBook.preview")
         }
@@ -376,7 +388,7 @@ struct AskWordBookView: View {
 
     private var list: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Image(systemName: "line.3.horizontal.decrease").font(.system(size: 11))
                         .foregroundStyle(StudioTheme.textTertiary)
@@ -746,7 +758,7 @@ struct AskWordBookDetail: View {
         HStack(alignment: .top, spacing: 14) {
             VStack(alignment: .leading, spacing: 9) {
                 Text(entry.headword).font(.system(size: 30, weight: .bold)).foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
                 AskWordBookFlow(spacing: 6) {
                     if let phonetics = entry.lookup.card?.phonetics, !phonetics.isEmpty {
@@ -761,21 +773,33 @@ struct AskWordBookDetail: View {
             }
             Spacer(minLength: 8)
             Button { model.toggleStar(entry) } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: entry.isStarred ? "star.fill" : "star")
-                        .foregroundStyle(entry.isStarred ? AskWordBookStyle.star : StudioTheme.textSecondary)
-                    Text(L(entry.isStarred ? "ask.wordBook.starredLabel" : "ask.wordBook.star"))
-                    Text("⌘S").font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
+                ViewThatFits(in: .horizontal) {
+                    starLabel(compact: false)
+                    starLabel(compact: true)
                 }
-                .font(.system(size: 12.5))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .padding(.horizontal, 11).frame(height: 28)
-                .askWordBookControl()
-                .contentShape(Rectangle())
             }
             .buttonStyle(StudioInteractiveButtonStyle())
+            .help(L(entry.isStarred ? "ask.wordBook.unstar" : "ask.wordBook.star") + " ⌘S")
+            .accessibilityLabel(L(entry.isStarred ? "ask.wordBook.unstar" : "ask.wordBook.star"))
             .accessibilityIdentifier("ask.wordBook.star")
         }
+    }
+
+    private func starLabel(compact: Bool) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: entry.isStarred ? "star.fill" : "star")
+                .foregroundStyle(entry.isStarred ? AskWordBookStyle.star : StudioTheme.textSecondary)
+            if !compact {
+                Text(L(entry.isStarred ? "ask.wordBook.starredLabel" : "ask.wordBook.star"))
+                Text("⌘S").font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
+            }
+        }
+        .font(.system(size: 12.5))
+        .foregroundStyle(StudioTheme.textPrimary)
+        .padding(.horizontal, 11).frame(height: 28)
+        .askWordBookControl()
+        .contentShape(Rectangle())
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     private func sound(label: String, text: String, language: String) -> some View {
@@ -795,42 +819,52 @@ struct AskWordBookDetail: View {
 
     /// The word's actions, fixed above its scrolling content.
     private var toolbar: some View {
-        HStack(spacing: 2) {
-            toolbarButton("doc.on.doc", "ask.plugin.action.copyDefinition", key: "⌘C") { model.copyMeaning(entry) }
-            toolbarButton("speaker.wave.2", "ask.plugin.action.speak") { model.speak(entry) }
-            if model.askAI != nil {
-                toolbarButton("bubble.left", "ask.quick.askAI") { model.ask(about: entry) }
-            }
-            if model.canRegenerate {
-                toolbarButton(entry.lookup.card == nil ? "sparkles" : "arrow.clockwise",
-                              entry.lookup.card == nil ? "ask.plugin.action.wordCard" : "ask.plugin.action.regenerate") {
-                    regenerate(entry)
-                }
-                .disabled(model.regenerating != nil)
-            }
-            Spacer(minLength: 4)
-            toolbarButton("trash", model.isTransient(entry) ? "ask.wordBook.dismiss" : "ask.wordBook.delete") {
-                model.delete(entry)
-            }
-            .accessibilityIdentifier("ask.wordBook.delete")
+        ViewThatFits(in: .horizontal) {
+            toolbarActions(compact: false).fixedSize(horizontal: true, vertical: false)
+            toolbarActions(compact: true)
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
         .accessibilityIdentifier("ask.wordBook.actions")
     }
 
-    private func toolbarButton(_ symbol: String, _ title: String, key: String? = nil,
+    private func toolbarActions(compact: Bool) -> some View {
+        HStack(spacing: 2) {
+            toolbarButton("doc.on.doc", "ask.plugin.action.copyDefinition", key: "⌘C", compact: compact) { model.copyMeaning(entry) }
+            toolbarButton("speaker.wave.2", "ask.plugin.action.speak", compact: compact) { model.speak(entry) }
+            if model.askAI != nil {
+                toolbarButton("bubble.left", "ask.quick.askAI", compact: compact) { model.ask(about: entry) }
+            }
+            if model.canRegenerate {
+                toolbarButton(entry.lookup.card == nil ? "sparkles" : "arrow.clockwise",
+                              entry.lookup.card == nil ? "ask.plugin.action.wordCard" : "ask.plugin.action.regenerate", compact: compact) {
+                    regenerate(entry)
+                }
+                .disabled(model.regenerating != nil)
+            }
+            Spacer(minLength: 4)
+            toolbarButton("trash", model.isTransient(entry) ? "ask.wordBook.dismiss" : "ask.wordBook.delete", compact: compact) {
+                model.delete(entry)
+            }
+            .accessibilityIdentifier("ask.wordBook.delete")
+        }
+    }
+
+    private func toolbarButton(_ symbol: String, _ title: String, key: String? = nil, compact: Bool = false,
                                action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: symbol).font(.system(size: 11))
-                Text(L(title)).font(.system(size: 12.5)).lineLimit(1)
-                if let key { Text(key).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary) }
+                if !compact {
+                    Text(L(title)).font(.system(size: 12.5)).lineLimit(1)
+                    if let key { Text(key).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary) }
+                }
             }
             .foregroundStyle(StudioTheme.textSecondary)
             .padding(.horizontal, 8).frame(height: 28)
             .contentShape(Rectangle())
         }
         .buttonStyle(AskWordBookHoverStyle())
+        .help(AskTitleBarButton.help(label: L(title), shortcut: key))
         .accessibilityLabel(L(title))
     }
 
@@ -848,6 +882,7 @@ struct AskWordBookDetail: View {
                             ForEach(Array(sense.meanings.enumerated()), id: \.offset) { position, meaning in
                                 Button { model.copyText(meaning) } label: {
                                     Text(meaning)
+                                        .fixedSize(horizontal: false, vertical: true)
                                         .font(.system(size: 14.5, weight: index == 0 && position == 0 ? .semibold : .regular))
                                         .foregroundStyle(StudioTheme.textPrimary)
                                         .padding(.horizontal, 6).padding(.vertical, 2)
@@ -914,8 +949,9 @@ struct AskWordBookDetail: View {
                     Text(label).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
                 }
                 Text(word).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, 10).frame(height: 26)
+            .padding(.horizontal, 10).padding(.vertical, 5).frame(minHeight: 26)
             .askWordBookControl()
             .contentShape(Rectangle())
         }
@@ -953,7 +989,7 @@ struct AskWordBookDetail: View {
     private var history: some View {
         VStack(alignment: .leading, spacing: 0) {
             AskWordBookSectionTitle(text: L("ask.wordBook.history"))
-            HStack(alignment: .top, spacing: 0) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 0)], alignment: .leading, spacing: 0) {
                 fact("ask.wordBook.fact.count", L("ask.wordBook.times", entry.lookupCount))
                 fact("ask.wordBook.fact.first", entry.firstLookedUpAt.formatted(format), divided: true)
                 fact("ask.wordBook.fact.last", entry.lastLookedUpAt.formatted(format), divided: true)
@@ -1018,26 +1054,11 @@ enum AskWordBookStyle {
     static let cardCorner = StudioTheme.CornerRadius.large
 }
 
-/// The main window's backdrop: a material with the theme's tint on top.
-struct AskWordBookBackground: View {
-    var fill: Color
-
-    var body: some View {
-        ZStack {
-            Rectangle().fill(.ultraThinMaterial)
-            fill
-        }
-        .ignoresSafeArea()
-    }
-}
-
 extension View {
-    /// A `StudioCard`-like container: card surface, thin border, 12-point corners.
+    /// Uses the same panel material and classic fallback as the chat workspace.
     func askWordBookCard() -> some View {
-        let shape = RoundedRectangle(cornerRadius: AskWordBookStyle.cardCorner, style: .continuous)
-        return background(StudioTheme.cardSurface, in: shape)
-            .overlay(shape.strokeBorder(StudioTheme.border))
-            .clipShape(shape)
+        askInWindowGlass(corner: AskMetrics.sidebarPanelCorner)
+            .clipShape(RoundedRectangle(cornerRadius: AskMetrics.sidebarPanelCorner, style: .continuous))
     }
 
     /// Rows grouped inside a card, outlined.
@@ -1048,15 +1069,14 @@ extension View {
 
     /// A small bordered button face.
     func askWordBookControl() -> some View {
-        let shape = RoundedRectangle(cornerRadius: AskWordBookStyle.controlCorner, style: .continuous)
-        return background(StudioTheme.controlSurface, in: shape).overlay(shape.strokeBorder(StudioTheme.border))
+        return askInWindowGlass(corner: AskWordBookStyle.controlCorner, elevation: .control)
     }
 
     /// A text field's face; focus draws the accent border and a soft ring.
     func askWordBookField(focused: Bool, corner: CGFloat, fill: Color = StudioTheme.cardSurface) -> some View {
         let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
-        return background(fill, in: shape)
-            .overlay(shape.strokeBorder(focused ? StudioTheme.accent : StudioTheme.border))
+        return askInWindowGlass(corner: corner, opaqueFill: fill, elevation: .control)
+            .overlay(shape.strokeBorder(focused ? StudioTheme.accent : .clear))
             .background {
                 if focused {
                     RoundedRectangle(cornerRadius: corner + 3, style: .continuous)
@@ -1067,10 +1087,7 @@ extension View {
 
     /// A menu-like surface that floats above the page.
     func askWordBookPopover(corner: CGFloat) -> some View {
-        let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
-        return background(StudioTheme.modalSurface, in: shape)
-            .overlay(shape.strokeBorder(StudioTheme.border))
-            .shadow(color: StudioTheme.shadow, radius: 12, y: 6)
+        return askInWindowGlass(corner: corner, elevation: .popover)
     }
 }
 
@@ -1089,13 +1106,18 @@ struct AskWordBookFlow: Layout {
         for row in arrange(bounds.width, subviews) {
             var x = bounds.minX
             for index in row.indices {
-                let size = subviews[index].sizeThatFits(.unspecified)
+                let size = measured(subviews[index], width: bounds.width)
                 subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2),
                                       proposal: ProposedViewSize(size))
                 x += size.width + spacing
             }
             y += row.height + spacing
         }
+    }
+
+    private func measured(_ subview: LayoutSubview, width: CGFloat) -> CGSize {
+        let ideal = subview.sizeThatFits(.unspecified)
+        return subview.sizeThatFits(ProposedViewSize(width: min(ideal.width, max(0, width)), height: nil))
     }
 
     struct Row {
@@ -1108,7 +1130,7 @@ struct AskWordBookFlow: Layout {
         var rows: [Row] = []
         var row = Row()
         for index in subviews.indices {
-            let size = subviews[index].sizeThatFits(.unspecified)
+            let size = measured(subviews[index], width: maxWidth)
             if !row.indices.isEmpty, row.width + spacing + size.width > maxWidth {
                 rows.append(row)
                 row = Row()

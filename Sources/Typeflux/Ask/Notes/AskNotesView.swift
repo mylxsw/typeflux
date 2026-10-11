@@ -1,6 +1,15 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// Columns follow the current viewport, reserving useful space for the note.
+struct AskNotesLayout {
+    let width: CGFloat
+    var sidebarInline: Bool { width >= 1100 }
+    var sidebarWidth: CGFloat { sidebarInline ? AskNotesView.sidebarWidth : 0 }
+    var listWidth: CGFloat { min(AskNotesView.listWidth, max(240, width * 0.26)) }
+    var detailWidth: CGFloat { max(0, width - sidebarWidth - listWidth) }
+}
+
 /// The notes window, drawn like the conversation window and following the interface
 /// style: shelves in the side panel, the list, and the chosen note to read or edit
 /// (`docs/design/notebook-redesign.md`).
@@ -15,15 +24,25 @@ struct AskNotesView: View {
     static let listWidth: CGFloat = 320
 
     var body: some View {
-        HStack(spacing: 0) {
-            AskNotesSidebar(model: model)
-                .frame(width: Self.sidebarWidth)
-                .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: [.leading, .top, .bottom])
-            AskNotesList(model: model, focus: $focus)
-                .frame(width: Self.listWidth)
-                .overlay(alignment: .trailing) { Rectangle().fill(AskTheme.separator).frame(width: 0.5) }
-            AskNoteDetailView(model: model, focus: $focus)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        GeometryReader { geometry in
+            let layout = AskNotesLayout(width: geometry.size.width)
+            HStack(spacing: 0) {
+                if layout.sidebarInline {
+                    AskNotesSidebar(model: model)
+                        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill,
+                                      glassInset: [.leading, .top, .bottom])
+                        .frame(width: layout.sidebarWidth, height: geometry.size.height)
+                        .clipped()
+                }
+                AskNotesList(model: model, focus: $focus, sidebarCollapsed: !layout.sidebarInline)
+                    .frame(width: layout.listWidth, height: geometry.size.height)
+                    .clipped()
+                    .overlay(alignment: .trailing) { Rectangle().fill(AskTheme.separator).frame(width: 0.5) }
+                AskNoteDetailView(model: model, focus: $focus)
+                    .frame(width: layout.detailWidth, height: geometry.size.height)
+                    .clipped()
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
         // One surface for the whole window, as in the conversation window.
         .background(AskWindowBackdrop())
@@ -87,11 +106,6 @@ struct AskNotesView: View {
                 }
                 if model.noticeOffersUndo, !model.deleted.isEmpty {
                     Button(L("ask.notes.undo")) { model.undoDelete() }
-                        .buttonStyle(.plain).font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(AskTheme.accent)
-                }
-                if model.canUndoRestore {
-                    Button(L("ask.notes.undo")) { model.undoRestoreOriginal() }
                         .buttonStyle(.plain).font(.system(size: 12.5, weight: .semibold))
                         .foregroundStyle(AskTheme.accent)
                 }

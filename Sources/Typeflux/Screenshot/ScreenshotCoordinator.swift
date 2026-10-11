@@ -127,7 +127,7 @@ final class ScreenshotCoordinator {
         pendingTask = Task { [weak self] in
             let result: Result<ScreenSnapshot, Error>
             do {
-                result = try await .success(capture.snapshot(ScreenCaptureRequest()))
+                result = try await .success(capture.snapshot(ScreenCaptureRequest(windowExclusion: .screenshotControls)))
             } catch {
                 result = .failure(error)
             }

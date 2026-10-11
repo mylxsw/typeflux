@@ -128,7 +128,7 @@
 "settings.identity" = "身份與互動";
 "settings.appearance.title" = "明暗模式";
 "settings.interfaceStyle.title" = "介面風格";
-"settings.interfaceStyle.subtitle" = "統一控制膠囊、啟動器、對話視窗和彈出選單的視覺風格。";
+"settings.interfaceStyle.subtitle" = "統一切換應用程式視窗、浮層和選單的顯示樣式。";
 "settings.appearance.subtitle" = "在淺色、深色或跟隨系統主題之間切換整個介面。";
 "settings.language.title" = "語言";
 "settings.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";
@@ -4509,8 +4509,6 @@
 "ask.notes.byAgent" = "由 Agent 修改";
 "ask.notes.openConversation" = "回到對話";
 "ask.notes.question" = "你的提問";
-"ask.notes.restoreOriginal" = "還原為原始結果";
-"ask.notes.restored" = "已還原為原始結果";
 "ask.notes.revertAgent" = "還原 Agent 文字修改";
 "ask.notes.agentReverted" = "已還原 Agent 的上一次文字修改";
 "ask.notes.emptyBody" = "空白筆記，按兩下或按 ⌘E 開始寫";

@@ -85,6 +85,7 @@ final class ScreenshotToastController: ScreenshotToastPresenting {
         let panel = NSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered,
                             defer: true)
         // Above the screenshot overlay, so a picked color's notice shows over it.
+        panel.identifier = ScreenshotCaptureWindowPolicy.toastIdentifier
         panel.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 1)
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         panel.isOpaque = false

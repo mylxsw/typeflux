@@ -7,11 +7,14 @@ enum AskNotesField: Hashable { case search, title, tag }
 struct AskNotesList: View {
     @ObservedObject var model: AskNotesViewModel
     var focus: FocusState<AskNotesField?>.Binding
+    var sidebarCollapsed = false
     @Environment(\.interfaceStyle) private var style
     @State private var searchHover = false
+    @State private var showsSidebar = false
 
     var body: some View {
         VStack(spacing: 0) {
+            if sidebarCollapsed { navigationBar }
             header
             searchField.padding(.horizontal, 12).padding(.bottom, 8)
             if model.inTrash {
@@ -49,6 +52,29 @@ struct AskNotesList: View {
             }
         }
         .accessibilityIdentifier("ask.notes.list")
+        .onChange(of: sidebarCollapsed) { collapsed in if !collapsed { showsSidebar = false } }
+        .onChange(of: model.scope) { _ in showsSidebar = false }
+    }
+
+    private var navigationBar: some View {
+        HStack(spacing: 6) {
+            Color.clear.frame(width: AskResultWindowView.trafficLightClearance)
+            AskIconGhostButton(label: L("ask.sidebar.toggle"), systemImage: "sidebar.left") {
+                showsSidebar.toggle()
+            }
+            .accessibilityIdentifier("ask.notes.sidebarToggle")
+            .popover(isPresented: $showsSidebar, arrowEdge: .leading) {
+                AskNotesSidebar(model: model, clearsTitleBar: false)
+                    .frame(width: AskNotesView.sidebarWidth, height: 480)
+                    .background(AskTheme.glassFill)
+            }
+            Spacer(minLength: 0)
+            AskIconGhostButton(label: L("ask.notes.new") + " ⌘N", systemImage: "square.and.pencil") {
+                model.createNote()
+            }
+        }
+        .padding(.trailing, 10)
+        .frame(height: AskMetrics.titleBarRowHeight)
     }
 
     private var header: some View {
@@ -86,13 +112,14 @@ struct AskNotesList: View {
                 }
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
+                .tint(StudioTheme.textTertiary)
                 .fixedSize()
                 .help(L("ask.notes.sort"))
                 .accessibilityLabel(L("ask.notes.sort"))
             }
         }
         .padding(.leading, 18).padding(.trailing, 10)
-        .frame(height: AskMetrics.titleBarRowHeight)
+        .frame(height: sidebarCollapsed ? 40 : AskMetrics.titleBarRowHeight)
     }
 
     private var searchField: some View {

@@ -1,5 +1,6 @@
 @testable import Typeflux
 import XCTest
+import Foundation
 
 final class StudioThemeTests: XCTestCase {
     // MARK: - Layout Constants
@@ -24,16 +25,16 @@ final class StudioThemeTests: XCTestCase {
         XCTAssertEqual(StudioTheme.Layout.settingsWindowWidth, 1100)
     }
 
-    func testSettingsWindowMinimumWidthKeepsOverviewOutOfCompactLayout() {
-        let minimumContentWidth = StudioTheme.Layout.settingsWindowMinWidth
-            - StudioTheme.Layout.sidebarWidth
-            - StudioTheme.Layout.contentInset * 2
-
-        XCTAssertEqual(StudioTheme.Layout.settingsWindowMinWidth, StudioTheme.Layout.settingsWindowWidth)
-        XCTAssertGreaterThanOrEqual(
-            minimumContentWidth,
-            StudioOverviewPanelLayoutCalculator.compactBreakpoint
-        )
+    func testSettingsWindowNavigationYieldsToNarrowContent() {
+        for width: CGFloat in [720, 900, 1039, 1040, 1100, 1440] {
+            let layout = StudioShellLayout(width: width)
+            XCTAssertEqual(layout.sidebarInline, width >= 1040)
+            XCTAssertGreaterThanOrEqual(layout.contentWidth, 672)
+            XCTAssertLessThanOrEqual(layout.contentWidth + layout.sidebarWidth + layout.horizontalInset * 2, width)
+        }
+        XCTAssertLessThan(StudioTheme.Layout.settingsWindowMinWidth, StudioTheme.Layout.settingsWindowWidth)
+        XCTAssertTrue(SettingsPaneMetrics.isCompact(contentWidth:
+            StudioShellLayout(width: StudioTheme.Layout.settingsWindowMinWidth).contentWidth))
     }
 
     func testOverlayWidth() {

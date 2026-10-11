@@ -128,7 +128,7 @@
 "settings.identity" = "身份与交互";
 "settings.appearance.title" = "明暗模式";
 "settings.interfaceStyle.title" = "界面风格";
-"settings.interfaceStyle.subtitle" = "统一控制胶囊、启动器、对话窗口和弹出菜单的视觉风格。";
+"settings.interfaceStyle.subtitle" = "统一切换应用窗口、浮层和菜单的展示样式。";
 "settings.appearance.subtitle" = "在浅色、深色或跟随系统主题之间切换整个界面。";
 "settings.language.title" = "语言";
 "settings.language.subtitle" = "选择 Typeflux 界面的显示语言。";
@@ -4524,8 +4524,6 @@
 "ask.notes.byAgent" = "由 Agent 修改";
 "ask.notes.openConversation" = "回到对话";
 "ask.notes.question" = "你的提问";
-"ask.notes.restoreOriginal" = "还原为原始结果";
-"ask.notes.restored" = "已还原为原始结果";
 "ask.notes.revertAgent" = "撤销 Agent 文本修改";
 "ask.notes.agentReverted" = "已撤销 Agent 的上一次文本修改";
 "ask.notes.emptyBody" = "空白笔记，双击或按 ⌘E 开始写";
@@ -4542,7 +4540,7 @@
 "ask.notes.saveFailed" = "无法保存笔记";
 "ask.notes.saveAnswer" = "存入笔记本";
 "ask.notes.savedAnswer" = "已存入笔记本 · 再点一次取消";
-"ask.notes.saveSelection" = "存入笔记本";
+"ask.notes.saveSelection" = "记笔记";
 "ask.notes.format.heading" = "标题";
 "ask.notes.format.heading1" = "一级标题";
 "ask.notes.format.heading2" = "二级标题";

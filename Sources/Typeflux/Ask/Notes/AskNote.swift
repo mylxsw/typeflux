@@ -71,7 +71,7 @@ struct AskNote: Equatable, Sendable, Identifiable {
     var source: AskNoteSource
     var conversationID: String?
     var messageID: String?
-    /// The text as generated, kept when an AI note is first edited so it can be restored.
+    /// The generated text, kept as a source snapshot when an AI note is first edited.
     var originalBody: String?
     /// Set while the note is in Recently Deleted.
     var deletedAt: Date?
@@ -119,9 +119,6 @@ struct AskNote: Equatable, Sendable, Identifiable {
     var isEdited: Bool { editedAt != nil }
 
     var isDeleted: Bool { deletedAt != nil }
-
-    /// Whether "Restore Original" applies: an AI note whose text was changed since.
-    var canRestoreOriginal: Bool { originalBody.map { $0 != body } ?? false }
 
     /// The headings (`#` to `###`) outside code blocks, for the outline.
     var headings: [AskNoteHeading] { AskNoteHeading.parse(body) }

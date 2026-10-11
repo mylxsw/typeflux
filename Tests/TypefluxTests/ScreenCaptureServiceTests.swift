@@ -45,8 +45,9 @@ struct ScreenCaptureServiceTests {
         }
     }
 
-    private func service(_ source: Source, granted: Bool = true) -> ScreenCaptureService {
-        ScreenCaptureService(permission: FakeScreenCapturePermission(granted: granted), ownProcessID: 7) {
+    private func service(_ source: Source, granted: Bool = true, controls: [CGWindowID] = []) -> ScreenCaptureService {
+        ScreenCaptureService(permission: FakeScreenCapturePermission(granted: granted), ownProcessID: 7,
+                             captureControlWindowIDs: { controls }) {
             source.content()
         }
     }
@@ -78,6 +79,50 @@ struct ScreenCaptureServiceTests {
         #expect(source.captures.allSatisfy { $0.excluded == [10] })
         let withoutWindows = try await service(source).snapshot(ScreenCaptureRequest(includesWindows: false))
         #expect(withoutWindows.windows.isEmpty)
+    }
+
+    @Test func explicitScreenshotKeepsAppPagesAndExcludesOnlyOwnCaptureControls() async throws {
+        let source = Source()
+        source.windows += [
+            ScreenCaptureTestSupport.window(12, processID: 7, title: "Chat"),
+            ScreenCaptureTestSupport.window(13, processID: 7, title: "Settings"),
+            ScreenCaptureTestSupport.window(14, processID: 7, title: "Word cards"),
+            ScreenCaptureTestSupport.window(15, processID: 7, title: "Notebook"),
+            ScreenCaptureTestSupport.window(16, processID: 7, title: "Screenshot preview")
+        ]
+        // An unrelated app must remain selectable even if the provider returns its ID.
+        let capturer = service(source, controls: [10, 11, 16, 999])
+        let snapshot = try await capturer.snapshot(ScreenCaptureRequest(windowExclusion: .screenshotControls))
+        #expect(snapshot.windows.map(\.id) == [11, 12, 13, 14, 15])
+        #expect(source.captures.allSatisfy { $0.excluded == [10, 16] })
+        let withoutWindows = try await capturer.snapshot(ScreenCaptureRequest(
+            includesWindows: false, windowExclusion: .screenshotControls
+        ))
+        #expect(withoutWindows.windows.isEmpty)
+        #expect(source.captures.allSatisfy { $0.excluded == [10, 16] })
+    }
+
+    @Test func explicitScreenshotWithoutControlsIncludesOwnWindows() async throws {
+        let source = Source()
+        let snapshot = try await service(source).snapshot(ScreenCaptureRequest(windowExclusion: .screenshotControls))
+        #expect(snapshot.windows.map(\.id) == [10, 11])
+        #expect(source.captures.allSatisfy { $0.excluded.isEmpty })
+    }
+
+    @Test func appPageCanBeSelectedByClickingItsWindow() async throws {
+        let source = Source()
+        let pageFrame = CGRect(x: 200, y: 100, width: 600, height: 400)
+        source.windows.append(ScreenCaptureTestSupport.window(12, processID: 7, frame: pageFrame, title: "Chat"))
+        let snapshot = try await service(source, controls: [10])
+            .snapshot(ScreenCaptureRequest(windowExclusion: .screenshotControls))
+        let display = try #require(snapshot.displays.first)
+        var selection = ScreenshotSelection(displayFrame: display.frame, scale: display.scale, windows: snapshot.windows)
+        let point = CGPoint(x: pageFrame.midX, y: pageFrame.midY)
+        selection.pointerMoved(to: point)
+        #expect(selection.hovered == pageFrame)
+        _ = selection.mouseDown(at: point)
+        #expect(selection.mouseUp(at: point) == .committed)
+        #expect(selection.rect == pageFrame)
     }
 
     @Test func preferredDisplayFallsBackToTheFirstOne() async throws {

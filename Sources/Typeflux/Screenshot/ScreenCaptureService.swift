@@ -15,9 +15,17 @@ struct ScreenCaptureRequest: Equatable {
         case fitting(maxDimension: Int)
     }
 
+    enum WindowExclusion: Equatable {
+        /// Automatic AI screen context omits the app's own UI.
+        case ownApplication
+        /// Explicit screenshots keep app pages and omit only capture controls.
+        case screenshotControls
+    }
+
     var displays: Displays = .all
     var resolution: Resolution = .native
     var includesWindows = true
+    var windowExclusion: WindowExclusion = .ownApplication
 }
 
 enum ScreenCaptureError: Error, Equatable {
@@ -32,18 +40,21 @@ protocol ScreenCapturing {
     func snapshot(_ request: ScreenCaptureRequest) async throws -> ScreenSnapshot
 }
 
-/// Freezes displays and lists windows through `ScreenCaptureContent`, leaving
-/// Typeflux's own windows out of both.
+/// Freezes displays and lists windows through `ScreenCaptureContent`, applying the same
+/// exclusion policy to the pixels and selectable windows.
 struct ScreenCaptureService: ScreenCapturing {
     private let permission: any ScreenCapturePermissionProviding
     private let loadContent: () async throws -> ScreenCaptureContent
     private let ownProcessID: pid_t
+    private let captureControlWindowIDs: @MainActor () -> [CGWindowID]
 
     init(permission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live,
          ownProcessID: pid_t = ProcessInfo.processInfo.processIdentifier,
+         captureControlWindowIDs: @escaping @MainActor () -> [CGWindowID] = ScreenshotCaptureWindowPolicy.excludedWindowIDs,
          loadContent: @escaping () async throws -> ScreenCaptureContent = ScreenCaptureContent.system) {
         self.permission = permission
         self.ownProcessID = ownProcessID
+        self.captureControlWindowIDs = captureControlWindowIDs
         self.loadContent = loadContent
     }
 
@@ -52,13 +63,20 @@ struct ScreenCaptureService: ScreenCapturing {
         let content = try await loadContent()
         let displays = Self.displays(content.displays, matching: request.displays)
         guard !displays.isEmpty else { throw ScreenCaptureError.unavailable }
-        let ownWindows = content.windows.filter { $0.processID == ownProcessID }.map(\.id)
+        let excludedWindows: [CGWindowID]
+        switch request.windowExclusion {
+        case .ownApplication:
+            excludedWindows = content.windows.filter { $0.processID == ownProcessID }.map(\.id)
+        case .screenshotControls:
+            let controls = Set(await captureControlWindowIDs())
+            excludedWindows = content.windows.filter { $0.processID == ownProcessID && controls.contains($0.id) }.map(\.id)
+        }
         let images = try await withThrowingTaskGroup(of: (Int, CGImage).self) { group in
             for (index, display) in displays.enumerated() {
                 let size = ScreenCaptureGeometry.pixelSize(pointSize: display.frame.size, scale: display.scale,
                                                            resolution: request.resolution)
                 group.addTask {
-                    let captured = try await content.capture(display, ownWindows, size)
+                    let captured = try await content.capture(display, excludedWindows, size)
                     // The macOS 13 fallback always returns native pixels.
                     guard let image = ScreenCaptureGeometry.resized(captured, to: size) else {
                         throw ScreenCaptureError.unavailable
@@ -74,7 +92,7 @@ struct ScreenCaptureService: ScreenCapturing {
             displays: zip(displays, images).map { display, image in
                 ScreenSnapshot.Display(id: display.id, frame: display.frame, scale: display.scale, image: image)
             },
-            windows: request.includesWindows ? content.windows.filter { $0.processID != ownProcessID } : []
+            windows: request.includesWindows ? content.windows.filter { !excludedWindows.contains($0.id) } : []
         )
     }
 

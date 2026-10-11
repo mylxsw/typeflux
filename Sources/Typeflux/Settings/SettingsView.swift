@@ -435,11 +435,13 @@ struct StudioView: View {
     @State private var isSubmittingFeedback = false
     @State private var feedbackSubmissionError: String?
     @State private var agentPane: AgentSettingsPane = .overview
+    @StateObject private var interfaceStyleObserver: InterfaceStyleObserver
     @State private var launcherPane: LauncherSettingsPane
 
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
     init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics) {
         self.viewModel = viewModel
+        _interfaceStyleObserver = StateObject(wrappedValue: InterfaceStyleObserver(settings: viewModel.askToolSettings))
         _imageSettings = StateObject(wrappedValue: AskImageSettingsModel(
             store: AskImageSettings(defaults: viewModel.askToolSettings.defaults)
         ))
@@ -508,6 +510,8 @@ struct StudioView: View {
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.15), value: viewModel.currentSection)
         }
+        .interfaceStyle(following: interfaceStyleObserver)
+        .onChange(of: interfaceStyleObserver.style) { viewModel.interfaceStyle = $0 }
         .onAppear {
             AppLocalization.shared.setLanguage(viewModel.appLanguage)
             viewModel.schedulePermissionRefresh()
@@ -1979,11 +1983,7 @@ struct StudioView: View {
                         .padding(.vertical, StudioTheme.Insets.historyEmptyVertical)
                     } else {
                         LazyVGrid(
-                            columns: [
-                                GridItem(.flexible(), spacing: StudioTheme.Spacing.xLarge),
-                                GridItem(.flexible(), spacing: StudioTheme.Spacing.xLarge),
-                                GridItem(.flexible(), spacing: StudioTheme.Spacing.xLarge)
-                            ],
+                            columns: [GridItem(.adaptive(minimum: 240), spacing: StudioTheme.Spacing.xLarge)],
                             alignment: .leading,
                             spacing: StudioTheme.Spacing.mediumLarge
                         ) {

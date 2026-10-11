@@ -47,8 +47,10 @@ struct ScreenCaptureContent {
                 if #available(macOS 14.0, *) {
                     return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
                 }
-                guard let legacy = CGWindowListCreateImage(CGDisplayBounds(target.displayID), .optionOnScreenOnly,
-                                                           kCGNullWindowID, .bestResolution) else {
+                // The macOS 13 fallback must use the same exclusions as ScreenCaptureKit.
+                let included = onScreenWindowOrder().filter { !excluded.contains($0) }.map { NSNumber(value: $0) }
+                guard let legacy = CGImage(windowListFromArrayScreenBounds: CGDisplayBounds(target.displayID),
+                                           windowArray: included as CFArray, imageOption: .bestResolution) else {
                     throw ScreenCaptureError.unavailable
                 }
                 return legacy

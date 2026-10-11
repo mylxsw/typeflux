@@ -53,11 +53,11 @@ struct AskNoteDetailView: View {
                 topBar(note, compact: width < 520)
                 switch model.mode {
                 case .read: reading(note, width: width)
-                case .edit: editing(note)
-                case .split: splitting(note)
+                case .edit: editing(note, width: width)
+                case .split: splitting(note, width: width)
                 }
             }
-            .overlay(alignment: .bottom) { actionBar(note) }
+            .overlay(alignment: .bottom) { actionBar(note, width: width) }
         } else {
             emptyState
         }
@@ -106,7 +106,7 @@ struct AskNoteDetailView: View {
                     }
                 }
                 exportMenu(note)
-                moreMenu(note)
+                moreMenu()
             }
         }
         .padding(.leading, 22).padding(.trailing, 12)
@@ -221,18 +221,18 @@ struct AskNoteDetailView: View {
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
+        .tint(StudioTheme.textTertiary)
         .fixedSize()
         .help(L("ask.notes.export"))
         .accessibilityLabel(L("ask.notes.export"))
         .accessibilityIdentifier("ask.notes.exportMenu")
     }
 
-    private func moreMenu(_ note: AskNote) -> some View {
+    private func moreMenu() -> some View {
         Menu {
             Button(L("ask.plugin.action.openInWindow") + "  ⌘O") { model.openSelectedInWindow() }
             if model.askAI != nil { Button(L("ask.result.askAI")) { model.askAIAboutSelected() } }
             if model.canOpenSource { Button(L("ask.notes.openConversation")) { model.openSource() } }
-            if note.canRestoreOriginal { Button(L("ask.notes.restoreOriginal")) { model.restoreOriginal() } }
             if model.agentRevision != nil { Button(L("ask.notes.revertAgent")) { model.revertAgentChange() } }
             Divider()
             Button(L("ask.notes.delete") + "  ⌘⌫", role: .destructive) { model.deleteSelected() }
@@ -242,6 +242,7 @@ struct AskNoteDetailView: View {
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
+        .tint(StudioTheme.textTertiary)
         .fixedSize()
         .accessibilityLabel(L("ask.notes.more"))
     }
@@ -274,7 +275,7 @@ struct AskNoteDetailView: View {
                 property("clock", L("ask.notes.prop.time")) { timeLine(note) }
                 property("tag", L("ask.notes.prop.tags")) { tagLine(note) }
             }
-            if !compact, !note.input.isEmpty { originCard(note) }
+            if !note.input.isEmpty, !compact || model.mode == .read { originCard(note) }
         }
     }
 
@@ -329,10 +330,6 @@ struct AskNoteDetailView: View {
         }
         return HStack(spacing: 6) {
             Text(parts.joined(separator: " · ")).lineLimit(1)
-            if note.canRestoreOriginal, !note.isDeleted {
-                Button(L("ask.notes.restoreOriginal"), action: model.restoreOriginal)
-                    .buttonStyle(.plain).foregroundStyle(AskTheme.accent)
-            }
             if model.agentRevision != nil, !note.isDeleted {
                 Button(L("ask.notes.revertAgent"), action: model.revertAgentChange)
                     .buttonStyle(.plain).foregroundStyle(AskTheme.accent)
@@ -406,7 +403,7 @@ struct AskNoteDetailView: View {
         return HStack(alignment: .top, spacing: 0) {
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 18) {
-                    header(note)
+                    header(note, compact: width < 520)
                     Rectangle().fill(AskTheme.separator).frame(height: 0.5)
                     if note.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         Button { model.beginEditing() } label: {
@@ -423,7 +420,7 @@ struct AskNoteDetailView: View {
                 }
                 .frame(maxWidth: Self.readingWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
-                .padding(.horizontal, 36).padding(.top, 6).padding(.bottom, 90)
+                .padding(.horizontal, width < 520 ? 18 : 36).padding(.top, 6).padding(.bottom, 90)
             }
             .contentShape(Rectangle())
             .onTapGesture(count: 2) { if !note.isDeleted { model.beginEditing() } }
@@ -473,7 +470,7 @@ struct AskNoteDetailView: View {
 
     // MARK: - Editing
 
-    private func editing(_ note: AskNote) -> some View {
+    private func editing(_ note: AskNote, width: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             header(note, compact: true)
             formatBar
@@ -483,20 +480,23 @@ struct AskNoteDetailView: View {
         }
         .frame(maxWidth: Self.readingWidth + 40)
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 36).padding(.top, 6).padding(.bottom, 64)
+        .padding(.horizontal, width < 520 ? 18 : 36).padding(.top, 6).padding(.bottom, 64)
     }
 
-    private func splitting(_ note: AskNote) -> some View {
-        HStack(spacing: 0) {
+    private func splitting(_ note: AskNote, width: CGFloat) -> some View {
+        let stacked = width < 600
+        let layout = stacked ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout(spacing: 0))
+        return layout {
             VStack(alignment: .leading, spacing: 12) {
                 titleField(size: 20)
                 formatBar
                 AskMarkdownEditor(text: $model.draftBody, controller: editor)
                     .id(note.id)
             }
-            .padding(.horizontal, 24).padding(.top, 6).padding(.bottom, 64)
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
-            Rectangle().fill(AskTheme.separator).frame(width: 0.5)
+            .padding(.horizontal, stacked ? 18 : 24).padding(.top, 6).padding(.bottom, stacked ? 12 : 64)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+            Rectangle().fill(AskTheme.separator)
+                .frame(width: stacked ? nil : 0.5, height: stacked ? 0.5 : nil)
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(L("ask.notes.preview")).font(.system(size: 11, weight: .semibold))
@@ -504,9 +504,9 @@ struct AskNoteDetailView: View {
                     AskNoteReaderText(text: model.draftBody)
                         .accessibilityIdentifier("ask.notes.splitPreview")
                 }
-                .padding(.horizontal, 24).padding(.top, 8).padding(.bottom, 80)
+                .padding(.horizontal, stacked ? 18 : 24).padding(.top, 8).padding(.bottom, 80)
             }
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
         }
     }
 
@@ -566,10 +566,10 @@ struct AskNoteDetailView: View {
 
     // MARK: - Bars
 
-    @ViewBuilder private func actionBar(_ note: AskNote) -> some View {
+    @ViewBuilder private func actionBar(_ note: AskNote, width: CGFloat) -> some View {
         if !note.isDeleted {
             ViewThatFits(in: .horizontal) {
-                noteActions(compact: false).fixedSize(horizontal: true, vertical: false)
+                if width >= 600 { noteActions(compact: false).fixedSize(horizontal: true, vertical: false) }
                 noteActions(compact: true)
             }
             .askInWindowGlass(corner: style.usesGlass ? 20 : 10, opaqueFill: AskTheme.glassFill)
@@ -736,7 +736,6 @@ struct AskNotesBarButton: View {
                 Image(systemName: symbol).font(.system(size: 11.5))
                 if !compact {
                     Text(title).font(.system(size: 12.5)).lineLimit(1)
-                    if let key { Text(key).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary) }
                 }
             }
             .fixedSize()

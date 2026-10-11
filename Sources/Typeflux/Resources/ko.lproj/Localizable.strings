@@ -128,7 +128,7 @@
 "settings.identity" = "정체성과 상호작용";
 "settings.appearance.title" = "외관";
 "settings.interfaceStyle.title" = "인터페이스 스타일";
-"settings.interfaceStyle.subtitle" = "캡슐, 런처, 채팅 창, 메뉴의 시각적 스타일을 한 번에 선택합니다.";
+"settings.interfaceStyle.subtitle" = "앱 창, 오버레이, 메뉴의 표시 스타일을 선택합니다.";
 "settings.appearance.subtitle" = "밝은 테마, 어두운 테마 또는 시스템 테마에 따라 구성 요소 시스템을 전환합니다.";
 "settings.language.title" = "언어";
 "settings.language.subtitle" = "Typeflux 인터페이스에서 사용되는 표시 언어를 선택하세요.";
@@ -4502,8 +4502,6 @@
 "ask.notes.byAgent" = "에이전트가 수정함";
 "ask.notes.openConversation" = "대화로 돌아가기";
 "ask.notes.question" = "질문";
-"ask.notes.restoreOriginal" = "원래 결과로 복원";
-"ask.notes.restored" = "원래 텍스트로 복원함";
 "ask.notes.revertAgent" = "에이전트 텍스트 변경 취소";
 "ask.notes.agentReverted" = "에이전트의 마지막 텍스트 변경을 취소함";
 "ask.notes.emptyBody" = "빈 노트입니다. 두 번 클릭하거나 ⌘E를 눌러 작성하세요";

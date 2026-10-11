@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 import Testing
 @testable import Typeflux
 
@@ -195,8 +196,108 @@ struct AskNotebookVisualTests {
         try await checkSplitControls(window, model: model)
     }
 
+    @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
+    func resizingKeepsNotesAndActionsInsideTheirColumns(style: InterfaceStyle) async throws {
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.english)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let store = makeTestNotes()
+        let chat = seed(store)
+        let settings = SettingsStore(defaults: UserDefaults(suiteName: "notebook-resizing-\(UUID().uuidString)")!)
+        settings.interfaceStyle = style
+        let controller = AskNotesWindowController()
+        controller.configure(store: store, settings: settings, askAI: { _ in }, openConversation: { _ in }) {
+            NSAppearance(named: .darkAqua)
+        }
+        controller.show(selecting: chat)
+        let window = try #require(controller.window)
+        let model = try #require(controller.model)
+        defer { window.close() }
+        for width in [1320, 1100, 1090, 940, 780, 680, 940, 1320] {
+            window.setContentSize(NSSize(width: width, height: 620))
+            try await capture(window, "resize-\(style.rawValue)-\(width)-read.png")
+            try checkReadControls(window)
+            let row = try #require(accessibilityElement("ask.notes.row", in: window))
+            let content = try #require(window.contentView)
+            let reader = try #require(descendants(content).compactMap { $0 as? AskNoteReaderText.ReaderView }.first)
+            let readerFrame = screenFrame(reader, in: window)
+            #expect(accessibilityFrame(row).maxX < readerFrame.minX,
+                    "the list must not overlap the note during resizing")
+            #expect(readerFrame.width >= 300 && readerFrame.maxX <= window.frame.maxX + 1)
+            #expect(model.selectedID == chat, "resizing keeps the selected note")
+            if width < 1100 {
+                let toggle = try accessibilityButton(L("ask.sidebar.toggle"), in: window)
+                #expect(accessibilityFrame(toggle).width >= 20, "collapsed navigation stays reachable")
+            }
+        }
+        model.setMode(.split)
+        let draft = "## Draft kept during resizing\n\n" + Self.answer
+        model.draftBody = draft
+        for width in [1320, 940, 680, 1320] {
+            window.setContentSize(NSSize(width: width, height: 620))
+            try await capture(window, "resize-\(style.rawValue)-\(width)-split.png")
+            let content = try #require(window.contentView)
+            let views = descendants(content)
+            let editor = try #require(views.compactMap { $0 as? AskMarkdownEditor.EditorView }.first)
+            let editorScroll = try #require(editor.enclosingScrollView)
+            let preview = try #require(views.compactMap { $0 as? AskNoteReaderText.ReaderView }.first)
+            let editorFrame = screenFrame(editorScroll, in: window)
+            let previewFrame = screenFrame(preview, in: window)
+            #expect(!editorFrame.intersects(previewFrame), "editor and preview never overlap")
+            #expect(editorFrame.width >= 200 && previewFrame.width >= 200)
+            #expect(model.mode == .split && model.draftBody == draft && editor.string == draft,
+                    "switching the split orientation keeps unsaved text")
+        }
+    }
+
+    @Test func resultWindowKeepsItsIconToolbarReachableWhileResizing() async throws {
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        let recorder = AskResultServicesRecorder()
+        let controller = AskResultWindowController()
+        controller.defaults = UserDefaults(suiteName: "result-resizing-\(UUID().uuidString)")!
+        let document = AskResultDocument(title: "Explain", keyword: "ex", model: "A long model name",
+            input: "hell cat", body: Self.answer, state: .done,
+            sourceApp: "An application with a very long name", sourceBundleID: "com.apple.Notes",
+            regenerate: { _ in "Regenerated" }, services: recorder.services)
+        controller.present(document)
+        let window = try #require(NSApp.windows.first {
+            $0.delegate === controller
+                && ($0.contentView as? NSHostingView<AskResultWindowView>)?.rootView.document === document
+        })
+        defer { window.close() }
+        for width in [900, 580, 480, 360, 580] {
+            window.setContentSize(NSSize(width: width, height: 420))
+            try await capture(window, "result-resize-\(width).png")
+            var lastMaxX = window.frame.minX
+            for identifier in ["copy", "copyRich", "insert", "regenerate", "askAI"] {
+                let button = try #require(accessibilityElement("ask.result." + identifier, in: window))
+                let frame = accessibilityFrame(button)
+                #expect(frame.width >= 28 && frame.height >= 28, "\(identifier) has a usable icon hit target")
+                #expect(frame.minX >= lastMaxX && frame.maxX <= window.frame.maxX + 1,
+                        "all toolbar actions fit without overlap")
+                lastMaxX = frame.maxX
+            }
+        }
+        let insert = try #require(accessibilityElement("ask.result.insert", in: window))
+        #expect(accessibilityValue("accessibilityHelp", of: insert)?.contains("⌥↩") == true,
+                "the icon's tooltip includes its shortcut")
+        try click(accessibilityFrame(insert), in: window)
+        try await waitForUI { !recorder.inserted.isEmpty }
+        #expect(recorder.inserted.first?.0 == document.body)
+        let ask = try #require(accessibilityElement("ask.result.askAI", in: window))
+        try click(accessibilityFrame(ask), in: window)
+        try await waitForUI { !recorder.asked.isEmpty }
+        #expect(!recorder.asked.isEmpty, "the last action remains clickable")
+    }
+
     private func checkReadControls(_ window: NSWindow) throws {
-        let left = window.frame.minX + AskNotesView.sidebarWidth + AskNotesView.listWidth
+        let layout = AskNotesLayout(width: window.contentView?.bounds.width ?? window.frame.width)
+        let left = window.frame.minX + layout.sidebarWidth + layout.listWidth
         // ViewThatFits does not always expose a container in AppKit's AX tree.
         // Measure each real control, which also detects one clipped action in an otherwise visible bar.
         let labels = [L("ask.plugin.action.copy"), L("ask.notes.rich"), L("ask.result.askAI"), L("ask.notes.edit"),
@@ -228,24 +329,31 @@ struct AskNotebookVisualTests {
         let preview = try #require(views.compactMap { $0 as? AskNoteReaderText.ReaderView }.first)
         let previewFrame = screenFrame(preview, in: window)
         #expect(editorFrame.width >= 100 && previewFrame.width >= 100, "both split columns remain usable")
-        #expect(editorFrame.maxX <= previewFrame.minX, "the editor cannot overlap the rendered preview")
-        let scrolling = try #require(views.compactMap { $0 as? NSScrollView }.first {
+        let layout = AskNotesLayout(width: content.bounds.width)
+        if layout.detailWidth < 600 {
+            #expect(previewFrame.maxY <= editorFrame.minY, "stacked editing keeps the preview below the editor")
+        } else {
+            #expect(editorFrame.maxX <= previewFrame.minX, "the editor cannot overlap the rendered preview")
+        }
+        if let scrolling = views.compactMap({ $0 as? NSScrollView }).first(where: {
             let frame = screenFrame($0, in: window)
             return frame.height <= 60 && frame.minY >= editorFrame.maxY - 1
                 && ($0.documentView?.frame.width ?? 0) > $0.contentView.bounds.width + 20
-        }, "the toolbar must scroll instead of widening the editor")
-        let formatFrame = screenFrame(scrolling, in: window)
-        #expect(formatFrame.minX >= editorFrame.minX - 1 && formatFrame.maxX <= editorFrame.maxX + 1)
-        let document = try #require(scrolling.documentView)
-        scrolling.contentView.scroll(to: NSPoint(x: max(0, document.bounds.width - scrolling.contentView.bounds.width),
-                                                 y: 0))
-        scrolling.reflectScrolledClipView(scrolling.contentView)
-        window.displayIfNeeded()
-        try await Task.sleep(for: .milliseconds(100))
+        }) {
+            let formatFrame = screenFrame(scrolling, in: window)
+            #expect(formatFrame.minX >= editorFrame.minX - 1 && formatFrame.maxX <= editorFrame.maxX + 1)
+            let document = try #require(scrolling.documentView)
+            scrolling.contentView.scroll(to: NSPoint(x: max(0, document.bounds.width - scrolling.contentView.bounds.width),
+                                                     y: 0))
+            scrolling.reflectScrolledClipView(scrolling.contentView)
+            window.displayIfNeeded()
+            try await Task.sleep(for: .milliseconds(100))
+        }
         let table = try #require(accessibilityElement(L("ask.notes.format.table"),
                                                       attribute: "accessibilityLabel", in: window))
         let tableFrame = accessibilityFrame(table)
-        #expect(formatFrame.contains(NSPoint(x: tableFrame.midX, y: tableFrame.midY)))
+        #expect(tableFrame.minX >= editorFrame.minX - 1 && tableFrame.maxX <= editorFrame.maxX + 1,
+                "the last formatting action fits or becomes reachable by scrolling")
         let before = model.draftBody
         try click(tableFrame, in: window)
         try await waitForUI { model.draftBody != before }

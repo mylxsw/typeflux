@@ -8,7 +8,7 @@ import SwiftUI
 final class AskNotesWindowController: NSObject, NSWindowDelegate {
     static let shared = AskNotesWindowController()
     static let defaultSize = NSSize(width: 1320, height: 800)
-    static let minimumSize = NSSize(width: 940, height: 560)
+    static let minimumSize = NSSize(width: 680, height: 500)
 
     private(set) var store: (any AskNoteStoring)?
     private var askAI: (@MainActor (String) -> Void)?

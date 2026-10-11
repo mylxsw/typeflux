@@ -128,7 +128,7 @@
 "settings.identity" = "アイデンティティとインタラクション";
 "settings.appearance.title" = "外観";
 "settings.interfaceStyle.title" = "インターフェーススタイル";
-"settings.interfaceStyle.subtitle" = "カプセル、ランチャー、チャットウインドウ、メニューの表示スタイルをまとめて選択します。";
+"settings.interfaceStyle.subtitle" = "アプリのウインドウ、オーバーレイ、メニューの表示スタイルを切り替えます。";
 "settings.appearance.subtitle" = "コンポーネント システムを明るいテーマ、暗いテーマ、またはシステムに従うテーマの間で切り替えます。";
 "settings.language.title" = "言語";
 "settings.language.subtitle" = "Typeflux インターフェイス全体で使用される表示言語を選択します。";
@@ -4502,8 +4502,6 @@
 "ask.notes.byAgent" = "エージェントが変更";
 "ask.notes.openConversation" = "会話に戻る";
 "ask.notes.question" = "あなたの質問";
-"ask.notes.restoreOriginal" = "元の結果に戻す";
-"ask.notes.restored" = "元のテキストに戻しました";
 "ask.notes.revertAgent" = "エージェントのテキスト変更を取り消す";
 "ask.notes.agentReverted" = "エージェントの最後のテキスト変更を取り消しました";
 "ask.notes.emptyBody" = "空のノートです。ダブルクリックするか ⌘E で書き始めます";

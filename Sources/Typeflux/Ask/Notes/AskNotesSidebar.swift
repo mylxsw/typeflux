@@ -62,12 +62,14 @@ extension View {
 /// The shelves: new note, library, sources, tags and Recently Deleted.
 struct AskNotesSidebar: View {
     @ObservedObject var model: AskNotesViewModel
+    var clearsTitleBar = true
     @Environment(\.interfaceStyle) private var style
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // The window has a full-size content view; this strip clears the traffic lights.
-            Color.clear.frame(height: AskMetrics.sidebarTopInset - (style.usesGlass ? AskMetrics.sidebarPanelInset : 0))
+            Color.clear.frame(height: clearsTitleBar
+                ? AskMetrics.sidebarTopInset - (style.usesGlass ? AskMetrics.sidebarPanelInset : 0) : 12)
             newNoteButton.padding(.horizontal, 10).padding(.bottom, 10)
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 1) {
@@ -160,13 +162,14 @@ struct AskNotesSidebar: View {
                 }
             }
         } label: {
-            Image(systemName: model.agentEnabled ? "sparkles" : "sparkles.slash")
+            Image(systemName: "sparkles")
                 .font(.system(size: 12.5))
                 .foregroundStyle(model.agentEnabled ? AskTheme.accent : StudioTheme.textTertiary)
                 .frame(width: 28, height: 28)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
+        .tint(model.agentEnabled ? AskTheme.accent : StudioTheme.textTertiary)
         .fixedSize()
         .help(L("ask.notes.agent.title"))
         .accessibilityLabel(L("ask.notes.agent.title"))
@@ -179,12 +182,6 @@ struct AskNotesSidebar: View {
             Text(L("ask.notes.localOnly")).font(.system(size: 11)).lineLimit(1)
             Spacer(minLength: 4)
             if model.agentSettings != nil { agentMenu }
-            AskIconGhostButton(label: L("ask.notes.import"), systemImage: "square.and.arrow.down") {
-                model.importFiles()
-            }
-            AskIconGhostButton(label: L("ask.notes.exportAll"), systemImage: "square.and.arrow.up") {
-                model.exportAll()
-            }
         }
         .foregroundStyle(StudioTheme.textTertiary)
         .padding(.leading, 14).padding(.trailing, 8)

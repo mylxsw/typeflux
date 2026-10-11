@@ -18,9 +18,10 @@ struct AskResultWindowView: View {
             content
             toolbar
         }
-        .background(AskWordBookBackground(fill: StudioTheme.shellSurface))
+        .background(AskWindowBackdrop())
         .overlay(alignment: .bottom) { noticeView }
         .background(shortcuts)
+        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityIdentifier("ask.result.window")
     }
 
@@ -141,43 +142,44 @@ struct AskResultWindowView: View {
         HStack(spacing: 6) {
             toolButton(L("ask.plugin.action.copy"), symbol: "doc.on.doc", key: nil, primary: true,
                        enabled: !document.body.isEmpty, action: document.copy)
+                .accessibilityIdentifier("ask.result.copy")
             toolButton(L("ask.plugin.action.copyRich"), symbol: "doc.richtext", key: "⇧⌘C", primary: false,
-                       enabled: !document.body.isEmpty, iconOnly: true, action: document.copyRich)
+                       enabled: !document.body.isEmpty, action: document.copyRich)
+                .accessibilityIdentifier("ask.result.copyRich")
             if document.sourceBundleID != nil {
                 toolButton(L("ask.result.insert", document.sourceApp ?? L("ask.result.sourceApp")),
                            symbol: "arrow.down.to.line", key: "⌥↩", primary: false, enabled: document.canInsert,
+                           detail: document.canInsert || document.isStreaming ? nil : L("ask.result.insert.unavailable"),
                            action: document.insert)
-                    .help(document.canInsert || document.isStreaming ? "" : L("ask.result.insert.unavailable"))
+                    .accessibilityIdentifier("ask.result.insert")
             }
             if document.fromNote {
                 toolButton(L("ask.result.revealNote"), symbol: "note.text", key: "⌘B", primary: false, enabled: true,
                            action: document.openNotes)
+                    .accessibilityIdentifier("ask.result.revealNote")
             } else {
                 toolButton(L("ask.plugin.action.regenerate"), symbol: "arrow.clockwise", key: "⌘R", primary: false,
                            enabled: document.canRegenerate, action: document.regenerate)
+                    .accessibilityIdentifier("ask.result.regenerate")
             }
             Spacer(minLength: 8)
             toolButton(L("ask.result.askAI"), symbol: "bubble.left", key: "⌘↩", primary: false,
                        enabled: !document.isStreaming && !document.body.isEmpty, action: document.askAI)
+                .accessibilityIdentifier("ask.result.askAI")
         }
         .padding(.horizontal, 12).frame(height: 46)
         .overlay(alignment: .top) { Rectangle().fill(StudioTheme.border).frame(height: 1) }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.result.toolbar")
     }
 
-    /// A toolbar button; `iconOnly` keeps the title and key for the tooltip, so the row fits narrow windows.
+    /// Icons keep every action reachable; the tooltip carries its full title and shortcut.
     private func toolButton(_ title: String, symbol: String, key: String?, primary: Bool, enabled: Bool,
-                            iconOnly: Bool = false, action: @escaping () -> Void) -> some View {
+                            detail: String? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 5) {
-                Image(systemName: symbol).font(.system(size: 11))
-                if !iconOnly {
-                    Text(title).font(.system(size: 12)).lineLimit(1)
-                    if let key { Text(key).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary) }
-                }
-            }
-            .fixedSize()
+            Image(systemName: symbol).font(.system(size: 12.5))
             .foregroundStyle(primary ? AskTheme.accent : StudioTheme.textSecondary)
-            .padding(.horizontal, 9).frame(height: 26)
+            .frame(width: 32, height: 30)
             .background(primary ? AskTheme.accent.opacity(0.16) : StudioTheme.controlSurface,
                         in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .contentShape(Rectangle())
@@ -185,7 +187,7 @@ struct AskResultWindowView: View {
         .buttonStyle(.plain)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.45)
-        .help(iconOnly ? title + (key.map { " " + $0 } ?? "") : "")
+        .help(title + (key.map { " " + $0 } ?? "") + (detail.map { "\n" + $0 } ?? ""))
         .accessibilityLabel(title)
     }
 

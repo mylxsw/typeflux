@@ -200,7 +200,7 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         await started(sut)
 
         XCTAssertEqual(sut.state, .selecting)
-        XCTAssertEqual(capturer.requests, [ScreenCaptureRequest()])
+        XCTAssertEqual(capturer.requests, [ScreenCaptureRequest(windowExclusion: .screenshotControls)])
         XCTAssertEqual(overlay.presented.count, 1)
         XCTAssertEqual(sut.snapshot?.displays.count, 2)
         XCTAssertEqual(guide.dismissals, 1, "A guide left open from before closes")

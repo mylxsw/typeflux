@@ -549,8 +549,19 @@ private struct StudioButtonChrome<Label: View>: View {
     }
 }
 
+/// Window navigation yields space before settings panes become cramped.
+struct StudioShellLayout {
+    let width: CGFloat
+    var sidebarInline: Bool { width >= 1040 }
+    var sidebarWidth: CGFloat { sidebarInline ? StudioTheme.sidebarWidth : 0 }
+    var horizontalInset: CGFloat { width < 860 ? 12 : StudioTheme.contentInset }
+    var contentWidth: CGFloat {
+        min(StudioTheme.contentMaxWidth, max(0, width - sidebarWidth - horizontalInset * 2))
+    }
+}
+
 struct StudioShell<Content: View>: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @State private var showsSidebar = false
 
     let currentSection: StudioSection
     let onSelect: (StudioSection) -> Void
@@ -594,105 +605,77 @@ struct StudioShell<Content: View>: View {
     }
 
     var body: some View {
-        ZStack {
-            StudioGlassBackground(tintOpacity: StudioTheme.Opacity.glassBackgroundTint)
-                .ignoresSafeArea()
-
-            HStack(spacing: StudioTheme.Spacing.none) {
-                StudioSidebar(
-                    currentSection: currentSection,
-                    onSelect: onSelect,
-                    onSendDirectFeedback: onSendDirectFeedback,
-                    onSendFeedbackEmail: onSendFeedbackEmail,
-                    onOpenGitHubIssue: onOpenGitHubIssue,
-                    onOpenAbout: onOpenAbout,
-                    onAccountAction: onAccountAction,
-                    isLoggedIn: isLoggedIn,
-                    accountPresentation: sidebarAccountPresentation
-                )
-                .frame(width: StudioTheme.sidebarWidth)
-                .background(
-                    sidebarBackground
-                )
-                .overlay(alignment: .trailing) {
-                    Rectangle()
-                        .fill(StudioTheme.border.opacity(0.46))
-                        .frame(width: 1)
+        GeometryReader { geometry in
+            let layout = StudioShellLayout(width: geometry.size.width)
+            HStack(spacing: 0) {
+                if layout.sidebarInline {
+                    sidebar
+                        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill,
+                                      glassInset: [.leading, .top, .bottom])
+                        .frame(width: layout.sidebarWidth, height: geometry.size.height)
                 }
-
-                GeometryReader { proxy in
-                    Group {
-                        if currentSection == .models {
-                            // The model page owns its scroll view. A second vertical
-                            // scroller competes for wheel events at its boundaries.
-                            pageContent(size: proxy.size)
-                        } else {
-                            ScrollView { pageContent(size: proxy.size) }
+                VStack(spacing: 0) {
+                    if !layout.sidebarInline { compactNavigation(height: geometry.size.height) }
+                    GeometryReader { proxy in
+                        Group {
+                            if currentSection == .models {
+                                pageContent(size: proxy.size, inset: layout.horizontalInset)
+                            } else {
+                                ScrollView { pageContent(size: proxy.size, inset: layout.horizontalInset) }
+                            }
                         }
+                        .frame(width: proxy.size.width, height: proxy.size.height)
                     }
-                    .background(contentBackground)
                 }
-                .padding(.vertical, StudioTheme.Layout.contentCardInset)
-                .padding(.trailing, StudioTheme.Layout.contentCardInset)
-                .padding(.leading, StudioTheme.Layout.shellContentLeadingInset)
+                .frame(width: max(0, geometry.size.width - layout.sidebarWidth), height: geometry.size.height)
             }
-            .padding(StudioTheme.Layout.shellInset)
-            .ignoresSafeArea(.container, edges: .top)
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .onChange(of: layout.sidebarInline) { inline in if inline { showsSidebar = false } }
         }
+        .background(AskWindowBackdrop())
+        .ignoresSafeArea(.container, edges: .top)
+        .onChange(of: currentSection) { _ in showsSidebar = false }
     }
 
-    private func pageContent(size: CGSize) -> some View {
-        let contentWidth = min(StudioTheme.contentMaxWidth,
-                               max(size.width - StudioTheme.contentInset * 2, 0))
+    private var sidebar: some View {
+        StudioSidebar(currentSection: currentSection, onSelect: onSelect,
+                      onSendDirectFeedback: onSendDirectFeedback, onSendFeedbackEmail: onSendFeedbackEmail,
+                      onOpenGitHubIssue: onOpenGitHubIssue, onOpenAbout: onOpenAbout,
+                      onAccountAction: onAccountAction, isLoggedIn: isLoggedIn,
+                      accountPresentation: sidebarAccountPresentation)
+    }
+
+    private func compactNavigation(height: CGFloat) -> some View {
+        HStack(spacing: 8) {
+            Color.clear.frame(width: AskResultWindowView.trafficLightClearance)
+            AskIconGhostButton(label: L("ask.sidebar.toggle"), systemImage: "sidebar.left") {
+                showsSidebar.toggle()
+            }
+            .accessibilityIdentifier("studio.sidebarToggle")
+            .popover(isPresented: $showsSidebar) {
+                sidebar.frame(width: StudioTheme.sidebarWidth, height: min(600, max(240, height - 60)))
+                    .background(AskWindowBackdrop())
+            }
+            Text(currentSection.heading).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+            Spacer(minLength: 0)
+            AskIconGhostButton(label: L("sidebar.settingsAccessibility"), systemImage: "gearshape") {
+                onSelect(.settings)
+            }
+        }
+        .padding(.trailing, 12)
+        .frame(height: AskMetrics.titleBarRowHeight)
+    }
+
+    private func pageContent(size: CGSize, inset: CGFloat) -> some View {
+        let contentWidth = min(StudioTheme.contentMaxWidth, max(size.width - inset * 2, 0))
         return VStack(alignment: .leading, spacing: StudioTheme.Spacing.section) {
             content(CGSize(width: contentWidth, height: size.height))
         }
         .frame(width: contentWidth, alignment: .topLeading)
-        .padding(.horizontal, StudioTheme.contentInset)
+        .padding(.horizontal, inset)
         .padding(.top, StudioTheme.Layout.shellContentTopInset)
-        // The model page scrolls itself, so its content runs to the window edge like other pages.
         .padding(.bottom, currentSection == .models ? 0 : StudioTheme.Layout.shellContentBottomInset)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-    }
-
-    @ViewBuilder
-    private var sidebarBackground: some View {
-        if colorScheme == .dark {
-            ZStack {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                StudioTheme.sidebar
-            }
-        } else {
-            ZStack {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                StudioTheme.sidebar
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(0.22),
-                        Color.clear
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var contentBackground: some View {
-        if colorScheme == .dark {
-            ZStack {
-                Rectangle().fill(.ultraThinMaterial)
-                StudioTheme.shellSurface
-            }
-        } else {
-            ZStack {
-                Rectangle().fill(.ultraThinMaterial)
-                StudioTheme.shellSurface
-            }
-        }
     }
 }
 
@@ -741,6 +724,7 @@ struct StudioGlassBackground: View {
 }
 
 struct StudioSidebar: View {
+    @Environment(\.interfaceStyle) private var style
     let currentSection: StudioSection
     let onSelect: (StudioSection) -> Void
     let onSendDirectFeedback: () -> Void
@@ -781,9 +765,11 @@ struct StudioSidebar: View {
             .padding(.top, StudioTheme.Insets.sidebarHeaderTop)
             .padding(.bottom, StudioTheme.Spacing.large)
 
-            VStack(spacing: StudioTheme.Spacing.xxSmall) {
-                ForEach(StudioSection.sidebarUpperCases, id: \.self) { section in
-                    sidebarNavigationButton(for: section)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: StudioTheme.Spacing.xxSmall) {
+                    ForEach(StudioSection.sidebarUpperCases, id: \.self) { section in
+                        sidebarNavigationButton(for: section)
+                    }
                 }
             }
 
@@ -962,10 +948,7 @@ extension StudioSidebar {
             .foregroundStyle(section == currentSection ? StudioTheme.textPrimary : StudioTheme.textSecondary)
             .padding(.horizontal, StudioTheme.Insets.sidebarItemHorizontal)
             .padding(.vertical, StudioTheme.Insets.sidebarItemVertical)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .fill(section == currentSection ? StudioTheme.sidebarSelection : Color.clear)
-            )
+            .askNotesRow(selected: section == currentSection, hovering: false, corner: style.ask.sidebarRowCorner)
             .contentShape(Rectangle())
         }
         .buttonStyle(StudioInteractiveButtonStyle())
@@ -1016,6 +999,7 @@ struct StudioCard<Content: View>: View {
     }
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.interfaceStyle) private var style
 
     var padding: CGFloat = StudioTheme.Insets.cardDefault
     var showsShadow: Bool = false
@@ -1047,15 +1031,13 @@ struct StudioCard<Content: View>: View {
         .padding(padding)
         .background(
             ZStack {
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                    .fill(StudioTheme.cardSurface)
-
                 cardTextureOverlay
 
                 RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
                     .fill(selectionOverlay)
             }
         )
+        .askInWindowGlass(corner: StudioTheme.CornerRadius.hero, opaqueFill: AskClassic.card, elevation: nil)
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
                 .stroke(
@@ -1066,7 +1048,7 @@ struct StudioCard<Content: View>: View {
         .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
         .shadow(
-            color: StudioTheme.shadow.opacity(showsShadow ? (isHighlighted ? 0.20 : 0.16) : 0.09),
+            color: StudioTheme.shadow.opacity(!style.usesGlass ? 0 : showsShadow ? (isHighlighted ? 0.20 : 0.16) : 0.09),
             radius: isHighlighted ? StudioTheme.Shadow.cardRadius + 2 : StudioTheme.Shadow.cardRadius,
             x: 0,
             y: isHighlighted ? StudioTheme.Shadow.cardY + 1 : StudioTheme.Shadow.cardY
@@ -1382,26 +1364,32 @@ struct StudioSettingRow<Accessory: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
-                    Text(title)
-                        .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-
-                    if let badge {
-                        StudioPill(title: badge)
-                    }
-                }
-                Text(subtitle)
-                    .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
+                labels.frame(minWidth: 200, maxWidth: .infinity, alignment: .leading)
+                accessory.fixedSize(horizontal: true, vertical: false)
             }
-            Spacer(minLength: StudioTheme.Spacing.pageGroup)
-            accessory
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                labels
+                accessory
+            }
         }
         .padding(.vertical, StudioTheme.Spacing.xSmall)
+    }
+
+    private var labels: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+            HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
+                Text(title)
+                    .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                if let badge { StudioPill(title: badge) }
+            }
+            Text(subtitle)
+                .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
 

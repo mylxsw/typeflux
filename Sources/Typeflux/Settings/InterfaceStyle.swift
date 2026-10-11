@@ -2,8 +2,8 @@ import Foundation
 import SwiftUI
 
 /// The app-wide visual language chosen in Settings › Interface style. It decides
-/// how the recording capsule, the launcher, the chat window, the clipboard panel
-/// and their menus are drawn: Liquid Glass, or the flat opaque surfaces macOS
+/// how the recording capsule, launcher, chat, clipboard, notebooks, word book,
+/// settings windows and their menus are drawn: Liquid Glass, or the flat opaque surfaces macOS
 /// used before it. Stored under `ui.overlayStyle`, its name from when it only
 /// styled the capsule, so existing choices carry over.
 enum InterfaceStyle: String, CaseIterable, Codable {

@@ -138,3 +138,41 @@ private final class SettingsBehaviorHistoryStore: HistoryStore {
 
     private struct UnusedExport: Error {}
 }
+
+extension SettingsBehaviorTests {
+    @Test func narrowSettingsKeepStyleControlsInsideTheWindow() async throws {
+        try await RenderedUI.withFixture { settings in
+            let model = makeModel(settings)
+            for style in InterfaceStyle.allCases {
+                model.setInterfaceStyle(style)
+                for width: CGFloat in [720, 900, 1100, 1440] {
+                    try await RenderedUI.withWindow(StudioView(viewModel: model), width: width, height: 900) { window, host in
+                        try await RenderedUI.wait { RenderedUI.contains(L("settings.interfaceStyle.title"), in: host) }
+                        let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
+                        for choice in InterfaceStyle.allCases {
+                            let button = try RenderedUI.button(choice.displayName, in: host)
+                            #expect(button.frame.width >= 20)
+                            #expect(button.frame.minX >= bounds.minX - 1 && button.frame.maxX <= bounds.maxX + 1,
+                                    "the style picker must stay within the viewport")
+                        }
+                        if width < 1040 {
+                            let navigation = try RenderedUI.button(L("ask.sidebar.toggle"), in: host)
+                            #expect(navigation.frame.width >= 20, "collapsed navigation remains reachable")
+                            window.setFrameOrigin(NSPoint(x: 80, y: 80))
+                            try navigation.press()
+                            try await RenderedUI.wait {
+                                NSApp.windows.contains { $0.isVisible && $0.parent === window }
+                            }
+                            let popover = try #require(NSApp.windows.first { $0.isVisible && $0.parent === window })
+                            try RenderedUI.button(StudioSection.launcher.title, in: popover).press()
+                            try await RenderedUI.wait { model.currentSection == .launcher }
+                            model.navigate(to: .settings)
+                            try await RenderedUI.wait { RenderedUI.contains(L("settings.interfaceStyle.title"), in: host) }
+                        }
+                        try RenderedUI.snapshot(host, name: "responsive-settings-\(style.rawValue)-\(Int(width))")
+                    }
+                }
+            }
+        }
+    }
+}

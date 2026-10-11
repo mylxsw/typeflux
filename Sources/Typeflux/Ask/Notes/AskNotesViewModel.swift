@@ -555,38 +555,6 @@ final class AskNotesViewModel: ObservableObject {
         update(note, replacing: previous)
     }
 
-    /// Puts back the text an AI note had before it was edited.
-    func restoreOriginal() {
-        guard finishEditing(), let id = selectedID, let previous = store.note(id: id), !previous.isDeleted,
-              let original = previous.originalBody, original != previous.body else { return }
-        var note = previous
-        note.body = original
-        note.editedAt = nil
-        note.author = .user
-        note.updatedAt = clock()
-        guard update(note, replacing: previous) else { return }
-        notice = L("ask.notes.restored")
-        undoRestore = (note, previous.body)
-    }
-
-    /// The version restored and the text it replaced, for conflict-safe undo.
-    private var undoRestore: (AskNote, String)?
-
-    func undoRestoreOriginal() {
-        guard finishEditing(), let (restored, body) = undoRestore,
-              let previous = store.note(id: restored.id), !previous.isDeleted,
-              previous.body == restored.body else { return }
-        var note = previous
-        note.body = body
-        note.editedAt = clock()
-        note.updatedAt = clock()
-        guard update(note, replacing: previous) else { return }
-        undoRestore = nil
-        notice = nil
-    }
-
-    var canUndoRestore: Bool { undoRestore?.0.id == selectedID }
-
     /// The text the note had before the agent last changed it, when there is one.
     var agentRevision: AskNoteRevision? {
         guard let note = selected, note.author == .agent,

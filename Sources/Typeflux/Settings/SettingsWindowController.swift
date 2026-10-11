@@ -86,6 +86,7 @@ final class SettingsWindowController: NSObject {
         AppLocalization.shared.setLanguage(viewModel.appLanguage)
         let view = StudioView(viewModel: viewModel, launcherPane: launcherPane ?? .basics)
         let hosting = TransparentSettingsHostingView(rootView: view)
+        hosting.sizingOptions = []
 
         let window = NSWindow(
             contentRect: NSRect(
@@ -122,6 +123,7 @@ final class SettingsWindowController: NSObject {
         self.window = window
         DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
+        window.contentMinSize = minimumWindowSize
         NSApp.activate(ignoringOtherApps: true)
         AuthState.shared.refreshProfileIfNeeded()
     }

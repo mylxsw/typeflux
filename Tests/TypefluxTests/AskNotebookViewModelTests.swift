@@ -47,7 +47,7 @@ struct AskNotebookViewModelTests {
         #expect(store.note(id: other)?.title == L("ask.notes.untitled"))
     }
 
-    @Test func restoresTheOriginalAndTheAgentsRevision() throws {
+    @Test func preservesUserEditsAndRevertsTheAgentsRevision() throws {
         let store = makeTestNotes()
         var note = makeTestNote("AI", body: "generated")
         note.source = .chat
@@ -63,12 +63,9 @@ struct AskNotebookViewModelTests {
         notes.beginEditing()
         notes.draftBody = "mine"
         notes.setMode(.read)
-        #expect(store.note(id: note.id)?.originalBody == "generated" && notes.selected?.canRestoreOriginal == true)
-        notes.restoreOriginal()
-        #expect(store.note(id: note.id)?.body == "generated" && store.note(id: note.id)?.editedAt == nil)
-        #expect(notes.notice == L("ask.notes.restored") && notes.canUndoRestore)
-        notes.undoRestoreOriginal()
-        #expect(store.note(id: note.id)?.body == "mine" && notes.notice == nil && !notes.canUndoRestore)
+        #expect(store.note(id: note.id)?.originalBody == "generated")
+        #expect(store.note(id: note.id)?.body == "mine" && store.note(id: note.id)?.editedAt != nil)
+        #expect(notes.notice == nil)
 
         #expect(notes.agentRevision == nil)
         let tool = AskNotebookTool(store: store, clock: { Date(timeIntervalSince1970: 6000) })
@@ -219,6 +216,8 @@ struct AskNotebookViewModelTests {
         #expect(!settings.askNotebookHiddenTags.contains("work"))
         notes.setAgentEnabled(false)
         #expect(!notes.agentEnabled && !settings.askNotebookAgentEnabled)
+        notes.setAgentEnabled(true)
+        #expect(notes.agentEnabled && settings.askNotebookAgentEnabled)
     }
 
     @Test func theWindowFollowsTheInterfaceStyleAndOpensNewNotes() throws {

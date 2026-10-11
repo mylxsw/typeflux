@@ -748,19 +748,15 @@ struct AskPluginResultsView: View {
     private func actionButton(title: String, symbol: String, key: String?, primary: Bool,
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 5) {
-                Image(systemName: symbol).font(.system(size: 11))
-                Text(title).font(.system(size: 11.5))
-                if let key { Text(key).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary) }
-            }
+            Image(systemName: symbol).font(.system(size: 12))
             .foregroundStyle(primary ? AskTheme.accent : StudioTheme.textSecondary)
-            .padding(.horizontal, 8)
-            .frame(height: Self.actionsHeight)
+            .frame(width: 32, height: Self.actionsHeight)
             .background(primary ? AskTheme.accent.opacity(0.16) : AskTheme.hoverFill,
                         in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .help(title + (key.map { " " + $0 } ?? ""))
         .accessibilityLabel(title)
     }
 

@@ -55,6 +55,7 @@ final class ScreenshotPermissionGuideController: ScreenshotPermissionGuidePresen
         let panel = NSPanel(contentRect: CGRect(x: 0, y: 0, width: 460, height: 320),
                             styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: true)
         panel.titlebarAppearsTransparent = true
+        panel.identifier = ScreenshotCaptureWindowPolicy.permissionIdentifier
         panel.titleVisibility = .hidden
         panel.isMovableByWindowBackground = true
         panel.level = .floating

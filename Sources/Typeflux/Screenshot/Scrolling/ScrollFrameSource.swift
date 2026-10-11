@@ -23,7 +23,7 @@ struct ScrollCaptureRegion: Equatable {
     }
 }
 
-/// Live frames of the region, leaving Typeflux's own windows out.
+/// Live frames of the region, leaving capture controls out while keeping app pages.
 protocol ScrollFrameSource: AnyObject {
     /// Starts delivering images as they change, on any queue, as soon as they arrive; `onError`
     /// reports that the stream stopped.
@@ -40,13 +40,16 @@ final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStrea
 
     private let queue = DispatchQueue(label: "Typeflux.ScrollCapture.frames", qos: .userInitiated)
     private let ownProcessID: pid_t
+    private let captureControlWindowIDs: @MainActor () -> [CGWindowID]
     private let lock = NSLock()
     private var stream: SCStream?
     private var onFrame: (@Sendable (CGImage) -> Void)?
     private var onError: (@Sendable (Error) -> Void)?
 
-    init(ownProcessID: pid_t = ProcessInfo.processInfo.processIdentifier) {
+    init(ownProcessID: pid_t = ProcessInfo.processInfo.processIdentifier,
+         captureControlWindowIDs: @escaping @MainActor () -> [CGWindowID] = ScreenshotCaptureWindowPolicy.excludedWindowIDs) {
         self.ownProcessID = ownProcessID
+        self.captureControlWindowIDs = captureControlWindowIDs
     }
 
     func start(_ region: ScrollCaptureRegion, onFrame: @escaping @Sendable (CGImage) -> Void,
@@ -57,8 +60,11 @@ final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStrea
         guard let display = content.displays.first(where: { $0.displayID == region.displayID }) else {
             throw ScreenCaptureError.unavailable
         }
-        let own = content.applications.filter { $0.processID == ownProcessID }
-        let filter = SCContentFilter(display: display, excludingApplications: own, exceptingWindows: [])
+        let controls = Set(await captureControlWindowIDs())
+        let excluded = content.windows.filter {
+            $0.owningApplication?.processID == ownProcessID && controls.contains($0.windowID)
+        }
+        let filter = SCContentFilter(display: display, excludingWindows: excluded)
         let stream = SCStream(filter: filter, configuration: Self.configuration(for: region), delegate: self)
         try stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: queue)
         lock.withLock {

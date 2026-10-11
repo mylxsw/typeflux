@@ -128,7 +128,7 @@
 "settings.identity" = "Identity & Interaction";
 "settings.appearance.title" = "Appearance";
 "settings.interfaceStyle.title" = "Interface style";
-"settings.interfaceStyle.subtitle" = "Choose the visual style for capsules, the launcher, the chat window and menus.";
+"settings.interfaceStyle.subtitle" = "Choose the visual style for app windows, overlays, and menus.";
 "settings.appearance.subtitle" = "Switch the component system between light, dark, or system-following themes.";
 "settings.language.title" = "Language";
 "settings.language.subtitle" = "Choose the display language used across the Typeflux interface.";
@@ -4524,8 +4524,6 @@
 "ask.notes.byAgent" = "changed by the agent";
 "ask.notes.openConversation" = "Back to Conversation";
 "ask.notes.question" = "Your question";
-"ask.notes.restoreOriginal" = "Restore Original";
-"ask.notes.restored" = "Restored the original text";
 "ask.notes.revertAgent" = "Undo Agent Text Change";
 "ask.notes.agentReverted" = "Undid the agent’s last text change";
 "ask.notes.emptyBody" = "Empty note. Double-click or press ⌘E to write.";
