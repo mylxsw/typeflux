@@ -15,7 +15,7 @@ final class SettingsWindowController: NSObject {
     /// The clipboard history, for Launcher → Clipboard's data usage.
     var clipboardHistoryStore: ClipboardHistoryStore?
     private var settingsStore: SettingsStore?
-    private var window: NSWindow?
+    private(set) var window: NSWindow?
     private var viewModel: StudioViewModel?
     private var languageObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
@@ -102,6 +102,8 @@ final class SettingsWindowController: NSObject {
         window.title = L("window.voiceStudio")
         window.center()
         window.titlebarAppearsTransparent = true
+        window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.settings.toolbar")
+        window.toolbarStyle = .unified
         window.titlebarSeparatorStyle = .none
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true

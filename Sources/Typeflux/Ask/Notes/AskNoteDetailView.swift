@@ -20,7 +20,7 @@ struct AskNoteDetailView: View {
     @State private var showsBatchTag = false
     @Environment(\.interfaceStyle) private var style
 
-    static let readingWidth: CGFloat = 700
+    static let readingWidth = AskLibraryLayout.readingWidth
     static let outlineWidth: CGFloat = 160
 
     var body: some View {
@@ -269,7 +269,7 @@ struct AskNoteDetailView: View {
 
     private func header(_ note: AskNote, compact: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            titleField(size: compact ? 21 : 26)
+            titleField(size: AskLibraryLayout.titleSize(compact: compact))
             VStack(alignment: .leading, spacing: 7) {
                 property("link", L("ask.notes.prop.source")) { sourceLine(note) }
                 property("clock", L("ask.notes.prop.time")) { timeLine(note) }
@@ -572,9 +572,7 @@ struct AskNoteDetailView: View {
                 if width >= 600 { noteActions(compact: false).fixedSize(horizontal: true, vertical: false) }
                 noteActions(compact: true)
             }
-            .askInWindowGlass(corner: style.usesGlass ? 20 : 10, opaqueFill: AskTheme.glassFill)
-            .padding(.bottom, 16)
-            .accessibilityElement(children: .contain)
+            .askLibraryActionSurface()
             .accessibilityIdentifier("ask.notes.actionBar")
         }
     }
@@ -619,7 +617,7 @@ struct AskNoteDetailView: View {
 
     private func barButton(_ title: String, symbol: String, key: String?, compact: Bool = false,
                            action: @escaping () -> Void) -> some View {
-        AskNotesBarButton(title: title, symbol: symbol, key: key, compact: compact, action: action)
+        AskLibraryBarButton(title: title, symbol: symbol, key: key, compact: compact, action: action)
     }
 
     // MARK: - Picking and empty
@@ -673,7 +671,7 @@ struct AskNoteDetailView: View {
             barButton(L("ask.notes.batch.export"), symbol: "square.and.arrow.up", key: nil, compact: compact,
                       action: model.exportPicked)
             barDivider
-            AskNotesBarButton(title: L("ask.notes.delete"), symbol: "trash", key: nil, danger: true, compact: compact,
+            AskLibraryBarButton(title: L("ask.notes.delete"), symbol: "trash", key: nil, danger: true, compact: compact,
                               action: model.trashPicked)
         }
     }
@@ -716,37 +714,5 @@ struct AskNoteDetailView: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 9)
         .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
-/// A labelled button on the notes window's floating bars.
-struct AskNotesBarButton: View {
-    var title: String
-    var symbol: String
-    var key: String?
-    var danger = false
-    var compact = false
-    var action: () -> Void
-    @State private var hovering = false
-    @Environment(\.interfaceStyle) private var style
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                Image(systemName: symbol).font(.system(size: 11.5))
-                if !compact {
-                    Text(title).font(.system(size: 12.5)).lineLimit(1)
-                }
-            }
-            .fixedSize()
-            .foregroundStyle(danger ? StudioTheme.danger : StudioTheme.textPrimary)
-            .padding(.horizontal, 9).frame(height: 28)
-            .background(hovering ? AskTheme.hoverFill : Color.clear, in: style.controlShape(height: 28))
-            .contentShape(style.controlShape(height: 28))
-        }
-        .buttonStyle(AskPressableStyle())
-        .onHover { hovering = $0 }
-        .help(title + (key.map { " " + $0 } ?? ""))
-        .accessibilityLabel(title)
     }
 }

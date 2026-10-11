@@ -9,11 +9,11 @@ enum StudioTheme {
     enum Layout {
         static let shellInset: CGFloat = 0
         static let contentCardInset: CGFloat = 0
-        static let shellContentTopInset: CGFloat = 52
+        static let shellContentTopInset: CGFloat = 28
         static let shellContentBottomInset: CGFloat = 32
         static let shellContentLeadingInset: CGFloat = 0
         static let shellCornerRadius: CGFloat = 0
-        static let sidebarWidth: CGFloat = 210
+        static let sidebarWidth: CGFloat = AskMetrics.sidebarWidth
         static let contentMaxWidth: CGFloat = 1160
         static let contentInset: CGFloat = 24
         static let settingsWindowWidth: CGFloat = 1100

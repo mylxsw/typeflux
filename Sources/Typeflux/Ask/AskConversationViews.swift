@@ -27,7 +27,6 @@ struct AskConversationView: View {
     /// sidebar popped in and out instead of sliding.
     @State private var sidebarChoice: Bool?
     @AppStorage("ask.sidebarCollapsed") private var storedSidebarCollapsed = false
-    @AppStorage(AskCloudPromo.dismissedKey) private var cloudPromoDismissedAt: Double = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.interfaceStyle) private var style
     @State private var windowSize = AskWorkspaceLayout.minimumWindowSize
@@ -402,19 +401,10 @@ struct AskConversationView: View {
     /// The name and plan badge (hover or click for the account card), or a
     /// sign-in link; the letter badge that used to lead it pointed at nothing.
     private var accountFooter: some View {
-        VStack(spacing: 0) {
-            if !layout.isShort, !auth.isLoggedIn, AskCloudPromo.isVisible(dismissedAt: cloudPromoDismissedAt) {
-                AskCloudPromoCard(onSignIn: { LoginWindowController.shared.show() }, onDismiss: {
-                    withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) {
-                        cloudPromoDismissedAt = Date().timeIntervalSince1970
-                    }
-                })
-                .padding(.horizontal, 10)
-                .padding(.bottom, 10)
-                .transition(.opacity)
-            }
-            Rectangle().fill(AskTheme.separator).frame(height: 0.5)
-            accountFooterRow
+        AskSidebarAccountFooter(signedIn: auth.isLoggedIn, compact: layout.isShort,
+                                onSignIn: { LoginWindowController.shared.show() },
+                                onOpenSettings: { model.onOpenSettings?(.settings) }) {
+            footerIdentity
         }
     }
 
@@ -427,26 +417,6 @@ struct AskConversationView: View {
         } else {
             AskLocalModeIdentity(model: model)
         }
-    }
-
-    private var accountFooterRow: some View {
-        HStack(spacing: 9) {
-            footerIdentity
-                .layoutPriority(1)
-            Spacer(minLength: 4)
-            Button { model.onOpenSettings?(.settings) } label: {
-                Image(systemName: "gearshape").font(.system(size: 15))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 32, height: 32)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(AskPressableStyle())
-            .help(L("sidebar.settingsAccessibility"))
-            .accessibilityLabel(L("sidebar.settingsAccessibility"))
-        }
-        .padding(.leading, 12)
-        .padding(.trailing, 10)
-        .frame(height: auth.isLoggedIn ? 52 : 56)
     }
 
     private var accountName: String {

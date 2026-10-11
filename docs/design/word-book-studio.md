@@ -1,4 +1,18 @@
-# 单词本 UI 重构：与主窗口统一 设计方案
+# 单词本 UI 重构：与笔记本统一
+
+## 当前实现（2026-10-11）
+
+单词本以笔记本为基准，共用 `AskLibraryLayout`、`askLibrarySearchSurface`、`askLibraryActionSurface` 和 `AskLibraryBarButton`。
+
+- 全窗口使用 `AskWindowBackdrop`；只有侧栏、底部操作栏和弹层使用玻璃材质，列表和详情不再包进大卡片。
+- 侧栏 232pt，列表宽度随窗口变化（240–320pt），详情使用剩余空间。窗口不足 1100pt 时，侧栏通过列表左上角按钮打开。
+- 分类标题移到列表顶部，15pt 字号、12pt 计数；排序使用图标菜单。搜索框尺寸、圆角、悬停与聚焦背景与笔记本一致。
+- 列表选中态共用 `askNotesRow`：Liquid Glass 使用蓝色半透明填充与细描边，经典样式使用系统列表选中背景。
+- 查词输入位于详情顶部的 52pt 标题栏；词头、释义等内容整体滚动。复制、朗读、问 AI、重新生成、删除位于底部浮动操作栏，空间不足时只显示图标。
+- 侧栏统计与本地保存提示直接放在侧栏上，不再叠加玻璃卡片；提示条浮在操作栏上方。
+- `AskLibraryVisualConsistencyTests` 比较两页真实窗口的列位置与搜索框尺寸，并检查缩放、最小窗口复制、语言方向切换和侧栏分类选择。设置 `TYPEFLUX_LIBRARY_SNAPSHOTS=<目录>` 输出同尺寸的两页原生截图。
+
+## 旧方案（GUL-251，已被上述实现替代）
 
 > 状态：已实现（GUL-251）。可交互设计稿：`docs/design/word-book-studio.html`（直接用浏览器打开），截图见 `docs/design/word-book-studio/`。取代 `docs/design/word-book-redesign.md` §2 中的 Liquid Glass 外观；功能、快捷键、数据与文案不变。
 

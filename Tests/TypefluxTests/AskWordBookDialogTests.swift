@@ -428,7 +428,7 @@ struct AskWordBookViewModelTests {
         #expect(model.todayIndex == 0, "Monday starts a new week")
         #expect(AskWordBookView.isCompact(AskWordBookWindowController.minimumSize.width))
         #expect(!AskWordBookView.isCompact(AskWordBookWindowController.defaultSize.width))
-        #expect(AskWordBookView.sidebarWidth == StudioTheme.sidebarWidth)
+        #expect(AskWordBookView.sidebarWidth == AskNotesView.sidebarWidth)
     }
 
     @Test func theViewDrawsEveryState() async throws {
@@ -466,10 +466,10 @@ struct AskWordBookViewModelTests {
                                                                           card: wordBookCard),
                                      lookupCount: 3, firstLookedUpAt: Self.now, lastLookedUpAt: Self.now, starredAt: Self.now)
         for view in [AnyView(AskWordBookRow(entry: entry, selected: true, select: {}, star: {})),
-                     AnyView(AskWordBookRow(entry: entry, selected: false, separated: true, select: {}, star: {})),
+                     AnyView(AskWordBookRow(entry: entry, selected: false, select: {}, star: {})),
                      AnyView(AskWordBookSectionTitle(text: "t", hint: "h")),
                      AnyView(AskWordBookKeyHint(key: "⌘L")),
-                     AnyView(Text("f").askWordBookField(focused: true, corner: 8)),
+                     AnyView(Text("f").askLibrarySearchSurface(focused: true)),
                      AnyView(Text("p").askWordBookPopover(corner: 10)),
                      AnyView(Button("z") {}.buttonStyle(AskWordBookHoverStyle()).disabled(true)),
                      AnyView(AskWordBookFlow { Text("a"); Text("b"); Text("c") }.frame(width: 20)),

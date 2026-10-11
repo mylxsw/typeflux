@@ -572,8 +572,7 @@ struct StudioShell<Content: View>: View {
     let onAccountAction: () -> Void
     let searchText: Binding<String>
     let searchPlaceholder: String
-    let isLoggedIn: Bool
-    let sidebarAccountPresentation: SidebarAccountCardPresentation
+    let accountDefaults: UserDefaults
     let content: (CGSize) -> Content
 
     init(
@@ -586,8 +585,7 @@ struct StudioShell<Content: View>: View {
         onAccountAction: @escaping () -> Void,
         searchText: Binding<String>,
         searchPlaceholder: String,
-        isLoggedIn: Bool = false,
-        sidebarAccountPresentation: SidebarAccountCardPresentation,
+        accountDefaults: UserDefaults,
         @ViewBuilder content: @escaping (CGSize) -> Content
     ) {
         self.currentSection = currentSection
@@ -599,8 +597,7 @@ struct StudioShell<Content: View>: View {
         self.onAccountAction = onAccountAction
         self.searchText = searchText
         self.searchPlaceholder = searchPlaceholder
-        self.isLoggedIn = isLoggedIn
-        self.sidebarAccountPresentation = sidebarAccountPresentation
+        self.accountDefaults = accountDefaults
         self.content = content
     }
 
@@ -609,7 +606,7 @@ struct StudioShell<Content: View>: View {
             let layout = StudioShellLayout(width: geometry.size.width)
             HStack(spacing: 0) {
                 if layout.sidebarInline {
-                    sidebar
+                    sidebar(compact: geometry.size.height < 500)
                         .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill,
                                       glassInset: [.leading, .top, .bottom])
                         .frame(width: layout.sidebarWidth, height: geometry.size.height)
@@ -637,12 +634,11 @@ struct StudioShell<Content: View>: View {
         .onChange(of: currentSection) { _ in showsSidebar = false }
     }
 
-    private var sidebar: some View {
+    private func sidebar(compact: Bool) -> some View {
         StudioSidebar(currentSection: currentSection, onSelect: onSelect,
                       onSendDirectFeedback: onSendDirectFeedback, onSendFeedbackEmail: onSendFeedbackEmail,
                       onOpenGitHubIssue: onOpenGitHubIssue, onOpenAbout: onOpenAbout,
-                      onAccountAction: onAccountAction, isLoggedIn: isLoggedIn,
-                      accountPresentation: sidebarAccountPresentation)
+                      onAccountAction: onAccountAction, defaults: accountDefaults, compact: compact)
     }
 
     private func compactNavigation(height: CGFloat) -> some View {
@@ -653,7 +649,7 @@ struct StudioShell<Content: View>: View {
             }
             .accessibilityIdentifier("studio.sidebarToggle")
             .popover(isPresented: $showsSidebar) {
-                sidebar.frame(width: StudioTheme.sidebarWidth, height: min(600, max(240, height - 60)))
+                sidebar(compact: height < 600).frame(width: StudioTheme.sidebarWidth, height: min(600, max(240, height - 60)))
                     .background(AskWindowBackdrop())
             }
             Text(currentSection.heading).font(.system(size: 13, weight: .semibold)).lineLimit(1)
@@ -732,143 +728,66 @@ struct StudioSidebar: View {
     let onOpenGitHubIssue: () -> Void
     let onOpenAbout: () -> Void
     let onAccountAction: () -> Void
-    let isLoggedIn: Bool
-    let accountPresentation: SidebarAccountCardPresentation
+    let defaults: UserDefaults
+    let compact: Bool
+    @ObservedObject private var auth = AuthState.shared
     @ObservedObject private var localization = AppLocalization.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            HStack(alignment: .center, spacing: StudioTheme.Spacing.smallMedium) {
-                TypefluxLogoBadge(
-                    size: 28,
-                    symbolSize: 15,
-                    backgroundShape: .circle,
-                    showsBorder: false
-                )
-
-                HStack(alignment: .center, spacing: 6) {
-                    Text(L("sidebar.appName"))
-                        .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
-
-                    Text(appVersionBadge)
-                        .font(.studioBody(8, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary.opacity(0.55))
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
-                }
-
-                Spacer()
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                TypefluxLogoBadge(size: 26, symbolSize: 14, backgroundShape: .circle, showsBorder: false)
+                Text(L("sidebar.appName"))
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text(appVersionBadge)
+                    .font(.system(size: 9))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                Spacer(minLength: 0)
+                utilityMenu
             }
-            .padding(.top, StudioTheme.Insets.sidebarHeaderTop)
-            .padding(.bottom, StudioTheme.Spacing.large)
+            .padding(.horizontal, 16)
+            .padding(.top, AskMetrics.titleBarRowHeight)
 
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: StudioTheme.Spacing.xxSmall) {
+                VStack(spacing: 4) {
                     ForEach(StudioSection.sidebarUpperCases, id: \.self) { section in
                         sidebarNavigationButton(for: section)
                     }
                 }
+                .padding(.horizontal, 10)
             }
 
-            Spacer()
-
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                StudioSidebarAccountCard(
-                    presentation: accountPresentation,
-                    action: onAccountAction,
-                    identityAction: onAccountAction
-                ) {
-                    HStack(spacing: StudioTheme.Spacing.xxSmall) {
-                        compactFeedbackMenuButton
-
-                        compactUtilityButton(
-                            systemImage: "questionmark.circle",
-                            accessibilityLabel: L("sidebar.aboutAccessibility"),
-                            isActive: false,
-                            action: onOpenAbout
-                        )
-
-                        compactUtilityButton(
-                            systemImage: "gearshape",
-                            accessibilityLabel: L("sidebar.settingsAccessibility"),
-                            isActive: currentSection == .settings,
-                            action: { onSelect(.settings) }
-                        )
-                    }
+            AskSidebarAccountFooter(signedIn: auth.isLoggedIn, compact: compact, defaults: defaults,
+                                    onSignIn: onAccountAction, onOpenSettings: { onSelect(.settings) }) {
+                if auth.isLoggedIn {
+                    AskAccountFooterIdentity(auth: auth, name:
+                        AskPresentation.accountName(name: auth.userProfile?.name, email: auth.userProfile?.email)
+                            ?? L("sidebar.appName"), onOpenAccount: onAccountAction)
+                } else {
+                    AskSignedOutIdentity(detail: L("ask.local.identity.storage"), action: onAccountAction)
                 }
             }
         }
-        .padding(.horizontal, StudioTheme.Insets.sidebarOuterHorizontal)
-        .padding(.top, StudioTheme.Insets.sidebarOuterVertical)
-        .padding(
-            .bottom,
-            StudioTheme.Insets.sidebarOuterHorizontal - StudioTheme.Spacing.small
-        )
         .environment(\.locale, localization.locale)
+    }
+
+    private var utilityMenu: some View {
+        StudioSidebarIconMenuButton(systemImage: "ellipsis", accessibilityLabel: L("history.action.more"),
+                                    size: 28, symbolSize: 13) {
+            Button(L("sidebar.feedback.directOption"), action: onSendDirectFeedback)
+            Button(L("sidebar.feedback.emailOption"), action: onSendFeedbackEmail)
+            Button(L("sidebar.feedback.githubOption"), action: onOpenGitHubIssue)
+            Divider()
+            Button(L("sidebar.aboutAccessibility"), action: onOpenAbout)
+        }
+        .accessibilityIdentifier("studio.supportMenu")
     }
 
     private var appVersionBadge: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
     }
 
-    private func compactUtilityButton(
-        systemImage: String,
-        accessibilityLabel: String,
-        isActive: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        StudioSidebarIconButton(
-            systemImage: systemImage,
-            accessibilityLabel: accessibilityLabel,
-            isActive: isActive,
-            size: 24,
-            symbolSize: 12,
-            action: action
-        )
-    }
-
-    private var compactFeedbackMenuButton: some View {
-        StudioSidebarIconMenuButton(
-            systemImage: "envelope",
-            accessibilityLabel: L("sidebar.feedbackAccessibility"),
-            size: 24,
-            symbolSize: 11
-        ) {
-            Button(L("sidebar.feedback.directOption"), action: onSendDirectFeedback)
-            Button(L("sidebar.feedback.emailOption"), action: onSendFeedbackEmail)
-            Button(L("sidebar.feedback.githubOption"), action: onOpenGitHubIssue)
-        }
-    }
-}
-
-private struct StudioSidebarIconButton: View {
-    let systemImage: String
-    let accessibilityLabel: String
-    let isActive: Bool
-    var size: CGFloat = StudioTheme.ControlSize.sidebarUtilityButton
-    var symbolSize: CGFloat = StudioTheme.Typography.iconSmall
-    let action: () -> Void
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: action) {
-            StudioSidebarIconLabel(
-                systemImage: systemImage,
-                accessibilityLabel: accessibilityLabel,
-                isActive: isActive,
-                isHovered: isHovered,
-                size: size,
-                symbolSize: symbolSize
-            )
-        }
-        .buttonStyle(StudioInteractiveButtonStyle())
-        .accessibilityLabel(accessibilityLabel)
-        .studioTooltip(accessibilityLabel, yOffset: 34)
-        .onHover { isHovered = $0 }
-    }
 }
 
 private struct StudioSidebarIconMenuButton<MenuContent: View>: View {
@@ -1031,24 +950,25 @@ struct StudioCard<Content: View>: View {
         .padding(padding)
         .background(
             ZStack {
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                    .fill(style.usesGlass ? AskTheme.hoverFill : AskClassic.card)
                 cardTextureOverlay
 
                 RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
                     .fill(selectionOverlay)
             }
         )
-        .askInWindowGlass(corner: StudioTheme.CornerRadius.hero, opaqueFill: AskClassic.card, elevation: nil)
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
                 .stroke(
                     cardBorderColor,
-                    lineWidth: isHighlighted ? StudioTheme.BorderWidth.emphasis : StudioTheme.BorderWidth.thin
+                    lineWidth: isHighlighted ? StudioTheme.BorderWidth.emphasis : 0.5
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
         .shadow(
-            color: StudioTheme.shadow.opacity(!style.usesGlass ? 0 : showsShadow ? (isHighlighted ? 0.20 : 0.16) : 0.09),
+            color: StudioTheme.shadow.opacity(!style.usesGlass || !showsShadow ? 0 : (isHighlighted ? 0.20 : 0.16)),
             radius: isHighlighted ? StudioTheme.Shadow.cardRadius + 2 : StudioTheme.Shadow.cardRadius,
             x: 0,
             y: isHighlighted ? StudioTheme.Shadow.cardY + 1 : StudioTheme.Shadow.cardY
@@ -1072,7 +992,7 @@ struct StudioCard<Content: View>: View {
             return StudioTheme.accent.opacity(0.34)
         }
 
-        return StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder)
+        return AskTheme.separator
     }
 
     private var cardTextureOverlay: some View {
@@ -1526,60 +1446,24 @@ struct StudioHistoryRow: View {
     let onRetry: (() -> Void)?
 
     @State private var isExpanded = false
-    @State private var isHovered = false
     @State private var isAudioPathHovered = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
-                Text(record.timestampText)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .frame(width: 108, alignment: .leading)
-
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
-                        Text(record.previewText)
-                            .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                            .foregroundStyle(record.hasFailure ? StudioTheme.danger : StudioTheme.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        if record.hasFailure {
-                            Image(systemName: "exclamationmark.circle.fill")
-                                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                                .foregroundStyle(StudioTheme.danger)
-                                .padding(.top, 3)
-                                .studioTooltip(record.failureMessage ?? L("workflow.processing.failed"), yOffset: 28)
-                        }
-                    }
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 12) {
+                    timestamp.frame(width: 48, alignment: .leading)
+                    preview.frame(minWidth: 240, idealWidth: 240, maxWidth: .infinity, alignment: .leading)
+                    rowActions
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .layoutPriority(1)
-
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    if let onCopyResult, record.hasTranscriptToCopy {
-                        historyIconButton(
-                            systemImage: "doc.on.doc",
-                            helpText: L("history.action.copyTranscript"),
-                            action: onCopyResult
-                        )
-                        .opacity(isHovered ? 1 : 0)
-                        .allowsHitTesting(isHovered)
-                        .animation(.easeOut(duration: 0.12), value: isHovered)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        timestamp
+                        Spacer(minLength: 0)
+                        rowActions
                     }
-
-                    historyActionsMenuButton
-                        .opacity(isHovered ? 1 : 0)
-                        .allowsHitTesting(isHovered)
-                        .animation(.easeOut(duration: 0.12), value: isHovered)
-
-                    historyIconButton(
-                        systemImage: isExpanded ? "chevron.up" : "chevron.down",
-                        helpText: isExpanded ? L("common.collapse") : L("common.expand"),
-                        action: { withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() } }
-                    )
+                    preview
                 }
-                .fixedSize(horizontal: true, vertical: false)
             }
 
             if isExpanded {
@@ -1645,10 +1529,49 @@ struct StudioHistoryRow: View {
         .padding(.vertical, StudioTheme.Insets.historyRowVertical)
         .background(Color.clear)
         .contentShape(Rectangle())
-        .onHover { isHovered = $0 }
         .contextMenu {
             historyActionsMenuContent
         }
+    }
+
+    private var timestamp: some View {
+        Text(record.timestampText)
+            .font(.studioBody(StudioTheme.Typography.bodySmall))
+            .foregroundStyle(StudioTheme.textTertiary)
+            .fixedSize()
+            .padding(.top, 6)
+    }
+
+    private var preview: some View {
+        HStack(alignment: .top, spacing: 6) {
+            Text(record.previewText)
+                .font(.studioBody(StudioTheme.Typography.bodyLarge))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(isExpanded ? nil : 2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if record.hasFailure {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+                    .foregroundStyle(StudioTheme.danger)
+                    .padding(.top, 3)
+                    .help(record.failureMessage ?? L("workflow.processing.failed"))
+                    .accessibilityLabel(record.failureMessage ?? L("workflow.processing.failed"))
+            }
+        }
+        .padding(.top, 5)
+    }
+
+    private var rowActions: some View {
+        HStack(spacing: 2) {
+            historyActionsMenuButton
+            historyIconButton(systemImage: isExpanded ? "chevron.up" : "chevron.down",
+                              helpText: isExpanded ? L("common.collapse") : L("common.expand")) {
+                withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
+            }
+            .accessibilityIdentifier("history.expand.\(record.id)")
+        }
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     private var historyActionsMenuButton: some View {
@@ -1693,8 +1616,7 @@ struct StudioHistoryRow: View {
     }
 
     private func historyIconButton(systemImage: String, helpText: String, action: @escaping () -> Void) -> some View {
-        StudioIconButton(systemImage: systemImage, action: action)
-            .studioTooltip(helpText, yOffset: 42)
+        AskIconGhostButton(label: helpText, systemImage: systemImage, action: action)
     }
 
     @ViewBuilder
@@ -1775,6 +1697,7 @@ struct StudioHistoryRow: View {
                     if let copyAction {
                         StudioIconButton(systemImage: "doc.on.doc", frame: 24, action: copyAction)
                             .studioTooltip(L("history.action.copyTranscript"), yOffset: 34)
+                            .accessibilityLabel(L("history.action.copyTranscript"))
                     }
                 }
 

@@ -1,14 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Columns follow the current viewport, reserving useful space for the note.
-struct AskNotesLayout {
-    let width: CGFloat
-    var sidebarInline: Bool { width >= 1100 }
-    var sidebarWidth: CGFloat { sidebarInline ? AskNotesView.sidebarWidth : 0 }
-    var listWidth: CGFloat { min(AskNotesView.listWidth, max(240, width * 0.26)) }
-    var detailWidth: CGFloat { max(0, width - sidebarWidth - listWidth) }
-}
+typealias AskNotesLayout = AskLibraryLayout
 
 /// The notes window, drawn like the conversation window and following the interface
 /// style: shelves in the side panel, the list, and the chosen note to read or edit
@@ -20,8 +13,8 @@ struct AskNotesView: View {
     @State private var dropTargeted = false
     @Environment(\.interfaceStyle) private var style
 
-    static let sidebarWidth: CGFloat = 232
-    static let listWidth: CGFloat = 320
+    static let sidebarWidth = AskLibraryLayout.sidebarWidth
+    static let listWidth = AskLibraryLayout.maximumListWidth
 
     var body: some View {
         GeometryReader { geometry in

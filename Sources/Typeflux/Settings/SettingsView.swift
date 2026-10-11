@@ -454,17 +454,6 @@ struct StudioView: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject private var authState = AuthState.shared
 
-    private var sidebarAccountPresentation: SidebarAccountCardPresentation {
-        SidebarAccountCardPresentation.make(
-            isLoggedIn: authState.isLoggedIn,
-            subscription: authState.subscription,
-            credits: authState.usageCredits,
-            subscriptionError: authState.subscriptionError,
-            usageError: authState.usageError,
-            displayName: authState.userProfile?.resolvedDisplayName
-        )
-    }
-
     var body: some View {
         StudioShell(
             currentSection: viewModel.currentSection,
@@ -476,12 +465,11 @@ struct StudioView: View {
             onAccountAction: handleAccountAction,
             searchText: $viewModel.searchQuery,
             searchPlaceholder: viewModel.currentSection.searchPlaceholder,
-            isLoggedIn: authState.isLoggedIn,
-            sidebarAccountPresentation: sidebarAccountPresentation
+            accountDefaults: viewModel.askToolSettings.defaults
         ) { viewportSize in
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.heroSection) {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                 if viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
                     pageHeader
                 }
@@ -928,21 +916,13 @@ struct StudioView: View {
                 Spacer()
 
                 HStack(spacing: StudioTheme.Spacing.medium) {
-                    StudioIconButton(
-                        systemImage: "square.and.arrow.up",
-                        variant: .ghost
-                    ) {
+                    AskIconGhostButton(label: L("history.action.exportMarkdown"), systemImage: "square.and.arrow.up") {
                         viewModel.exportHistory()
                     }
-                    .studioTooltip(L("history.action.exportMarkdown"), yOffset: 34)
 
-                    StudioIconButton(
-                        systemImage: "trash",
-                        variant: .ghost
-                    ) {
+                    AskIconGhostButton(label: L("common.clear"), systemImage: "trash") {
                         showingClearHistoryConfirmation = true
                     }
-                    .studioTooltip(L("common.clear"), yOffset: 34)
                 }
             } else if viewModel.currentSection == .personas {
                 Spacer()
@@ -1843,7 +1823,7 @@ struct StudioView: View {
 
     private var historyPage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-            StudioCard {
+            StudioCard(padding: 16) {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                     StudioSettingRow(
                         title: L("history.keep.title"),
@@ -1861,15 +1841,10 @@ struct StudioView: View {
                         )
                     }
 
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("history.privacy.title"),
-                        subtitle: L("history.privacy.subtitle")
-                    ) {
-                        Image(systemName: "lock.fill")
-                            .foregroundStyle(StudioTheme.success)
-                    }
+                    Label(L("history.privacy.subtitle"), systemImage: "lock.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 

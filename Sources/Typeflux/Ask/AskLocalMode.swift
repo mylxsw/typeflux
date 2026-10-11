@@ -341,7 +341,6 @@ struct AskStorageButton: View {
 struct AskLocalModeIdentity: View {
     @ObservedObject var model: AskConversationModel
     @State private var presented = false
-    @State private var hovering = false
 
     /// "Ollama · Stays on this Mac": the model's source and where chats are kept.
     static func detail(source: String) -> String {
@@ -350,7 +349,25 @@ struct AskLocalModeIdentity: View {
 
     var body: some View {
         let status = AskLocalModeStatus.make(model: model, signedIn: false)
-        Button { presented.toggle() } label: {
+        AskSignedOutIdentity(active: presented, detail: Self.detail(source: status.source)) {
+            presented.toggle()
+        }
+        .modifier(AskLocalModeMenu(isPresented: $presented, status: status, model: model))
+        .accessibilityLabel(L("ask.local.identity"))
+        .accessibilityValue(Self.detail(source: status.source))
+        .accessibilityHint(L("ask.location.local.help"))
+    }
+}
+
+/// Reusable signed-out identity; each window supplies its own account action.
+struct AskSignedOutIdentity: View {
+    var active = false
+    var detail: String
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
             HStack(spacing: 9) {
                 Image(systemName: "desktopcomputer").font(.system(size: 13, weight: .medium))
                     .foregroundStyle(StudioTheme.textPrimary)
@@ -359,8 +376,6 @@ struct AskLocalModeIdentity: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(L("ask.local.identity")).font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
-                    // The 210pt sidebar has room for where chats are kept, not the model's name
-                    // as well; the full line is the button's tooltip and its card says the rest.
                     Text(L("ask.local.identity.storage"))
                         .font(.system(size: 11))
                         .foregroundStyle(StudioTheme.textTertiary)
@@ -370,17 +385,16 @@ struct AskLocalModeIdentity: View {
             .padding(.leading, 4).padding(.trailing, 8)
             .frame(height: 40)
             .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(hovering || presented ? AskTheme.hoverFill : .clear))
+                .fill(hovering || active ? AskTheme.hoverFill : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .padding(.leading, -4)
         .onHover { hovering = $0 }
-        .help(Self.detail(source: status.source))
-        .modifier(AskLocalModeMenu(isPresented: $presented, status: status, model: model))
+        .help(detail)
         .accessibilityLabel(L("ask.local.identity"))
-        .accessibilityValue(Self.detail(source: status.source))
-        .accessibilityHint(L("ask.location.local.help"))
+        .accessibilityValue(detail)
+        .accessibilityIdentifier("sidebar.signedOutIdentity")
     }
 }
 

@@ -14,7 +14,7 @@ final class StudioThemeTests: XCTestCase {
     }
 
     func testSidebarWidth() {
-        XCTAssertEqual(StudioTheme.Layout.sidebarWidth, 210)
+        XCTAssertEqual(StudioTheme.Layout.sidebarWidth, AskMetrics.sidebarWidth)
     }
 
     func testContentMaxWidth() {

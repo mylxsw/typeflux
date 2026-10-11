@@ -8,8 +8,6 @@ struct AskNotesList: View {
     @ObservedObject var model: AskNotesViewModel
     var focus: FocusState<AskNotesField?>.Binding
     var sidebarCollapsed = false
-    @Environment(\.interfaceStyle) private var style
-    @State private var searchHover = false
     @State private var showsSidebar = false
 
     var body: some View {
@@ -141,17 +139,7 @@ struct AskNotesList: View {
                 .accessibilityLabel(L("ask.notes.search.clear"))
             }
         }
-        .padding(.horizontal, style.usesGlass ? 10 : 8)
-        .frame(height: style.ask.searchFieldHeight)
-        .background(searchHover || focus.wrappedValue == .search ? AskTheme.pressFill : AskTheme.hoverFill,
-                    in: RoundedRectangle(cornerRadius: style.ask.searchFieldCorner, style: .continuous))
-        .overlay {
-            if style.usesGlass {
-                RoundedRectangle(cornerRadius: style.ask.searchFieldCorner, style: .continuous)
-                    .strokeBorder(AskTheme.separator, lineWidth: 0.5)
-            }
-        }
-        .onHover { searchHover = $0 }
+        .askLibrarySearchSurface(focused: focus.wrappedValue == .search)
     }
 
     private var empty: some View {
