@@ -35,6 +35,8 @@ protocol HotkeyService: AnyObject {
     var onPersonaPickerRequested: (() -> Void)? { get set }
     var onHistoryRequested: (() -> Void)? { get set }
     var onScreenshotRequested: (() -> Void)? { get set }
+    /// A feature or keyword shortcut from the Shortcuts page was pressed.
+    var onShortcutRequested: ((HotkeyTarget) -> Void)? { get set }
     var onError: ((String) -> Void)? { get set }
 
     func start()
@@ -49,5 +51,6 @@ extension HotkeyService {
     var onAuxiliaryPressEnded: ((HotkeyEventContext) -> Void)? { get { nil } set {} }
     var onAuxiliaryPromoted: ((HotkeyEventContext) -> Void)? { get { nil } set {} }
     var onScreenshotRequested: (() -> Void)? { get { nil } set {} }
+    var onShortcutRequested: ((HotkeyTarget) -> Void)? { get { nil } set {} }
     func settleActivationGesture() {}
 }

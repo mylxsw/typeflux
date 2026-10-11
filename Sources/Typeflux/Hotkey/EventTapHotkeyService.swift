@@ -161,6 +161,7 @@ final class EventTapHotkeyService: HotkeyService {
     var onPersonaPickerRequested: (() -> Void)?
     var onHistoryRequested: (() -> Void)?
     var onScreenshotRequested: (() -> Void)?
+    var onShortcutRequested: ((HotkeyTarget) -> Void)?
     var onError: ((String) -> Void)?
 
     private let settingsStore: SettingsStore
@@ -191,6 +192,8 @@ final class EventTapHotkeyService: HotkeyService {
     private let historySystemHotkey = SystemHotkeyRegistrar(hotkeyID: historySystemHotkeyID, name: "History")
     private let screenshotSystemHotkey = SystemHotkeyRegistrar(hotkeyID: screenshotSystemHotkeyID,
                                                                name: "Screenshot")
+    /// Feature and keyword shortcuts: plain key chords the system delivers.
+    private let shortcutPool = SystemHotkeyPool(name: "Shortcuts")
     private var hotkeySettingsObserver: NSObjectProtocol?
     private var lastHistoryRequestAt: Date?
     private var lastScreenshotRequestAt: Date?
@@ -204,6 +207,10 @@ final class EventTapHotkeyService: HotkeyService {
         screenshotSystemHotkey.onPressed = { [weak self] in
             ErrorLogStore.shared.log("Hotkey(System): screenshot")
             self?.requestScreenshot()
+        }
+        shortcutPool.onPressed = { [weak self] target in
+            ErrorLogStore.shared.log("Hotkey(System): shortcut \(target)")
+            self?.onShortcutRequested?(target)
         }
     }
 
@@ -258,6 +265,7 @@ final class EventTapHotkeyService: HotkeyService {
         hotkeySettingsObserver = nil
         historySystemHotkey.unregister()
         screenshotSystemHotkey.unregister()
+        shortcutPool.unregisterAll()
         arbiter = HotkeyGestureArbiter()
         recordingStopGesture = RecordingStopGesture()
     }
@@ -265,6 +273,19 @@ final class EventTapHotkeyService: HotkeyService {
     private func registerSystemHotkeys() {
         historySystemHotkey.register(settingsStore.historyHotkey)
         screenshotSystemHotkey.register(settingsStore.screenshotHotkey)
+        shortcutPool.register(Self.shortcutBindings(in: settingsStore))
+    }
+
+    /// The feature shortcuts and the keyword shortcuts that are switched on.
+    static func shortcutBindings(in settingsStore: SettingsStore) -> [HotkeyTarget: HotkeyBinding] {
+        var bindings: [HotkeyTarget: HotkeyBinding] = [:]
+        for (action, binding) in settingsStore.actionHotkeys {
+            bindings[.action(action)] = binding
+        }
+        for hotkey in settingsStore.keywordHotkeys where hotkey.enabled {
+            if let binding = hotkey.binding { bindings[.keyword(hotkey.id)] = binding }
+        }
+        return bindings
     }
 
     private func installEventTapIfPossible() {

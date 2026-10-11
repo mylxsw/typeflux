@@ -107,7 +107,7 @@ History changes are broadcast via `NotificationCenter` using `.historyStoreDidCh
 
 ### Other Modules
 
-- `Hotkey/` — global hotkey capture via `EventTapHotkeyService` (CGEventTap)
+- `Hotkey/` — global hotkey capture via `EventTapHotkeyService` (CGEventTap for voice gestures; `SystemHotkeyPool` registers the plain key chords of feature and keyword shortcuts). Every shortcut is a `HotkeyTarget`; `HotkeyConflictChecker` is the one conflict check, and Settings → Shortcuts (`HotkeySettingsView`) lists them all
 - `Audio/` — `AVFoundationAudioRecorder`, `AudioDeviceManager`, audio format handling
 - `TextInjection/` — `AXTextInjector` uses Accessibility API; falls back to clipboard paste
 - `Clipboard/` — system clipboard read/write, plus the clipboard panel opened by the history hotkey: `ClipboardMonitor` records copies into `ClipboardHistoryStore`, `ClipboardFeed` merges them with voice history, and `ClipboardPanelController` shows `ClipboardPanelModel` in a non-activating key panel. `ClipboardCaptureSuppression` keeps Typeflux's own selection probes out of the history.

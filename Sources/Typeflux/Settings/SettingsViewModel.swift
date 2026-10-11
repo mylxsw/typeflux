@@ -1953,13 +1953,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setAuxiliaryHotkey(_ binding: HotkeyBinding) {
-        guard ![activationHotkey, askHotkey, personaHotkey, historyHotkey, screenshotHotkey]
-            .compactMap({ $0 }).contains(where: { $0.conflicts(with: binding) }) else {
-            showToast(L("settings.shortcuts.auxiliaryConflict"))
-            return
-        }
-        settingsStore.auxiliaryHotkey = binding
-        auxiliaryHotkey = binding
+        guard applyHotkey(binding, to: .auxiliary) else { return }
         showToast(L("settings.shortcuts.auxiliaryUpdated"))
     }
 
@@ -1972,29 +1966,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setActivationHotkey(_ binding: HotkeyBinding) {
-        if let auxiliaryHotkey, auxiliaryHotkey.conflicts(with: binding) {
-            showToast(L("settings.shortcuts.auxiliaryConflict"))
-            return
-        }
-        if let personaHotkey, binding.signature == personaHotkey.signature {
-            showToast(L("settings.shortcuts.activationConflict"))
-            return
-        }
-        if let askHotkey, binding.signature == askHotkey.signature {
-            showToast(L("settings.shortcuts.activationConflict"))
-            return
-        }
-        if let historyHotkey, binding.signature == historyHotkey.signature {
-            showToast(L("settings.shortcuts.activationConflict"))
-            return
-        }
-        if let screenshotHotkey, binding.signature == screenshotHotkey.signature {
-            showToast(L("settings.shortcuts.usedByScreenshot"))
-            return
-        }
-
-        activationHotkey = binding
-        settingsStore.activationHotkey = binding
+        guard applyHotkey(binding, to: .activation) else { return }
         showToast(L("settings.shortcuts.activationUpdated"))
     }
 
@@ -2009,29 +1981,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setAskHotkey(_ binding: HotkeyBinding) {
-        if let auxiliaryHotkey, auxiliaryHotkey.conflicts(with: binding) {
-            showToast(L("settings.shortcuts.auxiliaryConflict"))
-            return
-        }
-        if let activationHotkey, binding.signature == activationHotkey.signature {
-            showToast(L("settings.shortcuts.askConflict"))
-            return
-        }
-        if let personaHotkey, binding.signature == personaHotkey.signature {
-            showToast(L("settings.shortcuts.askConflict"))
-            return
-        }
-        if let historyHotkey, binding.signature == historyHotkey.signature {
-            showToast(L("settings.shortcuts.askConflict"))
-            return
-        }
-        if let screenshotHotkey, binding.signature == screenshotHotkey.signature {
-            showToast(L("settings.shortcuts.usedByScreenshot"))
-            return
-        }
-
-        askHotkey = binding
-        settingsStore.askHotkey = binding
+        guard applyHotkey(binding, to: .ask) else { return }
         showToast(L("settings.shortcuts.askUpdated"))
     }
 
@@ -2046,29 +1996,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setPersonaHotkey(_ binding: HotkeyBinding) {
-        if let auxiliaryHotkey, auxiliaryHotkey.conflicts(with: binding) {
-            showToast(L("settings.shortcuts.auxiliaryConflict"))
-            return
-        }
-        if let activationHotkey, binding.signature == activationHotkey.signature {
-            showToast(L("settings.shortcuts.personaConflict"))
-            return
-        }
-        if let askHotkey, binding.signature == askHotkey.signature {
-            showToast(L("settings.shortcuts.personaConflict"))
-            return
-        }
-        if let historyHotkey, binding.signature == historyHotkey.signature {
-            showToast(L("settings.shortcuts.personaConflict"))
-            return
-        }
-        if let screenshotHotkey, binding.signature == screenshotHotkey.signature {
-            showToast(L("settings.shortcuts.usedByScreenshot"))
-            return
-        }
-
-        personaHotkey = binding
-        settingsStore.personaHotkey = binding
+        guard applyHotkey(binding, to: .persona) else { return }
         showToast(L("settings.shortcuts.personaUpdated"))
     }
 
@@ -2083,29 +2011,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setHistoryHotkey(_ binding: HotkeyBinding) {
-        if let auxiliaryHotkey, auxiliaryHotkey.conflicts(with: binding) {
-            showToast(L("settings.shortcuts.auxiliaryConflict"))
-            return
-        }
-        if let activationHotkey, binding.signature == activationHotkey.signature {
-            showToast(L("settings.shortcuts.historyConflict"))
-            return
-        }
-        if let askHotkey, binding.signature == askHotkey.signature {
-            showToast(L("settings.shortcuts.historyConflict"))
-            return
-        }
-        if let personaHotkey, binding.signature == personaHotkey.signature {
-            showToast(L("settings.shortcuts.historyConflict"))
-            return
-        }
-        if let screenshotHotkey, binding.signature == screenshotHotkey.signature {
-            showToast(L("settings.shortcuts.usedByScreenshot"))
-            return
-        }
-
-        historyHotkey = binding
-        settingsStore.historyHotkey = binding
+        guard applyHotkey(binding, to: .history) else { return }
         showToast(L("settings.shortcuts.historyUpdated"))
     }
 
@@ -2120,18 +2026,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setScreenshotHotkey(_ binding: HotkeyBinding) {
-        if let auxiliaryHotkey, auxiliaryHotkey.conflicts(with: binding) {
-            showToast(L("settings.shortcuts.auxiliaryConflict"))
-            return
-        }
-        let others = [activationHotkey, askHotkey, personaHotkey, historyHotkey].compactMap { $0 }
-        guard !others.contains(where: { $0.signature == binding.signature }) else {
-            showToast(L("settings.shortcuts.screenshotConflict"))
-            return
-        }
-
-        screenshotHotkey = binding
-        settingsStore.screenshotHotkey = binding
+        guard applyHotkey(binding, to: .screenshot) else { return }
         showToast(L("settings.shortcuts.screenshotUpdated"))
     }
 
@@ -2143,6 +2038,19 @@ final class StudioViewModel: ObservableObject {
         screenshotHotkey = nil
         settingsStore.screenshotHotkey = nil
         showToast(L("settings.shortcuts.screenshotUnset"))
+    }
+
+    /// Saves a built-in shortcut after the check every shortcut shares, or says who has the keys.
+    private func applyHotkey(_ binding: HotkeyBinding, to builtIn: BuiltInHotkey) -> Bool {
+        let result = HotkeyConflictChecker.check(binding, for: .builtIn(builtIn),
+                                                 among: settingsStore.hotkeyAssignments)
+        if case let .taken(owner) = result.problem {
+            showToast(HotkeyConflictMessages.builtIn(builtIn, takenBy: owner, in: settingsStore))
+            return false
+        }
+        settingsStore.setHotkey(binding, for: builtIn)
+        syncHotkeysFromStore()
+        return true
     }
 
     func setScreenshotSaveDirectory(_ url: URL) {
