@@ -174,6 +174,8 @@
 "settings.permissionStatus.subtitle" = "Typeflux이 의존하는 macOS 권한을 검토한 후 필요한 경우 액세스 권한을 부여하세요.";
 
 "menu.openVoiceStudio" = "Typeflux 열기";
+"menu.commonFeatures" = "자주 사용하는 기능";
+"menu.voiceInput" = "음성 입력";
 "menu.history" = "역사";
 "menu.addVocabulary" = "단어 추가";
 "menu.addVocabulary.dialog.title" = "단어 추가";
@@ -4623,9 +4625,11 @@
 "hotkeys.menu.reset" = "기본값 복원";
 "hotkeys.menu.more" = "더 보기";
 "hotkeys.noMatch" = "“%@”와(과) 일치하는 단축키가 없습니다";
-"hotkeys.search" = "단축키 검색";
+"hotkeys.search" = "기능 또는 단축키 검색";
 "hotkeys.footnote" = "설정 페이지와 런처 설정의 단축키 항목도 그대로 유지되며, 어디서 바꿔도 함께 반영됩니다.";
 "hotkeys.updated" = "단축키를 %@(으)로 설정했습니다";
 
 "hotkeys.column.name" = "이름";
 "hotkeys.search.close" = "검색 닫기";
+
+"settings.list.itemCount" = "%d개 항목";

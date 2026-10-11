@@ -317,8 +317,17 @@ struct LauncherSettingsPolishTests {
             AskLauncherPluginSettingsView(settings: fixture.settings, workflows: fixture.store)
         }, size: NSSize(width: 700, height: 1600), name: "keyword-sections") { window in
             for section in AskKeywordSection.allCases {
-                #expect(find("ask.settings.keywords.section." + section.rawValue, in: window) != nil)
+                let header = try element("ask.settings.keywords.section." + section.rawValue, in: window)
+                #expect(header.frame.height <= 32, "section captions stay compact")
             }
+            let header = try element("ask.settings.keywords.section.translate", in: window).frame
+            let row = try element("ask.settings.keywords.row.fy", in: window).frame
+            #expect(header.minY > row.maxY, "the group caption sits above the content card")
+            try click(element("ask.settings.keywords.section.translate", in: window), in: window)
+            try await Task.sleep(for: .milliseconds(100))
+            #expect(find("ask.settings.keywords.row.fy", in: window) == nil)
+            try click(element("ask.settings.keywords.section.translate", in: window), in: window)
+            try await Task.sleep(for: .milliseconds(100))
             #expect(find("ask.settings.keywords.row.fy", in: window) != nil)
             #expect(find("ask.settings.keywords.row." + AskSystemCommand.toggleBluetooth.defaultKeyword, in: window) ==
                 nil)
@@ -385,9 +394,13 @@ struct LauncherSettingsPolishTests {
             value("accessibilityIdentifier") as? String
         }
 
-        var isOn: Bool? { (value("accessibilityValue") as? NSNumber)?.boolValue }
+        var isOn: Bool? {
+            (value("accessibilityValue") as? NSNumber)?.boolValue
+        }
 
-        var enabled: Bool? { value("isAccessibilityEnabled") as? Bool }
+        var enabled: Bool? {
+            value("isAccessibilityEnabled") as? Bool
+        }
 
         private func value(_ key: String) -> Any? {
             object.responds(to: NSSelectorFromString(key)) ? object.value(forKey: key) : nil

@@ -75,23 +75,19 @@ struct AskKeywordSectionHeader: View {
     let expanded: Bool
     let toggle: () -> Void
 
+    @State private var hovering = false
+
     var body: some View {
         Button(action: toggle) {
-            HStack(spacing: 10) {
-                Image(systemName: section.symbol).frame(width: 18).foregroundStyle(ModelVisualStyle.accent)
-                Text(section.title).font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text(String(count)).font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                Spacer()
-                Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 10, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
-            }
-            .padding(.horizontal, 16).frame(height: 44)
-            .background(StudioTheme.textSecondary.opacity(0.035))
-            .contentShape(Rectangle())
+            SettingsListSectionLabel(title: section.title, count: count, expanded: expanded)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(hovering ? StudioTheme.textSecondary.opacity(0.04) : .clear,
+                            in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityLabel(section.title + ", " + L("settings.list.itemCount", count))
         .accessibilityValue(L(expanded ? "ask.settings.keywords.expanded" : "ask.settings.keywords.collapsed"))
         .accessibilityIdentifier("ask.settings.keywords.section." + section.rawValue)
     }

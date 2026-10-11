@@ -219,16 +219,18 @@ struct AskLauncherPluginSettingsView: View {
             ForEach(AskKeywordSection.allCases, id: \.self) { section in
                 let group = shown.filter { section.kinds.contains($0.kind) }
                 if !group.isEmpty {
-                    ModelSurface {
-                        VStack(alignment: .leading, spacing: 0) {
-                            AskKeywordSectionHeader(section: section, count: group.count,
-                                                    expanded: !collapsedSections.contains(section)) {
-                                toggleSection(section)
-                            }
-                            if !collapsedSections.contains(section) {
-                                ForEach(Array(group.enumerated()), id: \.element.id) { index, row in
-                                    ModelRowDivider(leading: index == 0 ? 0 : 56)
-                                    AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
+                    VStack(alignment: .leading, spacing: 6) {
+                        AskKeywordSectionHeader(section: section, count: group.count,
+                                                expanded: !collapsedSections.contains(section)) {
+                            toggleSection(section)
+                        }
+                        if !collapsedSections.contains(section) {
+                            ModelSurface {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    ForEach(Array(group.enumerated()), id: \.element.id) { index, row in
+                                        if index > 0 { ModelRowDivider(leading: 56) }
+                                        AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
+                                    }
                                 }
                             }
                         }

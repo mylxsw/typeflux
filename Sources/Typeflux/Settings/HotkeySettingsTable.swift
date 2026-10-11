@@ -1,28 +1,5 @@
 import SwiftUI
 
-/// Every group uses the same name, binding and control columns.
-struct HotkeySettingsTableHeader: View {
-    let group: HotkeyGroup
-    let keyColumnWidth: CGFloat
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Text(L("hotkeys.column.name"))
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(L("studio.section.hotkeys"))
-                .frame(width: keyColumnWidth, alignment: .leading)
-            Text(group == .keywords ? L("ask.settings.keywords.enabled") : "")
-                .lineLimit(1).minimumScaleFactor(0.8)
-                .frame(width: 44)
-            Color.clear.frame(width: 24, height: 1)
-        }
-        .font(.system(size: 11.5, weight: .medium))
-        .foregroundStyle(StudioTheme.textTertiary)
-        .padding(.horizontal, 14).frame(height: 30)
-        .background(StudioTheme.controlSurface.opacity(0.45))
-    }
-}
-
 /// A single-line name cell, with useful keyword names and actionable warnings.
 struct HotkeySettingsName: View {
     let row: HotkeyRow

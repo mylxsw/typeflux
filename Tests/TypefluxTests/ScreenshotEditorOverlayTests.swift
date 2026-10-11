@@ -385,8 +385,15 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
 
     func testTheToolbarsShadowMarginLetsPressesThrough() throws {
         let (view, _) = makeView()
+        let window = NSWindow(contentRect: view.bounds, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = view
+        window.orderFront(nil)
+        defer { window.close() }
         frame(view, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 250, y: 150))
         let toolbar = try XCTUnwrap(view.toolbar)
+        toolbar.layoutSubtreeIfNeeded()
+        window.displayIfNeeded()
         let inset = ScreenshotOverlayView.toolbarShadowInset
 
         XCTAssertNil(toolbar.hitTest(CGPoint(x: toolbar.frame.minX + inset / 2, y: toolbar.frame.midY)))

@@ -312,29 +312,21 @@ struct ScreenshotEditorToolbar: View {
                 followUpButton(followUp)
             }
             separator
-            iconButton("xmark", help: "\(L("screenshot.edit.cancel"))  esc") { perform(.cancel) }
             iconButton("square.and.arrow.down", help: "\(L("screenshot.edit.save"))  ⌘S") { perform(.save) }
             iconButton("ellipsis", help: L("screenshot.edit.more"), isOn: state.showsMoreMenu) {
                 perform(.toggleMoreMenu)
             }
             .accessibilityIdentifier("screenshot.more")
-            Button { perform(.copy) } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
-                    Text(L("screenshot.edit.copy")).font(.system(size: 12.5, weight: .semibold))
-                        .lineLimit(1).fixedSize()
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 11)
-                .frame(height: 30)
-                .background(RoundedRectangle(cornerRadius: 8).fill(AskTheme.accent))
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("\(L("screenshot.edit.copy"))  ↩")
             if state.showsPin {
                 grip
             }
+            separator
+            iconButton("xmark", help: "\(L("screenshot.edit.cancel"))  esc", tint: .red) { perform(.cancel) }
+                .accessibilityLabel(L("screenshot.edit.cancel"))
+                .accessibilityIdentifier("screenshot.cancel")
+            iconButton("checkmark", help: "\(L("screenshot.edit.copy"))  ↩", tint: .green) { perform(.copy) }
+                .accessibilityLabel(L("screenshot.edit.copy"))
+                .accessibilityIdentifier("screenshot.copy")
         }
         .padding(4)
         .background(glass(cornerRadius: 12))
@@ -776,11 +768,12 @@ struct ScreenshotEditorToolbar: View {
     }
 
     private func iconButton(_ symbol: String, help: String, isOn: Bool = false, isEnabled: Bool = true,
+                            tint: Color? = nil,
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(isOn ? AskTheme.accent : Color.primary.opacity(0.75))
+                .foregroundStyle(tint ?? (isOn ? AskTheme.accent : Color.primary.opacity(0.75)))
                 .frame(width: 30, height: 30)
                 .background(RoundedRectangle(cornerRadius: 8).fill(isOn ? AskTheme.accentSoft : Color.clear))
                 .contentShape(Rectangle())

@@ -5,6 +5,73 @@ import Testing
 @Suite("Status bar word book", .serialized, .exclusiveUIState)
 @MainActor
 struct StatusBarWordBookMenuTests {
+    @Test
+    func `common features refreshes the screenshot shortcut when opened`() throws {
+        let originalLanguage = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(originalLanguage) }
+        let suite = "GroupedMenuShortcut-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        settings.screenshotHotkey = .defaultScreenshot
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(suite)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let controller = StatusBarController(
+            appState: AppStateStore(), settingsStore: settings,
+            historyStore: FileHistoryStore(baseDir: directory)
+        )
+        controller.start()
+        defer { controller.stop() }
+        let menu = try #require(controller.menu?.items.first { $0.title == L("menu.commonFeatures") }?.submenu)
+        let screenshot = try #require(menu.items.first { $0.title == L("menu.screenshot") })
+        #expect(!screenshot.keyEquivalent.isEmpty)
+        settings.screenshotHotkey = nil
+        controller.menuWillOpen(menu)
+        #expect(screenshot.keyEquivalent.isEmpty)
+        #expect(screenshot.keyEquivalentModifierMask.isEmpty)
+        settings.screenshotHotkey = .defaultScreenshot
+        controller.menuWillOpen(menu)
+        #expect(screenshot.keyEquivalent == "a")
+        #expect(screenshot.keyEquivalentModifierMask == [.command, .option])
+    }
+
+    @Test
+    func `voice input keeps recent history refresh and persona selection working`() throws {
+        let originalLanguage = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(originalLanguage) }
+        let suite = "GroupedMenuVoice-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(suite)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let history = FileHistoryStore(baseDir: directory)
+        let controller = StatusBarController(
+            appState: AppStateStore(), settingsStore: settings, historyStore: history
+        )
+        controller.start()
+        defer { controller.stop() }
+        let voiceMenu = try #require(controller.menu?.items.first { $0.title == L("menu.voiceInput") }?.submenu)
+        let historyMenu = try #require(voiceMenu.items.first { $0.title == L("menu.transcriptionHistory") }?.submenu)
+        #expect(historyMenu.items.first?.title == L("menu.transcriptionHistory.empty"))
+        history.save(record: HistoryRecord(date: Date(), transcriptText: "Recent nested history"))
+        controller.menuWillOpen(historyMenu)
+        #expect(historyMenu.items.first?.representedObject as? String == "Recent nested history")
+        #expect(historyMenu.items.last?.title == L("menu.transcriptionHistory.viewAll"))
+
+        let personasMenu = try #require(voiceMenu.items.first { $0.title == L("menu.personas") }?.submenu)
+        let persona = try #require(settings.personas.first)
+        let index = try #require(personasMenu.items.firstIndex { $0.representedObject as? String == persona.id.uuidString })
+        personasMenu.performActionForItem(at: index)
+        #expect(settings.activePersonaID == persona.id.uuidString)
+        #expect(settings.personaRewriteEnabled)
+        controller.menuWillOpen(personasMenu)
+        #expect(personasMenu.items.first { $0.representedObject as? String == persona.id.uuidString }?.state == .on)
+        personasMenu.performActionForItem(at: 0)
+        #expect(settings.activePersonaID.isEmpty)
+        #expect(!settings.personaRewriteEnabled)
+    }
+
     @Test(arguments: AppLanguage.allCases)
     func `replaces add vocabulary with a localized word book`(language: AppLanguage) throws {
         let originalLanguage = AppLocalization.shared.language
@@ -22,7 +89,15 @@ struct StatusBarWordBookMenuTests {
         )
         controller.start()
         defer { controller.stop() }
-        let menu = try #require(controller.menu)
+        let rootMenu = try #require(controller.menu)
+        let commonTitle = L("menu.commonFeatures")
+        let voiceTitle = L("menu.voiceInput")
+        #expect(commonTitle != "menu.commonFeatures")
+        #expect(voiceTitle != "menu.voiceInput")
+        #expect(rootMenu.items.prefix(4).map(\.title) == [
+            L("menu.openVoiceStudio"), commonTitle, voiceTitle, L("menu.settings")
+        ])
+        let menu = try #require(rootMenu.items[1].submenu)
         let title = L("ask.wordBook.title")
         #expect(title != "ask.wordBook.title")
         if language == .simplifiedChinese {
@@ -31,9 +106,15 @@ struct StatusBarWordBookMenuTests {
         #expect(menu.items.filter { $0.title == title }.count == 1)
         #expect(!menu.items.contains { $0.title == L("menu.addVocabulary") })
         #expect(!menu.items.contains { $0.action.map(NSStringFromSelector) == "addVocabularyTerm" })
-        #expect(menu.items.prefix(3).map(\.title) == [L("menu.openVoiceStudio"), title, L("menu.notes")])
-        #expect(menu.items[1].isEnabled && menu.items[1].submenu == nil)
-        #expect(menu.items[1].target === controller)
+        #expect(menu.items.filter { !$0.isHidden }.map(\.title) == [
+            L("menu.screenshot"), L("menu.screenshotText"), L("menu.notes"), title
+        ])
+        let wordBookItem = try #require(menu.items.first { $0.title == title })
+        #expect(wordBookItem.isEnabled && wordBookItem.submenu == nil)
+        #expect(wordBookItem.target === controller)
+        let voiceMenu = try #require(rootMenu.items[2].submenu)
+        #expect(voiceMenu.items.prefix(2).map(\.title) == [L("menu.transcriptionHistory"), L("menu.personas")])
+        #expect(voiceMenu.items.contains { $0.title == L("menu.textTransformation") } == (language == .traditionalChinese))
     }
 
     @Test(arguments: [false, true])
@@ -63,7 +144,8 @@ struct StatusBarWordBookMenuTests {
         )
         controller.start()
         defer { controller.stop() }
-        let menu = try #require(controller.menu)
+        let rootMenu = try #require(controller.menu)
+        let menu = try #require(rootMenu.items.first { $0.title == L("menu.commonFeatures") }?.submenu)
         let index = try #require(menu.items.firstIndex { $0.title == L("ask.wordBook.title") })
         menu.performActionForItem(at: index)
         let window = try #require(wordBook.window)

@@ -119,11 +119,12 @@ struct HotkeySettingsViewTests {
                     let rowSpacing = abs(voiceKeys.midY - auxiliaryKeys.midY)
                     #expect(rowSpacing >= 44 && rowSpacing <= 46)
                     let add = try element("hotkeys.keyword.add").frame
-                    let search = try element("hotkeys.search.toggle").frame
+                    let search = try element("hotkeys.search").frame
                     #expect(search.minY > voice.maxY)
                     #expect(add.maxY < voice.minY)
                     #expect(add.minY > keyword.maxY)
-                    #expect(!elements.contains { $0.value("accessibilityIdentifier") as? String == "hotkeys.search" })
+                    #expect(search.width > 200)
+                    #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.column.name"), in: window))
                     let toggle = try element("hotkeys.enabled." + shortcut.id.uuidString)
                     try toggle.press()
                     try await SettingsBehaviorTestSupport.wait { store.keywordHotkeys.first?.enabled == false }
@@ -141,7 +142,7 @@ struct HotkeySettingsViewTests {
         }
     }
 
-    @Test func `title search expands focuses filters and clears on close`() async throws {
+    @Test func `visible search stops recording filters and preserves the query on Escape`() async throws {
         try await SettingsBehaviorTestSupport.withFixture { store in
             let viewModel = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
                 baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-search-\(UUID())")
@@ -149,6 +150,7 @@ struct HotkeySettingsViewTests {
             try await SettingsBehaviorTestSupport.withWindow(
                 HotkeySettingsView(viewModel: viewModel, settingsStore: store, compact: true), width: 520, height: 980
             ) { window, _ in
+                try await Task.sleep(for: .milliseconds(100))
                 let originalBinding = store.hotkey(.activation)
                 try SettingsBehaviorTestSupport.button(
                     L("hotkeys.recordAccessibility", BuiltInHotkey.activation.title), in: window
@@ -156,10 +158,9 @@ struct HotkeySettingsViewTests {
                 try await SettingsBehaviorTestSupport.wait {
                     SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window)
                 }
-                try SettingsBehaviorTestSupport.button(L("hotkeys.search"), in: window).press()
-                #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window))
+                try focusSearch(in: window)
                 try await SettingsBehaviorTestSupport.wait {
-                    window.firstResponder is NSTextView
+                    !SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window)
                 }
                 let editor = try #require(window.firstResponder as? NSTextView)
                 editor.insertText("screenshot", replacementRange: NSRange(location: NSNotFound, length: 0))
@@ -168,30 +169,52 @@ struct HotkeySettingsViewTests {
                 }
                 #expect(SettingsBehaviorTestSupport.contains(BuiltInHotkey.screenshot.title, in: window))
                 #expect(store.hotkey(.activation) == originalBinding)
-                try SettingsBehaviorTestSupport.button(L("hotkeys.search.close"), in: window).press()
-                try await SettingsBehaviorTestSupport.wait {
-                    SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window)
-                }
-                #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.search.close"), in: window))
-                try SettingsBehaviorTestSupport.button(L("hotkeys.search"), in: window).press()
-                try await SettingsBehaviorTestSupport.wait { window.firstResponder is NSTextView }
-                let reopened = try #require(window.firstResponder as? NSTextView)
-                #expect(reopened.string.isEmpty)
-                reopened.insertText("unmatched-shortcut", replacementRange: NSRange(location: NSNotFound, length: 0))
-                try await SettingsBehaviorTestSupport.wait {
-                    SettingsBehaviorTestSupport.contains(L("hotkeys.noMatch", "unmatched-shortcut"), in: window)
-                }
+
+                // Escape ends editing without silently discarding the active filter.
                 let escape = try #require(NSEvent.keyEvent(
                     with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
                     windowNumber: window.windowNumber, context: nil,
                     characters: "\u{1b}", charactersIgnoringModifiers: "\u{1b}", isARepeat: false, keyCode: 53
                 ))
                 window.sendEvent(escape)
+                try await SettingsBehaviorTestSupport.wait { !(window.firstResponder is NSTextView) }
+                #expect(SettingsBehaviorTestSupport.contains(BuiltInHotkey.screenshot.title, in: window))
+                #expect(!SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window))
+                try focusSearch(in: window)
+                #expect((window.firstResponder as? NSTextView)?.string == "screenshot")
+
+                try SettingsBehaviorTestSupport.button(L("common.clear"), in: window).press()
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window)
+                }
+                #expect(!SettingsBehaviorTestSupport.contains(L("common.clear"), in: window))
+                try focusSearch(in: window)
+                let cleared = try #require(window.firstResponder as? NSTextView)
+                #expect(cleared.string.isEmpty)
+                cleared.insertText("unmatched-shortcut", replacementRange: NSRange(location: NSNotFound, length: 0))
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains(L("hotkeys.noMatch", "unmatched-shortcut"), in: window)
+                }
+                try SettingsBehaviorTestSupport.button(L("common.clear"), in: window).press()
                 try await SettingsBehaviorTestSupport.wait {
                     SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window)
                 }
             }
         }
+    }
+
+    private func focusSearch(in window: NSWindow) throws {
+        let search = try #require(SettingsBehaviorTestSupport.elements(in: window).first {
+            $0.value("accessibilityIdentifier") as? String == "hotkeys.search"
+                && $0.role == NSAccessibility.Role.textField.rawValue
+        })
+        func findField(in view: NSView) -> NSTextField? {
+            if let field = view as? NSTextField { return field }
+            return view.subviews.lazy.compactMap { findField(in: $0) }.first
+        }
+        let field = try #require(findField(in: window.contentView!))
+        #expect(search.frame.width > 200)
+        #expect(window.makeFirstResponder(field))
     }
 
     @Test func `keyword editor renders conflicts and effect`() async throws {

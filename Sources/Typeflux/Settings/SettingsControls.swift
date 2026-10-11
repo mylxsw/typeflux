@@ -59,8 +59,11 @@ private struct NativeSettingsActionMenu: NSViewRepresentable {
 
     /// SwiftUI draws the label; the native control still draws its keyboard focus ring.
     private final class MenuButton: NSPopUpButton {
-        override func draw(_ dirtyRect: NSRect) {}
-        override var focusRingMaskBounds: NSRect { bounds }
+        override func draw(_: NSRect) {}
+        override var focusRingMaskBounds: NSRect {
+            bounds
+        }
+
         override func drawFocusRingMask() {
             NSBezierPath(roundedRect: bounds, xRadius: ModelVisualStyle.controlCornerRadius,
                          yRadius: ModelVisualStyle.controlCornerRadius).fill()
@@ -74,9 +77,11 @@ private struct NativeSettingsActionMenu: NSViewRepresentable {
         }
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
 
-    func makeNSView(context: Context) -> NSPopUpButton {
+    func makeNSView(context _: Context) -> NSPopUpButton {
         let button = MenuButton(frame: .zero, pullsDown: true)
         button.isBordered = false
         button.focusRingType = .exterior
@@ -167,14 +172,14 @@ struct SettingsSearchBox: View {
     let placeholder: String
     @Binding var text: String
     var width: CGFloat? = 240
+    var onFocus: () -> Void = {}
+    var fieldIdentifier: String?
     @FocusState private var focused: Bool
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass").font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-            TextField(placeholder, text: $text).textFieldStyle(.plain)
-                .font(.system(size: SettingsControlMetrics.fontSize)).focused($focused)
-                .accessibilityLabel(placeholder)
+            searchField
             if !text.isEmpty {
                 Button { text = "" } label: {
                     Image(systemName: "xmark.circle.fill").font(.system(size: 12))
@@ -186,9 +191,51 @@ struct SettingsSearchBox: View {
         .padding(.horizontal, SettingsControlMetrics.horizontalPadding)
         .frame(width: width, height: SettingsControlMetrics.height)
         .modifier(SettingsControlChrome(focused: focused))
+        .onChange(of: focused) { value in
+            if value { onFocus() }
+        }
         .onAppear {
             // macOS may focus the first field before the pane finishes appearing.
             DispatchQueue.main.async { focused = false }
         }
+    }
+
+    @ViewBuilder private var searchField: some View {
+        let field = TextField(placeholder, text: $text).textFieldStyle(.plain)
+            .font(.system(size: SettingsControlMetrics.fontSize)).focused($focused)
+            .accessibilityLabel(placeholder)
+            .onExitCommand { focused = false }
+        if let fieldIdentifier {
+            field.accessibilityIdentifier(fieldIdentifier)
+        } else {
+            field
+        }
+    }
+}
+
+/// A quiet caption above settings lists, with an optional nearby disclosure arrow.
+struct SettingsListSectionLabel: View {
+    let title: String
+    let count: Int
+    var expanded: Bool?
+
+    var body: some View {
+        HStack(spacing: 7) {
+            if let expanded {
+                Image(systemName: expanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .frame(width: 12)
+                    .accessibilityHidden(true)
+            }
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(StudioTheme.textSecondary)
+            Text(L("settings.list.itemCount", count))
+                .font(.system(size: 11))
+                .foregroundStyle(StudioTheme.textTertiary)
+        }
+        .foregroundStyle(StudioTheme.textSecondary)
+        .padding(.horizontal, 4)
+        .frame(minHeight: SettingsControlMetrics.height)
     }
 }

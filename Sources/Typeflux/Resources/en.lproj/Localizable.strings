@@ -174,6 +174,8 @@
 "settings.permissionStatus.subtitle" = "Review the macOS permissions Typeflux depends on, then grant access where needed.";
 
 "menu.openVoiceStudio" = "Open Typeflux";
+"menu.commonFeatures" = "Common Features";
+"menu.voiceInput" = "Voice Input";
 "menu.history" = "History";
 "menu.addVocabulary" = "Add Word";
 "menu.addVocabulary.dialog.title" = "Add word";
@@ -4645,9 +4647,11 @@
 "hotkeys.menu.reset" = "Restore default";
 "hotkeys.menu.more" = "More";
 "hotkeys.noMatch" = "No shortcuts match “%@”";
-"hotkeys.search" = "Search shortcuts";
+"hotkeys.search" = "Search features or shortcuts";
 "hotkeys.footnote" = "The shortcut cards on the Settings and Launcher pages stay; a change in either place shows up in both.";
 "hotkeys.updated" = "Shortcut set to %@";
 
 "hotkeys.column.name" = "Name";
 "hotkeys.search.close" = "Close search";
+
+"settings.list.itemCount" = "Items: %d";

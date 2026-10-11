@@ -174,6 +174,8 @@
 "settings.output.opencc.config.t2s" = "繁体 → 简体";
 
 "menu.openVoiceStudio" = "打开 Typeflux";
+"menu.commonFeatures" = "常用功能";
+"menu.voiceInput" = "语音输入";
 "menu.history" = "历史";
 "menu.addVocabulary" = "添加生词";
 "menu.addVocabulary.dialog.title" = "添加生词";
@@ -4645,9 +4647,11 @@
 "hotkeys.menu.reset" = "恢复默认";
 "hotkeys.menu.more" = "更多";
 "hotkeys.noMatch" = "没有找到“%@”相关的快捷键";
-"hotkeys.search" = "搜索快捷键";
+"hotkeys.search" = "搜索功能或快捷键";
 "hotkeys.footnote" = "设置页和启动器设置里的快捷键入口仍然保留，在任何一处修改都会同步。";
 "hotkeys.updated" = "快捷键已设为 %@";
 
 "hotkeys.column.name" = "名称";
 "hotkeys.search.close" = "收起搜索";
+
+"settings.list.itemCount" = "%d 项";

@@ -34,9 +34,8 @@ struct HotkeySettingsView: View {
                                     keywordEmptyState
                                 }
                                 if !rows.isEmpty {
-                                    HotkeySettingsTableHeader(group: group, keyColumnWidth: keyColumnWidth)
-                                    ForEach(rows) { row in
-                                        ModelRowDivider(leading: 14)
+                                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                                        if index > 0 { ModelRowDivider(leading: 40) }
                                         rowView(row)
                                     }
                                 }
@@ -56,16 +55,15 @@ struct HotkeySettingsView: View {
     // MARK: - Header and tables
 
     private var header: some View {
-        HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
             StudioHeroHeader(eyebrow: StudioSection.hotkeys.eyebrow, title: StudioSection.hotkeys.heading)
-            Spacer(minLength: 8)
-            HotkeySettingsSearch(text: $query, width: compact ? 180 : 240, onOpen: stopRecording)
+            HotkeySettingsSearch(text: $query, onFocus: stopRecording)
         }
     }
 
     private func sectionHeader(_ group: HotkeyGroup, count: Int) -> some View {
         HStack(spacing: 8) {
-            ModelSectionLabel(title: group.title, detail: count == 0 ? nil : "\(count)")
+            SettingsListSectionLabel(title: group.title, count: count)
             Spacer(minLength: 8)
             if group == .keywords {
                 Button { add(nil) } label: {
@@ -114,7 +112,8 @@ struct HotkeySettingsView: View {
                         set: { model.setEnabled($0, forKeywordHotkey: id) }
                     ))
                     .labelsHidden().toggleStyle(.switch).controlSize(.small)
-                    .accessibilityLabel(L("ask.settings.keywords.enabled"))
+                    .accessibilityLabel(L("ask.settings.keywords.enabled") + " " + row.title)
+                    .help(L("ask.settings.keywords.enabled"))
                     .accessibilityIdentifier("hotkeys.enabled." + id.uuidString)
                 } else {
                     Color.clear.frame(height: 1)

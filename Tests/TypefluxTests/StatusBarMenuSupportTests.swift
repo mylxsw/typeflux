@@ -25,9 +25,11 @@ final class StatusBarMenuSupportTests: XCTestCase {
         XCTAssertEqual(index, 0)
         XCTAssertEqual(menu.items.filter { $0.title == L("menu.openVoiceStudio") }.count, 1)
         XCTAssertFalse(menu.items.contains { $0.title == L("menu.openAskConversations") })
-        XCTAssertEqual(menu.items[index + 1].title, L("ask.wordBook.title"))
+        let commonFeatures = try XCTUnwrap(menu.items[index + 1].submenu)
+        XCTAssertEqual(menu.items[index + 1].title, L("menu.commonFeatures"))
+        XCTAssertEqual(commonFeatures.items.filter { $0.title == L("ask.wordBook.title") }.count, 1)
         XCTAssertFalse(menu.items.contains { $0.title == L("menu.addVocabulary") })
-        XCTAssertEqual(menu.items[index + 2].title, L("menu.notes"))
+        XCTAssertEqual(menu.items[index + 2].title, L("menu.voiceInput"))
         XCTAssertNil(menu.items[index].submenu)
         XCTAssertTrue(menu.items[index].isEnabled)
         menu.performActionForItem(at: index)
@@ -56,7 +58,8 @@ final class StatusBarMenuSupportTests: XCTestCase {
         )
         controller.start()
         defer { controller.stop() }
-        let menu = try XCTUnwrap(controller.menu)
+        let rootMenu = try XCTUnwrap(controller.menu)
+        let menu = try XCTUnwrap(rootMenu.items.first { $0.title == L("menu.commonFeatures") }?.submenu)
         let restore = try XCTUnwrap(menu.items.first { $0.title == L("menu.pins.restoreMouse") })
         let close = menu.items[menu.index(of: restore) + 1]
         XCTAssertEqual(close.title, L("menu.pins.closeAll", 0))
@@ -92,7 +95,8 @@ final class StatusBarMenuSupportTests: XCTestCase {
         )
         controller.start()
         defer { controller.stop() }
-        let menu = try XCTUnwrap(controller.menu)
+        let rootMenu = try XCTUnwrap(controller.menu)
+        let menu = try XCTUnwrap(rootMenu.items.first { $0.title == L("menu.commonFeatures") }?.submenu)
         let index = try XCTUnwrap(menu.items.firstIndex { $0.title == L("menu.screenshotText") })
         XCTAssertEqual(menu.items[index - 1].title, L("menu.screenshot"), "Right after Screenshot")
         menu.performActionForItem(at: index)
@@ -147,11 +151,13 @@ final class StatusBarMenuSupportTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         let title = L("menu.downloadingLocalModelNamed", LocalSTTModel.whisperLocal.displayName, 35)
-        XCTAssertTrue(controller.menu?.items.contains { $0.title == title } ?? false)
+        let voiceMenu = try XCTUnwrap(controller.menu?.items.first { $0.title == L("menu.voiceInput") }?.submenu)
+        XCTAssertTrue(voiceMenu.items.contains { $0.title == title })
+        XCTAssertFalse(controller.menu?.items.contains { $0.title == title } ?? true)
     }
 
     @MainActor
-    func testStatusBarMenuIncludesSettingsItemNearAppearanceControls() throws {
+    func testStatusBarMenuGroupsFeaturesBeforeSettingsAndSeparatesHelpFromQuit() throws {
         if ProcessInfo.processInfo.environment["CI"] == "true" {
             throw XCTSkip("Status bar menu test requires a GUI WindowServer session.")
         }
@@ -174,14 +180,20 @@ final class StatusBarMenuSupportTests: XCTestCase {
         XCTAssertNotEqual(settingsItem.title, "Settings")
         XCTAssertFalse(try NSStringFromSelector(XCTUnwrap(settingsItem.action))
             .localizedCaseInsensitiveContains("settings"))
-        XCTAssertLessThan(
-            try XCTUnwrap(titles.firstIndex(of: L("menu.appearance"))),
-            try XCTUnwrap(titles.firstIndex(of: L("menu.settings")))
-        )
-        XCTAssertLessThan(
-            try XCTUnwrap(titles.firstIndex(of: L("menu.settings"))),
-            try XCTUnwrap(titles.firstIndex(of: L("menu.checkForUpdates")))
-        )
+        XCTAssertEqual(Array(titles.prefix(4)), [
+            L("menu.openVoiceStudio"), L("menu.commonFeatures"), L("menu.voiceInput"), L("menu.settings")
+        ])
+        let items = try XCTUnwrap(controller.menu?.items)
+        XCTAssertEqual(items.count, 10)
+        XCTAssertTrue(items[4].isSeparatorItem)
+        XCTAssertEqual(items[5].title, L("menu.setupGuide"))
+        XCTAssertEqual(items[6].title, L("menu.checkForUpdates"))
+        XCTAssertEqual(items[7].title, L("menu.about"))
+        XCTAssertTrue(items[8].isSeparatorItem)
+        XCTAssertEqual(items[9].title, L("menu.quit"))
+        XCTAssertEqual(items[9].keyEquivalent, "q")
+        XCTAssertNil(settingsItem.submenu)
+        XCTAssertFalse(titles.contains(L("menu.appearance")))
     }
 
     func testRecentTranscriptionRecordsFiltersEmptyFinalTextAndLimitsResults() {

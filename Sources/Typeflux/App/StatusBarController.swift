@@ -209,53 +209,58 @@ final class StatusBarController: NSObject {
         menu.delegate = self
 
         menu.addItem(makeItem(title: L("menu.openVoiceStudio"), action: #selector(openAskConversations)))
-        menu.addItem(makeItem(title: L("ask.wordBook.title"), action: #selector(openWordBook)))
-        menu.addItem(makeItem(title: L("menu.notes"), action: #selector(openNotes)))
-        menu.addItem(makeScreenshotItem())
-        menu.addItem(makeScreenshotTextItem())
-        for item in makePinnedScreenshotItems() { menu.addItem(item) }
-        let historyItem = NSMenuItem(title: L("menu.transcriptionHistory"), action: nil, keyEquivalent: "")
-        historyItem.tag = MenuTag.transcriptionHistory
-        historyItem.submenu = buildTranscriptionHistoryMenu()
-        menu.addItem(historyItem)
-        if settingsStore.isTextTransformationAvailable {
-            let textTransformationItem = NSMenuItem(title: L("menu.textTransformation"), action: nil, keyEquivalent: "")
-            textTransformationItem.tag = MenuTag.textTransformation
-            textTransformationItem.submenu = buildTextTransformationMenu()
-            menu.addItem(textTransformationItem)
-        }
-        let personasItem = NSMenuItem(title: L("menu.personas"), action: nil, keyEquivalent: "")
-        personasItem.tag = MenuTag.personas
-        personasItem.submenu = buildPersonasMenu()
-        menu.addItem(personasItem)
+        let commonFeaturesItem = NSMenuItem(title: L("menu.commonFeatures"), action: nil, keyEquivalent: "")
+        commonFeaturesItem.submenu = buildCommonFeaturesMenu()
+        menu.addItem(commonFeaturesItem)
+        let voiceInputItem = NSMenuItem(title: L("menu.voiceInput"), action: nil, keyEquivalent: "")
+        voiceInputItem.submenu = buildVoiceInputMenu()
+        menu.addItem(voiceInputItem)
+        menu.addItem(makeSettingsItem())
         menu.addItem(NSMenuItem.separator())
 
-        let appearanceItem = NSMenuItem(title: L("menu.appearance"), action: nil, keyEquivalent: "")
-        appearanceItem.submenu = buildAppearanceMenu()
-        menu.addItem(appearanceItem)
-        menu.addItem(makeSettingsItem())
-        menu.addItem(makeUpdateMenuItem())
-        if let downloadItem = makeLocalModelDownloadMenuItem() {
-            menu.addItem(downloadItem)
-        }
-        menu.addItem(NSMenuItem.separator())
         menu.addItem(makeItem(title: L("menu.setupGuide"), action: #selector(openOnboarding)))
+        menu.addItem(makeUpdateMenuItem())
         menu.addItem(makeItem(title: L("menu.about"), action: #selector(openAbout)))
         menu.addItem(NSMenuItem.separator())
-
         menu.addItem(makeItem(title: L("menu.quit"), action: #selector(quit), keyEquivalent: "q"))
 
         self.menu = menu
         statusItem?.menu = menu
     }
 
-    private func buildAppearanceMenu() -> NSMenu {
-        let menu = NSMenu(title: L("menu.appearance"))
+    private func buildCommonFeaturesMenu() -> NSMenu {
+        let menu = NSMenu(title: L("menu.commonFeatures"))
+        menu.autoenablesItems = false
+        menu.delegate = self
+        menu.addItem(makeScreenshotItem())
+        menu.addItem(makeScreenshotTextItem())
+        for item in makePinnedScreenshotItems() { menu.addItem(item) }
+        menu.addItem(makeItem(title: L("menu.notes"), action: #selector(openNotes)))
+        menu.addItem(makeItem(title: L("ask.wordBook.title"), action: #selector(openWordBook)))
+        return menu
+    }
 
-        menu.addItem(makeAppearanceItem(mode: .system))
-        menu.addItem(makeAppearanceItem(mode: .light))
-        menu.addItem(makeAppearanceItem(mode: .dark))
-
+    private func buildVoiceInputMenu() -> NSMenu {
+        let menu = NSMenu(title: L("menu.voiceInput"))
+        menu.autoenablesItems = false
+        let historyItem = NSMenuItem(title: L("menu.transcriptionHistory"), action: nil, keyEquivalent: "")
+        historyItem.tag = MenuTag.transcriptionHistory
+        historyItem.submenu = buildTranscriptionHistoryMenu()
+        menu.addItem(historyItem)
+        let personasItem = NSMenuItem(title: L("menu.personas"), action: nil, keyEquivalent: "")
+        personasItem.tag = MenuTag.personas
+        personasItem.submenu = buildPersonasMenu()
+        menu.addItem(personasItem)
+        if settingsStore.isTextTransformationAvailable {
+            let textTransformationItem = NSMenuItem(title: L("menu.textTransformation"), action: nil, keyEquivalent: "")
+            textTransformationItem.tag = MenuTag.textTransformation
+            textTransformationItem.submenu = buildTextTransformationMenu()
+            menu.addItem(textTransformationItem)
+        }
+        if let downloadItem = makeLocalModelDownloadMenuItem() {
+            menu.addItem(NSMenuItem.separator())
+            menu.addItem(downloadItem)
+        }
         return menu
     }
 
@@ -377,14 +382,6 @@ final class StatusBarController: NSObject {
 
         menu.addItem(NSMenuItem.separator())
         menu.addItem(makeItem(title: L("menu.personas.edit"), action: #selector(openPersonas)))
-    }
-
-    private func makeAppearanceItem(mode: AppearanceMode) -> NSMenuItem {
-        let item = NSMenuItem(title: mode.displayName, action: #selector(selectAppearanceMode(_:)), keyEquivalent: "")
-        item.target = self
-        item.representedObject = mode.rawValue
-        item.state = settingsStore.appearanceMode == mode ? .on : .off
-        return item
     }
 
     /// Returns a menu item showing local model download progress, or nil when there is nothing to display.
@@ -545,18 +542,6 @@ final class StatusBarController: NSObject {
 
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
-    }
-
-    @objc private func selectAppearanceMode(_ sender: NSMenuItem) {
-        guard
-            let rawValue = sender.representedObject as? String,
-            let mode = AppearanceMode(rawValue: rawValue)
-        else {
-            return
-        }
-
-        settingsStore.appearanceMode = mode
-        rebuildMenu()
     }
 
     @objc private func selectPersonaFromMenu(_ sender: NSMenuItem) {
