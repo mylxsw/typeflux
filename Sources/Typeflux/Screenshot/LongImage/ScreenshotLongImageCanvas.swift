@@ -110,11 +110,13 @@ final class ScreenshotLongImageCanvas: NSView {
         let hit: ScreenshotSelection.Hit = bounds.contains(point) ? .inside : .outside
         switch editor.mouseDown(at: point, clickCount: clickCount, shift: shift, crop: bounds, cropHit: hit) {
         case let .beginText(origin):
-            beginTextEditing(at: origin, text: "", fontSize: editor.style.fontSize, color: editor.style.color)
+            beginTextEditing(at: origin, text: "", fontSize: editor.style.fontSize, color: editor.style.color,
+                             font: editor.style.font)
         case let .editText(id):
             if let annotation = editor.document.annotation(id: id),
                case let .text(origin, text, fontSize) = annotation.kind {
-                beginTextEditing(at: origin, text: text, fontSize: fontSize, color: annotation.style.color)
+                beginTextEditing(at: origin, text: text, fontSize: fontSize, color: annotation.style.color,
+                                 font: annotation.style.font)
             }
         case .handled, .ignored:
             break
@@ -242,8 +244,8 @@ final class ScreenshotLongImageCanvas: NSView {
     // MARK: Text
 
     private func beginTextEditing(at origin: CGPoint, text: String, fontSize: CGFloat,
-                                  color: ScreenshotAnnotationStyle.Color) {
-        let field = ScreenshotOverlayView.makeTextField(text: text, fontSize: fontSize, color: color)
+                                  color: ScreenshotAnnotationStyle.Color, font: ScreenshotAnnotationStyle.TextFont) {
+        let field = ScreenshotOverlayView.makeTextField(text: text, fontSize: fontSize, color: color, font: font)
         field.delegate = self
         textOrigin = origin
         textField = field
@@ -312,7 +314,8 @@ final class ScreenshotLongImageCanvas: NSView {
         let selected = editor.editingTextID == nil ? editor.selected : nil
         canvas.model = ScreenshotAnnotationCanvasView.Model(crop: bounds, annotations: editor.visibleAnnotations,
                                                             selection: selected?.frame,
-                                                            handles: editor.selectionHandles)
+                                                            handles: editor.selectionHandles,
+                                                            bendHandle: editor.bendHandle)
         if toolStyles.styles != editor.toolStyles { toolStyles.styles = editor.toolStyles }
         window?.invalidateCursorRects(for: self)
         onChange?()

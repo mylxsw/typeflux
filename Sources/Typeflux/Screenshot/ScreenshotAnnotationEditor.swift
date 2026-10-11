@@ -63,6 +63,8 @@ struct ScreenshotAnnotationEditor {
         case drawing(start: CGPoint)
         case moving(start: CGPoint, original: ScreenshotAnnotation, before: [ScreenshotAnnotation])
         case resizing(anchor: CGPoint, original: ScreenshotAnnotation, before: [ScreenshotAnnotation])
+        /// The middle handle of a curved or elbow arrow.
+        case bending(original: ScreenshotAnnotation, before: [ScreenshotAnnotation])
     }
 
     static let handleHitRadius: CGFloat = 6
@@ -136,6 +138,18 @@ struct ScreenshotAnnotationEditor {
         return Self.corners(of: selected.frame)
     }
 
+    /// The handle that bends the selected curved or elbow arrow.
+    var bendHandle: CGPoint? {
+        guard editingTextID == nil else { return nil }
+        return selected?.bendHandle
+    }
+
+    /// The number the counters start from: the first counter's, else the counter tool's.
+    var counterStart: Int {
+        document.annotations.first { if case .counter = $0.kind { true } else { false } }?.style.counterStart
+            ?? toolStyles[.counter].counterStart
+    }
+
     /// The selected annotation is a mosaic, or the mosaic tool is picked: the sub-bar shows mosaic options.
     var showsMosaicOptions: Bool {
         if let selected { return selected.isMosaic }
@@ -150,6 +164,11 @@ struct ScreenshotAnnotationEditor {
     mutating func mouseDown(at point: CGPoint, clickCount: Int = 1, shift: Bool = false, crop: CGRect,
                             cropHit: ScreenshotSelection.Hit) -> Press {
         drag = nil
+        if let selected, let handle = bendHandle,
+           hypot(handle.x - point.x, handle.y - point.y) <= Self.handleHitRadius {
+            drag = .bending(original: selected, before: document.annotations)
+            return .handled
+        }
         if let selected, let corner = Self.corners(of: selected.frame).firstIndex(where: {
             hypot($0.x - point.x, $0.y - point.y) <= Self.handleHitRadius
         }), selected.isResizable {
@@ -191,6 +210,12 @@ struct ScreenshotAnnotationEditor {
             if shift { target = Self.constrainedSquare(from: anchor, to: point) }
             let frame = ScreenshotSelection.rect(from: anchor, to: target)
             return document.update(original.resized(from: original.frame, to: frame), recordingUndo: false)
+        case let .bending(original, _):
+            guard case let .arrow(from, to) = original.kind else { return false }
+            var bent = original
+            bent.style.arrowBend = ScreenshotAnnotation.arrowBend(through: point, from: from, to: to,
+                                                                   path: original.style.arrowPath)
+            return document.update(bent, recordingUndo: false)
         case nil:
             return false
         }
@@ -208,9 +233,12 @@ struct ScreenshotAnnotationEditor {
                 mosaic.textHeight = measureTextHeight(mosaic)
                 finished.kind = .mosaic(mosaic)
             }
+            if case let .path(points) = finished.kind, finished.style.smoothed {
+                finished.kind = .path(ScreenshotStrokeSmoothing.smoothed(points))
+            }
             document.add(finished)
             return true
-        case let .moving(_, _, before), let .resizing(_, _, before):
+        case let .moving(_, _, before), let .resizing(_, _, before), let .bending(_, before):
             document.commit(from: before)
             return true
         case nil:
@@ -220,7 +248,9 @@ struct ScreenshotAnnotationEditor {
 
     private func makeDraft(_ tool: ScreenshotAnnotationTool, at point: CGPoint) -> ScreenshotAnnotation {
         let empty = CGRect(origin: point, size: .zero)
-        let style = toolStyles[tool]
+        var style = toolStyles[tool]
+        if tool == .arrow, style.arrowPath == .curve { style.arrowBend = ScreenshotAnnotationStyle.defaultCurveBend }
+        if tool == .counter { style.counterStart = counterStart }
         let kind: ScreenshotAnnotation.Kind = switch tool {
         case .rect: .rect(empty)
         case .ellipse: .ellipse(empty)
@@ -253,10 +283,24 @@ struct ScreenshotAnnotationEditor {
         case .rect: draft.kind = .rect(ScreenshotSelection.rect(from: start, to: square))
         case .ellipse: draft.kind = .ellipse(ScreenshotSelection.rect(from: start, to: square))
         case .line: draft.kind = .line(from: start, to: angled)
-        case .arrow: draft.kind = .arrow(from: start, to: angled)
+        case .arrow:
+            draft.kind = .arrow(from: start, to: angled)
+            // An elbow turns the way the drag mostly went.
+            if draft.style.arrowPath == .elbow {
+                draft.style.arrowBend = abs(angled.x - start.x) >= abs(angled.y - start.y) ? 1 : -1
+            }
         case let .path(points): draft.kind = .path(stroke(points))
-        case let .highlight(points): draft.kind = .highlight(stroke(points))
-        case .counter: draft.kind = .counter(center: point)
+        case let .highlight(points):
+            draft.kind = .highlight(draft.style.highlighterMode == .straight ? [start, angled] : stroke(points))
+        case .counter:
+            // A bubble stays where the press was and points where the drag goes; a circle follows the pointer.
+            if draft.style.counterShape == .bubble {
+                if hypot(point.x - start.x, point.y - start.y) >= Self.minimumShapeSize {
+                    draft.style.counterAngle = atan2(point.y - start.y, point.x - start.x)
+                }
+            } else {
+                draft.kind = .counter(center: point)
+            }
         case var .mosaic(mosaic):
             switch mosaic.shape {
             case .rect: mosaic.shape = .rect(ScreenshotSelection.rect(from: start, to: square))
@@ -389,6 +433,85 @@ struct ScreenshotAnnotationEditor {
         default: return false
         }
         return true
+    }
+
+    /// Changes the options tool's style only: options that shape what is drawn next, such as smoothing.
+    private mutating func restyleTool(_ change: (inout ScreenshotAnnotationStyle) -> Void) {
+        guard let tool = optionsTool else { return }
+        change(&toolStyles[tool])
+    }
+
+    mutating func setArrowHead(_ head: ScreenshotAnnotationStyle.ArrowHead) {
+        restyle { $0.arrowHead = head }
+    }
+
+    /// A selected arrow that becomes curved bows by the default amount; an elbow turns the way it is longer.
+    mutating func setArrowPath(_ path: ScreenshotAnnotationStyle.ArrowPath) {
+        guard let selected, case let .arrow(from, to) = selected.kind else {
+            restyle { $0.arrowPath = path }
+            return
+        }
+        restyle { style in
+            style.arrowPath = path
+            switch path {
+            case .straight:
+                style.arrowBend = 0
+            case .curve:
+                // Coming from straight (0) or an elbow (±1): bow by the default amount.
+                if style.arrowBend == 0 || abs(style.arrowBend) == 1 {
+                    style.arrowBend = ScreenshotAnnotationStyle.defaultCurveBend
+                }
+            case .elbow:
+                style.arrowBend = abs(to.x - from.x) >= abs(to.y - from.y) ? 1 : -1
+            }
+        }
+    }
+
+    mutating func setOutlined(_ outlined: Bool) {
+        restyle { $0.outlined = outlined }
+    }
+
+    /// Smoothing happens when a stroke ends, so it only changes the pen's next strokes.
+    mutating func setSmoothed(_ smoothed: Bool) {
+        restyleTool { $0.smoothed = smoothed }
+    }
+
+    /// Straight or free only changes how the next stroke is drawn.
+    mutating func setHighlighterMode(_ mode: ScreenshotAnnotationStyle.HighlighterMode) {
+        restyleTool { $0.highlighterMode = mode }
+    }
+
+    mutating func setHighlighterTip(_ tip: ScreenshotAnnotationStyle.HighlighterTip) {
+        restyle { $0.highlighterTip = tip }
+    }
+
+    mutating func setFont(_ font: ScreenshotAnnotationStyle.TextFont) {
+        restyle { $0.font = font }
+    }
+
+    mutating func setTextStyle(_ textStyle: ScreenshotAnnotationStyle.TextStyle) {
+        restyle { $0.textStyle = textStyle }
+    }
+
+    mutating func setCounterLabel(_ label: ScreenshotAnnotationStyle.CounterLabel) {
+        restyle { $0.counterLabel = label }
+    }
+
+    mutating func setCounterShape(_ shape: ScreenshotAnnotationStyle.CounterShape) {
+        restyle { $0.counterShape = shape }
+    }
+
+    /// Counting is one sequence, so the start applies to the counter tool and every counter, as one undo step.
+    mutating func setCounterStart(_ start: Int) {
+        let range = ScreenshotAnnotationStyle.counterStartRange
+        let start = min(max(start, range.lowerBound), range.upperBound)
+        toolStyles[.counter].counterStart = start
+        let before = document.annotations
+        for var annotation in before where annotation.tool == .counter && annotation.style.counterStart != start {
+            annotation.style.counterStart = start
+            document.update(annotation, recordingUndo: false)
+        }
+        if styleChangeStart == nil { document.commit(from: before) }
     }
 
     mutating func setOpacity(_ opacity: CGFloat) {
@@ -548,6 +671,17 @@ extension ScreenshotAnnotationEditor {
         case let .mosaicEffect(effect): setMosaicEffect(effect)
         case let .mosaicStrength(strength): setMosaicStrength(strength)
         case let .mosaicShape(shape): setMosaicShape(shape)
+        case let .arrowHead(head): setArrowHead(head)
+        case let .arrowPath(path): setArrowPath(path)
+        case let .outlined(outlined): setOutlined(outlined)
+        case let .smoothed(smoothed): setSmoothed(smoothed)
+        case let .highlighterMode(mode): setHighlighterMode(mode)
+        case let .highlighterTip(tip): setHighlighterTip(tip)
+        case let .font(font): setFont(font)
+        case let .textStyle(textStyle): setTextStyle(textStyle)
+        case let .counterLabel(label): setCounterLabel(label)
+        case let .counterShape(shape): setCounterShape(shape)
+        case let .counterStart(start): setCounterStart(start)
         case .undo: undo()
         case .redo: redo()
         case .toggleColorPanel, .pickColor, .cancel, .save, .copy, .scrollCapture, .followUp: return false

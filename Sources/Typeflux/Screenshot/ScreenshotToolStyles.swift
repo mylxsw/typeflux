@@ -23,14 +23,27 @@ extension ScreenshotAnnotationTool {
 
     /// The style a tool starts with before the user changes it.
     var defaultStyle: ScreenshotAnnotationStyle {
+        var style: ScreenshotAnnotationStyle
         switch self {
-        case .rect, .ellipse, .line, .arrow, .pen: ScreenshotAnnotationStyle(color: .red, size: 4)
-        case .highlighter: ScreenshotAnnotationStyle(color: .yellow, size: 18)
-        case .text: ScreenshotAnnotationStyle(color: .red, size: 20)
-        case .counter: ScreenshotAnnotationStyle(color: .red, size: 24)
+        case .rect, .ellipse, .line: style = ScreenshotAnnotationStyle(color: .red, size: 4)
+        case .arrow:
+            style = ScreenshotAnnotationStyle(color: .red, size: 4)
+            style.outlined = true
+        case .pen:
+            style = ScreenshotAnnotationStyle(color: .red, size: 4)
+            style.smoothed = true
+        case .highlighter:
+            style = ScreenshotAnnotationStyle(color: .yellow, size: 18)
+            style.highlighterMode = .straight
+            style.highlighterTip = .square
+        case .text:
+            style = ScreenshotAnnotationStyle(color: .red, size: 20)
+            style.textStyle = .background
+        case .counter: style = ScreenshotAnnotationStyle(color: .red, size: 24)
         // The color of a solid mosaic.
-        case .mosaic: ScreenshotAnnotationStyle(color: .black, size: 28)
+        case .mosaic: style = ScreenshotAnnotationStyle(color: .black, size: 28)
         }
+        return style
     }
 
     /// Whether the options bar offers a color for this tool (a mosaic only when it is solid).
@@ -72,6 +85,10 @@ struct ScreenshotToolStyles: Equatable, Codable {
         style.size = clamp(style.size, to: tool.sizeRange)
         style.opacity = clamp(style.opacity, to: ScreenshotAnnotationStyle.opacityRange)
         style.cornerRadius = clamp(style.cornerRadius, to: ScreenshotAnnotationStyle.cornerRadiusRange)
+        let starts = ScreenshotAnnotationStyle.counterStartRange
+        style.counterStart = min(max(style.counterStart, starts.lowerBound), starts.upperBound)
+        if !style.arrowBend.isFinite { style.arrowBend = 0 }
+        if !style.counterAngle.isFinite { style.counterAngle = ScreenshotAnnotationStyle().counterAngle }
         return style
     }
 

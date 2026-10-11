@@ -177,12 +177,19 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
         switch kind {
         case let .rect(rect), let .ellipse(rect):
             return rect.standardized
-        case let .line(from, to), let .arrow(from, to):
+        case let .line(from, to):
             return ScreenshotSelection.rect(from: from, to: to)
+        case let .arrow(from, to):
+            let ends = ScreenshotSelection.rect(from: from, to: to)
+            guard style.arrowPath != .straight else { return ends }
+            return ends.union(Self.arrowShaft(from: from, to: to, style: style).boundingBoxOfPath)
         case let .path(points), let .highlight(points):
             return Self.boundingBox(of: points)
         case let .text(origin, text, fontSize):
-            return CGRect(origin: origin, size: Self.textSize(text, fontSize: fontSize))
+            let textRect = CGRect(origin: origin, size: Self.textSize(text, fontSize: fontSize, font: style.font))
+            guard style.textStyle == .background else { return textRect }
+            let padding = Self.textPadding(fontSize: fontSize)
+            return textRect.insetBy(dx: -padding.width, dy: -padding.height)
         case let .counter(center):
             let radius = style.counterDiameter / 2
             return CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
@@ -247,7 +254,10 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
             return Self.distance(from: point, toSegment: from, to) <= style.lineWidth / 2 + tolerance
         case let .arrow(from, to):
             let reach = max(style.lineWidth, Self.arrowHeadLength(lineWidth: style.lineWidth) / 2) + tolerance
-            return Self.distance(from: point, toSegment: from, to) <= reach
+            guard style.arrowPath != .straight else { return Self.distance(from: point, toSegment: from, to) <= reach }
+            return Self.arrowShaft(from: from, to: to, style: style)
+                .copy(strokingWithWidth: reach * 2, lineCap: .round, lineJoin: .round, miterLimit: 10)
+                .contains(point)
         case let .path(points):
             return Self.polyline(points).copy(strokingWithWidth: style.lineWidth + tolerance * 2, lineCap: .round,
                                               lineJoin: .round, miterLimit: 10).contains(point)
@@ -310,6 +320,93 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
         max(12, lineWidth * 4)
     }
 
+    // MARK: Arrows
+
+    /// The control point of a curved arrow, or the corner of an elbow; nil for a straight one.
+    static func arrowBendPoint(from: CGPoint, to: CGPoint, style: ScreenshotAnnotationStyle) -> CGPoint? {
+        switch style.arrowPath {
+        case .straight:
+            return nil
+        case .curve:
+            let length = hypot(to.x - from.x, to.y - from.y)
+            guard length > 0 else { return nil }
+            let normal = CGPoint(x: -(to.y - from.y) / length, y: (to.x - from.x) / length)
+            let mid = CGPoint(x: (from.x + to.x) / 2, y: (from.y + to.y) / 2)
+            let offset = style.arrowBend * length
+            return CGPoint(x: mid.x + normal.x * offset, y: mid.y + normal.y * offset)
+        case .elbow:
+            // Across first, then up or down; a negative bend goes up or down first.
+            return style.arrowBend >= 0 ? CGPoint(x: to.x, y: from.y) : CGPoint(x: from.x, y: to.y)
+        }
+    }
+
+    /// The arrow's line from `from` to `to`, without its heads.
+    static func arrowShaft(from: CGPoint, to: CGPoint, style: ScreenshotAnnotationStyle) -> CGPath {
+        let path = CGMutablePath()
+        path.move(to: from)
+        switch (style.arrowPath, arrowBendPoint(from: from, to: to, style: style)) {
+        case let (.curve, control?): path.addQuadCurve(to: to, control: control)
+        case let (.elbow, corner?): path.addLines(between: [from, corner, to])
+        default: path.addLine(to: to)
+        }
+        return path
+    }
+
+    /// Unit directions the shaft arrives at `to` and leaves `from` in, backwards, for the heads.
+    static func arrowDirections(from: CGPoint, to: CGPoint,
+                                style: ScreenshotAnnotationStyle) -> (end: CGPoint, start: CGPoint) {
+        func unit(_ head: CGPoint, _ tail: CGPoint) -> CGPoint? {
+            let dx = head.x - tail.x, dy = head.y - tail.y, length = hypot(dx, dy)
+            return length > 0.001 ? CGPoint(x: dx / length, y: dy / length) : nil
+        }
+        let straightEnd = unit(to, from) ?? CGPoint(x: 1, y: 0)
+        let straightStart = CGPoint(x: -straightEnd.x, y: -straightEnd.y)
+        guard let bend = arrowBendPoint(from: from, to: to, style: style) else { return (straightEnd, straightStart) }
+        return (unit(to, bend) ?? straightEnd, unit(from, bend) ?? straightStart)
+    }
+
+    /// The handle that bends a selected curved or elbow arrow: the curve's midpoint or the elbow's corner.
+    var bendHandle: CGPoint? {
+        guard case let .arrow(from, to) = kind,
+              let bend = Self.arrowBendPoint(from: from, to: to, style: style) else { return nil }
+        guard style.arrowPath == .curve else { return bend }
+        return CGPoint(x: (from.x + 2 * bend.x + to.x) / 4, y: (from.y + 2 * bend.y + to.y) / 4)
+    }
+
+    /// The bend that puts `bendHandle` at `point`: the curve passes through it, or the elbow turns at the nearer corner.
+    static func arrowBend(through point: CGPoint, from: CGPoint, to: CGPoint,
+                          path: ScreenshotAnnotationStyle.ArrowPath) -> CGFloat {
+        switch path {
+        case .straight:
+            return 0
+        case .curve:
+            let length = hypot(to.x - from.x, to.y - from.y)
+            guard length > 0 else { return 0 }
+            let normal = CGPoint(x: -(to.y - from.y) / length, y: (to.x - from.x) / length)
+            let mid = CGPoint(x: (from.x + to.x) / 2, y: (from.y + to.y) / 2)
+            let offset = (point.x - mid.x) * normal.x + (point.y - mid.y) * normal.y
+            return min(max(2 * offset / length, -2), 2)
+        case .elbow:
+            let across = hypot(point.x - to.x, point.y - from.y)
+            let upFirst = hypot(point.x - from.x, point.y - to.y)
+            return across <= upFirst ? 1 : -1
+        }
+    }
+
+    // MARK: Counters
+
+    /// "3" or "C" for the third counter; letters go on AA, AB… after Z.
+    static func counterLabel(_ number: Int, as label: ScreenshotAnnotationStyle.CounterLabel) -> String {
+        guard label == .letter, number > 0 else { return "\(number)" }
+        var value = number, letters = ""
+        while value > 0 {
+            value -= 1
+            letters = String(UnicodeScalar(UInt8(65 + value % 26))) + letters
+            value /= 26
+        }
+        return letters
+    }
+
     static func distance(from point: CGPoint, toSegment start: CGPoint, _ end: CGPoint) -> CGFloat {
         let dx = end.x - start.x, dy = end.y - start.y
         let lengthSquared = dx * dx + dy * dy
@@ -318,17 +415,34 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
         return hypot(point.x - (start.x + t * dx), point.y - (start.y + t * dy))
     }
 
-    static func font(size: CGFloat) -> NSFont {
-        .systemFont(ofSize: size, weight: .bold)
+    /// Bold, in one of the system's own designs, so no font has to be shipped.
+    static func font(size: CGFloat, family: ScreenshotAnnotationStyle.TextFont = .system) -> NSFont {
+        let system = NSFont.systemFont(ofSize: size, weight: .bold)
+        let design: NSFontDescriptor.SystemDesign
+        switch family {
+        case .system: return system
+        case .rounded: design = .rounded
+        case .serif: design = .serif
+        case .mono: design = .monospaced
+        }
+        guard let descriptor = system.fontDescriptor.withDesign(design) else { return system }
+        return NSFont(descriptor: descriptor, size: size) ?? system
     }
 
-    static func textAttributes(fontSize: CGFloat, color: CGColor) -> [NSAttributedString.Key: Any] {
-        [.font: font(size: fontSize), .foregroundColor: NSColor(cgColor: color) ?? .red]
+    static func textAttributes(fontSize: CGFloat, color: CGColor,
+                               font family: ScreenshotAnnotationStyle.TextFont = .system) -> [NSAttributedString.Key: Any] {
+        [.font: font(size: fontSize, family: family), .foregroundColor: NSColor(cgColor: color) ?? .red]
+    }
+
+    /// The room around text on a colored block.
+    static func textPadding(fontSize: CGFloat) -> CGSize {
+        CGSize(width: (fontSize * 0.3).rounded(), height: (fontSize * 0.12).rounded())
     }
 
     /// The size the text takes when drawn; an empty line still has a line's height.
-    static func textSize(_ text: String, fontSize: CGFloat) -> CGSize {
-        let attributes = textAttributes(fontSize: fontSize, color: CGColor(gray: 0, alpha: 1))
+    static func textSize(_ text: String, fontSize: CGFloat,
+                         font family: ScreenshotAnnotationStyle.TextFont = .system) -> CGSize {
+        let attributes = textAttributes(fontSize: fontSize, color: CGColor(gray: 0, alpha: 1), font: family)
         let measured = (text.isEmpty ? " " : text as NSString)
             .boundingRect(with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude),
                           options: [.usesLineFragmentOrigin, .usesFontLeading], attributes: attributes)
