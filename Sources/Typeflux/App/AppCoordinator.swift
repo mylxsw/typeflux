@@ -128,6 +128,10 @@ final class AppCoordinator {
             voice.recorder = WorkflowComposerRecording(workflowController)
             workflowController.composerVoiceInput = voice
             ask.model.recordingIsActive = { [weak workflowController] in workflowController?.isRecording ?? false }
+            let monitor = ask.model.systemMonitorWindow
+            monitor.openInLauncher = { [weak model = ask.model] focus in model?.openSystemMonitorInLauncher(focus: focus) }
+            // The monitor window comes back when it was open at quit.
+            DispatchQueue.main.async { monitor.restoreIfNeeded() }
         } else {
             workflowController.onAskRequested = {
                 let alert = NSAlert()

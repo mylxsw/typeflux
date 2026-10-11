@@ -433,7 +433,7 @@ struct AskComposer: View {
             switch key {
             case .commandEnter: model.submitLauncher(); return true
             case .escape, .commandO, .commandC, .commandZ, .shiftTab,
-                 .commandD, .commandE, .commandS, .commandB: return false
+                 .commandD, .commandE, .commandS, .commandB, .commandDelete, .optionCommandDelete: return false
             default: return true
             }
         }
@@ -489,7 +489,8 @@ struct AskComposer: View {
         case .commandC:
             guard case let .browser(index) = results.highlightedRow, results.browserEntries.indices.contains(index) else { return false }
             AskQuickResults.copy(results.browserEntries[index].url)
-        case .escape, .shiftTab, .commandD, .commandE, .commandZ, .commandS, .commandB, .commandO:
+        case .escape, .shiftTab, .commandD, .commandE, .commandZ, .commandS, .commandB, .commandO,
+             .commandDelete, .optionCommandDelete:
             return false
         }
         return true
@@ -511,7 +512,9 @@ struct AskComposer: View {
             return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, optionName: plugin.optionName,
                                     phase: plugins.phase, previous: plugins.previous, partial: plugins.partial,
                                     comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
-                                    offersAskAI: asks, savesNoteWhenDone: plugins.savesNoteWhenDone)
+                                    offersAskAI: asks && plugin.id != AskSystemMonitorPlugin.id,
+                                    savesNoteWhenDone: plugins.savesNoteWhenDone,
+                                    systemMonitor: plugin.id == AskSystemMonitorPlugin.id)
         }
         if quickSearch.presentation?.features.isEmpty != false,
            let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
@@ -613,6 +616,7 @@ struct AskComposer: View {
     /// Keys in keyword mode, see `docs/design/ask-launcher-keyword-plugins.md` §5.5.
     private func pluginKey(_ key: AskCommandKey) -> Bool {
         guard launcher, !active, let display = pluginDisplay else { return false }
+        if display.systemMonitor, let handled = systemMonitorKey(key) { return handled }
         let selection = draft.wrappedValue.sentSelection, text = draft.wrappedValue.text
         let language = AppLocalization.shared.language
         if display.hint != nil {
@@ -698,9 +702,40 @@ struct AskComposer: View {
             // Ask the AI about the chosen file: it becomes an attachment of a new question.
             guard case let .fileIcon(url)? = plugins.output?.selected?.icon else { return false }
             model.attachFileToLauncher(url)
-        case .right, .optionCommandC, .commandDown: return false
+        case .right, .optionCommandC, .commandDown, .commandDelete, .optionCommandDelete: return false
         }
         return true
+    }
+
+    /// Keys for the system monitor (`top`); nil leaves the key to keyword mode's usual handling.
+    private func systemMonitorKey(_ key: AskCommandKey) -> Bool? {
+        let mapped: SystemMonitorKey
+        switch key {
+        case .up: mapped = .up
+        case .down: mapped = .down
+        case .enter: mapped = .enter
+        case .tab: mapped = .tab
+        case .shiftTab: mapped = .shiftTab
+        case .escape: mapped = .escape
+        case let .number(number): mapped = .number(number)
+        case .commandC: mapped = .copy
+        case .commandO: mapped = .popOut
+        case .commandDelete: mapped = .terminate(force: false)
+        case .optionCommandDelete: mapped = .terminate(force: true)
+        default: return nil
+        }
+        let monitor = model.systemMonitor
+        let rows = monitor.rows(model.systemMonitorWindow.store.snapshot, filter: draft.wrappedValue.text)
+        let effect = monitor.handle(mapped, rows: rows)
+        guard effect != .unhandled else { return false }
+        if model.performSystemMonitorEffect(effect) == .close { onDismiss() }
+        return true
+    }
+
+    /// ⌘O: the system monitor moves into its window; elsewhere it opens the chat.
+    private func openChatOrMonitorWindow() {
+        if pluginDisplay?.systemMonitor == true, systemMonitorKey(.commandO) == true { return }
+        openChat()
     }
 
     /// A workflow waits for an answer in the bottom bar: ↩ allows, esc does not.
@@ -1003,6 +1038,13 @@ struct AskComposer: View {
             } else if showsLauncherSuggestions {
                 AskLauncherSuggestions(sections: home, highlighted: $suggestionIndex, onPick: pick)
                     .disabled(active)
+            } else if let pluginDisplay, pluginDisplay.systemMonitor {
+                SystemMonitorLauncherView(store: model.systemMonitorWindow.store, model: model.systemMonitor,
+                                          filter: draft.wrappedValue.text,
+                                          windowOpen: model.systemMonitorWindow.isOpen,
+                                          onEffect: { effect in
+                                              if model.performSystemMonitorEffect(effect) == .close { onDismiss() }
+                                          })
             } else if let pluginDisplay {
                 AskPluginResultsView(display: pluginDisplay, question: draft.wrappedValue.text,
                                      minimumHeight: pluginHeight,
@@ -1202,6 +1244,14 @@ struct AskComposer: View {
 
     /// Esc steps back one layer (`AskLauncherEscape`); false closes the launcher.
     private func escapeKey() -> Bool {
+        // The monitor steps back first: the question, the chosen row, the focused card, the filter.
+        if pluginDisplay?.systemMonitor == true {
+            if systemMonitorKey(.escape) == true { return true }
+            if !draft.wrappedValue.text.isEmpty {
+                draft.wrappedValue.text = ""
+                return true
+            }
+        }
         if model.launcherClipboardPreview != nil {
             model.launcherClipboardPreview = nil
             return true
@@ -1263,6 +1313,13 @@ struct AskComposer: View {
             return true
         }
         if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
+           plugins.hint?.pluginID != AskSystemMonitorPlugin.id || pluginHighlight == 0,
+           model.enterLauncherKeywordFromText(pluginID: AskSystemMonitorPlugin.id) {
+            pluginHighlight = 0
+            pluginReserve = 0
+            return true
+        }
+        if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
            plugins.hint?.pluginID != AskHistoryPlugin.id || pluginHighlight == 0,
            model.enterLauncherKeywordFromText(pluginID: AskHistoryPlugin.id) {
             pluginHighlight = 0
@@ -1298,7 +1355,7 @@ struct AskComposer: View {
             closePalette()
         case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE,
              .commandZ, .commandS, .commandB, .commandO, .right, .commandY, .optionCommandC, .shiftCommandEnter, .commandDown,
-             .number:
+             .number, .commandDelete, .optionCommandDelete:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }
@@ -1388,7 +1445,7 @@ struct AskComposer: View {
             onSlashQuery: launcher ? nil : slashChanged,
             onCommandKey: commandKey,
             onEmptyBackspace: launcher ? { removeKeyword() || removeLastContext() } : nil,
-            onOpenChat: launcher ? openChat : nil,
+            onOpenChat: launcher ? openChatOrMonitorWindow : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil
         )
         .frame(height: min(editorHeight, layout.editorMaximumHeight))
