@@ -9,6 +9,8 @@ final class StatusBarController: NSObject {
         static let textTransformation = 9004
         static let screenshot = 9005
         static let screenshotText = 9006
+        static let restorePinnedScreenshots = 9007
+        static let closePinnedScreenshots = 9008
     }
 
     private enum MenuValue {
@@ -37,6 +39,10 @@ final class StatusBarController: NSObject {
     private let onOpenAskConversations: () -> Void
     private let onScreenshot: () -> Void
     private let onScreenshotText: () -> Void
+    /// How many screenshots are pinned, and how many of them let clicks through.
+    private let pinnedScreenshots: () -> (count: Int, clickThrough: Int)
+    private let onRestorePinnedScreenshots: () -> Void
+    private let onClosePinnedScreenshots: () -> Void
 
     private var statusItem: NSStatusItem?
     private(set) var menu: NSMenu?
@@ -59,7 +65,10 @@ final class StatusBarController: NSObject {
         onOpenOnboarding: @escaping () -> Void = {},
         onOpenAskConversations: @escaping () -> Void = {},
         onScreenshot: @escaping () -> Void = {},
-        onScreenshotText: @escaping () -> Void = {}
+        onScreenshotText: @escaping () -> Void = {},
+        pinnedScreenshots: @escaping () -> (count: Int, clickThrough: Int) = { (0, 0) },
+        onRestorePinnedScreenshots: @escaping () -> Void = {},
+        onClosePinnedScreenshots: @escaping () -> Void = {}
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
@@ -73,6 +82,9 @@ final class StatusBarController: NSObject {
         self.onOpenAskConversations = onOpenAskConversations
         self.onScreenshot = onScreenshot
         self.onScreenshotText = onScreenshotText
+        self.pinnedScreenshots = pinnedScreenshots
+        self.onRestorePinnedScreenshots = onRestorePinnedScreenshots
+        self.onClosePinnedScreenshots = onClosePinnedScreenshots
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
     }
 
@@ -201,6 +213,7 @@ final class StatusBarController: NSObject {
         menu.addItem(makeItem(title: L("menu.notes"), action: #selector(openNotes)))
         menu.addItem(makeScreenshotItem())
         menu.addItem(makeScreenshotTextItem())
+        for item in makePinnedScreenshotItems() { menu.addItem(item) }
         let historyItem = NSMenuItem(title: L("menu.transcriptionHistory"), action: nil, keyEquivalent: "")
         historyItem.tag = MenuTag.transcriptionHistory
         historyItem.submenu = buildTranscriptionHistoryMenu()
@@ -426,6 +439,40 @@ final class StatusBarController: NSObject {
         DispatchQueue.main.async { [onScreenshotText] in onScreenshotText() }
     }
 
+    /// "Let pinned screenshots take clicks" and "Close pinned screenshots (2)": hidden until something is pinned.
+    func makePinnedScreenshotItems() -> [NSMenuItem] {
+        let restore = makeItem(title: L("menu.pins.restoreMouse"), action: #selector(restorePinnedScreenshots))
+        restore.tag = MenuTag.restorePinnedScreenshots
+        let close = makeItem(title: L("menu.pins.closeAll"), action: #selector(closePinnedScreenshots))
+        close.tag = MenuTag.closePinnedScreenshots
+        let items = [restore, close]
+        updatePinnedScreenshotItems(in: items)
+        return items
+    }
+
+    func updatePinnedScreenshotItems(in items: [NSMenuItem]) {
+        let pins = pinnedScreenshots()
+        for item in items {
+            switch item.tag {
+            case MenuTag.restorePinnedScreenshots:
+                item.isHidden = pins.clickThrough == 0
+            case MenuTag.closePinnedScreenshots:
+                item.isHidden = pins.count == 0
+                item.title = L("menu.pins.closeAll", pins.count)
+            default:
+                break
+            }
+        }
+    }
+
+    @objc private func restorePinnedScreenshots() {
+        onRestorePinnedScreenshots()
+    }
+
+    @objc private func closePinnedScreenshots() {
+        onClosePinnedScreenshots()
+    }
+
     private func makeSettingsItem() -> NSMenuItem {
         makeItem(title: L("menu.settings"), action: #selector(showConfiguration))
     }
@@ -578,6 +625,8 @@ extension StatusBarController: NSMenuDelegate {
         if let item = menu.item(withTag: MenuTag.screenshot) {
             applyScreenshotShortcut(to: item)
         }
+        updatePinnedScreenshotItems(in: [MenuTag.restorePinnedScreenshots, MenuTag.closePinnedScreenshots]
+            .compactMap { menu.item(withTag: $0) })
 
         if menu.title == L("menu.transcriptionHistory") {
             menu.removeAllItems()

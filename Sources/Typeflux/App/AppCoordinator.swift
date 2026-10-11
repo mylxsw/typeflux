@@ -196,7 +196,12 @@ final class AppCoordinator {
             },
             onScreenshotText: { [weak screenshotCoordinator] in
                 screenshotCoordinator?.start(mode: .region, followUp: .recognizeText)
-            }
+            },
+            pinnedScreenshots: { [weak screenshotCoordinator] in
+                (screenshotCoordinator?.pins.pinCount ?? 0, screenshotCoordinator?.pins.clickThroughCount ?? 0)
+            },
+            onRestorePinnedScreenshots: { [weak screenshotCoordinator] in screenshotCoordinator?.pins.restoreMouse() },
+            onClosePinnedScreenshots: { [weak screenshotCoordinator] in screenshotCoordinator?.pins.closeAll() }
         )
         statusBarController?.start()
         di.askConversationWindowController?.model.onOpenSettings = { [weak self] section in

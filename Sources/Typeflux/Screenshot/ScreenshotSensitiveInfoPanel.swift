@@ -129,6 +129,21 @@ final class ScreenshotSensitiveInfoController {
         }
     }
 
+    /// Something was found, so the panel has something to show, even after it was closed.
+    var hasFindings: Bool {
+        suggestions.status == .done && !suggestions.items.isEmpty
+    }
+
+    var isPanelShown: Bool {
+        hasFindings && !suggestions.isDismissed
+    }
+
+    /// The More menu's "Sensitive information": shows the panel again, or puts it away.
+    func setPanelShown(_ shown: Bool) {
+        suggestions.isDismissed = !shown
+        onChange?()
+    }
+
     /// Waits for the scan, for tests.
     func waitForScan() async {
         await task?.value

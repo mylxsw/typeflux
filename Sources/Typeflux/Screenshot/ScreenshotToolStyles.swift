@@ -64,6 +64,8 @@ struct ScreenshotToolStyles: Equatable, Codable {
     var mosaicStrength: ScreenshotMosaic.Strength = .medium
     var mosaicShape: ScreenshotAnnotationEditor.MosaicShape = .rect
     var mosaicScope: ScreenshotMosaic.Scope = .all
+    /// The region overlay puts its toolbar above the region instead of below it.
+    var prefersToolbarAbove = false
     /// Most recent first; never more than `recentColorLimit`.
     private(set) var recentColors: [ScreenshotAnnotationStyle.Color] = []
 
@@ -72,6 +74,14 @@ struct ScreenshotToolStyles: Equatable, Codable {
     subscript(tool: ScreenshotAnnotationTool) -> ScreenshotAnnotationStyle {
         get { styles[tool].map { Self.normalized($0, for: tool) } ?? tool.defaultStyle }
         set { styles[tool] = Self.normalized(newValue, for: tool) }
+    }
+
+    /// Every tool back to its default style; the recent colors and the toolbar's place stay.
+    mutating func resetStyles() {
+        var reset = ScreenshotToolStyles()
+        reset.recentColors = recentColors
+        reset.prefersToolbarAbove = prefersToolbarAbove
+        self = reset
     }
 
     /// Puts a color at the front of the recent colors.
@@ -103,7 +113,7 @@ struct ScreenshotToolStyles: Equatable, Codable {
 
     // Tools are stored by name; unknown names and missing fields fall back to the defaults.
     private enum CodingKeys: String, CodingKey {
-        case styles, mosaicEffect, mosaicStrength, mosaicShape, mosaicScope, recentColors
+        case styles, mosaicEffect, mosaicStrength, mosaicShape, mosaicScope, prefersToolbarAbove, recentColors
     }
 
     init(from decoder: Decoder) throws {
@@ -120,6 +130,7 @@ struct ScreenshotToolStyles: Equatable, Codable {
         mosaicShape = (try? container.decodeIfPresent(ScreenshotAnnotationEditor.MosaicShape.self,
                                                       forKey: .mosaicShape)) ?? .rect
         mosaicScope = (try? container.decodeIfPresent(ScreenshotMosaic.Scope.self, forKey: .mosaicScope)) ?? .all
+        prefersToolbarAbove = (try? container.decodeIfPresent(Bool.self, forKey: .prefersToolbarAbove)) ?? false
         let recent = (try? container.decodeIfPresent([ScreenshotAnnotationStyle.Color].self,
                                                      forKey: .recentColors)) ?? []
         recentColors = Array(recent.prefix(Self.recentColorLimit))
@@ -133,6 +144,7 @@ struct ScreenshotToolStyles: Equatable, Codable {
         try container.encode(mosaicStrength, forKey: .mosaicStrength)
         try container.encode(mosaicShape, forKey: .mosaicShape)
         try container.encode(mosaicScope, forKey: .mosaicScope)
+        try container.encode(prefersToolbarAbove, forKey: .prefersToolbarAbove)
         try container.encode(recentColors, forKey: .recentColors)
     }
 }
