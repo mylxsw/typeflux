@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 截图编辑器改版（可交互设计稿）</title>
+<style>
+:root {
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --accent: #2f8cff; --accent-soft: #15263e;
+  --border: rgba(255,255,255,.10); --glass: rgba(44,44,52,.96); --press: rgba(255,255,255,.12); --hover: rgba(255,255,255,.08);
+  --tile: rgba(255,255,255,.07); --pop: #2c2c34; --stage: #0e0e10; --danger: #ff4d4f;
+  --desk: linear-gradient(135deg, #1d2a3f 0%, #2b1f3a 55%, #3a2a24 100%);
+  --app: #17181c; --app2: #202127; --appText: #e6e6ea; --appText2: #9a9aa3; --appLine: rgba(255,255,255,.08);
+}
+body.light {
+  --text: #141414; --text2: #474747; --text3: #85868a; --accent: #1f6fe0; --accent-soft: #e7efff;
+  --border: #e2e5ea; --glass: rgba(255,255,255,.97); --press: rgba(0,0,0,.09); --hover: rgba(0,0,0,.06);
+  --tile: #eef0f3; --pop: #fff; --stage: #d9dde3;
+  --desk: linear-gradient(135deg, #b9cbe6 0%, #d8c8e8 55%, #ecd6c6 100%);
+  --app: #ffffff; --app2: #f4f5f7; --appText: #1d1d1f; --appText2: #6e6e73; --appLine: rgba(0,0,0,.08);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button { font: inherit; color: inherit; }
+svg { flex: none; display: block; }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1180px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--tile); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1180px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 30px; }
+.caption b { color: var(--text2); font-weight: 600; }
+body.solo .stagebar, body.solo .caption { display: none; }
+body.solo { padding: 0; }
+
+.desk { width: 1180px; height: 720px; border-radius: 14px; background: var(--desk); position: relative; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
+body.solo .desk { border-radius: 0; box-shadow: none; }
+.dim { position: absolute; inset: 0; background: rgba(0,0,0,.42); pointer-events: none; }
+body.light .dim { background: rgba(20,30,50,.28); }
+.screen { display: none; position: absolute; inset: 0; }
+.screen.on { display: block; }
+
+/* ---------- The captured app (fake) ---------- */
+.app { position: absolute; left: 150px; top: 70px; width: 880px; height: 470px; background: var(--app); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35); color: var(--appText); }
+.app .tb { height: 38px; background: var(--app2); border-bottom: 1px solid var(--appLine); display: flex; align-items: center; padding: 0 14px; gap: 8px; }
+.app .tb .dots { display: flex; gap: 7px; } .app .tb .dots i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; display: block; }
+.app .tb .dots i:nth-child(2) { background: #febc2e; } .app .tb .dots i:nth-child(3) { background: #28c840; }
+.app .tb .t { margin-left: 10px; font-weight: 600; font-size: 12.5px; color: var(--appText2); }
+.app .side { position: absolute; left: 0; top: 38px; bottom: 0; width: 180px; border-right: 1px solid var(--appLine); padding: 14px 10px; }
+.app .side div { height: 26px; border-radius: 6px; padding: 4px 10px; color: var(--appText2); font-size: 12.5px; }
+.app .side div.on { background: var(--hover); color: var(--appText); font-weight: 600; }
+.app .main { position: absolute; left: 180px; top: 38px; right: 0; bottom: 0; padding: 20px 26px; }
+.app h3 { margin: 0 0 4px; font-size: 18px; }
+.app .muted { color: var(--appText2); font-size: 12px; }
+.app .row { position: absolute; left: 26px; right: 26px; height: 34px; display: flex; align-items: center; border-bottom: 1px solid var(--appLine); font-size: 13px; }
+.app .row .k { width: 110px; color: var(--appText2); }
+.app .row .v { font-weight: 500; }
+.app .chart { position: absolute; left: 26px; top: 292px; width: 380px; height: 120px; border-radius: 10px; background: var(--app2); padding: 12px; }
+.app .bars { display: flex; align-items: flex-end; gap: 10px; height: 74px; margin-top: 8px; }
+.app .bars i { flex: 1; background: linear-gradient(#5aa2ff, #2f8cff); border-radius: 4px 4px 0 0; display: block; }
+.app .btnrow { position: absolute; left: 430px; top: 292px; display: flex; flex-direction: column; gap: 10px; }
+.app .abtn { height: 32px; padding: 0 16px; border-radius: 8px; background: #2f8cff; color: #fff; font-weight: 600; display: flex; align-items: center; font-size: 12.5px; }
+.app .abtn.ghost { background: var(--app2); color: var(--appText); }
+
+/* ---------- Region ---------- */
+.region { position: absolute; border: 1.5px solid var(--accent); box-shadow: 0 0 0 9999px rgba(0,0,0,.42); pointer-events: none; }
+body.light .region { box-shadow: 0 0 0 9999px rgba(20,30,50,.28); }
+.region .h { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #fff; border: 1.5px solid var(--accent); transform: translate(-50%,-50%); }
+.region .size { position: absolute; left: 0; top: -26px; background: rgba(0,0,0,.72); color: #fff; font: 11px ui-monospace, Menlo, monospace; padding: 3px 7px; border-radius: 5px; }
+.anno { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.mos { position: absolute; pointer-events: none; }
+
+/* ---------- Toolbar ---------- */
+.tbwrap { position: absolute; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.bar { display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 12px; background: var(--glass); border: 1px solid var(--border);
+  box-shadow: 0 8px 28px rgba(0,0,0,.35); }
+.ib { width: 30px; height: 30px; border-radius: 8px; border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text); opacity: .78; position: relative; }
+.ib:hover { background: var(--hover); opacity: 1; }
+.ib.on { background: var(--accent-soft); color: var(--accent); opacity: 1; }
+.ib.dis { opacity: .3; cursor: default; }
+.ib.new::after { content: ""; position: absolute; right: 3px; top: 3px; width: 6px; height: 6px; border-radius: 50%; background: #29c76e; }
+body.nonew .ib.new::after, body.nonew .optnew { display: none; }
+.tb-label { display: flex; align-items: center; gap: 4px; height: 30px; padding: 0 7px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; font-size: 12.5px; color: var(--text); opacity: .78; white-space: nowrap; }
+.tb-label:hover { background: var(--hover); opacity: 1; }
+.tb-label.ai { color: var(--accent); opacity: 1; }
+.sep { width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+.copy { height: 30px; padding: 0 11px; border-radius: 8px; border: 0; background: var(--accent); color: #fff; display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+.grip { width: 16px; height: 30px; display: grid; place-items: center; color: var(--text3); cursor: grab; }
+
+.opts { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 10px; background: var(--glass); border: 1px solid var(--border); box-shadow: 0 8px 28px rgba(0,0,0,.35); min-height: 36px; }
+.cap { font-size: 12px; color: var(--text3); white-space: nowrap; }
+.seg { display: inline-flex; background: var(--tile); border-radius: 7px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; min-width: 26px; height: 22px; padding: 0 6px; border-radius: 5px; cursor: pointer; color: var(--text2); font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
+.seg button.on { background: var(--press); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+body.light .seg button.on { background: #fff; }
+.colorbtn { width: 22px; height: 22px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; position: relative; box-shadow: 0 0 0 2px var(--glass), 0 0 0 3.5px var(--border); }
+.colorbtn::after { content: ""; position: absolute; right: -3px; bottom: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--glass); border: 1px solid var(--border);
+  background-image: linear-gradient(45deg, transparent 40%, var(--text3) 40%, var(--text3) 60%, transparent 60%); }
+.slider { display: flex; align-items: center; gap: 6px; }
+.slider input { width: 92px; accent-color: var(--accent); }
+.slider .val { font: 11px ui-monospace, Menlo, monospace; color: var(--text3); width: 22px; }
+.tog { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: var(--text2); white-space: nowrap; }
+.tog i { width: 28px; height: 16px; border-radius: 999px; background: var(--tile); border: 1px solid var(--border); position: relative; display: block; }
+.tog i::after { content: ""; position: absolute; top: 1px; left: 1px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: left .12s; }
+.tog.on i { background: var(--accent); border-color: var(--accent); }
+.tog.on i::after { left: 13px; }
+.stepper { display: inline-flex; align-items: center; background: var(--tile); border-radius: 7px; height: 26px; }
+.stepper button { border: 0; background: transparent; width: 22px; height: 26px; cursor: pointer; color: var(--text2); }
+.stepper span { min-width: 22px; text-align: center; font: 12px ui-monospace, Menlo, monospace; }
+.select { height: 24px; border-radius: 7px; background: var(--tile); border: 0; padding: 0 8px; font-size: 12px; color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.optnew { font-size: 10px; color: #29c76e; border: 1px solid rgba(41,199,110,.4); border-radius: 4px; padding: 0 4px; margin-left: -2px; }
+
+/* ---------- Popovers ---------- */
+.pop { position: absolute; background: var(--pop); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 18px 50px rgba(0,0,0,.45); padding: 12px; }
+.pop h5 { margin: 0 0 8px; font-size: 11.5px; color: var(--text3); font-weight: 600; }
+.swatches { display: grid; grid-template-columns: repeat(5, 26px); gap: 8px; }
+.sw { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0,0,0,.2); cursor: pointer; padding: 0; }
+.sw.on { box-shadow: 0 0 0 2px var(--pop), 0 0 0 4px var(--text); }
+.poprow { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.menu { padding: 5px; min-width: 230px; }
+.menu .mi { display: flex; align-items: center; gap: 9px; padding: 6px 9px; border-radius: 7px; font-size: 13px; cursor: default; }
+.menu .mi:hover, .menu .mi.hl { background: var(--accent); color: #fff; }
+.menu .mi .k { margin-left: auto; color: var(--text3); font-size: 12px; }
+.menu .mi:hover .k, .menu .mi.hl .k { color: rgba(255,255,255,.8); }
+.menu .ms { height: 1px; background: var(--border); margin: 4px 6px; }
+.tip { position: absolute; background: rgba(0,0,0,.8); color: #fff; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none; }
+
+/* ---------- Compare screen ---------- */
+.cmp { position: absolute; inset: 0; padding: 40px 54px; overflow: auto; }
+.cmp h4 { margin: 0 0 10px; font-size: 13px; color: #fff; display: flex; gap: 10px; align-items: baseline; }
+body.light .cmp h4 { color: #141414; }
+.cmp h4 span { font-weight: 400; color: rgba(255,255,255,.7); font-size: 12px; }
+body.light .cmp h4 span { color: #474747; }
+.cmp .block { margin-bottom: 30px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin-top: 8px; }
+.legend div { background: var(--glass); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--text2); }
+.legend b { color: var(--text); display: block; margin-bottom: 3px; font-size: 12.5px; }
+
+/* ---------- Pin screen ---------- */
+.win { position: absolute; border-radius: 10px; background: var(--app); box-shadow: 0 14px 40px rgba(0,0,0,.3); overflow: hidden; }
+.win .tb { height: 30px; background: var(--app2); border-bottom: 1px solid var(--appLine); }
+.code { padding: 14px 18px; font: 12.5px/1.7 ui-monospace, Menlo, monospace; color: var(--appText2); }
+.code b { color: #c792ea; font-weight: 400; } .code i { color: #82aaff; font-style: normal; } .code u { color: #c3e88d; text-decoration: none; }
+.pinned { position: absolute; border-radius: 4px; box-shadow: 0 16px 44px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.15); overflow: hidden; }
+.pinned.hover { box-shadow: 0 16px 44px rgba(0,0,0,.5), 0 0 0 2px var(--accent); }
+.pinbar { position: absolute; display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; background: var(--glass); border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.pinbar .pct { font: 11.5px ui-monospace, Menlo, monospace; color: var(--text2); padding: 0 6px; }
+</style>
+</head>
+<body>
+<div class="stagebar">
+  <b>截图编辑器改版</b>
+  <span class="pill" data-screen="compare">现状 vs 方案</span>
+  <span class="pill" data-screen="rect">形状</span>
+  <span class="pill" data-screen="color">颜色面板</span>
+  <span class="pill" data-screen="arrow">箭头 / 直线</span>
+  <span class="pill" data-screen="pen">画笔 / 荧光笔</span>
+  <span class="pill" data-screen="text">文字</span>
+  <span class="pill" data-screen="counter">序号</span>
+  <span class="pill" data-screen="callout">标注</span>
+  <span class="pill" data-screen="mosaic">马赛克</span>
+  <span class="pill" data-screen="pin">贴图</span>
+  <span class="pill" data-screen="more">更多菜单</span>
+  <span class="sp"></span>
+  <span class="pill" id="newToggle">标出新增</span>
+  <span class="pill" id="themeToggle">浅色</span>
+</div>
+<div class="caption" id="caption"></div>
+
+<div class="desk" id="desk">
+  <!-- Editor: one shared canvas, the toolbar and options follow the current tool. -->
+  <div class="screen" id="s-editor">
+    <div class="app" id="app">
+      <div class="tb"><div class="dots"><i></i><i></i><i></i></div><div class="t">Typeflux Cloud · 账单与订单</div></div>
+      <div class="side"><div>概览</div><div class="on">订单</div><div>发票</div><div>团队成员</div><div>API 密钥</div><div>设置</div></div>
+      <div class="main">
+        <h3>订单 #TF-20261011-0832</h3>
+        <div class="muted">2026-10-11 09:32 · 已支付 · 专业版年付</div>
+        <div class="row" style="top:76px"><span class="k">收件人</span><span class="v" id="v-name">张小明</span></div>
+        <div class="row" style="top:110px"><span class="k">手机</span><span class="v" id="v-phone">138 0013 8000</span></div>
+        <div class="row" style="top:144px"><span class="k">邮箱</span><span class="v" id="v-email">xiaoming.zhang@example.com</span></div>
+        <div class="row" style="top:178px"><span class="k">地址</span><span class="v" id="v-addr">上海市浦东新区世纪大道 100 号 21 层</span></div>
+        <div class="row" style="top:212px"><span class="k">金额</span><span class="v" id="v-amt">¥ 698.00</span></div>
+        <div class="chart" id="chart"><div class="muted">本月用量（分钟）</div><div class="bars"><i style="height:40%"></i><i style="height:62%"></i><i style="height:48%"></i><i style="height:80%"></i><i style="height:55%"></i><i style="height:92%"></i><i style="height:70%"></i></div></div>
+        <div class="btnrow"><div class="abtn" id="btn-dl">下载发票</div><div class="abtn ghost" id="btn-refund">申请退款</div></div>
+      </div>
+    </div>
+    <div class="region" id="region"></div>
+    <div id="mosaics"></div>
+    <svg class="anno" id="anno" width="1180" height="720"></svg>
+    <div class="tbwrap" id="tbwrap"></div>
+    <div id="pops"></div>
+  </div>
+
+  <div class="screen" id="s-compare"><div class="dim"></div><div class="cmp" id="cmp"></div></div>
+
+  <div class="screen" id="s-pin">
+    <div class="win" style="left:70px;top:60px;width:700px;height:560px">
+      <div class="tb"></div>
+      <div class="code"><b>func</b> <i>render</i>(_ display: ScreenSnapshot.Display, crop: CGRect) <b>throws</b> -&gt; CGImage {<br>
+      &nbsp;&nbsp;<b>let</b> base = <b>try</b> ScreenshotImageExporter.<i>crop</i>(display, to: crop)<br>
+      &nbsp;&nbsp;<b>guard</b> !annotations.isEmpty <b>else</b> { <b>return</b> base }<br>
+      &nbsp;&nbsp;<u>// 对照右侧贴着的设计图写布局</u><br>
+      &nbsp;&nbsp;<b>let</b> toolbar = ScreenshotEditorToolbar(state: state)<br>
+      &nbsp;&nbsp;<b>let</b> options = toolbar.<i>optionsBar</i>(for: tool)<br>&nbsp;&nbsp;…<br>}</div>
+    </div>
+    <div class="pinned hover" id="pinned" style="left:640px;top:150px;width:470px;height:286px"></div>
+    <div class="pinbar" style="left:640px;top:444px">
+      <button class="ib" title="缩小">−</button><span class="pct">80%</span><button class="ib" title="放大">+</button>
+      <span class="sep"></span>
+      <button class="ib" data-ic="opacity" title="透明度"></button>
+      <button class="ib on" data-ic="through" title="鼠标穿透（锁定）"></button>
+      <span class="sep"></span>
+      <button class="ib" data-ic="pen" title="继续标注"></button>
+      <button class="ib" data-ic="copyi" title="复制"></button>
+      <button class="ib" data-ic="save" title="保存"></button>
+      <button class="ib" data-ic="x" title="关闭"></button>
+    </div>
+    <div class="tip" style="left:640px;top:118px">双击或 esc 关闭 · 滚轮缩放 · ⌥ 滚轮调透明度 · 拖动移动</div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const P = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
+const ICONS = {
+  rect: `<rect x="3" y="4.5" width="14" height="11" rx="1.5"/>`,
+  ellipse: `<circle cx="10" cy="10" r="6.5"/>`,
+  line: `<path d="M4 16 16 4"/>`,
+  arrow: `<path d="M4 16 16 4M8 4h8v8"/>`,
+  pen: `<path d="M3.5 14c2-4 4-8 6-5s2 5 4 1 2-5 3-5"/>`,
+  highlighter: `<path d="m7 13 7.5-7.5a1.8 1.8 0 0 0-2.5-2.5L4.5 10.5 7 13Zm0 0-1.5 3h-3l2-2.5"/>`,
+  text: `<path d="M4 5.5V4h12v1.5M10 4v12M7.5 16h5"/>`,
+  counter: `<circle cx="10" cy="10" r="7"/><path d="M9 7.5 10.5 6.5V13.5"/>`,
+  callout: `<path d="M4 4.5h12a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-6l-3.5 3v-3H4a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1Z"/><path d="M6.5 8h7M6.5 10.5h4"/>`,
+  mosaic: `<path d="M3 3h4.6v4.6H3zM12.4 3H17v4.6h-4.6zM7.7 7.7h4.6v4.6H7.7zM3 12.4h4.6V17H3zM12.4 12.4H17V17h-4.6z" fill="currentColor" stroke="none"/>`,
+  scroll: `<rect x="4" y="2.5" width="12" height="15" rx="2"/><path d="M7.5 9.5 10 12l2.5-2.5M10 6v6"/>`,
+  pin: `<path d="M7 3h6M8 3v5l-2.5 3h9L12 8V3M10 11v6"/>`,
+  undo: `<path d="M7 7 4 10l3 3M4 10h8a4 4 0 0 1 0 8h-2"/>`,
+  redo: `<path d="m13 7 3 3-3 3M16 10H8a4 4 0 0 0 0 8h2"/>`,
+  ocr: `<path d="M3 7V4h3M14 4h3v3M17 13v3h-3M6 16H3v-3M7 8h6M10 8v5"/>`,
+  translate: `<path d="M3 5h8M7 3v2M9 5c-.6 3-2.8 5.6-5.5 6.5M5.5 7.5c1 1.8 2.6 3.2 4.5 4M11 17l3-7 3 7M12 15h4"/>`,
+  ai: `<path d="M10 2.5 11.6 8 17 10l-5.4 2L10 17.5 8.4 12 3 10l5.4-2L10 2.5Z"/>`,
+  more: `<circle cx="5" cy="10" r=".9" fill="currentColor"/><circle cx="10" cy="10" r=".9" fill="currentColor"/><circle cx="15" cy="10" r=".9" fill="currentColor"/>`,
+  x: `<path d="m5 5 10 10M15 5 5 15"/>`,
+  save: `<path d="M10 3v9M6.5 8.5 10 12l3.5-3.5M4 14v2.5h12V14"/>`,
+  check: `<path d="m4.5 10.5 3.5 3.5 7.5-8"/>`,
+  grip: `<circle cx="7.5" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="7.5" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="7.5" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="15" r="1" fill="currentColor" stroke="none"/>`,
+  opacity: `<circle cx="10" cy="10" r="6.5"/><path d="M10 3.5v13A6.5 6.5 0 0 0 10 3.5Z" fill="currentColor"/>`,
+  through: `<path d="M5 3l10 6-4.5 1.2L8.3 15 5 3Z"/>`,
+  copyi: `<rect x="6.5" y="6.5" width="10" height="10" rx="1.5"/><path d="M13.5 4V3.5a1 1 0 0 0-1-1h-9a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1H4"/>`,
+  shield: `<path d="M10 2.5 16 5v5c0 3.5-2.6 6.3-6 7.5-3.4-1.2-6-4-6-7.5V5l6-2.5Z"/><path d="m7.5 10 2 2 3.5-4"/>`,
+  folder: `<path d="M3 6a1 1 0 0 1 1-1h4l1.5 1.5H16a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6Z"/>`,
+  gear: `<circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6 15 15M5 15l1.4-1.4M13.6 6.4 15 5"/>`,
+  eyedrop: `<path d="m11.5 5 3.5 3.5M13 3.5a2 2 0 0 1 3 3L8 14.5H5.5V12L13.5 4"/>`,
+  dock: `<rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 12.5h14"/>`,
+};
+const ic = (n, size = 16) => `<svg width="${size}" height="${size}" viewBox="0 0 20 20" ${P}>${ICONS[n]}</svg>`;
+
+const COLORS = { red: '#ff4d4f', orange: '#ff8a1f', yellow: '#ffb020', green: '#29c76e', teal: '#1fc7c1',
+  blue: '#2f8cff', purple: '#8c5cff', pink: '#ff4fa3', white: '#ffffff', black: '#1d1d1f' };
+const COLOR_NAMES = { red: '红', orange: '橙', yellow: '黄', green: '绿', teal: '青', blue: '蓝', purple: '紫', pink: '粉', white: '白', black: '黑' };
+
+// Each tool remembers its own style (the proposal's "per-tool style memory").
+const S = {
+  tool: 'rect',
+  rect: { color: 'red', fill: 'stroke', dash: 'solid', width: 4, radius: 6 },
+  ellipse: { color: 'red', fill: 'stroke', dash: 'solid', width: 4 },
+  line: { color: 'red', dash: 'dashed', width: 3, caps: 'dot' },
+  arrow: { color: 'red', head: 'filled', path: 'curve', outline: true, width: 4 },
+  pen: { color: 'red', width: 4, smooth: true },
+  highlighter: { color: 'yellow', mode: 'straight', tip: 'square', width: 18 },
+  text: { color: 'red', font: 'system', style: 'background', size: 20 },
+  counter: { color: 'red', label: 'number', shape: 'circle', start: 1, size: 26 },
+  callout: { color: 'red', anchor: 'dot', style: 'background', size: 15 },
+  mosaic: { shape: 'rect', scope: 'text', effect: 'pixelate', strength: 1 },
+  recent: ['blue', 'green', 'purple'],
+};
+
+const TOOLS = [
+  ['rect', '矩形', 'R'], ['ellipse', '椭圆', 'O'], ['line', '直线', 'L', true], ['arrow', '箭头', 'A'], ['pen', '画笔', 'P'],
+  ['highlighter', '荧光笔', 'H'], ['text', '文字', 'T'], ['counter', '序号', 'N'], ['callout', '标注', 'C', true], ['mosaic', '马赛克', 'M'],
+];
+const REGION = { x: 320, y: 112, w: 690, h: 420 };
+const SCREEN_TOOL = { rect: 'rect', color: 'rect', arrow: 'arrow', pen: 'pen', text: 'text', counter: 'counter', callout: 'callout', mosaic: 'mosaic', more: 'counter' };
+const CAPTIONS = {
+  compare: '<b>工具栏总览</b>：主工具栏多了「直线」「标注」「贴图」和 ⋯ 菜单，取字 / 翻译收成图标；第二行从「5 色 + 3 档粗细」变成按工具定制的选项，并且每个工具记住自己的样式。',
+  rect: '<b>形状</b>：描边 / 半透明填充 / 实心三种填充，实线 / 虚线，连续粗细，矩形可调圆角。点工具栏切换工具，第二行跟着变；选中已画的标注时，改选项直接作用于它。',
+  color: '<b>颜色面板</b>：第二行只留一个色点，点开是 10 个常用色 + 最近使用 + 自定义 + 取色器（复用框选时的放大镜）+ 不透明度。数字键 1–0 直接换色。',
+  arrow: '<b>箭头 / 直线</b>：箭头三种头部（线形 / 实心 / 双向）、三种路径（直线 / 弧线 / 折线，弧线和折线可拖中点），可加白色描边保证在任意底色上可见；直线支持虚线和圆点端点。',
+  pen: '<b>画笔 / 荧光笔</b>：画笔默认平滑抖动；荧光笔默认「直线」模式（按住拖动是一条水平/任意角度的直线，最常见的划重点），也可切回自由涂抹；方头更像真的荧光笔。',
+  text: '<b>文字</b>：字体（系统 / 圆体 / 衬线 / 等宽）、样式（纯文字 / 底色 / 描边）、连续字号。底色和描边保证文字在复杂背景上能看清。',
+  counter: '<b>序号</b>：数字或字母，圆形或带指向的气泡（拖出方向），起始值可调；删除中间一个后其余自动重排。',
+  callout: '<b>标注（新增）</b>：一个文字框加一条指向线——先在目标处按下，拖到放文字的位置松开，直接输入。指向端可选圆点 / 箭头 / 无；两端都能单独拖动。',
+  mosaic: '<b>马赛克</b>：新增「椭圆」形状和「仅文字」范围：框住一块区域，只把里面识别到的文字打码，按钮、图标、图表保持清晰（本机 OCR，复用敏感信息检测已有的文字框）。',
+  pin: '<b>贴图（新增）</b>：编辑完按 F 或点图钉，截图变成一个置顶的浮窗贴在屏幕上，对照着写代码、填表。可缩放、调透明度、鼠标穿透，随时回到编辑。',
+  more: '<b>更多菜单</b>：低频动作收进 ⋯，主工具栏保持一行；保存仍在主栏。',
+};
+
+function seg(key, items, cur, title) {
+  return `<span class="seg" ${title ? `title="${title}"` : ''}>${items.map(([v, label, tip]) =>
+    `<button class="${cur === v ? 'on' : ''}" data-set="${key}" data-val="${v}" ${tip ? `title="${tip}"` : ''}>${label}</button>`).join('')}</span>`;
+}
+function slider(key, min, max, val, cap) {
+  return `<span class="slider">${cap ? `<span class="cap">${cap}</span>` : ''}<input type="range" min="${min}" max="${max}" value="${val}" data-range="${key}"><span class="val">${val}</span></span>`;
+}
+const colorBtn = c => `<button class="colorbtn" style="background:${COLORS[c]}" data-pop="color" title="颜色"></button>`;
+const tog = (key, on, label) => `<span class="tog ${on ? 'on' : ''}" data-tog="${key}"><i></i>${label}</span>`;
+const SVGI = (inner, w = 18) => `<svg width="${w}" height="14" viewBox="0 0 ${w} 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+const NEW = '<span class="optnew">新</span>';
+
+function optionsBar() {
+  const t = S.tool, o = S[t];
+  const sep = '<span class="sep"></span>';
+  switch (t) {
+    case 'rect': case 'ellipse':
+      return colorBtn(o.color) + sep +
+        seg('fill', [['stroke', SVGI('<rect x="3" y="2" width="12" height="10" rx="2"/>'), '描边'], ['soft', SVGI('<rect x="3" y="2" width="12" height="10" rx="2" fill="currentColor" fill-opacity=".35"/>'), '半透明填充'], ['solid', SVGI('<rect x="3" y="2" width="12" height="10" rx="2" fill="currentColor"/>'), '实心']], o.fill) + NEW +
+        seg('dash', [['solid', SVGI('<path d="M2 7h14"/>'), '实线'], ['dashed', SVGI('<path d="M2 7h3M8 7h3M14 7h2"/>'), '虚线']], o.dash) + NEW + sep +
+        slider('width', 1, 16, o.width, '粗细') + (t === 'rect' ? slider('radius', 0, 24, o.radius, '圆角') + NEW : '');
+    case 'line':
+      return colorBtn(o.color) + sep +
+        seg('dash', [['solid', SVGI('<path d="M2 7h14"/>'), '实线'], ['dashed', SVGI('<path d="M2 7h3M8 7h3M14 7h2"/>'), '虚线']], o.dash) +
+        seg('caps', [['none', SVGI('<path d="M3 7h12"/>'), '无端点'], ['dot', SVGI('<path d="M5 7h8"/><circle cx="3.5" cy="7" r="2" fill="currentColor"/><circle cx="14.5" cy="7" r="2" fill="currentColor"/>'), '圆点端点']], o.caps) + sep +
+        slider('width', 1, 16, o.width, '粗细');
+    case 'arrow':
+      return colorBtn(o.color) + sep +
+        seg('head', [['open', SVGI('<path d="M2 7h13M11 3l4 4-4 4"/>'), '线形'], ['filled', SVGI('<path d="M2 7h9"/><path d="M10 3l6 4-6 4Z" fill="currentColor"/>'), '实心'], ['double', SVGI('<path d="M4 7h10"/><path d="M5 3 1 7l4 4ZM13 3l4 4-4 4Z" fill="currentColor"/>'), '双向']], o.head) + NEW +
+        seg('path', [['straight', SVGI('<path d="M2 12 16 2"/>'), '直线'], ['curve', SVGI('<path d="M2 12C4 4 10 2 16 2"/>'), '弧线'], ['elbow', SVGI('<path d="M2 12h7V2h7"/>'), '折线']], o.path) + NEW +
+        tog('outline', o.outline, '白色描边') + NEW + sep + slider('width', 1, 16, o.width, '粗细');
+    case 'pen':
+      return colorBtn(o.color) + sep + slider('width', 1, 16, o.width, '粗细') + sep +
+        seg('smooth', [[true, '平滑'], [false, '原样']], o.smooth) + NEW;
+    case 'highlighter':
+      return colorBtn(o.color) + sep +
+        seg('mode', [['straight', '直线'], ['free', '自由']], o.mode) + NEW +
+        seg('tip', [['square', '方头'], ['round', '圆头']], o.tip) + NEW + sep + slider('width', 8, 36, o.width, '粗细');
+    case 'text':
+      return colorBtn(o.color) + sep +
+        `<span class="select" data-cycle="font">${{ system: '系统字体', rounded: '圆体', serif: '衬线', mono: '等宽' }[o.font]} <span style="opacity:.6">⌄</span></span>` + NEW +
+        seg('style', [['plain', 'Aa', '纯文字'], ['background', '<span style="background:currentColor;border-radius:3px;padding:0 3px"><span style="color:var(--glass)">Aa</span></span>', '底色'], ['outline', '<span style="-webkit-text-stroke:1px currentColor;color:var(--glass);font-weight:800">Aa</span>', '描边']], o.style) + NEW + sep +
+        slider('size', 10, 64, o.size, '字号');
+    case 'counter':
+      return colorBtn(o.color) + sep +
+        seg('label', [['number', '1 2 3'], ['letter', 'A B C']], o.label) + NEW +
+        seg('shape', [['circle', SVGI('<circle cx="9" cy="7" r="5.5" fill="currentColor"/>'), '圆形'], ['tag', SVGI('<path d="M3.5 7a5.5 5.5 0 0 1 9.5-3.8L16.5 7 13 10.8A5.5 5.5 0 0 1 3.5 7Z" fill="currentColor"/>'), '气泡（拖出指向）']], o.shape) + NEW +
+        `<span class="cap">起始</span><span class="stepper"><button data-step="-1">−</button><span>${o.label === 'letter' ? String.fromCharCode(64 + o.start) : o.start}</span><button data-step="1">+</button></span>` + NEW + sep +
+        slider('size', 18, 44, o.size, '大小');
+    case 'callout':
+      return colorBtn(o.color) + sep +
+        `<span class="cap">指向</span>` + seg('anchor', [['dot', SVGI('<path d="M5 7h11"/><circle cx="3.5" cy="7" r="2.2" fill="currentColor"/>'), '圆点'], ['arrow', SVGI('<path d="M4 7h12"/><path d="M6 3 1.5 7 6 11Z" fill="currentColor"/>'), '箭头'], ['none', SVGI('<path d="M2 7h14"/>'), '无']], o.anchor) +
+        seg('style', [['background', '底色'], ['outline', '描边框'], ['plain', '纯文字']], o.style) + sep + slider('size', 11, 32, o.size, '字号');
+    case 'mosaic':
+      return seg('shape', [['rect', SVGI('<rect x="3" y="2.5" width="12" height="9" rx="1" stroke-dasharray="2 2"/>'), '框选'], ['ellipse', SVGI('<ellipse cx="9" cy="7" rx="6.5" ry="5" stroke-dasharray="2 2"/>'), '椭圆'], ['brush', SVGI('<path d="M3 10c3-6 6 2 12-5" stroke-width="3"/>'), '涂抹']], S.mosaic.shape) +
+        `<span class="cap">范围</span>` + seg('scope', [['all', '全部'], ['text', '仅文字']], S.mosaic.scope) + NEW + '<span class="sep"></span>' +
+        seg('effect', [['pixelate', '像素化'], ['blur', '模糊'], ['solid', '纯色']], S.mosaic.effect) + '<span class="sep"></span>' +
+        `<span class="cap">强度</span>` + seg('strength', [[0, '弱'], [1, '中'], [2, '强']], S.mosaic.strength);
+  }
+  return '';
+}
+
+function mainBar(variant = 'new') {
+  if (variant === 'old') {
+    const old = ['rect', 'ellipse', 'arrow', 'pen', 'highlighter', 'text', 'counter', 'mosaic'];
+    return `<div class="bar">${old.map((t, i) => `<button class="ib ${i === 0 ? 'on' : ''}">${ic(t)}</button>`).join('')}
+      <span class="sep"></span><button class="ib">${ic('scroll')}</button><span class="sep"></span>
+      <button class="ib">${ic('undo')}</button><button class="ib dis">${ic('redo')}</button><span class="sep"></span>
+      <button class="tb-label">${ic('ocr', 15)}取字</button><button class="tb-label">${ic('translate', 15)}翻译</button><button class="tb-label ai">${ic('ai', 15)}问 AI</button>
+      <span class="sep"></span><button class="ib">${ic('x')}</button><button class="ib">${ic('save')}</button>
+      <button class="copy">${ic('check', 13)}复制</button></div>`;
+  }
+  return `<div class="bar">${TOOLS.map(([t, name, key, isNew]) =>
+      `<button class="ib ${S.tool === t ? 'on' : ''} ${isNew ? 'new' : ''}" data-tool="${t}" title="${name}  ${key}">${ic(t)}</button>`).join('')}
+    <span class="sep"></span>
+    <button class="ib" title="滚动截图  S">${ic('scroll')}</button>
+    <button class="ib new" data-go="pin" title="贴到屏幕  F">${ic('pin')}</button>
+    <span class="sep"></span>
+    <button class="ib" title="撤销  ⌘Z">${ic('undo')}</button><button class="ib dis" title="重做  ⇧⌘Z">${ic('redo')}</button>
+    <span class="sep"></span>
+    <button class="ib" title="取字">${ic('ocr')}</button><button class="ib" title="翻译">${ic('translate')}</button>
+    <button class="tb-label ai" title="问 AI">${ic('ai', 15)}问 AI</button>
+    <span class="sep"></span>
+    <button class="ib" title="保存  ⌘S">${ic('save')}</button>
+    <button class="ib new" data-pop="more" title="更多">${ic('more')}</button>
+    <span class="sep"></span>
+    <button class="ib" title="取消  esc">${ic('x')}</button>
+    <button class="copy" title="复制  ↩">${ic('check', 13)}复制</button>
+    <span class="grip new" title="拖动工具栏">${ic('grip', 14)}</span></div>`;
+}
+
+// ---------- Canvas: what the current tool's options look like on the screenshot ----------
+const R = REGION;
+function dashFor(o) { return o.dash === 'dashed' ? `stroke-dasharray="${o.width * 2.6} ${o.width * 1.8}"` : ''; }
+function arrowHead(x, y, angle, o, color) {
+  const L = Math.max(14, o.width * 4), W = L * 0.62;
+  const a = angle, p1 = [x - L * Math.cos(a) + W / 2 * Math.sin(a), y - L * Math.sin(a) - W / 2 * Math.cos(a)],
+    p2 = [x - L * Math.cos(a) - W / 2 * Math.sin(a), y - L * Math.sin(a) + W / 2 * Math.cos(a)];
+  if (o.head === 'open') return `<path d="M${p1} L${x},${y} L${p2}" fill="none" stroke="${color}" stroke-width="${o.width}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  return `<path d="M${p1} L${x},${y} L${p2} Z" fill="${color}" stroke="${color}" stroke-width="1" stroke-linejoin="round"/>`;
+}
+function textEl(x, y, str, o, color, anchor = 'start') {
+  const fam = { system: '-apple-system, "PingFang SC", sans-serif', rounded: '"SF Pro Rounded", "Hiragino Maru Gothic ProN", "PingFang SC", sans-serif',
+    serif: '"Songti SC", "New York", Georgia, serif', mono: 'ui-monospace, Menlo, monospace' }[o.font || 'system'];
+  const size = o.size;
+  const w = measure(str, size, fam), h = size * 1.35, pad = size * 0.38;
+  const left = anchor === 'middle' ? x - w / 2 : x;
+  let out = '';
+  if (o.style === 'background') out += `<rect x="${left - pad}" y="${y - h / 2 - pad * .55}" width="${w + pad * 2}" height="${h + pad * 1.1}" rx="${size * .3}" fill="${color}"/>`;
+  if (o.style === 'outline' && o.box) out += `<rect x="${left - pad}" y="${y - h / 2 - pad * .55}" width="${w + pad * 2}" height="${h + pad * 1.1}" rx="${size * .3}" fill="rgba(0,0,0,.55)" stroke="${color}" stroke-width="2"/>`;
+  const fill = o.style === 'background' ? contrast(color) : (o.style === 'outline' && !o.box ? '#fff' : (o.style === 'outline' ? '#fff' : color));
+  const stroke = o.style === 'outline' && !o.box ? `stroke="${color}" stroke-width="${Math.max(2, size / 7)}" paint-order="stroke" stroke-linejoin="round"` : '';
+  out += `<text x="${left}" y="${y}" dominant-baseline="central" font-family='${fam}' font-weight="700" font-size="${size}" fill="${fill}" ${stroke}>${str}</text>`;
+  return { svg: out, w: w + pad * 2, h: h + pad * 1.1, left: left - pad, top: y - h / 2 - pad * .55 };
+}
+const ctx = document.createElement('canvas').getContext('2d');
+function measure(str, size, fam) { ctx.font = `700 ${size}px ${fam}`; return ctx.measureText(str).width; }
+function contrast(hex) { return ['#ffffff', '#ffb020', '#1fc7c1'].includes(hex) ? '#141414' : '#ffffff'; }
+
+// Boxes of the captured app's content, in desk coordinates, so the demo marks land on it.
+function B(id) {
+  const d = $('#desk').getBoundingClientRect(), r = document.getElementById(id).getBoundingClientRect();
+  const x = r.left - d.left, y = r.top - d.top;
+  return { x, y, w: r.width, h: r.height, r: x + r.width, b: y + r.height, cx: x + r.width / 2, cy: y + r.height / 2 };
+}
+function canvas() {
+  const t = S.tool, o = S[t], c = o.color ? COLORS[o.color] : null;
+  const name = B('v-name'), phone = B('v-phone'), email = B('v-email'), addr = B('v-addr'), amt = B('v-amt'),
+    dl = B('btn-dl'), refund = B('btn-refund'), chart = B('chart');
+  let g = '';
+  switch (t) {
+    case 'rect': case 'ellipse': {
+      const fill = o.fill === 'stroke' ? 'none' : c, op = o.fill === 'soft' ? 0.28 : 1;
+      const rx = t === 'rect' ? o.radius : 0;
+      const shape = (x, y, w, h) => t === 'rect'
+        ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}" fill-opacity="${op}" stroke="${c}" stroke-width="${o.width}" ${dashFor(o)}/>`
+        : `<ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 2}" ry="${h / 2}" fill="${fill}" fill-opacity="${op}" stroke="${c}" stroke-width="${o.width}" ${dashFor(o)}/>`;
+      const p = t === 'rect' ? 6 : 14;
+      g += shape(email.x - p, email.y - p / 1.5, email.w + p * 2, email.h + p * 1.33);
+      g += shape(dl.x - p, dl.y - p / 1.5, dl.w + p * 2, dl.h + p * 1.33);
+      g += selection(email.x - p, email.y - p / 1.5, email.w + p * 2, email.h + p * 1.33);
+      break;
+    }
+    case 'line': {
+      const y = amt.b + 14, x0 = amt.x, x1 = addr.r + 40;
+      const cap = o.caps === 'dot' ? `<circle cx="${x0}" cy="${y}" r="${o.width + 2.5}" fill="${c}"/><circle cx="${x1}" cy="${y}" r="${o.width + 2.5}" fill="${c}"/>` : '';
+      g += `<path d="M${x0} ${y} H${x1}" stroke="${c}" stroke-width="${o.width}" stroke-linecap="round" ${dashFor(o)}/>` + cap;
+      g += `<path d="M${dl.x - 14} ${dl.y} V${refund.b}" stroke="${c}" stroke-width="${o.width}" stroke-linecap="round" ${dashFor(o)}/>`;
+      break;
+    }
+    case 'arrow': {
+      const from = [dl.r + 110, dl.b + 70], to = [dl.r + 8, dl.cy];
+      const cp = [dl.r + 130, dl.cy - 10];
+      let endAngle, startAngle;
+      if (o.path === 'straight') { endAngle = Math.atan2(to[1] - from[1], to[0] - from[0]); startAngle = endAngle + Math.PI; }
+      else if (o.path === 'curve') { endAngle = Math.atan2(to[1] - cp[1], to[0] - cp[0]); startAngle = Math.atan2(from[1] - cp[1], from[0] - cp[0]); }
+      else { endAngle = Math.PI; startAngle = Math.PI / 2; }
+      const L = Math.max(14, o.width * 4) * 0.7;
+      const trim = (pt, a) => [pt[0] - L * Math.cos(a), pt[1] - L * Math.sin(a)];
+      const end = o.head === 'open' ? to : trim(to, endAngle);
+      const start = o.head === 'double' ? trim(from, startAngle) : from;
+      const dd = o.path === 'straight' ? `M${start} L${end}` : o.path === 'curve' ? `M${start} Q${cp} ${end}` : `M${start} L${from[0]},${to[1]} L${end}`;
+      const body = (col, extra) => `<path d="${dd}" fill="none" stroke="${col}" stroke-width="${o.width + extra}" stroke-linecap="round" stroke-linejoin="round"/>` +
+        arrowHeadOutlined(to, endAngle, o, col, extra) + (o.head === 'double' ? arrowHeadOutlined(from, startAngle, o, col, extra) : '');
+      if (o.outline) g += body('#fff', 3);
+      g += body(c, 0);
+      const handle = (x, y) => `<circle cx="${x}" cy="${y}" r="5" fill="#fff" stroke="${COLORS.blue}" stroke-width="1.5"/>`;
+      if (o.path === 'curve') g += handle((from[0] + 2 * cp[0] + to[0]) / 4, (from[1] + 2 * cp[1] + to[1]) / 4);
+      if (o.path === 'elbow') g += handle(from[0], to[1]);
+      g += handle(...from) + handle(...to);
+      break;
+    }
+    case 'pen': {
+      const x0 = email.x - 14, x1 = email.r + 16, y0 = email.y - 8, y1 = email.b + 8, mx = (x0 + x1) / 2;
+      const smooth = `M${x0 + 20} ${y0} C ${mx - 40} ${y0 - 8}, ${mx + 60} ${y0 - 8}, ${x1 - 10} ${y0 + 2} S ${x1 + 10} ${y1 - 6}, ${x1 - 30} ${y1 + 2} S ${x0 + 20} ${y1 + 6}, ${x0} ${y1 - 8} S ${x0 + 4} ${y0 + 2}, ${x0 + 40} ${y0 - 4}`;
+      let raw = '', seed = 7;
+      const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280 - .5) * 5;
+      for (let i = 0; i <= 40; i++) {
+        const a = -Math.PI / 2 - 0.4 + i / 40 * Math.PI * 2.15;
+        raw += `${i ? 'L' : 'M'}${mx + Math.cos(a) * (x1 - x0) / 2 + rnd()},${(y0 + y1) / 2 + Math.sin(a) * (y1 - y0) / 2 + rnd()} `;
+      }
+      g += `<path d="${o.smooth ? smooth : raw}" fill="none" stroke="${c}" stroke-width="${o.width}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      break;
+    }
+    case 'highlighter': {
+      const cap = o.tip === 'square' ? 'butt' : 'round';
+      if (o.mode === 'straight') g += `<path d="M${addr.x - 2} ${addr.cy} H${addr.r + 2}" stroke="${c}" stroke-opacity=".42" stroke-width="${o.width}" stroke-linecap="${cap}"/>`;
+      else g += `<path d="M${addr.x} ${addr.cy + 3} C ${addr.x + 50} ${addr.cy - 6}, ${addr.x + 100} ${addr.cy + 8}, ${addr.cx + 20} ${addr.cy - 2} S ${addr.r - 30} ${addr.cy + 6}, ${addr.r + 4} ${addr.cy - 3}" fill="none" stroke="${c}" stroke-opacity=".42" stroke-width="${o.width}" stroke-linecap="${cap}" stroke-linejoin="round"/>`;
+      g += `<path d="M${amt.x - 2} ${amt.cy} H${amt.r + 2}" stroke="${c}" stroke-opacity=".42" stroke-width="${o.width}" stroke-linecap="${cap}"/>`;
+      break;
+    }
+    case 'text': {
+      const a = textEl(amt.r + 24, amt.cy, '已核对 ✓', o, c), b = textEl(chart.x + 150, chart.y + 22, '峰值在周六', o, c);
+      g += a.svg + b.svg + selection(a.left, a.top, a.w, a.h);
+      break;
+    }
+    case 'counter': {
+      const kx = name.x - 22;
+      const pts = [[kx, name.cy, 0], [kx, email.cy, 0], [kx, addr.cy, 0], [dl.r + 22, dl.cy, Math.PI]];
+      pts.forEach(([x, y, dir], i) => {
+        const n = S.counter.start + i, label = o.label === 'letter' ? String.fromCharCode(64 + Math.min(n, 26)) : String(n), r = o.size / 2;
+        if (o.shape === 'tag') {
+          const tip = [x + Math.cos(dir) * r * 1.75, y + Math.sin(dir) * r * 1.75];
+          const a1 = dir + 0.8, a2 = dir - 0.8;
+          g += `<path d="M${x + Math.cos(a1) * r},${y + Math.sin(a1) * r} L${tip} L${x + Math.cos(a2) * r},${y + Math.sin(a2) * r} Z" fill="${c}"/>`;
+        }
+        g += `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="rgba(0,0,0,.25)" stroke-width="1"/>
+          <text x="${x}" y="${y + 0.5}" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="${o.size * .54}" fill="${contrast(c)}">${label}</text>`;
+      });
+      break;
+    }
+    case 'callout': {
+      const handle = (x, y) => `<circle cx="${x}" cy="${y}" r="5" fill="#fff" stroke="${COLORS.blue}" stroke-width="1.5"/>`;
+      const one = (anchor, bx, by, str, from) => {
+        const box = textEl(bx, by, str, { ...o, box: true }, c);
+        const ex = box.left + box.w / 2, ey = from === 'bottom' ? box.top + box.h : box.top;
+        let s = `<path d="M${ex},${ey} L${anchor}" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>`;
+        if (o.anchor === 'dot') s += `<circle cx="${anchor[0]}" cy="${anchor[1]}" r="5" fill="${c}"/>`;
+        if (o.anchor === 'arrow') s += arrowHead(anchor[0], anchor[1], Math.atan2(anchor[1] - ey, anchor[0] - ex), { head: 'filled', width: 3 }, c);
+        return { svg: s + box.svg, box };
+      };
+      const a = one([addr.r - 30, addr.y + 2], addr.r + 10, name.y - 6, '地址请改成公司', 'bottom');
+      const b = one([refund.r - 6, refund.cy], refund.r + 40, refund.b + 46, '这个按钮先隐藏', 'top');
+      g += a.svg + b.svg + selection(a.box.left, a.box.top, a.box.w, a.box.h) + handle(addr.r - 30, addr.y + 2);
+      break;
+    }
+    case 'mosaic': {
+      const m = mosaicArea();
+      if (S.mosaic.shape === 'ellipse') g += `<ellipse cx="${m.x + m.w / 2}" cy="${m.y + m.h / 2}" rx="${m.w / 2}" ry="${m.h / 2}" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="5 4"/>`;
+      if (S.mosaic.shape === 'rect') g += `<rect x="${m.x}" y="${m.y}" width="${m.w}" height="${m.h}" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="5 4"/>`;
+      if (S.mosaic.scope === 'text' && S.mosaic.shape !== 'brush') {
+        const n = mosaicRuns().length;
+        g += `<text x="${m.x + m.w}" y="${m.y - 8}" text-anchor="end" font-size="11.5" fill="#fff" style="paint-order:stroke" stroke="rgba(0,0,0,.6)" stroke-width="3">识别到 ${n} 段文字 · 已打码</text>`;
+      }
+      break;
+    }
+  }
+  $('#anno').innerHTML = g;
+  renderMosaics();
+}
+function arrowHeadOutlined(pt, a, o, col, extra) {
+  if (!extra) return arrowHead(pt[0], pt[1], a, o, col);
+  const ow = { ...o, width: o.width };
+  const head = arrowHead(pt[0], pt[1], a, ow, col);
+  return head.replace(/stroke-width="[^"]*"/, `stroke-width="${o.head === 'open' ? o.width + extra : 1 + extra * 1.6}"`);
+}
+function selection(x, y, w, h) {
+  const pts = [[x, y], [x + w / 2, y], [x + w, y], [x + w, y + h / 2], [x + w, y + h], [x + w / 2, y + h], [x, y + h], [x, y + h / 2]];
+  return `<rect x="${x - 4}" y="${y - 4}" width="${w + 8}" height="${h + 8}" fill="none" stroke="${COLORS.blue}" stroke-width="1" stroke-dasharray="3 3"/>` +
+    pts.map(([px, py]) => `<rect x="${px - 3.5}" y="${py - 3.5}" width="7" height="7" rx="1.5" fill="#fff" stroke="${COLORS.blue}" stroke-width="1.2"/>`).join('');
+}
+
+function mosaicStyle(effect, strength) {
+  const block = [6, 10, 15][strength];
+  if (effect === 'blur') return `backdrop-filter: blur(${[3, 6, 10][strength]}px); -webkit-backdrop-filter: blur(${[3, 6, 10][strength]}px); background: rgba(128,128,140,.08);`;
+  if (effect === 'solid') return 'background: #3a3b42;';
+  return `backdrop-filter: blur(${block / 2.2}px) saturate(.6); -webkit-backdrop-filter: blur(${block / 2.2}px) saturate(.6);
+    background-image: linear-gradient(rgba(0,0,0,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.18) 1px, transparent 1px),
+    repeating-conic-gradient(rgba(255,255,255,.07) 0 25%, rgba(0,0,0,.07) 0 50%); background-size: ${block}px ${block}px, ${block}px ${block}px, ${block * 2}px ${block * 2}px;`;
+}
+// The mosaic covers the contact rows; "text only" pixelates just the recognized text in it.
+function mosaicArea() {
+  const phone = B('v-phone'), amt = B('v-amt');
+  return { x: phone.x - 24, y: phone.y - 12, w: 360, h: amt.b - phone.y + 24 };
+}
+function mosaicRuns() {
+  const m = mosaicArea(), { shape } = S.mosaic;
+  const inEllipse = (x, y) => ((x - (m.x + m.w / 2)) / (m.w / 2)) ** 2 + ((y - (m.y + m.h / 2)) / (m.h / 2)) ** 2 <= 1;
+  return ['v-phone', 'v-email', 'v-addr', 'v-amt'].map(B).map(r => {
+    // A run is clipped to the drawn shape, as the editor clips to the mask.
+    const right = Math.min(r.r, m.x + m.w);
+    return { ...r, w: right - r.x, cx: (r.x + right) / 2 };
+  }).filter(r => r.w > 0 && (shape !== 'ellipse' || inEllipse(r.cx, r.cy)));
+}
+function renderMosaics() {
+  const box = $('#mosaics');
+  if (S.tool !== 'mosaic') { box.innerHTML = ''; return; }
+  const m = mosaicArea(), { shape, scope, effect, strength } = S.mosaic;
+  const style = mosaicStyle(effect, strength);
+  let html = '';
+  if (shape === 'brush') {
+    ['v-phone', 'v-email'].map(B).forEach(r => {
+      html += `<div class="mos" style="left:${r.x - 10}px;top:${r.y - 6}px;width:${r.w + 20}px;height:${r.h + 12}px;border-radius:${(r.h + 12) / 2}px;${style}"></div>`;
+    });
+  } else if (scope === 'all') {
+    html += `<div class="mos" style="left:${m.x}px;top:${m.y}px;width:${m.w}px;height:${m.h}px;${shape === 'ellipse' ? 'border-radius:50%;' : ''}${style}"></div>`;
+  } else {
+    mosaicRuns().forEach(r => {
+      html += `<div class="mos" style="left:${r.x - 3}px;top:${r.y - 2}px;width:${r.w + 6}px;height:${r.h + 4}px;border-radius:4px;${style}"></div>`;
+    });
+  }
+  box.innerHTML = html;
+}
+
+// ---------- Popovers ----------
+let pop = null;
+function popovers() {
+  const anchor = $('#tbwrap');
+  const top = anchor.offsetTop, left = anchor.offsetLeft;
+  if (pop === 'color') {
+    const o = S[S.tool];
+    return `<div class="pop" style="left:${left + 4}px;bottom:${720 - top + 6}px;width:236px">
+      <h5>颜色 <span style="font-weight:400">· 数字键 1–0</span></h5>
+      <div class="swatches">${Object.keys(COLORS).map((k, i) => `<button class="sw ${o.color === k ? 'on' : ''}" style="background:${COLORS[k]}" data-color="${k}" title="${COLOR_NAMES[k]}  ${(i + 1) % 10}"></button>`).join('')}</div>
+      <h5 style="margin-top:12px">最近使用</h5>
+      <div style="display:flex;gap:8px">${S.recent.map(k => `<button class="sw" style="background:${COLORS[k]};width:20px;height:20px" data-color="${k}"></button>`).join('')}
+        <button class="sw" style="width:20px;height:20px;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)" title="自定义颜色…"></button></div>
+      <div class="poprow"><span class="cap">不透明度</span><input type="range" min="20" max="100" value="100" style="width:104px;accent-color:var(--accent)"><span class="cap mono">100%</span></div>
+      <div class="poprow"><button class="select" style="flex:1;justify-content:center">${ic('eyedrop', 14)}从截图取色</button></div>
+    </div>`;
+  }
+  if (pop === 'more') {
+    const moreBtn = anchor.querySelector('[data-pop="more"]');
+    const x = left + moreBtn.offsetLeft - 190;
+    return `<div class="pop menu" style="left:${x}px;bottom:${720 - top + 6}px">
+      <div class="mi">${ic('folder', 15)}另存为…<span class="k">⇧⌘S</span></div>
+      <div class="mi">${ic('copyi', 15)}复制并保存<span class="k">⌥↩</span></div>
+      <div class="ms"></div>
+      <div class="mi hl">${ic('shield', 15)}显示敏感信息面板<span class="k">✓</span></div>
+      <div class="mi">${ic('dock', 15)}工具栏放到上方</div>
+      <div class="ms"></div>
+      <div class="mi">${ic('gear', 15)}截图设置…</div>
+    </div>`;
+  }
+  return '';
+}
+
+// ---------- Rendering ----------
+let screen = 'rect';
+function renderEditor() {
+  const r = $('#region');
+  r.style.cssText = `left:${R.x}px;top:${R.y}px;width:${R.w}px;height:${R.h}px`;
+  r.innerHTML = `<span class="size">${R.w * 2} × ${R.h * 2}</span>` +
+    [[0, 0], [50, 0], [100, 0], [100, 50], [100, 100], [50, 100], [0, 100], [0, 50]].map(([x, y]) => `<i class="h" style="left:${x}%;top:${y}%"></i>`).join('');
+  const w = $('#tbwrap');
+  w.style.left = (R.x + R.w - 760) + 'px';
+  w.style.top = (R.y + R.h + 10) + 'px';
+  w.innerHTML = mainBar() + `<div class="opts">${optionsBar()}</div>`;
+  canvas();
+  $('#pops').innerHTML = popovers();
+  bind();
+}
+function renderCompare() {
+  const saved = S.tool; S.tool = 'arrow';
+  const arrowOpts = optionsBar(); S.tool = 'text'; const textOpts = optionsBar(); S.tool = saved;
+  $('#cmp').innerHTML = `
+    <div class="block"><h4>现在 <span>8 个工具 · 第二行所有工具相同：5 个颜色 + 3 档粗细</span></h4>${mainBar('old')}
+      <div class="opts"><span class="cap">颜色</span>${['red', 'yellow', 'green', 'blue', 'white'].map((k, i) => `<span class="sw" style="display:inline-block;width:16px;height:16px;background:${COLORS[k]};${i === 0 ? 'box-shadow:0 0 0 2px var(--glass),0 0 0 3.5px var(--text)' : ''}"></span>`).join('')}
+      <span class="sep"></span><span class="cap">粗细</span>${[2, 4, 6].map(h => `<span style="display:inline-block;width:12px;height:${h}px;border-radius:3px;background:var(--text3);margin:0 5px"></span>`).join('')}</div></div>
+    <div class="block"><h4>方案 <span>10 个工具 + 贴图 + ⋯；取字 / 翻译收成图标；绿点 = 新增</span></h4>${mainBar()}
+      <div class="opts">${arrowOpts}</div><div class="opts">${textOpts}</div></div>
+    <div class="legend">
+      <div><b>每个工具一套选项</b>第二行按工具定制：形状有填充 / 虚线 / 圆角，箭头有头部 / 路径 / 描边，文字有字体 / 样式，序号有字母 / 起始值……</div>
+      <div><b>每个工具记住自己的样式</b>荧光笔默认黄、箭头默认红互不干扰；样式跨截图保存，下次打开还是上次的设置。</div>
+      <div><b>颜色、粗细不再受限</b>一个色点打开 10 色面板 + 最近使用 + 自定义 + 取色；粗细、字号、圆角都是连续滑块，<code>[</code> <code>]</code> 键微调。</div>
+      <div><b>新工具：直线、标注</b>直线用来划分、对齐；标注 = 文字框 + 指向线，是给截图写说明最常用的形式。</div>
+      <div><b>马赛克「仅文字」</b>框住一片区域只把文字打码，界面结构保持清晰，适合发给设计和客服的截图。</div>
+      <div><b>贴图 + 可拖动工具栏</b>截图可以钉在屏幕上对照；工具栏挡住内容时可以拖走，⋯ 里也能放到上方。</div>
+    </div>`;
+}
+function renderPin() {
+  const p = $('#pinned');
+  p.innerHTML = '';
+  // A scaled copy of the captured app stands in for the pinned screenshot.
+  const clone = $('#app').cloneNode(true);
+  clone.removeAttribute('id');
+  const k = 470 / R.w;
+  clone.style.cssText = `position:absolute;left:${-(R.x - 150) * k}px;top:${-(R.y - 70) * k}px;transform:scale(${k});transform-origin:0 0;box-shadow:none;border-radius:0`;
+  p.appendChild(clone);
+}
+function show(id) {
+  screen = id;
+  pop = id === 'color' ? 'color' : id === 'more' ? 'more' : null;
+  document.querySelectorAll('.pill[data-screen]').forEach(p => p.classList.toggle('on', p.dataset.screen === id));
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  if (id === 'compare') { $('#s-compare').classList.add('on'); renderCompare(); }
+  else if (id === 'pin') { $('#s-pin').classList.add('on'); renderPin(); }
+  else {
+    if (SCREEN_TOOL[id]) S.tool = SCREEN_TOOL[id];
+    $('#s-editor').classList.add('on'); renderEditor();
+  }
+  $('#caption').innerHTML = CAPTIONS[id] || CAPTIONS[S.tool] || '';
+  document.querySelectorAll('[data-ic]').forEach(b => b.innerHTML = ic(b.dataset.ic));
+  history.replaceState(null, '', '?' + new URLSearchParams({ ...Object.fromEntries(new URLSearchParams(location.search)), s: id }));
+}
+const TOOL_SCREEN = { rect: 'rect', ellipse: 'rect', line: 'arrow', arrow: 'arrow', pen: 'pen', highlighter: 'pen', text: 'text', counter: 'counter', callout: 'callout', mosaic: 'mosaic' };
+function bind() {
+  document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => {
+    S.tool = b.dataset.tool; pop = null;
+    screen = TOOL_SCREEN[S.tool];
+    document.querySelectorAll('.pill[data-screen]').forEach(p => p.classList.toggle('on', p.dataset.screen === screen));
+    $('#caption').innerHTML = CAPTIONS[screen];
+    renderEditor();
+  });
+  document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
+    const key = b.dataset.set, raw = b.dataset.val, o = S[S.tool];
+    o[key] = raw === 'true' ? true : raw === 'false' ? false : /^\d+$/.test(raw) ? Number(raw) : raw;
+    // Letters stop at Z.
+    if (S.tool === 'counter' && o.label === 'letter') o.start = Math.min(o.start, 26);
+    renderEditor();
+  });
+  document.querySelectorAll('[data-range]').forEach(r => r.oninput = () => {
+    S[S.tool][r.dataset.range] = Number(r.value);
+    r.nextElementSibling.textContent = r.value; canvas();
+  });
+  document.querySelectorAll('[data-tog]').forEach(t => t.onclick = () => { const o = S[S.tool]; o[t.dataset.tog] = !o[t.dataset.tog]; renderEditor(); });
+  document.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { const o = S.counter; o.start = Math.max(1, Math.min(o.label === 'letter' ? 26 : 99, o.start + Number(b.dataset.step))); renderEditor(); });
+  document.querySelectorAll('[data-cycle="font"]').forEach(b => b.onclick = () => { const f = ['system', 'rounded', 'serif', 'mono']; S.text.font = f[(f.indexOf(S.text.font) + 1) % f.length]; renderEditor(); });
+  document.querySelectorAll('[data-pop]').forEach(b => b.onclick = e => { e.stopPropagation(); pop = pop === b.dataset.pop ? null : b.dataset.pop; $('#pops').innerHTML = popovers(); bind(); });
+  document.querySelectorAll('[data-color]').forEach(b => b.onclick = () => {
+    const k = b.dataset.color, o = S[S.tool];
+    if (o.color && o.color !== k) S.recent = [o.color, ...S.recent.filter(x => x !== o.color && x !== k)].slice(0, 5);
+    o.color = k; renderEditor();
+  });
+  document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => show(b.dataset.go));
+}
+document.addEventListener('keydown', e => {
+  if (screen === 'compare' || screen === 'pin') return;
+  const t = TOOLS.find(([, , key]) => key.toLowerCase() === e.key.toLowerCase());
+  if (t && !e.metaKey) { S.tool = t[0]; pop = null; screen = TOOL_SCREEN[t[0]]; $('#caption').innerHTML = CAPTIONS[screen]; renderEditor(); return; }
+  const o = S[S.tool];
+  if ((e.key === '[' || e.key === ']') && ('width' in o || 'size' in o)) {
+    const k = 'width' in o ? 'width' : 'size'; o[k] = Math.max(1, o[k] + (e.key === ']' ? 1 : -1)); renderEditor();
+  }
+  const n = '1234567890'.indexOf(e.key);
+  if (n >= 0 && o.color) { o.color = Object.keys(COLORS)[n]; renderEditor(); }
+  if (e.key === 'Escape') { pop = null; $('#pops').innerHTML = ''; }
+});
+$('#desk').addEventListener('click', e => { if (pop && !e.target.closest('.pop')) { pop = null; $('#pops').innerHTML = ''; } });
+document.querySelectorAll('.pill[data-screen]').forEach(p => p.onclick = () => show(p.dataset.screen));
+$('#themeToggle').onclick = () => { document.body.classList.toggle('light'); $('#themeToggle').classList.toggle('on'); };
+$('#newToggle').onclick = () => { document.body.classList.toggle('nonew'); $('#newToggle').classList.toggle('on', !document.body.classList.contains('nonew')); };
+
+const params = new URLSearchParams(location.search);
+if (params.get('light') === '1') { document.body.classList.add('light'); $('#themeToggle').classList.add('on'); }
+if (params.get('solo')) document.body.classList.add('solo');
+if (params.get('nonew') === '1') document.body.classList.add('nonew'); else $('#newToggle').classList.add('on');
+if (params.get('tool')) S.tool = params.get('tool');
+show(params.get('solo') || params.get('s') || 'compare');
+if (params.get('tool')) { S.tool = params.get('tool'); renderEditor(); $('#caption').innerHTML = CAPTIONS[TOOL_SCREEN[S.tool]]; }
+</script>
+</body>
+</html>
