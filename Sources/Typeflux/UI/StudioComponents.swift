@@ -864,6 +864,8 @@ struct StudioCard<Content: View>: View {
     var isHighlighted: Bool = false
     var isDimmed: Bool = false
     var texture: Texture = .standard
+    /// Suppress the surface and outline without changing content spacing.
+    var showsChrome: Bool = true
     let content: Content
 
     init(
@@ -872,6 +874,7 @@ struct StudioCard<Content: View>: View {
         isHighlighted: Bool = false,
         isDimmed: Bool = false,
         texture: Texture = .standard,
+        showsChrome: Bool = true,
         @ViewBuilder content: () -> Content
     ) {
         self.padding = padding
@@ -879,6 +882,7 @@ struct StudioCard<Content: View>: View {
         self.isHighlighted = isHighlighted
         self.isDimmed = isDimmed
         self.texture = texture
+        self.showsChrome = showsChrome
         self.content = content()
     }
 
@@ -889,25 +893,29 @@ struct StudioCard<Content: View>: View {
         .padding(padding)
         .background(
             ZStack {
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                    .fill(style.usesGlass ? StudioTheme.cardFill : AskClassic.card)
-                cardTextureOverlay
+                if showsChrome {
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                        .fill(style.usesGlass ? StudioTheme.cardFill : AskClassic.card)
+                    cardTextureOverlay
 
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                    .fill(selectionOverlay)
+                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                        .fill(selectionOverlay)
+                }
             }
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
                 .stroke(
-                    cardBorderColor,
+                    showsChrome ? cardBorderColor : .clear,
                     lineWidth: isHighlighted ? StudioTheme.BorderWidth.emphasis : (usesLightGlassCard ? 1 : 0.5)
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
         .shadow(
-            color: StudioTheme.shadow.opacity(!style.usesGlass || usesLightGlassCard || !showsShadow ? 0 : (isHighlighted ? 0.20 : 0.16)),
+            color: StudioTheme.shadow
+                .opacity(!showsChrome || !style
+                    .usesGlass || usesLightGlassCard || !showsShadow ? 0 : (isHighlighted ? 0.20 : 0.16)),
             radius: isHighlighted ? StudioTheme.Shadow.cardRadius + 2 : StudioTheme.Shadow.cardRadius,
             x: 0,
             y: isHighlighted ? StudioTheme.Shadow.cardY + 1 : StudioTheme.Shadow.cardY
@@ -915,9 +923,13 @@ struct StudioCard<Content: View>: View {
     }
 
     /// Light Liquid Glass: a flat white card with a 1px hairline and no shadow.
-    private var usesLightGlassCard: Bool { Self.usesLightGlassCard(glass: style.usesGlass, dark: colorScheme == .dark) }
+    private var usesLightGlassCard: Bool {
+        Self.usesLightGlassCard(glass: style.usesGlass, dark: colorScheme == .dark)
+    }
 
-    static func usesLightGlassCard(glass: Bool, dark: Bool) -> Bool { glass && !dark }
+    static func usesLightGlassCard(glass: Bool, dark: Bool) -> Bool {
+        glass && !dark
+    }
 
     private var selectionOverlay: Color {
         if isHighlighted {

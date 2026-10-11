@@ -293,6 +293,7 @@ private struct CloudServerMenuPicker: View {
 
 // swiftlint:disable:next type_body_length
 struct StudioView: View {
+    @Environment(\.colorScheme) private var colorScheme
     private struct ShortcutConfiguration {
         let title: String
         let subtitle: String
@@ -1888,7 +1889,7 @@ struct StudioView: View {
                 vocabularySearchControl
             }
 
-            StudioCard {
+            StudioCard(showsChrome: colorScheme == .dark) {
                 Group {
                     if filteredVocabularyEntries.isEmpty {
                         VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {

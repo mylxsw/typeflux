@@ -745,10 +745,17 @@ struct AskCapsuleButtonStyle: ButtonStyle {
         let kind: Kind
         var expands = false
         @Environment(\.isEnabled) private var isEnabled
+        @Environment(\.colorScheme) private var colorScheme
 
         /// Disabled buttons turn neutral grey rather than a faded accent, so they
         /// never read as a weaker version of the action they cannot perform.
-        private var lit: Bool { isEnabled && kind != .secondary }
+        private var lit: Bool {
+            isEnabled && kind != .secondary
+        }
+
+        private var solidPrimary: Bool {
+            colorScheme == .light && kind == .primary
+        }
 
         var body: some View {
             configuration.label
@@ -760,23 +767,29 @@ struct AskCapsuleButtonStyle: ButtonStyle {
                 .frame(maxWidth: expands ? .infinity : nil)
                 .frame(height: expands ? 36 : 30)
                 .background(fill, in: Capsule())
-                // A lit top edge on filled buttons, like the board's glass buttons.
+                // Dark filled buttons keep their glass highlight; light primary actions are solid.
                 .overlay {
-                    if lit {
+                    if lit, !solidPrimary {
                         Capsule().fill(LinearGradient(colors: [Color.white.opacity(0.18), .clear],
                                                       startPoint: .top, endPoint: .bottom))
                             .allowsHitTesting(false)
                     }
                 }
-                .overlay(Capsule().strokeBorder(lit ? Color.white.opacity(0.3)
-                                                    : (isEnabled ? AskTheme.border : AskTheme.separator),
-                                                lineWidth: lit ? 0.5 : 1))
-                .shadow(color: kind == .primary && isEnabled ? AskTheme.accent.opacity(0.4) : .clear, radius: 7, y: 3)
+                .overlay(Capsule().strokeBorder(borderColor, lineWidth: lit ? 0.5 : 1))
+                .shadow(color: kind == .primary && isEnabled && !solidPrimary ? AskTheme.accent.opacity(0.4) : .clear,
+                        radius: 7, y: 3)
                 .contentShape(Capsule())
                 .scaleEffect(configuration.isPressed ? 0.95 : 1)
                 .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
                 .opacity(configuration.isPressed ? 0.85 : 1)
                 .fixedSize(horizontal: !expands, vertical: true)
+        }
+
+        private var borderColor: Color {
+            if solidPrimary && isEnabled {
+                return .clear
+            }
+            return lit ? Color.white.opacity(0.3) : (isEnabled ? AskTheme.border : AskTheme.separator)
         }
 
         private var fill: Color {

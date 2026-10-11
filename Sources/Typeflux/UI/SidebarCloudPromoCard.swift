@@ -14,6 +14,8 @@ enum AskCloudPromo {
 /// What Typeflux Cloud adds, above the signed-out footer. Closing it keeps it
 /// away for `AskCloudPromo.quietPeriod`.
 struct AskCloudPromoCard: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var onSignIn: () -> Void
     var onDismiss: () -> Void
 
@@ -21,6 +23,7 @@ struct AskCloudPromoCard: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "cloud").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(colorScheme == .dark ? StudioTheme.textPrimary : StudioTheme.accent)
                     .accessibilityHidden(true)
                 Text(verbatim: "Typeflux Cloud").font(.system(size: 12.5, weight: .semibold))
                 Spacer(minLength: 4)
@@ -45,9 +48,16 @@ struct AskCloudPromoCard: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(LinearGradient(colors: [AskTheme.accent.opacity(0.16), Color.purple.opacity(0.1)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.separator, lineWidth: 0.5))
+        .background {
+            let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+            if colorScheme == .dark {
+                shape.fill(LinearGradient(colors: [AskTheme.accent.opacity(0.16), Color.purple.opacity(0.1)],
+                                          startPoint: .topLeading, endPoint: .bottomTrailing))
+            } else {
+                shape.fill(Color.white.opacity(0.70))
+            }
+        }
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .strokeBorder(colorScheme == .dark ? AskTheme.separator : StudioTheme.sidePanelStroke, lineWidth: 0.5))
     }
 }
