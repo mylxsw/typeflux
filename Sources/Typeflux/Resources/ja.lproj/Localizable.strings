@@ -4245,6 +4245,9 @@
 "screenshot.text.askAI" = "スクリーンショットのこの文字について：\n\n%@";
 "screenshot.text.meta" = "%d 行 · %@";
 "screenshot.text.source" = "この Mac で認識";
+"screenshot.text.organize" = "整理する";
+"screenshot.text.original" = "原文を表示";
+"screenshot.text.organize.empty" = "AI の整理結果が空です。再試行するか原文を表示してください。";
 "screenshot.translate.unavailable" = "翻訳にキーワードがありません。ランチャーのキーワード設定で追加してください";
 "screenshot.ask.attachmentName" = "スクリーンショット";
 "screenshot.ask.attachmentPart" = "スクリーンショット %d/%d";

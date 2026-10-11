@@ -4267,6 +4267,9 @@
 "screenshot.text.askAI" = "关于这段截图里的文字：\n\n%@";
 "screenshot.text.meta" = "%d 行 · %@";
 "screenshot.text.source" = "本机识别";
+"screenshot.text.organize" = "一键整理";
+"screenshot.text.original" = "显示原文";
+"screenshot.text.organize.empty" = "AI 未返回整理结果，请重试或显示原文。";
 "screenshot.translate.unavailable" = "翻译没有可用的关键词，请在启动器的关键词设置里添加";
 "screenshot.ask.attachmentName" = "截图";
 "screenshot.ask.attachmentPart" = "截图 %d/%d";

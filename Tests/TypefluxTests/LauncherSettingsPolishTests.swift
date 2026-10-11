@@ -414,16 +414,8 @@ struct LauncherSettingsPolishTests {
         try #require(find(id, in: window), "Missing accessibility element: \(id)")
     }
 
-    private func click(_ element: Element, in window: NSWindow) throws {
-        let frame = window.convertFromScreen(element.frame)
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: type, location: NSPoint(x: frame.midX, y: frame.midY),
-                                                        modifierFlags: [],
-                                                        timestamp: ProcessInfo.processInfo.systemUptime,
-                                                        windowNumber: window.windowNumber,
-                                                        context: nil, eventNumber: 0, clickCount: 1,
-                                                        pressure: type == .leftMouseDown ? 1 : 0))
-            NSApp.sendEvent(event)
-        }
+    private func click(_ element: Element, in _: NSWindow) throws {
+        // Use the rendered control's press action instead of entering AppKit's synchronous mouse tracking loop.
+        try SettingsBehaviorTestSupport.Element(object: element.object).press()
     }
 }
