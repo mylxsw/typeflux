@@ -251,7 +251,8 @@ struct AskLauncherSuggestions: View {
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay {
                 if highlighted {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(AskTheme.launcherSelectionEdge)
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5)
                 }
             }
             .contentShape(Rectangle())
@@ -296,7 +297,8 @@ struct AskLauncherSuggestions: View {
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.launcherChipEdge))
             .overlay {
                 if highlighted {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.launcherSelectionEdge)
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5)
                 }
             }
             .contentShape(Rectangle())

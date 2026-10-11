@@ -66,12 +66,22 @@ struct StudioLightPaletteTests {
         ]
         for (color, white, alpha) in checks {
             let value = resolve(color, dark: true)
-            #expect(abs(value.red - white) < 0.01 && abs(value.alpha - alpha) < 0.01, "\(value)")
+            // The legacy tokens use AppKit's calibrated colour space, whose
+            // channels change when converted to sRGB. Compare like spaces.
+            let expected = resolve(Color(nsColor: NSColor(calibratedWhite: white, alpha: alpha)), dark: true)
+            expectRGBA(value, expected)
         }
         let accent = resolve(StudioTheme.accent, dark: true)
-        #expect(abs(accent.blue - 1.0) < 0.01 && abs(accent.red - 0.09) < 0.02)
+        let originalAccent = Color(nsColor: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1, alpha: 1))
+        expectRGBA(accent, resolve(originalAccent, dark: true))
         let panel = resolve(StudioTheme.sidePanelFill, dark: true)
         #expect(abs(panel.red - 0.173) < 0.004 && abs(panel.blue - 0.204) < 0.004)
+    }
+
+    private func expectRGBA(_ value: RGBA, _ expected: RGBA, sourceLocation: SourceLocation = #_sourceLocation) {
+        #expect(abs(value.red - expected.red) < 0.002 && abs(value.green - expected.green) < 0.002
+            && abs(value.blue - expected.blue) < 0.002 && abs(value.alpha - expected.alpha) < 0.002,
+            "\(value) vs \(expected)", sourceLocation: sourceLocation)
     }
 
     @Test func rgbHelperDecodesHex() {

@@ -86,6 +86,7 @@ struct AskComposer: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var glassOverride
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.askWindowDrag) private var windowDrag
     @Environment(\.interfaceStyle) private var interfaceStyle
@@ -182,12 +183,23 @@ struct AskComposer: View {
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
     /// The launcher is the workspace composer summoned by a hotkey: the same
     /// controls and states on a glass card, so it sits on whatever window it floats over.
-    private var chrome: AskComposerChrome { .of(launcher: launcher, style: interfaceStyle) }
-    /// Nil for the opaque workspace card.
-    private var glass: AskGlassMaterial? {
-        chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
-                                                                 style: interfaceStyle) : nil
+    private var chrome: AskComposerChrome {
+        var value = AskComposerChrome.of(launcher: launcher, style: interfaceStyle)
+        if !launcher, colorScheme == .light {
+            value.idleBorder = AskTheme.border
+        }
+        return value
     }
+
+    /// Light workspace cards are opaque; other appearances keep the style's material.
+    private var glass: AskGlassMaterial? {
+        if !launcher, colorScheme == .light {
+            return .opaque
+        }
+        return chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
+                                                                        style: interfaceStyle) : nil
+    }
+
     private func submit() {
         if model.consumeModeCommand(launcher: launcher) { closePalette(); return }
         // Submitting in keyword mode asks the AI, like ⌘Return, when there is something to ask.
@@ -986,7 +998,8 @@ struct AskComposer: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
-        .modifier(AskWorkspaceCardDepth(enabled: !launcher && interfaceStyle.usesGlass, corner: chrome.corner))
+        .modifier(AskWorkspaceCardDepth(enabled: !launcher && (interfaceStyle.usesGlass || colorScheme == .light),
+                                        corner: chrome.corner))
         .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
                                  idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased),
                                  sheen: !launcher))

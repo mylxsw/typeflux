@@ -19,8 +19,8 @@ struct AskWorkspaceGlassTests {
         let dark = AskGlassPlacement.floating.frost(dark: true)
         let light = AskGlassPlacement.floating.frost(dark: false)
         #expect(dark >= 0.75 && dark < 1)
-        // Light glass stays clear enough to show the backdrop (GUL-252).
-        #expect(light >= 0.65 && light <= 0.75)
+        // GUL-327: light floating panels keep a stable surface over dark desktops.
+        #expect(light == 0.92)
     }
 
     @Test(arguments: [false, true]) func inWindowChromeAndMenusRemainFrosted(dark: Bool) {

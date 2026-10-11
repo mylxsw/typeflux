@@ -49,7 +49,7 @@ extension AskComposerInteractionTests {
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let fixture = try AskTestFixture()
-        fixture.model.launcherDraft = AskDraft(text: "Explain this", includeScreenshot: false,
+        fixture.model.launcherDraft = AskDraft(text: "Please use the attached context", includeScreenshot: false,
                                                selection: "First line\nSecond line", source: "Safari — Example",
                                                sourceOff: true, selectionOff: true)
         let window = try await hostSourceContext(AskLauncherView(model: fixture.model, onDismiss: {}),
@@ -241,7 +241,11 @@ extension AskComposerInteractionTests {
             if let label {
                 // OCR may merge neighboring controls into one line. Click the
                 // matched words, not the center of that entire toolbar line.
-                guard let range = candidate.string.range(of: label),
+                // Vision can lowercase a button label. Match whole words so
+                // "Attach" cannot select a preview containing "attached".
+                let escaped = NSRegularExpression.escapedPattern(for: label)
+                let pattern = "(?<!\\w)\(escaped)(?!\\w)"
+                guard let range = candidate.string.range(of: pattern, options: [.regularExpression, .caseInsensitive]),
                       let match = try? candidate.boundingBox(for: range) else { return nil }
                 bounds = match.boundingBox
             } else {

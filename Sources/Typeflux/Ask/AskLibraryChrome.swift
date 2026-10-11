@@ -43,7 +43,7 @@ private struct AskLibraryActionSurface: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .askInWindowGlass(corner: style.usesGlass ? 20 : 10, opaqueFill: AskTheme.glassFill)
+            .askContentCard(corner: style.usesGlass ? 20 : 10, opaqueFill: AskTheme.glassFill)
             .padding(.bottom, 16)
             .accessibilityElement(children: .contain)
     }

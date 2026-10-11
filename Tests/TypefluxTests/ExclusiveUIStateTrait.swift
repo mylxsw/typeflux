@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 /// Runs a test case only while no other `.exclusiveUIState` test case is running.
@@ -22,7 +23,15 @@ struct ExclusiveUIStateTrait: SuiteTrait, TestTrait, TestScoping {
         testCase _: Test.Case?,
         performing function: @Sendable () async throws -> Void
     ) async throws {
-        try await lock.withLock(function)
+        try await lock.withLock {
+            // Background AppKit runners can nap and coalesce the timers used
+            // by native focus and animation tests. Keep only this case active.
+            let process = ProcessInfo.processInfo
+            let activity = process.beginActivity(options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical],
+                                                 reason: "Running an AppKit UI test")
+            defer { process.endActivity(activity) }
+            try await function()
+        }
     }
 }
 

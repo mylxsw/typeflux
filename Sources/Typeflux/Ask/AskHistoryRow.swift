@@ -20,6 +20,7 @@ struct AskHistoryRow: View {
     @State private var renameError: String?
     @State private var editSession = UUID()
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Group {
@@ -83,15 +84,19 @@ struct AskHistoryRow: View {
         .padding(.trailing, 10)
         .frame(height: style.ask.sidebarRowHeight)
         .frame(maxWidth: .infinity, alignment: .leading)
-        // Selection is an accent-tinted glass pill, concentric with the panel,
-        // that slides from the previous row to the new one. Classic marks it
-        // with the system's flat grey source-list selection.
+        // White selection rises gently above the quiet light sidebar. Dark
+        // retains its glass tint or classic source-list selection.
         .background {
             let shape = RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous)
             ZStack {
                 if hovering, !selected { shape.fill(AskTheme.hoverFill).transition(.opacity) }
                 if selected {
-                    if style.usesGlass {
+                    if colorScheme == .light {
+                        shape.fill(.white)
+                            .overlay(shape.strokeBorder(AskTheme.librarySeparator, lineWidth: 0.5))
+                            .shadow(color: .black.opacity(0.08), radius: 1, y: 1)
+                            .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
+                    } else if style.usesGlass {
                         let tint = stored ? AskTheme.privateTint : AskTheme.accent
                         shape.fill(tint.opacity(0.18))
                             .overlay(shape.strokeBorder(tint.opacity(0.4), lineWidth: 0.5))
@@ -141,4 +146,3 @@ struct AskHistoryRow: View {
         }
     }
 }
-

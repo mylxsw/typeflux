@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-/// The launcher's light palette: clearer glass, translucent washes that take on
+/// The launcher's light palette: stable light glass, translucent washes that take on
 /// the backdrop, and footer switches whose "on" state reads by shape.
 @Suite("Launcher light palette")
 struct AskLauncherLightPaletteTests {
@@ -39,12 +39,12 @@ struct AskLauncherLightPaletteTests {
         return (max(a, b) + 0.05) / (min(a, b) + 0.05)
     }
 
-    @Test func lightLauncherGlassLetsTheBackdropThrough() {
-        #expect(AskGlassPlacement.floating.frost(dark: false) == 0.70)
-        // Dark mode keeps its deeper frost.
+    @Test func lightLauncherGlassKeepsANearWhiteBackplate() {
+        #expect(AskGlassPlacement.floating.frost(dark: false) == 0.92)
+        // Dark mode keeps its original frost.
         #expect(AskGlassPlacement.floating.frost(dark: true) == 0.78)
         // Menus over the transcript stay well frosted.
-        #expect(AskGlassPlacement.menu.frost(dark: false) == 0.90)
+        #expect(AskGlassPlacement.menu.frost(dark: false) == 0.92)
     }
 
     @Test func frostAloneKeepsPrimaryTextReadableOverABlackWindow() {
@@ -71,8 +71,8 @@ struct AskLauncherLightPaletteTests {
     }
 
     @Test(arguments: [
-        (AskTheme.launcherSeparator, 0.07), (AskTheme.launcherSelection, 0.13), (AskTheme.launcherKeyword, 0.11),
-        (AskTheme.launcherTile, 0.72), (AskTheme.launcherChipFill, 0.5), (AskTheme.launcherShortcutFill, 0.045)
+        (AskTheme.launcherSeparator, 0.08), (AskTheme.launcherSelection, 0.09), (AskTheme.launcherKeyword, 0.10),
+        (AskTheme.launcherTile, 0.72), (AskTheme.launcherChipFill, 0.5)
     ])
     func lightWashesAreTranslucent(color: Color, alpha: Double) {
         #expect(abs(resolve(color, dark: false).alpha - alpha) < 0.005)
@@ -98,7 +98,7 @@ struct AskLauncherLightPaletteTests {
 
     @Test func metaTextStepsBelowSecondaryInLightMode() {
         let meta = resolve(AskTheme.launcherMetaText, dark: false)
-        #expect(meta.isClose(to: resolve(StudioTheme.textTertiary, dark: false)))
+        #expect(meta.isClose(to: RGBA(red: 110 / 255, green: 110 / 255, blue: 115 / 255, alpha: 1)))
         #expect(luminance(meta) > luminance(resolve(StudioTheme.textSecondary, dark: false)))
     }
 
@@ -125,7 +125,7 @@ struct AskLauncherLightPaletteTests {
         // Light and dark both tint the well with the accent.
         for dark in [false, true] {
             let fill = resolve(AskTheme.switchOnFill, dark: dark)
-            #expect(fill.blue > fill.red + 0.3 && fill.alpha > 0.1 && fill.alpha < 0.3)
+            #expect(fill.blue > fill.red + 0.3 && fill.alpha >= 0.099 && fill.alpha < 0.3)
         }
     }
 
@@ -145,8 +145,8 @@ struct AskLauncherLightPaletteTests {
     }
 
     @Test func storageOnThisMacSitsInAPrivateWell() {
-        #expect(AskStorageButton.wellFill(local: true, active: false) == AskTheme.privateTint.opacity(0.13))
-        #expect(AskStorageButton.wellFill(local: true, active: true) == AskTheme.privateTint.opacity(0.13))
+        #expect(AskStorageButton.wellFill(local: true, active: false) == AskTheme.privateFill)
+        #expect(AskStorageButton.wellFill(local: true, active: true) == AskTheme.privateFill)
         #expect(AskStorageButton.wellFill(local: false, active: true) == AskTheme.hoverFill)
         #expect(AskStorageButton.wellFill(local: false, active: false) == .clear)
     }

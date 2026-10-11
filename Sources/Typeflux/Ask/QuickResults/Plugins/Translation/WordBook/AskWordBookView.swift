@@ -12,6 +12,7 @@ struct AskWordBookView: View {
     @State private var regenerating: AskWordBookEntry?
     @FocusState private var focus: Field?
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.colorScheme) private var colorScheme
 
     enum Field: Hashable { case lookup, filter }
 
@@ -35,7 +36,9 @@ struct AskWordBookView: View {
                 list(sidebarCollapsed: !layout.sidebarInline)
                     .frame(width: layout.listWidth, height: proxy.size.height)
                     .clipped()
-                    .overlay(alignment: .trailing) { Rectangle().fill(AskTheme.separator).frame(width: 0.5) }
+                    .overlay(alignment: .trailing) {
+                        Rectangle().fill(AskTheme.librarySeparator).frame(width: colorScheme == .light ? 1 : 0.5)
+                    }
                 VStack(spacing: 0) {
                     HStack {
                         Spacer(minLength: 0)
@@ -150,9 +153,11 @@ struct AskWordBookView: View {
             ForEach(Array(model.week.enumerated()), id: \.offset) { index, count in
                 VStack(spacing: 3) {
                     ZStack(alignment: .bottom) {
-                        RoundedRectangle(cornerRadius: 3, style: .continuous).fill(AskWordBookStyle.hover)
                         RoundedRectangle(cornerRadius: 3, style: .continuous)
-                            .fill(index == today ? StudioTheme.accent : StudioTheme.textTertiary.opacity(0.55))
+                            .fill(colorScheme == .light ? Color.black.opacity(0.06) : AskWordBookStyle.hover)
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(colorScheme == .light || index == today
+                                ? StudioTheme.accent : StudioTheme.textTertiary.opacity(0.55))
                             .frame(height: count == 0 ? 0 : max(5, 20 * CGFloat(count) / CGFloat(peak)))
                     }
                     .frame(height: 20)
@@ -987,8 +992,7 @@ enum AskWordBookStyle {
 extension View {
     /// Rows grouped inside a card, outlined.
     func askWordBookGroup() -> some View {
-        overlay(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-            .strokeBorder(StudioTheme.border))
+        modifier(AskWordBookGroupSurface())
     }
 
     /// Quiet controls belong to the content surface, rather than individual glass panels.
@@ -1000,6 +1004,20 @@ extension View {
     /// A menu-like surface that floats above the page.
     func askWordBookPopover(corner: CGFloat) -> some View {
         return askInWindowGlass(corner: corner, elevation: .popover)
+    }
+}
+
+private struct AskWordBookGroupSurface: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
+        if colorScheme == .light {
+            content.background(shape.fill(.white))
+                .overlay(shape.strokeBorder(AskTheme.cardBorder, lineWidth: 1))
+        } else {
+            content.overlay(shape.strokeBorder(StudioTheme.border))
+        }
     }
 }
 

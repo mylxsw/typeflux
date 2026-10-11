@@ -6,6 +6,7 @@ import Testing
 /// `.exclusiveUIState`. A test that reads localized text without the trait can run while a writer
 /// holds the lock and see the other language, whatever `interface:` value it passes elsewhere.
 @Suite("Global language isolation", .serialized, .exclusiveUIState)
+@MainActor
 struct ExclusiveUIStateLanguageTests {
     /// A one-way signal whose `wait()` throws when the waiting task is cancelled, so no exit of a
     /// test can hang on it.
@@ -81,7 +82,7 @@ struct ExclusiveUIStateLanguageTests {
         do {
             tasks.append(Task {
                 defer { reads.append("writer done") }
-                try await trait.provideScope(for: test, testCase: testCase) {
+                try await trait.provideScope(for: test, testCase: testCase) { @MainActor in
                     AppLocalization.shared.setLanguage(switched)
                     defer { AppLocalization.shared.setLanguage(original) }
                     await writerSwitched.signal()
@@ -92,7 +93,7 @@ struct ExclusiveUIStateLanguageTests {
             reads.append("unlocked: " + L(key))
             tasks.append(Task {
                 defer { reads.append("reader done") }
-                try await trait.provideScope(for: test, testCase: testCase) {
+                try await trait.provideScope(for: test, testCase: testCase) { @MainActor in
                     reads.append("locked: " + L(key))
                 }
             })
@@ -166,7 +167,7 @@ struct ExclusiveUIStateLanguageTests {
     /// cancellation of the calling task, or an operation that ends before it is ready, which also
     /// ends the wait) cancels the task if it is still running and joins it first.
     private func cancelOnceReady(
-        _ operation: @escaping @Sendable (_ ready: Gate) async throws -> Void,
+        _ operation: @escaping @MainActor @Sendable (_ ready: Gate) async throws -> Void,
         whileReady: () async throws -> Void = {}
     ) async throws -> Result<Void, Error> {
         let ready = Gate(), ended = Gate()
@@ -200,7 +201,7 @@ struct ExclusiveUIStateLanguageTests {
     /// runs inside the race just before it reports that, and `whileQueued` runs here once it has.
     private func cancelRaceOnceQueued(
         on lock: ExclusiveUIStateLock, original: AppLanguage, switched: AppLanguage, reads: Reads,
-        beforeQueued: @escaping @Sendable () async throws -> Void = {},
+        beforeQueued: @escaping @MainActor @Sendable () async throws -> Void = {},
         whileQueued: () async throws -> Void = {}
     ) async throws -> Result<Void, Error> {
         try await cancelOnceReady({ queued in

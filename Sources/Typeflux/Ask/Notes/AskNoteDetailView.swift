@@ -19,6 +19,7 @@ struct AskNoteDetailView: View {
     @State private var batchTag = ""
     @State private var showsBatchTag = false
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.colorScheme) private var colorScheme
 
     static let readingWidth = AskLibraryLayout.readingWidth
     static let outlineWidth: CGFloat = 160
@@ -391,9 +392,10 @@ struct AskNoteDetailView: View {
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 9)
-        .background(AskTheme.hoverFill.opacity(0.6), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(AskTheme.noteQuestionSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(AskTheme.separator, lineWidth: 0.5))
+            .strokeBorder(colorScheme == .light ? AskTheme.cardBorder : AskTheme.separator,
+                          lineWidth: colorScheme == .light ? 1 : 0.5))
     }
 
     // MARK: - Reading
