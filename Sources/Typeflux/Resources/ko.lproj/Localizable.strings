@@ -4242,6 +4242,15 @@
 "screenshot.counter.shape.circle" = "원형";
 "screenshot.counter.shape.bubble" = "말풍선 · 드래그해 방향 지정";
 "screenshot.counter.start" = "시작";
+"screenshot.tool.callout" = "설명선";
+"screenshot.callout.anchor" = "끝 모양";
+"screenshot.callout.anchor.dot" = "점";
+"screenshot.callout.anchor.arrow" = "화살표";
+"screenshot.callout.anchor.plain" = "선만";
+"screenshot.mosaic.shape.ellipse" = "타원";
+"screenshot.mosaic.scope" = "범위";
+"screenshot.mosaic.scope.all" = "전체";
+"screenshot.mosaic.scope.text" = "텍스트만";
 "screenshot.mosaic.shape.rect" = "영역";
 "screenshot.mosaic.shape.brush" = "브러시";
 "screenshot.mosaic.effect.pixelate" = "픽셀화";

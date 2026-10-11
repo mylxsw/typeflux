@@ -4264,6 +4264,15 @@
 "screenshot.counter.shape.circle" = "圆形";
 "screenshot.counter.shape.bubble" = "气泡 · 拖动指向";
 "screenshot.counter.start" = "起始";
+"screenshot.tool.callout" = "标注";
+"screenshot.callout.anchor" = "指向";
+"screenshot.callout.anchor.dot" = "圆点";
+"screenshot.callout.anchor.arrow" = "箭头";
+"screenshot.callout.anchor.plain" = "无";
+"screenshot.mosaic.shape.ellipse" = "椭圆";
+"screenshot.mosaic.scope" = "范围";
+"screenshot.mosaic.scope.all" = "全部";
+"screenshot.mosaic.scope.text" = "仅文字";
 "screenshot.mosaic.shape.rect" = "框选";
 "screenshot.mosaic.shape.brush" = "涂抹";
 "screenshot.mosaic.effect.pixelate" = "像素化";

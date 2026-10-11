@@ -4,8 +4,23 @@ import AppKit
 struct ScreenshotMosaic: Equatable {
     enum Shape: Equatable {
         case rect(CGRect)
+        case ellipse(CGRect)
         /// A painted stroke through `points`, `width` points wide.
         case brush([CGPoint], width: CGFloat)
+
+        /// Boxes and ellipses cover an area; a brush covers what it was painted over.
+        var coversArea: Bool {
+            if case .brush = self { return false }
+            return true
+        }
+    }
+
+    /// What inside the shape is covered.
+    enum Scope: String, CaseIterable, Equatable, Codable {
+        /// Everything inside the shape.
+        case all
+        /// Only the lines of text found inside it, so the layout around them stays clear.
+        case text
     }
 
     enum Effect: String, CaseIterable, Equatable, Codable {
@@ -24,10 +39,17 @@ struct ScreenshotMosaic: Equatable {
     var strength: Strength = .medium
     /// The tallest line of text under the region when it was drawn, in points; nil when none was found.
     var textHeight: CGFloat?
+    /// With the text scope: the lines of text inside the shape, in points; only they are covered.
+    var textRuns: [CGRect]?
+
+    /// How far a text run is grown on every side, so the mosaic covers its letters whole.
+    static let textRunMargin: CGFloat = 2
+
+    var scope: Scope { textRuns == nil ? .all : .text }
 
     var frame: CGRect {
         switch shape {
-        case let .rect(rect):
+        case let .rect(rect), let .ellipse(rect):
             return rect.standardized
         case let .brush(points, width):
             return ScreenshotAnnotation.boundingBox(of: points).insetBy(dx: -width / 2, dy: -width / 2)
@@ -39,10 +61,20 @@ struct ScreenshotMosaic: Equatable {
         switch shape {
         case let .rect(rect):
             return CGPath(rect: rect.standardized, transform: nil)
+        case let .ellipse(rect):
+            return CGPath(ellipseIn: rect.standardized, transform: nil)
         case let .brush(points, width):
             return ScreenshotAnnotation.polyline(points)
                 .copy(strokingWithWidth: width, lineCap: .round, lineJoin: .round, miterLimit: 10)
         }
+    }
+
+    /// The paths the effect is clipped to, one after another: the shape, then the text runs when there are any.
+    var clipPaths: [CGPath] {
+        guard let textRuns, !textRuns.isEmpty else { return [maskPath] }
+        let runs = CGMutablePath()
+        for run in textRuns { runs.addRect(run.insetBy(dx: -Self.textRunMargin, dy: -Self.textRunMargin)) }
+        return [maskPath, runs]
     }
 
     /// The pixelation block, in pixels, for an image with `scale` pixels per point. Medium and
@@ -71,15 +103,19 @@ struct ScreenshotMosaic: Equatable {
         switch shape {
         case let .rect(rect):
             copy.shape = .rect(rect.offsetBy(dx: dx, dy: dy))
+        case let .ellipse(rect):
+            copy.shape = .ellipse(rect.offsetBy(dx: dx, dy: dy))
         case let .brush(points, width):
             copy.shape = .brush(points.map { CGPoint(x: $0.x + dx, y: $0.y + dy) }, width: width)
         }
+        copy.textRuns = textRuns?.map { $0.offsetBy(dx: dx, dy: dy) }
         return copy
     }
 }
 
 /// One mark on a screenshot. Coordinates are points on the frozen display, with y growing
 /// downward; the overlay uses the display's own origin, the exported event the global one.
+// swiftlint:disable:next type_body_length
 struct ScreenshotAnnotation: Equatable, Identifiable {
     enum Kind: Equatable {
         case rect(CGRect)
@@ -94,6 +130,8 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
         case text(origin: CGPoint, String, fontSize: CGFloat)
         /// A numbered dot; numbers follow the order of the counters in the document.
         case counter(center: CGPoint)
+        /// Text in a box with a line out to `anchor`; `origin` is the top-left corner of the text.
+        case callout(anchor: CGPoint, origin: CGPoint, String, fontSize: CGFloat)
         case mosaic(ScreenshotMosaic)
     }
 
@@ -132,6 +170,7 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
         case .highlight: .highlighter
         case .text: .text
         case .counter: .counter
+        case .callout: .callout
         case .mosaic: .mosaic
         }
     }
@@ -141,7 +180,7 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
     var size: CGFloat {
         get {
             switch kind {
-            case let .text(_, _, fontSize): return fontSize
+            case let .text(_, _, fontSize), let .callout(_, _, _, fontSize): return fontSize
             case let .mosaic(mosaic):
                 if case let .brush(_, width) = mosaic.shape { return width }
                 return style.size
@@ -153,6 +192,8 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
             switch kind {
             case let .text(origin, text, _):
                 kind = .text(origin: origin, text, fontSize: newValue)
+            case let .callout(anchor, origin, text, _):
+                kind = .callout(anchor: anchor, origin: origin, text, fontSize: newValue)
             case var .mosaic(mosaic):
                 if case let .brush(points, _) = mosaic.shape {
                     mosaic.shape = .brush(points, width: newValue)
@@ -166,8 +207,18 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
 
     /// Text and counters keep their size; everything else can be stretched by its handles.
     var isResizable: Bool {
-        if case .counter = kind { return false }
-        return true
+        switch kind {
+        case .counter, .callout: false
+        default: true
+        }
+    }
+
+    /// The text that a double-click edits, for text and callouts.
+    var editableText: (origin: CGPoint, text: String, fontSize: CGFloat)? {
+        switch kind {
+        case let .text(origin, text, fontSize), let .callout(_, origin, text, fontSize): return (origin, text, fontSize)
+        default: return nil
+        }
     }
 
     // MARK: Geometry
@@ -193,6 +244,8 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
         case let .counter(center):
             let radius = style.counterDiameter / 2
             return CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
+        case let .callout(anchor, _, _, _):
+            return (calloutBox ?? .null).union(CGRect(origin: anchor, size: .zero))
         case let .mosaic(mosaic):
             return mosaic.frame
         }
@@ -230,12 +283,16 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
         case let .highlight(points): copy.kind = .highlight(points.map(map))
         case let .text(origin, text, fontSize): copy.kind = .text(origin: map(origin), text, fontSize: fontSize)
         case let .counter(center): copy.kind = .counter(center: map(center))
+        case let .callout(anchor, origin, text, fontSize):
+            copy.kind = .callout(anchor: map(anchor), origin: map(origin), text, fontSize: fontSize)
         case let .mosaic(mosaic):
             var moved = mosaic
             switch mosaic.shape {
             case let .rect(rect): moved.shape = .rect(mapRect(rect))
+            case let .ellipse(rect): moved.shape = .ellipse(mapRect(rect))
             case let .brush(points, width): moved.shape = .brush(points.map(map), width: width)
             }
+            moved.textRuns = mosaic.textRuns?.map(mapRect)
             copy.kind = .mosaic(moved)
         }
         return copy
@@ -268,10 +325,20 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
             return frame.insetBy(dx: -tolerance, dy: -tolerance).contains(point)
         case let .counter(center):
             return hypot(point.x - center.x, point.y - center.y) <= style.counterDiameter / 2 + tolerance
+        case let .callout(anchor, _, _, fontSize):
+            guard let box = calloutBox else { return false }
+            if box.insetBy(dx: -tolerance, dy: -tolerance).contains(point) { return true }
+            let reach = Self.calloutLineWidth(fontSize: fontSize) / 2 + tolerance
+            if hypot(point.x - anchor.x, point.y - anchor.y) <= reach * 2 { return true }
+            guard let start = calloutLineStart else { return false }
+            return Self.distance(from: point, toSegment: start, anchor) <= reach
         case let .mosaic(mosaic):
             switch mosaic.shape {
             case .rect:
                 return mosaic.frame.insetBy(dx: -tolerance, dy: -tolerance).contains(point)
+            case let .ellipse(rect):
+                return CGPath(ellipseIn: rect.standardized.insetBy(dx: -tolerance, dy: -tolerance), transform: nil)
+                    .contains(point)
             case let .brush(points, width):
                 return Self.polyline(points).copy(strokingWithWidth: width + tolerance * 2, lineCap: .round,
                                                   lineJoin: .round, miterLimit: 10).contains(point)
@@ -365,8 +432,10 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
         return (unit(to, bend) ?? straightEnd, unit(from, bend) ?? straightStart)
     }
 
-    /// The handle that bends a selected curved or elbow arrow: the curve's midpoint or the elbow's corner.
+    /// The handle that bends a selected curved or elbow arrow: the curve's midpoint or the elbow's corner;
+    /// for a callout, the point its line ends at.
     var bendHandle: CGPoint? {
+        if case let .callout(anchor, _, _, _) = kind { return anchor }
         guard case let .arrow(from, to) = kind,
               let bend = Self.arrowBendPoint(from: from, to: to, style: style) else { return nil }
         guard style.arrowPath == .curve else { return bend }
@@ -391,6 +460,49 @@ struct ScreenshotAnnotation: Equatable, Identifiable {
             let upFirst = hypot(point.x - from.x, point.y - to.y)
             return across <= upFirst ? 1 : -1
         }
+    }
+
+    // MARK: Callouts
+
+    /// The callout's box: its text with room around it, at least a square of the font size when empty.
+    var calloutBox: CGRect? {
+        guard case let .callout(_, origin, text, fontSize) = kind else { return nil }
+        var size = Self.textSize(text, fontSize: fontSize, font: style.font)
+        size.width = max(size.width, fontSize)
+        let padding = Self.textPadding(fontSize: fontSize)
+        return CGRect(origin: origin, size: size).insetBy(dx: -padding.width, dy: -padding.height)
+    }
+
+    /// Where the line leaves the box: the middle of the side facing the anchor; nil when the anchor is inside it.
+    var calloutLineStart: CGPoint? {
+        guard case let .callout(anchor, _, _, _) = kind, let box = calloutBox, !box.contains(anchor) else { return nil }
+        let sides = [CGPoint(x: box.midX, y: box.minY), CGPoint(x: box.maxX, y: box.midY),
+                     CGPoint(x: box.midX, y: box.maxY), CGPoint(x: box.minX, y: box.midY)]
+        return sides.min { hypot($0.x - anchor.x, $0.y - anchor.y) < hypot($1.x - anchor.x, $1.y - anchor.y) }
+    }
+
+    /// The color of the text while it is typed: a callout's box shows under the field, so its text color
+    /// is the one drawn on the box; text shows in its own color.
+    static func editingTextColor(_ style: ScreenshotAnnotationStyle, callout: Bool) -> CGColor {
+        guard callout else { return style.color.cgColor() }
+        switch style.textStyle {
+        case .background: return style.color.contrastingTextColor
+        case .outline: return CGColor(gray: 1, alpha: 1)
+        case .plain: return style.color.cgColor()
+        }
+    }
+
+    static func calloutLineWidth(fontSize: CGFloat) -> CGFloat {
+        max(2, (fontSize / 7).rounded())
+    }
+
+    /// A callout dragged by its box: the box moves, the point it points at stays.
+    func movingCalloutBox(dx: CGFloat, dy: CGFloat) -> ScreenshotAnnotation {
+        guard case let .callout(anchor, origin, text, fontSize) = kind else { return offsetBy(dx: dx, dy: dy) }
+        var moved = self
+        moved.kind = .callout(anchor: anchor, origin: CGPoint(x: origin.x + dx, y: origin.y + dy), text,
+                              fontSize: fontSize)
+        return moved
     }
 
     // MARK: Counters

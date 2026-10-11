@@ -23,7 +23,7 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
 
     func testToolKeysAndShortcuts() {
         let letters = ScreenshotAnnotationTool.allCases.map(\.shortcut)
-        XCTAssertEqual(letters, ["R", "O", "L", "A", "P", "H", "T", "N", "M"])
+        XCTAssertEqual(letters, ["R", "O", "L", "A", "P", "H", "T", "N", "C", "M"])
         for tool in ScreenshotAnnotationTool.allCases {
             XCTAssertEqual(ScreenshotAnnotationTool(keyCode: tool.keyCode), tool)
         }

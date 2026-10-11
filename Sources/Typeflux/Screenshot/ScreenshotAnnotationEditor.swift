@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 
 enum ScreenshotAnnotationTool: String, CaseIterable, Equatable {
-    case rect, ellipse, line, arrow, pen, highlighter, text, counter, mosaic
+    case rect, ellipse, line, arrow, pen, highlighter, text, counter, callout, mosaic
 
     /// The letter shown in tooltips.
     var shortcut: String {
@@ -15,6 +15,7 @@ enum ScreenshotAnnotationTool: String, CaseIterable, Equatable {
         case .highlighter: "H"
         case .text: "T"
         case .counter: "N"
+        case .callout: "C"
         case .mosaic: "M"
         }
     }
@@ -30,6 +31,7 @@ enum ScreenshotAnnotationTool: String, CaseIterable, Equatable {
         case .highlighter: 4
         case .text: 17
         case .counter: 45
+        case .callout: 8
         case .mosaic: 46
         }
     }
@@ -45,7 +47,7 @@ enum ScreenshotAnnotationTool: String, CaseIterable, Equatable {
 // swiftlint:disable:next type_body_length
 struct ScreenshotAnnotationEditor {
     enum MosaicShape: String, CaseIterable, Equatable, Codable {
-        case rect, brush
+        case rect, ellipse, brush
     }
 
     /// What a press did.
@@ -63,7 +65,7 @@ struct ScreenshotAnnotationEditor {
         case drawing(start: CGPoint)
         case moving(start: CGPoint, original: ScreenshotAnnotation, before: [ScreenshotAnnotation])
         case resizing(anchor: CGPoint, original: ScreenshotAnnotation, before: [ScreenshotAnnotation])
-        /// The middle handle of a curved or elbow arrow.
+        /// The middle handle of a curved or elbow arrow, or the point a callout points at.
         case bending(original: ScreenshotAnnotation, before: [ScreenshotAnnotation])
     }
 
@@ -82,6 +84,8 @@ struct ScreenshotAnnotationEditor {
     private(set) var draft: ScreenshotAnnotation?
     /// The text annotation whose text is being edited; the overlay shows a field instead of it.
     private(set) var editingTextID: UUID?
+    /// A callout just drawn, waiting for its text; it joins the document once the text is typed.
+    private(set) var calloutDraft: ScreenshotAnnotation?
     private var drag: Drag?
     /// The annotations before a slider drag began, so the whole drag undoes in one step.
     private var styleChangeStart: [ScreenshotAnnotation]?
@@ -120,6 +124,8 @@ struct ScreenshotAnnotationEditor {
 
     /// Measures the text under a new mosaic, in points.
     var measureTextHeight: (ScreenshotMosaic) -> CGFloat? = { _ in nil }
+    /// Finds the lines of text inside a rectangle, in points, for mosaics that only cover text.
+    var locateText: (CGRect) -> [CGRect] = { _ in [] }
 
     var isDragging: Bool { drag != nil }
 
@@ -127,9 +133,17 @@ struct ScreenshotAnnotationEditor {
         selectedID.flatMap(document.annotation(id:))
     }
 
-    /// What the overlay draws: the document, then the draft, without the text being edited.
+    /// What the overlay draws: the document, then the draft, without the text being edited. A callout
+    /// being edited keeps its line and box, with the field over the box.
     var visibleAnnotations: [ScreenshotAnnotation] {
-        document.annotations.filter { $0.id != editingTextID } + (draft.map { [$0] } ?? [])
+        let shown = document.annotations.compactMap { annotation -> ScreenshotAnnotation? in
+            guard annotation.id == editingTextID else { return annotation }
+            guard case let .callout(anchor, origin, _, fontSize) = annotation.kind else { return nil }
+            var bare = annotation
+            bare.kind = .callout(anchor: anchor, origin: origin, "", fontSize: fontSize)
+            return bare
+        }
+        return shown + (draft.map { [$0] } ?? []) + (calloutDraft.map { [$0] } ?? [])
     }
 
     /// The corners that resize the selected annotation.
@@ -179,7 +193,7 @@ struct ScreenshotAnnotationEditor {
         if case .handle = cropHit { return .ignored }
         if crop.contains(point), let hit = document.hit(at: point) {
             selectedID = hit.id
-            if clickCount >= 2, case .text = hit.kind {
+            if clickCount >= 2, hit.editableText != nil {
                 editingTextID = hit.id
                 return .editText(hit.id)
             }
@@ -203,7 +217,8 @@ struct ScreenshotAnnotationEditor {
             draft = extended(current, from: start, to: point, shift: shift)
             return true
         case let .moving(start, original, _):
-            return document.update(original.offsetBy(dx: point.x - start.x, dy: point.y - start.y),
+            // A callout moves its box; the point it points at stays where it is.
+            return document.update(original.movingCalloutBox(dx: point.x - start.x, dy: point.y - start.y),
                                    recordingUndo: false)
         case let .resizing(anchor, original, _):
             var target = point
@@ -211,6 +226,11 @@ struct ScreenshotAnnotationEditor {
             let frame = ScreenshotSelection.rect(from: anchor, to: target)
             return document.update(original.resized(from: original.frame, to: frame), recordingUndo: false)
         case let .bending(original, _):
+            if case let .callout(_, origin, text, fontSize) = original.kind {
+                var moved = original
+                moved.kind = .callout(anchor: point, origin: origin, text, fontSize: fontSize)
+                return document.update(moved, recordingUndo: false)
+            }
             guard case let .arrow(from, to) = original.kind else { return false }
             var bent = original
             bent.style.arrowBend = ScreenshotAnnotation.arrowBend(through: point, from: from, to: to,
@@ -228,10 +248,14 @@ struct ScreenshotAnnotationEditor {
         switch drag {
         case .drawing:
             defer { draft = nil }
+            // A callout waits for its text before it joins the document.
+            if let callout = draft, case .callout = callout.kind {
+                calloutDraft = callout
+                return true
+            }
             guard var finished = draft, Self.isWorthKeeping(finished) else { return draft != nil }
-            if var mosaic = finished.mosaic {
-                mosaic.textHeight = measureTextHeight(mosaic)
-                finished.kind = .mosaic(mosaic)
+            if let mosaic = finished.mosaic {
+                finished.kind = .mosaic(finishedMosaic(mosaic, scope: toolStyles.mosaicScope))
             }
             if case let .path(points) = finished.kind, finished.style.smoothed {
                 finished.kind = .path(ScreenshotStrokeSmoothing.smoothed(points))
@@ -251,6 +275,11 @@ struct ScreenshotAnnotationEditor {
         var style = toolStyles[tool]
         if tool == .arrow, style.arrowPath == .curve { style.arrowBend = ScreenshotAnnotationStyle.defaultCurveBend }
         if tool == .counter { style.counterStart = counterStart }
+        let mosaicDraftShape: ScreenshotMosaic.Shape = switch mosaicShape {
+        case .rect: .rect(empty)
+        case .ellipse: .ellipse(empty)
+        case .brush: .brush([point], width: style.brushWidth)
+        }
         let kind: ScreenshotAnnotation.Kind = switch tool {
         case .rect: .rect(empty)
         case .ellipse: .ellipse(empty)
@@ -260,10 +289,9 @@ struct ScreenshotAnnotationEditor {
         case .highlighter: .highlight([point])
         case .text: .text(origin: point, "", fontSize: style.fontSize)
         case .counter: .counter(center: point)
-        case .mosaic: .mosaic(ScreenshotMosaic(
-                shape: mosaicShape == .rect ? .rect(empty) : .brush([point], width: style.brushWidth),
-                effect: mosaicEffect, strength: mosaicStrength
-            ))
+        case .callout: .callout(anchor: point, origin: point, "", fontSize: style.fontSize)
+        case .mosaic: .mosaic(ScreenshotMosaic(shape: mosaicDraftShape, effect: mosaicEffect,
+                                               strength: mosaicStrength))
         }
         return ScreenshotAnnotation(kind: kind, style: style)
     }
@@ -301,9 +329,13 @@ struct ScreenshotAnnotationEditor {
             } else {
                 draft.kind = .counter(center: point)
             }
+        case let .callout(anchor, _, text, fontSize):
+            // The box follows the pointer, a little below its tip; the line stays on the press.
+            draft.kind = .callout(anchor: anchor, origin: point, text, fontSize: fontSize)
         case var .mosaic(mosaic):
             switch mosaic.shape {
             case .rect: mosaic.shape = .rect(ScreenshotSelection.rect(from: start, to: square))
+            case .ellipse: mosaic.shape = .ellipse(ScreenshotSelection.rect(from: start, to: square))
             case let .brush(points, width): mosaic.shape = .brush(stroke(points), width: width)
             }
             draft.kind = .mosaic(mosaic)
@@ -319,9 +351,13 @@ struct ScreenshotAnnotationEditor {
         case let .line(from, to), let .arrow(from, to):
             return hypot(to.x - from.x, to.y - from.y) >= minimumShapeSize
         case let .mosaic(mosaic):
-            guard case let .rect(rect) = mosaic.shape else { return true }
-            return rect.width >= minimumShapeSize && rect.height >= minimumShapeSize
-        case let .text(_, text, _):
+            switch mosaic.shape {
+            case let .rect(rect), let .ellipse(rect):
+                return rect.width >= minimumShapeSize && rect.height >= minimumShapeSize
+            case .brush:
+                return true
+            }
+        case let .text(_, text, _), let .callout(_, _, text, _):
             return !text.isEmpty
         case .path, .highlight, .counter:
             return true
@@ -330,19 +366,32 @@ struct ScreenshotAnnotationEditor {
 
     // MARK: Text
 
-    /// Ends typing: adds the new text, or replaces (or, when emptied, removes) the edited one.
+    /// Ends typing: adds the new text or callout, or replaces (or, when emptied, removes) the edited one.
     mutating func commitText(_ text: String, at origin: CGPoint) {
         defer { editingTextID = nil }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let id = editingTextID, var edited = document.annotation(id: id),
-           case let .text(oldOrigin, _, fontSize) = edited.kind {
+        if var callout = calloutDraft {
+            calloutDraft = nil
+            guard !trimmed.isEmpty, case let .callout(anchor, boxOrigin, _, fontSize) = callout.kind else { return }
+            callout.kind = .callout(anchor: anchor, origin: boxOrigin, text, fontSize: fontSize)
+            document.add(callout)
+            return
+        }
+        if let id = editingTextID, var edited = document.annotation(id: id) {
             if trimmed.isEmpty {
                 document.remove(id: id)
                 selectedID = nil
-            } else {
-                edited.kind = .text(origin: oldOrigin, text, fontSize: fontSize)
-                document.update(edited)
+                return
             }
+            switch edited.kind {
+            case let .text(oldOrigin, _, fontSize):
+                edited.kind = .text(origin: oldOrigin, text, fontSize: fontSize)
+            case let .callout(anchor, boxOrigin, _, fontSize):
+                edited.kind = .callout(anchor: anchor, origin: boxOrigin, text, fontSize: fontSize)
+            default:
+                return
+            }
+            document.update(edited)
             return
         }
         guard !trimmed.isEmpty else { return }
@@ -352,6 +401,7 @@ struct ScreenshotAnnotationEditor {
 
     mutating func cancelText() {
         editingTextID = nil
+        calloutDraft = nil
     }
 
     // MARK: Commands
@@ -493,6 +543,10 @@ struct ScreenshotAnnotationEditor {
         restyle { $0.textStyle = textStyle }
     }
 
+    mutating func setCalloutAnchor(_ anchor: ScreenshotAnnotationStyle.CalloutAnchor) {
+        restyle { $0.calloutAnchor = anchor }
+    }
+
     mutating func setCounterLabel(_ label: ScreenshotAnnotationStyle.CounterLabel) {
         restyle { $0.counterLabel = label }
     }
@@ -566,6 +620,40 @@ struct ScreenshotAnnotationEditor {
 
     mutating func setMosaicShape(_ shape: MosaicShape) {
         toolStyles.mosaicShape = shape
+    }
+
+    /// A selected box or ellipse mosaic is covered again over everything, or over its text only.
+    mutating func setMosaicScope(_ scope: ScreenshotMosaic.Scope) {
+        guard let annotation = selected, let mosaic = annotation.mosaic else {
+            toolStyles.mosaicScope = scope
+            return
+        }
+        var changed = annotation
+        changed.kind = .mosaic(finishedMosaic(mosaic, scope: scope))
+        updateSelected(changed)
+    }
+
+    /// The text scope only exists for a selected box or ellipse mosaic, or the mosaic tool with one of those shapes.
+    var mosaicScope: ScreenshotMosaic.Scope {
+        selected?.mosaic?.scope ?? toolStyles.mosaicScope
+    }
+
+    /// Measures the text under a mosaic and, with the text scope, keeps only its lines; with no text
+    /// found it covers the whole shape, so nothing is left uncovered by mistake.
+    private func finishedMosaic(_ mosaic: ScreenshotMosaic, scope: ScreenshotMosaic.Scope) -> ScreenshotMosaic {
+        var mosaic = mosaic
+        mosaic.textRuns = nil
+        if scope == .text, mosaic.shape.coversArea {
+            let shape = mosaic.maskPath
+            let runs = locateText(mosaic.frame).filter { shape.contains(CGPoint(x: $0.midX, y: $0.midY)) }
+            if !runs.isEmpty {
+                mosaic.textRuns = runs
+                mosaic.textHeight = runs.map(\.height).max()
+                return mosaic
+            }
+        }
+        mosaic.textHeight = measureTextHeight(mosaic)
+        return mosaic
     }
 
     /// - Returns: whether an annotation was removed.
@@ -682,6 +770,8 @@ extension ScreenshotAnnotationEditor {
         case let .counterLabel(label): setCounterLabel(label)
         case let .counterShape(shape): setCounterShape(shape)
         case let .counterStart(start): setCounterStart(start)
+        case let .calloutAnchor(anchor): setCalloutAnchor(anchor)
+        case let .mosaicScope(scope): setMosaicScope(scope)
         case .undo: undo()
         case .redo: redo()
         case .toggleColorPanel, .pickColor, .cancel, .save, .copy, .scrollCapture, .followUp: return false

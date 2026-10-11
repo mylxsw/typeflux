@@ -140,6 +140,13 @@ struct ScreenshotAnnotationStyle: Equatable, Codable {
         case letter
     }
 
+    /// The end of a callout's line, on the thing it points at.
+    enum CalloutAnchor: String, CaseIterable, Codable {
+        case dot, arrow
+        /// Just the line.
+        case plain
+    }
+
     enum CounterShape: String, CaseIterable, Codable {
         case circle
         /// A circle with a point, aimed by `counterAngle`.
@@ -174,6 +181,7 @@ struct ScreenshotAnnotationStyle: Equatable, Codable {
     var counterAngle: CGFloat = .pi / 4
     /// The number (or letter) of the first counter; counters count on from it.
     var counterStart = 1
+    var calloutAnchor: CalloutAnchor = .dot
 
     static let opacityRange: ClosedRange<CGFloat> = 0.2...1
     static let counterStartRange: ClosedRange<Int> = 1...99
@@ -215,6 +223,7 @@ struct ScreenshotAnnotationStyle: Equatable, Codable {
     private enum CodingKeys: String, CodingKey {
         case color, opacity, size, dash, fill, cornerRadius, arrowHead, arrowPath, arrowBend, outlined, smoothed
         case highlighterMode, highlighterTip, font, textStyle, counterLabel, counterShape, counterAngle, counterStart
+        case calloutAnchor
     }
 
     init(from decoder: Decoder) throws {
@@ -242,5 +251,6 @@ struct ScreenshotAnnotationStyle: Equatable, Codable {
         counterShape = value(.counterShape, defaults.counterShape)
         counterAngle = value(.counterAngle, defaults.counterAngle)
         counterStart = value(.counterStart, defaults.counterStart)
+        calloutAnchor = value(.calloutAnchor, defaults.calloutAnchor)
     }
 }
