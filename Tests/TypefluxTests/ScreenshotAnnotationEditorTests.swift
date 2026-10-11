@@ -23,7 +23,7 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
 
     func testToolKeysAndShortcuts() {
         let letters = ScreenshotAnnotationTool.allCases.map(\.shortcut)
-        XCTAssertEqual(letters, ["R", "O", "A", "P", "H", "T", "N", "M"])
+        XCTAssertEqual(letters, ["R", "O", "L", "A", "P", "H", "T", "N", "M"])
         for tool in ScreenshotAnnotationTool.allCases {
             XCTAssertEqual(ScreenshotAnnotationTool(keyCode: tool.keyCode), tool)
         }
@@ -45,6 +45,7 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
         let expected: [ScreenshotAnnotationTool: ScreenshotAnnotation.Kind] = [
             .rect: .rect(CGRect(x: 10, y: 10, width: 50, height: 30)),
             .ellipse: .ellipse(CGRect(x: 10, y: 10, width: 50, height: 30)),
+            .line: .line(from: start, to: end),
             .arrow: .arrow(from: start, to: end),
             .pen: .path([start, CGPoint(x: 35, y: 25), end]),
             .highlighter: .highlight([start, CGPoint(x: 35, y: 25), end]),
@@ -151,7 +152,7 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
         XCTAssertNil(measured[0].textHeight, "Measured before the height is known")
 
         editor.setMosaicShape(.brush)
-        editor.setWidth(.thick)
+        editor.setSize(44)
         draw(&editor, from: CGPoint(x: 100, y: 100), to: CGPoint(x: 140, y: 100))
         guard case let .brush(points, width)? = editor.document.annotations[1].mosaic?.shape else {
             return XCTFail("No brush")
@@ -242,20 +243,23 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
         XCTAssertTrue(editor.selectionHandles.isEmpty)
     }
 
-    func testStyleChangesApplyToTheSelection() {
+    func testStyleChangesApplyToTheSelectionOrElseTheTool() {
         var editor = self.editor(with: .rect)
         editor.setColor(.green)
-        editor.setWidth(.thin)
+        editor.setSize(2)
         draw(&editor, from: CGPoint(x: 10, y: 10), to: CGPoint(x: 60, y: 40))
-        XCTAssertEqual(editor.document.annotations[0].style, ScreenshotAnnotationStyle(color: .green, width: .thin))
+        XCTAssertEqual(editor.document.annotations[0].style, ScreenshotAnnotationStyle(color: .green, size: 2))
         XCTAssertEqual(editor.document.undoDepth, 1, "Nothing selected, nothing changed")
 
         _ = editor.mouseDown(at: CGPoint(x: 10, y: 25), crop: crop, cropHit: .inside)
         editor.mouseUp(at: CGPoint(x: 10, y: 25))
         editor.setColor(.white)
-        editor.setWidth(.thick)
-        XCTAssertEqual(editor.selected?.style, ScreenshotAnnotationStyle(color: .white, width: .thick))
+        editor.setSize(6)
+        XCTAssertEqual(editor.selected?.style, ScreenshotAnnotationStyle(color: .white, size: 6))
         XCTAssertEqual(editor.document.undoDepth, 3)
+        XCTAssertEqual(editor.toolStyles[.rect], ScreenshotAnnotationStyle(color: .green, size: 2),
+                       "Restyling a mark leaves the tool's style alone")
+        XCTAssertEqual(editor.toolStyles.recentColors, [.white, .green])
     }
 
     func testDeleteNudgeAndUndoRedo() {
@@ -308,7 +312,7 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
 
     func testTypingAddsTextInTheCurrentStyle() {
         var editor = self.editor(with: .text)
-        editor.setWidth(.thick)
+        editor.setSize(24)
         editor.setColor(.blue)
         XCTAssertEqual(editor.mouseDown(at: CGPoint(x: 20, y: 30), crop: crop, cropHit: .inside),
                        .beginText(at: CGPoint(x: 20, y: 30)))
@@ -333,7 +337,7 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
         XCTAssertTrue(editor.visibleAnnotations.isEmpty, "The field shows instead")
         XCTAssertTrue(editor.selectionHandles.isEmpty)
         editor.commitText("Final", at: .zero)
-        XCTAssertEqual(editor.document.annotations[0].kind, .text(origin: CGPoint(x: 20, y: 30), "Final", fontSize: 18))
+        XCTAssertEqual(editor.document.annotations[0].kind, .text(origin: CGPoint(x: 20, y: 30), "Final", fontSize: 20))
         XCTAssertNil(editor.editingTextID)
 
         _ = editor.mouseDown(at: CGPoint(x: 25, y: 35), clickCount: 2, crop: crop, cropHit: .inside)
@@ -351,9 +355,10 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
         editor.commitText("Hello", at: CGPoint(x: 20, y: 30))
         _ = editor.mouseDown(at: CGPoint(x: 25, y: 35), crop: crop, cropHit: .inside)
         editor.mouseUp(at: CGPoint(x: 25, y: 35))
-        editor.setWidth(.thin)
+        editor.setSize(14)
         guard case let .text(_, _, fontSize)? = editor.selected?.kind else { return XCTFail("No text") }
         XCTAssertEqual(fontSize, 14)
+        XCTAssertEqual(editor.shownSize, 14)
 
         let frame = try XCTUnwrap(editor.selected?.frame)
         _ = editor.mouseDown(at: CGPoint(x: frame.maxX, y: frame.maxY), crop: crop, cropHit: .inside)
@@ -371,8 +376,9 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
         _ = editor.mouseDown(at: CGPoint(x: 120, y: 100), crop: crop, cropHit: .inside)
         editor.mouseUp(at: CGPoint(x: 120, y: 100))
 
-        editor.setWidth(.thin)
+        editor.setSize(16)
         guard case let .brush(_, width)? = editor.selected?.mosaic?.shape else { return XCTFail("No brush") }
         XCTAssertEqual(width, 16)
+        XCTAssertEqual(editor.shownSize, 16)
     }
 }

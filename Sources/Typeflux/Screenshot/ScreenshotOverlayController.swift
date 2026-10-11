@@ -34,17 +34,21 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
     /// Finds sensitive text to suggest mosaics for.
     private let sensitiveScanner: (any ScreenshotSensitiveInfoScanning)?
+    /// Each tool's style, shared by every display and kept for the next screenshot.
+    private let toolStyles: ScreenshotToolStyleStore
 
     init(primaryDisplayHeight: @escaping () -> CGFloat = { NSScreen.screens.first?.frame.height ?? 0 },
          pointerLocation: @escaping () -> CGPoint = {
              CGEvent(source: nil)?.location ?? .zero
          },
          textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
-         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil) {
+         sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil,
+         toolStyles: ScreenshotToolStyleStore = ScreenshotToolStyleStore()) {
         self.primaryDisplayHeight = primaryDisplayHeight
         self.pointerLocation = pointerLocation
         self.textMeasurer = textMeasurer
         self.sensitiveScanner = sensitiveScanner
+        self.toolStyles = toolStyles
     }
 
     var isPresented: Bool { !panels.isEmpty }
@@ -55,7 +59,7 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         let primaryHeight = primaryDisplayHeight()
         for display in snapshot.displays {
             let view = ScreenshotOverlayView(display: display, windows: snapshot.windows, textMeasurer: textMeasurer,
-                                             sensitiveScanner: sensitiveScanner)
+                                             sensitiveScanner: sensitiveScanner, toolStyles: toolStyles)
             view.onActivate = { [weak self] view in self?.activate(view) ?? true }
             view.onEvent = { [weak self] view, event in self?.forward(event, from: view) }
             let panel = ScreenshotOverlayPanel(
@@ -111,6 +115,7 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         for other in views where other !== view && other.selection.rect != nil {
             other.clearSelection()
         }
+        view.adoptStoredStyles()
         focus(view)
         return true
     }

@@ -3,14 +3,29 @@ import CoreGraphics
 import XCTest
 
 final class ScreenshotAnnotationTests: XCTestCase {
-    func testStyleSizesGrowWithTheWidth() {
-        let thin = ScreenshotAnnotationStyle(width: .thin), thick = ScreenshotAnnotationStyle(width: .thick)
+    func testEveryToolSizeIsTheStylesSize() {
+        let style = ScreenshotAnnotationStyle(size: 9)
         for size in [\ScreenshotAnnotationStyle.lineWidth, \.highlighterWidth, \.fontSize, \.counterDiameter,
                      \.brushWidth] {
-            XCTAssertLessThan(thin[keyPath: size], ScreenshotAnnotationStyle()[keyPath: size])
-            XCTAssertLessThan(ScreenshotAnnotationStyle()[keyPath: size], thick[keyPath: size])
+            XCTAssertEqual(style[keyPath: size], 9)
         }
-        XCTAssertEqual(ScreenshotAnnotationStyle.Color.allCases.count, 5)
+    }
+
+    func testColors() {
+        typealias Color = ScreenshotAnnotationStyle.Color
+        XCTAssertEqual(Color.presets.count, 10)
+        XCTAssertEqual(Set(Color.presets).count, 10)
+        XCTAssertEqual(Color.presets.compactMap(\.presetName),
+                       ["red", "orange", "yellow", "green", "teal", "blue", "purple", "pink", "white", "black"])
+        XCTAssertNil(Color(hex: 0x123456).presetName)
+        XCTAssertEqual(Color(hex: 0x123456).hex, "#123456")
+        XCTAssertEqual(Color(ScreenshotMagnifier.RGB(red: 255, green: 0, blue: 128)).hex, "#FF0080")
+        XCTAssertEqual(Color(red: 2, green: -1, blue: 0.5), Color(red: 1, green: 0, blue: 0.5), "Clamped")
+        XCTAssertEqual(ScreenshotAnnotationStyle(opacity: 0.5).cgColor(alpha: 0.4).alpha, 0.2, accuracy: 0.001)
+        XCTAssertEqual(Color.green.contrastingTextColor, Color.red.contrastingTextColor, "White on green")
+        XCTAssertEqual(Color.black.contrastingTextColor, Color.red.contrastingTextColor)
+        XCTAssertGreaterThan(Color.white.luminance, 0.99)
+        XCTAssertLessThan(Color.black.luminance, 0.02)
         XCTAssertEqual(ScreenshotAnnotationStyle.Color.blue.cgColor().components?.map { ($0 * 255).rounded() },
                        [0x2F, 0x8C, 0xFF, 255])
         XCTAssertEqual(ScreenshotAnnotationStyle.Color.red.cgColor(alpha: 0.4).alpha, 0.4, accuracy: 0.001)
@@ -21,7 +36,8 @@ final class ScreenshotAnnotationTests: XCTestCase {
     }
 
     func testFramesOfEveryKind() {
-        let style = ScreenshotAnnotationStyle()
+        let style = ScreenshotAnnotation(kind: .counter(center: .zero)).style
+        XCTAssertEqual(style.counterDiameter, 24, "Without a style, the counter's own size")
         XCTAssertEqual(ScreenshotAnnotation(kind: .rect(CGRect(x: 10, y: 10, width: -5, height: 5))).frame,
                        CGRect(x: 5, y: 10, width: 5, height: 5), "Standardized")
         XCTAssertEqual(ScreenshotAnnotation(kind: .arrow(from: CGPoint(x: 9, y: 1), to: CGPoint(x: 1, y: 5))).frame,

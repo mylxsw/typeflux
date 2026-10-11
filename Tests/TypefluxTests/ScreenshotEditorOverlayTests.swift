@@ -150,8 +150,8 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
 
         view.toolbarModel.perform(.tool(.pen))
         view.toolbarModel.perform(.color(.green))
-        view.toolbarModel.perform(.width(.thick))
-        XCTAssertEqual(view.toolbarModel.state.style, ScreenshotAnnotationStyle(color: .green, width: .thick))
+        view.toolbarModel.perform(.size(6))
+        XCTAssertEqual(view.toolbarModel.state.style, ScreenshotAnnotationStyle(color: .green, size: 6))
         XCTAssertFalse(view.toolbarModel.state.canUndo)
         drag(view, from: CGPoint(x: 60, y: 60), to: CGPoint(x: 90, y: 90))
         XCTAssertTrue(view.toolbarModel.state.canUndo)
@@ -226,7 +226,7 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         XCTAssertNil(view.textField)
         XCTAssertNil(field.superview)
         XCTAssertEqual(view.editor.document.annotations.map(\.kind),
-                       [.text(origin: CGPoint(x: 100, y: 100), "Peak in September", fontSize: 18)])
+                       [.text(origin: CGPoint(x: 100, y: 100), "Peak in September", fontSize: 20)])
 
         // Double-click edits it; esc keeps it as it was.
         view.mouseDown(at: CGPoint(x: 105, y: 105), clickCount: 2)

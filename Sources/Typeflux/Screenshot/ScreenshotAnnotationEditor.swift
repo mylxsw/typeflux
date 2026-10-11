@@ -2,13 +2,14 @@ import CoreGraphics
 import Foundation
 
 enum ScreenshotAnnotationTool: String, CaseIterable, Equatable {
-    case rect, ellipse, arrow, pen, highlighter, text, counter, mosaic
+    case rect, ellipse, line, arrow, pen, highlighter, text, counter, mosaic
 
     /// The letter shown in tooltips.
     var shortcut: String {
         switch self {
         case .rect: "R"
         case .ellipse: "O"
+        case .line: "L"
         case .arrow: "A"
         case .pen: "P"
         case .highlighter: "H"
@@ -23,6 +24,7 @@ enum ScreenshotAnnotationTool: String, CaseIterable, Equatable {
         switch self {
         case .rect: 15
         case .ellipse: 31
+        case .line: 37
         case .arrow: 0
         case .pen: 35
         case .highlighter: 4
@@ -40,8 +42,9 @@ enum ScreenshotAnnotationTool: String, CaseIterable, Equatable {
 
 /// Drawing, picking and changing annotations inside the chosen region. Pure state: the
 /// overlay feeds it pointer and key input in the display's own points and draws the result.
+// swiftlint:disable:next type_body_length
 struct ScreenshotAnnotationEditor {
-    enum MosaicShape: String, CaseIterable, Equatable {
+    enum MosaicShape: String, CaseIterable, Equatable, Codable {
         case rect, brush
     }
 
@@ -69,10 +72,8 @@ struct ScreenshotAnnotationEditor {
     static let minimumPointSpacing: CGFloat = 1
 
     private(set) var tool: ScreenshotAnnotationTool?
-    private(set) var style = ScreenshotAnnotationStyle()
-    private(set) var mosaicEffect: ScreenshotMosaic.Effect = .pixelate
-    private(set) var mosaicStrength: ScreenshotMosaic.Strength = .medium
-    private(set) var mosaicShape: MosaicShape = .rect
+    /// Each tool's style and the mosaic options; the overlay keeps them in a store between screenshots.
+    private(set) var toolStyles: ScreenshotToolStyles
     private(set) var document = ScreenshotAnnotationDocument()
     private(set) var selectedID: UUID?
     /// The annotation being drawn, not yet in the document.
@@ -80,6 +81,40 @@ struct ScreenshotAnnotationEditor {
     /// The text annotation whose text is being edited; the overlay shows a field instead of it.
     private(set) var editingTextID: UUID?
     private var drag: Drag?
+    /// The annotations before a slider drag began, so the whole drag undoes in one step.
+    private var styleChangeStart: [ScreenshotAnnotation]?
+
+    init(toolStyles: ScreenshotToolStyles = ScreenshotToolStyles()) {
+        self.toolStyles = toolStyles
+    }
+
+    /// Styles changed elsewhere, such as on another display; what is drawn keeps its own.
+    mutating func replaceToolStyles(_ styles: ScreenshotToolStyles) {
+        toolStyles = styles
+    }
+
+    /// The picked tool's style; the rectangle's when no tool is picked.
+    var style: ScreenshotAnnotationStyle { toolStyles[tool ?? .rect] }
+    var mosaicEffect: ScreenshotMosaic.Effect { toolStyles.mosaicEffect }
+    var mosaicStrength: ScreenshotMosaic.Strength { toolStyles.mosaicStrength }
+    var mosaicShape: MosaicShape { toolStyles.mosaicShape }
+
+    /// The style the options bar shows and changes: the selected annotation's, else the tool's.
+    var shownStyle: ScreenshotAnnotationStyle? {
+        if let selected { return selected.style }
+        return tool.map { toolStyles[$0] }
+    }
+
+    /// The tool whose options the bar shows: the selected annotation's, else the picked one.
+    var optionsTool: ScreenshotAnnotationTool? {
+        selected?.tool ?? tool
+    }
+
+    /// The size the slider shows, in the options tool's range.
+    var shownSize: CGFloat? {
+        if let selected { return selected.size }
+        return tool.map { toolStyles[$0].size }
+    }
 
     /// Measures the text under a new mosaic, in points.
     var measureTextHeight: (ScreenshotMosaic) -> CGFloat? = { _ in nil }
@@ -185,9 +220,11 @@ struct ScreenshotAnnotationEditor {
 
     private func makeDraft(_ tool: ScreenshotAnnotationTool, at point: CGPoint) -> ScreenshotAnnotation {
         let empty = CGRect(origin: point, size: .zero)
+        let style = toolStyles[tool]
         let kind: ScreenshotAnnotation.Kind = switch tool {
         case .rect: .rect(empty)
         case .ellipse: .ellipse(empty)
+        case .line: .line(from: point, to: point)
         case .arrow: .arrow(from: point, to: point)
         case .pen: .path([point])
         case .highlighter: .highlight([point])
@@ -215,6 +252,7 @@ struct ScreenshotAnnotationEditor {
         switch draft.kind {
         case .rect: draft.kind = .rect(ScreenshotSelection.rect(from: start, to: square))
         case .ellipse: draft.kind = .ellipse(ScreenshotSelection.rect(from: start, to: square))
+        case .line: draft.kind = .line(from: start, to: angled)
         case .arrow: draft.kind = .arrow(from: start, to: angled)
         case let .path(points): draft.kind = .path(stroke(points))
         case let .highlight(points): draft.kind = .highlight(stroke(points))
@@ -234,7 +272,7 @@ struct ScreenshotAnnotationEditor {
         switch annotation.kind {
         case let .rect(rect), let .ellipse(rect):
             return rect.width >= minimumShapeSize && rect.height >= minimumShapeSize
-        case let .arrow(from, to):
+        case let .line(from, to), let .arrow(from, to):
             return hypot(to.x - from.x, to.y - from.y) >= minimumShapeSize
         case let .mosaic(mosaic):
             guard case let .rect(rect) = mosaic.shape else { return true }
@@ -264,6 +302,7 @@ struct ScreenshotAnnotationEditor {
             return
         }
         guard !trimmed.isEmpty else { return }
+        let style = toolStyles[.text]
         document.add(ScreenshotAnnotation(kind: .text(origin: origin, text, fontSize: style.fontSize), style: style))
     }
 
@@ -283,57 +322,127 @@ struct ScreenshotAnnotationEditor {
         selectedID = nil
     }
 
-    /// Sets the color for new annotations and the selected one.
-    mutating func setColor(_ color: ScreenshotAnnotationStyle.Color) {
-        style.color = color
-        restyleSelected { $0.style.color = color }
-    }
+    // MARK: Style
 
-    /// Sets the size for new annotations and the selected one; text takes the matching font size.
-    mutating func setWidth(_ width: ScreenshotAnnotationStyle.Width) {
-        style.width = width
-        restyleSelected { annotation in
-            annotation.style.width = width
-            switch annotation.kind {
-            case let .text(origin, text, _):
-                annotation.kind = .text(origin: origin, text, fontSize: annotation.style.fontSize)
-            case var .mosaic(mosaic):
-                if case let .brush(points, _) = mosaic.shape {
-                    mosaic.shape = .brush(points, width: annotation.style.brushWidth)
-                    annotation.kind = .mosaic(mosaic)
-                }
-            default:
-                break
-            }
+    /// Changes the selected annotation, or the picked tool's style when nothing is selected, so
+    /// restyling one mark never changes what the next one looks like.
+    private mutating func restyle(_ change: (inout ScreenshotAnnotationStyle) -> Void) {
+        if var annotation = selected {
+            change(&annotation.style)
+            annotation.style = ScreenshotToolStyles.normalized(annotation.style, for: annotation.tool)
+            updateSelected(annotation)
+        } else if let tool {
+            change(&toolStyles[tool])
         }
     }
 
+    private mutating func updateSelected(_ annotation: ScreenshotAnnotation) {
+        document.update(annotation, recordingUndo: styleChangeStart == nil)
+    }
+
+    mutating func setColor(_ color: ScreenshotAnnotationStyle.Color) {
+        guard selected != nil || tool != nil else { return }
+        restyle { $0.color = color }
+        toolStyles.noteRecent(color)
+    }
+
+    /// The tool's size, or the selected annotation's (the font size of text, the width of a brush).
+    mutating func setSize(_ size: CGFloat) {
+        if var annotation = selected {
+            annotation.size = ScreenshotToolStyles.clamp(size, to: annotation.tool.sizeRange)
+            updateSelected(annotation)
+        } else if let tool {
+            toolStyles[tool].size = size
+        }
+    }
+
+    /// `[` and `]`: one step smaller or larger.
+    mutating func stepSize(by steps: Int) {
+        guard let tool = optionsTool, let size = shownSize else { return }
+        setSize(size + CGFloat(steps) * tool.sizeStep)
+    }
+
+    /// Virtual key codes of 1, 2 … 9, 0 (ANSI layout), the order of the preset colors.
+    static let colorKeyCodes: [UInt16] = [18, 19, 20, 21, 23, 22, 26, 28, 25, 29]
+    static let smallerKeyCode: UInt16 = 33
+    static let largerKeyCode: UInt16 = 30
+
+    /// Whether the options bar offers a color now: tools that draw in a color, and solid mosaics.
+    var offersColor: Bool {
+        guard let tool = optionsTool else { return false }
+        if tool == .mosaic { return (selected?.mosaic?.effect ?? mosaicEffect) == .solid }
+        return tool.usesColor
+    }
+
+    /// 1–0 pick a preset color and `[` `]` change the size, while a tool is picked or a mark is selected.
+    /// - Returns: whether the key meant something here.
+    mutating func handleStyleKey(_ keyCode: UInt16) -> Bool {
+        guard optionsTool != nil else { return false }
+        if let index = Self.colorKeyCodes.firstIndex(of: keyCode) {
+            guard offersColor else { return false }
+            setColor(ScreenshotAnnotationStyle.Color.presets[index])
+            return true
+        }
+        switch keyCode {
+        case Self.smallerKeyCode: stepSize(by: -1)
+        case Self.largerKeyCode: stepSize(by: 1)
+        default: return false
+        }
+        return true
+    }
+
+    mutating func setOpacity(_ opacity: CGFloat) {
+        restyle { $0.opacity = opacity }
+    }
+
+    mutating func setDash(_ dash: ScreenshotAnnotationStyle.Dash) {
+        restyle { $0.dash = dash }
+    }
+
+    mutating func setFill(_ fill: ScreenshotAnnotationStyle.Fill) {
+        restyle { $0.fill = fill }
+    }
+
+    mutating func setCornerRadius(_ radius: CGFloat) {
+        restyle { $0.cornerRadius = radius }
+    }
+
+    /// A slider drag starts: its changes to the selected annotation become one undo step.
+    mutating func beginStyleChange() {
+        guard styleChangeStart == nil else { return }
+        styleChangeStart = document.annotations
+    }
+
+    mutating func endStyleChange() {
+        guard let start = styleChangeStart else { return }
+        styleChangeStart = nil
+        document.commit(from: start)
+    }
+
     mutating func setMosaicEffect(_ effect: ScreenshotMosaic.Effect) {
-        mosaicEffect = effect
-        restyleSelected { annotation in
-            guard var mosaic = annotation.mosaic else { return }
+        if let annotation = selected, var mosaic = annotation.mosaic {
             mosaic.effect = effect
-            annotation.kind = .mosaic(mosaic)
+            var changed = annotation
+            changed.kind = .mosaic(mosaic)
+            updateSelected(changed)
+        } else {
+            toolStyles.mosaicEffect = effect
         }
     }
 
     mutating func setMosaicStrength(_ strength: ScreenshotMosaic.Strength) {
-        mosaicStrength = strength
-        restyleSelected { annotation in
-            guard var mosaic = annotation.mosaic else { return }
+        if let annotation = selected, var mosaic = annotation.mosaic {
             mosaic.strength = strength
-            annotation.kind = .mosaic(mosaic)
+            var changed = annotation
+            changed.kind = .mosaic(mosaic)
+            updateSelected(changed)
+        } else {
+            toolStyles.mosaicStrength = strength
         }
     }
 
     mutating func setMosaicShape(_ shape: MosaicShape) {
-        mosaicShape = shape
-    }
-
-    private mutating func restyleSelected(_ change: (inout ScreenshotAnnotation) -> Void) {
-        guard var annotation = selected else { return }
-        change(&annotation)
-        document.update(annotation)
+        toolStyles.mosaicShape = shape
     }
 
     /// - Returns: whether an annotation was removed.
@@ -373,7 +482,8 @@ struct ScreenshotAnnotationEditor {
         guard drag == nil else { return [] }
         let added = rects.map { rect in
             ScreenshotAnnotation(kind: .mosaic(ScreenshotMosaic(shape: .rect(rect), effect: mosaicEffect,
-                                                                strength: mosaicStrength, textHeight: rect.height)))
+                                                                strength: mosaicStrength, textHeight: rect.height)),
+                                 style: toolStyles[.mosaic])
         }
         document.add(added)
         return added.map(\.id)
@@ -417,5 +527,31 @@ struct ScreenshotAnnotationEditor {
         let x = abs(cos(angle)) < 1e-9 ? 0 : cos(angle) * length
         let y = abs(sin(angle)) < 1e-9 ? 0 : sin(angle) * length
         return CGPoint(x: start.x + x, y: start.y + y)
+    }
+}
+
+extension ScreenshotAnnotationEditor {
+    /// Applies a toolbar action that only changes the marks, the tools or their style, the same
+    /// way in the region overlay and the long image editor.
+    /// - Returns: false for actions the view handles itself: finishing, the color panel, picking a color.
+    @discardableResult
+    mutating func apply(_ action: ScreenshotEditorToolbarModel.Action) -> Bool {
+        switch action {
+        case let .tool(tool): selectTool(tool)
+        case let .color(color): setColor(color)
+        case let .size(size): setSize(size)
+        case let .opacity(opacity): setOpacity(opacity)
+        case let .dash(dash): setDash(dash)
+        case let .fill(fill): setFill(fill)
+        case let .cornerRadius(radius): setCornerRadius(radius)
+        case let .styleChange(began): if began { beginStyleChange() } else { endStyleChange() }
+        case let .mosaicEffect(effect): setMosaicEffect(effect)
+        case let .mosaicStrength(strength): setMosaicStrength(strength)
+        case let .mosaicShape(shape): setMosaicShape(shape)
+        case .undo: undo()
+        case .redo: redo()
+        case .toggleColorPanel, .pickColor, .cancel, .save, .copy, .scrollCapture, .followUp: return false
+        }
+        return true
     }
 }

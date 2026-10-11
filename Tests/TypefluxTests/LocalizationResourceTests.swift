@@ -406,9 +406,12 @@ extension LocalizationResourceTests {
 extension LocalizationResourceTests {
     func testScreenshotEditorCopyExistsInEveryLanguage() throws {
         var keys = ScreenshotAnnotationTool.allCases.map { "screenshot.tool.\($0.rawValue)" }
-        keys += ["undo", "redo", "cancel", "save", "copy", "color", "size"].map { "screenshot.edit.\($0)" }
-        keys += ScreenshotAnnotationStyle.Color.allCases.map { "screenshot.color.\($0.rawValue)" }
-        keys += ["thin", "medium", "thick"].map { "screenshot.width.\($0)" }
+        keys += ["undo", "redo", "cancel", "save", "copy", "color", "size", "fontSize", "counterSize", "opacity",
+                 "cornerRadius"].map { "screenshot.edit.\($0)" }
+        keys += ScreenshotAnnotationStyle.Color.presets.compactMap(\.presetName).map { "screenshot.color.\($0)" }
+        keys += ["recent", "pick"].map { "screenshot.color.\($0)" }
+        keys += ScreenshotAnnotationStyle.Fill.allCases.map { "screenshot.fill.\($0.rawValue)" }
+        keys += ScreenshotAnnotationStyle.Dash.allCases.map { "screenshot.dash.\($0.rawValue)" }
         keys += ScreenshotAnnotationEditor.MosaicShape.allCases.map { "screenshot.mosaic.shape.\($0.rawValue)" }
         keys += ScreenshotMosaic.Effect.allCases.map { "screenshot.mosaic.effect.\($0.rawValue)" }
         keys += ["", ".low", ".medium", ".high"].map { "screenshot.mosaic.strength\($0)" }
@@ -421,6 +424,7 @@ extension LocalizationResourceTests {
                 XCTAssertFalse(try XCTUnwrap(table[key], "Missing \(key) in \(language.rawValue)").isEmpty)
             }
             XCTAssertNil(table["screenshot.overlay.hint"], "The toolbar replaced the hint")
+            XCTAssertNil(table["screenshot.width.thin"], "Sizes are a slider now")
         }
     }
 }

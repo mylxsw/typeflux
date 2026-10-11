@@ -44,18 +44,21 @@ final class DIContainer {
         recognizer: TiledImageTextRecognizer(base: imageTextRecognizer)
     )
     lazy var screenshotCoordinator: ScreenshotCoordinator = { [settingsStore, sensitiveInfoScanner] in
-        ScreenshotCoordinator(
+        // One store, so a style picked in the region editor is there in the long image editor too.
+        let toolStyles = ScreenshotToolStyleStore(defaults: settingsStore.defaults)
+        return ScreenshotCoordinator(
             capture: screenCapture,
             permission: screenCapturePermission,
             overlay: ScreenshotOverlayController(textMeasurer: VisionTextHeightMeasurer(),
-                                                 sensitiveScanner: sensitiveInfoScanner),
+                                                 sensitiveScanner: sensitiveInfoScanner, toolStyles: toolStyles),
             permissionGuide: ScreenshotPermissionGuideController(),
             toast: ScreenshotToastController(),
             output: screenshotOutput,
             saveDirectory: { settingsStore.screenshotSaveDirectory },
             relaunch: { ScreenshotAppRelauncher.relaunch() },
             longImageEditor: ScreenshotLongImageEditorController(textMeasurer: VisionTextHeightMeasurer(),
-                                                                 sensitiveScanner: sensitiveInfoScanner),
+                                                                 sensitiveScanner: sensitiveInfoScanner,
+                                                                 toolStyles: toolStyles),
             makeScrollCapture: ScreenshotCoordinator.scrollCapture(for:)
         )
     }()
