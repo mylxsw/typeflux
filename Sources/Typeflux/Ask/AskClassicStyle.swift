@@ -18,7 +18,7 @@ enum AskClassic {
     /// The history column: a step off the canvas, lighter in dark like the
     /// system's source lists, a cool grey in light.
     static let sidebar = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.961, green: 0.961, blue: 0.969, alpha: 1),
+        light: NSColor(srgbRed: 0.953, green: 0.957, blue: 0.965, alpha: 1),
         dark: NSColor(srgbRed: 0.149, green: 0.149, blue: 0.149, alpha: 1)
     )
     /// The composer and the empty state's cards, raised off the canvas.
@@ -122,10 +122,28 @@ struct AskSidePanelChrome: ViewModifier {
     /// Over the conversation, as a drawer, rather than beside it.
     var floating = false
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    /// In light Liquid Glass the panel is a flat, slightly translucent grey:
+    /// no frost, no drop shadow, only a hairline. Dark keeps the frosted glass.
+    static func usesFlatLightPanel(glass: Bool, dark: Bool) -> Bool { glass && !dark }
+
+    /// The flat light panel's fill opacity; solid with Reduce Transparency.
+    static func flatPanelOpacity(reduceTransparency: Bool) -> Double {
+        reduceTransparency ? 1 : StudioTheme.Opacity.sidePanelFill
+    }
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if style.usesGlass {
+        if Self.usesFlatLightPanel(glass: style.usesGlass, dark: colorScheme == .dark) {
+            let shape = RoundedRectangle(cornerRadius: AskMetrics.sidebarPanelCorner, style: .continuous)
+            content
+                .background(shape.fill(StudioTheme.sidePanelFill.opacity(Self.flatPanelOpacity(reduceTransparency: reduceTransparency)))
+                    .allowsHitTesting(false))
+                .overlay(shape.strokeBorder(StudioTheme.sidePanelStroke, lineWidth: 0.5).allowsHitTesting(false))
+                .padding(glassInset, AskMetrics.sidebarPanelInset)
+        } else if style.usesGlass {
             content
                 .askInWindowGlass(corner: AskMetrics.sidebarPanelCorner, opaqueFill: glassFill)
                 .padding(glassInset, AskMetrics.sidebarPanelInset)

@@ -1251,14 +1251,14 @@ struct AskWindowBackdrop: View {
 
     /// The app's own tint over the blurred desktop.
     static func base(dark: Bool) -> Color {
-        dark ? Color(red: 0.094, green: 0.094, blue: 0.110) : Color(red: 0.969, green: 0.969, blue: 0.976)
+        dark ? Color(red: 0.094, green: 0.094, blue: 0.110) : Color(red: 1, green: 1, blue: 1)
     }
 
     /// How much of the tint covers the blur: enough to keep the window calm
     /// and legible on any wallpaper, light enough that it still reads as frosted.
     static func tintOpacity(dark: Bool, reduceTransparency: Bool) -> Double {
         if reduceTransparency { return 1 }
-        return dark ? 0.78 : 0.72
+        return dark ? 0.78 : 0.95
     }
 
     var body: some View {

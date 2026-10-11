@@ -6,6 +6,7 @@ import SwiftUI
 /// billing.
 struct AskAccountCard: View {
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
     static let width: CGFloat = 300
 
     @ObservedObject var auth: AuthState
@@ -206,10 +207,17 @@ struct AskAccountCard: View {
         .padding(.horizontal, 4)
     }
 
+    /// White opacity of the light Cloud promo card.
+    static let promoCardOpacity = 0.70
+
     @ViewBuilder
     private func offerBackground(_ tone: AccountStatusPresentation.Tone) -> some View {
         let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-        if tone == .accent {
+        if tone == .accent, colorScheme != .dark {
+            // Light: a translucent white card on the sidebar, no gradient.
+            shape.fill(Color.white.opacity(Self.promoCardOpacity))
+                .overlay(shape.strokeBorder(StudioTheme.sidePanelStroke, lineWidth: 1))
+        } else if tone == .accent {
             shape.fill(LinearGradient(colors: [StudioTheme.accent.opacity(0.16), Color.purple.opacity(0.13)],
                                       startPoint: .topLeading, endPoint: .bottomTrailing))
                 .overlay(shape.strokeBorder(StudioTheme.accent.opacity(0.25)))
