@@ -8,6 +8,36 @@ import Testing
 @Suite("Ask light v4 screenshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLightV4SnapshotTests {
+    @Test func `settings review screenshots`() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_V4_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            settings.appLanguage = .simplifiedChinese
+            AppLocalization.shared.setLanguage(.simplifiedChinese)
+            let library = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
+            for (style, dark, name) in [(InterfaceStyle.liquidGlass, false, "glass-light"),
+                                        (.classic, false, "classic-light"), (.liquidGlass, true, "glass-dark")] {
+                settings.interfaceStyle = style
+                settings.appearanceMode = dark ? .dark : .light
+                for section in [StudioSection.settings, .vocabulary, .personas, .hotkeys] {
+                    let model = StudioViewModel(settingsStore: settings, historyStore: SnapshotHistoryStore(),
+                                                initialSection: section, modelLibrary: library)
+                    model.vocabularyEntries = [
+                        VocabularyEntry(term: "Typeflux", source: .manual, occurrenceCount: 42),
+                        VocabularyEntry(term: "Liquid Glass", source: .automatic, occurrenceCount: 12),
+                        VocabularyEntry(term: "SwiftUI", source: .codex, occurrenceCount: 8),
+                        VocabularyEntry(term: "macOS", source: .claude, occurrenceCount: 6)
+                    ]
+                    if section == .personas { model.selectPersona(model.personas.first?.id) }
+                    try await capture(StudioView(viewModel: model), size: NSSize(width: 1100, height: 800),
+                                      style: style, dark: dark,
+                                      file: root.appendingPathComponent("\(section.rawValue)-\(name).png"))
+                }
+            }
+        }
+    }
+
     @Test func `review screenshots`() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_LIGHT_V4_SNAPSHOTS"] else { return }
         _ = NSApplication.shared
@@ -207,4 +237,15 @@ struct AskLightV4SnapshotTests {
         #expect(capture.terminationStatus == 0)
         #expect(FileManager.default.fileExists(atPath: file.path))
     }
+}
+
+private final class SnapshotHistoryStore: HistoryStore {
+    func save(record _: HistoryRecord) {}
+    func list() -> [HistoryRecord] { [] }
+    func list(limit _: Int, offset _: Int, searchQuery _: String?) -> [HistoryRecord] { [] }
+    func record(id _: UUID) -> HistoryRecord? { nil }
+    func delete(id _: UUID) {}
+    func purge(olderThanDays _: Int) {}
+    func clear() {}
+    func exportMarkdown() throws -> URL { throw CocoaError(.featureUnsupported) }
 }

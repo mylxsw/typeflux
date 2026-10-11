@@ -884,20 +884,9 @@ struct AskWordBookDetail: View {
     }
 
     private func chip(_ word: String, label: String?) -> some View {
-        Button { Task { await model.lookUp(word) } } label: {
-            HStack(spacing: 5) {
-                if let label, !label.isEmpty {
-                    Text(label).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-                }
-                Text(word).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, 10).padding(.vertical, 5).frame(minHeight: 26)
-            .askWordBookControl()
-            .contentShape(Rectangle())
+        AskWordBookRelatedChip(word: word, label: label) {
+            Task { await model.lookUp(word) }
         }
-        .buttonStyle(StudioInteractiveButtonStyle())
-        .help(L("ask.wordBook.lookUpWord", word))
     }
 
     private var plain: some View {
