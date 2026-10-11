@@ -4,7 +4,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("System monitor in the launcher")
+@Suite("System monitor in the launcher", .exclusiveUIState)
 @MainActor
 struct SystemMonitorLauncherModelTests {
     typealias F = SystemMonitorFixtures
@@ -178,7 +178,7 @@ struct SystemMonitorLauncherModelTests {
     }
 }
 
-@Suite("Ending processes from the monitor")
+@Suite("Ending processes from the monitor", .exclusiveUIState)
 @MainActor
 struct SystemProcessTerminatorTests {
     typealias F = SystemMonitorFixtures

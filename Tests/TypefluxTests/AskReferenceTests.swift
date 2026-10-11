@@ -154,6 +154,19 @@ struct AskReferenceTests {
         #expect(NSPasteboard.general.string(forType: .string) == "sentence")
         #expect(!editor.askPopover.isShown)
 
+        // Saving an excerpt leaves the question composer and clipboard alone.
+        var saved: [String] = []
+        editor.onSaveNote = { saved.append($0) }
+        editor.showSelectionAction()
+        #expect(editor.askPopover.isShown)
+        editor.perform(.note, excerpt: "sentence")
+        #expect(saved == ["sentence"] && added.count == 3)
+        #expect(NSPasteboard.general.string(forType: .string) == "sentence")
+        #expect(!editor.askPopover.isShown)
+        editor.onSaveNote = nil
+        editor.perform(.note, excerpt: "ignored")
+        #expect(saved == ["sentence"])
+
         // Without a handler the bar never opens, so a streaming answer stays inert.
         editor.onAsk = nil
         editor.showSelectionAction()
@@ -161,7 +174,8 @@ struct AskReferenceTests {
     }
 
     @Test func selectionActionsCarryDistinctTitlesAndQuestions() {
-        #expect(AskSelectionAction.allCases.count == 4)
+        #expect(AskSelectionAction.standard.count == 4)
+        #expect(AskSelectionAction.allCases.count == 5)
         let titles = AskSelectionAction.allCases.map(\.title)
         #expect(Set(titles).count == titles.count)
         // A missing table entry makes L() echo the key, so guard against that.

@@ -228,6 +228,7 @@ enum AskTheme {
         if name.hasPrefix("mcp_") {
             return (mcpServer ?? "MCP") + " · " + String(name.dropFirst(4))
         }
+        if name == AskNotebookTool.name { return notebookToolTitle(args) }
         if ["memory", "run_code", "skill"].contains(name) {
             let title = L("ask.tool." + name)
             if name == "skill", let skill = args["name"] as? String { return title + " · " + skill }
@@ -239,6 +240,15 @@ enum AskTheme {
         let action = (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) ?? ""
         let title = L("ask.tool." + name)
         return action.isEmpty ? title : title + " · " + L("ask.action." + action)
+    }
+
+    private static func notebookToolTitle(_ args: [String: Any]) -> String {
+        let action = args["action"] as? String ?? ""
+        let title = L("ask.tool.notebook")
+        let detail = action == "search" ? args["query"] as? String : args["title"] as? String
+        let verb = ["search", "read", "list", "create", "append", "update", "tag", "delete"].contains(action)
+            ? " · " + L("ask.notebook.action." + action) : ""
+        return title + verb + (detail.flatMap { $0.isEmpty ? nil : " · " + String($0.prefix(60)) } ?? "")
     }
 }
 
@@ -970,6 +980,11 @@ struct AskGhostButton: View {
 /// for an optional question before anything could happen.
 enum AskSelectionAction: String, CaseIterable {
     case explain, translate, ask, copy
+    /// Saves the selection to the notebook; offered where a note can be saved.
+    case note
+
+    /// The actions every selection bar offers.
+    static let standard: [AskSelectionAction] = [.explain, .translate, .ask, .copy]
 
     var title: String {
         switch self {
@@ -977,6 +992,7 @@ enum AskSelectionAction: String, CaseIterable {
         case .translate: return L("ask.selection.translate")
         case .ask: return L("ask.selection.ask")
         case .copy: return L("ask.copy")
+        case .note: return L("ask.notes.saveSelection")
         }
     }
 
@@ -986,6 +1002,7 @@ enum AskSelectionAction: String, CaseIterable {
         case .translate: return "character.book.closed"
         case .ask: return "text.bubble"
         case .copy: return "doc.on.doc"
+        case .note: return "note.text.badge.plus"
         }
     }
 
@@ -995,7 +1012,7 @@ enum AskSelectionAction: String, CaseIterable {
         switch self {
         case .explain: return L("ask.references.explain")
         case .translate: return L("ask.references.translate")
-        case .ask, .copy: return ""
+        case .ask, .copy, .note: return ""
         }
     }
 }
@@ -1003,11 +1020,12 @@ enum AskSelectionAction: String, CaseIterable {
 /// The bar that floats over a selection inside an answer. Copy is separated by
 /// a rule because it is the only action that does not reach the composer.
 struct AskSelectionActionBar: View {
+    var actions: [AskSelectionAction] = AskSelectionAction.standard
     var perform: (AskSelectionAction) -> Void
 
     var body: some View {
         HStack(spacing: 2) {
-            ForEach(AskSelectionAction.allCases, id: \.rawValue) { action in
+            ForEach(actions, id: \.rawValue) { action in
                 if action == .copy {
                     Rectangle().fill(AskTheme.separator)
                         .frame(width: 1, height: 16)
@@ -1165,6 +1183,7 @@ enum AskPresentation {
         case "run_code", "project_terminal": return "terminal"
         case "skill": return "book"
         case "memory": return "brain"
+        case AskNotebookTool.name: return "note.text"
         case "update_plan": return "list.bullet.clipboard"
         case "research": return "doc.text.magnifyingglass"
         case let name where name.hasPrefix("mcp_"): return "point.3.connected.trianglepath.dotted"

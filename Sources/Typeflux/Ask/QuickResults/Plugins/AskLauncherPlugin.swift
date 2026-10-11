@@ -150,6 +150,8 @@ struct AskPluginAction: Equatable, Sendable {
         case openNotes(id: UUID?)
         /// Opens a saved note in a result window (`nb` keyword).
         case openNote(UUID)
+        /// Opens the notes window on a new note with this title (`nb text`).
+        case createNote(String)
         /// Closes the launcher, then starts a screenshot (`jt` keyword); with a follow-up, the
         /// chosen region goes straight to it (`ocr`, `jtai`).
         case capture(mode: ScreenshotMode, followUp: ScreenshotFollowUp? = nil)

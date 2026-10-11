@@ -356,6 +356,10 @@ extension AskConversationModel {
             return .close
         case let .openNote(id):
             return openNoteInWindow(id) ? .close : .stay
+        case let .createNote(title):
+            finishPluginResult()
+            createNote(title)
+            return .close
         case let .capture(mode, followUp):
             guard let onStartScreenshot else { return .stay }
             finishPluginResult()

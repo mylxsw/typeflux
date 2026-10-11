@@ -1212,7 +1212,10 @@ struct AskConversationView: View {
                            isStreaming: message.id == streamingId,
                            canRegenerate: regenerable == message.id,
                            onRegenerate: { model.regenerate(message.id) },
-                           outputs: item.outputs)
+                           outputs: item.outputs,
+                           onSaveNote: model.notes == nil || message.role != "assistant" ? nil
+                               : { excerpt in model.toggleAnswerNote(message, excerpt: excerpt) },
+                           savedToNotes: model.answerNoteIDs[message.id] != nil)
         case let .activity(group):
             let results = model.selected?.messages.filter { $0.role == "tool" } ?? []
             let isLatest = items.last(where: { if case .activity = $0.kind { return true }; return false })?.id == group.id
@@ -1313,6 +1316,10 @@ private struct AskMessageView: View {
     var onRegenerate: () -> Void = {}
     /// Images and pages from the tool steps before this answer.
     var outputs = AskRunOutputs()
+    /// Saves the answer, or the given part of it, to the notebook; nil hides the action.
+    var onSaveNote: ((String?) -> Void)?
+    /// The whole answer is in the notebook.
+    var savedToNotes = false
     @State private var copied = false
     @State private var hovering = false
 
@@ -1378,7 +1385,7 @@ private struct AskMessageView: View {
             if !message.text.isEmpty {
                 AskTranscriptText(text: message.text, onAsk: isStreaming ? nil : { text, question in
                     onReference(AskReference(messageId: message.id, text: text, question: question))
-                })
+                }, onSaveNote: isStreaming ? nil : onSaveNote.map { save -> (String) -> Void in { save($0) } })
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
             }
             if !outputs.isEmpty, !isStreaming {
@@ -1439,11 +1446,17 @@ private struct AskMessageView: View {
             AskIconGhostButton(label: L("ask.quote"), systemImage: "text.quote") {
                 onReference(AskReference(messageId: message.id, text: message.text, question: ""))
             }
+            if let onSaveNote {
+                AskIconGhostButton(label: L(savedToNotes ? "ask.notes.savedAnswer" : "ask.notes.saveAnswer"),
+                                   systemImage: savedToNotes ? "note.text" : "note.text.badge.plus",
+                                   active: savedToNotes) { onSaveNote(nil) }
+                    .accessibilityIdentifier("ask.message.saveNote")
+            }
             AskIconGhostButton(label: usageHelp, systemImage: "chart.bar.xaxis", action: onUsage)
             .accessibilityLabel(L("ask.usage.title"))
             .accessibilityValue(usageLabel)
         }
-        .opacity(hovering || copied ? 1 : 0)
+        .opacity(hovering || copied || savedToNotes ? 1 : 0)
         .animation(.easeOut(duration: 0.12), value: hovering)
     }
 

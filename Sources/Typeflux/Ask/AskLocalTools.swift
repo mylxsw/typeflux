@@ -151,12 +151,29 @@ final class AskLocalTools: AskToolExecuting {
         }
     }
 
+    /// The user's notes, for the `notebook` tool; nil leaves the tool and its skill out.
+    var notebook: (any AskNoteStoring)?
+
+    /// The notebook is set and the user lets the agent use it: neither the notes window's
+    /// switch nor the `notebook` skill in Settings › Skills is off.
+    var notebookAvailable: Bool {
+        notebook != nil && settings?.askNotebookAgentEnabled != false
+            && settings?.askDisabledSkills.contains(AskNotebookSkill.name) != true
+    }
+
+    var notebookTool: AskNotebookTool? {
+        guard notebookAvailable, let notebook else { return nil }
+        return AskNotebookTool(store: notebook,
+                               hiddenTags: settings?.askNotebookHiddenTags ?? SettingsStore.defaultNotebookHiddenTags)
+    }
+
     var workflowAuthoring: AskWorkflowAuthoringStore?
     var workflowEnvironmentProbe = AskWorkflowEnvironmentProbe()
 
     /// Skills the user has not turned off in settings.
     var enabledSkills: [AskSkill] {
-        let disabled = settings?.askDisabledSkills ?? []
+        var disabled = settings?.askDisabledSkills ?? []
+        if !notebookAvailable { disabled.insert(AskNotebookSkill.name) }
         return skills.skills().filter { !disabled.contains($0.name) }
     }
 
@@ -194,6 +211,7 @@ final class AskLocalTools: AskToolExecuting {
         if let skill = skills.definition(enabledSkills) { result.append(skill) }
         if workflowAuthoringEnabled { result += Self.workflowChatDefinitions }
         result.append(AskMemoryNoteStore.definition)
+        if notebookAvailable { result.append(AskNotebookTool.definition) }
         if imageConfiguration != nil { result.append(Self.imageGenerationDefinition) }
         mcpTools = [:]
         mcpServers = [:]
@@ -236,6 +254,7 @@ final class AskLocalTools: AskToolExecuting {
         case ("artifact", _), ("generate_image", _): return .write
         case ("project_terminal", _): return ["status", "output"].contains(action) ? .read : .write
         case ("project_files", _): return ["list", "read", "review", "export"].contains(action) ? .read : .write
+        case (AskNotebookTool.name, _): return AskNotebookTool.risk(action: action)
         case ("computer", _), ("browser", _), ("run_code", _), ("memory", _): return .write
         default: return .destructive
         }
@@ -361,10 +380,19 @@ final class AskLocalTools: AskToolExecuting {
                          isError: execution.timedOut || execution.exitCode != 0)
         case "skill":
             guard let name = args["name"] as? String else { throw AskLocalError.message(L("ask.tool.invalid")) }
-            guard !(settings?.askDisabledSkills.contains(name) ?? false) else { throw AskLocalError.message(L("ask.skills.missing")) }
+            guard enabledSkills.contains(where: { $0.name == name }) else {
+                throw AskLocalError.message(L("ask.skills.missing"))
+            }
             return .init(content: try skills.load(name))
         case "memory":
             return .init(content: try notes.execute(args, owner: owner()))
+        case AskNotebookTool.name:
+            guard let tool = notebookTool else { throw AskLocalError.message(L("ask.tool.unavailable")) }
+            guard AskNotebookTool.readActions.contains(args["action"] as? String ?? "") else {
+                // Writes require the approved dispatch entry point.
+                throw AskLocalError.message(L("ask.tool.unavailable"))
+            }
+            return .init(content: try tool.execute(args))
         default: throw AskLocalError.message(L("ask.tool.unavailable"))
         }
     }

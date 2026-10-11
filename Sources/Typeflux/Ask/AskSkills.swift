@@ -98,6 +98,7 @@ extension AskSkill {
 
 enum AskBuiltinSkills {
     static let all: [AskSkill] = [
+        AskNotebookSkill.skill,
         AskSkill(name: AskWorkflowAuthorSkill.name,
                  description: "Create or edit a reusable Typeflux launcher tool/workflow from a natural-language request. Do not use for one-off text processing.",
                  body: AskWorkflowAuthorSkill.chatInstructions),

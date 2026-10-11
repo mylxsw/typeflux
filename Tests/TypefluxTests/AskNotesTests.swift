@@ -59,6 +59,7 @@ struct AskNotesStoreTests {
         """
         #expect(AskNote.plainText(markdown) == "Title\nquoted bold and code\nitem link\nfirst\na  b\nlet x = 1")
         #expect(makeTestNote(body: "## Hi\n\n*there*").excerpt == "Hi there")
+        #expect(AskNote.plainText("- [x] done\n* [ ] todo") == "done\ntodo")
         #expect(AskNote.normalizedTag("  ##work ") == "work")
         #expect(AskNote.normalizedTag(" # ") == nil)
         #expect(AskNote.normalizedTag(String(repeating: "a", count: 60))?.count == 40)
@@ -118,7 +119,7 @@ struct AskNotesStoreTests {
         #expect(store.note(id: note.id) == note)
         store.delete(ids: [])
         store.restore([])
-        #expect(AskNoteQuery.Sort.allCases == [.updated, .created])
+        #expect(AskNoteQuery.Sort.allCases == [.updated, .created, .title])
         for _ in 0 ..< 100 where changes < 4 {
             try await Task.sleep(for: .milliseconds(5))
         }
@@ -206,9 +207,10 @@ struct AskNotesPluginTests {
         #expect(all.action(for: .commandC)?.kind == .copy("alpha"))
         #expect(all.action(for: .commandB)?.kind == .openNotes(id: nil))
         let found = try await plugin.run(request(" beta "), plan: plugin.plan(request("beta")))
-        #expect(found.items.map(\.title) == ["Second", L("ask.notes.openWindow")] && found.original == "beta")
+        #expect(found.items.map(\.title) == ["Second", L("ask.notes.newTitled", "beta"), L("ask.notes.openWindow")]
+            && found.original == "beta")
         var last = found
-        last.selectedItem = 1
+        last.selectedItem = 2
         #expect(last.action(for: .enter)?.kind == .openNotes(id: nil))
         let none = try await plugin.run(request("zzz"), plan: plugin.plan(request("zzz")))
         #expect(none.items.first?.title == L("ask.notes.noMatch") && none.items.first?.valid == false)

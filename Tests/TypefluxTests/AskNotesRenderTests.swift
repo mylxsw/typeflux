@@ -139,8 +139,27 @@ struct AskNotesRenderTests {
             let empty = AskNotesViewModel(store: makeTestNotes(), notificationCenter: NotificationCenter())
             try await render(AskNotesView(model: empty) {}, size: NSSize(width: 900, height: 560), dark: true,
                              name: "11-notes-empty.png")
-            #expect(AskNotesView.shortDate(Date(timeIntervalSince1970: 0), now: Date(timeIntervalSince1970: 86400 * 40))
-                != AskNotesView.shortDate(Date(timeIntervalSince1970: 86400 * 40), now: Date(timeIntervalSince1970: 86400 * 40)))
+            #expect(AskNotesListRow.shortDate(Date(timeIntervalSince1970: 0), now: Date(timeIntervalSince1970: 86400 * 40))
+                != AskNotesListRow.shortDate(Date(timeIntervalSince1970: 86400 * 40), now: Date(timeIntervalSince1970: 86400 * 40)))
         }
     }
+
+    @Test func onlyMarkdownTasksReceiveInteractiveCheckboxLinks() throws {
+        let markdown = "Literal ☐ glyph\n\n```\n☑ code\n```\n\n- [ ] first\n- [x] second"
+        let rendered = AskNoteReaderText.attributed(markdown, highlight: "first")
+        var links: [String] = []
+        rendered.enumerateAttribute(.link, in: NSRange(location: 0, length: rendered.length)) { value, _, _ in
+            if let url = value as? URL { links.append(url.absoluteString) }
+            else if let value = value as? String { links.append(value) }
+        }
+        #expect(links == ["typeflux-task://0", "typeflux-task://1"])
+        let text = rendered.string as NSString
+        let literal = text.range(of: "☐")
+        #expect(rendered.attribute(.link, at: literal.location, effectiveRange: nil) == nil)
+        let highlighted = text.range(of: "first")
+        #expect(rendered.attribute(.backgroundColor, at: highlighted.location, effectiveRange: nil) != nil)
+        let done = text.range(of: "second")
+        #expect(rendered.attribute(.strikethroughStyle, at: done.location, effectiveRange: nil) != nil)
+    }
+
 }

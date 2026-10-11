@@ -16,6 +16,7 @@ struct AskConversationWindowServicesTests {
                 for task in controller.maintenanceTasks { await task.value }
                 #expect(controller.model.workflows === fixture.workflows)
                 #expect(controller.model.workflowAuthoring === fixture.tools.workflowAuthoring)
+                #expect(fixture.tools.notebook === fixture.notes)
                 // The callback installed by the production initializer opens and reuses
                 // this controller's conversation window, with its isolated cache.
                 controller.model.onShowConversation?()
@@ -62,6 +63,8 @@ struct AskConversationWindowServicesTests {
         #expect(fixture.notes.save(note))
         #expect(services.removeNote(id))
         #expect(!services.noteExists(id))
+        #expect(fixture.notes.note(id: id)?.isDeleted == true)
+        #expect(fixture.notes.count(.trash) == 1, "result-window unstar remains recoverable")
         #expect(!services.removeNote(id))
     }
 
@@ -95,7 +98,7 @@ struct AskConversationWindowServicesTests {
         private let oldNotesFrame: Any?
 
         init(_ settings: SettingsStore) throws {
-            oldNotesFrame = UserDefaults.standard.object(forKey: "NSWindow Frame AskNotes")
+            oldNotesFrame = UserDefaults.standard.object(forKey: "NSWindow Frame AskNotes.v2")
             root = FileManager.default.temporaryDirectory
                 .appendingPathComponent("workspace-services-" + UUID().uuidString)
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -145,8 +148,8 @@ struct AskConversationWindowServicesTests {
                 #expect(!window.isVisible)
             }
             NSWindow.removeFrame(usingName: name)
-            NSWindow.removeFrame(usingName: "AskNotes")
-            if let oldNotesFrame { UserDefaults.standard.set(oldNotesFrame, forKey: "NSWindow Frame AskNotes") }
+            NSWindow.removeFrame(usingName: "AskNotes.v2")
+            if let oldNotesFrame { UserDefaults.standard.set(oldNotesFrame, forKey: "NSWindow Frame AskNotes.v2") }
             try? FileManager.default.removeItem(at: root)
         }
     }

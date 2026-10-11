@@ -100,7 +100,8 @@ struct AskScreenshotTextPlugin: AskLauncherPlugin {
                                   symbol: "sparkles", shortcut: nil)
         ]
         if savesNotes {
-            let draft = AskNoteDraft(command: L("screenshot.text.title"), keyword: keyword, input: "", body: text)
+            let draft = AskNoteDraft(command: L("screenshot.text.title"), keyword: keyword, input: "", body: text,
+                                     source: .screenshot)
             actions += [AskPromptPlugin.noteAction(draft, saved: false)]
         }
         // One chip: the card shows several as "from → to".
