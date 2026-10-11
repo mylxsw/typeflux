@@ -833,7 +833,7 @@ struct AskConversationView: View {
     }
 
     private var headerCredits: String? {
-        guard model.selectedId != nil, let usage = model.selected?.usage else { return nil }
+        guard let id = model.selectedId, !model.isLocal(id), let usage = model.selected?.usage else { return nil }
         return usage.total.creditsText
     }
 
@@ -1449,6 +1449,7 @@ private struct AskMessageView: View {
 
     private var usageLabel: String {
         guard let usage else { return L("ask.usage.title") }
+        if usage.calls > 0, usage.external == usage.calls { return usage.tokenText(usage.totalTokens) + " tokens" }
         return usage.creditsText + " credits"
     }
 

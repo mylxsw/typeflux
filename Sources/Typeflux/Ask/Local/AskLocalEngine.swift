@@ -13,6 +13,8 @@ struct AskLocalRecord: Codable, Equatable, Sendable {
     /// Built-in tools of the current run, executed by the engine instead of the device.
     var builtinTools: [AskToolDefinition] = []
     var lastInferenceId: String?
+    /// Optional so conversations saved before local metering still load.
+    var localUsage: AskLocalUsage?
     var cloudCalls = 0
     var approvedCloudCallId: String?
     /// Messages sent into the running run that the model has not read yet.
@@ -96,6 +98,11 @@ actor AskLocalEngine: AskAPI {
         record.conversation.revision += 1
         record.conversation.updatedAt = now()
         record.conversation.run?.updatedAt = now()
+        try persist(record)
+    }
+
+    /// Metering can arrive after a run ends without changing content or activity dates.
+    private func persist(_ record: AskLocalRecord) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try AskCoding.encoder().encode(record).write(to: file(record.conversation.id), options: [.atomic, .completeFileProtection])
         records[record.conversation.id] = record
@@ -147,6 +154,10 @@ actor AskLocalEngine: AskAPI {
 
     func conversation(id: String, token _: String) async throws -> AskConversation {
         try record(id).conversation
+    }
+
+    func usage(id: String, runId: String?, cursor: Int64?, token _: String) async throws -> AskUsagePage {
+        try record(id).localUsage?.page(runId: runId, cursor: cursor) ?? AskUsagePage(items: [], nextCursor: nil)
     }
 
     func models(token _: String) async throws -> [AskCloudModel] { [] }
@@ -244,16 +255,21 @@ actor AskLocalEngine: AskAPI {
         var record = try record(conversationId)
         guard let run = record.conversation.run else { throw conflict() }
         if run.budgetEnabled == true {
-            try settleInference(record, request)
-            try refreshBudget(&record)
-            if run.id != request.runId || run.status != "waiting_inference"
-                || run.inference?.id != request.inferenceId {
-                return record.conversation
+            let root = record.localUsage?.budgetRoot(for: request)
+            if record.localUsage?.contains(request) != true || root == run.budgetRootId {
+                try settleInference(record, request)
+                try refreshBudget(&record)
+            } else if request.usage?.isValid == false {
+                throw AskBudgetError.invalid
             }
         }
-        guard run.id == request.runId, run.deviceId == request.deviceId else { throw conflict() }
-        if record.lastInferenceId == request.inferenceId { return record.conversation }
-        guard run.status == "waiting_inference", let inference = run.inference, inference.id == request.inferenceId else { throw conflict() }
+        guard run.id == request.runId, run.deviceId == request.deviceId,
+              run.status == "waiting_inference", let inference = run.inference,
+              inference.id == request.inferenceId else {
+            return try lateInferenceUsage(&record, request: request, run: run)
+        }
+        record.startUsage(inference, at: run.updatedAt)
+        record.settleUsage(request)
         record.lastInferenceId = request.inferenceId
         record.conversation.run?.inference = nil
         if request.failed {
@@ -275,6 +291,19 @@ actor AskLocalEngine: AskAPI {
         return try await applyCompletion(&record, content: request.content, calls: request.toolCalls, finishReason: request.finishReason)
     }
 
+    private func lateInferenceUsage(_ record: inout AskLocalRecord, request: AskInferenceResult, run: AskRun) throws -> AskConversation {
+        // Only a previously recorded invocation may update usage after cancellation,
+        // retry or completion. Its content must never be applied again.
+        if record.localUsage?.contains(request) == true {
+            if record.settleUsage(request) { try persist(record) }
+            return record.conversation
+        }
+        if run.budgetEnabled == true { return record.conversation }
+        if run.id == request.runId, run.deviceId == request.deviceId,
+           record.lastInferenceId == request.inferenceId { return record.conversation }
+        throw conflict()
+    }
+
     func cancel(conversationId: String, runId: String, token: String) async throws -> AskConversation {
         try await cancel(conversationId: conversationId, runId: runId, partial: nil, token: token)
     }
@@ -283,8 +312,11 @@ actor AskLocalEngine: AskAPI {
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == runId else { throw conflict() }
         guard run.isActive else { return record.conversation }
-        if let partial, run.status == "waiting_inference", run.inference?.id == partial.inferenceId, partial.deviceId == run.deviceId {
+        if let partial, partial.runId == run.id, run.status == "waiting_inference",
+           let inference = run.inference, inference.id == partial.inferenceId, partial.deviceId == run.deviceId {
             try settleInference(record, partial)
+            record.startUsage(inference, at: run.updatedAt)
+            record.settleUsage(partial)
             record.conversation.run?.preview = partial.content
             record.conversation.run?.reasoning = partial.reasoning
         }
@@ -449,6 +481,7 @@ actor AskLocalEngine: AskAPI {
         }
         record.conversation.run?.status = "waiting_inference"
         record.conversation.run?.inference = AskInference(id: id, payload: AskLocalPrompt.json(bounded), summaryThrough: summaryThrough)
+        if let inference = record.conversation.run?.inference { record.startUsage(inference, at: now()) }
         try save(&record)
         return record.conversation
     }
@@ -605,6 +638,7 @@ actor AskLocalEngine: AskAPI {
     }
 
     private func closePending(_ record: inout AskLocalRecord, reason: String, status: AskExecutionStatus = .unknown) {
+        record.closeUsage()
         for call in record.conversation.run?.pending ?? [] {
             let request = AskToolResultRequest(runId: record.conversation.run?.id ?? "",
                                                deviceId: record.conversation.run?.deviceId ?? "", toolCallId: call.id,

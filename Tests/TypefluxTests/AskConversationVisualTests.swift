@@ -787,6 +787,57 @@ struct AskConversationVisualTests {
         }
     }
 
+    @Test func renderLocalUsageSurfaces() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_LOCAL_USAGE_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let language = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(language) }
+        let suite = "local-usage-visual-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let profile = AskModelProfile(name: "Local model", baseURL: "http://127.0.0.1:11434/v1", model: "qwen3:14b")
+        defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let fixture = try AskTestFixture(localOnly: true, modelLibrary: library)
+        defer { fixture.model.resetSession() }
+        let engine = AskLocalEngine(directory: fixture.root.appendingPathComponent("local"))
+        let queued = try await engine.send(conversationId: "local-usage", request: .init(
+            id: "question", deviceId: "device", text: "帮我整理这周的发布计划。", tools: [], modelRef: profile.reference), token: "")
+        let run = try #require(queued.run)
+        let value = try await engine.inferenceResult(conversationId: queued.id, request: .init(
+            runId: run.id, deviceId: run.deviceId, inferenceId: #require(run.inference?.id),
+            content: "先确定发布范围，再验证真实使用流程，最后准备验收清单。",
+            usage: .init(promptTokens: 1240, completionTokens: 186, totalTokens: 1426, cachedTokens: 640)), token: "")
+        await fixture.api.seed(value)
+        await fixture.api.setUsageRecords(try await engine.usage(id: value.id, runId: nil, cursor: nil, token: "").items)
+        await fixture.model.select(value.id)
+        #expect(fixture.model.hasUsageRecords && !fixture.model.isSignedIn)
+        let auth = AuthState(loadStoredToken: { nil }, loadStoredUserProfile: { nil },
+                             saveStoredToken: { _, _ in }, saveStoredUserProfile: { _ in }, clearStoredSession: {})
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            try await render(AskConversationView(model: fixture.model, showsUsage: true, auth: auth)
+                             .environment(\.interfaceStyle, .classic),
+                             size: NSSize(width: 1100, height: 740),
+                             appearance: appearance, file: root.appendingPathComponent("local-usage-\(name).png"))
+        }
+        let missing = try await engine.send(conversationId: "local-missing", request: .init(
+            id: "question", deviceId: "device", text: "Explain the plan", tools: [], modelRef: profile.reference), token: "")
+        let missingRun = try #require(missing.run)
+        let missingValue = try await engine.inferenceResult(conversationId: missing.id, request: .init(
+            runId: missingRun.id, deviceId: missingRun.deviceId, inferenceId: #require(missingRun.inference?.id),
+            content: "The model did not return token usage."), token: "")
+        await fixture.api.seed(missingValue)
+        await fixture.api.setUsageRecords(try await engine.usage(id: missing.id, runId: nil, cursor: nil, token: "").items)
+        await fixture.model.select(missing.id)
+        try await render(AskConversationView(model: fixture.model, showsUsage: true, auth: auth)
+                         .environment(\.interfaceStyle, .classic),
+                         size: NSSize(width: 1100, height: 740), appearance: .darkAqua,
+                         file: root.appendingPathComponent("local-usage-missing-dark.png"))
+    }
+
     /// The workspace's floating chrome. System glass is composited by the window
     /// server and cannot be cached offscreen, so the layout is captured with the
     /// opaque Reduce Transparency material, which shares every frame with the glass.

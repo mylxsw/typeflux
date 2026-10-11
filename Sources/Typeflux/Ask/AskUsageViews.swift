@@ -69,6 +69,7 @@ struct AskUsagePanel: View {
     @FocusState private var closeFocused: Bool
 
     private var usage: AskConversationUsage? { model.selected?.usage }
+    private var local: Bool { model.selectedId.map(model.isLocal) ?? false }
     private var totals: AskUsageTotals? { runId.flatMap { usage?.runs[$0] } ?? (runId == nil ? usage?.total : nil) }
     private var loadKey: String { "\(model.selectedId ?? "")/\(usage?.version ?? 0)/\(model.selected?.run?.id ?? "none")/\(runId ?? "all")" }
 
@@ -135,7 +136,7 @@ struct AskUsagePanel: View {
                 }
                 .padding(compact ? 12 : 16)
             }
-            if let credits = auth.usageCredits {
+            if !local, let credits = auth.usageCredits {
                 Rectangle().fill(AskTheme.separator).frame(height: 1)
                 HStack {
                     Text(L("ask.usage.balance"))
@@ -209,8 +210,9 @@ struct AskUsagePanel: View {
                 Text(L(runId == nil ? "ask.usage.conversation" : "ask.usage.round"))
                     .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
             }
-            figure(totals.creditsText, unit: "credits")
-            help(totals.statusKey)
+            figure(local ? totals.tokenText(totals.totalTokens) : totals.creditsText,
+                   unit: local ? "tokens" : "credits")
+            help(local ? "ask.usage.localHelp" : totals.statusKey)
             VStack(spacing: 0) {
                 detail("ask.usage.input", totals.tokenText(totals.inputTokens))
                 rule
@@ -226,7 +228,7 @@ struct AskUsagePanel: View {
             }
             .padding(.top, 2)
             if totals.estimated > 0 { help("ask.usage.estimated") }
-            if (totals.cachedInputTokens ?? 0) > 0 { help("ask.usage.cachedHelp") }
+            if !local, (totals.cachedInputTokens ?? 0) > 0 { help("ask.usage.cachedHelp") }
         }
     }
 
@@ -357,6 +359,11 @@ struct AskUsagePanel: View {
     }
 
     private func invocationCost(_ item: AskUsageInvocation) -> String {
+        if local, let tokens = item.tokens {
+            return (tokens.incomplete == true ? "≥" : "")
+                + AccountUsageDisplayFormatter.count(Int64(tokens.totalTokens)) + " tokens"
+        }
+        if local { return L(item.status == "pending" ? "ask.usage.pendingShort" : "ask.usage.unavailable") }
         if item.status == "confirmed", let amount = item.microcredits {
             return AskUsageTotals(microcredits: amount, calls: 1).creditsText + " credits"
         }

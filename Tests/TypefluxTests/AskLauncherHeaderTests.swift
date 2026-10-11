@@ -416,9 +416,9 @@ struct AskLauncherHeaderTests {
         // Observe the rendered panel rather than assuming its asynchronous layout finished after 300 ms.
         try await fixture.wait {
             window.contentView?.layoutSubtreeIfNeeded()
-            return window.childWindows?.contains { $0 is AskHoverCardPresenter.Panel } == true
+            return window.childWindows?.contains { $0 is AskHoverCardPresenter.Panel && $0.isVisible } == true
         }
-        return try #require(window.childWindows?.first { $0 is AskHoverCardPresenter.Panel })
+        return try #require(window.childWindows?.first { $0 is AskHoverCardPresenter.Panel && $0.isVisible })
     }
 
     private func saveSnapshot(_ view: NSView, name: String) throws {
