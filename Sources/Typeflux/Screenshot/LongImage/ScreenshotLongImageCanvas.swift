@@ -22,6 +22,7 @@ final class ScreenshotLongImageCanvas: NSView {
     private(set) var showsColorPanel = false
     /// The eyedropper is on: the next click takes the color under the pointer.
     private(set) var isPickingColor = false
+    private(set) var showsMoreMenu = false
     private let canvas: ScreenshotAnnotationCanvasView
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
     /// The field for typing a text annotation, while one is typed.
@@ -180,6 +181,8 @@ final class ScreenshotLongImageCanvas: NSView {
             isPickingColor = false
         case Key.escape:
             onEvent?(.cancelled)
+        case Key.returnKey where modifiers.contains(.option), Key.enter where modifiers.contains(.option):
+            finish(.copyAndSave)
         case Key.returnKey, Key.enter:
             finish(.copy)
         case Key.keyC where command:
@@ -233,12 +236,21 @@ final class ScreenshotLongImageCanvas: NSView {
         case .cancel: onEvent?(.cancelled)
         case .save: finish(.save)
         case .copy: finish(.copy)
+        case .copyAndSave: finish(.copyAndSave)
         case let .followUp(followUp): finish(.followUp(followUp))
-        case .scrollCapture: break
+        // A long image is not pinned and its toolbar stays put under it.
+        case .scrollCapture, .pin, .dragToolbar, .toggleToolbarPlacement: break
+        case .toggleMoreMenu:
+            showsMoreMenu.toggle()
+            showsColorPanel = false
+        case .toggleSensitivePanel:
+            sensitiveInfo.setPanelShown(!sensitiveInfo.isPanelShown)
+            showsMoreMenu = false
         default:
             editor.apply(action)
             // A swatch is the choice: the panel closes, as a menu would.
             if case .color = action { showsColorPanel = false }
+            if case .resetStyles = action { showsMoreMenu = false }
         }
         window?.makeFirstResponder(self)
         refresh()
@@ -346,7 +358,10 @@ final class ScreenshotLongImageCanvas: NSView {
     /// The toolbar for the editor's current state; there is no scrolling capture from a long image.
     var toolbarState: ScreenshotEditorToolbarModel.State {
         ScreenshotEditorToolbarModel.State(editor: editor, showsColorPanel: showsColorPanel,
-                                           isPickingColor: isPickingColor, showsScrollCapture: false)
+                                           isPickingColor: isPickingColor, showsScrollCapture: false, showsPin: false,
+                                           showsMoreMenu: showsMoreMenu,
+                                           canShowSensitivePanel: sensitiveInfo.hasFindings,
+                                           showsSensitivePanel: sensitiveInfo.isPanelShown)
     }
 
     /// The eyedropper's click: the color of the image under the pointer becomes the color.

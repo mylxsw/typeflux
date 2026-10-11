@@ -63,12 +63,15 @@ final class ScreenshotOverlayChromeView: NSView {
         if let loupe = model.loupe { drawLoupe(loupe, in: context) }
     }
 
-    /// Where the editing toolbar goes: below the region, or above it, or inside its
-    /// bottom-right corner when neither fits.
-    static func toolbarFrame(for selection: CGRect, size: CGSize, in bounds: CGRect) -> CGRect {
+    /// Where the editing toolbar goes: below the region (above it with `prefersAbove`), else on the
+    /// other side, or inside its bottom-right corner when neither fits.
+    static func toolbarFrame(for selection: CGRect, size: CGSize, in bounds: CGRect,
+                             prefersAbove: Bool = false) -> CGRect {
         let gap: CGFloat = 8
         var origin = CGPoint(x: selection.maxX - size.width, y: selection.maxY + gap)
-        if origin.y + size.height > bounds.maxY {
+        if prefersAbove, selection.minY - gap - size.height >= bounds.minY {
+            origin.y = selection.minY - gap - size.height
+        } else if origin.y + size.height > bounds.maxY {
             origin.y = selection.minY - gap - size.height
             if origin.y < bounds.minY { origin.y = selection.maxY - gap - size.height; origin.x -= gap }
         }

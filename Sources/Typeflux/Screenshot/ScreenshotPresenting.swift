@@ -4,6 +4,10 @@ import Foundation
 enum ScreenshotOutputAction: Equatable {
     case copy
     case save
+    /// Save it and put it on the clipboard.
+    case copyAndSave
+    /// Keep it above other windows, where the region was.
+    case pin
     /// Hand the image to the launcher: recognize its text, translate it or ask about it.
     case followUp(ScreenshotFollowUp)
 }

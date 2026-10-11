@@ -39,6 +39,43 @@ final class StatusBarMenuSupportTests: XCTestCase {
     }
 
     @MainActor
+    func testTheMenuBarClosesAndReleasesPinnedScreenshots() throws {
+        if ProcessInfo.processInfo.environment["CI"] == "true" {
+            throw XCTSkip("Requires a GUI WindowServer session")
+        }
+        let suite = "PinnedScreenshotMenuTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var counts = (count: 0, clickThrough: 0)
+        var restores = 0, closes = 0
+        let controller = StatusBarController(
+            appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults),
+            historyStore: EmptyHistoryStore(),
+            pinnedScreenshots: { counts }, onRestorePinnedScreenshots: { restores += 1 },
+            onClosePinnedScreenshots: { closes += 1 }
+        )
+        controller.start()
+        defer { controller.stop() }
+        let menu = try XCTUnwrap(controller.menu)
+        let restore = try XCTUnwrap(menu.items.first { $0.title == L("menu.pins.restoreMouse") })
+        let close = menu.items[menu.index(of: restore) + 1]
+        XCTAssertEqual(close.title, L("menu.pins.closeAll", 0))
+        XCTAssertTrue(restore.isHidden)
+        XCTAssertTrue(close.isHidden)
+
+        counts = (2, 1)
+        controller.menuWillOpen(menu)
+        XCTAssertFalse(restore.isHidden)
+        XCTAssertFalse(close.isHidden)
+        XCTAssertEqual(close.title, L("menu.pins.closeAll", 2))
+        menu.performActionForItem(at: menu.index(of: restore))
+        menu.performActionForItem(at: menu.index(of: close))
+        XCTAssertEqual(restores, 1)
+        XCTAssertEqual(closes, 1)
+        XCTAssertEqual(menu.items[menu.index(of: restore) - 1].title, L("menu.screenshotText"))
+    }
+
+    @MainActor
     func testScreenshotToTextMenuEntryStartsTheTextScreenshot() throws {
         if ProcessInfo.processInfo.environment["CI"] == "true" {
             throw XCTSkip("Requires a GUI WindowServer session")
