@@ -115,8 +115,8 @@ struct AskClassicStyleVisualTests {
         }
         // 2x pixels, mid-height, below the history rows and above the footer.
         let row = bitmap.pixelsHigh / 2
-        #expect(abs(try white(1, row) - 0.961) < 0.02, "sidebar must be flush with the window edge")
-        #expect(abs(try white(200, row) - 0.961) < 0.02)
+        #expect(abs(try white(1, row) - 0.957) < 0.02, "sidebar must be flush with the window edge")
+        #expect(abs(try white(200, row) - 0.957) < 0.02)
         #expect(try white(Int(AskMetrics.sidebarWidth * 2) + 40, row) > 0.99, "canvas")
         let divider = (Int(AskMetrics.sidebarWidth * 2) - 4 ... Int(AskMetrics.sidebarWidth * 2) + 2)
             .map { (try? white($0, row)) ?? 1 }.min() ?? 1

@@ -281,6 +281,7 @@ struct KeywordHotkeyDraftItem: Identifiable {
 struct HotkeyKeysView: View {
     let binding: HotkeyBinding?
     var isRecording = false
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 4) {
@@ -300,14 +301,18 @@ struct HotkeyKeysView: View {
         }
     }
 
+    private var capFill: Color { colorScheme == .dark ? ModelVisualStyle.control : StudioTheme.cardFill }
+
     private func cap(_ text: String, highlighted: Bool = false) -> some View {
         Text(text)
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(highlighted ? ModelVisualStyle.accent : StudioTheme.textPrimary)
             .padding(.horizontal, 8).frame(minWidth: 26, minHeight: 24)
-            .background(highlighted ? ModelVisualStyle.accent.opacity(0.12) : ModelVisualStyle.control,
+            .background(highlighted ? ModelVisualStyle.accent.opacity(0.12) : capFill,
                         in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .strokeBorder(highlighted ? ModelVisualStyle.accent.opacity(0.5) : ModelVisualStyle.border))
+            // Light keycaps are white and stand on a 1pt bottom edge.
+            .shadow(color: colorScheme == .dark || highlighted ? .clear : Color.black.opacity(0.10), radius: 0, x: 0, y: 1)
     }
 }

@@ -413,15 +413,24 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
     }
 }
 
-private struct StudioButtonChromeModifier: ViewModifier {
+struct StudioButtonChromeModifier: ViewModifier {
     let variant: StudioButton.Variant
     let isDisabled: Bool
     let isLoading: Bool
     let isPressed: Bool
     let minWidth: CGFloat?
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovering = false
+
+    /// Light primary buttons are solid accent, #1D4ED8 under the pointer; dark keeps its gradient.
+    static func solidPrimaryFill(dark: Bool, hovering: Bool) -> Color? {
+        guard !dark else { return nil }
+        return hovering ? StudioTheme.accentHover : StudioTheme.accent
+    }
 
     func body(content: Content) -> some View {
         content
+            .onHover { isHovering = $0 }
             .frame(minWidth: minWidth)
             .foregroundStyle(foreground)
             .background(background)
@@ -439,6 +448,10 @@ private struct StudioButtonChromeModifier: ViewModifier {
         let buttonShape = RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
 
         switch variant {
+        case .primary where Self.solidPrimaryFill(dark: colorScheme == .dark, hovering: isHovering || isPressed) != nil:
+            buttonShape
+                .fill(Self.solidPrimaryFill(dark: colorScheme == .dark, hovering: isHovering || isPressed) ?? StudioTheme.accent)
+                .shadow(color: StudioTheme.accent.opacity(0.18), radius: 8, x: 0, y: 5)
         case .primary:
             buttonShape
                 .fill(
@@ -765,13 +778,38 @@ extension StudioSidebar {
 
                 Spacer()
             }
-            .foregroundStyle(section == currentSection ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .foregroundStyle(section == currentSection ? StudioTheme.accentText : StudioTheme.textSecondary)
             .padding(.horizontal, StudioTheme.Insets.sidebarItemHorizontal)
             .padding(.vertical, StudioTheme.Insets.sidebarItemVertical)
-            .askNotesRow(selected: section == currentSection, hovering: false, corner: style.ask.sidebarRowCorner)
+            .modifier(StudioSidebarRowBackground(selected: section == currentSection,
+                                                 corner: style.ask.sidebarRowCorner))
             .contentShape(Rectangle())
         }
         .buttonStyle(StudioInteractiveButtonStyle())
+    }
+}
+
+/// The sidebar row's background. In light the selected row is a raised white
+/// block (hairline + 1pt shadow) on the grey sidebar; in dark it keeps the
+/// notes-row selection wash.
+struct StudioSidebarRowBackground: ViewModifier {
+    var selected: Bool
+    var corner: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    static func usesRaisedBlock(selected: Bool, dark: Bool) -> Bool { selected && !dark }
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if Self.usesRaisedBlock(selected: selected, dark: colorScheme == .dark) {
+            let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
+            content
+                .background(shape.fill(StudioTheme.sidebarSelection)
+                    .shadow(color: Color.black.opacity(0.06), radius: 0, x: 0, y: 1))
+                .overlay(shape.strokeBorder(StudioTheme.sidebarSelectionStroke, lineWidth: 1))
+        } else {
+            content.askNotesRow(selected: selected, hovering: false, corner: corner)
+        }
     }
 }
 
@@ -852,7 +890,7 @@ struct StudioCard<Content: View>: View {
         .background(
             ZStack {
                 RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                    .fill(style.usesGlass ? AskTheme.hoverFill : AskClassic.card)
+                    .fill(style.usesGlass ? StudioTheme.cardFill : AskClassic.card)
                 cardTextureOverlay
 
                 RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
@@ -863,18 +901,23 @@ struct StudioCard<Content: View>: View {
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
                 .stroke(
                     cardBorderColor,
-                    lineWidth: isHighlighted ? StudioTheme.BorderWidth.emphasis : 0.5
+                    lineWidth: isHighlighted ? StudioTheme.BorderWidth.emphasis : (usesLightGlassCard ? 1 : 0.5)
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
         .shadow(
-            color: StudioTheme.shadow.opacity(!style.usesGlass || !showsShadow ? 0 : (isHighlighted ? 0.20 : 0.16)),
+            color: StudioTheme.shadow.opacity(!style.usesGlass || usesLightGlassCard || !showsShadow ? 0 : (isHighlighted ? 0.20 : 0.16)),
             radius: isHighlighted ? StudioTheme.Shadow.cardRadius + 2 : StudioTheme.Shadow.cardRadius,
             x: 0,
             y: isHighlighted ? StudioTheme.Shadow.cardY + 1 : StudioTheme.Shadow.cardY
         )
     }
+
+    /// Light Liquid Glass: a flat white card with a 1px hairline and no shadow.
+    private var usesLightGlassCard: Bool { Self.usesLightGlassCard(glass: style.usesGlass, dark: colorScheme == .dark) }
+
+    static func usesLightGlassCard(glass: Bool, dark: Bool) -> Bool { glass && !dark }
 
     private var selectionOverlay: Color {
         if isHighlighted {
@@ -893,7 +936,7 @@ struct StudioCard<Content: View>: View {
             return StudioTheme.accent.opacity(0.34)
         }
 
-        return AskTheme.separator
+        return usesLightGlassCard ? StudioTheme.cardStroke : AskTheme.separator
     }
 
     private var cardTextureOverlay: some View {

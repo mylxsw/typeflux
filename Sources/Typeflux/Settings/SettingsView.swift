@@ -3583,7 +3583,7 @@ struct StudioView: View {
                 Capsule()
                     .fill(
                         vocabularyFilter == filter
-                            ? StudioTheme.surface : StudioTheme.surfaceMuted.opacity(0.82)
+                            ? StudioTheme.filterChipSelectedFill : StudioTheme.surfaceMuted.opacity(0.82)
                     )
             )
             .overlay(
@@ -6048,6 +6048,14 @@ private struct VocabularyTermCard: View {
     let onDelete: () -> Void
 
     @State private var isHovered = false
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// Light: a white card with a 1px hairline; dark keeps the translucent surface.
+    private var cardFill: Color { colorScheme == .dark ? StudioTheme.surface : StudioTheme.cardFill }
+    private var cardStroke: Color {
+        colorScheme == .dark
+            ? StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder) : StudioTheme.cardStroke
+    }
 
     var body: some View {
         HStack(spacing: StudioTheme.Spacing.small) {
@@ -6080,14 +6088,11 @@ private struct VocabularyTermCard: View {
         .frame(minHeight: 48)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .fill(StudioTheme.surface)
+                .fill(cardFill)
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .stroke(
-                    StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                    lineWidth: StudioTheme.BorderWidth.thin
-                )
+                .stroke(cardStroke, lineWidth: StudioTheme.BorderWidth.thin)
         )
         .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
         .onHover { isHovered = $0 }
@@ -6107,9 +6112,10 @@ private struct VocabularyTermCard: View {
                 .scaledToFit()
                 .frame(width: 16, height: 16)
         } else {
-            Image(systemName: "asterisk")
-                .font(.system(size: StudioTheme.Typography.iconRegular, weight: .bold))
-                .foregroundStyle(StudioTheme.warning)
+            // Light: a neutral sparkle; dark keeps the original accent asterisk.
+            Image(systemName: colorScheme == .dark ? "asterisk" : "sparkles")
+                .font(.system(size: StudioTheme.Typography.iconRegular, weight: colorScheme == .dark ? .bold : .regular))
+                .foregroundStyle(colorScheme == .dark ? StudioTheme.warning : StudioTheme.textTertiary)
         }
     }
 }
