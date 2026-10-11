@@ -202,6 +202,8 @@ extension AskConversationModel {
             AskNotesPlugin(store: notes),
             AskScreenshotPlugin(),
             AskScreenshotTextPlugin(screenshot: { [weak self] in self?.launcherScreenshot?.source },
+                                    generator: promptAI,
+                                    modelName: { [weak settings] in AskPluginRegistry.modelName(settings) },
                                     savesNotes: notes != nil),
             AskBrowserSearchPlugin(kind: .tab, service: browserSearch, settings: { [weak settings] in
                 settings?.askBrowserSearchSettings ?? AskBrowserSearchSettings()

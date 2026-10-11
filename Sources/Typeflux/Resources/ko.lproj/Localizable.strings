@@ -4247,6 +4247,9 @@
 "screenshot.text.askAI" = "스크린샷의 이 텍스트에 대해:\n\n%@";
 "screenshot.text.meta" = "%d줄 · %@";
 "screenshot.text.source" = "이 Mac에서 인식";
+"screenshot.text.organize" = "정리하기";
+"screenshot.text.original" = "원문 보기";
+"screenshot.text.organize.empty" = "AI 정리 결과가 비어 있습니다. 다시 시도하거나 원문을 확인하세요.";
 "screenshot.translate.unavailable" = "번역 키워드가 없습니다. 런처 키워드 설정에서 추가하세요";
 "screenshot.ask.attachmentName" = "스크린샷";
 "screenshot.ask.attachmentPart" = "스크린샷 %d/%d";
