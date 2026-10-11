@@ -12,6 +12,8 @@ final class ScreenshotAnnotationCanvasView: NSView {
         /// The selected annotation's frame, outlined with a dashed line.
         var selection: CGRect?
         var handles: [CGPoint] = []
+        /// The round handle that bends a curved or elbow arrow.
+        var bendHandle: CGPoint?
     }
 
     private struct PatchKey: Equatable {
@@ -100,6 +102,14 @@ final class ScreenshotAnnotationCanvasView: NSView {
             context.setStrokeColor(ScreenshotOverlayChromeView.accent.cgColor)
             context.setLineWidth(1.5)
             context.stroke(rect)
+        }
+        if let bend = model.bendHandle {
+            let rect = CGRect(x: bend.x - size / 2 - 1, y: bend.y - size / 2 - 1, width: size + 2, height: size + 2)
+            context.setFillColor(NSColor.white.cgColor)
+            context.fillEllipse(in: rect)
+            context.setStrokeColor(ScreenshotOverlayChromeView.accent.cgColor)
+            context.setLineWidth(1.5)
+            context.strokeEllipse(in: rect)
         }
     }
 }

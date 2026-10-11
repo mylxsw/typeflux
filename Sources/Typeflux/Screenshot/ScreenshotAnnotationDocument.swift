@@ -32,15 +32,21 @@ struct ScreenshotAnnotationDocument: Equatable {
         annotations.last { $0.contains(point) }
     }
 
-    /// 1, 2, 3… in the order the counters were placed; removing one renumbers the rest.
+    /// 1, 2, 3… (or from the first counter's start) in the order the counters were placed; removing one
+    /// renumbers the rest.
     func counterNumber(of id: UUID) -> Int? {
         Self.counterNumbers(in: annotations)[id]
     }
 
+    /// Counting starts from the first counter's `counterStart`.
     static func counterNumbers(in annotations: [ScreenshotAnnotation]) -> [UUID: Int] {
         var numbers: [UUID: Int] = [:]
+        var start: Int?
         for annotation in annotations {
-            if case .counter = annotation.kind { numbers[annotation.id] = numbers.count + 1 }
+            guard case .counter = annotation.kind else { continue }
+            let first = start ?? annotation.style.counterStart
+            start = first
+            numbers[annotation.id] = first + numbers.count
         }
         return numbers
     }

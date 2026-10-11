@@ -92,6 +92,60 @@ struct ScreenshotAnnotationStyle: Equatable, Codable {
         case solid
     }
 
+    enum ArrowHead: String, CaseIterable, Codable {
+        /// Two strokes, like a chevron.
+        case open
+        /// A filled triangle.
+        case filled
+        /// Filled heads at both ends.
+        case double
+    }
+
+    enum ArrowPath: String, CaseIterable, Codable {
+        case straight
+        /// A quadratic curve bowed by `arrowBend`.
+        case curve
+        /// One right angle; the sign of `arrowBend` picks which way it turns.
+        case elbow
+    }
+
+    enum HighlighterMode: String, CaseIterable, Codable {
+        /// A straight stroke from where the press started.
+        case straight
+        /// Wherever the pointer goes.
+        case free
+    }
+
+    enum HighlighterTip: String, CaseIterable, Codable {
+        case square, round
+    }
+
+    enum TextFont: String, CaseIterable, Codable {
+        case system, rounded, serif, mono
+    }
+
+    enum TextStyle: String, CaseIterable, Codable {
+        /// Colored text.
+        case plain
+        /// Text on a block of the color.
+        case background
+        /// White text outlined in the color.
+        case outline
+    }
+
+    enum CounterLabel: String, CaseIterable, Codable {
+        /// 1, 2, 3…
+        case number
+        /// A, B, C… then AA, AB…
+        case letter
+    }
+
+    enum CounterShape: String, CaseIterable, Codable {
+        case circle
+        /// A circle with a point, aimed by `counterAngle`.
+        case bubble
+    }
+
     var color: Color = .red
     /// Multiplies the color's alpha, 0.2...1.
     var opacity: CGFloat = 1
@@ -102,8 +156,29 @@ struct ScreenshotAnnotationStyle: Equatable, Codable {
     var fill: Fill = .stroke
     /// Rectangles only.
     var cornerRadius: CGFloat = 0
+    var arrowHead: ArrowHead = .filled
+    var arrowPath: ArrowPath = .straight
+    /// How far a curved arrow bows, as a fraction of its length; for an elbow, which way it turns.
+    var arrowBend: CGFloat = 0
+    /// A white outline under arrows, so they show on any background.
+    var outlined = false
+    /// Pen strokes are smoothed when the press ends.
+    var smoothed = false
+    var highlighterMode: HighlighterMode = .free
+    var highlighterTip: HighlighterTip = .round
+    var font: TextFont = .system
+    var textStyle: TextStyle = .plain
+    var counterLabel: CounterLabel = .number
+    var counterShape: CounterShape = .circle
+    /// Where a bubble counter points, in radians from the +x axis (y grows downward).
+    var counterAngle: CGFloat = .pi / 4
+    /// The number (or letter) of the first counter; counters count on from it.
+    var counterStart = 1
 
     static let opacityRange: ClosedRange<CGFloat> = 0.2...1
+    static let counterStartRange: ClosedRange<Int> = 1...99
+    /// How much a new curved arrow bows.
+    static let defaultCurveBend: CGFloat = 0.3
     static let cornerRadiusRange: ClosedRange<CGFloat> = 0...24
     static let highlighterAlpha: CGFloat = 0.4
     /// How opaque the inside of a `.soft` shape is.
@@ -138,17 +213,34 @@ struct ScreenshotAnnotationStyle: Equatable, Codable {
 
     // Every field is optional when decoding, so styles saved by an older version still load.
     private enum CodingKeys: String, CodingKey {
-        case color, opacity, size, dash, fill, cornerRadius
+        case color, opacity, size, dash, fill, cornerRadius, arrowHead, arrowPath, arrowBend, outlined, smoothed
+        case highlighterMode, highlighterTip, font, textStyle, counterLabel, counterShape, counterAngle, counterStart
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        func value<T: Decodable>(_ key: CodingKeys, _ fallback: T) -> T {
+            (try? container.decodeIfPresent(T.self, forKey: key)) ?? fallback
+        }
         let defaults = ScreenshotAnnotationStyle()
-        color = (try? container.decodeIfPresent(Color.self, forKey: .color)) ?? defaults.color
-        opacity = (try? container.decodeIfPresent(CGFloat.self, forKey: .opacity)) ?? defaults.opacity
-        size = (try? container.decodeIfPresent(CGFloat.self, forKey: .size)) ?? defaults.size
-        dash = (try? container.decodeIfPresent(Dash.self, forKey: .dash)) ?? defaults.dash
-        fill = (try? container.decodeIfPresent(Fill.self, forKey: .fill)) ?? defaults.fill
-        cornerRadius = (try? container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)) ?? defaults.cornerRadius
+        color = value(.color, defaults.color)
+        opacity = value(.opacity, defaults.opacity)
+        size = value(.size, defaults.size)
+        dash = value(.dash, defaults.dash)
+        fill = value(.fill, defaults.fill)
+        cornerRadius = value(.cornerRadius, defaults.cornerRadius)
+        arrowHead = value(.arrowHead, defaults.arrowHead)
+        arrowPath = value(.arrowPath, defaults.arrowPath)
+        arrowBend = value(.arrowBend, defaults.arrowBend)
+        outlined = value(.outlined, defaults.outlined)
+        smoothed = value(.smoothed, defaults.smoothed)
+        highlighterMode = value(.highlighterMode, defaults.highlighterMode)
+        highlighterTip = value(.highlighterTip, defaults.highlighterTip)
+        font = value(.font, defaults.font)
+        textStyle = value(.textStyle, defaults.textStyle)
+        counterLabel = value(.counterLabel, defaults.counterLabel)
+        counterShape = value(.counterShape, defaults.counterShape)
+        counterAngle = value(.counterAngle, defaults.counterAngle)
+        counterStart = value(.counterStart, defaults.counterStart)
     }
 }
