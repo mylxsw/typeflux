@@ -204,7 +204,9 @@ flowchart LR
   C <--> D[快照 file-index.bin<br/>Application Support/Typeflux]
   E[FSEvents 文件级事件<br/>从上次的 eventId 继续] --> F[增量更新：增 / 删 / 改名]
   F --> C
-  G[启动器按键] -->|同步查询 < 15ms| C
+  G[启动器按键] --> Q[AskQuickSearchSession<br/>文件防抖 16ms]
+  Q --> W[独立后台应用 / 文件队列<br/>代际取消，完成后发布]
+  W --> C
   G -->|仅：建索引期间 / 搜内容| H[聚焦 MDQuery<br/>异步、防抖 150ms、可取消]
 ```
 
@@ -276,7 +278,8 @@ flowchart LR
 ### 5.2 改动现有代码
 
 - `AskQuickResults`：`Row` 增加 `.file(Int)`、`.pane(Int)`、`.showAllFiles`、`.notice(...)`；`resolve` 合并应用与文件的结果，按 2.1 的规则分组与排序；`keepChoice` 认文件路径。
-- `AskQuickResults.resolve` 仍然同步调用应用和文件索引（都是内存查询）。聚焦结果通过快捷结果框架的异步档（翻译插件已经用上的 generation + 取消机制）合并进来。
+- 普通搜索由 `AskQuickSearchSession` 在后台分别查询应用和文件，主线程只处理输入和发布结果。文件防抖 16 ms；应用先完成时最多等 80 ms 合并文件结果，两者都完成则立即发布。慢应用仍遵守混合 / 应用优先的排序约束，文件优先模式可以提前发布文件。
+- 文件索引维护一个有界字符掩码候选池：只缓存匹配前的完整候选集合，最多 100,000 条且不超过总记录的 1/8。后续查询的字符掩码包含旧掩码、路径匹配域一致且快照版本未变时，可以重用候选；每次仍重新匹配、过滤和排序。查询变宽、匹配域改变或候选过多时全量扫描，索引发布时失效。验证与测量见 `docs/validation/gul-324-launcher-search.md`。
 - `AskAppIndex`：范围来自设置；FSEvents 代替定时重扫；新增系统设置来源。`AskAppMatcher` 改为调用 `AskFuzzyMatcher`，现有测试保持通过。
 - `AskQuickResultsView`：新的文件行、组标题、「显示全部」行、提示行、高亮区间渲染；`height(for:)` 同步更新。
 - `AskComposer` 按键：→、⌘R、⌘Y、⇧⌘C、⌥⌘C、⇧⌘↩、⌥↩、⌘↓（`AskCommandKey` 新增对应项）。

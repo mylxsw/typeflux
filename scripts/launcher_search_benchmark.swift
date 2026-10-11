@@ -4,7 +4,7 @@ import Darwin
 
 // Standalone diagnostic: production search sources are compiled unchanged.
 // Localization is irrelevant to matching; no application or user files are scanned.
-func L(_ key: String) -> String { key }
+func L(_ key: String, _ arguments: CVarArg...) -> String { key }
 
 struct Generator {
     var value: UInt64 = 242
@@ -67,19 +67,49 @@ for size in [100_000, 500_000, 1_000_000] {
     let options = AskFileSearchOptions(limit: 24, now: now)
     for query in queries {
         let parsed = AskSearchQuery(query)
-        measure("files=\(size) query=\(query)") { state.search(parsed, options: options).count }
+        let cache = AskFileSearchCandidates()
+        let reference = state.search(parsed, options: options)
+        precondition(state.search(parsed, options: options, candidates: cache) == reference)
+        measure("files=\(size) full query=\(query)") { state.search(parsed, options: options).count }
+        measure("files=\(size) warm_candidates query=\(query)") {
+            let hits = state.search(parsed, options: options, candidates: cache)
+            precondition(hits == reference)
+            return hits.count
+        }
     }
     measure("files=\(size) recent") { state.recent(options: options).count }
     largest = state
 }
 
+// Selective names isolate the cost of visiting irrelevant records while typing.
+// This is a separate workload, not a claim about every filename distribution.
+var selective = AskFileIndexState(home: "/bench")
+let selectiveRoot = selective.directory("/bench")
+for number in 0..<1_000_000 {
+    let name = number % 1000 == 0 ? "rare-report-\(number).pdf" : "bbbb-\(number).pdf"
+    selective.add(name: name, directory: selectiveRoot, kind: .file, modified: now)
+}
+let selectiveCache = AskFileSearchCandidates(), selectiveQuery = AskSearchQuery("rare")
+let selectiveOptions = AskFileSearchOptions(limit: 24, now: now)
+_ = selective.search(.init("rar"), options: selectiveOptions, candidates: selectiveCache)
+let selectiveReference = selective.search(selectiveQuery, options: selectiveOptions)
+measure("selective=1000000 full query=rare") { selective.search(selectiveQuery, options: selectiveOptions).count }
+measure("selective=1000000 warm_candidates query=rare") {
+    let hits = selective.search(selectiveQuery, options: selectiveOptions, candidates: selectiveCache)
+    precondition(hits == selectiveReference)
+    return hits.count
+}
+
 
 final class BenchmarkFiles: AskFileSearching, @unchecked Sendable {
     let state: AskFileIndexState
+    let candidates = AskFileSearchCandidates()
     init(_ state: AskFileIndexState) { self.state = state }
     var status: AskFileIndexStatus { .init(phase: .ready, count: state.count) }
     var usage: [String: Int] { [:] }
-    func search(_ query: AskSearchQuery, options: AskFileSearchOptions) -> [AskFileHit] { state.search(query, options: options) }
+    func search(_ query: AskSearchQuery, options: AskFileSearchOptions) -> [AskFileHit] {
+        state.search(query, options: options, candidates: candidates)
+    }
     func recent(options: AskFileSearchOptions) -> [AskFileHit] { state.recent(options: options) }
     func start() {}
     func recordOpen(_ path: String) {}
@@ -100,11 +130,11 @@ func percentile(_ values: [Double], _ fraction: Double) -> Double {
     values.sorted()[min(values.count - 1, Int(Double(values.count) * fraction))]
 }
 
-// Measures the actual production coordinator, including its 60 ms debounce.
+// Measures the actual production coordinator, including its configured debounce.
 // Publication latency is distinct from a rendered frame; UI tests cover interaction.
 let pipelineState = largest!
 Task { @MainActor in
-    let session = AskQuickSearchSession()
+    let session = AskQuickSearchSession(imageCache: AskResultImageCache { _ in nil })
     let sources = AskQuickResults.Sources(apps: BenchmarkApps(applications), files: BenchmarkFiles(pipelineState))
     var inputs: [Double] = [], apps: [Double] = [], files: [Double] = []
     for round in 0..<31 {

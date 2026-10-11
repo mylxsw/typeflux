@@ -1,5 +1,7 @@
 # GUL-242 — responsive launcher search
 
+This is the historical GUL-242 validation record. For current candidate reuse, debounce and publication behavior, see [GUL-324](gul-324-launcher-search.md).
+
 ## Behavior and implementation
 
 Input handlers no longer synchronously scan application or file indexes. `AskQuickSearchSession` owns independent application and file workers. Each worker has at most one running request and one replaceable pending request. Applications publish immediately; files wait for a cancellable 60 ms debounce. Mixed mode buffers an early file response until the application provider has answered. Explicit file-first mode may publish files immediately.
