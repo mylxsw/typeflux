@@ -1,0 +1,134 @@
+Apple M4, Apple Swift 6.4; one warm-up + 30 measured runs; synthetic records only.
+Measurements exclude rendered frames and remain sensitive to host load.
+
+BASELINE
+apps=500 query=r p50=0.270ms p95=0.273ms max=0.275ms checksum=372
+apps=500 query=report p50=0.126ms p95=0.127ms max=0.130ms checksum=372
+apps=500 query=ht p50=0.088ms p95=0.089ms max=0.091ms checksum=372
+entries=100000 build=0.77s
+files=100000 full query=r p50=1.351ms p95=1.600ms max=1.644ms checksum=744
+files=100000 full query=re p50=1.828ms p95=2.105ms max=2.256ms checksum=744
+files=100000 full query=report p50=1.348ms p95=1.593ms max=1.671ms checksum=744
+files=100000 full query=ht p50=1.476ms p95=1.652ms max=1.677ms checksum=744
+files=100000 full query=hetong p50=1.108ms p95=1.455ms max=1.466ms checksum=744
+files=100000 full query=会议 p50=0.794ms p95=0.893ms max=1.907ms checksum=744
+files=100000 full query=budget final p50=0.987ms p95=2.253ms max=2.336ms checksum=744
+files=100000 full query=img .png p50=0.534ms p95=0.612ms max=0.633ms checksum=744
+files=100000 full query=summary in:project p50=0.557ms p95=0.657ms max=0.663ms checksum=744
+files=100000 full query=xyzzy p50=0.074ms p95=0.089ms max=0.090ms checksum=0
+files=100000 recent p50=1.898ms p95=1.972ms max=1.976ms checksum=744
+entries=500000 build=4.11s
+files=500000 full query=r p50=8.412ms p95=10.753ms max=11.292ms checksum=744
+files=500000 full query=re p50=8.261ms p95=10.283ms max=12.701ms checksum=744
+files=500000 full query=report p50=5.445ms p95=6.181ms max=6.209ms checksum=744
+files=500000 full query=ht p50=7.790ms p95=9.017ms max=9.616ms checksum=744
+files=500000 full query=hetong p50=4.517ms p95=4.694ms max=4.698ms checksum=744
+files=500000 full query=会议 p50=2.904ms p95=2.990ms max=3.048ms checksum=744
+files=500000 full query=budget final p50=4.986ms p95=5.185ms max=5.216ms checksum=744
+files=500000 full query=img .png p50=1.708ms p95=1.773ms max=1.808ms checksum=744
+files=500000 full query=summary in:project p50=2.236ms p95=2.383ms max=2.490ms checksum=744
+files=500000 full query=xyzzy p50=0.276ms p95=0.292ms max=0.293ms checksum=0
+files=500000 recent p50=9.358ms p95=9.625ms max=9.882ms checksum=744
+entries=1000000 build=8.25s
+files=1000000 full query=r p50=12.808ms p95=13.335ms max=13.505ms checksum=744
+files=1000000 full query=re p50=15.745ms p95=16.296ms max=18.033ms checksum=744
+files=1000000 full query=report p50=11.031ms p95=11.745ms max=12.190ms checksum=744
+files=1000000 full query=ht p50=12.280ms p95=12.916ms max=15.358ms checksum=744
+files=1000000 full query=hetong p50=9.907ms p95=10.766ms max=13.123ms checksum=744
+files=1000000 full query=会议 p50=6.813ms p95=7.291ms max=9.109ms checksum=744
+files=1000000 full query=budget final p50=12.111ms p95=12.481ms max=12.498ms checksum=744
+files=1000000 full query=img .png p50=3.382ms p95=3.481ms max=3.491ms checksum=744
+files=1000000 full query=summary in:project p50=5.210ms p95=5.291ms max=5.370ms checksum=744
+files=1000000 full query=xyzzy p50=0.556ms p95=0.574ms max=0.582ms checksum=0
+files=1000000 recent p50=17.890ms p95=18.585ms max=18.615ms checksum=744
+selective=1000000 full query=rare p50=1.083ms p95=1.125ms max=1.144ms checksum=744
+PIPELINE input p50=0.113ms p95=0.157ms max=0.160ms
+PIPELINE apps p50=81.895ms p95=82.626ms max=82.830ms
+PIPELINE files_with_debounce p50=109.152ms p95=112.619ms max=113.172ms
+
+CURRENT
+apps=500 query=r p50=0.276ms p95=0.281ms max=0.284ms checksum=372
+apps=500 query=report p50=0.128ms p95=0.130ms max=0.130ms checksum=372
+apps=500 query=ht p50=0.090ms p95=0.093ms max=0.099ms checksum=372
+entries=100000 build=0.76s
+files=100000 full query=r p50=1.229ms p95=1.290ms max=1.340ms checksum=744
+files=100000 warm_candidates query=r p50=1.249ms p95=1.301ms max=1.316ms checksum=744
+files=100000 full query=re p50=1.663ms p95=1.719ms max=1.732ms checksum=744
+files=100000 warm_candidates query=re p50=1.695ms p95=1.770ms max=1.774ms checksum=744
+files=100000 full query=report p50=1.191ms p95=1.245ms max=1.254ms checksum=744
+files=100000 warm_candidates query=report p50=1.202ms p95=1.260ms max=1.281ms checksum=744
+files=100000 full query=ht p50=1.306ms p95=1.409ms max=1.428ms checksum=744
+files=100000 warm_candidates query=ht p50=1.329ms p95=1.388ms max=1.422ms checksum=744
+files=100000 full query=hetong p50=1.000ms p95=1.031ms max=1.057ms checksum=744
+files=100000 warm_candidates query=hetong p50=1.010ms p95=1.042ms max=1.044ms checksum=744
+files=100000 full query=会议 p50=0.723ms p95=0.750ms max=0.750ms checksum=744
+files=100000 warm_candidates query=会议 p50=0.824ms p95=0.829ms max=0.832ms checksum=744
+files=100000 full query=budget final p50=0.899ms p95=0.951ms max=0.967ms checksum=744
+files=100000 warm_candidates query=budget final p50=1.580ms p95=1.867ms max=2.030ms checksum=744
+files=100000 full query=img .png p50=0.504ms p95=0.534ms max=0.540ms checksum=744
+files=100000 warm_candidates query=img .png p50=0.517ms p95=0.541ms max=0.544ms checksum=744
+files=100000 full query=summary in:project p50=0.569ms p95=0.591ms max=0.597ms checksum=744
+files=100000 warm_candidates query=summary in:project p50=0.841ms p95=0.846ms max=0.848ms checksum=744
+files=100000 full query=xyzzy p50=0.075ms p95=0.079ms max=0.087ms checksum=0
+files=100000 warm_candidates query=xyzzy p50=0.019ms p95=0.023ms max=0.025ms checksum=0
+files=100000 recent p50=1.960ms p95=2.049ms max=2.088ms checksum=744
+entries=500000 build=4.04s
+files=500000 full query=r p50=6.062ms p95=6.147ms max=6.234ms checksum=744
+files=500000 warm_candidates query=r p50=6.212ms p95=6.463ms max=7.943ms checksum=744
+files=500000 full query=re p50=7.611ms p95=7.795ms max=7.809ms checksum=744
+files=500000 warm_candidates query=re p50=7.806ms p95=7.976ms max=8.013ms checksum=744
+files=500000 full query=report p50=5.355ms p95=6.086ms max=6.971ms checksum=744
+files=500000 warm_candidates query=report p50=5.402ms p95=5.580ms max=5.649ms checksum=744
+files=500000 full query=ht p50=5.658ms p95=5.956ms max=6.017ms checksum=744
+files=500000 warm_candidates query=ht p50=5.688ms p95=5.876ms max=5.915ms checksum=744
+files=500000 full query=hetong p50=4.411ms p95=4.646ms max=4.686ms checksum=744
+files=500000 warm_candidates query=hetong p50=4.587ms p95=4.977ms max=6.396ms checksum=744
+files=500000 full query=会议 p50=3.225ms p95=3.343ms max=3.356ms checksum=744
+files=500000 warm_candidates query=会议 p50=3.267ms p95=3.390ms max=3.472ms checksum=744
+files=500000 full query=budget final p50=5.060ms p95=5.176ms max=5.178ms checksum=744
+files=500000 warm_candidates query=budget final p50=5.066ms p95=5.202ms max=5.206ms checksum=744
+files=500000 full query=img .png p50=1.757ms p95=1.850ms max=1.879ms checksum=744
+files=500000 warm_candidates query=img .png p50=1.798ms p95=1.889ms max=1.896ms checksum=744
+files=500000 full query=summary in:project p50=2.256ms p95=3.215ms max=3.400ms checksum=744
+files=500000 warm_candidates query=summary in:project p50=2.125ms p95=2.193ms max=2.384ms checksum=744
+files=500000 full query=xyzzy p50=0.316ms p95=0.351ms max=0.352ms checksum=0
+files=500000 warm_candidates query=xyzzy p50=0.092ms p95=0.094ms max=0.095ms checksum=0
+files=500000 recent p50=8.868ms p95=9.024ms max=9.392ms checksum=744
+entries=1000000 build=8.25s
+files=1000000 full query=r p50=17.250ms p95=18.277ms max=18.707ms checksum=744
+files=1000000 warm_candidates query=r p50=16.299ms p95=17.519ms max=18.299ms checksum=744
+files=1000000 full query=re p50=18.954ms p95=20.935ms max=21.557ms checksum=744
+files=1000000 warm_candidates query=re p50=19.316ms p95=20.989ms max=21.209ms checksum=744
+files=1000000 full query=report p50=13.488ms p95=14.447ms max=15.056ms checksum=744
+files=1000000 warm_candidates query=report p50=13.603ms p95=14.374ms max=14.426ms checksum=744
+files=1000000 full query=ht p50=15.206ms p95=16.192ms max=17.336ms checksum=744
+files=1000000 warm_candidates query=ht p50=15.932ms p95=17.414ms max=17.955ms checksum=744
+files=1000000 full query=hetong p50=11.806ms p95=12.458ms max=12.555ms checksum=744
+files=1000000 warm_candidates query=hetong p50=12.421ms p95=12.997ms max=13.875ms checksum=744
+files=1000000 full query=会议 p50=8.181ms p95=8.528ms max=8.622ms checksum=744
+files=1000000 warm_candidates query=会议 p50=5.867ms p95=6.694ms max=6.786ms checksum=744
+files=1000000 full query=budget final p50=15.219ms p95=16.592ms max=16.671ms checksum=744
+files=1000000 warm_candidates query=budget final p50=15.863ms p95=17.516ms max=18.144ms checksum=744
+files=1000000 full query=img .png p50=4.341ms p95=4.578ms max=5.020ms checksum=744
+files=1000000 warm_candidates query=img .png p50=4.398ms p95=5.687ms max=6.273ms checksum=744
+files=1000000 full query=summary in:project p50=6.574ms p95=7.135ms max=7.155ms checksum=744
+files=1000000 warm_candidates query=summary in:project p50=5.003ms p95=5.508ms max=5.925ms checksum=744
+files=1000000 full query=xyzzy p50=0.806ms p95=0.850ms max=0.853ms checksum=0
+files=1000000 warm_candidates query=xyzzy p50=0.195ms p95=0.203ms max=0.205ms checksum=0
+files=1000000 recent p50=16.404ms p95=18.364ms max=18.532ms checksum=744
+selective=1000000 full query=rare p50=1.148ms p95=1.180ms max=1.225ms checksum=744
+selective=1000000 warm_candidates query=rare p50=0.247ms p95=0.250ms max=0.250ms checksum=744
+PIPELINE input p50=0.039ms p95=0.059ms max=0.085ms
+PIPELINE apps p50=29.451ms p95=33.028ms max=33.378ms
+PIPELINE files_with_debounce p50=29.451ms p95=33.028ms max=33.378ms
+
+INTERLEAVED SCANNER CONTROL (same process, alternating order; identical ordered hits)
+CONTROL original query=r p50=15.685ms p95=19.371ms
+CONTROL full query=r p50=14.973ms p95=19.786ms
+CONTROL cached query=r p50=15.097ms p95=17.454ms
+CONTROL original query=report p50=12.707ms p95=13.673ms
+CONTROL full query=report p50=12.370ms p95=14.328ms
+CONTROL cached query=report p50=12.432ms p95=14.309ms
+CONTROL original query=xyzzy p50=0.805ms p95=0.906ms
+CONTROL full query=xyzzy p50=0.845ms p95=1.107ms
+CONTROL cached query=xyzzy p50=0.222ms p95=0.357ms

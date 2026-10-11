@@ -35,11 +35,15 @@ extension AskFileIndexState {
     static func depthPenalty(_ depth: UInt16) -> Double { min(Double(depth) * 0.004, 0.04) }
 
     /// The best files for `query`, best first.
-    func search(_ query: AskSearchQuery, options: AskFileSearchOptions) -> [AskFileHit] {
+    func search(_ query: AskSearchQuery, options: AskFileSearchOptions,
+                candidates: AskFileSearchCandidates? = nil, revision: Int = 0) -> [AskFileHit] {
         guard options.limit > 0, !query.isEmpty, !records.isEmpty, options.cancellation?.isCancelled != true else { return [] }
         let extensionBytes = query.fileExtension.map { Array($0.lowercased().utf8) }
         let mask = query.mask
         let oneWord = query.words.count <= 1
+        let indices = candidates?.lookup(mask: mask, includesPaths: !oneWord, recordCount: records.count, revision: revision)
+        let scanCount = indices?.count ?? records.count
+        guard scanCount > 0 else { return [] }
         // Group usage by directory once. Looking up each used path with
         // record(at:) would repeatedly scan large directories. Names are only
         // decoded for matching entries in directories with recorded usage.
@@ -51,27 +55,32 @@ extension AskFileIndexState {
                 usage[directory, default: [:]][(path as NSString).lastPathComponent] = Self.usageBoost(count)
             }
         }
-        let chunks = (records.count + Self.chunkSize - 1) / Self.chunkSize
+        let chunks = (scanCount + Self.chunkSize - 1) / Self.chunkSize
+        let collector = candidates?.collector(mask: mask, recordCount: records.count, chunks: chunks)
         var found = [[(score: Double, index: UInt32)]](repeating: [], count: chunks)
         let lock = NSLock()
         let context = ScanContext(query: query, mask: mask, wordMasks: query.words.prefix(64).map { AskSearchText.mask($0) },
-                                  oneWord: oneWord, extensionBytes: extensionBytes, options: options, usage: usage)
+                                  oneWord: oneWord, extensionBytes: extensionBytes, options: options, usage: usage,
+                                  collector: collector)
         records.withUnsafeBufferPointer { records in
             keys.withUnsafeBufferPointer { keys in
                 starts.withUnsafeBufferPointer { starts in
                     directoryMasks.withUnsafeBufferPointer { directoryMasks in
                         directoryDepths.withUnsafeBufferPointer { directoryDepths in
                             query.compact.withUnsafeBufferPointer { compact in
-                                let tables = ScanTables(records: records, keys: keys, starts: starts,
-                                                        directoryMasks: directoryMasks,
-                                                        directoryDepths: directoryDepths, compact: compact)
-                                // Leave CPU headroom for drawing and the independent app query.
-                                let workers = min(4, chunks)
-                                DispatchQueue.concurrentPerform(iterations: workers) { worker in
-                                    for chunk in stride(from: worker, to: chunks, by: workers) {
-                                        guard options.cancellation?.isCancelled != true else { return }
-                                        let local = scan(chunk: chunk, tables, context)
-                                        lock.withLock { found[chunk] = local }
+                                (indices ?? []).withUnsafeBufferPointer { indicesBuffer in
+                                    let tables = ScanTables(records: records, keys: keys, starts: starts,
+                                                            directoryMasks: directoryMasks,
+                                                            directoryDepths: directoryDepths, compact: compact,
+                                                            candidates: indices == nil ? nil : indicesBuffer)
+                                    // Leave CPU headroom for drawing and the independent app query.
+                                    let workers = min(4, chunks)
+                                    DispatchQueue.concurrentPerform(iterations: workers) { worker in
+                                        for chunk in stride(from: worker, to: chunks, by: workers) {
+                                            guard options.cancellation?.isCancelled != true else { return }
+                                            let local = scan(chunk: chunk, tables, context)
+                                            lock.withLock { found[chunk] = local }
+                                        }
                                     }
                                 }
                             }
@@ -81,6 +90,7 @@ extension AskFileIndexState {
             }
         }
         guard options.cancellation?.isCancelled != true else { return [] }
+        candidates?.store(collector, mask: mask, includesPaths: !oneWord, recordCount: records.count, revision: revision)
         let matched = Array(found.joined())
         var candidates = matched.map { candidate in
             (score: candidate.score, index: candidate.index, path: self.path(of: candidate.index))
@@ -136,6 +146,7 @@ extension AskFileIndexState {
         var extensionBytes: [UInt8]?
         var options: AskFileSearchOptions
         var usage: [UInt32: [String: Double]]
+        var collector: AskFileSearchCandidates.Collector?
     }
 
     private struct ScanTables {
@@ -145,6 +156,7 @@ extension AskFileIndexState {
         var directoryMasks: UnsafeBufferPointer<UInt64>
         var directoryDepths: UnsafeBufferPointer<UInt16>
         var compact: UnsafeBufferPointer<UInt8>
+        var candidates: UnsafeBufferPointer<UInt32>?
     }
 
     /// One chunk of the table: every entry that matches, with its score so far.
@@ -160,20 +172,28 @@ extension AskFileIndexState {
             if left.nameLength != right.nameLength { return left.nameLength < right.nameLength }
             return path(of: lhs.index) < path(of: rhs.index)
         }
-        let end = min(tables.records.count, (chunk + 1) * Self.chunkSize)
+        let end = min(tables.candidates?.count ?? tables.records.count, (chunk + 1) * Self.chunkSize)
+        let collecting = context.collector?.isCollecting == true
+        var maskCandidates: [UInt32] = []
+        var exceeded = false
         let type = context.options.type
         var folderDirectory = -1
         var folderMatches = true
         var wordsDirectory = -1
         var wordsInPath: UInt64 = 0
         let needsPathWords = context.query.words.count > 1
-        for position in chunk * Self.chunkSize ..< end {
-            if position % 256 == 0, context.options.cancellation?.isCancelled == true { return [] }
+        for offset in chunk * Self.chunkSize ..< end {
+            if offset % 256 == 0, context.options.cancellation?.isCancelled == true { return [] }
+            let position = tables.candidates.map { Int($0[offset]) } ?? offset
             let record = tables.records[position]
             if record.isRemoved { continue }
             let directory = Int(record.directory)
             let reach = context.oneWord ? record.mask : record.mask | tables.directoryMasks[directory]
             if reach & context.mask != context.mask { continue }
+            if collecting, !exceeded, let collector = context.collector {
+                if maskCandidates.count < collector.capacity { maskCandidates.append(UInt32(position)) }
+                else { exceeded = true; maskCandidates.removeAll() }
+            }
             if type != .all, !type.matches(kind: record.recordKind, extension: Self.fileExtension(record, tables.keys)) {
                 continue
             }
@@ -204,6 +224,7 @@ extension AskFileIndexState {
                 - Self.depthPenalty(tables.directoryDepths[directory]) + (context.usage[record.directory]?[name(of: record)] ?? 0)
             local.insert((ranked, UInt32(position)))
         }
+        if collecting { context.collector?.insert(maskCandidates, chunk: chunk, exceeded: exceeded) }
         return local.items
     }
 

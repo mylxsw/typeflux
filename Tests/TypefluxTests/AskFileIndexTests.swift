@@ -288,6 +288,32 @@ struct AskFileIndexServiceTests {
                             defaults: defaults, home: root.path, makeReader: { AskRecordingFileReader() }, makeWatcher: { watcher })
     }
 
+    @Test func rebuildingAnEqualSizedSnapshotInvalidatesEvenAnEmptyCandidatePool() throws {
+        let root = try makeTree()
+        let snapshot = root.appendingPathExtension("bin")
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: snapshot)
+        }
+        for number in 0..<20 { try Data().write(to: root.appendingPathComponent("aaaa-\(number).md")) }
+        let index = AskFileIndex(configuration: { (true, settings(root)) }, fullDiskAccess: { true },
+                                 snapshotURL: snapshot, home: root.path,
+                                 makeReader: { AskRecordingFileReader() }, makeWatcher: { AskTestFileWatcher() },
+                                 searchCandidates: .init(minimumEntries: 0))
+        index.start()
+        index.waitUntilIdle()
+        let originalCount = index.status.count
+        #expect(index.search(.init("zz"), options: .init()).isEmpty)
+        // The new snapshot has the same record count, so count alone cannot
+        // validate the empty pool gathered for the previous snapshot.
+        try FileManager.default.moveItem(at: root.appendingPathComponent("Notes.md"),
+                                         to: root.appendingPathComponent("zz-new.md"))
+        index.rebuild()
+        index.waitUntilIdle()
+        #expect(index.status.count == originalCount)
+        #expect(index.search(.init("zz"), options: .init()).map(\.name) == ["zz-new.md"])
+    }
+
     @Test func buildsWatchesAndFollowsChanges() throws {
         let root = try makeTree()
         defer { try? FileManager.default.removeItem(at: root) }

@@ -219,7 +219,7 @@ struct AskQuickActionPanelTests {
     }
 }
 
-@Suite("Ask file search plugin")
+@Suite("Ask file search plugin", .exclusiveUIState)
 struct AskFileSearchPluginTests {
     private func plugin(_ index: AskTestFileIndex?, limit: Int = 30) -> AskFileSearchPlugin {
         var settings = AskLauncherSearchSettings()
@@ -236,6 +236,7 @@ struct AskFileSearchPluginTests {
     private func run(_ plugin: AskFileSearchPlugin, _ request: AskPluginRequest) async throws -> AskPluginOutput {
         let plan = await plugin.plan(request)
         #expect(plan.mode == .live)
+        #expect(plan.debounce == .milliseconds(16))
         return try await plugin.run(request, plan: plan, progress: { _ in })
     }
 

@@ -190,6 +190,22 @@ struct AskQuickSearchSessionTests {
         #expect(batches.first?.apps.count == 1 && batches.first?.files.count == 1)
     }
 
+    @Test(arguments: [0, 1, 2])
+    func completeLocalBatchesBypassThePublicationGrace(providers: Int) async throws {
+        let apps = AskControlledSearchIndex(), files = AskControlledSearchIndex()
+        apps.appSearch = { _ in [Self.app] }
+        files.fileSearch = { _ in [Self.file] }
+        // A long injected grace makes this a scheduling assertion, not a tight
+        // wall-clock performance assertion that becomes flaky on a loaded host.
+        let session = AskQuickSearchSession(publicationGrace: .seconds(5))
+        defer { session.cancel() }
+        session.fileDebounce = .zero
+        update(session, apps: providers == 2 ? nil : apps, files: providers == 1 ? nil : files)
+        try await Self.wait { !session.isSearching }
+        #expect(session.results?.apps.count == (providers == 2 ? 0 : 1))
+        #expect(session.results?.files.count == (providers == 1 ? 0 : 1))
+    }
+
     @Test func pendingQueriesKeepTheirPresentationWithoutRetainingExecutableRows() async throws {
         let gate = DispatchSemaphore(value: 0)
         defer { gate.signal() }

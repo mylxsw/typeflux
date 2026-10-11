@@ -1,0 +1,191 @@
+XCTest: 3722 tests, 17 skipped, 0 failures; 227.381 seconds.
+First make coverage: diagnostic deadline at 600 seconds, stopped during Swift Testing; no assertion failures recorded.
+Swift Testing inventory: 2473 test functions.
+First pass: 175 uniquely mapped completed suites, covering 1157 test functions.
+Continuation: 1316 remaining test functions passed, 411.986 seconds, exit 0.
+A single uninterrupted make coverage run remains unverified.
+
+Completed suite mappings (display title -> type):
+Account credit chart -> AccountCreditChartTests
+Account status text -> AccountStatusTextTests
+Account status presentation -> AccountStatusPresentationTests
+Account usage forecast -> AccountUsageForecastTests
+Account page operations -> AccountViewOperationTests
+Account view rendering -> AccountViewRenderingTests
+Ask HTTP contract -> AskAPIClientTests
+Ask account card hover -> AskAccountCardHoverTests
+Ask app entry -> AskAppEntryTests
+Ask app matcher -> AskAppMatcherTests
+Ask app index -> AskAppIndexTests
+Ask quick results with apps -> AskQuickResultsAppTests
+Ask attachment loading -> AskAttachmentLoaderTests
+Ask attachment pasteboard -> AskAttachmentPasteboardTests
+Ask attachment drafts -> AskAttachmentDraftTests
+Ask attachment prompts -> AskAttachmentPromptTests
+Ask folder grants -> AskFolderGrantTests
+Ask attachment composer model -> AskAttachmentModelTests
+Production automation routing -> AskAutomationIntegrationTests
+Managed AppleScript client -> AskAutomationScriptRunnerTests
+Browser observation execution -> AskBrowserExecutorTests
+AskBrowserSearchTests -> AskBrowserSearchTests
+Ask calculator formats -> AskCalculatorFormatsTests
+Ask calculator number -> AskCalculatorNumberTests
+Ask calculator detection -> AskCalculatorDetectionTests
+Ask calculator evaluation -> AskCalculatorEvaluationTests
+Ask calculator lexer -> AskCalculatorLexerTests
+Ask capped width -> AskCappedWidthTests
+Ask captured content sizing -> AskCapturedComposerTests
+Ask captured content inventory -> AskCapturedContentItemsTests
+Chat run phase -> AskRunPhaseTests
+Chat activity line while paused -> AskActivityPausedTests
+Chat recovery actions -> AskRecoveryActionTests
+Chat recovery timeline -> AskRecoveryTimelineTests
+Chat workflow draft presentation -> AskWorkflowChecklistTests
+Chat redesign copy -> AskChatRedesignCopyTests
+Chat recovery decisions -> AskRecoveryDecisionTests
+Chat redesign rendering -> AskChatRedesignVisualTests
+Interface style snapshots -> AskClassicStyleVisualTests
+AskClipboardPluginTests -> AskClipboardPluginTests
+Ask command rendering -> AskCommandRenderTests
+Ask slash parsing -> AskSlashQueryTests
+Ask command catalog -> AskCommandCatalogTests
+Ask command matching -> AskCommandMatcherTests
+Ask command palette navigation -> AskCommandPaletteStateTests
+Ask command execution -> AskCommandExecutionTests
+Ask command prompts -> AskCommandPromptTests
+Ask command snapshots -> AskCommandVisualTests
+Ask composer chrome -> AskComposerChromeTests
+Ask composer event delivery -> AskComposerInteractionTests
+Ask composer notices -> AskComposerNoticeTests
+Ask launcher notices -> AskLauncherNoticeLayoutTests
+Ask notice snapshots -> AskNoticeVisualTests
+Ask composer IME placeholder -> AskComposerPlaceholderTests
+Ask responsive composer -> AskComposerResponsiveTests
+Ask native composer -> AskComposerTests
+Computer observation execution -> AskComputerExecutorTests
+Desktop identity evidence -> AskComputerTargetProbeTests
+Ask context selection -> AskContextCaptureTests
+Ask context chips -> AskContextChipsTests
+Ask motion -> AskMotionTests
+Ask orb motion frames -> AskConversationOrbRenderTests
+Ask conversation orb -> AskConversationOrbTests
+Ask conversation storage -> AskConversationStorageTests
+Ask conversations -> AskConversationTests
+Ask navigation regressions -> AskNavigationTests
+Conversation titles -> AskConversationTitleTests
+Ask visual snapshots -> AskConversationVisualTests
+Ask window lifecycle -> AskConversationWindowLifecycleTests
+Conversation workspace service wiring -> AskConversationWindowServicesTests
+Ask conversation window sizing -> AskConversationWindowSizingTests
+Ask credit pauses -> AskCreditPauseTests
+Ask design fidelity -> AskDesignFidelityTests
+Ask effort picker -> AskEffortPickerTests
+Real home file index audit -> AskFileHomeAuditTests
+Ask file index state -> AskFileIndexStateTests
+Ask file scope -> AskFileScopeTests
+Ask file snapshot -> AskFileSnapshotTests
+Ask file crawler and index -> AskFileIndexServiceTests
+File scan reliability -> AskFileReliabilityTests
+File reliability snapshots -> AskFileReliabilityVisualTests
+File search candidate reuse -> AskFileSearchCandidatesTests
+Streaming file reads -> AskFileStreamingTests
+Ask first question controls -> AskFirstQuestionInteractionTests
+Ask first question snapshots -> AskFirstQuestionVisualTests
+Floating panel readability -> AskFloatingPanelStyleTests
+Ask fuzzy matcher -> AskFuzzyMatcherTests
+Ask search query -> AskSearchQueryTests
+Ask launcher search settings -> AskLauncherSearchSettingsTests
+Ask glass menu -> AskGlassMenuTests
+Ask launcher glass -> AskGlassTests
+Ask harness UI -> AskHarnessUITests
+Ask agent harness snapshots -> AskHarnessVisualTests
+Ask native pull refresh -> AskHistoryPullRefreshTests
+Inline conversation rename -> AskHistoryRenameTests
+Ask hover card -> AskHoverCardTests
+Ask image capability -> AskImageCapabilityTests
+AskImagePickerStateTests -> AskImagePickerStateTests
+Ask image recovery copy -> AskImageRecoveryCopyTests
+AskKeywordAliasTests -> AskKeywordAliasTests
+AskKeywordListPresentationTests -> AskKeywordListPresentationTests
+AskKeywordDraftTests -> AskKeywordDraftTests
+AskWorkflowRunSettingsTests -> AskWorkflowRunSettingsTests
+AskKeywordMatcherTests -> AskKeywordMatcherTests
+AskKeywordListTests -> AskKeywordListTests
+Ask launcher context token -> AskLauncherContextTests
+Ask launcher dragging -> AskLauncherDragTests
+Ask launcher position -> AskLauncherPositionTests
+Launcher Esc with result focus -> AskLauncherEscapeMonitorTests
+AskLauncherFeatureSearchTests -> AskLauncherFeatureSearchTests
+Ask launcher glass snapshots -> AskLauncherGlassVisualTests
+Ask launcher header -> AskLauncherHeaderTests
+Ask launcher header snapshots -> AskLauncherHeaderVisualTests
+Launcher height motion -> AskLauncherHeightAnimatorTests
+Ask launcher home -> AskLauncherHomeTests
+Launcher light palette -> AskLauncherLightPaletteTests
+Launcher typing motion -> AskLauncherMotionTests
+AskLauncherNavigationPluginTests -> AskLauncherNavigationPluginTests
+Launcher number hints -> AskLauncherNumberShortcutTests
+Launcher palette rendering -> AskLauncherPaletteRenderTests
+Ask launcher placement -> AskLauncherPlacementTests
+Ask launcher polish -> AskLauncherPolishTests
+Ask launcher polish snapshots -> AskLauncherPolishVisualTests
+Ask launcher position settings -> AskLauncherPositionSettingsTests
+Ask launcher position snapshots -> AskLauncherPositionVisualTests
+Ask launcher search snapshots -> AskLauncherSearchVisualTests
+Ask launcher toggle -> AskLauncherToggleTests
+Ask Liquid Glass redesign -> AskLiquidGlassRedesignTests
+Ask live preview -> AskLivePreviewHarness
+Ask local authorization evidence -> AskLocalApprovalTests
+Ask local mode surfaces -> AskLocalModeUITests
+Ask browser adapter -> AskLocalToolsTests
+Local Ask usage -> AskLocalUsageTests
+Ask localization native accessibility -> AskLocalizationPolishAccessibilityTests
+Launcher localization polish -> AskLocalizationPolishTests
+Ask localization polish snapshots -> AskLocalizationPolishVisualTests
+Ask Markdown code blocks -> AskMarkdownCodeTests
+Ask Markdown tables -> AskMarkdownTableTests
+Ask memory -> AskMemoryTests
+Ask sent message provenance -> AskMessageProvenanceTests
+Ask model chooser with images -> AskModelChooserImageTests
+Ask independent model selection -> AskModelSelectionTests
+Ask shadows and motion -> AskMotionEffectsTests
+Notebook privacy and approved dispatch -> AskNotebookAuthorizationTests
+Notebook entry point regressions -> AskNotebookEntryRegressionTests
+Notebook Markdown helpers -> AskNotebookMarkdownTests
+Notebook editor commands -> AskMarkdownFormatTests
+Notebook store, import and export -> AskNotebookStoreTests
+Notebook agent tool and skill -> AskNotebookToolTests
+Saving answers and new notes from the launcher -> AskNotebookEntryTests
+Notebook window model -> AskNotebookViewModelTests
+Notebook window visuals -> AskNotebookVisualTests
+AI prompt results: Markdown, windows and notes -> AskPromptResultFlowTests
+Ask notes window -> AskNotesViewModelTests
+AI prompt result rendering -> AskNotesRenderTests
+AskNotesStoreTests -> AskNotesStoreTests
+AskNoteExportTests -> AskNoteExportTests
+AskNotesPluginTests -> AskNotesPluginTests
+AskNumberConversionsTests -> AskNumberConversionsTests
+Trusted observation store -> AskObservationStoreTests
+AskOpenChatTests -> AskOpenChatTests
+Ask permission modes -> AskPermissionModeTests
+Permission mode composer -> AskPermissionModeUITests
+Ask plugin session -> AskPluginSessionTests
+Ask test plugin -> AskTestPluginTests
+Ask plugin views -> AskPluginViewTests
+Ask plugin snapshots -> AskPluginVisualTests
+AskPrefixPluginTests -> AskPrefixPluginTests
+Project tool approval and integration -> AskProjectToolTests
+AskPromptPluginTests -> AskPromptPluginTests
+AskWebSearchPluginTests -> AskWebSearchPluginTests
+AskPluginRegistryTests -> AskPluginRegistryTests
+Ask quick results with files -> AskQuickResultsFileTests
+Ask quick action panel -> AskQuickActionPanelTests
+Ask file search plugin -> AskFileSearchPluginTests
+
+Inventory audit:
+All discovered Swift Testing test functions: 2473
+Functions selected by completed-suite expression: 1157
+Complement selected by continuation: 1316
+The continuation reported exactly 1316 passing tests.
+Discovery output SHA-256: 552282172f7ae5ea54d9593030c9a133ddd71efa19bf5d98e1eb77eee205668b
+Remaining selected inventory SHA-256: ddc1f7b70e3d892ae6dd6b8e586c344dd16cef5b40bafccbd9e3ee7c55909e5c

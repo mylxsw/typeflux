@@ -83,6 +83,8 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private let queue = DispatchQueue(label: "typeflux.ask.files.index", qos: .utility)
     private let lock = NSLock()
     private var published: AskFileIndexState
+    private var publishedRevision = 0
+    private let searchCandidates: AskFileSearchCandidates
     private var currentStatus = AskFileIndexStatus()
     private var usageCounts: [String: Int]
     /// What the queue is working towards; nil when off. Changing it cancels a scan under way.
@@ -105,7 +107,8 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
          fullDiskAccess: @escaping () -> Bool = { AskFullDiskAccess.isGranted() },
          snapshotURL: URL = AskFileIndex.defaultSnapshotURL, defaults: UserDefaults = .standard,
          home: String = NSHomeDirectory(), makeReader: @escaping () -> AskFileReading = { AskFileReader() },
-         makeWatcher: @escaping () -> AskFileWatching = { AskFSEventsWatcher() }) {
+         makeWatcher: @escaping () -> AskFileWatching = { AskFSEventsWatcher() },
+         searchCandidates: AskFileSearchCandidates = AskFileSearchCandidates()) {
         self.configuration = configuration
         self.fullDiskAccess = fullDiskAccess
         self.snapshotURL = snapshotURL
@@ -113,6 +116,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
         self.home = home
         self.makeWatcher = makeWatcher
         self.makeReader = makeReader
+        self.searchCandidates = searchCandidates
         reader = makeReader()
         published = AskFileIndexState(home: home)
         working = AskFileIndexState(home: home)
@@ -140,10 +144,10 @@ extension AskFileIndex {
     // MARK: - Reading
 
     func search(_ query: AskSearchQuery, options: AskFileSearchOptions) -> [AskFileHit] {
-        let (state, usage) = lock.withLock { (published, usageCounts) }
+        let (state, usage, revision) = lock.withLock { (published, usageCounts, publishedRevision) }
         var options = options
         options.usage = usage
-        return state.search(query, options: options)
+        return state.search(query, options: options, candidates: searchCandidates, revision: revision)
     }
 
     func recent(options: AskFileSearchOptions) -> [AskFileHit] {
@@ -439,6 +443,8 @@ extension AskFileIndex {
         let bytes = Self.bytes(of: state)
         lock.withLock {
             published = state
+            publishedRevision += 1
+            searchCandidates.invalidate(revision: publishedRevision)
             currentStatus.phase = phase
             currentStatus.count = state.count
             currentStatus.bytes = bytes

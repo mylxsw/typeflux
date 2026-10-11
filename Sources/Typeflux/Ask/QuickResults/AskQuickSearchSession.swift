@@ -15,6 +15,7 @@ final class AskQuickSearchSession: ObservableObject {
     private let apps = AskSearchWorker<[AskAppMatch]>(label: "typeflux.ask.search.apps")
     private let files = AskSearchWorker<FileBatch>(label: "typeflux.ask.search.files")
     private let imageCache: AskResultImageCache
+    private let publicationGrace: Duration
     private var browserTask: Task<Void, Never>?
     private var browserResults: [AskBrowserSearchEntry] = []
     private var browserReady = true
@@ -36,11 +37,12 @@ final class AskQuickSearchSession: ObservableObject {
     private var currentSettings = AskLauncherSearchSettings()
     private var currentEntries: [AskLauncherSearchEntry] = []
     private var numberResults: AskQuickResults?
-    var fileDebounce: Duration = .milliseconds(60)
+    var fileDebounce: Duration = .milliseconds(16)
     private static let log = OSLog(subsystem: "com.typeflux", category: "LauncherSearch")
 
-    init(imageCache: AskResultImageCache = .shared) {
+    init(imageCache: AskResultImageCache = .shared, publicationGrace: Duration = .milliseconds(80)) {
         self.imageCache = imageCache
+        self.publicationGrace = publicationGrace
     }
 
     /// Keep the empty, non-executable search placeholder out of the visible list.
@@ -196,9 +198,17 @@ final class AskQuickSearchSession: ObservableObject {
     private func publish() {
         // Give debounced files a bounded chance to join the application batch.
         // Slow providers still publish independently after this short grace period.
+        // Once both local providers finish there is no batch left to coalesce.
+        // Cancel the grace timer rather than delaying an already complete answer.
+        if appsReady, fileResults != nil {
+            publication?.cancel()
+            publication = nil
+            commitResults()
+            return
+        }
         guard publication == nil else { return }
         let ticket = generation
-        let grace: Duration = appsReady && fileResults == nil ? .milliseconds(80) : .milliseconds(16)
+        let grace: Duration = appsReady && fileResults == nil ? publicationGrace : .milliseconds(16)
         publication = Task { [weak self] in
             do { try await Task.sleep(for: grace) } catch { return }
             guard let self, generation == ticket, !Task.isCancelled else { return }

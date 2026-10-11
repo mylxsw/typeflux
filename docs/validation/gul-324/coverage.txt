@@ -1,0 +1,21 @@
+Focused command:
+swift test -j 2 --no-parallel --enable-code-coverage --filter 'AskQuickResults|AskQuickSearchSession|AskSearchScheduling|AskResultImageCache|AskLauncherToggle|AskFileIndex|AskFileSearchCandidates|AskFileScope|AskFileStreaming|AskFileReliability|AskFuzzy|AskApp|LauncherSearchSettings|AskPluginSession|AskPluginFiles|AskFileSearchPlugin|ExclusiveUIStateLanguage'
+
+299 tests in 35 suites passed after 158.754 seconds.
+
+Changed executable lines (git diff --unified=0 and LLVM LCOV DA records):
+AskQuickSearchSession.swift 12/12
+AskFileIndex.swift 7/8
+AskFileSearch.swift 34/34
+AskFileSearchCandidates.swift 53/53
+AskFileSearchPlugin.swift 1/1
+Total 107/108 = 99.07%
+
+Whole-file line coverage:
+AskQuickSearchSession.swift 212/212
+AskFileIndex.swift 361/373
+AskFileSearch.swift 261/261
+AskFileSearchCandidates.swift 53/53
+AskFileSearchPlugin.swift 92/94
+
+The remaining changed uncovered line is the default watcher construction in the index initializer; service tests inject a watcher.

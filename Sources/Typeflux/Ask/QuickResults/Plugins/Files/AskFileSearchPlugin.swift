@@ -35,7 +35,7 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
         let type = Self.type(of: request.options) ?? .all
         return AskPluginPlan(mode: .live, title: title, meta: [AskPluginMeta(text: type.title)],
-                             values: [Self.typeOption: type.rawValue], debounce: .milliseconds(60))
+                             values: [Self.typeOption: type.rawValue], debounce: .milliseconds(16))
     }
 
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
