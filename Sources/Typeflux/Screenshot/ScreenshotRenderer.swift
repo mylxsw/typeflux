@@ -88,9 +88,11 @@ enum ScreenshotRenderer {
         var toPiece = CGAffineTransform(translationX: -sourceFrame.minX, y: -sourceFrame.minY)
             .concatenating(CGAffineTransform(scaleX: scale.width, y: scale.height))
             .concatenating(CGAffineTransform(translationX: -pixels.minX, y: -pixels.minY))
-        guard let mask = mosaic.maskPath.copy(using: &toPiece) else { return nil }
-        context.addPath(mask)
-        context.clip()
+        for path in mosaic.clipPaths {
+            guard let mask = path.copy(using: &toPiece) else { return nil }
+            context.addPath(mask)
+            context.clip()
+        }
         drawImage(effected, in: CGRect(x: 0, y: 0, width: piece.width, height: piece.height), context: context)
         guard let image = context.makeImage() else { return nil }
         let rect = CGRect(x: sourceFrame.minX + pixels.minX / scale.width,
@@ -172,9 +174,66 @@ enum ScreenshotRenderer {
             let size = (label as NSString).size(withAttributes: attributes)
             drawText(label, at: CGPoint(x: frame.midX - size.width / 2, y: frame.midY - size.height / 2),
                      attributes: attributes, in: context)
+        case let .callout(anchor, origin, text, fontSize):
+            drawCallout(annotation, anchor: anchor, text: text, at: origin, fontSize: fontSize, in: context)
         case .mosaic:
             break
         }
+    }
+
+    /// The line out to the anchor, its end, then the box and its text on top.
+    private static func drawCallout(_ annotation: ScreenshotAnnotation, anchor: CGPoint, text: String,
+                                    at origin: CGPoint, fontSize: CGFloat, in context: CGContext) {
+        let style = annotation.style
+        guard let box = annotation.calloutBox else { return }
+        let lineWidth = ScreenshotAnnotation.calloutLineWidth(fontSize: fontSize)
+        if let start = annotation.calloutLineStart {
+            context.setLineWidth(lineWidth)
+            context.move(to: start)
+            context.addLine(to: anchor)
+            context.strokePath()
+            switch style.calloutAnchor {
+            case .dot:
+                let radius = lineWidth * 1.8
+                context.fillEllipse(in: CGRect(x: anchor.x - radius, y: anchor.y - radius, width: radius * 2,
+                                               height: radius * 2))
+            case .arrow:
+                let length = hypot(anchor.x - start.x, anchor.y - start.y)
+                guard length > 0 else { break }
+                let direction = CGPoint(x: (anchor.x - start.x) / length, y: (anchor.y - start.y) / length)
+                let head = min(ScreenshotAnnotation.arrowHeadLength(lineWidth: lineWidth), length)
+                let base = point(anchor, back: direction, by: head)
+                context.move(to: anchor)
+                context.addLine(to: CGPoint(x: base.x - direction.y * head / 2, y: base.y + direction.x * head / 2))
+                context.addLine(to: CGPoint(x: base.x + direction.y * head / 2, y: base.y - direction.x * head / 2))
+                context.closePath()
+                context.fillPath()
+            case .plain:
+                break
+            }
+        }
+        let radius = min(fontSize * 0.3, box.height / 2)
+        let boxPath = CGPath(roundedRect: box, cornerWidth: radius, cornerHeight: radius, transform: nil)
+        let textColor: CGColor
+        switch style.textStyle {
+        case .background:
+            context.addPath(boxPath)
+            context.fillPath()
+            textColor = style.color.contrastingTextColor.copy(alpha: style.opacity) ?? style.color.contrastingTextColor
+        case .outline:
+            // A dark box with a colored edge: white text reads on any background.
+            context.setFillColor(CGColor(gray: 0, alpha: 0.6 * style.opacity))
+            context.addPath(boxPath)
+            context.fillPath()
+            context.setLineWidth(2)
+            context.addPath(boxPath)
+            context.strokePath()
+            textColor = CGColor(gray: 1, alpha: style.opacity)
+        case .plain:
+            textColor = style.cgColor()
+        }
+        drawText(text, at: origin, attributes: ScreenshotAnnotation.textAttributes(fontSize: fontSize, color: textColor,
+                                                                                   font: style.font), in: context)
     }
 
     /// Dashed outlines and lines; dashes keep round ends, so the gaps are a little longer.

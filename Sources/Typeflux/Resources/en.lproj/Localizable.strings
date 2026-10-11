@@ -4265,6 +4265,15 @@
 "screenshot.counter.shape.circle" = "Circle";
 "screenshot.counter.shape.bubble" = "Bubble · drag to aim";
 "screenshot.counter.start" = "Start at";
+"screenshot.tool.callout" = "Callout";
+"screenshot.callout.anchor" = "Points with";
+"screenshot.callout.anchor.dot" = "Dot";
+"screenshot.callout.anchor.arrow" = "Arrow";
+"screenshot.callout.anchor.plain" = "Line only";
+"screenshot.mosaic.shape.ellipse" = "Ellipse";
+"screenshot.mosaic.scope" = "Cover";
+"screenshot.mosaic.scope.all" = "Everything";
+"screenshot.mosaic.scope.text" = "Text only";
 "screenshot.mosaic.shape.rect" = "Box";
 "screenshot.mosaic.shape.brush" = "Brush";
 "screenshot.mosaic.effect.pixelate" = "Pixelate";

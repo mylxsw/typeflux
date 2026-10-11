@@ -17,6 +17,7 @@ final class ScreenshotEditorToolbarModel {
         var mosaicEffect: ScreenshotMosaic.Effect = .pixelate
         var mosaicStrength: ScreenshotMosaic.Strength = .medium
         var mosaicShape: ScreenshotAnnotationEditor.MosaicShape = .rect
+        var mosaicScope: ScreenshotMosaic.Scope = .all
         var recentColors: [ScreenshotAnnotationStyle.Color] = []
         /// What the counters count from.
         var counterStart = 1
@@ -48,7 +49,14 @@ final class ScreenshotEditorToolbarModel {
             size = editor.shownSize ?? style.size
             mosaicEffect = mosaic?.effect ?? editor.mosaicEffect
             mosaicStrength = mosaic?.strength ?? editor.mosaicStrength
-            mosaicShape = mosaic.map { if case .brush = $0.shape { .brush } else { .rect } } ?? editor.mosaicShape
+            mosaicShape = mosaic.map { mosaic in
+                switch mosaic.shape {
+                case .rect: .rect
+                case .ellipse: .ellipse
+                case .brush: .brush
+                }
+            } ?? editor.mosaicShape
+            mosaicScope = editor.mosaicScope
             recentColors = editor.toolStyles.recentColors
             counterStart = editor.counterStart
             canUndo = editor.document.canUndo
@@ -91,6 +99,8 @@ final class ScreenshotEditorToolbarModel {
         case counterLabel(ScreenshotAnnotationStyle.CounterLabel)
         case counterShape(ScreenshotAnnotationStyle.CounterShape)
         case counterStart(Int)
+        case calloutAnchor(ScreenshotAnnotationStyle.CalloutAnchor)
+        case mosaicScope(ScreenshotMosaic.Scope)
         case undo, redo, cancel, save, copy, scrollCapture
         /// Recognize the text, translate it or ask the AI about the image.
         case followUp(ScreenshotFollowUp)
@@ -113,6 +123,7 @@ final class ScreenshotEditorToolbarModel {
         case .highlighter: "highlighter"
         case .text: "textformat"
         case .counter: "1.circle"
+        case .callout: "text.bubble"
         case .mosaic: "checkerboard.rectangle"
         }
     }
@@ -128,6 +139,7 @@ final class ScreenshotEditorToolbarModel {
     static func symbol(for shape: ScreenshotAnnotationEditor.MosaicShape) -> String {
         switch shape {
         case .rect: "rectangle.dashed"
+        case .ellipse: "circle.dashed"
         case .brush: "paintbrush.pointed"
         }
     }
@@ -163,6 +175,14 @@ final class ScreenshotEditorToolbarModel {
         }
     }
 
+    static func symbol(for anchor: ScreenshotAnnotationStyle.CalloutAnchor) -> String {
+        switch anchor {
+        case .dot: "smallcircle.filled.circle"
+        case .arrow: "arrow.up.left"
+        case .plain: "line.diagonal"
+        }
+    }
+
     static func symbol(for shape: ScreenshotAnnotationStyle.CounterShape) -> String {
         switch shape {
         case .circle: "circle.fill"
@@ -190,7 +210,7 @@ final class ScreenshotEditorToolbarModel {
     /// The caption of the size slider: font size for text, size for counters, line width for the rest.
     static func sizeCaption(for tool: ScreenshotAnnotationTool) -> String {
         switch tool {
-        case .text: L("screenshot.edit.fontSize")
+        case .text, .callout: L("screenshot.edit.fontSize")
         case .counter: L("screenshot.edit.counterSize")
         default: L("screenshot.edit.size")
         }
@@ -371,6 +391,21 @@ struct ScreenshotEditorToolbar: View {
                 }
             }
             separator
+        case .callout:
+            caption(L("screenshot.callout.anchor"))
+            segment {
+                ForEach(ScreenshotAnnotationStyle.CalloutAnchor.allCases, id: \.self) { anchor in
+                    optionButton(ScreenshotEditorToolbarModel.symbol(for: anchor),
+                                 help: L("screenshot.callout.anchor.\(anchor.rawValue)"),
+                                 isOn: style.calloutAnchor == anchor) { perform(.calloutAnchor(anchor)) }
+                }
+            }
+            segment {
+                ForEach(ScreenshotAnnotationStyle.TextStyle.allCases, id: \.self) { textStyle in
+                    textStyleButton(textStyle, isOn: style.textStyle == textStyle)
+                }
+            }
+            separator
         case .text:
             segment {
                 ForEach(ScreenshotAnnotationStyle.TextFont.allCases, id: \.self) { font in
@@ -498,6 +533,16 @@ struct ScreenshotEditorToolbar: View {
             optionButton(ScreenshotEditorToolbarModel.symbol(for: shape),
                          help: L("screenshot.mosaic.shape.\(shape.rawValue)"),
                          isOn: state.mosaicShape == shape) { perform(.mosaicShape(shape)) }
+        }
+        if state.mosaicShape != .brush {
+            caption(L("screenshot.mosaic.scope"))
+            segment {
+                ForEach(ScreenshotMosaic.Scope.allCases, id: \.self) { scope in
+                    textOption(L("screenshot.mosaic.scope.\(scope.rawValue)"), isOn: state.mosaicScope == scope) {
+                        perform(.mosaicScope(scope))
+                    }
+                }
+            }
         }
         separator
         ForEach(ScreenshotMosaic.Effect.allCases, id: \.self) { effect in

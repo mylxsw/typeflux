@@ -4243,6 +4243,15 @@
 "screenshot.counter.shape.circle" = "円";
 "screenshot.counter.shape.bubble" = "吹き出し · ドラッグで向きを決める";
 "screenshot.counter.start" = "開始";
+"screenshot.tool.callout" = "吹き出し";
+"screenshot.callout.anchor" = "指し先";
+"screenshot.callout.anchor.dot" = "点";
+"screenshot.callout.anchor.arrow" = "矢印";
+"screenshot.callout.anchor.plain" = "線のみ";
+"screenshot.mosaic.shape.ellipse" = "楕円";
+"screenshot.mosaic.scope" = "範囲";
+"screenshot.mosaic.scope.all" = "すべて";
+"screenshot.mosaic.scope.text" = "文字のみ";
 "screenshot.mosaic.shape.rect" = "範囲";
 "screenshot.mosaic.shape.brush" = "ブラシ";
 "screenshot.mosaic.effect.pixelate" = "ピクセル化";
