@@ -297,12 +297,7 @@ extension ProviderModelsView {
     }
 
     private func formRow(_ title: String, @ViewBuilder content: () -> some View) -> some View {
-        HStack(spacing: 16) {
-            Text(title).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
-                .frame(width: 96, alignment: .leading)
-            content()
-        }
-        .padding(.horizontal, 18).padding(.vertical, 12)
+        ModelFormRow(title: title, content: content)
     }
 
     /// References the scene pickers would offer, so row shortcuts never assign an ineligible model.

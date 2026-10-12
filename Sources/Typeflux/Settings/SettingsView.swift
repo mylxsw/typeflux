@@ -4062,235 +4062,148 @@ struct StudioView: View {
     }
 
     private var focusedProviderConfigurationPanel: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                            Text(focusedProviderTitle)
-                                .font(
-                                    .studioDisplay(
-                                        StudioTheme.Typography.sectionTitle, weight: .semibold
-                                    )
-                                )
-                                .foregroundStyle(StudioTheme.textPrimary)
-                            Text(focusedProviderSubtitle)
-                                .font(.studioBody(StudioTheme.Typography.bodySmall))
-                                .foregroundStyle(StudioTheme.textSecondary)
-                        }
-
-                        Spacer()
-
-
-                    }
-                }
-
-                focusedProviderForm
-
-                if [
-                    StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .ollama, .aliCloud,
-                    .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial
-                ].contains(viewModel.focusedModelProvider) || focusedLLMRemoteProvider != nil {
-                    HStack(spacing: StudioTheme.Spacing.small) {
-                        Spacer()
-
-                        if shouldShowFocusedLLMConnectionTestButton {
-                            SettingsActionButton(
-                                title: viewModel.llmConnectionTestState == .testing
-                                    ? L("settings.models.testingConnection") : L("common.test"),
-                                symbol: viewModel.llmConnectionTestState == .testing
-                                    ? nil : "network",
-                                isLoading: viewModel.llmConnectionTestState == .testing
-                            ) {
-                                viewModel.testLLMConnection()
-                            }
-                        } else if [
-                            StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                            .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial
-                        ].contains(viewModel.focusedModelProvider),
-                            !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn {
-                            SettingsActionButton(
-                                title: viewModel.sttConnectionTestState == .testing
-                                    ? L("settings.models.testingConnection") : L("common.test"),
-                                symbol: viewModel.sttConnectionTestState == .testing
-                                    ? nil : "network",
-                                isLoading: viewModel.sttConnectionTestState == .testing
-                            ) {
-                                viewModel.testSTTConnection()
-                            }
-                        }
-
-                        if viewModel.focusedModelProvider.showsManualSaveButton {
-                            SettingsActionButton(
-                                title: L("common.save"), symbol: "checkmark", primary: true
-                            ) {
-                                viewModel.applyModelConfiguration()
-                            }
-                        }
-                    }
-
-                    if shouldShowFocusedLLMConnectionTestButton {
-                        connectionTestResultView(viewModel.llmConnectionTestState)
-                    } else if [
-                        StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                        .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial
-                    ].contains(viewModel.focusedModelProvider),
-                        !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn {
-                        connectionTestResultView(viewModel.sttConnectionTestState)
-                    }
-                }
-
-                if viewModel.focusedModelProvider == .ollama {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        SettingsActionButton(
-                            title: viewModel.isPreparingOllama
-                                ? L("settings.models.preparing")
-                                : (viewModel.isOllamaFailed
-                                    ? L("common.retry") : L("settings.models.prepareLocalModel")),
-                            symbol: viewModel.isPreparingOllama
-                                ? nil
-                                : (viewModel.isOllamaFailed
-                                    ? "arrow.clockwise" : "arrow.down.circle"),
-                            primary: true
-                        ) {
-                            viewModel.prepareOllamaModel()
-                        }
-
-                        Text(viewModel.ollamaStatus)
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                    }
-                }
-
-                if viewModel.focusedModelProvider == .localSTT {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                            HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
-                                Text(L("settings.models.storagePath"))
-                                    .font(
-                                        .studioBody(
-                                            StudioTheme.Typography.caption, weight: .semibold
-                                        )
-                                    )
-                                    .foregroundStyle(StudioTheme.textSecondary)
-
-                                Spacer(minLength: 0)
-
-                                Button {
-                                    viewModel.copyLocalSTTStoragePath()
-                                } label: {
-                                    Image(systemName: "doc.on.doc")
-                                        .font(
-                                            .system(
-                                                size: StudioTheme.Typography.iconXSmall,
-                                                weight: .semibold
-                                            )
-                                        )
-                                        .foregroundStyle(StudioTheme.textSecondary)
-                                        .frame(width: 28, height: 28)
-                                        .background(
-                                            RoundedRectangle(
-                                                cornerRadius: StudioTheme.CornerRadius.medium,
-                                                style: .continuous
-                                            )
-                                            .fill(StudioTheme.iconTileSurface)
-                                        )
-                                }
-                                .buttonStyle(StudioInteractiveButtonStyle())
-
-                                Button {
-                                    viewModel.openLocalSTTStorageFolder()
-                                } label: {
-                                    Image(systemName: "folder")
-                                        .font(
-                                            .system(
-                                                size: StudioTheme.Typography.iconXSmall,
-                                                weight: .semibold
-                                            )
-                                        )
-                                        .foregroundStyle(StudioTheme.textSecondary)
-                                        .frame(width: 28, height: 28)
-                                        .background(
-                                            RoundedRectangle(
-                                                cornerRadius: StudioTheme.CornerRadius.medium,
-                                                style: .continuous
-                                            )
-                                            .fill(StudioTheme.iconTileSurface)
-                                        )
-                                }
-                                .buttonStyle(StudioInteractiveButtonStyle())
-                            }
-
-                            Text(viewModel.localSTTStoragePath)
-                                .font(.studioMono(StudioTheme.Typography.caption))
-                                .foregroundStyle(StudioTheme.textPrimary)
-                                .textSelection(.enabled)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        Text(viewModel.localSTTStatus)
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textSecondary)
+        VStack(alignment: .leading, spacing: 0) {
+            ModelDetailHeader(
+                title: focusedProviderTitle,
+                icon: viewModel.focusedModelProvider,
+                connected: focusedProviderConnected,
+                backTitle: ModelPageTab.speech.title,
+                onBack: { viewModel.isShowingSpeechProviderDetail = false }
+            )
+            .padding(.bottom, 22)
+            SettingsListSectionLabel(title: L("models.connection")).padding(.bottom, 8)
+            ModelSurface {
+                VStack(alignment: .leading, spacing: 0) {
+                    focusedProviderForm
+                    focusedProviderActions
+                    if viewModel.focusedModelProvider == .localSTT {
+                        localSTTStorageRow
                     }
                 }
             }
         }
     }
 
+    private var focusedProviderConnected: Bool {
+        guard let provider = STTProvider.settingsDisplayOrder.first(where: {
+            $0.studioProviderID == viewModel.focusedModelProvider
+        }) else { return providerIsConfigured(viewModel.focusedModelProvider) }
+        return ModelAvailability.speechReason(
+            provider, settings: viewModel.modelLibrary.settings, loggedIn: authState.isLoggedIn,
+            localModelAvailable: viewModel.isModelAvailable(
+                provider == .typefluxOfficial ? .senseVoiceSmall : viewModel.localSTTModel
+            ), googleAuthorized: viewModel.googleCloudOAuthAuthorized
+        ) == nil
+    }
+
+    @ViewBuilder
+    private var focusedProviderActions: some View {
+        // Language providers use ProviderModelsView; this footer belongs to speech connections.
+        let supportsConnection = [StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
+                       .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial]
+            .contains(viewModel.focusedModelProvider)
+        let canTest = supportsConnection
+            && (!viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn)
+        if canTest || (supportsConnection && viewModel.focusedModelProvider.showsManualSaveButton) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Spacer(minLength: 8)
+                    if canTest {
+                        SettingsActionButton(title: L("ask.models.test"),
+                                             isLoading: viewModel.sttConnectionTestState == .testing) {
+                            viewModel.testSTTConnection()
+                        }
+                    }
+                    if viewModel.focusedModelProvider.showsManualSaveButton {
+                        SettingsActionButton(title: L("ask.models.save"), primary: true) {
+                            viewModel.applyModelConfiguration()
+                        }
+                    }
+                }
+                if canTest { connectionTestResultView(viewModel.sttConnectionTestState) }
+            }
+            .padding(.horizontal, 18).padding(.vertical, 12)
+        }
+    }
+
+    private var localSTTStorageRow: some View {
+        ModelFormRow(title: L("settings.models.storagePath")) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(viewModel.localSTTStoragePath)
+                        .font(.studioMono(12)).textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Button { viewModel.copyLocalSTTStoragePath() } label: {
+                        Image(systemName: "doc.on.doc")
+                    }
+                    .accessibilityLabel(L("common.copy"))
+                    Button { viewModel.openLocalSTTStorageFolder() } label: {
+                        Image(systemName: "folder")
+                    }
+                    .accessibilityLabel(L("settings.models.storagePath"))
+                }
+                .buttonStyle(.plain)
+                Text(viewModel.localSTTStatus)
+                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+            }
+        }
+    }
+
     private var focusedProviderForm: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+        VStack(alignment: .leading, spacing: 0) {
             switch viewModel.focusedModelProvider {
             case .typefluxOfficial:
-                typefluxOfficialProviderForm
+                ModelFormRow(title: L("studio.section.account")) { typefluxOfficialProviderForm }
 
             case .appleSpeech:
-                Text(L("settings.models.appleSpeech.quickest"))
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                ModelFormRow(title: L("common.model")) {
+                    Text(STTProvider.appleSpeech.displayName).font(.system(size: 13))
+                }
 
             case .freeSTT:
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    if FreeSTTModelRegistry.suggestedModelNames.isEmpty {
-                        Text(L("settings.models.freeSTT.noSources"))
+                ModelFormRow(title: L("common.model")) {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                        if FreeSTTModelRegistry.suggestedModelNames.isEmpty {
+                            Text(L("settings.models.freeSTT.noSources"))
+                                .font(.studioBody(StudioTheme.Typography.caption))
+                                .foregroundStyle(StudioTheme.textTertiary)
+                        } else {
+                            StudioMenuPicker(
+                                options: FreeSTTModelRegistry.suggestedModelNames.map { ($0, $0) },
+                                selection: Binding(
+                                    get: { viewModel.freeSTTModel },
+                                    set: viewModel.setFreeSTTModel
+                                ),
+                                width: 320
+                            )
+                        }
+
+                        Text(L("settings.models.freeSTT.hint"))
                             .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                    } else {
-                        StudioMenuPicker(
-                            options: FreeSTTModelRegistry.suggestedModelNames.map { ($0, $0) },
-                            selection: Binding(
-                                get: { viewModel.freeSTTModel },
-                                set: viewModel.setFreeSTTModel
-                            ),
-                            width: 320
-                        )
-                    }
+                            .foregroundStyle(StudioTheme.textSecondary)
 
-                    Text(L("settings.models.freeSTT.hint"))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
-
-                    if !FreeSTTModelRegistry.sources.isEmpty {
-                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                            Text(L("settings.models.freeSTT.availableSources"))
-                                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                                .foregroundStyle(StudioTheme.textSecondary)
-                            ForEach(FreeSTTModelRegistry.sourceSummaryLines(), id: \.self) { line in
-                                Text(line)
-                                    .font(.studioMono(StudioTheme.Typography.caption))
-                                    .foregroundStyle(StudioTheme.textTertiary)
+                        if !FreeSTTModelRegistry.sources.isEmpty {
+                            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                                Text(L("settings.models.freeSTT.availableSources"))
+                                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                                    .foregroundStyle(StudioTheme.textSecondary)
+                                ForEach(FreeSTTModelRegistry.sourceSummaryLines(), id: \.self) { line in
+                                    Text(line)
+                                        .font(.studioMono(StudioTheme.Typography.caption))
+                                        .foregroundStyle(StudioTheme.textTertiary)
+                                }
                             }
                         }
                     }
                 }
+                ModelRowDivider()
 
             case .localSTT:
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                    Text(L("settings.models.localModel"))
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-
+                VStack(spacing: 0) {
                     ForEach(LocalSTTModel.displayOrder, id: \.self) { model in
                         localSTTModelOptionCard(model)
+                        ModelRowDivider()
                     }
                 }
                 .confirmationDialog(
@@ -4367,20 +4280,23 @@ struct StudioView: View {
                     text: Binding(
                         get: { viewModel.whisperBaseURL }, set: viewModel.setWhisperBaseURL
                     ),
-                    suggestions: whisperEndpointSuggestions
+                    suggestions: whisperEndpointSuggestions,
+                    horizontal: true
                 )
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
                     placeholder: whisperModelSuggestions[0],
                     text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
-                    suggestions: whisperModelSuggestions
+                    suggestions: whisperModelSuggestions,
+                    horizontal: true
                 )
                 StudioTextInputCard(
                     label: L("common.apiKey"), placeholder: "sk-...",
                     text: Binding(
                         get: { viewModel.whisperAPIKey }, set: viewModel.setWhisperAPIKey
                     ),
-                    secure: true
+                    secure: true,
+                    horizontal: true
                 ) {
                     if let url = sttProviderAPIKeyURL(.whisperAPI) {
                         apiKeyHelpButton(url: url)
@@ -4418,7 +4334,7 @@ struct StudioView: View {
                 typefluxCloudLLMProviderForm
 
             case .multimodalLLM:
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                VStack(alignment: .leading, spacing: 0) {
                     StudioSuggestedTextInputCard(
                         label: L("settings.models.apiEndpoint"),
                         placeholder: OpenAIAudioModelCatalog.multimodalEndpoints[0],
@@ -4426,7 +4342,8 @@ struct StudioView: View {
                             get: { viewModel.multimodalLLMBaseURL },
                             set: viewModel.setMultimodalLLMBaseURL
                         ),
-                        suggestions: multimodalEndpointSuggestions
+                        suggestions: multimodalEndpointSuggestions,
+                        horizontal: true
                     )
                     StudioSuggestedTextInputCard(
                         label: L("common.model"),
@@ -4435,14 +4352,16 @@ struct StudioView: View {
                             get: { viewModel.multimodalLLMModel },
                             set: viewModel.setMultimodalLLMModel
                         ),
-                        suggestions: multimodalModelSuggestions
+                        suggestions: multimodalModelSuggestions,
+                        horizontal: true
                     )
                     StudioTextInputCard(
                         label: L("common.apiKey"), placeholder: "sk-...",
                         text: Binding(
                             get: { viewModel.multimodalLLMAPIKey },
                             set: viewModel.setMultimodalLLMAPIKey
-                        ), secure: true
+                        ), secure: true,
+                        horizontal: true
                     ) {
                         if let url = sttProviderAPIKeyURL(.multimodalLLM) {
                             apiKeyHelpButton(url: url)
@@ -4454,7 +4373,7 @@ struct StudioView: View {
                 }
 
             case .aliCloud:
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                VStack(alignment: .leading, spacing: 0) {
                     StudioSuggestedTextInputCard(
                         label: L("common.model"),
                         placeholder: AliCloudASRDefaults.model,
@@ -4462,14 +4381,16 @@ struct StudioView: View {
                             get: { viewModel.aliCloudModel },
                             set: viewModel.setAliCloudModel
                         ),
-                        suggestions: AliCloudASRDefaults.suggestedModels
+                        suggestions: AliCloudASRDefaults.suggestedModels,
+                        horizontal: true
                     )
                     StudioTextInputCard(
                         label: L("common.apiKey"), placeholder: "sk-...",
                         text: Binding(
                             get: { viewModel.aliCloudAPIKey }, set: viewModel.setAliCloudAPIKey
                         ),
-                        secure: true
+                        secure: true,
+                        horizontal: true
                     ) {
                         if let url = sttProviderAPIKeyURL(.aliCloud) {
                             apiKeyHelpButton(url: url)
@@ -4478,10 +4399,11 @@ struct StudioView: View {
                 }
 
             case .doubaoRealtime:
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                VStack(alignment: .leading, spacing: 0) {
                     StudioTextInputCard(
                         label: L("settings.models.doubao.appID"), placeholder: "APPID",
-                        text: Binding(get: { viewModel.doubaoAppID }, set: viewModel.setDoubaoAppID)
+                        text: Binding(get: { viewModel.doubaoAppID }, set: viewModel.setDoubaoAppID),
+                        horizontal: true
                     )
                     StudioTextInputCard(
                         label: L("settings.models.doubao.resourceID"),
@@ -4489,14 +4411,16 @@ struct StudioView: View {
                         text: Binding(
                             get: { viewModel.doubaoResourceID },
                             set: viewModel.setDoubaoResourceID
-                        )
+                        ),
+                        horizontal: true
                     )
                     StudioTextInputCard(
                         label: L("settings.models.doubao.accessToken"), placeholder: "access-token",
                         text: Binding(
                             get: { viewModel.doubaoAccessToken },
                             set: viewModel.setDoubaoAccessToken
-                        ), secure: true
+                        ), secure: true,
+                        horizontal: true
                     ) {
                         Button {
                             NSWorkspace.shared.open(
@@ -4512,13 +4436,14 @@ struct StudioView: View {
                 }
 
             case .googleCloud:
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                VStack(alignment: .leading, spacing: 0) {
                     StudioTextInputCard(
                         label: L("settings.models.googleCloud.projectID"), placeholder: "my-gcp-project",
                         text: Binding(
                             get: { viewModel.googleCloudProjectID },
                             set: viewModel.setGoogleCloudProjectID
-                        )
+                        ),
+                        horizontal: true
                     )
                     StudioSuggestedTextInputCard(
                         label: L("common.model"),
@@ -4527,39 +4452,42 @@ struct StudioView: View {
                             get: { viewModel.googleCloudModel },
                             set: viewModel.setGoogleCloudModel
                         ),
-                        suggestions: GoogleCloudSpeechDefaults.suggestedModels
+                        suggestions: GoogleCloudSpeechDefaults.suggestedModels,
+                        horizontal: true
                     )
-                    HStack(spacing: StudioTheme.Spacing.small) {
-                        SettingsActionButton(
-                            title: viewModel.googleCloudOAuthAuthorized
-                                ? L("settings.models.googleCloud.oauth.reauthorize")
-                                : L("settings.models.googleCloud.oauth.authorize"),
-                            symbol: "person.crop.circle.badge.checkmark",
-                            isLoading: viewModel.isAuthorizingGoogleCloudOAuth,
-                            isDisabled: AppServerConfiguration.googleCloudOAuthClientID.isEmpty
-                        ) {
-                            viewModel.authorizeGoogleCloudOAuth()
-                        }
-
-                        if viewModel.googleCloudOAuthAuthorized {
+                    ModelFormRow(title: "Google OAuth") {
+                        HStack(spacing: 8) {
                             SettingsActionButton(
-                                title: L("settings.models.googleCloud.oauth.disconnect"),
-                                symbol: "xmark.circle"
+                                title: viewModel.googleCloudOAuthAuthorized
+                                    ? L("settings.models.googleCloud.oauth.reauthorize")
+                                    : L("settings.models.googleCloud.oauth.authorize"),
+                                isLoading: viewModel.isAuthorizingGoogleCloudOAuth,
+                                isDisabled: AppServerConfiguration.googleCloudOAuthClientID.isEmpty
                             ) {
-                                viewModel.disconnectGoogleCloudOAuth()
+                                viewModel.authorizeGoogleCloudOAuth()
                             }
-                        }
 
-                        Spacer()
+                            if viewModel.googleCloudOAuthAuthorized {
+                                SettingsActionButton(
+                                    title: L("settings.models.googleCloud.oauth.disconnect")
+                                ) {
+                                    viewModel.disconnectGoogleCloudOAuth()
+                                }
+                            }
+
+                            Spacer()
+                        }
                     }
+                    ModelRowDivider()
                 }
 
             case .groqSTT:
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                VStack(alignment: .leading, spacing: 0) {
                     StudioTextInputCard(
                         label: L("common.apiKey"), placeholder: "gsk_...",
                         text: Binding(get: { viewModel.groqSTTAPIKey }, set: viewModel.setGroqSTTAPIKey),
-                        secure: true
+                        secure: true,
+                        horizontal: true
                     ) {
                         if let url = sttProviderAPIKeyURL(.groq) {
                             apiKeyHelpButton(url: url)
@@ -4569,16 +4497,18 @@ struct StudioView: View {
                         label: L("common.model"),
                         placeholder: OpenAIAudioModelCatalog.groqWhisperModels[0],
                         text: Binding(get: { viewModel.groqSTTModel }, set: viewModel.setGroqSTTModel),
-                        suggestions: OpenAIAudioModelCatalog.groqWhisperModels
+                        suggestions: OpenAIAudioModelCatalog.groqWhisperModels,
+                        horizontal: true
                     )
                 }
 
             case .soniox:
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                VStack(alignment: .leading, spacing: 0) {
                     StudioTextInputCard(
                         label: L("common.apiKey"), placeholder: "sk-...",
                         text: Binding(get: { viewModel.sonioxAPIKey }, set: viewModel.setSonioxAPIKey),
-                        secure: true
+                        secure: true,
+                        horizontal: true
                     ) {
                         if let url = sttProviderAPIKeyURL(.soniox) {
                             apiKeyHelpButton(url: url)
@@ -4588,20 +4518,12 @@ struct StudioView: View {
                         label: L("common.model"),
                         placeholder: SonioxASRDefaults.model,
                         text: Binding(get: { viewModel.sonioxModel }, set: viewModel.setSonioxModel),
-                        suggestions: SonioxASRDefaults.suggestedModels
+                        suggestions: SonioxASRDefaults.suggestedModels,
+                        horizontal: true
                     )
                 }
             }
         }
-    }
-
-    private var shouldShowFocusedLLMConnectionTestButton: Bool {
-        guard viewModel.focusedModelProvider.domain == .llm else { return false }
-        guard viewModel.focusedModelProvider == .ollama || focusedLLMRemoteProvider != nil else {
-            return false
-        }
-
-        return !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn
     }
 
     private var typefluxOfficialProviderForm: some View {
@@ -4858,74 +4780,37 @@ struct StudioView: View {
         let isActive = viewModel.localSTTModel == model && isDownloaded
         let specs = model.specs
 
-        return VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.small) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                    HStack(spacing: StudioTheme.Spacing.xSmall) {
-                        Text(model.displayName)
-                            .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-
-                        if let recommendationBadgeTitle = model.recommendationBadgeTitle {
-                            localSTTRecommendationPill(recommendationBadgeTitle)
-                        }
-                    }
-
+        return ModelFormRow(title: model.displayName) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
                     Text(specs.summary)
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    if isActive {
+                        StudioPill(title: L("settings.models.selected"), tone: StudioTheme.accent,
+                                   fill: StudioTheme.accentSoft)
+                    }
                 }
-
-                Spacer(minLength: 0)
-
-                if isActive {
-                    StudioPill(
-                        title: L("settings.models.selected"),
-                        tone: StudioTheme.accent,
-                        fill: StudioTheme.accentSoft
-                    )
+                HStack {
+                    Text("\(specs.parameterValue) parameters · \(specs.sizeValue)")
+                        .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                    Spacer()
+                    localSTTModelDownloadIconButton(model)
                 }
-            }
-
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                localSTTSpecPill(model.displayName)
-                localSTTSpecPill("\(specs.parameterValue) parameters")
-                localSTTSpecPill(specs.sizeValue)
-            }
-
-            if isFocused {
-                localSTTModelProgressRow(model)
-
-                if !isDownloaded {
+                if isFocused, viewModel.isPreparingLocalSTT || !isDownloaded {
+                    localSTTModelProgressRow(model)
                     Text(viewModel.localSTTPreparationDetail)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-
-                if !viewModel.localSTTTransferDetail.isEmpty {
-                    Text(viewModel.localSTTTransferDetail)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    if !viewModel.localSTTTransferDetail.isEmpty {
+                        Text(viewModel.localSTTTransferDetail)
+                            .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    }
                 }
             }
         }
-        .padding(StudioTheme.Insets.cardCompact)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .fill(isFocused ? StudioTheme.selectionSurfaceRaised : StudioTheme.localModelOptionSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .stroke(
-                    StudioTheme.border.opacity(0.75),
-                    lineWidth: StudioTheme.BorderWidth.thin
-                )
-        )
-        .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
-        .onTapGesture {
-            selectLocalSTTModelCard(model)
-        }
+        .contentShape(Rectangle())
+        .onTapGesture { selectLocalSTTModelCard(model) }
         .contextMenu {
             Button {
                 let isAvailable = viewModel.isModelAvailable(model)
@@ -4967,7 +4852,6 @@ struct StudioView: View {
                 .foregroundStyle(StudioTheme.textSecondary)
                 .frame(width: 40, alignment: .trailing)
 
-            localSTTModelDownloadIconButton(model)
         }
     }
 
@@ -5004,30 +4888,6 @@ struct StudioView: View {
         if !viewModel.isModelAvailable(model) {
             localSTTPendingDownload = model
         }
-    }
-
-    private func localSTTSpecPill(_ text: String) -> some View {
-        Text(text)
-            .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
-            .foregroundStyle(StudioTheme.textSecondary)
-            .padding(.horizontal, StudioTheme.Insets.pillHorizontal)
-            .padding(.vertical, StudioTheme.Insets.pillVertical)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(StudioTheme.surface)
-            )
-    }
-
-    private func localSTTRecommendationPill(_ text: String) -> some View {
-        Text(text)
-            .font(.studioBody(StudioTheme.Typography.caption, weight: .bold))
-            .foregroundStyle(Color.green.opacity(0.95))
-            .padding(.horizontal, StudioTheme.Insets.pillHorizontal)
-            .padding(.vertical, StudioTheme.Insets.pillVertical)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(Color.green.opacity(0.16))
-            )
     }
 
     private func providerIsConfigured(_ provider: StudioModelProviderID) -> Bool {
@@ -5414,43 +5274,6 @@ struct StudioView: View {
             STTProvider.typefluxOfficial.displayName
         case .typefluxCloud:
             LLMRemoteProvider.typefluxCloud.displayName
-        }
-    }
-
-    private var focusedProviderSubtitle: String {
-        switch viewModel.focusedModelProvider {
-        case .appleSpeech:
-            L("settings.models.focused.appleSpeech")
-        case .localSTT:
-            L("settings.models.focused.localSTT")
-        case .freeSTT:
-            L("settings.models.focused.freeSTT")
-        case .whisperAPI:
-            L("settings.models.focused.whisper")
-        case .ollama:
-            L("settings.models.focused.ollama")
-        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek, .kimi,
-             .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
-            L(
-                "settings.models.focused.remoteProvider",
-                focusedLLMRemoteProvider?.displayName ?? LLMProvider.openAICompatible.displayName
-            )
-        case .multimodalLLM:
-            L("settings.models.focused.multimodal")
-        case .aliCloud:
-            L("settings.models.focused.aliCloud")
-        case .doubaoRealtime:
-            L("settings.models.focused.doubao")
-        case .googleCloud:
-            L("settings.models.focused.googleCloud")
-        case .groqSTT:
-            L("settings.models.focused.groq")
-        case .soniox:
-            L("settings.models.focused.soniox")
-        case .typefluxOfficial:
-            L("settings.models.focused.typefluxOfficial")
-        case .typefluxCloud:
-            L("settings.models.focused.typefluxCloud")
         }
     }
 

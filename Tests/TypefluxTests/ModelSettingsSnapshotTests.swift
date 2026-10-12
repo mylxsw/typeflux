@@ -21,7 +21,7 @@ struct ModelSettingsSnapshotTests {
                 let model = StudioViewModel(settingsStore: settings,
                                             historyStore: FileHistoryStore(baseDir: root
                                                 .appendingPathComponent("history")),
-                                            initialSection: .models, modelLibrary: library)
+                                            initialSection: .models, localModelManager: FixtureLocalModels(), modelLibrary: library)
                 for name in [
                     "scenes",
                     "speech",
@@ -29,6 +29,8 @@ struct ModelSettingsSnapshotTests {
                     "provider",
                     "cloud",
                     "speech-provider",
+                    "speech-google",
+                    "speech-local",
                     "settings",
                     "hotkeys"
                 ] {
@@ -41,8 +43,9 @@ struct ModelSettingsSnapshotTests {
                     if name == "cloud" {
                         model.selectedLanguageProviderID = library.providers.first { $0.isCloud }?.id
                     }
-                    if name == "speech-provider" {
-                        model.focusModelProvider(.whisperAPI)
+                    if ["speech-provider", "speech-google", "speech-local"].contains(name) {
+                        model.focusModelProvider(name == "speech-google" ? .googleCloud
+                            : name == "speech-local" ? .localSTT : .whisperAPI)
                         model.isShowingSpeechProviderDetail = true
                     }
                     try await capture(

@@ -37,7 +37,6 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                     catalogError
                 case .speech:
                     if viewModel.isShowingSpeechProviderDetail {
-                        backButton { viewModel.isShowingSpeechProviderDetail = false }.padding(.bottom, 16)
                         speechDetail()
                     } else {
                         speechList
@@ -60,11 +59,6 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
         if let error = library.catalogError {
             Text(error).font(.caption).foregroundStyle(StudioTheme.danger).padding(.top, 10)
         }
-    }
-
-    /// Returns from a speech provider's settings to the speech provider list.
-    private func backButton(_ action: @escaping () -> Void) -> some View {
-        ModelProviderBackButton(title: ModelPageTab.speech.title, action: action)
     }
 
     private var scenes: some View {

@@ -182,8 +182,137 @@ struct ModelSettingsControlsTests {
         }
     }
 
-    private func withModel(_ check: (SettingsStore, StudioViewModel) async throws -> Void) async throws {
+    @Test func `speech details share the language provider header and form grid`() async throws {
+        try await withModel { _, model in
+            model.selectModelPageTab(.speech)
+            for provider in STTProvider.settingsDisplayOrder {
+                model.focusModelProvider(provider.studioProviderID)
+                model.isShowingSpeechProviderDetail = true
+                try await UI.withWindow(StudioView(viewModel: model), width: 920, height: 800) { window, host in
+                    let elements = UI.elements(in: host)
+                    #expect(elements.contains { $0.value("accessibilityIdentifier") as? String == "models.provider.title" })
+                    #expect(UI.contains(L("models.connection"), in: host))
+                    #expect(UI.contains(L("models.configured"), in: host)
+                        || UI.contains(L("models.notConfigured"), in: host))
+                    #expect(!UI.contains(L("settings.models.focused.whisper"), in: host))
+                    #expect(!UI.contains(L("settings.models.focused.googleCloud"), in: host))
+                    #expect(!UI.contains(L("settings.models.focused.localSTT"), in: host))
+                    var labels: [UI.Element] = []
+                    for element in elements {
+                        let identifier = element.value("accessibilityIdentifier") as? String ?? ""
+                        if identifier.hasPrefix("models.form.label.") { labels.append(element) }
+                    }
+                    #expect(!labels.isEmpty)
+                    for label in labels {
+                        let identifier = try #require(label.value("accessibilityIdentifier") as? String)
+                            .replacingOccurrences(of: "models.form.label.", with: "models.form.field.")
+                        let field = try #require(elements.first {
+                            $0.value("accessibilityIdentifier") as? String == identifier
+                        })
+                        #expect(label.frame.width > 0)
+                        #expect(field.frame.width > 0)
+                        #expect(label.frame.maxX <= field.frame.minX)
+                        #expect(field.frame.maxX <= window.frame.maxX)
+                    }
+                    let back = try #require(elements.first {
+                        $0.value("accessibilityIdentifier") as? String == "models.provider.back"
+                    })
+                    try back.press()
+                    try await UI.wait { !model.isShowingSpeechProviderDetail }
+                }
+            }
+        }
+    }
+
+    @Test func `speech connection footer saves drafts and preserves test feedback`() async throws {
+        try await withModel { store, model in
+            model.selectModelPageTab(.speech)
+            model.focusModelProvider(.whisperAPI)
+            model.isShowingSpeechProviderDetail = true
+            try await UI.withWindow(StudioView(viewModel: model), width: 1100, height: 800) { _, host in
+                #expect(UI.contains(L("models.notConfigured"), in: host))
+                model.setWhisperBaseURL("https://fixture.invalid/v1/audio/transcriptions")
+                model.setWhisperModel("whisper-1")
+                model.setWhisperAPIKey("fixture")
+                try UI.button(L("ask.models.save"), in: host).press()
+                #expect(store.whisperAPIKey == "fixture")
+                #expect(store.whisperModel == "whisper-1")
+                #expect(store.whisperBaseURL == "https://fixture.invalid/v1/audio/transcriptions")
+                try await UI.wait { UI.contains(L("models.configured"), in: host) }
+                #expect(!UI.contains(L("common.test"), in: host))
+                model.sttConnectionTestState = .testing
+                try await UI.wait {
+                    UI.elements(in: host).contains { $0.label == L("ask.models.test") && $0.role == "AXBusyIndicator" }
+                }
+                let testing = try #require(UI.elements(in: host).first {
+                    $0.label == L("ask.models.test") && $0.role == "AXBusyIndicator"
+                })
+                #expect(testing.value("isAccessibilityEnabled") as? Bool == false)
+                model.sttConnectionTestState = .notice(message: "Fixture connection feedback")
+                try await UI.wait { UI.contains("Fixture connection feedback", in: host) }
+                #expect(try UI.button(L("ask.models.test"), in: host).value("isAccessibilityEnabled") as? Bool == true)
+            }
+        }
+    }
+
+    @Test func `google connection row disconnects stored authorization`() async throws {
+        try await withModel(googleAuthorized: true) { _, model in
+            model.selectModelPageTab(.speech)
+            model.focusModelProvider(.googleCloud)
+            model.isShowingSpeechProviderDetail = true
+            try await UI.withWindow(StudioView(viewModel: model), width: 920, height: 800) { _, host in
+                #expect(model.googleCloudOAuthAuthorized)
+                #expect(UI.contains(L("settings.models.googleCloud.oauth.reauthorize"), in: host))
+                try UI.button(L("settings.models.googleCloud.oauth.disconnect"), in: host).press()
+                try await UI.wait { !model.googleCloudOAuthAuthorized }
+                #expect(!GoogleCloudSpeechCredentialResolver.isStoredAuthorizationAvailable())
+                try await UI.wait { UI.contains(L("settings.models.googleCloud.oauth.authorize"), in: host) }
+            }
+        }
+    }
+
+    @Test func `local model rows retain download confirmation and cancellation`() async throws {
+        try await withModel { _, model in
+            model.selectModelPageTab(.speech)
+            model.focusModelProvider(.localSTT)
+            model.focusLocalSTTModel(.funASR)
+            model.localSTTTransferDetail = "Fixture transfer: 12 MB / 100 MB"
+            model.isShowingSpeechProviderDetail = true
+            try await UI.withWindow(StudioView(viewModel: model), width: 1100, height: 800) { window, host in
+                #expect(UI.contains(L("models.configured"), in: host))
+                #expect(UI.contains(L("settings.models.storagePath"), in: host))
+                #expect(!UI.contains(L("ask.models.save"), in: host))
+                #expect(UI.contains("Fixture transfer: 12 MB / 100 MB", in: host))
+                for local in LocalSTTModel.displayOrder {
+                    #expect(UI.contains(local.displayName, in: host))
+                }
+                try UI.button(L("settings.models.prepareLocalModel"), in: host).press()
+                try await UI.wait { window.attachedSheet != nil }
+                let sheet = try #require(window.attachedSheet?.contentView)
+                try UI.button(L("common.cancel"), in: sheet).press()
+                try await UI.wait { window.attachedSheet == nil }
+                #expect(!model.isPreparingLocalSTT)
+            }
+        }
+    }
+
+    private func withModel(googleAuthorized: Bool = false,
+                           _ check: (SettingsStore, StudioViewModel) async throws -> Void) async throws {
         try await UI.withFixture { store in
+            let previousGoogleToken = GoogleCloudSpeechOAuthTokenStore.load()
+            defer {
+                if let previousGoogleToken {
+                    GoogleCloudSpeechOAuthTokenStore.save(previousGoogleToken)
+                } else {
+                    GoogleCloudSpeechOAuthTokenStore.clear()
+                }
+            }
+            if googleAuthorized {
+                GoogleCloudSpeechOAuthTokenStore.save(GoogleCloudSpeechOAuthToken(
+                    accessToken: "fixture-google-token", refreshToken: nil,
+                    expiresAt: Int(Date().timeIntervalSince1970) + 3600
+                ))
+            }
             let root = FileManager.default.temporaryDirectory.appendingPathComponent("model-controls-\(UUID())")
             defer { try? FileManager.default.removeItem(at: root) }
             let model = StudioViewModel(settingsStore: store, historyStore: FileHistoryStore(baseDir: root),
@@ -201,11 +330,12 @@ struct ModelSettingsControlsTests {
     }
 }
 
-private final class FixtureLocalModels: LocalSTTModelManaging {
+final class FixtureLocalModels: LocalSTTModelManaging {
     func prepareModel(settingsStore _: SettingsStore,
                       onUpdate _: (@Sendable (LocalSTTPreparationUpdate) -> Void)?) async throws {}
-    func preparedModelInfo(settingsStore _: SettingsStore) -> LocalSTTPreparedModelInfo? {
-        nil
+    func preparedModelInfo(settingsStore: SettingsStore) -> LocalSTTPreparedModelInfo? {
+        guard isModelAvailable(settingsStore.localSTTModel) else { return nil }
+        return LocalSTTPreparedModelInfo(storagePath: "/fixture/local-model", sourceDisplayName: "Fixture")
     }
 
     func isModelAvailable(_ model: LocalSTTModel) -> Bool {
