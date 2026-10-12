@@ -1,0 +1,116 @@
+{
+  "covered_changed_lines": 313,
+  "executable_changed_lines": 319,
+  "percent": 98.12,
+  "files": {
+    "Sources/Typeflux/Clipboard/ClipboardCategory.swift": {
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardEntry.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardEntryAction.swift": {
+      "covered": 10,
+      "executable": 10,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardEntryFormatter.swift": {
+      "covered": 4,
+      "executable": 4,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardEntryKind.swift": {
+      "covered": 4,
+      "executable": 4,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardFeed.swift": {
+      "covered": 6,
+      "executable": 6,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardHistoryStore.swift": {
+      "covered": 0,
+      "executable": 0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardItem.swift": {
+      "covered": 0,
+      "executable": 0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardPanelCommand.swift": {
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardPanelController.swift": {
+      "covered": 6,
+      "executable": 6,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardPanelModel.swift": {
+      "covered": 12,
+      "executable": 13,
+      "uncovered": [
+        371
+      ]
+    },
+    "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardPanelView.swift": {
+      "covered": 7,
+      "executable": 9,
+      "uncovered": [
+        75,
+        76
+      ]
+    },
+    "Sources/Typeflux/Clipboard/SQLiteClipboardHistoryStore.swift": {
+      "covered": 100,
+      "executable": 103,
+      "uncovered": [
+        292,
+        305,
+        306
+      ]
+    },
+    "Sources/Typeflux/Workflow/WorkflowController+History.swift": {
+      "covered": 13,
+      "executable": 13,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Workflow/WorkflowController+Processing.swift": {
+      "covered": 4,
+      "executable": 4,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardPanelModel+Snippets.swift": {
+      "covered": 23,
+      "executable": 23,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardSnippet.swift": {
+      "covered": 37,
+      "executable": 37,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Clipboard/ClipboardSnippetEditor.swift": {
+      "covered": 49,
+      "executable": 49,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Workflow/WorkflowController+Snippets.swift": {
+      "covered": 32,
+      "executable": 32,
+      "uncovered": []
+    }
+  }
+}

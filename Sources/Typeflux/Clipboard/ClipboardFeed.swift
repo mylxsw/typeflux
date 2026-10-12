@@ -3,6 +3,7 @@ import Foundation
 /// Builds, filters and groups the clipboard panel's rows. Pure, so it is fully unit tested.
 enum ClipboardFeed {
     enum Section: Equatable {
+        case snippets
         case pinned
         case today
         case yesterday
@@ -10,6 +11,7 @@ enum ClipboardFeed {
 
         var title: String {
             switch self {
+            case .snippets: L("clipboard.snippet.permanent")
             case .pinned: L("clipboard.section.pinned")
             case .today: L("clipboard.section.today")
             case .yesterday: L("clipboard.section.yesterday")
@@ -35,7 +37,7 @@ enum ClipboardFeed {
 
         var entries: [ClipboardEntry] = []
         for item in clipboardItems {
-            if item.payload == .text, let text = item.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+            if item.snippet == nil, item.payload == .text, let text = item.text?.trimmingCharacters(in: .whitespacesAndNewlines),
                let voice = voiceDates[text] {
                 voiceDates[text] = (voice.record, max(voice.date, item.date))
                 continue
@@ -73,7 +75,7 @@ enum ClipboardFeed {
             origin: .clipboard(item.id), kind: kind, date: item.date, text: item.payload == .text ? item.text : nil,
             filePaths: item.filePaths, imagePath: item.imagePath, imagePixelSize: pixelSize,
             byteSize: item.byteSize, sourceBundleID: item.sourceBundleID,
-            sourceAppName: item.sourceAppName, isPinned: item.isPinned
+            sourceAppName: item.sourceAppName, isPinned: item.isPinned, snippet: item.snippet
         )
     }
 
@@ -87,7 +89,7 @@ enum ClipboardFeed {
     ) -> [ClipboardEntry] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
         return entries.filter { entry in
-            guard category == .all || entry.kind.category == category else { return false }
+            guard (category == .snippet) == (entry.snippet != nil) else { return false }
             guard sourceBundleID == nil || entry.sourceBundleID == sourceBundleID else { return false }
             guard !needle.isEmpty else { return true }
             return searchText(entry).localizedCaseInsensitiveContains(needle)
@@ -95,6 +97,7 @@ enum ClipboardFeed {
     }
 
     static func section(for entry: ClipboardEntry, now: Date, calendar: Calendar = .current) -> Section {
+        if entry.snippet != nil { return .snippets }
         if entry.isPinned { return .pinned }
         if calendar.isDate(entry.date, inSameDayAs: now) { return .today }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
@@ -113,6 +116,6 @@ enum ClipboardFeed {
 
     static func searchableText(of entry: ClipboardEntry) -> String {
         let fileNames = entry.filePaths.map { ($0 as NSString).lastPathComponent }
-        return ([entry.text ?? entry.title, entry.sourceAppName ?? ""] + fileNames).joined(separator: "\n")
+        return ([entry.text ?? entry.title, entry.snippet?.name ?? "", entry.snippet?.alias ?? "", entry.sourceAppName ?? ""] + fileNames).joined(separator: "\n")
     }
 }

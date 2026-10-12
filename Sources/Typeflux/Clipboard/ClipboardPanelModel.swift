@@ -32,6 +32,10 @@ final class ClipboardPanelModel: ObservableObject {
     @Published private(set) var notice: String?
     /// Only entries copied from this app are shown.
     @Published private(set) var appFilter: ClipboardAppFilter?
+    /// A permanent snippet edit, kept open when validation or persistence fails.
+    @Published var snippetDraft: ClipboardSnippetDraft?
+    @Published var snippetError: String?
+    var onSaveSnippet: ((ClipboardSnippetDraft) throws -> ClipboardItem)?
     /// Text being edited before pasting (`⌘E`); `nil` when not editing.
     @Published var editingText: String?
     @Published private(set) var pendingConfirmation: ClipboardPanelConfirmation?
@@ -82,6 +86,8 @@ final class ClipboardPanelModel: ObservableObject {
         setEntries(entries)
         notice = nil
         editingText = nil
+        snippetDraft = nil
+        snippetError = nil
         pendingConfirmation = nil
         appFilter = nil
         query = ""
@@ -172,6 +178,13 @@ final class ClipboardPanelModel: ObservableObject {
         if let index { select(index: index) }
         guard let entry = selectedEntry, actions(for: entry).contains(action) else { return }
         switch action {
+        case .saveSnippet, .editSnippet:
+            snippetDraft = ClipboardSnippetDraft(entry: entry)
+            snippetError = nil
+            return
+        case .delete where entry.snippet != nil:
+            pendingConfirmation = .deleteSnippet(entry)
+            return
         case .editBeforePaste:
             editingText = entry.text
             return
@@ -180,7 +193,7 @@ final class ClipboardPanelModel: ObservableObject {
             return
         case .deleteAllFromApp:
             if let app = ClipboardAppFilter(entry: entry) {
-                let count = entries.filter { $0.sourceBundleID == app.bundleID && !$0.isPinned }.count
+                let count = entries.filter { $0.sourceBundleID == app.bundleID && !$0.isPinned && $0.snippet == nil }.count
                 pendingConfirmation = .deleteApp(app, count: count)
             }
             return
@@ -327,7 +340,7 @@ extension ClipboardPanelModel {
 
     /// Asks to delete every unpinned clipboard item; voice results stay.
     func requestClearUnpinned() {
-        let count = entries.filter { !$0.isPinned && $0.kind != .voice }.count
+        let count = entries.filter { !$0.isPinned && $0.snippet == nil && $0.kind != .voice }.count
         guard count > 0 else {
             showNotice(L("clipboard.notice.nothingToClear"))
             return
@@ -354,6 +367,8 @@ extension ClipboardPanelModel {
     func cancel() {
         if pendingConfirmation != nil {
             pendingConfirmation = nil
+        } else if snippetDraft != nil {
+            cancelSnippetEdit()
         } else if editingText != nil {
             editingText = nil
         } else if !query.isEmpty {

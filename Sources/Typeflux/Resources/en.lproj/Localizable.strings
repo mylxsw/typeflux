@@ -453,7 +453,7 @@
 "clipboard.settings.pause.oneHour" = "Pause for 1 hour";
 "clipboard.settings.pause.untilResumed" = "Pause until resumed";
 "clipboard.settings.retention" = "Keep history for";
-"clipboard.settings.retention.subtitle" = "Separate from voice history. Pinned items never expire.";
+"clipboard.settings.retention.subtitle" = "Separate from voice history. Snippets and pinned items never expire.";
 "clipboard.settings.retention.oneDay" = "1 day";
 "clipboard.settings.retention.oneWeek" = "1 week";
 "clipboard.settings.retention.oneMonth" = "1 month";
@@ -480,8 +480,8 @@
 "clipboard.action.editBeforePaste" = "Edit Before Pasting";
 "clipboard.action.showOnlyApp" = "Show Only %@";
 "clipboard.action.deleteAllFromApp" = "Delete All from %@…";
-"clipboard.confirm.clearUnpinned" = "Delete %d unpinned clipboard items? Voice results stay.";
-"clipboard.confirm.deleteApp" = "Delete %1$d unpinned items copied from %2$@?";
+"clipboard.confirm.clearUnpinned" = "Delete %d unpinned clipboard items? Snippets and voice results stay.";
+"clipboard.confirm.deleteApp" = "Delete %1$d unpinned items copied from %2$@? Snippets stay.";
 "clipboard.notice.nothingToClear" = "No unpinned clipboard items to delete";
 "clipboard.notice.paused" = "Clipboard recording paused";
 "clipboard.notice.resumed" = "Clipboard recording resumed";
@@ -506,9 +506,9 @@
 "clipboard.settings.ignored.choose" = "Don't Record";
 "clipboard.settings.usage.reveal" = "Show in Finder";
 "clipboard.settings.usage.clearAll.title" = "Delete all unpinned clipboard items?";
-"clipboard.settings.usage.clearAll.message" = "Pinned items and voice results stay. This can't be undone.";
+"clipboard.settings.usage.clearAll.message" = "Snippets, pinned items and voice results stay. This cannot be undone.";
 "clipboard.settings.usage.deleteApp.title" = "Delete unpinned items from %@?";
-"clipboard.settings.usage.deleteApp.message" = "Pinned items stay. This can't be undone.";
+"clipboard.settings.usage.deleteApp.message" = "Snippets and pinned items stay. This cannot be undone.";
 "clipboard.settings.usage.deleteApp.help" = "Delete this app's unpinned items";
 "clipboard.settings.usage.items" = "%d items";
 "clipboard.settings.usage.row" = "%1$@ · %2$d items";
@@ -4707,3 +4707,28 @@
 "emoji.match.contains" = "Partial match";
 "emoji.match.intent" = "Suggested for this expression";
 "emoji.match.typo" = "Spelling correction";
+
+// Clipboard snippets
+"clipboard.tab.clipboard" = "Clipboard";
+"clipboard.tab.snippet" = "Snippets";
+"clipboard.action.saveSnippet" = "Save as Snippet…";
+"clipboard.action.editSnippet" = "Edit Snippet…";
+"clipboard.snippet.permanent" = "Kept permanently";
+"clipboard.snippet.voiceAlias" = "Voice: %@";
+"clipboard.snippet.name" = "Name";
+"clipboard.snippet.content" = "Content";
+"clipboard.snippet.alias" = "Voice alias (optional)";
+"clipboard.snippet.aliasHint" = "Say “insert snippet” followed by the alias to insert the exact text.";
+"clipboard.snippet.retentionHint" = "Saved in Snippets. No pin needed; never removed by history cleanup.";
+"clipboard.snippet.save" = "Save";
+"clipboard.snippet.saved" = "Snippet saved";
+"clipboard.snippet.search" = "Search snippets";
+"clipboard.snippet.empty" = "No snippets yet. Right-click a text entry to save one.";
+"clipboard.snippet.confirmDelete" = "Delete snippet “%@”? This cannot be undone.";
+"clipboard.snippet.error.invalidName" = "Enter a name of 1–60 characters.";
+"clipboard.snippet.error.emptyText" = "Snippet content cannot be empty.";
+"clipboard.snippet.error.invalidAlias" = "Voice aliases can contain up to 40 characters.";
+"clipboard.snippet.error.duplicateAlias" = "This voice alias is already in use.";
+"clipboard.snippet.error.missingItem" = "The source text no longer exists. Close this editor and try again.";
+"clipboard.snippet.error.unavailable" = "Could not save the snippet. Your draft has been kept; please try again.";
+"clipboard.snippet.notFound" = "No snippet matches this voice alias.";

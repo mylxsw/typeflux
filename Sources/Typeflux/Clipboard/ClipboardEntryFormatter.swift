@@ -5,6 +5,10 @@ enum ClipboardEntryFormatter {
     /// Subtitle parts, e.g. `["PDF", "12 pages", "2.3 MB", "Finder", "12 min. ago"]`. `info` adds
     /// what only decoding the file reveals: a video or audio length, a PDF page count.
     static func details(for entry: ClipboardEntry, info: ClipboardMediaInfo? = nil, now: Date = Date()) -> [String] {
+        if let snippet = entry.snippet {
+            return [L("clipboard.tab.snippet"), snippet.alias.isEmpty ? nil : L("clipboard.snippet.voiceAlias", snippet.alias),
+                    L("clipboard.entry.characters", entry.text?.count ?? 0), entry.sourceAppName].compactMap { $0 }
+        }
         var parts = kindDetails(for: entry) + mediaDetails(for: entry, info: info)
         if !entry.kind.isTextual, entry.byteSize > 0 {
             parts.append(ByteCountFormatter.string(fromByteCount: entry.byteSize, countStyle: .file))

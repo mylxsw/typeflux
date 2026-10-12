@@ -45,6 +45,23 @@ final class ClipboardPanelControllerKeyTests: XCTestCase {
     }
 
     @MainActor
+    func testSnippetEditorRoutesTextKeysAndSaveWithoutPasting() throws {
+        controller.present(model)
+        model.perform(.saveSnippet, at: 0)
+        XCTAssertNotNil(model.snippetDraft)
+        XCTAssertFalse(try press(125))
+        XCTAssertFalse(try press(36), "Return stays in the text editor")
+        XCTAssertFalse(try press(0, "a"))
+        XCTAssertTrue(try press(36, flags: .command))
+        XCTAssertNotNil(model.snippetError, "Unavailable persistence keeps the draft open")
+        XCTAssertTrue(commands.isEmpty)
+        XCTAssertTrue(try press(53))
+        XCTAssertNil(model.snippetDraft)
+        XCTAssertNil(model.snippetError)
+        XCTAssertEqual(model.selectedIndex, 0)
+    }
+
+    @MainActor
     func testEditorKeepsTypingKeysAndHandlesEscapeAndCommandReturn() throws {
         controller.present(model)
         model.perform(.editBeforePaste, at: 1)

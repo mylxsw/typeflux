@@ -20,6 +20,7 @@ struct ClipboardEntry: Identifiable, Equatable, Sendable {
     let sourceBundleID: String?
     let sourceAppName: String?
     let isPinned: Bool
+    var snippet: ClipboardSnippet?
 
     var id: String {
         switch origin {
@@ -55,6 +56,7 @@ struct ClipboardEntry: Identifiable, Equatable, Sendable {
 
     /// The single-line title: the text itself, the file name, or a count.
     var title: String {
+        if let snippet { return snippet.name }
         if let text { return text }
         switch kind {
         case .images where filePaths.count > 1:

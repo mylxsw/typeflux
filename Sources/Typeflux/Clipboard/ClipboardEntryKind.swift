@@ -14,17 +14,11 @@ enum ClipboardEntryKind: Equatable, Sendable {
     case audio
     case files
 
-    var category: ClipboardCategory {
-        switch self {
-        case .voice: .voice
-        case .text, .link, .code: .text
-        case .image, .images: .image
-        case .pdf, .document, .video, .audio, .files: .file
-        }
-    }
-
     /// Text-like entries paste through the text injector; the rest paste pasteboard objects.
     var isTextual: Bool {
-        category == .voice || category == .text
+        switch self {
+        case .voice, .text, .link, .code: true
+        default: false
+        }
     }
 }

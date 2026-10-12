@@ -10,6 +10,14 @@ extension WorkflowController {
         historyPanelModel.onAction = { [weak self] action, entry in
             self?.performHistoryAction(action, on: entry)
         }
+        historyPanelModel.onSaveSnippet = { [weak self] draft in
+            guard let store = self?.clipboardHistoryStore else { throw ClipboardSnippetError.unavailable }
+            let id: UUID?
+            if case let .clipboard(sourceID) = draft.entry.origin { id = sourceID } else { id = nil }
+            return try store.saveSnippet(id: id, name: draft.name, text: draft.text, alias: draft.alias,
+                                         source: ClipboardSource(bundleID: draft.entry.sourceBundleID,
+                                                                 appName: draft.entry.sourceAppName), at: Date())
+        }
         historyPanelModel.onDismiss = { [weak self] in
             self?.dismissHistoryPicker()
         }
@@ -114,7 +122,8 @@ extension WorkflowController {
             saveHistoryImageToDownloads(entry)
         case .copyImageText:
             copyHistoryImageText(entry)
-        case .retryTranscription, .togglePin, .delete, .editBeforePaste, .showOnlyApp, .deleteAllFromApp:
+        case .saveSnippet, .editSnippet, .retryTranscription, .togglePin, .delete, .editBeforePaste,
+             .showOnlyApp, .deleteAllFromApp:
             performHistoryManagementAction(action, on: entry)
         }
     }
@@ -136,6 +145,8 @@ extension WorkflowController {
 
     func performHistoryPanelCommand(_ command: ClipboardPanelCommand) {
         switch command {
+        case let .deleteSnippet(entry):
+            deleteHistoryEntry(entry)
         case .togglePause:
             if settingsStore.isClipboardRecordingPaused() {
                 settingsStore.resumeClipboardRecording()
@@ -269,6 +280,7 @@ extension WorkflowController {
     }
 
     private func toggleHistoryEntryPin(_ entry: ClipboardEntry) {
+        guard entry.snippet == nil else { return }
         switch entry.origin {
         case let .voice(id):
             clipboardHistoryStore?.setVoiceRecordPinned(!entry.isPinned, recordID: id)

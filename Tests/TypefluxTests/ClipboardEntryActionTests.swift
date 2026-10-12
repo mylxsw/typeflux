@@ -5,17 +5,17 @@ final class ClipboardEntryActionTests: XCTestCase {
     func testAvailableActionsFollowTheEntryKind() {
         XCTAssertEqual(
             ClipboardEntryAction.available(for: ClipboardTestSupport.entry(.voice)),
-            [.paste, .pastePlainText, .editBeforePaste, .copy, .retryTranscription, .togglePin, .delete]
+            [.paste, .pastePlainText, .editBeforePaste, .copy, .retryTranscription, .saveSnippet, .togglePin, .delete]
         )
         XCTAssertEqual(
             ClipboardEntryAction.available(for: ClipboardTestSupport.entry(.link)),
-            [.paste, .pastePlainText, .editBeforePaste, .copy, .togglePin, .delete]
+            [.paste, .pastePlainText, .editBeforePaste, .copy, .saveSnippet, .togglePin, .delete]
         )
         XCTAssertEqual(
             ClipboardEntryAction.available(for: ClipboardTestSupport.entry(
                 .text, sourceBundleID: "com.apple.Safari", sourceAppName: "Safari"
             )),
-            [.paste, .pastePlainText, .editBeforePaste, .copy, .showOnlyApp, .togglePin, .delete, .deleteAllFromApp]
+            [.paste, .pastePlainText, .editBeforePaste, .copy, .saveSnippet, .showOnlyApp, .togglePin, .delete, .deleteAllFromApp]
         )
         XCTAssertEqual(
             ClipboardEntryAction.available(for: ClipboardTestSupport.entry(.image, imagePath: "/i.png")),

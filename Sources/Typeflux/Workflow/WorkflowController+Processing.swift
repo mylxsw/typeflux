@@ -1200,7 +1200,10 @@ extension WorkflowController {
                 return
             }
 
-            if isAskSelectionFlow, let askContextText, !askContextText.isEmpty {
+            if recordingIntent == .dictation, let alias = ClipboardSnippetCommand.alias(in: transcribedText) {
+                try await processSnippetCommand(alias: alias, sessionID: sessionID, record: &record,
+                                                pipelineTiming: &pipelineTiming)
+            } else if isAskSelectionFlow, let askContextText, !askContextText.isEmpty {
                 try await processAskFlowWithSelection(
                     transcribedText: transcribedText,
                     askContextText: askContextText,

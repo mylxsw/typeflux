@@ -123,7 +123,7 @@ struct ClipboardPanelRow: View, Equatable {
     /// destructive actions last.
     static func startsMenuGroup(_ action: ClipboardEntryAction, after previous: ClipboardEntryAction) -> Bool {
         switch action {
-        case .togglePin: true
+        case .saveSnippet, .editSnippet, .togglePin: true
         case .quickLook, .showOnlyApp: previous == .copy
         default: false
         }

@@ -189,6 +189,12 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             return handleQuickLookKeyDown(event)
         }
         guard event.window === panel else { return false }
+        if model.snippetDraft != nil {
+            if event.keyCode == 53 { model.cancelSnippetEdit(); return true }
+            let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
+            if [36, 76].contains(event.keyCode), flags == .command { model.commitSnippet(); return true }
+            return false
+        }
         if model.editingText != nil {
             return handleEditorKeyDown(event, model: model)
         }
