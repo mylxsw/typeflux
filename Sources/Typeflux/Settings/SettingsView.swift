@@ -209,33 +209,21 @@ private struct CloudServerMenuPicker: View {
         Button {
             isPresented.toggle()
         } label: {
-            HStack(spacing: StudioTheme.Spacing.small) {
-                if let selectedOption {
-                    Text(selectedOption.domain)
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(1)
-                    Spacer(minLength: 0)
-                    if let tagText = selectedOption.tagText {
-                        CloudServerStatusTag(text: tagText, tone: selectedOption.tone)
+            SettingsMenuField {
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    if let selectedOption {
+                        Text(selectedOption.domain)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer(minLength: 0)
+                        if let tagText = selectedOption.tagText {
+                            CloudServerStatusTag(text: tagText, tone: selectedOption.tone)
+                                .fixedSize()
+                        }
                     }
                 }
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
             }
-            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
-            .padding(.vertical, StudioTheme.Insets.buttonVertical)
             .frame(width: width)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .fill(StudioTheme.controlSurface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                    .stroke(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
@@ -2403,7 +2391,7 @@ struct StudioView: View {
                             get: { viewModel.preferredAPIServer },
                             set: viewModel.setPreferredAPIServer
                         ),
-                        width: 310
+                        width: StudioTheme.Layout.appearancePickerWidth
                     )
                 }
 
@@ -2422,7 +2410,7 @@ struct StudioView: View {
                             get: { viewModel.preferredASRServer },
                             set: viewModel.setPreferredASRServer
                         ),
-                        width: 310
+                        width: StudioTheme.Layout.appearancePickerWidth
                     )
                 }
 

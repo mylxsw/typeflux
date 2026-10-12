@@ -25,6 +25,24 @@ final class SettingsMenuPickerTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(100))
             host.layoutSubtreeIfNeeded()
             let button = try XCTUnwrap(descendants(host).compactMap { $0 as? NSPopUpButton }.first)
+            XCTAssertEqual(button.bounds.width, 280, accuracy: 1)
+            XCTAssertEqual(button.bounds.height, SettingsControlMetrics.menuHeight, accuracy: 1)
+            let bounds = button.bounds
+            let clickPoints = [
+                NSPoint(x: 1, y: bounds.midY),
+                NSPoint(x: bounds.maxX - 1, y: bounds.midY),
+                NSPoint(x: bounds.midX, y: 1),
+                NSPoint(x: bounds.midX, y: bounds.maxY - 1),
+                NSPoint(x: bounds.maxX - 16, y: bounds.midY)
+            ]
+            for point in clickPoints {
+                let hostPoint = host.convert(point, from: button)
+                XCTAssertTrue(host.hitTest(hostPoint) === button, "The whole field must hit the native menu at \(point)")
+                try inspectMenu(using: button, clickAt: point) { menu in
+                    XCTAssertEqual(menu.items.count, options.count)
+                    return nil
+                }
+            }
             try inspectMenu(using: button) { menu in
                 let items = menu.items.filter { !$0.isSeparatorItem && !$0.isHidden }
                 XCTAssertEqual(items.map(\.title), options.map(\.label))
@@ -45,7 +63,7 @@ final class SettingsMenuPickerTests: XCTestCase {
         [view] + view.subviews.flatMap(descendants)
     }
 
-    private func inspectMenu(using button: NSPopUpButton, check: @escaping (NSMenu) throws -> Int?) throws {
+    private func inspectMenu(using button: NSPopUpButton, clickAt point: NSPoint? = nil, check: @escaping (NSMenu) throws -> Int?) throws {
         var inspected = false
         var failure: Error?
         // SwiftUI builds native menu items only when menu tracking begins.
@@ -65,7 +83,21 @@ final class SettingsMenuPickerTests: XCTestCase {
         }
         RunLoop.main.add(timer, forMode: .eventTracking)
         RunLoop.main.add(timer, forMode: .common)
-        button.performClick(nil)
+        if let point, let window = button.window {
+            let location = button.convert(point, to: nil)
+            let down = try XCTUnwrap(NSEvent.mouseEvent(with: .leftMouseDown, location: location,
+                                                       modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                                       windowNumber: window.windowNumber, context: nil,
+                                                       eventNumber: 0, clickCount: 1, pressure: 1))
+            window.sendEvent(down)
+            let up = try XCTUnwrap(NSEvent.mouseEvent(with: .leftMouseUp, location: location,
+                                                     modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                                     windowNumber: window.windowNumber, context: nil,
+                                                     eventNumber: 1, clickCount: 1, pressure: 0))
+            window.sendEvent(up)
+        } else {
+            button.performClick(nil)
+        }
         timer.invalidate()
         if let failure { throw failure }
         XCTAssertTrue(inspected, "The native menu must open")

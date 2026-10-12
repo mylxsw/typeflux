@@ -4,6 +4,7 @@ import SwiftUI
 /// Shared metrics for single-line settings fields, menus and actions.
 enum SettingsControlMetrics {
     static let height: CGFloat = 30
+    static let menuHeight: CGFloat = 36
     static let fontSize: CGFloat = 13
     static let horizontalPadding: CGFloat = 10
 }
@@ -126,44 +127,121 @@ struct SettingsControlChrome: ViewModifier {
     }
 }
 
-/// A field-sized menu that preserves native keyboard navigation and selection marks.
+/// Shared field appearance for native menus and status-rich popover selectors.
+struct SettingsMenuField<Content: View>: View {
+    @Environment(\.isEnabled) private var enabled
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.trailing, 18)
+            .overlay(alignment: .trailing) {
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .allowsHitTesting(false)
+            }
+            .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+            .foregroundStyle(StudioTheme.textPrimary)
+            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
+            .frame(height: SettingsControlMetrics.menuHeight)
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .fill(StudioTheme.controlSurface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+                    .strokeBorder(StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin)
+            )
+            .contentShape(Rectangle())
+            .opacity(enabled ? 1 : 0.45)
+    }
+}
+
+/// The native menu covers the whole field, including padding and the custom arrow.
 struct SettingsMenuPicker<Value: Hashable>: View {
     let title: String
     let options: [(label: String, value: Value)]
     @Binding var selection: Value
+    @Environment(\.isEnabled) private var enabled
 
     var body: some View {
-        HStack(spacing: 0) {
-            Menu {
-                Picker(title, selection: $selection) {
-                    ForEach(Array(options.enumerated()), id: \.offset) { _, option in
-                        Text(option.label).tag(option.value)
-                    }
-                }
-                // The automatic macOS style turns a picker inside a menu into a submenu.
-                .pickerStyle(.inline)
-                .labelsHidden()
-            } label: {
+        ZStack {
+            SettingsMenuField {
                 Text(options.first { $0.value == selection }?.label ?? title)
                     .lineLimit(1).truncationMode(.middle)
             }
-            .menuStyle(.borderlessButton).menuIndicator(.hidden)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.trailing, 18)
-            .accessibilityLabel(title)
-            .accessibilityValue(options.first { $0.value == selection }?.label ?? "")
+            .accessibilityHidden(true)
+            .allowsHitTesting(false)
+            NativeSettingsMenuPicker(title: title, options: options, selection: $selection, enabled: enabled)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .overlay(alignment: .trailing) {
-            Image(systemName: "chevron.up.chevron.down")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .allowsHitTesting(false)
+        .frame(height: SettingsControlMetrics.menuHeight)
+    }
+}
+
+private struct NativeSettingsMenuPicker<Value: Hashable>: NSViewRepresentable {
+    let title: String
+    let options: [(label: String, value: Value)]
+    @Binding var selection: Value
+    let enabled: Bool
+
+    /// SwiftUI draws the field; AppKit owns its full hit area and keyboard navigation.
+    private final class MenuButton: NSPopUpButton {
+        override func draw(_: NSRect) {}
+        override var intrinsicContentSize: NSSize {
+            NSSize(width: NSView.noIntrinsicMetric, height: NSView.noIntrinsicMetric)
         }
-        .font(.system(size: SettingsControlMetrics.fontSize))
-        .foregroundStyle(StudioTheme.textPrimary)
-        .padding(.horizontal, SettingsControlMetrics.horizontalPadding)
-        .frame(height: SettingsControlMetrics.height)
-        .modifier(SettingsControlChrome())
+        override var alignmentRectInsets: NSEdgeInsets {
+            NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        }
+        override var focusRingMaskBounds: NSRect { bounds }
+        override func drawFocusRingMask() {
+            NSBezierPath(roundedRect: bounds, xRadius: StudioTheme.CornerRadius.xLarge,
+                         yRadius: StudioTheme.CornerRadius.xLarge).fill()
+        }
+    }
+
+    final class Coordinator: NSObject {
+        var selection: Binding<Value>
+        var values: [Value] = []
+
+        init(selection: Binding<Value>) {
+            self.selection = selection
+        }
+
+        @objc func choose(_ sender: NSMenuItem) {
+            guard values.indices.contains(sender.tag) else { return }
+            selection.wrappedValue = values[sender.tag]
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(selection: $selection) }
+
+    func makeNSView(context _: Context) -> NSPopUpButton {
+        let button = MenuButton(frame: .zero, pullsDown: false)
+        button.isBordered = false
+        button.focusRingType = .exterior
+        return button
+    }
+
+    func updateNSView(_ button: NSPopUpButton, context: Context) {
+        context.coordinator.selection = $selection
+        context.coordinator.values = options.map(\.value)
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        for (index, option) in options.enumerated() {
+            let item = NSMenuItem(title: option.label, action: #selector(Coordinator.choose(_:)), keyEquivalent: "")
+            item.target = context.coordinator
+            item.tag = index
+            menu.addItem(item)
+        }
+        button.menu = menu
+        button.selectItem(at: options.firstIndex { $0.value == selection } ?? -1)
+        button.isEnabled = enabled
+        button.setAccessibilityLabel(title)
+        button.setAccessibilityValue(options.first { $0.value == selection }?.label ?? "")
     }
 }
 

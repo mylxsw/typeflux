@@ -10,7 +10,7 @@ struct StudioPersonaLibraryView: View {
     }
 
     var body: some View {
-        VStack(spacing: StudioTheme.Spacing.large) {
+        VStack(spacing: StudioTheme.Spacing.smallMedium) {
             StudioPersonaUsageSettings(viewModel: viewModel)
             HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
                 roster

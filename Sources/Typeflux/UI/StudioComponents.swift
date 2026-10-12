@@ -1709,7 +1709,7 @@ struct StudioMenuPicker<T: Hashable>: View {
 
     var body: some View {
         SettingsMenuPicker(title: selectedLabel, options: options, selection: $selection)
-            .frame(width: width, height: height ?? SettingsControlMetrics.height)
+            .frame(width: width, height: height ?? SettingsControlMetrics.menuHeight)
             .fixedSize()
     }
 }
