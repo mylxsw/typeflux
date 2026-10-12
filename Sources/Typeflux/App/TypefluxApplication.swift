@@ -46,9 +46,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func application(_: NSApplication, open urls: [URL]) {
-        guard urls.contains(where: BillingReturnLink.matches) else { return }
         Task { @MainActor in
-            await BillingReturnLink.handle(auth: .shared)
+            await AppLoginURLRouter.handle(
+                urls, login: AuthState.shared.webLoginCoordinator,
+                isLoggedIn: { AuthState.shared.isLoggedIn },
+                showLogin: { LoginWindowController.shared.show() },
+                handleBilling: { await BillingReturnLink.handle(auth: .shared) }
+            )
         }
     }
 

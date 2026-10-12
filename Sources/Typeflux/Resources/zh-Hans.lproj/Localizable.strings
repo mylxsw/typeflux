@@ -4762,3 +4762,17 @@
 "personas.redesign.shortcutsHelp" = "快捷键设置";
 "personas.redesign.close" = "关闭";
 "personas.redesign.noneShort" = "不使用人设";
+
+// Website sign-in
+"auth.web.description" = "在 Typeflux 官网使用邮箱、Google、GitHub 或 Apple 安全登录。";
+"auth.web.waiting" = "等待浏览器登录…";
+"auth.web.exchanging" = "正在完成登录…";
+"auth.web.continue" = "在浏览器中继续";
+"auth.web.reopen" = "重新打开登录页";
+"auth.web.reopenHint" = "请使用同一浏览器。若浏览器登录会话丢失，请取消后重新开始。";
+"auth.web.cancel" = "取消";
+"auth.web.cancelled" = "登录已取消，可以重新开始。";
+"auth.web.expired" = "本次登录已过期，请重新开始。";
+"auth.web.browserUnavailable" = "无法启动浏览器，请重试。";
+"auth.web.restartRequired" = "无法完成登录，请重新发起；之前的授权码不能重试。";
+"auth.web.storageFailed" = "无法将会话保存到钥匙串，请解锁钥匙串后重新登录。";

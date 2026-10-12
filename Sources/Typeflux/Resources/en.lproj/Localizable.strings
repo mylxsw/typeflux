@@ -4762,3 +4762,17 @@
 "personas.redesign.shortcutsHelp" = "Shortcut settings";
 "personas.redesign.close" = "Close";
 "personas.redesign.noneShort" = "No persona";
+
+// Website sign-in
+"auth.web.description" = "Sign in securely on the Typeflux website using email, Google, GitHub or Apple.";
+"auth.web.waiting" = "Waiting for browser sign-in…";
+"auth.web.exchanging" = "Completing sign-in…";
+"auth.web.continue" = "Continue in browser";
+"auth.web.reopen" = "Reopen login page";
+"auth.web.reopenHint" = "Use the same browser. If its login session was lost, cancel and start again.";
+"auth.web.cancel" = "Cancel";
+"auth.web.cancelled" = "Sign-in cancelled. You can start again.";
+"auth.web.expired" = "This login has expired. Start again.";
+"auth.web.browserUnavailable" = "The browser could not start. Try again.";
+"auth.web.restartRequired" = "Sign-in could not be completed. Start a new login; the previous code cannot be retried.";
+"auth.web.storageFailed" = "Your session could not be saved in Keychain. Unlock Keychain and start again.";
