@@ -852,7 +852,7 @@ struct AskComposer: View {
 
     /// What the launcher's home offers for its context; empty outside the launcher.
     private var home: [AskLauncherHome.Section] {
-        guard launcher else { return [] }
+        guard showsLauncherSuggestions else { return [] }
         _ = homeAppsRevision
         return AskLauncherSuggestions.fitting(model.launcherHome(), height: launcherHomeViewportHeight)
     }
@@ -955,7 +955,7 @@ struct AskComposer: View {
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: launcherCollapsed) { _ in reportHeight() }
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
-            .onChange(of: showsQuickResults) { _ in updateFilePreview() }
+            .onChange(of: showsQuickResults) { _ in updateFilePreview(); reportHeight() }
             // The home fills in as the context arrives after the panel shows.
             .onChange(of: homeHeight) { _ in reportHeight() }
             .onChange(of: draft.wrappedValue.text) { _ in
@@ -968,6 +968,7 @@ struct AskComposer: View {
                 } else if quickReserve > 0 || pluginReserve > 0 {
                     scheduleReserveSettle()
                 }
+                if draft.wrappedValue.hasText, !quickSearch.isSearching { reportHeight() }
             }
             .onChange(of: quickResults) { _ in quickResultsChanged() }
             .onChange(of: quickSearch.pendingResults) { _ in quickResultsChanged() }
@@ -2048,6 +2049,13 @@ struct AskComposer: View {
 
     private func reportHeight() {
         let height = launcherCollapsed ? AskLauncherWindowMode.simpleHeight : desiredLauncherHeight
+        // Other layout preferences may change with the first edit too. Hold the
+        // native frame until the first search batch instead of resizing an empty list.
+        if launcher, quickSearch.isVisible, draft.wrappedValue.hasText, !active, !launcherCollapsed, !paletteOpen,
+           !contextPanelOpen, pluginDisplay == nil, !showsStrip,
+           (draft.wrappedValue.references ?? []).isEmpty, presentedQuickResults == nil,
+           quickSearch.isSearching || !quickSearch.isCurrent(text: draft.wrappedValue.text),
+           let availableHeight, height < availableHeight + AskMetrics.launcherGutter * 2 { return }
         onHeightChange(height)
         if launcher {
             onWindowHeightChange(height)

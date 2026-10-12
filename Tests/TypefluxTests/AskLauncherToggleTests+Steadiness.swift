@@ -142,6 +142,41 @@ extension AskLauncherToggleTests {
         }
     }
 
+    @Test func anEmptyFirstQuerySettlesToItsOwnHeight() async throws {
+        let session = try await openSteadyLauncher(initialQuery: "")
+        defer { session.close() }
+        let initialHeight = session.panel.frame.height
+        session.editor.insertText("zzperfprobe", replacementRange: NSRange(location: NSNotFound, length: 0))
+        try await steadily("the empty first query settles below the home") {
+            session.searched("zzperfprobe") && session.panel.frame.height < initialHeight - 0.5
+                && !session.owned.controller.launcherIsResizing
+        }
+        #expect(session.fixture.model.quickSearch.presentation == nil)
+    }
+
+    @Test func firstQueryKeepsTheHomeHeightUntilItsResultsArrive() async throws {
+        let session = try await openSteadyLauncher(initialQuery: "")
+        defer { session.close() }
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        let apps = AskControlledSearchIndex()
+        apps.recentApps = session.fixture.model.appIndex.recentApplications(limit: AskLauncherHome.maximumRecentApplications)
+        apps.appSearch = { _ in _ = gate.wait(timeout: .now() + 5); return [AskQuickSearchSessionTests.app] }
+        session.fixture.model.appIndex = apps
+        let container = try #require(session.editor.enclosingScrollView)
+        let recorder = Recorder(panel: session.panel, container: container)
+        defer { recorder.stop() }
+        let initialHeight = session.panel.frame.height
+        session.editor.insertText("zzperfprobe", replacementRange: NSRange(location: NSNotFound, length: 0))
+        try await steadily("the first query reaches its worker") { !apps.calls.isEmpty }
+        try await Task.sleep(for: .milliseconds(80))
+        recorder.sample()
+        #expect(recorder.heights.allSatisfy { abs($0 - initialHeight) < 0.5 },
+                "The launcher must keep \(initialHeight) before the first batch: \(recorder.heights)")
+        gate.signal()
+        try await steadily("the first query finishes") { session.searched("zzperfprobe") }
+    }
+
     @Test func theEditorAndControlsStayPutWhileResultsComeAndGo() async throws {
         let session = try await openSteadyLauncher()
         defer { session.close() }

@@ -2,9 +2,17 @@ import AppKit
 import Carbon
 
 protocol AskBrowserSearching: Sendable {
+    /// A fresh in-memory snapshot; never reads files, automates a browser or requests permission.
+    func cachedSnapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) async
+        -> AskBrowserSearchSnapshot?
     func snapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) async
         -> AskBrowserSearchSnapshot
     func focus(_ target: AskBrowserTabTarget) async throws
+}
+
+extension AskBrowserSearching {
+    func cachedSnapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) async
+        -> AskBrowserSearchSnapshot? { nil }
 }
 
 actor AskBrowserSearchService: AskBrowserSearching {
@@ -37,16 +45,28 @@ actor AskBrowserSearchService: AskBrowserSearching {
         self.authorized = authorized
     }
 
+    private func cacheKey(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) -> String {
+        let selected = AskSearchBrowser.allCases.filter { browsers.contains($0) }
+        return kind.rawValue + ":" + selected.map(\.id).joined(separator: ",") + ":" + String(interactive)
+    }
+
+    func cachedSnapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) async
+        -> AskBrowserSearchSnapshot? {
+        let key = cacheKey(kind: kind, browsers: browsers, interactive: interactive)
+        let lifetime: TimeInterval = kind == .tab ? 2 : 5
+        guard let cached = cache[key], Date().timeIntervalSince(cached.date) < lifetime else { return nil }
+        return cached.snapshot
+    }
+
     // Cache reuse, browser selection and independent source batches share this lifecycle.
     // swiftlint:disable:next cyclomatic_complexity
     func snapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser],
                   interactive: Bool) async -> AskBrowserSearchSnapshot {
         let selected = AskSearchBrowser.allCases.filter { browsers.contains($0) }
-        let key = kind.rawValue + ":" + selected.map(\.id).joined(separator: ",") + ":" + String(interactive)
-        let lifetime: TimeInterval = kind == .tab ? 2 : 5
+        let key = cacheKey(kind: kind, browsers: browsers, interactive: interactive)
         cache = cache.filter { Date().timeIntervalSince($0.value.date) < 5 }
         if cache.count > 8 { cache.removeAll() }
-        if let cached = cache[key], Date().timeIntervalSince(cached.date) < lifetime { return cached.snapshot }
+        if let cached = await cachedSnapshot(kind: kind, browsers: browsers, interactive: interactive) { return cached }
         if let task = pending[key] { return await task.value }
         let runner = interactive ? runner : backgroundRunner, home = home, running = running, authorized = authorized
         let task = Task {

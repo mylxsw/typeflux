@@ -23,6 +23,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private let tools: AskLocalTools?
     private let conversationFrameAutosaveName: NSWindow.FrameAutosaveName
     private var launcher: AskFloatingPanel?
+    private weak var launcherEditor: NSTextView?
     private var launcherHeight = AskMetrics.launcherHeight(editor: 32, banners: 0)
     private let launcherHeightAnimator = AskLauncherHeightAnimator()
     let filePreview: AskFilePreviewController
@@ -260,7 +261,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             let anchor = launcherAnchor(on: screen)
             panel.setFrame(AskLauncherPlacement.preferredFrame(on: frame, anchor: anchor,
                            height: model.launcherIsCollapsed ? AskLauncherWindowMode.simpleHeight : launcherHeight),
-                           display: true)
+                           display: false)
             launcherOpeningTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
         }
         // Take keyboard focus without activating the app and raising its other windows.
@@ -324,6 +325,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         Task { [model] in await model.loadCachedHistoryIfNeeded() }
         let panel = launcherPanel()
         panel.contentView?.layoutSubtreeIfNeeded()
+        launcherEditor = findEditor(in: panel.contentView)
     }
 
     // MARK: - Launcher position
@@ -540,14 +542,20 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
     @discardableResult
     private func focusEditor(in window: NSWindow?) -> Bool {
-        func editor(in view: NSView) -> NSTextView? {
-            if let text = view as? NSTextView, text.isEditable { return text }
-            return view.subviews.lazy.compactMap { editor(in: $0) }.first
+        if window === launcher, let editor = launcherEditor, editor.window === window, editor.isEditable {
+            return window?.makeFirstResponder(editor) == true
         }
         guard let content = window?.contentView else { return false }
         content.layoutSubtreeIfNeeded()
-        guard let editor = editor(in: content) else { return false }
+        guard let editor = findEditor(in: content) else { return false }
+        if window === launcher { launcherEditor = editor }
         return window?.makeFirstResponder(editor) == true
+    }
+
+    private func findEditor(in view: NSView?) -> NSTextView? {
+        guard let view else { return nil }
+        if let text = view as? NSTextView, text.isEditable { return text }
+        return view.subviews.lazy.compactMap { self.findEditor(in: $0) }.first
     }
 }
 

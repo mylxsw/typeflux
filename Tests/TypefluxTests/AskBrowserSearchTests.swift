@@ -30,8 +30,18 @@ private actor BrowserSearchTestService: AskBrowserSearching {
     var entries: [AskBrowserSearchEntry]
     var calls = 0
     var delay: Duration
-    init(entries: [AskBrowserSearchEntry] = [], delay: Duration = .zero) {
-        self.entries = entries; self.delay = delay
+    var hasCachedSnapshot: Bool
+    var cachedKinds: [AskBrowserSearchEntry.Kind]
+    init(entries: [AskBrowserSearchEntry] = [], delay: Duration = .zero, hasCachedSnapshot: Bool = false,
+         cachedKinds: [AskBrowserSearchEntry.Kind] = [.tab, .bookmark]) {
+        self.entries = entries; self.delay = delay; self.hasCachedSnapshot = hasCachedSnapshot
+        self.cachedKinds = cachedKinds
+    }
+
+    func cachedSnapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive _: Bool) async
+        -> AskBrowserSearchSnapshot? {
+        hasCachedSnapshot && cachedKinds.contains(kind)
+            ? .init(entries: entries.filter { $0.kind == kind && browsers.contains($0.browser) }) : nil
     }
 
     func snapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser],
@@ -42,11 +52,108 @@ private actor BrowserSearchTestService: AskBrowserSearching {
     }
 
     func focus(_: AskBrowserTabTarget) async throws {}
+
+    func invalidateCache() { hasCachedSnapshot = false }
 }
 
 @Suite(.exclusiveUIState)
 @MainActor
 struct AskBrowserSearchTests {
+    @Test func `empty local results do not wait for a cold browser snapshot`() async throws {
+        let service = BrowserSearchTestService(delay: .seconds(5))
+        let apps = AskControlledSearchIndex(), files = AskControlledSearchIndex()
+        let session = AskQuickSearchSession()
+        defer { session.cancel() }
+        session.update(text: "zzperfprobe", chinese: false, calculator: false,
+                       sources: .init(apps: apps, files: files, browsers: service))
+        try await AskQuickSearchSessionTests.wait {
+            !apps.calls.isEmpty && !files.calls.isEmpty && session.presentation?.rows == [.askAI]
+        }
+        #expect(session.isSearching, "The browser refresh must not hold back the completed local answer")
+    }
+
+    @Test func `cached bookmarks publish without waiting for uncached tabs`() async throws {
+        let bookmark = entry()
+        let service = BrowserSearchTestService(entries: [bookmark], delay: .seconds(5), hasCachedSnapshot: true,
+                                               cachedKinds: [.bookmark])
+        let session = AskQuickSearchSession()
+        defer { session.cancel() }
+        session.update(text: "Project", chinese: false, calculator: false, sources: .init(browsers: service))
+        try await AskQuickSearchSessionTests.wait { session.results?.browserEntries.first?.id == bookmark.id }
+        #expect(session.isSearching, "Cached matches stay useful while the missing source refreshes")
+        #expect(session.pendingResults == nil)
+    }
+
+    @Test func `a cold browser source preserves pending rows until its new snapshot arrives`() async throws {
+        let service = BrowserSearchTestService(entries: [entry(kind: .tab)], delay: .seconds(5), hasCachedSnapshot: true)
+        let session = AskQuickSearchSession()
+        defer { session.cancel() }
+        var settings = AskBrowserSearchSettings()
+        settings.bookmarksEnabled = false
+        settings.tabBrowsers = [.chrome]
+        let sources = AskQuickResults.Sources(browsers: service, browserSettings: settings)
+        session.update(text: "Project", chinese: false, calculator: false, sources: sources)
+        try await AskQuickSearchSessionTests.wait { !session.isSearching }
+        let previous = try #require(session.results?.browserEntries.first)
+        await service.invalidateCache()
+        session.update(text: "Other", chinese: false, calculator: false, sources: sources)
+        var reading = false
+        for _ in 0..<1000 {
+            if await service.calls > 0 { reading = true; break }
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        #expect(reading)
+        #expect(session.isSearching)
+        #expect(session.presentation?.browserEntries.first?.id == previous.id)
+        #expect(session.results?.browserEntries.isEmpty != false, "Pending rows must never remain executable")
+    }
+
+    @Test func `cached direct results bypass delayed snapshot work`() async throws {
+        let service = BrowserSearchTestService(entries: [entry(kind: .tab)], delay: .seconds(5), hasCachedSnapshot: true)
+        let session = AskQuickSearchSession()
+        defer { session.cancel() }
+        var settings = AskBrowserSearchSettings()
+        settings.bookmarksEnabled = false
+        settings.tabBrowsers = [.chrome]
+        session.update(text: "Project", chinese: false, calculator: false,
+                       sources: .init(browsers: service, browserSettings: settings))
+        try await AskQuickSearchSessionTests.wait { !session.isSearching }
+        #expect(session.results?.browserEntries.count == 1)
+        #expect(await service.calls == 0)
+        session.update(text: "missing", chinese: false, calculator: false,
+                       sources: .init(browsers: service, browserSettings: settings))
+        try await AskQuickSearchSessionTests.wait { !session.isSearching }
+        #expect(session.results?.browserEntries.isEmpty != false)
+        #expect(await service.calls == 0)
+    }
+
+    @Test func `cached snapshots never automate and keep source permissions separate`() async throws {
+        let runner = BrowserSearchTestRunner()
+        let service = AskBrowserSearchService(runner: runner, running: { _ in true }, authorized: { _ in true })
+        #expect(await service.cachedSnapshot(kind: .tab, browsers: [.chrome], interactive: false) == nil)
+        #expect(await runner.calls.isEmpty)
+        let fresh = await service.snapshot(kind: .tab, browsers: [.chrome], interactive: false)
+        #expect(await service.cachedSnapshot(kind: .tab, browsers: [.chrome], interactive: false)?.entries == fresh.entries)
+        #expect(await service.cachedSnapshot(kind: .tab, browsers: [.safari], interactive: false) == nil)
+        #expect(await service.cachedSnapshot(kind: .tab, browsers: [.chrome], interactive: true) == nil)
+        #expect(await runner.calls.count == 1)
+
+        let session = AskQuickSearchSession()
+        defer { session.cancel() }
+        var settings = AskBrowserSearchSettings()
+        settings.bookmarksEnabled = false
+        settings.tabBrowsers = [.chrome]
+        session.update(text: "Project", chinese: false, calculator: false,
+                       sources: .init(browsers: service, browserSettings: settings))
+        try await AskQuickSearchSessionTests.wait { !session.isSearching }
+        #expect(session.results?.browserEntries.count == 1)
+        session.update(text: "missing", chinese: false, calculator: false,
+                       sources: .init(browsers: service, browserSettings: settings))
+        try await AskQuickSearchSessionTests.wait { !session.isSearching }
+        #expect(session.results?.browserEntries.isEmpty != false)
+        #expect(await runner.calls.count == 1, "Editing a query must reuse a fresh snapshot without browser automation")
+    }
+
     private func entry(
         _ title: String = "Project",
         url: String = "https://example.com",

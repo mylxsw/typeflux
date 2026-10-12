@@ -6,6 +6,11 @@ APP_DIR="${TYPEFLUX_DEV_APP_DIR:-${TYPEFLUX_DEV_APP_DIR:-$HOME/Applications/Type
 APP_EXEC="$APP_DIR/Contents/MacOS/Typeflux"
 LOG_PID=""
 DEV_VARIANT="${TYPEFLUX_DEV_VARIANT:-minimal}"
+BUILD_CONFIGURATION="${TYPEFLUX_DEV_BUILD_CONFIGURATION:-release}"
+case "$BUILD_CONFIGURATION" in
+  debug|release) ;;
+  *) echo "Error: TYPEFLUX_DEV_BUILD_CONFIGURATION must be debug or release." >&2; exit 1 ;;
+esac
 
 profile_supports_apple_sign_in() {
   local profile_path="$1"
@@ -129,9 +134,10 @@ cleanup() {
 trap 'cleanup 130' INT
 trap 'cleanup 143' TERM
 
-swift build --package-path "$ROOT_DIR" -c debug
+# Keep development-only commands and defaults while optimizing the launcher.
+swift build --package-path "$ROOT_DIR" -c "$BUILD_CONFIGURATION" -Xswiftc -DDEBUG
 
-BIN_DIR="$(swift build --package-path "$ROOT_DIR" --show-bin-path)"
+BIN_DIR="$(swift build --package-path "$ROOT_DIR" -c "$BUILD_CONFIGURATION" -Xswiftc -DDEBUG --show-bin-path)"
 BIN="$BIN_DIR/Typeflux"
 mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
