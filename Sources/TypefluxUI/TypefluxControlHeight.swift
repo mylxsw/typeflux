@@ -4,6 +4,7 @@ import Foundation
 public enum TypefluxControlHeight: String, CaseIterable, Sendable {
     case toolbar
     case sidebarRow
+    case navigationIcon
     case toolbarItem
     case toolbarSearch
     case button
@@ -25,6 +26,7 @@ public enum TypefluxControlHeight: String, CaseIterable, Sendable {
         switch self {
         case .toolbar: style == .classic ? 52 : 52
         case .sidebarRow: style == .classic ? 28 : 32
+        case .navigationIcon: 28
         case .toolbarItem: style == .classic ? 24 : 36
         case .toolbarSearch: style == .classic ? 24 : 36
         case .button: style == .classic ? 22 : 26

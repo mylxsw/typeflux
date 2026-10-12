@@ -23,27 +23,22 @@ struct SettingsOrganizationTests {
     }
 
     @Test(arguments: [AppLanguage.english, .simplifiedChinese, .traditionalChinese, .japanese, .korean])
-    func `voice input and settings titles remain above their tabs`(language: AppLanguage) async throws {
+    func `voice input and settings titles live in the native toolbar above their tabs`(language: AppLanguage) async throws {
         try await withModel(section: .home) { _, model in
             model.setAppLanguage(language)
             for width: CGFloat in [720, 1100] {
-                try await UI.withWindow(StudioView(viewModel: model), width: width, height: 800) { _, host in
+                try await UI.withWindow(StudioView(viewModel: model), width: width, height: 800) { window, host in
                     for section in StudioSection.voiceInputCases + [.settings] {
                         model.navigate(to: section)
                         let tabTitle = section == .settings ? AppSettingsPane.general.title : StudioSection.home.title
                         try await UI.wait {
-                            UI.elements(in: host).contains {
-                                $0.value("accessibilityIdentifier") as? String == "studio.page.title"
-                                    && UI.contains(section.shellTitle, in: $0.object)
-                            } && UI.contains(tabTitle, in: host)
+                            window.title == section.heading && UI.contains(tabTitle, in: host)
                         }
-                        let title = try #require(UI.elements(in: host).first {
+                        #expect(window.toolbar != nil)
+                        #expect(!UI.elements(in: host).contains {
                             $0.value("accessibilityIdentifier") as? String == "studio.page.title"
-                                && UI.contains(section.shellTitle, in: $0.object)
                         })
-                        let tab = try UI.button(tabTitle, in: host)
-                        #expect(title.frame.minY > tab.frame.maxY, "The page title stays above the tab bar")
-                        #expect(abs(title.frame.minX - tab.frame.minX) < 2, "Title and tabs share a leading edge")
+                        _ = try UI.button(tabTitle, in: host)
                         try UI.snapshot(host, name: "page-title-\(section.rawValue)-\(language.rawValue)-\(Int(width))")
                     }
                 }

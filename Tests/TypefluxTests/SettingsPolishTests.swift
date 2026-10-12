@@ -32,7 +32,7 @@ final class SettingsPolishTests: XCTestCase {
         )
     }
 
-    func testFieldsSearchMenusAndActionsUseTheirControlHeights() {
+    func testFieldsMenusAndActionsUseTheirControlHeights() {
         let field = height(TextField("Name", text: .constant("long example name"))
             .textFieldStyle(ModelFieldStyle(monospaced: false)))
         XCTAssertEqual(field, 30, accuracy: 0.5)
@@ -41,8 +41,6 @@ final class SettingsPolishTests: XCTestCase {
             field,
             accuracy: 0.5
         )
-        XCTAssertEqual(height(SettingsSearchBox(placeholder: "Search", text: .constant(""))), field, accuracy: 0.5)
-        XCTAssertEqual(height(SettingsSearchBox(placeholder: "Search", text: .constant("query"))), field, accuracy: 0.5)
         XCTAssertEqual(
             height(SettingsMenuPicker(
                 title: "Protocol",
@@ -279,23 +277,6 @@ final class SettingsPolishTests: XCTestCase {
                 await Task.yield()
             }
             XCTAssertEqual((window.firstResponder as? NSTextView)?.string, "first-value")
-        }
-    }
-
-    func testSearchClearActionHasAccessibleNameAndUpdatesBinding() async throws {
-        var query = "model query"
-        let search = SettingsSearchBox(
-            placeholder: "Search fixture",
-            text: Binding(get: { query }, set: { query = $0 })
-        )
-        try await withWindow(search, width: 280, height: 40) { window, hosting in
-            let button = try XCTUnwrap(self.elements(in: hosting)
-                .first { $0.accessibilityLabel() == L("common.clear") })
-            try self.click(button, in: window)
-            for _ in 0 ..< 10 {
-                await Task.yield()
-            }
-            XCTAssertEqual(query, "")
         }
     }
 

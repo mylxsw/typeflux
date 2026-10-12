@@ -2,6 +2,7 @@ import SwiftUI
 
 /// The caller owns navigation; using a native button preserves keyboard activation.
 public struct TypefluxNavigationRow: View {
+    @Environment(\.interfaceStyle) private var style
     private let title: String
     private let systemImage: String
     private let color: Color
@@ -21,7 +22,12 @@ public struct TypefluxNavigationRow: View {
         TypefluxButton(kind: .borderless, action: action) {
             HStack(spacing: 8) {
                 Image(systemName: systemImage).foregroundStyle(.white)
-                    .frame(width: 28, height: 28).background(color, in: RoundedRectangle(cornerRadius: 6))
+                    .frame(width: TypefluxControlHeight.navigationIcon.value(for: style),
+                           height: TypefluxControlHeight.navigationIcon.value(for: style))
+                    .background(
+                        color,
+                        in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: style))
+                    )
                     .accessibilityHidden(true)
                 Text(title).foregroundStyle(TypefluxColor.label.color)
                 Spacer()

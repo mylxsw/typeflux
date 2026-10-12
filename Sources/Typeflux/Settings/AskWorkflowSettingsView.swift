@@ -123,9 +123,12 @@ struct AskWorkflowTrustSummary: Equatable {
 
 /// Settings → Launcher → Workflows: installed workflows, creation tools and the trust sheet.
 struct AskWorkflowSettingsView: View {
+    @Environment(\.typefluxToolbarSearchQuery) private var toolbarQuery
+    @Environment(\.studioUsesToolbarTitles) private var usesToolbarTitle
     @ObservedObject var store: AskWorkflowStore
     @ObservedObject var log: AskWorkflowLog = .shared
     let settings: SettingsStore
+    var searchQuery = ""
 
     @State private var reviewing: AskWorkflow?
     @State private var failure: String?
@@ -179,7 +182,10 @@ struct AskWorkflowSettingsView: View {
             }
             let builtIn = settings.effectiveAskLauncherKeywords(reserving: store.workflows)
             let conflicts = AskWorkflowStore.keywords(of: store.plugins { (nil, nil) }, excluding: builtIn).conflicts
-            ForEach(Array(store.workflows.enumerated()), id: \.element.id) { index, workflow in
+            if !store.workflows.isEmpty, visibleWorkflows.isEmpty {
+                AgentSettingsEmptyRow(text: L("personas.redesign.noResults", toolbarQuery ?? searchQuery))
+            }
+            ForEach(Array(visibleWorkflows.enumerated()), id: \.element.id) { index, workflow in
                 if index > 0 { ModelRowDivider(leading: 66) }
                 row(
                     workflow,
@@ -193,17 +199,31 @@ struct AskWorkflowSettingsView: View {
         }
     }
 
-    /// The pane title and its actions share a header, with a two-line fallback for narrow panes.
-    private var header: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 0) {
-                paneTitle.fixedSize(horizontal: true, vertical: false)
-                Spacer(minLength: 12)
-                actions
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                paneTitle
-                HStack { Spacer(minLength: 0); actions }
+    private var visibleWorkflows: [AskWorkflow] {
+        let query = (toolbarQuery ?? searchQuery).trimmingCharacters(in: .whitespacesAndNewlines)
+        return store.workflows.filter {
+            query.isEmpty || $0.id.localizedCaseInsensitiveContains(query)
+                || ($0.manifest?.name.localizedCaseInsensitiveContains(query) ?? false)
+                || ($0.manifest?.description?.localizedCaseInsensitiveContains(query) ?? false)
+                || ($0.manifest?.keywords.contains { $0.keyword.localizedCaseInsensitiveContains(query) } ?? false)
+        }
+    }
+
+    /// Window titles live in the toolbar; standalone panes keep a header with a narrow fallback.
+    @ViewBuilder private var header: some View {
+        if usesToolbarTitle {
+            HStack { Spacer(minLength: 0); actions }
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 0) {
+                    paneTitle.fixedSize(horizontal: true, vertical: false)
+                    Spacer(minLength: 12)
+                    actions
+                }
+                VStack(alignment: .leading, spacing: 10) {
+                    paneTitle
+                    HStack { Spacer(minLength: 0); actions }
+                }
             }
         }
     }

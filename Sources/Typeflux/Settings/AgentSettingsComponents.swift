@@ -231,29 +231,36 @@ struct AgentFlowLayout: Layout {
     }
 }
 
-/// Top of every settings pane: icon tile, title and the pane's
-/// state or main switch on the right.
+/// Standalone panes include their title; the settings window
+/// keeps only the accessory below its toolbar.
 struct AgentPaneHeader<Accessory: View>: View {
+    @Environment(\.studioUsesToolbarTitles) private var usesToolbarTitle
     let symbol: String
     let title: String
     var subtitle: String?
     @ViewBuilder var accessory: Accessory
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: symbol).font(.system(size: 18))
-                .foregroundStyle(ModelVisualStyle.accent)
-                .frame(width: 40, height: 40)
-                .background(ModelVisualStyle.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                if let subtitle {
-                    Text(subtitle).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+        if usesToolbarTitle {
+            if Accessory.self != EmptyView.self {
+                HStack { Spacer(minLength: 0); accessory }
             }
-            Spacer(minLength: 12)
-            HStack(spacing: 10) { accessory }
+        } else {
+            HStack(alignment: .center, spacing: 14) {
+                Image(systemName: symbol).font(.system(size: 18))
+                    .foregroundStyle(ModelVisualStyle.accent)
+                    .frame(width: 40, height: 40)
+                    .background(ModelVisualStyle.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                    if let subtitle {
+                        Text(subtitle).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 12)
+                HStack(spacing: 10) { accessory }
+            }
         }
     }
 }

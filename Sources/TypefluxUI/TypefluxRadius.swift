@@ -5,6 +5,7 @@ public enum TypefluxRadius: String, CaseIterable, Sendable {
     case window
     case sidebar
     case sidebarRow
+    case navigationIcon
     case toolbarItem
     case toolbarSearch
     case button
@@ -28,6 +29,7 @@ public enum TypefluxRadius: String, CaseIterable, Sendable {
         case .window: style == .classic ? 10 : 26
         case .sidebar: style == .classic ? 0 : 18
         case .sidebarRow: style == .classic ? 5 : 10
+        case .navigationIcon: 6
         case .toolbarItem: style == .classic ? 0 : 18
         case .toolbarSearch: style == .classic ? 6 : 18
         case .button: style == .classic ? 5.5 : 8

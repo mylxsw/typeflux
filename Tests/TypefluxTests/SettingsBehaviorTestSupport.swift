@@ -11,11 +11,19 @@ enum SettingsBehaviorTestSupport {
         let object: NSObject
 
         func value(_ key: String) -> Any? {
-            object.responds(to: NSSelectorFromString(key)) ? object.value(forKey: key) : nil
+            if object.responds(to: NSSelectorFromString(key)) { return object.value(forKey: key) }
+            // Native outline rows expose the informal AppKit accessibility protocol.
+            let attributes = ["accessibilityRole": "AXRole", "accessibilityLabel": "AXDescription",
+                              "accessibilityValue": "AXValue", "accessibilityFrame": "AXFrame",
+                              "accessibilityChildren": "AXChildren", "accessibilityRows": "AXRows",
+                              "accessibilityIdentifier": "AXIdentifier"]
+            guard let attribute = attributes[key] else { return nil }
+            return object.accessibilityAttributeValue(NSAccessibility.Attribute(rawValue: attribute))
         }
 
         var label: String {
-            value("accessibilityLabel") as? String ?? ""
+            if let label = value("accessibilityLabel") as? String, !label.isEmpty { return label }
+            return object.accessibilityAttributeValue(.title) as? String ?? ""
         }
 
         var text: String {
@@ -23,11 +31,15 @@ enum SettingsBehaviorTestSupport {
         }
 
         var role: String {
-            value("accessibilityRole") as? String ?? ""
+            (value("accessibilityRole") as? NSAccessibility.Role)?.rawValue
+                ?? value("accessibilityRole") as? String ?? ""
         }
 
         var frame: NSRect {
-            (value("accessibilityFrame") as? NSValue)?.rectValue ?? .zero
+            if let frame = value("accessibilityFrame") as? NSValue { return frame.rectValue }
+            guard let position = object.accessibilityAttributeValue(.position) as? NSValue,
+                  let size = object.accessibilityAttributeValue(.size) as? NSValue else { return .zero }
+            return NSRect(origin: position.pointValue, size: size.sizeValue)
         }
 
         func press() throws {
@@ -40,6 +52,10 @@ enum SettingsBehaviorTestSupport {
                 return
             }
             let selector = NSSelectorFromString("accessibilityPerformPress")
+            if !object.responds(to: selector), object.accessibilityActionNames().contains(.press) {
+                object.accessibilityPerformAction(.press)
+                return
+            }
             _ = try #require(object.responds(to: selector), "The rendered control must expose a press action")
             let press = unsafeBitCast(object.method(for: selector), to: Press.self)
             #expect(press(object, selector))
@@ -51,7 +67,9 @@ enum SettingsBehaviorTestSupport {
         func walk(_ node: Any) -> [Element] {
             guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return [] }
             let element = Element(object: object)
-            return [element] + (element.value("accessibilityChildren") as? [Any] ?? []).flatMap(walk)
+            let children = (element.value("accessibilityChildren") as? [Any] ?? [])
+                + (element.value("accessibilityRows") as? [Any] ?? [])
+            return [element] + children.flatMap(walk)
         }
         return walk(root)
     }
@@ -88,10 +106,18 @@ enum SettingsBehaviorTestSupport {
         // Prevent the root Settings view from fetching the real account in this test process.
         let previousLogin = AuthState.shared.isLoggedIn
         AuthState.shared.isLoggedIn = false
+        // VocabularyStore still uses standard defaults; isolate it along with the settings suite.
+        let vocabularyKeys = ["vocabulary.entries", "vocabulary.entries.\(CloudDataLocalScope.key)"]
+        let previousVocabulary = vocabularyKeys.map { UserDefaults.standard.object(forKey: $0) }
+        vocabularyKeys.forEach { UserDefaults.standard.removeObject(forKey: $0) }
         let suite = "SettingsBehavior-\(UUID().uuidString)"
         let fixtureDefaults = UserDefaults(suiteName: suite)
         defer {
             fixtureDefaults?.removePersistentDomain(forName: suite)
+            for (key, value) in zip(vocabularyKeys, previousVocabulary) {
+                if let value { UserDefaults.standard.set(value, forKey: key) }
+                else { UserDefaults.standard.removeObject(forKey: key) }
+            }
             KeychainTokenStore.inMemoryLock.withLock { KeychainTokenStore.inMemoryValues = previousKeys }
             KeychainTokenStore.useInMemoryStoreForTesting = previousMemoryStore
             AuthState.shared.isLoggedIn = previousLogin

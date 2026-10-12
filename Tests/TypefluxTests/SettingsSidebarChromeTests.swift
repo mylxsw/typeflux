@@ -122,25 +122,22 @@ struct SettingsSidebarChromeTests {
     }
 
     @Test(arguments: InterfaceStyle.allCases, [1100.0, 720.0])
-    func `settings follows launcher in inline and compact navigation`(style: InterfaceStyle, width: Double) async throws {
+    func `settings follows launcher in the native sidebar at both widths`(
+        style: InterfaceStyle,
+        width: Double
+    ) async throws {
         try await UI.withFixture { settings in
             var selected: StudioSection?
             let shell = StudioShell(
-                currentSection: .launcher, onSelect: { selected = $0 }, onAccountAction: {},
-                searchText: .constant(""), searchPlaceholder: "", accountDefaults: settings.defaults
+                currentSection: .launcher, title: L("studio.section.launcher"), onSelect: { selected = $0 },
+                onAccountAction: {},
+                search: nil, searchPlaceholder: "", accountDefaults: settings.defaults
             ) { _ in Text("Launcher content") }
                 .environment(\.interfaceStyle, style)
             try await UI.withWindow(shell, width: width, height: 650) { window, host in
+                if width < 1040 { try TypefluxNavigationTestSupport.toggleSidebar(in: window) }
                 #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: host))
-                let navigationHost: NSView
-                if width < 1040 {
-                    try UI.button(L("ask.sidebar.toggle"), in: host).press()
-                    try await UI.wait { !(window.childWindows ?? []).isEmpty }
-                    let popup = try #require(window.childWindows?.first)
-                    navigationHost = try #require(popup.contentView)
-                } else {
-                    navigationHost = host
-                }
+                let navigationHost = window
                 try await UI.wait { UI.contains(L("studio.section.settings"), in: navigationHost) }
                 #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: navigationHost))
                 let launcher = try UI.button(L("studio.section.launcher"), in: navigationHost)
@@ -148,11 +145,7 @@ struct SettingsSidebarChromeTests {
                 #expect(settingsButton.frame.maxY <= launcher.frame.minY)
                 try settingsButton.press()
                 #expect(selected == .settings)
-                try UI.snapshot(navigationHost, name: "settings-navigation-\(style.rawValue)-\(Int(width))")
-                if width < 1040 {
-                    try UI.button(L("ask.sidebar.toggle"), in: host).press()
-                    try await UI.wait { (window.childWindows ?? []).isEmpty }
-                }
+                try UI.snapshot(host, name: "settings-navigation-\(style.rawValue)-\(Int(width))")
             }
         }
     }
@@ -201,22 +194,12 @@ struct SettingsSidebarChromeTests {
                     #expect(button.frame.width >= 20)
                     #expect(button.frame.minX >= bounds.minX - 1 && button.frame.maxX <= bounds.maxX + 1)
                 }
-                if size.width >= 1040 {
-                    let identity = try identity(in: host)
-                    #expect(identity.frame.minY >= bounds.minY && identity.frame.maxX < bounds.minX + 264)
-                    #expect(UI.contains("Typeflux Cloud", in: host))
-                } else {
-                    try UI.button(L("ask.sidebar.toggle"), in: host).press()
-                    try await UI.wait { !(window.childWindows ?? []).isEmpty }
-                    let popup = try #require(window.childWindows?.first)
-                    let popupHost = try #require(popup.contentView)
-                    try await UI.wait { UI.contains(L("ask.local.identity"), in: popupHost) }
-                    let popupBounds = popup.convertToScreen(popupHost.convert(popupHost.bounds, to: nil))
-                    let identity = try identity(in: popupHost)
-                    #expect(identity.frame.minY >= popupBounds.minY - 1)
-                    #expect(identity.frame.maxY <= popupBounds.maxY + 1)
-                    try UI.button(L("ask.sidebar.toggle"), in: host).press()
-                    try await UI.wait { (window.childWindows ?? []).isEmpty }
+                if size.width < 1040 { try TypefluxNavigationTestSupport.toggleSidebar(in: window) }
+                try await UI.wait { UI.contains(L("ask.local.identity"), in: window) }
+                let identity = try identity(in: window)
+                #expect(identity.frame.minY >= bounds.minY && identity.frame.maxX < bounds.minX + 264)
+                if size.height >= 620 {
+                    #expect(UI.contains("Typeflux Cloud", in: window))
                 }
                 try await capture(window, name: "settings-history-\(style.rawValue)-\(Int(size.width))-dark")
             }
@@ -260,7 +243,7 @@ private extension SettingsSidebarChromeTests {
     }
 
     /// The settings identity is status, not a button, so find it by label alone.
-    func identity(in host: NSView) throws -> SettingsBehaviorTestSupport.Element {
+    func identity(in host: Any) throws -> SettingsBehaviorTestSupport.Element {
         try #require(UI.elements(in: host).first { $0.text == L("ask.local.identity") },
                      "Missing signed-out identity")
     }

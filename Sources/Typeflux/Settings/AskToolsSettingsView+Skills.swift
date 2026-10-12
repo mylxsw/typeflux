@@ -21,10 +21,14 @@ extension AskToolsSettingsView {
     }
 
     @ViewBuilder var skillSections: some View {
-        let visible = Self.filteredSkills(skillList, disabled: disabledSkills, query: skillQuery, filter: skillFilter)
+        let visible = Self.filteredSkills(
+            skillList,
+            disabled: disabledSkills,
+            query: toolbarQuery ?? searchQuery.wrappedValue,
+            filter: skillFilter
+        )
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                SettingsSearchBox(placeholder: L("agent.skills.search"), text: $skillQuery)
                 ModelSegmentedControl(
                     options: [(label: L("agent.filter.all"), value: SkillFilter.all),
                               (label: L("agent.filter.enabled"), value: SkillFilter.enabled),

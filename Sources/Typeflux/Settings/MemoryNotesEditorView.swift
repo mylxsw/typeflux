@@ -3,21 +3,30 @@ import SwiftUI
 /// Saved notes: explained in plain words, searchable, added and corrected inline, removable with undo.
 /// Editing is an explicit user action; model-driven corrections still use P02 approval.
 struct MemoryNotesEditorView: View {
+    @Environment(\.typefluxToolbarSearchQuery) private var toolbarQuery
     @ObservedObject var model: AskMemoryNotesSettingsModel
     let store: AskMemoryNoteStore
     let owner: String
     var correctionsEnabled = false
-    @State private var query = ""
+    @Binding var query: String
+
+    init(model: AskMemoryNotesSettingsModel, store: AskMemoryNoteStore, owner: String,
+         correctionsEnabled: Bool = false, query: Binding<String> = .constant("")) {
+        self.model = model
+        self.store = store
+        self.owner = owner
+        self.correctionsEnabled = correctionsEnabled
+        _query = query
+    }
 
     private var visibleNotes: [AskMemoryNote] {
-        let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = (toolbarQuery ?? query).trimmingCharacters(in: .whitespacesAndNewlines)
         return model.notes.filter { text.isEmpty || $0.text.localizedCaseInsensitiveContains(text) }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                SettingsSearchBox(placeholder: L("agent.memory.search"), text: $query)
                 Spacer()
                 Button {
                     query = ""

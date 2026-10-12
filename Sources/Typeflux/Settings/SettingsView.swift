@@ -282,18 +282,13 @@ private struct CloudServerMenuPicker: View {
 // swiftlint:disable:next type_body_length
 struct StudioView: View {
     @Environment(\.colorScheme) private var colorScheme
-    private let vocabularySearchCollapsedSize: CGFloat = 44
-    private let vocabularySearchExpandedWidth: CGFloat = 276
-    private let vocabularySearchAnimation = Animation.interpolatingSpring(stiffness: 180, damping: 24)
 
     @ObservedObject var viewModel: StudioViewModel
     @StateObject private var imageSettings: AskImageSettingsModel
     @State private var vocabularyFilter: VocabularyFilter = .all
-    @State private var isVocabularySearchExpanded = false
     @State private var isAddingVocabulary = false
     @State private var editingVocabularyEntry: VocabularyEntry?
     @State private var newVocabularyTerm = ""
-    @FocusState private var isVocabularySearchFocused: Bool
     @State private var isRecentInputMemoryManagerPresented = false
     @State private var localSTTPendingDelete: LocalSTTModel?
     @State private var localSTTPendingDownload: LocalSTTModel?
@@ -310,14 +305,15 @@ struct StudioView: View {
     @State private var feedbackImageUploadTasks: [FeedbackImageAttachment.ID: Task<Void, Never>] = [:]
     @State private var isSubmittingFeedback = false
     @State private var feedbackSubmissionError: String?
-    @State private var agentPane: AgentSettingsPane = .overview
+    @State private var agentPane: AgentSettingsPane
+    @StateObject private var toolbarSearch = TypefluxSearchState()
     @StateObject private var interfaceStyleObserver: InterfaceStyleObserver
     @State private var launcherPane: LauncherSettingsPane
     @State private var settingsPane: AppSettingsPane
 
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
     init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics,
-         settingsPane: AppSettingsPane = .general) {
+         settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview) {
         self.viewModel = viewModel
         _interfaceStyleObserver = StateObject(wrappedValue: InterfaceStyleObserver(settings: viewModel.askToolSettings))
         _imageSettings = StateObject(wrappedValue: AskImageSettingsModel(
@@ -325,6 +321,7 @@ struct StudioView: View {
         ))
         _launcherPane = State(initialValue: launcherPane)
         _settingsPane = State(initialValue: settingsPane)
+        _agentPane = State(initialValue: agentPane)
     }
 
     @State private var agentStatuses: [AgentCapabilityStatus] = []
@@ -336,23 +333,16 @@ struct StudioView: View {
     var body: some View {
         StudioShell(
             currentSection: viewModel.currentSection,
+            title: toolbarTitle,
             onSelect: viewModel.navigateFromSidebar,
             onAccountAction: handleAccountAction,
-            searchText: $viewModel.searchQuery,
-            searchPlaceholder: viewModel.currentSection.searchPlaceholder,
+            search: searchScope == nil ? nil : toolbarSearch,
+            searchPlaceholder: searchPrompt,
             accountDefaults: viewModel.askToolSettings.defaults
         ) { viewportSize in
-            let viewportHeight = viewportContentHeight(from: viewportSize)
+            let viewportHeight = max(viewportSize.height, 0)
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                if viewModel.currentSection.isVoiceInput || [.models, .settings].contains(viewModel.currentSection) {
-                    StudioHeroHeader(
-                        eyebrow: viewModel.currentSection.eyebrow,
-                        title: viewModel.currentSection.sidebarSection.sidebarTitle
-                    )
-                    .accessibilityIdentifier("studio.page.title")
-                }
-
                 if viewModel.currentSection.isVoiceInput {
                     voiceInputHeader
                 } else if viewModel.currentSection == .settings {
@@ -382,10 +372,32 @@ struct StudioView: View {
                 minHeight: viewModel.currentSection == .vocabulary ? viewportHeight : nil,
                 alignment: .topLeading
             )
-            .background(vocabularyOutsideTapTarget)
             .id(viewModel.currentSection)
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.15), value: viewModel.currentSection)
+        }
+        .onChange(of: searchScope) { _ in
+            toolbarSearch.focusChanged(false)
+            toolbarSearch.query = ""
+            viewModel.searchQuery = ""
+            viewModel.modelSearchQuery = ""
+        }
+        .onChange(of: toolbarSearch.query) { query in
+            if searchScope?.usesModelQuery == true, viewModel.modelSearchQuery != query {
+                viewModel.modelSearchQuery = query
+            } else if searchScope?.usesStudioQuery == true, viewModel.searchQuery != query {
+                viewModel.searchQuery = query
+            }
+        }
+        .onChange(of: viewModel.searchQuery) { query in
+            if searchScope?.usesStudioQuery == true, toolbarSearch.query != query {
+                toolbarSearch.query = query
+            }
+        }
+        .onChange(of: viewModel.modelSearchQuery) { query in
+            if searchScope?.usesModelQuery == true, toolbarSearch.query != query {
+                toolbarSearch.query = query
+            }
         }
         .interfaceStyle(following: interfaceStyleObserver)
         .onChange(of: interfaceStyleObserver.style) { viewModel.interfaceStyle = $0 }
@@ -718,16 +730,31 @@ struct StudioView: View {
         }
     }
 
-    private var pageHeader: some View {
-        HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-            StudioHeroHeader(
-                eyebrow: viewModel.currentSection.eyebrow,
-                title: viewModel.currentSection.heading,
-                subtitle: viewModel.currentSection == .agent ? nil : viewModel.currentSection.subheading
-            )
+    private var searchScope: SettingsSearchScope? {
+        .resolve(section: viewModel.currentSection, modelTab: viewModel.modelPageTab,
+                 providerDetail: viewModel.isShowingModelProviderDetail, agentPane: agentPane,
+                 launcherPane: launcherPane)
+    }
 
-            pageHeaderActions
+    private var searchPrompt: String {
+        switch searchScope {
+        case .skills: L("agent.skills.search")
+        case .memory: L("agent.memory.search")
+        case .keywords: L("ask.settings.keywords.search")
+        default: viewModel.currentSection.searchPlaceholder
         }
+    }
+
+    private var toolbarTitle: String {
+        switch viewModel.currentSection {
+        case .agent: viewModel.currentSection.heading + " · " + agentPane.title
+        case .launcher: viewModel.currentSection.heading + " · " + launcherPane.title
+        default: viewModel.currentSection.heading
+        }
+    }
+
+    private var pageHeader: some View {
+        HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
     }
 
     /// Voice Input pages share one header: their tabs, with the shown page's actions on the right.
@@ -780,98 +807,90 @@ struct StudioView: View {
     }
 
     /// Actions on the right of the page header, including the spacer that pushes them there.
+    @ViewBuilder
     private var pageHeaderActions: some View {
-        Group {
-            if viewModel.currentSection == .vocabulary {
-                Spacer()
+        if viewModel.currentSection == .vocabulary {
+            Spacer()
 
-                HStack(spacing: StudioTheme.Spacing.medium) {
-                    StudioButton(
-                        title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .secondary
-                    ) {
-                        editingVocabularyEntry = nil
-                        newVocabularyTerm = ""
-                        isAddingVocabulary = true
-                    }
-
-                    Menu {
-                        Button(action: viewModel.importVocabulary) {
-                            Label(L("vocabulary.action.importFile"), systemImage: "arrow.down.doc")
-                        }
-                        Button(action: viewModel.exportVocabulary) {
-                            Label(L("vocabulary.action.export"), systemImage: "arrow.up.doc")
-                        }
-                        Divider()
-                        Button(action: viewModel.importClaudeVocabulary) {
-                            vocabularyMenuItemLabel(
-                                title: L("vocabulary.action.importClaude"),
-                                source: .claude
-                            )
-                        }
-                        Button(action: viewModel.importCodexVocabulary) {
-                            vocabularyMenuItemLabel(
-                                title: L("vocabulary.action.importCodex"),
-                                source: .codex
-                            )
-                        }
-                    } label: {
-                        vocabularyMoreMenuLabel
-                    }
-                    .menuStyle(.button)
-                    .buttonStyle(.plain)
-                    .menuIndicator(.hidden)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .modifier(StudioButtonChromeModifier(
-                        variant: .secondary,
-                        isDisabled: viewModel.isSynchronizingVocabulary,
-                        isLoading: false,
-                        isPressed: false,
-                        minWidth: StudioTheme.ControlSize.buttonMinWidth
-                    ))
-                    .disabled(viewModel.isSynchronizingVocabulary)
+            HStack(spacing: StudioTheme.Spacing.medium) {
+                StudioButton(
+                    title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .secondary
+                ) {
+                    editingVocabularyEntry = nil
+                    newVocabularyTerm = ""
+                    isAddingVocabulary = true
                 }
-            } else if viewModel.currentSection == .history {
-                Spacer()
 
-                HStack(spacing: StudioTheme.Spacing.medium) {
-                    AskIconGhostButton(label: L("history.action.exportMarkdown"), systemImage: "square.and.arrow.up") {
-                        viewModel.exportHistory()
+                Menu {
+                    Button(action: viewModel.importVocabulary) {
+                        Label(L("vocabulary.action.importFile"), systemImage: "arrow.down.doc")
                     }
-
-                    AskIconGhostButton(label: L("common.clear"), systemImage: "trash") {
-                        showingClearHistoryConfirmation = true
+                    Button(action: viewModel.exportVocabulary) {
+                        Label(L("vocabulary.action.export"), systemImage: "arrow.up.doc")
                     }
-                }
-            } else if viewModel.currentSection == .models {
-                Spacer()
-
-                // Provider lists can be searched; a provider's own settings have nothing to search.
-                if let domain = viewModel.modelPageTab.domain, !viewModel.isShowingModelProviderDetail {
-                    HStack(spacing: StudioTheme.Spacing.small) {
-                        SettingsSearchBox(
-                            placeholder: L("models.search"),
-                            text: $viewModel.modelSearchQuery,
-                            width: 220,
-                            fieldIdentifier: "models.search"
+                    Divider()
+                    Button(action: viewModel.importClaudeVocabulary) {
+                        vocabularyMenuItemLabel(
+                            title: L("vocabulary.action.importClaude"),
+                            source: .claude
                         )
+                    }
+                    Button(action: viewModel.importCodexVocabulary) {
+                        vocabularyMenuItemLabel(
+                            title: L("vocabulary.action.importCodex"),
+                            source: .codex
+                        )
+                    }
+                } label: {
+                    vocabularyMoreMenuLabel
+                }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
+                .fixedSize(horizontal: true, vertical: false)
+                .modifier(StudioButtonChromeModifier(
+                    variant: .secondary,
+                    isDisabled: viewModel.isSynchronizingVocabulary,
+                    isLoading: false,
+                    isPressed: false,
+                    minWidth: StudioTheme.ControlSize.buttonMinWidth
+                ))
+                .disabled(viewModel.isSynchronizingVocabulary)
+            }
+        } else if viewModel.currentSection == .history {
+            Spacer()
 
-                        if domain == .llm {
-                            SettingsActionButton(
-                                title: L("models.addEndpoint"),
-                                symbol: "plus"
-                            ) {
-                                viewModel.isAddingModelEndpoint = true
-                            }
-                            .fixedSize(horizontal: true, vertical: false)
-                            .accessibilityIdentifier("models.addProvider")
+            HStack(spacing: StudioTheme.Spacing.medium) {
+                AskIconGhostButton(label: L("history.action.exportMarkdown"), systemImage: "square.and.arrow.up") {
+                    viewModel.exportHistory()
+                }
+
+                AskIconGhostButton(label: L("common.clear"), systemImage: "trash") {
+                    showingClearHistoryConfirmation = true
+                }
+            }
+        } else if viewModel.currentSection == .models {
+            Spacer()
+
+            // Provider lists can be searched; a provider's own settings have nothing to search.
+            if let domain = viewModel.modelPageTab.domain, !viewModel.isShowingModelProviderDetail {
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    if domain == .llm {
+                        SettingsActionButton(
+                            title: L("models.addEndpoint"),
+                            symbol: "plus"
+                        ) {
+                            viewModel.isAddingModelEndpoint = true
                         }
+                        .fixedSize(horizontal: true, vertical: false)
+                        .accessibilityIdentifier("models.addProvider")
                     }
                 }
-            } else if viewModel.currentSection == .account {
-                Spacer()
-            } else if viewModel.currentSection.isVoiceInput {
-                Spacer()
             }
+        } else if viewModel.currentSection == .account {
+            Spacer()
+        } else if viewModel.currentSection.isVoiceInput {
+            Spacer()
         }
     }
 
@@ -941,14 +960,6 @@ struct StudioView: View {
             focusedProviderConfigurationPanel
         }
         .frame(height: viewportHeight, alignment: .top)
-    }
-
-    private func viewportContentHeight(from viewportSize: CGSize) -> CGFloat {
-        max(
-            viewportSize.height - StudioTheme.Layout.shellContentTopInset
-                - (viewModel.currentSection == .models ? 0 : StudioTheme.Layout.shellContentBottomInset),
-            0
-        )
     }
 
     private var personasPage: some View {
@@ -1075,8 +1086,6 @@ struct StudioView: View {
                 }
 
                 Spacer()
-
-                vocabularySearchControl
             }
 
             StudioCard(showsChrome: colorScheme == .dark) {
@@ -1790,6 +1799,7 @@ struct StudioView: View {
                 AskToolsSettingsView(
                     settings: viewModel.askToolSettings,
                     imageSettingsModel: imageSettings,
+                    searchQuery: $toolbarSearch.query,
                     pane: agentPane,
                     onNavigate: { agentPane = $0 },
                     onStatusesChange: { agentStatuses = $0 }
@@ -1815,6 +1825,7 @@ struct StudioView: View {
         SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: $launcherPane, compact: compact) {
             LauncherSettingsView(
                 settings: viewModel.askToolSettings, pane: launcherPane,
+                searchQuery: $toolbarSearch.query,
                 clipboardHistory: SettingsWindowController.shared.clipboardHistoryStore,
                 onEditShortcut: {
                     settingsPane = .hotkeys
@@ -1822,6 +1833,14 @@ struct StudioView: View {
                 }
             )
             .id(launcherPane)
+        }
+    }
+
+    private var filteredMCPServers: [MCPServerConfig] {
+        let query = toolbarSearch.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return viewModel.mcpServers.filter {
+            query.isEmpty || $0.name.localizedCaseInsensitiveContains(query)
+                || mcpTransportDetail(for: $0).localizedCaseInsensitiveContains(query)
         }
     }
 
@@ -1846,7 +1865,10 @@ struct StudioView: View {
             VStack(alignment: .leading, spacing: 8) {
                 ModelSurface {
                     VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(viewModel.mcpServers.enumerated()), id: \.element.id) { index, server in
+                        if filteredMCPServers.isEmpty {
+                            AgentSettingsEmptyRow(text: L("personas.redesign.noResults", toolbarSearch.query))
+                        }
+                        ForEach(Array(filteredMCPServers.enumerated()), id: \.element.id) { index, server in
                             if index > 0 { ModelRowDivider(leading: 66) }
                             mcpServerRow(server)
                         }
@@ -2116,72 +2138,6 @@ struct StudioView: View {
     }
 
     @ViewBuilder
-    private var vocabularyOutsideTapTarget: some View {
-        if viewModel.currentSection == .vocabulary, isVocabularySearchExpanded {
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    collapseVocabularySearch()
-                }
-        }
-    }
-
-    private var vocabularySearchControl: some View {
-        HStack(spacing: isVocabularySearchExpanded ? StudioTheme.Spacing.small : StudioTheme.Spacing.none) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                .foregroundStyle(
-                    isVocabularySearchExpanded ? StudioTheme.textTertiary : StudioTheme.textSecondary
-                )
-                .frame(width: vocabularySearchCollapsedSize, height: vocabularySearchCollapsedSize)
-
-            if isVocabularySearchExpanded {
-                TextField(L("vocabulary.search.placeholder"), text: $viewModel.searchQuery)
-                    .textFieldStyle(.plain)
-                    .font(.studioBody(StudioTheme.Typography.body))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                    .focused($isVocabularySearchFocused)
-                    .onSubmit {
-                        collapseVocabularySearch()
-                    }
-                    .onChange(of: isVocabularySearchFocused) { isFocused in
-                        if !isFocused {
-                            collapseVocabularySearch()
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-            }
-        }
-        .padding(.trailing, isVocabularySearchExpanded ? StudioTheme.Insets.textFieldHorizontal : 0)
-        .frame(
-            width: isVocabularySearchExpanded ? vocabularySearchExpandedWidth : vocabularySearchCollapsedSize,
-            height: vocabularySearchCollapsedSize,
-            alignment: .leading
-        )
-        .background(
-            Capsule()
-                .fill(StudioTheme.controlSurface.opacity(StudioTheme.Opacity.textFieldFill))
-        )
-        .overlay(
-            Capsule()
-                .stroke(
-                    StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                    lineWidth: StudioTheme.BorderWidth.thin
-                )
-        )
-        .contentShape(Capsule())
-        .clipped()
-        .onTapGesture {
-            if !isVocabularySearchExpanded {
-                expandVocabularySearch()
-            }
-        }
-        .animation(vocabularySearchAnimation, value: isVocabularySearchExpanded)
-    }
-
-    @ViewBuilder
     private var vocabularyEmptyActions: some View {
         if vocabularyFilter == .otherApps, vocabularyCount(for: .otherApps) == 0 {
             HStack(spacing: StudioTheme.Spacing.small) {
@@ -2340,24 +2296,6 @@ struct StudioView: View {
 
     private func vocabularyCount(for filter: VocabularyFilter) -> Int {
         viewModel.vocabularyEntries.count(where: { filter.matches($0.source) })
-    }
-
-    private func expandVocabularySearch() {
-        withAnimation(vocabularySearchAnimation) {
-            isVocabularySearchExpanded = true
-        }
-
-        DispatchQueue.main.async {
-            isVocabularySearchFocused = true
-        }
-    }
-
-    private func collapseVocabularySearch() {
-        isVocabularySearchFocused = false
-
-        withAnimation(vocabularySearchAnimation) {
-            isVocabularySearchExpanded = false
-        }
     }
 
     private var vocabularyMoreMenuLabel: some View {

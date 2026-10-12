@@ -245,52 +245,6 @@ private struct NativeSettingsMenuPicker<Value: Hashable>: NSViewRepresentable {
     }
 }
 
-/// Search shared by the Models and Agent pages, including a named clear action.
-struct SettingsSearchBox: View {
-    let placeholder: String
-    @Binding var text: String
-    var width: CGFloat? = 240
-    var onFocus: () -> Void = {}
-    var fieldIdentifier: String?
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass").font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-            searchField
-            if !text.isEmpty {
-                Button { text = "" } label: {
-                    Image(systemName: "xmark.circle.fill").font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-                .buttonStyle(.plain).accessibilityLabel(L("common.clear"))
-            }
-        }
-        .padding(.horizontal, SettingsControlMetrics.horizontalPadding)
-        .frame(width: width, height: SettingsControlMetrics.height)
-        .modifier(SettingsControlChrome(focused: focused))
-        .onChange(of: focused) { value in
-            if value { onFocus() }
-        }
-        .onAppear {
-            // macOS may focus the first field before the pane finishes appearing.
-            DispatchQueue.main.async { focused = false }
-        }
-    }
-
-    @ViewBuilder private var searchField: some View {
-        let field = TextField(placeholder, text: $text).textFieldStyle(.plain)
-            .font(.system(size: SettingsControlMetrics.fontSize)).focused($focused)
-            .accessibilityLabel(placeholder)
-            .onExitCommand { focused = false }
-        if let fieldIdentifier {
-            field.accessibilityIdentifier(fieldIdentifier)
-        } else {
-            field
-        }
-    }
-}
-
 /// A quiet caption above settings lists, with an optional nearby disclosure arrow.
 struct SettingsListSectionLabel: View {
     let title: String

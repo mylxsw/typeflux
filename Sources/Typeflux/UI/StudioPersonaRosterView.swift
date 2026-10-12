@@ -20,19 +20,6 @@ struct StudioPersonaRosterView: View {
                 .accessibilityIdentifier("personas.create")
             }
             .padding(.horizontal, 4)
-            HStack(spacing: 5) {
-                Image(systemName: "magnifyingglass").foregroundStyle(StudioTheme.textSecondary)
-                TextField(L("studio.search.personas"), text: $viewModel.searchQuery).textFieldStyle(.plain)
-                    .accessibilityIdentifier("personas.search")
-                if !viewModel.searchQuery.isEmpty {
-                    Button { viewModel.searchQuery = "" } label: { Image(systemName: "xmark.circle.fill") }
-                        .buttonStyle(.plain).accessibilityLabel(L("settings.personas.clearSearch"))
-                }
-            }
-            .font(.system(size: 12))
-            .padding(8)
-            .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).stroke(StudioTheme.border))
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     if viewModel.isCreatingPersonaDraft {
