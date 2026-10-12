@@ -127,11 +127,11 @@
 "settings.launchAtLogin.subtitle" = "Mac にサインインした後、Typeflux が自動的に起動します。";
 "settings.activationHotkey" = "音声ショートカット";
 "settings.identity" = "アイデンティティとインタラクション";
-"settings.appearance.title" = "外観";
+"settings.appearance.title" = "カラーモード";
 "settings.interfaceStyle.title" = "インターフェーススタイル";
 "settings.interfaceStyle.subtitle" = "アプリのウインドウ、オーバーレイ、メニューの表示スタイルを切り替えます。";
 "settings.appearance.subtitle" = "コンポーネント システムを明るいテーマ、暗いテーマ、またはシステムに従うテーマの間で切り替えます。";
-"settings.language.title" = "言語";
+"settings.language.title" = "表示言語";
 "settings.language.subtitle" = "Typeflux インターフェイス全体で使用される表示言語を選択します。";
 "settings.output.title" = "出力";
 "settings.output.opencc.title" = "中国語出力を変換";
@@ -4636,18 +4636,20 @@
 "hotkeys.keyword.sheet.record" = "ショートカットを記録";
 
 // Liquid Glass intensity
-"settings.glassIntensity.title" = "Liquid Glass の濃さ";
+"settings.glassIntensity.title" = "ガラスの質感";
 "settings.glassIntensity.subtitle" = "すべてのウインドウの透明度を調整します。変更はすぐに反映されます。";
 "settings.glassIntensity.clear" = "クリア";
-"settings.glassIntensity.tinted" = "色付き";
-"settings.glassIntensity.accessibility" = "現在のシステムのアクセシビリティ設定では、不透明な表示が優先されます。";
+"settings.glassIntensity.tinted" = "濃い";
+"settings.glassIntensity.accessibility" = "システムのアクセシビリティ設定により透明効果が制限されています。";
 "settings.glassIntensity.previewSearch" = "検索";
 
 // Launcher default window mode
-"ask.settings.windowMode.title" = "デフォルトのウインドウ表示";
+"ask.settings.windowMode.title" = "ランチャーの初期表示";
 "ask.settings.windowMode.simple" = "シンプル";
 "ask.settings.windowMode.complete" = "フル";
-"ask.settings.windowMode.detail" = "シンプルは入力欄だけで開き、入力や機能の使用時に展開します。フルは候補と下部のコントロールを表示します。ウインドウの高さは内容に合わせて自動調整されます。次回ランチャーを開くときに適用されます。";
+"ask.settings.windowMode.detail" = "次回ランチャーを開くと反映されます。";
 "ask.settings.windowMode.selected" = "選択済み";
 
 "ask.home.section.apps" = "最近使ったアプリ";
+
+"settings.pane.appearance" = "外観";

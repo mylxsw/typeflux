@@ -30,6 +30,7 @@ struct LauncherWindowModeSetting: View {
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(selected ? AskTheme.accent : StudioTheme.textTertiary)
                     Text(mode.title).foregroundStyle(StudioTheme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .font(.system(size: 13, weight: .medium))
             }
@@ -46,6 +47,7 @@ struct LauncherWindowModeSetting: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isButton)
+        .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityLabel(mode.title)
         .accessibilityValue(selected ? L("ask.settings.windowMode.selected") : "")
         .accessibilityAction { selection = mode }
@@ -65,11 +67,14 @@ struct LauncherWindowModeSetting: View {
             if mode == .complete {
                 Rectangle().fill(StudioTheme.border).frame(height: 1)
                 VStack(alignment: .leading, spacing: 7) {
-                    ForEach(0..<3) { index in
+                    ForEach(0 ..< 3) { index in
                         HStack(spacing: 7) {
                             RoundedRectangle(cornerRadius: 2).fill(AskTheme.accent.opacity(index == 0 ? 0.65 : 0.25))
                                 .frame(width: 10, height: 10)
-                            Capsule().fill(StudioTheme.textTertiary.opacity(0.3)).frame(width: index == 1 ? 42 : 55, height: 4)
+                            Capsule().fill(StudioTheme.textTertiary.opacity(0.3)).frame(
+                                width: index == 1 ? 42 : 55,
+                                height: 4
+                            )
                             Spacer(minLength: 0)
                         }
                     }
