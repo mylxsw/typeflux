@@ -2,20 +2,20 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-@Suite("Ask launcher placement")
+@Suite("Ask launcher placement", .exclusiveUIState)
 struct AskLauncherPlacementTests {
     private let screen = NSRect(x: 0, y: 40, width: 1512, height: 900)
 
-    @Test func fixedLauncherIs800By600PointsAndCentredOnALargeDisplay() {
+    @Test func launcherOpensAtRestingHeightAndCentredOnALargeDisplay() {
         let display = NSRect(x: -2400, y: 100, width: 2400, height: 1600)
         let frame = AskLauncherPlacement.preferredFrame(on: display)
-        #expect(frame.size == NSSize(width: 800, height: 600))
-        #expect(frame.midX == display.midX && frame.midY == display.midY)
+        #expect(frame.size == NSSize(width: 700, height: AskLauncherPlacement.restingHeight))
+        #expect(abs(frame.midX - display.midX) <= 0.5 && abs(frame.midY - display.midY) <= 0.5)
     }
 
-    @Test func fixedLauncherFitsInsideASmallerDisplay() {
+    @Test func launcherClampsRequestedHeightInsideASmallerDisplay() {
         let screen = NSRect(x: -640, y: 40, width: 640, height: 480)
-        let frame = AskLauncherPlacement.preferredFrame(on: screen)
+        let frame = AskLauncherPlacement.preferredFrame(on: screen, height: 600)
         let margin = AskLauncherPlacement.screenMargin
         #expect(frame.width == screen.width - margin * 2)
         #expect(frame.height == screen.height - margin * 2)
@@ -23,12 +23,12 @@ struct AskLauncherPlacementTests {
         #expect(frame.minY == screen.minY + margin && frame.maxY == screen.maxY - margin)
     }
 
-    @Test func fixedLauncherRestoresAnAnchorAndClampsOutOfBoundsPositions() {
+    @Test func launcherRestoresAnAnchorAndClampsOutOfBoundsPositions() {
         let display = NSRect(x: 200, y: -100, width: 2400, height: 1600)
         let anchor = AskLauncherPlacement.Anchor(left: 100, fromTop: 80)
         let frame = AskLauncherPlacement.preferredFrame(on: display, anchor: anchor)
         #expect(AskLauncherPlacement.anchor(of: frame, on: display) == anchor)
-        #expect(frame.size == NSSize(width: 800, height: 600))
+        #expect(frame.size == NSSize(width: 700, height: AskLauncherPlacement.restingHeight))
         let outside = AskLauncherPlacement.preferredFrame(on: display, anchor: .init(left: 3000, fromTop: -100))
         #expect(outside.maxX == display.maxX - AskLauncherPlacement.screenMargin)
         #expect(outside.maxY == display.maxY - AskLauncherPlacement.screenMargin)

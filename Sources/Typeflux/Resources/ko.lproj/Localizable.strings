@@ -4683,3 +4683,20 @@
 "clipboard.snippet.error.missingItem" = "원본 텍스트가 없습니다. 편집기를 닫고 다시 시도하세요.";
 "clipboard.snippet.error.unavailable" = "저장하지 못했습니다. 초안은 유지됩니다. 다시 시도하세요.";
 "clipboard.snippet.notFound" = "이 음성 별칭과 일치하는 스니펫이 없습니다.";
+
+// Launcher file preview
+"launcher.search.preview" = "파일 미리보기";
+"launcher.search.preview.subtitle" = "파일을 선택하면 실행기 옆에 미리보기를 표시합니다.";
+"ask.preview.loading" = "미리보기 로딩 중…";
+"ask.preview.pages" = "총 %d페이지";
+"ask.preview.lines" = "총 %d줄";
+"ask.preview.noAutoplay" = "자동 재생 안 함";
+"ask.preview.truncated" = "미리보기가 잘렸습니다";
+"ask.preview.kind.image" = "이미지";
+"ask.preview.kind.pdf" = "PDF";
+"ask.preview.kind.text" = "텍스트";
+"ask.preview.kind.markdown" = "Markdown";
+"ask.preview.kind.table" = "표";
+"ask.preview.kind.document" = "문서";
+"ask.preview.kind.video" = "동영상";
+"ask.preview.kind.audio" = "오디오";

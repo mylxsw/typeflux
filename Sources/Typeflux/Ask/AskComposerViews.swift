@@ -9,6 +9,7 @@ struct AskLauncherView: View {
     var onWindowHeightChange: (CGFloat) -> Void = { _ in }
     /// Moving the panel: a strip along the card's top edge and the bottom bar's empty space.
     var drag: AskWindowDragHandlers?
+    var onFilePreview: (AskFileHit?, [AskFileHit], Bool) -> Void = { _, _, _ in }
     @State private var hovering = false
     @State private var showingNumberHints = false
     @Environment(\.colorScheme) private var colorScheme
@@ -17,7 +18,7 @@ struct AskLauncherView: View {
         GeometryReader { geometry in
             AskComposer(model: model, availableHeight: geometry.size.height, launcher: true,
                         onDismiss: onDismiss, onHeightChange: onHeightChange,
-                        onWindowHeightChange: onWindowHeightChange)
+                        onWindowHeightChange: onWindowHeightChange, onFilePreview: onFilePreview)
         }
             .padding(AskMetrics.launcherGutter)
             // Pinned to the panel's top edge: SwiftUI draws new results before the panel
@@ -83,6 +84,7 @@ struct AskComposer: View {
     /// Set by the workspace only: the context ring opens and closes the usage
     /// panel. The launcher has no panel, so it also keeps its fixed footer height.
     var onToggleUsage: (() -> Void)?
+    var onFilePreview: (AskFileHit?, [AskFileHit], Bool) -> Void
     @ObservedObject private var voice: AskVoiceInput
     /// The launcher's keyword mode (`fy` → translate).
     @ObservedObject private var plugins: AskPluginSession
@@ -99,7 +101,8 @@ struct AskComposer: View {
          launcher: Bool, onDismiss: @escaping () -> Void = {},
          onHeightChange: @escaping (CGFloat) -> Void = { _ in },
          onWindowHeightChange: @escaping (CGFloat) -> Void = { _ in },
-         onToggleUsage: (() -> Void)? = nil) {
+         onToggleUsage: (() -> Void)? = nil,
+         onFilePreview: @escaping (AskFileHit?, [AskFileHit], Bool) -> Void = { _, _, _ in }) {
         self.model = model
         self.compact = compact
         self.availableWidth = availableWidth
@@ -109,6 +112,7 @@ struct AskComposer: View {
         self.onHeightChange = onHeightChange
         self.onWindowHeightChange = onWindowHeightChange
         self.onToggleUsage = onToggleUsage
+        self.onFilePreview = onFilePreview
         self.voice = model.voiceInput
         self.plugins = model.plugins
         self._quickSearch = StateObject(wrappedValue: launcher ? model.quickSearch : AskQuickSearchSession())
@@ -303,7 +307,23 @@ struct AskComposer: View {
         }
     }
 
+    private func updateFilePreview() {
+        guard launcher else { return }
+        // Pending rows preserve the previous selection while the new query runs.
+        if showsQuickResults, quickResultsArePending { return }
+        guard showsQuickResults, let results = quickResults else {
+            onFilePreview(nil, [], true); return
+        }
+        let hit = results.file(at: results.highlightedRow)
+        var neighbours: [AskFileHit] = []
+        if let hit, let index = results.files.firstIndex(of: hit) {
+            neighbours = [index - 1, index + 1].compactMap { results.files.indices.contains($0) ? results.files[$0] : nil }
+        }
+        onFilePreview(hit, neighbours, results.rows.isEmpty)
+    }
+
     private func quickResultsChanged() {
+        updateFilePreview()
         let next = presentedQuickResults
         let reserve = AskLauncherHeightReserve.holding(quickReserve, content: next.map { AskQuickResultsView.height(for: $0) } ?? 0)
         if reserve != quickReserve { quickReserve = reserve }
@@ -928,6 +948,7 @@ struct AskComposer: View {
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: launcherCollapsed) { _ in reportHeight() }
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
+            .onChange(of: showsQuickResults) { _ in updateFilePreview() }
             // The home fills in as the context arrives after the panel shows.
             .onChange(of: homeHeight) { _ in reportHeight() }
             .onChange(of: draft.wrappedValue.text) { _ in

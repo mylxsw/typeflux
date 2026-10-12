@@ -237,12 +237,14 @@ struct AskFileIconView: View {
 @MainActor
 final class AskQuickLook: NSObject, QLPreviewPanelDataSource {
     static let shared = AskQuickLook()
+    static let willShow = Notification.Name("AskQuickLook.willShow")
     private var url: URL?
 
     var isVisible: Bool { QLPreviewPanel.sharedPreviewPanelExists() && QLPreviewPanel.shared().isVisible }
 
     /// Shows `url`, or closes the panel when it already shows it.
     func toggle(_ url: URL) {
+        NotificationCenter.default.post(name: Self.willShow, object: self)
         if isVisible, self.url == url { close(); return }
         self.url = url
         guard let panel = QLPreviewPanel.shared() else { return }

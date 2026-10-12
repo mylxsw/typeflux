@@ -71,7 +71,8 @@ final class DIContainer {
             llmService: llmService,
             screenCapture: screenCapture,
             screenCapturePermission: screenCapturePermission,
-            clipboardHistoryStore: clipboardHistoryStore
+            clipboardHistoryStore: clipboardHistoryStore,
+            filePreviewLoader: AskFilePreviewLoader()
         ) } catch {
             ErrorLogStore.shared
                 .log("Ask conversation storage could not be initialized: \(error.localizedDescription)"); return nil

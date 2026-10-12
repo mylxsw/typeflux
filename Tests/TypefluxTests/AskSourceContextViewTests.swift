@@ -27,7 +27,7 @@ extension AskComposerInteractionTests {
         #expect(windowLabel.frame.minX - appLabel.frame.maxX < 24,
                 "A short app name must not reserve the maximum width before the window title")
         try clickSourceText("Safari", in: window)
-        let popover = try await waitForSourceControl("ask.context.source.remove")
+        let popover = try await waitForSourceControl("ask.context.source.remove", in: window)
         defer { if popover !== window { popover.orderOut(nil) } }
         let details = try #require(popover.contentView)
         #expect(try sourceContainsLabel(in: details, label: "Example"))
@@ -57,13 +57,15 @@ extension AskComposerInteractionTests {
         defer { window.close(); fixture.model.resetSession() }
         let host = try #require(window.contentView)
         try clickSourceChip(try #require(sourceChipAnchors(host).first), in: window)
-        let sourceMenu = try await waitForSourceControl("ask.attach.title")
+        let sourceMenu = try await waitForSourceControl("ask.attach.title", in: window,
+                                                       containing: L("ask.context.restore.source", "Safari"))
         try clickSourceText(L("ask.context.restore.source", "Safari"), in: sourceMenu)
         try await fixture.wait { fixture.model.launcherDraft.sourceOff != true }
         #expect(fixture.model.launcherDraft.selectionOff == true)
         try await Task.sleep(for: .milliseconds(150))
         try clickSourceChip(try #require(sourceChipAnchors(host).first), in: window)
-        let selectionMenu = try await waitForSourceControl("ask.attach.title")
+        let selectionMenu = try await waitForSourceControl("ask.attach.title", in: window,
+                                                          containing: L("ask.context.restore.selection", 2))
         try clickSourceText(L("ask.context.restore.selection", 2), in: selectionMenu)
         try await fixture.wait { fixture.model.launcherDraft.selectionOff != true }
         #expect(fixture.model.launcherDraft.sentSource == "Safari — Example")
@@ -134,7 +136,7 @@ extension AskComposerInteractionTests {
                                                 size: NSSize(width: 1100, height: 760))
         defer { window.close(); fixture.model.resetSession() }
         try clickSourceText("Selected words", in: window)
-        let popover = try await waitForSourceControl("ask.selection.remove")
+        let popover = try await waitForSourceControl("ask.selection.remove", in: window)
         defer { if popover !== window { popover.orderOut(nil) } }
         try clickSourceControl("ask.selection.remove", in: popover)
         try await fixture.wait { fixture.model.draft.selectionOff == true }
@@ -201,7 +203,7 @@ extension AskComposerInteractionTests {
                                                 size: NSSize(width: 1100, height: 760))
         defer { window.close(); fixture.model.resetSession() }
         try clickSourceText("Finder", in: window)
-        let popover = try await waitForSourceControl("ask.context.source.remove")
+        let popover = try await waitForSourceControl("ask.context.source.remove", in: window)
         defer { if popover !== window { popover.orderOut(nil) } }
         try clickSourceControl("ask.context.source.remove", in: popover)
         try await fixture.wait { fixture.model.draft.sourceOff == true }
@@ -268,19 +270,24 @@ extension AskComposerInteractionTests {
         return try sourceText(in: root, matching: label).first?.frame
     }
 
-    private func sourceControlWindow(_ identifier: String) -> NSWindow? {
-        NSApp.windows.first { window in
-            guard window.isVisible, let root = window.contentView else { return false }
-            return (try? sourceControl(in: root, identifier: identifier)) != nil
+    private func sourceControlWindow(_ identifier: String, in parent: NSWindow, containing label: String?) -> NSWindow? {
+        ([parent] + (parent.childWindows ?? [])).first { window in
+            guard window.isVisible, let root = window.contentView,
+                  (try? sourceControl(in: root, identifier: identifier)) != nil else { return false }
+            return label.map { (try? sourceText(in: root, matching: $0).isEmpty) == false } ?? true
         }
     }
 
-    private func waitForSourceControl(_ identifier: String) async throws -> NSWindow {
-        for _ in 0..<10 {
-            if let window = sourceControlWindow(identifier) { return window }
+    private func waitForSourceControl(_ identifier: String, in parent: NSWindow,
+                                      containing label: String? = nil) async throws -> NSWindow {
+        // Reused panels from earlier tests can remain in NSApp.windows. Resolve only this
+        // fixture's windows, and wait for the action itself when a menu is still rendering.
+        let deadline = ContinuousClock.now + .seconds(3)
+        while ContinuousClock.now < deadline {
+            if let window = sourceControlWindow(identifier, in: parent, containing: label) { return window }
             try await Task.sleep(for: .milliseconds(100))
         }
-        let labels = NSApp.windows.filter(\.isVisible).compactMap { $0.contentView }
+        let labels = ([parent] + (parent.childWindows ?? [])).filter(\.isVisible).compactMap { $0.contentView }
             .flatMap { (try? sourceText(in: $0).map(\.text)) ?? [] }
         let missing: NSWindow? = nil
         return try #require(missing, "Missing popover control: \(identifier); rendered labels: \(labels)")

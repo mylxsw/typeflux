@@ -48,7 +48,7 @@ struct AskLauncherMotionTests {
         defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
-        // Exercise changing result counts within the fixed launcher viewport.
+        // Exercise changing result counts while the panel follows its content height.
         fixture.model.appIndex = AskTestAppIndex((0 ..< 2).map { AskTestAppIndex.app(
             "Alpha \($0)",
             id: "test.alpha\($0)"
@@ -87,13 +87,10 @@ struct AskLauncherMotionTests {
             fixture.model.launcherDraft.source == "Safari"
                 && !fixture.model.capturing && !fixture.model.quickSearch.isSearching
         }
-        let expectedHomeHeight = AskLauncherPlacement.preferredFrame(on: visible).height
-        #expect(window.frame.size == AskLauncherPlacement.preferredFrame(on: visible).size)
-        try await fixture.wait {
-            content.layoutSubtreeIfNeeded()
-            return !controller.launcherIsResizing && abs(window.frame.height - expectedHomeHeight) < 1
-        }
-        #expect(abs(window.frame.height - expectedHomeHeight) < 1, "The captured home must finish its first layout")
+        try await Task.sleep(for: .milliseconds(250))
+        try await fixture.wait { !controller.launcherIsResizing }
+        #expect(window.frame.width == min(700, visible.width - 24))
+        #expect(window.frame.height > 118, "The captured home must add space below the empty composer")
         let homeHeight = window.frame.height
         let editor = try #require(editor(in: content))
         let openChat = try element("ask.launcher.openChat", in: window)
@@ -142,8 +139,8 @@ struct AskLauncherMotionTests {
             try await Task.sleep(for: .milliseconds(12))
             try sample()
         }
-        #expect((heights.max() ?? 0) - (heights.min() ?? 0) < 0.5,
-                "changing results must preserve the fixed launcher size")
+        #expect((heights.max() ?? 0) - (heights.min() ?? 0) > 1,
+                "changing results must exercise the adaptive launcher height")
     }
 
     @Test func returnAndNumberShortcutsCannotRunTheDisplayedOldBatch() async throws {

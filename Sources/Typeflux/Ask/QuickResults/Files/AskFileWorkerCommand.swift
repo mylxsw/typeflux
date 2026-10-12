@@ -1,14 +1,16 @@
 import Darwin
 import Foundation
+import ImageIO
 
 /// Private line-delimited protocol between the index and its disposable file-system worker.
 struct AskFileReadRequest: Codable {
-    enum Operation: String, Codable { case directory, entry, resolve }
+    enum Operation: String, Codable { case directory, entry, resolve, preview }
     var operation: Operation
     var path: String
     var scope: AskFileScope?
     var blocked: [String] = []
     var limit: Int = AskFileCrawler.maximumEntries
+    var readText: Bool = true
 }
 
 struct AskFileReadResponse: Codable {
@@ -17,6 +19,12 @@ struct AskFileReadResponse: Codable {
     var error: Int32?
     var more: Bool?
     var skippedMounts: [String]?
+    var text: String?
+    var truncated: Bool?
+    var fileSize: Int64?
+    var modified: Date?
+    var imageWidth: Int?
+    var imageHeight: Int?
 }
 
 /// Runs before AppKit startup. Only this child performs potentially stuck directory reads.
@@ -40,6 +48,12 @@ public enum AskFileWorkerCommand {
         try? stream(request) { frame in
             result.entries += frame.entries
             result.path = frame.path ?? result.path
+            result.text = frame.text ?? result.text
+            result.truncated = frame.truncated ?? result.truncated
+            result.fileSize = frame.fileSize ?? result.fileSize
+            result.modified = frame.modified ?? result.modified
+            result.imageWidth = frame.imageWidth ?? result.imageWidth
+            result.imageHeight = frame.imageHeight ?? result.imageHeight
             result.error = frame.error ?? result.error
             result.skippedMounts = (result.skippedMounts ?? []) + (frame.skippedMounts ?? [])
         }
@@ -55,6 +69,7 @@ public enum AskFileWorkerCommand {
 
     private static func response(_ request: AskFileReadRequest, mounts: AskFileMounts,
                                  emit: (AskFileReadResponse) throws -> Void) throws -> AskFileReadResponse {
+        if request.operation == .preview { return preview(request, mounts: mounts) }
         if request.operation == .resolve {
             return AskFileReadResponse(path: resolve(request.path, blocked: request.blocked, mounts: mounts))
         }
@@ -129,6 +144,52 @@ public enum AskFileWorkerCommand {
         let kind: AskFileRecord.Kind = directory ? (AskFileCrawler.isPackage(path) ? .package : .folder) : .file
         return AskFileCrawler.Entry(path: path, kind: kind,
                                     modified: Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec)))
+    }
+
+    /// Reject aliases, placeholders and non-local mounts before opening any file contents.
+    private static func preview(_ request: AskFileReadRequest, mounts: AskFileMounts) -> AskFileReadResponse {
+        guard AskFilePreviewPolicy.kind(path: request.path) != nil,
+              !AskFileScope.isProtected(request.path, folders: request.blocked) else {
+            return AskFileReadResponse(error: EACCES)
+        }
+        if let mount = mounts.blocking(request.path) { return AskFileReadResponse(skippedMounts: [mount]) }
+        let parent = openDirectory((request.path as NSString).deletingLastPathComponent,
+                                   blocked: request.blocked + mounts.excluded)
+        guard parent >= 0 else { return AskFileReadResponse(error: errno) }
+        defer { close(parent) }
+        let name = (request.path as NSString).lastPathComponent
+        var info = stat()
+        guard fstatat(parent, name, &info, AT_SYMLINK_NOFOLLOW) == 0 else { return AskFileReadResponse(error: errno) }
+        // SF_DATALESS is used by File Provider/iCloud placeholders. Do not trigger a download.
+        guard AskFilePreviewPolicy.isResidentRegularFile(mode: info.st_mode, flags: info.st_flags) else { return AskFileReadResponse(error: EINVAL) }
+        let descriptor = openat(parent, name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
+        guard descriptor >= 0 else { return AskFileReadResponse(error: errno) }
+        defer { close(descriptor) }
+        var opened = stat()
+        guard fstat(descriptor, &opened) == 0,
+              AskFilePreviewPolicy.isResidentRegularFile(mode: opened.st_mode, flags: opened.st_flags) else { return AskFileReadResponse(error: EINVAL) }
+        var result = AskFileReadResponse(fileSize: Int64(opened.st_size), modified:
+            Date(timeIntervalSince1970: Double(opened.st_mtimespec.tv_sec) + Double(opened.st_mtimespec.tv_nsec) / 1e9))
+        guard request.readText else {
+            if AskFilePreviewPolicy.kind(path: request.path) == .image,
+               let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: request.path) as CFURL,
+                                                      [kCGImageSourceShouldCache: false] as CFDictionary),
+               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] {
+                result.imageWidth = properties[kCGImagePropertyPixelWidth] as? Int
+                result.imageHeight = properties[kCGImagePropertyPixelHeight] as? Int
+            }
+            return result
+        }
+        var bytes = [UInt8](repeating: 0, count: 65536)
+        let count = Darwin.read(descriptor, &bytes, bytes.count)
+        guard count >= 0 else { return AskFileReadResponse(error: errno) }
+        let data = Data(bytes.prefix(count))
+        guard let decoded = AskFilePreviewText.decode(data, hasMore: opened.st_size > count) else {
+            return AskFileReadResponse(error: EILSEQ)
+        }
+        result.text = decoded.text
+        result.truncated = decoded.truncated
+        return result
     }
 
     /// Opening ancestors with O_NOFOLLOW prevents an alias (or a replaced directory) bypassing the policy.

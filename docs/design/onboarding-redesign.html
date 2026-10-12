@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Typeflux · Onboarding 重构 设计稿</title>
+<style>
+  :root {
+    --font: -apple-system, "SF Pro Text", Inter, "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", "WenQuanYi Zen Hei", "Helvetica Neue", sans-serif;
+  }
+  /* ===== theme tokens (mirror StudioTheme) ===== */
+  .t-light {
+    --wall: radial-gradient(1200px 700px at 18% 0%, #c9d8f5 0%, transparent 60%), radial-gradient(900px 700px at 100% 100%, #e9d6f2 0%, transparent 55%), #dfe4ee;
+    --menubar: rgba(246,246,248,.72); --menubar-text: #1d1d1f;
+    --win: #f7f7f9; --win-grad: radial-gradient(520px 320px at 100% 0%, rgba(37,99,235,.09), transparent 70%);
+    --card: #ffffff; --card-2: #f2f3f6; --well: #eceef2;
+    --text: #1d1d1f; --text-2: #5f6168; --text-3: #9a9ca3;
+    --hair: rgba(0,0,0,.08); --hair-2: rgba(0,0,0,.14);
+    --accent: #2563eb; --accent-soft: rgba(37,99,235,.10); --accent-line: rgba(37,99,235,.38); --accent-text: #1d4fd7;
+    --ok: #16a34a; --ok-soft: rgba(22,163,74,.10); --warn: #c2410c; --warn-soft: rgba(234,88,12,.10); --warn-line: rgba(234,88,12,.32);
+    --shadow: 0 30px 80px rgba(20,30,60,.22), 0 4px 14px rgba(20,30,60,.10);
+    --card-shadow: 0 1px 2px rgba(0,0,0,.05);
+    --key-top: #ffffff; --key-bot: #e7e8ec; --key-edge: #c9cbd2; --key-text: #2b2c30;
+    --chip: rgba(0,0,0,.05);
+  }
+  .t-dark {
+    --wall: radial-gradient(1200px 700px at 18% 0%, #23324f 0%, transparent 60%), radial-gradient(900px 700px at 100% 100%, #3a2546 0%, transparent 55%), #121318;
+    --menubar: rgba(30,30,34,.72); --menubar-text: #ececee;
+    --win: #1c1c1f; --win-grad: radial-gradient(520px 320px at 100% 0%, rgba(23,140,255,.14), transparent 70%);
+    --card: #26262a; --card-2: #2d2d32; --well: #19191c;
+    --text: #f2f2f4; --text-2: #a7a8ae; --text-3: #6f7077;
+    --hair: rgba(255,255,255,.08); --hair-2: rgba(255,255,255,.15);
+    --accent: #178cff; --accent-soft: rgba(23,140,255,.16); --accent-line: rgba(23,140,255,.5); --accent-text: #78b8ff;
+    --ok: #32d17a; --ok-soft: rgba(50,209,122,.14); --warn: #ffa057; --warn-soft: rgba(255,160,87,.12); --warn-line: rgba(255,160,87,.35);
+    --shadow: 0 30px 80px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.35);
+    --card-shadow: 0 1px 0 rgba(255,255,255,.04) inset;
+    --key-top: #3a3a40; --key-bot: #2c2c31; --key-edge: #18181b; --key-text: #f0f0f2;
+    --chip: rgba(255,255,255,.07);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font: 13px/1.45 var(--font); background: #0d0d10; color: #e8e8ea; -webkit-font-smoothing: antialiased; }
+  svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  /* ===== tool bar (not part of the design) ===== */
+  .tb { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 24px; background: rgba(13,13,16,.92); border-bottom: 1px solid #222; backdrop-filter: blur(10px); }
+  .tb h1 { font-size: 14px; margin: 0 8px 0 0; font-weight: 650; }
+  .pill { display: inline-flex; background: #1f1f24; border: 1px solid #2c2c33; border-radius: 9px; padding: 2px; }
+  .pill button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 7px; color: #a5a6ad; font-size: 12px; }
+  .pill button.on { background: #3a3a44; color: #fff; }
+  select.scr { background: #1f1f24; color: #ddd; border: 1px solid #2c2c33; border-radius: 8px; padding: 5px 8px; font: inherit; font-size: 12px; }
+  .tb .hint { color: #7d7e86; font-size: 12px; }
+  .proto { padding: 28px 24px 40px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .caption { color: #9fa0a7; font-size: 12.5px; max-width: 1280px; width: 1280px; }
+  .caption b { color: #eee; }
+  .board { display: none; grid-template-columns: repeat(2, 640px); gap: 26px 28px; padding: 28px 24px 60px; justify-content: center; }
+  .board .cell { width: 640px; }
+  .board .lbl { color: #b9bac0; font-size: 12px; margin: 0 0 8px; } .board .lbl b { color: #fff; margin-right: 6px; }
+  .board .thumb { width: 640px; height: 400px; overflow: hidden; border-radius: 10px; border: 1px solid #26262c; cursor: pointer; }
+  .board .thumb .desk { transform: scale(.5); transform-origin: 0 0; }
+  body.view-board .board { display: grid; } body.view-board .proto { display: none; }
+  body.bare .tb, body.bare .caption { display: none; } body.bare .proto { padding: 0; }
+  body.bare { background: transparent; }
+
+  /* ===== desk / wallpaper ===== */
+  .desk { position: relative; width: 1280px; height: 800px; overflow: hidden; background: var(--wall); color: var(--text); border-radius: 10px; font: 13px/1.45 var(--font); }
+  body.bare .desk { border-radius: 0; }
+  .menubar { position: absolute; inset: 0 0 auto 0; height: 26px; background: var(--menubar); backdrop-filter: blur(20px); display: flex; align-items: center; padding: 0 14px; gap: 18px; font-size: 13px; color: var(--menubar-text); z-index: 5; }
+  .menubar .apple { font-size: 14px; } .menubar b { font-weight: 650; }
+  .menubar .right { margin-left: auto; display: flex; gap: 14px; align-items: center; font-size: 12.5px; }
+  .mb-tf { width: 22px; height: 18px; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; position: relative; }
+  .mb-tf.hl { background: rgba(127,127,127,.25); }
+  .mb-tf .dot { position: absolute; right: 0; top: 1px; width: 6px; height: 6px; border-radius: 50%; background: #ff9f0a; }
+
+  /* ===== onboarding window ===== */
+  .win { position: absolute; left: 200px; top: 74px; width: 880px; height: 640px; border-radius: 14px; background: var(--win-grad), var(--win); box-shadow: var(--shadow); border: 1px solid var(--hair-2); overflow: hidden; display: flex; flex-direction: column; }
+  .win.dim { filter: saturate(.9); }
+  .titlebar { height: 52px; flex: none; display: flex; align-items: center; padding: 0 18px; position: relative; }
+  .lights { display: flex; gap: 8px; } .lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #d9d9dc; }
+  .t-dark .lights i:nth-child(3) { background: #48484c; }
+  .stepper { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-3); }
+  .stepper .st { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 4px; border-radius: 99px; }
+  .stepper .n { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 650; background: var(--chip); color: var(--text-2); }
+  .stepper .st.on { color: var(--text); background: var(--card); box-shadow: 0 0 0 1px var(--hair); font-weight: 600; }
+  .stepper .st.on .n { background: var(--accent); color: #fff; }
+  .stepper .st.done .n { background: var(--ok-soft); color: var(--ok); }
+  .stepper .bar { width: 18px; height: 1px; background: var(--hair-2); }
+  .lang { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 7px; color: var(--text-2); font-size: 12px; border: 1px solid var(--hair); background: var(--card); }
+  .body { flex: 1; min-height: 0; padding: 6px 64px 0; display: flex; flex-direction: column; }
+  .footer { height: 68px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 28px 0 28px; border-top: 1px solid var(--hair); }
+  .footer .helper { color: var(--text-3); font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+  .footer .sp { flex: 1; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 550; cursor: pointer; user-select: none; white-space: nowrap; border: 1px solid transparent; }
+  .btn.primary { background: var(--accent); color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.08) inset; }
+  .btn.primary.lg { height: 36px; padding: 0 22px; font-size: 13.5px; }
+  .btn.primary.off { opacity: .45; cursor: default; }
+  .btn.ghost { color: var(--text-2); }
+  .btn.ghost:hover { background: var(--chip); }
+  .btn.sec { background: var(--card); color: var(--text); border-color: var(--hair-2); box-shadow: var(--card-shadow); }
+  .btn.sm { height: 26px; padding: 0 11px; font-size: 12px; border-radius: 7px; }
+  .link { color: var(--accent-text); cursor: pointer; }
+  .muted { color: var(--text-2); } .faint { color: var(--text-3); }
+
+  .h-title { font-size: 26px; font-weight: 700; letter-spacing: -.2px; margin: 10px 0 6px; }
+  .h-sub { color: var(--text-2); font-size: 14px; margin: 0 0 22px; max-width: 640px; }
+
+  /* keycaps */
+  .kc { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 6px; font-size: 11.5px; font-weight: 600; color: var(--key-text);
+    background: linear-gradient(180deg, var(--key-top), var(--key-bot)); border: 1px solid var(--key-edge); border-bottom-width: 2px; font-family: var(--font); vertical-align: middle; }
+  .kc.lg { min-width: 54px; height: 50px; border-radius: 11px; font-size: 17px; padding: 0 12px; border-bottom-width: 3px; }
+  .kc.xl { min-width: 76px; height: 64px; border-radius: 13px; font-size: 20px; padding: 0 16px; border-bottom-width: 4px; }
+  .kc.wide { min-width: 140px; }
+  .kc.press { transform: translateY(2px); border-bottom-width: 1px; background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 80%, #000)); color: #fff; border-color: color-mix(in srgb, var(--accent) 60%, #000); box-shadow: 0 0 0 5px var(--accent-soft); }
+  .plus { color: var(--text-3); margin: 0 6px; font-size: 13px; }
+
+  /* generic card */
+  .card { background: var(--card); border: 1px solid var(--hair); border-radius: 12px; box-shadow: var(--card-shadow); }
+  .tag { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; font-size: 10.5px; font-weight: 600; background: var(--chip); color: var(--text-2); }
+  .tag.req { background: var(--accent-soft); color: var(--accent-text); }
+  .tag.ok { background: var(--ok-soft); color: var(--ok); }
+  .tag.rec { background: linear-gradient(90deg, rgba(124,58,237,.14), rgba(37,99,235,.14)); color: var(--accent-text); }
+
+  /* ===== welcome ===== */
+  .welcome { align-items: center; text-align: center; padding-top: 10px; }
+  .logo { width: 72px; height: 72px; border-radius: 18px; box-shadow: 0 10px 28px rgba(37,99,235,.28); }
+  .welcome .h-title { font-size: 30px; margin-top: 16px; }
+  .welcome .h-sub { margin: 0 auto 30px; font-size: 15px; }
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 100%; text-align: left; }
+  .pillar { padding: 16px 16px 18px; }
+  .pillar .art { height: 132px; border-radius: 9px; background: var(--well); margin-bottom: 14px; position: relative; overflow: hidden; border: 1px solid var(--hair); }
+  .pillar h3 { margin: 0 0 4px; font-size: 14.5px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+  .pillar p { margin: 0; color: var(--text-2); font-size: 12.5px; line-height: 1.5; }
+  .pillar .keys { margin-top: 10px; display: flex; align-items: center; gap: 4px; color: var(--text-3); font-size: 11.5px; }
+  /* pillar arts */
+  .art-doc { position: absolute; left: 14px; right: 14px; top: 16px; bottom: 0; background: var(--card); border-radius: 8px 8px 0 0; border: 1px solid var(--hair); padding: 12px 12px; font-size: 11.5px; color: var(--text); }
+  .art-doc .ln { height: 6px; border-radius: 3px; background: var(--chip); margin-bottom: 7px; }
+  .art-doc .typed { font-size: 11.5px; } .art-doc .typed .cur { display: inline-block; width: 1.5px; height: 13px; background: var(--accent); vertical-align: -2px; }
+  .voicepill { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 99px; background: rgba(28,28,31,.92); color: #fff; font-size: 11px; box-shadow: 0 6px 18px rgba(0,0,0,.25); white-space: nowrap; }
+  .wave { display: inline-flex; align-items: center; gap: 2px; height: 14px; } .wave i { width: 2.5px; border-radius: 2px; background: #5fb0ff; }
+  .art-launch { position: absolute; left: 14px; right: 14px; top: 22px; border-radius: 11px; background: rgba(40,40,44,.94); color: #eee; font-size: 11.5px; box-shadow: 0 8px 22px rgba(0,0,0,.25); overflow: hidden; }
+  .art-launch .q { padding: 9px 11px; border-bottom: 1px solid rgba(255,255,255,.08); color: #fff; }
+  .art-launch .r { white-space: nowrap; display: flex; align-items: center; gap: 7px; padding: 6px 11px; color: #ddd; } .art-launch .r.on { background: rgba(255,255,255,.08); }
+  .art-launch .r .ap { width: 16px; height: 16px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; }
+  .art-launch .r .k { margin-left: auto; color: #8d8d93; font-size: 10.5px; }
+  .art-chat { position: absolute; inset: 10px 12px 0 12px; display: flex; flex-direction: column; gap: 6px; font-size: 10.5px; }
+  .art-chat .bub { padding: 5px 9px; }
+  .bub { max-width: 84%; padding: 7px 10px; border-radius: 11px; line-height: 1.45; }
+  .bub.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .bub.ai { align-self: flex-start; background: var(--card); color: var(--text); border: 1px solid var(--hair); border-bottom-left-radius: 4px; }
+  .ctxchip { align-self: flex-end; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text-2); background: var(--card); border: 1px solid var(--hair); border-radius: 6px; padding: 2px 7px; }
+
+  /* ===== permissions ===== */
+  .perm-list { padding: 4px 0; }
+  .perm { display: flex; align-items: center; gap: 14px; padding: 15px 18px; }
+  .perm + .perm { border-top: 1px solid var(--hair); }
+  .perm .ic { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex: none; color: #fff; }
+  .perm .ic svg { width: 20px; height: 20px; }
+  .perm .tx { flex: 1; min-width: 0; }
+  .perm .tt { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .perm .ds { color: var(--text-2); font-size: 12.5px; margin-top: 2px; }
+  .perm .feat { display: inline-flex; gap: 5px; margin-top: 6px; }
+  .perm .feat span { font-size: 10.5px; color: var(--text-3); border: 1px solid var(--hair); border-radius: 5px; padding: 0 5px; }
+  .granted { display: inline-flex; align-items: center; gap: 6px; color: var(--ok); font-weight: 600; font-size: 12.5px; }
+  .granted .ck { width: 20px; height: 20px; border-radius: 50%; background: var(--ok); color: #fff; display: inline-flex; align-items: center; justify-content: center; }
+  .granted .ck svg { width: 12px; height: 12px; stroke-width: 2.6; }
+  .waiting { display: inline-flex; align-items: center; gap: 8px; color: var(--accent-text); font-size: 12.5px; font-weight: 550; }
+  .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent-soft); border-top-color: var(--accent); animation: sp 0.9s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  .privacy { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--text-2); font-size: 12.5px; padding: 0 4px; }
+  .privacy svg { color: var(--ok); }
+  .perm.pending { background: var(--accent-soft); }
+  .perm.optional .tt { color: var(--text); }
+
+  /* system settings mock (outside the onboarding window) */
+  .sys { position: absolute; left: 640px; top: 250px; width: 560px; height: 420px; border-radius: 12px; background: var(--win); border: 1px solid var(--hair-2); box-shadow: var(--shadow); overflow: hidden; display: flex; z-index: 8; }
+  .sys .side { width: 170px; background: var(--card-2); border-right: 1px solid var(--hair); padding: 40px 10px 10px; font-size: 12px; color: var(--text-2); }
+  .sys .side div { padding: 5px 8px; border-radius: 6px; display: flex; gap: 7px; align-items: center; }
+  .sys .side div.on { background: var(--accent); color: #fff; }
+  .sys .side i { width: 14px; height: 14px; border-radius: 4px; background: #8e8e93; display: inline-block; } .sys .side div.on i { background: rgba(255,255,255,.85); }
+  .sys .main { flex: 1; padding: 14px 18px; }
+  .sys .main h4 { margin: 2px 0 6px; font-size: 14px; } .sys .main p { margin: 0 0 12px; color: var(--text-2); font-size: 11.5px; }
+  .sys .row { display: flex; align-items: center; gap: 9px; padding: 9px 10px; background: var(--card); border: 1px solid var(--hair); font-size: 12.5px; }
+  .sys .row:first-of-type { border-radius: 8px 8px 0 0; } .sys .row + .row { border-top: none; } .sys .row:last-of-type { border-radius: 0 0 8px 8px; }
+  .sys .row .ap { width: 20px; height: 20px; border-radius: 5px; }
+  .tog { margin-left: auto; width: 34px; height: 20px; border-radius: 99px; background: var(--hair-2); position: relative; }
+  .tog::after { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .tog.on { background: var(--ok); } .tog.on::after { left: 16px; }
+  .sys .row.hl { box-shadow: 0 0 0 2px var(--accent) inset; position: relative; z-index: 1; }
+  .coach { position: absolute; z-index: 9; width: 250px; padding: 12px 14px; border-radius: 12px; background: rgba(28,28,31,.94); color: #fff; font-size: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+  .coach b { display: block; font-size: 13px; margin-bottom: 3px; }
+  .coach .faint2 { color: #a1a1a8; }
+  .coach::after { content: ""; position: absolute; width: 12px; height: 12px; background: inherit; transform: rotate(45deg); }
+  .coach.arrow-r::after { right: -5px; top: 22px; } .coach.arrow-u::after { top: -5px; left: 30px; } .coach.arrow-d::after { bottom: -5px; left: 30px; }
+
+  /* ===== AI ===== */
+  .ai-opts { margin-top: -6px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .opt { padding: 14px 14px 13px; position: relative; cursor: pointer; }
+  .opt.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .opt .top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .opt .oi { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+  .opt .radio { margin-left: auto; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--hair-2); }
+  .opt.on .radio { border: 5px solid var(--accent); }
+  .opt h4 { margin: 0; font-size: 14px; font-weight: 650; }
+  .opt p { margin: 0; color: var(--text-2); font-size: 12px; line-height: 1.5; }
+  .opt ul { margin: 6px 0 0; padding: 0; list-style: none; color: var(--text-2); font-size: 11.5px; }
+  .opt li { display: flex; gap: 6px; align-items: center; margin-top: 3px; } .opt li svg { width: 12px; height: 12px; color: var(--ok); stroke-width: 2.4; }
+  .detail { margin-top: 12px; padding: 16px 20px; min-height: 168px; }
+  .detail h5 { margin: 0 0 4px; font-size: 13.5px; font-weight: 650; }
+  .signin { display: flex; gap: 10px; margin-top: 14px; }
+  .signin .btn { height: 38px; flex: 1; font-size: 13px; }
+  .signin img { width: 15px; height: 15px; }
+  .terms { margin-top: 12px; font-size: 11.5px; color: var(--text-3); }
+  .acct { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,#6366f1,#22d3ee); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+  .quota { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .quota div { background: var(--card-2); border-radius: 9px; padding: 9px 11px; font-size: 11.5px; color: var(--text-2); }
+  .quota b { display: block; color: var(--text); font-size: 13px; font-weight: 600; margin-bottom: 1px; }
+  .provs { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+  .prov { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 7px; border-radius: 8px; border: 1px solid var(--hair); background: var(--card); font-size: 12px; }
+  .prov img { width: 15px; height: 15px; border-radius: 3px; }
+  .prov.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+  .t-dark .prov img.mono, .t-dark .apple, .t-dark .signin img.ap-logo { filter: invert(1); }
+  .fields { display: grid; grid-template-columns: 1fr 200px auto; gap: 10px; align-items: end; }
+  .fld label { display: block; font-size: 11.5px; color: var(--text-2); margin-bottom: 5px; }
+  .input { height: 32px; border-radius: 8px; border: 1px solid var(--hair-2); background: var(--well); padding: 0 10px; display: flex; align-items: center; font-size: 12.5px; color: var(--text); gap: 6px; }
+  .input .ph { color: var(--text-3); }
+  .input .chev { margin-left: auto; color: var(--text-3); }
+  .testok { margin-top: 10px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ok); }
+  .testok .faint { margin-left: 4px; }
+  .note { margin-top: 12px; display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: var(--text-2); }
+  .note svg { margin-top: 1px; color: var(--text-3); }
+  .asr { margin-top: 12px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; background: var(--ok-soft); color: var(--text); font-size: 12.5px; }
+  .asr svg { color: var(--ok); }
+  .asr .faint { margin-left: auto; font-size: 11.5px; }
+
+  /* popover */
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.18); }
+  .t-dark .scrim { background: rgba(0,0,0,.35); }
+  .sheet { position: absolute; left: 50%; top: 120px; transform: translateX(-50%); width: 420px; padding: 22px 22px 18px; border-radius: 14px; background: var(--card); border: 1px solid var(--hair-2); box-shadow: var(--shadow); }
+  .sheet h4 { margin: 0 0 6px; font-size: 15px; } .sheet p { margin: 0 0 12px; color: var(--text-2); font-size: 12.5px; }
+  .cap { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 12px 14px; border-radius: 10px; background: var(--card-2); font-size: 12.5px; margin-bottom: 16px; }
+  .cap span { display: flex; align-items: center; gap: 7px; } .cap .y svg { color: var(--ok); stroke-width: 2.4; width: 13px; height: 13px; } .cap .n { color: var(--text-3); } .cap .n svg { width: 13px; height: 13px; }
+  .sheet .acts { display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* ===== practice ===== */
+  .prac { display: grid; grid-template-columns: 236px 1fr; gap: 16px; flex: 1; min-height: 0; padding-bottom: 18px; }
+  .tasks { display: flex; flex-direction: column; gap: 8px; }
+  .task { padding: 12px 13px; border-radius: 11px; border: 1px solid var(--hair); background: var(--card); display: flex; gap: 11px; align-items: flex-start; cursor: pointer; }
+  .task.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .task .ti { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: #fff; flex: none; }
+  .task .tn { font-size: 13.5px; font-weight: 650; display: flex; align-items: center; gap: 6px; }
+  .task .td { font-size: 11.5px; color: var(--text-2); margin-top: 3px; display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+  .task .state { margin-left: auto; }
+  .task .ok { width: 18px; height: 18px; border-radius: 50%; background: var(--ok); color: #fff; display: inline-flex; align-items: center; justify-content: center; } .task .ok svg { width: 11px; height: 11px; stroke-width: 2.8; }
+  .task .todo { width: 18px; height: 18px; border-radius: 50%; border: 1.5px dashed var(--hair-2); display: inline-block; }
+  .task.off { opacity: .55; }
+  .tasks .tip { margin-top: auto; font-size: 11.5px; color: var(--text-3); padding: 0 4px; line-height: 1.55; }
+  .sandbox { border-radius: 12px; background: var(--well); border: 1px solid var(--hair); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .sb-head { padding: 16px 20px 0; }
+  .sb-head h3 { margin: 0; font-size: 16px; font-weight: 650; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .sb-head p { margin: 5px 0 0; color: var(--text-2); font-size: 12.5px; }
+  .sb-keys { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 0 6px; }
+  .sb-keys .lbl { font-size: 11.5px; color: var(--text-3); text-align: center; margin-top: 6px; }
+  .note-app { margin: 10px 20px 0; flex: 1; background: var(--card); border-radius: 10px 10px 0 0; border: 1px solid var(--hair); border-bottom: none; position: relative; }
+  .note-app .bar { height: 30px; display: flex; align-items: center; gap: 6px; padding: 0 10px; border-bottom: 1px solid var(--hair); font-size: 11.5px; color: var(--text-3); }
+  .note-app .bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--hair-2); }
+  .note-app .bar span { margin-left: 8px; }
+  .note-app .txt { padding: 14px 16px; font-size: 14px; line-height: 1.6; }
+  .note-app .txt .ph { color: var(--text-3); }
+  .note-app .cur { display: inline-block; width: 1.5px; height: 18px; background: var(--accent); vertical-align: -3px; }
+  .note-app .new { background: var(--accent-soft); border-radius: 3px; }
+  .rec-pill { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 12px; border-radius: 99px; background: rgba(28,28,31,.94); color: #fff; font-size: 12.5px; box-shadow: 0 10px 26px rgba(0,0,0,.3); white-space: nowrap; }
+  .rec-pill .live { color: #cfd0d6; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+  .rec-pill .t { color: #8d8e95; font-variant-numeric: tabular-nums; }
+  .success { position: absolute; right: 16px; top: 44px; display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 99px; background: var(--ok-soft); color: var(--ok); font-size: 12px; font-weight: 600; }
+  .warnbox { margin: 12px 20px 0; padding: 12px 14px; border-radius: 10px; background: var(--warn-soft); border: 1px solid var(--warn-line); font-size: 12.5px; display: flex; gap: 10px; align-items: flex-start; }
+  .warnbox svg { color: var(--warn); margin-top: 1px; }
+  .warnbox b { display: block; color: var(--text); font-weight: 650; margin-bottom: 2px; }
+  .warnbox .acts { display: flex; gap: 8px; margin-top: 9px; align-items: center; }
+  .infobox { margin: 12px 20px 0; padding: 12px 14px; border-radius: 10px; background: var(--card); border: 1px solid var(--hair); font-size: 12.5px; display: flex; gap: 10px; align-items: flex-start; }
+  .infobox svg { color: var(--accent); margin-top: 1px; }
+  .infobox b { display: block; font-weight: 650; margin-bottom: 2px; }
+  .sb-foot { padding: 10px 20px 14px; font-size: 11.5px; color: var(--text-3); display: flex; gap: 14px; align-items: center; }
+  .sample { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; background: var(--card); border: 1px solid var(--hair); font-size: 12px; color: var(--text); }
+  .samples { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 20px 0; }
+  .ghostlaunch { margin: 16px 20px 0; border-radius: 12px; border: 1.5px dashed var(--hair-2); height: 112px; display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 12.5px; gap: 8px; }
+
+  /* real launcher overlay (dark glass, same in both themes like the product) */
+  .launcher { position: absolute; left: 300px; top: 168px; width: 680px; border-radius: 22px; background: rgba(44,44,48,.88); backdrop-filter: blur(30px) saturate(1.4); border: 1px solid rgba(255,255,255,.16); box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 30px 70px rgba(0,0,0,.5); color: #f2f2f2; z-index: 10; overflow: hidden; }
+  .t-light .launcher { background: rgba(250,250,252,.86); color: #1d1d1f; border-color: rgba(0,0,0,.10); box-shadow: 0 30px 70px rgba(20,30,60,.30); }
+  .launcher .in { display: flex; align-items: center; gap: 10px; height: 58px; padding: 0 14px 0 18px; font-size: 18px; }
+  .launcher .in .ph { opacity: .45; } .launcher .in .cur { display: inline-block; width: 1.5px; height: 21px; background: #178cff; vertical-align: -4px; }
+  .launcher .in .mic { margin-left: auto; opacity: .6; }
+  .launcher .in .send { width: 32px; height: 32px; border-radius: 50%; background: rgba(127,127,127,.18); display: inline-flex; align-items: center; justify-content: center; }
+  .launcher .in .send.on { background: #178cff; color: #fff; }
+  .launcher .res { border-top: 1px solid rgba(127,127,127,.18); padding: 6px; }
+  .launcher .sec { font-size: 11px; opacity: .5; padding: 6px 10px 4px; font-weight: 600; }
+  .launcher .row { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 10px; border-radius: 10px; font-size: 14px; }
+  .launcher .row.on { background: rgba(127,127,127,.16); }
+  .launcher .row .ap { width: 26px; height: 26px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; }
+  .launcher .row .r { margin-left: auto; font-size: 12px; opacity: .55; }
+  .launcher .calc { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .launcher .bot { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 16px; border-top: 1px solid rgba(127,127,127,.18); font-size: 12px; }
+  .launcher .bot .m { font-weight: 600; opacity: .85; } .launcher .bot .r { margin-left: auto; opacity: .55; display: flex; gap: 12px; }
+  .launcher .bot .hl { opacity: 1; color: #178cff; font-weight: 650; }
+  .launcher .kc { background: rgba(127,127,127,.18); border: none; color: inherit; height: 18px; min-width: 18px; font-size: 10.5px; padding: 0 4px; }
+
+  /* chat window overlay */
+  .chat { position: absolute; left: 470px; top: 120px; width: 640px; height: 560px; border-radius: 16px; background: var(--win); border: 1px solid var(--hair-2); box-shadow: var(--shadow); z-index: 11; overflow: hidden; display: flex; flex-direction: column; }
+  .chat .head { height: 46px; display: flex; align-items: center; padding: 0 16px; gap: 10px; border-bottom: 1px solid var(--hair); font-weight: 600; font-size: 13px; }
+  .chat .head .lights { margin-right: 10px; }
+  .chat .msgs { flex: 1; padding: 18px 26px; display: flex; flex-direction: column; gap: 12px; font-size: 13.5px; }
+  .chat .q { align-self: flex-end; background: var(--accent-soft); color: var(--text); padding: 9px 13px; border-radius: 14px; max-width: 80%; }
+  .chat .a { line-height: 1.7; color: var(--text); }
+  .chat .a .stream { display: inline-block; width: 8px; height: 14px; background: var(--accent); border-radius: 2px; vertical-align: -2px; animation: bl 1s steps(2) infinite; }
+  @keyframes bl { 50% { opacity: 0; } }
+  .chat .comp { margin: 0 18px 16px; border-radius: 16px; border: 1px solid var(--hair-2); background: var(--card); height: 82px; padding: 12px 14px; color: var(--text-3); font-size: 13px; display: flex; flex-direction: column; }
+  .chat .comp .row2 { margin-top: auto; display: flex; align-items: center; gap: 12px; color: var(--text-2); font-size: 12px; }
+  .chat .comp .row2 b { color: var(--text); font-weight: 600; }
+
+  /* ===== done ===== */
+  .done { align-items: center; text-align: center; }
+  .bigok { width: 64px; height: 64px; border-radius: 50%; background: var(--ok); color: #fff; display: inline-flex; align-items: center; justify-content: center; margin-top: 8px; box-shadow: 0 0 0 10px var(--ok-soft); }
+  .bigok svg { width: 32px; height: 32px; stroke-width: 2.6; }
+  .cheat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: 100%; margin-top: 6px; }
+  .cheat .card { padding: 18px 16px 16px; text-align: center; }
+  .cheat .ks { display: flex; justify-content: center; align-items: center; gap: 4px; height: 52px; }
+  .cheat h4 { margin: 10px 0 2px; font-size: 14px; } .cheat p { margin: 0; color: var(--text-2); font-size: 12px; }
+  .more { width: 100%; margin-top: 14px; display: flex; gap: 10px; }
+  .more .m { flex: 1; display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 10px; background: var(--card-2); font-size: 12px; color: var(--text-2); text-align: left; }
+  .more .m b { color: var(--text); font-weight: 600; display: block; font-size: 12.5px; }
+  .more .m .kc { margin-left: auto; }
+  .launchrow { margin-top: 16px; display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-2); }
+  .menuhint { position: absolute; z-index: 12; right: 66px; top: 36px; width: 290px; padding: 14px 16px; border-radius: 12px; background: var(--card); border: 1px solid var(--hair-2); box-shadow: var(--shadow); font-size: 12.5px; }
+  .menuhint::before { content: ""; position: absolute; top: -6px; right: 142px; width: 12px; height: 12px; background: var(--card); border-left: 1px solid var(--hair-2); border-top: 1px solid var(--hair-2); transform: rotate(45deg); }
+  .menuhint b { display: block; font-size: 13.5px; margin-bottom: 4px; }
+  .menuhint .ln { display: flex; align-items: center; gap: 6px; color: var(--text-2); margin-top: 6px; }
+  .menuhint .acts { display: flex; justify-content: flex-end; margin-top: 12px; gap: 8px; }
+
+  /* settings window (post onboarding resume) */
+  .settings { position: absolute; left: 160px; top: 80px; width: 960px; height: 620px; border-radius: 14px; background: var(--win); border: 1px solid var(--hair-2); box-shadow: var(--shadow); overflow: hidden; display: flex; }
+  .settings .sb { width: 220px; background: var(--card-2); border-right: 1px solid var(--hair); padding: 46px 10px 12px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--text); }
+  .settings .sb .it { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: 7px; } .settings .sb .it.on { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+  .settings .sb .it svg { color: var(--text-2); } .settings .sb .it.on svg { color: var(--accent-text); }
+  .resume { margin-top: auto; padding: 12px; border-radius: 11px; background: var(--card); border: 1px solid var(--hair); font-size: 12px; }
+  .resume b { display: block; font-size: 13px; margin-bottom: 2px; } .resume .prog { height: 4px; border-radius: 2px; background: var(--chip); margin: 9px 0 10px; overflow: hidden; } .resume .prog i { display: block; height: 100%; width: 66%; background: var(--accent); }
+  .resume .todo-l { color: var(--text-2); display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .settings .content { flex: 1; padding: 46px 32px; }
+  .settings .content h2 { margin: 0 0 14px; font-size: 20px; }
+  .skel { height: 54px; border-radius: 10px; background: var(--card); border: 1px solid var(--hair); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-access" viewBox="0 0 24 24"><circle cx="12" cy="4.8" r="1.8"/><path d="M5 8.5c2.3.7 4.6 1 7 1s4.7-.3 7-1M12 9.5V14m0 0-3 6.5M12 14l3 6.5"/></symbol>
+  <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12.5" rx="2"/><path d="M8.5 20.5h7M12 17v3.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5.5 12.5 4 4 9-9"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4.5 4.5 0 0 1-.5 9z"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16.5 6.5l2.5 2.5M14.5 8.5 16 10"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/><path d="M9.5 3v3.5M14.5 3v3.5M9.5 17.5V21M14.5 17.5V21M3 9.5h3.5M3 14.5h3.5M17.5 9.5H21M17.5 14.5H21"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3.5 13.9 9l5.6 1.9-5.6 1.9L12 18.5l-1.9-5.7L4.5 10.9 10.1 9z"/><path d="M19 3.5v3M17.5 5h3"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4.5 6.5a2.5 2.5 0 0 1 2.5-2.5h10a2.5 2.5 0 0 1 2.5 2.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4 3.5V16H7a2.5 2.5 0 0 1-2.5-2.5z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.5 5.3 3.5 8.5s-1.1 6.1-3.5 8.5c-2.4-2.4-3.5-5.3-3.5-8.5S9.6 5.9 12 3.5z"/></symbol>
+  <symbol id="i-chevd" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+  <symbol id="i-chevr" viewBox="0 0 24 24"><path d="m10 7 5 5-5 5"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 21 19.5H3z"/><path d="M12 10v4.5M12 17h.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 8h.01"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><rect x="6" y="4.5" width="12" height="16" rx="2"/><path d="M9.5 4.5V3.5h5v1M9 10h6M9 14h4"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></symbol>
+  <symbol id="i-arrowup" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4.5h5.5V10M19.5 4.5 11 13M17 14v4.5A1.5 1.5 0 0 1 15.5 20h-10A1.5 1.5 0 0 1 4 18.5v-10A1.5 1.5 0 0 1 5.5 7H10"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M6 18l1.6-1.6M16.4 7.6 18 6"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 10.5v3"/></symbol>
+  <symbol id="i-model" viewBox="0 0 24 24"><path d="M12 3.5 19.5 8v8L12 20.5 4.5 16V8z"/><path d="M4.5 8 12 12.5 19.5 8M12 12.5v8"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3L19.5 9M19.5 4.5V9H15"/></symbol>
+</svg>
+
+<div class="tb">
+  <h1>Typeflux · Onboarding 重构</h1>
+  <div class="pill" id="viewPill"><button data-v="proto" class="on">可交互原型</button><button data-v="board">全部画面</button></div>
+  <div class="pill" id="themePill"><button data-v="light" class="on">浅色</button><button data-v="dark">深色</button></div>
+  <select class="scr" id="scrSel"></select>
+  <span class="hint">在原型中直接点击按钮即可走完整个流程 · ←/→ 切换画面</span>
+</div>
+
+<div class="proto">
+  <div id="stage"></div>
+  <div class="caption" id="caption"></div>
+</div>
+<div class="board" id="board"></div>
+
+<script>
+const ic = (n, cls = "") => `<svg class="i ${cls}"><use href="#i-${n}"/></svg>`;
+const kc = (t, cls = "") => `<span class="kc ${cls}">${t}</span>`;
+const LOGO = "../../logo.png";
+const PROV = n => `../../Sources/Typeflux/Resources/Providers/${n}.png`;
+const wave = (n = 14, h = [5,9,13,8,11,6,12,9,5,10,13,7,9,6]) => `<span class="wave">${Array.from({length:n},(_,i)=>`<i style="height:${h[i%h.length]}px"></i>`).join("")}</span>`;
+
+/* ---------- shared chrome ---------- */
+const STEPS = ["权限", "AI", "上手"];
+function stepper(active) {
+  // active: 0..2 for steps, 3 = all done
+  return `<div class="stepper">${STEPS.map((s, i) => {
+    const cls = i < active ? "done" : i === active ? "on" : "";
+    const n = i < active ? `<svg class="i" style="width:11px;height:11px;stroke-width:2.8"><use href="#i-check"/></svg>` : (i + 1);
+    return (i ? `<span class="bar"></span>` : "") + `<span class="st ${cls}"><span class="n">${n}</span>${s}</span>`;
+  }).join("")}</div>`;
+}
+function titlebar({ step = null, lang = false } = {}) {
+  return `<div class="titlebar"><div class="lights"><i></i><i></i><i></i></div>${step === null ? "" : stepper(step)}${lang ? `<span class="lang">${ic("globe")}简体中文${ic("chevd")}</span>` : ""}</div>`;
+}
+function footer({ back = true, helper = "", extra = "", primary = "继续", primaryOff = false, go = "", lg = false }) {
+  return `<div class="footer">${back ? `<span class="btn ghost" data-go="back">上一步</span>` : ""}${helper ? `<span class="helper">${helper}</span>` : ""}<span class="sp"></span>${extra}<span class="btn primary ${lg ? "lg" : ""} ${primaryOff ? "off" : ""}" data-go="${go}">${primary}</span></div>`;
+}
+function menubar({ tf = false, dot = false, hl = false, app = "Typeflux" } = {}) {
+  return `<div class="menubar"><img class="apple" src="../../Sources/Typeflux/Resources/apple.svg" style="width:13px;height:13px;opacity:.85"><b>${app}</b><span>文件</span><span>编辑</span><span>窗口</span><span>帮助</span>
+    <span class="right">${tf ? `<span class="mb-tf ${hl ? "hl" : ""}"><img src="${LOGO}" style="width:15px;height:15px;border-radius:4px">${dot ? `<i class="dot"></i>` : ""}</span>` : ""}${ic("wave")}<span>🔋</span><span>10月12日 周一 14:32</span></span></div>`;
+}
+
+/* ---------- screens ---------- */
+function welcome() {
+  return `${titlebar({ lang: true })}
+  <div class="body welcome">
+    <img class="logo" src="${LOGO}">
+    <div class="h-title">欢迎使用 Typeflux</div>
+    <p class="h-sub">说、找、问 —— 在任何应用里，一个按键就够。</p>
+    <div class="pillars">
+      <div class="card pillar">
+        <div class="art"><div class="art-doc"><div class="ln" style="width:70%"></div><div class="typed">明天下午三点和设计团队开会<span class="cur"></span></div></div>
+          <span class="voicepill">${wave(9)} 正在听…</span></div>
+        <h3>${ic("mic")} 语音输入</h3>
+        <p>按住说话，松开后文字直接写进当前应用，自动去掉口头禅、修好标点。</p>
+        <div class="keys">按住 ${kc("fn")}</div>
+      </div>
+      <div class="card pillar">
+        <div class="art"><div class="art-launch"><div class="q">计算</div>
+          <div class="r on"><span class="ap" style="background:#8e8e93">=</span>计算器<span class="k">应用</span></div>
+          <div class="r"><span class="ap" style="background:#f59e0b">📋</span>会议纪要…<span class="k">剪贴板</span></div>
+          <div class="r"><span class="ap" style="background:#2563eb">译</span>fy 计算 → compute<span class="k">翻译</span></div></div></div>
+        <h3>${ic("search")} 启动器</h3>
+        <p>打开应用、计算、翻译、查剪贴板和历史，输入关键词就有结果。</p>
+        <div class="keys">${kc("⌘")}${kc("Space")}</div>
+      </div>
+      <div class="card pillar">
+        <div class="art"><div class="art-chat"><span class="ctxchip">${ic("screen")} 带上当前屏幕</span><div class="bub me">这张表里哪个月增长最快？</div><div class="bub ai">7 月，环比 +32%。</div></div></div>
+        <h3>${ic("spark")} AI 对话</h3>
+        <p>随时提问，自动带上选中的文字和当前屏幕；能搜索网页、调用工具。</p>
+        <div class="keys">启动器中 ${kc("⌘")}${kc("↩")}</div>
+      </div>
+    </div>
+  </div>
+  ${footer({ back: false, helper: `${ic("info")}大约 2 分钟，3 步完成`, primary: "开始设置", go: "perm", lg: true })}`;
+}
+
+function permRow({ icon, color, title, req, desc, feats, state }) {
+  let right = "";
+  if (state === "ask") right = `<span class="btn sec sm" data-go="${title === "辅助功能" ? "perm-ax" : "perm-done"}">${title === "辅助功能" ? "打开系统设置" : "允许"}</span>`;
+  if (state === "wait") right = `<span class="waiting"><span class="spin"></span>等待你在系统设置中打开…</span>`;
+  if (state === "ok") right = `<span class="granted"><span class="ck">${ic("check")}</span>已允许</span>`;
+  if (state === "later") right = `<span class="btn ghost sm">需要时再说</span><span class="btn sec sm">允许</span>`;
+  return `<div class="perm ${state === "wait" ? "pending" : ""}">
+    <span class="ic" style="background:${color}">${ic(icon)}</span>
+    <div class="tx"><div class="tt">${title}${req ? `<span class="tag req">必需</span>` : `<span class="tag">可选</span>`}</div>
+      <div class="ds">${desc}</div><div class="feat">${feats.map(f => `<span>${f}</span>`).join("")}</div></div>
+    <div style="display:flex;gap:6px;align-items:center">${right}</div></div>`;
+}
+function perm(variant) {
+  const mic = variant === "init" ? "ask" : "ok";
+  const ax = variant === "init" ? "ask" : variant === "ax" ? "wait" : "ok";
+  const remain = [mic, ax].filter(s => s !== "ok").length;
+  return `${titlebar({ step: 0 })}
+  <div class="body">
+    <div class="h-title">允许 Typeflux 听见你、帮你输入</div>
+    <p class="h-sub">需要两项系统权限。Typeflux 只在你按下快捷键时录音。</p>
+    <div class="card perm-list">
+      ${permRow({ icon: "mic", color: "#ef4444", title: "麦克风", req: true, desc: "听见你说的话。", feats: ["语音输入", "语音提问"], state: mic })}
+      ${permRow({ icon: "access", color: "#2563eb", title: "辅助功能", req: true, desc: "把文字写进当前应用，读取你选中的文字。", feats: ["语音输入", "启动器", "AI 对话"], state: ax })}
+      ${permRow({ icon: "screen", color: "#7c3aed", title: "屏幕录制", req: false, desc: "让 AI 看懂当前屏幕，截图识字。不授权也能正常使用其他功能。", feats: ["AI 对话", "截图"], state: "later" })}
+    </div>
+    <div class="privacy">${ic("lock")}语音默认在这台 Mac 上识别，录音不会上传；截图只在你提问时随问题发送。</div>
+  </div>
+  ${footer({ back: true, helper: remain ? `还差 ${remain} 项必需权限` : `${ic("check")} 必需权限已就绪`, extra: remain ? `<span class="btn ghost" data-go="perm-skip">稍后授权</span>` : "", primary: "继续", primaryOff: remain > 0, go: remain ? "" : "ai" })}`;
+}
+function permAxOverlay() {
+  return `<div class="sys">
+    <div class="side"><div>${'<i></i>'}通用</div><div>${'<i></i>'}外观</div><div>${'<i></i>'}辅助功能</div><div>${'<i></i>'}控制中心</div><div>${'<i></i>'}Siri 与聚焦</div><div class="on"><i></i>隐私与安全性</div><div><i></i>桌面与程序坞</div><div><i></i>显示器</div><div><i></i>键盘</div></div>
+    <div class="main"><h4>‹ 辅助功能</h4><p>允许下面的应用控制你的电脑。</p>
+      <div class="row"><span class="ap" style="background:#1d1d1f"></span>BetterTouchTool<span class="tog on"></span></div>
+      <div class="row"><span class="ap" style="background:#0ea5e9"></span>Raycast<span class="tog on"></span></div>
+      <div class="row hl"><img class="ap" src="${LOGO}">Typeflux<span class="tog"></span></div>
+      <div class="row"><span class="ap" style="background:#6b7280"></span>终端<span class="tog"></span></div>
+    </div></div>
+  <div class="coach arrow-r" style="left:378px;top:430px"><b>打开 Typeflux 右侧的开关</b>完成后回到这里，会自动继续。<div class="faint2" style="margin-top:6px">列表里没有 Typeflux？把 <span style="color:#fff">Typeflux.app</span> 拖进列表。</div></div>`;
+}
+function permSkipOverlay() {
+  return `<div class="scrim"></div><div class="sheet" style="top:200px">
+    <h4>不授权也可以先看看</h4>
+    <p>缺少必需权限时，下面的功能暂时不能用。菜单栏图标会提醒你，随时可以在设置里补上。</p>
+    <div class="cap"><span class="n">${ic("x")}语音输入</span><span class="n">${ic("x")}把结果写回应用</span><span class="y">${ic("check")}启动器搜索、计算</span><span class="y">${ic("check")}AI 对话（打字提问）</span></div>
+    <div class="acts"><span class="btn ghost" data-go="ai">稍后授权</span><span class="btn primary" data-go="perm">继续授权</span></div></div>`;
+}
+
+function aiScreen(mode) {
+  const opts = [
+    { k: "cloud", ic: "cloud", bg: "linear-gradient(135deg,#6366f1,#2563eb)", t: "Typeflux Cloud", tag: `<span class="tag rec">推荐</span>`, d: "登录即用，无需配置。", li: ["每月免费额度", "联网搜索、识图", "对话在多设备同步"] },
+    { k: "key", ic: "key", bg: "linear-gradient(135deg,#f59e0b,#ea580c)", t: "自己的 API Key", tag: "", d: "使用你已有的模型服务。", li: ["OpenAI、Claude、Gemini…", "DeepSeek、通义、Kimi…", "按服务商计费"] },
+    { k: "local", ic: "cpu", bg: "linear-gradient(135deg,#10b981,#047857)", t: "本机模型", tag: "", d: "通过 Ollama 在这台 Mac 上运行。", li: ["数据不离开这台 Mac", "离线可用", "需要较好的硬件"] },
+  ];
+  const sel = mode.startsWith("cloud") ? "cloud" : mode.startsWith("key") ? "key" : "local";
+  const go = { cloud: "ai", key: "ai-key", local: "ai-local" };
+  let detail = "";
+  if (mode === "cloud") detail = `<h5>登录 Typeflux Cloud</h5><div class="muted" style="font-size:12.5px">会在浏览器中完成登录，然后自动回到这里。</div>
+      <div class="signin"><span class="btn sec" data-go="ai-cloud-ok"><img src="../../Sources/Typeflux/Resources/google.svg">使用 Google 登录</span><span class="btn sec" data-go="ai-cloud-ok"><img class="ap-logo" src="../../Sources/Typeflux/Resources/apple.svg">使用 Apple 登录</span><span class="btn sec" data-go="ai-cloud-ok">${ic("chat")}使用邮箱登录</span></div>
+      <div class="terms">登录即表示同意 <span class="link">服务条款</span> 和 <span class="link">隐私政策</span>。已有会员会自动生效。</div>`;
+  if (mode === "cloud-ok") detail = `<div class="acct"><span class="avatar">M</span><div><div style="font-weight:650;font-size:14px">mylxsw</div><div class="faint" style="font-size:12px">已通过 Google 登录 · 免费版</div></div>
+        <span class="granted" style="margin-left:auto"><span class="ck">${ic("check")}</span>已就绪</span></div>
+      <div class="quota"><div><b>本月 AI 额度</b>剩余 1,000 积分</div><div><b>对话、启动器提问</b>使用云端模型</div><div><b>语音识别</b>本机模型，不消耗额度</div></div>
+      <div class="note">${ic("info")}<span>升级会员后，语音识别也可以切换为更快的云端识别。<span class="link">了解会员</span></span></div>`;
+  if (mode === "key") detail = `<h5>选择服务商</h5>
+      <div class="provs">
+        <span class="prov on"><img src="${PROV("openai")}" class="mono">OpenAI</span><span class="prov"><img src="${PROV("claude-color")}">Anthropic</span><span class="prov"><img src="${PROV("gemini-color")}">Gemini</span><span class="prov"><img src="${PROV("deepseek-color")}">DeepSeek</span><span class="prov"><img src="${PROV("openrouter")}" class="mono">OpenRouter</span><span class="prov"><img src="${PROV("qwen-color")}">通义千问</span><span class="prov">更多 ${ic("chevd")}</span></div>
+      <div class="fields"><div class="fld"><label>API Key</label><div class="input">sk-proj-••••••••••••••••••••Q7aF</div></div>
+        <div class="fld"><label>模型</label><div class="input">gpt-5.1-mini<span class="chev">${ic("chevd")}</span></div></div>
+        <span class="btn sec" style="height:32px">测试连接</span></div>
+      <div class="testok">${ic("check")}连接成功 · 412 ms<span class="faint">· <span class="link">获取 API Key</span> · <span class="link">自定义 Base URL</span></span></div>`;
+  if (mode === "local") detail = `<div class="acct"><img src="${PROV("ollama")}" style="width:34px;height:34px;border-radius:8px;background:#fff;padding:4px;border:1px solid var(--hair)"><div><div style="font-weight:650;font-size:14px">已检测到 Ollama</div><div class="faint" style="font-size:12px">运行中 · http://localhost:11434</div></div>
+        <span class="granted" style="margin-left:auto"><span class="ck">${ic("check")}</span>已连接</span></div>
+      <div class="fields" style="grid-template-columns:1fr auto;margin-top:16px"><div class="fld"><label>模型（已安装 3 个）</label><div class="input">qwen3:8b · 5.2 GB<span class="chev">${ic("chevd")}</span></div></div><span class="btn sec" style="height:32px">测试</span></div>
+      <div class="note">${ic("info")}<span>没检测到时显示「下载 Ollama ↗」和「重新检测」。本机模型不支持联网搜索。</span></div>`;
+  return `${titlebar({ step: 1 })}
+  <div class="body">
+    <div class="h-title">选择 AI 的工作方式</div>
+    <p class="h-sub">AI 用于对话、启动器提问和润色语音文字。随时可以在设置里更换。</p>
+    <div class="ai-opts">${opts.map(o => `<div class="card opt ${o.k === sel ? "on" : ""}" data-go="${go[o.k]}">
+      <div class="top"><span class="oi" style="background:${o.bg}">${ic(o.ic)}</span><h4>${o.t}</h4>${o.tag}<span class="radio"></span></div>
+      <p>${o.d}</p><ul>${o.li.map(l => `<li>${ic("check")}${l}</li>`).join("")}</ul></div>`).join("")}</div>
+    <div class="card detail">${detail}</div>
+    <div class="asr">${ic("wave")}<span><b>语音识别已就绪</b> · 内置本机模型 SenseVoice，离线可用，无需配置。</span><span class="faint">可在 设置 → 模型 中更换</span></div>
+  </div>
+  ${footer({ back: true, extra: `<span class="btn ghost" data-go="ai-skip">暂不使用 AI</span>`, primary: "继续", primaryOff: mode === "cloud", go: mode === "cloud" ? "" : "try-voice" })}`;
+}
+function aiSkipOverlay() {
+  return `<div class="scrim"></div><div class="sheet">
+    <h4>先不连接 AI？</h4>
+    <p>不连接 AI 也能用 Typeflux 的大部分功能。之后在 设置 → 模型 里随时可以连接。</p>
+    <div class="cap"><span class="y">${ic("check")}语音输入</span><span class="y">${ic("check")}启动器搜索、计算、剪贴板</span><span class="n">${ic("x")}AI 对话</span><span class="n">${ic("x")}AI 润色语音文字</span></div>
+    <div class="acts"><span class="btn ghost" data-go="try-ai-none">暂不使用</span><span class="btn primary" data-go="ai">返回连接</span></div></div>`;
+}
+
+function tasksCol(active, done, aiOff = false) {
+  const T = [
+    { k: "voice", ic: "mic", bg: "#ef4444", n: "说", t: "语音输入", d: `按住 ${kc("fn")} 说话` },
+    { k: "launch", ic: "search", bg: "#0ea5e9", n: "找", t: "启动器", d: `按 ${kc("⌘")}${kc("Space")}` },
+    { k: "ai", ic: "spark", bg: "#7c3aed", n: "问", t: "AI 对话", d: `启动器里按 ${kc("⌘")}${kc("↩")}` },
+  ];
+  const go = { voice: "try-voice", launch: "try-launch", ai: aiOff ? "try-ai-none" : "try-ai" };
+  return `<div class="tasks">${T.map(x => `<div class="task ${x.k === active ? "on" : ""} ${x.k === "ai" && aiOff ? "off" : ""}" data-go="${go[x.k]}">
+      <span class="ti" style="background:${x.bg}">${ic(x.ic)}</span><div><div class="tn">${x.t}</div><div class="td">${x.d}</div></div>
+      <span class="state">${done.includes(x.k) ? `<span class="ok">${ic("check")}</span>` : `<span class="todo"></span>`}</span></div>`).join("")}
+    <div class="tip">每一项都可以跳过。快捷键随时可以在 设置 → 快捷键 中修改。</div></div>`;
+}
+function practiceFooter(done, aiOff = false) {
+  const total = aiOff ? 2 : 3;
+  const n = done.length;
+  return footer({ back: true, helper: `已完成 ${n} / ${total}`, extra: n < total ? `<span class="btn ghost" data-go="done">跳过练习</span>` : "", primary: n >= total ? "完成" : "下一项", go: n >= total ? "done" : "" });
+}
+function tryVoice(variant) {
+  let sb = "";
+  const head = `<div class="sb-head"><h3>按住 ${kc("fn")} 说一句话，说完松开</h3><p>文字会写进光标所在的位置。就在下面这个备忘录里试试。</p></div>`;
+  if (variant === "idle") sb = `${head}<div class="samples"><span class="faint" style="font-size:12px;align-self:center">可以这样说：</span><span class="sample">“明天下午三点和设计团队开会”</span><span class="sample">“嗯…帮我记一下，周五前交周报”</span></div>
+    <div class="note-app"><div class="bar"><i></i><i></i><i></i><span>备忘录</span></div><div class="txt"><span class="cur"></span><span class="ph">光标在这里，按住 fn 开始说话…</span></div></div>`;
+  if (variant === "rec") sb = `${head}<div class="sb-keys"><div style="text-align:center">${kc("fn", "xl press")}<div class="lbl">正在按住</div></div></div>
+    <div class="note-app"><div class="bar"><i></i><i></i><i></i><span>备忘录</span></div><div class="txt"><span class="cur"></span></div>
+    <span class="rec-pill">${wave(16)}<span class="live">嗯明天下午三点和设计团队开…</span><span class="t">0:03</span></span></div>`;
+  if (variant === "ok") sb = `${head}<div class="note-app"><div class="bar"><i></i><i></i><i></i><span>备忘录</span></div>
+    <span class="success">${ic("check")}写进去了，用时 0.6 秒</span>
+    <div class="txt"><span class="new">明天下午三点和设计团队开会。</span><span class="cur"></span></div>
+    <div class="txt" style="padding-top:0;font-size:12px" ><span class="faint">你说的是“嗯明天下午三点和设计团队开会”，“嗯”已自动去掉。</span></div></div>`;
+  if (variant === "fn") sb = `${head}
+    <div class="warnbox">${ic("warn")}<div><b>fn 键现在会打开「表情与符号」</b>需要在键盘设置中把「按下 🌐 键时」改为「不执行任何操作」，Typeflux 才能使用它。
+      <div class="acts"><span class="btn sec sm">打开键盘设置</span><span class="faint">改好后这里会自动更新</span></div></div></div>
+    <div class="infobox">${ic("keyboard")}<div><b>外接键盘没有 fn 键？</b><span class="muted">改用右侧的一个按键：按住说话，连按两下打开启动器。</span>
+      <div style="display:flex;gap:8px;margin-top:9px"><span class="btn sec sm">使用右侧 ⌘</span><span class="btn sec sm">使用右侧 ⌥</span></div></div></div>
+    <div class="note-app" style="margin-top:12px"><div class="bar"><i></i><i></i><i></i><span>备忘录</span></div><div class="txt"><span class="cur"></span><span class="ph">光标在这里，按住 fn 开始说话…</span></div></div>`;
+  const done = variant === "ok" ? ["voice"] : [];
+  return `${titlebar({ step: 2 })}
+  <div class="body"><div class="h-title" style="font-size:22px">三个按键，上手 Typeflux</div><p class="h-sub" style="margin-bottom:14px">跟着各试一次就记住了。</p>
+    <div class="prac">${tasksCol("voice", done)}<div class="sandbox">${sb}</div></div></div>
+  ${variant === "ok" ? footer({ back: true, helper: "已完成 1 / 3", extra: `<span class="btn ghost" data-go="done">跳过练习</span>`, primary: "下一项", go: "try-launch" }) : practiceFooter(done)}`;
+}
+function tryLaunch(variant) {
+  const done = variant === "ok" ? ["voice", "launch"] : ["voice"];
+  let sb = `<div class="sb-head"><h3>按 ${kc("⌘")}${kc("Space")} 打开启动器</h3><p>输入应用名、算式或关键词，回车打开；${kc("esc")} 关闭。</p></div>`;
+  if (variant === "conflict") sb += `<div class="warnbox">${ic("warn")}<div><b>⌘ Space 已被「聚焦搜索」使用</b>两个功能用同一组按键时，只有一个会响应。
+      <div class="acts"><span class="btn primary sm" data-go="try-launch">改用 ⌥ Space</span><span class="btn sec sm">在系统设置中关闭聚焦搜索的快捷键</span></div></div></div>`;
+  sb += `<div class="samples"><span class="faint" style="font-size:12px;align-self:center">打开后试试：</span><span class="sample">128*3</span><span class="sample">日历</span><span class="sample">fy 你好</span><span class="sample">昨天复制的链接</span></div>
+    <div class="ghostlaunch">${variant === "ok" ? `<span class="granted"><span class="ck">${ic("check")}</span>启动器已打开，结果出来了</span>` : `${ic("search")} 启动器会出现在屏幕中间`}</div>`;
+  const f = variant === "ok" ? footer({ back: true, helper: "已完成 2 / 3", extra: `<span class="btn ghost" data-go="done">跳过练习</span>`, primary: "下一项", go: "try-ai" }) : practiceFooter(done);
+  return `${titlebar({ step: 2 })}
+  <div class="body"><div class="h-title" style="font-size:22px">三个按键，上手 Typeflux</div><p class="h-sub" style="margin-bottom:14px">跟着各试一次就记住了。</p>
+    <div class="prac">${tasksCol("launch", done)}<div class="sandbox">${sb}</div></div></div>${f}`;
+}
+function launcherOverlay() {
+  return `<div class="launcher"><div class="in">128*3<span class="cur"></span><span class="mic">${ic("mic")}</span><span class="send">${ic("arrowup")}</span></div>
+    <div class="res"><div class="row on"><span class="ap" style="background:#8e8e93">=</span><span class="calc">384</span><span class="r">↩ 复制结果</span></div>
+      <div class="sec">问 AI</div><div class="row"><span class="ap" style="background:#7c3aed">${ic("spark")}</span>128*3<span class="r">⌘↩</span></div></div>
+    <div class="bot"><span class="m">Typeflux Cloud ⌄</span><span class="r"><span>↩ 复制</span><span>⌘↩ 问 AI</span><span>esc 关闭</span></span></div></div>`;
+}
+function tryAI(variant) {
+  const none = variant === "none";
+  const done = variant === "ok" ? ["voice", "launch", "ai"] : ["voice", "launch"];
+  let sb = `<div class="sb-head"><h3>在启动器里输入问题，按 ${kc("⌘")}${kc("↩")} 交给 AI</h3><p>也可以点 🎙 用语音提问。选中的文字和当前屏幕会自动带上，点一下就能去掉。</p></div>`;
+  if (none) sb += `<div class="infobox" style="margin-top:16px">${ic("info")}<div><b>AI 还没有连接</b><span class="muted">连接后就能在启动器里提问、和 AI 对话。语音输入和启动器搜索不受影响。</span>
+      <div style="display:flex;gap:8px;margin-top:10px"><span class="btn primary sm" data-go="ai">连接 AI</span><span class="btn ghost sm" data-go="done">先跳过</span></div></div></div>`;
+  else sb += `<div class="samples"><span class="faint" style="font-size:12px;align-self:center">试试问：</span><span class="sample">帮我写一封请假邮件，明天下午</span><span class="sample">把选中的文字翻译成英文</span><span class="sample">这一屏讲了什么</span></div>
+    <div class="ghostlaunch">${variant === "ok" ? `<span class="granted"><span class="ck">${ic("check")}</span>AI 已经回答了，对话保存在对话窗口里</span>` : `${ic("spark")} 先按 ⌘ Space 打开启动器`}</div>`;
+  const f = none ? footer({ back: true, helper: "已完成 2 / 2", primary: "完成", go: "done" }) : variant === "ok" ? footer({ back: true, helper: "已完成 3 / 3", primary: "完成", go: "done" }) : practiceFooter(done);
+  return `${titlebar({ step: 2 })}
+  <div class="body"><div class="h-title" style="font-size:22px">三个按键，上手 Typeflux</div><p class="h-sub" style="margin-bottom:14px">跟着各试一次就记住了。</p>
+    <div class="prac">${tasksCol("ai", done, none)}<div class="sandbox">${sb}</div></div></div>${f}`;
+}
+function askLauncherOverlay() {
+  return `<div class="launcher"><div class="in">帮我写一封请假邮件，明天下午<span class="cur"></span><span class="mic">${ic("mic")}</span><span class="send on">${ic("arrowup")}</span></div>
+    <div class="res"><div class="sec">问 AI</div><div class="row on"><span class="ap" style="background:#7c3aed">${ic("spark")}</span>帮我写一封请假邮件，明天下午<span class="r">⌘↩ 在对话中打开</span></div>
+      <div class="sec">应用</div><div class="row"><span class="ap" style="background:#3b82f6">✉</span>邮件<span class="r">应用</span></div></div>
+    <div class="bot"><span class="m">Typeflux Cloud ⌄</span><span class="r"><span>↩ 打开</span><span class="hl">⌘↩ 问 AI</span><span>esc 关闭</span></span></div></div>`;
+}
+function chatOverlay() {
+  return `<div class="chat"><div class="head"><div class="lights"><i></i><i></i><i></i></div>请假邮件<span style="margin-left:auto;font-weight:400" class="faint">Typeflux Cloud</span></div>
+    <div class="msgs"><div class="q">帮我写一封请假邮件，明天下午</div>
+      <div class="a"><b>主题：</b>明天下午请假申请<br><br>王经理，您好：<br><br>因个人事务，我想申请明天（10 月 13 日）下午半天假，时间为 13:30–18:00。手头的需求评审材料今天下班前会整理好并同步给小李，紧急事项可以随时电话联系我。<br><br>麻烦您批准，谢谢！<span class="stream"></span></div></div>
+    <div class="comp">继续追问，/ 调用命令<div class="row2">＋ ${ic("cloud")}<b>Typeflux Cloud</b>${ic("chevd")}<span style="margin-left:auto">${ic("mic")}</span></div></div></div>`;
+}
+
+function done(aiOff = false) {
+  return `${titlebar({ step: 3 })}
+  <div class="body done">
+    <span class="bigok">${ic("check")}</span>
+    <div class="h-title" style="margin-top:20px">一切就绪</div>
+    <p class="h-sub" style="margin:0 auto 22px">记住这三个按键就够了。Typeflux 会一直在菜单栏里待命。</p>
+    <div class="cheat">
+      <div class="card"><div class="ks">${kc("fn", "lg")}</div><h4>按住说话</h4><p>松开后写进当前应用</p></div>
+      <div class="card"><div class="ks">${kc("⌘", "lg")}${kc("Space", "lg wide")}</div><h4>打开启动器</h4><p>搜索、计算、翻译、剪贴板</p></div>
+      <div class="card" style="${aiOff ? "opacity:.55" : ""}"><div class="ks">${kc("⌘", "lg")}${kc("↩", "lg")}</div><h4>问 AI</h4><p>${aiOff ? "连接 AI 后可用" : "在启动器里把问题交给 AI"}</p></div>
+    </div>
+    <div class="more">
+      <div class="m">${ic("clip")}<div><b>剪贴板与历史</b>复制过的内容和语音记录</div>${kc("⌥⌘O")}</div>
+      <div class="m">${ic("camera")}<div><b>截图</b>框选区域截图并标注</div>${kc("⌥⌘A")}</div>
+      <div class="m">${ic("person")}<div><b>切换人设</b>换一种语气写</div>${kc("⌥⌘P")}</div>
+    </div>
+    <div class="launchrow"><span class="tog on"></span>登录 Mac 时自动打开 Typeflux</div>
+  </div>
+  ${footer({ back: true, primary: "开始使用", go: "menubar", lg: true })}`;
+}
+
+function menubarHint() {
+  return `<div class="menuhint"><b>Typeflux 在这里</b>点菜单栏图标可以打开设置、查看历史、切换人设。
+    <div class="ln">${kc("fn")} 按住说话</div><div class="ln">${kc("⌘")}${kc("Space")} 打开启动器</div>
+    <div class="acts"><span class="btn primary sm" data-go="welcome">好的</span></div></div>`;
+}
+function resumeSettings() {
+  const it = (i, t, on) => `<div class="it ${on ? "on" : ""}">${ic(i)}${t}</div>`;
+  return `<div class="settings"><div class="sb">
+      ${it("gear", "通用", true)}${it("mic", "语音输入")}${it("search", "启动器")}${it("spark", "AI 对话")}${it("model", "模型")}${it("keyboard", "快捷键")}${it("lock", "权限")}
+      <div class="resume"><b>完成设置</b><span class="muted">还差 1 步，语音输入才能使用</span><div class="prog"><i></i></div>
+        <div class="todo-l"><span class="todo" style="width:12px;height:12px;border-radius:50%;border:1.5px dashed var(--hair-2);display:inline-block"></span>允许辅助功能</div>
+        <span class="btn primary sm" style="margin-top:10px;width:100%" data-go="perm">继续设置</span></div></div>
+    <div class="content"><h2>通用</h2><div class="skel"></div><div class="skel"></div><div class="skel" style="height:120px"></div></div></div>`;
+}
+
+/* ---------- registry ---------- */
+const S = [
+  { id: "welcome", name: "0 欢迎", win: welcome, note: "<b>欢迎</b>：一句话讲清产品是什么，三张卡片对应三个能力和各自的按键。界面语言默认跟随系统，右上角可以改，不再单独占一步。" },
+  { id: "perm", name: "1 权限 · 初始", win: () => perm("init"), note: "<b>权限</b>：只要两项必需权限，每项写清楚「用来做什么、影响哪些功能」。屏幕录制标为可选，默认推到真正用到时再申请。" },
+  { id: "perm-ax", name: "1 权限 · 辅助功能引导", win: () => perm("ax"), overlay: permAxOverlay, note: "<b>辅助功能引导</b>：系统设置打开后，在它旁边显示一个提示卡，指出要打开哪个开关。Typeflux 轮询授权状态，打开后自动变成「已允许」，不用切回来手动刷新。" },
+  { id: "perm-done", name: "1 权限 · 已完成", win: () => perm("done"), note: "<b>必需权限完成</b>：主按钮可用；可选项保持「需要时再说」，不挡路。" },
+  { id: "perm-skip", name: "1 权限 · 稍后授权", win: () => perm("init"), overlay: permSkipOverlay, note: "<b>稍后授权</b>：不强制。说清缺权限时哪些能用、哪些不能用，之后由菜单栏和设置里的「完成设置」卡片接住。" },
+  { id: "ai", name: "2 AI · 云端（未登录）", win: () => aiScreen("cloud"), note: "<b>AI</b>：三种方式三张卡片，默认选中 Typeflux Cloud。语音识别用内置本机模型，单独一行说明「已就绪」，不再让用户在 11 个语音引擎里挑。" },
+  { id: "ai-cloud-ok", name: "2 AI · 云端已登录", win: () => aiScreen("cloud-ok"), note: "<b>登录完成</b>：从浏览器回来后显示账号、套餐和额度，说清哪些功能走云端、哪些不消耗额度。" },
+  { id: "ai-key", name: "2 AI · 自己的 API Key", win: () => aiScreen("key"), note: "<b>自己的 Key</b>：服务商芯片 + Key + 模型 + 测试连接，一屏完成。Base URL 等高级项收进链接。" },
+  { id: "ai-local", name: "2 AI · 本机模型", win: () => aiScreen("local"), note: "<b>本机模型</b>：自动检测 Ollama 和已安装的模型；没检测到时给下载链接和重新检测。" },
+  { id: "ai-skip", name: "2 AI · 暂不使用", win: () => aiScreen("cloud"), overlay: aiSkipOverlay, note: "<b>暂不使用 AI</b>：说清不连接 AI 时哪些能用。选择后练习里的「问」一项会变成提示，完成页对应卡片变灰。" },
+  { id: "try-voice", name: "3 上手 · 说（待试）", win: () => tryVoice("idle"), note: "<b>上手 · 说</b>：页面里放一个真实可输入的备忘录，焦点已经在里面。用户按住 fn 说话，结果直接写进来，比看说明更快记住。" },
+  { id: "try-voice-rec", name: "3 上手 · 说（录音中）", win: () => tryVoice("rec"), note: "<b>录音中</b>：大键帽显示按下状态，底部是和真实使用时一样的录音浮条（实时字幕 + 计时）。" },
+  { id: "try-voice-ok", name: "3 上手 · 说（完成）", win: () => tryVoice("ok"), note: "<b>写入成功</b>：高亮新写入的文字，并点明自动去掉了口头禅，让用户马上感受到「比打字好」。" },
+  { id: "try-voice-fn", name: "3 上手 · 说（fn 被占用）", win: () => tryVoice("fn"), note: "<b>fn 被系统占用</b>：只在检测到问题时出现，给一键打开键盘设置；外接键盘可以一键改用右 ⌘ / 右 ⌥。" },
+  { id: "try-launch", name: "3 上手 · 找（待试）", win: () => tryLaunch("idle"), note: "<b>上手 · 找</b>：提示按 ⌘ Space，给几个有代表性的输入（算式、应用、翻译关键词、剪贴板）。" },
+  { id: "try-launch-open", name: "3 上手 · 找（启动器已打开）", win: () => tryLaunch("idle"), overlay: launcherOverlay, note: "<b>启动器已打开</b>：真实的启动器出现在屏幕中间，引导窗口留在后面。出了结果就算完成。" },
+  { id: "try-launch-conflict", name: "3 上手 · 找（与聚焦搜索冲突）", win: () => tryLaunch("conflict"), note: "<b>快捷键冲突</b>：⌘ Space 默认属于聚焦搜索。检测到冲突时推荐改用 ⌥ Space，也可以去系统设置关掉聚焦搜索的快捷键。" },
+  { id: "try-ai", name: "3 上手 · 问（待试）", win: () => tryAI("idle"), note: "<b>上手 · 问</b>：在启动器里把问题交给 AI，同时告诉用户选中文字和屏幕会自动带上。" },
+  { id: "try-ai-launcher", name: "3 上手 · 问（启动器中）", win: () => tryAI("idle"), overlay: askLauncherOverlay, note: "<b>启动器中提问</b>：底栏的 ⌘↩ 问 AI 高亮，告诉用户下一步按什么。" },
+  { id: "try-ai-chat", name: "3 上手 · 问（对话窗口）", win: () => tryAI("ok"), overlay: chatOverlay, note: "<b>对话窗口</b>：⌘↩ 后打开对话窗口并流式回答，这一项完成。" },
+  { id: "try-ai-none", name: "3 上手 · 问（未连接 AI）", win: () => tryAI("none"), note: "<b>未连接 AI</b>：这一项变成提示，可以回去连接或跳过，不计入完成数。" },
+  { id: "done", name: "4 完成", win: () => done(false), note: "<b>完成</b>：三个按键做成速查卡，再列三个常用的次要功能。默认勾选「登录时打开」。" },
+  { id: "menubar", name: "5 首次进入 · 菜单栏提示", win: null, overlay: menubarHint, mb: { tf: true, hl: true, app: "备忘录" }, note: "<b>首次进入</b>：引导窗口关闭后，从菜单栏图标弹出一次性提示，告诉用户 Typeflux 在哪。" },
+  { id: "resume", name: "6 跳过后 · 设置中的完成卡片", win: null, overlay: resumeSettings, mb: { tf: true, dot: true, app: "Typeflux" }, note: "<b>跳过后找回</b>：跳过了必需步骤时，菜单栏图标带橙点，设置侧栏底部显示「完成设置」卡片，点一下回到缺的那一步。" },
+];
+const byId = Object.fromEntries(S.map(s => [s.id, s]));
+const order = S.map(s => s.id);
+const BACK = { perm: "welcome", "perm-ax": "welcome", "perm-done": "welcome", "perm-skip": "welcome", ai: "perm-done", "ai-cloud-ok": "perm-done", "ai-key": "perm-done", "ai-local": "perm-done", "ai-skip": "perm-done",
+  "try-voice": "ai-cloud-ok", "try-voice-rec": "ai-cloud-ok", "try-voice-ok": "ai-cloud-ok", "try-voice-fn": "ai-cloud-ok", "try-launch": "try-voice-ok", "try-launch-open": "try-voice-ok", "try-launch-conflict": "try-voice-ok",
+  "try-ai": "try-launch", "try-ai-launcher": "try-launch", "try-ai-chat": "try-launch", "try-ai-none": "ai", done: "try-ai-chat" };
+// clicking around inside a practice sandbox advances its micro-states
+const ADVANCE = { "try-voice": "try-voice-rec", "try-voice-rec": "try-voice-ok", "try-launch": "try-launch-open", "try-launch-open": "try-launch-ok", "try-ai": "try-ai-launcher", "try-ai-launcher": "try-ai-chat" };
+byId["try-launch-ok"] = { id: "try-launch-ok", name: "3 上手 · 找（完成）", win: () => tryLaunch("ok"), note: "<b>找 · 完成</b>" };
+
+function renderDesk(s, theme) {
+  const mb = s.mb || { tf: true };
+  return `<div class="desk t-${theme}">${menubar(mb)}${s.win ? `<div class="win">${s.win()}</div>` : ""}${s.overlay ? s.overlay() : ""}</div>`;
+}
+
+let state = { id: "welcome", theme: "light", view: "proto" };
+function parseHash() {
+  const h = location.hash.slice(1).split("&");
+  for (const p of h) {
+    if (!p) continue;
+    const [k, v] = p.split("=");
+    if (v === undefined && byId[k]) state.id = k;
+    else if (k === "theme") state.theme = v;
+    else if (k === "view") state.view = v;
+    else if (k === "bare") document.body.classList.add("bare");
+  }
+}
+function render() {
+  const s = byId[state.id] || byId.welcome;
+  document.getElementById("stage").innerHTML = renderDesk(s, state.theme);
+  document.getElementById("caption").innerHTML = s.note || "";
+  document.getElementById("scrSel").value = state.id;
+  document.querySelectorAll("#themePill button").forEach(b => b.classList.toggle("on", b.dataset.v === state.theme));
+  document.querySelectorAll("#viewPill button").forEach(b => b.classList.toggle("on", b.dataset.v === state.view));
+  document.body.classList.toggle("view-board", state.view === "board");
+  if (state.view === "board") {
+    document.getElementById("board").innerHTML = S.map(x => `<div class="cell"><div class="lbl"><b>${x.name}</b></div><div class="thumb" data-open="${x.id}">${renderDesk(x, state.theme)}</div></div>`).join("");
+  }
+}
+function go(id) {
+  if (!id) return;
+  if (id === "back") id = BACK[state.id] || "welcome";
+  if (!byId[id]) return;
+  state.id = id; history.replaceState(null, "", `#${id}&theme=${state.theme}`); render();
+}
+document.getElementById("scrSel").innerHTML = S.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+document.getElementById("scrSel").onchange = e => go(e.target.value);
+document.getElementById("themePill").onclick = e => { if (e.target.dataset.v) { state.theme = e.target.dataset.v; go(state.id); } };
+document.getElementById("viewPill").onclick = e => { if (e.target.dataset.v) { state.view = e.target.dataset.v; render(); } };
+document.addEventListener("click", e => {
+  const open = e.target.closest("[data-open]");
+  if (open) { state.view = "proto"; go(open.dataset.open); return; }
+  const g = e.target.closest("[data-go]");
+  if (g && g.dataset.go) { go(g.dataset.go); return; }
+  if (e.target.closest(".sandbox") && ADVANCE[state.id]) go(ADVANCE[state.id]);
+  else if (e.target.closest(".launcher") && ADVANCE[state.id]) go(ADVANCE[state.id]);
+});
+document.addEventListener("keydown", e => {
+  const i = order.indexOf(state.id);
+  if (e.key === "ArrowRight" && i < order.length - 1) go(order[i + 1]);
+  if (e.key === "ArrowLeft" && i > 0) go(order[i - 1]);
+});
+parseHash(); render();
+</script>
+</body>
+</html>

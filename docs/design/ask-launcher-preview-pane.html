@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Typeflux · 启动器文件预览窗口 设计稿 v3</title>
+<style>
+  /* Tokens copied from AskTheme / StudioTheme (dark calibrated whites converted to sRGB). */
+  :root {
+    --page: #0e0e10; --desk: #1a1b1e; --dot: rgba(255,255,255,.07);
+    --card: rgba(36,36,38,.92); --card-edge: rgba(255,255,255,.18);
+    --sep: rgba(255,255,255,.07);
+    --t1: #f1f1f1; --t2: #c3c3c3; --t3: #9f9f9f; --meta: #c3c3c3;
+    --accent: #2e93ff; --hover: rgba(255,255,255,.08); --best-edge: rgba(46,147,255,.55);
+    --tray: rgba(0,0,0,.16); --tray-edge: rgba(255,255,255,.12);
+    --switch-on: rgba(23,140,255,.22); --switch-on-edge: rgba(23,140,255,.35);
+    --private: #bf5af2; --private-fill: rgba(191,90,242,.13);
+    --well: rgba(0,0,0,.22); --keycap: rgba(255,255,255,.08); --keycap-edge: rgba(255,255,255,.10);
+    --code-key: #8ebdff; --code-str: #f0a37a; --code-com: #8a8a8e; --code-num: #c6a0f6;
+  }
+  body.light {
+    --page: #e7e8ec; --desk: #eef0f4; --dot: rgba(0,0,0,.07);
+    --card: rgba(246,247,250,.94); --card-edge: rgba(0,0,0,.12);
+    --sep: rgba(15,23,42,.08);
+    --t1: #1d1d1f; --t2: #515154; --t3: #6e6e73; --meta: #6e6e73;
+    --accent: #2563eb; --hover: rgba(0,0,0,.06); --best-edge: rgba(37,99,235,.55);
+    --tray: rgba(255,255,255,.26); --tray-edge: rgba(255,255,255,.30);
+    --switch-on: rgba(37,99,235,.10); --switch-on-edge: rgba(37,99,235,.20);
+    --private: #9333ea; --private-fill: rgba(147,51,234,.10);
+    --well: rgba(0,0,0,.045); --keycap: #fff; --keycap-edge: rgba(15,23,42,.14);
+    --code-key: #1d4ed8; --code-str: #b4441a; --code-com: #8e8e93; --code-num: #7c3aed;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 26px 32px 44px; background: var(--page); color: var(--t1); min-width: 1300px;
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif; -webkit-font-smoothing: antialiased; }
+  h1 { font-size: 20px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--t2); margin: 0 0 14px; max-width: 1220px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
+  .toolbar .lbl { color: var(--t3); font-size: 11.5px; margin-right: 2px; }
+  .tb { height: 26px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--sep); background: var(--hover); color: var(--t1); font: inherit; font-size: 12px; cursor: pointer; }
+  .tb.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tsep { width: 1px; height: 16px; background: var(--sep); margin: 0 6px; }
+
+  /* desktop */
+  .desk { position: relative; height: 640px; border-radius: 14px; border: 1px solid var(--sep); overflow: hidden;
+    background: radial-gradient(var(--dot) 1px, transparent 1px) 0 0 / 22px 22px, var(--desk); }
+  .desk .screenlabel { position: absolute; right: 14px; bottom: 10px; font: 11px "SF Mono", ui-monospace, monospace; color: var(--t3); }
+  .launcher { position: absolute; left: 70px; top: 40px; }
+
+  /* ===================== launcher card: unchanged from today ===================== */
+  .card { width: 688px; border-radius: 16px; background: var(--card); border: 1px solid var(--card-edge); position: relative; overflow: hidden;
+    box-shadow: 0 22px 54px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.22); backdrop-filter: blur(28px) saturate(1.3); }
+  body.light .card, body.light .pv { box-shadow: 0 22px 54px rgba(0,0,0,.16), 0 2px 6px rgba(0,0,0,.06); }
+  .grip { position: absolute; top: 4px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: var(--t3); opacity: .45; }
+  .head { display: flex; align-items: center; gap: 4px; height: 58px; padding: 0 12px; }
+  .head input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--t1); font: inherit; font-size: 17px; padding: 0 2px; caret-color: var(--accent); }
+  .head input::placeholder { color: var(--t3); }
+  .hbtn { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; color: var(--t2); flex: none; }
+  .hbtn svg { width: 17px; height: 17px; }
+  .send { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; flex: none;
+    box-shadow: 0 0 14px rgba(46,147,255,.45); }
+  .send svg { width: 16px; height: 16px; }
+  .rule { height: 1px; background: var(--sep); margin: 0 12px; }
+  .list { padding: 6px; max-height: 430px; overflow-y: auto; scrollbar-width: none; }
+  .list::-webkit-scrollbar { display: none; }
+  .sect { font-size: 11px; font-weight: 600; color: var(--t3); height: 20px; display: flex; align-items: flex-end; padding: 0 10px; margin-top: 2px; }
+  .row { position: relative; display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 10px; border-radius: 14px; margin-top: 2px; cursor: default; }
+  .row.hl { background: var(--hover); }
+  .row.hl.best { box-shadow: inset 0 0 0 1px var(--best-edge); }
+  .row .nm { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
+  .row .nm b { color: var(--accent); font-weight: 700; }
+  .row .loc { font-size: 11.5px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 0; min-width: 0; }
+  .row .tail { margin-left: auto; font-size: 11.5px; color: var(--t3); flex: none; white-space: nowrap; }
+  .row .val { margin-left: auto; font-size: 13px; color: var(--t2); flex: none; font-variant-numeric: tabular-nums; }
+  .more { display: flex; align-items: center; height: 30px; padding: 0 10px 0 50px; border-radius: 12px; font-size: 12.5px; color: var(--t2); margin-top: 2px; }
+  .more span { margin-left: auto; font-size: 11.5px; color: var(--t3); }
+  .badge { position: absolute; left: 29px; top: 1px; width: 17px; height: 17px; border-radius: 4px; background: #fff; color: rgba(0,0,0,.85);
+    font: 700 10px/17px ui-rounded, -apple-system, sans-serif; text-align: center; box-shadow: 0 1px 1px rgba(0,0,0,.18); display: none; }
+  body.cmd .badge { display: block; }
+
+  .tile { width: 28px; height: 28px; border-radius: 9px; background: rgba(46,147,255,.14); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .tile svg { width: 13px; height: 13px; }
+  .appicon { width: 28px; height: 28px; border-radius: 7px; flex: none; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 15px; }
+  .ficon { width: 22px; height: 28px; margin: 0 3px; border-radius: 3px; background: linear-gradient(#fefefe,#e8e8eb); box-shadow: 0 0 0 .5px rgba(0,0,0,.28), 0 1px 1px rgba(0,0,0,.15);
+    position: relative; flex: none; display: inline-flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; font: 700 6.5px/1 -apple-system, sans-serif; color: #6b6b70; }
+  .ficon.img { background: linear-gradient(160deg,#9ad0ff,#4f8ff7 60%,#7ac36a 60%); color: #fff; }
+  .ficon.pdf { color: #e2483d; } .ficon.vid { background: linear-gradient(#3a3a3e,#1e1e20); color: #fff; } .ficon.zip { color: #8a6d3b; } .ficon.doc { color: #2b5bd7; }
+  .ficon.code { color: #0a7cd8; } .ficon.sheet { color: #1d8a4e; } .ficon.aud { background: linear-gradient(#ff5e7a,#d61f4d); color: #fff; }
+  .folder { width: 28px; height: 22px; margin: 3px 0; border-radius: 4px; background: linear-gradient(#74c4ff,#3b95f2); position: relative; flex: none; }
+  .folder::before { content: ""; position: absolute; left: 2px; top: -3px; width: 11px; height: 5px; border-radius: 2px 2px 0 0; background: #5aaef8; }
+
+  .bar { position: relative; height: 48px; display: flex; align-items: center; gap: 4px; padding: 0 14px 0 7px; }
+  .bar::before { content: ""; position: absolute; inset: 4px 6px; border-radius: 10px; background: var(--tray); box-shadow: inset 0 0 0 1px var(--tray-edge); pointer-events: none; }
+  .bar > * { position: relative; }
+  .fbtn { height: 34px; min-width: 30px; display: inline-flex; align-items: center; justify-content: center; color: var(--t2); flex: none; }
+  .fbtn svg { width: 15px; height: 15px; }
+  .ftile { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex: none; color: var(--t2); }
+  .ftile svg { width: 15px; height: 15px; }
+  .ftile.private { background: var(--private-fill); color: var(--private); }
+  .ftile.on { background: var(--switch-on); box-shadow: inset 0 0 0 1px var(--switch-on-edge); color: var(--accent); }
+  .model { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 8px; font-size: 13.5px; font-weight: 600; flex: none; }
+  .model svg { width: 13px; height: 13px; color: var(--t2); }
+  .fsep { width: 1px; height: 18px; background: var(--sep); margin: 0 4px; flex: none; }
+  .spacer { flex: 1; }
+  .hint { font-size: 11px; color: var(--meta); white-space: nowrap; }
+
+  /* ===================== preview window (new, separate panel) ===================== */
+  .pv { position: absolute; top: 40px; width: 380px; border-radius: 16px; background: var(--card); border: 1px solid var(--card-edge); overflow: hidden;
+    box-shadow: 0 22px 54px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.22); backdrop-filter: blur(28px) saturate(1.3);
+    display: flex; flex-direction: column; opacity: 0; transform: translateX(-10px) scale(.985); transform-origin: left center; pointer-events: none;
+    transition: opacity .14s ease-in, transform .14s ease-in; }
+  .pv.left { transform-origin: right center; transform: translateX(10px) scale(.985); }
+  .pv.show { opacity: 1; transform: none; pointer-events: auto; transition: opacity .18s cubic-bezier(.2,.8,.2,1), transform .18s cubic-bezier(.2,.8,.2,1); }
+  body.reduce .pv, body.reduce .pv.left { transform: none !important; transition-duration: .1s !important; }
+  body.slow .pv { transition-duration: 1.2s !important; }
+  body.slow .pv-body > .layer { transition-duration: .9s !important; }
+  .pv-head { display: flex; align-items: center; gap: 9px; height: 50px; padding: 0 14px; flex: none; }
+  .pv-head .ficon { transform: scale(.85); margin: 0 1px; }
+  .pv-head .tx { min-width: 0; flex: 1; }
+  .pv-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pv-kind { font-size: 11px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pv-body { flex: 1; min-height: 0; position: relative; margin: 0 10px; border-radius: 10px; background: var(--well); overflow: hidden; }
+  .pv-body > .layer { position: absolute; inset: 0; transition: opacity .12s ease-out; }
+  .pv-body > .layer.out { opacity: 0; }
+  .pv-foot { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; flex: none; font-size: 11px; color: var(--t3); }
+  .pv-foot .path { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: rtl; text-align: left; }
+  .pv-foot .path bdi { direction: ltr; unicode-bidi: isolate; }
+  .pv-foot .k { flex: none; color: var(--t3); }
+
+  /* preview renderers */
+  .r-img { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: repeating-conic-gradient(rgba(127,127,127,.12) 0 25%, transparent 0 50%) 0 0 / 14px 14px; }
+  .r-img .pic { width: 100%; aspect-ratio: 16 / 10; border-radius: 6px; position: relative; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+  .pic.shot { background: linear-gradient(#2a2a2d,#202022); }
+  .pic.shot::before { content: ""; position: absolute; left: 7%; top: 12%; width: 38%; height: 7px; border-radius: 4px; background: rgba(255,255,255,.4); }
+  .pic.shot::after { content: ""; position: absolute; left: 7%; right: 7%; top: 30%; bottom: 12%; border-radius: 5px; background: repeating-linear-gradient(transparent 0 11px, rgba(255,255,255,.09) 11px 19px); }
+  .pic.photo { aspect-ratio: 3 / 2 !important; background: linear-gradient(180deg,#f6b26b 0%,#e8768a 38%,#5b4a8b 62%,#1f2a44 100%); }
+  .pic.photo::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 34%; background: linear-gradient(170deg, transparent 30%, #141a2c 31%); }
+  .r-img .pic.icon { width: 46%; aspect-ratio: 1; border-radius: 22%; background: linear-gradient(135deg,#5ac8fa,#2e93ff 55%,#6f5cff); box-shadow: 0 10px 24px rgba(0,0,0,.35); }
+  .pic.icon::after { content: "T"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font: 800 64px/1 -apple-system, sans-serif; }
+  .r-pdf { position: absolute; inset: 0; overflow-y: auto; padding: 14px 0; display: flex; flex-direction: column; align-items: center; gap: 12px; background: rgba(120,120,128,.35); scrollbar-width: thin; }
+  .r-pdf .page { width: 74%; aspect-ratio: 1 / 1.414; background: #fff; box-shadow: 0 3px 12px rgba(0,0,0,.3); padding: 9% 9%; color: #222; flex: none; }
+  .r-pdf .page b { display: block; font-size: 11px; margin-bottom: 4px; } .r-pdf .page small { display: block; font-size: 7px; color: #777; margin-bottom: 8px; }
+  .r-pdf .page i { display: block; height: 4px; margin: 6px 0; border-radius: 2px; background: #e3e3e6; }
+  .r-pdf .page .tb2 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 4px; margin: 12px 0; } .r-pdf .page .tb2 i { margin: 0; height: 6px; }
+  .r-pdf .count { position: sticky; bottom: 0; align-self: flex-end; margin-right: 10px; font: 10.5px "SF Mono", monospace; color: #fff; background: rgba(0,0,0,.55); padding: 1px 6px; border-radius: 5px; }
+  .r-code { position: absolute; inset: 0; overflow: auto; padding: 10px 0; font: 11px/1.65 "SF Mono", ui-monospace, Menlo, monospace; scrollbar-width: thin; }
+  .r-code .ln { display: grid; grid-template-columns: 36px 1fr; white-space: pre; }
+  .r-code .lt { overflow: hidden; text-overflow: ellipsis; padding-right: 12px; }
+  .r-code .ln i { font-style: normal; color: var(--t3); text-align: right; padding-right: 12px; opacity: .7; user-select: none; }
+  .r-code .k { color: var(--code-key); } .r-code .s { color: var(--code-str); } .r-code .c { color: var(--code-com); } .r-code .n { color: var(--code-num); }
+  .r-code .trunc { padding: 6px 0 0 48px; color: var(--t3); font: 11px -apple-system, sans-serif; }
+  .r-md { position: absolute; inset: 0; overflow: auto; padding: 14px 16px; font-size: 12.5px; line-height: 1.6; scrollbar-width: thin; }
+  .r-md h3 { font-size: 15px; margin: 0 0 6px; } .r-md h4 { font-size: 13px; margin: 12px 0 4px; } .r-md ul { margin: 0; padding-left: 18px; } .r-md p { margin: 0 0 6px; color: var(--t2); }
+  .r-md code { font: 11px "SF Mono", monospace; background: var(--hover); padding: 1px 4px; border-radius: 4px; }
+  .r-doc { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 18px; }
+  .r-doc .page { width: 70%; aspect-ratio: 1 / 1.3; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.3); padding: 10% 9%; }
+  .r-doc .page b { display: block; font-size: 11px; color: #1f3d8a; margin-bottom: 10px; } .r-doc .page i { display: block; height: 4px; margin: 6px 0; border-radius: 2px; background: #e3e3e6; }
+  .r-sheet { position: absolute; inset: 14px; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,.3); display: grid; grid-template-columns: 26px repeat(4, 1fr); grid-auto-rows: 20px; font: 9.5px/20px -apple-system, sans-serif; color: #333; }
+  .r-sheet span { border-right: 1px solid #e6e6e9; border-bottom: 1px solid #e6e6e9; padding: 0 4px; white-space: nowrap; overflow: hidden; }
+  .r-sheet span.h { background: #f2f2f5; color: #888; text-align: center; }
+  .r-vid { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .r-vid .frame { width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; position: relative; overflow: hidden; background: linear-gradient(135deg,#243b55,#141e30); box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .r-vid .frame::before { content: ""; position: absolute; left: 10%; top: 16%; width: 52%; height: 64%; border-radius: 6px; background: rgba(255,255,255,.12); }
+  .r-vid .play { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: rgba(255,255,255,.88); }
+  .r-vid .play::after { content: ""; position: absolute; left: 16px; top: 12px; border-left: 13px solid #222; border-top: 8px solid transparent; border-bottom: 8px solid transparent; }
+  .r-vid .dur { position: absolute; right: 6px; bottom: 6px; font: 10.5px "SF Mono", monospace; color: #fff; background: rgba(0,0,0,.55); padding: 1px 5px; border-radius: 4px; }
+  .r-aud { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  .r-aud .wave { display: flex; gap: 3px; align-items: center; height: 70px; }
+  .r-aud .wave i { width: 3px; border-radius: 2px; background: var(--accent); opacity: .75; }
+  .r-aud .cap { font-size: 11px; color: var(--t3); }
+  .r-skel { position: absolute; inset: 0; padding: 16px; }
+  .skel { height: 8px; border-radius: 4px; margin: 9px 0; background: linear-gradient(90deg, var(--hover), var(--sep), var(--hover)); background-size: 200% 100%; animation: sh 1s linear infinite; }
+  @keyframes sh { to { background-position: -200% 0; } }
+
+  /* notes */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  .box { border: 1px solid var(--sep); border-radius: 12px; padding: 14px 16px; background: rgba(127,127,127,.04); color: var(--t2); font-size: 12.5px; }
+  .box h2 { font-size: 14px; color: var(--t1); margin: 0 0 8px; font-weight: 600; }
+  .box ul { margin: 0; padding-left: 18px; } .box li { margin: 0 0 5px; }
+  .box b { color: var(--t1); font-weight: 600; } .box code { font: 11px "SF Mono", monospace; color: var(--t2); }
+  table.m { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.m th { text-align: left; font-weight: 600; color: var(--t3); font-size: 11px; padding: 0 8px 6px 0; border-bottom: 1px solid var(--sep); }
+  table.m td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--sep); vertical-align: top; }
+  table.m td:first-child { color: var(--t1); white-space: nowrap; }
+  .tl { display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; font-size: 12px; }
+  .tl span:nth-child(odd) { color: var(--t1); font-family: "SF Mono", ui-monospace, monospace; font-size: 11.5px; }
+  .log { position: absolute; left: 14px; bottom: 10px; font: 11px "SF Mono", ui-monospace, monospace; color: var(--t3); }
+</style>
+</head>
+<body>
+<h1>启动器 · 文件预览窗口 设计稿 v3</h1>
+<p class="sub">新思路：<b>启动器保持现状，一点不改</b>。用 ↑↓ 或鼠标停在一个<b>能预览的文件</b>上时，启动器右侧出现一个<b>独立的预览窗口</b>，高度和启动器一致；停在应用、文件夹、计算或不支持的文件上时，窗口不出现，已出现的会收起。
+可以直接打字，用 ↑↓ 或鼠标悬停切换。工具栏可以切换：慢动作（看清动效）、减弱动态效果、窄屏（右侧放不下时放左侧）、深浅色。</p>
+
+<div class="toolbar">
+  <span class="lbl">示例</span>
+  <button class="tb" data-q="launcher">混合列表</button>
+  <button class="tb" data-q="xcode">代码</button>
+  <button class="tb" data-q="screenshot">图片</button>
+  <button class="tb" data-q="invoice">PDF</button>
+  <button class="tb" data-q="周报">Markdown / Word</button>
+  <button class="tb" data-q="budget">表格</button>
+  <button class="tb" data-q="demo">视频 / 音频</button>
+  <button class="tb" data-q="typeflux-1">不支持的文件</button>
+  <button class="tb" data-q="chat">应用（不预览）</button>
+  <button class="tb" data-q="12*34">计算（不预览）</button>
+  <span class="tsep"></span>
+  <button class="tb" id="slow">慢动作</button>
+  <button class="tb" id="reduce">减弱动态效果</button>
+  <button class="tb" id="narrow">窄屏（放左侧）</button>
+  <button class="tb" id="theme">浅色</button>
+</div>
+
+<div class="desk" id="desk">
+  <div class="launcher" id="launcher">
+    <div class="card" id="card">
+      <div class="grip"></div>
+      <div class="head">
+        <input id="q" placeholder="搜索应用、计算，或直接提问" autocomplete="off" spellcheck="false">
+        <span class="hbtn" title="语音输入"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></svg></span>
+        <span id="chatBtn"></span>
+      </div>
+      <div id="results"></div>
+      <div class="bar">
+        <span class="fbtn" title="添加附件"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2.5v11M2.5 8h11"/></svg></span>
+        <span class="ftile private" title="对话保存在本机"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3.5" y="7" width="9" height="7" rx="1.4"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7"/></svg></span>
+        <span class="model" title="模型"><svg viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="5" r="2"/><circle cx="11" cy="5" r="1.4"/><circle cx="5" cy="11" r="1.4"/><circle cx="11" cy="11" r="2"/></svg>coding/auto</span>
+        <span class="fbtn" title="权限模式"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M8 1.8 13 3.6v4.1c0 3-2.1 5.4-5 6.5-2.9-1.1-5-3.5-5-6.5V3.6L8 1.8Z"/><path d="m5.7 8 1.6 1.6 3-3.2" stroke-linecap="round"/></svg></span>
+        <span class="fsep"></span>
+        <span class="ftile" title="截图"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M1.8 5V3.4c0-.9.7-1.6 1.6-1.6H5M11 1.8h1.6c.9 0 1.6.7 1.6 1.6V5M14.2 11v1.6c0 .9-.7 1.6-1.6 1.6H11M5 14.2H3.4c-.9 0-1.6-.7-1.6-1.6V11"/><rect x="4.4" y="5.6" width="7.2" height="5.4" rx="1.2"/><circle cx="8" cy="8.3" r="1.3"/></svg></span>
+        <span class="ftile on" title="记忆"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M6.2 2.6a2 2 0 0 0-3 1.6 2.2 2.2 0 0 0-1 3.4 2.2 2.2 0 0 0 1.4 3.6 2 2 0 0 0 2.6 1.9V2.6ZM9.8 2.6a2 2 0 0 1 3 1.6 2.2 2.2 0 0 1 1 3.4 2.2 2.2 0 0 1-1.4 3.6 2 2 0 0 1-2.6 1.9V2.6Z"/></svg></span>
+        <span class="spacer"></span>
+        <span class="hint" id="hint"></span>
+      </div>
+    </div>
+  </div>
+  <div class="pv" id="pv">
+    <div class="pv-head" id="pvHead"></div>
+    <div class="pv-body" id="pvBody"></div>
+    <div class="pv-foot" id="pvFoot"></div>
+  </div>
+  <div class="log" id="log"></div>
+  <div class="screenlabel" id="screenlabel"></div>
+</div>
+
+<div class="grid2">
+  <div class="box">
+    <h2>什么时候出现 / 消失</h2>
+    <table class="m">
+      <tr><th style="width:150px">高亮项</th><th>预览窗口</th></tr>
+      <tr><td>能预览的文件</td><td>停留 <b>120ms</b> 后开始加载；内容好了就<b>滑出</b>，150ms 内没好就先带着骨架条滑出，不出现空窗口</td></tr>
+      <tr><td>换到另一个能预览的文件</td><td>窗口不动，标题立即更新，内容 <b>120ms 交叉淡入</b>；新内容没好之前保留旧内容，超过 150ms 换成骨架条</td></tr>
+      <tr><td>换到不能预览的行</td><td>等 <b>150ms</b> 再收起：方向键连续经过一行应用或文件夹时不会闪；150ms 内回到能预览的文件就不收起</td></tr>
+      <tr><td>改输入、结果变化</td><td>按新的高亮项重新判断；没有结果立即收起</td></tr>
+      <tr><td>启动器高度变化</td><td>和启动器用同一个弹簧动画（<code>AskLauncherHeightAnimator</code>）一起改高度，顶边对齐</td></tr>
+      <tr><td>拖动启动器</td><td>作为子窗口跟着移动</td></tr>
+      <tr><td>Esc / 打开 / 发送 / 启动器失焦</td><td>和启动器一起立即消失，不单独做动画</td></tr>
+      <tr><td>→ 操作面板、⌘Y 快速查看</td><td>操作面板打开时保持显示；⌘Y 打开系统快速查看时先收起，避免两个预览重叠</td></tr>
+    </table>
+  </div>
+  <div class="box">
+    <h2>动效参数</h2>
+    <div class="tl">
+      <span>出现 180ms</span><span>透明度 0→1，从启动器一侧滑出 10pt，缩放 0.985→1（以靠近启动器的边为原点），ease-out <code>(.2,.8,.2,1)</code></span>
+      <span>收起 140ms</span><span>透明度 1→0，往启动器方向收回 10pt，ease-in；收起后 <code>orderOut</code>，窗口不销毁</span>
+      <span>切换 120ms</span><span>只做内容层交叉淡入，窗口位置和大小不动</span>
+      <span>高度 弹簧</span><span>跟随启动器，critically damped，无回弹</span>
+      <span>减弱动态效果</span><span>系统开了“减弱动态效果”时只保留透明度变化（100ms），不位移、不缩放</span>
+    </div>
+    <h2 style="margin-top:14px">位置与尺寸</h2>
+    <ul>
+      <li>在启动器卡片右侧 <b>10pt</b>，顶边与卡片对齐，高度等于卡片高度；结果很少、启动器很矮时最低 <b>320pt</b>（往下多出一截），否则 PDF、图片会小到看不清。</li>
+      <li>宽度优先 <b>380pt</b>，右侧放不下就放左侧；两侧都不足 <b>280pt</b> 就不显示。例如 1280pt 宽的屏幕上，启动器居中时两侧都只剩约 270pt。</li>
+      <li>外观和启动器一样：玻璃材质、16pt 圆角、同样的描边和阴影；顶部是文件名和信息，中间是预览区，底部是路径和现有的 ⌘Y 提示。</li>
+    </ul>
+  </div>
+</div>
+<div class="grid2">
+  <div class="box">
+    <h2>哪些能预览、怎么显示</h2>
+    <table class="m">
+      <tr><th style="width:120px">类型</th><th>预览内容</th><th style="width:160px">来源</th></tr>
+      <tr><td>图片</td><td>按比例放进预览区，透明部分显示棋盘格</td><td>QLThumbnailGenerator</td></tr>
+      <tr><td>PDF</td><td>前 3 页竖向排列，滚轮可以翻看；右下角写页数</td><td>QLThumbnailGenerator / PDFKit</td></tr>
+      <tr><td>代码 / 纯文本</td><td>等宽、带行号；只给注释、关键字、字符串、数字上色；最多 200 行</td><td>AskFileReader（子进程）</td></tr>
+      <tr><td>Markdown</td><td>简单渲染：标题、列表、行内代码</td><td>AskFileReader</td></tr>
+      <tr><td>Word / Pages / Keynote / PPT</td><td>第一页缩略图</td><td>QLThumbnailGenerator</td></tr>
+      <tr><td>Excel / Numbers / CSV</td><td>表格缩略图；CSV 直接画成表格，最多 30 行</td><td>QLThumbnailGenerator / AskFileReader</td></tr>
+      <tr><td>视频</td><td>一帧画面 + 时长，<b>不自动播放</b></td><td>AVAssetImageGenerator</td></tr>
+      <tr><td>音频</td><td>波形 + 时长，不自动播放</td><td>AVAsset</td></tr>
+      <tr><td><b>不显示窗口</b></td><td>应用、文件夹、系统设置、计算、关键词、浏览器标签、压缩包 / dmg / 未知二进制、名字像密钥的文件（.env、*.pem…）、iCloud 未下载、网络盘上的文件、缩略图生成失败的文件</td><td>—</td></tr>
+    </table>
+  </div>
+  <div class="box">
+    <h2>性能</h2>
+    <ul>
+      <li><b>启动器零改动</b>：预览是另一个窗口、另一棵视图树，启动器打字和列表滚动不受影响。</li>
+      <li><b>一个窗口反复用</b>：第一次需要时才创建，之后只 <code>orderFront / orderOut</code>；它不能成为 key window，键盘焦点始终在启动器。</li>
+      <li><b>预览窗口里不用 QLPreviewView</b>：它每换一个文件都要重新起一次渲染，视频还会自动播放，方向键快速移动时开销大。要看完整内容仍用现有的 ⌘Y 快速查看。</li>
+      <li><b>停留才加载</b>：120ms 去抖；高亮一变就取消上一个请求（<code>QLThumbnailGenerator.cancel</code>、Task 取消、子进程读取有超时）。</li>
+      <li><b>尺寸受控</b>：缩略图按预览区的像素尺寸生成；文本最多读 64 KB / 200 行；视频只取一帧，音频只读前 30 秒画波形。</li>
+      <li><b>缓存</b>：最近 32 项、上限 64 MB，key 是路径 + 修改时间 + 大小；启动器收起 60 秒后或收到内存压力通知时清空。</li>
+      <li><b>预取</b>：显示第 N 项后，空闲时预取相邻两项的缩略图（只限图片和 PDF）。</li>
+      <li><b>“能不能预览”是纯函数</b>：只看扩展名 / UTType 和文件名，不读磁盘，所以切换高亮时几乎没有开销；读不了或生成失败时再收起。</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const SVG = {
+  arrowUp: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg>',
+  win: '<svg viewBox="0 0 18 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="15" height="12" rx="2.6"/><path d="M1.8 5.4h14.4"/></svg>',
+  eq: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3.5 6h9M3.5 10h9"/></svg>',
+};
+// ------------------------------------------------------------------ data
+const APPS = [
+  { id: 'xcode', name: 'Xcode', alias: 'xcode', glyph: '⚒', bg: 'linear-gradient(135deg,#5ac8fa,#1d6fe8)', path: '/Applications' },
+  { id: 'chatgpt', name: 'ChatGPT', alias: 'chatgpt', glyph: '✺', bg: '#fff', fg: '#111', path: '/Applications' },
+  { id: 'launchpad', name: '启动台', alias: 'launchpad launcher qidongtai', glyph: '▦', bg: 'linear-gradient(135deg,#8e8e93,#3a3a3c)', path: '/System/Applications' },
+];
+const F = o => Object.assign({ mod: '1周前' }, o);
+const FILES = [
+  F({ id: 'x1', name: 'xcode.dart', alias: 'xcode', ext: 'DART', cls: 'code', kind: 'Dart 源代码', size: '18 KB', lang: 'dart', folder: '~/fvm/versions/3.47.2/packages/flutter_tools/lib/src/macos', lines: 512 }),
+  F({ id: 'x2', name: 'xcode.dart', alias: 'xcode', ext: 'DART', cls: 'code', kind: 'Dart 源代码', size: '18 KB', lang: 'dart', folder: '~/fvm/versions/3.47.6/packages/flutter_tools/lib/src/macos', lines: 518 }),
+  F({ id: 'x3', name: 'xcode_debug.js', alias: 'xcode', ext: 'JS', cls: 'code', kind: 'JavaScript', size: '6 KB', lang: 'js', folder: '~/fvm/versions/3.47.2/packages/flutter_tools/bin', lines: 164 }),
+  F({ id: 'x4', name: 'xcode_backend.sh', alias: 'xcode', ext: 'SH', cls: 'code', kind: 'Shell 脚本', size: '2 KB', lang: 'sh', folder: '~/fvm/versions/3.47.2/packages/flutter_tools/bin', lines: 41 }),
+  F({ id: 'l1', name: 'launcher-dark.png', alias: 'launcher screenshot', ext: 'PNG', cls: 'img', kind: 'PNG 图像', size: '1.4 MB', pic: 'shot', dims: '2880 × 1800', folder: '~/Workspace/typeflux/docs/design/ask-launcher-hover-preview', mod: '今天' }),
+  F({ id: 'l2', name: 'launcher-workflows.md', alias: 'launcher', ext: 'MD', cls: '', kind: 'Markdown 文稿', size: '29 KB', md: true, folder: '~/Workspace/typeflux/docs/design', mod: '昨天' }),
+  F({ id: 'l3', name: 'LauncherPlacement.swift', alias: 'launcher', ext: 'SWIFT', cls: 'code', kind: 'Swift 源代码', size: '4 KB', lang: 'swift', folder: '~/Workspace/typeflux/Sources/Typeflux/Ask', lines: 96, mod: '3天前' }),
+  F({ id: 'l4', name: 'launcher-demo.mp4', alias: 'launcher demo', ext: 'MP4', cls: 'vid', kind: 'MPEG-4 影片', size: '48.6 MB', video: true, dur: '01:32', res: '2560 × 1440', folder: '~/Movies/Typeflux', mod: '昨天' }),
+  F({ id: 'l5', name: 'launcher-icons.zip', alias: 'launcher', ext: 'ZIP', cls: 'zip', kind: 'ZIP 归档', size: '12.0 MB', none: '压缩包', folder: '~/Downloads', mod: '上周' }),
+  F({ id: 's1', name: 'Screenshot 2026-10-12 at 10.42.png', alias: 'screenshot', ext: 'PNG', cls: 'img', kind: 'PNG 图像', size: '2.1 MB', pic: 'shot', dims: '3024 × 1964', folder: '~/Desktop', mod: '今天' }),
+  F({ id: 's2', name: 'Screenshot sunset.jpg', alias: 'screenshot', ext: 'JPG', cls: 'img', kind: 'JPEG 图像', size: '3.6 MB', pic: 'photo', dims: '4032 × 2688', folder: '~/Pictures/2026', mod: '9月21日' }),
+  F({ id: 's3', name: 'screenshot-icon.icns', alias: 'screenshot icon', ext: 'ICNS', cls: 'img', kind: 'Apple 图标', size: '640 KB', pic: 'icon', dims: '1024 × 1024', folder: '~/Workspace/typeflux/Resources', mod: '8月2日' }),
+  F({ id: 'p1', name: 'invoice-2026-09.pdf', alias: 'invoice', ext: 'PDF', cls: 'pdf', kind: 'PDF 文稿', size: '284 KB', pdf: 2, folder: '~/Documents/财务/2026', mod: '10月3日' }),
+  F({ id: 'p2', name: 'invoice-2026-08.pdf', alias: 'invoice', ext: 'PDF', cls: 'pdf', kind: 'PDF 文稿', size: '276 KB', pdf: 1, folder: '~/Documents/财务/2026', mod: '9月2日' }),
+  F({ id: 'w1', name: '2026Q3 周报汇总.md', alias: '周报 zhoubao', ext: 'MD', cls: '', kind: 'Markdown 文稿', size: '12 KB', md: true, folder: '~/Documents/工作', mod: '9月30日' }),
+  F({ id: 'w2', name: '周报模板.docx', alias: '周报 zhoubao', ext: 'DOCX', cls: 'doc', kind: 'Word 文稿', size: '48 KB', doc: true, folder: '~/Documents/工作/模板', mod: '8月2日' }),
+  F({ id: 'b1', name: 'budget-2027.xlsx', alias: 'budget', ext: 'XLSX', cls: 'sheet', kind: 'Excel 工作簿', size: '96 KB', sheet: true, folder: '~/Documents/财务', mod: '今天' }),
+  F({ id: 'b2', name: 'budget-q3.csv', alias: 'budget', ext: 'CSV', cls: 'sheet', kind: 'CSV 文本', size: '8 KB', sheet: true, folder: '~/Documents/财务', mod: '9月30日' }),
+  F({ id: 'v1', name: 'demo-launcher.mp4', alias: 'demo', ext: 'MP4', cls: 'vid', kind: 'MPEG-4 影片', size: '48.6 MB', video: true, dur: '01:32', res: '2560 × 1440', folder: '~/Movies/Typeflux', mod: '昨天' }),
+  F({ id: 'v2', name: 'demo-voice.m4a', alias: 'demo', ext: 'M4A', cls: 'aud', kind: 'MPEG-4 音频', size: '1.8 MB', audio: true, dur: '00:46', folder: '~/Music/Typeflux', mod: '昨天' }),
+  F({ id: 'v3', name: 'demo.env', alias: 'demo', ext: 'ENV', cls: '', kind: '纯文本', size: '1 KB', none: '名字像密钥', folder: '~/Workspace/typeflux-api', mod: '8月12日' }),
+  F({ id: 't1', name: 'Typeflux-1.4.0.dmg', alias: 'typeflux-1', ext: 'DMG', cls: 'zip', kind: '磁盘映像', size: '96.2 MB', none: '磁盘映像', folder: '~/Downloads', mod: '10月8日' }),
+  F({ id: 't2', name: 'typeflux-1.3.2.zip', alias: 'typeflux-1', ext: 'ZIP', cls: 'zip', kind: 'ZIP 归档', size: '88.0 MB', none: '压缩包', folder: '~/Downloads', mod: '9月12日' }),
+];
+const FOLDERS = [
+  { id: 'd1', name: 'launcher', alias: 'launcher', folder: '~/Workspace/typeflux/docs/design', mod: '今天' },
+  { id: 'd2', name: 'xcode', alias: 'xcode', folder: '~/fvm/versions/3.47.2/packages/flutter_tools/templates', mod: '1周前' },
+];
+const CODE = {
+  dart: [['c', '// Copyright 2014 The Flutter Authors.'], ['p', ''], ['p', "<k>import</k> <s>'package:meta/meta.dart'</s>;"], ['p', "<k>import</k> <s>'../base/file_system.dart'</s>;"], ['p', "<k>import</k> <s>'../base/process.dart'</s>;"], ['p', ''], ['c', '/// Result of calling `xcodebuild -showBuildSettings`.'], ['p', '<k>class</k> XcodeProjectBuildContext {'], ['p', '  <k>const</k> XcodeProjectBuildContext({'], ['p', '    <k>this</k>.scheme,'], ['p', '    <k>this</k>.configuration,'], ['p', '    <k>this</k>.sdk = XcodeSdk.IPhoneOS,'], ['p', '  });'], ['p', ''], ['p', '  <k>final</k> String? scheme;'], ['p', '  <k>final</k> String? configuration;'], ['p', '  <k>final</k> XcodeSdk sdk;'], ['p', ''], ['p', '  <k>static const</k> int timeoutSeconds = <n>60</n>;'], ['p', '}'], ['p', ''], ['p', 'Future&lt;bool&gt; isXcodeInstalled() <k>async</k> {'], ['p', "  <k>final</k> result = <k>await</k> run(<s>'xcode-select'</s>, [<s>'-p'</s>]);"], ['p', '  <k>return</k> result.exitCode == <n>0</n>;'], ['p', '}']],
+  js: [['c', '// xcode_debug.js: attach the debugger to Xcode'], ['p', "<k>const</k> app = Application(<s>'Xcode'</s>);"], ['p', 'app.includeStandardAdditions = <k>true</k>;'], ['p', ''], ['p', '<k>function</k> run(argv) {'], ['p', '  <k>const</k> [project, scheme] = argv;'], ['p', '  <k>const</k> workspace = app.open(project);'], ['p', '  <k>for</k> (<k>let</k> i = <n>0</n>; i &lt; <n>20</n>; i++) {'], ['p', '    <k>if</k> (workspace.loaded()) <k>break</k>;'], ['p', '    delay(<n>0.5</n>);'], ['p', '  }'], ['p', '  workspace.activeScheme = scheme;'], ['p', "  <k>return</k> JSON.stringify({ status: <s>'ok'</s> });"], ['p', '}']],
+  sh: [['c', '#!/usr/bin/env bash'], ['c', '# Copyright 2014 The Flutter Authors.'], ['p', ''], ['p', '<k>set</k> -euo pipefail'], ['p', ''], ['p', 'FLUTTER_ROOT=<s>"$(cd "$(dirname "$0")/../../.." &amp;&amp; pwd)"</s>'], ['p', '<k>exec</k> <s>"$FLUTTER_ROOT/bin/dart"</s> \\'], ['p', '  <s>"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.dart"</s> <s>"$@"</s>']],
+  swift: [['c', '// AskLauncherPlacement.swift'], ['p', '<k>import</k> AppKit'], ['p', ''], ['p', '<k>enum</k> AskLauncherPlacement {'], ['p', '    <k>static let</k> screenMargin: CGFloat = <n>12</n>'], ['p', '    <k>static let</k> snapDistance: CGFloat = <n>8</n>'], ['p', ''], ['p', '    <k>struct</k> Anchor: Equatable, Codable {'], ['p', '        <k>var</k> left: CGFloat'], ['p', '        <k>var</k> fromTop: CGFloat'], ['p', '    }'], ['p', '}']],
+};
+
+// ------------------------------------------------------------------ helpers
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const $ = id => document.getElementById(id);
+function match(item, q) {
+  const ql = q.toLowerCase(), name = item.name.toLowerCase(), alias = (item.alias || '').toLowerCase();
+  if (name.startsWith(ql)) return { score: name === ql ? 1 : .95, hl: [0, q.length] };
+  const at = name.indexOf(ql); if (at >= 0) return { score: .8, hl: [at, at + q.length] };
+  if (alias.split(/\s+/).some(a => a.startsWith(ql))) return { score: .7, hl: null };
+  return null;
+}
+const marked = (n, hl) => hl ? esc(n.slice(0, hl[0])) + '<b>' + esc(n.slice(hl[0], hl[1])) + '</b>' + esc(n.slice(hl[1])) : esc(n);
+// Previewability is a pure function of the hit (extension and name), with no disk access.
+const previewable = r => !!(r && r.type === 'file' && !r.item.none);
+
+// ------------------------------------------------------------------ search (mirrors AskQuickResults grouping)
+const state = { q: '', res: null, hl: 0, chosen: false, narrow: false };
+function search(q) {
+  const t = q.trim(); if (!t) return null;
+  if (/\d/.test(t) && /^[\d\s+\-*/().]+$/.test(t) && /[+\-*/]/.test(t)) {
+    try { const v = Function('"use strict";return (' + t + ')')(); if (typeof v === 'number' && isFinite(v)) return { rows: [{ type: 'calc', expr: t, value: v }] }; } catch (e) {}
+    return null;
+  }
+  const found = [];
+  APPS.forEach(x => { const m = match(x, t); if (m) found.push({ type: 'app', item: x, ...m }); });
+  FILES.forEach(x => { const m = match(x, t); if (m) found.push({ type: 'file', item: x, ...m }); });
+  FOLDERS.forEach(x => { const m = match(x, t); if (m) found.push({ type: 'folder', item: x, ...m }); });
+  if (!found.length) return null;
+  const apps = found.filter(x => x.type === 'app').sort((a, b) => b.score - a.score);
+  const best = apps[0] && apps[0].score >= .95 ? apps[0] : null;
+  const rows = best ? [{ ...best, best: true }] : [];
+  const files = found.filter(x => x.type === 'file').sort((a, b) => b.score - a.score);
+  apps.filter(x => x !== best).forEach(x => rows.push(x));
+  files.slice(0, 6).forEach(x => rows.push(x));
+  found.filter(x => x.type === 'folder').forEach(x => rows.push(x));
+  return { rows, more: files.length > 6 };
+}
+
+// ------------------------------------------------------------------ launcher rendering (current AskQuickResultsView, unchanged)
+function iconOf(r) {
+  const i = r.item;
+  if (r.type === 'app') return `<span class="appicon" style="background:${i.bg};color:${i.fg || '#fff'}">${i.glyph}</span>`;
+  if (r.type === 'file') return `<span class="ficon ${i.cls}">${i.ext}</span>`;
+  if (r.type === 'folder') return '<span class="folder"></span>';
+  return `<span class="tile">${SVG.eq}</span>`;
+}
+function rowHTML(r, idx) {
+  const hl = idx === state.hl;
+  let mid = '', tail = '';
+  if (r.type === 'calc') { mid = '<span class="nm">计算器</span>'; tail = `<span class="val">= ${r.value.toLocaleString('en-US')}</span>`; }
+  else {
+    mid = `<span class="nm">${marked(r.item.name, r.hl)}</span><span class="loc">${esc(r.item.folder || r.item.path)}</span>`;
+    if (r.type === 'app') tail = hl ? '<span class="tail">打开 ↩</span>' : '';
+    else tail = `<span class="tail">${hl ? '打开 ↩ · → 更多' : r.item.mod}</span>`;
+  }
+  return `<div class="row${hl ? ' hl' : ''}${r.best ? ' best' : ''}" data-i="${idx}">${idx < 9 ? `<span class="badge">${idx + 1}</span>` : ''}${iconOf(r)}${mid}${tail}</div>`;
+}
+function renderLauncher() {
+  const res = $('results');
+  $('chatBtn').innerHTML = state.q.trim() ? `<span class="send" title="问 AI ⌘↩">${SVG.arrowUp}</span>` : `<span class="hbtn" title="打开对话">${SVG.win}</span>`;
+  if (!state.res) res.innerHTML = '';
+  else {
+    let g = null, out = '';
+    state.res.rows.forEach((r, idx) => {
+      const grp = r.best ? '最佳匹配' : { app: '应用', file: '文件', folder: '文件夹', calc: '计算' }[r.type];
+      if (grp !== g) { g = grp; out += `<div class="sect">${grp}</div>`; }
+      out += rowHTML(r, idx);
+      const next = state.res.rows[idx + 1];
+      if (r.type === 'file' && state.res.more && (!next || next.type !== 'file')) out += '<div class="more">显示全部匹配的文件<span>⌘↓</span></div>';
+    });
+    res.innerHTML = `<div class="rule"></div><div class="list" id="list">${out}</div>`;
+    const h = res.querySelector('.row.hl'); if (h && state.chosen) h.scrollIntoView({ block: 'nearest' });
+  }
+  const r = state.res && state.res.rows[state.hl];
+  $('hint').textContent = !state.q.trim() ? '↩ 打开对话 · ⌘K 上下文' : !r ? '↩ 发送' : r.type === 'calc' ? '↩ 复制结果 · ⌘↩ 问 AI'
+    : r.type === 'file' || r.type === 'folder' ? '↩ 打开 · → 更多操作 · ⌘↩ 问 AI' : '↩ 打开 · ⌘↩ 问 AI';
+  syncPreviewFrame();
+}
+
+// ------------------------------------------------------------------ preview window controller
+// Mirrors the proposed AskFilePreviewController: dwell, cancellable load, crossfade, grace hide.
+const DWELL = 120, READY_WAIT = 150, HIDE_GRACE = 150, MIN_H = 320;
+const pv = { shown: false, item: null, want: null, dwellT: 0, hideT: 0, loadT: 0, skelT: 0, cache: new Set() };
+const log = m => { $('log').textContent = m; };
+const slow = () => document.body.classList.contains('slow') ? 6 : 1;
+function syncPreviewFrame() {
+  const card = $('card'), el = $('pv'), desk = $('desk');
+  const cardLeft = $('launcher').offsetLeft, cardW = card.offsetWidth;
+  const right = desk.clientWidth - (cardLeft + cardW) - 10 - 12, left = cardLeft - 10 - 12;
+  let side = right >= 380 ? 'right' : left >= 380 ? 'left' : right >= 280 ? 'right' : left >= 280 ? 'left' : 'none';
+  const w = Math.min(380, side === 'right' ? right : left);
+  el.style.width = w + 'px';
+  el.style.left = (side === 'left' ? cardLeft - 10 - w : cardLeft + cardW + 10) + 'px';
+  el.classList.toggle('left', side === 'left');
+  el.style.height = Math.max(MIN_H, card.offsetHeight) + 'px';
+  el.dataset.side = side;
+}
+function clearTimers() { clearTimeout(pv.dwellT); clearTimeout(pv.loadT); clearTimeout(pv.skelT); }
+function highlightChanged() {
+  const r = state.res && state.res.rows[state.hl];
+  clearTimers();
+  if (previewable(r) && $('pv').dataset.side !== 'none') {
+    clearTimeout(pv.hideT); pv.hideT = 0;
+    pv.want = r.item;
+    if (pv.shown && pv.item && pv.item.id === r.item.id) return;
+    pv.dwellT = setTimeout(() => load(r.item), DWELL * slow());
+    log(`停留 ${DWELL}ms 后加载：${r.item.name}`);
+  } else {
+    pv.want = null;
+    if (pv.shown && !pv.hideT) { pv.hideT = setTimeout(hide, HIDE_GRACE * slow()); log(`${HIDE_GRACE}ms 后收起（期间回到可预览的文件就取消）`); }
+    else if (!pv.shown) log(!r ? '' : r.type === 'file' ? `${r.item.name}：${r.item.none}，不预览` : '这一行不是文件，不显示预览窗口');
+  }
+}
+function load(item) {
+  const cached = pv.cache.has(item.id);
+  const cost = cached ? 0 : (item.pic || item.pdf || item.doc || item.sheet || item.video ? 220 : 60);
+  if (cost > READY_WAIT) pv.skelT = setTimeout(() => { if (pv.want === item) pv.shown ? swap(item, true) : present(item, true); }, READY_WAIT * slow());
+  pv.loadT = setTimeout(() => {
+    pv.cache.add(item.id);
+    if (pv.want !== item) return;
+    pv.shown ? swap(item, false) : present(item, false);
+    log((cached ? '缓存命中：' : '加载完成：') + item.name);
+  }, cost * slow());
+}
+function present(item, skeleton) {
+  fill(item, skeleton, false);
+  pv.shown = true; pv.item = item;
+  requestAnimationFrame(() => $('pv').classList.add('show'));
+}
+function swap(item, skeleton) {
+  if (pv.item === item && !skeleton && !$('pvBody').querySelector('.r-skel')) return;
+  fill(item, skeleton, true); pv.item = item;
+}
+function hide() {
+  pv.hideT = 0; if (pv.want) return;
+  $('pv').classList.remove('show'); pv.shown = false; pv.item = null; log('已收起');
+}
+function hideNow() { clearTimers(); clearTimeout(pv.hideT); pv.hideT = 0; pv.want = null; $('pv').classList.remove('show'); pv.shown = false; pv.item = null; }
+function fill(item, skeleton, crossfade) {
+  const meta = [item.kind, item.size, item.dims, item.dur, item.lines && item.lines + ' 行'].filter(Boolean).join(' · ');
+  $('pvHead').innerHTML = `<span class="ficon ${item.cls}">${item.ext}</span><div class="tx"><div class="pv-name">${esc(item.name)}</div><div class="pv-kind">${meta}</div></div>`;
+  $('pvFoot').innerHTML = `<span class="path"><bdi>${esc(item.folder)}</bdi></span><span class="k">⌘Y 快速查看</span>`;
+  const body = $('pvBody');
+  const layer = document.createElement('div'); layer.className = 'layer' + (crossfade ? ' out' : '');
+  layer.innerHTML = skeleton ? '<div class="r-skel"><div class="skel" style="width:55%"></div><div class="skel"></div><div class="skel" style="width:80%"></div><div class="skel" style="width:65%"></div><div class="skel" style="width:90%"></div></div>' : render(item);
+  const old = [...body.children];
+  body.appendChild(layer);
+  if (crossfade) requestAnimationFrame(() => requestAnimationFrame(() => { layer.classList.remove('out'); old.forEach(o => o.classList.add('out')); setTimeout(() => old.forEach(o => o.remove()), 140 * slow()); }));
+  else old.forEach(o => o.remove());
+}
+function render(i) {
+  if (i.pic) return `<div class="r-img"><div class="pic ${i.pic}"></div></div>`;
+  if (i.pdf) return `<div class="r-pdf">${Array.from({ length: i.pdf }, (_, n) => `<div class="page"><b>${n ? 'Terms' : 'INVOICE'}</b><small>${n ? 'Page 2' : 'No. 2026-09-0042 · 2026-10-03'}</small><i style="width:60%"></i><i></i><i style="width:80%"></i><div class="tb2"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><i></i><i style="width:45%"></i><i></i><i style="width:70%"></i></div>`).join('')}<span class="count">共 ${i.pdf} 页</span></div>`;
+  if (i.md) return '<div class="r-md"><h3>2026 Q3 周报汇总</h3><p>启动器、关键词插件、工作流三条线的进展。</p><h4>第 39 周</h4><ul><li>启动器支持应用 / 文件搜索</li><li>关键词插件：翻译、截图取字、剪贴板</li><li>修复长文本粘贴丢字</li></ul><h4>第 38 周</h4><ul><li>工作流编辑器 M2</li><li>浅色模式 v4，<code>AskTheme</code> 统一取色</li></ul><h4>下周计划</h4><ul><li>启动器文件预览窗口</li></ul></div>';
+  if (i.doc) return '<div class="r-doc"><div class="page"><b>周报模板</b><i style="width:50%"></i><i></i><i style="width:85%"></i><i></i><br><i style="width:40%"></i><i></i><i style="width:75%"></i><i></i><i style="width:60%"></i></div></div>';
+  if (i.sheet) {
+    const rows = [['', 'A', 'B', 'C', 'D'], ['1', '项目', 'Q1', 'Q2', 'Q3'], ['2', '云服务', '12,400', '13,100', '13,900'], ['3', '模型调用', '8,200', '9,650', '11,020'], ['4', '设计', '3,000', '3,000', '3,200'], ['5', '市场', '6,500', '7,800', '7,200'], ['6', '合计', '30,100', '33,550', '35,320']];
+    let o = ''; for (let k = 0; k < 18; k++) (rows[k] || [String(k), '', '', '', '']).forEach((c, j) => { o += `<span class="${k === 0 || j === 0 ? 'h' : ''}">${c}</span>`; });
+    return `<div class="r-sheet">${o}</div>`;
+  }
+  if (i.video) return `<div class="r-vid"><div class="frame"><div class="play"></div><span class="dur">${i.dur}</span></div></div>`;
+  if (i.audio) { let w = ''; for (let k = 0; k < 48; k++) w += `<i style="height:${10 + Math.abs(Math.sin(k * .7) * 40 + Math.sin(k * 2.3) * 10)}px"></i>`; return `<div class="r-aud"><div class="wave">${w}</div><div class="cap">${i.dur} · 不自动播放</div></div>`; }
+  if (i.lang) {
+    // Code samples are trusted mock strings that already escape their own < and &.
+    const lines = CODE[i.lang].map((l, n) => {
+      const body = l[0] === 'c' ? `<span class="c">${esc(l[1])}</span>` : l[1].replace(/<k>(.*?)<\/k>/g, '<span class="k">$1</span>').replace(/<s>(.*?)<\/s>/g, '<span class="s">$1</span>').replace(/<n>(.*?)<\/n>/g, '<span class="n">$1</span>');
+      return `<div class="ln"><i>${n + 1}</i><span class="lt">${body || ' '}</span></div>`;
+    }).join('');
+    return `<div class="r-code">${lines}${i.lines > CODE[i.lang].length ? `<div class="trunc">共 ${i.lines} 行，预览最多显示 200 行</div>` : ''}</div>`;
+  }
+  return '';
+}
+
+// ------------------------------------------------------------------ input
+const rowId = r => r.type + ':' + (r.item ? r.item.id : r.expr);
+function update(q) {
+  state.q = q;
+  const prev = state.chosen && state.res && state.res.rows[state.hl] ? rowId(state.res.rows[state.hl]) : null;
+  state.res = search(q); state.hl = 0;
+  if (state.res && prev) { const k = state.res.rows.findIndex(r => rowId(r) === prev); if (k >= 0) state.hl = k; else state.chosen = false; } else state.chosen = false;
+  renderLauncher();
+  if (!state.res) { hideNow(); log(state.q.trim() ? '没有结果：预览立即收起' : ''); } else highlightChanged();
+}
+function move(d) { if (!state.res) return; const n = state.res.rows.length; state.hl = ((state.hl + d) % n + n) % n; state.chosen = true; renderLauncher(); highlightChanged(); }
+const input = $('q');
+input.addEventListener('input', () => update(input.value));
+input.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); move(e.key === 'ArrowDown' ? 1 : -1); }
+  else if (e.key === 'Escape') { e.preventDefault(); input.value = ''; update(''); log('Esc：预览和启动器一起立即消失'); }
+  else if (e.key === 'Enter') { e.preventDefault(); hideNow(); log('打开 / 发送：预览和启动器一起消失'); }
+});
+const mods = e => document.body.classList.toggle('cmd', e.metaKey && !e.altKey && !e.shiftKey && !e.ctrlKey);
+document.addEventListener('keydown', mods); document.addEventListener('keyup', mods);
+window.addEventListener('blur', () => document.body.classList.remove('cmd'));
+$('results').addEventListener('mousemove', e => {
+  const row = e.target.closest('[data-i]'); if (!row) return;
+  const k = +row.dataset.i; if (k !== state.hl) { state.hl = k; state.chosen = true; renderLauncher(); highlightChanged(); }
+});
+document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => {
+  input.value = b.dataset.q; state.chosen = false; update(b.dataset.q); input.focus();
+  document.querySelectorAll('[data-q]').forEach(x => x.classList.toggle('on', x === b));
+}));
+const toggle = (id, cls, on, off) => $(id).addEventListener('click', () => { const v = document.body.classList.toggle(cls); $(id).classList.toggle('on', v); if (on) $(id).textContent = v ? on : off; input.focus(); });
+toggle('slow', 'slow'); toggle('reduce', 'reduce'); toggle('theme', 'light', '深色', '浅色');
+function layoutDesk() {
+  $('launcher').style.left = state.narrow ? '520px' : '70px';
+  $('screenlabel').textContent = state.narrow ? '右侧空间不足：放在左侧' : '预览窗口：卡片右侧 10pt · 宽 380pt · 高度 = 启动器卡片（最低 320pt）';
+}
+$('narrow').addEventListener('click', () => { state.narrow = !state.narrow; $('narrow').classList.toggle('on', state.narrow); hideNow(); layoutDesk(); renderLauncher(); highlightChanged(); input.focus(); });
+new ResizeObserver(syncPreviewFrame).observe($('card'));
+
+const params = new URLSearchParams(location.search);
+if (params.get('theme') === 'light') { document.body.classList.add('light'); $('theme').textContent = '深色'; }
+if (params.get('narrow')) { state.narrow = true; $('narrow').classList.add('on'); }
+layoutDesk();
+input.value = params.get('q') ?? 'launcher';
+update(input.value);
+for (let k = 0; k < +(params.get('down') || 0); k++) move(1);
+input.focus();
+</script>
+</body>
+</html>

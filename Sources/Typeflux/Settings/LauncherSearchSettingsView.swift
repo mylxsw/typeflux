@@ -24,6 +24,7 @@ struct LauncherSearchSettingsView: View {
     @State var search = AskLauncherSearchSettings()
     @State var appsEnabled = true
     @State var filesEnabled = true
+    @State var previewEnabled = true
     @State var browserPreferences = AskBrowserSearchSettings()
     @State var status = AskFileIndexStatus()
     @State var hasFullDiskAccess = false
@@ -51,6 +52,13 @@ struct LauncherSearchSettingsView: View {
 
     @ViewBuilder private var generalTab: some View {
         AgentSettingsSection(title: L("launcher.search.general")) {
+            AgentSettingsRow(icon: "doc.viewfinder", title: L("launcher.search.preview"),
+                             subtitle: L("launcher.search.preview.subtitle"), subtitleLineLimit: nil) {
+                Toggle("", isOn: Binding(get: { previewEnabled }, set: {
+                    previewEnabled = $0; settings.askFilePreviewEnabled = $0
+                })).labelsHidden().toggleStyle(.switch).accessibilityLabel(L("launcher.search.preview"))
+            }
+            ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "wand.and.stars", title: L("launcher.search.fuzzy"),
                              subtitle: L("launcher.search.fuzzy.subtitle"), subtitleLineLimit: nil) {
                 Toggle("", isOn: binding(\.fuzzy)).labelsHidden().toggleStyle(.switch)
@@ -360,6 +368,7 @@ extension LauncherSearchSettingsView {
         browserPreferences = settings.askBrowserSearchSettings
         appsEnabled = settings.askQuickAppSearchEnabled
         filesEnabled = settings.askQuickFileSearchEnabled
+        previewEnabled = settings.askFilePreviewEnabled
         status = index.status
         let check = fullDiskAccess
         Task {
