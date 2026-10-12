@@ -49,7 +49,7 @@ struct WebLoginProtocolTests {
     }
 
     @Test(arguments: [
-        "http://typeflux.app",
+        "ftp://typeflux.app",
         "https://user@typeflux.app",
         "https://typeflux.app/path",
         "https://typeflux.app?q=a",
@@ -57,7 +57,20 @@ struct WebLoginProtocolTests {
         "file:///tmp/a"
     ])
     func `rejects invalid origin`(raw: String) throws {
-        #expect(try !WebLoginConfiguration.isHTTPSOrigin(#require(URL(string: raw))))
+        #expect(try !WebLoginConfiguration.isWebOrigin(#require(URL(string: raw))))
+    }
+
+    @Test(arguments: ["http://localhost:5174", "http://127.0.0.1:5174", "http://[::1]:5174", "http://typeflux.test", "http://typeflux.test:80"])
+    func `HTTP transaction preserves exact configured origin`(origin: String) throws {
+        let configuration = WebLoginConfiguration.resolve(environment: [
+            "TYPEFLUX_WEB_AUTH_ENABLED": "true", "TYPEFLUX_WEB_AUTH_ORIGIN": origin,
+            "TYPEFLUX_WEB_AUTH_API_ORIGIN": origin
+        ], info: [:])
+        let login = transaction(url: "\(origin)/login?transaction=\(opaque)")
+        #expect(try configuration.validate(login, now: clock).scheme == "http")
+        #expect(throws: WebLoginFailure.invalidResponse) {
+            try configuration.validate(transaction(url: "https://localhost:5174/login?transaction=\(opaque)"), now: clock)
+        }
     }
 
     @Test func `validates transaction and strict callback`() throws {
@@ -345,7 +358,7 @@ struct WebLoginCoordinatorTests {
             let h = Harness()
             let configuration = WebLoginConfiguration.resolve(environment: [
                 "TYPEFLUX_WEB_AUTH_ENABLED": "true",
-                "TYPEFLUX_WEB_AUTH_ORIGIN": invalidOrigin ? "http://typeflux.app" : "https://typeflux.app"
+                "TYPEFLUX_WEB_AUTH_ORIGIN": invalidOrigin ? "file:///tmp" : "https://typeflux.app"
             ], info: [:])
             let coordinator = WebLoginCoordinator(configuration: configuration, api: h.api, store: h.store,
                                                   browserFactory: { _, _, _ in h.browser },
@@ -394,9 +407,13 @@ struct WebLoginCoordinatorTests {
 @Suite("Web login HTTP", .exclusiveUIState)
 @MainActor
 struct WebLoginHTTPTests {
-    @Test func `sends frozen contract without state in exchange`() async throws {
+    @Test(arguments: ["https://api.typeflux.app", "http://localhost:5174"])
+    func `sends frozen contract without state in exchange`(origin: String) async throws {
+        let configuration = WebLoginConfiguration.resolve(
+            environment: ["TYPEFLUX_WEB_AUTH_API_ORIGIN": origin], info: [:]
+        )
         var requests: [URLRequest] = []
-        let api = WebLoginHTTPAPI(configuration: config()) { request in
+        let api = WebLoginHTTPAPI(configuration: configuration) { request in
             requests.append(request)
             let body = request.url!.path.hasSuffix("transactions")
                 ? "{\"transaction_id\":\"\(opaque)\",\"login_url\":\"https://typeflux.app/login?transaction=\(opaque)\",\"expires_at\":1800000600}"
@@ -411,7 +428,9 @@ struct WebLoginHTTPTests {
         #expect(response.expiresAt == 1_800_003_600)
         #expect(requests.count == 2)
         for request in requests {
-            #expect(request.url?.host == config().apiOrigin.host)
+            #expect(request.url?.host == configuration.apiOrigin.host)
+            #expect(request.url?.scheme == configuration.apiOrigin.scheme)
+            #expect(request.url?.port == configuration.apiOrigin.port)
             #expect(request.httpMethod == "POST" && !request.httpShouldHandleCookies)
             #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
         }
@@ -440,13 +459,13 @@ struct WebLoginHTTPTests {
         }
     }
 
-    @Test func `rejects insecure endpoint and malformed responses`() async {
-        let insecure = WebLoginConfiguration.resolve(
-            environment: ["TYPEFLUX_WEB_AUTH_API_ORIGIN": "http://localhost:8080"],
+    @Test func `rejects invalid endpoint and malformed responses`() async {
+        let invalid = WebLoginConfiguration.resolve(
+            environment: ["TYPEFLUX_WEB_AUTH_API_ORIGIN": "ftp://localhost:8080"],
             info: [:]
         )
         var calls = 0
-        let api = WebLoginHTTPAPI(configuration: insecure) { _ in calls += 1; throw URLError(.badURL) }
+        let api = WebLoginHTTPAPI(configuration: invalid) { _ in calls += 1; throw URLError(.badURL) }
         await #expect(throws: WebLoginFailure.invalidResponse) { try await api.create(proof: proof) }
         #expect(calls == 0)
         for invalidHTTP in [false, true] {
