@@ -2092,7 +2092,10 @@
 "ask.local.identity" = "未登入";
 "ask.local.identity.detail" = "%@ · 對話僅存本機";
 "ask.local.identity.storage" = "對話僅存本機";
-"ask.cloudPromo.body" = "登入後可使用雲端模型（支援識圖、聯網搜尋），對話在多台裝置間同步。";
+"ask.local.identity.localMode" = "本機模式";
+"ask.cloudPromo.vision" = "識圖";
+"ask.cloudPromo.search" = "聯網搜尋";
+"ask.cloudPromo.sync" = "多端同步";
 "ask.cloudPromo.signIn" = "登入";
 "ask.cloudPromo.dismiss" = "30 天內不再顯示";
 "ask.vision.willUse" = "將使用 %@";

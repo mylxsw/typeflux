@@ -186,6 +186,13 @@ struct AskLocalModeUITests {
         #expect(AskCloudPromo.isVisible(dismissedAt: now.timeIntervalSince1970 - AskCloudPromo.quietPeriod, now: now))
     }
 
+    @Test func promoSummaryListsEveryFeature() {
+        let labels = AskCloudPromo.features.map { L($0.key) }
+        #expect(labels.count == 3)
+        #expect(Set(labels).count == labels.count)
+        #expect(AskCloudPromo.summary == labels.joined(separator: " · "))
+    }
+
     @Test func localSurfacesRender() throws {
         let f = try localFixture([text, vision])
         for status in [AskLocalModeStatus(source: "Ollama", searchConfigured: false, offersSignIn: true),

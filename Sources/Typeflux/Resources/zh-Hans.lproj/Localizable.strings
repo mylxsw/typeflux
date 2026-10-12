@@ -2095,7 +2095,10 @@
 "ask.local.identity" = "未登录";
 "ask.local.identity.detail" = "%@ · 对话仅存本机";
 "ask.local.identity.storage" = "对话仅存本机";
-"ask.cloudPromo.body" = "登录后可使用云端模型（支持识图、联网搜索），对话在多台设备间同步。";
+"ask.local.identity.localMode" = "本地模式";
+"ask.cloudPromo.vision" = "识图";
+"ask.cloudPromo.search" = "联网搜索";
+"ask.cloudPromo.sync" = "多端同步";
 "ask.cloudPromo.signIn" = "登录";
 "ask.cloudPromo.dismiss" = "30 天内不再显示";
 "ask.vision.willUse" = "将使用 %@";

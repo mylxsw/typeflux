@@ -1,7 +1,9 @@
 import SwiftUI
 
 /// Owns account state, identity, Cloud promotion, and settings access for both sidebars.
-/// Only the signed-out interaction varies: chat offers local mode; settings offers sign-in.
+/// Signed out, exactly one sign-in action shows: the Cloud card, or a pill once the card is
+/// closed or the sidebar is compact. Only the signed-out identity varies: chat offers local
+/// mode; settings shows status only.
 struct SidebarAccountFooter<SignedOutIdentity: View>: View {
     @ObservedObject var auth: AuthState
     @ObservedObject private var localization = AppLocalization.shared
@@ -26,9 +28,13 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
         _dismissedAt = AppStorage(wrappedValue: 0, AskCloudPromo.dismissedKey, store: defaults)
     }
 
+    private var showsPromo: Bool {
+        !compact && !auth.isLoggedIn && AskCloudPromo.isVisible(dismissedAt: dismissedAt)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            if !compact, !auth.isLoggedIn, AskCloudPromo.isVisible(dismissedAt: dismissedAt) {
+            if showsPromo {
                 AskCloudPromoCard(onSignIn: onSignIn, onDismiss: {
                     withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) {
                         dismissedAt = Date().timeIntervalSince1970
@@ -42,6 +48,13 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
             HStack(spacing: 9) {
                 identity.layoutPriority(1)
                 Spacer(minLength: 4)
+                if !auth.isLoggedIn, !showsPromo {
+                    Button(L("ask.cloudPromo.signIn"), action: onSignIn)
+                        .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
+                        .help(AskCloudPromo.summary)
+                        .accessibilityHint(AskCloudPromo.summary)
+                        .accessibilityIdentifier("sidebar.signIn")
+                }
                 Button(action: onOpenSettings) {
                     Image(systemName: "gearshape").font(.system(size: 15))
                         .foregroundStyle(StudioTheme.textSecondary)
@@ -79,7 +92,8 @@ extension SidebarAccountFooter where SignedOutIdentity == AskSignedOutIdentity {
          onOpenSettings: @escaping () -> Void) {
         self.init(auth: auth, compact: compact, defaults: defaults,
                   onSignIn: onSignIn, onOpenAccount: onOpenAccount, onOpenSettings: onOpenSettings) {
-            AskSignedOutIdentity(detail: L("ask.local.identity.storage"), action: onSignIn)
+            AskSignedOutIdentity(subtitle: L("ask.local.identity.localMode"),
+                                 detail: L("ask.local.identity.localMode"), action: nil)
         }
     }
 }

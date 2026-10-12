@@ -36,6 +36,22 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testSidebarCloudPromoKeysExistInEveryLanguage() throws {
+        let keys = ["ask.cloudPromo.vision", "ask.cloudPromo.search", "ask.cloudPromo.sync",
+                    "ask.cloudPromo.signIn", "ask.cloudPromo.dismiss", "ask.local.identity.localMode"]
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            let tableURL = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))
+            let table = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: tableURL),
+                options: [], format: nil) as? [String: String])
+            for key in keys {
+                XCTAssertFalse(try XCTUnwrap(table[key], "Missing \(key) in \(language.rawValue)").isEmpty)
+            }
+            // The card lists features instead of the old explanatory sentence.
+            XCTAssertNil(table["ask.cloudPromo.body"], "Stale ask.cloudPromo.body in \(language.rawValue)")
+        }
+    }
+
     func testMainAppDeclaresAllResourceLocalizations() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let plist = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: root.appendingPathComponent("app/Info.plist")),
