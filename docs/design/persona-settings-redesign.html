@@ -123,9 +123,9 @@ body.narrow .usage .slot.apps .apps-row { flex: 1; min-width: 0; }
 
 /* ---------- Library ---------- */
 .lib { flex: 1; display: flex; gap: 14px; min-height: 0; }
-.roster { width: 300px; flex: none; display: flex; flex-direction: column; min-height: 0; }
+.roster { width: 300px; flex: none; display: flex; flex-direction: column; min-height: 0; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 10px 8px; }
 body.narrow .roster { width: 250px; }
-.rhead { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.rhead { display: flex; align-items: center; gap: 6px; margin: 0 4px 10px; }
 .rhead h3 { margin: 0; font-size: 14px; }
 .rhead .n { color: var(--text3); font-weight: 500; font-size: 12px; }
 .rhead .sp { flex: 1; }
@@ -133,15 +133,24 @@ body.narrow .roster { width: 250px; }
 .search input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; color: var(--text); font-size: 12.5px; }
 .search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .rlist { flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
-.gl { font-size: 11.5px; font-weight: 600; color: var(--text3); margin: 10px 6px 4px; display: flex; gap: 6px; }
-.gl:first-child { margin-top: 2px; }
-.prow { display: flex; align-items: center; gap: 10px; padding: 7px 10px; min-height: 36px; border-radius: 9px; cursor: pointer; position: relative; }
+.gl { font-size: 11px; font-weight: 600; color: var(--text3); margin: 12px 8px 4px; display: flex; align-items: center; gap: 6px; letter-spacing: .02em; }
+.gl:first-child { margin-top: 4px; }
+.gl .c { margin-left: auto; font-weight: 500; }
+.prow { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 8px 0 10px; border-radius: 8px; cursor: pointer; position: relative; }
+.prow + .prow { margin-top: 1px; }
 .prow:hover { background: var(--card-hover); }
 .prow.on { background: var(--accent-soft); }
-.prow .meta { flex: 1; min-width: 0; }
-.prow .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
-.prow .nm .t { overflow: hidden; text-overflow: ellipsis; }
-.prow .tags { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
+.prow.on .nm { color: var(--accent); }
+body.light .prow.on .nm { color: var(--accent); }
+.prow .nm { flex: 1; min-width: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow .nm .pre { color: var(--text3); font-weight: 400; }
+.prow.on .nm .pre { color: inherit; opacity: .7; }
+.prow .marks { display: flex; gap: 4px; flex: none; }
+.mk { font-size: 10.5px; font-weight: 600; line-height: 18px; padding: 0 6px; border-radius: 5px; white-space: nowrap; }
+.mk.def { background: var(--ok-soft); color: var(--ok); }
+.mk.aux { background: var(--ai-soft); color: var(--ai); }
+.mk.app { background: var(--tile); color: var(--text2); }
+.mk.off { background: transparent; color: var(--text3); border: 1px dashed var(--border); line-height: 16px; }
 .prow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex: none; }
 .empty { text-align: center; color: var(--text3); padding: 28px 12px; font-size: 12.5px; }
 .empty b { display: block; color: var(--text2); margin-bottom: 4px; }
@@ -431,21 +440,31 @@ function renderUsage() {
 }
 
 /* ---------- Roster ---------- */
+// Short, single-line marks keep every row the same height; the detail pane spells them out.
+function marksOf(id) {
+  return usesOf(id).map(u => {
+    const t = u.k === 'def' ? '默认' : u.k === 'aux' ? '辅助' : u.apps.length === 1 ? u.apps[0].app : `${u.apps.length} 个应用`;
+    return `<span class="mk ${u.k}" title="${esc(u.t)}">${esc(t)}</span>`;
+  }).join('');
+}
+// A shared "候选：" style prefix is de-emphasised so the distinctive part of the name reads first.
+function nameHTML(name) {
+  const m = name.match(/^(.{1,6}[:：])\s*(.+)$/);
+  return m ? `<span class="pre">${esc(m[1])}</span>${esc(m[2])}` : esc(name);
+}
 function rowHTML(p) {
-  const tags = usesOf(p.id).map(u => `<span class="badge ${u.k}">${u.k === 'def' ? '✓ ' : ''}${esc(u.t)}</span>`).join('');
   const isDirty = draft && draft.id === p.id && dirty();
-  return `<div class="prow ${sel === p.id && !creating ? 'on' : ''}" data-id="${p.id}">
-    <div class="meta"><div class="nm"><span class="t">${esc(p.name)}</span>${isDirty ? '<span class="dot" title="未保存"></span>' : ''}</div>
-      ${tags ? `<div class="tags">${tags}</div>` : ''}</div></div>`;
+  return `<div class="prow ${sel === p.id && !creating ? 'on' : ''}" data-id="${p.id}" title="${esc(p.name)}">
+    <span class="nm">${nameHTML(p.name)}</span>${isDirty ? '<span class="dot" title="未保存"></span>' : ''}<span class="marks">${marksOf(p.id)}</span></div>`;
 }
 function renderRoster() {
   const k = q.trim().toLowerCase();
   const match = (p) => !k || p.name.toLowerCase().includes(k) || p.prompt.toLowerCase().includes(k) || summary(p).toLowerCase().includes(k);
   const sys = personas.filter(p => p.sys && match(p)), mine = personas.filter(p => !p.sys && match(p));
   let h = '';
-  if (creating) h += `<div class="gl">新建中</div><div class="prow on"><div class="meta"><div class="nm">${esc(creating.name || '未命名人设')}</div></div></div>`;
-  if (mine.length) h += `<div class="gl">我的人设 · ${mine.length}</div>` + mine.map(rowHTML).join('');
-  if (sys.length) h += `<div class="gl">内置 · ${sys.length}</div>` + sys.map(rowHTML).join('');
+  if (creating) h += `<div class="gl">新建中</div><div class="prow on"><span class="nm">${esc(creating.name || '未命名人设')}</span><span class="mk app">未保存</span></div>`;
+  if (mine.length) h += `<div class="gl">我的人设<span class="c">${mine.length}</span></div>` + mine.map(rowHTML).join('');
+  if (sys.length) h += `<div class="gl">内置<span class="c">${sys.length}</span></div>` + sys.map(rowHTML).join('');
   if (!sys.length && !mine.length) h += `<div class="empty"><b>没有找到「${esc(q)}」</b>可以搜索名称或人设定义里的文字。<br><br><button class="btn sm" id="createFromSearch">新建「${esc(q)}」</button></div>`;
   $('rlist').innerHTML = h;
   $('qClear').style.display = q ? 'grid' : 'none';
