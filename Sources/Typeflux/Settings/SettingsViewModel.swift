@@ -1408,7 +1408,7 @@ final class StudioViewModel: ObservableObject {
         switch modelPageTab {
         case .scenes: false
         case .speech: isShowingSpeechProviderDetail
-        case .language: selectedLanguageProviderID != nil
+        case .language: modelLibrary.providers.contains { $0.id == selectedLanguageProviderID }
         }
     }
 

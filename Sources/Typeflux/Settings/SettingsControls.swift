@@ -294,7 +294,7 @@ struct SettingsSearchBox: View {
 /// A quiet caption above settings lists, with an optional nearby disclosure arrow.
 struct SettingsListSectionLabel: View {
     let title: String
-    let count: Int
+    var count: Int?
     var expanded: Bool?
 
     var body: some View {
@@ -308,12 +308,40 @@ struct SettingsListSectionLabel: View {
             Text(title)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
-            Text(L("settings.list.itemCount", count))
-                .font(.system(size: 11))
-                .foregroundStyle(StudioTheme.textTertiary)
+            if let count {
+                Text(L("settings.list.itemCount", count))
+                    .font(.system(size: 11))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
         }
         .foregroundStyle(StudioTheme.textSecondary)
         .padding(.horizontal, 4)
         .frame(minHeight: SettingsControlMetrics.height)
+    }
+}
+
+/// Settings action chrome with optional progress, shared by provider configuration actions.
+struct SettingsActionButton: View {
+    let title: String
+    var symbol: String?
+    var primary = false
+    var isLoading = false
+    var isDisabled = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                if isLoading {
+                    ProgressView().controlSize(.small)
+                } else if let symbol {
+                    Image(systemName: symbol)
+                }
+                Text(title)
+            }
+        }
+        .buttonStyle(ModelActionStyle(primary: primary))
+        .accessibilityLabel(title)
+        .disabled(isDisabled || isLoading)
     }
 }

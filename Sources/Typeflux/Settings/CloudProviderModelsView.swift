@@ -14,7 +14,6 @@ struct CloudProviderModelsView: View {
         VStack(alignment: .leading, spacing: 0) {
             ModelDetailHeader(
                 title: "Typeflux Cloud",
-                subtitle: L("settings.models.domain.llm"),
                 icon: .typefluxCloud,
                 connected: auth.isLoggedIn,
                 onBack: onBack
@@ -34,7 +33,7 @@ struct CloudProviderModelsView: View {
                 .padding(.horizontal, 18).padding(.vertical, 14)
             }
             HStack(spacing: 8) {
-                ModelSectionLabel(title: L("models.cloud.available"), detail: "\(models.count)")
+                SettingsListSectionLabel(title: L("models.cloud.available"), count: models.count)
                 Spacer()
                 if library.loading { ProgressView().controlSize(.small) }
                 Button {
@@ -52,7 +51,7 @@ struct CloudProviderModelsView: View {
                         }
                         modelRow(model)
                     }
-                    if models.isEmpty && !library.loading {
+                    if models.isEmpty, !library.loading {
                         Text(L("models.cloud.empty")).font(.system(size: 13))
                             .foregroundStyle(StudioTheme.textTertiary)
                             .frame(maxWidth: .infinity).padding(.vertical, 24)

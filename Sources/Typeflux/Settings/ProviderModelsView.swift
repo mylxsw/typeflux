@@ -40,7 +40,6 @@ struct ProviderModelsView: View {
             if let provider {
                 ModelDetailHeader(
                     title: provider.name,
-                    subtitle: L("settings.models.domain.llm"),
                     icon: provider.studioProviderID,
                     connected: library.unavailableReason(provider, loggedIn: auth.isLoggedIn) == nil,
                     onBack: onBack
@@ -52,7 +51,7 @@ struct ProviderModelsView: View {
                             .foregroundStyle(StudioTheme.textSecondary).padding(18)
                     }
                 } else {
-                    ModelSectionLabel(title: L("models.connection")).padding(.bottom, 8)
+                    SettingsListSectionLabel(title: L("models.connection")).padding(.bottom, 8)
                     connectionCard(provider)
                 }
                 modelsHeader(provider).padding(.top, 26).padding(.bottom, 8)
@@ -165,7 +164,7 @@ struct ProviderModelsView: View {
 
     private func modelsHeader(_ provider: RegisteredProvider) -> some View {
         HStack(spacing: 8) {
-            ModelSectionLabel(title: L("common.model"), detail: "\(provider.models.count)")
+            SettingsListSectionLabel(title: L("common.model"), count: provider.models.count)
             Spacer()
             Button { manual = true } label: { Label(L("models.manual"), systemImage: "plus") }
             Button { load(provider) } label: { Label(L("models.load"), systemImage: "arrow.clockwise") }
@@ -202,7 +201,7 @@ struct ProviderModelsView: View {
                         canAsk: askReferences.contains(model.reference)
                     )
                 }
-                if provider.models.isEmpty && !manual {
+                if provider.models.isEmpty, !manual {
                     Text(L("models.noModels")).font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary)
                         .frame(maxWidth: .infinity).padding(.vertical, 24)
                 }

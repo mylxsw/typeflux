@@ -64,12 +64,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
 
     /// Returns from a speech provider's settings to the speech provider list.
     private func backButton(_ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(ModelPageTab.speech.title, systemImage: "chevron.left")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .contentShape(Rectangle())
-        }.buttonStyle(.plain)
+        ModelProviderBackButton(title: ModelPageTab.speech.title, action: action)
     }
 
     private var scenes: some View {
@@ -102,50 +97,34 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private var speechSceneMenu: some View {
-        HStack(spacing: 8) {
-            ModelProviderIcon(provider: viewModel.sttProvider.studioProviderID, size: 16)
-            Menu {
-                ForEach(speechProviders, id: \.rawValue) { provider in
-                    Section(provider.displayName) {
-                        if provider == .localModel {
-                            ForEach(
-                                LocalSTTModel.displayOrder.filter { viewModel.isModelAvailable($0) },
-                                id: \.rawValue
-                            ) { model in
-                                Button(model.displayName) {
-                                    viewModel.setLocalSTTModel(model); viewModel.setSTTProvider(provider)
-                                }
-                            }
-                        } else {
-                            Button(speechModelName(provider)) { viewModel.setSTTProvider(provider) }
-                        }
+        SettingsMenuPicker(
+            title: speechModelName(viewModel.sttProvider)
+                + (speechReason(viewModel.sttProvider).map { " — " + $0 } ?? ""),
+            options: speechProviders.flatMap { provider -> [(label: String, value: SpeechModelSelection)] in
+                if provider == .localModel {
+                    return LocalSTTModel.displayOrder.filter { viewModel.isModelAvailable($0) }.map {
+                        (label: $0.displayName, value: SpeechModelSelection(provider: provider, localModel: $0))
                     }
                 }
-            } label: {
-                Text(speechModelName(viewModel.sttProvider)
-                    + (speechReason(viewModel.sttProvider).map { " — " + $0 } ?? ""))
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // Same up/down indicator as the other scene selectors; clicks fall through to the menu.
-            .overlay(alignment: .trailing) {
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .allowsHitTesting(false)
-            }
-        }
-        .font(.system(size: 13))
-        .padding(.horizontal, 10).frame(width: 240, height: 30, alignment: .leading)
-        .background(
-            ModelVisualStyle.control,
-            in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
+                let name = speechModelName(provider)
+                return [(label: name == provider.displayName ? name : provider.displayName + " · " + name,
+                         value: SpeechModelSelection(provider: provider))]
+            },
+            selection: Binding(
+                get: { SpeechModelSelection(
+                    provider: viewModel.sttProvider,
+                    localModel: viewModel.sttProvider == .localModel ? viewModel.localSTTModel : nil
+                ) },
+                set: { selection in
+                    if let model = selection.localModel {
+                        viewModel.setLocalSTTModel(model)
+                    }
+                    viewModel.setSTTProvider(selection.provider)
+                }
+            )
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                .strokeBorder(ModelVisualStyle.border)
-        )
+        .frame(width: 240)
+        .accessibilityIdentifier("models.scene.speech")
     }
 
     private func sceneRow(_ title: String, icon: String,
@@ -263,16 +242,16 @@ extension ModelSettingsPage {
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             if !connected.isEmpty {
-                ModelSectionLabel(title: L("models.configured"), detail: "\(connected.count)")
+                SettingsListSectionLabel(title: L("models.configured"), count: connected.count)
                     .padding(.bottom, 8)
                 providerSurface(connected, onSelect: onSelect)
             }
             if !unconfigured.isEmpty {
-                ModelSectionLabel(title: L("models.notConfigured"), detail: "\(unconfigured.count)")
+                SettingsListSectionLabel(title: L("models.notConfigured"), count: unconfigured.count)
                     .padding(.top, connected.isEmpty ? 0 : 22).padding(.bottom, 8)
                 providerSurface(unconfigured, onSelect: onSelect)
             }
-            if connected.isEmpty && unconfigured.isEmpty && !search.trimmingCharacters(in: .whitespaces).isEmpty {
+            if connected.isEmpty, unconfigured.isEmpty, !search.trimmingCharacters(in: .whitespaces).isEmpty {
                 ModelSurface {
                     Text(String(format: L("models.searchEmpty"), search))
                         .font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary)
@@ -341,4 +320,10 @@ extension STTProvider {
         case .appleSpeech: .appleSpeech
         }
     }
+}
+
+/// Keeps local model identity alongside its provider when selecting a speech scene.
+private struct SpeechModelSelection: Hashable {
+    let provider: STTProvider
+    var localModel: LocalSTTModel?
 }

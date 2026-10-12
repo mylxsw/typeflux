@@ -106,6 +106,13 @@ final class ModelPageTabTests: XCTestCase {
         XCTAssertFalse(viewModel.isShowingModelProviderDetail)
     }
 
+    func testMissingProviderKeepsListActionsAvailable() {
+        let viewModel = makeViewModel()
+        viewModel.selectModelPageTab(.language)
+        viewModel.selectedLanguageProviderID = "removed-provider"
+        XCTAssertFalse(viewModel.isShowingModelProviderDetail)
+    }
+
     func testReturningToModelsKeepsTheTabButResetsSearchAndSpeechDetail() {
         let viewModel = makeViewModel()
         viewModel.selectModelPageTab(.speech)
@@ -126,7 +133,7 @@ final class ModelPageTabTests: XCTestCase {
         viewModel.selectModelPageTab(.language)
         viewModel.modelSearchQuery = "claude"
 
-        viewModel.navigate(to: .hotkeys)
+        viewModel.navigate(to: .settings)
 
         XCTAssertEqual(viewModel.modelSearchQuery, "claude")
     }

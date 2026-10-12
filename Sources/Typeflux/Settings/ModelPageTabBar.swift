@@ -8,7 +8,7 @@ struct ModelPageTabBar: View {
     var body: some View {
         HStack(spacing: StudioTheme.Spacing.xxLarge) {
             ForEach(ModelPageTab.allCases) { tab in
-                VoiceInputTab(title: tab.title, count: nil, selected: tab == selection) {
+                StudioUnderlineTab(title: tab.title, count: nil, selected: tab == selection) {
                     onSelect(tab)
                 }
                 .accessibilityIdentifier("studio.models.tab.\(tab.rawValue)")
