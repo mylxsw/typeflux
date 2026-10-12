@@ -386,7 +386,10 @@ final class LocalizationResourceTests: XCTestCase {
             "models.showKey",
             "models.hideKey",
             "models.cloud.managedShort",
-            "models.usageHint"
+            "models.usageHint",
+            "models.tab.scenes",
+            "models.tab.speech",
+            "models.tab.language"
         ]
 
         for language in AppLanguage.allCases {
