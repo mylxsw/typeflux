@@ -1,0 +1,95 @@
+{
+  "covered_changed_lines": 1163,
+  "executable_changed_lines": 1187,
+  "percent": 97.98,
+  "files": {
+    "Sources/Typeflux/Settings/PersonaAppDiscovery.swift": {
+      "covered": 146,
+      "executable": 147,
+      "uncovered": [
+        112
+      ]
+    },
+    "Sources/Typeflux/Settings/SettingsView.swift": {
+      "covered": 2,
+      "executable": 4,
+      "uncovered": [
+        426,
+        956
+      ]
+    },
+    "Sources/Typeflux/Settings/SettingsViewModel.swift": {
+      "covered": 60,
+      "executable": 61,
+      "uncovered": [
+        2415
+      ]
+    },
+    "Sources/Typeflux/Settings/StudioViewModel+PersonaLibrary.swift": {
+      "covered": 237,
+      "executable": 238,
+      "uncovered": [
+        148
+      ]
+    },
+    "Sources/Typeflux/UI/PersonaDeletionConfirmationView.swift": {
+      "covered": 26,
+      "executable": 26,
+      "uncovered": []
+    },
+    "Sources/Typeflux/UI/StudioComponents.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/UI/StudioPersonaAppRulesDrawer.swift": {
+      "covered": 173,
+      "executable": 178,
+      "uncovered": [
+        100,
+        127,
+        171,
+        172,
+        183
+      ]
+    },
+    "Sources/Typeflux/UI/StudioPersonaDetailView.swift": {
+      "covered": 160,
+      "executable": 167,
+      "uncovered": [
+        23,
+        24,
+        25,
+        51,
+        62,
+        149,
+        154
+      ]
+    },
+    "Sources/Typeflux/UI/StudioPersonaLibraryView.swift": {
+      "covered": 69,
+      "executable": 73,
+      "uncovered": [
+        72,
+        73,
+        74,
+        75
+      ]
+    },
+    "Sources/Typeflux/UI/StudioPersonaRosterView.swift": {
+      "covered": 119,
+      "executable": 120,
+      "uncovered": [
+        82
+      ]
+    },
+    "Sources/Typeflux/UI/StudioPersonaUsageSettings.swift": {
+      "covered": 170,
+      "executable": 172,
+      "uncovered": [
+        32,
+        49
+      ]
+    }
+  }
+}

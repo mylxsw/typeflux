@@ -1,0 +1,6 @@
+{
+  "make_format_exit_code": 2,
+  "changed_file_findings": 39,
+  "new_findings": 0,
+  "note": "Existing findings were checked against unchanged source from the merged main base. No new persona view/action/discovery file has a finding."
+}

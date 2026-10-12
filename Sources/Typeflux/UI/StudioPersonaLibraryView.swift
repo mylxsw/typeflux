@@ -1,277 +1,109 @@
 import SwiftUI
 
-/// A bounded master-detail editor. Only the roster and prompt scroll; actions stay visible.
+/// Usage and content remain independent; only the roster and definition scroll.
 struct StudioPersonaLibraryView: View {
+    @Environment(\.studioWindowWidth) private var windowWidth
     @ObservedObject var viewModel: StudioViewModel
     let onDelete: (PersonaProfile) -> Void
 
-    private var isReadOnly: Bool {
-        viewModel.selectedPersonaIsSystem && !viewModel.isCreatingPersonaDraft
-    }
-
     var body: some View {
-        VStack(spacing: StudioTheme.Spacing.smallMedium) {
-            StudioPersonaUsageSettings(viewModel: viewModel)
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
-                roster
-                    .frame(width: StudioTheme.Layout.personasListWidth)
-                editor
+        GeometryReader { geometry in
+            let narrow = (windowWidth ?? geometry.size.width) < 1000
+            VStack(spacing: 16) {
+                StudioPersonaUsageStrip(viewModel: viewModel, narrow: narrow)
+                    .disabled(viewModel.isPersonaRulesDrawerPresented || viewModel.personaPendingDeletion != nil)
+                HStack(spacing: 14) {
+                    StudioPersonaRosterView(viewModel: viewModel, onDelete: onDelete)
+                        .frame(width: narrow ? 250 : 300)
+                    StudioPersonaDetailView(viewModel: viewModel, onDelete: onDelete)
+                }
+                .frame(maxHeight: .infinity)
+                .disabled(viewModel.isPersonaRulesDrawerPresented || viewModel.personaPendingDeletion != nil)
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var roster: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(StudioTheme.textSecondary)
-                TextField(L("studio.search.personas"), text: $viewModel.searchQuery)
-                    .textFieldStyle(.plain)
-                    .accessibilityLabel(L("studio.search.personas"))
-                if !viewModel.searchQuery.isEmpty {
-                    Button { viewModel.searchQuery = "" } label: {
-                        Image(systemName: "xmark.circle.fill")
+            .overlay {
+                if viewModel.isPersonaRulesDrawerPresented {
+                    Color.black.opacity(0.28)
+                        .contentShape(Rectangle())
+                        .onTapGesture { viewModel.closePersonaAppRules() }
+                        .accessibilityLabel(L("personas.redesign.close"))
+                        .accessibilityAddTraits(.isButton)
+                    HStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        StudioPersonaAppRulesDrawer(viewModel: viewModel)
+                            .frame(width: min(520, geometry.size.width))
+                    }
+                }
+            }
+            .overlay {
+                if let persona = viewModel.personaPendingDeletion {
+                    Color.black.opacity(0.4)
+                    PersonaDeletionConfirmationView(viewModel: viewModel, persona: persona)
+                        .frame(width: min(440, geometry.size.width - 32))
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if let message = viewModel.personaUndoMessage, viewModel.personaPendingDeletion == nil {
+                    HStack(spacing: 14) {
+                        Text(message).lineLimit(2)
+                        Button(L("personas.redesign.undo")) { viewModel.undoPersonaChange() }
+                            .accessibilityIdentifier("personas.undoAction")
+                            .foregroundStyle(StudioTheme.accent)
+                        Button { viewModel.dismissPersonaUndo() } label: { Image(systemName: "xmark") }
+                            .accessibilityLabel(L("personas.redesign.close"))
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .accessibilityLabel(L("settings.personas.clearSearch"))
-                }
-            }
-            .font(.studioBody(StudioTheme.Typography.body))
-            .padding(StudioTheme.Spacing.smallMedium)
-            .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.small))
-
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.section) {
-                    StudioPersonaRosterRow(
-                        title: L("settings.personas.none"),
-                        subtitle: L("persona.none.subtitle"),
-                        systemImage: "slash.circle",
-                        isSelected: !viewModel.isCreatingPersonaDraft && viewModel.selectedPersonaID == nil,
-                        isDefault: viewModel.isDefaultPersona(nil)
-                    ) { viewModel.selectPersona(nil) }
-
-                    rosterGroup(title: L("settings.personas.builtIn"), personas: viewModel.filteredBuiltInPersonas)
-                    rosterGroup(title: L("settings.personas.custom"), personas: viewModel.filteredCustomPersonas)
-
-                    if viewModel.filteredPersonas.isEmpty && !viewModel.searchQuery.isEmpty {
-                        Text(L("settings.personas.noResults"))
-                            .font(.studioBody(StudioTheme.Typography.bodySmall))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .padding(.horizontal, StudioTheme.Spacing.xSmall)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func rosterGroup(title: String, personas: [PersonaProfile]) -> some View {
-        if !personas.isEmpty {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                Text(title)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .padding(.horizontal, StudioTheme.Spacing.xSmall)
-                ForEach(personas) { persona in
-                    StudioPersonaRosterRow(
-                        title: persona.name,
-                        subtitle: viewModel.personaListSubtitle(for: persona),
-                        systemImage: nil,
-                        isSelected: !viewModel.isCreatingPersonaDraft && viewModel.selectedPersonaID == persona.id,
-                        isDefault: viewModel.isDefaultPersona(persona.id)
-                    ) { viewModel.selectPersona(persona.id) }
-                    .contextMenu {
-                        if !persona.isSystem {
-                            Button(L("common.delete"), role: .destructive) { onDelete(persona) }
-                        }
-                    }
+                    .font(.system(size: 12))
+                    .padding(12)
+                    .background(StudioTheme.surface, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(StudioTheme.border))
+                    .shadow(radius: 8, y: 3)
+                    .padding(12)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("personas.undo")
                 }
             }
         }
-    }
-
-    private var editor: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-            HStack {
-                Text(L("settings.personas.settingsTitle"))
-                    .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Spacer()
-                if !viewModel.isCreatingPersonaDraft {
-                    defaultButton
-                }
-            }
-            .frame(minHeight: 32)
-
-            if !viewModel.isCreatingPersonaDraft && viewModel.selectedPersonaID == nil {
-                Text(L("persona.none.subtitle"))
-                    .font(.studioBody(StudioTheme.Typography.body))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            } else {
-                nameField
-                promptField
-                editorFooter
+        .onAppear {
+            if viewModel.selectedPersonaID == nil, !viewModel.isCreatingPersonaDraft {
+                viewModel.selectPersona(SettingsStore.defaultPersonaID)
             }
         }
-        .padding(StudioTheme.Insets.cardDefault)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(StudioTheme.cardSurface, in: RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero))
-        .overlay {
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero)
-                .stroke(StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder), lineWidth: 1)
-        }
-    }
-
-    private var defaultButton: some View {
-        Button {
-            guard !viewModel.isEditingDefaultPersona else { return }
-            if viewModel.selectedPersonaID == nil {
-                viewModel.deactivatePersonaRewrite()
-            } else {
-                viewModel.activateSelectedPersona()
-            }
-        } label: {
-            Label(L("settings.models.useAsDefault"), systemImage: "checkmark.circle.fill")
-                .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
-                .foregroundStyle(viewModel.isEditingDefaultPersona ? StudioTheme.success : StudioTheme.textPrimary)
-                .padding(.horizontal, StudioTheme.Spacing.smallMedium)
-                .padding(.vertical, StudioTheme.Spacing.xSmall)
-                .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.small))
-                .overlay {
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.small)
-                        .stroke(StudioTheme.border, lineWidth: 1)
-                }
-        }
-        .buttonStyle(StudioInteractiveButtonStyle())
-        .accessibilityValue(viewModel.isEditingDefaultPersona ? L("settings.personas.default") : "")
-    }
-
-    private var nameField: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-            fieldLabel(L("settings.personas.name"))
-            TextField(L("settings.personas.namePlaceholder"), text: $viewModel.personaDraftName)
-                .textFieldStyle(.plain)
-                .font(.studioBody(StudioTheme.Typography.body))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .padding(StudioTheme.Spacing.smallMedium)
-                .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.small))
-                .overlay {
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.small)
-                        .stroke(StudioTheme.border, lineWidth: 1)
-                }
-                .disabled(isReadOnly)
-                .accessibilityLabel(L("settings.personas.name"))
-        }
-    }
-
-    private var promptField: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-            fieldLabel(L("settings.personas.prompt"))
-            TextEditor(text: $viewModel.personaDraftPrompt)
-                .font(.studioBody(StudioTheme.Typography.body))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineSpacing(4)
-                .scrollContentBackground(.hidden)
-                .disabled(isReadOnly)
-                .padding(StudioTheme.Spacing.smallMedium)
-                .frame(minHeight: 0, maxHeight: .infinity)
-                .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.small))
-                .overlay {
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.small)
-                        .stroke(StudioTheme.border, lineWidth: 1)
-                }
-                .accessibilityLabel(L("settings.personas.prompt"))
-        }
-        .frame(maxHeight: .infinity)
-    }
-
-    private func fieldLabel(_ text: String) -> some View {
-        Text(text)
-            .font(.studioBody(StudioTheme.Typography.bodySmall))
-            .foregroundStyle(StudioTheme.textSecondary)
-    }
-
-    private var editorFooter: some View {
-        HStack(spacing: StudioTheme.Spacing.large) {
-            if isReadOnly {
-                fieldLabel(L("settings.personas.readOnly"))
-            } else {
-                if viewModel.hasPersonaDraftChanges {
-                    fieldLabel(L("settings.personas.unsaved"))
-                }
-                Spacer(minLength: StudioTheme.Spacing.small)
-                StudioButton(title: L("common.cancel"), systemImage: nil, variant: .ghost) {
-                    viewModel.cancelPersonaEditing()
-                }
-                StudioButton(
-                    title: L("settings.personas.saveChanges"),
-                    systemImage: nil,
-                    variant: .primary,
-                    isDisabled: !viewModel.canSavePersonaDraft || !viewModel.hasPersonaDraftChanges
-                ) { viewModel.savePersonaDraft() }
+        .onExitCommand {
+            if viewModel.personaPendingDeletion != nil {
+                viewModel.personaPendingDeletion = nil
+            } else if viewModel.isPersonaRulesDrawerPresented {
+                viewModel.closePersonaAppRules()
             }
         }
-        .frame(minHeight: 34)
+        .alert(L("personas.redesign.guardTitle", viewModel.personaDraftName), isPresented: Binding(
+            get: { viewModel.pendingPersonaNavigation != nil },
+            set: {
+                if !$0 {
+                    viewModel.resolvePersonaDraftGuard(.cancel)
+                }
+            }
+        )) {
+            Button(L("personas.redesign.discard"), role: .destructive) { viewModel.resolvePersonaDraftGuard(.discard) }
+                .accessibilityIdentifier("personas.guard.discard")
+            Button(L("common.cancel"), role: .cancel) { viewModel.resolvePersonaDraftGuard(.cancel) }
+                .accessibilityIdentifier("personas.guard.cancel")
+            Button(L("personas.redesign.save")) { viewModel.resolvePersonaDraftGuard(.save) }
+                .accessibilityIdentifier("personas.guard.save")
+                .disabled(!viewModel.canSavePersonaDraft)
+        } message: {
+            Text(L("personas.redesign.guardMessage"))
+        }
     }
 }
 
-private struct StudioPersonaRosterRow: View {
-    let title: String
-    let subtitle: String
-    let systemImage: String?
-    let isSelected: Bool
-    let isDefault: Bool
-    let action: () -> Void
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: StudioTheme.Spacing.smallMedium) {
-                Group {
-                    if let systemImage {
-                        Image(systemName: systemImage)
-                    } else {
-                        Text(String(title.prefix(StudioTheme.Count.personaInitials)).uppercased())
-                    }
-                }
-                .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
-                .foregroundStyle(isSelected ? StudioTheme.accent : StudioTheme.textSecondary)
-                .frame(width: 36, height: 36)
-                .background(StudioTheme.surfaceMuted, in: RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.small))
-
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                    Text(title)
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(1)
-                    Text(subtitle)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                if isDefault {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: StudioTheme.Typography.iconRegular))
-                        .foregroundStyle(StudioTheme.success)
-                }
-            }
-            .padding(StudioTheme.Spacing.xSmall)
-            .frame(minHeight: 56)
-            .background(
-                isSelected ? StudioTheme.accent.opacity(0.10) : (isHovered ? StudioTheme.surfaceMuted : Color.clear),
-                in: RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.small)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
-        .accessibilityLabel(title + ", " + subtitle)
-        .accessibilityValue(isDefault ? L("settings.personas.default") : "")
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+struct PersonaPanelModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(StudioTheme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(StudioTheme.border.opacity(0.65)))
     }
+}
+
+extension EnvironmentValues {
+    @Entry var studioWindowWidth: CGFloat?
 }
