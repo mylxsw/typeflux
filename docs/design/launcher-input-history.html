@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · 启动器输入历史回溯 设计稿</title>
+<style>
+  :root {
+    --canvas: #0c0c0d; --desk: #1b1c1f;
+    --glass: rgba(44,44,47,.93);
+    --hair: rgba(255,255,255,.10);
+    --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: rgba(10,132,255,.16); --accent-text: #8ebdff;
+    --hover: rgba(255,255,255,.08); --ctl: rgba(255,255,255,.08);
+    --violet: #bf5af2; --violet-soft: rgba(191,90,242,.18); --violet-text: #d6a1f7;
+    --green-soft: rgba(52,199,89,.16); --green-text: #7ee09a;
+    --orange-soft: rgba(255,159,10,.16); --orange-text: #ffc36b;
+    --danger: #ff6961; --ok: #34c759;
+    --win: #232325; --wall-a: #2c3442; --wall-b: #3b2f45;
+    --mark: #8ebdff;
+  }
+  body.light {
+    --canvas: #eceef1; --desk: #dfe3e8;
+    --glass: rgba(250,250,252,.95);
+    --hair: rgba(0,0,0,.09);
+    --text: #1d1d1f; --text-2: #5f5f64; --text-3: #8e8e93;
+    --accent-soft: rgba(10,132,255,.12); --accent-text: #0a6cdb;
+    --hover: rgba(0,0,0,.05); --ctl: rgba(0,0,0,.05);
+    --violet-soft: rgba(175,82,222,.12); --violet-text: #8e3fc0;
+    --green-soft: rgba(52,199,89,.14); --green-text: #1f8a3b;
+    --orange-soft: rgba(255,149,0,.14); --orange-text: #b26a00;
+    --win: #f7f7f8; --wall-a: #b9c7dc; --wall-b: #d9c8e4;
+    --mark: #0a6cdb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 48px 64px; background: var(--canvas); color: var(--text); width: 1600px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans SC", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 18px; max-width: 1260px; }
+  h3 { font-size: 17px; margin: 44px 0 14px; font-weight: 650; }
+  code { font-size: 11.5px; color: var(--text-2); font-family: ui-monospace, Menlo, monospace; }
+  .topbar { display: flex; gap: 10px; align-items: center; margin-bottom: 22px; }
+  .pill { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--ctl); border: 1px solid var(--hair); }
+  .pill button { border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; height: 26px; padding: 0 12px; border-radius: 7px; cursor: pointer; }
+  .pill button.on { background: var(--accent); color: #fff; }
+  .btn { border: 1px solid var(--hair); background: var(--ctl); color: var(--text); font: inherit; font-size: 12px; height: 26px; padding: 0 10px; border-radius: 7px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-bottom: 10px; }
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 6px; }
+  .grid2 { display: grid; grid-template-columns: 800px 1fr; gap: 28px 36px; align-items: start; }
+  .gallery { display: grid; grid-template-columns: repeat(2, 740px); gap: 28px 40px; }
+  .gallery .cap { font-size: 12px; color: var(--text-2); margin: 0 0 8px; }
+  .gallery .cap b { color: var(--text); }
+  table.spec { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  table.spec th, table.spec td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  table.spec th { color: var(--text-3); font-weight: 600; font-size: 11.5px; }
+  table.spec td:first-child { white-space: nowrap; }
+  kbd { font: 600 11px -apple-system, "SF Pro Text", sans-serif; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--hair); background: var(--ctl); color: var(--text); }
+
+  /* ===== stage ===== */
+  .stage { position: relative; border-radius: 14px; padding: 36px 30px; border: 1px solid var(--hair); min-height: 200px;
+    background: radial-gradient(900px 500px at 20% 0%, var(--wall-a), transparent 60%), radial-gradient(900px 500px at 90% 100%, var(--wall-b), transparent 60%), var(--desk); }
+  .stage.live { min-height: 660px; }
+  .stage.tight { padding: 26px 30px; }
+  .reopen { position: absolute; left: 50%; top: 46%; transform: translate(-50%,-50%); text-align: center; color: var(--text-2); font-size: 12.5px; display: none; }
+  .reopen .btn { margin-top: 10px; height: 30px; padding: 0 14px; }
+  .stage.closed .reopen { display: block; }
+  .stage.closed .card { opacity: 0; transform: scale(.97); pointer-events: none; }
+
+  /* ===== launcher card ===== */
+  .card { width: 680px; border-radius: 26px; background: var(--glass); border: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(24px);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 24px 60px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.25); position: relative; overflow: hidden;
+    transition: opacity .16s, transform .16s; }
+  body.light .card { border-color: rgba(0,0,0,.10); box-shadow: 0 24px 60px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.08); }
+  .editor { display: flex; align-items: center; gap: 8px; padding: 14px 18px 6px; min-height: 52px; }
+  .editor input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 16px; caret-color: var(--accent); }
+  .editor input::placeholder { color: var(--text-3); }
+  .editor .static { flex: 1; font-size: 16px; white-space: nowrap; overflow: hidden; }
+  .editor .ph { color: var(--text-3); }
+  .caret { display: inline-block; width: 1.5px; height: 19px; background: var(--accent); vertical-align: -4px; margin-left: 1px; }
+  .scope { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px 0 7px; border-radius: 8px; flex: none; font-size: 12.5px; font-weight: 600; white-space: nowrap;
+    background: var(--accent-soft); color: var(--accent-text); }
+  .ctxchip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 8px; background: var(--ctl); font-size: 12px; color: var(--text-2); white-space: nowrap; }
+  .ctxrow { display: flex; gap: 6px; padding: 12px 16px 0; }
+  .mic { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); flex: none; }
+  .send { width: 34px; height: 34px; border-radius: 50%; background: var(--ctl); color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex: none; }
+  .send.on { background: var(--accent); color: #fff; }
+  .foot { display: flex; align-items: center; gap: 6px; height: 48px; padding: 0 10px; }
+  .round { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); font-size: 16px; flex: none; }
+  .menu { font-size: 13.5px; font-weight: 600; padding: 0 6px; white-space: nowrap; }
+  .vsep { width: 1px; height: 20px; background: var(--hair); margin: 0 4px; }
+  .spacer { flex: 1; }
+  .hint { font-size: 11.5px; color: var(--text-3); white-space: nowrap; padding-right: 6px; }
+  .hint b { color: var(--text-2); font-weight: 600; }
+  .hair { height: 1px; background: var(--hair); margin: 0 12px; }
+
+  .list { padding: 6px 6px; max-height: 452px; overflow-y: auto; scrollbar-width: thin; }
+  .grp { display: flex; align-items: flex-end; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--text-3); padding: 0 10px 6px; height: 34px; }
+  .grp:first-child { height: 26px; }
+  .grp .n { font-weight: 500; }
+  .grp .act { margin-left: auto; font-weight: 500; color: var(--text-3); cursor: pointer; letter-spacing: 0; }
+  .grp .act:hover { color: var(--accent-text); }
+  .row { display: flex; align-items: center; gap: 11px; padding: 0 10px; height: 44px; border-radius: 13px; font-size: 13.5px; cursor: default; position: relative; }
+  .row + .row { margin-top: 2px; }
+  .row.hl { background: var(--hover); }
+  .row.hl.sel { box-shadow: inset 0 0 0 1px rgba(10,132,255,.55); }
+  .row .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+  .row .t mark { background: none; color: var(--mark); font-weight: 650; }
+  .row .res { color: var(--text-2); white-space: nowrap; flex: none; }
+  .row .to { font-size: 11.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1 1 auto; }
+  .row .tag { font-size: 10.5px; border-radius: 5px; padding: 0 5px; flex: none; height: 17px; line-height: 17px; }
+  .row .tag.draft { color: var(--orange-text); background: var(--orange-soft); }
+  .row .right { margin-left: auto; font-size: 11.5px; color: var(--text-3); white-space: nowrap; flex: none; padding-left: 8px; display: flex; gap: 10px; align-items: center; }
+  .row .fill { display: none; color: var(--text-2); font-size: 12px; }
+  .row.hl .fill { display: inline; }
+  .row .kwc { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; background: var(--accent-soft); color: var(--accent-text); font-size: 12px; font-weight: 600; flex: none; }
+  .row.empty { height: auto; padding: 18px 10px 20px; flex-direction: column; gap: 4px; color: var(--text-2); font-size: 12.5px; text-align: center; }
+  .row.empty .s { color: var(--text-3); font-size: 11.5px; }
+
+  .tile { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex: none; position: relative;
+    background: var(--ctl); color: var(--text-2); }
+  .tile.ai { background: var(--accent-soft); color: var(--accent); }
+  .tile.calc { background: var(--green-soft); color: var(--green-text); font-weight: 700; }
+  .tile.kw { background: var(--violet-soft); color: var(--violet-text); font-weight: 700; font-size: 11px; }
+  .tile.web { background: var(--accent-soft); color: var(--accent); }
+  .tile.draft { background: var(--orange-soft); color: var(--orange-text); }
+  .tile.app { color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); font-weight: 700; font-size: 12px; border-radius: 7px; }
+  .tile.doc { width: 22px; margin: 0 3px; border-radius: 3px 7px 3px 3px; background: #f4f4f6; color: #555; font-size: 7px; font-weight: 800; align-items: flex-end; padding-bottom: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .badge { position: absolute; left: 29px; top: 4px; width: 17px; height: 17px; border-radius: 4px; background: #fff; color: rgba(0,0,0,.85);
+    font: 700 10px ui-rounded, -apple-system, sans-serif; display: none; align-items: center; justify-content: center; box-shadow: 0 1px 1px rgba(0,0,0,.18); z-index: 2; }
+  .card.cmd .badge { display: inline-flex; }
+
+  .chips { display: flex; gap: 6px; padding: 8px 10px 4px; }
+  .chip { height: 28px; padding: 0 10px; border-radius: 9px; background: var(--ctl); color: var(--text-2); display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; }
+  .chip b { color: var(--accent-text); font-weight: 650; }
+  .toast { position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); background: rgba(0,0,0,.78); color: #fff; font-size: 12px; padding: 5px 12px; border-radius: 8px; white-space: nowrap; z-index: 7; pointer-events: none; opacity: 0; transition: opacity .15s; }
+  .toast.on { opacity: 1; }
+  .ghost { color: var(--text-3); }
+
+  .ctx { position: absolute; width: 200px; border-radius: 10px; background: var(--win); border: 1px solid var(--hair); box-shadow: 0 18px 40px rgba(0,0,0,.45); padding: 5px; z-index: 8; font-size: 12.5px; }
+  .ctx .it { display: flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; }
+  .ctx .it .k { margin-left: auto; color: var(--text-3); font-size: 11px; }
+  .ctx .it.on { background: var(--accent); color: #fff; } .ctx .it.on .k { color: rgba(255,255,255,.8); }
+  .ctx .it.danger { color: var(--danger); }
+  .ctx .sep { height: 1px; background: var(--hair); margin: 4px 6px; }
+
+  /* compare */
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--hair); border: 1px solid var(--hair); border-radius: 12px; overflow: hidden; }
+  .cmp > div { background: var(--win); padding: 14px 16px; }
+  .cmp h4 { margin: 0 0 8px; font-size: 13px; }
+  .cmp ul { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 12.5px; } .cmp li { margin-bottom: 5px; }
+
+  /* settings */
+  .win { border-radius: 12px; background: var(--win); border: 1px solid var(--hair); overflow: hidden; width: 640px; }
+  .srow { display: flex; align-items: center; gap: 12px; padding: 11px 14px; font-size: 13px; }
+  .srow + .srow { border-top: 1px solid var(--hair); }
+  .srow .d { color: var(--text-3); font-size: 11.5px; margin-top: 2px; }
+  .srow .r { margin-left: auto; display: flex; gap: 8px; align-items: center; flex: none; }
+  .sw { width: 32px; height: 19px; border-radius: 10px; background: var(--ctl); border: 1px solid var(--hair); position: relative; flex: none; }
+  .sw::after { content: ""; position: absolute; top: 1px; left: 1px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .sw.on { background: var(--ok); border-color: transparent; } .sw.on::after { left: 14px; }
+  select.sel { background: var(--ctl); color: var(--text); border: 1px solid var(--hair); border-radius: 6px; height: 24px; font: inherit; font-size: 12px; padding: 0 6px; }
+  .log { font: 11.5px/1.6 ui-monospace, Menlo, monospace; color: var(--text-3); margin-top: 12px; min-height: 20px; }
+</style></head>
+<body>
+<h1>启动器：每次呼出都是空白 + ↑ 回溯最近输入</h1>
+<p class="sub">GUL-362。两件事：① 每次按快捷键呼出启动器，输入框都是空的（不再残留上次的草稿）；② 输入框为空时按 <kbd>↑</kbd>，在启动器下半区列出「最近输入」，可以一键填回。上面的启动器可以直接操作：点一下输入框，按 <kbd>↑</kbd> 开始。</p>
+
+<div class="topbar">
+  <div class="pill" id="theme"><button class="on" data-v="dark">深色</button><button data-v="light">浅色</button></div>
+  <button class="btn" id="reset">重置演示数据</button>
+  <button class="btn" id="clearAll">模拟「没有历史」</button>
+  <span class="notes">快捷键：<kbd>⌥Space</kbd> 呼出 / 关闭 · <kbd>↑</kbd> 打开历史 · 按住 <kbd>⌘</kbd> 看编号 · <kbd>⌘1…9</kbd> · <kbd>⌘⌫</kbd> 删除 · 右键菜单</span>
+</div>
+
+<div class="grid2">
+  <div>
+    <div class="label">可交互原型</div>
+    <div class="stage live" id="stage">
+      <div class="card" id="card"></div>
+      <div class="reopen" id="reopen">启动器已关闭<br><button class="btn primary" id="reopenBtn">⌥Space 再次呼出</button></div>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+  <div class="notes">
+    <div class="label">试试这些</div>
+    <ul>
+      <li><b>↑ 回溯</b>：输入框为空时按 ↑，下半区换成「最近输入」，第 1 条已高亮。↑/↓ 移动，<b>↩ 或 → 填入</b>，填入后结果列表按这段文字重新计算。</li>
+      <li><b>边打边筛</b>：历史打开后继续打字，输入框前出现「最近」标签，只筛选历史，不触发搜索。<kbd>⌫</kbd> 删到空再按一次，回到普通状态。</li>
+      <li><b>按住 ⌘</b>：前 9 条显示编号（和启动器、剪贴板的编号徽标是同一个组件），<kbd>⌘1…9</kbd> 直接填入。</li>
+      <li><b>⌘↩</b>：不填入，直接用这条文字问 AI（启动器里 ⌘↩ 一直是「问 AI」）。</li>
+      <li><b>删除</b>：<kbd>⌘⌫</kbd> 删除高亮的一条；右键可删除或清空；标题右侧「清除」清空全部。</li>
+      <li><b>每次都是空白</b>：打几个字后按 <kbd>esc</kbd> 关闭，再按 <kbd>⌥Space</kbd>：输入框是空的。刚才没发出去的文字在 ↑ 的第一条，标着「未发送」，不会丢。</li>
+      <li><b>执行即记录</b>：输入 <code>12*8</code>、<code>zed</code>、<code>fy hello</code> 或任意问题后按 ↩，这次输入会记到历史最前面，同样的文字只保留一条。</li>
+    </ul>
+    <div class="label" style="margin-top:18px">和竞品相比</div>
+    <div class="cmp">
+      <div><h4>竞品（参考截图）</h4><ul>
+        <li>浮层叠在结果列表上，下面的文字透出来，难以阅读</li>
+        <li>只有文字，看不出当时做了什么</li>
+        <li>只能翻，不能搜；不能删</li>
+        <li>没发出去的输入不会留下</li>
+      </ul></div>
+      <div><h4>我们</h4><ul>
+        <li>就地替换下半区，单列布局不叠层，高度跟内容走</li>
+        <li>每条带结果类型：问 AI、计算结果、打开的应用/文件、关键词、未发送</li>
+        <li>继续打字即筛选，支持拼音首字母；<kbd>⌘⌫</kbd> 删除、可关闭记录</li>
+        <li>呼出总是空白，但上次的草稿可以 ↑ 找回</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<h3>状态一览</h3>
+<div class="gallery" id="gallery"></div>
+
+<h3>规则</h3>
+<div class="grid2" style="grid-template-columns: 1fr 1fr;">
+  <div>
+    <div class="label">键盘</div>
+    <table class="spec">
+      <tr><th>状态</th><th>按键</th><th>行为</th></tr>
+      <tr><td>输入框为空</td><td><kbd>↑</kbd></td><td>打开「最近输入」，高亮第 1 条。首页有高亮行时，高亮在第一行才打开，否则先上移高亮。输入法组字中不响应。</td></tr>
+      <tr><td>输入框有内容</td><td><kbd>↑</kbd></td><td>不变：在结果列表里移动。</td></tr>
+      <tr><td rowspan="9">历史打开</td><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>按屏幕方向移动，不循环；第 1 条再按 ↑ 无反应。</td></tr>
+      <tr><td><kbd>↩</kbd> <kbd>→</kbd> <kbd>⇥</kbd> / 单击</td><td>填入：输入框换成这条文字，光标在末尾，历史关闭，结果列表立即按新文字计算。</td></tr>
+      <tr><td><kbd>⌘1…9</kbd></td><td>填入第 n 条。按住 ⌘ 时显示编号。</td></tr>
+      <tr><td><kbd>⌘↩</kbd></td><td>直接用这条文字问 AI（新建对话），不经过填入。</td></tr>
+      <tr><td><kbd>⌘⌫</kbd></td><td>删除高亮的一条，高亮落到下一条。</td></tr>
+      <tr><td>打字</td><td>筛选历史（子串 + 拼音首字母），输入框前显示「最近」标签。</td></tr>
+      <tr><td><kbd>⌫</kbd>（筛选为空）</td><td>关闭历史，回到首页。</td></tr>
+      <tr><td><kbd>esc</kbd></td><td>先清空筛选；筛选为空时关闭历史回到首页；再按才关闭启动器。</td></tr>
+      <tr><td>右键</td><td>填入 / 问 AI / 拷贝文字 / 删除 / 清除全部。</td></tr>
+    </table>
+  </div>
+  <div>
+    <div class="label">记录与呼出</div>
+    <table class="spec">
+      <tr><th>项</th><th>规则</th></tr>
+      <tr><td>呼出</td><td>每次呼出：清空输入框文字、退出关键词模式、清掉手动加的附件、高亮回到首页默认项。自动带上的上下文（选中文字、当前网页）照常按当时重新获取。</td></tr>
+      <tr><td>什么时候记</td><td>① 执行：↩ 执行任一结果、⌘↩ 问 AI、关键词运行、⌘N；② 放弃：关闭时输入框里还有文字（去掉首尾空白后 ≥ 2 个字），记为「未发送」。</td></tr>
+      <tr><td>记什么</td><td>原样的输入文字（含关键词前缀，如 <code>fy hello</code>）+ 当时的去向（问 AI / 计算结果 / 应用 / 文件 / 关键词 / 网页搜索）+ 时间。不记选区、截图、附件和 AI 回答。</td></tr>
+      <tr><td>去重</td><td>文字相同（忽略首尾空白、大小写）只保留一条，移到最前，去向和时间更新；「未发送」被同文字的执行记录覆盖。</td></tr>
+      <tr><td>容量</td><td>最多 100 条，单条最长 500 字；多行文字在列表里用 <code>↵</code> 连成一行显示。</td></tr>
+      <tr><td>不记</td><td>设置里关闭了「记住输入历史」时什么都不记，已有记录保留到用户清除。只含空白、或只有关键词本身（如 <code>fy</code>）的输入不记。</td></tr>
+      <tr><td>存储</td><td>只在本机：<code>UserDefaults</code> 的 <code>ask.launcher.inputHistory</code>，不上传、不同步，和 <code>ask.launcher.keywordUsage</code> 同级。</td></tr>
+      <tr><td>去向变化</td><td>填入后结果是重新算的：文件被删、应用被卸载时就按当下结果显示，历史条目只做标注，不保证还能打开同一个目标。</td></tr>
+    </table>
+  </div>
+</div>
+
+<h3>设置：启动器 → 通用</h3>
+<div class="win">
+  <div class="srow"><div><div>记住输入历史</div><div class="d">在启动器输入框为空时按 ↑ 找回最近的输入。只保存在这台 Mac 上。</div></div><div class="r"><span class="sw on"></span></div></div>
+  <div class="srow"><div><div>保留条数</div><div class="d">超过后删除最早的记录。</div></div><div class="r"><select class="sel"><option>50</option><option selected>100</option><option>200</option></select></div></div>
+  <div class="srow"><div><div>清除输入历史</div><div class="d">当前 11 条。</div></div><div class="r"><button class="btn">清除…</button></div></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MIN = 60e3, HOUR = 60 * MIN, DAY = 24 * HOUR;
+const now = Date.now();
+
+const APPS = [
+  { name: 'Zed', color: '#1d1d1f', g: 'Z', py: 'zed' },
+  { name: 'Safari', color: '#1e88e5', g: 'S', py: 'safari' },
+  { name: 'Xcode', color: '#147efb', g: 'X', py: 'xcode' },
+  { name: '飞书', color: '#3370ff', g: '飞', py: 'feishu fs' },
+  { name: '微信', color: '#07c160', g: '微', py: 'weixin wx' },
+];
+const FILES = [{ name: '合同台账.xlsx', dir: '~/Documents/合同', ini: 'httz' }, { name: '2026 年度采购合同.pdf', dir: '~/Documents/合同', ini: '2026ndcght' }];
+const KEYWORDS = { fy: '翻译', rw: '润色', sum: '总结', ex: '解释', g: 'Google 搜索' };
+
+function seed() {
+  return [
+    { text: 'zed', kind: 'app', target: 'Zed', at: now - 3 * MIN },
+    { text: '帮我把这段 SQL 改成用 CTE 的写法', kind: 'draft', at: now - 25 * MIN },
+    { text: 'fy 这个方案的边界条件我们再对一下', kind: 'keyword', at: now - 52 * MIN },
+    { text: '100*334', kind: 'calc', target: '33,400', at: now - 2 * HOUR },
+    { text: '合同台账', kind: 'file', target: '合同台账.xlsx', at: now - 5 * HOUR },
+    { text: 'swift actor 和 GCD 串行队列有什么区别？', kind: 'ai', at: now - 9 * HOUR },
+    { text: 'g swiftui scrollPosition', kind: 'web', target: 'Google', at: now - DAY - 2 * HOUR },
+    { text: '1+1', kind: 'calc', target: '2', at: now - 2 * DAY },
+    { text: '飞书', kind: 'app', target: '飞书', at: now - 3 * DAY },
+    { text: '把下面这段话改得更口语一点\n然后给我两个版本', kind: 'ai', at: now - 4 * DAY },
+    { text: 'tinyc', kind: 'ai', at: now - 6 * DAY },
+  ];
+}
+
+function ago(t) {
+  const d = Date.now() - t;
+  if (d < MIN) return '刚刚';
+  if (d < HOUR) return Math.floor(d / MIN) + ' 分钟前';
+  if (d < DAY) return Math.floor(d / HOUR) + ' 小时前';
+  if (d < 2 * DAY) return '昨天';
+  return Math.floor(d / DAY) + ' 天前';
+}
+
+function calc(text) {
+  const s = text.replace(/[×xX]/g, '*').replace(/÷/g, '/').replace(/=$/, '').trim();
+  if (!/^[\d\s+\-*/().^%]+$/.test(s) || !/\d\s*[+\-*/^%]\s*[\d(]/.test(s)) return null;
+  try { const v = Function('"use strict";return (' + s.replace(/\^/g, '**') + ')')(); return Number.isFinite(v) ? v : null; } catch { return null; }
+}
+const fmt = v => (Math.round(v * 1e8) / 1e8).toLocaleString('en-US', { maximumFractionDigits: 8 });
+
+function tileFor(e) {
+  switch (e.kind) {
+    case 'ai': return '<span class="tile ai">✦</span>';
+    case 'calc': return '<span class="tile calc">=</span>';
+    case 'keyword': return '<span class="tile kw">' + ({ fy: '译', rw: '✎', sum: '≡', ex: '?' }[e.text.split(' ')[0]] || 'K') + '</span>';
+    case 'web': return '<span class="tile web">G</span>';
+    case 'draft': return '<span class="tile draft">✎</span>';
+    case 'file': return '<span class="tile doc">XLS</span>';
+    case 'app': { const a = APPS.find(x => x.name === e.target) || { color: '#555', g: '?' }; return `<span class="tile app" style="background:${a.color}">${esc(a.g)}</span>`; }
+  }
+  return '<span class="tile">·</span>';
+}
+
+function highlight(text, q) {
+  const one = text.replace(/\n+/g, ' ↵ ');
+  if (!q) return esc(one);
+  const i = one.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return esc(one);
+  return esc(one.slice(0, i)) + '<mark>' + esc(one.slice(i, i + q.length)) + '</mark>' + esc(one.slice(i + q.length));
+}
+
+function body(e, q) {
+  if (e.kind === 'keyword' || e.kind === 'web') {
+    const [k, ...rest] = e.text.split(' ');
+    return `<span class="kwc">${esc(k)}</span><span class="t">${highlight(rest.join(' '), q)}</span>`;
+  }
+  let h = `<span class="t">${highlight(e.text, q)}</span>`;
+  if (e.kind === 'calc') h += `<span class="res">= ${esc(e.target)}</span>`;
+  if (e.kind === 'app' || e.kind === 'file') h += `<span class="to">→ ${esc(e.target)}</span>`;
+  if (e.kind === 'draft') h += '<span class="tag draft">未发送</span>';
+  return h;
+}
+
+/* initials of CJK text for a light pinyin-initial match: demo-only table */
+const INITIALS = { '合': 'h', '同': 't', '台': 't', '账': 'z', '飞': 'f', '书': 's', '帮': 'b', '我': 'w', '把': 'b', '这': 'z', '段': 'd', '翻': 'f', '译': 'y' };
+function matches(e, q) {
+  if (!q) return true;
+  const t = e.text.toLowerCase(), ql = q.toLowerCase();
+  if (t.includes(ql)) return true;
+  if ((e.target || '').toLowerCase().includes(ql)) return true;
+  const ini = [...e.text].map(c => INITIALS[c] || '').join('');
+  return ini.includes(ql);
+}
+
+/* ===== render ===== */
+function homeHTML() {
+  return `<div class="hair"></div><div class="list">
+    <div class="grp">继续对话</div>
+    <div class="row" data-home="0"><span class="tile">💬</span><span class="t">Swift 并发模型梳理</span><span class="right">40 分钟前</span></div>
+    <div class="row" data-home="1"><span class="tile">💬</span><span class="t">周报：GUL 迭代进度</span><span class="right">3 小时前</span></div>
+    <div class="grp">常用关键词</div>
+    <div class="chips"><span class="chip"><b>fy</b> 翻译</span><span class="chip"><b>rw</b> 润色</span><span class="chip"><b>sum</b> 总结</span><span class="chip"><b>g</b> 搜索</span></div>
+  </div>`;
+}
+
+function historyHTML(st) {
+  const items = st.filtered;
+  const head = `<div class="grp">最近输入 <span class="n">${st.filter ? items.length + ' 条匹配' : ''}</span>${st.history.length ? '<span class="act" data-act="clear">清除</span>' : ''}</div>`;
+  if (!st.history.length) return `<div class="hair"></div><div class="list">${head}<div class="row empty">还没有输入历史<span class="s">在启动器里执行过的搜索和问题会出现在这里</span></div></div>`;
+  if (!items.length) return `<div class="hair"></div><div class="list">${head}<div class="row empty">没有匹配「${esc(st.filter)}」的记录<span class="s">⌫ 删除筛选 · esc 返回</span></div></div>`;
+  const rows = items.map((e, i) => `<div class="row ${i === st.hl ? 'hl sel' : ''}" data-h="${i}">
+      ${tileFor(e)}${i < 9 ? `<span class="badge">${i + 1}</span>` : ''}${body(e, st.filter)}
+      <span class="right"><span class="fill">填入 →</span><span>${ago(e.at)}</span></span></div>`).join('');
+  return `<div class="hair"></div><div class="list" data-list>${head}${rows}</div>`;
+}
+
+function resultsHTML(text) {
+  const rows = [];
+  const v = calc(text);
+  if (v !== null) rows.push({ grp: '计算器', html: `<span class="tile calc">=</span><span class="t">${esc(text)}</span><span class="res" style="margin-left:auto;font-size:15px;color:var(--text)">= ${fmt(v)}</span>`, run: { kind: 'calc', target: fmt(v) } });
+  const [k, ...rest] = text.split(' ');
+  if (KEYWORDS[k] && rest.length) rows.push({ grp: '关键词', html: `<span class="tile kw">${esc(k)}</span><span class="t">${esc(KEYWORDS[k])}</span><span class="to">${esc(rest.join(' '))}</span>`, run: { kind: k === 'g' ? 'web' : 'keyword', target: k === 'g' ? 'Google' : undefined } });
+  const q = text.toLowerCase();
+  APPS.filter(a => q.length && (a.name.toLowerCase().startsWith(q) || a.py.split(' ').some(p => p.startsWith(q)))).forEach(a =>
+    rows.push({ grp: '应用', html: `<span class="tile app" style="background:${a.color}">${esc(a.g)}</span><span class="t">${esc(a.name)}</span><span class="right">打开 ↩</span>`, run: { kind: 'app', target: a.name } }));
+  FILES.filter(f => q.length && (f.name.toLowerCase().includes(q) || f.ini.includes(q))).forEach(f =>
+    rows.push({ grp: '文件', html: `<span class="tile doc">${f.name.endsWith('pdf') ? 'PDF' : 'XLS'}</span><span class="t">${esc(f.name)}</span><span class="to">${esc(f.dir)}</span><span class="right">打开 ↩</span>`, run: { kind: 'file', target: f.name } }));
+  rows.push({ grp: 'AI', html: `<span class="tile ai">✦</span><span class="t">问 AI　“${esc(text.replace(/\n/g, ' '))}”</span><span class="right">⌘↩</span>`, run: { kind: 'ai' } });
+  return rows;
+}
+
+function cardHTML(st) {
+  const inHistory = st.mode === 'history';
+  const editor = inHistory
+    ? `<span class="scope">↺ 最近</span>${st.static ? `<span class="static">${st.filter ? esc(st.filter) + '<span class="caret"></span>' : '<span class="caret"></span><span class="ph">筛选最近输入…</span>'}</span>` : `<input id="inp" placeholder="筛选最近输入…" value="${esc(st.filter)}" autocomplete="off">`}`
+    : (st.static ? `<span class="static">${st.text ? esc(st.text) + '<span class="caret"></span>' : '<span class="caret"></span><span class="ph">搜索、计算，或问点什么…</span>'}</span>` : `<input id="inp" placeholder="搜索、计算，或问点什么…" value="${esc(st.text)}" autocomplete="off">`);
+  let lower = '', hint = '';
+  if (inHistory) {
+    lower = historyHTML(st);
+    hint = st.filtered.length ? '<b>↩</b> 填入 · <b>⌘↩</b> 问 AI · <b>⌘⌫</b> 删除 · <b>esc</b> 返回' : '<b>esc</b> 返回';
+  } else if (!st.text) {
+    lower = homeHTML();
+    hint = '<b>↑</b> 最近输入 · <b>↩</b> 执行 · <b>esc</b> 关闭';
+  } else {
+    const rows = resultsHTML(st.text);
+    st.results = rows;
+    let last = '';
+    lower = '<div class="hair"></div><div class="list">' + rows.map((r, i) => {
+      const g = r.grp !== last ? `<div class="grp">${r.grp}</div>` : ''; last = r.grp;
+      return g + `<div class="row ${i === st.rhl ? 'hl sel' : ''}" data-r="${i}">${r.html}</div>`;
+    }).join('') + '</div>';
+    hint = '<b>↩</b> 执行 · <b>⌘↩</b> 问 AI · <b>esc</b> 关闭';
+  }
+  return `${st.ctx ? '<div class="ctxrow"><span class="ctxchip">📄 Safari · Swift Concurrency 文档 ×</span></div>' : ''}
+    <div class="editor">${editor}<span class="mic">🎙</span><span class="send ${(!inHistory && st.text) ? 'on' : ''}">↑</span></div>
+    ${lower}
+    <div class="hair"></div>
+    <div class="foot"><span class="round">＋</span><span class="round">☁</span><span class="menu">Typeflux Cloud ▾</span><span class="vsep"></span><span class="round">⌗</span><span class="spacer"></span><span class="hint">${hint}</span></div>
+    <div class="toast" id="toast"></div>`;
+}
+
+function refilter(st) {
+  st.filtered = st.history.filter(e => matches(e, st.filter));
+  st.hl = Math.min(st.hl, Math.max(0, st.filtered.length - 1));
+}
+
+/* ===== live prototype ===== */
+const S = { mode: 'home', text: '', filter: '', hl: 0, rhl: 0, history: seed(), filtered: [], results: [], ctx: false, open: true };
+const card = $('#card');
+let toastTimer;
+
+function log(msg) { $('#log').textContent = '› ' + msg; }
+function toast(msg) {
+  const t = $('#toast'); if (!t) return;
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 1400);
+}
+
+function render(keepCaret = true) {
+  if (S.mode === 'history') refilter(S);
+  card.innerHTML = cardHTML(S);
+  const inp = $('#inp');
+  if (inp && keepCaret) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  const hl = card.querySelector('.row.hl');
+  if (hl) hl.scrollIntoView({ block: 'nearest' });
+}
+
+function remember(text, kind, target) {
+  const key = text.trim().toLowerCase();
+  if (!key) return;
+  S.history = S.history.filter(e => e.text.trim().toLowerCase() !== key);
+  S.history.unshift({ text: text.trim(), kind, target, at: Date.now() });
+  S.history = S.history.slice(0, 100);
+}
+
+function openHistory() { S.mode = 'history'; S.filter = ''; S.hl = 0; render(); log('↑ 打开最近输入'); }
+function closeHistory() { S.mode = 'home'; S.filter = ''; render(); log('回到首页'); }
+function fill(i) {
+  const e = S.filtered[i]; if (!e) return;
+  S.mode = 'results'; S.text = e.text; S.rhl = 0; S.filter = '';
+  render(); log('填入：' + e.text.replace(/\n/g, ' ↵ '));
+}
+function askAI(text) {
+  remember(text, 'ai');
+  log('⌘↩ 问 AI：新建对话「' + text.replace(/\n/g, ' ') + '」，启动器关闭');
+  closeLauncher(false);
+}
+function del(i) {
+  const e = S.filtered[i]; if (!e) return;
+  S.history = S.history.filter(x => x !== e);
+  render(); toast('已删除'); log('⌘⌫ 删除：' + e.text);
+}
+function clearAll() { S.history = []; render(); toast('已清除输入历史'); log('清除全部'); }
+
+function runResult(i) {
+  const r = S.results[i]; if (!r) return;
+  remember(S.text, r.run.kind, r.run.target);
+  const what = { file: '打开 ' + r.run.target, calc: '复制结果 ' + r.run.target, app: '打开 ' + r.run.target, ai: '问 AI', keyword: '运行关键词', web: '打开网页搜索' }[r.run.kind];
+  log('↩ ' + what + '，记入历史；启动器关闭');
+  closeLauncher(false);
+}
+
+function closeLauncher(saveDraft) {
+  if (saveDraft && S.mode !== 'history' && S.text.trim().length >= 2) {
+    const key = S.text.trim().toLowerCase();
+    if (!S.history.some(e => e.text.trim().toLowerCase() === key)) remember(S.text, 'draft');
+    log('esc 关闭：未发送的「' + S.text.trim() + '」记为「未发送」');
+  } else if (saveDraft) log('esc 关闭');
+  S.open = false; $('#stage').classList.add('closed'); card.classList.remove('cmd');
+}
+function openLauncher() {
+  Object.assign(S, { open: true, mode: 'home', text: '', filter: '', hl: 0, rhl: 0, ctx: Math.random() < .5 });
+  $('#stage').classList.remove('closed');
+  render(); log('⌥Space 呼出：输入框为空（初始状态）');
+}
+
+card.addEventListener('input', ev => {
+  if (ev.target.id !== 'inp') return;
+  if (S.mode === 'history') { S.filter = ev.target.value; S.hl = 0; }
+  else { S.text = ev.target.value; S.rhl = 0; S.mode = S.text ? 'results' : 'home'; }
+  render();
+});
+
+document.addEventListener('keydown', ev => {
+  if (ev.altKey && ev.code === 'Space') { ev.preventDefault(); S.open ? closeLauncher(true) : openLauncher(); return; }
+  if (!S.open) return;
+  if (ev.key === 'Meta') card.classList.add('cmd');
+  if (ev.isComposing) return;
+  const inp = $('#inp');
+  if (document.activeElement !== inp && !card.contains(document.activeElement)) return;
+  const k = ev.key;
+  if (S.mode === 'history') {
+    const n = S.filtered.length;
+    if (k === 'ArrowDown') { ev.preventDefault(); S.hl = Math.min(n - 1, S.hl + 1); render(); }
+    else if (k === 'ArrowUp') { ev.preventDefault(); S.hl = Math.max(0, S.hl - 1); render(); }
+    else if (ev.metaKey && k === 'Enter') { ev.preventDefault(); if (n) askAI(S.filtered[S.hl].text); }
+    else if (ev.metaKey && k === 'Backspace') { ev.preventDefault(); del(S.hl); }
+    else if (ev.metaKey && /^[1-9]$/.test(k)) { ev.preventDefault(); fill(+k - 1); }
+    else if (k === 'Enter' || k === 'Tab' || (k === 'ArrowRight' && inp.selectionStart === inp.value.length)) { ev.preventDefault(); fill(S.hl); }
+    else if (k === 'Backspace' && !S.filter) { ev.preventDefault(); closeHistory(); }
+    else if (k === 'Escape') { ev.preventDefault(); if (S.filter) { S.filter = ''; render(); } else closeHistory(); }
+    return;
+  }
+  if (S.mode === 'home') {
+    if (k === 'ArrowUp' && !inp.value) { ev.preventDefault(); openHistory(); }
+    else if (k === 'Escape') { ev.preventDefault(); closeLauncher(true); }
+    return;
+  }
+  // results
+  const n = S.results.length;
+  if (k === 'ArrowDown') { ev.preventDefault(); S.rhl = Math.min(n - 1, S.rhl + 1); render(); }
+  else if (k === 'ArrowUp') { ev.preventDefault(); S.rhl = Math.max(0, S.rhl - 1); render(); }
+  else if (ev.metaKey && k === 'Enter') { ev.preventDefault(); askAI(S.text); }
+  else if (ev.metaKey && /^[1-9]$/.test(k)) { ev.preventDefault(); S.rhl = Math.min(n - 1, +k - 1); runResult(S.rhl); }
+  else if (k === 'Enter' && !ev.shiftKey) { ev.preventDefault(); runResult(S.rhl); }
+  else if (k === 'Escape') { ev.preventDefault(); closeLauncher(true); }
+});
+document.addEventListener('keyup', ev => { if (ev.key === 'Meta') card.classList.remove('cmd'); });
+window.addEventListener('blur', () => card.classList.remove('cmd'));
+
+card.addEventListener('mousemove', ev => {
+  const r = ev.target.closest('[data-h]');
+  if (r && +r.dataset.h !== S.hl) { S.hl = +r.dataset.h; render(); }
+});
+card.addEventListener('click', ev => {
+  closeMenu();
+  if (ev.target.closest('[data-act="clear"]')) return clearAll();
+  const h = ev.target.closest('[data-h]'); if (h) return fill(+h.dataset.h);
+  const r = ev.target.closest('[data-r]'); if (r) return runResult(+r.dataset.r);
+  const inp = $('#inp'); if (inp) inp.focus();
+});
+
+let menu;
+function closeMenu() { if (menu) { menu.remove(); menu = null; } }
+card.addEventListener('contextmenu', ev => {
+  const h = ev.target.closest('[data-h]'); if (!h) return;
+  ev.preventDefault(); closeMenu();
+  const i = +h.dataset.h; S.hl = i; render(false);
+  const rect = $('#stage').getBoundingClientRect();
+  menu = document.createElement('div'); menu.className = 'ctx';
+  menu.style.left = (ev.clientX - rect.left) + 'px'; menu.style.top = (ev.clientY - rect.top) + 'px';
+  menu.innerHTML = `<div class="it on" data-m="fill">填入<span class="k">↩</span></div><div class="it" data-m="ai">问 AI<span class="k">⌘↩</span></div><div class="it" data-m="copy">拷贝文字<span class="k">⌘C</span></div><div class="sep"></div><div class="it danger" data-m="del">删除<span class="k">⌘⌫</span></div><div class="it danger" data-m="clear">清除全部…</div>`;
+  menu.addEventListener('mouseover', e => { const it = e.target.closest('.it'); if (!it) return; menu.querySelectorAll('.it').forEach(x => x.classList.toggle('on', x === it)); });
+  menu.addEventListener('click', e => {
+    const m = e.target.closest('[data-m]')?.dataset.m; closeMenu();
+    if (m === 'fill') fill(i); else if (m === 'ai') askAI(S.filtered[i].text);
+    else if (m === 'copy') { toast('已拷贝'); log('拷贝文字'); } else if (m === 'del') del(i); else if (m === 'clear') clearAll();
+  });
+  $('#stage').appendChild(menu);
+});
+document.addEventListener('click', ev => { if (menu && !menu.contains(ev.target)) closeMenu(); });
+
+$('#reopenBtn').onclick = openLauncher;
+$('#reset').onclick = () => { S.history = seed(); openLauncher(); log('已重置演示数据'); };
+$('#clearAll').onclick = () => { S.history = []; openLauncher(); log('历史已清空，按 ↑ 看空状态'); };
+$('#theme').onclick = ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#theme button').forEach(x => x.classList.toggle('on', x === b));
+  document.body.classList.toggle('light', b.dataset.v === 'light');
+};
+
+/* ===== static gallery ===== */
+function shot(cap, st, opts = {}) {
+  const s = Object.assign({ mode: 'home', text: '', filter: '', hl: 0, rhl: 0, history: seed(), filtered: [], results: [], ctx: false, static: true }, st);
+  if (s.mode === 'history') refilter(s);
+  const w = document.createElement('div');
+  w.innerHTML = `<div class="cap">${cap}</div><div class="stage tight"><div class="card ${opts.cmd ? 'cmd' : ''}">${cardHTML(s)}</div></div>`;
+  $('#gallery').appendChild(w);
+}
+shot('<b>1 · 呼出</b>：输入框总是空的，底栏提示 ↑ 最近输入', { ctx: true });
+shot('<b>2 · 按 ↑</b>：下半区换成最近输入，第 1 条高亮', { mode: 'history' });
+shot('<b>3 · 按住 ⌘</b>：前 9 条显示编号，⌘1…9 直接填入', { mode: 'history', hl: 3 }, { cmd: true });
+shot('<b>4 · 继续打字</b>：只筛选历史，支持拼音首字母', { mode: 'history', filter: 'ht' });
+shot('<b>5 · 填入之后</b>：按当下结果重新计算，↩ 执行', { mode: 'results', text: '100*334' });
+shot('<b>6 · 没有历史</b>：说明它会记什么', { mode: 'history', history: [] });
+
+render();
+log('点输入框，按 ↑ 开始');
+</script>
+</body></html>
