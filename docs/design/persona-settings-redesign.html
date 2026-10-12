@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 人设页改版（可交互设计稿）</title>
+<style>
+:root {
+  --bg: #1b1b1d; --sidebar: #161617; --card: rgba(255,255,255,.045);
+  --card-hover: rgba(255,255,255,.07); --border: rgba(255,255,255,.115); --border-soft: rgba(255,255,255,.07);
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16);
+  --ok: #29c76e; --ok-soft: rgba(41,199,110,.14); --warn: #eb8040; --warn-soft: rgba(235,128,64,.15);
+  --danger: #dc5252; --danger-soft: rgba(220,82,82,.13); --field: rgba(255,255,255,.06); --tile: rgba(255,255,255,.07);
+  --ai: #a970ff; --ai-soft: rgba(169,112,255,.15); --key: rgba(255,255,255,.09);
+  --shadow: 0 30px 80px rgba(0,0,0,.45); --stage: #0e0e10; --pop: #2a2a2d; --scrim: rgba(0,0,0,.45);
+}
+body.light {
+  --bg: #f4f5f7; --sidebar: #eceef1; --card: rgba(255,255,255,.95); --card-hover: #f2f4f7;
+  --border: rgba(97,115,143,.16); --border-soft: rgba(97,115,143,.10); --text: #141414; --text2: #474747; --text3: #85868a; --accent: #1f6fe0;
+  --accent-soft: rgba(31,111,224,.12); --ok: #1fab63; --ok-soft: rgba(31,171,99,.12); --warn: #ed5c2e;
+  --warn-soft: rgba(237,92,46,.12); --danger-soft: rgba(220,82,82,.10); --field: #fff; --tile: #eef0f3; --key: #fff;
+  --ai: #8a4fe8; --ai-soft: rgba(138,79,232,.11);
+  --shadow: 0 30px 80px rgba(30,40,60,.18); --stage: #d9dde3; --pop: #fff; --scrim: rgba(30,40,60,.25);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button, input, select, textarea { font: inherit; color: inherit; }
+svg { flex: none; }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1180px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1180px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 30px; }
+.caption b { color: var(--text2); font-weight: 600; }
+body.solo .stagebar, body.solo .caption { display: none; }
+body.solo { padding: 0; }
+
+/* ---------- Shared controls ---------- */
+.btn { height: 28px; border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 0 12px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 500; font-size: 12.5px; }
+.btn:hover { background: var(--card-hover); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--text2); }
+.btn.ghost:hover { background: var(--card-hover); color: var(--text); }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn.sm { height: 24px; padding: 0 9px; font-size: 12px; border-radius: 7px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.ibtn { width: 26px; height: 26px; border-radius: 7px; border: 1px solid transparent; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text3); }
+.ibtn:hover { background: var(--card-hover); color: var(--text); }
+.ibtn.boxed { border-color: var(--border); background: var(--card); color: var(--text2); }
+.switch { width: 32px; height: 19px; border-radius: 999px; background: var(--tile); border: 1px solid var(--border); position: relative; cursor: pointer; flex: none; transition: background .15s; }
+.switch::after { content: ""; position: absolute; top: 1px; left: 1px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: left .15s; }
+.switch.on { background: var(--ok); border-color: var(--ok); }
+.switch.on::after { left: 14px; }
+.seg { display: inline-flex; background: var(--tile); border-radius: 8px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 2px 10px; border-radius: 6px; cursor: pointer; color: var(--text2); font-size: 12px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.seg button.on { background: var(--card-hover); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+body.light .seg button.on { background: #fff; }
+.seg button .n { font-size: 10.5px; color: var(--text3); }
+.keys { display: inline-flex; gap: 3px; align-items: center; }
+.keys kbd { min-width: 20px; height: 20px; padding: 0 5px; border-radius: 5px; background: var(--key); border: 1px solid var(--border); border-bottom-width: 2px;
+  font: 600 11px -apple-system, "SF Pro Text", sans-serif; display: inline-grid; place-items: center; color: var(--text); }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; white-space: nowrap; line-height: 17px; }
+.badge.def { background: var(--ok-soft); color: var(--ok); }
+.badge.aux { background: var(--ai-soft); color: var(--ai); }
+.badge.app { background: var(--tile); color: var(--text2); }
+.badge.off { background: var(--tile); color: var(--text3); }
+.badge.sys { background: var(--tile); color: var(--text3); font-weight: 500; }
+
+/* ---------- Window ---------- */
+.window { position: relative; display: flex; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); background: var(--bg); width: 1180px; height: 780px; transition: width .2s; }
+body.narrow .window { width: 940px; }
+body.solo .window { border-radius: 0; box-shadow: none; border: 0; }
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.mainnav { width: 200px; background: var(--sidebar); padding: 14px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border); flex: none; }
+body.narrow .mainnav { width: 168px; }
+.mainnav .lights { margin: 2px 4px 22px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin: 0 6px 22px; }
+.brand .logo { width: 28px; height: 28px; border-radius: 50%; background: var(--text); color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+.brand small { font-size: 11px; color: var(--text3); font-weight: 500; }
+.navitem { display: flex; align-items: center; gap: 11px; padding: 8px 12px; border-radius: 9px; color: var(--text2); font-weight: 500; }
+.navitem.on { background: var(--accent-soft); color: var(--text); }
+.navsp { flex: 1; }
+.content { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; padding: 24px 28px 22px; }
+.ph h1 { margin: 0 0 12px; font-size: 26px; font-weight: 700; }
+.tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--border-soft); margin-bottom: 16px; }
+.tabs span { padding: 0 0 9px; color: var(--text2); font-weight: 600; font-size: 14px; position: relative; }
+.tabs span small { color: var(--text3); font-weight: 500; margin-left: 4px; }
+.tabs span.on { color: var(--text); }
+.tabs span.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); border-radius: 2px; }
+
+/* ---------- Usage strip ---------- */
+.usage { display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 10px; margin-bottom: 14px; }
+body.narrow .usage { grid-template-columns: 1fr 1fr; }
+body.narrow .usage .slot.apps { grid-column: 1 / -1; }
+body.narrow .usage .slot.apps { flex-direction: row; align-items: center; gap: 14px; padding: 8px 13px; }
+body.narrow .usage .slot.apps .apps-row { flex: 1; min-width: 0; }
+.slot { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 11px 13px; display: flex; flex-direction: column; gap: 8px; position: relative; min-width: 0; }
+.slot .top { display: flex; align-items: center; gap: 7px; color: var(--text2); font-size: 12px; font-weight: 600; }
+.slot .top .sp { flex: 1; }
+.slot .top .hint { font-weight: 400; color: var(--text3); }
+.slot .ico { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; }
+.slot .ico.g { background: var(--ok-soft); color: var(--ok); }
+.slot .ico.p { background: var(--ai-soft); color: var(--ai); }
+.slot .ico.b { background: var(--accent-soft); color: var(--accent); }
+.picker { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px 0 6px; border-radius: 8px; border: 1px solid var(--border); background: var(--field); cursor: pointer; min-width: 0; text-align: left; }
+.picker:hover { border-color: var(--text3); }
+.picker .nm { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.picker .chev { color: var(--text3); }
+.apps-row { display: flex; align-items: center; gap: 8px; height: 32px; }
+.appstack { display: flex; }
+.appstack .ai { width: 24px; height: 24px; border-radius: 6px; margin-left: -5px; border: 2px solid var(--bg); font-size: 10px; font-weight: 700; display: grid; place-items: center; color: #fff; }
+.appstack .ai:first-child { margin-left: 0; }
+.apps-row .txt { flex: 1; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.apps-row .txt b { color: var(--text); }
+.priority { display: flex; align-items: center; gap: 6px; color: var(--text3); font-size: 11.5px; margin: -6px 2px 12px; }
+.priority b { color: var(--text2); font-weight: 600; }
+
+/* ---------- Library ---------- */
+.lib { flex: 1; display: flex; gap: 14px; min-height: 0; }
+.roster { width: 300px; flex: none; display: flex; flex-direction: column; min-height: 0; }
+body.narrow .roster { width: 250px; }
+.rhead { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.rhead h3 { margin: 0; font-size: 14px; }
+.rhead .n { color: var(--text3); font-weight: 500; font-size: 12px; }
+.rhead .sp { flex: 1; }
+.search { display: flex; align-items: center; gap: 6px; background: var(--field); border: 1px solid var(--border); border-radius: 8px; padding: 0 9px; color: var(--text3); height: 30px; margin-bottom: 8px; }
+.search input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; color: var(--text); font-size: 12.5px; }
+.search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.rlist { flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.gl { font-size: 11.5px; font-weight: 600; color: var(--text3); margin: 10px 6px 4px; display: flex; gap: 6px; }
+.gl:first-child { margin-top: 2px; }
+.prow { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 9px; cursor: pointer; position: relative; }
+.prow:hover { background: var(--card-hover); }
+.prow.on { background: var(--accent-soft); }
+.prow .meta { flex: 1; min-width: 0; }
+.prow .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+.prow .nm .t { overflow: hidden; text-overflow: ellipsis; }
+.prow .ds { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow .tags { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
+.prow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex: none; }
+.av { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; }
+.av.lg { width: 46px; height: 46px; border-radius: 12px; font-size: 19px; }
+.empty { text-align: center; color: var(--text3); padding: 28px 12px; font-size: 12.5px; }
+.empty b { display: block; color: var(--text2); margin-bottom: 4px; }
+
+/* ---------- Detail ---------- */
+.detail { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; position: relative; }
+.dhead { display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px 12px; }
+.dhead .meta { flex: 1; min-width: 0; }
+.dhead h2 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.dhead h2 input { font-size: 18px; font-weight: 700; border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 1px 6px; margin-left: -7px; outline: none; width: 100%; min-width: 0; }
+.dhead h2 input:hover { border-color: var(--border); }
+.dhead h2 input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--field); }
+.dhead .sub { color: var(--text3); font-size: 12.5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dhead .acts { display: flex; gap: 6px; align-items: center; position: relative; }
+.uses { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 0 18px 12px; border-bottom: 1px solid var(--border-soft); }
+.uses .lbl { color: var(--text3); font-size: 12px; margin-right: 2px; }
+.uses .none { color: var(--text3); font-size: 12px; }
+.uses .lnk { color: var(--accent); cursor: pointer; font-size: 12px; background: none; border: 0; padding: 0; }
+.dbody { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 18px 14px; gap: 10px; }
+.note { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; background: var(--tile); color: var(--text2); font-size: 12.5px; }
+.note .sp { flex: 1; }
+.flabel { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text3); font-weight: 600; }
+.flabel .sp { flex: 1; }
+.flabel .aux { font-weight: 400; }
+.prompt { flex: 1; min-height: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--field); padding: 12px 14px; overflow-y: auto; line-height: 1.7; font-size: 13px; white-space: pre-wrap; color: var(--text); outline: none; resize: none; width: 100%; }
+.prompt.ro { background: transparent; color: var(--text2); }
+textarea.prompt:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.savebar { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-top: 1px solid var(--border-soft); background: var(--card); }
+.savebar .sp { flex: 1; }
+.savebar .st { color: var(--warn); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.savebar .st.ok { color: var(--text3); }
+.savebar .kh { color: var(--text3); font-size: 11.5px; }
+
+/* Templates */
+.tpl { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+body.narrow .tpl { grid-template-columns: 1fr 1fr; }
+.tpl button { text-align: left; border: 1px solid var(--border); background: var(--field); border-radius: 10px; padding: 9px 10px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.tpl .av { width: 26px; height: 26px; border-radius: 7px; font-size: 12px; }
+.tpl button:hover { border-color: var(--accent); }
+.tpl button.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.tpl b { display: block; margin-bottom: 2px; }
+.tpl span { color: var(--text3); font-size: 12px; }
+
+/* ---------- Popovers / menus ---------- */
+.menu { position: absolute; z-index: 50; background: var(--pop); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,.35); padding: 5px; min-width: 240px; display: none; }
+.menu.open { display: block; }
+.menu .mi { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+.menu .mi:hover { background: var(--accent); color: #fff; }
+.menu .mi:hover .mh, .menu .mi:hover .ck { color: #fff; }
+.menu .mi .mt { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.menu .mi .mh { color: var(--text3); font-size: 11.5px; }
+.menu .mi .ck { width: 14px; color: var(--accent); }
+.menu .mi.danger { color: var(--danger); }
+.menu .mi.danger:hover { background: var(--danger); color: #fff; }
+.menu .sep { height: 1px; background: var(--border-soft); margin: 4px 2px; }
+.menu .mg { font-size: 11px; color: var(--text3); font-weight: 600; padding: 5px 8px 2px; }
+.menu .msearch { margin: 2px 2px 4px; height: 26px; }
+
+/* ---------- App rules drawer ---------- */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 40; display: none; }
+.scrim.open { display: block; }
+.drawer { visibility: hidden; position: absolute; top: 0; right: 0; bottom: 0; width: 520px; background: var(--bg); border-left: 1px solid var(--border); z-index: 41; box-shadow: -20px 0 60px rgba(0,0,0,.35);
+  transform: translateX(105%); transition: transform .22s ease; display: flex; flex-direction: column; }
+.drawer.open { transform: none; visibility: visible; }
+.drawer .dh { display: flex; align-items: center; gap: 10px; padding: 18px 20px 6px; }
+.drawer .dh h3 { margin: 0; font-size: 17px; flex: 1; }
+.drawer .lead { color: var(--text3); padding: 0 20px 12px; font-size: 12.5px; }
+.drawer .master { display: flex; align-items: center; gap: 10px; margin: 0 20px 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
+.drawer .master .meta { flex: 1; }
+.drawer .master .meta b { display: block; }
+.drawer .master .meta span { color: var(--text3); font-size: 12px; }
+.drawer .rules { flex: 1; overflow-y: auto; padding: 0 20px 16px; }
+.drawer.paused .rules .rule { opacity: .5; }
+.rule { display: grid; grid-template-columns: 30px 1fr 180px 32px 26px; align-items: center; gap: 10px; padding: 9px 4px; border-top: 1px solid var(--border-soft); }
+.rule:first-of-type { border-top: 0; }
+.rule.off .an, .rule.off .rp { opacity: .5; }
+.rule .an { min-width: 0; }
+.rule .an b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rule .an span { color: var(--text3); font-size: 11.5px; font-family: ui-monospace, Menlo, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.rule .rp { position: relative; }
+.rule .rp .picker { height: 28px; width: 100%; }
+.rule .rp .picker.missing .nm { color: var(--danger); }
+.appicon { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 12px; }
+.addapp { margin: 4px 0 0; }
+.apppick { border: 1px solid var(--border); border-radius: 11px; background: var(--card); margin-top: 10px; overflow: hidden; display: none; }
+.apppick.open { display: block; }
+.apppick .ah { display: flex; gap: 8px; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-soft); }
+.apppick .ah .search { flex: 1; margin: 0; }
+.apppick .al { max-height: 220px; overflow-y: auto; padding: 4px; }
+.apppick .ar { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+.apppick .ar:hover { background: var(--card-hover); }
+.apppick .ar .an { flex: 1; min-width: 0; }
+.apppick .ar .an span { color: var(--text3); font-size: 11.5px; font-family: ui-monospace, Menlo, monospace; }
+.apppick .ar .appicon { width: 26px; height: 26px; font-size: 11px; }
+.apppick .ar.bound { opacity: .45; cursor: default; }
+.apppick .manual { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--border-soft); align-items: center; color: var(--text3); font-size: 12px; }
+.apppick .manual input { flex: 1; height: 26px; border: 1px solid var(--border); background: var(--field); border-radius: 7px; padding: 0 8px; outline: none; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+
+/* ---------- Dialog & toast ---------- */
+.modal { position: absolute; inset: 0; display: none; place-items: center; z-index: 60; background: var(--scrim); }
+.modal.open { display: grid; }
+.dialog { width: 380px; background: var(--pop); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 18px; }
+.dialog h4 { margin: 0 0 6px; font-size: 15px; }
+.dialog p { margin: 0 0 10px; color: var(--text2); }
+.dialog ul { margin: 0 0 14px; padding: 10px 12px 10px 28px; background: var(--tile); border-radius: 9px; color: var(--text2); font-size: 12.5px; }
+.dialog ul li + li { margin-top: 4px; }
+.dialog .row { display: flex; justify-content: flex-end; gap: 8px; }
+.toast { position: absolute; left: 50%; bottom: 22px; transform: translate(-50%, 30px); opacity: 0; transition: all .2s; z-index: 70; background: var(--pop); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,.35); padding: 8px 10px 8px 14px; display: flex; align-items: center; gap: 12px; pointer-events: none; }
+.toast.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+.toast .lnk { color: var(--accent); background: none; border: 0; cursor: pointer; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="stagebar">
+  <b>人设页改版</b>
+  <span class="pill" data-state="builtin">① 浏览内置人设</span>
+  <span class="pill" data-state="custom">② 编辑我的人设</span>
+  <span class="pill" data-state="create">③ 新建人设</span>
+  <span class="pill" data-state="apps">④ 应用专属规则</span>
+  <span class="pill" data-state="delete">⑤ 删除使用中的人设</span>
+  <span class="pill" data-state="search">⑥ 搜索无结果</span>
+  <span class="sp"></span>
+  <span class="pill" id="narrowToggle">窄窗口</span>
+  <span class="pill" id="themeToggle">浅色</span>
+</div>
+<div class="caption" id="caption"></div>
+
+<div class="window" id="win">
+  <nav class="mainnav">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><span class="logo">∞</span>Typeflux <small>0.4.0</small></div>
+    <div class="navitem on">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 7v2M5 4v8M8 2v12M11 5v6M14 7v2"/></svg>语音输入</div>
+    <div class="navitem"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10" rx="2"/><path d="M6 1v2M10 1v2M6 13v2M10 13v2M1 6h2M1 10h2M13 6h2M13 10h2"/></svg>模型</div>
+    <div class="navitem"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M5 7l2 1.5L5 10M8.5 10H11"/></svg>Agent</div>
+    <div class="navitem"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 2a2 2 0 100 4h6a2 2 0 100-4 2 2 0 00-2 2v8a2 2 0 102-2H5a2 2 0 102 2V4a2 2 0 00-2-2z"/></svg>启动器</div>
+    <div class="navsp"></div>
+  </nav>
+
+  <main class="content">
+    <div class="ph">
+      <h1>语音输入</h1>
+      <div class="tabs"><span>概览</span><span>词库<small>128</small></span><span>历史</span><span class="on">人设<small id="tabCount">9</small></span></div>
+    </div>
+
+    <!-- Where personas apply -->
+    <section class="usage" id="usage">
+      <div class="slot">
+        <div class="top"><span class="ico g"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 7v2M5 4v8M8 2v12M11 5v6M14 7v2"/></svg></span>听写默认<span class="sp"></span><span class="keys"><kbd>fn</kbd></span></div>
+        <button class="picker" data-slot="default"><span class="av" id="defAv" style="width:22px;height:22px;border-radius:6px;font-size:11px"></span><span class="nm" id="defName"></span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4l2.5-2.5L7.5 4M2.5 6l2.5 2.5L7.5 6"/></svg></button>
+      </div>
+      <div class="slot">
+        <div class="top"><span class="ico p"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="5" r="2.5"/><path d="M1.5 14c.5-3 2.3-4.5 4.5-4.5s4 1.5 4.5 4.5M11.5 3.5c1 .8 1 2.2 0 3M13.5 2c2 1.8 2 4.2 0 6"/></svg></span>辅助输入<span class="sp"></span><span class="keys"><kbd>⌥</kbd><kbd>fn</kbd></span></div>
+        <button class="picker" data-slot="aux"><span class="av" id="auxAv" style="width:22px;height:22px;border-radius:6px;font-size:11px"></span><span class="nm" id="auxName"></span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4l2.5-2.5L7.5 4M2.5 6l2.5 2.5L7.5 6"/></svg></button>
+      </div>
+      <div class="slot apps">
+        <div class="top"><span class="ico b"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg></span>应用专属<span class="sp"></span><span class="hint" id="appsHint"></span></div>
+        <div class="apps-row"><span class="appstack" id="appStack"></span><span class="txt" id="appsTxt"></span><button class="btn sm" id="openApps">管理<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 1.5L7 5 3.5 8.5"/></svg></button></div>
+      </div>
+    </section>
+    <div class="priority"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 7v4M8 4.6v.4"/></svg>
+      生效顺序：按 <b>辅助输入</b> 快捷键时总用它的人设；否则先看 <b>应用专属</b> 规则，没有匹配再用 <b>听写默认</b>。</div>
+
+    <!-- Library -->
+    <section class="lib">
+      <div class="roster">
+        <div class="rhead"><h3>人设库</h3><span class="n" id="libCount">9</span><span class="sp"></span>
+          <button class="btn sm" id="newBtn"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 1.5v9M1.5 6h9"/></svg>新建</button></div>
+        <label class="search"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+          <input id="q" placeholder="搜索名称或内容"><button class="ibtn" id="qClear" style="width:18px;height:18px;display:none" aria-label="清除搜索">✕</button></label>
+        <div class="rlist" id="rlist"></div>
+      </div>
+      <div class="detail" id="detail"></div>
+    </section>
+
+    <!-- Shared popover for persona choice -->
+    <div class="menu" id="pickMenu"></div>
+    <div class="menu" id="useMenu" style="min-width:250px"></div>
+    <div class="menu" id="moreMenu" style="min-width:190px"></div>
+
+    <div class="scrim" id="scrim"></div>
+    <aside class="drawer" id="drawer">
+      <div class="dh"><h3>应用专属人设</h3><button class="ibtn" id="closeDrawer" aria-label="关闭">✕</button></div>
+      <div class="lead">在这些应用里听写时，自动换成指定的人设；其他应用继续用听写默认。</div>
+      <div class="master"><div class="meta"><b>启用应用专属规则</b><span id="masterSub">关闭后所有规则暂停，统一使用听写默认。</span></div><span class="switch on" id="masterSwitch"></span></div>
+      <div class="rules" id="rules"></div>
+    </aside>
+
+    <div class="modal" id="modal"><div class="dialog" id="dialog"></div></div>
+    <div class="toast" id="toast"><span id="toastText"></span><button class="lnk" id="toastUndo">撤销</button></div>
+  </main>
+</div>
+
+<script>
+const PALETTE = ['#2f8cff', '#29c76e', '#a970ff', '#eb8040', '#20b2aa', '#e5577a', '#c9a227', '#6f7bf7'];
+const SYS_TF = 'tf', SYS_EN = 'en';
+const TF_PROMPT = `人设语言模式：继承。
+- 不要自行决定输出语言。
+- 遵循任务、源内容和更高优先级语言策略已经确定的语言。
+- 如果任务内容无法确定语言，使用系统提供的默认语言，不要臆造语言。
+
+核心原则：
+- 主动整理内容，不要只删除语气词。
+- 识别不同的主题、要点、决定、请求和行动项；归拢相关细节、合并重复信息，并按合理顺序组织。
+- 理解用户真正想表达的意思，而不是机械保留不流畅的口语字面表达。
+- 去除口头填充词（如 um、uh、like、you know、basically 等）、重复和语病，同时保留意图、语气和重要细节。
+- 让结果更清晰、更有结构、更有用，但不要添加用户没有表达或暗示的新事实。
+- 保留关键约束、请求、决定、行动项、人名、数字和承诺。
+- 在不改变原意的前提下，提升句子结构与表达清晰度。
+- 保持用户整体语气自然，不要无故改得更正式或更华丽。
+
+编辑与成稿：
+- 修正语法、标点、语序和明显的口语修正痕迹。
+- 单一思路用简洁段落；有多个并列事项时，用简单的项目符号或编号列表。
+- 最终文本简洁但完整。
+
+输出规则：
+- 只返回整理后的最终文本。
+- 不要包含解释、引号、代码块、标题或复杂 Markdown。`;
+const EN_PROMPT = `Persona language mode: English.
+- Always output English, regardless of the spoken language.
+
+Translate the dictated content into natural, fluent English.
+- Preserve meaning, tone, names, numbers and commitments.
+- Remove filler words and spoken repairs before translating.
+- Return only the translated text.`;
+
+let personas = [
+  { id: SYS_TF, name: 'Typeflux', sys: true, summary: '整理口述，保留原意', prompt: TF_PROMPT },
+  { id: SYS_EN, name: 'English Translator', sys: true, summary: '将口述内容翻译为英文', prompt: EN_PROMPT },
+  { id: 'c1', name: '候选：英文口语化表达', prompt: 'ASR post-processing editor. Clean up spoken English into casual, natural phrasing.\n\n- Keep contractions and a friendly tone.\n- Remove fillers and false starts.\n- Return only the final text.' },
+  { id: 'c2', name: '候选：结构化输出', prompt: '# Role\n把口述整理成结构化的要点。\n\n- 先给一句话结论。\n- 再用编号列出要点、待办和负责人。\n- 不要添加原文没有的信息。' },
+  { id: 'c3', name: '候选：英文翻译', prompt: 'ASR post-processing editor role: translate the dictation into concise business English.\n\n- Keep product names untouched.\n- Return only the translation.' },
+  { id: 'c4', name: '职场助手', prompt: '你是一名语音转写文本润色助手。把口述内容改写成适合发给同事的消息：\n\n- 语气礼貌、简洁、直接。\n- 有请求时把请求放在最前面。\n- 保留所有人名、时间和数字。' },
+  { id: 'c5', name: '邮件回复', prompt: '把口述整理成一封可直接发送的邮件正文：称呼、正文、结尾敬语。\n\n- 正式但不生硬。\n- 不要编造事实。' },
+  { id: 'c6', name: '会议纪要', prompt: '把口述整理为会议纪要：\n\n1. 议题\n2. 结论\n3. 待办（负责人 · 截止时间）' },
+  { id: 'c7', name: '代码提交说明', prompt: 'Turn the dictation into a git commit message.\n\n- Imperative subject line under 60 characters.\n- Optional body wrapped at 72 characters explaining why.' },
+];
+let settings = { def: SYS_TF, aux: 'c1' };
+let appsEnabled = true;
+let rules = [
+  { id: 'r1', app: 'Slack', bundle: 'com.tinyspeck.slackmacgap', persona: 'c4', on: true, color: '#4a154b' },
+  { id: 'r2', app: '邮件', bundle: 'com.apple.mail', persona: 'c5', on: true, color: '#2f8cff' },
+  { id: 'r3', app: 'Xcode', bundle: 'com.apple.dt.Xcode', persona: 'c7', on: false, color: '#147efb' },
+  { id: 'r4', app: 'Cursor', bundle: 'com.todesktop.230313mzl4w4u92', persona: null, on: true, color: '#222' },
+];
+const INSTALLED = [
+  { app: '飞书', bundle: 'com.bytedance.lark', color: '#3370ff', running: true },
+  { app: '微信', bundle: 'com.tencent.xinWeChat', color: '#07c160', running: true },
+  { app: 'Notion', bundle: 'notion.id', color: '#111', running: true },
+  { app: 'Slack', bundle: 'com.tinyspeck.slackmacgap', color: '#4a154b', running: true },
+  { app: 'Safari', bundle: 'com.apple.Safari', color: '#1e90ff', running: false },
+  { app: 'Obsidian', bundle: 'md.obsidian', color: '#7c3aed', running: false },
+  { app: '备忘录', bundle: 'com.apple.Notes', color: '#e3b122', running: false },
+];
+
+let sel = SYS_TF, q = '', draft = null, creating = null, pendingSelect = null, undo = null;
+
+const $ = (id) => document.getElementById(id);
+const byId = (id) => personas.find(p => p.id === id);
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function hash(s) { let h = 0; for (const c of s) h = (h * 31 + c.codePointAt(0)) >>> 0; return h; }
+function glyph(p) {
+  if (!p) return '∅';
+  if (p.id === SYS_TF) return '∞';
+  const n = p.name.replace(/^候选[:：]\s*/, '');
+  return /^[A-Za-z]/.test(n) ? n[0].toUpperCase() : n[0];
+}
+function avStyle(p) {
+  if (!p) return 'background:var(--tile);color:var(--text3)';
+  const c = p.id === SYS_TF ? '#2f8cff' : PALETTE[hash(p.name) % PALETTE.length];
+  return `background:${c}26;color:${c}`;
+}
+function summary(p) {
+  if (p.summary) return p.summary;
+  // Custom personas have no summary field: show the first meaningful line without Markdown markers.
+  const line = p.prompt.split('\n').map(l => l.replace(/^[#>\-*\d.\s]+/, '').trim()).find(l => l && !/^role$/i.test(l));
+  return line || '自定义人设';
+}
+function usesOf(id) {
+  const u = [];
+  if (settings.def === id) u.push({ k: 'def', t: '听写默认' });
+  if (settings.aux === id) u.push({ k: 'aux', t: '辅助输入' });
+  const apps = rules.filter(r => r.persona === id);
+  if (apps.length) {
+    const live = apps.filter(r => r.on && appsEnabled);
+    const t = apps.length === 1 ? apps[0].app : `${apps[0].app} 等 ${apps.length} 个应用`;
+    u.push({ k: live.length ? 'app' : 'off', t: live.length ? t : t + ' · 已暂停', apps });
+  }
+  return u;
+}
+const dirty = () => !!draft && (draft.name !== byId(draft.id)?.name || draft.prompt !== byId(draft.id)?.prompt);
+
+/* ---------- Usage strip ---------- */
+function renderUsage() {
+  const d = byId(settings.def), a = byId(settings.aux);
+  const mini = 'width:22px;height:22px;border-radius:6px;font-size:11px;';
+  $('defAv').textContent = glyph(d); $('defAv').style.cssText = mini + avStyle(d);
+  $('defName').textContent = d ? d.name : '不使用人设（原样输出）';
+  $('auxAv').textContent = glyph(a); $('auxAv').style.cssText = mini + avStyle(a);
+  $('auxName').textContent = a.name;
+  const active = rules.filter(r => r.on);
+  $('appStack').innerHTML = rules.slice(0, 4).map(r => `<span class="ai" style="background:${r.color};${r.on && appsEnabled ? '' : 'opacity:.4'}">${esc(r.app[0])}</span>`).join('');
+  $('appsHint').textContent = appsEnabled ? '' : '已暂停';
+  $('appsTxt').innerHTML = !rules.length ? '还没有规则，可以让 Slack 自动换成「职场助手」'
+    : appsEnabled ? `<b>${active.length}</b> 个应用${rules.length > active.length ? ` · ${rules.length - active.length} 个暂停` : ''}` : '全部规则已暂停';
+  $('tabCount').textContent = personas.length; $('libCount').textContent = personas.length;
+}
+
+/* ---------- Roster ---------- */
+function rowHTML(p) {
+  const tags = usesOf(p.id).map(u => `<span class="badge ${u.k}">${u.k === 'def' ? '✓ ' : ''}${esc(u.t)}</span>`).join('');
+  const isDirty = draft && draft.id === p.id && dirty();
+  return `<div class="prow ${sel === p.id && !creating ? 'on' : ''}" data-id="${p.id}">
+    <span class="av" style="${avStyle(p)}">${esc(glyph(p))}</span>
+    <div class="meta"><div class="nm"><span class="t">${esc(p.name)}</span>${isDirty ? '<span class="dot" title="未保存"></span>' : ''}</div>
+      <div class="ds">${esc(summary(p))}</div>${tags ? `<div class="tags">${tags}</div>` : ''}</div></div>`;
+}
+function renderRoster() {
+  const k = q.trim().toLowerCase();
+  const match = (p) => !k || p.name.toLowerCase().includes(k) || p.prompt.toLowerCase().includes(k) || summary(p).toLowerCase().includes(k);
+  const sys = personas.filter(p => p.sys && match(p)), mine = personas.filter(p => !p.sys && match(p));
+  let h = '';
+  if (creating) h += `<div class="gl">新建中</div><div class="prow on"><span class="av" style="background:var(--accent-soft);color:var(--accent)">+</span><div class="meta"><div class="nm">${esc(creating.name || '未命名人设')}</div><div class="ds">尚未保存</div></div></div>`;
+  if (mine.length) h += `<div class="gl">我的人设 · ${mine.length}</div>` + mine.map(rowHTML).join('');
+  if (sys.length) h += `<div class="gl">内置 · ${sys.length}</div>` + sys.map(rowHTML).join('');
+  if (!sys.length && !mine.length) h += `<div class="empty"><b>没有找到「${esc(q)}」</b>可以搜索名称或人设定义里的文字。<br><br><button class="btn sm" id="createFromSearch">新建「${esc(q)}」</button></div>`;
+  $('rlist').innerHTML = h;
+  $('qClear').style.display = q ? 'grid' : 'none';
+}
+
+/* ---------- Detail ---------- */
+function usesHTML(id) {
+  const u = usesOf(id);
+  if (!u.length) return `<span class="lbl">使用于</span><span class="none">暂未使用 ·</span><button class="lnk" data-act="useMenu">设为听写默认、辅助输入或绑定应用</button>`;
+  return `<span class="lbl">使用于</span>` + u.map(x => `<span class="badge ${x.k}" ${x.apps ? 'style="cursor:pointer" data-act="openApps"' : ''}>${x.k === 'def' ? '✓ ' : ''}${esc(x.t)}</span>`).join('');
+}
+function renderDetail() {
+  const el = $('detail');
+  if (creating) return renderCreate(el);
+  const p = byId(sel);
+  if (!p) { el.innerHTML = '<div class="empty" style="margin:auto">选择一个人设查看详情</div>'; return; }
+  if (!p.sys && (!draft || draft.id !== p.id)) draft = { id: p.id, name: p.name, prompt: p.prompt };
+  if (p.sys) draft = null;
+  const chars = (draft ? draft.prompt : p.prompt).length;
+  el.innerHTML = `
+    <div class="dhead">
+      <span class="av lg" style="${avStyle(p)}">${esc(glyph(p))}</span>
+      <div class="meta">
+        <h2>${p.sys ? esc(p.name) + ' <span class="badge sys">内置</span>' : `<input id="nameIn" value="${esc(draft.name)}" aria-label="人设名称" placeholder="人设名称">`}</h2>
+        <div class="sub">${p.sys ? esc(summary(p)) : '我的人设 · 点名称即可改名'}</div>
+      </div>
+      <div class="acts">
+        <button class="btn" data-act="useMenu">设为…<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5L5 6.5 8 3.5"/></svg></button>
+        <button class="ibtn boxed" data-act="moreMenu" aria-label="更多"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg></button>
+      </div>
+    </div>
+    <div class="uses">${usesHTML(p.id)}</div>
+    <div class="dbody">
+      ${p.sys ? `<div class="note"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+        内置人设由 Typeflux 维护，会随版本改进。<span class="sp"></span><button class="btn sm" data-act="duplicate">复制一份来修改</button></div>` : ''}
+      <div class="flabel">人设定义<span class="aux">· 发给模型的改写指令</span><span class="sp"></span><span class="aux" id="charCount">${chars} 字</span></div>
+      ${p.sys ? `<div class="prompt ro">${esc(p.prompt)}</div>` : `<textarea class="prompt" id="promptIn" spellcheck="false" placeholder="描述这个人设要把口述改成什么样，例如：改成礼貌、简洁的工作消息，保留人名和数字。">${esc(draft.prompt)}</textarea>`}
+    </div>
+    ${p.sys ? '' : `<div class="savebar" id="savebar"></div>`}`;
+  if (!p.sys) {
+    $('nameIn').addEventListener('input', e => { draft.name = e.target.value; syncDirty(); });
+    $('promptIn').addEventListener('input', e => { draft.prompt = e.target.value; $('charCount').textContent = draft.prompt.length + ' 字'; syncDirty(); });
+    renderSavebar();
+  }
+}
+function renderSavebar() {
+  const bar = $('savebar'); if (!bar) return;
+  const d = dirty(), valid = draft.name.trim() && draft.prompt.trim();
+  bar.innerHTML = d
+    ? `<span class="st">● 有未保存的修改</span><span class="sp"></span><span class="kh">⌘S 保存</span><button class="btn ghost" data-act="revert">放弃修改</button><button class="btn primary" data-act="save" ${valid ? '' : 'disabled'}>保存</button>`
+    : `<span class="st ok">修改后在这里保存 · 自动同步到已登录的设备</span>`;
+}
+function syncDirty() { renderSavebar(); renderRoster(); }
+
+function renderCreate(el) {
+  const t = creating.template;
+  el.innerHTML = `
+    <div class="dhead"><span class="av lg" style="background:var(--accent-soft);color:var(--accent)">+</span>
+      <div class="meta"><h2><input id="nameIn" value="${esc(creating.name)}" placeholder="给人设起个名字，例如：周报助手" aria-label="人设名称"></h2>
+      <div class="sub">新建人设 · 保存后可以设为听写默认、辅助输入或绑定到应用</div></div></div>
+    <div class="dbody" style="border-top:1px solid var(--border-soft);padding-top:14px">
+      <div class="flabel">从哪里开始</div>
+      <div class="tpl">
+        <button class="${t === 'blank' ? 'on' : ''}" data-tpl="blank"><span class="av" style="background:var(--tile);color:var(--text2)">✎</span><div><b>空白</b><span>自己写改写指令</span></div></button>
+        <button class="${t === SYS_TF ? 'on' : ''}" data-tpl="${SYS_TF}"><span class="av" style="${avStyle(byId(SYS_TF))}">∞</span><div><b>基于 Typeflux</b><span>在“整理口述”上加自己的要求</span></div></button>
+        <button class="${t === SYS_EN ? 'on' : ''}" data-tpl="${SYS_EN}"><span class="av" style="${avStyle(byId(SYS_EN))}">E</span><div><b>基于 English Translator</b><span>改成别的目标语言或风格</span></div></button>
+        <button class="${t === 'other' ? 'on' : ''}" data-tpl="other"><span class="av" style="background:var(--tile);color:var(--text2)">⧉</span><div><b>复制现有人设</b><span>从“我的人设”里挑一个</span></div></button>
+      </div>
+      <div class="flabel">人设定义<span class="sp"></span><span class="aux" id="charCount">${creating.prompt.length} 字</span></div>
+      <textarea class="prompt" id="promptIn" spellcheck="false" placeholder="描述这个人设要把口述改成什么样，例如：改成礼貌、简洁的工作消息，保留人名和数字。">${esc(creating.prompt)}</textarea>
+    </div>
+    <div class="savebar"><span class="st ok">${creating.name.trim() && creating.prompt.trim() ? '可以保存了' : '填写名称和人设定义后即可保存'}</span><span class="sp"></span>
+      <button class="btn ghost" data-act="cancelCreate">取消</button><button class="btn primary" data-act="saveCreate" ${creating.name.trim() && creating.prompt.trim() ? '' : 'disabled'}>创建人设</button></div>`;
+  $('nameIn').addEventListener('input', e => { creating.name = e.target.value; refreshCreateState(); renderRoster(); });
+  $('promptIn').addEventListener('input', e => { creating.prompt = e.target.value; $('charCount').textContent = creating.prompt.length + ' 字'; refreshCreateState(); });
+}
+function refreshCreateState() {
+  const ok = creating.name.trim() && creating.prompt.trim();
+  const bar = $('detail').querySelector('.savebar');
+  bar.querySelector('.st').textContent = ok ? '可以保存了' : '填写名称和人设定义后即可保存';
+  bar.querySelector('[data-act=saveCreate]').disabled = !ok;
+}
+
+/* ---------- Menus ---------- */
+function closeMenus() { document.querySelectorAll('.menu.open').forEach(m => m.classList.remove('open')); }
+function placeMenu(menu, anchor, alignRight) {
+  const host = document.querySelector('.content').getBoundingClientRect(), r = anchor.getBoundingClientRect();
+  menu.classList.add('open');
+  const w = menu.offsetWidth;
+  let left = (alignRight ? r.right - w : r.left) - host.left;
+  left = Math.max(8, Math.min(left, host.width - w - 8));
+  let top = r.bottom - host.top + 4;
+  if (top + menu.offsetHeight > host.height - 8) top = r.top - host.top - menu.offsetHeight - 4;
+  menu.style.left = left + 'px'; menu.style.top = top + 'px';
+}
+function openPicker(anchor, current, allowNone, onPick, opts = {}) {
+  const m = $('pickMenu');
+  const item = (p) => `<div class="mi" data-pick="${p ? p.id : ''}"><span class="ck">${(p ? p.id : null) === current ? '✓' : ''}</span>
+    <span class="av" style="width:20px;height:20px;border-radius:5px;font-size:10px;${avStyle(p)}">${esc(glyph(p))}</span><span class="mt">${p ? esc(p.name) : '不使用人设'}</span><span class="mh">${p ? esc(summary(p)).slice(0, 14) : '原样输出'}</span></div>`;
+  m.innerHTML = (opts.title ? `<div class="mg">${opts.title}</div>` : '')
+    + (allowNone ? item(null) + '<div class="sep"></div>' : '')
+    + '<div class="mg">我的人设</div>' + personas.filter(p => !p.sys).map(item).join('')
+    + '<div class="mg">内置</div>' + personas.filter(p => p.sys).map(item).join('');
+  m.onclick = (e) => { const it = e.target.closest('[data-pick]'); if (!it) return; closeMenus(); onPick(it.dataset.pick || null); };
+  placeMenu(m, anchor);
+}
+function openUseMenu(anchor) {
+  const p = byId(sel), m = $('useMenu');
+  const apps = rules.filter(r => r.persona === p.id);
+  m.innerHTML = `
+    <div class="mi" data-u="def"><span class="ck">${settings.def === p.id ? '✓' : ''}</span><span class="mt">听写默认</span><span class="keys"><kbd>fn</kbd></span></div>
+    <div class="mi" data-u="aux"><span class="ck">${settings.aux === p.id ? '✓' : ''}</span><span class="mt">辅助输入</span><span class="keys"><kbd>⌥</kbd><kbd>fn</kbd></span></div>
+    <div class="sep"></div>
+    <div class="mi" data-u="app"><span class="ck"></span><span class="mt">在某个应用里使用…</span><span class="mh">${apps.length ? apps.length + ' 个应用' : ''}</span></div>`;
+  m.onclick = (e) => {
+    const it = e.target.closest('[data-u]'); if (!it) return; closeMenus();
+    const k = it.dataset.u;
+    if (k === 'def') {
+      if (settings.def === p.id) { const prev = settings.def; settings.def = null; toast('听写默认已改为不使用人设', () => { settings.def = prev; renderAll(); }); }
+      else { const prev = settings.def; settings.def = p.id; toast(`听写默认已改为「${p.name}」`, () => { settings.def = prev; renderAll(); }); }
+    } else if (k === 'aux') {
+      if (settings.aux === p.id) { toast('辅助输入必须选一个人设，请在上方换成其他人设'); return; }
+      const prev = settings.aux; settings.aux = p.id; toast(`辅助输入已改为「${p.name}」`, () => { settings.aux = prev; renderAll(); });
+    } else { openDrawer(true, p.id); return; }
+    renderAll();
+  };
+  placeMenu(m, anchor, true);
+}
+function openMoreMenu(anchor) {
+  const p = byId(sel), m = $('moreMenu');
+  m.innerHTML = `<div class="mi" data-m="dup"><span class="mt">复制为新人设</span></div>`
+    + (p.sys ? '' : `<div class="sep"></div><div class="mi danger" data-m="del"><span class="mt">删除人设…</span></div>`);
+  m.onclick = (e) => { const it = e.target.closest('[data-m]'); if (!it) return; closeMenus(); it.dataset.m === 'dup' ? duplicate(p) : confirmDelete(p); };
+  placeMenu(m, anchor, true);
+}
+
+/* ---------- Actions ---------- */
+function guardDirty(next) {
+  if (!dirty()) { next(); return; }
+  const p = byId(draft.id);
+  showDialog(`<h4>保存对「${esc(p.name)}」的修改？</h4><p>切换前不保存，修改会丢失。</p>
+    <div class="row"><button class="btn ghost" data-d="discard">不保存</button><button class="btn" data-d="cancel">取消</button><button class="btn primary" data-d="save">保存</button></div>`, (k) => {
+    if (k === 'cancel') return;
+    if (k === 'save') save(true); else draft = null;
+    next();
+  });
+}
+function select(id) { guardDirty(() => { creating = null; sel = id; draft = null; renderAll(); }); }
+function save(silent) {
+  const p = byId(draft.id); if (!draft.name.trim() || !draft.prompt.trim()) return;
+  p.name = draft.name.trim(); p.prompt = draft.prompt; draft = null;
+  if (!silent) { renderAll(); toast('已保存'); }
+}
+function beginCreate(name = '', template = 'blank') {
+  guardDirty(() => { draft = null; creating = { name, template, prompt: '' }; renderAll(); setTimeout(() => $('nameIn')?.focus(), 0); });
+}
+function duplicate(p) {
+  guardDirty(() => {
+    draft = null; creating = { name: p.name + ' 副本', template: p.sys ? p.id : 'other', prompt: p.prompt };
+    renderAll(); setTimeout(() => { const n = $('nameIn'); n.focus(); n.select(); }, 0);
+  });
+}
+function confirmDelete(p) {
+  const impacts = [];
+  if (settings.def === p.id) impacts.push('听写默认将改为 <b>Typeflux</b>');
+  if (settings.aux === p.id) impacts.push('辅助输入将改为 <b>English Translator</b>');
+  const apps = rules.filter(r => r.persona === p.id);
+  if (apps.length) impacts.push(`${apps.map(r => esc(r.app)).join('、')} 的应用规则会一并删除`);
+  showDialog(`<h4>删除「${esc(p.name)}」？</h4>
+    ${impacts.length ? `<p>这个人设正在使用中，删除后：</p><ul>${impacts.map(i => `<li>${i}</li>`).join('')}</ul>` : '<p>删除后可以在提示里撤销。</p>'}
+    <div class="row"><button class="btn" data-d="cancel">取消</button><button class="btn danger" data-d="ok">删除</button></div>`, (k) => {
+    if (k !== 'ok') return;
+    const snap = { personas: personas.slice(), settings: { ...settings }, rules: rules.map(r => ({ ...r })), sel };
+    personas = personas.filter(x => x.id !== p.id);
+    if (settings.def === p.id) settings.def = SYS_TF;
+    if (settings.aux === p.id) settings.aux = SYS_EN;
+    rules = rules.filter(r => r.persona !== p.id);
+    sel = personas.find(x => !x.sys)?.id || SYS_TF; draft = null;
+    renderAll();
+    toast(`已删除「${p.name}」`, () => { personas = snap.personas; settings = snap.settings; rules = snap.rules; sel = snap.sel; draft = null; renderAll(); });
+  });
+}
+
+/* ---------- Dialog / toast ---------- */
+function showDialog(html, onClose) {
+  $('dialog').innerHTML = html; $('modal').classList.add('open');
+  $('dialog').onclick = (e) => { const b = e.target.closest('[data-d]'); if (!b) return; $('modal').classList.remove('open'); onClose(b.dataset.d); };
+}
+let toastTimer;
+function toast(text, onUndo) {
+  $('toastText').textContent = text; undo = onUndo || null;
+  $('toastUndo').style.display = onUndo ? '' : 'none';
+  $('toast').classList.add('show'); clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $('toast').classList.remove('show'), 4000);
+}
+$('toastUndo').onclick = () => { if (undo) undo(); undo = null; $('toast').classList.remove('show'); };
+
+/* ---------- App rules drawer ---------- */
+let pickerOpen = false, appQ = '', appScope = 'running', drawerPreset = null;
+function openDrawer(withPicker, presetPersona) {
+  pickerOpen = !!withPicker; drawerPreset = presetPersona || null;
+  $('drawer').classList.add('open'); $('scrim').classList.add('open'); renderRules();
+}
+function closeDrawer() { $('drawer').classList.remove('open'); $('scrim').classList.remove('open'); closeMenus(); renderAll(); }
+function renderRules() {
+  $('drawer').classList.toggle('paused', !appsEnabled);
+  $('masterSwitch').classList.toggle('on', appsEnabled);
+  $('masterSub').textContent = appsEnabled ? '关闭后所有规则暂停，统一使用听写默认。' : '已暂停 · 所有应用都使用听写默认。';
+  const ruleRow = (r) => {
+    const p = byId(r.persona), missing = r.persona && !p;
+    return `<div class="rule ${r.on ? '' : 'off'}" data-r="${r.id}">
+      <span class="appicon" style="background:${r.color}">${esc(r.app[0])}</span>
+      <div class="an"><b>${esc(r.app)}</b><span>${esc(r.bundle)}</span></div>
+      <div class="rp"><button class="picker ${missing ? 'missing' : ''}" data-rp="${r.id}"><span class="av" style="width:18px;height:18px;border-radius:5px;font-size:9px;${avStyle(p)}">${esc(glyph(p))}</span>
+        <span class="nm">${missing ? '人设已不存在' : p ? esc(p.name) : '不使用人设'}</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4l2.5-2.5L7.5 4M2.5 6l2.5 2.5L7.5 6"/></svg></button></div>
+      <span class="switch ${r.on ? 'on' : ''}" data-rs="${r.id}" title="${r.on ? '暂停' : '启用'}"></span>
+      <button class="ibtn" data-rd="${r.id}" aria-label="删除规则"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></button></div>`;
+  };
+  const bound = new Set(rules.map(r => r.bundle));
+  const k = appQ.trim().toLowerCase();
+  const list = INSTALLED.filter(a => (appScope === 'all' || a.running) && (!k || a.app.toLowerCase().includes(k) || a.bundle.toLowerCase().includes(k)));
+  $('rules').innerHTML = (rules.length ? rules.map(ruleRow).join('') : `<div class="empty"><b>还没有应用专属规则</b>例如：在 Slack 里自动用「职场助手」，在邮件里自动用「邮件回复」。</div>`)
+    + `<div class="addapp"><button class="btn" id="addApp"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 1.5v9M1.5 6h9"/></svg>添加应用${drawerPreset ? `（使用「${esc(byId(drawerPreset)?.name || '')}」）` : ''}</button></div>
+    <div class="apppick ${pickerOpen ? 'open' : ''}">
+      <div class="ah"><label class="search"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg><input id="appQ" placeholder="搜索应用名称或 Bundle ID" value="${esc(appQ)}"></label>
+        <div class="seg"><button class="${appScope === 'running' ? 'on' : ''}" data-scope="running">已启动</button><button class="${appScope === 'all' ? 'on' : ''}" data-scope="all">全部</button></div></div>
+      <div class="al">${list.map(a => `<div class="ar ${bound.has(a.bundle) ? 'bound' : ''}" data-add="${a.bundle}"><span class="appicon" style="background:${a.color}">${esc(a.app[0])}</span>
+        <div class="an"><div>${esc(a.app)}</div><span>${esc(a.bundle)}</span></div>${bound.has(a.bundle) ? '<span class="badge off">已有规则</span>' : a.running ? '<span class="badge app">运行中</span>' : ''}</div>`).join('') || '<div class="empty">没有找到匹配的应用</div>'}</div>
+      <div class="manual">找不到？<input id="manualId" placeholder="直接输入 Bundle ID 或应用名称"><button class="btn sm" id="manualAdd">添加</button></div>
+    </div>`;
+  if (pickerOpen) setTimeout(() => $('appQ')?.focus(), 0);
+}
+function addRule(app, bundle, color) {
+  const id = 'r' + Date.now();
+  rules.push({ id, app, bundle, color: color || '#555', persona: drawerPreset || settings.def, on: true });
+  pickerOpen = false; appQ = '';
+  const preset = drawerPreset; drawerPreset = null;
+  renderRules(); renderAll();
+  toast(`已添加 ${app}${preset ? `，使用「${byId(preset).name}」` : '，点人设可修改'}`);
+}
+$('rules').addEventListener('click', (e) => {
+  const t = e.target;
+  if (t.closest('#addApp')) { pickerOpen = !pickerOpen; renderRules(); return; }
+  const sc = t.closest('[data-scope]'); if (sc) { appScope = sc.dataset.scope; renderRules(); return; }
+  const ad = t.closest('[data-add]'); if (ad && !ad.classList.contains('bound')) { const a = INSTALLED.find(x => x.bundle === ad.dataset.add); addRule(a.app, a.bundle, a.color); return; }
+  if (t.closest('#manualAdd')) { const v = $('manualId').value.trim(); if (v) addRule(v.includes('.') ? v.split('.').pop() : v, v); return; }
+  const rs = t.closest('[data-rs]'); if (rs) { const r = rules.find(x => x.id === rs.dataset.rs); r.on = !r.on; renderRules(); renderAll(); return; }
+  const rd = t.closest('[data-rd]'); if (rd) { const i = rules.findIndex(x => x.id === rd.dataset.rd); const [r] = rules.splice(i, 1); renderRules(); renderAll();
+    toast(`已删除 ${r.app} 的规则`, () => { rules.splice(i, 0, r); renderRules(); renderAll(); }); return; }
+  const rp = t.closest('[data-rp]'); if (rp) { const r = rules.find(x => x.id === rp.dataset.rp);
+    e.stopPropagation(); openPicker(rp, r.persona, true, (id) => { r.persona = id; renderRules(); renderAll(); }, { title: `在 ${r.app} 里使用` }); }
+});
+$('rules').addEventListener('input', (e) => { if (e.target.id === 'appQ') { appQ = e.target.value; const pos = e.target.selectionStart; renderRules(); const n = $('appQ'); n.focus(); n.setSelectionRange(pos, pos); } });
+$('masterSwitch').onclick = () => { appsEnabled = !appsEnabled; renderRules(); renderAll(); };
+$('closeDrawer').onclick = closeDrawer; $('scrim').onclick = closeDrawer; $('openApps').onclick = () => openDrawer(false);
+
+/* ---------- Wiring ---------- */
+function renderAll() { renderUsage(); renderRoster(); renderDetail(); }
+$('rlist').addEventListener('click', (e) => {
+  if (e.target.closest('#createFromSearch')) { const n = q; q = ''; $('q').value = ''; beginCreate(n); return; }
+  const r = e.target.closest('.prow[data-id]'); if (r) select(r.dataset.id);
+});
+$('q').addEventListener('input', (e) => { q = e.target.value; renderRoster(); });
+$('qClear').onclick = (e) => { e.preventDefault(); q = ''; $('q').value = ''; renderRoster(); };
+$('newBtn').onclick = () => beginCreate();
+document.querySelectorAll('.picker[data-slot]').forEach(b => b.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const key = b.dataset.slot === 'default' ? 'def' : 'aux';
+  openPicker(b, settings[key], key === 'def', (id) => {
+    const prev = settings[key];
+    settings[key] = id;
+    renderAll();
+    toast(`${key === 'def' ? '听写默认' : '辅助输入'}已改为「${id ? byId(id).name : '不使用人设'}」`, () => { settings[key] = prev; renderAll(); });
+  }, { title: key === 'def' ? '按 fn 听写时使用' : '按 ⌥ fn 时使用' });
+}));
+$('detail').addEventListener('click', (e) => {
+  const a = e.target.closest('[data-act]'); const tp = e.target.closest('[data-tpl]');
+  if (tp) {
+    const t = tp.dataset.tpl;
+    if (t === 'other') { e.stopPropagation(); openPicker(tp, null, false, (id) => { creating.template = 'other'; creating.prompt = byId(id).prompt; if (!creating.name) creating.name = byId(id).name + ' 副本'; renderDetail(); renderRoster(); }, { title: '复制哪个人设' }); return; }
+    creating.template = t; creating.prompt = t === 'blank' ? '' : byId(t).prompt + '\n\n补充要求：\n- '; renderDetail();
+    const ta = $('promptIn'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); return;
+  }
+  if (!a) return;
+  e.stopPropagation();
+  const k = a.dataset.act;
+  if (k === 'useMenu') openUseMenu(a.closest('.acts') ? a : $('detail').querySelector('[data-act=useMenu]'));
+  else if (k === 'moreMenu') openMoreMenu(a);
+  else if (k === 'duplicate') duplicate(byId(sel));
+  else if (k === 'openApps') openDrawer(false);
+  else if (k === 'save') save();
+  else if (k === 'revert') { draft = null; renderAll(); }
+  else if (k === 'cancelCreate') { creating = null; renderAll(); }
+  else if (k === 'saveCreate') {
+    const id = 'c' + Date.now(); personas.push({ id, name: creating.name.trim(), prompt: creating.prompt });
+    creating = null; sel = id; renderAll(); toast('已创建人设，可以点「设为…」开始使用');
+  }
+});
+document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) closeMenus(); });
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); if (dirty()) save(); }
+  if (e.key === 'Escape') { if (document.querySelector('.menu.open')) closeMenus(); else if ($('drawer').classList.contains('open')) closeDrawer(); }
+});
+
+/* ---------- Stage states ---------- */
+const CAPTIONS = {
+  builtin: '<b>① 浏览内置人设</b> · 顶部三张卡回答「在哪里用哪个人设」，下方只管理人设本身。内置人设只读，提供「复制一份来修改」。',
+  custom: '<b>② 编辑我的人设</b> · 名称直接在标题处改；修改后底部出现保存条（⌘S），列表标出未保存的圆点；切换前会提示保存。',
+  create: '<b>③ 新建人设</b> · 先选起点（空白 / 基于内置 / 复制现有），名称和定义都填写后才能创建。',
+  apps: '<b>④ 应用专属规则</b> · 从右侧抽屉管理，不离开页面；每条规则可换人设、暂停、删除（可撤销）；从已启动的应用里一键添加。',
+  delete: '<b>⑤ 删除使用中的人设</b> · 确认框列出删除后的连带影响，删除后提示条可撤销。',
+  search: '<b>⑥ 搜索无结果</b> · 同时搜索名称和定义内容；无结果时可直接用搜索词新建。',
+};
+function reset() {
+  closeMenus(); $('modal').classList.remove('open'); $('drawer').classList.remove('open'); $('scrim').classList.remove('open');
+  creating = null; draft = null; q = ''; $('q').value = ''; pickerOpen = false; drawerPreset = null;
+}
+function go(state) {
+  reset();
+  document.querySelectorAll('.pill[data-state]').forEach(p => p.classList.toggle('on', p.dataset.state === state));
+  $('caption').innerHTML = CAPTIONS[state] || '';
+  if (state === 'builtin') { sel = SYS_TF; renderAll(); }
+  if (state === 'custom') { sel = 'c4'; renderAll(); draft.prompt += '\n- 结尾不要加“谢谢”。'; renderDetail(); renderRoster(); }
+  if (state === 'create') { sel = SYS_TF; renderAll(); creating = { name: '周报助手', template: SYS_TF, prompt: TF_PROMPT + '\n\n补充要求：\n- 按「本周完成 / 下周计划 / 风险」三段输出。' }; renderAll(); }
+  if (state === 'apps') { sel = 'c4'; renderAll(); openDrawer(true); }
+  if (state === 'delete') { sel = 'c4'; renderAll(); confirmDelete(byId('c4')); }
+  if (state === 'search') { sel = SYS_TF; renderAll(); q = '周报'; $('q').value = q; renderRoster(); }
+}
+document.querySelectorAll('.pill[data-state]').forEach(p => p.onclick = () => go(p.dataset.state));
+$('themeToggle').onclick = () => { document.body.classList.toggle('light'); $('themeToggle').classList.toggle('on'); };
+$('narrowToggle').onclick = () => { document.body.classList.toggle('narrow'); $('narrowToggle').classList.toggle('on'); };
+
+const params = new URLSearchParams(location.search);
+if (params.get('theme') === 'light') { document.body.classList.add('light'); $('themeToggle').classList.add('on'); }
+if (params.get('narrow')) { document.body.classList.add('narrow'); $('narrowToggle').classList.add('on'); }
+if (params.get('solo')) document.body.classList.add('solo');
+go(params.get('state') || 'builtin');
+</script>
+</body>
+</html>
