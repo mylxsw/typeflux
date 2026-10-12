@@ -4144,14 +4144,16 @@ private final class DelayedRealtimeSessionFactory: RealtimeTranscriptionSessionF
 }
 
 private final class MockProcessingHistoryStore: HistoryStore {
+    private let lock = NSLock()
     private var records: [UUID: HistoryRecord] = [:]
 
     func save(record: HistoryRecord) {
-        records[record.id] = record
+        lock.withLock { records[record.id] = record }
     }
 
     func list() -> [HistoryRecord] {
-        records.values.sorted { $0.date < $1.date }
+        let snapshot = lock.withLock { Array(records.values) }
+        return snapshot.sorted { $0.date < $1.date }
     }
 
     func list(limit: Int, offset: Int, searchQuery _: String?) -> [HistoryRecord] {
@@ -4159,16 +4161,16 @@ private final class MockProcessingHistoryStore: HistoryStore {
     }
 
     func record(id: UUID) -> HistoryRecord? {
-        records[id]
+        lock.withLock { records[id] }
     }
 
     func delete(id: UUID) {
-        records[id] = nil
+        lock.withLock { records[id] = nil }
     }
 
     func purge(olderThanDays _: Int) {}
     func clear() {
-        records.removeAll()
+        lock.withLock { records.removeAll() }
     }
 
     func exportMarkdown() throws -> URL {

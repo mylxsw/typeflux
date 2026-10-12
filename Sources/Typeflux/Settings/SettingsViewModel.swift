@@ -233,18 +233,27 @@ final class StudioViewModel: ObservableObject {
     @Published var personaAppBindings: [PersonaAppBinding]
     @Published var personaAppBindingsEnabled: Bool
     @Published var selectedPersonaID: UUID?
-    @Published private(set) var activePersonaID: String
+    @Published var activePersonaID: String
+    @Published var personaPendingDeletion: PersonaProfile?
+    @Published var pendingPersonaNavigation: PersonaDraftNavigation?
+    @Published var personaDraftTemplateID: UUID?
+    @Published var personaDraftCreationID = UUID()
+    @Published var isPersonaRulesDrawerPresented = false
+    @Published var isAddingPersonaAppRule = false
+    @Published var personaUndoMessage: String?
+    var personaUndoAction: PersonaUndoAction?
+    var personaUndoScope: String?
     @Published var personaDraftName: String
     @Published var personaDraftPrompt: String
     @Published var personaAppBindingDraftIdentifier: String
     @Published var personaAppBindingDraftPersonaID: UUID?
-    @Published private(set) var isCreatingPersonaDraft: Bool
+    @Published var isCreatingPersonaDraft: Bool
     @Published var vocabularyEntries: [VocabularyEntry]
     @Published private(set) var isSynchronizingVocabulary = false
 
     @Published var launchAtLogin: Bool
     @Published var auxiliaryHotkey: HotkeyBinding?
-    @Published private(set) var auxiliaryPersonaID: String
+    @Published var auxiliaryPersonaID: String
     @Published var activationHotkey: HotkeyBinding?
     @Published var askHotkey: HotkeyBinding?
     @Published var personaHotkey: HotkeyBinding?
@@ -479,7 +488,10 @@ final class StudioViewModel: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.syncPersonaSelectionFromStore(preservingEditor: self.currentSection == .personas)
+                syncPersonaSelectionFromStore(
+                    preservingEditor: currentSection == .personas || hasPersonaDraftChanges || isCreatingPersonaDraft,
+                    invalidatingUndoForExternalChanges: true
+                )
             }
         }
         personaStoreObserver = NotificationCenter.default.addObserver(
@@ -489,12 +501,20 @@ final class StudioViewModel: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                personas = self.settingsStore.personas
+                let preserveDraft = hasPersonaDraftChanges || isCreatingPersonaDraft
+                let updated = settingsStore.personas
+                if personas.sorted(by: { $0.id.uuidString < $1.id.uuidString })
+                    != updated.sorted(by: { $0.id.uuidString < $1.id.uuidString }) {
+                    dismissPersonaUndo()
+                }
+                personas = updated
                 auxiliaryPersonaID = self.settingsStore.auxiliaryPersona.id.uuidString
                 if let selectedPersonaID, !personas.contains(where: { $0.id == selectedPersonaID }) {
                     self.selectedPersonaID = personas.first?.id
+                    loadPersonaDraft()
+                } else if !preserveDraft {
+                    loadPersonaDraft()
                 }
-                loadPersonaDraft()
             }
         }
         hotkeySettingsObserver = NotificationCenter.default.addObserver(
@@ -695,7 +715,9 @@ final class StudioViewModel: ObservableObject {
     }
 
     var canSavePersonaDraft: Bool {
-        !selectedPersonaIsSystem && !personaDraftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        (isCreatingPersonaDraft || !selectedPersonaIsSystem)
+            && !personaDraftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !personaDraftPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var filteredPersonas: [PersonaProfile] {
@@ -900,6 +922,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     /// The Launcher page pane an outside caller asked for, e.g. the clipboard panel's settings button.
+    @Published var settingsPaneRequest: AppSettingsPane?
     @Published private(set) var launcherPaneRequest: LauncherSettingsPane?
 
     /// Opens the Launcher page at one of its panes.
@@ -1999,7 +2022,13 @@ final class StudioViewModel: ObservableObject {
 
     func setDefaultPersonaSelection(_ id: UUID?) {
         guard id == nil || personas.contains(where: { $0.id == id }) else { return }
+        guard defaultPersonaSelectionID != id || !settingsStore.personaSelectionIsExplicit else { return }
+        let previous = settingsStore.activePersonaID
+        let enabled = settingsStore.personaRewriteEnabled
+        let explicit = settingsStore.personaSelectionIsExplicit
         settingsStore.applyPersonaSelection(id)
+        registerPersonaUndo(.defaultSelection(previous, enabled, explicit),
+                            message: L("personas.redesign.defaultChanged", personaTitle(id)))
         // Input defaults do not select a different persona in the editor.
         syncPersonaSelectionFromStore(preservingEditor: true)
     }
@@ -2012,8 +2041,14 @@ final class StudioViewModel: ObservableObject {
 
     func setAuxiliaryPersona(_ id: String) {
         guard personas.contains(where: { $0.id.uuidString == id }) else { return }
+        guard auxiliaryPersonaID != id else { return }
+        let previous = settingsStore.auxiliaryPersonaID
         settingsStore.auxiliaryPersonaID = id
         auxiliaryPersonaID = id
+        registerPersonaUndo(
+            .auxiliary(previous),
+            message: L("personas.redesign.auxiliaryChanged", personaTitle(UUID(uuidString: id)))
+        )
     }
 
     func setAuxiliaryHotkey(_ binding: HotkeyBinding) {
@@ -2150,6 +2185,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func applyPersonaSelection(_ id: UUID?) {
+        dismissPersonaUndo()
         settingsStore.applyPersonaSelection(id)
         syncPersonaSelectionFromStore()
 
@@ -2162,6 +2198,9 @@ final class StudioViewModel: ObservableObject {
 
     var canSavePersonaAppBinding: Bool {
         !personaAppBindingDraftIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !hasPersonaAppRule(personaAppBindingDraftIdentifier)
+            && (personaAppBindingDraftPersonaID == nil
+                || personas.contains { $0.id == personaAppBindingDraftPersonaID })
     }
 
     func savePersonaAppBinding() {
@@ -2169,36 +2208,45 @@ final class StudioViewModel: ObservableObject {
         guard !identifier.isEmpty else { return }
 
         let personaID = personaAppBindingDraftPersonaID
+        guard personaID == nil || personas.contains(where: { $0.id == personaID }),
+              !hasPersonaAppRule(identifier) else { return }
+        dismissPersonaUndo()
         settingsStore.savePersonaAppBinding(appIdentifier: identifier, personaID: personaID)
         personaAppBindings = settingsStore.personaAppBindings
         personaAppBindingDraftIdentifier = ""
+        isAddingPersonaAppRule = false
         if personaID == nil {
             showToast(L("settings.personaAppBindings.savedNoPersona"))
         } else if let persona = personas.first(where: { $0.id == personaID }) {
             showToast(L("settings.personaAppBindings.saved", persona.name))
-        } else {
-            showToast(L("settings.personaAppBindings.savedGeneric"))
         }
     }
 
     func setPersonaAppBindingsEnabled(_ value: Bool) {
+        dismissPersonaUndo()
         personaAppBindingsEnabled = value
         settingsStore.personaAppBindingsEnabled = value
     }
 
     func updatePersonaAppBindingPersona(id: UUID, personaID: UUID?) {
+        guard personaID == nil || personas.contains(where: { $0.id == personaID }) else { return }
+        dismissPersonaUndo()
         settingsStore.updatePersonaAppBindingPersona(id: id, personaID: personaID)
         personaAppBindings = settingsStore.personaAppBindings
     }
 
     func setPersonaAppBindingEnabled(id: UUID, isEnabled: Bool) {
+        dismissPersonaUndo()
         settingsStore.setPersonaAppBindingEnabled(id: id, isEnabled: isEnabled)
         personaAppBindings = settingsStore.personaAppBindings
     }
 
     func removePersonaAppBinding(id: UUID) {
+        guard let rule = personaAppBindings.first(where: { $0.id == id }) else { return }
+        let snapshot = personaAppBindings
         settingsStore.removePersonaAppBinding(id: id)
         personaAppBindings = settingsStore.personaAppBindings
+        registerPersonaUndo(.rules(snapshot), message: L("personas.redesign.ruleDeleted", rule.appIdentifier))
     }
 
     func personaName(for binding: PersonaAppBinding) -> String {
@@ -2291,36 +2339,9 @@ final class StudioViewModel: ObservableObject {
         showToast(L("vocabulary.toast.copied"))
     }
 
-    func beginCreatingPersona() {
-        searchQuery = ""
-        isCreatingPersonaDraft = true
-        selectedPersonaID = nil
-        personaDraftName = ""
-        personaDraftPrompt = ""
-    }
-
-    func deletePersona(id: UUID) {
-        guard let persona = personas.first(where: { $0.id == id }), !persona.isSystem else { return }
-        personas.removeAll { $0.id == id }
-        persistPersonas()
-        settingsStore.personaAppBindings = settingsStore.personaAppBindings.filter { $0.personaID != id }
-        personaAppBindings = settingsStore.personaAppBindings
-        if personaAppBindingDraftPersonaID == id {
-            personaAppBindingDraftPersonaID = personas.first?.id
-        }
-        if settingsStore.activePersonaID == id.uuidString {
-            settingsStore.activePersonaID = personas.first?.id.uuidString ?? ""
-            activePersonaID = settingsStore.activePersonaID
-        }
-        if selectedPersonaID == id {
-            selectedPersonaID = personas.first?.id
-        }
-        isCreatingPersonaDraft = false
-        loadPersonaDraft()
-    }
-
     func activateSelectedPersona() {
         guard let selectedPersona else { return }
+        dismissPersonaUndo()
         let draftName = personaDraftName
         let draftPrompt = personaDraftPrompt
         settingsStore.applyPersonaSelection(selectedPersona.id)
@@ -2331,6 +2352,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func deactivatePersonaRewrite() {
+        dismissPersonaUndo()
         settingsStore.applyPersonaSelection(nil)
         syncPersonaSelectionFromStore()
     }
@@ -2338,7 +2360,8 @@ final class StudioViewModel: ObservableObject {
     func savePersonaDraft() {
         let name = personaDraftName.trimmingCharacters(in: .whitespacesAndNewlines)
         let prompt = personaDraftPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return }
+        guard canSavePersonaDraft else { return }
+        dismissPersonaUndo()
 
         if isCreatingPersonaDraft {
             let persona = PersonaProfile(name: name, prompt: prompt)
@@ -2365,7 +2388,11 @@ final class StudioViewModel: ObservableObject {
         showToast(L("settings.personas.saved"))
     }
 
-    private func syncPersonaSelectionFromStore(preservingEditor: Bool = false) {
+    func syncPersonaSelectionFromStore(preservingEditor: Bool = false,
+                                       invalidatingUndoForExternalChanges: Bool = false) {
+        if invalidatingUndoForExternalChanges, personaStoreDiffersFromPublishedState {
+            dismissPersonaUndo()
+        }
         auxiliaryPersonaID = settingsStore.auxiliaryPersona.id.uuidString
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
@@ -2384,11 +2411,12 @@ final class StudioViewModel: ObservableObject {
     }
 
     func cancelPersonaEditing() {
+        if case .template = personaUndoAction {
+            dismissPersonaUndo()
+        }
         if isCreatingPersonaDraft {
             isCreatingPersonaDraft = false
-            selectedPersonaID = settingsStore.personaRewriteEnabled
-                ? settingsStore.activePersona.map(\.id)
-                : nil
+            selectedPersonaID = settingsStore.activePersona?.id ?? SettingsStore.defaultPersonaID
         }
         loadPersonaDraft()
     }
@@ -3083,11 +3111,11 @@ final class StudioViewModel: ObservableObject {
         historyStore.purge(olderThanDays: days)
     }
 
-    private func persistPersonas() {
+    func persistPersonas() {
         settingsStore.personas = personas
     }
 
-    private func loadPersonaDraft() {
+    func loadPersonaDraft() {
         if let selectedPersona {
             personaDraftName = selectedPersona.name
             personaDraftPrompt = settingsStore.resolvedPersonaPrompt(for: selectedPersona)

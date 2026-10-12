@@ -442,7 +442,7 @@ final class SettingsViewModelPersonaTests: XCTestCase {
             let rect = host.convert(scroll.bounds, from: scroll)
             XCTAssertGreaterThan(rect.height, 100)
             XCTAssertGreaterThanOrEqual(rect.minY, 0)
-            XCTAssertLessThanOrEqual(rect.maxY, size.height - 54, "Prompt must leave room for pinned footer")
+            XCTAssertLessThanOrEqual(rect.maxY, size.height, "Prompt must remain inside the editor")
             XCTAssertEqual(textView.string, prompt)
         }
     }

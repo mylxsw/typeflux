@@ -56,8 +56,8 @@ struct SettingsOrganizationTests {
             #expect(AppSettingsPane.allCases.last == .advanced)
             for width: CGFloat in [720, 1100] {
                 try await UI.withWindow(StudioView(viewModel: model), width: width, height: 800) { _, host in
-                    for key in ["settings.providers", "settings.personas.providers.stt", "settings.personas.providers.llm",
-                                "settings.identity", "settings.personaDefault.title", "settings.shortcuts.auxiliary.persona",
+                    for key in ["settings.providers",
+                                "settings.identity", "personas.redesign.dictation", "personas.redesign.auxiliary",
                                 "settings.advanced.voiceProcessingTimeout.title", "settings.servers.title"] {
                         #expect(!UI.contains(L(key), in: host))
                     }
@@ -83,7 +83,7 @@ struct SettingsOrganizationTests {
             model.selectPersona(SettingsStore.defaultPersonaID)
             for width: CGFloat in [720, 1100] {
                 try await UI.withWindow(StudioView(viewModel: model), width: width, height: 800) { _, host in
-                    for key in ["settings.personaDefault.title", "settings.shortcuts.auxiliary.persona"] {
+                    for key in ["personas.redesign.dictation", "personas.redesign.auxiliary"] {
                         #expect(UI.contains(L(key), in: host))
                     }
                     let elements = UI.elements(in: host)
@@ -95,7 +95,8 @@ struct SettingsOrganizationTests {
                     })
                     #expect(abs(defaultPicker.frame.midY - auxiliaryPicker.frame.midY) < 1)
                     #expect(auxiliaryPicker.frame.minX > defaultPicker.frame.maxX)
-                    #expect(UI.contains(L("settings.personas.name"), in: host))
+                    #expect(UI.contains(L("settings.personas.prompt"), in: host))
+                    #expect(!elements.contains { $0.value("accessibilityIdentifier") as? String == "personas.name" })
                     try UI.snapshot(host, name: "personas-input-defaults-\(Int(width))")
                 }
             }

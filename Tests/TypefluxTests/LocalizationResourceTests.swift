@@ -210,10 +210,12 @@ final class LocalizationResourceTests: XCTestCase {
 
     func testPersonaLibraryCopyExistsForAllSupportedLanguages() throws {
         let keys = [
-            "settingsTitle", "none", "builtIn", "custom", "clearSearch", "noResults",
-            "default", "readOnly", "unsaved", "saveChanges", "summary.typeflux",
+            "custom", "clearSearch", "summary.typeflux",
             "summary.translator", "customPersona"
-        ].map { "settings.personas." + $0 }
+        ].map { "settings.personas." + $0 } + [
+            "library", "builtIn", "none", "noResults", "discardChanges", "save", "create",
+            "copyToEdit", "guardTitle", "deleteDefault", "deleteAuxiliary", "undo"
+        ].map { "personas.redesign." + $0 }
         for language in AppLanguage.allCases {
             let bundle = try localizationBundle(for: language)
             for key in keys {
