@@ -9,6 +9,7 @@ let package = Package(
     ],
     products: [
         .library(name: "TypefluxKit", targets: ["Typeflux"]),
+        .library(name: "TypefluxUI", targets: ["TypefluxUI"]),
         .executable(name: "Typeflux", targets: ["TypefluxCLI"])
     ],
     dependencies: [
@@ -21,6 +22,7 @@ let package = Package(
         .package(url: "https://github.com/doggy8088/opencc-swift.git", branch: "main")
     ],
     targets: [
+        .target(name: "TypefluxUI"),
         .target(
             name: "TypefluxAudioSafety",
             path: "Sources/TypefluxAudioSafety",
@@ -30,6 +32,7 @@ let package = Package(
             name: "Typeflux",
             dependencies: [
                 "TypefluxAudioSafety",
+                "TypefluxUI",
                 .product(name: "TypefluxChat", package: "TypefluxChat"),
                 .product(name: "Yams", package: "Yams"),
                 .product(name: "Markdown", package: "swift-markdown"),
@@ -60,7 +63,7 @@ let package = Package(
         ),
         .testTarget(
             name: "TypefluxTests",
-            dependencies: ["Typeflux"],
+            dependencies: ["Typeflux", "TypefluxUI"],
             path: "Tests/TypefluxTests"
         )
     ]

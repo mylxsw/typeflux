@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// Palette and controls shared by model configuration and system settings.
+@available(*, deprecated, message: "Use TypefluxUI tokens for new components.")
 enum ModelVisualStyle {
     /// Opaque backdrop for sheets and popovers that do not sit on the window material.
     static let canvas = Color(nsColor: NSColor(name: nil) { appearance in

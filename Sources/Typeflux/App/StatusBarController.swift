@@ -224,6 +224,9 @@ final class StatusBarController: NSObject {
         feedbackItem.submenu = buildFeedbackMenu()
         menu.addItem(feedbackItem)
         menu.addItem(makeItem(title: L("menu.about"), action: #selector(openAbout)))
+        #if DEBUG
+            menu.addItem(DevLauncher.makeMenu())
+        #endif
         menu.addItem(NSMenuItem.separator())
         menu.addItem(makeItem(title: L("menu.quit"), action: #selector(quit), keyEquivalent: "q"))
 

@@ -1,6 +1,17 @@
-import Foundation
+import AppKit
 
 enum DevLauncher {
+    @MainActor
+    static func makeMenu(gallery: TypefluxGalleryWindowController = .shared) -> NSMenuItem {
+        let menu = NSMenu(title: "Dev")
+        let item = NSMenuItem(title: "Component Gallery", action: #selector(gallery.showGallery), keyEquivalent: "")
+        item.target = gallery
+        menu.addItem(item)
+        let root = NSMenuItem(title: "Dev", action: nil, keyEquivalent: "")
+        root.submenu = menu
+        return root
+    }
+
     static func relaunchAsAppBundleIfNeeded() {
         guard !PrivacyGuard.isRunningInAppBundle else { return }
 

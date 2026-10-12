@@ -6,10 +6,7 @@ import SwiftUI
 /// settings windows and their menus are drawn: Liquid Glass, or the flat opaque surfaces macOS
 /// used before it. Stored under `ui.overlayStyle`, its name from when it only
 /// styled the capsule, so existing choices carry over.
-enum InterfaceStyle: String, CaseIterable, Codable {
-    case liquidGlass
-    case classic
-
+extension InterfaceStyle {
     var displayName: String {
         switch self {
         case .liquidGlass:
@@ -18,14 +15,9 @@ enum InterfaceStyle: String, CaseIterable, Codable {
             L("interfaceStyle.classic")
         }
     }
-
-    /// Whether surfaces may be translucent glass. Classic draws every surface opaque.
-    var usesGlass: Bool { self == .liquidGlass }
 }
 
 extension EnvironmentValues {
-    @Entry var interfaceStyle: InterfaceStyle = .liquidGlass
-    @Entry var liquidGlassIntensity: LiquidGlassIntensity = .init()
     @Entry var interfaceAppearanceObserver: InterfaceStyleObserver? = nil
 }
 
@@ -51,14 +43,20 @@ final class InterfaceStyleObserver: ObservableObject {
     }
 
     deinit {
-        if let token { center.removeObserver(token) }
+        if let token {
+            center.removeObserver(token)
+        }
     }
 
     func refresh() {
         let next = settings.interfaceStyle
-        if next != style { style = next }
+        if next != style {
+            style = next
+        }
         let intensity = LiquidGlassIntensity(settings.liquidGlassIntensity)
-        if intensity != glassIntensity { glassIntensity = intensity }
+        if intensity != glassIntensity {
+            glassIntensity = intensity
+        }
     }
 }
 
