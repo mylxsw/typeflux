@@ -68,3 +68,62 @@ settings row. They access no account, microphone or screen content.
 The live menu/window check runs in a separate process: the current SwiftPM
 async test runner exits early if more renders follow that native lifecycle.
 Combine its coverage profile with the normal test run when measuring coverage.
+
+Content controls are wrapped by `TypefluxButton` (primary, regular, destructive,
+borderless, link; native control sizes and an opt-in default Return action),
+`TypefluxIconButton`, `TypefluxPopup`, `TypefluxMenu`,
+`TypefluxSegmentedControl`, `TypefluxSwitch`, `TypefluxCheckbox`,
+`TypefluxRadioGroup`, `TypefluxSlider`, `TypefluxTextField` and `TypefluxProgress`.
+Callers pass localized strings and bindings and use `.disabled`, `.focused`,
+`.onSubmit` and keyboard shortcuts as needed. Do not restyle these controls at
+call sites. Native Tahoe controls keep their shape in both interface styles.
+
+`TypefluxForm`, `TypefluxFormSection`, `TypefluxSettingsRow` and
+`TypefluxNavigationRow` wrap grouped forms and labeled rows. Forms have a 640pt
+maximum width. Navigation rows take an action so the application owns routing.
+`TypefluxEmptyState` uses the native unavailable view on macOS 14+ and a solid
+compatibility layout on macOS 13. `typefluxHelp` uses the native help tag.
+
+`TypefluxTable` owns native sorting, multiple selection and alternating rows.
+Use `TypefluxTableCell(rowID:)` in every column and
+`TypefluxTableActions(rowID:selected:)` in the trailing column to reveal actions
+when any cell is hovered, the row is selected, the action group is keyboard
+focused, or VoiceOver is enabled. Pass selection membership through `selected`.
+Actions stay available through native keyboard selection without requiring hover.
+
+`TypefluxStatus`, `TypefluxTag`, `TypefluxToken` and `TypefluxKeyHint` use semantic
+colors. Tags are read-only metadata; tokens represent attachments or context
+and optionally offer an accessible native remove button. Supply spoken shortcut
+and remove labels explicitly. Slider and progress inputs normalize nonfinite and
+out-of-range display values without writing to model bindings while rendering.
+
+The gallery's content section uses synthetic English developer examples. Each
+section includes live and disabled samples; hovering, holding and focusing the
+live sample reports the state while the OS draws the control. Read-only status,
+tags, key hints and progress have no press/focus interaction.
+
+```sh
+# Run each UI suite in a separate process to isolate native window lifecycles.
+TYPEFLUX_UI_SNAPSHOTS=artifacts/content swift test --no-parallel --enable-code-coverage \
+  --filter TypefluxUIControlsVisualTests
+swift test --no-parallel --enable-code-coverage --filter TypefluxUIControlsBehaviorTests
+swift test --no-parallel --enable-code-coverage --filter TypefluxUIControlsTableTests
+swift test --no-parallel --enable-code-coverage --filter TypefluxUIControlStateTests
+```
+
+Only the related suites are required for this content-control change. The full
+suite is reserved for acceptance after all UI-unification sub-issues are complete.
+
+Native menu tracking follows `SettingsMenuPickerTests`: run the menu checks in
+an independent test process. SwiftUI creates the items only when tracking starts.
+Save each suite’s coverage profile before the next run and merge the profiles.
+
+```sh
+TYPEFLUX_UI_CONTENT_MENUS=1 swift test --no-parallel --enable-code-coverage \
+  --filter TypefluxUIControlsMenuTests
+```
+
+The snapshot helper sets the control activity to `.key` so native controls show
+the active accent rather than the inactive window palette. High-contrast renders
+use AppKit's accessibility appearances; read-only system accessibility preferences
+are never changed by the tests.

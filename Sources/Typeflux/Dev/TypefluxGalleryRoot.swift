@@ -6,7 +6,9 @@ struct TypefluxGalleryRoot: View {
 
     var body: some View {
         TypefluxGalleryView(style: $state.style, appearance: $state.appearance,
-                            labels: TypefluxGalleryWindowController.labels)
+                            labels: TypefluxGalleryWindowController.labels) {
+            TypefluxControlsGalleryView()
+        }
             .onChange(of: state.appearance, perform: onAppearanceChange)
     }
 }
