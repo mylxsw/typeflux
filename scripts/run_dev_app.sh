@@ -145,7 +145,7 @@ set_plist_value() {
 }
 
 add_dev_http_transport_exception_if_needed() {
-  local configured_urls="${TYPEFLUX_API_URLS:-${TYPEFLUX_API_URL:-}}"
+  local configured_urls="${TYPEFLUX_API_URLS:-${TYPEFLUX_API_URL:-}},${TYPEFLUX_WEB_AUTH_API_ORIGIN:-},${TYPEFLUX_WEB_AUTH_ORIGIN:-}"
   if [[ "$configured_urls" != *"http://"* ]]; then
     return
   fi

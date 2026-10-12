@@ -69,8 +69,8 @@ final class WebLoginCoordinator: ObservableObject {
         generation = authGeneration()
         phase = .creating
         do {
-            guard WebLoginConfiguration.isHTTPSOrigin(configuration.apiOrigin),
-                  WebLoginConfiguration.isHTTPSOrigin(configuration.websiteOrigin) else {
+            guard WebLoginConfiguration.isWebOrigin(configuration.apiOrigin),
+                  WebLoginConfiguration.isWebOrigin(configuration.websiteOrigin) else {
                 throw WebLoginFailure.invalidResponse
             }
             let proof = try makeProof()
