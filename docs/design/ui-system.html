@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="zh-Hans" data-style="glass" data-theme="light" data-accent="blue">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux UI System v2 · Apple 原生规范（交互稿）</title>
+<style>
+/* =====================================================================
+   Typeflux UI System v2
+   Two styles mirror the two macOS generations the app runs on:
+     data-style="classic" → macOS 15 Sequoia (opaque, vibrancy sidebar)
+     data-style="glass"   → macOS 26 Tahoe   (Liquid Glass navigation layer)
+   Rule of thumb from the HIG: glass is for the navigation layer that floats
+   above content (toolbar, sidebar, menus, popovers, panels, sheets).
+   Content stays on solid surfaces with standard controls.
+   ===================================================================== */
+
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", sans-serif;
+  --mono: "SF Mono", ui-monospace, Menlo, monospace;
+
+  /* macOS text styles (NSFont.TextStyle / SwiftUI Font.TextStyle on macOS) */
+  --largeTitle: 400 26px/32px var(--font-display);
+  --title1: 400 22px/26px var(--font-display);
+  --title2: 400 17px/22px var(--font-display);
+  --title3: 400 15px/20px var(--font);
+  --headline: 700 13px/16px var(--font);
+  --body: 400 13px/16px var(--font);
+  --callout: 400 12px/15px var(--font);
+  --subheadline: 400 11px/14px var(--font);
+  --footnote: 400 10px/13px var(--font);
+
+  --spring: cubic-bezier(.32, 1.42, .58, 1);
+  --ease: cubic-bezier(.25, .8, .25, 1);
+}
+
+/* ---------- accent follows System Settings › Appearance › Accent ---------- */
+[data-accent="blue"]     { --accent: #007aff; }
+[data-theme="dark"][data-accent="blue"] { --accent: #0a84ff; }
+[data-accent="purple"]   { --accent: #a550a7; }
+[data-accent="pink"]     { --accent: #f74f9e; }
+[data-accent="red"]      { --accent: #ff5257; }
+[data-accent="orange"]   { --accent: #f7821b; }
+[data-accent="yellow"]   { --accent: #ffc600; }
+[data-accent="green"]    { --accent: #62ba46; }
+[data-accent="graphite"] { --accent: #8c8c8c; }
+:root { --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent); --focus: 0 0 0 3.5px color-mix(in srgb, var(--accent) 45%, transparent); }
+
+/* ---------- semantic system colours ---------- */
+[data-theme="light"] {
+  color-scheme: light;
+  --label: rgba(0,0,0,.85); --label2: rgba(0,0,0,.50); --label3: rgba(0,0,0,.26); --label4: rgba(0,0,0,.10);
+  --sep: rgba(0,0,0,.10); --fill: rgba(0,0,0,.05); --fill2: rgba(0,0,0,.08); --fill3: rgba(0,0,0,.12);
+  --red: #ff3b30; --orange: #ff9500; --yellow: #ffcc00; --green: #28cd41; --purple: #af52de; --teal: #59adc4;
+  --control: #ffffff; --tooltip-bg: #f2f2f2; --tooltip-fg: rgba(0,0,0,.85);
+  --wallpaper:
+    radial-gradient(60% 70% at 15% 20%, #8fb6ff 0%, transparent 60%),
+    radial-gradient(55% 60% at 85% 15%, #ffb3d1 0%, transparent 60%),
+    radial-gradient(70% 70% at 70% 90%, #9be7c8 0%, transparent 60%),
+    radial-gradient(50% 50% at 30% 85%, #ffd59a 0%, transparent 60%), #dfe6f3;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --label: rgba(255,255,255,.85); --label2: rgba(255,255,255,.55); --label3: rgba(255,255,255,.25); --label4: rgba(255,255,255,.10);
+  --sep: rgba(255,255,255,.10); --fill: rgba(255,255,255,.06); --fill2: rgba(255,255,255,.10); --fill3: rgba(255,255,255,.14);
+  --red: #ff453a; --orange: #ff9f0a; --yellow: #ffd60a; --green: #32d74b; --purple: #bf5af2; --teal: #6ac4dc;
+  --control: rgba(255,255,255,.14); --tooltip-bg: #3a3a3c; --tooltip-fg: rgba(255,255,255,.85);
+  --wallpaper:
+    radial-gradient(60% 70% at 15% 20%, #23407e 0%, transparent 60%),
+    radial-gradient(55% 60% at 85% 15%, #5d2350 0%, transparent 60%),
+    radial-gradient(70% 70% at 70% 90%, #0f4a3e 0%, transparent 60%),
+    radial-gradient(50% 50% at 30% 85%, #5a3a12 0%, transparent 60%), #0b0d14;
+}
+
+/* ---------- Classic = macOS 15 Sequoia ---------- */
+[data-style="classic"] {
+  --r-window: 10px; --r-group: 8px; --r-menu: 6px; --r-menu-item: 4px; --r-popover: 10px; --r-sheet: 10px;
+  --r-btn: 5.5px; --r-btn-lg: 7px; --r-field: 5px; --r-search: 6px; --r-seg: 6px; --r-row: 5px; --r-tb: 5px;
+  --h-btn: 22px; --h-btn-lg: 28px; --h-field: 22px; --h-seg: 22px; --h-tb: 28px; --h-search-tb: 24px; --w-search: 200px;
+  --row-side: 28px; --row-form: 36px; --row-table: 24px; --row-menu: 22px;
+  --sw-w: 32px; --sw-h: 18px; --knob-w: 16px; --knob-h: 16px; --cb: 14px; --cb-r: 3.5px;
+}
+[data-style="classic"][data-theme="light"] {
+  --win: #ececec; --canvas: #f6f6f6; --content: #ffffff; --group: #ffffff; --group-stroke: rgba(0,0,0,.08);
+  --sidebar: rgba(226,226,228,.82); --material: rgba(244,244,246,.86); --material-stroke: rgba(0,0,0,.12);
+  --alt-row: rgba(0,0,0,.028); --bezel: #ffffff; --bezel-stroke: rgba(0,0,0,.14); --bezel-shadow: 0 .5px 1.5px rgba(0,0,0,.18);
+  --shadow-menu: 0 8px 26px rgba(0,0,0,.18), 0 0 0 .5px rgba(0,0,0,.14);
+  --shadow-win: 0 22px 60px rgba(0,0,0,.25), 0 0 0 .5px rgba(0,0,0,.22);
+}
+[data-style="classic"][data-theme="dark"] {
+  --win: #2b2b2d; --canvas: #1f1f21; --content: #1e1e1e; --group: rgba(255,255,255,.045); --group-stroke: rgba(255,255,255,.08);
+  --sidebar: rgba(48,48,52,.80); --material: rgba(44,44,48,.86); --material-stroke: rgba(255,255,255,.14);
+  --alt-row: rgba(255,255,255,.03); --bezel: rgba(255,255,255,.16); --bezel-stroke: rgba(255,255,255,.06); --bezel-shadow: 0 .5px 1px rgba(0,0,0,.4);
+  --shadow-menu: 0 10px 30px rgba(0,0,0,.5), 0 0 0 .5px rgba(255,255,255,.16);
+  --shadow-win: 0 26px 70px rgba(0,0,0,.6), 0 0 0 .5px rgba(255,255,255,.16);
+}
+
+/* ---------- Liquid Glass = macOS 26 Tahoe ---------- */
+[data-style="glass"] {
+  --r-window: 26px; --r-group: 14px; --r-menu: 14px; --r-menu-item: 8px; --r-popover: 18px; --r-sheet: 22px;
+  --r-btn: 8px; --r-btn-lg: 999px; --r-field: 8px; --r-search: 999px; --r-seg: 999px; --r-row: 10px; --r-tb: 999px;
+  --h-btn: 26px; --h-btn-lg: 34px; --h-field: 26px; --h-seg: 28px; --h-tb: 36px; --h-search-tb: 36px; --w-search: 240px;
+  --row-side: 32px; --row-form: 40px; --row-table: 28px; --row-menu: 24px;
+  --sw-w: 38px; --sw-h: 22px; --knob-w: 26px; --knob-h: 18px; --cb: 16px; --cb-r: 5px;
+}
+[data-style="glass"][data-theme="light"] {
+  --win: #fbfbfd; --canvas: #fbfbfd; --content: #ffffff; --group: rgba(0,0,0,.035); --group-stroke: transparent;
+  --sidebar: rgba(255,255,255,.30);
+  --g-tint: rgba(255,255,255,.28); --g-tint-strong: rgba(250,250,252,.72); --g-rim: .95; --g-glow: .55;
+  --g-outline: rgba(0,0,0,.07); --g-shadow: 0 8px 28px -6px rgba(20,30,60,.22), 0 1px 3px rgba(20,30,60,.10);
+  --alt-row: rgba(0,0,0,.025); --bezel: #ffffff; --bezel-stroke: rgba(0,0,0,.06); --bezel-shadow: 0 1px 2.5px rgba(0,0,0,.14);
+  --shadow-menu: 0 18px 50px -8px rgba(20,30,60,.30), 0 0 0 .5px rgba(0,0,0,.08);
+  --shadow-win: 0 34px 90px -10px rgba(20,30,60,.35), 0 0 0 .5px rgba(0,0,0,.10);
+}
+[data-style="glass"][data-theme="dark"] {
+  --win: #1d1d1f; --canvas: #1d1d1f; --content: #1d1d1f; --group: rgba(255,255,255,.05); --group-stroke: transparent;
+  --sidebar: rgba(40,40,46,.34);
+  --g-tint: rgba(40,40,46,.30); --g-tint-strong: rgba(36,36,40,.78); --g-rim: .38; --g-glow: .16;
+  --g-outline: rgba(255,255,255,.10); --g-shadow: 0 10px 34px -6px rgba(0,0,0,.6), 0 1px 3px rgba(0,0,0,.4);
+  --alt-row: rgba(255,255,255,.03); --bezel: rgba(255,255,255,.16); --bezel-stroke: rgba(255,255,255,.05); --bezel-shadow: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-menu: 0 18px 50px -8px rgba(0,0,0,.7), 0 0 0 .5px rgba(255,255,255,.12);
+  --shadow-win: 0 34px 90px -10px rgba(0,0,0,.75), 0 0 0 .5px rgba(255,255,255,.14);
+}
+
+/* =====================================================================
+   Materials
+   .glass    — Liquid Glass (regular). Classic maps it to a vibrancy material.
+   .glass.clear — the clearer variant for controls over rich media.
+   The HTML approximates the optics with blur + saturation + a specular rim;
+   the app uses NSGlassEffectView / .glassEffect(), which adds refraction.
+   ===================================================================== */
+[data-style="glass"] .glass {
+  background: var(--g-tint);
+  -webkit-backdrop-filter: blur(14px) saturate(190%) brightness(1.04);
+  backdrop-filter: blur(14px) saturate(190%) brightness(1.04);
+  box-shadow: inset 0 0 0 .5px var(--g-outline), var(--g-shadow);
+  isolation: isolate;
+}
+[data-style="glass"][data-theme="dark"] .glass { -webkit-backdrop-filter: blur(14px) saturate(170%) brightness(.92); backdrop-filter: blur(14px) saturate(170%) brightness(.92); }
+[data-style="glass"] .glass::before {
+  /* specular rim: bright where light hits (top-left, bottom-right), fading along the sides */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
+  background: linear-gradient(135deg, rgba(255,255,255,var(--g-rim)) 0%, rgba(255,255,255,.18) 22%, rgba(255,255,255,0) 45%, rgba(255,255,255,0) 60%, rgba(255,255,255,.22) 82%, rgba(255,255,255,calc(var(--g-rim) * .8)) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+[data-style="glass"] .glass::after {
+  /* inner glow: light gathering at the upper edge of the lens */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  background: radial-gradient(120% 70% at 30% -10%, rgba(255,255,255,var(--g-glow)), transparent 55%),
+              linear-gradient(to top, rgba(255,255,255,calc(var(--g-glow) * .35)), transparent 30%);
+}
+[data-style="glass"] .glass.strong { background: var(--g-tint-strong); }
+[data-style="glass"] .glass.clear { background: rgba(255,255,255,.08); }
+[data-style="classic"] .glass {
+  background: var(--material); -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 0 0 .5px var(--material-stroke);
+}
+
+/* =====================================================================
+   Board chrome (presentation only)
+   ===================================================================== */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: var(--body); color: var(--label); background: var(--wallpaper); background-attachment: fixed; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+button, input, textarea { font: inherit; color: inherit; }
+svg { display: block; }
+.board-bar { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 14px; padding: 9px 20px;
+  background: color-mix(in srgb, var(--canvas) 72%, transparent); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); border-bottom: .5px solid var(--sep); }
+.board-bar h1 { font: var(--headline); margin: 0; white-space: nowrap; }
+.board-bar h1 small { font: var(--subheadline); color: var(--label2); margin-left: 6px; }
+.board-nav { display: flex; gap: 2px; flex: 1; overflow-x: auto; }
+.board-nav a { padding: 4px 10px; border-radius: 6px; color: var(--label2); text-decoration: none; font: var(--callout); white-space: nowrap; }
+.board-nav a:hover { background: var(--fill); color: var(--label); }
+.board-nav a.on { background: var(--fill2); color: var(--label); font-weight: 600; }
+.board-ctrls { display: flex; gap: 10px; align-items: center; }
+.board-ctrls .lbl { font: var(--subheadline); color: var(--label2); }
+.accents { display: flex; gap: 5px; }
+.accents button { width: 14px; height: 14px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.2); }
+.accents button.on { box-shadow: 0 0 0 2px var(--canvas), 0 0 0 3.5px var(--label3); }
+.page { max-width: 1260px; margin: 0 auto; padding: 32px 24px 120px; }
+section.board { display: none; }
+section.board.on { display: block; animation: appear .3s var(--ease); }
+@keyframes appear { from { opacity: 0; transform: translateY(6px); } }
+.h-board { font: 700 28px/34px var(--font-display); margin: 0 0 8px; letter-spacing: -.01em; }
+.p-board { color: var(--label2); margin: 0 0 28px; max-width: 860px; font-size: 14px; line-height: 22px; }
+.h-sec { font: 600 19px/24px var(--font-display); margin: 44px 0 14px; display: flex; gap: 10px; align-items: baseline; }
+.h-sec small { font: var(--callout); color: var(--label2); font-weight: 400; }
+.sheet-card { background: color-mix(in srgb, var(--canvas) 88%, transparent); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); border-radius: 18px; box-shadow: 0 0 0 .5px var(--sep), 0 10px 30px -12px rgba(0,0,0,.18); padding: 20px; }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(2, minmax(0,1fr)); } .g3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+@media (max-width: 1000px) { .g2, .g3 { grid-template-columns: 1fr; } }
+.cmp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.cmp-head h3 { font: 600 15px/20px var(--font); margin: 0; }
+.cmp-head code { font: 11px var(--mono); color: var(--label2); }
+.stage { min-height: 64px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 18px; border-radius: 12px; background: var(--content); box-shadow: inset 0 0 0 .5px var(--sep); position: relative; }
+.stage.wall { background: var(--wallpaper); background-attachment: fixed; }
+.stage.col { flex-direction: column; align-items: stretch; }
+.spec { width: 100%; border-collapse: collapse; margin-top: 14px; font: var(--callout); }
+.spec th { text-align: left; font: 600 11px/14px var(--font); color: var(--label2); padding: 5px 8px; border-bottom: .5px solid var(--sep); }
+.spec td { padding: 6px 8px; border-bottom: .5px solid var(--sep); color: var(--label2); vertical-align: top; }
+.spec td:first-child { color: var(--label); white-space: nowrap; }
+.spec tr:last-child td { border-bottom: 0; }
+.spec code, .note code, .rules code { font: 11px var(--mono); background: var(--fill); border-radius: 4px; padding: 1px 4px; color: var(--label); }
+.note { font: var(--callout); color: var(--label2); line-height: 18px; }
+.rules { margin: 12px 0 0; padding-left: 18px; font: var(--callout); line-height: 19px; color: var(--label2); }
+.rules li::marker { color: var(--label3); }
+.rules b { color: var(--label); font-weight: 600; }
+.cur-style { font: 600 11px/1 var(--font); padding: 3px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); }
+.fix-list { counter-reset: fx; display: grid; gap: 10px; }
+.fix { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; }
+.fix::before { counter-increment: fx; content: counter(fx); width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font: 700 12px/22px var(--font); text-align: center; }
+.fix b { display: block; font: 600 13px/18px var(--font); }
+.fix span { font: var(--callout); color: var(--label2); line-height: 18px; }
+.fix s { color: var(--label3); }
+.hide { display: none !important; }
+
+/* =====================================================================
+   Controls — content layer (standard, solid)
+   ===================================================================== */
+
+/* Push button ---------------------------------------------------------- */
+.btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: var(--h-btn); padding: 0 12px; min-width: 70px;
+  border-radius: var(--r-btn); border: 0; background: var(--bezel); box-shadow: 0 0 0 .5px var(--bezel-stroke), var(--bezel-shadow);
+  font: var(--body); color: var(--label); cursor: default; white-space: nowrap; user-select: none; transition: filter .12s, transform .12s; }
+.btn:active:not(:disabled) { filter: brightness(.94); }
+[data-theme="dark"] .btn:active:not(:disabled) { filter: brightness(1.25); }
+.btn:focus-visible { outline: 0; box-shadow: 0 0 0 .5px var(--bezel-stroke), var(--focus); }
+.btn:disabled { color: var(--label3); }
+.btn.default { background: var(--accent); color: #fff; box-shadow: 0 .5px 1.5px rgba(0,0,0,.25), inset 0 .5px 0 rgba(255,255,255,.25); }
+[data-style="classic"] .btn.default { background: linear-gradient(to bottom, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent)); }
+.btn.default:disabled { background: var(--fill2); color: var(--label3); box-shadow: none; }
+.btn.destructive { color: var(--red); }
+.btn.lg { height: var(--h-btn-lg); border-radius: var(--r-btn-lg); padding: 0 18px; font-weight: 500; min-width: 96px; }
+.btn.borderless { background: transparent; box-shadow: none; color: var(--accent); min-width: 0; padding: 0 6px; }
+.btn.borderless:hover { background: var(--fill); }
+.btn.icon-only { min-width: 0; width: var(--h-btn); padding: 0; }
+.btn svg { width: 13px; height: 13px; }
+.help-btn { width: 20px; height: 20px; border-radius: 50%; border: 0; background: var(--bezel); box-shadow: 0 0 0 .5px var(--bezel-stroke), var(--bezel-shadow); font: 600 12px/20px var(--font); color: var(--label2); padding: 0; cursor: default; }
+
+/* Pop-up button & pull-down -------------------------------------------- */
+.popup { position: relative; display: inline-block; }
+.popup > button { display: inline-flex; align-items: center; gap: 8px; height: var(--h-btn); min-width: 150px; padding: 0 4px 0 10px; border: 0; border-radius: var(--r-btn);
+  background: var(--bezel); box-shadow: 0 0 0 .5px var(--bezel-stroke), var(--bezel-shadow); font: var(--body); color: var(--label); cursor: default; text-align: left; }
+.popup > button:focus-visible { outline: 0; box-shadow: 0 0 0 .5px var(--bezel-stroke), var(--focus); }
+.popup .val { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+.popup .chev { width: 16px; height: 16px; display: grid; place-items: center; border-radius: 4px; color: var(--label2); flex: none; }
+.popup .chev svg { width: 8px; height: 11px; }
+[data-style="classic"] .popup:not(.borderless):not(.pulldown) .chev { background: var(--accent); color: #fff; }
+[data-style="glass"] .popup > button { padding-right: 6px; }
+.popup.borderless > button { background: transparent; box-shadow: none; min-width: 0; color: var(--label2); padding: 0 4px 0 8px; }
+.popup.borderless > button:hover { background: var(--fill); }
+.popup.pulldown .chev svg { width: 9px; height: 6px; }
+.popup > button.tb-btn, .popup > button.btn { min-width: 0; background: transparent; box-shadow: none; padding: 0 8px; }
+.popup > button.btn { background: var(--bezel); box-shadow: 0 0 0 .5px var(--bezel-stroke), var(--bezel-shadow); }
+[data-style="classic"] .popup > button.tb-btn { padding: 0 6px; }
+
+/* Menu (navigation layer → glass) -------------------------------------- */
+.menu { position: absolute; z-index: 50; min-width: 100%; padding: 5px; border-radius: var(--r-menu); display: none; white-space: nowrap; box-shadow: var(--shadow-menu) !important; }
+[data-style="glass"] .menu { background: var(--g-tint-strong); padding: 6px; }
+.open > .menu { display: block; animation: menuIn .16s var(--ease); }
+@keyframes menuIn { from { opacity: 0; transform: scale(.97); } }
+.mi { display: flex; align-items: center; gap: 6px; height: var(--row-menu); padding: 0 12px 0 6px; border-radius: var(--r-menu-item); font: var(--body); color: var(--label); cursor: default; position: relative; z-index: 3; }
+.mi .ck { width: 14px; flex: none; text-align: center; font-size: 12px; visibility: hidden; }
+.mi.on .ck { visibility: visible; }
+.mi .mic { width: 16px; flex: none; color: var(--label2); display: grid; place-items: center; }
+.mi .mic svg { width: 14px; height: 14px; }
+.mi .ks { margin-left: auto; padding-left: 24px; color: var(--label3); font: var(--body); letter-spacing: .04em; }
+.mi:hover, .mi.kb { background: var(--accent); color: #fff; }
+.mi:hover .mic, .mi.kb .mic, .mi:hover .ks, .mi.kb .ks { color: rgba(255,255,255,.85); }
+.mi.danger { color: var(--red); }
+.mi.danger:hover, .mi.danger.kb { background: var(--red); color: #fff; }
+.mh { font: 600 11px/14px var(--font); color: var(--label2); padding: 6px 12px 3px 26px; position: relative; z-index: 3; }
+.ms { height: 1px; background: var(--sep); margin: 5px 10px; position: relative; z-index: 3; }
+
+/* Text field ------------------------------------------------------------ */
+.field { height: var(--h-field); padding: 0 7px; border: 0; border-radius: var(--r-field); background: var(--control); box-shadow: inset 0 0 0 .5px var(--bezel-stroke), inset 0 .5px 1px rgba(0,0,0,.06); outline: 0; font: var(--body); color: var(--label); width: 100%; }
+[data-style="glass"] .field { background: var(--fill); box-shadow: none; padding: 0 10px; }
+.field:focus { box-shadow: inset 0 0 0 .5px var(--bezel-stroke), var(--focus); }
+.field::placeholder { color: var(--label3); }
+.field.invalid { box-shadow: inset 0 0 0 1px var(--red); }
+.field.mono { font: 12px var(--mono); }
+
+/* Segmented control (sliding thumb) ------------------------------------ */
+.seg { position: relative; display: inline-flex; height: var(--h-seg); padding: 2px; border-radius: var(--r-seg); background: var(--fill2); isolation: isolate; flex: none; }
+.seg button { position: relative; z-index: 2; border: 0; background: transparent; padding: 0 12px; font: var(--body); color: var(--label); cursor: default; border-radius: calc(var(--r-seg) - 2px); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.seg button + button::before { content: ""; position: absolute; left: 0; top: 25%; bottom: 25%; width: 1px; background: var(--sep); transition: opacity .15s; }
+.seg button.on::before, .seg button.on + button::before { opacity: 0; }
+[data-style="glass"] .seg button + button::before { display: none; }
+.seg .thumb { position: absolute; z-index: 1; top: 2px; bottom: 2px; border-radius: calc(var(--r-seg) - 2px); background: var(--bezel); box-shadow: 0 0 0 .5px var(--bezel-stroke), 0 1px 3px rgba(0,0,0,.14); transition: left .32s var(--spring), width .32s var(--spring); }
+[data-theme="dark"] .seg .thumb { background: rgba(255,255,255,.22); }
+.seg .n { color: var(--label2); font: var(--subheadline); }
+.seg.sm { height: calc(var(--h-seg) - 4px); } .seg.sm button { font: var(--callout); padding: 0 9px; }
+.seg.icons button { padding: 0 9px; } .seg.icons svg { width: 14px; height: 14px; }
+
+/* Switch ---------------------------------------------------------------- */
+.sw { position: relative; width: var(--sw-w); height: var(--sw-h); border-radius: 99px; border: 0; padding: 0; background: var(--fill3); cursor: default; flex: none; transition: background .2s; }
+.sw .knob { position: absolute; top: calc((var(--sw-h) - var(--knob-h)) / 2); left: calc((var(--sw-h) - var(--knob-h)) / 2); width: var(--knob-w); height: var(--knob-h); border-radius: 99px; background: #fff;
+  box-shadow: 0 1px 2.5px rgba(0,0,0,.28), 0 0 0 .5px rgba(0,0,0,.06); transition: transform .3s var(--spring), width .2s var(--ease); }
+.sw[aria-checked="true"] { background: var(--accent); }
+.sw[aria-checked="true"] .knob { transform: translateX(calc(var(--sw-w) - var(--knob-w) - (var(--sw-h) - var(--knob-h)))); }
+[data-style="glass"] .sw:active .knob { width: calc(var(--knob-w) + 6px); background: rgba(255,255,255,.55); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); box-shadow: inset 0 0 0 .5px rgba(255,255,255,.9), 0 3px 10px rgba(0,0,0,.25); }
+[data-style="glass"] .sw[aria-checked="true"]:active .knob { transform: translateX(calc(var(--sw-w) - var(--knob-w) - 6px - (var(--sw-h) - var(--knob-h)))); }
+.sw:disabled { opacity: .45; }
+.sw:focus-visible { outline: 0; box-shadow: var(--focus); }
+
+/* Checkbox & radio ------------------------------------------------------ */
+.check { display: inline-flex; align-items: center; gap: 6px; cursor: default; font: var(--body); user-select: none; }
+.check .box { width: var(--cb); height: var(--cb); border-radius: var(--cb-r); background: var(--bezel); box-shadow: 0 0 0 .5px var(--bezel-stroke), var(--bezel-shadow); display: grid; place-items: center; flex: none; }
+.check .box svg { width: 70%; height: 70%; opacity: 0; color: #fff; }
+.check.on .box { background: var(--accent); box-shadow: inset 0 .5px 0 rgba(255,255,255,.25), 0 .5px 1px rgba(0,0,0,.2); }
+.check.on .box svg { opacity: 1; }
+.check .box.radio { border-radius: 50%; }
+.check.on .box.radio::after { content: ""; width: 38%; height: 38%; border-radius: 50%; background: #fff; }
+
+/* Slider ---------------------------------------------------------------- */
+.slider { -webkit-appearance: none; appearance: none; width: 200px; height: 20px; background: transparent; margin: 0; --p: 50%; cursor: default; }
+.slider::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(to right, var(--accent) var(--p), var(--fill3) var(--p)); }
+[data-style="glass"] .slider::-webkit-slider-runnable-track { height: 6px; }
+.slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 0 0 .5px rgba(0,0,0,.08); transition: width .15s, transform .15s; }
+[data-style="glass"] .slider::-webkit-slider-thumb { width: 28px; height: 18px; border-radius: 99px; margin-top: -6px; }
+[data-style="glass"] .slider:active::-webkit-slider-thumb { transform: scale(1.25); background: rgba(255,255,255,.6); box-shadow: inset 0 0 0 .5px #fff, 0 4px 12px rgba(0,0,0,.25); }
+.slider::-moz-range-track { height: 4px; border-radius: 4px; background: var(--fill3); }
+.slider::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--accent); }
+.slider::-moz-range-thumb { width: 18px; height: 18px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.ticks { display: flex; justify-content: space-between; font: var(--subheadline); color: var(--label2); width: 200px; }
+
+/* Progress -------------------------------------------------------------- */
+.spinner { width: 16px; height: 16px; position: relative; animation: spin 1s steps(12) infinite; }
+.spinner i { position: absolute; left: 7px; top: 0; width: 2px; height: 5px; border-radius: 1px; background: var(--label2); transform-origin: 1px 8px; }
+.spinner i:nth-child(1){transform:rotate(0deg);opacity:1}.spinner i:nth-child(2){transform:rotate(30deg);opacity:.92}.spinner i:nth-child(3){transform:rotate(60deg);opacity:.84}.spinner i:nth-child(4){transform:rotate(90deg);opacity:.76}.spinner i:nth-child(5){transform:rotate(120deg);opacity:.68}.spinner i:nth-child(6){transform:rotate(150deg);opacity:.6}.spinner i:nth-child(7){transform:rotate(180deg);opacity:.52}.spinner i:nth-child(8){transform:rotate(210deg);opacity:.44}.spinner i:nth-child(9){transform:rotate(240deg);opacity:.36}.spinner i:nth-child(10){transform:rotate(270deg);opacity:.28}.spinner i:nth-child(11){transform:rotate(300deg);opacity:.2}.spinner i:nth-child(12){transform:rotate(330deg);opacity:.14}
+@keyframes spin { to { transform: rotate(360deg); } }
+.bar { width: 200px; height: 6px; border-radius: 6px; background: var(--fill2); overflow: hidden; }
+[data-style="classic"] .bar { height: 5px; }
+.bar i { display: block; height: 100%; width: 62%; border-radius: inherit; background: var(--accent); }
+
+/* Status, tags, tokens -------------------------------------------------- */
+.status { display: inline-flex; align-items: center; gap: 6px; font: var(--callout); color: var(--label2); white-space: nowrap; }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--label3); }
+.status.ok i { background: var(--green); } .status.warn i { background: var(--orange); } .status.err i { background: var(--red); }
+.status.off i { background: transparent; box-shadow: inset 0 0 0 1.2px var(--label3); }
+.tag { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 5px; font: 500 11px/18px var(--font); background: var(--fill2); color: var(--label2); white-space: nowrap; }
+[data-style="glass"] .tag { border-radius: 99px; }
+.tag.accent { background: var(--accent-soft); color: var(--accent); }
+.tag.green { background: color-mix(in srgb, var(--green) 16%, transparent); color: color-mix(in srgb, var(--green) 75%, var(--label)); }
+.tag.orange { background: color-mix(in srgb, var(--orange) 16%, transparent); color: color-mix(in srgb, var(--orange) 80%, var(--label)); }
+.tag.purple { background: color-mix(in srgb, var(--purple) 15%, transparent); color: var(--purple); }
+.token { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 4px 0 8px; border-radius: 4px; background: var(--accent-soft); color: var(--label); font: var(--body); }
+[data-style="glass"] .token { border-radius: 99px; height: 22px; padding-left: 10px; }
+.token .x { width: 14px; height: 14px; border-radius: 50%; display: grid; place-items: center; color: var(--label2); cursor: default; }
+.token .x:hover { background: var(--fill2); }
+.token .x svg { width: 7px; height: 7px; }
+.kbd { display: inline-flex; align-items: center; height: 18px; padding: 0 5px; border-radius: 4px; font: 500 11px/1 var(--font); color: var(--label2); background: var(--fill); box-shadow: inset 0 0 0 .5px var(--sep); }
+
+/* Grouped form (System Settings) ---------------------------------------- */
+.form { display: flex; flex-direction: column; gap: 6px; }
+.form-h { font: var(--headline); margin: 18px 2px 6px; display: flex; justify-content: space-between; align-items: center; }
+.form-h:first-child { margin-top: 0; }
+.form-f { font: var(--subheadline); color: var(--label2); margin: 2px 10px 0; line-height: 15px; }
+.group { background: var(--group); border-radius: var(--r-group); box-shadow: inset 0 0 0 .5px var(--group-stroke); }
+.row { display: flex; align-items: center; gap: 12px; min-height: var(--row-form); padding: 6px 10px; position: relative; }
+[data-style="glass"] .row { padding: 6px 14px; }
+.row + .row::before { content: ""; position: absolute; top: 0; left: 10px; right: 10px; height: 1px; background: var(--sep); transform: scaleY(.5); }
+[data-style="glass"] .row + .row::before { left: 14px; right: 14px; }
+.row .lab { flex: 1; min-width: 0; }
+.row .lab .t { font: var(--body); }
+.row .lab .d { font: var(--subheadline); color: var(--label2); margin-top: 2px; line-height: 14px; }
+.row .acc { display: flex; align-items: center; gap: 8px; flex: none; color: var(--label2); }
+.row.nav { cursor: default; }
+.row.nav:hover { background: var(--fill); }
+.group > .row.nav:first-child { border-radius: var(--r-group) var(--r-group) 0 0; } .group > .row.nav:last-child { border-radius: 0 0 var(--r-group) var(--r-group); }
+.group > .row.nav:only-child { border-radius: var(--r-group); }
+.row .ico { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; flex: none; color: #fff; }
+[data-style="glass"] .row .ico { border-radius: 7px; }
+.row .ico svg { width: 14px; height: 14px; }
+.chev-r { width: 7px; height: 12px; color: var(--label3); }
+
+/* Table (NSTableView inset) ---------------------------------------------- */
+.table { width: 100%; border-collapse: separate; border-spacing: 0; font: var(--body); }
+.table th { text-align: left; font: var(--subheadline); color: var(--label2); padding: 0 10px; height: 26px; border-bottom: .5px solid var(--sep); white-space: nowrap; cursor: default; }
+.table th.sortable:hover { color: var(--label); }
+.table th .dir { display: inline-block; margin-left: 4px; font-size: 9px; }
+.table td { padding: 0 10px; height: var(--row-table); white-space: nowrap; }
+.table tbody tr:nth-child(even) td { background: var(--alt-row); }
+.table tbody tr td:first-child { border-radius: var(--r-row) 0 0 var(--r-row); } .table tbody tr td:last-child { border-radius: 0 var(--r-row) var(--r-row) 0; }
+.table tbody tr.sel td { background: var(--accent); color: #fff; }
+.table tbody tr.sel td .tag { background: rgba(255,255,255,.22); color: #fff; }
+.table tbody tr.sel td.dim { color: rgba(255,255,255,.8); }
+.table td.dim { color: var(--label2); font: var(--callout); }
+.table .row-act { opacity: 0; }
+.table tr:hover .row-act, .table tr.sel .row-act { opacity: 1; }
+.table tr.sel .row-act { color: #fff !important; }
+
+/* Empty state (ContentUnavailableView) ---------------------------------- */
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px; padding: 40px 20px; }
+.empty .sym { width: 40px; height: 40px; color: var(--label3); margin-bottom: 8px; }
+.empty h5 { font: 600 15px/20px var(--font); margin: 0; }
+.empty p { font: var(--body); color: var(--label2); margin: 0 0 10px; max-width: 300px; line-height: 18px; }
+
+/* =====================================================================
+   Navigation layer — toolbar, sidebar, search, popover, sheet, HUD
+   ===================================================================== */
+
+/* Toolbar items: Tahoe groups them in glass capsules, Sequoia draws borderless items */
+.tb-group { position: relative; display: inline-flex; align-items: center; height: var(--h-tb); border-radius: var(--r-tb); padding: 0 2px; flex: none; }
+.tb-btn { position: relative; z-index: 3; height: var(--h-tb); min-width: var(--h-tb); padding: 0 8px; border: 0; background: transparent; color: var(--label); display: inline-flex; align-items: center; justify-content: center; gap: 5px; border-radius: var(--r-tb); cursor: default; font: var(--body); }
+.tb-btn svg { width: 16px; height: 16px; }
+.tb-btn:hover { background: var(--fill); }
+.tb-btn:active { background: var(--fill2); }
+.tb-btn.on { color: var(--accent); }
+[data-style="glass"] .tb-group .tb-btn { height: calc(var(--h-tb) - 4px); min-width: calc(var(--h-tb) - 4px); }
+[data-style="glass"] .tb-group.prominent { background: var(--accent); }
+[data-style="glass"] .tb-group.prominent .tb-btn { color: #fff; }
+[data-style="classic"] .tb-group { background: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; padding: 0; gap: 2px; }
+[data-style="classic"] .tb-group::before, [data-style="classic"] .tb-group::after { display: none; }
+[data-style="classic"] .tb-btn { height: 24px; min-width: 28px; padding: 0 6px; color: var(--label2); }
+[data-style="classic"] .tb-btn:hover { background: var(--fill2); color: var(--label); }
+[data-style="classic"] .tb-btn.on { color: var(--accent); }
+
+/* Collapsible toolbar search (NSSearchToolbarItem / .searchable(placement: .toolbar)) */
+.tsearch { position: relative; display: inline-flex; align-items: center; height: var(--h-search-tb); width: var(--h-search-tb); border-radius: var(--r-search); flex: none;
+  transition: width .44s var(--spring), background .2s, box-shadow .2s; }
+.tsearch .ts-ico { position: relative; z-index: 3; flex: none; width: var(--h-search-tb); height: var(--h-search-tb); border: 0; background: transparent; display: grid; place-items: center; color: var(--label); cursor: default; border-radius: inherit; padding: 0; transition: width .3s var(--ease); }
+.tsearch .ts-ico svg { width: 15px; height: 15px; }
+.tsearch input { position: relative; z-index: 3; flex: 1; min-width: 0; width: 0; border: 0; outline: 0; background: transparent; font: var(--body); color: var(--label); opacity: 0; transition: opacity .18s; padding: 0; }
+.tsearch input::placeholder { color: var(--label3); }
+.tsearch .ts-clear { position: relative; z-index: 3; flex: none; width: 16px; height: 16px; margin-right: 10px; border: 0; padding: 0; border-radius: 50%; background: var(--label3); color: var(--canvas); display: none; place-items: center; cursor: default; }
+.tsearch .ts-clear svg { width: 7px; height: 7px; }
+.tsearch.open { width: var(--w-search); }
+.tsearch.open input { opacity: 1; }
+.tsearch.open.filled .ts-clear { display: grid; }
+.tsearch.open .ts-ico { width: 32px; color: var(--label2); }
+[data-style="glass"] .tsearch:not(.open) .ts-ico:hover { background: var(--fill); }
+[data-style="glass"] .tsearch.open.focused { box-shadow: inset 0 0 0 .5px var(--g-outline), var(--g-shadow), var(--focus); }
+[data-style="classic"] .tsearch { height: 24px; width: 28px; border-radius: 5px; }
+[data-style="classic"] .tsearch .ts-ico { width: 28px; height: 24px; color: var(--label2); }
+[data-style="classic"] .tsearch:not(.open):hover { background: var(--fill2); }
+[data-style="classic"] .tsearch.open { width: var(--w-search); background: var(--control); box-shadow: inset 0 0 0 .5px var(--bezel-stroke); border-radius: 6px; }
+[data-style="classic"] .tsearch.open.focused { box-shadow: inset 0 0 0 .5px var(--bezel-stroke), var(--focus); }
+[data-style="classic"] .tsearch.open .ts-ico { width: 24px; }
+[data-style="classic"] .tsearch .ts-clear { width: 14px; height: 14px; margin-right: 5px; }
+
+/* Inline search field — only inside menus, popovers and pickers */
+.isearch { display: flex; align-items: center; gap: 5px; height: var(--h-field); padding: 0 8px; border-radius: var(--r-search); background: var(--fill); color: var(--label2); }
+.isearch svg { width: 12px; height: 12px; flex: none; }
+.isearch input { flex: 1; border: 0; outline: 0; background: transparent; font: var(--body); color: var(--label); min-width: 0; }
+.isearch:focus-within { box-shadow: var(--focus); }
+
+/* Tooltip — native help tag: light, small radius, no arrow */
+#tip { position: fixed; z-index: 99; pointer-events: none; padding: 3px 7px; border-radius: 4px; font: var(--subheadline); background: var(--tooltip-bg); color: var(--tooltip-fg); box-shadow: 0 2px 8px rgba(0,0,0,.18), 0 0 0 .5px rgba(0,0,0,.12); opacity: 0; transition: opacity .12s; white-space: nowrap; }
+[data-style="glass"] #tip { border-radius: 8px; padding: 4px 9px; }
+#tip.on { opacity: 1; }
+
+/* Popover */
+.popover { position: absolute; z-index: 45; width: 260px; padding: 14px; border-radius: var(--r-popover); display: none; box-shadow: var(--shadow-menu) !important; }
+[data-style="glass"] .popover { background: var(--g-tint-strong); }
+.open > .popover { display: block; animation: menuIn .18s var(--ease); }
+.popover > * { position: relative; z-index: 3; }
+
+/* HUD */
+.hud { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%) scale(.96); z-index: 90; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px 0 14px; border-radius: 99px; font: 500 13px/1 var(--font); opacity: 0; pointer-events: none; transition: opacity .2s, transform .3s var(--spring); }
+.hud.on { opacity: 1; transform: translateX(-50%) scale(1); }
+.hud svg { width: 16px; height: 16px; color: var(--green); position: relative; z-index: 3; }
+.hud span { position: relative; z-index: 3; }
+[data-style="glass"] .hud { background: var(--g-tint-strong); }
+[data-style="classic"] .hud { border-radius: 12px; height: 44px; background: rgba(40,40,40,.82); color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+
+/* Sheet & alert */
+.scrim { position: fixed; inset: 0; z-index: 80; display: none; place-items: center; background: rgba(0,0,0,.18); }
+.scrim.on { display: grid; animation: appear .2s; }
+.sheet { position: relative; width: 440px; border-radius: var(--r-sheet); overflow: hidden; box-shadow: var(--shadow-win) !important; }
+[data-style="classic"] .sheet { background: var(--win); }
+[data-style="glass"] .sheet { background: var(--g-tint-strong); }
+[data-style="glass"][data-theme="light"] .sheet { background: rgba(252,252,253,.9); }
+.sheet > * { position: relative; z-index: 3; }
+.sheet .s-body { padding: 20px 20px 4px; display: flex; flex-direction: column; gap: 12px; }
+.sheet h3 { font: var(--headline); margin: 0; }
+[data-style="glass"] .sheet h3 { font: 600 15px/20px var(--font); }
+.sheet .s-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 20px 20px; }
+.form2 { display: grid; grid-template-columns: 84px 1fr; gap: 10px 10px; align-items: center; }
+.form2 > label { text-align: right; font: var(--body); color: var(--label); }
+.alert { width: 260px; padding: 20px 16px 16px; text-align: center; }
+.alert .a-ico { width: 64px; height: 64px; margin: 0 auto 10px; }
+.alert h3 { margin: 0 0 6px; }
+.alert p { font: var(--subheadline); margin: 0 0 16px; color: var(--label); line-height: 14px; }
+.alert .a-btns { display: flex; gap: 8px; } .alert .a-btns .btn { flex: 1; min-width: 0; }
+[data-style="glass"] .alert { width: 340px; text-align: left; padding: 22px; }
+[data-style="glass"] .alert .a-ico { width: 48px; height: 48px; margin: 0 0 12px; }
+[data-style="glass"] .alert p { font: var(--body); color: var(--label2); line-height: 18px; }
+[data-style="glass"] .alert .a-btns { justify-content: flex-end; }
+[data-style="glass"] .alert .a-btns .btn { flex: none; height: 30px; border-radius: 99px; padding: 0 16px; }
+
+/* =====================================================================
+   Window chrome
+   ===================================================================== */
+.win { position: relative; display: flex; border-radius: var(--r-window); overflow: hidden; background: var(--canvas); box-shadow: var(--shadow-win); }
+.traffic { position: absolute; z-index: 20; left: 20px; top: 19px; display: flex; gap: 8px; }
+.traffic i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.12); }
+.traffic i:nth-child(2) { background: #febc2e; } .traffic i:nth-child(3) { background: #28c840; }
+[data-style="glass"] .traffic { left: 24px; top: 24px; }
+
+/* Sidebar */
+.side { position: relative; z-index: 10; width: 220px; flex: none; display: flex; flex-direction: column; padding: 52px 10px 10px; outline: 0; }
+[data-style="classic"] .side { background: var(--sidebar) !important; -webkit-backdrop-filter: blur(30px) saturate(170%); backdrop-filter: blur(30px) saturate(170%); box-shadow: inset -.5px 0 0 var(--sep) !important; }
+[data-style="glass"] .side { margin: 8px 0 8px 8px; border-radius: 18px; padding: 52px 8px 8px; }
+.side > * { position: relative; z-index: 3; }
+.side-h { font: 600 11px/14px var(--font); color: var(--label2); padding: 12px 10px 5px; }
+.nav { display: flex; align-items: center; gap: 8px; height: var(--row-side); padding: 0 8px; border-radius: var(--r-row); font: var(--body); cursor: default; color: var(--label); flex: none; }
+.nav .ni { width: 18px; display: grid; place-items: center; color: var(--accent); flex: none; }
+.nav .ni svg { width: 16px; height: 16px; }
+.nav .cnt { margin-left: auto; color: var(--label2); font: var(--callout); }
+.nav.on { background: var(--fill2); }
+.side.focused .nav.on { background: var(--accent); color: #fff; }
+.side.focused .nav.on .ni, .side.focused .nav.on .cnt { color: #fff; }
+.side .foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: var(--r-row); }
+.side .foot:hover { background: var(--fill); }
+.avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #9aa8bd, #6b7790); color: #fff; display: grid; place-items: center; font: 600 12px/1 var(--font); flex: none; }
+
+/* Content + toolbar */
+.main { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--canvas); }
+.toolbar { position: absolute; z-index: 15; left: 0; right: 0; top: 0; height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 20px; }
+[data-style="glass"] .toolbar { top: 8px; padding: 0 16px 0 24px; }
+[data-style="classic"] .toolbar { background: var(--canvas); box-shadow: inset 0 -.5px 0 var(--sep); }
+.toolbar .title { font: 700 15px/20px var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toolbar .flex { flex: 1; }
+.toolbar .center { position: absolute; left: 50%; transform: translateX(-50%); }
+/* Tahoe scroll-edge effect: content blurs and fades as it slides under the toolbar */
+[data-style="glass"] .main::before { content: ""; position: absolute; z-index: 14; left: 0; right: 0; top: 0; height: 74px; pointer-events: none;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  -webkit-mask: linear-gradient(to bottom, #000 45%, transparent); mask: linear-gradient(to bottom, #000 45%, transparent);
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--canvas) 70%, transparent), transparent); }
+.scroll { flex: 1; overflow: auto; padding: 64px 28px 28px; }
+[data-style="glass"] .scroll { padding-top: 76px; }
+.scroll .narrow { max-width: 640px; margin: 0 auto; }
+
+/* Library (list in the glass sidebar, Messages-style) */
+.lib-side { width: 300px; }
+.lib-item { padding: 8px 10px; border-radius: var(--r-row); cursor: default; }
+.lib-item + .lib-item { margin-top: 1px; }
+.lib-item .t { font: var(--headline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib-item .s { font: var(--callout); color: var(--label2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib-item .s b { color: var(--label); font-weight: 400; margin-right: 6px; }
+.lib-item.on { background: var(--fill2); }
+.lib-side.focused .lib-item.on { background: var(--accent); color: #fff; }
+.lib-side.focused .lib-item.on .s, .lib-side.focused .lib-item.on .s b { color: rgba(255,255,255,.85); }
+.doc { max-width: 680px; margin: 0 auto; font: 15px/1.6 var(--font); }
+.doc h2 { font: 700 22px/28px var(--font-display); margin: 0 0 4px; }
+.doc .meta { font: var(--callout); color: var(--label2); margin-bottom: 18px; }
+.doc li { margin: 4px 0; }
+.doc code { font: 13px var(--mono); background: var(--fill); border-radius: 4px; padding: 1px 4px; }
+
+/* Spotlight-style panel (launcher / clipboard / ⌘K) */
+.desk { position: relative; border-radius: 18px; background: var(--wallpaper); background-attachment: fixed; padding: 56px 24px 72px; display: flex; justify-content: center; overflow: hidden; box-shadow: inset 0 0 0 .5px var(--sep); min-height: 560px; }
+.desk .faux-win { position: absolute; left: 6%; top: 40px; width: 46%; height: 70%; border-radius: var(--r-window); background: var(--content); box-shadow: var(--shadow-win); padding: 50px 24px; font: 15px/1.7 var(--font); color: var(--label2); overflow: hidden; }
+.desk .faux-win b { color: var(--label); }
+.spot { position: relative; z-index: 2; width: 680px; max-width: 100%; display: flex; flex-direction: column; gap: 10px; align-self: flex-start; }
+.spot-bar { display: flex; align-items: center; gap: 10px; }
+.spot-field { position: relative; flex: 1; display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 20px; border-radius: 28px; }
+.spot-field > * { position: relative; z-index: 3; }
+.spot-field svg { width: 20px; height: 20px; color: var(--label2); flex: none; }
+.spot-field input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: 400 21px/26px var(--font-display); color: var(--label); }
+.spot-field input::placeholder { color: var(--label3); }
+.spot-modes { display: flex; gap: 8px; }
+.spot-mode { position: relative; width: 56px; height: 56px; border-radius: 50%; border: 0; display: grid; place-items: center; color: var(--label); cursor: default; padding: 0; }
+.spot-mode svg { position: relative; z-index: 3; width: 20px; height: 20px; }
+[data-style="glass"] .spot-mode.on { background: var(--accent); color: #fff; }
+.spot-results { position: relative; border-radius: 24px; padding: 8px; }
+[data-style="glass"] .spot-results { background: var(--g-tint-strong); }
+.spot-results > * { position: relative; z-index: 3; }
+.spot-sec { font: 600 11px/14px var(--font); color: var(--label2); padding: 8px 12px 4px; }
+.spot-row { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 14px; cursor: default; }
+.spot-row .ri { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--fill2); color: var(--label2); }
+.spot-row .ri svg { width: 16px; height: 16px; }
+.spot-row .rt { flex: 1; min-width: 0; font: 400 14px/18px var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spot-row .rm { font: var(--callout); color: var(--label2); white-space: nowrap; }
+.spot-row.on { background: var(--accent); color: #fff; }
+.spot-row.on .rm { color: rgba(255,255,255,.8); }
+.spot-row.on .ri { background: rgba(255,255,255,.22); color: #fff; }
+.spot-foot { display: flex; gap: 16px; padding: 10px 12px 4px; font: var(--subheadline); color: var(--label2); border-top: .5px solid var(--sep); margin-top: 6px; }
+.spot-foot .r { margin-left: auto; display: flex; gap: 16px; }
+[data-style="classic"] .spot { gap: 0; width: 640px; border-radius: 12px; overflow: hidden; background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(170%); backdrop-filter: blur(30px) saturate(170%); box-shadow: var(--shadow-menu); }
+[data-style="classic"] .spot-field { height: 52px; border-radius: 0; background: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+[data-style="classic"] .spot-field input { font-size: 20px; }
+[data-style="classic"] .spot-modes { padding-right: 10px; gap: 2px; }
+[data-style="classic"] .spot-mode { width: 30px; height: 26px; border-radius: 6px; background: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; color: var(--label2); }
+[data-style="classic"] .spot-mode svg { width: 16px; height: 16px; }
+[data-style="classic"] .spot-mode:hover { background: var(--fill2) !important; }
+[data-style="classic"] .spot-mode.on { color: var(--accent); background: var(--accent-soft) !important; }
+[data-style="classic"] .spot-results { border-radius: 0; background: transparent !important; box-shadow: inset 0 .5px 0 var(--sep) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; padding: 6px; }
+[data-style="classic"] .spot-row { height: 34px; border-radius: 6px; }
+[data-style="classic"] .spot-row .ri { width: 22px; height: 22px; border-radius: 5px; }
+[data-style="classic"] .spot-row .rt { font-size: 13px; }
+
+/* Foundation readouts */
+.swatch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.sw-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.sw-chip { height: 44px; border-radius: 10px; box-shadow: inset 0 0 0 .5px var(--sep); }
+.sw-cell b { font: 600 11px/14px var(--font); }
+.sw-cell span { font: 10px var(--mono); color: var(--label2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.type-row { display: grid; grid-template-columns: 140px 1fr 220px; gap: 16px; align-items: baseline; padding: 9px 0; border-bottom: .5px solid var(--sep); }
+.type-row:last-child { border-bottom: 0; }
+.type-row code { font: 11px var(--mono); color: var(--label2); }
+.dims { display: grid; grid-template-columns: auto 1fr 1fr; font: var(--callout); }
+.dims > div { padding: 6px 10px; border-bottom: .5px solid var(--sep); }
+.dims > div.h { font: 600 11px/14px var(--font); color: var(--label2); }
+.dims > div.v { font: 11.5px var(--mono); color: var(--label2); }
+.dims > div.v.cur { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- SF Symbols-like glyphs drawn at 16pt -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="6.8" cy="6.8" r="4.9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10.4 10.4 4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 2.5v11M2.5 8h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-x" viewBox="0 0 16 16"><path d="m3 3 10 10M13 3 3 13" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="m3 8.5 3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-updown" viewBox="0 0 8 12"><path d="m1.5 4.3 2.5-2.6 2.5 2.6M1.5 7.7 4 10.3l2.5-2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 9 6"><path d="m1 1.2 3.5 3.5L8 1.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-right" viewBox="0 0 7 12"><path d="m1.5 1.5 4 4.5-4 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-left" viewBox="0 0 16 16"><path d="m10 3-5 5 5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-fwd" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-more" viewBox="0 0 16 16"><circle cx="3" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="13" cy="8" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4.8 6h6.4M5.9 8.2h4.2M7 10.4h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+    <symbol id="i-share" viewBox="0 0 16 16"><path d="M8 1.8v8.4M5.2 4.5 8 1.8l2.8 2.7M4.5 7H3.6v7h8.8V7h-.9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-import" viewBox="0 0 16 16"><path d="M8 1.8v8.4M5.2 7.5 8 10.2l2.8-2.7M3.6 10v4h8.8v-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 16 16"><path d="M2.5 4h11M6 4V2.6h4V4M4 4l.7 9.4h6.6L12 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-sidebar" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 2.8v10.4" stroke="currentColor" stroke-width="1.3"/></symbol>
+    <symbol id="i-compose" viewBox="0 0 16 16"><path d="M13 9v3.5a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 2 12.5v-8A1.5 1.5 0 0 1 3.5 3H7" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="m12.3 1.8 1.9 1.9-6 6-2.6.7.7-2.6z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 16 16"><path d="m8 1.8 1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-book" viewBox="0 0 16 16"><path d="M2 3c2-.9 4-.9 6 .4 2-1.3 4-1.3 6-.4v10c-2-.9-4-.9-6 .4-2-1.3-4-1.3-6-.4z M8 3.4v10" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 1.8V4M9.5 1.8V4M6.5 12v2.2M9.5 12v2.2M1.8 6.5H4M1.8 9.5H4M12 6.5h2.2M12 9.5h2.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 4.5V8l2.4 1.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+    <symbol id="i-keyboard" viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4 7h.01M6.5 7h.01M9 7h.01M11.5 7h.01M5 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 16 16"><path d="M4 1.8h5.2L12.5 5v9.2H4z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 1.8V5.2h3.4M6 8h4.5M6 10.5h4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 16 16"><rect x="1.8" y="3" width="12.4" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="5.6" cy="6.4" r="1.2" fill="currentColor"/><path d="m2.5 12 3.8-3.6 2.6 2.4 2-1.8 3 2.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+    <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.8 9.2a2.8 2.8 0 0 0 4 0l2.2-2.2a2.8 2.8 0 0 0-4-4l-1 1M9.2 6.8a2.8 2.8 0 0 0-4 0L3 9a2.8 2.8 0 0 0 4 4l1-1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-scissors" viewBox="0 0 16 16"><circle cx="4" cy="4.5" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="4" cy="11.5" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="m5.6 5.7 8.4 7M5.6 10.3 14 3.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 16 16"><rect x="3" y="2.8" width="10" height="11.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="5.6" y="1.5" width="4.8" height="2.6" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 16 16"><path d="M8 1.5c.5 3.2 1.5 4.6 5 5-3.5.5-4.5 1.8-5 5-.5-3.2-1.5-4.5-5-5 3.5-.4 4.5-1.8 5-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 16 16"><rect x="5" y="5" width="9" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 16 16"><path d="m11.3 2.3 2.4 2.4-8.4 8.4-3.1.7.7-3.1z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+    <symbol id="i-list" viewBox="0 0 16 16"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 64 64"><path d="M32 6 60 56H4z" fill="#ffcc00" stroke="#d9a400" stroke-width="2" stroke-linejoin="round"/><path d="M32 22v18" stroke="#3a2a00" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="47.5" r="3.2" fill="#3a2a00"/></symbol>
+    <symbol id="i-checkfill" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="m4.8 8.2 2.2 2.2 4.2-4.6" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<!-- ================= Board chrome ================= -->
+<div class="board-bar">
+  <h1>Typeflux UI System <small>v2 · Apple 原生 · GUL-342</small></h1>
+  <nav class="board-nav" id="boardNav">
+    <a href="#principles" data-sec="principles" class="on">① 原则</a>
+    <a href="#foundation" data-sec="foundation">② 基础</a>
+    <a href="#controls" data-sec="controls">③ 控件</a>
+    <a href="#navlayer" data-sec="navlayer">④ 导航层</a>
+    <a href="#windows" data-sec="windows">⑤ 页面</a>
+    <a href="#build" data-sec="build">⑥ 实现</a>
+  </nav>
+  <div class="board-ctrls">
+    <span class="lbl">形态</span>
+    <div class="seg sm" id="styleSeg"><button data-v="classic">传统</button><button data-v="glass" class="on">Liquid Glass</button></div>
+    <span class="lbl">外观</span>
+    <div class="seg sm" id="themeSeg"><button data-v="light" class="on">浅色</button><button data-v="dark">深色</button></div>
+    <span class="lbl">强调色</span>
+    <div class="accents" id="accents">
+      <button data-v="blue" class="on" style="background:#007aff" data-tip="蓝色（默认）"></button><button data-v="purple" style="background:#a550a7" data-tip="紫色"></button><button data-v="pink" style="background:#f74f9e" data-tip="粉色"></button><button data-v="red" style="background:#ff5257" data-tip="红色"></button><button data-v="orange" style="background:#f7821b" data-tip="橙色"></button><button data-v="yellow" style="background:#ffc600" data-tip="黄色"></button><button data-v="green" style="background:#62ba46" data-tip="绿色"></button><button data-v="graphite" style="background:#8c8c8c" data-tip="石墨色"></button>
+    </div>
+  </div>
+</div>
+
+<main class="page">
+
+<!-- ================================================================ ① -->
+<section class="board on" id="principles">
+  <h2 class="h-board">让 Typeflux 看起来就是一个 Mac 原生应用</h2>
+  <p class="p-board">两种形态对应 Typeflux 实际运行的两代系统：<b>传统 = macOS 15 Sequoia 原生外观</b>（也是 macOS 13–15 用户看到的样子），<b>Liquid Glass = macOS 26 Tahoe 原生外观</b>。所有尺寸、圆角、材质都以这两代系统自带应用（访达、备忘录、信息、系统设置、聚焦）为准，不再自创风格。右上角可以切换形态、外观，以及跟随系统的强调色。</p>
+
+  <div class="grid g2">
+    <div class="sheet-card">
+      <div class="cmp-head"><h3>五条原则</h3></div>
+      <div class="fix-list">
+        <div class="fix"><div><b>玻璃只用在导航层</b><span>按 HIG 的要求，Liquid Glass 只用于浮在内容之上的那一层：工具栏、侧栏、菜单、弹出框、浮动面板、弹窗。内容层使用实底和标准控件，保证可读性。</span></div></div>
+        <div class="fix"><div><b>优先用系统控件，不要自己画</b><span>按钮、弹出菜单、开关、分段、表单、表格、工具栏搜索都直接用 SwiftUI/AppKit 原生控件。在 macOS 26 上它们会自动呈现 Tahoe 外观，在 13–15 上自动呈现 Sequoia 外观。只有聚焦式浮动面板和 HUD 这类系统里没有现成控件的界面才自己绘制。</span></div></div>
+        <div class="fix"><div><b>系统语义色与文字样式</b><span>颜色使用 <code>labelColor</code>、<code>separatorColor</code> 等语义色，强调色跟随用户在“系统设置”里的选择。字号直接用 <code>.body</code>、<code>.headline</code> 等系统文字样式，不再写数字字号。</span></div></div>
+        <div class="fix"><div><b>标题放在工具栏</b><span>和访达、系统设置一样，页面标题显示在窗口工具栏里，内容区不再放 22pt 大标题和副标题。</span></div></div>
+        <div class="fix"><div><b>圆角同心</b><span>窗口 26 → 侧栏内缩 8 → 侧栏 18 → 行内缩 8 → 行 10。所有嵌套形状都满足“内层圆角 = 外层圆角 − 间距”，这是 Tahoe 观感的关键。</span></div></div>
+      </div>
+    </div>
+    <div class="sheet-card">
+      <div class="cmp-head"><h3>对 v1 的修正</h3><code>上一版问题 → 本版</code></div>
+      <div class="fix-list">
+        <div class="fix"><div><b>搜索：收起成放大镜，点击展开</b><span><s>常驻输入框</s> → 工具栏右侧一个放大镜圆钮，点击或按 ⌘F 时以弹簧动画展开成胶囊输入框；输入框为空并失去焦点，或按 Esc 时收起。对应原生 <code>NSSearchToolbarItem</code>。</span></div></div>
+        <div class="fix"><div><b>不再把卡片和按钮做成半透明</b><span><s>卡片、按钮、输入框都用玻璃</s> → 只有导航层使用玻璃，内容层回到实底。</span></div></div>
+        <div class="fix"><div><b>按钮不再一律胶囊</b><span><s>所有控件都是胶囊</s> → 与 macOS 26 一致：常规尺寸用圆角矩形，大尺寸和工具栏按钮才用胶囊。</span></div></div>
+        <div class="fix"><div><b>下拉恢复原生弹出按钮</b><span><s>自绘选择框</s> → 原生弹出按钮：Sequoia 是蓝色箭头方块，Tahoe 是灰色双箭头；菜单打开时，当前选项正好盖在按钮上方。设置行内用无边框样式。</span></div></div>
+        <div class="fix"><div><b>筛选不用标签按钮</b><span><s>彩色 chip</s> → 少于 4 个选项用分段控件，更多时用工具栏里的筛选菜单。标签样式只用于 token（附件、上下文引用）。</span></div></div>
+        <div class="fix"><div><b>提示改用原生样式</b><span><s>深色气泡 tooltip、Toast</s> → 浅色帮助标签；操作反馈尽量在原位完成，例如按钮图标变成对勾。只有没有上下文的确认才使用 HUD。</span></div></div>
+        <div class="fix"><div><b>启动器和剪贴板改用聚焦（Spotlight）的样式</b><span><s>自定义面板 + chip</s> → Tahoe 聚焦样式：胶囊形玻璃输入条，右侧是圆形玻璃模式按钮，结果显示在下方的玻璃面板里。</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="h-sec">一眼对比 <small>同一个工具栏 + 搜索，切换右上角“形态”</small></h3>
+  <div class="stage wall" style="padding:28px;justify-content:center">
+    <div class="win" style="width:760px;height:180px">
+      <div class="traffic"><i></i><i></i><i></i></div>
+      <aside class="side glass" style="width:180px"><div class="nav on"><span class="ni"><svg><use href="#i-book"/></svg></span>词库</div></aside>
+      <div class="main">
+        <div class="toolbar">
+          <div class="title">词库</div><div class="flex"></div>
+          <div class="tb-group glass"><button class="tb-btn" data-tip="筛选"><svg><use href="#i-filter"/></svg></button><button class="tb-btn" data-tip="添加词条"><svg><use href="#i-plus"/></svg></button></div>
+          <div class="tsearch glass" data-tsearch><button class="ts-ico" aria-label="搜索" data-tip="搜索 (⌘F)"><svg><use href="#i-search"/></svg></button><input placeholder="搜索词库"><button class="ts-clear" aria-label="清除"><svg><use href="#i-x"/></svg></button></div>
+        </div>
+        <div class="scroll"><p class="note" style="margin:0">点击右上角的放大镜试试 → 输入文字 → 按 Esc 清空 → 再按 Esc 收起。</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ ② -->
+<section class="board" id="foundation">
+  <h2 class="h-board">基础：系统文字样式、语义色、材质、尺寸</h2>
+  <p class="p-board">不定义自己的色板和字号表。设计稿中的每一个值都对应一个系统 API，代码里写 API 名，不写数字。</p>
+
+  <h3 class="h-sec">文字样式 <small>SwiftUI <code>Font.TextStyle</code>（macOS 取值）· 系统字体 SF Pro / 苹方</small></h3>
+  <div class="sheet-card">
+    <div class="type-row"><code>.largeTitle 26</code><span style="font:var(--largeTitle)">今日节省 42 分钟</span><span class="note">概览页的数字</span></div>
+    <div class="type-row"><code>.title 22</code><span style="font:var(--title1)">UI 规范评审纪要</span><span class="note">文档 / 笔记标题</span></div>
+    <div class="type-row"><code>.title2 17</code><span style="font:var(--title2)">添加模型服务</span><span class="note">少量使用</span></div>
+    <div class="type-row"><code>.title3 15</code><span style="font:var(--title3)">还没有笔记</span><span class="note">空状态标题、Tahoe 弹窗标题</span></div>
+    <div class="type-row"><code>.headline 13 bold</code><span style="font:var(--headline)">自动学习新词</span><span class="note">分组标题、列表行标题、工具栏标题（15）</span></div>
+    <div class="type-row"><code>.body 13</code><span style="font:var(--body)">按住快捷键说话，松开后文字插入当前输入框。</span><span class="note">正文与所有控件文字</span></div>
+    <div class="type-row"><code>.callout 12</code><span style="font:var(--callout);color:var(--label2)">识别后自动加入词库</span><span class="note">次要信息</span></div>
+    <div class="type-row"><code>.subheadline 11</code><span style="font:var(--subheadline);color:var(--label2)">修改后重启生效</span><span class="note">设置行说明、表头、侧栏分组</span></div>
+    <div class="type-row"><code>.footnote 10</code><span style="font:var(--footnote);color:var(--label2)">© Typeflux</span><span class="note">极少使用</span></div>
+    <p class="note" style="margin:12px 0 0">现状代码里有 37 种字面量字号（11.5、12.5、13.5…），全部映射到上表的样式。半点字号（.5）是系统里不存在的，是让界面“不像 Mac”的主要原因之一。</p>
+  </div>
+
+  <h3 class="h-sec">语义色 <small>NSColor 语义色 · 强调色 = <code>controlAccentColor</code>，跟随系统</small></h3>
+  <div class="sheet-card"><div class="swatch-grid" id="swatches"></div>
+    <p class="note" style="margin:14px 0 0">强调色不再写死 <code>#2563EB</code>。用户在系统设置里选了紫色，Typeflux 的选中态、开关、主按钮都会跟着变成紫色。可以点击右上角的色点验证。</p></div>
+
+  <h3 class="h-sec">材质 <small>Liquid Glass 的三种形态与传统材质</small></h3>
+  <div class="grid g3">
+    <div class="stage wall" style="height:150px;justify-content:center"><div class="glass" style="position:relative;width:180px;height:90px;border-radius:24px;display:grid;place-items:center"><span style="position:relative;z-index:3;font:var(--headline)">Regular</span></div></div>
+    <div class="stage wall" style="height:150px;justify-content:center"><div class="glass clear" style="position:relative;width:180px;height:90px;border-radius:24px;display:grid;place-items:center"><span style="position:relative;z-index:3;font:var(--headline)">Clear</span></div></div>
+    <div class="stage wall" style="height:150px;justify-content:center"><div class="glass strong" style="position:relative;width:180px;height:90px;border-radius:24px;display:grid;place-items:center"><span style="position:relative;z-index:3;font:var(--headline)">Regular · 菜单 / 弹窗</span></div></div>
+  </div>
+  <table class="spec">
+    <tr><th>用途</th><th>传统（Sequoia）</th><th>Liquid Glass（Tahoe）</th><th>API</th></tr>
+    <tr><td>侧栏</td><td>Vibrancy <code>.sidebar</code>，贴边，右侧 0.5pt 分隔线</td><td>悬浮玻璃面板，内缩 8，圆角 18</td><td><code>NavigationSplitView</code>（系统自动）</td></tr>
+    <tr><td>工具栏</td><td>与内容同色，滚动后底部出现分隔线</td><td>无背景；按钮分组放进玻璃胶囊；滚动到工具栏下方的内容会模糊淡出（scroll edge effect）</td><td><code>.toolbar</code>（系统自动）</td></tr>
+    <tr><td>菜单 / 弹出框</td><td><code>.menu</code> / <code>.popover</code> 材质</td><td>玻璃，叠加较浓的底色以保证文字可读</td><td>系统自动</td></tr>
+    <tr><td>浮动面板</td><td><code>.hudWindow</code> / <code>.popover</code></td><td>Regular 玻璃，可在两个元素之间做形变（morph）</td><td><code>NSGlassEffectView</code> / <code>GlassEffectContainer</code></td></tr>
+    <tr><td>内容层</td><td>实底 <code>windowBackgroundColor</code></td><td>实底（不要用玻璃）</td><td>—</td></tr>
+  </table>
+  <p class="note">网页无法实现真正的折射（lensing）。设计稿用模糊、饱和度和高光边来近似；App 中直接使用系统的 <code>NSGlassEffectView</code> / <code>.glassEffect()</code>（代码库在 <code>AskGlass.swift</code> 里已经接入）。开启“降低透明度”或“增强对比度”时，系统会自动回退到实底。</p>
+
+  <h3 class="h-sec">尺寸与圆角 <small>当前形态：<span class="cur-style" id="curStyle">Liquid Glass</span></small></h3>
+  <div class="sheet-card"><div class="dims" id="dims"></div></div>
+</section>
+
+<!-- ================================================================ ③ -->
+<section class="board" id="controls">
+  <h2 class="h-board">控件（内容层）</h2>
+  <p class="p-board">内容层的控件全部是实底的系统控件。每个控件下面列出两种形态的规格和对应的 SwiftUI 写法；使用原生控件时，这些规格由系统自动提供。所有示例都可以操作。</p>
+
+  <div class="grid g2">
+    <div class="sheet-card">
+      <div class="cmp-head"><h3>按钮</h3><code>Button + .buttonStyle / .controlSize</code></div>
+      <div class="stage col">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn">取消</button><button class="btn default">保存</button><button class="btn destructive">删除…</button><button class="btn" disabled>不可用</button></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn lg default">开始使用</button><button class="btn lg">登录</button><button class="btn" id="copyDemo"><svg><use href="#i-copy"/></svg>拷贝</button><button class="btn borderless">了解更多</button><button class="help-btn" data-tip="帮助">?</button></div>
+      </div>
+      <table class="spec">
+        <tr><th>类型</th><th>何时用</th><th>SwiftUI</th></tr>
+        <tr><td>默认（强调色）</td><td>每个窗口或弹窗最多一个，回车触发</td><td><code>.borderedProminent</code> + <code>.keyboardShortcut(.defaultAction)</code></td></tr>
+        <tr><td>普通</td><td>其它显式操作</td><td><code>.bordered</code></td></tr>
+        <tr><td>破坏性</td><td>删除、清空；文字为红色，并用弹窗确认</td><td><code>Button(role: .destructive)</code></td></tr>
+        <tr><td>大号</td><td>引导页、登录页、空状态的主操作；Tahoe 中为胶囊形</td><td><code>.controlSize(.large)</code></td></tr>
+        <tr><td>无边框 / 链接</td><td>行内次要操作</td><td><code>.borderless</code> / <code>.link</code></td></tr>
+      </table>
+      <ul class="rules"><li>按钮文字用动词，不加句号。会打开弹窗的按钮以“…”结尾（如“删除…”）。</li><li>操作结果在原位反馈：点击“拷贝”试试，图标会短暂变成对勾，不弹 Toast。</li><li>主按钮放在最右，取消在它左侧。</li></ul>
+    </div>
+
+    <div class="sheet-card">
+      <div class="cmp-head"><h3>弹出按钮（选择一个值）</h3><code>Picker(.menu)</code></div>
+      <div class="stage" style="gap:16px">
+        <div class="popup" data-popup><button><span class="val">简体中文</span><span class="chev"><svg><use href="#i-updown"/></svg></span></button>
+          <div class="menu glass"><div class="mi" data-v="跟随系统"><span class="ck">✓</span>跟随系统</div><div class="ms"></div><div class="mi on" data-v="简体中文"><span class="ck">✓</span>简体中文</div><div class="mi" data-v="繁體中文"><span class="ck">✓</span>繁體中文</div><div class="mi" data-v="English"><span class="ck">✓</span>English</div><div class="mi" data-v="日本語"><span class="ck">✓</span>日本語</div></div></div>
+        <div class="popup borderless" data-popup><button><span class="val">最近 7 天</span><span class="chev"><svg><use href="#i-updown"/></svg></span></button>
+          <div class="menu glass"><div class="mi" data-v="今天"><span class="ck">✓</span>今天</div><div class="mi on" data-v="最近 7 天"><span class="ck">✓</span>最近 7 天</div><div class="mi" data-v="最近 30 天"><span class="ck">✓</span>最近 30 天</div></div></div>
+        <div class="popup pulldown" data-popup data-pulldown><button class="btn"><span class="val">导入</span><span class="chev"><svg><use href="#i-down"/></svg></span></button>
+          <div class="menu glass" style="min-width:200px"><div class="mi"><span class="mic"><svg><use href="#i-doc"/></svg></span>从文件导入…<span class="ks">⌘O</span></div><div class="mi"><span class="mic"><svg><use href="#i-clip"/></svg></span>从剪贴板导入</div><div class="ms"></div><div class="mi"><span class="mic"><svg><use href="#i-search"/></svg></span>扫描项目目录…</div></div></div>
+      </div>
+      <table class="spec">
+        <tr><th>形式</th><th>传统</th><th>Liquid Glass</th></tr>
+        <tr><td>有边框（表单）</td><td>22 高，圆角 5.5，右侧强调色箭头方块</td><td>26 高，圆角 8，灰色双箭头</td></tr>
+        <tr><td>无边框（设置行）</td><td colspan="2">灰色文字 + 双箭头，悬停时出现底色，和系统设置一致：<code>.buttonStyle(.borderless)</code></td></tr>
+        <tr><td>下拉（选择一个操作）</td><td colspan="2">单向箭头 ⌄，菜单在按钮下方展开：<code>Menu</code></td></tr>
+      </table>
+      <ul class="rules"><li><b>菜单打开时，当前选项正好覆盖在按钮上方</b>（原生弹出按钮的行为），而不是在按钮下方展开。</li><li>支持 ↑ ↓ 选择、回车确认、Esc 取消。</li></ul>
+    </div>
+
+    <div class="sheet-card">
+      <div class="cmp-head"><h3>开关 · 复选框 · 单选</h3><code>Toggle / Picker(.radioGroup)</code></div>
+      <div class="stage" style="gap:22px">
+        <button class="sw" role="switch" aria-checked="true" data-sw aria-label="开关"><span class="knob"></span></button>
+        <button class="sw" role="switch" aria-checked="false" data-sw aria-label="开关"><span class="knob"></span></button>
+        <button class="sw" role="switch" aria-checked="true" disabled aria-label="禁用"><span class="knob"></span></button>
+        <span class="check on" data-check><span class="box"><svg><use href="#i-check"/></svg></span>粘贴后恢复剪贴板</span>
+        <span data-radio style="display:flex;gap:14px"><span class="check on"><span class="box radio"></span>悬浮</span><span class="check"><span class="box radio"></span>停靠</span></span>
+      </div>
+      <ul class="rules"><li><b>Tahoe 开关的滑块是胶囊形</b>，按住时会变成透明的玻璃透镜并拉长。可以按住上面的开关看效果。</li><li>设置行里的开关放在行尾，用 <code>.controlSize(.small)</code>。复选框用于“一组可多选的项”或附带说明的同意项。</li><li>2–4 个互斥选项、并且需要同时看到全部选项时用单选，否则用弹出按钮。</li></ul>
+    </div>
+
+    <div class="sheet-card">
+      <div class="cmp-head"><h3>分段控件</h3><code>Picker(.segmented)</code></div>
+      <div class="stage col" style="align-items:flex-start;gap:14px">
+        <div class="seg" data-seg><button class="on">全部 <span class="n">128</span></button><button>手动</button><button>自动学习</button></div>
+        <div class="seg icons" data-seg><button class="on" data-tip="列表"><svg><use href="#i-list"/></svg></button><button data-tip="图标"><svg><use href="#i-grid"/></svg></button></div>
+      </div>
+      <ul class="rules"><li>用于在同一区域内切换视图或筛选，2–5 项。选中的滑块以弹簧动画移动。</li><li>页面级的切换（如 模型 › 语音识别 / 文本 / 图像）也用分段控件，放在工具栏中间，和访达、App Store 的做法一致。<b>不再使用下划线标签栏</b>，系统里没有这种控件。</li></ul>
+    </div>
+
+    <div class="sheet-card">
+      <div class="cmp-head"><h3>文本框 · 滑块 · 进度</h3><code>TextField / Slider / ProgressView</code></div>
+      <div class="stage col">
+        <div class="form2"><label>Base URL：</label><input class="field mono" value="https://api.openai.com/v1"><label>API 密钥：</label><input class="field invalid" type="password" value="sk-xxxxxxxxxx"><span></span><span class="note" style="color:var(--red);margin-top:-6px">密钥无效：服务返回 401。</span></div>
+        <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div><input type="range" class="slider" min="0" max="100" value="70" data-slider aria-label="玻璃浓度"><div class="ticks"><span>清透</span><span>浓郁</span></div></div><div class="spinner"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="bar"><i></i></div></div>
+      </div>
+      <ul class="rules"><li>表单标签右对齐放在左侧，以冒号前的文字为准（<code>Form</code> + <code>.formStyle(.columns)</code>）；系统设置风格的页面用 <code>.grouped</code>。</li><li>出错时给输入框加红色描边，并在下方用一句话说明原因。</li><li>Tahoe 滑块的滑块头是胶囊形，拖动时会变成玻璃并放大。</li></ul>
+    </div>
+
+    <div class="sheet-card">
+      <div class="cmp-head"><h3>状态 · 标签 · Token</h3><code>Label / Text / TokenField</code></div>
+      <div class="stage col" style="gap:12px">
+        <div style="display:flex;gap:16px;flex-wrap:wrap"><span class="status ok"><i></i>已连接</span><span class="status warn"><i></i>额度不足</span><span class="status err"><i></i>连接失败</span><span class="status off"><i></i>未配置</span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="tag">本地</span><span class="tag accent">默认</span><span class="tag green">已启用</span><span class="tag orange">Beta</span><span class="tag purple">私密</span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" data-tokens><span class="token">报告.pdf<span class="x"><svg><use href="#i-x"/></svg></span></span><span class="token">Safari 选中文本<span class="x"><svg><use href="#i-x"/></svg></span></span></div>
+      </div>
+      <ul class="rules"><li>状态用“圆点 + 文字”，和系统设置里网络、蓝牙的写法一致。</li><li>标签只是只读说明，不能点击。Token 用于附件和上下文引用，可以删除。</li><li>侧栏里的计数直接显示灰色数字，不加胶囊底。</li></ul>
+    </div>
+  </div>
+
+  <h3 class="h-sec">分组表单 <small>系统设置的写法：<code>Form { Section { … } }.formStyle(.grouped)</code></small></h3>
+  <div class="grid g2">
+    <div class="stage col" style="padding:24px;background:var(--canvas)">
+      <div class="form">
+        <div class="form-h">语音输入</div>
+        <div class="group">
+          <div class="row"><div class="lab"><div class="t">按住说话快捷键</div></div><div class="acc"><span class="kbd">fn</span></div></div>
+          <div class="row"><div class="lab"><div class="t">识别语言</div></div><div class="acc"><div class="popup borderless" data-popup><button><span class="val">自动检测</span><span class="chev"><svg><use href="#i-updown"/></svg></span></button><div class="menu glass" style="right:0"><div class="mi on" data-v="自动检测"><span class="ck">✓</span>自动检测</div><div class="mi" data-v="中文"><span class="ck">✓</span>中文</div><div class="mi" data-v="英文"><span class="ck">✓</span>英文</div></div></div></div></div>
+          <div class="row"><div class="lab"><div class="t">自动学习新词</div><div class="d">识别后自动加入词库，可以随时移除。</div></div><div class="acc"><button class="sw" role="switch" aria-checked="true" data-sw aria-label="自动学习新词"><span class="knob"></span></button></div></div>
+        </div>
+        <div class="form-f">修改语言后，下一次录音生效。</div>
+        <div class="form-h">高级</div>
+        <div class="group">
+          <div class="row nav"><div class="ico" style="background:var(--teal)"><svg><use href="#i-keyboard"/></svg></div><div class="lab"><div class="t">快捷键</div></div><div class="acc">6 个<svg class="chev-r"><use href="#i-right"/></svg></div></div>
+          <div class="row nav"><div class="ico" style="background:var(--purple)"><svg><use href="#i-sparkle"/></svg></div><div class="lab"><div class="t">人设</div></div><div class="acc"><svg class="chev-r"><use href="#i-right"/></svg></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-card">
+      <ul class="rules" style="margin-top:0">
+        <li><b>分组标题</b>使用 headline，放在组的上方；<b>分组说明</b>使用 subheadline 次要色，放在组的下方。</li>
+        <li><b>行</b>：左边是标题（加可选的一行说明），右边是控件。高度：传统 36，Tahoe 40。分隔线左右都内缩，与系统设置一致。</li>
+        <li><b>控件在行内的写法</b>：选择用无边框弹出按钮，开关放在行尾，可进入下一级的行在末尾放 › ，快捷键用键帽样式。</li>
+        <li><b>带彩色图标的行</b>只用于进入下一级的导航（和系统设置一致）。普通设置项不加图标。</li>
+        <li>分组的背景：传统为白底 + 0.5pt 描边，圆角 8；Tahoe 为浅灰填充、无描边，圆角 14。</li>
+        <li>内容最大宽度 640，居中放置，和系统设置的阅读宽度一致。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="h-sec">表格 · 空状态 <small><code>Table</code> · <code>ContentUnavailableView</code></small></h3>
+  <div class="grid g2">
+    <div class="stage col" style="padding:6px">
+      <table class="table" id="demoTable"><thead><tr><th>词条</th><th>来源</th><th>使用次数</th></tr></thead><tbody>
+        <tr class="sel"><td>Typeflux</td><td><span class="tag">手动</span></td><td class="dim">214</td></tr><tr><td>Liquid Glass</td><td><span class="tag accent">自动</span></td><td class="dim">37</td></tr><tr><td>PGVector</td><td><span class="tag">手动</span></td><td class="dim">19</td></tr><tr><td>SwiftUI</td><td><span class="tag accent">自动</span></td><td class="dim">88</td></tr></tbody></table>
+      <p class="note" style="margin:8px 10px 4px">表格使用隔行底色，表头可点击排序，选中整行时使用强调色。行操作在悬停时才显示。</p>
+    </div>
+    <div class="stage col"><div class="empty"><svg class="sym"><use href="#i-search"/></svg><h5>没有找到“typeflx”的结果</h5><p>检查一下拼写，或者把它添加为新词条。</p><button class="btn">添加“typeflx”</button></div></div>
+  </div>
+</section>
+
+<!-- ================================================================ ④ -->
+<section class="board" id="navlayer">
+  <h2 class="h-board">导航层：工具栏、搜索、侧栏、菜单、弹窗</h2>
+  <p class="p-board">导航层是 Liquid Glass 真正发挥作用的地方。示例放在彩色背景上，方便看清折射、高光边和阴影；切换到“传统”可以看到 Sequoia 中对应的样子。</p>
+
+  <h3 class="h-sec">工具栏搜索：放大镜 → 展开 <small><code>.searchable(placement: .toolbar)</code> / <code>NSSearchToolbarItem</code></small></h3>
+  <div class="grid g2">
+    <div class="stage wall" style="height:220px;justify-content:center;align-items:flex-start;padding-top:40px">
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="tb-group glass"><button class="tb-btn" data-tip="后退"><svg><use href="#i-left"/></svg></button><button class="tb-btn" data-tip="前进"><svg><use href="#i-fwd"/></svg></button></div>
+        <div class="tb-group glass"><button class="tb-btn" data-tip="分享"><svg><use href="#i-share"/></svg></button><button class="tb-btn" data-tip="更多"><svg><use href="#i-more"/></svg></button></div>
+        <div class="tsearch glass" data-tsearch><button class="ts-ico" aria-label="搜索" data-tip="搜索 (⌘F)"><svg><use href="#i-search"/></svg></button><input placeholder="搜索"><button class="ts-clear" aria-label="清除"><svg><use href="#i-x"/></svg></button></div>
+      </div>
+    </div>
+    <div class="sheet-card">
+      <table class="spec" style="margin-top:0">
+        <tr><th>状态</th><th>传统（Sequoia）</th><th>Liquid Glass（Tahoe）</th></tr>
+        <tr><td>收起</td><td>28×24 无边框放大镜，悬停时出现底色</td><td>36pt 圆形玻璃按钮</td></tr>
+        <tr><td>展开</td><td>200×24 圆角 6 的搜索框，带聚焦环</td><td>240×36 玻璃胶囊，由圆形以弹簧动画拉伸而成</td></tr>
+        <tr><td>有内容</td><td colspan="2">右侧显示 ⓧ 清除按钮；失去焦点后仍保持展开，提醒用户“正在筛选”</td></tr>
+      </table>
+      <ul class="rules">
+        <li><b>展开</b>：点击放大镜，或在窗口内按 ⌘F。</li>
+        <li><b>收起</b>：输入框为空且失去焦点时；或者按 Esc，第一次 Esc 清空内容，第二次 Esc 收起。</li>
+        <li><b>位置</b>：始终放在工具栏最右侧。窗口足够宽时可以默认展开（系统行为），窄窗口默认收起。</li>
+        <li><b>实时过滤</b>：边输入边过滤，结果为空时内容区显示空状态。</li>
+        <li><b>适用范围</b>：设置窗口、笔记、单词本、历史、Agent 等所有窗口里的列表页，统一使用这一个组件。</li>
+        <li><b>例外</b>：菜单、弹出框、模型选择器里的搜索使用常驻的小号输入框（见下方弹出框示例），因为这些地方没有工具栏。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="h-sec">工具栏按钮 <small>Tahoe 将相关按钮编组放进玻璃胶囊；Sequoia 为无边框图标</small></h3>
+  <div class="grid g2">
+    <div class="stage wall" style="height:150px;justify-content:center;gap:12px">
+      <div class="tb-group glass"><button class="tb-btn" data-tip="显示/隐藏边栏"><svg><use href="#i-sidebar"/></svg></button></div>
+      <div class="tb-group glass"><button class="tb-btn on" data-tip="收藏"><svg><use href="#i-star"/></svg></button><button class="tb-btn" data-tip="分享"><svg><use href="#i-share"/></svg></button><button class="tb-btn" data-tip="删除"><svg><use href="#i-trash"/></svg></button></div>
+      <div class="tb-group glass prominent"><button class="tb-btn" data-tip="新建笔记"><svg><use href="#i-compose"/></svg></button></div>
+    </div>
+    <div class="sheet-card"><ul class="rules" style="margin-top:0">
+      <li>工具栏按钮都是<b>纯图标</b>，使用 SF Symbols，必须提供悬停提示和辅助功能标签（<code>.help()</code> / <code>Label</code>）。</li>
+      <li>同类操作放进同一组（<code>ToolbarItemGroup</code>），组与组之间用 <code>ToolbarSpacer</code> 分开。</li>
+      <li>每个窗口最多有一个强调色按钮（如“新建”），对应 <code>.buttonStyle(.glassProminent)</code>。</li>
+      <li>需要文字说明的操作（例如“添加服务”）不要放在工具栏，放到内容区，使用普通按钮。</li>
+    </ul></div>
+  </div>
+
+  <h3 class="h-sec">菜单 · 弹出框 · 提示 <small>菜单行可以带图标（macOS 26），快捷键靠右对齐</small></h3>
+  <div class="grid g2">
+    <div class="stage wall" style="height:280px;align-items:flex-start;gap:24px;padding:30px">
+      <div class="popup pulldown" data-popup data-pulldown><button class="btn icon-only" aria-label="更多" data-tip="更多"><svg><use href="#i-more"/></svg></button>
+        <div class="menu glass" style="min-width:210px"><div class="mi"><span class="mic"><svg><use href="#i-pencil"/></svg></span>重命名</div><div class="mi"><span class="mic"><svg><use href="#i-star"/></svg></span>设为默认</div><div class="mi"><span class="mic"><svg><use href="#i-copy"/></svg></span>拷贝 ID<span class="ks">⇧⌘C</span></div><div class="ms"></div><div class="mi danger"><span class="mic"><svg><use href="#i-trash"/></svg></span>删除…<span class="ks">⌘⌫</span></div></div></div>
+      <div class="popup" data-pop><button class="btn">选择模型…</button>
+        <div class="popover glass" style="left:50%;margin-left:-130px;top:calc(100% + 10px)">
+          <div class="isearch"><svg><use href="#i-search"/></svg><input placeholder="搜索模型" aria-label="搜索模型"></div>
+          <div class="mh" style="padding-left:6px;margin-top:8px">Typeflux Cloud</div>
+          <div class="mi on" style="padding-left:6px"><span class="ck">✓</span>自动</div><div class="mi" style="padding-left:6px"><span class="ck">✓</span>推理</div>
+          <div class="mh" style="padding-left:6px">OpenAI</div><div class="mi" style="padding-left:6px"><span class="ck">✓</span>gpt-4.1-mini</div>
+        </div></div>
+      <span class="note" style="align-self:center" data-tip="这是原生样式的帮助标签：浅色、没有箭头，悬停 0.6 秒后出现。">将鼠标悬停在这里看提示 ⓘ</span>
+    </div>
+    <div class="sheet-card"><table class="spec" style="margin-top:0">
+      <tr><th></th><th>传统</th><th>Liquid Glass</th></tr>
+      <tr><td>菜单</td><td>圆角 6，行高 22，高亮圆角 4</td><td>圆角 14，行高 24，高亮圆角 8（与内边距 6 同心）</td></tr>
+      <tr><td>弹出框</td><td>圆角 10</td><td>圆角 18，玻璃</td></tr>
+      <tr><td>帮助标签</td><td>浅灰方角，11pt</td><td>浅灰，圆角 8</td></tr>
+    </table>
+    <ul class="rules"><li>菜单结构：图标列（可选）→ 文字 → 右对齐的快捷键；危险操作放在最后并标红，用分隔线隔开。</li><li>每一个“···”按钮都使用原生 <code>Menu</code>，不要自己绘制弹层。</li></ul></div>
+  </div>
+
+  <h3 class="h-sec">弹窗 · 警告 · HUD</h3>
+  <div class="stage wall" style="justify-content:center;gap:12px;padding:28px">
+    <button class="btn" id="openSheet">打开弹窗（添加词条）</button>
+    <button class="btn" id="openAlert">打开警告（删除确认）</button>
+    <button class="btn" id="openHud">显示 HUD</button>
+  </div>
+  <ul class="rules"><li><b>弹窗</b>：从窗口中滑出（<code>.sheet</code>）。不在顶部放大标题，表单紧凑；底部按钮靠右，回车触发默认按钮，Esc 取消。</li><li><b>警告</b>：Sequoia 为居中窄卡片，按钮横向铺满；Tahoe 改为左对齐，按钮是靠右的胶囊（<code>.alert</code> 会自动适配）。破坏性操作的按钮文字使用红色。</li><li><b>HUD</b>：只用于没有上下文的确认，例如通过全局快捷键完成的复制，1.5 秒后消失。</li></ul>
+</section>
+
+<!-- ================================================================ ⑤ -->
+<section class="board" id="windows">
+  <h2 class="h-board">页面：三种窗口</h2>
+  <p class="p-board">设置窗口（系统设置式）、资料库窗口（信息 / 备忘录式）、浮动面板（聚焦式），覆盖 Typeflux 全部窗口。下面的示例都可以操作：切换侧栏、搜索、筛选、排序、选择行、删除、添加。</p>
+
+  <h3 class="h-sec">A · 设置窗口 <small>概览 · 历史 · 词库 · 人设 · 模型 · Agent · 启动器 · 设置 · 账号</small></h3>
+  <div class="stage wall" style="padding:36px;justify-content:center">
+  <div class="win" id="app" style="width:1080px;height:640px">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <aside class="side glass" id="appSide" tabindex="0" aria-label="边栏">
+      <div class="nav" data-page="p-general"><span class="ni"><svg><use href="#i-gear"/></svg></span>通用</div>
+      <div class="nav on" data-page="p-vocab"><span class="ni"><svg><use href="#i-book"/></svg></span>词库<span class="cnt" id="vocabCnt"></span></div>
+      <div class="nav" data-page="p-models"><span class="ni"><svg><use href="#i-cpu"/></svg></span>模型</div>
+      <div class="nav" data-page="p-history"><span class="ni"><svg><use href="#i-clock"/></svg></span>历史</div>
+      <div class="side-h">随便问</div>
+      <div class="nav" data-page="p-agent"><span class="ni"><svg><use href="#i-sparkle"/></svg></span>Agent</div>
+      <div class="foot"><span class="avatar">M</span><div style="min-width:0"><div style="font:var(--headline)">mylxsw</div><div style="font:var(--subheadline);color:var(--label2)">Pro · 剩余 82%</div></div></div>
+    </aside>
+
+    <!-- 通用 -->
+    <div class="main hide" id="p-general">
+      <div class="toolbar"><div class="title">通用</div><div class="flex"></div></div>
+      <div class="scroll"><div class="narrow form">
+        <div class="form-h">外观</div>
+        <div class="group">
+          <div class="row"><div class="lab"><div class="t">界面风格</div></div><div class="acc"><div class="seg sm" id="innerStyleSeg"><button data-v="classic">传统</button><button data-v="glass" class="on">Liquid Glass</button></div></div></div>
+          <div class="row"><div class="lab"><div class="t">玻璃浓度</div><div class="d">越往右越不透明，文字越清晰。</div></div><div class="acc"><input type="range" class="slider" min="0" max="100" value="70" data-slider style="width:160px" aria-label="玻璃浓度"></div></div>
+          <div class="row"><div class="lab"><div class="t">在菜单栏中显示</div></div><div class="acc"><button class="sw" role="switch" aria-checked="true" data-sw aria-label="在菜单栏中显示"><span class="knob"></span></button></div></div>
+        </div>
+        <div class="form-h">启动</div>
+        <div class="group">
+          <div class="row"><div class="lab"><div class="t">登录时打开</div></div><div class="acc"><button class="sw" role="switch" aria-checked="true" data-sw aria-label="登录时打开"><span class="knob"></span></button></div></div>
+          <div class="row"><div class="lab"><div class="t">界面语言</div><div class="d">修改后需重启 Typeflux。</div></div><div class="acc"><div class="popup borderless" data-popup><button><span class="val">简体中文</span><span class="chev"><svg><use href="#i-updown"/></svg></span></button><div class="menu glass" style="right:0"><div class="mi" data-v="跟随系统"><span class="ck">✓</span>跟随系统</div><div class="mi on" data-v="简体中文"><span class="ck">✓</span>简体中文</div><div class="mi" data-v="English"><span class="ck">✓</span>English</div></div></div></div></div>
+        </div>
+        <div class="form-h">数据</div>
+        <div class="group">
+          <div class="row"><div class="lab"><div class="t">清除历史记录</div><div class="d">删除所有语音和剪贴板记录，此操作不可撤销。</div></div><div class="acc"><button class="btn destructive" data-alert>清除…</button></div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 词库 -->
+    <div class="main" id="p-vocab">
+      <div class="toolbar">
+        <div class="title">词库</div><div class="flex"></div>
+        <div class="seg sm" id="vocabSeg" style="margin-right:4px"><button class="on" data-f="all">全部</button><button data-f="manual">手动</button><button data-f="auto">自动学习</button></div>
+        <div class="tb-group glass">
+          <div class="popup pulldown" data-popup data-pulldown style="z-index:3"><button class="tb-btn" data-tip="导入" aria-label="导入"><svg><use href="#i-import"/></svg></button><div class="menu glass" style="right:0;min-width:190px"><div class="mi"><span class="mic"><svg><use href="#i-doc"/></svg></span>从文件导入…</div><div class="mi"><span class="mic"><svg><use href="#i-search"/></svg></span>扫描项目目录…</div></div></div>
+          <button class="tb-btn" data-tip="添加词条" aria-label="添加词条" id="addTerm"><svg><use href="#i-plus"/></svg></button>
+        </div>
+        <div class="tsearch glass" data-tsearch id="vocabSearch"><button class="ts-ico" aria-label="搜索" data-tip="搜索 (⌘F)"><svg><use href="#i-search"/></svg></button><input placeholder="搜索词库" aria-label="搜索词库"><button class="ts-clear" aria-label="清除"><svg><use href="#i-x"/></svg></button></div>
+      </div>
+      <div class="scroll" style="padding-left:12px;padding-right:12px">
+        <table class="table" id="vocabTable"><thead><tr><th class="sortable" data-k="term">词条</th><th>来源</th><th class="sortable" data-k="uses" style="width:110px">使用次数</th><th class="sortable" data-k="order" style="width:120px">添加时间</th><th style="width:40px"></th></tr></thead><tbody></tbody></table>
+        <div class="empty hide" id="vocabEmpty"><svg class="sym"><use href="#i-search"/></svg><h5 id="vocabEmptyT"></h5><p>检查一下拼写，或者把它添加为新词条。</p><button class="btn" id="vocabEmptyAdd"></button></div>
+      </div>
+    </div>
+
+    <!-- 模型 -->
+    <div class="main hide" id="p-models">
+      <div class="toolbar"><div class="title">模型</div><div class="flex"></div>
+        <div class="seg sm center" data-seg><button class="on">场景</button><button>服务商</button><button>本地模型</button></div>
+        <div class="tsearch glass" data-tsearch><button class="ts-ico" aria-label="搜索" data-tip="搜索 (⌘F)"><svg><use href="#i-search"/></svg></button><input placeholder="搜索模型" aria-label="搜索模型"><button class="ts-clear" aria-label="清除"><svg><use href="#i-x"/></svg></button></div>
+      </div>
+      <div class="scroll"><div class="narrow form">
+        <div class="form-h">场景</div>
+        <div class="group">
+          <div class="row"><div class="lab"><div class="t">语音识别</div><div class="d">按住快捷键说话时使用</div></div><div class="acc"><div class="popup borderless" data-popup><button><span class="val">Typeflux Cloud · 标准</span><span class="chev"><svg><use href="#i-updown"/></svg></span></button><div class="menu glass" style="right:0"><div class="mh">Typeflux Cloud</div><div class="mi on" data-v="Typeflux Cloud · 标准"><span class="ck">✓</span>标准</div><div class="mi" data-v="Typeflux Cloud · 高精度"><span class="ck">✓</span>高精度</div><div class="ms"></div><div class="mh">自定义</div><div class="mi" data-v="OpenAI · whisper-1"><span class="ck">✓</span>OpenAI · whisper-1</div><div class="mi" data-v="本地 · SenseVoice"><span class="ck">✓</span>本地 · SenseVoice</div></div></div></div></div>
+          <div class="row"><div class="lab"><div class="t">改写</div><div class="d">用语音改写选中的文本</div></div><div class="acc"><div class="popup borderless" data-popup><button><span class="val">OpenAI · gpt-4.1-mini</span><span class="chev"><svg><use href="#i-updown"/></svg></span></button><div class="menu glass" style="right:0"><div class="mi on" data-v="OpenAI · gpt-4.1-mini"><span class="ck">✓</span>OpenAI · gpt-4.1-mini</div><div class="mi" data-v="Ollama · qwen3:8b"><span class="ck">✓</span>Ollama · qwen3:8b</div></div></div></div></div>
+          <div class="row"><div class="lab"><div class="t">随便问默认模型</div></div><div class="acc"><div class="popup borderless" data-popup><button><span class="val">自动</span><span class="chev"><svg><use href="#i-updown"/></svg></span></button><div class="menu glass" style="right:0"><div class="mi on" data-v="自动"><span class="ck">✓</span>自动</div><div class="mi" data-v="推理"><span class="ck">✓</span>推理</div></div></div></div></div>
+        </div>
+        <div class="form-h">服务商 <button class="btn" style="font-weight:400"><svg><use href="#i-plus"/></svg>添加服务…</button></div>
+        <div class="group">
+          <div class="row nav"><div class="ico" style="background:#10a37f"><svg><use href="#i-sparkle"/></svg></div><div class="lab"><div class="t">OpenAI</div><div class="d">3 个模型</div></div><div class="acc"><span class="status ok"><i></i>已连接</span><svg class="chev-r"><use href="#i-right"/></svg></div></div>
+          <div class="row nav"><div class="ico" style="background:#ff6a00"><svg><use href="#i-cpu"/></svg></div><div class="lab"><div class="t">阿里云百炼</div><div class="d">实时识别</div></div><div class="acc"><span class="status warn"><i></i>额度不足</span><svg class="chev-r"><use href="#i-right"/></svg></div></div>
+          <div class="row nav"><div class="ico" style="background:#555"><svg><use href="#i-cpu"/></svg></div><div class="lab"><div class="t">Ollama</div><div class="d">本地</div></div><div class="acc"><span class="status off"><i></i>未配置</span><svg class="chev-r"><use href="#i-right"/></svg></div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 历史 -->
+    <div class="main hide" id="p-history">
+      <div class="toolbar"><div class="title">历史</div><div class="flex"></div>
+        <div class="tb-group glass"><div class="popup pulldown" data-popup data-pulldown style="z-index:3"><button class="tb-btn" data-tip="筛选" aria-label="筛选"><svg><use href="#i-filter"/></svg></button><div class="menu glass" style="right:0;min-width:170px"><div class="mh">类型</div><div class="mi on" data-v="全部"><span class="ck">✓</span>全部</div><div class="mi" data-v="语音输入"><span class="ck">✓</span>语音输入</div><div class="mi" data-v="改写"><span class="ck">✓</span>改写</div></div></div></div>
+        <div class="tsearch glass" data-tsearch id="histSearch"><button class="ts-ico" aria-label="搜索" data-tip="搜索 (⌘F)"><svg><use href="#i-search"/></svg></button><input placeholder="搜索历史" aria-label="搜索历史"><button class="ts-clear" aria-label="清除"><svg><use href="#i-x"/></svg></button></div>
+      </div>
+      <div class="scroll"><div class="narrow form" id="histList"></div></div>
+    </div>
+
+    <!-- Agent -->
+    <div class="main hide" id="p-agent">
+      <div class="toolbar"><div class="title">Agent</div><div class="flex"></div></div>
+      <div class="scroll"><div class="narrow"><div class="empty" style="padding-top:90px"><svg class="sym"><use href="#i-sparkle"/></svg><h5>还没有连接 MCP 服务</h5><p>连接后，随便问可以调用本地工具和你的项目文件。</p><button class="btn default">添加 MCP 服务…</button></div></div></div>
+    </div>
+  </div>
+  </div>
+
+  <h3 class="h-sec">B · 资料库窗口 <small>笔记 · 单词本 · 随便问对话（列表放在玻璃侧栏里，与“信息”App 相同）</small></h3>
+  <div class="stage wall" style="padding:36px;justify-content:center">
+  <div class="win" style="width:1080px;height:520px">
+    <div class="traffic"><i></i><i></i><i></i></div>
+    <aside class="side glass lib-side" id="noteSide" tabindex="0" aria-label="笔记列表"><div id="noteList"></div></aside>
+    <div class="main">
+      <div class="toolbar"><div class="flex"></div>
+        <div class="tb-group glass"><button class="tb-btn" data-tip="收藏" aria-label="收藏" id="noteStar"><svg><use href="#i-star"/></svg></button><button class="tb-btn" data-tip="分享" aria-label="分享"><svg><use href="#i-share"/></svg></button><button class="tb-btn" data-tip="移到废纸篓" aria-label="移到废纸篓" id="noteTrash"><svg><use href="#i-trash"/></svg></button></div>
+        <div class="tb-group glass prominent"><button class="tb-btn" data-tip="新建笔记" aria-label="新建笔记" id="noteNew"><svg><use href="#i-compose"/></svg></button></div>
+        <div class="tsearch glass" data-tsearch id="noteSearch"><button class="ts-ico" aria-label="搜索" data-tip="搜索 (⌘F)"><svg><use href="#i-search"/></svg></button><input placeholder="搜索笔记" aria-label="搜索笔记"><button class="ts-clear" aria-label="清除"><svg><use href="#i-x"/></svg></button></div>
+      </div>
+      <div class="scroll"><div class="doc" id="noteDoc"></div></div>
+    </div>
+  </div>
+  </div>
+
+  <h3 class="h-sec">C · 浮动面板 <small>剪贴板 · 启动器 · ⌘K（聚焦样式：圆形按钮切换模式，↑↓ 选择，↵ 粘贴，⌘1–9 快速粘贴）</small></h3>
+  <div class="desk">
+    <div class="faux-win"><b>周报草稿</b><br>本周完成了 UI 规范 v2 的评审……<br><br>（这是当前正在使用的应用窗口，面板浮在它上方）</div>
+    <div class="spot" id="spot">
+      <div class="spot-bar">
+        <div class="spot-field glass"><svg><use href="#i-clip"/></svg><input placeholder="搜索剪贴板" id="spotInput" aria-label="搜索剪贴板"></div>
+        <div class="spot-modes" id="spotModes">
+          <button class="spot-mode glass on" data-f="all" data-tip="全部" aria-label="全部"><svg><use href="#i-clip"/></svg></button>
+          <button class="spot-mode glass" data-f="text" data-tip="文本" aria-label="文本"><svg><use href="#i-doc"/></svg></button>
+          <button class="spot-mode glass" data-f="image" data-tip="图片" aria-label="图片"><svg><use href="#i-photo"/></svg></button>
+          <button class="spot-mode glass" data-f="link" data-tip="链接" aria-label="链接"><svg><use href="#i-link"/></svg></button>
+          <button class="spot-mode glass" data-f="snippet" data-tip="片段" aria-label="片段"><svg><use href="#i-scissors"/></svg></button>
+        </div>
+      </div>
+      <div class="spot-results glass" id="spotResults"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ ⑥ -->
+<section class="board" id="build">
+  <h2 class="h-board">实现：优先原生，最后才自定义</h2>
+  <p class="p-board">要做到“像原生”，最有效的方法是使用原生控件。现在界面割裂，根本原因是有 33 种自绘按钮、11 种自绘搜索框，等等。下表列出每个组件应该使用的 API；只有聚焦式面板和 HUD 需要自己绘制。</p>
+  <div class="sheet-card"><table class="spec" style="margin-top:0">
+    <tr><th>组件</th><th>SwiftUI / AppKit</th><th>替换掉的现有实现</th></tr>
+    <tr><td>窗口结构</td><td><code>NavigationSplitView</code> + <code>.toolbar</code> + <code>.navigationTitle</code></td><td><code>StudioSidebar</code>、<code>StudioHeroHeader</code>、页面内的大标题</td></tr>
+    <tr><td>工具栏搜索</td><td><code>.searchable(text:placement:.toolbar)</code>；需要更细的控制时用 <code>NSSearchToolbarItem</code></td><td><code>SettingsSearchBox</code>、<code>AskLibrarySearchSurface</code>、词库的可展开胶囊，以及 8 处内联搜索框</td></tr>
+    <tr><td>按钮</td><td><code>.bordered</code> / <code>.borderedProminent</code> / <code>.borderless</code> / <code>.glass</code> / <code>.glassProminent</code>，<code>.controlSize</code></td><td><code>StudioButton</code>、<code>ModelActionStyle</code>、<code>AskWorkflowActionStyle</code>、<code>AskCapsuleButtonStyle</code>、<code>SettingsActionButton</code>…</td></tr>
+    <tr><td>选择</td><td><code>Picker</code>（<code>.menu</code>）/ <code>Menu</code></td><td><code>SettingsMenuPicker</code>、<code>SettingsActionMenu</code>、<code>CloudServerMenuPicker</code></td></tr>
+    <tr><td>分段</td><td><code>Picker(.segmented)</code></td><td><code>StudioSegmentedControl</code>、<code>AskSegmentedControl</code>、<code>ModelPageTabBar</code>、<code>VoiceInputTabBar</code>、<code>StudioUnderlineTab</code></td></tr>
+    <tr><td>设置页</td><td><code>Form</code> + <code>.formStyle(.grouped)</code> + <code>LabeledContent</code></td><td><code>StudioCard</code>、<code>StudioSettingRow</code>、<code>ModelSurface</code></td></tr>
+    <tr><td>列表 / 表格</td><td><code>List</code>（<code>.sidebar</code> / <code>.inset</code>）、<code>Table</code></td><td><code>StudioHistoryRow</code>、自绘的词库列表</td></tr>
+    <tr><td>空状态</td><td><code>ContentUnavailableView</code>（macOS 14 起；13 需要做一个同样外观的 shim）</td><td><code>AgentEmptyState</code> 和各页面自写的空状态</td></tr>
+    <tr><td>确认</td><td><code>.alert</code> / <code>.confirmationDialog</code></td><td>自绘弹层</td></tr>
+    <tr><td>提示</td><td><code>.help()</code></td><td><code>StudioTooltipModifier</code></td></tr>
+    <tr><td>玻璃</td><td><code>.glassEffect()</code>、<code>GlassEffectContainer</code>（用于搜索圆钮与胶囊之间的形变）、<code>NSGlassEffectView</code>；macOS 13–15 使用 <code>NSVisualEffectView</code></td><td><code>StudioLiquidGlassBackground</code> 中的自绘高光</td></tr>
+    <tr><td>自定义（保留）</td><td>聚焦式面板、HUD、录音浮层</td><td>统一放到 <code>UI/DesignSystem/</code></td></tr>
+  </table></div>
+
+  <h3 class="h-sec">“传统”形态在 macOS 26 上的含义</h3>
+  <div class="sheet-card"><p class="note" style="margin:0">原生控件的形状由系统决定：在 macOS 26 上，按钮和弹出按钮总是 Tahoe 的形状，应用无法强制改回 Sequoia 的样子。因此“传统”在 macOS 26 上的含义是<b>关闭玻璃材质</b>：侧栏、工具栏、菜单和面板都使用实底，相当于 macOS 26.1 系统设置里的“着色（Tinted）”外观。在 macOS 13–15 上，两种形态都会以 Sequoia 的外观呈现，区别只在于浮动面板是否半透明。设计稿里的“传统”展示的是 Sequoia 外观，作为两种形态在旧系统上的基线。</p></div>
+
+  <h3 class="h-sec">迁移顺序</h3>
+  <div class="grid g2">
+    <div class="sheet-card"><ul class="rules" style="margin-top:0">
+      <li><b>阶段 1：窗口骨架</b>（约 1 周）。设置窗口改用 <code>NavigationSplitView</code> + 工具栏标题 + 工具栏搜索，删除内容区的大标题。这一步改动最小，但对“原生感”的提升最大。</li>
+      <li><b>阶段 2：设置页表单化</b>（约 2 周）。各个设置页改为 <code>Form(.grouped)</code>，使用原生的弹出按钮、开关和分段控件；词库和历史改为 <code>Table</code>。</li>
+      <li><b>阶段 3：资料库窗口</b>。笔记、单词本、随便问统一使用模板 B。</li>
+      <li><b>阶段 4：浮动面板</b>。剪贴板、启动器、⌘K 统一为聚焦式面板。</li>
+    </ul></div>
+    <div class="sheet-card"><ul class="rules" style="margin-top:0">
+      <li><b>测试</b>：每个阶段都沿用 <code>AskConversationVisualTests</code> 的渲染方式，输出“macOS 版本 × 形态 × 浅色/深色”的截图，作为对比基线。</li>
+      <li><b>防止回退</b>：用 SwiftLint 禁止 <code>.font(.system(size:</code>、字面量 <code>cornerRadius</code>、<code>NSColor(calibrated…)</code>，以当前数量为基线，只允许减少。</li>
+      <li><b>删除</b>：<code>ModelVisualStyle</code>、<code>AskWordBookStyle</code>、<code>AskNotesStyle</code>、<code>AskWorkflowEditorStyle</code>、<code>SystemMonitorTheme</code>、<code>OnboardingProviderStyle</code>。<code>StudioTheme</code> 最终只保留品牌色和少数布局常量。</li>
+    </ul></div>
+  </div>
+</section>
+
+</main>
+
+<!-- overlays -->
+<div id="tip" role="tooltip"></div>
+<div class="hud glass" id="hud" role="status"><svg><use href="#i-checkfill"/></svg><span id="hudText">已拷贝</span></div>
+<div class="scrim" id="sheetScrim">
+  <div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="s-body">
+      <h3 id="sheetTitle">添加词条</h3>
+      <div class="form2"><label for="termIn">词条：</label><input class="field" id="termIn" placeholder="例如 Typeflux"><label for="hintIn">读音提示：</label><input class="field" id="hintIn" placeholder="可选"></div>
+      <span class="check on" data-check style="margin-left:94px"><span class="box"><svg><use href="#i-check"/></svg></span>识别时优先匹配</span>
+    </div>
+    <div class="s-foot"><button class="btn" data-dismiss>取消</button><button class="btn default" id="sheetOk" disabled>添加</button></div>
+  </div>
+</div>
+<div class="scrim" id="alertScrim">
+  <div class="sheet glass alert" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle">
+    <svg class="a-ico"><use href="#i-warn"/></svg>
+    <h3 id="alertTitle">要清除所有历史记录吗？</h3>
+    <p>此操作会删除 1,284 条语音和剪贴板记录，且不可撤销。</p>
+    <div class="a-btns"><button class="btn" data-dismiss>取消</button><button class="btn destructive" id="alertOk">清除</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const root = document.documentElement;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* ---------------- segmented controls with a sliding thumb ---------------- */
+  function placeThumb(seg) {
+    let t = $('.thumb', seg);
+    if (!t) { t = document.createElement('span'); t.className = 'thumb'; seg.prepend(t); }
+    const on = $('button.on', seg);
+    if (!on || !seg.offsetParent) return;
+    t.style.left = on.offsetLeft + 'px'; t.style.width = on.offsetWidth + 'px';
+  }
+  function bindSeg(seg, onChange) {
+    $$('button', seg).forEach(b => b.addEventListener('click', () => {
+      $$('button', seg).forEach(x => x.classList.toggle('on', x === b)); placeThumb(seg); onChange && onChange(b);
+    }));
+    placeThumb(seg);
+  }
+  // Thumb geometry depends on the style's font and padding, so re-measure after layout changes.
+  const relayout = () => requestAnimationFrame(() => $$('.seg').forEach(placeThumb));
+  window.addEventListener('resize', relayout);
+  document.fonts && document.fonts.ready.then(relayout);
+
+  /* ---------------- board: sections, style, theme, accent ---------------- */
+  function show(id) {
+    $$('section.board').forEach(s => s.classList.toggle('on', s.id === id));
+    $$('#boardNav a').forEach(a => a.classList.toggle('on', a.dataset.sec === id));
+    relayout();
+  }
+  $$('#boardNav a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); show(a.dataset.sec); history.replaceState(null, '', '#' + a.dataset.sec); scrollTo({ top: 0 }); }));
+  if (location.hash && $(location.hash + '.board')) show(location.hash.slice(1));
+
+  function setStyle(v) {
+    root.dataset.style = v;
+    [$('#styleSeg'), $('#innerStyleSeg')].forEach(seg => $$('button', seg).forEach(b => b.classList.toggle('on', b.dataset.v === v)));
+    refreshReadouts(); relayout();
+  }
+  bindSeg($('#styleSeg'), b => setStyle(b.dataset.v));
+  bindSeg($('#innerStyleSeg'), b => setStyle(b.dataset.v));
+  bindSeg($('#themeSeg'), b => { root.dataset.theme = b.dataset.v; refreshReadouts(); });
+  $$('#accents button').forEach(b => b.addEventListener('click', () => { root.dataset.accent = b.dataset.v; $$('#accents button').forEach(x => x.classList.toggle('on', x === b)); refreshReadouts(); }));
+
+  const SW = [['label', '标签', 'labelColor'], ['label2', '次级标签', 'secondaryLabelColor'], ['label3', '三级标签', 'tertiaryLabelColor'], ['sep', '分隔线', 'separatorColor'], ['fill', '填充', 'quaternarySystemFill'], ['accent', '强调色', 'controlAccentColor'],
+    ['canvas', '窗口背景', 'windowBackgroundColor'], ['content', '内容背景', 'textBackgroundColor'], ['red', '红', 'systemRed'], ['orange', '橙', 'systemOrange'], ['green', '绿', 'systemGreen'], ['purple', '紫', 'systemPurple']];
+  $('#swatches').innerHTML = SW.map(([k, n, api]) => `<div class="sw-cell"><div class="sw-chip" style="background:var(--${k})"></div><b>${n}</b><span>${api}</span><span data-tok="${k}"></span></div>`).join('');
+  const DIMS = [
+    ['窗口圆角', '10', '26'], ['侧栏', '贴边 · 行 28 · 圆角 5', '悬浮内缩 8 · 圆角 18 · 行 32 · 圆角 10'],
+    ['工具栏高度 / 按钮', '52 · 无边框 28×24', '52 · 玻璃胶囊 36'], ['工具栏搜索', '收起 28×24 · 展开 200×24 r6', '收起 ⌀36 · 展开 240×36 胶囊'],
+    ['按钮（常规 / 大）', '22 r5.5 / 28 r7', '26 r8 / 34 胶囊'], ['弹出按钮', '22 r5.5 · 强调色箭头块', '26 r8 · 灰色双箭头'],
+    ['文本框', '22 r5 · 描边', '26 r8 · 填充'], ['分段控件', '22 r6', '28 胶囊'], ['开关', '32×18 圆形滑块', '38×22 胶囊滑块'], ['复选框', '14 r3.5', '16 r5'],
+    ['表单分组 / 行', 'r8 / 36', 'r14 / 40'], ['表格行', '24', '28'], ['菜单 / 行 / 高亮', 'r6 / 22 / r4', 'r14 / 24 / r8'], ['弹出框 / 弹窗', 'r10 / r10', 'r18 / r22'],
+    ['聚焦面板', '输入 52 · r12 一体', '输入 56 胶囊 + 圆钮 56 + 结果面板 r24']
+  ];
+  function refreshReadouts() {
+    const cs = getComputedStyle(root);
+    $$('[data-tok]').forEach(s => s.textContent = cs.getPropertyValue('--' + s.dataset.tok).trim());
+    const glass = root.dataset.style === 'glass';
+    $('#curStyle').textContent = glass ? 'Liquid Glass（Tahoe）' : '传统（Sequoia）';
+    $('#dims').innerHTML = '<div class="h">项目</div><div class="h">传统</div><div class="h">Liquid Glass</div>' +
+      DIMS.map(([k, a, b]) => `<div>${k}</div><div class="v ${glass ? '' : 'cur'}">${a}</div><div class="v ${glass ? 'cur' : ''}">${b}</div>`).join('');
+  }
+  refreshReadouts();
+
+  /* ---------------- tooltips (native help tags, 600ms delay) ---------------- */
+  const tip = $('#tip'); let tipTimer;
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-tip]'); if (!el) return;
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(() => {
+      tip.textContent = el.dataset.tip; const r = el.getBoundingClientRect();
+      tip.style.left = Math.min(innerWidth - tip.offsetWidth - 8, Math.max(8, r.left + r.width / 2 - tip.offsetWidth / 2)) + 'px';
+      tip.style.top = (r.bottom + 8) + 'px'; tip.classList.add('on');
+    }, 600);
+  });
+  document.addEventListener('mouseout', e => { if (e.target.closest('[data-tip]')) { clearTimeout(tipTimer); tip.classList.remove('on'); } });
+  document.addEventListener('mousedown', () => { clearTimeout(tipTimer); tip.classList.remove('on'); });
+
+  /* ---------------- generic controls ---------------- */
+  $$('[data-seg]').forEach(s => bindSeg(s));
+  $$('[data-sw]').forEach(s => s.addEventListener('click', () => s.setAttribute('aria-checked', String(s.getAttribute('aria-checked') !== 'true'))));
+  $$('[data-check]').forEach(c => c.addEventListener('click', () => c.classList.toggle('on')));
+  $$('[data-radio]').forEach(g => $$('.check', g).forEach(c => c.addEventListener('click', () => $$('.check', g).forEach(x => x.classList.toggle('on', x === c)))));
+  $$('[data-slider]').forEach(s => { const f = () => s.style.setProperty('--p', ((s.value - s.min) / (s.max - s.min) * 100) + '%'); s.addEventListener('input', f); f(); });
+  $$('[data-tokens] .x').forEach(x => x.addEventListener('click', () => x.parentElement.remove()));
+  $$('#demoTable tbody tr').forEach(tr => tr.addEventListener('click', () => $$('#demoTable tbody tr').forEach(x => x.classList.toggle('sel', x === tr))));
+  const copyBtn = $('#copyDemo'); let copyT;
+  copyBtn.addEventListener('click', () => {
+    clearTimeout(copyT);
+    copyBtn.innerHTML = '<svg style="color:var(--green)"><use href="#i-check"/></svg>已拷贝';
+    copyT = setTimeout(() => copyBtn.innerHTML = '<svg><use href="#i-copy"/></svg>拷贝', 1400);
+  });
+
+  /* ---------------- pop-up buttons, pull-downs, popovers ---------------- */
+  function closeAll(except) { $$('.popup.open').forEach(p => { if (p !== except) p.classList.remove('open'); }); }
+  document.addEventListener('mousedown', e => { if (!e.target.closest('.popup')) closeAll(); });
+  $$('[data-pop]').forEach(p => p.querySelector(':scope > button').addEventListener('click', e => {
+    e.stopPropagation(); const willOpen = !p.classList.contains('open'); closeAll(); p.classList.toggle('open', willOpen);
+    if (willOpen) setTimeout(() => { const i = $('input', p); i && i.focus(); }, 30);
+  }));
+  $$('[data-popup]').forEach(p => {
+    const btn = p.querySelector(':scope > button'), menu = $('.menu', p), pulldown = p.hasAttribute('data-pulldown');
+    const items = () => $$('.mi', menu); let kb = -1;
+    const mark = i => { kb = i; items().forEach((x, j) => x.classList.toggle('kb', j === i)); };
+    function open() {
+      closeAll(p); p.classList.add('open');
+      if (pulldown) { menu.style.top = 'calc(100% + 4px)'; mark(-1); return; }
+      // Native pop-up behaviour: the selected item opens exactly over the button.
+      const list = items(), sel = Math.max(0, list.findIndex(x => x.classList.contains('on')));
+      menu.style.top = (-list[sel].offsetTop + (btn.offsetHeight - list[sel].offsetHeight) / 2) + 'px';
+      if (!menu.style.right) menu.style.left = '-6px';
+      mark(sel);
+    }
+    const close = () => { p.classList.remove('open'); mark(-1); };
+    btn.addEventListener('click', e => { e.stopPropagation(); p.classList.contains('open') ? close() : open(); });
+    btn.addEventListener('keydown', e => {
+      if (!p.classList.contains('open')) { if (['ArrowDown', 'ArrowUp', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); open(); } return; }
+      const n = items().length;
+      if (e.key === 'ArrowDown') { e.preventDefault(); mark((kb + 1) % n); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); mark((kb - 1 + n) % n); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (items()[kb]) items()[kb].click(); }
+      else if (e.key === 'Escape') { e.preventDefault(); close(); }
+    });
+    items().forEach(it => it.addEventListener('click', e => {
+      e.stopPropagation();
+      if (it.dataset.v) {
+        items().filter(x => x.dataset.v).forEach(x => x.classList.toggle('on', x === it));
+        if (!pulldown) $('.val', p).textContent = it.dataset.v;
+      }
+      close(); btn.focus();
+    }));
+  });
+
+  /* ---------------- collapsible toolbar search ---------------- */
+  $$('[data-tsearch]').forEach(box => {
+    const input = $('input', box), icon = $('.ts-ico', box), clear = $('.ts-clear', box);
+    const sync = () => box.classList.toggle('filled', input.value.length > 0);
+    const expand = () => { box.classList.add('open'); input.focus(); };
+    const collapse = () => { box.classList.remove('open', 'focused'); input.blur(); };
+    icon.addEventListener('mousedown', e => { if (box.classList.contains('open')) e.preventDefault(); });
+    icon.addEventListener('click', () => box.classList.contains('open') ? input.focus() : expand());
+    input.addEventListener('focus', () => box.classList.add('focused'));
+    input.addEventListener('blur', () => {
+      box.classList.remove('focused');
+      // An empty field folds back into the magnifier; a query keeps it open as a filter reminder.
+      setTimeout(() => { if (document.activeElement !== input && !input.value) box.classList.remove('open'); }, 120);
+    });
+    input.addEventListener('input', sync);
+    input.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      if (input.value) { input.value = ''; sync(); input.dispatchEvent(new Event('input')); } else collapse();
+    });
+    clear.addEventListener('mousedown', e => e.preventDefault());
+    clear.addEventListener('click', () => { input.value = ''; sync(); input.dispatchEvent(new Event('input')); input.focus(); });
+  });
+  document.addEventListener('keydown', e => {
+    if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'f') return;
+    const visible = $$('[data-tsearch]').filter(b => b.offsetParent !== null);
+    const target = visible.find(b => b.closest('.win') && b.closest('.win').matches(':hover')) || visible[0];
+    if (!target) return;
+    e.preventDefault();
+    if (target.classList.contains('open')) $('input', target).focus(); else $('.ts-ico', target).click();
+  });
+
+  /* ---------------- HUD, sheet, alert ---------------- */
+  let hudT;
+  function hud(text) { $('#hudText').textContent = text; const h = $('#hud'); h.classList.add('on'); clearTimeout(hudT); hudT = setTimeout(() => h.classList.remove('on'), 1500); }
+  $('#openHud').addEventListener('click', () => hud('已拷贝到剪贴板'));
+  let lastFocus = null;
+  function openScrim(id) { lastFocus = document.activeElement; $(id).classList.add('on'); }
+  function closeScrims() { $$('.scrim.on').forEach(s => s.classList.remove('on')); if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  $$('[data-dismiss]').forEach(b => b.addEventListener('click', closeScrims));
+  $$('.scrim').forEach(s => s.addEventListener('mousedown', e => { if (e.target === s) closeScrims(); }));
+  const termIn = $('#termIn'), sheetOk = $('#sheetOk');
+  function openSheet(prefill = '') { openScrim('#sheetScrim'); termIn.value = prefill; $('#hintIn').value = ''; sheetOk.disabled = !prefill.trim(); setTimeout(() => termIn.focus(), 40); }
+  termIn.addEventListener('input', () => { sheetOk.disabled = !termIn.value.trim(); });
+  $('#openSheet').addEventListener('click', () => openSheet());
+  const openAlert = () => { openScrim('#alertScrim'); setTimeout(() => $('#alertScrim .btn').focus(), 40); };
+  $('#openAlert').addEventListener('click', openAlert);
+  $$('[data-alert]').forEach(b => b.addEventListener('click', openAlert));
+  $('#alertOk').addEventListener('click', () => { closeScrims(); hud('已清除历史记录'); });
+  document.addEventListener('keydown', e => {
+    const open = $('.scrim.on'); if (!open) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeScrims(); }
+    if (e.key === 'Enter' && open.id === 'sheetScrim' && e.target.tagName === 'INPUT' && !sheetOk.disabled) sheetOk.click();
+  });
+
+  /* ---------------- settings window: sidebar ---------------- */
+  const side = $('#appSide');
+  $$('.nav[data-page]', side).forEach(n => n.addEventListener('click', () => {
+    $$('.nav[data-page]', side).forEach(x => x.classList.toggle('on', x === n));
+    $$('#app > .main').forEach(m => m.classList.toggle('hide', m.id !== n.dataset.page));
+    side.classList.add('focused'); side.focus(); relayout();
+  }));
+  side.addEventListener('blur', () => side.classList.remove('focused'));
+  side.addEventListener('keydown', e => {
+    if (!['ArrowDown', 'ArrowUp'].includes(e.key)) return;
+    e.preventDefault(); const navs = $$('.nav[data-page]', side); const i = navs.findIndex(x => x.classList.contains('on'));
+    navs[(i + (e.key === 'ArrowDown' ? 1 : -1) + navs.length) % navs.length].click();
+  });
+
+  /* ---------------- 词库 ---------------- */
+  const VOCAB = [
+    { term: 'Tahoe', src: 'auto', uses: 9, added: '10月 12日' }, { term: 'NSGlassEffectView', src: 'auto', uses: 4, added: '10月 11日' },
+    { term: 'Multica', src: 'manual', uses: 23, added: '10月 10日' }, { term: 'Liquid Glass', src: 'auto', uses: 37, added: '10月 8日' },
+    { term: 'SenseVoice', src: 'auto', uses: 6, added: '10月 1日' }, { term: 'WhisperKit', src: 'auto', uses: 12, added: '9月 15日' },
+    { term: 'Typeflux', src: 'manual', uses: 214, added: '9月 2日', hint: 'type flux' }, { term: 'PGVector', src: 'manual', uses: 19, added: '8月 21日' },
+    { term: 'SwiftUI', src: 'auto', uses: 88, added: '7月 30日' }, { term: '随便问', src: 'manual', uses: 61, added: '6月 11日' }
+  ];
+  VOCAB.forEach((v, i) => { v.order = i; });
+  let vocabFilter = 'all', sortKey = null, sortDir = 1, selTerm = 'Typeflux', nextOrder = -1;
+  const vIn = $('#vocabSearch input');
+  function renderVocab() {
+    const q = vIn.value.trim().toLowerCase();
+    let rows = VOCAB.filter(v => (vocabFilter === 'all' || v.src === vocabFilter) && (!q || v.term.toLowerCase().includes(q) || (v.hint || '').toLowerCase().includes(q)));
+    if (sortKey) rows = [...rows].sort((a, b) => (sortKey === 'term' ? a.term.localeCompare(b.term, 'zh') : a[sortKey] - b[sortKey]) * sortDir);
+    $('#vocabCnt').textContent = VOCAB.length;
+    $('#vocabTable tbody').innerHTML = rows.map(v => `<tr class="${v.term === selTerm ? 'sel' : ''}" data-t="${esc(v.term)}"><td>${esc(v.term)}${v.hint ? ` <span style="font:var(--callout);opacity:.6">· ${esc(v.hint)}</span>` : ''}</td><td>${v.src === 'manual' ? '<span class="tag">手动</span>' : '<span class="tag accent">自动学习</span>'}</td><td class="dim">${v.uses}</td><td class="dim">${esc(v.added)}</td><td><button class="btn borderless icon-only row-act" data-del="${esc(v.term)}" data-tip="删除" aria-label="删除 ${esc(v.term)}" style="color:var(--label2);height:20px;width:22px"><svg><use href="#i-trash"/></svg></button></td></tr>`).join('');
+    $$('#vocabTable th.sortable').forEach(th => { th.innerHTML = esc(th.textContent.replace(/[▲▼]/g, '').trim()) + (th.dataset.k === sortKey ? `<span class="dir">${sortDir > 0 ? '▲' : '▼'}</span>` : ''); });
+    const empty = rows.length === 0, raw = vIn.value.trim();
+    $('#vocabTable').classList.toggle('hide', empty); $('#vocabEmpty').classList.toggle('hide', !empty);
+    if (empty) { $('#vocabEmptyT').textContent = raw ? `没有找到“${raw}”的结果` : '这个分类下还没有词条'; $('#vocabEmptyAdd').textContent = raw ? `添加“${raw}”` : '添加词条…'; }
+    $$('#vocabTable tbody tr').forEach(tr => tr.addEventListener('click', () => { selTerm = tr.dataset.t; renderVocab(); }));
+    $$('#vocabTable [data-del]').forEach(b => b.addEventListener('click', e => {
+      e.stopPropagation(); const i = VOCAB.findIndex(v => v.term === b.dataset.del); if (i >= 0) VOCAB.splice(i, 1); renderVocab();
+    }));
+  }
+  $$('#vocabTable th.sortable').forEach(th => th.addEventListener('click', () => {
+    if (sortKey === th.dataset.k) sortDir = -sortDir; else { sortKey = th.dataset.k; sortDir = th.dataset.k === 'uses' ? -1 : 1; }
+    renderVocab();
+  }));
+  vIn.addEventListener('input', renderVocab);
+  bindSeg($('#vocabSeg'), b => { vocabFilter = b.dataset.f; renderVocab(); });
+  $('#addTerm').addEventListener('click', () => openSheet());
+  $('#vocabEmptyAdd').addEventListener('click', () => openSheet(vIn.value.trim()));
+  sheetOk.addEventListener('click', () => {
+    const term = termIn.value.trim(); if (!term) return;
+    if (!VOCAB.some(v => v.term === term)) VOCAB.unshift({ term, src: 'manual', uses: 0, added: '今天', hint: $('#hintIn').value.trim(), order: nextOrder-- });
+    selTerm = term; closeScrims(); renderVocab();
+  });
+  renderVocab();
+
+  /* ---------------- 历史 ---------------- */
+  const HIST = [['今天', [['明天下午三点和设计团队过一下 UI 规范', 'Slack', '10:42', '语音输入'], ['请把这段改写得更正式一些', 'Mail', '09:15', '改写']]], ['昨天', [['周报：完成 UI 规范 v2 评审', '备忘录', '18:20', '语音输入'], ['把这个函数改成异步的', 'Xcode', '15:03', '改写']]]];
+  const hIn = $('#histSearch input');
+  function renderHist() {
+    const q = hIn.value.trim().toLowerCase();
+    const groups = HIST.map(([day, items]) => [day, items.filter(([t, app]) => !q || (t + app).toLowerCase().includes(q))]).filter(([, items]) => items.length);
+    $('#histList').innerHTML = groups.length ? groups.map(([day, items]) => `<div class="form-h">${day}</div><div class="group">${items.map(([t, app, time, kind]) =>
+      `<div class="row nav"><div class="lab"><div class="t">${esc(t)}</div><div class="d">${esc(app)} · ${time}</div></div><div class="acc">${kind === '改写' ? '<span class="tag accent">改写</span>' : ''}<svg class="chev-r"><use href="#i-right"/></svg></div></div>`).join('')}</div>`).join('')
+      : `<div class="empty" style="padding-top:80px"><svg class="sym"><use href="#i-search"/></svg><h5>没有找到“${esc(hIn.value.trim())}”的结果</h5></div>`;
+  }
+  hIn.addEventListener('input', renderHist);
+  renderHist();
+
+  /* ---------------- 笔记 ---------------- */
+  const NOTES = [
+    { t: 'UI 规范评审纪要', s: '按钮回归原生样式，搜索收起为放大镜…', d: '10:42', body: '<p>评审结论：</p><ul><li>两种形态分别对应 macOS 15 Sequoia 和 macOS 26 Tahoe 的原生外观。</li><li>Liquid Glass 只用于导航层，内容层保持实底。</li><li>搜索统一使用工具栏里可收起的放大镜。</li></ul>' },
+    { t: 'Liquid Glass 适配清单', s: '设置窗口、剪贴板、启动器…', d: '昨天', body: '<p>需要检查“降低透明度”和“增强对比度”下的回退效果，以及 macOS 13–15 上的 <code>NSVisualEffectView</code> 降级。</p>' },
+    { t: 'PGVector 索引调优', s: 'HNSW m=16, ef_construction=64', d: '周一', body: '<p>HNSW 参数：<code>m=16</code>、<code>ef_construction=64</code>，查询时 <code>ef_search=40</code>。</p>' },
+    { t: '采访提纲', s: '语音输入的使用场景有哪些？', d: '9月 28日', body: '<p>1. 你在哪些场景下会用语音输入？<br>2. 最常遇到的识别错误是什么？</p>' }
+  ];
+  let noteSel = 0;
+  const nSide = $('#noteSide'), nIn = $('#noteSearch input');
+  function renderNotes() {
+    const q = nIn.value.trim().toLowerCase();
+    const list = NOTES.map((n, i) => ({ n, i })).filter(({ n }) => !q || (n.t + n.s).toLowerCase().includes(q));
+    $('#noteList').innerHTML = list.length ? list.map(({ n, i }) => `<div class="lib-item ${i === noteSel ? 'on' : ''}" data-i="${i}"><div class="t">${esc(n.t)}</div><div class="s"><b>${esc(n.d)}</b>${esc(n.s)}</div></div>`).join('')
+      : `<div class="empty" style="padding:40px 10px"><svg class="sym" style="width:30px;height:30px"><use href="#i-search"/></svg><h5 style="font-size:13px">没有结果</h5></div>`;
+    $$('#noteList .lib-item').forEach(r => r.addEventListener('click', () => { noteSel = +r.dataset.i; nSide.classList.add('focused'); nSide.focus(); renderNotes(); }));
+    const cur = NOTES[noteSel];
+    $('#noteDoc').innerHTML = cur ? `<h2>${esc(cur.t)}</h2><div class="meta">${esc(cur.d)}</div>${cur.body}` : '<div class="empty" style="padding-top:120px"><h5>没有笔记</h5></div>';
+  }
+  nIn.addEventListener('input', renderNotes);
+  nSide.addEventListener('blur', () => nSide.classList.remove('focused'));
+  $('#noteNew').addEventListener('click', () => { NOTES.unshift({ t: '新笔记', s: '没有其他文本', d: '刚刚', body: '<p style="color:var(--label3)">开始输入…</p>' }); noteSel = 0; renderNotes(); });
+  $('#noteTrash').addEventListener('click', () => { if (!NOTES.length) return; NOTES.splice(noteSel, 1); noteSel = Math.max(0, Math.min(noteSel, NOTES.length - 1)); renderNotes(); });
+  $('#noteStar').addEventListener('click', e => e.currentTarget.classList.toggle('on'));
+  renderNotes();
+
+  /* ---------------- 剪贴板（聚焦式） ---------------- */
+  const CLIPS = [
+    { k: 'text', t: '明天下午三点和设计团队过一下 UI 规范', app: 'Slack', d: '刚刚', ic: 'i-doc' },
+    { k: 'link', t: 'https://github.com/mylxsw/typeflux/pull/437', app: 'Safari', d: '2 分钟前', ic: 'i-link' },
+    { k: 'image', t: '截屏 2026-10-12 11.20.04', app: '截屏', d: '8 分钟前', ic: 'i-photo' },
+    { k: 'snippet', t: '邮件签名', app: '片段', d: '固定', ic: 'i-scissors' },
+    { k: 'text', t: 'SELECT term, uses FROM vocab ORDER BY uses DESC;', app: '终端', d: '1 小时前', ic: 'i-doc' },
+    { k: 'link', t: 'https://developer.apple.com/design/human-interface-guidelines/materials', app: 'Safari', d: '昨天', ic: 'i-link' },
+    { k: 'text', t: '把这段话改写得更简洁', app: '备忘录', d: '昨天', ic: 'i-doc' }
+  ];
+  let clipF = 'all', clipSel = 0, clipRows = [];
+  const sIn = $('#spotInput');
+  function renderSpot() {
+    const q = sIn.value.trim().toLowerCase();
+    clipRows = CLIPS.filter(c => (clipF === 'all' || c.k === clipF) && (!q || (c.t + c.app).toLowerCase().includes(q)));
+    clipSel = Math.min(clipSel, Math.max(0, clipRows.length - 1));
+    $('#spotResults').innerHTML = clipRows.length
+      ? '<div class="spot-sec">最近拷贝</div>' + clipRows.map((c, i) => `<div class="spot-row ${i === clipSel ? 'on' : ''}" data-i="${i}"><span class="ri"><svg><use href="#${c.ic}"/></svg></span><span class="rt">${esc(c.t)}</span><span class="rm">${esc(c.app)} · ${c.d}</span>${i < 9 ? `<span class="rm" style="width:26px;text-align:right">⌘${i + 1}</span>` : ''}</div>`).join('')
+        + '<div class="spot-foot"><span>↑↓ 选择</span><span>↵ 粘贴</span><span>⌘↵ 粘贴为纯文本</span><div class="r"><span>⌘K 更多操作</span><span>esc 关闭</span></div></div>'
+      : '<div class="empty" style="padding:28px"><svg class="sym" style="width:30px;height:30px"><use href="#i-search"/></svg><h5 style="font-size:13px">没有匹配的内容</h5></div>';
+    $$('#spotResults .spot-row').forEach(r => {
+      r.addEventListener('mousemove', () => { if (clipSel !== +r.dataset.i) { clipSel = +r.dataset.i; $$('#spotResults .spot-row').forEach((x, j) => x.classList.toggle('on', j === clipSel)); } });
+      r.addEventListener('click', paste);
+    });
+  }
+  function paste() { if (clipRows[clipSel]) hud('已粘贴到“周报草稿”'); }
+  sIn.addEventListener('input', () => { clipSel = 0; renderSpot(); });
+  sIn.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); clipSel = Math.min(clipRows.length - 1, clipSel + 1); renderSpot(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); clipSel = Math.max(0, clipSel - 1); renderSpot(); }
+    else if (e.key === 'Enter') { e.preventDefault(); paste(); }
+    else if (e.key === 'Escape') { sIn.value = ''; clipSel = 0; renderSpot(); }
+    else if ((e.metaKey || e.ctrlKey) && /^[1-9]$/.test(e.key)) { e.preventDefault(); const i = +e.key - 1; if (clipRows[i]) { clipSel = i; renderSpot(); paste(); } }
+  });
+  $$('#spotModes .spot-mode').forEach(b => b.addEventListener('click', () => {
+    clipF = b.dataset.f; clipSel = 0; $$('#spotModes .spot-mode').forEach(x => x.classList.toggle('on', x === b));
+    sIn.placeholder = b.dataset.f === 'all' ? '搜索剪贴板' : '搜索' + b.dataset.tip; renderSpot(); sIn.focus();
+  }));
+  renderSpot();
+})();
+</script>
+</body>
+</html>
