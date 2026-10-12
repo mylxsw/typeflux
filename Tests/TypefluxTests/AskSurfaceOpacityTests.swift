@@ -63,20 +63,21 @@ struct AskSurfaceOpacityTests {
         }
     }
 
-    @Test func glassFrostStaysDarkOverWhiteInBothMaterialPaths() async throws {
+    @Test func glassFrostAdaptsToAppearanceInBothMaterialPaths() async throws {
         for material in [AskGlassMaterial.liquidGlass, .visualEffect] {
             let glass = AskComposerChrome.launcher.glassBackground(material).background(Color.white)
             let cardSize = NSSize(width: 100, height: 80)
             let light = try await render(glass, size: cardSize, appearance: .aqua)
             let dark = try await render(glass, size: cardSize, appearance: .darkAqua)
-            // This checks the SwiftUI frost against white. Window-server
-            // backdrop sampling is outside the scope of bitmap captures.
+            // Native glass now uses a light scrim and lets the window server supply
+            // most of the dark optics. A bitmap can check its adaptive scrim, while
+            // legacy blur still supplies a strong dark frost inside the view itself.
             let lightFill = try pixel(light, x: 50, y: 40)
             let darkFill = try pixel(dark, x: 50, y: 40)
             #expect(lightFill.redComponent > 0.65)
-            #expect(darkFill.redComponent < 0.4)
-            #expect(darkFill.greenComponent < 0.4)
-            #expect(darkFill.blueComponent < 0.4)
+            #expect(darkFill.redComponent < (material == .liquidGlass ? lightFill.redComponent - 0.05 : 0.4))
+            #expect(darkFill.greenComponent < (material == .liquidGlass ? lightFill.greenComponent - 0.05 : 0.4))
+            #expect(darkFill.blueComponent < (material == .liquidGlass ? lightFill.blueComponent - 0.05 : 0.4))
         }
     }
 

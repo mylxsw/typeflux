@@ -4658,3 +4658,20 @@
 "settings.pane.appearance" = "외관";
 
 "settings.inputAndCapture.title" = "입력 및 캡처";
+
+// Launcher file preview
+"launcher.search.preview" = "파일 미리보기";
+"launcher.search.preview.subtitle" = "파일을 선택하면 실행기 옆에 미리보기를 표시합니다.";
+"ask.preview.loading" = "미리보기 로딩 중…";
+"ask.preview.pages" = "총 %d페이지";
+"ask.preview.lines" = "총 %d줄";
+"ask.preview.noAutoplay" = "자동 재생 안 함";
+"ask.preview.truncated" = "미리보기가 잘렸습니다";
+"ask.preview.kind.image" = "이미지";
+"ask.preview.kind.pdf" = "PDF";
+"ask.preview.kind.text" = "텍스트";
+"ask.preview.kind.markdown" = "Markdown";
+"ask.preview.kind.table" = "표";
+"ask.preview.kind.document" = "문서";
+"ask.preview.kind.video" = "동영상";
+"ask.preview.kind.audio" = "오디오";

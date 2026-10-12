@@ -162,7 +162,7 @@ extension AskLauncherToggleTests {
         #expect(editorDrift < 0.5, "the editor and its controls moved by \(editorDrift)")
     }
 
-    @Test func theListKeepsItsHeightWhileMatchesComeAndGo() async throws {
+    @Test func theListGrowsWithoutShrinkingWhileMatchesComeAndGo() async throws {
         // Start with one app and no feature matches, leaving room for the list to grow.
         let session = try await openSteadyLauncher(initialQuery: "qq音乐")
         defer { session.close() }
@@ -176,8 +176,8 @@ extension AskLauncherToggleTests {
                 "the matches came and went: \(shown)")
         let heights = recorder.heights
         #expect(heights.count >= 5)
-        #expect((heights.max() ?? 0) - (heights.min() ?? 0) < 0.5,
-                "the launcher size stays fixed while matches come and go")
+        #expect((heights.max() ?? 0) - (heights.min() ?? 0) > 0.5,
+                "the launcher grows to fit the larger result list")
         for (before, after) in zip(heights, heights.dropFirst()) {
             #expect(after >= before - 0.5, "the panel shrank from \(before) to \(after)")
         }

@@ -179,3 +179,10 @@ extension SettingsStore {
         set { defaults.set(newValue, forKey: "ask.localMode") }
     }
 }
+
+extension SettingsStore {
+    var askFilePreviewEnabled: Bool {
+        get { defaults.object(forKey: "ask.launcher.filePreview") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "ask.launcher.filePreview") }
+    }
+}

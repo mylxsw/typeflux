@@ -38,9 +38,9 @@ struct AskComposerChromeTests {
         #expect(AskMetrics.launcherHeaderHeight(editor: 32) == 58)
         #expect(AskMetrics.launcherHeaderHeight(editor: 33) == 58)
         #expect(AskMetrics.launcherHeaderHeight(editor: 60) == 84)
-        // The bottom bar matches the single-line header, leaving room around its controls.
-        #expect(launcher.footerHeight == AskMetrics.launcherHeaderHeight(editor: 32))
-        #expect((launcher.footerHeight - AskMetrics.composerControlHeight) / 2 == 12)
+        // The compact bottom bar leaves 7pt above and below each 34pt control.
+        #expect(launcher.footerHeight == 48)
+        #expect((launcher.footerHeight - AskMetrics.composerControlHeight) / 2 == 7)
     }
 
     @Test func launcherEditorTextLinesUpWithTheModelName() {

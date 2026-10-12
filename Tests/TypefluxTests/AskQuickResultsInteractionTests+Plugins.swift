@@ -3,6 +3,37 @@ import Foundation
 import Testing
 @testable import Typeflux
 
+/// Holds each stream open until the test has observed its intermediate output.
+private final class AskControlledTextGenerator: AskTextGenerating, @unchecked Sendable {
+    private let lock = NSLock()
+    private var requests: [(system: String, user: String)] = []
+    private var continuation: AsyncThrowingStream<String, Error>.Continuation?
+
+    var prompts: [(system: String, user: String)] { lock.withLock { requests } }
+
+    func stream(systemPrompt: String, userPrompt: String) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            lock.withLock {
+                self.continuation = continuation
+                requests.append((systemPrompt, userPrompt))
+            }
+        }
+    }
+
+    func emit(_ piece: String) {
+        lock.withLock { continuation }?.yield(piece)
+    }
+
+    func finish() {
+        let current = lock.withLock {
+            let current = continuation
+            continuation = nil
+            return current
+        }
+        current?.finish()
+    }
+}
+
 /// Keyword plugins in the real launcher, driven by key presses. They live in
 /// the quick results interaction suite: both swap the copy pasteboard, so they
 /// must take turns.
@@ -249,9 +280,8 @@ extension AskQuickResultsInteractionTests {
 
     @Test func anAIPromptStreamsOnReturnThenCopiesAndRegenerates() async throws {
         try await withPasteboard { pasteboard in
-            let generator = AskTestTextGenerator()
-            generator.pieces = ["Pol", "ished"]
-            generator.delay = .milliseconds(80)
+            let generator = AskControlledTextGenerator()
+            defer { generator.finish() }
             let launcher = try await Launcher(text: "") { model in
                 let plugin = AskPromptPlugin(generator: generator, modelName: { "m" })
                 model.plugins = AskPluginSession(plugins: [plugin]) { AskPromptPlugin.keywords }
@@ -262,7 +292,11 @@ extension AskQuickResultsInteractionTests {
             try await settle { if case .ready = model.plugins.phase { true } else { false } }
             #expect(generator.prompts.isEmpty, "nothing goes to the model before Return")
             try await launcher.press(Self.returnKey)
+            try await settle { generator.prompts.count == 1 }
+            generator.emit("Pol")
             try await settle { model.plugins.partial?.body == "Pol" }
+            generator.emit("ished")
+            generator.finish()
             try await settle { model.plugins.output != nil }
             #expect(model.plugins.output?.body == "Polished")
             #expect(generator.prompts.first?.user.hasSuffix("teh text") == true)
@@ -270,8 +304,10 @@ extension AskQuickResultsInteractionTests {
             launcher.editor.copy(nil)
             #expect(pasteboard.string(forType: .string) == "Polished")
             #expect(launcher.dismissed == 0)
-            generator.pieces = ["Again"]
             try await launcher.press(15, .command)
+            try await settle { generator.prompts.count == 2 }
+            generator.emit("Again")
+            generator.finish()
             try await settle { model.plugins.output?.body == "Again" }
             #expect(generator.prompts.count == 2)
             try await launcher.press(Self.returnKey)

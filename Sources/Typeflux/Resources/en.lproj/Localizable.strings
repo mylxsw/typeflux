@@ -4681,6 +4681,23 @@
 
 "settings.inputAndCapture.title" = "Input and Capture";
 
+// Launcher file preview
+"launcher.search.preview" = "Preview files";
+"launcher.search.preview.subtitle" = "Show a preview beside the launcher when a file is highlighted.";
+"ask.preview.loading" = "Loading preview…";
+"ask.preview.pages" = "%d pages";
+"ask.preview.lines" = "%d lines";
+"ask.preview.noAutoplay" = "No autoplay";
+"ask.preview.truncated" = "Preview truncated";
+"ask.preview.kind.image" = "Image";
+"ask.preview.kind.pdf" = "PDF";
+"ask.preview.kind.text" = "Text";
+"ask.preview.kind.markdown" = "Markdown";
+"ask.preview.kind.table" = "Table";
+"ask.preview.kind.document" = "Document";
+"ask.preview.kind.video" = "Video";
+"ask.preview.kind.audio" = "Audio";
+
 // Built-in emoji search
 "emoji.title" = "Emoji";
 "emoji.placeholder" = "Search names, keywords, or describe a feeling";

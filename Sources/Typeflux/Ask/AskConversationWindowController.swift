@@ -25,6 +25,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private var launcher: AskFloatingPanel?
     private var launcherHeight = AskMetrics.launcherHeight(editor: 32, banners: 0)
     private let launcherHeightAnimator = AskLauncherHeightAnimator()
+    let filePreview: AskFilePreviewController
     private var launcherOpeningTop: CGFloat?
     private(set) var conversationWindow: NSWindow?
     private var controlPanel: AskFloatingPanel?
@@ -43,7 +44,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
          screenCapture: any ScreenCapturing = ScreenCaptureService(),
          screenCapturePermission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live,
          services: AskConversationWindowServices? = nil,
-         clipboardHistoryStore: (any ClipboardHistoryStore)? = nil) throws {
+         clipboardHistoryStore: (any ClipboardHistoryStore)? = nil,
+         filePreviewLoader: (any AskFilePreviewLoading)? = nil) throws {
+        self.filePreview = AskFilePreviewController(loader: filePreviewLoader)
         self.dockVisibility = dockVisibility
         self.settings = settings
         self.launcherInputSource = launcherInputSource
@@ -190,7 +193,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     init(settings: SettingsStore, model: AskConversationModel, dockVisibility: DockVisibilityController = .shared,
          conversationFrameAutosaveName: NSWindow.FrameAutosaveName = "AskConversationWorkspace",
-         launcherInputSource: any AskLauncherInputSourceSelecting = SystemAskLauncherInputSourceSelector()) {
+         launcherInputSource: any AskLauncherInputSourceSelecting = SystemAskLauncherInputSourceSelector(),
+         filePreviewLoader: (any AskFilePreviewLoading)? = nil) {
+        self.filePreview = AskFilePreviewController(loader: filePreviewLoader)
         self.dockVisibility = dockVisibility
         self.settings = settings; self.model = model; self.tools = nil
         self.launcherInputSource = launcherInputSource
@@ -294,12 +299,19 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         )
         let hosting = FirstMouseHostingView(rootView: AskLauncherView(model: model,
             onDismiss: { [weak self] in self?.dismissLauncher() },
-            onWindowHeightChange: { [weak self] height in self?.updateLauncherHeight(height) }, drag: drag)
+            onWindowHeightChange: { [weak self] height in self?.updateLauncherHeight(height) }, drag: drag,
+            onFilePreview: { [weak self] hit, neighbours, empty in
+                guard let self else { return }
+                if self.settings.askFilePreviewEnabled, self.launcher?.isVisible == true {
+                    self.filePreview.request(hit, neighbours: neighbours, empty: empty)
+                } else { self.filePreview.dismissNow() }
+            })
             .interfaceStyle(following: interfaceStyle))
         // The height animator sizes the panel while preserving its top edge.
         hosting.sizingOptions = []
         panel.contentView = hosting
         launcher = panel
+        filePreview.attach(to: panel, style: interfaceStyle)
         return panel
     }
 
@@ -346,6 +358,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             CATransaction.setDisableActions(true)
             launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height,
                               top: self.launcherOpeningTop, screen: launcher.screen?.visibleFrame), display: false)
+            self.filePreview.updateFrame()
             launcher.contentView?.layoutSubtreeIfNeeded()
             launcher.displayIfNeeded()
             CATransaction.commit()
@@ -384,6 +397,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     func dismissLauncher() {
+        filePreview.dismissNow()
         launcherHeightAnimator.stop()
         // Menus and hover cards are child panels; close them with the launcher so
         // their buttons do not reopen into a stale state next time.
