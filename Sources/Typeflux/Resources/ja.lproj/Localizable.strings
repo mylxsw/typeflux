@@ -4737,3 +4737,12 @@
 "ask.plugin.kill.warning" = "強制終了すると未保存の変更が失われる場合があります。";
 "ask.plugin.kill.failed" = "「%@」を強制終了できませんでした。";
 "ask.settings.keywords.kind.kill.hint" = "実行中のアプリを一覧表示し、選択したアプリを強制終了します。";
+
+// Website login connection diagnostics.
+"auth.web.invalidResponse" = "ログインサービスから予期しない応答がありました。App と API のウェブサイト URL が一致しているか確認してください。";
+"auth.web.networkUnavailable" = "ログインサービスに接続できません。API の URL と Docker の起動状態を確認してください。";
+"auth.web.transportBlocked" = "macOS がこの App の HTTP 通信をブロックしました。HTTP の URL を設定し、開発用起動スクリプトで再ビルドしてください。";
+"auth.web.endpointUnavailable" = "ログイン API が利用できません。API のバージョン、ウェブログイン設定、/api プロキシを確認してください。";
+"auth.web.requestRejected" = "ログイン要求が拒否されました。開発用・本番用クライアントとコールバック URL の設定を確認してください。";
+"auth.web.serviceUnavailable" = "ログインサービスを利用できません。API とデータベースを確認して再試行してください。";
+"auth.web.rateLimited" = "ログイン試行が多すぎます。しばらく待ってから再試行してください。";

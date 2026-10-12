@@ -128,12 +128,20 @@ struct PendingWebLogin {
 
 enum WebLoginFailure: Error, Equatable {
     case invalidResponse, invalidCallback, expired, browserUnavailable, restartRequired, storageFailed
+    case networkUnavailable, transportBlocked, endpointUnavailable, requestRejected, serviceUnavailable, rateLimited
     var localizationKey: String {
         switch self {
         case .expired: "auth.web.expired"
         case .browserUnavailable: "auth.web.browserUnavailable"
         case .storageFailed: "auth.web.storageFailed"
-        case .invalidResponse, .invalidCallback, .restartRequired: "auth.web.restartRequired"
+        case .invalidResponse: "auth.web.invalidResponse"
+        case .networkUnavailable: "auth.web.networkUnavailable"
+        case .transportBlocked: "auth.web.transportBlocked"
+        case .endpointUnavailable: "auth.web.endpointUnavailable"
+        case .requestRejected: "auth.web.requestRejected"
+        case .serviceUnavailable: "auth.web.serviceUnavailable"
+        case .rateLimited: "auth.web.rateLimited"
+        case .invalidCallback, .restartRequired: "auth.web.restartRequired"
         }
     }
 }

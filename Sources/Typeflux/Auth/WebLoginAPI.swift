@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 @MainActor
 protocol WebLoginAPI {
@@ -9,6 +10,7 @@ protocol WebLoginAPI {
 /// A single pinned HTTP(S) endpoint, with no failover, redirects, cookies or application retries.
 /// A lost token response must restart authorization, never replay a possibly consumed code.
 final class WebLoginHTTPAPI: WebLoginAPI {
+    private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "WebLogin")
     private let configuration: WebLoginConfiguration
     private let send: (URLRequest) async throws -> (Data, URLResponse)
     private let session: URLSession?
@@ -60,12 +62,39 @@ final class WebLoginHTTPAPI: WebLoginAPI {
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.httpShouldHandleCookies = false
         request.timeoutInterval = 30
-        let (data, response) = try await send(request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await send(request)
+        } catch let error as URLError {
+            logger.error("Web login request failed: endpoint=\(path, privacy: .public), transport=\(error.errorCode)")
+            // Never retry a token exchange: its response may have been lost after consumption.
+            if path.hasSuffix("/token") { throw WebLoginFailure.restartRequired }
+            throw error.code == .appTransportSecurityRequiresSecureConnection
+                ? WebLoginFailure.transportBlocked : WebLoginFailure.networkUnavailable
+        }
         guard let http = response as? HTTPURLResponse else { throw WebLoginFailure.invalidResponse }
-        let envelope = try JSONDecoder().decode(APIResponse<T>.self, from: data)
-        guard (200 ..< 300).contains(http.statusCode), envelope.code == "OK", let result = envelope.data else {
+        // Classify HTTP failures before decoding: proxies can return HTML or an empty body.
+        guard (200 ..< 300).contains(http.statusCode) else {
+            logger.error("Web login request failed: endpoint=\(path, privacy: .public), status=\(http.statusCode)")
+            switch http.statusCode {
+            case 404, 405: throw WebLoginFailure.endpointUnavailable
+            case 429: throw WebLoginFailure.rateLimited
+            case 500...599: throw WebLoginFailure.serviceUnavailable
+            default: throw path.hasSuffix("/transactions")
+                ? WebLoginFailure.requestRejected : WebLoginFailure.restartRequired
+            }
+        }
+        let envelope: APIResponse<T>
+        do { envelope = try JSONDecoder().decode(APIResponse<T>.self, from: data) }
+        catch {
+            logger.error("Web login response could not be decoded: endpoint=\(path, privacy: .public)")
+            throw WebLoginFailure.invalidResponse
+        }
+        guard envelope.code == "OK", let result = envelope.data else {
             // Do not expose raw server bodies, grant codes or tokens to logs/UI.
-            throw WebLoginFailure.restartRequired
+            throw path.hasSuffix("/transactions")
+                ? WebLoginFailure.requestRejected : WebLoginFailure.restartRequired
         }
         return result
     }
