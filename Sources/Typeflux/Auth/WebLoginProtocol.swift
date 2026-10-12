@@ -30,9 +30,9 @@ struct WebLoginConfiguration {
         resolve(environment: ProcessInfo.processInfo.environment, info: Bundle.main.infoDictionary ?? [:])
     }
 
-    static func isHTTPSOrigin(_ url: URL) -> Bool {
+    static func isWebOrigin(_ url: URL) -> Bool {
         guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
-        return parts.scheme == "https" && parts.host?.isEmpty == false && parts.user == nil
+        return (parts.scheme == "https" || parts.scheme == "http") && parts.host?.isEmpty == false && parts.user == nil
             && parts.password == nil && parts.query == nil && parts.fragment == nil
             && (parts.path.isEmpty || parts.path == "/")
     }
@@ -46,14 +46,16 @@ struct WebLoginConfiguration {
     }
 
     func validate(_ transaction: WebLoginTransaction, now: Date) throws -> URL {
-        guard Self.isHTTPSOrigin(websiteOrigin), Self.isHTTPSOrigin(apiOrigin),
+        guard Self.isWebOrigin(websiteOrigin), Self.isWebOrigin(apiOrigin),
               transaction.expiresAt > now.timeIntervalSince1970,
               transaction.expiresAt <= now.timeIntervalSince1970 + 1800,
               WebLoginProof.isOpaqueValue(transaction.transactionID),
               let url = URL(string: transaction.loginURL),
+              let expected = URLComponents(url: websiteOrigin, resolvingAgainstBaseURL: false),
               let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              parts.scheme == websiteOrigin.scheme, parts.host == websiteOrigin.host,
-              (parts.port ?? 443) == (websiteOrigin.port ?? 443),
+              parts.scheme == expected.scheme, parts.host == expected.host,
+              (parts.port ?? (parts.scheme == "http" ? 80 : 443)) ==
+                (expected.port ?? (expected.scheme == "http" ? 80 : 443)),
               parts.user == nil, parts.password == nil, parts.fragment == nil,
               parts.percentEncodedPath == "/login",
               parts.queryItems == [URLQueryItem(name: "transaction", value: transaction.transactionID)]

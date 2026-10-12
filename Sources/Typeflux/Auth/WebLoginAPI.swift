@@ -6,7 +6,7 @@ protocol WebLoginAPI {
     func exchange(code: String, verifier: String) async throws -> LoginResponse
 }
 
-/// A single pinned HTTPS endpoint, with no failover, redirects, cookies or application retries.
+/// A single pinned HTTP(S) endpoint, with no failover, redirects, cookies or application retries.
 /// A lost token response must restart authorization, never replay a possibly consumed code.
 final class WebLoginHTTPAPI: WebLoginAPI {
     private let configuration: WebLoginConfiguration
@@ -49,7 +49,7 @@ final class WebLoginHTTPAPI: WebLoginAPI {
     }
 
     private func post<T: Decodable>(path: String, body: [String: String]) async throws -> T {
-        guard WebLoginConfiguration.isHTTPSOrigin(configuration.apiOrigin)
+        guard WebLoginConfiguration.isWebOrigin(configuration.apiOrigin)
         else { throw WebLoginFailure.invalidResponse }
         var parts = URLComponents(url: configuration.apiOrigin, resolvingAgainstBaseURL: false)!
         parts.path = path

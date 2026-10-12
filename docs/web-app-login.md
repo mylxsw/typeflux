@@ -3,7 +3,7 @@
 This implementation depends on [typeflux-api PR #139](https://github.com/mylxsw/typeflux-api/pull/139),
 head `bb0c9622423d5418829670fa219bbf9b03fc81ce`, and its
 [frozen contract](https://github.com/mylxsw/typeflux-api/blob/bb0c9622423d5418829670fa219bbf9b03fc81ce/docs/web-app-auth.md).
-The Homepage implementation is GUL-359. Do not enable the entry until both are deployed and the
+The Homepage implementation is GUL-359. Do not enable the production entry until both are deployed and the
 real-provider/browser acceptance tests pass. No iOS behavior changes.
 
 ## Rollout configuration
@@ -15,12 +15,13 @@ signing. Both development launch scripts copy the configuration into their bundl
 | Key | Default | Purpose |
 | --- | --- | --- |
 | `TYPEFLUX_WEB_AUTH_ENABLED` | `false` | Only the exact string `true` enables the new entry. |
-| `TYPEFLUX_WEB_AUTH_ORIGIN` | `https://typeflux.app` | Trusted website origin; API login URL must match HTTPS origin, `/login`, and the sole expected transaction query. |
-| `TYPEFLUX_WEB_AUTH_API_ORIGIN` | First configured `AppServerConfiguration.apiBaseURLs` entry | Reachable, pinned API HTTPS origin; no endpoint rotation or retry for the one-use code. Set explicitly for staging. |
+| `TYPEFLUX_WEB_AUTH_ORIGIN` | `https://typeflux.app` | Trusted website origin; API login URL must match HTTP(S) origin, `/login`, and the sole expected transaction query. |
+| `TYPEFLUX_WEB_AUTH_API_ORIGIN` | First configured `AppServerConfiguration.apiBaseURLs` entry | Reachable, pinned API HTTP(S) origin; no endpoint rotation or retry for the one-use code. Set explicitly for staging. |
 | `TYPEFLUX_WEB_AUTH_CHANNEL` | `production` | `development` selects the separate development client and callback. Dev scripts set it automatically. |
 
-Origins must have no credentials, query, fragment or path prefix. HTTP is rejected even if
-the old dev API flow enables an ATS exception. No client secrets belong in the app.
+Origins must have no credentials, query, fragment or path prefix. HTTP and HTTPS are accepted without an extra transport flag. The development
+launch scripts enable the existing ATS HTTP exception when either Web origin uses
+HTTP; set `TYPEFLUX_API_URL` to the local API too for profile/refresh calls. No client secrets belong in the app.
 
 Configure the API's `WEB_AUTH_CLIENTS` as a JSON object (there is no server default):
 
@@ -93,3 +94,8 @@ Rollback by setting `TYPEFLUX_WEB_AUTH_ENABLED=false` and restarting the app (or
 a bundle with the flag disabled). The original login UI returns; existing Keychain sessions
 are untouched. Preserve native API/provider configuration. API/Homepage rollback follows
 the API document; no user, refresh token or session data needs deleting.
+
+For local Docker, set both Web origins and `TYPEFLUX_API_URL` to
+`http://localhost:5174`, enable Web auth, and run `make run`. Use the API
+repository's `docs/web-app-local-http.md` and Compose override with the matching
+Homepage `Dockerfile.local`. Pending state, PKCE and strict origin matching are unchanged.
