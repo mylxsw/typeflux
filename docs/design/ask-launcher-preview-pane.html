@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Typeflux · 启动器右侧预览栏 设计稿</title>
+<style>
+  :root {
+    --canvas: #0c0c0d; --desk: #1b1c1f;
+    --glass: rgba(50,50,54,.86);
+    --hair: rgba(255,255,255,.10);
+    --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
+    --accent: #0a84ff; --accent-soft: rgba(10,132,255,.16); --accent-text: #8ebdff;
+    --hover: rgba(255,255,255,.08); --sel: rgba(10,132,255,.22); --sel-edge: rgba(10,132,255,.55);
+    --pane: rgba(255,255,255,.035); --well: rgba(0,0,0,.22); --chip: rgba(255,255,255,.07);
+    --ok: #30d158; --danger: #ff8a80; --warn: #ffd60a;
+    --code-str: #ff9f7a; --code-key: #7cc7ff; --code-com: #6e6e73;
+  }
+  body.light {
+    --canvas: #e9e9ec; --desk: #f4f4f6;
+    --glass: rgba(250,250,252,.90);
+    --hair: rgba(0,0,0,.09);
+    --text: #1d1d1f; --text-2: #5e5e63; --text-3: #8e8e93;
+    --accent-soft: rgba(10,132,255,.12); --accent-text: #0a66d8;
+    --hover: rgba(0,0,0,.05); --sel: rgba(10,132,255,.14); --sel-edge: rgba(10,132,255,.45);
+    --pane: rgba(0,0,0,.025); --well: rgba(0,0,0,.04); --chip: rgba(0,0,0,.05);
+    --code-str: #c4461b; --code-key: #0b62c4; --code-com: #8e8e93;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 40px 48px; background: var(--canvas); color: var(--text); min-width: 1360px;
+    font: 13px/1.45 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif; }
+  h1 { font-size: 21px; margin: 0 0 4px; font-weight: 650; }
+  .sub { color: var(--text-2); margin: 0 0 18px; max-width: 1180px; }
+  code, .mono { font-family: "SF Mono", ui-monospace, Menlo, monospace; }
+  code { font-size: 11.5px; color: var(--text-2); }
+
+  /* ===== toolbar ===== */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+  .toolbar .lbl { color: var(--text-3); font-size: 11.5px; margin-right: 2px; }
+  .tb { height: 28px; padding: 0 11px; border-radius: 8px; border: 1px solid var(--hair); background: var(--chip);
+    color: var(--text); font: inherit; font-size: 12.5px; cursor: pointer; }
+  .tb.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tb small { color: var(--text-3); margin-left: 4px; font-family: "SF Mono", ui-monospace, monospace; }
+  .tb.on small { color: rgba(255,255,255,.75); }
+  .tsep { width: 1px; height: 18px; background: var(--hair); margin: 0 6px; }
+
+  .layout { display: grid; grid-template-columns: 860px 1fr; gap: 28px; align-items: start; }
+  .stage { border-radius: 16px; padding: 36px 40px 44px; border: 1px solid var(--hair);
+    background: radial-gradient(1100px 420px at 30% -30%, rgba(80,110,160,.35) 0%, transparent 60%), var(--desk); }
+  body.light .stage { background: radial-gradient(1100px 420px at 30% -30%, rgba(120,160,230,.35) 0%, transparent 60%), var(--desk); }
+
+  /* ===== launcher card ===== */
+  .card { width: 780px; border-radius: 26px; background: var(--glass); border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 24px 60px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.25);
+    backdrop-filter: blur(30px); overflow: hidden; position: relative; transition: width .18s ease; }
+  body.light .card { border-color: rgba(0,0,0,.10); box-shadow: 0 24px 60px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.08); }
+  .card.legacy { width: 700px; }
+  .head { display: flex; align-items: center; gap: 10px; height: 58px; padding: 0 16px 0 20px; }
+  .head input { flex: 1; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 17px; }
+  .head input::placeholder { color: var(--text-3); }
+  .head .ico { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-2); font-size: 15px; }
+  .head .eq { color: var(--text-3); font-size: 17px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .rule { height: 1px; background: var(--hair); margin: 0 12px; }
+
+  .body { position: relative; }
+  .body.split { display: grid; grid-template-columns: 340px 1fr; height: 432px; }
+  .body.single { max-height: 432px; overflow: auto; }
+  .list { overflow-y: auto; padding: 6px; height: 100%; scrollbar-width: thin; }
+  .grp { font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--text-3); padding: 8px 10px 3px; display: flex; }
+  .grp span { margin-left: auto; font-weight: 500; letter-spacing: 0; }
+  .row { position: relative; display: flex; align-items: center; gap: 10px; padding: 0 10px; height: 42px; border-radius: 12px;
+    cursor: default; }
+  .row.hl { background: var(--sel); box-shadow: inset 0 0 0 1px var(--sel-edge); }
+  .row .nm { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .row .nm b { color: var(--accent-text); font-weight: 650; }
+  .row .tx { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .row .tx small { color: var(--text-3); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25; }
+  .row .tx .nm { line-height: 1.3; }
+  .row .kw { font: 11px "SF Mono", ui-monospace, monospace; color: var(--text-3); padding: 1px 5px; border-radius: 5px; background: var(--chip); flex: none; }
+  .row .tail { margin-left: auto; color: var(--text-3); font-size: 11.5px; flex: none; }
+  .row.hl .tail { color: var(--text-2); }
+  .badge { position: absolute; left: 3px; top: 3px; min-width: 13px; height: 13px; padding: 0 3px; border-radius: 4px; background: var(--text);
+    color: var(--canvas); font: 600 9px/13px -apple-system, sans-serif; text-align: center; opacity: 0; transition: opacity .1s; }
+  body.cmd .badge { opacity: .92; }
+  .single .row { height: 42px; }
+  .single .row .tail.path { margin-left: 8px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .icon { width: 28px; height: 28px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center;
+    flex: none; font-size: 15px; color: #fff; font-weight: 600; }
+  .icon.sym { background: var(--accent-soft); color: var(--accent); font-size: 13px; }
+  .icon.file { background: linear-gradient(#fdfdfd,#e6e6e9); color: #6a6a70; font: 600 7.5px/1 -apple-system, sans-serif; border-radius: 4px; width: 23px; margin: 0 2.5px; box-shadow: 0 0 0 .5px rgba(0,0,0,.25); align-items: flex-end; padding-bottom: 4px; }
+  .icon.folder { background: linear-gradient(#6cc0ff,#2f8ef0); border-radius: 5px; height: 22px; margin: 3px 0; }
+  .icon.wf { background: linear-gradient(135deg,#bf5af2,#7d3cff); font-size: 13px; }
+  .icon.kwi { background: linear-gradient(135deg,#5e5ce6,#3634a3); font-size: 12px; }
+  .icon.tab { background: #fff; color: #333; border-radius: 50%; width: 20px; height: 20px; margin: 4px; font-size: 11px; box-shadow: 0 0 0 .5px rgba(0,0,0,.2); }
+
+  /* ===== preview pane ===== */
+  .pv { border-left: 1px solid var(--hair); background: var(--pane); display: flex; flex-direction: column; min-width: 0; height: 432px; }
+  .pv-scroll { flex: 1; overflow-y: auto; padding: 16px 18px 12px; scrollbar-width: thin; }
+  .pv-kind { font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--text-3); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .pv-kind .src { margin-left: auto; font-weight: 500; letter-spacing: 0; }
+  .hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 6px 0 14px; }
+  .hero .big { width: 76px; height: 76px; border-radius: 18px; font-size: 38px; margin-bottom: 10px; }
+  .hero .big.sm { width: 52px; height: 52px; border-radius: 13px; font-size: 24px; margin-bottom: 8px; }
+  .hero h3 { margin: 0; font-size: 16px; font-weight: 650; }
+  .hero p { margin: 2px 0 0; color: var(--text-3); font-size: 12px; }
+  .meta { display: grid; grid-template-columns: 76px 1fr; gap: 7px 10px; font-size: 12px; border-top: 1px solid var(--hair); padding-top: 12px; }
+  .meta dt { color: var(--text-3); }
+  .meta dd { margin: 0; color: var(--text); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .meta dd.wrap { white-space: normal; word-break: break-all; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: rgba(48,209,88,.16); color: var(--ok); }
+  .pill.gray { background: var(--chip); color: var(--text-2); }
+
+  .resbox { background: var(--well); border-radius: 14px; padding: 12px 14px 10px; text-align: right; margin-bottom: 12px; font-variant-numeric: tabular-nums; }
+  .resbox .ex { color: var(--text-2); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .resbox .val { font-size: 30px; font-weight: 650; letter-spacing: -.4px; line-height: 1.2; word-break: break-all; }
+  .resbox .val.err { font-size: 15px; color: var(--danger); font-weight: 500; }
+  .fmts { display: flex; flex-direction: column; gap: 2px; }
+  .fmt { position: relative; display: grid; grid-template-columns: 1fr 26px; align-items: center; gap: 6px; padding: 6px 8px 6px 10px; border-radius: 10px; }
+  .fmt:hover { background: var(--hover); }
+  .fmt .k { color: var(--text-3); font-size: 11px; display: flex; gap: 6px; align-items: center; }
+  .fmt .k kbd { font: 9.5px "SF Mono", ui-monospace, monospace; color: var(--text-3); border: 1px solid var(--hair); border-radius: 4px; padding: 0 3px; opacity: 0; }
+  body.opt .fmt .k kbd { opacity: 1; }
+  .fmt .v { font-size: 12.5px; word-break: break-all; font-variant-numeric: tabular-nums; }
+  .fmt .cp { grid-row: span 2; grid-column: 2; grid-row-start: 1; width: 26px; height: 26px; border-radius: 7px; border: 0; background: transparent;
+    color: var(--text-3); cursor: pointer; font-size: 13px; }
+  .fmt .cp:hover { background: var(--chip); color: var(--text); }
+  .fmt .cp.ok { color: var(--ok); }
+  .new { font-size: 9.5px; color: var(--warn); border: 1px solid rgba(255,214,10,.4); border-radius: 4px; padding: 0 3px; }
+
+  .code { background: var(--well); border-radius: 10px; padding: 8px 0; font: 11px/1.6 "SF Mono", ui-monospace, Menlo, monospace; overflow: hidden; margin-bottom: 12px; }
+  .code .ln { display: grid; grid-template-columns: 30px 1fr; white-space: pre; }
+  .code .lt { overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+  .code .ln i { font-style: normal; color: var(--text-3); text-align: right; padding-right: 10px; user-select: none; }
+  .code .s { color: var(--code-str); } .code .k { color: var(--code-key); } .code .c { color: var(--code-com); }
+  .code .more { color: var(--text-3); padding: 2px 0 0 40px; font-family: -apple-system, sans-serif; font-size: 11px; }
+  .thumb { border-radius: 10px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 0 0 1px var(--hair); aspect-ratio: 16 / 10; position: relative; }
+  .thumb.img { background: linear-gradient(160deg, #f5f7fb 0 30%, #dfe7f5 30% 31%, #f5f7fb 31%); }
+  .thumb.img::before { content: ""; position: absolute; left: 7%; top: 12%; width: 86%; height: 70%; border-radius: 8px;
+    background: linear-gradient(#ffffff, #f2f2f5); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+  .thumb.img::after { content: "随便问…"; position: absolute; left: 12%; top: 19%; font-size: 12px; color: #8e8e93; }
+  .thumb.pdf { background: #9a9aa0; display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3.4; }
+  .thumb.pdf .page { width: 58%; height: 88%; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.3); padding: 10px 12px; color: #333; font-size: 6px; }
+  .thumb.pdf .page b { display: block; font-size: 9px; margin-bottom: 6px; }
+  .thumb.pdf .page i { display: block; height: 3px; background: #e2e2e6; margin: 3px 0; border-radius: 2px; }
+  .kids { display: flex; flex-direction: column; gap: 1px; margin-bottom: 12px; }
+  .kid { display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 6px; border-radius: 7px; font-size: 12px; }
+  .kid:hover { background: var(--hover); }
+  .kid .icon { transform: scale(.72); margin: 0 -4px; }
+  .kid span:last-child { margin-left: auto; color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .hidden-box { border: 1px dashed var(--hair); border-radius: 10px; padding: 18px 14px; text-align: center; color: var(--text-2); font-size: 12px; margin-bottom: 12px; }
+  .hidden-box b { display: block; color: var(--text); font-size: 13px; margin-bottom: 3px; }
+  .skel { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--chip), var(--hover), var(--chip)); background-size: 200% 100%;
+    animation: sh 1s linear infinite; margin: 8px 0; }
+  @keyframes sh { to { background-position: -200% 0; } }
+  .sect { font-size: 11px; color: var(--text-3); font-weight: 600; margin: 12px 0 6px; }
+  .steps { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+  .steps li { counter-increment: s; display: flex; gap: 9px; align-items: flex-start; padding: 5px 0; font-size: 12.5px; }
+  .steps li::before { content: counter(s); flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--chip); color: var(--text-2);
+    font-size: 10.5px; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .steps li small { display: block; color: var(--text-3); font-size: 11px; }
+  .ex-line { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; font-size: 12px; }
+  .ex-line code { background: var(--chip); padding: 1px 6px; border-radius: 5px; color: var(--text); }
+  .ex-line span { color: var(--text-3); }
+  .desc { color: var(--text-2); font-size: 12.5px; margin: 0 0 10px; }
+
+  .acts { display: flex; gap: 2px; padding: 6px 8px; border-top: 1px solid var(--hair); flex: none; }
+  .act { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 5px 2px 4px; border-radius: 8px;
+    border: 0; background: transparent; color: var(--text-2); font: inherit; font-size: 10.5px; cursor: pointer; white-space: nowrap; }
+  .act:hover { background: var(--hover); color: var(--text); }
+  .act .g { font-size: 14px; line-height: 18px; color: var(--text); }
+  .act kbd { font: 9.5px "SF Mono", ui-monospace, monospace; color: var(--text-3); }
+  .act.primary .g { color: var(--accent); }
+  .act.more { flex: none; width: 44px; }
+
+  /* ===== home & empty ===== */
+  .home { padding: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 10px 8px; }
+  .chip { display: inline-flex; gap: 6px; align-items: center; height: 26px; padding: 0 9px; border-radius: 8px; background: var(--chip); font-size: 12px; }
+  .chip code { color: var(--accent-text); font-size: 11px; }
+  .empty { padding: 26px 20px; color: var(--text-2); display: flex; gap: 12px; align-items: center; }
+
+  .foot { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px 0 14px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--text-2); }
+  .foot .model { font-weight: 600; color: var(--text); }
+  .foot .hint { margin-left: auto; color: var(--text-3); font-size: 11.5px; }
+  .foot .hint b { color: var(--text-2); font-weight: 500; }
+
+  /* ===== action panel (→) ===== */
+  .ap { position: absolute; right: 12px; bottom: 54px; width: 260px; border-radius: 14px; background: #2a2a2e; border: 1px solid var(--hair);
+    box-shadow: 0 18px 40px rgba(0,0,0,.45); backdrop-filter: blur(30px); padding: 6px; z-index: 5; }
+  body.light .ap { background: rgba(255,255,255,.97); box-shadow: 0 18px 40px rgba(0,0,0,.18); }
+  .ap .t { font-size: 11px; color: var(--text-3); padding: 4px 8px 6px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ap .it { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border-radius: 8px; font-size: 12.5px; }
+  .ap .it.hl { background: var(--accent); color: #fff; }
+  .ap .it kbd { margin-left: auto; font: 10.5px "SF Mono", ui-monospace, monospace; color: var(--text-3); }
+  .ap .it.hl kbd { color: rgba(255,255,255,.8); }
+
+  .toast { position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); background: rgba(0,0,0,.78); color: #fff; padding: 6px 12px;
+    border-radius: 999px; font-size: 12px; opacity: 0; transition: opacity .15s; pointer-events: none; white-space: nowrap; z-index: 6; }
+  .toast.show { opacity: 1; }
+
+  /* ===== notes ===== */
+  .notes { color: var(--text-2); font-size: 12.5px; }
+  .notes h2 { font-size: 14px; color: var(--text); margin: 0 0 8px; font-weight: 600; }
+  .notes.box, .notes .box { border: 1px solid var(--hair); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; background: var(--pane); }
+  .notes ul { margin: 0; padding-left: 18px; } .notes li { margin: 0 0 5px; }
+  .notes b { color: var(--text); font-weight: 600; }
+  .keys { display: grid; grid-template-columns: 92px 1fr; gap: 5px 10px; font-size: 12px; }
+  .keys kbd { font: 11px "SF Mono", ui-monospace, monospace; background: var(--chip); border: 1px solid var(--hair); border-radius: 5px; padding: 0 5px; color: var(--text); justify-self: start; align-self: start; line-height: 18px; }
+  .spec { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+  .spec .box { margin: 0; }
+  .measure { font: 11px "SF Mono", ui-monospace, monospace; color: var(--text-3); margin-top: 12px; display: flex; gap: 16px; }
+</style>
+</head>
+<body>
+<h1>启动器 · 右侧预览栏（Preview Pane）设计稿</h1>
+<p class="sub">有搜索结果时，启动器分成两栏：左栏是结果列表，右栏是高亮结果的详情（计算结果与各种写法、应用信息、文件内容、文件夹内容、关键词说明、工作流步骤、浏览器标签）。输入框为空时仍是现在的单栏首页，没有结果时仍是“回车问 AI”。
+下方是可操作的原型：可以直接打字，也可以用 ↑↓ / ⌘1–9 / → / ⌥1–9 / ⌘C / Esc；按住 ⌘ 显示序号，按住 ⌥ 显示复制快捷键。</p>
+
+<div class="toolbar">
+  <span class="lbl">示例</span>
+  <button class="tb" data-q="1234567.89*2">计算 <small>1234567.89*2</small></button>
+  <button class="tb" data-q="1791774189">纯数字 <small>1791774189</small></button>
+  <button class="tb" data-q="chat">应用 <small>chat</small></button>
+  <button class="tb" data-q="localizable">代码 / 文本 <small>localizable</small></button>
+  <button class="tb" data-q="appearance">图片 <small>appearance</small></button>
+  <button class="tb" data-q="invoice">PDF <small>invoice</small></button>
+  <button class="tb" data-q="design">文件夹 <small>design</small></button>
+  <button class="tb" data-q="fy">关键词 <small>fy</small></button>
+  <button class="tb" data-q="周报">工作流 <small>周报</small></button>
+  <button class="tb" data-q="multica">浏览器标签 <small>multica</small></button>
+  <button class="tb" data-q="显示">系统设置 <small>显示</small></button>
+  <button class="tb" data-q="secrets">敏感文件 <small>secrets</small></button>
+  <button class="tb" data-q="">首页 <small>空</small></button>
+  <button class="tb" data-q="今天天气怎么样？">问 AI <small>无结果</small></button>
+  <span class="tsep"></span>
+  <button class="tb" id="theme">浅色</button>
+  <button class="tb on" id="pvToggle">预览栏：开</button>
+</div>
+
+<div class="layout">
+  <div>
+    <div class="stage">
+      <div class="card" id="card">
+        <div class="head">
+          <input id="q" placeholder="搜索应用、文件、计算，或直接提问" autocomplete="off" spellcheck="false">
+          <span class="eq" id="eq"></span>
+          <span class="ico" title="语音">🎙</span>
+          <span class="ico" title="打开对话窗口">▢</span>
+        </div>
+        <div class="rule"></div>
+        <div class="body" id="body"></div>
+        <div class="foot">
+          <span>＋</span><span class="tsep"></span><span class="model">⌗ coding/auto</span>
+          <span class="hint" id="hint"></span>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+      <div class="measure"><span id="mW"></span><span id="mD"></span></div>
+    </div>
+    <div class="spec">
+      <div class="notes box">
+        <h2>键盘</h2>
+        <div class="keys">
+          <kbd>↑ ↓</kbd><span>移动高亮，右栏立即切换（文件内容 80ms 去抖后异步加载）</span>
+          <kbd>↩</kbd><span>主操作：打开 / 复制结果 / 进入关键词 / 运行工作流 / 切到标签</span>
+          <kbd>⌘1–9</kbd><span>执行左栏第 N 项（现有行为不变）</span>
+          <kbd>⌥1–9</kbd><span>复制右栏第 N 种写法（计算 / 数字转换）</span>
+          <kbd>→</kbd><span>更多操作面板（现有 <code>AskQuickActionPanel</code>）；← / Esc 收起</span>
+          <kbd>⌘C</kbd><span>输入框无选区时复制高亮项的值（结果 / 路径 / 链接）</span>
+          <kbd>⇥</kbd><span>关键词补全为 “fy ”</span>
+          <kbd>⌘↩</kbd><span>不管有没有结果，都把原文发给 AI</span>
+          <kbd>Esc</kbd><span>先关面板，再清空输入，最后收起启动器</span>
+        </div>
+      </div>
+      <div class="notes box">
+        <h2>布局规则</h2>
+        <ul>
+          <li>两栏<b>只在有结果时</b>出现；首页、关键词插件会话、无结果三种状态保持现在的单栏。</li>
+          <li>启动器宽度从 700pt 调到 <b>780pt</b>，空输入时也是 780pt，所以第一次出结果时只往下展开、不横向跳。</li>
+          <li>结果区<b>高度固定 432pt</b>：高亮切换时右栏内容高度不同，固定高度可以避免窗口跟着跳；内容超出时右栏自己滚动。</li>
+          <li>动作条在右栏底部，最多 5 个 + “更多”，和 → 面板用同一份 <code>AskQuickAction</code> 列表。</li>
+          <li>设置里加“显示预览栏”开关（默认开）；关掉就回到现在的单栏样式（点工具栏“预览栏：关”可以对比）。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes" id="notes"></div>
+</div>
+
+<script>
+// ---------------------------------------------------------------- mock data
+const APPS = [
+  { id: 'chatgpt', name: 'ChatGPT', alias: 'chatgpt', glyph: '✺', bg: 'linear-gradient(135deg,#1f1f1f,#3a3a3a)', cat: '效率工具', path: '/Applications/ChatGPT.app', ver: '1.2026.0930 (1759)', size: '412.6 MB', opened: '今天 01:35', created: '2026/06/25 23:42', running: '运行中 · 2 个窗口', bundle: 'com.openai.chat' },
+  { id: 'chrome', name: 'Google Chrome', alias: 'googlechrome gc', glyph: '◉', bg: 'conic-gradient(#ea4335 0 33%,#fbbc05 0 66%,#34a853 0)', cat: '开发者工具', path: '/Applications/Google Chrome.app', ver: '141.0.7390.66', size: '1.31 GB', opened: '刚刚', created: '2025/11/02 10:12', running: '运行中 · 4 个窗口', bundle: 'com.google.Chrome' },
+  { id: 'claude', name: 'Claude', alias: 'claude', glyph: '✳', bg: 'linear-gradient(135deg,#d97757,#b85a3c)', cat: '效率工具', path: '/Applications/Claude.app', ver: '1.0.211', size: '388.0 MB', opened: '昨天 22:10', created: '2026/02/14 09:20', running: '', bundle: 'com.anthropic.claudefordesktop' },
+  { id: 'chess', name: '国际象棋', alias: 'chess guojixiangqi gjxq', glyph: '♞', bg: 'linear-gradient(135deg,#8e8e93,#48484a)', cat: '游戏', path: '/System/Applications/Chess.app', ver: '3.18', size: '6.2 MB', opened: '3 个月前', created: '系统自带', running: '', bundle: 'com.apple.Chess' },
+  { id: 'calc', name: '计算器', alias: 'calculator jisuanqi jsq', glyph: '±', bg: 'linear-gradient(135deg,#ff9f0a,#ff6b00)', cat: '工具', path: '/System/Applications/Calculator.app', ver: '11.0', size: '5.1 MB', opened: '上周', created: '系统自带', running: '', bundle: 'com.apple.calculator' },
+  { id: 'cursor', name: 'Cursor', alias: 'cursor', glyph: '⌖', bg: 'linear-gradient(135deg,#2b2b2b,#000)', cat: '开发者工具', path: '/Applications/Cursor.app', ver: '1.9.2', size: '598.4 MB', opened: '2 天前', created: '2026/01/09 14:00', running: '', bundle: 'com.todesktop.cursor' },
+  { id: 'freeform', name: '无边记', alias: 'freeform wubianji wbj', glyph: '〜', bg: 'linear-gradient(135deg,#5ac8fa,#007aff)', cat: '效率工具', path: '/System/Applications/Freeform.app', ver: '4.0', size: '41.0 MB', opened: '今天 09:02', created: '系统自带', running: '', bundle: 'com.apple.freeform' },
+];
+const PANES = [
+  { id: 'display', name: '显示器', alias: 'display xianshiqi xsq', glyph: '▭', bg: 'linear-gradient(135deg,#0a84ff,#0060df)', crumb: '系统设置 › 显示器', desc: '分辨率、亮度、夜览、原彩显示，以及外接显示器的排列方式。' },
+  { id: 'notif', name: '通知', alias: 'notifications tongzhi tz', glyph: '◉', bg: 'linear-gradient(135deg,#ff453a,#d70015)', crumb: '系统设置 › 通知', desc: '通知样式、显示预览的时机、各个应用的通知权限。' },
+];
+const LOC_EN = [
+  ['c', '/* Typeflux — English */'],
+  ['k', '"language.option.english"', '"English"'],
+  ['k', '"language.option.simplifiedChinese"', '"简体中文"'],
+  ['k', '"appearance.system"', '"System"'],
+  ['k', '"appearance.light"', '"Light"'],
+  ['k', '"appearance.dark"', '"Dark"'],
+  ['k', '"window.voiceStudio"', '"Typeflux"'],
+  ['k', '"common.refresh"', '"Refresh"'],
+  ['k', '"home.recentTranscriptions"', '"Recent Transcriptions"'],
+  ['k', '"home.exportAll"', '"Export All"'],
+  ['k', '"ask.quick.section.files"', '"Files"'],
+  ['k', '"ask.quick.section.folders"', '"Folders"'],
+  ['k', '"ask.quick.file.showAll"', '"Show All Files"'],
+  ['k', '"ask.quick.app.open"', '"Open"'],
+];
+const SWIFT = [
+  ['c', '// LauncherSettingsView.swift'],
+  ['p', 'import SwiftUI'],
+  ['p', ''],
+  ['p', 'struct LauncherSettingsView: View {'],
+  ['p', '    @ObservedObject var settings: SettingsStore'],
+  ['p', ''],
+  ['p', '    var body: some View {'],
+  ['p', '        Form {'],
+  ['p', '            Toggle(L(<s>"ask.settings.previewPane"</s>),'],
+  ['p', '                   isOn: $settings.askLauncherPreviewPane)'],
+  ['p', '            Picker(L(<s>"ask.settings.windowMode"</s>), ...'],
+  ['p', '        }'],
+  ['p', '    }'],
+  ['p', '}'],
+];
+const FILES = [
+  { id: 'f1', name: 'Localizable.strings', alias: 'localizable', kind: 'text', ext: 'STR', folder: '~/Workspace/typeflux/Sources/Typeflux/Resources/en.lproj', size: '182 KB', mod: '今天 10:42', created: '2025/08/03', type: '字符串文件', lines: 4112, code: LOC_EN },
+  { id: 'f2', name: 'Localizable.strings', alias: 'localizable', kind: 'text', ext: 'STR', folder: '~/Workspace/typeflux/Sources/Typeflux/Resources/zh-Hans.lproj', size: '171 KB', mod: '今天 10:42', created: '2025/08/03', type: '字符串文件', lines: 4112,
+    code: [['c', '/* Typeflux — 简体中文 */'], ['k', '"language.option.english"', '"English"'], ['k', '"appearance.system"', '"跟随系统"'], ['k', '"appearance.light"', '"浅色"'], ['k', '"appearance.dark"', '"深色"'], ['k', '"common.refresh"', '"刷新"'], ['k', '"home.exportAll"', '"全部导出"'], ['k', '"ask.quick.section.files"', '"文件"'], ['k', '"ask.quick.app.open"', '"打开"']] },
+  { id: 'f3', name: 'Localizable.strings', alias: 'localizable', kind: 'text', ext: 'STR', folder: '~/Workspace/typeflux/Sources/Typeflux/Resources/ja.lproj', size: '176 KB', mod: '昨天 18:20', created: '2025/08/03', type: '字符串文件', lines: 4112,
+    code: [['c', '/* Typeflux — 日本語 */'], ['k', '"appearance.system"', '"システム"'], ['k', '"appearance.light"', '"ライト"'], ['k', '"appearance.dark"', '"ダーク"'], ['k', '"common.refresh"', '"更新"']] },
+  { id: 'f4', name: 'LauncherSettingsView.swift', alias: 'launchersettingsview localizable-no', kind: 'text', ext: 'SWIFT', folder: '~/Workspace/typeflux/Sources/Typeflux/Settings', size: '6 KB', mod: '3 天前', created: '2026/03/11', type: 'Swift 源文件', lines: 188, code: SWIFT, swift: true },
+  { id: 'f5', name: 'appearance-light.png', alias: 'appearance light', kind: 'image', ext: 'PNG', folder: '~/Workspace/typeflux/docs/design/ask-launcher-quick-results', size: '1.2 MB', mod: '上周', created: '2026/09/30', type: 'PNG 图像', dims: '2880 × 1800' },
+  { id: 'f6', name: 'appearance-dark.png', alias: 'appearance dark', kind: 'image', ext: 'PNG', folder: '~/Workspace/typeflux/docs/design/ask-launcher-quick-results', size: '1.1 MB', mod: '上周', created: '2026/09/30', type: 'PNG 图像', dims: '2880 × 1800' },
+  { id: 'f7', name: 'invoice-2026-09.pdf', alias: 'invoice fapiao', kind: 'pdf', ext: 'PDF', folder: '~/Documents/财务/2026', size: '284 KB', mod: '10月3日', created: '2026/10/03', type: 'PDF 文稿', pages: 2 },
+  { id: 'f8', name: '2026Q3 周报汇总.md', alias: 'zhoubao weekly 周报', kind: 'text', ext: 'MD', folder: '~/Documents/工作', size: '12 KB', mod: '9月30日', created: '2026/07/01', type: 'Markdown 文稿', lines: 214,
+    code: [['h', '# 2026 Q3 周报汇总'], ['p', ''], ['h', '## 第 39 周'], ['p', '- 启动器支持应用 / 文件搜索'], ['p', '- 关键词插件：翻译、截图取字、剪贴板'], ['p', '- 修复长文本粘贴丢字'], ['p', ''], ['h', '## 第 38 周'], ['p', '- 工作流编辑器 M2']] },
+  { id: 'f9', name: 'secrets.env', alias: 'secrets env', kind: 'secret', ext: 'ENV', folder: '~/Workspace/typeflux-api', size: '1 KB', mod: '8月12日', created: '2026/04/20', type: '纯文本' },
+];
+const FOLDERS = [
+  { id: 'd1', name: 'design', alias: 'design sheji', folder: '~/Workspace/typeflux/docs', count: 58, size: '186.4 MB', mod: '今天 11:02',
+    kids: [['d', 'ask-launcher-quick-results', '11 项'], ['d', 'ask-launcher-workflows', '8 项'], ['d', 'ask-launcher-hover-preview', '3 项'], ['f', 'ask-launcher-preview-pane.html', '58 KB'], ['f', 'ask-launcher-preview-pane.md', '21 KB'], ['f', 'ask-launcher-quick-results.md', '34 KB'], ['f', 'ask-launcher-workflows.md', '29 KB'], ['f', 'before-launcher.png', '2.1 MB']] },
+  { id: 'd2', name: 'Design Assets', alias: 'design assets', folder: '~/Dropbox', count: 214, size: '2.4 GB', mod: '9月21日',
+    kids: [['d', 'icons', '96 项'], ['d', 'marketing', '40 项'], ['f', 'brand-guide.pdf', '18.2 MB'], ['f', 'logo.sketch', '4.4 MB']] },
+];
+const KEYWORDS = [
+  { id: 'k1', kw: 'fy', name: '翻译', alias: 'fy fanyi translate 翻译', glyph: '文', aliases: ['tr'], desc: '把后面的文字翻译成目标语言；单词会显示词卡（音标、释义、例句），可以加入单词本。',
+    ex: [['fy hello world', '你好，世界'], ['fy 启动器', 'launcher'], ['fy ephemeral', '词卡：adj. 短暂的']], recent: '今天用过 6 次', engine: '本地词典 → AI · coding/auto' },
+  { id: 'k2', kw: 'ocr', name: '截图取字', alias: 'ocr jietuquzi 截图', glyph: '⌗', aliases: [], desc: '框选屏幕区域，识别其中的文字，可直接复制或继续问 AI。',
+    ex: [['ocr', '框选区域 → 识别文字'], ['ocr 表格', '按表格整理']], recent: '昨天用过', engine: 'Vision 本地识别' },
+  { id: 'k3', kw: 'f', name: '文件搜索', alias: 'f wenjian file', glyph: '⌕', aliases: ['find'], desc: '只搜文件和文件夹，支持 kind:pdf、in:~/Documents 这类筛选。',
+    ex: [['f invoice kind:pdf', '只看 PDF'], ['f in:~/Downloads', '限定目录']], recent: '今天用过 2 次', engine: '本地索引 · 312,408 个文件' },
+];
+const WORKFLOWS = [
+  { id: 'w1', name: '生成周报', alias: 'zhoubao weekly 周报 shengcheng', kw: 'wk', desc: '读取本周 Git 提交和日历事件，生成一份周报草稿并复制到剪贴板。',
+    steps: [['读取 Git 提交', '~/Workspace/typeflux · 本周'], ['读取日历事件', '工作日历 · 本周'], ['AI 生成周报', '模板：周报-简洁版 · coding/auto'], ['复制到剪贴板', '同时保存到 ~/Documents/工作']],
+    input: '无需输入', last: '上周五 18:02 · 成功 · 14 秒' },
+  { id: 'w2', name: '翻译并替换选中文字', alias: 'fanyi tihuan translate replace', kw: 'trr', desc: '把当前应用里选中的文字翻译成英文，并直接替换原文。',
+    steps: [['读取选中文字', '当前应用'], ['AI 翻译', '目标语言：English'], ['替换选中文字', '粘贴回原位置']], input: '选中的文字', last: '今天 10:15 · 成功 · 2 秒' },
+];
+const TABS = [
+  { id: 't1', name: 'Multica — Project Management for Humans and Agents', alias: 'multica', url: 'https://multica.ai/gulu/issues/GUL-332', browser: 'Google Chrome', win: '窗口 1 · 第 3 个标签', time: '2 分钟前看过' },
+  { id: 't2', name: 'Multica Docs · CLI Reference', alias: 'multica docs', url: 'https://docs.multica.ai/cli', browser: 'Google Chrome', win: '窗口 2 · 第 1 个标签', time: '1 小时前看过' },
+];
+
+// ---------------------------------------------------------------- formatting helpers
+const CN_DIG = '零壹贰叁肆伍陆柒捌玖', CN_UNIT = ['', '拾', '佰', '仟'], CN_BIG = ['', '万', '亿', '兆'];
+function cnAmount(n) {
+  if (!isFinite(n) || Math.abs(n) >= 1e16) return null;
+  const neg = n < 0; n = Math.abs(n);
+  const cents = Math.round(n * 100);
+  const int = Math.floor(cents / 100), jiao = Math.floor(cents / 10) % 10, fen = cents % 10;
+  let s = '';
+  if (int > 0) {
+    const str = String(int); const groups = [];
+    for (let i = str.length; i > 0; i -= 4) groups.unshift(str.slice(Math.max(0, i - 4), i));
+    let zero = false;
+    groups.forEach((g, gi) => {
+      const big = CN_BIG[groups.length - 1 - gi]; let part = ''; let any = false;
+      for (let i = 0; i < g.length; i++) {
+        const d = +g[i], u = CN_UNIT[g.length - 1 - i];
+        if (d === 0) { zero = any || s !== '' || part !== ''; }
+        else { if (zero && (part || s)) part += '零'; part += CN_DIG[d] + u; zero = false; any = true; }
+      }
+      if (any) s += part + big; else zero = s !== '';
+    });
+    s += '元';
+  }
+  if (jiao === 0 && fen === 0) s += (s ? '整' : '零元整');
+  else {
+    if (jiao) s += CN_DIG[jiao] + '角'; else if (int > 0) s += '零';
+    if (fen) s += CN_DIG[fen] + '分';
+  }
+  return (neg ? '负' : '') + s;
+}
+const EN_ONES = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
+const EN_TENS = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
+function en999(n) {
+  let s = [];
+  if (n >= 100) { s.push(EN_ONES[Math.floor(n / 100)] + ' HUNDRED'); n %= 100; }
+  if (n >= 20) { s.push(EN_TENS[Math.floor(n / 10)] + (n % 10 ? '-' + EN_ONES[n % 10] : '')); }
+  else if (n > 0) s.push(EN_ONES[n]);
+  return s.join(' ');
+}
+function enWords(n) {
+  if (n === 0) return 'ZERO';
+  const scales = ['', ' THOUSAND', ' MILLION', ' BILLION', ' TRILLION']; let parts = [], i = 0;
+  while (n > 0 && i < scales.length) { const c = n % 1000; if (c) parts.unshift(en999(c) + scales[i]); n = Math.floor(n / 1000); i++; }
+  return parts.join(' ');
+}
+function enAmount(n) {
+  if (!isFinite(n) || n < 0 || n >= 1e15) return null;
+  const cents = Math.round(n * 100), d = Math.floor(cents / 100), c = cents % 100;
+  return 'SAY US DOLLARS ' + enWords(d) + (c ? ' AND CENTS ' + enWords(c) : '') + ' ONLY';
+}
+const grouped = n => n.toLocaleString('en-US', { maximumFractionDigits: 10 });
+function cnNumber(str) {
+  const d = '零一二三四五六七八九', u = ['', '十', '百', '千']; const n = str.replace(/^-/, '');
+  if (!/^\d{1,16}$/.test(n)) return null;
+  const groups = []; for (let i = n.length; i > 0; i -= 4) groups.unshift(n.slice(Math.max(0, i - 4), i));
+  let out = '', zero = false;
+  groups.forEach((g, gi) => {
+    let part = '', any = false;
+    for (let i = 0; i < g.length; i++) { const x = +g[i]; if (x === 0) zero = true; else { if (zero && (out || part)) part += '零'; part += d[x] + u[g.length - 1 - i]; zero = false; any = true; } }
+    if (any) out += part + ['', '万', '亿', '兆'][groups.length - 1 - gi];
+  });
+  return (str.startsWith('-') ? '负' : '') + (out || '零').replace(/^一十/, '十');
+}
+function tsLocal(sec) {
+  const dt = new Date(sec * 1000); if (isNaN(dt)) return null; const p = x => String(x).padStart(2, '0');
+  return `${dt.getFullYear()}-${p(dt.getMonth() + 1)}-${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}:${p(dt.getSeconds())}`;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ---------------------------------------------------------------- engine
+function evaluate(expr) {
+  // The real app uses AskCalculator's own parser; the mock only accepts a whitelist before evaluating.
+  const src = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**').replace(/,/g, '');
+  if (!/^[\d\s+\-*/().%]+$/.test(src.replace(/\*\*/g, '*'))) return { error: '无法计算' };
+  try {
+    const v = Function('"use strict";return (' + src.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)') + ')')();
+    if (typeof v !== 'number' || !isFinite(v)) return { error: '除数不能为 0' };
+    return { value: Math.round(v * 1e10) / 1e10 };
+  } catch (e) { return { incomplete: true }; }
+}
+function match(item, q) {
+  const ql = q.toLowerCase(); const name = item.name.toLowerCase(); const alias = (item.alias || '').toLowerCase();
+  if (name === ql) return { score: 1, hl: [0, q.length] };
+  if (name.startsWith(ql)) return { score: .95, hl: [0, q.length] };
+  const at = name.indexOf(ql); if (at >= 0) return { score: .8, hl: [at, at + q.length] };
+  if (alias.split(/\s+/).some(a => a.startsWith(ql))) return { score: .85, hl: null };
+  if (alias.includes(ql)) return { score: .7, hl: null };
+  return null;
+}
+function marked(name, hl) {
+  if (!hl) return esc(name);
+  return esc(name.slice(0, hl[0])) + '<b>' + esc(name.slice(hl[0], hl[1])) + '</b>' + esc(name.slice(hl[1]));
+}
+function search(q) {
+  const t = q.trim(); const rows = [];
+  if (!t) return null;
+  const isNumber = /^[+-]?\d+(\.\d+)?$/.test(t);
+  const isExpr = !isNumber && /^[\d\s+\-*/().%^×÷,]+$/.test(t) && /\d/.test(t) && /[+\-*/^%×÷]/.test(t.replace(/^[+-]/, ''));
+  if (isExpr) {
+    const r = evaluate(t);
+    if (r.incomplete && state.lastCalc) rows.push({ type: 'calc', calc: { ...state.lastCalc, pending: t } });
+    else if (!r.incomplete) { const calc = { expr: t, ...r }; if (r.value !== undefined) state.lastCalc = calc; rows.push({ type: 'calc', calc }); }
+    return rows.length ? { rows, best: 0 } : null;
+  }
+  if (isNumber) rows.push({ type: 'number', calc: { expr: t, value: +t, raw: t } });
+  const scored = [];
+  KEYWORDS.forEach(k => { const m = k.kw === t.toLowerCase() ? { score: 1.1, hl: null } : match(k, t); if (m) scored.push({ type: 'kw', item: k, ...m, g: '功能' }); });
+  WORKFLOWS.forEach(w => { const m = match(w, t); if (m) scored.push({ type: 'wf', item: w, ...m, g: '功能' }); });
+  APPS.forEach(a => { const m = match(a, t); if (m) scored.push({ type: 'app', item: a, ...m, g: '应用' }); });
+  PANES.forEach(p => { const m = match(p, t); if (m) scored.push({ type: 'pane', item: p, ...m, g: '系统设置' }); });
+  FILES.forEach(f => { const m = match(f, t); if (m) scored.push({ type: 'file', item: f, ...m, g: '文件' }); });
+  FOLDERS.forEach(f => { const m = match(f, t); if (m) scored.push({ type: 'folder', item: f, ...m, g: '文件夹' }); });
+  TABS.forEach(b => { const m = match(b, t); if (m) scored.push({ type: 'tab', item: b, ...m, g: '浏览器标签' }); });
+  const order = ['功能', '应用', '系统设置', '文件', '文件夹', '浏览器标签'];
+  const limits = { '功能': 3, '应用': 5, '系统设置': 3, '文件': 6, '文件夹': 3, '浏览器标签': 3 };
+  let best = null;
+  const top = scored.slice().sort((a, b) => b.score - a.score)[0];
+  if (!isNumber && top && top.score >= .95 && t.length >= 2) best = top;
+  if (best) rows.push({ ...best, g: '最佳匹配' });
+  order.forEach(g => scored.filter(s => s.g === g && s !== best).sort((a, b) => b.score - a.score).slice(0, limits[g]).forEach(s => rows.push(s)));
+  if (!rows.length) return null;
+  return { rows, best: best ? (isNumber ? 1 : 0) : (isNumber ? 0 : null) };
+}
+
+// ---------------------------------------------------------------- previews
+function calcFormats(c) {
+  if (c.value === undefined) return [];
+  const v = c.value; const out = [];
+  if (c.raw !== undefined) {
+    const cn = cnNumber(c.raw); if (cn) out.push(['中文数字', cn]);
+  }
+  const a = cnAmount(v); if (a) out.push(['中文大写金额', a]);
+  if (Math.abs(v) >= 1000) out.push(['千分位', grouped(v)]);
+  const e = enAmount(v); if (e) out.push(['英文金额', e]);
+  if (Number.isInteger(v) && Math.abs(v) <= Number.MAX_SAFE_INTEGER) {
+    out.push(['十六进制', (v < 0 ? '-' : '') + '0x' + Math.abs(v).toString(16).toUpperCase()]);
+    out.push(['二进制', (v < 0 ? '-' : '') + '0b' + Math.abs(v).toString(2)]);
+    if (c.raw !== undefined) out.push(['八进制', '0o' + Math.abs(v).toString(8)]);
+  }
+  if (c.raw !== undefined && Number.isInteger(v) && v >= 1e8 && v <= 4102444800) out.push(['Unix 时间戳（秒）', tsLocal(v), true]);
+  if (c.raw !== undefined && Number.isInteger(v) && v >= 1e11 && v <= 4102444800000) out.push(['Unix 时间戳（毫秒）', tsLocal(v / 1000), true]);
+  out.push(['科学计数法', v.toExponential().replace('e+', 'e')]);
+  return out;
+}
+function actionsFor(r) {
+  switch (r.type) {
+    case 'calc': case 'number': return [['⧉', '复制结果', '↩', true], ['ƒ', '复制算式', '⇧⌘C'], ['✦', '问 AI', '⌘↩']];
+    case 'app': return [['↗', '打开', '↩', true], ['⌕', '在访达中显示', '⌘R'], ['⧉', '复制路径', '⇧⌘C'], ...(r.item.running ? [['⏻', '退出', '⌘Q']] : []), ['ⓘ', '显示简介', '⌘I']];
+    case 'pane': return [['↗', '打开', '↩', true], ['⧉', '复制链接', '⇧⌘C']];
+    case 'file': return [['↗', '打开', '↩', true], ['⌕', '在访达中显示', '⌘R'], ['◉', '快速查看', '⌘Y'], ['⧉', '复制文件', '⌘C'], ['✦', '问 AI', '⌘↩']];
+    case 'folder': return [['↗', '打开', '↩', true], ['⌕', '在此搜索', '⌘F'], ['>_', '终端', '⌘T'], ['⧉', '复制路径', '⇧⌘C']];
+    case 'kw': return [['→', '进入', '↩', true], ['⇥', '补全', '⇥'], ['⚙', '设置', '⌘,']];
+    case 'wf': return [['▶', '运行', '↩', true], ['✎', '编辑', '⌘E'], ['☰', '运行记录', '⌘L']];
+    case 'tab': return [['↗', '切到标签', '↩', true], ['⧉', '复制链接', '⇧⌘C'], ['✕', '关闭标签', '⌘W']];
+  }
+  return [];
+}
+function moreActions(r) {
+  const base = actionsFor(r).map(a => [a[1], a[2]]);
+  if (r.type === 'file') return [...base, ['打开方式…', '⌘O'], ['复制路径', '⇧⌘C'], ['复制名称', '⌥⌘C'], ['在终端中打开', '⌘T'], ['移到废纸篓', '⌘⌫']];
+  if (r.type === 'app') return [...base, ['问 AI', '⌘↩'], ['隐藏', '⌘H']];
+  return base;
+}
+function iconHTML(r, big) {
+  const i = r.item;
+  switch (r.type) {
+    case 'app': case 'pane': return `<span class="icon${big ? ' big' : ''}" style="background:${i.bg}">${i.glyph}</span>`;
+    case 'file': return `<span class="icon file">${i.ext}</span>`;
+    case 'folder': return `<span class="icon folder"></span>`;
+    case 'kw': return `<span class="icon kwi">${i.glyph}</span>`;
+    case 'wf': return `<span class="icon wf">⚡</span>`;
+    case 'tab': return `<span class="icon tab">M</span>`;
+    case 'calc': return `<span class="icon sym">=</span>`;
+    case 'number': return `<span class="icon sym">#</span>`;
+  }
+}
+function codeHTML(f) {
+  const lines = f.code.map((l, n) => {
+    let body;
+    if (l[0] === 'c') body = `<span class="c">${esc(l[1])}</span>`;
+    else if (l[0] === 'k') body = `<span class="k">${esc(l[1])}</span> = <span class="s">${esc(l[2])}</span>;`;
+    else if (l[0] === 'h') body = `<span class="k">${esc(l[1])}</span>`;
+    else body = esc(l[1]).replace(/&lt;s&gt;(.*?)&lt;\/s&gt;/g, '<span class="s">$1</span>');
+    return `<div class="ln"><i>${n + 1}</i><span class="lt">${body}</span></div>`;
+  }).join('');
+  return `<div class="code">${lines}<div class="more">… 共 ${f.lines.toLocaleString()} 行，只读取前 64 KB</div></div>`;
+}
+function previewHTML(r) {
+  const i = r.item;
+  switch (r.type) {
+    case 'calc': case 'number': {
+      const c = r.calc; const fm = calcFormats(c);
+      const val = c.error ? `<div class="val err">${esc(c.error)}</div>` : `<div class="val" style="${c.pending ? 'color:var(--text-3)' : ''}">${esc(r.type === 'number' ? c.raw : grouped(c.value))}</div>`;
+      return `<div class="pv-kind">${r.type === 'calc' ? '计算器' : '数字转换'}<span class="src">本地计算</span></div>
+        <div class="resbox"><div class="ex">${esc(c.pending ? c.pending + ' …' : c.expr)}</div>${val}</div>
+        <div class="fmts">${fm.map((f, n) => `<div class="fmt" data-copy="${esc(f[1])}"><div><div class="k">${f[0]}${f[2] ? ' <span class="new">新</span>' : ''}${n < 9 ? `<kbd>⌥${n + 1}</kbd>` : ''}</div><div class="v">${esc(f[1])}</div></div><button class="cp" title="复制">⧉</button></div>`).join('')}</div>`;
+    }
+    case 'app': return `<div class="pv-kind">应用<span class="src">${i.running ? '<span class="pill">● ' + i.running + '</span>' : '<span class="pill gray">未运行</span>'}</span></div>
+      <div class="hero">${iconHTML(r, true)}<h3>${esc(i.name)}</h3><p>${i.cat}</p></div>
+      <dl class="meta"><dt>位置</dt><dd title="${esc(i.path)}">${esc(i.path)}</dd><dt>版本</dt><dd>${i.ver}</dd><dt>大小</dt><dd>${i.size}</dd><dt>上次打开</dt><dd>${i.opened}</dd><dt>安装时间</dt><dd>${i.created}</dd><dt>Bundle ID</dt><dd class="mono" style="font-size:11px">${i.bundle}</dd></dl>`;
+    case 'pane': return `<div class="pv-kind">系统设置</div>
+      <div class="hero">${iconHTML(r, true)}<h3>${esc(i.name)}</h3><p>${i.crumb}</p></div>
+      <p class="desc" style="text-align:center">${i.desc}</p>`;
+    case 'file': {
+      const loading = state.loading === i.id;
+      let body;
+      if (i.kind === 'secret') body = `<div class="hidden-box"><b>不预览内容</b>文件名像是密钥或凭证（*.env、*.pem、id_rsa…），只显示文件信息。<br>可在“设置 › 启动器 › 预览”里调整规则。</div>`;
+      else if (loading) body = `<div class="code" style="padding:10px 14px"><div class="skel" style="width:70%"></div><div class="skel" style="width:90%"></div><div class="skel" style="width:55%"></div><div class="skel" style="width:80%"></div></div>`;
+      else if (i.kind === 'text') body = codeHTML(i);
+      else if (i.kind === 'image') body = `<div class="thumb img"></div>`;
+      else if (i.kind === 'pdf') body = `<div class="thumb pdf"><div class="page"><b>INVOICE · 2026-09</b><i style="width:60%"></i><i></i><i style="width:80%"></i><i></i><i style="width:40%"></i><br><i></i><i style="width:70%"></i><i></i></div></div>`;
+      const extra = i.kind === 'image' ? `<dt>尺寸</dt><dd>${i.dims}</dd>` : i.kind === 'pdf' ? `<dt>页数</dt><dd>${i.pages} 页</dd>` : i.lines ? `<dt>行数</dt><dd>${i.lines.toLocaleString()}</dd>` : '';
+      return `<div class="pv-kind">${esc(i.name)}<span class="src">${i.type}</span></div>${body}
+        <dl class="meta"><dt>位置</dt><dd class="wrap">${esc(i.folder)}</dd><dt>大小</dt><dd>${i.size}</dd>${extra}<dt>修改时间</dt><dd>${i.mod}</dd><dt>创建时间</dt><dd>${i.created}</dd></dl>`;
+    }
+    case 'folder': {
+      const loading = state.loading === i.id;
+      const kids = loading ? '<div class="skel"></div><div class="skel" style="width:80%"></div><div class="skel" style="width:60%"></div>'
+        : i.kids.map(k => `<div class="kid">${k[0] === 'd' ? '<span class="icon folder"></span>' : '<span class="icon file">' + k[1].split('.').pop().toUpperCase().slice(0, 4) + '</span>'}<span>${esc(k[1])}</span><span>${k[2]}</span></div>`).join('');
+      return `<div class="pv-kind">${esc(i.name)}<span class="src">文件夹 · ${i.count} 项</span></div>
+        <div class="kids">${kids}</div>
+        <dl class="meta"><dt>位置</dt><dd class="wrap">${esc(i.folder)}</dd><dt>大小</dt><dd>${i.size}</dd><dt>修改时间</dt><dd>${i.mod}</dd></dl>`;
+    }
+    case 'kw': return `<div class="pv-kind">关键词插件<span class="src">${i.recent}</span></div>
+      <div class="hero">${iconHTML(r, true).replace('icon kwi', 'icon kwi big sm')}<h3>${esc(i.name)}</h3><p><code style="color:var(--accent-text)">${i.kw}</code>${i.aliases.map(a => ' · <code>' + a + '</code>').join('')}</p></div>
+      <p class="desc">${i.desc}</p>
+      <div class="sect">用法</div>${i.ex.map(e => `<div class="ex-line"><code>${esc(e[0])}</code><span>→ ${esc(e[1])}</span></div>`).join('')}
+      <dl class="meta" style="margin-top:12px"><dt>引擎</dt><dd>${i.engine}</dd></dl>`;
+    case 'wf': return `<div class="pv-kind">工作流<span class="src"><code>${i.kw}</code></span></div>
+      <div class="hero" style="padding-bottom:8px"><span class="icon wf big sm">⚡</span><h3>${esc(i.name)}</h3></div>
+      <p class="desc">${i.desc}</p>
+      <div class="sect">步骤</div><ol class="steps">${i.steps.map(s => `<li><span>${esc(s[0])}<small>${esc(s[1])}</small></span></li>`).join('')}</ol>
+      <dl class="meta" style="margin-top:10px"><dt>输入</dt><dd>${i.input}</dd><dt>上次运行</dt><dd>${i.last}</dd></dl>`;
+    case 'tab': {
+      const others = TABS.filter(t => t !== i);
+      return `<div class="pv-kind">浏览器标签<span class="src">${i.time}</span></div>
+        <div class="hero" style="padding-bottom:10px"><span class="icon tab big" style="width:56px;height:56px;font-size:26px">M</span><h3 style="font-size:14px">${esc(i.name)}</h3><p class="mono" style="font-size:11px">${esc(i.url)}</p></div>
+        <dl class="meta"><dt>浏览器</dt><dd>${i.browser}</dd><dt>位置</dt><dd>${i.win}</dd><dt>域名</dt><dd>${new URL(i.url).host}</dd></dl>
+        ${others.length ? `<div class="sect">同一网站的其他标签</div><div class="kids">${others.map(o => `<div class="kid"><span class="icon tab">M</span><span>${esc(o.name)}</span><span></span></div>`).join('')}</div>` : ''}`;
+    }
+  }
+  return '';
+}
+
+// ---------------------------------------------------------------- rendering
+const state = { q: '', res: null, hl: 0, chosen: false, panel: null, preview: true, loading: null, lastCalc: null, loadTimer: null };
+const $ = id => document.getElementById(id);
+const NOTES = {
+  home: ['首页（不变）', '输入框为空时保持现在的单栏：继续对话、最近使用的应用、关键词 chips。宽度已经是 780pt，开始打字时只往下展开。', ['<code>AskLauncherHome</code> 不改布局，只适配新宽度。']],
+  ai: ['没有本地结果（不变）', '没有任何本地结果时不出现两栏，也没有空的预览栏。回车照旧把原文发给 AI。', ['<code>AskQuickResults.resolve</code> 返回 nil 的路径不变。']],
+  calc: ['计算', '左栏只剩一行“计算器”（不再把各种写法排在列表里），右栏是算式 + 大号结果 + 全部写法。每种写法都可以点击复制，或者按 ⌥1–9 复制。算式没写完时保留上一次结果并变暗。', ['数据：<code>AskCalculation</code> + <code>AskCalculatorFormats</code>，同步计算、不需要 IO。', '<code>.format(Int)</code> 行从左栏移到右栏；<code>AskQuickResults.rows</code> 里不再有 format，方向键只在左栏移动。']],
+  number: ['纯数字', '纯数字同时出现“数字转换”和搜索结果。右栏列出中文数字、大写金额、各种进制、千分位、科学计数法；看起来像时间戳时多一行“Unix 时间戳”（标“新”，可选）。', ['数据：<code>AskNumberConversions.formats</code>，时间戳是新增的一种 Kind。', '左栏第一行仍是转换，回车复制结果，和现在一样。']],
+  app: ['应用', '大图标、名称、分类，下面是位置、版本、大小、上次打开、安装时间。正在运行的应用显示窗口数，动作条多一个“退出”。', ['数据：<code>Bundle(url:).infoDictionary</code>（版本、分类）、<code>URLResourceValues</code>（大小、创建时间）、<code>kMDItemLastUsedDate</code>、<code>NSRunningApplication</code>。', '在后台读取，按 bundle 路径 + 修改时间缓存。']],
+  pane: ['系统设置', '图标、路径（系统设置 › 显示器）和一句说明。', ['说明文案放在本地化文件里，按 pane id 查；没有文案就只显示图标和路径。']],
+  file: ['文件', '文本 / 代码显示前若干行，图片和 PDF 显示 Quick Look 缩略图，其他类型显示大图标；下面是位置、大小、修改与创建时间。像密钥的文件（.env、*.pem、id_rsa…）只显示文件信息、不读内容。', ['缩略图：已有的 <code>QLThumbnailGenerator</code> + <code>AskResultImageCache</code>。', '文本：经过 <code>AskFileReader</code> 子进程读取（有超时、可取消，网络盘卡住也不会拖住主线程），最多 64 KB / 200 行，先检测是不是二进制。', '高亮切换后 80ms 去抖再加载，切走时取消；加载时显示骨架屏。']],
+  folder: ['文件夹', '列出前 20 个子项（文件夹在前），加总数、大小、修改时间。', ['通过 <code>AskFileReader</code> 列目录，遵守 <code>AskFileScope</code> 的屏蔽目录；目录大小用索引里的值，没有就不显示。', '点子项直接打开；⌘F 用“在此搜索”进入文件模式。']],
+  kw: ['关键词', '说明、别名、用法示例、最近使用。按 ↩ 进入插件，⇥ 补全成 “fy ”。', ['数据：<code>AskLauncherSearchEntry</code> / <code>AskKeyword</code>；用法示例由插件的 manifest 提供（新增可选字段 <code>examples</code>）。', '使用次数来自 <code>AskKeywordUsage</code>。']],
+  wf: ['工作流', '说明、步骤（每步一行，带参数摘要）、需要的输入、上次运行结果。↩ 运行，⌘E 编辑。', ['数据：<code>AskWorkflowManifest</code> 的步骤 + 已有的 <code>AskWorkflowActionsSummaryView</code> 摘要逻辑；上次运行来自 <code>WorkflowController+History</code>。']],
+  tab: ['浏览器标签', '标题、完整 URL、所在浏览器 / 窗口 / 标签序号，以及同一网站的其他标签。', ['数据：<code>AskBrowserSearchEntry</code>（已经有标题、URL、浏览器）；同站标签从同一批结果里按域名分组，不需要再调 AppleScript。']],
+  secret: ['敏感文件', '名字像密钥 / 凭证的文件不读内容：开着屏幕共享时，选中就把内容显示出来风险太大。', ['规则：<code>*.env</code>、<code>.env.*</code>、<code>*.pem</code>、<code>*.key</code>、<code>id_rsa*</code>、<code>*.p12</code>、<code>credentials*</code>，用户可在设置里改。']],
+};
+function noteKey() {
+  if (!state.q.trim()) return 'home';
+  if (!state.res) return 'ai';
+  const r = state.res.rows[state.hl]; if (!r) return 'ai';
+  if (r.type === 'file' && r.item.kind === 'secret') return 'secret';
+  return r.type;
+}
+function renderNotes() {
+  const n = NOTES[noteKey()];
+  $('notes').innerHTML = `<div class="box"><h2>当前状态：${n[0]}</h2><p style="margin:0 0 8px">${n[1]}</p><ul>${n[2].map(x => '<li>' + x + '</li>').join('')}</ul></div>
+  <div class="box"><h2>和竞品的取舍</h2><ul>
+    <li><b>保留</b>：两栏、右栏随高亮切换、底部动作条、计算结果大字显示（竞品 1、4、5）。</li>
+    <li><b>保留我们自己的</b>：AI 是兜底操作（⌘↩），关键词 / 工作流是一等结果；首页仍是单栏。</li>
+    <li><b>不做</b>：右栏里放可编辑的设置项（竞品 2 的时区 / 格式），第一版只读；时间戳只作为一种可选的转换写法。</li>
+    <li><b>不做</b>：整块文件内容的语法高亮，第一版只区分注释、键和字符串。</li>
+  </ul></div>`;
+}
+function rowHTML(r, idx) {
+  const i = r.item; let main = '', tail = '', sub = '';
+  switch (r.type) {
+    case 'calc': main = '计算器'; tail = r.calc.error ? '—' : (r.calc.pending ? '…' : '= ' + grouped(r.calc.value)); break;
+    case 'number': main = '数字转换'; tail = calcFormats(r.calc).length + ' 种写法'; break;
+    case 'app': main = marked(i.name, r.hl); sub = state.preview ? '' : i.path.replace(/\/[^/]+$/, ''); tail = i.running ? '运行中' : ''; break;
+    case 'pane': main = marked(i.name, r.hl); tail = '系统设置'; break;
+    case 'file': main = marked(i.name, r.hl); sub = i.folder; tail = state.preview ? '' : i.mod; break;
+    case 'folder': main = marked(i.name, r.hl); sub = i.folder; break;
+    case 'kw': main = marked(i.name, r.hl); tail = `<span class="kw">${i.kw}</span>`; break;
+    case 'wf': main = marked(i.name, r.hl); tail = `<span class="kw">${i.kw}</span>`; break;
+    case 'tab': main = marked(i.name, r.hl); sub = new URL(i.url).host; break;
+  }
+  if (idx === state.hl && !state.preview) tail = { app: '打开 ↩', file: '→ 更多操作', calc: '复制 ↩', number: '复制 ↩', kw: '进入 ↩', wf: '运行 ↩', tab: '切到标签 ↩', pane: '打开 ↩', folder: '打开 ↩' }[r.type];
+  const text = sub ? `<span class="tx"><span class="nm">${main}</span><small>${esc(sub)}</small></span>` : `<span class="nm">${main}</span>`;
+  return `<div class="row${idx === state.hl ? ' hl' : ''}" data-i="${idx}">${idx < 9 ? `<span class="badge">${idx + 1}</span>` : ''}${iconHTML(r)}${text}<span class="tail">${tail}</span></div>`;
+}
+function listHTML() {
+  let g = null, out = '';
+  state.res.rows.forEach((r, idx) => {
+    const grp = r.type === 'calc' ? '计算' : r.type === 'number' ? '数字转换' : r.g;
+    if (grp !== g) { g = grp; out += `<div class="grp">${grp}</div>`; }
+    out += rowHTML(r, idx);
+  });
+  return out;
+}
+function render() {
+  const body = $('body'); const card = $('card');
+  card.classList.toggle('legacy', !state.preview);
+  $('mW').textContent = (state.preview ? '780' : '700') + 'pt 宽';
+  $('mD').textContent = state.preview ? '左栏 340pt · 预览栏 440pt · 结果区固定高 432pt' : '现状：单栏，高度随内容变化（最高 430pt）';
+  const r = state.res && state.res.rows[state.hl];
+  $('eq').textContent = r && r.type === 'calc' && r.calc.value !== undefined && !r.calc.pending ? '= ' + grouped(r.calc.value) : '';
+  if (!state.q.trim()) {
+    body.className = 'body single';
+    body.innerHTML = `<div class="home"><div class="grp">继续对话</div>
+      <div class="row"><span class="icon sym">↺</span><span class="nm">今天天气怎么样</span><span class="tail">7 小时前</span></div>
+      <div class="row"><span class="icon sym">↺</span><span class="nm">帮我取一组适合管娃小朋友的名字</span><span class="tail">昨天</span></div>
+      <div class="grp">最近使用的应用</div>
+      <div class="row">${iconHTML({ type: 'app', item: APPS[6] })}<span class="nm">无边记</span></div>
+      <div class="row hl">${iconHTML({ type: 'app', item: APPS[1] })}<span class="nm">Google Chrome</span></div>
+      <div class="row">${iconHTML({ type: 'app', item: APPS[0] })}<span class="nm">ChatGPT</span></div>
+      <div class="chips"><span class="chip"><code>fy</code>翻译</span><span class="chip"><code>ocr</code>截图取字</span><span class="chip"><code>clip</code>剪贴板历史</span><span class="chip"><code>f</code>文件搜索</span><span class="chip"><code>dict</code>单词本</span><span class="chip"><code>prefix</code>关键词目录</span></div></div>`;
+  } else if (!state.res) {
+    body.className = 'body single';
+    body.innerHTML = `<div class="empty"><span class="icon sym" style="background:rgba(191,90,242,.18);color:#d6a1f7">✦</span><span>没有本地结果。按 <b style="color:var(--text)">↩</b> 把“${esc(state.q)}”发给 AI。</span></div>`;
+  } else if (!state.preview) {
+    body.className = 'body single';
+    body.innerHTML = `<div class="list" style="height:auto">${listHTML()}</div>`;
+  } else {
+    body.className = 'body split';
+    const acts = actionsFor(r);
+    body.innerHTML = `<div class="list" id="list">${listHTML()}</div>
+      <div class="pv"><div class="pv-scroll" id="pvs">${previewHTML(r)}</div>
+      <div class="acts">${acts.slice(0, 5).map((a, n) => `<button class="act${a[3] ? ' primary' : ''}" data-act="${n}"><span class="g">${a[0]}</span>${a[1]}<kbd>${a[2]}</kbd></button>`).join('')}
+      <button class="act more" data-more="1"><span class="g">⋯</span>更多<kbd>→</kbd></button></div></div>`;
+    const hlRow = body.querySelector('.row.hl'); if (hlRow && state.chosen) hlRow.scrollIntoView({ block: 'nearest' });
+  }
+  if (state.panel) {
+    const items = moreActions(r);
+    body.insertAdjacentHTML('beforeend', `<div class="ap"><div class="t">${esc(r.item ? r.item.name : '计算结果')}</div>${items.map((a, n) => `<div class="it${n === state.panel.hl ? ' hl' : ''}">${a[0]}<kbd>${a[1]}</kbd></div>`).join('')}</div>`);
+  }
+  $('hint').innerHTML = hint(r);
+  renderNotes();
+}
+function hint(r) {
+  if (state.panel) return '<b>↑↓</b> 选择 · <b>↩</b> 执行 · <b>←</b> 返回';
+  if (!state.q.trim()) return '<b>↩</b> 打开 · <b>⌘↩</b> 问 AI · <b>⌘K</b> 上下文';
+  if (!r) return '<b>↩</b> 问 AI · <b>esc</b> 清空';
+  const main = { calc: '复制结果', number: '复制结果', app: '打开', pane: '打开', file: '打开', folder: '打开', kw: '进入', wf: '运行', tab: '切到标签' }[r.type];
+  return `<b>↩</b> ${main} · <b>→</b> 更多 · <b>⌘↩</b> 问 AI`;
+}
+let toastTimer;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1300); }
+function scheduleLoad() {
+  clearTimeout(state.loadTimer); state.loading = null;
+  const r = state.res && state.res.rows[state.hl];
+  if (!r || !state.preview || !(r.type === 'file' || r.type === 'folder') || r.item.kind === 'secret' || r.item.kind === 'image' || r.item.kind === 'pdf') return;
+  if (loaded.has(r.item.id)) return;
+  state.loading = r.item.id;
+  const id = r.item.id;
+  state.loadTimer = setTimeout(() => { loaded.add(id); if (state.loading === id) { state.loading = null; render(); } }, 80 + 180);
+}
+const loaded = new Set();
+function update(q) {
+  state.q = q; state.panel = null;
+  const prevId = state.chosen && state.res && state.res.rows[state.hl] ? rowId(state.res.rows[state.hl]) : null;
+  state.res = search(q);
+  state.hl = state.res && state.res.best !== null ? state.res.best : 0;
+  if (state.res && prevId) { const k = state.res.rows.findIndex(r => rowId(r) === prevId); if (k >= 0) state.hl = k; else state.chosen = false; }
+  else state.chosen = false;
+  scheduleLoad(); render();
+}
+const rowId = r => r.type + ':' + (r.item ? r.item.id : '');
+function move(d) {
+  if (!state.res) return; const n = state.res.rows.length;
+  state.hl = ((state.hl + d) % n + n) % n; state.chosen = true; scheduleLoad(); render();
+}
+function primaryValue(r) {
+  if (!r) return null;
+  if (r.type === 'calc' || r.type === 'number') return r.calc.value !== undefined ? String(r.type === 'number' ? r.calc.raw : r.calc.value) : null;
+  if (r.type === 'file' || r.type === 'folder') return r.item.folder + '/' + r.item.name;
+  if (r.type === 'app') return r.item.path;
+  if (r.type === 'tab') return r.item.url;
+  return r.item && r.item.name;
+}
+function run(r, label) {
+  if (!r) { toast('✦ 已发送给 AI：' + state.q); return; }
+  const a = label || actionsFor(r)[0][1];
+  if (a === '复制结果') { toast('已复制 ' + primaryValue(r)); return; }
+  if (a === '复制算式') { toast('已复制 ' + r.calc.expr + ' = ' + primaryValue(r)); return; }
+  if (a === '进入') { $('q').value = r.item.kw + ' '; update($('q').value); toast('进入「' + r.item.name + '」插件'); return; }
+  toast(a + '：' + (r.item ? r.item.name : ''));
+}
+
+// ---------------------------------------------------------------- events
+const input = $('q');
+input.addEventListener('input', () => update(input.value));
+input.addEventListener('keydown', e => {
+  const r = state.res && state.res.rows[state.hl];
+  if (state.panel) {
+    const items = moreActions(r);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); state.panel.hl = (state.panel.hl + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length; render(); }
+    else if (e.key === 'Enter') { e.preventDefault(); const a = items[state.panel.hl][0]; state.panel = null; render(); run(r, a); }
+    else if (e.key === 'ArrowLeft' || e.key === 'Escape') { e.preventDefault(); state.panel = null; render(); }
+    return;
+  }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); move(e.key === 'ArrowDown' ? 1 : -1); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (e.metaKey || !r) run(null); else run(r); }
+  else if (e.key === 'ArrowRight' && r && input.selectionStart === input.value.length) { e.preventDefault(); state.panel = { hl: 0 }; render(); }
+  else if (e.key === 'Escape') { e.preventDefault(); input.value = ''; update(''); }
+  else if (e.key === 'Tab' && r && r.type === 'kw') { e.preventDefault(); input.value = r.item.kw + ' '; update(input.value); }
+  else if (e.metaKey && /^[1-9]$/.test(e.key)) { e.preventDefault(); const k = +e.key - 1; if (state.res && state.res.rows[k]) { state.hl = k; render(); run(state.res.rows[k]); } }
+  else if (e.altKey && /^Digit[1-9]$/.test(e.code) && r && (r.type === 'calc' || r.type === 'number')) { e.preventDefault(); const f = calcFormats(r.calc)[+e.code.slice(5) - 1]; if (f) toast('已复制 ' + f[0] + '：' + f[1]); }
+  else if (e.metaKey && e.key.toLowerCase() === 'c' && input.selectionStart === input.selectionEnd && r) { e.preventDefault(); toast('已复制 ' + primaryValue(r)); }
+});
+document.addEventListener('keydown', e => { document.body.classList.toggle('cmd', e.metaKey); document.body.classList.toggle('opt', e.altKey); });
+document.addEventListener('keyup', e => { document.body.classList.toggle('cmd', e.metaKey); document.body.classList.toggle('opt', e.altKey); });
+window.addEventListener('blur', () => document.body.classList.remove('cmd', 'opt'));
+$('body').addEventListener('mousemove', e => {
+  const row = e.target.closest('.row[data-i]'); if (!row || state.panel) return;
+  const k = +row.dataset.i; if (k !== state.hl) { state.hl = k; state.chosen = true; scheduleLoad(); render(); }
+});
+$('body').addEventListener('click', e => {
+  const cp = e.target.closest('.fmt'); if (cp) { const b = cp.querySelector('.cp'); b.textContent = '✓'; b.classList.add('ok'); toast('已复制 ' + cp.dataset.copy); setTimeout(() => { b.textContent = '⧉'; b.classList.remove('ok'); }, 900); input.focus(); return; }
+  const r = state.res && state.res.rows[state.hl];
+  const act = e.target.closest('[data-act]'); if (act) { run(r, actionsFor(r)[+act.dataset.act][1]); input.focus(); return; }
+  if (e.target.closest('[data-more]')) { state.panel = { hl: 0 }; render(); input.focus(); return; }
+  const row = e.target.closest('.row[data-i]'); if (row) { run(state.res.rows[+row.dataset.i]); input.focus(); }
+});
+document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => {
+  input.value = b.dataset.q; state.chosen = false; update(b.dataset.q); input.focus();
+  document.querySelectorAll('[data-q]').forEach(x => x.classList.toggle('on', x === b));
+}));
+$('theme').addEventListener('click', () => { const l = document.body.classList.toggle('light'); $('theme').textContent = l ? '深色' : '浅色'; input.focus(); });
+$('pvToggle').addEventListener('click', () => { state.preview = !state.preview; $('pvToggle').classList.toggle('on', state.preview); $('pvToggle').textContent = '预览栏：' + (state.preview ? '开' : '关（现状）'); scheduleLoad(); render(); input.focus(); });
+
+const initial = new URLSearchParams(location.search).get('q');
+if (new URLSearchParams(location.search).get('theme') === 'light') { document.body.classList.add('light'); $('theme').textContent = '深色'; }
+if (new URLSearchParams(location.search).get('preview') === '0') $('pvToggle').click();
+input.value = initial ?? 'localizable';
+update(input.value);
+input.focus();
+</script>
+</body>
+</html>
