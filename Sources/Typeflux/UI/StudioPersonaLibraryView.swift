@@ -10,10 +10,13 @@ struct StudioPersonaLibraryView: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
-            roster
-                .frame(width: StudioTheme.Layout.personasListWidth)
-            editor
+        VStack(spacing: StudioTheme.Spacing.large) {
+            StudioPersonaUsageSettings(viewModel: viewModel)
+            HStack(alignment: .top, spacing: StudioTheme.Spacing.section) {
+                roster
+                    .frame(width: StudioTheme.Layout.personasListWidth)
+                editor
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

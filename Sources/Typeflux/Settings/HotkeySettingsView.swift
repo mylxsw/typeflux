@@ -17,7 +17,6 @@ struct HotkeySettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-            StudioHeroHeader(eyebrow: StudioSection.hotkeys.eyebrow, title: StudioSection.hotkeys.heading)
             ForEach(HotkeyGroup.allCases) { group in
                 let rows = model.rows.filter { $0.group == group }
                 if !rows.isEmpty || group == .keywords {

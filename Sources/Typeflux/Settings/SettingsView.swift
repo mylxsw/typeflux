@@ -294,26 +294,6 @@ private struct CloudServerMenuPicker: View {
 // swiftlint:disable:next type_body_length
 struct StudioView: View {
     @Environment(\.colorScheme) private var colorScheme
-    private struct ShortcutConfiguration {
-        let title: String
-        let subtitle: String
-        let footnote: String
-        let icon: String
-        let badgeSymbol: String
-        let binding: HotkeyBinding?
-        let isDefault: Bool
-        let isThisRecording: Bool
-    }
-
-    private enum ShortcutRecordingTarget {
-        case auxiliary
-        case activation
-        case ask
-        case persona
-        case history
-        case screenshot
-    }
-
     private enum PersonaAppPickerScope: String, CaseIterable, Sendable {
         case running
         case all
@@ -353,9 +333,7 @@ struct StudioView: View {
     private let vocabularySearchAnimation = Animation.interpolatingSpring(stiffness: 180, damping: 24)
 
     @ObservedObject var viewModel: StudioViewModel
-    @StateObject private var recorder = HotkeyRecorder()
     @StateObject private var imageSettings: AskImageSettingsModel
-    @State private var recordingTarget: ShortcutRecordingTarget?
     @State private var vocabularyFilter: VocabularyFilter = .all
     @State private var isVocabularySearchExpanded = false
     @State private var isAddingVocabulary = false
@@ -410,7 +388,6 @@ struct StudioView: View {
     @State private var agentStatuses: [AgentCapabilityStatus] = []
     @State private var isMCPImportPresented = false
     @State private var mcpImportText = ""
-    @State private var isAdvancedSettingsExpanded = false
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject private var authState = AuthState.shared
 
@@ -428,8 +405,9 @@ struct StudioView: View {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                 if viewModel.currentSection.isVoiceInput {
                     voiceInputHeader
-                } else if viewModel.currentSection != .hotkeys,
-                          viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
+                } else if viewModel.currentSection == .settings {
+                    settingsHeader
+                } else if viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
                     pageHeader
                 }
 
@@ -830,10 +808,10 @@ struct StudioView: View {
                 onSelect: viewModel.navigate
             )
             .frame(maxWidth: .infinity, alignment: .leading)
-            // Overlaid so taller buttons keep the tab underline on the divider, centred on the tab titles.
-            .overlay {
+            // Keep a clear gap below actions without moving the tab underline off the divider.
+            .overlay(alignment: .bottom) {
                 HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
-                    .padding(.bottom, StudioTheme.Spacing.xxxSmall)
+                    .padding(.bottom, StudioTheme.Spacing.small)
             }
             Rectangle()
                 .fill(StudioTheme.border)
@@ -847,9 +825,9 @@ struct StudioView: View {
             if viewModel.currentSection == .vocabulary {
                 Spacer()
 
-                HStack(spacing: StudioTheme.Spacing.small) {
+                HStack(spacing: StudioTheme.Spacing.medium) {
                     StudioButton(
-                        title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .primary
+                        title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .secondary
                     ) {
                         editingVocabularyEntry = nil
                         newVocabularyTerm = ""
@@ -879,9 +857,17 @@ struct StudioView: View {
                     } label: {
                         vocabularyMoreMenuLabel
                     }
-                    .menuStyle(.borderlessButton)
+                    .menuStyle(.button)
+                    .buttonStyle(.plain)
                     .menuIndicator(.hidden)
                     .fixedSize(horizontal: true, vertical: false)
+                    .modifier(StudioButtonChromeModifier(
+                        variant: .secondary,
+                        isDisabled: viewModel.isSynchronizingVocabulary,
+                        isLoading: false,
+                        isPressed: false,
+                        minWidth: StudioTheme.ControlSize.buttonMinWidth
+                    ))
                     .disabled(viewModel.isSynchronizingVocabulary)
                 }
             } else if viewModel.currentSection == .history {
@@ -953,9 +939,6 @@ struct StudioView: View {
             agentPage(compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
         case .launcher:
             launcherPage(compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
-        case .hotkeys:
-            HotkeySettingsView(viewModel: viewModel, settingsStore: viewModel.askToolSettings,
-                               compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
         case .account:
             AccountView(authState: AuthState.shared) {
                 viewModel.navigate(to: .home)
@@ -1025,56 +1008,6 @@ struct StudioView: View {
     private var personasPage: some View {
         StudioPersonaLibraryView(viewModel: viewModel) { persona in
             personaPendingDeletion = persona
-        }
-    }
-
-    private var personaProviderSelectionSection: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                StudioSettingRow(
-                    title: L("settings.personas.providers.stt"),
-                    subtitle: L("settings.personas.providers.stt.subtitle")
-                ) {
-                    StudioMenuPicker(
-                        options: STTProvider.settingsDisplayOrder
-                            .filter { $0 != .freeModel || !FreeSTTModelRegistry.suggestedModelNames.isEmpty }
-                            .map { (label: $0.displayName, value: $0) },
-                        selection: Binding(
-                            get: { viewModel.sttProvider },
-                            set: { viewModel.setSTTProvider($0) }
-                        ),
-                        width: 200
-                    )
-                }
-
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                StudioSettingRow(
-                    title: L("settings.personas.providers.llm"),
-                    subtitle: L("settings.personas.providers.llm.subtitle")
-                ) {
-                    StudioMenuPicker(
-                        options: personaLLMProviderOptions,
-                        selection: Binding(
-                            get: {
-                                viewModel.llmProvider == .ollama
-                                    ? .ollama
-                                    : viewModel.llmRemoteProvider.studioProviderID
-                            },
-                            set: { providerID in
-                                if providerID == .ollama {
-                                    viewModel.setLLMProvider(.ollama)
-                                } else if let remoteProvider = LLMRemoteProvider.from(
-                                    providerID: providerID
-                                ) {
-                                    viewModel.setLLMRemoteProvider(remoteProvider)
-                                }
-                            }
-                        ),
-                        width: 200
-                    )
-                }
-            }
         }
     }
 
@@ -1780,29 +1713,6 @@ struct StudioView: View {
         return url.deletingPathExtension().lastPathComponent
     }
 
-    private var personaLLMProviderOptions: [(label: String, value: StudioModelProviderID)] {
-        var remoteOptions = LLMRemoteProvider.settingsDisplayOrder
-            .filter { $0 != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty }
-            .filter { $0 != .custom }
-            .filter { $0 != .typefluxCloud }
-            .map { provider in
-                (label: provider.displayName, value: provider.studioProviderID)
-            }
-        let customOptions = LLMRemoteProvider.settingsDisplayOrder
-            .filter { $0 == .custom }
-            .map { provider in
-                (label: provider.displayName, value: provider.studioProviderID)
-            }
-
-        remoteOptions.append((label: LLMProvider.ollama.displayName, value: .ollama))
-        remoteOptions.sort { lhs, rhs in
-            lhs.label.localizedCaseInsensitiveCompare(rhs.label) == .orderedAscending
-        }
-
-        return [(label: LLMRemoteProvider.typefluxCloud.displayName, value: .typefluxCloud)] + remoteOptions +
-            customOptions
-    }
-
     private var historyPage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
             StudioCard(padding: 16) {
@@ -1957,21 +1867,39 @@ struct StudioView: View {
         }
     }
 
-    private func settingsPage(compact: Bool) -> some View {
-        SettingsPaneLayout(sections: AppSettingsPane.sections, selection: $settingsPane, compact: compact) {
-            switch settingsPane {
-            case .general:
-                generalSettingsPage
-            case .appearance:
-                AppearanceSettingsView(viewModel: viewModel)
+    private var settingsHeader: some View {
+        VStack(spacing: StudioTheme.Spacing.none) {
+            HStack(spacing: StudioTheme.Spacing.xxLarge) {
+                ForEach(AppSettingsPane.allCases) { pane in
+                    StudioUnderlineTab(title: pane.title, count: nil, selected: pane == settingsPane) {
+                        settingsPane = pane
+                    }
+                    .accessibilityIdentifier("studio.settings.tab.\(pane.rawValue)")
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Rectangle()
+                .fill(StudioTheme.border)
+                .frame(height: 1)
+        }
+    }
+
+    @ViewBuilder
+    private func settingsPage(compact: Bool) -> some View {
+        switch settingsPane {
+        case .general:
+            generalSettingsPage
+        case .hotkeys:
+            HotkeySettingsView(viewModel: viewModel, settingsStore: viewModel.askToolSettings, compact: compact)
+        case .appearance:
+            AppearanceSettingsView(viewModel: viewModel)
+        case .advanced:
+            advancedSettingsPage
         }
     }
 
     private var generalSettingsPage: some View {
         VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            StudioSectionTitle(title: L("settings.general"))
-
             StudioCard {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                     StudioSettingRow(
@@ -2037,222 +1965,29 @@ struct StudioView: View {
                 }
             }
 
-            StudioSectionTitle(title: L("settings.activationHotkey"))
+            StudioSectionTitle(title: L("settings.inputAndCapture.title"))
 
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
-                    shortcutConfigurationRow(
-                        configuration: ShortcutConfiguration(
-                            title: L("settings.shortcuts.activation.title"),
-                            subtitle: L("settings.shortcuts.activation.subtitle"),
-                            footnote: L("settings.shortcuts.activation.footnote"),
-                            icon: "command",
-                            badgeSymbol: "mic.fill",
-                            binding: viewModel.activationHotkey,
-                            isDefault: viewModel.activationHotkey?.signature
-                                == HotkeyBinding.defaultActivation.signature,
-                            isThisRecording: recordingTarget == .activation
-                        ),
-                        onStartRecording: {
-                            recordingTarget = .activation
-                            recorder.start { binding in
-                                viewModel.setActivationHotkey(binding)
-                                recordingTarget = nil
-                            }
-                        },
-                        onReset: {
-                            viewModel.resetActivationHotkey()
-                        },
-                        onUnset: {
-                            viewModel.unsetActivationHotkey()
-                        },
-                        showsQuickInputSetting: true
-                    )
-
-                    shortcutConfigurationRow(
-                        configuration: ShortcutConfiguration(
-                            title: L("settings.shortcuts.auxiliary.title"),
-                            subtitle: L("settings.shortcuts.auxiliary.subtitle"),
-                            footnote: L("settings.shortcuts.auxiliary.footnote"),
-                            icon: "mic.fill",
-                            badgeSymbol: "person.crop.circle",
-                            binding: viewModel.auxiliaryHotkey,
-                            isDefault: viewModel.auxiliaryHotkey?.signature == HotkeyBinding.defaultAuxiliary.signature,
-                            isThisRecording: recordingTarget == .auxiliary
-                        ),
-                        onStartRecording: {
-                            recordingTarget = .auxiliary
-                            recorder.start(supportsAuxiliaryBindings: true) { binding in
-                                viewModel.setAuxiliaryHotkey(binding)
-                                recordingTarget = nil
-                            }
-                        },
-                        onReset: { viewModel.resetAuxiliaryHotkey() },
-                        onUnset: { viewModel.unsetAuxiliaryHotkey() }
-                    )
-
-                    shortcutConfigurationRow(
-                        configuration: ShortcutConfiguration(
-                            title: L("settings.shortcuts.ask.title"),
-                            subtitle: L("settings.shortcuts.ask.subtitle"),
-                            footnote: L("settings.shortcuts.ask.footnote"),
-                            icon: "questionmark.bubble.fill",
-                            badgeSymbol: "text.quote",
-                            binding: viewModel.askHotkey,
-                            isDefault: viewModel.askHotkey?.signature
-                                == HotkeyBinding.defaultAsk.signature,
-                            isThisRecording: recordingTarget == .ask
-                        ),
-                        onStartRecording: {
-                            recordingTarget = .ask
-                            recorder.start { binding in
-                                viewModel.setAskHotkey(binding)
-                                recordingTarget = nil
-                            }
-                        },
-                        onReset: {
-                            viewModel.resetAskHotkey()
-                        },
-                        onUnset: {
-                            viewModel.unsetAskHotkey()
-                        },
-                        showsLauncherPositionSetting: true
-                    )
-
-                    shortcutConfigurationRow(
-                        configuration: ShortcutConfiguration(
-                            title: L("settings.shortcuts.persona.title"),
-                            subtitle: L("settings.shortcuts.persona.subtitle"),
-                            footnote: L("settings.shortcuts.persona.footnote"),
-                            icon: "person.crop.rectangle.stack.fill",
-                            badgeSymbol: "person.crop.circle.badge.checkmark",
-                            binding: viewModel.personaHotkey,
-                            isDefault: viewModel.personaHotkey?.signature
-                                == HotkeyBinding.defaultPersona.signature,
-                            isThisRecording: recordingTarget == .persona
-                        ),
-                        onStartRecording: {
-                            recordingTarget = .persona
-                            recorder.start { binding in
-                                viewModel.setPersonaHotkey(binding)
-                                recordingTarget = nil
-                            }
-                        },
-                        onReset: {
-                            viewModel.resetPersonaHotkey()
-                        },
-                        onUnset: {
-                            viewModel.unsetPersonaHotkey()
-                        }
-                    )
-
-                    shortcutConfigurationRow(
-                        configuration: ShortcutConfiguration(
-                            title: L("settings.shortcuts.history.title"),
-                            subtitle: L("settings.shortcuts.history.subtitle"),
-                            footnote: L("settings.shortcuts.history.footnote"),
-                            icon: "clock.arrow.circlepath",
-                            badgeSymbol: "clock",
-                            binding: viewModel.historyHotkey,
-                            isDefault: viewModel.historyHotkey?.signature
-                                == HotkeyBinding.defaultHistory.signature,
-                            isThisRecording: recordingTarget == .history
-                        ),
-                        onStartRecording: {
-                            recordingTarget = .history
-                            recorder.start { binding in
-                                viewModel.setHistoryHotkey(binding)
-                                recordingTarget = nil
-                            }
-                        },
-                        onReset: {
-                            viewModel.resetHistoryHotkey()
-                        },
-                        onUnset: {
-                            viewModel.unsetHistoryHotkey()
-                        }
-                    )
-
-                    shortcutConfigurationRow(
-                        configuration: ShortcutConfiguration(
-                            title: L("settings.shortcuts.screenshot.title"),
-                            subtitle: L("settings.shortcuts.screenshot.subtitle"),
-                            footnote: L("settings.shortcuts.screenshot.footnote"),
-                            icon: "camera.viewfinder",
-                            badgeSymbol: "crop",
-                            binding: viewModel.screenshotHotkey,
-                            isDefault: viewModel.screenshotHotkey?.signature
-                                == HotkeyBinding.defaultScreenshot.signature,
-                            isThisRecording: recordingTarget == .screenshot
-                        ),
-                        onStartRecording: {
-                            recordingTarget = .screenshot
-                            recorder.start { binding in
-                                viewModel.setScreenshotHotkey(binding)
-                                recordingTarget = nil
-                            }
-                        },
-                        onReset: {
-                            viewModel.resetScreenshotHotkey()
-                        },
-                        onUnset: {
-                            viewModel.unsetScreenshotHotkey()
-                        },
-                        showsScreenshotSaveLocation: true
-                    )
-                }
-
-                if recorder.isRecording {
-                    recordingShortcutBanner
-                }
-            }
-
-            StudioSectionTitle(title: L("settings.providers"))
-
-            personaProviderSelectionSection
-
-            StudioSectionTitle(title: L("settings.identity"))
-
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.xxLarge) {
-                StudioCard {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                        StudioSettingRow(
-                            title: L("settings.personaDefault.title"),
-                            subtitle: L("settings.personaDefault.subtitle")
-                        ) {
-                            StudioMenuPicker(
-                                options: [(label: L("persona.none.title"), value: nil as UUID?)]
-                                    + viewModel.personas.map { persona in
-                                        (label: persona.name, value: persona.id as UUID?)
-                                    },
-                                selection: Binding(
-                                    get: { viewModel.defaultPersonaSelectionID },
-                                    set: { viewModel.setDefaultPersonaSelection($0) }
-                                ),
-                                width: 200
-                            )
-                        }
-
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                        StudioSettingRow(
-                            title: L("settings.shortcuts.auxiliary.persona"),
-                            subtitle: L("settings.personaAuxiliary.subtitle")
-                        ) {
-                            StudioMenuPicker(
-                                options: viewModel.personas.map { persona in
-                                    (label: persona.name, value: persona.id.uuidString)
-                                },
-                                selection: Binding(
-                                    get: { viewModel.auxiliaryPersonaID },
-                                    set: { viewModel.setAuxiliaryPersona($0) }
-                                ),
-                                width: 200
-                            )
-                        }
+            StudioCard {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                    StudioSettingRow(
+                        title: L("settings.shortcuts.quickInput.title"),
+                        subtitle: L("settings.shortcuts.quickInput.subtitle"),
+                        badge: "Beta"
+                    ) {
+                        Toggle("", isOn: Binding(
+                            get: { viewModel.quickInputEnabled },
+                            set: viewModel.setQuickInputEnabled
+                        ))
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                        .accessibilityIdentifier("settings.quickInput")
                     }
+
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    launcherPositionSetting
+                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                    screenshotSaveLocationSetting
                 }
-                .frame(maxWidth: .infinity)
             }
 
             StudioSectionTitle(title: L("settings.audio"))
@@ -2513,157 +2248,142 @@ struct StudioView: View {
                     }
                 }
             }
+        }
+    }
 
-            HStack {
-                Spacer()
-                StudioButton(
-                    title: L("settings.advanced.button"),
-                    systemImage: isAdvancedSettingsExpanded ? "chevron.up" : "chevron.down",
-                    variant: .ghost
-                ) {
-                    withAnimation(.easeInOut(duration: 0.18)) {
-                        isAdvancedSettingsExpanded.toggle()
-                    }
-                }
-                Spacer()
-            }
+    private var advancedSettingsPage: some View {
+        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
+            StudioCard {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                    /*
+                      Local optimization is hidden because SenseVoice availability and the
+                      cloud-local race are system-managed fallback policies, not user choices.
+                      Keep this setting UI until the model lifecycle is fully unified.
+                     StudioSettingRow(
+                         title: L("settings.advanced.localOptimization.title"),
+                         subtitle: L("settings.advanced.localOptimization.subtitle")
+                     ) {
+                         Toggle(
+                             "",
+                             isOn: Binding(
+                                 get: { viewModel.localOptimizationEnabled },
+                                 set: viewModel.setLocalOptimizationEnabled
+                             )
+                         )
+                         .labelsHidden()
+                         .toggleStyle(.switch)
+                     }
 
-            if isAdvancedSettingsExpanded {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-                    StudioCard {
-                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                            /*
-                              Local optimization is hidden because SenseVoice availability and the
-                              cloud-local race are system-managed fallback policies, not user choices.
-                              Keep this setting UI until the model lifecycle is fully unified.
-                             StudioSettingRow(
-                                 title: L("settings.advanced.localOptimization.title"),
-                                 subtitle: L("settings.advanced.localOptimization.subtitle")
-                             ) {
-                                 Toggle(
-                                     "",
-                                     isOn: Binding(
-                                         get: { viewModel.localOptimizationEnabled },
-                                         set: viewModel.setLocalOptimizationEnabled
-                                     )
-                                 )
-                                 .labelsHidden()
-                                 .toggleStyle(.switch)
-                             }
+                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                     */
 
-                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                             */
-
-                            StudioSettingRow(
-                                title: L("settings.advanced.voiceProcessingTimeout.title"),
-                                subtitle: L("settings.advanced.voiceProcessingTimeout.subtitle")
-                            ) {
-                                StudioMenuPicker(
-                                    options: VoiceProcessingTimeout.allCases.map {
-                                        (label: $0.displayName, value: $0)
-                                    },
-                                    selection: Binding(
-                                        get: { viewModel.voiceProcessingTimeout },
-                                        set: viewModel.setVoiceProcessingTimeout
-                                    ),
-                                    width: StudioTheme.Layout.appearancePickerWidth
-                                )
-                            }
-
-                            /*
-                              Memory optimization is temporarily hidden and forced off until it can be
-                              improved.
-                              Keep this setting UI for a future reintroduction.
-                             StudioSettingRow(
-                                 title: L("settings.advanced.localSTTMemoryOptimization.title"),
-                                 subtitle: L("settings.advanced.localSTTMemoryOptimization.subtitle")
-                             ) {
-                                 Toggle(
-                                     "",
-                                     isOn: Binding(
-                                         get: { viewModel.localSTTMemoryOptimizationEnabled },
-                                         set: viewModel.setLocalSTTMemoryOptimizationEnabled
-                                     )
-                                 )
-                                 .labelsHidden()
-                                 .toggleStyle(.switch)
-                             }
-
-                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                             */
-
-                            /*
-                              Applying personas to selected text now remains enabled without a user setting.
-                              Keep this beta setting UI in case configurability returns later.
-                             StudioSettingRow(
-                                 title: L("settings.advanced.personaHotkeyApply.title"),
-                                 subtitle: L("settings.advanced.personaHotkeyApply.subtitle"),
-                                 badge: "Beta"
-                             ) {
-                                 Toggle(
-                                     "",
-                                     isOn: Binding(
-                                         get: { viewModel.personaHotkeyAppliesToSelection },
-                                         set: viewModel.setPersonaHotkeyAppliesToSelection
-                                     )
-                                 )
-                                 .labelsHidden()
-                                 .toggleStyle(.switch)
-                             }
-
-                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                             */
-
-                            /*
-                              Input-context optimization now remains enabled without a user setting.
-                              Keep this beta setting UI in case configurability returns later.
-                             StudioSettingRow(
-                                 title: L("settings.advanced.inputContextOptimization.title"),
-                                 subtitle: L("settings.advanced.inputContextOptimization.subtitle"),
-                                 badge: "Beta"
-                             ) {
-                                 Toggle(
-                                     "",
-                                     isOn: Binding(
-                                         get: { viewModel.inputContextOptimizationEnabled },
-                                         set: viewModel.setInputContextOptimizationEnabled
-                                     )
-                                 )
-                                 .labelsHidden()
-                                 .toggleStyle(.switch)
-                             }
-
-                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                             */
-
-                            /*
-                              Apple Speech fallback is intentionally hidden from settings and should no longer
-                              be presented to users. Keep the entry code because the underlying fallback remains.
-                             Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                             StudioSettingRow(
-                                 title: L("settings.models.appleFallback"),
-                                 subtitle: L("settings.models.appleFallback.detail")
-                             ) {
-                                 Toggle(
-                                     "",
-                                     isOn: Binding(
-                                         get: { viewModel.appleSpeechFallback },
-                                         set: viewModel.setAppleSpeechFallback
-                                     )
-                                 )
-                                 .labelsHidden()
-                                 .toggleStyle(.switch)
-                             }
-                             */
-                        }
+                    StudioSettingRow(
+                        title: L("settings.advanced.voiceProcessingTimeout.title"),
+                        subtitle: L("settings.advanced.voiceProcessingTimeout.subtitle")
+                    ) {
+                        StudioMenuPicker(
+                            options: VoiceProcessingTimeout.allCases.map {
+                                (label: $0.displayName, value: $0)
+                            },
+                            selection: Binding(
+                                get: { viewModel.voiceProcessingTimeout },
+                                set: viewModel.setVoiceProcessingTimeout
+                            ),
+                            width: StudioTheme.Layout.appearancePickerWidth
+                        )
                     }
 
-                    StudioSectionTitle(title: L("settings.servers.title"))
-                    cloudServerSettingsCard
+                    /*
+                      Memory optimization is temporarily hidden and forced off until it can be
+                      improved.
+                      Keep this setting UI for a future reintroduction.
+                     StudioSettingRow(
+                         title: L("settings.advanced.localSTTMemoryOptimization.title"),
+                         subtitle: L("settings.advanced.localSTTMemoryOptimization.subtitle")
+                     ) {
+                         Toggle(
+                             "",
+                             isOn: Binding(
+                                 get: { viewModel.localSTTMemoryOptimizationEnabled },
+                                 set: viewModel.setLocalSTTMemoryOptimizationEnabled
+                             )
+                         )
+                         .labelsHidden()
+                         .toggleStyle(.switch)
+                     }
+
+                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                     */
+
+                    /*
+                      Applying personas to selected text now remains enabled without a user setting.
+                      Keep this beta setting UI in case configurability returns later.
+                     StudioSettingRow(
+                         title: L("settings.advanced.personaHotkeyApply.title"),
+                         subtitle: L("settings.advanced.personaHotkeyApply.subtitle"),
+                         badge: "Beta"
+                     ) {
+                         Toggle(
+                             "",
+                             isOn: Binding(
+                                 get: { viewModel.personaHotkeyAppliesToSelection },
+                                 set: viewModel.setPersonaHotkeyAppliesToSelection
+                             )
+                         )
+                         .labelsHidden()
+                         .toggleStyle(.switch)
+                     }
+
+                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                     */
+
+                    /*
+                      Input-context optimization now remains enabled without a user setting.
+                      Keep this beta setting UI in case configurability returns later.
+                     StudioSettingRow(
+                         title: L("settings.advanced.inputContextOptimization.title"),
+                         subtitle: L("settings.advanced.inputContextOptimization.subtitle"),
+                         badge: "Beta"
+                     ) {
+                         Toggle(
+                             "",
+                             isOn: Binding(
+                                 get: { viewModel.inputContextOptimizationEnabled },
+                                 set: viewModel.setInputContextOptimizationEnabled
+                             )
+                         )
+                         .labelsHidden()
+                         .toggleStyle(.switch)
+                     }
+
+                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                     */
+
+                    /*
+                      Apple Speech fallback is intentionally hidden from settings and should no longer
+                      be presented to users. Keep the entry code because the underlying fallback remains.
+                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                     StudioSettingRow(
+                         title: L("settings.models.appleFallback"),
+                         subtitle: L("settings.models.appleFallback.detail")
+                     ) {
+                         Toggle(
+                             "",
+                             isOn: Binding(
+                                 get: { viewModel.appleSpeechFallback },
+                                 set: viewModel.setAppleSpeechFallback
+                             )
+                         )
+                         .labelsHidden()
+                         .toggleStyle(.switch)
+                     }
+                     */
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
+
+            StudioSectionTitle(title: L("settings.servers.title"))
+            cloudServerSettingsCard
         }
     }
 
@@ -2852,7 +2572,10 @@ struct StudioView: View {
             LauncherSettingsView(
                 settings: viewModel.askToolSettings, pane: launcherPane,
                 clipboardHistory: SettingsWindowController.shared.clipboardHistoryStore,
-                onEditShortcut: { viewModel.navigate(to: .settings) }
+                onEditShortcut: {
+                    settingsPane = .hotkeys
+                    viewModel.navigate(to: .settings)
+                }
             )
             .id(launcherPane)
         }
@@ -3042,90 +2765,6 @@ struct StudioView: View {
         }
     }
 
-    private func shortcutConfigurationRow(
-        configuration: ShortcutConfiguration,
-        onStartRecording: @escaping () -> Void,
-        onReset: @escaping () -> Void,
-        onUnset: @escaping () -> Void,
-        showsQuickInputSetting: Bool = false,
-        showsLauncherPositionSetting: Bool = false,
-        showsScreenshotSaveLocation: Bool = false
-    ) -> some View {
-        StudioCard(padding: StudioTheme.Insets.cardDense) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-                HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                        .fill(StudioTheme.iconTileSurface)
-                        .frame(width: 54, height: 54)
-                        .overlay(
-                            Image(systemName: configuration.icon)
-                                .font(.system(size: 21, weight: .semibold))
-                                .foregroundStyle(StudioTheme.accent)
-                        )
-
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                        Text(configuration.title)
-                            .font(.studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                        Text(configuration.subtitle)
-                            .font(.studioBody(StudioTheme.Typography.bodySmall))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(configuration.footnote)
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .frame(maxWidth: 340, alignment: .leading)
-
-                    Spacer(minLength: StudioTheme.Spacing.large)
-
-                    shortcutPill(configuration.binding, accentSymbol: configuration.badgeSymbol)
-                        .frame(minWidth: 170, alignment: .leading)
-
-                    shortcutActionButtons(
-                        isDefault: configuration.isDefault,
-                        isUnset: configuration.binding == nil,
-                        isThisRecording: configuration.isThisRecording,
-                        onStart: onStartRecording,
-                        onReset: onReset,
-                        onUnset: onUnset
-                    )
-                }
-
-                if showsQuickInputSetting {
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.shortcuts.quickInput.title"),
-                        subtitle: L("settings.shortcuts.quickInput.subtitle"),
-                        badge: "Beta"
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.quickInputEnabled },
-                                set: viewModel.setQuickInputEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-                }
-
-                if showsLauncherPositionSetting {
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                    launcherPositionSetting
-                }
-
-                if showsScreenshotSaveLocation {
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                    screenshotSaveLocationSetting
-                }
-            }
-        }
-    }
-
     /// The folder ⌘S saves screenshots into.
     private var screenshotSaveLocationSetting: some View {
         StudioSettingRow(
@@ -3180,144 +2819,6 @@ struct StudioView: View {
             }
         }
         .onAppear { viewModel.refreshAskLauncherPositions() }
-    }
-
-    private var recordingShortcutBanner: some View {
-        HStack(spacing: StudioTheme.Spacing.medium) {
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                .fill(StudioTheme.accentSoft)
-                .frame(width: 38, height: 38)
-                .overlay(
-                    Image(systemName: "keyboard")
-                        .foregroundStyle(StudioTheme.accent)
-                )
-
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                Text(L("settings.shortcuts.recording"))
-                    .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text(recordingBannerDescription)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
-
-            Spacer()
-        }
-        .padding(StudioTheme.Insets.cardDense)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .fill(StudioTheme.accentSoft.opacity(0.72))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .stroke(StudioTheme.accent.opacity(0.28), lineWidth: StudioTheme.BorderWidth.thin)
-        )
-    }
-
-    private func shortcutKeycap(_ title: String) -> some View {
-        Text(title)
-            .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-            .foregroundStyle(StudioTheme.textPrimary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                    .fill(StudioTheme.rowSurface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                    .stroke(
-                        StudioTheme.border.opacity(0.75), lineWidth: StudioTheme.BorderWidth.thin
-                    )
-            )
-    }
-
-    private var recordingBannerDescription: String {
-        switch recordingTarget {
-        case .auxiliary:
-            L("settings.shortcuts.recordingAuxiliary")
-        case .activation:
-            L("settings.shortcuts.recordingActivation")
-        case .ask:
-            L("settings.shortcuts.recordingAsk")
-        case .persona:
-            L("settings.shortcuts.recordingPersona")
-        case .history:
-            L("settings.shortcuts.recordingHistory")
-        case .screenshot:
-            L("settings.shortcuts.recordingScreenshot")
-        case nil:
-            L("settings.shortcuts.recordingGeneric")
-        }
-    }
-
-    private func shortcutActionButtons(
-        isDefault: Bool,
-        isUnset: Bool,
-        isThisRecording: Bool,
-        onStart: @escaping () -> Void,
-        onReset: @escaping () -> Void,
-        onUnset: @escaping () -> Void
-    ) -> some View {
-        HStack(spacing: StudioTheme.Spacing.xSmall) {
-            StudioIconButton(
-                systemImage: isThisRecording ? "stop.circle.fill" : "keyboard",
-                variant: isThisRecording ? .secondary : .primary
-            ) {
-                if isThisRecording {
-                    recorder.stop()
-                    recordingTarget = nil
-                } else {
-                    onStart()
-                }
-            }
-            .studioTooltip(
-                isThisRecording ? L("settings.shortcuts.stopRecording") : L("settings.shortcuts.record"),
-                yOffset: 38
-            )
-
-            StudioIconButton(
-                systemImage: "arrow.counterclockwise",
-                variant: .secondary,
-                isDisabled: isDefault
-            ) {
-                onReset()
-            }
-            .studioTooltip(L("common.reset"), yOffset: 38)
-
-            StudioIconButton(
-                systemImage: "xmark.circle",
-                variant: .secondary,
-                isDisabled: isUnset
-            ) {
-                onUnset()
-            }
-            .studioTooltip(L("settings.shortcuts.unset"), yOffset: 38)
-        }
-    }
-
-    @ViewBuilder
-    private func shortcutPill(_ binding: HotkeyBinding?, accentSymbol _: String) -> some View {
-        if let binding {
-            HStack(spacing: 5) {
-                HStack(spacing: StudioTheme.Spacing.xxxSmall) {
-                    ForEach(HotkeyFormat.components(binding), id: \.self) { key in
-                        shortcutKeycap(key)
-                    }
-                }
-
-                if let pressCount = HotkeyFormat.pressCount(binding) {
-                    Text("×\(pressCount)")
-                        .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .bold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .baselineOffset(1)
-                }
-            }
-            .help(binding.isModifierDoubleTapTrigger ? L("settings.shortcuts.doubleTapHelp") : "")
-        } else {
-            shortcutKeycap(L("settings.shortcuts.none"))
-                .opacity(0.5)
-        }
     }
 
     private func personaSelectionCard(
@@ -3695,30 +3196,14 @@ struct StudioView: View {
 
     private var vocabularyMoreMenuLabel: some View {
         HStack(spacing: StudioTheme.Spacing.xSmall) {
-            Text(L("vocabulary.action.more"))
-                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .lineLimit(1)
-
             Image(systemName: "chevron.down")
                 .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
+            Text(L("vocabulary.action.more"))
+                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                .lineLimit(1)
         }
         .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
         .padding(.vertical, StudioTheme.Insets.buttonVertical)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                .fill(StudioTheme.controlSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                .stroke(
-                    StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                    lineWidth: StudioTheme.BorderWidth.thin
-                )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
     }
 
     private func vocabularyMenuItemIcon(for source: VocabularySource) -> some View {

@@ -840,7 +840,7 @@
 "settings.shortcuts.ask.title" = "隨便問";
 "settings.shortcuts.ask.subtitle" = "連按兩次 Fn 即可開始錄音提問，回答會在視窗中展示。若有選取文字，明確的編輯請求也可以直接改寫選取範圍。";
 "settings.shortcuts.ask.footnote" = "";
-"settings.shortcuts.launcherPosition.title" = "開啟位置";
+"settings.shortcuts.launcherPosition.title" = "啟動器開啟位置";
 "settings.shortcuts.launcherPosition.center" = "永遠置中";
 "settings.shortcuts.launcherPosition.last" = "記住上次位置";
 "settings.shortcuts.launcherPosition.center.subtitle" = "在滑鼠所在螢幕的正中開啟。拖動只影響這一次。";
@@ -4660,3 +4660,5 @@
 "ask.home.section.apps" = "最近使用的應用程式";
 
 "settings.pane.appearance" = "外觀";
+
+"settings.inputAndCapture.title" = "輸入與截圖";

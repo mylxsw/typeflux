@@ -55,9 +55,9 @@ final class VoiceInputNavigationTests: XCTestCase {
     func testSidebarOtherEntriesNavigateDirectly() throws {
         let viewModel = try makeViewModel(initialSection: .home)
 
-        viewModel.navigateFromSidebar(to: .hotkeys)
+        viewModel.navigateFromSidebar(to: .settings)
 
-        XCTAssertEqual(viewModel.currentSection, .hotkeys)
+        XCTAssertEqual(viewModel.currentSection, .settings)
         XCTAssertEqual(viewModel.lastVoiceInputSection, .home)
     }
 
@@ -86,7 +86,7 @@ final class VoiceInputNavigationTests: XCTestCase {
 
     func testTabInvokesItsAction() {
         var tapped = false
-        let tab = VoiceInputTab(title: "History", count: nil, selected: false) { tapped = true }
+        let tab = StudioUnderlineTab(title: "History", count: nil, selected: false) { tapped = true }
 
         tab.action()
 

@@ -202,6 +202,7 @@ final class HotkeySettingsModelTests: XCTestCase {
         let targets = model.rows.map(\.target)
         XCTAssertEqual(Set(targets), Set(BuiltInHotkey.allCases.map(HotkeyTarget.builtIn)
                 + AppHotkeyAction.allCases.map(HotkeyTarget.action)))
+        XCTAssertEqual(Array(targets.prefix(3)), [.builtIn(.activation), .builtIn(.auxiliary), .builtIn(.persona)])
         let groups = model.rows.map(\.group)
         XCTAssertEqual(
             groups,

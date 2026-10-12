@@ -39,6 +39,89 @@ struct HotkeySettingsViewTests {
         }
     }
 
+    @Test func `settings tabs separate shortcut bindings from input and capture controls`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { store in
+            let model = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
+                baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-tabs-\(UUID())")
+            ), initialSection: .settings)
+            let originalBindings = BuiltInHotkey.allCases.map { store.hotkey($0) }
+            for width: CGFloat in [820, 1100] {
+                try await render(StudioView(viewModel: model), size: NSSize(width: width, height: 1000),
+                                 name: "settings-hotkeys-tab-\(Int(width))") { window in
+                    @MainActor func element(_ identifier: String) throws -> SettingsBehaviorTestSupport.Element {
+                        try #require(SettingsBehaviorTestSupport.elements(in: window).first {
+                            $0.value("accessibilityIdentifier") as? String == identifier
+                        })
+                    }
+                    let controlTitles = ["settings.inputAndCapture.title", "settings.shortcuts.quickInput.title",
+                                         "settings.shortcuts.launcherPosition.title", "settings.shortcuts.screenshot.saveLocation.title"]
+                    for title in controlTitles {
+                        #expect(SettingsBehaviorTestSupport.contains(L(title), in: window))
+                    }
+                    #expect(!SettingsBehaviorTestSupport.contains(L("settings.activationHotkey"), in: window))
+                    #expect(!SettingsBehaviorTestSupport.elements(in: window).contains {
+                        ($0.value("accessibilityIdentifier") as? String ?? "").hasPrefix("hotkeys.binding.")
+                    })
+                    try SettingsBehaviorTestSupport.snapshot(try #require(window.contentView),
+                                                             name: "settings-input-capture-\(Int(width))")
+                    let quickInput = store.quickInputEnabled
+                    try element("settings.quickInput").press()
+                    try await SettingsBehaviorTestSupport.wait { store.quickInputEnabled != quickInput }
+                    try element("studio.settings.tab.hotkeys").press()
+                    try await SettingsBehaviorTestSupport.wait {
+                        SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window)
+                    }
+                    for title in controlTitles {
+                        #expect(!SettingsBehaviorTestSupport.contains(L(title), in: window))
+                    }
+                    for hotkey in BuiltInHotkey.allCases {
+                        _ = try element("hotkeys.binding.builtIn." + hotkey.rawValue)
+                    }
+                    let activation = try element("hotkeys.row.builtIn.activation").frame
+                    let auxiliary = try element("hotkeys.row.builtIn.auxiliary").frame
+                    let persona = try element("hotkeys.row.builtIn.persona").frame
+                    let launcher = try element("hotkeys.row.builtIn.ask").frame
+                    #expect(activation.minY > auxiliary.minY && auxiliary.minY > persona.minY)
+                    #expect(persona.minY > launcher.minY)
+                    #expect(SettingsBehaviorTestSupport.elements(in: window).filter {
+                        $0.role == NSAccessibility.Role.button.rawValue && $0.label == AppSettingsPane.hotkeys.title
+                    }.count == 1)
+                    try element("hotkeys.binding.builtIn.activation").press()
+                    try await SettingsBehaviorTestSupport.wait {
+                        SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window)
+                    }
+                    try element("studio.settings.tab.general").press()
+                    try await SettingsBehaviorTestSupport.wait {
+                        SettingsBehaviorTestSupport.contains(L("settings.inputAndCapture.title"), in: window)
+                    }
+                    try element("studio.settings.tab.hotkeys").press()
+                    try await SettingsBehaviorTestSupport.wait {
+                        SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window)
+                    }
+                    #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window))
+                    #expect(BuiltInHotkey.allCases.map { store.hotkey($0) } == originalBindings)
+                }
+            }
+        }
+    }
+
+    @Test func `clipboard change shortcut opens the shortcuts tab`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { store in
+            let model = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
+                baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-link-\(UUID())")
+            ), initialSection: .launcher)
+            try await SettingsBehaviorTestSupport.withWindow(StudioView(viewModel: model, launcherPane: .clipboard),
+                                                              width: 1100, height: 1000) { window, _ in
+                try SettingsBehaviorTestSupport.button(L("clipboard.settings.shortcut.change"), in: window).press()
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains(BuiltInHotkey.history.title, in: window)
+                }
+                #expect(model.currentSection == .settings)
+                #expect(!SettingsBehaviorTestSupport.contains(L("settings.launchAtLogin.title"), in: window))
+            }
+        }
+    }
+
     @Test func `shortcuts page lists every core feature and keyword shortcuts`() async throws {
         let previous = AppLocalization.shared.language
         let snapshots = ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_SNAPSHOTS"] != nil
@@ -57,10 +140,10 @@ struct HotkeySettingsViewTests {
         store.appLanguage = AppLocalization.shared.language
         let model = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
             baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-\(UUID())")
-        ), initialSection: .hotkeys)
+        ), initialSection: .settings)
 
         for light in [false, true] {
-            try await render(StudioView(viewModel: model), size: NSSize(width: 1100, height: 900),
+            try await render(StudioView(viewModel: model, settingsPane: .hotkeys), size: NSSize(width: 1100, height: 900),
                              name: "hotkeys-empty-\(light ? "light" : "dark")", light: light) { window in
                 #expect(SettingsBehaviorTestSupport.contains(AppHotkeyAction.openChat.title, in: window))
                 #expect(SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window))
@@ -82,7 +165,7 @@ struct HotkeySettingsViewTests {
                           keyword: "gone", pluginID: "workflow.gone")
         ]
         for light in [false, true] {
-            try await render(StudioView(viewModel: model), size: NSSize(width: 1100, height: 1000),
+            try await render(StudioView(viewModel: model, settingsPane: .hotkeys), size: NSSize(width: 1100, height: 1000),
                              name: "hotkeys-page-\(light ? "light" : "dark")", light: light) { window in
                 #expect(SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.status.missing"), in: window))
                 #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.empty"), in: window))
@@ -96,7 +179,7 @@ struct HotkeySettingsViewTests {
             store.keywordHotkeys = [shortcut]
             let viewModel = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
                 baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-compact-\(UUID())")
-            ), initialSection: .hotkeys)
+            ), initialSection: .settings)
             for width: CGFloat in [520, 820] {
                 store.keywordHotkeys = [shortcut]
                 try await render(HotkeySettingsView(viewModel: viewModel, settingsStore: store, compact: width < 720),
@@ -144,7 +227,7 @@ struct HotkeySettingsViewTests {
         try await SettingsBehaviorTestSupport.withFixture { store in
             let viewModel = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
                 baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-template-\(UUID())")
-            ), initialSection: .hotkeys)
+            ), initialSection: .settings)
             try await SettingsBehaviorTestSupport.withWindow(
                 HotkeySettingsView(viewModel: viewModel, settingsStore: store, compact: true), width: 520, height: 980
             ) { window, _ in
@@ -200,7 +283,7 @@ struct HotkeySettingsViewTests {
             store.keywordHotkeys = [shortcut]
             let viewModel = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
                 baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-edit-\(UUID())")
-            ), initialSection: .hotkeys)
+            ), initialSection: .settings)
             try await SettingsBehaviorTestSupport.withWindow(
                 HotkeySettingsView(viewModel: viewModel, settingsStore: store, compact: true), width: 520, height: 980
             ) { window, _ in

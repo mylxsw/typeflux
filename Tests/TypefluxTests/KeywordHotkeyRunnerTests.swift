@@ -53,7 +53,7 @@ struct KeywordHotkeyRunnerTests {
         let store = SettingsStore(defaults: defaults)
         let viewModel = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
             baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-\(UUID())")
-        ), initialSection: .hotkeys)
+        ), initialSection: .settings)
         store.setHotkey(binding, for: .openNotes)
         viewModel.setPersonaHotkey(binding)
         #expect(viewModel.toastMessage == L("hotkeys.conflict.usedBy", AppHotkeyAction.openNotes.title))
@@ -91,11 +91,9 @@ struct KeywordHotkeyRunnerTests {
         pool.unregisterAll()
     }
 
-    @Test func `studio section for shortcuts`() {
-        #expect(StudioSection.hotkeys.iconName == "keyboard")
-        #expect(StudioSection.hotkeys.title == L("studio.section.hotkeys"))
-        #expect(StudioSection.hotkeys.subheading == L("studio.subheading.hotkeys"))
-        #expect(!StudioSection.hotkeys.eyebrow.isEmpty && !StudioSection.hotkeys.heading.isEmpty)
-        #expect(!StudioSection.hotkeys.searchPlaceholder.isEmpty)
+    @Test func `shortcuts are an app settings tab`() {
+        #expect(AppSettingsPane.allCases == [.general, .hotkeys, .appearance, .advanced])
+        #expect(AppSettingsPane.hotkeys.symbol == "keyboard")
+        #expect(AppSettingsPane.hotkeys.title == L("studio.section.hotkeys"))
     }
 }

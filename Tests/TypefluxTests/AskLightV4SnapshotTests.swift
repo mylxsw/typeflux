@@ -20,7 +20,8 @@ struct AskLightV4SnapshotTests {
                                         (.classic, false, "classic-light"), (.liquidGlass, true, "glass-dark")] {
                 settings.interfaceStyle = style
                 settings.appearanceMode = dark ? .dark : .light
-                for section in [StudioSection.settings, .home, .vocabulary, .history, .personas, .hotkeys] {
+                for (section, pane) in [(StudioSection.settings, AppSettingsPane.general), (.settings, .hotkeys),
+                                        (.home, .general), (.vocabulary, .general), (.history, .general), (.personas, .general)] {
                     let model = StudioViewModel(settingsStore: settings, historyStore: SnapshotHistoryStore(),
                                                 initialSection: section, modelLibrary: library)
                     model.vocabularyEntries = [
@@ -30,9 +31,9 @@ struct AskLightV4SnapshotTests {
                         VocabularyEntry(term: "macOS", source: .claude, occurrenceCount: 6)
                     ]
                     if section == .personas { model.selectPersona(model.personas.first?.id) }
-                    try await capture(StudioView(viewModel: model), size: NSSize(width: 1100, height: 800),
+                    try await capture(StudioView(viewModel: model, settingsPane: pane), size: NSSize(width: 1100, height: 800),
                                       style: style, dark: dark,
-                                      file: root.appendingPathComponent("\(section.rawValue)-\(name).png"))
+                                      file: root.appendingPathComponent("\(section.rawValue)-\(pane.rawValue)-\(name).png"))
                 }
             }
         }

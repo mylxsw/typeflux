@@ -472,7 +472,8 @@ final class StudioViewModel: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.syncPersonaSelectionFromStore()
+                guard let self else { return }
+                self.syncPersonaSelectionFromStore(preservingEditor: self.currentSection == .personas)
             }
         }
         personaStoreObserver = NotificationCenter.default.addObserver(
@@ -1966,18 +1967,10 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setDefaultPersonaSelection(_ id: UUID?) {
-        guard let id else {
-            setPersonaRewriteEnabled(false)
-            return
-        }
-
-        settingsStore.activePersonaID = id.uuidString
-        activePersonaID = id.uuidString
-        selectedPersonaID = id
-
-        if !personaRewriteEnabled {
-            setPersonaRewriteEnabled(true)
-        }
+        guard id == nil || personas.contains(where: { $0.id == id }) else { return }
+        settingsStore.applyPersonaSelection(id)
+        // Input defaults do not select a different persona in the editor.
+        syncPersonaSelectionFromStore(preservingEditor: true)
     }
 
     func selectPersona(_ id: UUID?) {
@@ -2341,7 +2334,7 @@ final class StudioViewModel: ObservableObject {
         showToast(L("settings.personas.saved"))
     }
 
-    private func syncPersonaSelectionFromStore() {
+    private func syncPersonaSelectionFromStore(preservingEditor: Bool = false) {
         auxiliaryPersonaID = settingsStore.auxiliaryPersona.id.uuidString
         personaRewriteEnabled = settingsStore.personaRewriteEnabled
         personaHotkeyAppliesToSelection = settingsStore.personaHotkeyAppliesToSelection
@@ -2349,11 +2342,13 @@ final class StudioViewModel: ObservableObject {
         activePersonaID = settingsStore.activePersonaID
         personaAppBindings = settingsStore.personaAppBindings
         personaAppBindingsEnabled = settingsStore.personaAppBindingsEnabled
-        selectedPersonaID = settingsStore.personaRewriteEnabled
-            ? settingsStore.activePersona.map(\.id)
-            : nil
-        if !isCreatingPersonaDraft {
-            loadPersonaDraft()
+        if !preservingEditor {
+            selectedPersonaID = settingsStore.personaRewriteEnabled
+                ? settingsStore.activePersona.map(\.id)
+                : nil
+            if !isCreatingPersonaDraft {
+                loadPersonaDraft()
+            }
         }
     }
 

@@ -833,7 +833,7 @@
 "settings.shortcuts.ask.title" = "何でも聞いてください";
 "settings.shortcuts.ask.subtitle" = "Fn を 2 回押すと録音が開始され、何でも質問できます。回答はポップアップに表示されます。テキストが選択されている場合、明示的な編集リクエストによってテキストを直接書き換えることもできます。";
 "settings.shortcuts.ask.footnote" = "";
-"settings.shortcuts.launcherPosition.title" = "表示位置";
+"settings.shortcuts.launcherPosition.title" = "ランチャーを開く位置";
 "settings.shortcuts.launcherPosition.center" = "常に中央";
 "settings.shortcuts.launcherPosition.last" = "前回の位置を記憶";
 "settings.shortcuts.launcherPosition.center.subtitle" = "ポインタのある画面の中央に開きます。ドラッグはその回だけ有効です。";
@@ -4653,3 +4653,5 @@
 "ask.home.section.apps" = "最近使ったアプリ";
 
 "settings.pane.appearance" = "外観";
+
+"settings.inputAndCapture.title" = "入力とスクリーンショット";

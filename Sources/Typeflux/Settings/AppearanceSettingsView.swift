@@ -6,7 +6,6 @@ struct AppearanceSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            AgentPaneHeader(symbol: AppSettingsPane.appearance.symbol, title: AppSettingsPane.appearance.title)
             ModelSurface {
                 VStack(alignment: .leading, spacing: 18) {
                     settingRow(title: L("settings.appearance.title")) {

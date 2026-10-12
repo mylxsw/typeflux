@@ -24,15 +24,27 @@ struct AppearanceSettingsTests {
 
     @Test func `settings navigation separates appearance from general and launcher`() async throws {
         try await withModel { settings, model in
-            try await UI.withWindow(StudioView(viewModel: model), width: 1280, height: 1000) { _, host in
-                try await UI.wait { UI.contains(L("settings.launchAtLogin.title"), in: host) }
-                #expect(!UI.contains(L("settings.interfaceStyle.title"), in: host))
-                try UI.button(AppSettingsPane.appearance.title, in: host).press()
-                try await UI.wait { UI.contains(L("settings.interfaceStyle.title"), in: host) }
-                #expect(!UI.contains(L("settings.launchAtLogin.title"), in: host))
-                #expect(UI.contains(L("ask.settings.windowMode.title"), in: host))
-                try UI.button(AppSettingsPane.general.title, in: host).press()
-                try await UI.wait { UI.contains(L("settings.launchAtLogin.title"), in: host) }
+            for width in [720.0, 1100.0, 1280.0] {
+                try await UI.withWindow(StudioView(viewModel: model), width: width, height: 1000) { _, host in
+                    try await UI.wait { UI.contains(L("settings.launchAtLogin.title"), in: host) }
+                    #expect(!UI.contains(L("settings.interfaceStyle.title"), in: host))
+                    let general = try UI.button(AppSettingsPane.general.title, in: host)
+                    let appearance = try UI.button(AppSettingsPane.appearance.title, in: host)
+                    #expect(abs(general.frame.midY - appearance.frame.midY) < 1)
+                    #expect(appearance.frame.minX > general.frame.maxX)
+                    let launchLabel = try #require(UI.elements(in: host).first {
+                        $0.text == L("settings.launchAtLogin.title")
+                    })
+                    #expect(launchLabel.frame.minX - general.frame.minX < SettingsPaneMetrics.listWidth)
+                    try UI.snapshot(host, name: "settings-tabs-general-\(Int(width))")
+                    try appearance.press()
+                    try await UI.wait { UI.contains(L("settings.interfaceStyle.title"), in: host) }
+                    #expect(!UI.contains(L("settings.launchAtLogin.title"), in: host))
+                    #expect(UI.contains(L("ask.settings.windowMode.title"), in: host))
+                    try UI.snapshot(host, name: "settings-tabs-appearance-\(Int(width))")
+                    try UI.button(AppSettingsPane.general.title, in: host).press()
+                    try await UI.wait { UI.contains(L("settings.launchAtLogin.title"), in: host) }
+                }
             }
             try await UI.withWindow(LauncherSettingsView(settings: settings)) { _, host in
                 #expect(!UI.contains(L("ask.settings.windowMode.title"), in: host))

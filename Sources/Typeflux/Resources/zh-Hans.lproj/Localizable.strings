@@ -842,7 +842,7 @@
 "settings.shortcuts.ask.title" = "随便问";
 "settings.shortcuts.ask.subtitle" = "连按两次 Fn 即可开始录音提问，回答会在弹窗中展示。若有选中文字，明确的编辑请求也可以直接改写选区。";
 "settings.shortcuts.ask.footnote" = "";
-"settings.shortcuts.launcherPosition.title" = "打开位置";
+"settings.shortcuts.launcherPosition.title" = "启动器打开位置";
 "settings.shortcuts.launcherPosition.center" = "始终居中";
 "settings.shortcuts.launcherPosition.last" = "记住上次位置";
 "settings.shortcuts.launcherPosition.center.subtitle" = "在鼠标所在屏幕的正中打开。拖动只影响这一次。";
@@ -4675,3 +4675,5 @@
 "ask.home.section.apps" = "最近使用的应用";
 
 "settings.pane.appearance" = "外观";
+
+"settings.inputAndCapture.title" = "输入与截屏";

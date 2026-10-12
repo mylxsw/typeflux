@@ -842,7 +842,7 @@
 "settings.shortcuts.ask.title" = "Ask Anything";
 "settings.shortcuts.ask.subtitle" = "Double-tap Fn to start recording and ask anything. Answers appear in a popup. If text is selected, explicit edit requests can also rewrite it directly.";
 "settings.shortcuts.ask.footnote" = "";
-"settings.shortcuts.launcherPosition.title" = "Open position";
+"settings.shortcuts.launcherPosition.title" = "Launcher open position";
 "settings.shortcuts.launcherPosition.center" = "Always center";
 "settings.shortcuts.launcherPosition.last" = "Remember last position";
 "settings.shortcuts.launcherPosition.center.subtitle" = "Opens in the middle of the screen with the pointer. Dragging it only moves it this time.";
@@ -4675,3 +4675,5 @@
 "ask.home.section.apps" = "Recent apps";
 
 "settings.pane.appearance" = "Appearance";
+
+"settings.inputAndCapture.title" = "Input and Capture";
