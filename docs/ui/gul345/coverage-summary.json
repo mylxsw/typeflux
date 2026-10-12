@@ -1,0 +1,191 @@
+{
+  "scope": "Added and modified instrumentable navigation source files; only related tests",
+  "uninstrumented_static_declarations": [
+    "Sources/Typeflux/Dev/TypefluxNavigationGalleryExamples.swift"
+  ],
+  "executable_lines": 1609,
+  "covered_lines": 1567,
+  "percent": 97.39,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Dev/TypefluxGalleryRoot.swift",
+      "executable_lines": 16,
+      "covered_lines": 16,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxAccessibilityOptions.swift",
+      "executable_lines": 4,
+      "covered_lines": 4,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxConfirmation.swift",
+      "executable_lines": 7,
+      "covered_lines": 7,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxGlassContainer.swift",
+      "executable_lines": 50,
+      "covered_lines": 46,
+      "percent": 92
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxGlassGroup.swift",
+      "executable_lines": 13,
+      "covered_lines": 13,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxHUD.swift",
+      "executable_lines": 53,
+      "covered_lines": 53,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxHUDMessage.swift",
+      "executable_lines": 5,
+      "covered_lines": 5,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxHUDState.swift",
+      "executable_lines": 28,
+      "covered_lines": 28,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxInlineSearch.swift",
+      "executable_lines": 11,
+      "covered_lines": 10,
+      "percent": 90.9090909090909
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxKeyboardMonitor.swift",
+      "executable_lines": 38,
+      "covered_lines": 36,
+      "percent": 94.73684210526315
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxNativeSearchField.swift",
+      "executable_lines": 88,
+      "covered_lines": 77,
+      "percent": 87.5
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxNavigationGallery.swift",
+      "executable_lines": 247,
+      "covered_lines": 233,
+      "percent": 94.33198380566802
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxNavigationGalleryLabels.swift",
+      "executable_lines": 22,
+      "covered_lines": 22,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxNavigationItem.swift",
+      "executable_lines": 7,
+      "covered_lines": 7,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSearchState.swift",
+      "executable_lines": 38,
+      "covered_lines": 38,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSearchToolbarBridge.swift",
+      "executable_lines": 135,
+      "covered_lines": 131,
+      "percent": 97.03703703703704
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSearchable.swift",
+      "executable_lines": 7,
+      "covered_lines": 7,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSheet.swift",
+      "executable_lines": 90,
+      "covered_lines": 90,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSheetConfiguration.swift",
+      "executable_lines": 7,
+      "covered_lines": 7,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSpotlightItem.swift",
+      "executable_lines": 7,
+      "covered_lines": 7,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSpotlightKey.swift",
+      "executable_lines": 21,
+      "covered_lines": 21,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSpotlightMode.swift",
+      "executable_lines": 5,
+      "covered_lines": 5,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSpotlightPanel.swift",
+      "executable_lines": 373,
+      "covered_lines": 367,
+      "percent": 98.39142091152814
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSpotlightSelection.swift",
+      "executable_lines": 36,
+      "covered_lines": 36,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxToolbar.swift",
+      "executable_lines": 51,
+      "covered_lines": 51,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxToolbarAction.swift",
+      "executable_lines": 8,
+      "covered_lines": 8,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxToolbarGroup.swift",
+      "executable_lines": 4,
+      "covered_lines": 4,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxToolbarSearch.swift",
+      "executable_lines": 88,
+      "covered_lines": 88,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxWindow.swift",
+      "executable_lines": 118,
+      "covered_lines": 118,
+      "percent": 100
+    },
+    {
+      "file": "Sources/TypefluxUI/View+TypefluxConfirmation.swift",
+      "executable_lines": 32,
+      "covered_lines": 32,
+      "percent": 100
+    }
+  ]
+}

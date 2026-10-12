@@ -1,0 +1,62 @@
+import SwiftUI
+
+/// Compact sheet body. The trailing footer order is Cancel, then the default action.
+public struct TypefluxSheet<Content: View>: View {
+    private let title: String
+    private let cancelTitle: String
+    private let confirmTitle: String
+    private let isConfirmEnabled: Bool
+    private let role: ButtonRole?
+    private let cancel: () -> Void
+    private let confirm: () -> Void
+    private let content: Content
+
+    public init(title: String, cancelTitle: String, confirmTitle: String, isConfirmEnabled: Bool = true,
+                role: ButtonRole? = nil, cancel: @escaping () -> Void, confirm: @escaping () -> Void,
+                @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.cancelTitle = cancelTitle
+        self.confirmTitle = confirmTitle
+        self.isConfirmEnabled = isConfirmEnabled
+        self.role = role
+        self.cancel = cancel
+        self.confirm = confirm
+        self.content = content()
+    }
+
+    public var body: some View {
+        TypefluxGlassContainer(radius: .sheet, placement: .inWindow) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(title).font(.headline).accessibilityAddTraits(.isHeader)
+                content
+                HStack(spacing: 8) {
+                    Spacer()
+                    Button(cancelTitle, role: .cancel, action: cancel).keyboardShortcut(.cancelAction)
+                        .accessibilityIdentifier("typeflux.sheet.cancel")
+                    Button(confirmTitle, role: role, action: confirm).buttonStyle(.borderedProminent)
+                        .keyboardShortcut(.defaultAction).disabled(!isConfirmEnabled)
+                        .accessibilityIdentifier("typeflux.sheet.confirm")
+                }
+            }.padding(20)
+        }
+    }
+}
+
+public extension View {
+    /// Return false from confirm to keep validation errors visible in the sheet.
+    func typefluxSheet(isPresented: Binding<Bool>, configuration: TypefluxSheetConfiguration,
+                       confirm: @escaping () -> Bool,
+                       @ViewBuilder content: @escaping () -> some View) -> some View {
+        sheet(isPresented: isPresented) {
+            TypefluxSheet(title: configuration.title, cancelTitle: configuration.cancelTitle,
+                          confirmTitle: configuration.confirmTitle,
+                          isConfirmEnabled: configuration.isConfirmEnabled, role: configuration.role,
+                          cancel: { isPresented.wrappedValue = false },
+                          confirm: {
+                              if confirm() {
+                                  isPresented.wrappedValue = false
+                              }
+                          }, content: content)
+        }
+    }
+}

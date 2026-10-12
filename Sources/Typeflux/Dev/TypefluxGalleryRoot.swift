@@ -8,6 +8,9 @@ struct TypefluxGalleryRoot: View {
         TypefluxGalleryView(style: $state.style, appearance: $state.appearance,
                             labels: TypefluxGalleryWindowController.labels) {
             TypefluxControlsGalleryView()
+            TypefluxNavigationGallery(labels: TypefluxNavigationGalleryExamples.labels,
+                                      items: TypefluxNavigationGalleryExamples.items,
+                                      modes: TypefluxNavigationGalleryExamples.modes)
         }
             .onChange(of: state.appearance, perform: onAppearanceChange)
     }
