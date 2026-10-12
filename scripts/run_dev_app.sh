@@ -125,6 +125,7 @@ mkdir -p "$APP_DIR/Contents/Resources"
 
 # Keep the .app path stable to avoid macOS privacy permission re-prompts.
 cp "$ROOT_DIR/app/Info.plist" "$APP_DIR/Contents/Info.plist"
+bash "$ROOT_DIR/scripts/configure_dev_web_auth.sh" "$APP_DIR/Contents/Info.plist"
 cp "$BIN" "$APP_DIR/Contents/MacOS/Typeflux"
 cp "$ROOT_DIR/app/Typeflux.icns" "$APP_DIR/Contents/Resources/Typeflux.icns"
 bash "$ROOT_DIR/scripts/copy_resource_bundles.sh" "$BIN_DIR" "$APP_DIR/Contents/Resources"

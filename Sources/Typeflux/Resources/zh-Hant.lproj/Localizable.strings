@@ -4747,3 +4747,17 @@
 "personas.redesign.shortcutsHelp" = "快捷鍵設定";
 "personas.redesign.close" = "關閉";
 "personas.redesign.noneShort" = "不使用人設";
+
+// Website sign-in
+"auth.web.description" = "在 Typeflux 官網使用電子郵件、Google、GitHub 或 Apple 安全登入。";
+"auth.web.waiting" = "等待瀏覽器登入…";
+"auth.web.exchanging" = "正在完成登入…";
+"auth.web.continue" = "在瀏覽器中繼續";
+"auth.web.reopen" = "重新開啟登入頁";
+"auth.web.reopenHint" = "請使用同一瀏覽器。若瀏覽器登入工作階段遺失，請取消後重新開始。";
+"auth.web.cancel" = "取消";
+"auth.web.cancelled" = "登入已取消，可以重新開始。";
+"auth.web.expired" = "本次登入已過期，請重新開始。";
+"auth.web.browserUnavailable" = "無法啟動瀏覽器，請重試。";
+"auth.web.restartRequired" = "無法完成登入，請重新開始；先前的授權碼無法重試。";
+"auth.web.storageFailed" = "無法將工作階段儲存至鑰匙圈，請解鎖鑰匙圈後重新登入。";
