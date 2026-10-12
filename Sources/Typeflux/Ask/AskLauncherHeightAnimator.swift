@@ -30,6 +30,10 @@ final class AskLauncherHeightAnimator {
 
     func update(from height: CGFloat, to target: CGFloat, animated: Bool,
                 framesPerSecond: Int = 60, rate: CGFloat = 28, apply: @escaping (CGFloat) -> Void) {
+        guard height != target else {
+            stop()
+            return
+        }
         guard animated, abs(height - target) > 0.1 else {
             stop()
             apply(target)

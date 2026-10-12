@@ -40,15 +40,17 @@ final class AskQuickSearchSession: ObservableObject {
     var fileDebounce: Duration = .milliseconds(16)
     private static let log = OSLog(subsystem: "com.typeflux", category: "LauncherSearch")
 
-    init(imageCache: AskResultImageCache = .shared, publicationGrace: Duration = .milliseconds(80)) {
-        self.imageCache = imageCache
+    init(imageCache: AskResultImageCache? = nil, publicationGrace: Duration = .milliseconds(24)) {
+        self.imageCache = imageCache ?? .shared
         self.publicationGrace = publicationGrace
     }
 
-    /// Keep the empty, non-executable search placeholder out of the visible list.
+    /// Keep empty placeholders hidden until local search completes. Browser
+    /// refreshes must not delay the local answer or leave the panel empty.
     var presentation: AskQuickResults? {
         if let pendingResults { return pendingResults }
-        if isSearching, results?.rows == [.askAI], results?.notice == nil { return nil }
+        if isSearching, !appsReady || fileResults == nil,
+           results?.rows == [.askAI], results?.notice == nil { return nil }
         return results
     }
 
@@ -172,13 +174,26 @@ final class AskQuickSearchSession: ObservableObject {
         guard let service = sources.browsers else { return }
         let settings = sources.browserSettings
         browserTask = Task { [weak self] in
+            async let cachedTabs: AskBrowserSearchSnapshot? = settings.tabsEnabled && settings.directTabs
+                ? service.cachedSnapshot(kind: .tab, browsers: settings.tabBrowsers, interactive: false) : .some(.init())
+            async let cachedBookmarks: AskBrowserSearchSnapshot? = settings.bookmarksEnabled && settings.directBookmarks
+                ? service.cachedSnapshot(kind: .bookmark, browsers: settings.bookmarkBrowsers, interactive: false) : .some(.init())
+            let (cachedTabBatch, cachedBookmarkBatch) = await (cachedTabs, cachedBookmarks)
+            guard let self, generation == ticket, !Task.isCancelled else { return }
+            if cachedTabBatch != nil || cachedBookmarkBatch != nil {
+                browserResults = AskBrowserSearchEntry.search(cachedTabBatch?.entries ?? [], query: text, limit: 5) +
+                    AskBrowserSearchEntry.search(cachedBookmarkBatch?.entries ?? [], query: text, limit: 5)
+                browserReady = cachedTabBatch != nil && cachedBookmarkBatch != nil
+                if browserReady || !browserResults.isEmpty { publish() }
+                if browserReady { return }
+            }
             do { try await Task.sleep(for: .milliseconds(120)) } catch { return }
             async let tabs: AskBrowserSearchSnapshot = settings.tabsEnabled && settings.directTabs
                 ? service.snapshot(kind: .tab, browsers: settings.tabBrowsers, interactive: false) : .init()
             async let bookmarks: AskBrowserSearchSnapshot = settings.bookmarksEnabled && settings.directBookmarks
                 ? service.snapshot(kind: .bookmark, browsers: settings.bookmarkBrowsers, interactive: false) : .init()
             let (tabBatch, bookmarkBatch) = await (tabs, bookmarks)
-            guard let self, generation == ticket, !Task.isCancelled else { return }
+            guard generation == ticket, !Task.isCancelled else { return }
             browserResults = AskBrowserSearchEntry.search(tabBatch.entries, query: text, limit: 5) +
                 AskBrowserSearchEntry.search(bookmarkBatch.entries, query: text, limit: 5)
             browserReady = true

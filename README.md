@@ -135,6 +135,10 @@ make release-continue # resume an interrupted local release
 swift test        # run tests
 ```
 
+The macOS `make run` and `make dev` commands build with optimizations by default,
+while retaining development-only commands and defaults. For an unoptimized build
+when debugging, use `TYPEFLUX_DEV_BUILD_CONFIGURATION=debug make run` (or `make dev`).
+
 The Mac LAN targets select a single API endpoint even when `TYPEFLUX_API_URLS`
 is inherited from the shell. Realtime ASR addresses are supplied by the selected
 API, not by the app Makefile. Set `REALTIME_ASR_SERVER_ORIGINS` in each API's

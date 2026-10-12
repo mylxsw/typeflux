@@ -9,6 +9,7 @@ final class AskControlledSearchIndex: AskAppSearching, AskFileSearching, @unchec
     let lock = NSLock()
     var appSearch: @Sendable (String) -> [AskAppMatch] = { _ in [] }
     var fileSearch: @Sendable (AskFileSearchOptions) -> [AskFileHit] = { _ in [] }
+    var recentApps: [AskAppEntry] = []
     private var queries: [String] = []
     private var onMain = false
     var calls: [String] { lock.withLock { queries } }
@@ -26,6 +27,7 @@ final class AskControlledSearchIndex: AskAppSearching, AskFileSearching, @unchec
     func recent(options: AskFileSearchOptions) -> [AskFileHit] { fileSearch(options) }
     func refreshIfStale() {}
     func recordLaunch(_ entry: AskAppEntry) {}
+    func recentApplications(limit: Int) -> [AskAppEntry] { Array(recentApps.prefix(limit)) }
     func start() {}
     func recordOpen(_ path: String) {}
     func forget(_ path: String) {}
@@ -36,6 +38,28 @@ final class AskControlledSearchIndex: AskAppSearching, AskFileSearching, @unchec
 @Suite("Staged launcher search", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickSearchSessionTests {
+    @Test func applicationResultsPublishWhileFileSearchIsStillBlocked() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        let apps = AskControlledSearchIndex(), files = AskControlledSearchIndex()
+        apps.appSearch = { _ in [Self.app] }
+        files.fileSearch = { _ in _ = gate.wait(timeout: .now() + 5); return [Self.file] }
+        let session = AskQuickSearchSession()
+        defer { session.cancel() }
+        update(session, apps: apps, files: files)
+        try await Self.wait { session.results?.apps.isEmpty == false }
+        #expect(session.isSearching)
+        #expect(session.results?.files.isEmpty == true)
+        session.results?.highlight(0)
+        let first = try #require(session.results)
+        let selected = first.identity(of: first.highlightedRow)
+        gate.signal()
+        try await Self.wait { !session.isSearching }
+        #expect(session.results?.files == [Self.file])
+        let final = try #require(session.results)
+        #expect(final.identity(of: final.highlightedRow) == selected)
+    }
+
     @Test func disablingConversionsDuringSearchRemovesThemAndRejectsThePreviousBatch() async throws {
         let gate = DispatchSemaphore(value: 0)
         defer { gate.signal() }
@@ -128,8 +152,13 @@ struct AskQuickSearchSessionTests {
         files.fileSearch = { _ in [Self.file] }
         let session = AskQuickSearchSession(imageCache: cache)
         update(session, apps: apps, files: files)
-        try await Self.wait { !session.isSearching }
         let scale = NSScreen.main?.backingScaleFactor ?? 2
+        // Publication never waits for icons. Verify the search's prefetch clients
+        // complete without creating row views, even under a busy main actor.
+        try await Self.wait {
+            !session.isSearching && cache.cached(.init(url: Self.app.entry.url, thumbnail: false, scale: scale)) != nil
+                && cache.cached(.init(url: Self.file.url, thumbnail: false, modified: Self.file.modified, scale: scale)) != nil
+        }
         #expect(cache.cached(.init(url: Self.app.entry.url, thumbnail: false, scale: scale)) === expected)
         #expect(cache.cached(.init(url: Self.file.url, thumbnail: false, modified: Self.file.modified,
                                   scale: scale)) === expected)

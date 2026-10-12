@@ -4,6 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_DIR="${TYPEFLUX_DEV_APP_DIR:-${TYPEFLUX_DEV_APP_DIR:-$HOME/Applications/Typeflux Dev.app}}"
 DEV_VARIANT="${TYPEFLUX_DEV_VARIANT:-minimal}"
+BUILD_CONFIGURATION="${TYPEFLUX_DEV_BUILD_CONFIGURATION:-release}"
+case "$BUILD_CONFIGURATION" in
+  debug|release) ;;
+  *) echo "Error: TYPEFLUX_DEV_BUILD_CONFIGURATION must be debug or release." >&2; exit 1 ;;
+esac
 
 # Kill any running instance before rebuilding, so the binary copy succeeds.
 pkill -f "Typeflux Dev.app/Contents/MacOS/Typeflux" 2>/dev/null || true
@@ -116,9 +121,10 @@ install_bundled_models() {
   esac
 }
 
-swift build --package-path "$ROOT_DIR" -c debug
+# Keep development-only commands and defaults while optimizing the launcher.
+swift build --package-path "$ROOT_DIR" -c "$BUILD_CONFIGURATION" -Xswiftc -DDEBUG
 
-BIN_DIR="$(swift build --package-path "$ROOT_DIR" --show-bin-path)"
+BIN_DIR="$(swift build --package-path "$ROOT_DIR" -c "$BUILD_CONFIGURATION" -Xswiftc -DDEBUG --show-bin-path)"
 BIN="$BIN_DIR/Typeflux"
 mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"

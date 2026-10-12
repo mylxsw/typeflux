@@ -5,6 +5,17 @@ import Testing
 @Suite("Launcher height motion", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherHeightAnimatorTests {
+    @Test func unchangedHeightDoesNotRequestAnotherLayout() {
+        let animator = AskLauncherHeightAnimator()
+        var applications = 0
+        for _ in 0..<20 {
+            animator.update(from: 300, to: 300, animated: true) { _ in applications += 1 }
+        }
+        animator.update(from: 300, to: 300, animated: false) { _ in applications += 1 }
+        #expect(applications == 0)
+        #expect(!animator.isAnimating)
+    }
+
     @Test func growthAndShrinkageSettleWithoutBouncing() {
         for (start, target): (CGFloat, CGFloat) in [(120, 550), (550, 120)] {
             let motion = AskLauncherHeightAnimator.Motion(start: start, target: target, startedAt: 0)
@@ -39,8 +50,13 @@ struct AskLauncherHeightAnimatorTests {
     @Test func nativeUpdatesHaveIntermediateFramesAndReducedMotionFinishesImmediately() async throws {
         let animator = AskLauncherHeightAnimator()
         var samples: [CGFloat] = []
-        animator.update(from: 120, to: 550, animated: true) { samples.append($0) }
-        try await Task.sleep(for: .milliseconds(90))
+        // Leave enough motion to observe real timer callbacks on a loaded host.
+        // The default spring's timing is verified by the pure motion tests above.
+        animator.update(from: 120, to: 550, animated: true, rate: 8) { samples.append($0) }
+        for _ in 0..<400 {
+            if samples.count >= 2 { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
         #expect(samples.count >= 2)
         #expect(samples.allSatisfy { $0 > 120 && $0 < 550 })
         animator.update(from: samples.last ?? 120, to: 200, animated: false) { samples.append($0) }
