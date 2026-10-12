@@ -1,144 +1,119 @@
-# 启动器：右侧预览设计方案（v2）
+# 启动器：文件预览窗口设计方案（v3）
 
-> 状态：设计稿，待评审。可交互设计稿：`docs/design/ask-launcher-preview-pane.html`（浏览器直接打开，可切换深浅色、开关预览对比现状、切换提示样式）；截图在 `docs/design/ask-launcher-preview-pane/`。
+> 状态：设计稿，待评审。可交互设计稿：`docs/design/ask-launcher-preview-pane.html`（浏览器直接打开；可以切换慢动作、减弱动态效果、窄屏、深浅色）；截图在 `docs/design/ask-launcher-preview-pane/`。
 >
-> v2 根据 v1 的评审意见重做：外观逐项对齐现在的启动器；左栏搜索结果为主、右栏预览为辅；预览栏里不放工具栏，只用系统已有的快捷键，并重新设计快捷键提示的样式。
+> v1 和 v2 把启动器改成两栏，评审后换了思路：**启动器保持现状，一点不改**。高亮停在能预览的文件上时，在启动器旁边弹出一个**独立的预览窗口**。
 
-## 1. 需求与评估
+## 1. 行为
 
-需求：参考竞品，有搜索结果时启动器分成两栏：左边是搜索结果，右边是高亮结果的详情，包括计算结果、文件信息与内容、文件夹列表、关键词、工作流等。
+用 ↑↓ 或鼠标停在一个**能预览的文件**上时，启动器右侧出现预览窗口，高度和启动器一致。停在应用、文件夹、计算或不支持的文件上时，窗口不出现，已经出现的会收起。启动器本身的布局、快捷键、提示文字都不变。
 
-结论：**可以做，建议做，约 5 人日。** 右栏要显示的数据大部分已经有：计算写法（`AskCalculatorFormats` / `AskNumberConversions`）、应用 entry、文件命中（`AskFileHit`）、缩略图（`QLThumbnailGenerator` + `AskResultImageCache`）、受控读文件（`AskFileReader` 子进程）、浏览器标签与书签（`AskBrowserSearchEntry`）、关键词（`AskLauncherSearchEntry`）。主要新增的是右栏视图，以及按高亮项在后台加载详情的一层。搜索、排序、最佳匹配、快捷键都不改。
+| 高亮项 | 预览窗口 |
+|--------|----------|
+| 能预览的文件 | 停留 **120ms** 后开始加载；内容好了就滑出。150ms 内没好就先带着骨架条滑出，不出现空窗口 |
+| 换到另一个能预览的文件 | 窗口不动，标题立即更新，内容 **120ms 交叉淡入**；新内容没好之前保留旧内容，超过 150ms 换成骨架条 |
+| 换到不能预览的行 | 等 **150ms** 再收起：方向键连续经过一行应用或文件夹时不会闪；150ms 内回到能预览的文件就不收起 |
+| 改输入、结果变化 | 按新的高亮项重新判断；没有结果立即收起 |
+| 启动器高度变化 | 和启动器用同一个弹簧动画（`AskLauncherHeightAnimator`）一起改高度，顶边对齐 |
+| 拖动启动器 | 作为子窗口（`addChildWindow`）跟着移动 |
+| Esc / 打开 / 发送 / 启动器失焦 | 和启动器一起立即消失，不单独做动画 |
+| → 操作面板 | 保持显示（面板在启动器内部） |
+| ⌘Y 快速查看 | 先收起，避免两个预览叠在一起 |
 
-收益：同名文件（比如多个 `Localizable.strings`）现在只能靠一行被截断的目录区分，右栏可以直接看到内容和完整位置；左栏被截断的长值（英文金额、长二进制）在右栏完整显示；应用、文件夹、PDF 不用打开就能确认。
+鼠标悬停沿用列表现有的规则：指针真的移动过才改高亮（`AskSearchPointer`），所以窗口滑出时不会因为指针碰巧在某一行上而误切换。
 
-`ask-launcher-quick-results.md` §1 当时写的是“保持单列”，实现时要同步更新那一段。
+## 2. 外观、位置与尺寸
 
-## 2. 布局
+- **位置**：启动器卡片右侧 **10pt**，顶边与卡片对齐。
+- **高度**：等于卡片高度；结果很少、启动器很矮时最低 **320pt**（往下多出一截），否则 PDF 和图片会小到看不清。**这一点和“高度一致”略有出入，请确认。**
+- **宽度**：优先 **380pt**；右侧放不下就放左侧；两侧都不足 **280pt** 就不显示。例如 1280pt 宽的屏幕上，启动器居中时两侧都只剩约 270pt。
+- **外观**：和启动器同一套玻璃材质（`AskGlassBackground`）、16pt 圆角、同样的描边和阴影。
+- **结构**：
+  1. 顶部 50pt：文件图标、文件名（一行，中间截断）、一行信息（种类 · 大小 · 尺寸 / 时长 / 行数）。
+  2. 中间：预览区，10pt 内边距，圆角 10pt 的底。
+  3. 底部 38pt：所在目录（太长时截掉开头）和现有的“⌘Y 快速查看”提示。
+- **窗口性质**：不能成为 key window，键盘焦点始终在启动器；可以接收滚轮（翻 PDF、长文本），不接收点击以外的输入。
 
-| 项 | 取值 | 说明 |
-|----|------|------|
-| 面板宽度 | **700pt，不变**（卡片 688pt + 两侧 6pt 边距） | 不改 `AskMetrics.launcherWidth` |
-| 左栏 | **400pt（58%）** | 搜索结果，行样式和现在完全一样 |
-| 右栏 | **288pt（42%）** | 预览，左边一条 `launcherSeparator` 分隔线 |
-| 结果区高度 | 有结果时**固定 400pt** | 现在是随内容变高、最高 430pt；固定高度后切换高亮窗口不跳，右栏内容超出时自己滚动 |
-| 顶部输入行、底部托盘 | 不变 | 58pt 输入行（麦克风、打开对话）；48pt 玻璃托盘（＋、本机存储、模型、权限、截图、记忆、提示） |
+## 3. 动效
 
-什么时候是两栏：只有**有快捷结果、且设置里“显示预览”开着**的时候。首页（继续对话 / 最近使用的应用 / 关键词）、关键词插件会话、`/` 命令面板、没有本地结果这几种状态都保持现在的单栏。
+| 动作 | 参数 |
+|------|------|
+| 出现 | 180ms；透明度 0→1，从启动器一侧滑出 10pt，缩放 0.985→1（以靠近启动器的边为原点），ease-out `(0.2, 0.8, 0.2, 1)` |
+| 收起 | 140ms；透明度 1→0，往启动器方向收回 10pt，ease-in；结束后 `orderOut`，窗口不销毁 |
+| 切换文件 | 120ms；只做内容层交叉淡入，窗口位置和大小不动 |
+| 高度 | 跟随启动器的 critically damped 弹簧，无回弹 |
+| 减弱动态效果 | 系统开了“减弱动态效果”时只保留透明度变化（100ms），不位移、不缩放 |
 
-左栏的行在两栏模式下只改一处：文件行右侧的修改时间和“→ 更多操作”文字去掉（时间在右栏有，提示在底部托盘有），把空间留给目录。目录过长时截掉开头、保留最后几级，同名文件靠末级目录区分。
+窗口的透明度和位移用 `NSAnimationContext` 驱动 `animator().alphaValue` 和 frame。内容层交叉淡入在 SwiftUI 里用 `.transition(.opacity)`，以文件路径作为 `id`。
 
-## 3. 右栏内容
+## 4. 哪些能预览
 
-### 3.1 通用结构
+| 类型 | 预览内容 | 来源 |
+|------|----------|------|
+| 图片（png jpg heic gif webp tiff bmp svg icns psd…） | 按比例放进预览区，透明部分显示棋盘格 | `QLThumbnailGenerator` |
+| PDF | 前 3 页竖向排列，滚轮可以翻看；右下角写总页数 | `QLThumbnailGenerator`，页数用 PDFKit |
+| 代码 / 纯文本（`AskFileType.code` 列表、txt、log、json、yaml…） | 等宽、带行号；只给注释、关键字、字符串、数字上色；最多 200 行 | `AskFileReader`（子进程） |
+| Markdown | 简单渲染：标题、列表、行内代码 | `AskFileReader` |
+| Word / Pages / Keynote / PPT | 第一页缩略图 | `QLThumbnailGenerator` |
+| Excel / Numbers | 表格缩略图 | `QLThumbnailGenerator` |
+| CSV / TSV | 直接画成表格，最多 30 行 | `AskFileReader` |
+| 视频 | 一帧画面 + 时长，**不自动播放** | `AVAssetImageGenerator` |
+| 音频 | 波形 + 时长，不自动播放 | `AVAsset`，只读前 30 秒 |
 
-1. **头部**：文件和文件夹用“小图标 + 名称（最多两行）+ 种类”；应用、关键词、标签用“居中大图标 + 名称 + 一行副标题”。
-2. **预览区**：按类型决定，见 3.2。
-3. **信息区**：一律“左标签、右数值”，11.5pt；位置放最后，过长时截掉开头。
+**不显示窗口**：应用、文件夹、系统设置、计算、关键词、浏览器标签与书签、压缩包 / dmg / 未知二进制、名字像密钥的文件（`.env`、`.env.*`、`*.pem`、`*.key`、`id_rsa*`、`*.p12`、`credentials*`）、iCloud 未下载的文件、网络盘上的文件（`AskFileMounts.shouldSkip` 的那些文件系统），以及缩略图生成失败或读取超时的文件。最后两种是加载后才知道的：此时如果窗口已经显示就收起，没显示就不出现。
 
-右栏没有任何按钮或工具栏，也不接收键盘焦点。
+## 5. 性能
 
-### 3.2 不同类型怎么展示
+- **启动器零改动**：预览是另一个窗口、另一棵视图树，启动器打字和列表滚动的开销不变。启动器只需要把“当前高亮的文件”和“卡片 frame”交给预览控制器。
+- **一个窗口反复用**：第一次需要时才创建，之后只 `orderFront` / `orderOut`。
+- **预览窗口里不用 `QLPreviewView`**：它每换一个文件都要重新起一次渲染，视频还会自动播放，方向键快速移动时开销大。要看完整内容仍用现有的 ⌘Y 快速查看（`AskQuickLook`）。
+- **停留才加载**：120ms 去抖；高亮一变就取消上一个请求（`QLThumbnailGenerator.cancel(_:)`、Swift Task 取消、`AskFileReader` 有超时）。旧请求的结果即使晚到也不会覆盖新高亮。
+- **尺寸受控**：缩略图按预览区的像素尺寸（宽 × backingScaleFactor）生成；文本最多读 64 KB / 200 行，先检测是不是二进制；视频只取一帧；音频只读前 30 秒。
+- **缓存**：最近 32 项、上限 64 MB，key 是路径 + 修改时间 + 大小；启动器收起 60 秒后，或收到内存压力通知（`DispatchSource.makeMemoryPressureSource`）时清空。
+- **预取**：显示第 N 项后，空闲时以低优先级预取相邻两项的缩略图，只限图片和 PDF。
+- **“能不能预览”是纯函数**：只看扩展名 / UTType 和文件名，不读磁盘，切换高亮时几乎没有开销。
+- **目标**：本地文件从停下到内容出现，p95 ≤ 250ms（120ms 去抖 + 加载）；方向键连续移动时不触发任何加载；启动器列表滚动保持 60fps。
 
-| 类型 | 预览区 | 信息（按顺序） |
-|------|--------|----------------|
-| 文本 / 代码（txt md json strings swift …） | 前 9 行等宽文本（以填满预览区、信息区仍可见为准），超宽截断不换行；只区分注释、键、字符串三种颜色；Markdown 只把标题加粗；底部写“共 N 行” | 种类 · 大小 · 行数 · 修改 · 位置 |
-| 图片（png jpg heic gif webp svg） | Quick Look 缩略图按比例放进 16:10 区域，透明部分显示棋盘格 | 种类 · 大小 · 尺寸 · 修改 · 位置 |
-| PDF | 第一页缩略图，灰底居中 | 种类 · 大小 · 页数 · 修改 · 位置 |
-| Office / iWork（docx xlsx pptx pages key numbers） | Quick Look 缩略图（系统能生成就用），生成不了就退回大图标 | 种类 · 大小 · 修改 · 位置 |
-| 视频 / 音频 | 视频：一帧缩略图 + 右下角时长；音频：大图标 | 种类 · 大小 · 时长 · 分辨率（视频）· 修改 · 位置 |
-| 文件夹 | 前 8 个子项（文件夹在前），右侧是项数或大小 | 项数 · 修改 · 位置 |
-| 应用 | 大图标 + 名称 + 版本 | 状态（运行中 / 未运行）· 种类 · 大小 · 上次打开 · 位置 |
-| 压缩包 / 安装包 / 未知类型 | 大图标，不读内容 | 种类 · 大小 · 修改 · 位置 |
-| 敏感文件（`.env` `.env.*` `*.pem` `*.key` `id_rsa*` `*.p12` `credentials*`） | 虚线框说明“不预览内容”，只显示信息 | 种类 · 大小 · 修改 · 位置 |
-| iCloud 未下载 | 大图标 + “未下载到本机”，不触发下载 | 种类 · 大小 · 位置 |
-| 计算 | 高亮“计算器”行时：算式 + 大号结果；高亮某种写法时：写法名 + 完整内容（长值换行显示）+ 算式和结果 | — |
-| 关键词 | 居中图标、名称、关键词标签；说明、用法示例 | 最近使用 |
-| 浏览器标签 / 书签 | favicon、标题、浏览器 | 网址 · 域名 |
+## 6. 实现方案
 
-**计算写法留在左栏。** 写法行仍然在左栏，↑↓ 选中、↩ 复制，和现在一样；右栏只负责完整显示。这样不需要任何新快捷键。
+新增（都放在 `Sources/Typeflux/Ask/QuickResults/Preview/`）：
 
-### 3.3 加载
-
-- 计算、应用基本信息、关键词、标签都是同步可得的，切换即显示。
-- 文本内容、目录列表、缩略图、应用的大小 / 上次打开在后台读取：高亮停留 80ms 后开始，切走就取消，旧结果不会覆盖新高亮；还没读完时显示骨架条。
-- 文本和目录一律经过 `AskFileReader` 子进程（有超时，网络盘卡住也拖不住主线程）：最多读 64 KB，先检测是不是二进制；遵守 `AskFileScope` 的屏蔽目录。
-- 缓存最近 64 项，以“路径 + 修改时间”为 key。
-
-## 4. 操作与快捷键提示
-
-### 4.1 操作入口不变
-
-- 主操作：↩（打开 / 复制结果 / 打开功能），和现在一样。
-- 其余操作：→ 打开现有的 `AskQuickActionPanelView`，在两栏模式下浮在右栏上方。内容仍是 `AskQuickActionPanel.make` 给出的列表：文件是打开、打开方式…、在访达中显示、快速查看、拷贝路径、拷贝文件、拷贝名称、带上此文件问 AI、移到废纸篓；文件夹和应用也和现在一样。
-- **不新增任何快捷键**。只用现有的 ↩、→、←、⌘↩、⇥、⌘1–9，以及面板里已有的 ⌥↩、⌘R、⌘Y、⇧⌘C、⌥⌘C、⇧⌘↩。
-
-### 4.2 提示改成“文字 + 键帽”
-
-| | 样式 |
-|---|------|
-| 现状 | `↩ 打开 · → 更多操作 · ⌘↩ 问 AI` |
-| 新样式 | `打开 [↩]   更多操作 [→]   问 AI [⌘↩]` |
-
-- **文字在前、键在后**：先读到“做什么”，键帽只是辅助。
-- 键帽：高 16pt、最小宽 16pt、圆角 4pt、10.5pt 字，用 `AskTheme.keycapSurface`（深色白 8%；浅色白底加 0.5pt `launcherShortcutEdge` 描边）。和 ⌘ 数字角标是同一种视觉语言。
-- 组之间用 10pt 间距分开，不再用“·”。
-- 文案不变：仍是现有的 `ask.quick.hint.*` / `ask.home.hint.*`，只把“键 + 文字”拆成两部分渲染。地方不够时仍按 `AskLauncherContext.hintTiers` 从后往前去掉整组。
-- → 面板里每行右侧的快捷键也改用同样的键帽（高亮行上用白色 18% 底）。
-- 这个样式和两栏无关，单栏模式下同样适用。
-
-## 5. 实现方案
-
-### 5.1 结构
-
-```
-AskComposer(launcher) results area
-├─ 首页 / 插件 / 无结果：不变
-└─ 快捷结果
-   ├─ 预览关闭：AskQuickResultsView（不变）
-   └─ 预览开启：HStack
-      ├─ AskQuickResultsView(compact: true)   // 宽 400，文件行去掉时间
-      └─ AskQuickPreviewView(preview:)        // 新，宽 288
-```
-
-新增：
-
-- `AskQuickPreview`（纯值类型）：从 `AskQuickResults` + `highlightedRow` 推出右栏内容，case 有 `.calculation`、`.format`、`.app`、`.pane`、`.file`、`.folder`、`.feature`、`.browser`。纯函数，方便单元测试。
-- `AskQuickPreviewLoader`（`@MainActor` ObservableObject）：去抖、取消、LRU 缓存。
-- `AskQuickPreviewPolicy`：文件类型 → 展示方式的映射、敏感文件名规则、二进制检测、iCloud 占位文件判断。纯函数。
-- `AskFileReadRequest.Operation`（现有 `directory / entry / resolve`）新增 `preview`：在子进程里按字节数和行数截好再返回，`AskFileReadResponse` 加一个 `text` 字段。目录列表复用现有的 `directory`，`limit: 8`。
-- `AskKeyHint` 视图：把 `"↩ 打开 · → 更多操作"` 这类现有文案拆成（文字, 键）对，渲染成“文字 + 键帽”。底部托盘的提示和 `AskQuickActionPanelView` 共用。
-- `SettingsStore.askLauncherPreviewPane`（默认 `true`），启动器设置里加开关。
+| 类型 | 职责 |
+|------|------|
+| `AskFilePreviewKind` + `AskFilePreviewPolicy` | 纯函数：文件 → 预览方式（image / pdf / text / markdown / table / document / video / audio）或“不预览”；包括敏感文件名和网络盘规则 |
+| `AskFilePreviewLoader` | `@MainActor`：去抖、取消、LRU 缓存、预取；按类型调用 `QLThumbnailGenerator`、`AskFileReader`、AVFoundation |
+| `AskFilePreviewController` | 持有预览 `NSPanel`（复用 `AskHoverCardPresenter.Panel` 那种不会成为 key 的面板）；计算位置和宽度、左右侧选择；出现 / 收起 / 跟随高度；Reduce Motion |
+| `AskFilePreviewView` | SwiftUI：顶部信息、各类型的预览、底部路径 |
 
 需要改的现有代码：
 
-- `AskComposerViews.resultsHeight`：两栏时返回固定 400pt。
-- `AskQuickResultsView`：加 `compact` 参数（文件行不显示时间和高亮提示文字）；`AskQuickActionPanelView` 在两栏模式下定位到右栏上方。
-- `launcherBar` 的提示 `Text` 换成 `AskKeyHint`。
-- 本地化：右栏的标签（种类、大小、行数、尺寸、页数、时长、分辨率、项数、修改、位置、状态、运行中 / 未运行、不预览内容、未下载到本机、共 N 行），6 种语言。
+- `AskFileReadRequest.Operation`（现有 `directory / entry / resolve`）新增 `preview`：在子进程里按字节数和行数截好再返回，`AskFileReadResponse` 加一个 `text` 字段。
+- `AskComposer`（launcher）：高亮变化时调用 `previewController.request(hit)` 或 `previewController.dismiss()`。打开、发送、Esc、⌘Y 时调用 `dismissNow()`。
+- `AskConversationWindowController`：在 `AskLauncherHeightAnimator` 的 `apply` 里同时更新预览窗口的 frame；启动器关闭和失焦时一起收起。
+- 设置：启动器设置里加“预览文件”开关（默认开）。
+- 本地化：信息行里的单位、“共 N 页”“共 N 行”“不自动播放”等，6 种语言。
 
-### 5.2 里程碑
+里程碑：
 
 | 里程碑 | 内容 | 估时 |
 |--------|------|------|
-| M1 | 两栏布局与固定高度、设置开关；`AskQuickPreview`；计算 / 应用（同步字段）/ 系统设置 / 关键词 / 标签预览；`AskKeyHint` 提示样式 | 2 天 |
-| M2 | `AskQuickPreviewLoader` + `AskFileReader.preview`；文本、图片、PDF、Office、视频、文件夹预览；敏感文件和 iCloud 规则；应用的大小 / 上次打开 | 2 天 |
-| M3 | 浅色与无障碍（VoiceOver 读出右栏标题和主值）、截图、更新 `ask-launcher-quick-results.md` | 1 天 |
+| M1 | 预览窗口：位置、尺寸、子窗口、出现 / 收起 / 切换动效、跟随高度、Reduce Motion、设置开关；`AskFilePreviewPolicy`；图片和 PDF | 2 天 |
+| M2 | `AskFileReader.preview`；代码 / 文本 / Markdown / CSV；Office、视频、音频；缓存、预取、内存压力 | 1.5 天 |
+| M3 | 浅色、VoiceOver（窗口出现时读出文件名和类型）、截图、文档 | 0.5 天 |
 
-### 5.3 测试
+## 7. 测试
 
 按仓库要求覆盖率 ≥ 90%：
 
-- `AskQuickPreview`：每种 row 推出的内容；高亮越界、行被移除时的回退。
-- `AskQuickPreviewPolicy`：每种扩展名的展示方式、敏感文件名、二进制检测、iCloud 占位文件。
-- `AskQuickPreviewLoader`：去抖、切换后取消（旧结果不覆盖新高亮）、缓存命中与修改时间变化后失效、读取超时显示为大图标。用假的 `AskFileReading`。
-- `AskFileReader.preview`：按字节 / 行截断、UTF-8 半个字符、空文件、无权限。
-- `AskKeyHint`：现有每条 `ask.quick.hint.*` / `ask.home.hint.*` 在 6 种语言下都能拆成（文字, 键）对。
-- 结果区高度：预览开 / 关两种模式。
+- `AskFilePreviewPolicy`：每种扩展名对应的预览方式，敏感文件名，网络盘，没有扩展名的文件。
+- `AskFilePreviewController` 的时序（用可注入的时钟）：停留不足 120ms 不加载；150ms 内回到可预览文件不收起；连续切换时只有最后一个请求生效；内容 150ms 内没好时先显示骨架；Esc / 打开时立即消失。
+- 位置计算：右侧够、只有左侧够、两侧都不够、启动器很矮（最低 320pt）、多显示器。
+- `AskFilePreviewLoader`：取消、缓存命中、修改时间变化后失效、内存压力清空、读取超时变成“不预览”。用假的 `AskFileReading` 和缩略图生成器。
+- `AskFileReader.preview`：按字节 / 行截断、UTF-8 半个字符、二进制文件、空文件、无权限。
 
-## 6. 不做（本期）
+## 8. 不做（本期）
 
-- 预览栏里的工具栏和新快捷键。
-- 右栏里的可编辑设置（竞品的时区 / 格式切换）。
+- 预览窗口里的操作按钮和新快捷键（操作仍走启动器里的 ↩ / → / ⌘Y）。
+- 文件夹、应用的预览。
+- 视频 / 音频在预览窗口里播放。
 - 完整语法高亮。
-- 关键词插件会话（剪贴板历史、笔记、对话历史）的右栏预览，等两栏稳定后单独评估。
