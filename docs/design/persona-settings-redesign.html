@@ -97,7 +97,7 @@ body.narrow .mainnav { width: 168px; }
 .tabs span.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); border-radius: 2px; }
 
 /* ---------- Usage strip ---------- */
-.usage { display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 10px; margin-bottom: 14px; }
+.usage { display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 10px; margin-bottom: 16px; }
 body.narrow .usage { grid-template-columns: 1fr 1fr; }
 body.narrow .usage .slot.apps { grid-column: 1 / -1; }
 body.narrow .usage .slot.apps { flex-direction: row; align-items: center; gap: 14px; padding: 8px 13px; }
@@ -120,8 +120,6 @@ body.narrow .usage .slot.apps .apps-row { flex: 1; min-width: 0; }
 .appstack .ai:first-child { margin-left: 0; }
 .apps-row .txt { flex: 1; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .apps-row .txt b { color: var(--text); }
-.priority { display: flex; align-items: center; gap: 6px; color: var(--text3); font-size: 11.5px; margin: -6px 2px 12px; }
-.priority b { color: var(--text2); font-weight: 600; }
 
 /* ---------- Library ---------- */
 .lib { flex: 1; display: flex; gap: 14px; min-height: 0; }
@@ -137,13 +135,12 @@ body.narrow .roster { width: 250px; }
 .rlist { flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
 .gl { font-size: 11.5px; font-weight: 600; color: var(--text3); margin: 10px 6px 4px; display: flex; gap: 6px; }
 .gl:first-child { margin-top: 2px; }
-.prow { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 9px; cursor: pointer; position: relative; }
+.prow { display: flex; align-items: center; gap: 10px; padding: 6px 8px; min-height: 44px; border-radius: 9px; cursor: pointer; position: relative; }
 .prow:hover { background: var(--card-hover); }
 .prow.on { background: var(--accent-soft); }
 .prow .meta { flex: 1; min-width: 0; }
 .prow .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
 .prow .nm .t { overflow: hidden; text-overflow: ellipsis; }
-.prow .ds { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .prow .tags { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
 .prow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex: none; }
 .av { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; }
@@ -175,20 +172,16 @@ body.narrow .roster { width: 250px; }
 .prompt.ro { background: transparent; color: var(--text2); }
 textarea.prompt:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .savebar { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-top: 1px solid var(--border-soft); background: var(--card); }
+.savebar[hidden] { display: none; }
 .savebar .sp { flex: 1; }
 .savebar .st { color: var(--warn); font-size: 12px; display: flex; align-items: center; gap: 6px; }
 .savebar .st.ok { color: var(--text3); }
 .savebar .kh { color: var(--text3); font-size: 11.5px; }
 
 /* Templates */
-.tpl { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-body.narrow .tpl { grid-template-columns: 1fr 1fr; }
-.tpl button { text-align: left; border: 1px solid var(--border); background: var(--field); border-radius: 10px; padding: 9px 10px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-.tpl .av { width: 26px; height: 26px; border-radius: 7px; font-size: 12px; }
-.tpl button:hover { border-color: var(--accent); }
-.tpl button.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.tpl b { display: block; margin-bottom: 2px; }
-.tpl span { color: var(--text3); font-size: 12px; }
+.tplbtn { border: 1px solid var(--border); background: var(--field); border-radius: 7px; height: 24px; padding: 0 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 400; color: var(--text3); }
+.tplbtn b { color: var(--text); font-weight: 600; }
+.tplbtn:hover { border-color: var(--text3); }
 
 /* ---------- Popovers / menus ---------- */
 .menu { position: absolute; z-index: 50; background: var(--pop); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,.35); padding: 5px; min-width: 240px; display: none; }
@@ -308,8 +301,6 @@ body.narrow .tpl { grid-template-columns: 1fr 1fr; }
         <div class="apps-row"><span class="appstack" id="appStack"></span><span class="txt" id="appsTxt"></span><button class="btn sm" id="openApps">管理<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 1.5L7 5 3.5 8.5"/></svg></button></div>
       </div>
     </section>
-    <div class="priority"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 7v4M8 4.6v.4"/></svg>
-      生效顺序：按 <b>辅助输入</b> 快捷键时总用它的人设；否则先看 <b>应用专属</b> 规则，没有匹配再用 <b>听写默认</b>。</div>
 
     <!-- Library -->
     <section class="lib">
@@ -464,14 +455,14 @@ function rowHTML(p) {
   return `<div class="prow ${sel === p.id && !creating ? 'on' : ''}" data-id="${p.id}">
     <span class="av" style="${avStyle(p)}">${esc(glyph(p))}</span>
     <div class="meta"><div class="nm"><span class="t">${esc(p.name)}</span>${isDirty ? '<span class="dot" title="未保存"></span>' : ''}</div>
-      <div class="ds">${esc(summary(p))}</div>${tags ? `<div class="tags">${tags}</div>` : ''}</div></div>`;
+      ${tags ? `<div class="tags">${tags}</div>` : ''}</div></div>`;
 }
 function renderRoster() {
   const k = q.trim().toLowerCase();
   const match = (p) => !k || p.name.toLowerCase().includes(k) || p.prompt.toLowerCase().includes(k) || summary(p).toLowerCase().includes(k);
   const sys = personas.filter(p => p.sys && match(p)), mine = personas.filter(p => !p.sys && match(p));
   let h = '';
-  if (creating) h += `<div class="gl">新建中</div><div class="prow on"><span class="av" style="background:var(--accent-soft);color:var(--accent)">+</span><div class="meta"><div class="nm">${esc(creating.name || '未命名人设')}</div><div class="ds">尚未保存</div></div></div>`;
+  if (creating) h += `<div class="gl">新建中</div><div class="prow on"><span class="av" style="background:var(--accent-soft);color:var(--accent)">+</span><div class="meta"><div class="nm">${esc(creating.name || '未命名人设')}</div></div></div>`;
   if (mine.length) h += `<div class="gl">我的人设 · ${mine.length}</div>` + mine.map(rowHTML).join('');
   if (sys.length) h += `<div class="gl">内置 · ${sys.length}</div>` + sys.map(rowHTML).join('');
   if (!sys.length && !mine.length) h += `<div class="empty"><b>没有找到「${esc(q)}」</b>可以搜索名称或人设定义里的文字。<br><br><button class="btn sm" id="createFromSearch">新建「${esc(q)}」</button></div>`;
@@ -512,7 +503,7 @@ function renderDetail() {
       <div class="flabel">人设定义<span class="aux">· 发给模型的改写指令</span><span class="sp"></span><span class="aux" id="charCount">${chars} 字</span></div>
       ${p.sys ? `<div class="prompt ro">${esc(p.prompt)}</div>` : `<textarea class="prompt" id="promptIn" spellcheck="false" placeholder="描述这个人设要把口述改成什么样，例如：改成礼貌、简洁的工作消息，保留人名和数字。">${esc(draft.prompt)}</textarea>`}
     </div>
-    ${p.sys ? '' : `<div class="savebar" id="savebar"></div>`}`;
+    ${p.sys ? '' : `<div class="savebar" id="savebar" hidden></div>`}`;
   if (!p.sys) {
     $('nameIn').addEventListener('input', e => { draft.name = e.target.value; syncDirty(); });
     $('promptIn').addEventListener('input', e => { draft.prompt = e.target.value; $('charCount').textContent = draft.prompt.length + ' 字'; syncDirty(); });
@@ -522,39 +513,54 @@ function renderDetail() {
 function renderSavebar() {
   const bar = $('savebar'); if (!bar) return;
   const d = dirty(), valid = draft.name.trim() && draft.prompt.trim();
+  // The bar only exists while there is something to save, so the prompt keeps the full height otherwise.
+  bar.hidden = !d;
   bar.innerHTML = d
     ? `<span class="st">● 有未保存的修改</span><span class="sp"></span><span class="kh">⌘S 保存</span><button class="btn ghost" data-act="revert">放弃修改</button><button class="btn primary" data-act="save" ${valid ? '' : 'disabled'}>保存</button>`
-    : `<span class="st ok">修改后在这里保存 · 自动同步到已登录的设备</span>`;
+    : '';
 }
 function syncDirty() { renderSavebar(); renderRoster(); }
 
+const TEMPLATE_LABEL = { blank: '空白', [SYS_TF]: '基于 Typeflux', [SYS_EN]: '基于 English Translator' };
+function templateLabel(t) { return TEMPLATE_LABEL[t] || `复制「${byId(t)?.name || ''}」`; }
 function renderCreate(el) {
-  const t = creating.template;
   el.innerHTML = `
     <div class="dhead"><span class="av lg" style="background:var(--accent-soft);color:var(--accent)">+</span>
-      <div class="meta"><h2><input id="nameIn" value="${esc(creating.name)}" placeholder="给人设起个名字，例如：周报助手" aria-label="人设名称"></h2>
-      <div class="sub">新建人设 · 保存后可以设为听写默认、辅助输入或绑定到应用</div></div></div>
-    <div class="dbody" style="border-top:1px solid var(--border-soft);padding-top:14px">
-      <div class="flabel">从哪里开始</div>
-      <div class="tpl">
-        <button class="${t === 'blank' ? 'on' : ''}" data-tpl="blank"><span class="av" style="background:var(--tile);color:var(--text2)">✎</span><div><b>空白</b><span>自己写改写指令</span></div></button>
-        <button class="${t === SYS_TF ? 'on' : ''}" data-tpl="${SYS_TF}"><span class="av" style="${avStyle(byId(SYS_TF))}">∞</span><div><b>基于 Typeflux</b><span>在“整理口述”上加自己的要求</span></div></button>
-        <button class="${t === SYS_EN ? 'on' : ''}" data-tpl="${SYS_EN}"><span class="av" style="${avStyle(byId(SYS_EN))}">E</span><div><b>基于 English Translator</b><span>改成别的目标语言或风格</span></div></button>
-        <button class="${t === 'other' ? 'on' : ''}" data-tpl="other"><span class="av" style="background:var(--tile);color:var(--text2)">⧉</span><div><b>复制现有人设</b><span>从“我的人设”里挑一个</span></div></button>
-      </div>
-      <div class="flabel">人设定义<span class="sp"></span><span class="aux" id="charCount">${creating.prompt.length} 字</span></div>
-      <textarea class="prompt" id="promptIn" spellcheck="false" placeholder="描述这个人设要把口述改成什么样，例如：改成礼貌、简洁的工作消息，保留人名和数字。">${esc(creating.prompt)}</textarea>
+      <div class="meta"><h2><input id="nameIn" value="${esc(creating.name)}" placeholder="给人设起个名字，例如：周报助手" aria-label="人设名称"></h2></div></div>
+    <div class="dbody" style="border-top:1px solid var(--border-soft);padding-top:12px">
+      <div class="flabel">人设定义<span class="sp"></span>
+        <button class="tplbtn" data-act="tplMenu" aria-label="起点">起点：<b>${esc(templateLabel(creating.template))}</b><svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5L5 6.5 8 3.5"/></svg></button>
+        <span class="aux" id="charCount">${creating.prompt.length} 字</span></div>
+      <textarea class="prompt" id="promptIn" spellcheck="false" placeholder="描述这个人设要把口述改成什么样，例如：改成礼貌、简洁的工作消息，保留人名和数字。&#10;&#10;也可以点右上角「起点」，基于内置人设或复制已有人设开始。">${esc(creating.prompt)}</textarea>
     </div>
-    <div class="savebar"><span class="st ok">${creating.name.trim() && creating.prompt.trim() ? '可以保存了' : '填写名称和人设定义后即可保存'}</span><span class="sp"></span>
+    <div class="savebar"><span class="sp"></span>
       <button class="btn ghost" data-act="cancelCreate">取消</button><button class="btn primary" data-act="saveCreate" ${creating.name.trim() && creating.prompt.trim() ? '' : 'disabled'}>创建人设</button></div>`;
   $('nameIn').addEventListener('input', e => { creating.name = e.target.value; refreshCreateState(); renderRoster(); });
-  $('promptIn').addEventListener('input', e => { creating.prompt = e.target.value; $('charCount').textContent = creating.prompt.length + ' 字'; refreshCreateState(); });
+  $('promptIn').addEventListener('input', e => { creating.prompt = e.target.value; creating.edited = true; $('charCount').textContent = creating.prompt.length + ' 字'; refreshCreateState(); });
 }
 function refreshCreateState() {
-  const ok = creating.name.trim() && creating.prompt.trim();
-  const bar = $('detail').querySelector('.savebar');
-  bar.querySelector('.st').textContent = ok ? '可以保存了' : '填写名称和人设定义后即可保存';
-  bar.querySelector('[data-act=saveCreate]').disabled = !ok;
+  $('detail').querySelector('[data-act=saveCreate]').disabled = !(creating.name.trim() && creating.prompt.trim());
+}
+function applyTemplate(t) {
+  const prev = { template: creating.template, prompt: creating.prompt, edited: creating.edited };
+  creating.template = t;
+  creating.prompt = t === 'blank' ? '' : t === SYS_TF || t === SYS_EN ? byId(t).prompt + '\n\n补充要求：\n- ' : byId(t).prompt;
+  if (t !== 'blank' && t !== SYS_TF && t !== SYS_EN && !creating.name) creating.name = byId(t).name + ' 副本';
+  creating.edited = false;
+  renderDetail(); renderRoster();
+  const ta = $('promptIn'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+  // Replacing text the user typed is reversible, never silent.
+  if (prev.edited && prev.prompt.trim()) toast(`已换成「${templateLabel(t)}」的定义`, () => { Object.assign(creating, prev); renderDetail(); });
+}
+function openTemplateMenu(anchor) {
+  const m = $('moreMenu');
+  const item = (t, p, hint) => `<div class="mi" data-t="${t}"><span class="ck">${creating.template === t ? '✓' : ''}</span>
+    <span class="av" style="width:20px;height:20px;border-radius:5px;font-size:10px;${p ? avStyle(p) : 'background:var(--tile);color:var(--text2)'}">${p ? esc(glyph(p)) : '✎'}</span><span class="mt">${esc(t === 'blank' || t === SYS_TF || t === SYS_EN ? templateLabel(t) : p.name)}</span><span class="mh">${hint || ''}</span></div>`;
+  m.innerHTML = item('blank', null, '自己写')
+    + item(SYS_TF, byId(SYS_TF), '整理口述') + item(SYS_EN, byId(SYS_EN), '翻译为英文')
+    + '<div class="sep"></div><div class="mg">复制我的人设</div>' + personas.filter(p => !p.sys).map(p => item(p.id, p)).join('');
+  m.onclick = (e) => { const it = e.target.closest('[data-t]'); if (!it) return; closeMenus(); applyTemplate(it.dataset.t); };
+  placeMenu(m, anchor, true);
 }
 
 /* ---------- Menus ---------- */
@@ -632,7 +638,7 @@ function beginCreate(name = '', template = 'blank') {
 }
 function duplicate(p) {
   guardDirty(() => {
-    draft = null; creating = { name: p.name + ' 副本', template: p.sys ? p.id : 'other', prompt: p.prompt };
+    draft = null; creating = { name: p.name + ' 副本', template: p.id, prompt: p.prompt };
     renderAll(); setTimeout(() => { const n = $('nameIn'); n.focus(); n.select(); }, 0);
   });
 }
@@ -750,18 +756,13 @@ document.querySelectorAll('.picker[data-slot]').forEach(b => b.addEventListener(
   }, { title: key === 'def' ? '按 fn 听写时使用' : '按 ⌥ fn 时使用' });
 }));
 $('detail').addEventListener('click', (e) => {
-  const a = e.target.closest('[data-act]'); const tp = e.target.closest('[data-tpl]');
-  if (tp) {
-    const t = tp.dataset.tpl;
-    if (t === 'other') { e.stopPropagation(); openPicker(tp, null, false, (id) => { creating.template = 'other'; creating.prompt = byId(id).prompt; if (!creating.name) creating.name = byId(id).name + ' 副本'; renderDetail(); renderRoster(); }, { title: '复制哪个人设' }); return; }
-    creating.template = t; creating.prompt = t === 'blank' ? '' : byId(t).prompt + '\n\n补充要求：\n- '; renderDetail();
-    const ta = $('promptIn'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); return;
-  }
+  const a = e.target.closest('[data-act]');
   if (!a) return;
   e.stopPropagation();
   const k = a.dataset.act;
   if (k === 'useMenu') openUseMenu(a.closest('.acts') ? a : $('detail').querySelector('[data-act=useMenu]'));
   else if (k === 'moreMenu') openMoreMenu(a);
+  else if (k === 'tplMenu') openTemplateMenu(a);
   else if (k === 'duplicate') duplicate(byId(sel));
   else if (k === 'openApps') openDrawer(false);
   else if (k === 'save') save();
@@ -780,9 +781,9 @@ document.addEventListener('keydown', (e) => {
 
 /* ---------- Stage states ---------- */
 const CAPTIONS = {
-  builtin: '<b>① 浏览内置人设</b> · 顶部三张卡回答「在哪里用哪个人设」，下方只管理人设本身。内置人设只读，提供「复制一份来修改」。',
-  custom: '<b>② 编辑我的人设</b> · 名称直接在标题处改；修改后底部出现保存条（⌘S），列表标出未保存的圆点；切换前会提示保存。',
-  create: '<b>③ 新建人设</b> · 先选起点（空白 / 基于内置 / 复制现有），名称和定义都填写后才能创建。',
+  builtin: '<b>① 浏览内置人设</b> · 顶部三张卡回答「在哪里用哪个人设」，下方只管理人设本身。列表只显示名称和使用标签。内置人设只读，提供「复制一份来修改」。',
+  custom: '<b>② 编辑我的人设</b> · 名称直接在标题处改；有修改时底部才出现保存条（⌘S），列表标出未保存的圆点；切换前会提示保存。',
+  create: '<b>③ 新建人设</b> · 定义输入框占满详情区；「起点」是定义标题行右侧的小菜单（空白 / 基于内置 / 复制我的人设），换起点覆盖已输入内容时可撤销。',
   apps: '<b>④ 应用专属规则</b> · 从右侧抽屉管理，不离开页面；每条规则可换人设、暂停、删除（可撤销）；从已启动的应用里一键添加。',
   delete: '<b>⑤ 删除使用中的人设</b> · 确认框列出删除后的连带影响，删除后提示条可撤销。',
   search: '<b>⑥ 搜索无结果</b> · 同时搜索名称和定义内容；无结果时可直接用搜索词新建。',
@@ -797,7 +798,7 @@ function go(state) {
   $('caption').innerHTML = CAPTIONS[state] || '';
   if (state === 'builtin') { sel = SYS_TF; renderAll(); }
   if (state === 'custom') { sel = 'c4'; renderAll(); draft.prompt += '\n- 结尾不要加“谢谢”。'; renderDetail(); renderRoster(); }
-  if (state === 'create') { sel = SYS_TF; renderAll(); creating = { name: '周报助手', template: SYS_TF, prompt: TF_PROMPT + '\n\n补充要求：\n- 按「本周完成 / 下周计划 / 风险」三段输出。' }; renderAll(); }
+  if (state === 'create') { sel = SYS_TF; renderAll(); creating = { name: '周报助手', template: SYS_TF, prompt: TF_PROMPT + '\n\n补充要求：\n- 按「本周完成 / 下周计划 / 风险」三段输出。', edited: true }; renderAll(); }
   if (state === 'apps') { sel = 'c4'; renderAll(); openDrawer(true); }
   if (state === 'delete') { sel = 'c4'; renderAll(); confirmDelete(byId('c4')); }
   if (state === 'search') { sel = SYS_TF; renderAll(); q = '周报'; $('q').value = q; renderRoster(); }
