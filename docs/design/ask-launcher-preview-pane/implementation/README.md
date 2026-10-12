@@ -2,6 +2,8 @@
 
 These images are native `NSPanel` / SwiftUI captures using deterministic test content, rendered by `AskFilePreviewVisualTests` in the classic interface style. They are not browser mockups. The PDF fixture contains three visible page images with a synthetic total page count.
 
+See [validation results and exact commands](VALIDATION.md) for the build, full regression run, coverage and measurement scope.
+
 | Type | Light | Dark |
 | --- | --- | --- |
 | Image | ![Image, light](image-light.png) | ![Image, dark](image-dark.png) |
@@ -17,7 +19,7 @@ TYPEFLUX_PREVIEW_BENCHMARK=1 \
 swift test --enable-code-coverage --filter AskFilePreview
 ```
 
-The latency measurement uses 20 distinct local PNG paths and includes the 120ms highlight debounce; it does not represent every format or a cold OS disk cache. Integration tests separately exercise real launcher selection, panel reuse, placement, dismissal, and the disabled setting.
+The microbenchmark measures loader completion for 20 distinct local PNG paths and adds the configured 120ms highlight debounce. It excludes AppKit drawing and the entry animation, and does not represent every format or a cold OS disk cache. Integration tests separately exercise real launcher selection, panel reuse, placement, dismissal, and the disabled setting.
 
 Implementation decisions where the specification leaves room:
 
