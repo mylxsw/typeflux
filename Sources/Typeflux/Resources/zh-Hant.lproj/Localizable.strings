@@ -1786,7 +1786,10 @@
 "models.invalidResponse" = "The provider returned an invalid model response";
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
-"models.back" = "Model settings";
+"models.back" = "返回";
+"models.tab.scenes" = "模型配置";
+"models.tab.speech" = "語音識別";
+"models.tab.language" = "大語言模型";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
 "models.fixedSpeech" = "Speech to text · one fixed model";
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
@@ -1810,12 +1813,12 @@
 "models.rewriteBlocked" = "無法用於轉譯與潤色：%@";
 "models.visionGuessed" = "根據模型名稱推斷支援視覺，可在「···」選單中變更";
 "ask.models.visionTrial" = "視覺能力未確認，將嘗試傳送圖片";
-"models.usageHint" = "標籤表示該模型目前被哪個場景使用；可在「應用場景」或「···」選單中變更。";
+"models.usageHint" = "標籤表示該模型目前被哪個功能使用；可在「模型配置」或「···」選單中變更。";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
 "models.emptyCatalog" = "The provider returned no models";
 "models.loadFailed" = "Could not load models.";
-"models.subscription" = "The selected speech provider requires an active subscription. Renew or select a local model in Application scenarios.";
+"models.subscription" = "所選語音服務需要有效訂閱，請續訂或在「模型配置」中選擇本地模型。";
 
 "models.noAvailable" = "暫無適用於目前輸入的可用模型，請檢查登入狀態和模型設定。";
 

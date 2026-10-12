@@ -1789,7 +1789,10 @@
 "models.invalidResponse" = "The provider returned an invalid model response";
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
-"models.back" = "Model settings";
+"models.back" = "Back";
+"models.tab.scenes" = "Model Configuration";
+"models.tab.speech" = "Speech Recognition";
+"models.tab.language" = "Language Models";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
 "models.fixedSpeech" = "Speech to text · one fixed model";
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
@@ -1813,12 +1816,12 @@
 "models.rewriteBlocked" = "Can’t be used for rewriting: %@";
 "models.visionGuessed" = "Vision inferred from the model name; change it from the ··· menu";
 "ask.models.visionTrial" = "Vision unconfirmed; images will be tried";
-"models.usageHint" = "Badges show which scenario uses each model. Change them in Application scenarios or from the ··· menu.";
+"models.usageHint" = "Badges show which feature uses each model. Change them in Model Configuration or from the ··· menu.";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
 "models.emptyCatalog" = "The provider returned no models";
 "models.loadFailed" = "Could not load models.";
-"models.subscription" = "The selected speech provider requires an active subscription. Renew or select a local model in Application scenarios.";
+"models.subscription" = "The selected speech provider requires an active subscription. Renew or select a local model in Model Configuration.";
 
 "models.noAvailable" = "No models are available for this input. Check your sign-in and model settings.";
 

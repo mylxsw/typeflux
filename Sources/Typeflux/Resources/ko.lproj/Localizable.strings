@@ -1779,7 +1779,10 @@
 "models.invalidResponse" = "The provider returned an invalid model response";
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
-"models.back" = "Model settings";
+"models.back" = "뒤로";
+"models.tab.scenes" = "모델 구성";
+"models.tab.speech" = "음성 인식";
+"models.tab.language" = "대규모 언어 모델";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
 "models.fixedSpeech" = "Speech to text · one fixed model";
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
@@ -1803,12 +1806,12 @@
 "models.rewriteBlocked" = "다시 쓰기 및 다듬기에 사용할 수 없음: %@";
 "models.visionGuessed" = "모델 이름으로 비전 지원을 추정했습니다. ··· 메뉴에서 변경할 수 있습니다";
 "ask.models.visionTrial" = "비전 지원 미확인, 이미지 전송을 시도합니다";
-"models.usageHint" = "배지는 각 모델을 사용 중인 시나리오를 나타냅니다. 사용 시나리오 또는 ··· 메뉴에서 변경할 수 있습니다.";
+"models.usageHint" = "배지는 각 모델을 사용 중인 기능을 나타냅니다. 모델 구성 또는 ··· 메뉴에서 변경할 수 있습니다.";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
 "models.emptyCatalog" = "The provider returned no models";
 "models.loadFailed" = "Could not load models.";
-"models.subscription" = "The selected speech provider requires an active subscription. Renew or select a local model in Application scenarios.";
+"models.subscription" = "선택한 음성 서비스에는 활성 구독이 필요합니다. 구독을 갱신하거나 모델 구성에서 로컬 모델을 선택하세요.";
 
 "models.noAvailable" = "현재 입력에 사용할 수 있는 모델이 없습니다. 로그인 상태와 모델 설정을 확인하세요.";
 

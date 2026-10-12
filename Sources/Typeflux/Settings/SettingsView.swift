@@ -395,7 +395,9 @@ struct StudioView: View {
                     voiceInputHeader
                 } else if viewModel.currentSection == .settings {
                     settingsHeader
-                } else if viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
+                } else if viewModel.currentSection == .models {
+                    modelsHeader
+                } else {
                     pageHeader
                 }
 
@@ -807,6 +809,35 @@ struct StudioView: View {
         }
     }
 
+    /// The Models page header shares its tabs and action alignment with Voice Input.
+    private var modelsHeader: some View {
+        ViewThatFits(in: .horizontal) {
+            VStack(spacing: 0) {
+                HStack(alignment: .bottom, spacing: StudioTheme.Spacing.large) {
+                    modelTabs.fixedSize(horizontal: true, vertical: false)
+                    HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
+                        .padding(.bottom, StudioTheme.Spacing.small)
+                        .frame(height: 0, alignment: .bottom)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Rectangle().fill(StudioTheme.border).frame(height: 1)
+            }
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                VStack(spacing: 0) {
+                    modelTabs.frame(maxWidth: .infinity, alignment: .leading)
+                    Rectangle().fill(StudioTheme.border).frame(height: 1)
+                }
+                if viewModel.modelPageTab.domain != nil, !viewModel.isShowingModelProviderDetail {
+                    HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
+                }
+            }
+        }
+    }
+
+    private var modelTabs: some View {
+        ModelPageTabBar(selection: viewModel.modelPageTab, onSelect: viewModel.selectModelPageTab)
+    }
+
     /// Actions on the right of the page header, including the spacer that pushes them there.
     private var pageHeaderActions: some View {
         Group {
@@ -893,13 +924,28 @@ struct StudioView: View {
             } else if viewModel.currentSection == .models {
                 Spacer()
 
-                StudioIconButton(
-                    systemImage: "plus",
-                    variant: .ghost
-                ) {
-                    viewModel.isAddingModelEndpoint = true
+                // Provider lists can be searched; a provider's own settings have nothing to search.
+                if let domain = viewModel.modelPageTab.domain, !viewModel.isShowingModelProviderDetail {
+                    HStack(spacing: StudioTheme.Spacing.small) {
+                        SettingsSearchBox(
+                            placeholder: L("models.search"),
+                            text: $viewModel.modelSearchQuery,
+                            width: 220,
+                            fieldIdentifier: "models.search"
+                        )
+
+                        if domain == .llm {
+                            SettingsActionButton(
+                                title: L("models.addEndpoint"),
+                                symbol: "plus"
+                            ) {
+                                viewModel.isAddingModelEndpoint = true
+                            }
+                            .fixedSize(horizontal: true, vertical: false)
+                            .accessibilityIdentifier("models.addProvider")
+                        }
+                    }
                 }
-                .studioTooltip(L("models.addEndpoint"), yOffset: 34)
             } else if viewModel.currentSection == .account {
                 Spacer()
             } else if viewModel.currentSection.isVoiceInput {
@@ -982,15 +1028,6 @@ struct StudioView: View {
                 - (viewModel.currentSection == .models ? 0 : StudioTheme.Layout.shellContentBottomInset),
             0
         )
-    }
-
-    private func modelDomainTabTitle(for domain: StudioModelDomain) -> String {
-        switch domain {
-        case .stt:
-            L("settings.models.domain.stt")
-        case .llm:
-            L("settings.models.domain.llm")
-        }
     }
 
     private var personasPage: some View {
@@ -4058,13 +4095,11 @@ struct StudioView: View {
                         Spacer()
 
                         if shouldShowFocusedLLMConnectionTestButton {
-                            StudioButton(
+                            SettingsActionButton(
                                 title: viewModel.llmConnectionTestState == .testing
                                     ? L("settings.models.testingConnection") : L("common.test"),
-                                systemImage: viewModel.llmConnectionTestState == .testing
+                                symbol: viewModel.llmConnectionTestState == .testing
                                     ? nil : "network",
-                                variant: .secondary,
-                                isDisabled: viewModel.llmConnectionTestState == .testing,
                                 isLoading: viewModel.llmConnectionTestState == .testing
                             ) {
                                 viewModel.testLLMConnection()
@@ -4074,13 +4109,11 @@ struct StudioView: View {
                             .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial
                         ].contains(viewModel.focusedModelProvider),
                             !viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn {
-                            StudioButton(
+                            SettingsActionButton(
                                 title: viewModel.sttConnectionTestState == .testing
                                     ? L("settings.models.testingConnection") : L("common.test"),
-                                systemImage: viewModel.sttConnectionTestState == .testing
+                                symbol: viewModel.sttConnectionTestState == .testing
                                     ? nil : "network",
-                                variant: .secondary,
-                                isDisabled: viewModel.sttConnectionTestState == .testing,
                                 isLoading: viewModel.sttConnectionTestState == .testing
                             ) {
                                 viewModel.testSTTConnection()
@@ -4088,8 +4121,8 @@ struct StudioView: View {
                         }
 
                         if viewModel.focusedModelProvider.showsManualSaveButton {
-                            StudioButton(
-                                title: L("common.save"), systemImage: "checkmark", variant: .primary
+                            SettingsActionButton(
+                                title: L("common.save"), symbol: "checkmark", primary: true
                             ) {
                                 viewModel.applyModelConfiguration()
                             }
@@ -4109,16 +4142,16 @@ struct StudioView: View {
 
                 if viewModel.focusedModelProvider == .ollama {
                     VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        StudioButton(
+                        SettingsActionButton(
                             title: viewModel.isPreparingOllama
                                 ? L("settings.models.preparing")
                                 : (viewModel.isOllamaFailed
                                     ? L("common.retry") : L("settings.models.prepareLocalModel")),
-                            systemImage: viewModel.isPreparingOllama
+                            symbol: viewModel.isPreparingOllama
                                 ? nil
                                 : (viewModel.isOllamaFailed
                                     ? "arrow.clockwise" : "arrow.down.circle"),
-                            variant: .primary
+                            primary: true
                         ) {
                             viewModel.prepareOllamaModel()
                         }
@@ -4497,24 +4530,21 @@ struct StudioView: View {
                         suggestions: GoogleCloudSpeechDefaults.suggestedModels
                     )
                     HStack(spacing: StudioTheme.Spacing.small) {
-                        StudioButton(
+                        SettingsActionButton(
                             title: viewModel.googleCloudOAuthAuthorized
                                 ? L("settings.models.googleCloud.oauth.reauthorize")
                                 : L("settings.models.googleCloud.oauth.authorize"),
-                            systemImage: "person.crop.circle.badge.checkmark",
-                            variant: .secondary,
+                            symbol: "person.crop.circle.badge.checkmark",
+                            isLoading: viewModel.isAuthorizingGoogleCloudOAuth,
                             isDisabled: AppServerConfiguration.googleCloudOAuthClientID.isEmpty
-                                || viewModel.isAuthorizingGoogleCloudOAuth,
-                            isLoading: viewModel.isAuthorizingGoogleCloudOAuth
                         ) {
                             viewModel.authorizeGoogleCloudOAuth()
                         }
 
                         if viewModel.googleCloudOAuthAuthorized {
-                            StudioButton(
+                            SettingsActionButton(
                                 title: L("settings.models.googleCloud.oauth.disconnect"),
-                                systemImage: "xmark.circle",
-                                variant: .ghost
+                                symbol: "xmark.circle"
                             ) {
                                 viewModel.disconnectGoogleCloudOAuth()
                             }
@@ -4593,10 +4623,10 @@ struct StudioView: View {
                     HStack {
                         Spacer()
 
-                        StudioButton(
+                        SettingsActionButton(
                             title: L("settings.models.typefluxOfficial.signIn"),
-                            systemImage: "person.circle",
-                            variant: .primary
+                            symbol: "person.circle",
+                            primary: true
                         ) {
                             LoginWindowController.shared.show()
                         }

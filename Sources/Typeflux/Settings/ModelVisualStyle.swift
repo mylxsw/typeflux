@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Model settings surfaces reuse the shared Studio palette so the page matches the rest of the app.
+/// Palette and controls shared by model configuration and system settings.
 enum ModelVisualStyle {
     /// Opaque backdrop for sheets and popovers that do not sit on the window material.
     static let canvas = Color(nsColor: NSColor(name: nil) { appearance in
@@ -103,48 +103,38 @@ struct ModelIconTile<Content: View>: View {
     }
 }
 
-/// Provider detail heading: back action, provider logo, title, subtitle and connection state.
+/// Provider detail heading with a contextual back action and connection state.
 struct ModelDetailHeader: View {
     let title: String
-    let subtitle: String
     let icon: StudioModelProviderID
     let connected: Bool
     var onBack: (() -> Void)?
 
     var body: some View {
-        HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             if let onBack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
+                ModelProviderBackButton(title: ModelPageTab.language.title, action: onBack)
+            }
+            HStack(spacing: 12) {
+                ModelIconTile(size: 38) {
+                    ModelProviderIcon(provider: icon, size: 24)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L("models.back"))
-                .help(L("models.back"))
-            }
-            ModelIconTile(size: 38) {
-                ModelProviderIcon(provider: icon, size: 24)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .bold))
+                Text(title).font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text(subtitle).font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary)
+                Spacer(minLength: 12)
+                ModelConnectionStatus(connected: connected)
             }
-            Spacer(minLength: 12)
-            ModelConnectionStatus(connected: connected)
         }
     }
 }
 
+/// Shared by system settings and model settings; keep action metrics in one place.
 struct ModelActionStyle: ButtonStyle {
     var primary = false
     @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13, weight: .medium))
+            .font(.system(size: SettingsControlMetrics.fontSize, weight: .medium))
             .padding(.horizontal, 12).frame(height: SettingsControlMetrics.height)
             .foregroundStyle(primary ? .white : StudioTheme.textPrimary)
             .background(
@@ -207,5 +197,22 @@ struct ModelCheckboxStyle: ToggleStyle {
                 configuration.label.foregroundStyle(StudioTheme.textPrimary)
             }.opacity(enabled ? 1 : 0.5)
         }.buttonStyle(.plain)
+    }
+}
+
+/// Contextual navigation keeps the destination visible when returning to a provider list.
+struct ModelProviderBackButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: "chevron.left")
+                .font(.system(size: SettingsControlMetrics.fontSize, weight: .medium))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("models.provider.back")
     }
 }

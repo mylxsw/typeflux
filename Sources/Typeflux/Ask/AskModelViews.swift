@@ -46,54 +46,29 @@ struct AskModelMenu: View {
     }
 
     private var corner: CGFloat {
-        compact ? AskMetrics.composerControlHeight / 2 : (fieldStyle ? ModelVisualStyle.controlCornerRadius : 16)
+        compact ? AskMetrics.composerControlHeight / 2 : 16
     }
     private var fill: Color {
-        guard compact else { return fieldStyle ? ModelVisualStyle.control : ModelVisualStyle.input }
+        guard compact else { return ModelVisualStyle.input }
         return hovering || expanded ? AskTheme.hoverFill : .clear
     }
     private var stroke: Color { compact ? .clear : ModelVisualStyle.border }
 
     var body: some View {
         Button { expanded.toggle() } label: {
-            HStack(spacing: compact ? 6 : 8) {
-                if let (provider, model) = library.registry.resolve(library.presentationReference(for: reference, scenario: scenario)) {
-                    ModelIcon(model: model, provider: provider, size: 16)
-                }
-                // A long model name must not squeeze the context chips out of the
-                // footer, and a short one hugs its text instead of padding out to the cap.
-                AskCappedWidth(maxWidth: condensed ? 84 : compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
-                    Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
-                        .foregroundStyle(currentReason == nil ? StudioTheme.textPrimary : StudioTheme.warning)
-                }
-                if let shownEffort, !condensed {
-                    Text(shownEffort.label)
-                        .font(.system(size: 13.5, weight: .regular))
-                        .foregroundStyle(shownEffort.isTop(in: effortLevels)
-                                         ? AskTheme.reasoningTopText : StudioTheme.textSecondary)
-                        .lineLimit(1).fixedSize()
-                }
-                if fieldStyle {
-                    Spacer(minLength: 4)
-                }
-                if currentReason != nil {
-                    Image(systemName: "exclamationmark.circle")
-                }
-                if showsChevron {
-                    Image(systemName: fieldStyle ? "chevron.up.chevron.down" : "chevron.down")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
+            if fieldStyle {
+                SettingsMenuField { modelLabel }
+                    .frame(width: 240)
+            } else {
+                modelLabel
+                    .font(.system(size: compact ? 13.5 : 13, weight: compact ? .semibold : .medium))
+                    .padding(.leading, compact ? 12 : 11)
+                    .padding(.trailing, compact ? 10 : 11)
+                    .frame(height: compact ? AskMetrics.composerControlHeight : 32)
+                    .background(fill, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(stroke))
+                    .contentShape(Rectangle())
             }
-            .font(.system(size: compact ? 13.5 : 13,
-                          weight: fieldStyle ? .regular : (compact ? .semibold : .medium)))
-            .padding(.leading, compact ? 12 : (fieldStyle ? 10 : 11))
-            .padding(.trailing, compact ? 10 : (fieldStyle ? 10 : 11))
-            .frame(width: fieldStyle ? 240 : nil,
-                   height: compact ? AskMetrics.composerControlHeight : (fieldStyle ? 30 : 32))
-            .background(fill, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(stroke))
-            .contentShape(Rectangle())
         }
         .buttonStyle(.plain).disabled(disabled)
         .onHover { hovering = $0 }
@@ -121,6 +96,41 @@ struct AskModelMenu: View {
             if library.automaticallyLoadsCatalog {
                 await library.refresh(token: auth.accessToken)
                 await library.probeOllama()
+            }
+        }
+    }
+
+    private var modelLabel: some View {
+        HStack(spacing: compact ? 6 : 8) {
+            if let (provider, model) = library.registry.resolve(library.presentationReference(
+                for: reference,
+                scenario: scenario
+            )) {
+                ModelIcon(model: model, provider: provider, size: 16)
+            }
+            // A long model name must not squeeze the context chips out of the
+            // footer, and a short one hugs its text instead of padding out to the cap.
+            AskCappedWidth(maxWidth: condensed ? 84 : compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
+                Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
+                    .foregroundStyle(currentReason == nil ? StudioTheme.textPrimary : StudioTheme.warning)
+            }
+            if let shownEffort, !condensed {
+                Text(shownEffort.label)
+                    .font(.system(size: 13.5, weight: .regular))
+                    .foregroundStyle(shownEffort.isTop(in: effortLevels)
+                        ? AskTheme.reasoningTopText : StudioTheme.textSecondary)
+                    .lineLimit(1).fixedSize()
+            }
+            if fieldStyle {
+                Spacer(minLength: 4)
+            }
+            if currentReason != nil {
+                Image(systemName: "exclamationmark.circle")
+            }
+            if showsChevron, !fieldStyle {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
         }
     }

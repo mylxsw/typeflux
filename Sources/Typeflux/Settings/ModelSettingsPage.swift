@@ -9,63 +9,62 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
         nonmutating set { viewModel.selectedLanguageProviderID = newValue }
     }
 
-    @State private var speechDetailVisible = false
-    @State private var search = ""
+    private var search: String {
+        viewModel.modelSearchQuery
+    }
+
     let speechDetail: () -> SpeechDetail
 
     var body: some View {
+        VStack(spacing: 0) { content }
+            // Attached to a container that outlives tab switches, so changing tabs does not refetch the catalog.
+            .task(id: auth.accessToken) {
+                library.adoptLegacySelectionIfNeeded()
+                if library.automaticallyLoadsCatalog {
+                    await library.refresh(token: auth.accessToken)
+                    await library.probeOllama()
+                }
+            }
+            .sheet(isPresented: $viewModel.isAddingModelEndpoint) { AddModelEndpointView(library: library) }
+    }
+
+    private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if speechDetailVisible {
-                    backButton { speechDetailVisible = false }.padding(.bottom, 16)
-                    speechDetail()
-                } else if let id = selectedProvider, let provider = library.providers.first(where: { $0.id == id }) {
-                    ProviderModelsView(library: library, providerID: provider.id) { selectedProvider = nil }
-                } else {
+                switch viewModel.modelPageTab {
+                case .scenes:
                     scenes
-                    toolbar.padding(.top, 28).padding(.bottom, 4)
-                    if viewModel.modelDomain == .stt {
+                    catalogError
+                case .speech:
+                    if viewModel.isShowingSpeechProviderDetail {
+                        backButton { viewModel.isShowingSpeechProviderDetail = false }.padding(.bottom, 16)
+                        speechDetail()
+                    } else {
                         speechList
+                    }
+                case .language:
+                    if let id = selectedProvider, library.providers.contains(where: { $0.id == id }) {
+                        ProviderModelsView(library: library, providerID: id) { selectedProvider = nil }
                     } else {
                         languageList
-                    }
-                    if let error = library.catalogError {
-                        Text(error).font(.caption).foregroundStyle(StudioTheme.danger).padding(.top, 10)
+                        catalogError
                     }
                 }
             }.padding(2).padding(.bottom, StudioTheme.Layout.shellContentBottomInset)
         }
-        .task(id: auth.accessToken) {
-            library.adoptLegacySelectionIfNeeded()
-            if library.automaticallyLoadsCatalog {
-                await library.refresh(token: auth.accessToken)
-                await library.probeOllama()
-            }
-        }
-        .sheet(isPresented: $viewModel.isAddingModelEndpoint) { AddModelEndpointView(library: library) }
+        // Each tab opens at its top rather than at the previous tab's scroll position.
+        .id(viewModel.modelPageTab)
     }
 
+    @ViewBuilder private var catalogError: some View {
+        if let error = library.catalogError {
+            Text(error).font(.caption).foregroundStyle(StudioTheme.danger).padding(.top, 10)
+        }
+    }
+
+    /// Returns from a speech provider's settings to the speech provider list.
     private func backButton(_ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(L("models.back"), systemImage: "chevron.left")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .contentShape(Rectangle())
-        }.buttonStyle(.plain)
-    }
-
-    private var toolbar: some View {
-        HStack(spacing: 10) {
-            ModelSegmentedControl(
-                options: [
-                    (label: L("settings.models.domain.stt"), value: StudioModelDomain.stt),
-                    (label: L("settings.models.domain.llm"), value: StudioModelDomain.llm)
-                ],
-                selection: Binding(get: { viewModel.modelDomain }, set: { viewModel.setModelDomain($0) })
-            )
-            Spacer()
-            SettingsSearchBox(placeholder: L("models.search"), text: $search, width: 240)
-        }
+        ModelProviderBackButton(title: ModelPageTab.speech.title, action: action)
     }
 
     private var scenes: some View {
@@ -98,50 +97,34 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
     }
 
     private var speechSceneMenu: some View {
-        HStack(spacing: 8) {
-            ModelProviderIcon(provider: viewModel.sttProvider.studioProviderID, size: 16)
-            Menu {
-                ForEach(speechProviders, id: \.rawValue) { provider in
-                    Section(provider.displayName) {
-                        if provider == .localModel {
-                            ForEach(
-                                LocalSTTModel.displayOrder.filter { viewModel.isModelAvailable($0) },
-                                id: \.rawValue
-                            ) { model in
-                                Button(model.displayName) {
-                                    viewModel.setLocalSTTModel(model); viewModel.setSTTProvider(provider)
-                                }
-                            }
-                        } else {
-                            Button(speechModelName(provider)) { viewModel.setSTTProvider(provider) }
-                        }
+        SettingsMenuPicker(
+            title: speechModelName(viewModel.sttProvider)
+                + (speechReason(viewModel.sttProvider).map { " — " + $0 } ?? ""),
+            options: speechProviders.flatMap { provider -> [(label: String, value: SpeechModelSelection)] in
+                if provider == .localModel {
+                    return LocalSTTModel.displayOrder.filter { viewModel.isModelAvailable($0) }.map {
+                        (label: $0.displayName, value: SpeechModelSelection(provider: provider, localModel: $0))
                     }
                 }
-            } label: {
-                Text(speechModelName(viewModel.sttProvider)
-                    + (speechReason(viewModel.sttProvider).map { " — " + $0 } ?? ""))
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // Same up/down indicator as the other scene selectors; clicks fall through to the menu.
-            .overlay(alignment: .trailing) {
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .allowsHitTesting(false)
-            }
-        }
-        .font(.system(size: 13))
-        .padding(.horizontal, 10).frame(width: 240, height: 30, alignment: .leading)
-        .background(
-            ModelVisualStyle.control,
-            in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
+                let name = speechModelName(provider)
+                return [(label: name == provider.displayName ? name : provider.displayName + " · " + name,
+                         value: SpeechModelSelection(provider: provider))]
+            },
+            selection: Binding(
+                get: { SpeechModelSelection(
+                    provider: viewModel.sttProvider,
+                    localModel: viewModel.sttProvider == .localModel ? viewModel.localSTTModel : nil
+                ) },
+                set: { selection in
+                    if let model = selection.localModel {
+                        viewModel.setLocalSTTModel(model)
+                    }
+                    viewModel.setSTTProvider(selection.provider)
+                }
+            )
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                .strokeBorder(ModelVisualStyle.border)
-        )
+        .frame(width: 240)
+        .accessibilityIdentifier("models.scene.speech")
     }
 
     private func sceneRow(_ title: String, icon: String,
@@ -186,8 +169,7 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
         // while the wheel moves across configured/unconfigured groups.
         return providerGroups(
             connected: rows(groups.connected),
-            unconfigured: rows(groups.unconfigured),
-            showsAddRow: search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            unconfigured: rows(groups.unconfigured)
         ) { selectedProvider = $0 }
     }
 
@@ -233,12 +215,11 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
         }
         return providerGroups(
             connected: rows(groups.connected),
-            unconfigured: rows(groups.unconfigured),
-            showsAddRow: false
+            unconfigured: rows(groups.unconfigured)
         ) { id in
             guard let provider = STTProvider(rawValue: id) else { return }
             viewModel.focusModelProvider(provider.studioProviderID)
-            speechDetailVisible = true
+            viewModel.isShowingSpeechProviderDetail = true
         }
     }
 }
@@ -257,70 +238,43 @@ extension ModelSettingsPage {
     private func providerGroups(
         connected: [ModelProviderRowData],
         unconfigured: [ModelProviderRowData],
-        showsAddRow: Bool,
         onSelect: @escaping (String) -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            if !connected.isEmpty || showsAddRow {
-                ModelSectionLabel(title: L("models.configured"), detail: "\(connected.count)")
-                    .padding(.top, 22).padding(.bottom, 8)
-                ModelSurface {
-                    VStack(spacing: 0) {
-                        ForEach(Array(connected.enumerated()), id: \.element.id) { index, row in
-                            if index > 0 {
-                                ModelRowDivider(leading: 66)
-                            }
-                            ModelProviderRow(row: row) { onSelect(row.id) }
-                        }
-                        if showsAddRow {
-                            if !connected.isEmpty {
-                                ModelRowDivider(leading: 66)
-                            }
-                            addEndpointRow
-                        }
-                    }
-                }
+            if !connected.isEmpty {
+                SettingsListSectionLabel(title: L("models.configured"), count: connected.count)
+                    .padding(.bottom, 8)
+                providerSurface(connected, onSelect: onSelect)
             }
             if !unconfigured.isEmpty {
-                ModelSectionLabel(title: L("models.notConfigured"), detail: "\(unconfigured.count)")
-                    .padding(.top, 22).padding(.bottom, 8)
-                ModelSurface {
-                    VStack(spacing: 0) {
-                        ForEach(Array(unconfigured.enumerated()), id: \.element.id) { index, row in
-                            if index > 0 {
-                                ModelRowDivider(leading: 66)
-                            }
-                            ModelProviderRow(row: row) { onSelect(row.id) }
-                        }
-                    }
-                }
+                SettingsListSectionLabel(title: L("models.notConfigured"), count: unconfigured.count)
+                    .padding(.top, connected.isEmpty ? 0 : 22).padding(.bottom, 8)
+                providerSurface(unconfigured, onSelect: onSelect)
             }
-            if connected.isEmpty && unconfigured.isEmpty && !search.trimmingCharacters(in: .whitespaces).isEmpty {
+            if connected.isEmpty, unconfigured.isEmpty, !search.trimmingCharacters(in: .whitespaces).isEmpty {
                 ModelSurface {
                     Text(String(format: L("models.searchEmpty"), search))
                         .font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary)
                         .frame(maxWidth: .infinity).padding(.vertical, 26)
-                }.padding(.top, 22)
+                }
             }
         }
     }
 
-    private var addEndpointRow: some View {
-        Button { viewModel.isAddingModelEndpoint = true } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "plus").font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(ModelVisualStyle.accent)
-                    .frame(width: 34, height: 34)
-                    .background(
-                        ModelVisualStyle.accent.opacity(0.14),
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    )
-                Text(L("models.addEndpoint")).font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(ModelVisualStyle.accent)
-                Spacer()
+    private func providerSurface(
+        _ rows: [ModelProviderRowData],
+        onSelect: @escaping (String) -> Void
+    ) -> some View {
+        ModelSurface {
+            VStack(spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                    if index > 0 {
+                        ModelRowDivider(leading: 66)
+                    }
+                    ModelProviderRow(row: row) { onSelect(row.id) }
+                }
             }
-            .padding(.horizontal, 18).frame(minHeight: 56).contentShape(Rectangle())
-        }.buttonStyle(.plain)
+        }
     }
 
     private func speechReason(_ provider: STTProvider) -> String? {
@@ -366,4 +320,10 @@ extension STTProvider {
         case .appleSpeech: .appleSpeech
         }
     }
+}
+
+/// Keeps local model identity alongside its provider when selecting a speech scene.
+private struct SpeechModelSelection: Hashable {
+    let provider: STTProvider
+    var localModel: LocalSTTModel?
 }

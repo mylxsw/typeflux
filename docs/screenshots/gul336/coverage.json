@@ -1,0 +1,114 @@
+{
+  "covered": 286,
+  "executable": 310,
+  "percent": 92.26,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskModelViews.swift",
+      "executable": 48,
+      "covered": 48,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/CloudProviderModelsView.swift",
+      "executable": 2,
+      "covered": 2,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelPageTabBar.swift",
+      "executable": 10,
+      "covered": 10,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelProviderRow.swift",
+      "executable": 3,
+      "covered": 3,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelSettingsPage.swift",
+      "executable": 83,
+      "covered": 77,
+      "uncovered": [
+        24,
+        25,
+        26,
+        61,
+        62,
+        222
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelVisualStyle.swift",
+      "executable": 20,
+      "covered": 20,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ProviderModelsView.swift",
+      "executable": 3,
+      "covered": 2,
+      "uncovered": [
+        204
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsControls.swift",
+      "executable": 23,
+      "covered": 23,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsView.swift",
+      "executable": 67,
+      "covered": 54,
+      "uncovered": [
+        4098,
+        4101,
+        4145,
+        4150,
+        4154,
+        4533,
+        4537,
+        4538,
+        4545,
+        4547,
+        4626,
+        4628,
+        4629
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsViewModel.swift",
+      "executable": 24,
+      "covered": 24,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsWindowController.swift",
+      "executable": 2,
+      "covered": 0,
+      "uncovered": [
+        67,
+        87
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/StudioModels.swift",
+      "executable": 23,
+      "covered": 23,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Workflow/WorkflowController.swift",
+      "executable": 2,
+      "covered": 0,
+      "uncovered": [
+        1507,
+        1508
+      ]
+    }
+  ]
+}

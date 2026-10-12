@@ -22,10 +22,11 @@ struct ModelProviderRow: View {
                     ModelProviderIcon(provider: row.icon, size: 22)
                 }.opacity(row.available ? 1 : 0.55)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(row.name).font(.system(size: 14, weight: .semibold))
+                    Text(row.name).font(.system(size: StudioTheme.Typography.settingTitle, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
                     if !row.detail.isEmpty {
-                        Text(row.detail).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                        Text(row.detail).font(.system(size: StudioTheme.Typography.bodySmall))
+                            .foregroundStyle(StudioTheme.textSecondary)
                             .lineLimit(1).truncationMode(.middle)
                     }
                 }.opacity(row.available ? 1 : 0.6)
