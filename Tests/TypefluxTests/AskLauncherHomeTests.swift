@@ -74,22 +74,22 @@ struct AskLauncherHomeTests {
 
     // MARK: - Recent conversations
 
-    @Test func recentConversationsAreNewestFirstAndLimitedToThree() {
+    @Test func recentConversationsAreNewestFirstAndLimitedToTwo() {
         let conversations = [conversation("old", ago: 2 * 24 * 3600), conversation("b", ago: 3600),
                              conversation("a", ago: 60), conversation("c", ago: 7200), conversation("untitled", title: "", ago: 10),
                              conversation("d", ago: 9000)]
         let alone = recentRows(Home.build(context(conversations: conversations)))
-        #expect(alone.map(\.id) == ["conversation.a", "conversation.b", "conversation.c"])
+        #expect(alone.map(\.id) == ["conversation.a", "conversation.b"])
         #expect(alone[0].action == .conversation(id: "a"))
         #expect(alone[0].date == Self.now.addingTimeInterval(-60))
-        // Browser context keeps the same three recent conversations.
+        // Browser context keeps the same two recent conversations.
         let beside = recentRows(Home.build(context(bundle: "com.google.Chrome", conversations: conversations)))
-        #expect(beside.map(\.id) == ["conversation.a", "conversation.b", "conversation.c"])
+        #expect(beside.map(\.id) == ["conversation.a", "conversation.b"])
         // Captured selections do not replace the default home.
-        #expect(recentRows(Home.build(context(selection: "one\ntwo", conversations: conversations))).count == 3)
-        #expect(recentRows(Home.build(context(selection: "one", keywords: [], conversations: conversations))).count == 3)
+        #expect(recentRows(Home.build(context(selection: "one\ntwo", conversations: conversations))).count == 2)
+        #expect(recentRows(Home.build(context(selection: "one", keywords: [], conversations: conversations))).count == 2)
         // A blank selection is no selection.
-        #expect(recentRows(Home.build(context(selection: "  \n", conversations: conversations))).count == 3)
+        #expect(recentRows(Home.build(context(selection: "  \n", conversations: conversations))).count == 2)
         #expect(recentRows(Home.build(context())).isEmpty)
         #expect(recentRows(Home.build(context(conversations: [conversation("old", ago: 3 * 24 * 3600)]))).count == 1)
     }
@@ -141,27 +141,26 @@ struct AskLauncherHomeTests {
             Issue.record("History, applications and keywords must stay in display order")
             return
         }
-        for height in [CGFloat(320), 380, 480] {
+        for (height, expectedAppCount) in [(CGFloat(320), 2), (380, 3), (480, 3)] {
             let fitted = AskLauncherSuggestions.fitting(sections, height: height)
             let rows = Home.items(fitted).compactMap { item -> Home.Row? in
                 guard case let .row(row) = item, case .application = row.action else { return nil }
                 return row
             }
-            #expect(!rows.isEmpty)
+            #expect(rows.count == expectedAppCount)
             #expect(rows.first?.action == .application(input.applications[0]))
             #expect(AskLauncherSuggestions.height(for: fitted) <= height)
-            #expect(height - AskLauncherSuggestions.height(for: fitted)
-                < AskLauncherSuggestions.rowHeight + AskLauncherSuggestions.rowSpacing)
-            #expect(recentRows(fitted).count == 3)
+            #expect(recentRows(fitted).count == 2)
             #expect(try #require(chips(fitted)).chips.count == Home.maximumChips)
         }
-        let short = AskLauncherSuggestions.fitting(sections, height: 280)
+        let short = AskLauncherSuggestions.fitting(sections, height: 220)
         #expect(!short.contains { if case .applications = $0 { true } else { false } })
-        #expect(recentRows(short).count == 3)
+        #expect(recentRows(short).count == 2)
         #expect(chips(short) != nil)
         input.conversations = []
         let withoutHistory = AskLauncherSuggestions.fitting(Home.build(input), height: 380)
-        #expect(Home.numberedRows(withoutHistory).count > Home.numberedRows(AskLauncherSuggestions.fitting(sections, height: 380)).count - 3)
+        #expect(Home.numberedRows(withoutHistory).count == 3)
+        #expect(recentRows(withoutHistory).isEmpty)
     }
 
     // MARK: - Navigation

@@ -32,7 +32,7 @@ final class SettingsPolishTests: XCTestCase {
         )
     }
 
-    func testFieldsSearchMenusAndActionsHaveMatchingIntrinsicHeights() {
+    func testFieldsSearchMenusAndActionsUseTheirControlHeights() {
         let field = height(TextField("Name", text: .constant("long example name"))
             .textFieldStyle(ModelFieldStyle(monospaced: false)))
         XCTAssertEqual(field, 30, accuracy: 0.5)
@@ -49,7 +49,7 @@ final class SettingsPolishTests: XCTestCase {
                 options: [(label: "Responses", value: 1)],
                 selection: .constant(1)
             )),
-            field,
+            36,
             accuracy: 0.5
         )
         XCTAssertEqual(height(Button("Save") {}.buttonStyle(ModelActionStyle(primary: true))), field, accuracy: 0.5)

@@ -146,6 +146,12 @@ struct SettingsSidebarChromeTests {
                 window.setFrameOrigin(NSPoint(x: 80, y: 80))
                 let host = try #require(window.contentView)
                 try await UI.wait { UI.contains(L("history.keep.title"), in: host) }
+                // The toolbar can appear before the asynchronous history rows are loaded.
+                try await UI.wait {
+                    UI.elements(in: host).contains {
+                        $0.role == NSAccessibility.Role.button.rawValue && $0.label == L("common.expand")
+                    }
+                }
                 try await Task.sleep(for: .milliseconds(180))
                 let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
                 for label in [L("history.action.exportMarkdown"), L("common.clear"), L("common.expand")] {
