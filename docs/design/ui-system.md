@@ -1,117 +1,112 @@
-# Typeflux UI System v1
+# Typeflux UI System v2 — Apple native
 
-The interactive board is `docs/design/ui-system.html`. Open it in a browser and use the switches in the top right for **传统 / Liquid Glass** and **浅色 / 深色**. This file is the written spec. When it disagrees with the board, this file wins.
+The interactive board is `docs/design/ui-system.html`. Switch style (传统 / Liquid Glass), appearance and accent colour in its top-right corner. This file is the written spec. When it disagrees with the board, this file wins.
 
-## 1. Why
+## 1. Direction
 
-The audit in GUL-342 found that the client has several separate design languages:
+The two interface styles map to the two macOS generations Typeflux runs on:
 
-| Measure (from `Sources/Typeflux`) | Today | Target |
+| Style | Looks like | Notes |
 | --- | --- | --- |
-| Distinct literal font sizes (`.system(size: n)`, 1,302 uses) | 37 | 8 text styles |
-| Distinct literal corner radii (`cornerRadius: n`, 494 uses) | 23 | 6 radius tokens |
-| Theme / style / metrics enums | 14 | 1 token layer |
-| Search field implementations | 11 | 2 (`.field`, `.palette`) |
-| Button styles + button views | 9 + 24 | `TFButton`, `TFIconButton` |
-| Segmented / tab controls | 6 | `TFSegmented`, `TFTabs` |
-| Chip / badge / pill / tag views | 41 | `TFBadge`, `TFChip`, `TFKeyHint` |
-| Dropdown pickers | 5 | `TFSelect`, `TFMenuButton` |
+| 传统 (Classic) | macOS 15 Sequoia | Opaque surfaces and a vibrancy sidebar. This is also the baseline on macOS 13–15. |
+| Liquid Glass | macOS 26 Tahoe | Liquid Glass on the navigation layer only. |
 
-The full per-page findings are in tab ① of the board.
+Every size, radius and material follows the system apps: Finder, Notes, Messages, System Settings and Spotlight.
+
+On macOS 26, native controls always take the Tahoe shape, and an app cannot force them back to Sequoia. So on macOS 26, 传统 means **"no glass materials"**: opaque sidebar, toolbar, menus and panels. This matches the system's Tinted appearance.
 
 ## 2. Principles
 
-1. **One intent, one component.** Search, choose, switch and confirm each map to exactly one component. Pages do not restyle them.
-2. **Geometry is shared. Shape and material follow the style.** Control heights, spacing and type are the same in Classic and Liquid Glass, so switching style never reflows a page. Only corner radii, surfaces (opaque vs. translucent with blur and rim light) and shadows change.
-3. **Components never check `usesGlass`.** They read tokens. The token layer resolves `(InterfaceStyle, ColorScheme, reduceTransparency, increasedContrast)`. With Reduce Transparency or Increase Contrast on, Glass falls back to the Classic values.
-4. **Content first.** Hierarchy comes from weight, spacing and grouping. Each region has at most one primary button. No gradients and no coloured shadows.
-5. **Native behaviour.** ⌘F focuses search, and Esc clears it (pressing Esc again blurs). In menus, the check mark sits on the left and ↑ ↓ ↵ Esc all work.
+1. **Glass is for the navigation layer only.** That means toolbar, sidebar, menus, popovers, floating panels and sheets. Content stays on solid surfaces with standard controls, as the HIG requires.
+2. **Use system controls; don't draw them.** Native SwiftUI/AppKit controls render the Tahoe look on 26 and the Sequoia look on 13–15 automatically. Custom drawing is reserved for the Spotlight-style panel, the HUD and the recording overlay.
+3. **Use system semantic colours and text styles.** Use `labelColor`, `separatorColor` and similar, and use `controlAccentColor` so the accent follows the user's choice in System Settings. Text uses `Font.TextStyle` (`.body`, `.headline`, …), with no numeric sizes and no half-point sizes.
+4. **Titles live in the toolbar.** Use `.navigationTitle`, as in Finder and System Settings. Remove the 22pt in-content headings and subtitles.
+5. **Concentric radii.** Window 26 → sidebar inset 8 → sidebar 18 → row inset 8 → row 10.
 
-## 3. Tokens
+## 3. Changes from v1
 
-### Type (SF Pro / PingFang)
+| v1 | v2 |
+| --- | --- |
+| Search field always visible | A magnifier in the toolbar. Click or ⌘F expands it, with a spring, into a capsule field. It collapses when it is empty and loses focus. The first Esc clears it; the second collapses it. A non-empty query keeps it expanded. (`.searchable(placement: .toolbar)` / `NSSearchToolbarItem`.) Menus, popovers and pickers keep a small always-visible field because they have no toolbar. |
+| Glass cards, buttons and fields | Glass only on the navigation layer; content is solid |
+| Every control a capsule | Regular sizes use rounded rectangles; large and toolbar controls use capsules (Tahoe) |
+| Custom select | Native pop-up button. The menu opens with the selected item over the button. Settings rows use the borderless style. |
+| Filter chips | Segmented control (≤4 options) or a toolbar filter menu. Token style is only for attachments and context references. |
+| Underline tabs | A segmented control in the toolbar centre (as in Finder and App Store) |
+| Dark tooltip bubble and toast | Native help tag. Feedback happens in place (for example, a button icon turns into a check mark). A HUD is used only for confirmations that have no context. |
+| Custom launcher/clipboard panel | Spotlight layout: a glass capsule input, circular glass mode buttons, and a glass results panel below |
+| Hard-coded `#2563EB` accent | `controlAccentColor` |
 
-| Token | Size / line | Weight | Use |
-| --- | --- | --- | --- |
-| display | 26 / 32 | semibold | metrics, hero numbers |
-| title1 | 22 / 28 | semibold | page title |
-| title2 | 17 / 22 | semibold | sheet title, list-column title |
-| headline | 13 / 18 | semibold | row title, card title |
-| body | 13 / 18 | regular | body text, all control labels |
-| callout | 12 / 16 | regular | secondary text, help |
-| caption | 11 / 14 | medium | section labels, badges, timestamps |
-| mono | 12 / 16 | SF Mono | model IDs, URLs, shortcuts |
+## 4. Metrics
 
-### Spacing (4pt grid)
-
-The scale is 4, 8, 12, 16, 20, 24, 32. Use 8 inside controls, 16 for row and card padding, 12 between cards, 24 between groups, and 28/32 for page padding. The 10/14/18/22 steps go away.
-
-### Control heights (identical in both styles)
-
-sm **24** (table rows, dense toolbars) · md **30** (default for buttons, fields, selects and segmented controls) · lg **36** (onboarding, login and empty-state CTAs only) · list row **40** single-line / **56** two-line · palette input **52**.
-
-### Radii
-
-| Token | Classic | Liquid Glass |
+| Item | 传统 (Sequoia) | Liquid Glass (Tahoe) |
 | --- | --- | --- |
-| control (button, search, select, segmented) | 6 | capsule |
-| text field | 6 | 10 |
-| row / nav item | 6 | 10 |
-| card | 10 | 16 |
-| menu / popover | 8 | 14 |
-| side panel | 0, flush with a hairline | 20, floating inset |
-| window / sheet | 10 / 12 | 24 / 22 |
+| Window radius | 10 | 26 |
+| Sidebar | Flush, row 28, radius 5 | Floating inset 8, radius 18, row 32, radius 10 |
+| Toolbar | 52 high, borderless 28×24 items | 52 high, items grouped in 36pt glass capsules |
+| Toolbar search | Collapsed 28×24; expanded 200×24, radius 6 | Collapsed ⌀36; expanded 240×36 capsule |
+| Push button (regular / large) | 22 r5.5 / 28 r7 | 26 r8 / 34 capsule |
+| Pop-up button | 22 r5.5, accent chevron box | 26 r8, grey chevrons |
+| Text field | 22 r5, bezel | 26 r8, fill |
+| Segmented | 22 r6 | 28 capsule |
+| Switch | 32×18, round knob | 38×22, capsule knob (becomes a glass lens while pressed) |
+| Checkbox | 14 r3.5 | 16 r5 |
+| Grouped form | Group r8, row 36 | Group r14, row 40 |
+| Table row | 24 | 28 |
+| Menu / item / highlight | r6 / 22 / r4 | r14 / 24 / r8 |
+| Popover / sheet | r10 / r10 | r18 / r22 |
+| Spotlight panel | 52 input, single r12 panel | 56 capsule input + 56 round mode buttons + r24 results |
 
-Nested shapes are concentric: inner radius = outer radius − inset.
+Text styles (macOS values): largeTitle 26, title 22, title2 17, title3 15, headline 13 bold, body 13, callout 12, subheadline 11, footnote 10.
 
-### Colour (semantic only)
+## 5. Window templates
 
-`bg.window`, `bg.sidebar`, `surface.card`, `surface.raised`, `surface.control`, `surface.field`, `surface.menu`, `surface.track`, `border`, `border.strong`, `divider`, `text.primary/secondary/tertiary/disabled`, `accent`, `accent.hover`, `accent.soft`, `accent.text`, `success/warning/danger/private` (each with a `.soft` variant), and `hover/press/selected` washes. The board's tab ② shows the exact values for all four style × appearance combinations. The accent stays `#2563EB` (light) and `#178CFF` (dark), as today.
+- **A · Settings window** (System Settings layout):
+  - `NavigationSplitView` with a glass sidebar whose icons use the accent colour and whose counts are plain grey numbers.
+  - Toolbar title, with an optional segmented control in the toolbar centre and grouped icon buttons plus the collapsible search on the right.
+  - Content uses `Form(.grouped)` at most 640 wide and centred, or a `Table` for lists such as 词库 and 历史.
+- **B · Library window** (Messages layout; used by notes, word book and Ask conversations):
+  - The item list lives in the glass sidebar.
+  - The detail pane holds a reading column up to 680 wide.
+  - The toolbar has grouped icon actions, one prominent "new" button and the collapsible search.
+- **C · Floating panel** (Spotlight layout; used by the clipboard, launcher and ⌘K):
+  - A capsule input with circular mode buttons and a results panel below.
+  - Keys: ↑↓ select, ↵ paste, ⌘↵ paste as plain text, ⌘1–9 quick paste, Esc closes.
 
-### Elevation
+## 6. Implementation mapping
 
-The levels are 0 canvas · 1 card (Classic: 1px border; Glass: rim light plus soft shadow) · 2 menu/popover/toast · 3 window/sheet.
-
-## 4. Components
-
-| Component | Replaces | Rules |
+| Component | API | Replaces |
 | --- | --- | --- |
-| `TFButton(role: .primary/.secondary/.plain/.destructive, size:)` | `StudioButton`, `SettingsActionButton`, `ModelActionStyle`, `AskWorkflowActionStyle`, `AskCapsuleButtonStyle`, `.borderedProminent` | At most one primary per region. Secondary actions go on the left and the primary sits rightmost. Sheet footers are right-aligned. |
-| `TFIconButton` | `StudioIconButton`, `AskIconGhostButton`, `AgentSettingsIconButton`, `AskHeaderIconButton` … | Square, same heights as buttons. Must have a tooltip and an accessibility label. |
-| Label rule | — | Window and list toolbars use icon-only buttons. Page headers use text (an icon is optional). Card and sheet footers use text only. Table rows use sm icon buttons that appear on row hover. Never mix icon-only and labelled buttons in one toolbar. |
-| `TFSearchField(.field)` | `SettingsSearchBox`, `AskLibrarySearchSurface`, the collapsing vocabulary search, persona/workflow/gallery inline fields | Always visible (never expand-on-click). md 30. Shows the ⌘F hint when empty and a clear button when filled. Filters live with a 150ms debounce. Placeholder is “搜索{对象}” with no ellipsis. |
-| `TFSearchField(.palette)` | Launcher, ⌘K, clipboard headers | 52 high, 17pt, no fill, divider below. Only in floating panels. ↑ ↓ ↵ Esc work, and a 32pt hint bar sits at the bottom. |
-| `TFSelect` | `Picker(.menu)`, `SettingsMenuPicker`, `CloudServerMenuPicker`, model chooser popover | Shows the current value with ⇅. Width follows the form column or is 180/240. Adds an inline search above 12 options. |
-| `TFMenuButton` | `SettingsActionMenu`, “···” menus | Shows the action name with ⌄, or a “···” icon. Menu rows are 26 high, with group captions and separators. Destructive items go last, in red. |
-| `TFSegmented` | `StudioSegmentedControl`, `AskSegmentedControl`, `Picker(.segmented)` | Switches a view or filter within a region. ≤5 items. |
-| `TFTabs` | `ModelPageTabBar`, `VoiceInputTabBar`, `StudioUnderlineTab` | Page-level sections directly under the page header. 2pt accent underline. |
-| `TFToggle` / `TFCheckbox` / `TFRadio` | — | Settings use a Toggle at the row's trailing edge. Multi-select uses Checkbox. Radio is only for 2–4 options that need visible descriptions; otherwise use `TFSelect`. |
-| `TFTextField` / `TFTextArea` / `TFForm` | `ModelFieldStyle`, ad-hoc fields | The label column is 120 and right-aligned. Below 480 width, labels move above the field. Focus shows an accent border plus a 3px ring. Errors show a danger border and the reason below the field. |
-| `TFCard(.content/.grouped/.interactive)` | `StudioCard`, `ModelSurface`, `AskContentCardSurface`, private cards | Padding is 16. In grouped cards, dividers start at the content edge. Interactive cards deepen their border on hover, and selection adds an accent outline. |
-| `TFListRow` | `StudioHistoryRow`, `StudioSettingRow`, `ModelProviderRow`, Ask history row | 28pt leading tile, body title, callout subtitle, trailing accessory. 40 / 56 high. |
-| `TFSection` | `ModelSectionLabel`, `StudioSectionTitle` | Caption semibold tertiary, optional count, optional trailing plain button. |
-| `TFBadge` | `StudioPill`, `StudioTag`, `AgentStatusBadge`, `AskStatusBadge`, `ModelUsageBadge` … | 18 high capsule, 11pt semibold. Tones are neutral, accent, success, warning, danger and private. For status, prefer a dot plus label. |
-| `TFChip` | `AskChip`, `AskKeywordChip`, `ClipboardAppFilterChip`, `AgentFactChip` … | 24 high capsule. Selected state uses `accent.soft`. Optional count or remove ✕. |
-| `TFKeyHint` | `AskKeyHint`, `KeywordHotkeyBadge` | 18 high, 10.5pt. Used everywhere a shortcut is shown. |
-| `TFBanner` | promo cards, inline notices | Info, success, warning and danger, with an optional trailing action. |
-| `TFToast` | — | Short result feedback, 2.5s, bottom centre. |
-| `TFEmptyState` | `AgentEmptyState`, per-page empty views | Icon 26 tertiary, headline, callout, optional sm button. Search misses say “没有找到 “xxx”” and offer an action. |
-| `TFSheet` | ad-hoc sheets | 440 / 560 / 720 wide. title2 header with a close button. 20pt body. Right-aligned footer. |
+| Window | `NavigationSplitView`, `.toolbar`, `.navigationTitle` | `StudioSidebar`, `StudioHeroHeader` |
+| Search | `.searchable(placement: .toolbar)` / `NSSearchToolbarItem` | `SettingsSearchBox`, `AskLibrarySearchSurface`, the collapsible vocabulary capsule, 8 inline fields |
+| Buttons | `.bordered`, `.borderedProminent`, `.borderless`, `.glass`, `.glassProminent`, `.controlSize` | `StudioButton`, `ModelActionStyle`, `AskWorkflowActionStyle`, `AskCapsuleButtonStyle`, `SettingsActionButton` … |
+| Select | `Picker(.menu)`, `Menu` | `SettingsMenuPicker`, `SettingsActionMenu`, `CloudServerMenuPicker` |
+| Segmented | `Picker(.segmented)` | `StudioSegmentedControl`, `AskSegmentedControl`, `ModelPageTabBar`, `VoiceInputTabBar`, `StudioUnderlineTab` |
+| Settings | `Form` + `.formStyle(.grouped)` + `LabeledContent` | `StudioCard`, `StudioSettingRow`, `ModelSurface` |
+| Lists | `List`, `Table` | `StudioHistoryRow`, the custom vocabulary list |
+| Empty | `ContentUnavailableView` (macOS 14+, plus a look-alike shim for 13) | `AgentEmptyState` and per-page empty views |
+| Confirm | `.alert`, `.confirmationDialog` | Custom overlays |
+| Tooltip | `.help()` | `StudioTooltipModifier` |
+| Glass | `.glassEffect()`, `GlassEffectContainer` (search morph), `NSGlassEffectView`; `NSVisualEffectView` on 13–15 | Hand-drawn highlights in `StudioLiquidGlassBackground` |
 
-## 5. Layout templates
+## 7. Roll-out
 
-- **A · Settings page** (all settings sections, account). Sidebar is 220 wide with 32/34 rows. Page padding is 28 top / 32 sides. The page header has a title1 title, a callout subtitle and right-aligned actions. Optional `TFTabs` come next, then a toolbar (search → filters → flexible space → icon actions, 8 apart), then sections with grouped cards. Content max width is 760 for forms and 1160 for lists.
-- **B · Library (list + detail)** (notes, word book, Ask conversations, personas, history). The list column is 280 wide: title2 header plus a new-item icon button, `TFSearchField(.field)`, optional `TFSegmented`, then two-line rows. The detail side has a 48pt icon-only toolbar and reading width ≤ 720.
-- **C · Floating panel** (launcher, ⌘K, clipboard, command palette). Palette input 52 → optional chip filters → 40pt result rows (the selected row uses solid accent) → 32pt hint bar.
-- **D · Sheet** as specified in `TFSheet` above.
+1. **Window skeleton (~1 week).** Move the settings window to `NavigationSplitView` with a toolbar title and toolbar search, and drop the in-content headings. This is the smallest change with the biggest effect on how native the app feels.
+2. **Forms (~2 weeks).** Turn each settings page into `Form(.grouped)` with native pop-ups, switches and segmented controls. 词库 and 历史 become `Table`s.
+3. **Library windows (template B):** notes, word book, Ask.
+4. **Floating panels (template C):** clipboard, launcher, ⌘K.
 
-## 6. Roll-out
+For every phase, add snapshot renders (macOS version × style × appearance) in the style of `AskConversationVisualTests`. Add SwiftLint rules that forbid literal `.font(.system(size:`, literal `cornerRadius:` and `NSColor(calibrated…)`; use today's counts as the baseline, which may only go down. Then delete `ModelVisualStyle`, `AskWordBookStyle`, `AskNotesStyle`, `AskWorkflowEditorStyle`, `SystemMonitorTheme` and `OnboardingProviderStyle`.
 
-1. **Tokens (≈1 week).** Add `UI/DesignSystem/TFTokens.swift` (`TFColor`, `TFFont`, `TFSpace`, `TFRadius`, `TFHeight`, `TFElevation`). Have `StudioTheme`, `AskTheme`, `ModelVisualStyle` and `AskStyleMetrics` forward to it as deprecated aliases. Rendering does not change yet. Unit-test the resolution table (2 styles × 2 appearances × reduce transparency).
-2. **Components (≈2 weeks).** Build the components in §4 under `UI/DesignSystem/`. For each one, add snapshot renders in the style of `AskConversationVisualTests` for all 4 combinations, plus hover, pressed, disabled and focus states.
-3. **Page migration**, one page per PR, each with before/after captures in all 4 combinations:
-   - 2a: settings pages (vocabulary, personas, models, agent, launcher, history)
-   - 2b: floating panels
-   - 2c: library windows
-   - 2d: workflow editor, system monitor, onboarding, update alert, clipboard snippet editor
-4. **Guard against regressions.** Add SwiftLint custom rules that forbid literal `.font(.system(size:`, literal `cornerRadius:` and `NSColor(calibrated…)` outside `UI/DesignSystem/`. Use today's counts as the baseline; they may only go down. Then delete the private style enums (`ModelVisualStyle`, `AskWordBookStyle`, `AskNotesStyle`, `AskWorkflowEditorStyle`, `SystemMonitorTheme`, `OnboardingProviderStyle`).
+## Appendix: audit (v1)
+
+Counts taken from `Sources/Typeflux`:
+
+- 37 literal font sizes (1,302 uses)
+- 23 literal corner radii (494 uses)
+- 14 theme/style enums
+- 11 search field implementations
+- 9 custom `ButtonStyle`s and 24 `*Button` views
+- 6 segmented/tab controls
+- 41 chip/badge/pill/tag views
+- 5 dropdown pickers
