@@ -39,7 +39,7 @@ struct AskLauncherLightPaletteTests {
         return (max(a, b) + 0.05) / (min(a, b) + 0.05)
     }
 
-    @Test func lightLauncherGlassKeepsANearWhiteBackplate() {
+    @Test func legacyFloatingCardsAndMenusKeepTheirReadabilityFrost() {
         #expect(AskGlassPlacement.floating.frost(dark: false) == 0.92)
         // Dark mode keeps its original frost.
         #expect(AskGlassPlacement.floating.frost(dark: true) == 0.78)
@@ -71,8 +71,8 @@ struct AskLauncherLightPaletteTests {
     }
 
     @Test(arguments: [
-        (AskTheme.launcherSeparator, 0.08), (AskTheme.launcherSelection, 0.09), (AskTheme.launcherKeyword, 0.10),
-        (AskTheme.launcherTile, 0.72), (AskTheme.launcherChipFill, 0.5)
+        (AskTheme.launcherSeparator, 0.08), (AskTheme.launcherSelection, 0.10), (AskTheme.launcherKeyword, 0.06),
+        (AskTheme.launcherTile, 0.24), (AskTheme.launcherChipFill, 0.08)
     ])
     func lightWashesAreTranslucent(color: Color, alpha: Double) {
         #expect(abs(resolve(color, dark: false).alpha - alpha) < 0.005)
@@ -108,14 +108,29 @@ struct AskLauncherLightPaletteTests {
         // The keyword's translucent fill cannot exceed its opaque source luminance
         // over the launcher's dark surface.
         #expect(contrast(text, keyword) >= 4.5)
-        #expect(resolve(AskTheme.launcherKeywordText, dark: false)
-            .isClose(to: resolve(AskTheme.accentText, dark: false)))
     }
 
-    @Test func metaTextStepsBelowSecondaryInLightMode() {
+    @Test func lightGlassAndSelectionStayNeutralWithReadableTitles() {
+        let glass = resolve(AskTheme.launcherGlassTint, dark: false)
+        #expect(glass.red > 0.85 && glass.red < 0.92)
+        #expect(glass.red == glass.green && glass.green == glass.blue)
+        // The reference's selected row is near #B4B4B4. Use a slightly darker
+        // reading surface so captions remain legible as desktop colors shift.
+        let selected = RGBA(red: 0.70, green: 0.70, blue: 0.70, alpha: 1)
+        #expect(contrast(resolve(StudioTheme.textPrimary, dark: false), selected) >= 7)
+        #expect(resolve(AskTheme.launcherSelectionEdge, dark: false).alpha == 0)
+        let keywordText = resolve(AskTheme.launcherKeywordText, dark: false)
+        #expect(keywordText.red == keywordText.green && keywordText.green == keywordText.blue)
+        #expect(contrast(keywordText, selected) >= 4.5)
+        #expect(contrast(resolve(AskTheme.launcherMetaText, dark: false), selected) >= 4.5)
+        #expect(resolve(AskTheme.launcherGlassTint, dark: true)
+            .isClose(to: RGBA(red: 18 / 255, green: 18 / 255, blue: 18 / 255, alpha: 1)))
+    }
+
+    @Test func metadataRemainsSecondaryToTitlesInLightMode() {
         let meta = resolve(AskTheme.launcherMetaText, dark: false)
-        #expect(meta.isClose(to: RGBA(red: 110 / 255, green: 110 / 255, blue: 115 / 255, alpha: 1)))
-        #expect(luminance(meta) > luminance(resolve(StudioTheme.textSecondary, dark: false)))
+        #expect(meta.isClose(to: RGBA(red: 0.27, green: 0.27, blue: 0.27, alpha: 1)))
+        #expect(luminance(meta) > luminance(resolve(StudioTheme.textPrimary, dark: false)))
     }
 
     @Test func neutralRowsSitOnARaisedTile() {

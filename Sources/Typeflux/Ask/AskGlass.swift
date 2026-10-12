@@ -113,13 +113,13 @@ struct AskGlassBackground: View {
     /// `.circular` for pills: a continuous corner near half the height draws a
     /// stray sliver at each end of the outline.
     var cornerStyle: RoundedCornerStyle = .continuous
-    /// Large dark launchers use a diffuse backdrop and quieter native optics.
+    /// Large launchers use a diffuse backdrop and quieter native optics.
     /// Small popovers and conversation chrome retain the regular glass policy.
     var diffuseLauncher = false
 
-    private var usesDiffuseBackdrop: Bool { diffuseLauncher && colorScheme == .dark }
+    private var usesDiffuseBackdrop: Bool { diffuseLauncher }
     private var launcherTintOpacity: Double { 0.48 + intensity.value * 0.30 }
-    private var launcherTint: Color { Color(.sRGB, white: 18 / 255, opacity: 1) }
+    private var launcherTint: Color { AskTheme.launcherGlassTint }
 
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: corner, style: cornerStyle) }
 
@@ -166,7 +166,7 @@ struct AskGlassBackground: View {
         }
         .clipShape(shape)
         .overlay {
-            // Small floating cards keep a specular edge; the large dark launcher
+            // Small floating cards keep a specular edge; the large launcher
             // leaves its outline to the subdued native optics.
             if !usesDiffuseBackdrop && (effectiveMaterial == .visualEffect ||
                 (effectiveMaterial == .liquidGlass && placement == .floating)) {

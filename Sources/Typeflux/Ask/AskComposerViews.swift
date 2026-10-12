@@ -1682,18 +1682,6 @@ struct AskComposer: View {
         .padding(.trailing, 14)
         .frame(height: layout.footerHeight)
         .frame(maxWidth: .infinity)
-        .background {
-            if showsGlassLauncherBar && colorScheme == .light {
-                // A translucent tray with breathing room distinguishes controls from results
-                // without adding a second blur or changing their hit targets.
-                let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
-                shape.fill(Color.white.opacity(0.26))
-                    .overlay(shape.strokeBorder(Color.white.opacity(0.30), lineWidth: 1))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
-                    .allowsHitTesting(false)
-            }
-        }
         .overlay(alignment: .top) {
             if !showsGlassLauncherBar {
                 Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)

@@ -95,6 +95,12 @@ enum AskTheme {
         light: NSColor(srgbRed: 0.965, green: 0.969, blue: 0.980, alpha: 1),
         dark: NSColor(srgbRed: 0.110, green: 0.110, blue: 0.110, alpha: 1)
     )
+    /// Neutral diffuse glass in both appearances. The opaque accessibility
+    /// fallback keeps its brighter reading surface in `launcherSurface`.
+    static let launcherGlassTint = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 226 / 255, green: 226 / 255, blue: 226 / 255, alpha: 1),
+        dark: NSColor(srgbRed: 18 / 255, green: 18 / 255, blue: 18 / 255, alpha: 1)
+    )
     /// Popovers opened from the composer (model and reasoning choosers).
     static let popoverSurface = StudioTheme.dynamic(
         light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
@@ -134,34 +140,34 @@ enum AskTheme {
     )
     /// The highlighted home row or keyword chip, outlined by `launcherSelectionEdge`.
     static let launcherSelection = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.09),
+        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.10),
         dark: NSColor(srgbRed: 0.196, green: 0.196, blue: 0.196, alpha: 1)
     )
     static let launcherSelectionEdge = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.20),
+        light: .clear,
         dark: .clear
     )
     /// The `fy`, `dict` keyword labels.
     static let launcherKeyword = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.10),
+        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.06),
         dark: NSColor(srgbRed: 0.22, green: 0.22, blue: 0.22, alpha: 0.72)
     )
     static let launcherKeywordText = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 29 / 255, green: 78 / 255, blue: 216 / 255, alpha: 1),
+        light: NSColor(srgbRed: 0.27, green: 0.27, blue: 0.27, alpha: 1),
         dark: NSColor(srgbRed: 0.70, green: 0.70, blue: 0.70, alpha: 1)
     )
-    /// A neutral row icon's tile: a raised white chip in light mode instead of a grey wash.
+    /// A neutral row icon's tile: a subtle raised wash over the glass.
     static let launcherTile = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.72),
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.24),
         dark: NSColor(calibratedWhite: 0.720, alpha: 0.14)
     )
     static let launcherTileEdge = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.10),
+        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.04),
         dark: .clear
     )
     /// Keyword chips at rest.
     static let launcherChipFill = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.5),
+        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.08),
         dark: .clear
     )
     static let launcherChipEdge = StudioTheme.dynamic(
@@ -177,14 +183,13 @@ enum AskTheme {
         light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.14),
         dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
     )
-    /// Times, shortcut badges and the key hint: a step below secondary text in
-    /// light mode so titles lead. Dark mode uses a muted neutral grey.
+    /// Times, shortcut badges and key hints stay readable over neutral selections.
     static let launcherMetaText = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 110 / 255, green: 110 / 255, blue: 115 / 255, alpha: 1),
+        light: NSColor(srgbRed: 0.27, green: 0.27, blue: 0.27, alpha: 1),
         dark: NSColor(srgbRed: 0.65, green: 0.65, blue: 0.65, alpha: 1)
     )
     static let launcherPlaceholderText = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 81 / 255, green: 81 / 255, blue: 84 / 255, alpha: 1),
+        light: NSColor(srgbRed: 0.47, green: 0.47, blue: 0.47, alpha: 1),
         dark: NSColor(srgbRed: 0.52, green: 0.52, blue: 0.52, alpha: 1)
     )
     /// A footer switch that is on (screenshot, memory): a tinted well behind the

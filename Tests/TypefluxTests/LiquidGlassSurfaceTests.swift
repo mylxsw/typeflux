@@ -21,11 +21,9 @@ struct LiquidGlassSurfaceTests {
                     let native = layers.compactMap { $0 as? NSGlassEffectView }
                     if material == .opaque {
                         #expect(blur.isEmpty && native.isEmpty)
-                    } else if dark {
+                    } else {
                         #expect(blur.contains { $0.material == .hudWindow && $0.blendingMode == .behindWindow })
                         #expect(native.count == (material == .liquidGlass ? 1 : 0))
-                    } else {
-                        #expect(!blur.contains { $0.material == .hudWindow })
                     }
                 }
             }

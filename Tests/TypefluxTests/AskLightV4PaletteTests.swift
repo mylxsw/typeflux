@@ -27,7 +27,7 @@ struct AskLightV4PaletteTests {
         Color(.sRGB, red: red / 255, green: green / 255, blue: blue / 255, opacity: alpha)
     }
 
-    @Test func `light tokens match the board`() throws {
+    @Test func `light workspace tokens and neutral launcher palette`() throws {
         let pairs: [(Color, Color)] = [
             (AskTheme.border, rgb(15, 23, 42, 0.08)),
             (AskTheme.separator, rgb(15, 23, 42, 0.08)),
@@ -35,10 +35,10 @@ struct AskLightV4PaletteTests {
             (AskTheme.cardBorder, rgb(15, 23, 42, 0.09)),
             (AskTheme.librarySeparator, rgb(15, 23, 42, 0.06)),
             (AskTheme.accentText, rgb(29, 78, 216)),
-            (AskTheme.launcherMetaText, rgb(110, 110, 115)),
-            (AskTheme.launcherSelection, rgb(37, 99, 235, 0.09)),
-            (AskTheme.launcherSelectionEdge, rgb(37, 99, 235, 0.20)),
-            (AskTheme.launcherKeyword, rgb(37, 99, 235, 0.10)),
+            (AskTheme.launcherMetaText, rgb(69, 69, 69)),
+            (AskTheme.launcherSelection, rgb(0, 0, 0, 0.10)),
+            (AskTheme.launcherSelectionEdge, .clear),
+            (AskTheme.launcherKeyword, rgb(0, 0, 0, 0.06)),
             (AskTheme.switchOnFill, rgb(37, 99, 235, 0.10)),
             (AskTheme.switchOnEdge, rgb(37, 99, 235, 0.20)),
             (AskTheme.privateTint, rgb(147, 51, 234)),
