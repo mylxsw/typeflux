@@ -577,7 +577,7 @@ struct AskComposer: View {
             return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, optionName: plugin.optionName,
                                     phase: plugins.phase, previous: plugins.previous, partial: plugins.partial,
                                     comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
-                                    offersAskAI: asks && ![AskSystemMonitorPlugin.id, AskEmojiPlugin.id].contains(plugin.id),
+                                    offersAskAI: asks && ![AskKillAppPlugin.id, AskSystemMonitorPlugin.id, AskEmojiPlugin.id].contains(plugin.id),
                                     savesNoteWhenDone: plugins.savesNoteWhenDone,
                                     systemMonitor: plugin.id == AskSystemMonitorPlugin.id)
         }
@@ -1411,6 +1411,13 @@ struct AskComposer: View {
         }
         if launcher, key == .enter, !plugins.isActive,
            model.enterLauncherKeywordFromText(pluginID: AskEmojiPlugin.id) {
+            pluginHighlight = 0
+            pluginReserve = 0
+            return true
+        }
+        if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
+           plugins.hint?.pluginID != AskKillAppPlugin.id || pluginHighlight == 0,
+           model.enterLauncherKeywordFromText(pluginID: AskKillAppPlugin.id) {
             pluginHighlight = 0
             pluginReserve = 0
             return true

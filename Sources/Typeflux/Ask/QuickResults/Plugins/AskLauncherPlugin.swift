@@ -101,6 +101,7 @@ struct AskPluginPlan: Equatable, Sendable {
 /// Something done with a result. The same key means the same thing in every plugin.
 struct AskPluginAction: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
+        case killApp(AskKillAppTarget)
         case openChat
         case emoji(EmojiAction)
         case systemCommand(AskSystemCommand)

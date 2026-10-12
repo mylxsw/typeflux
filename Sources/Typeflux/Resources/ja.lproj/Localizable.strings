@@ -4727,3 +4727,13 @@
 "auth.web.browserUnavailable" = "ブラウザを起動できませんでした。もう一度お試しください。";
 "auth.web.restartRequired" = "ログインを完了できませんでした。前の認証コードは再利用できないため、最初からやり直してください。";
 "auth.web.storageFailed" = "キーチェーンに保存できませんでした。キーチェーンを解除してログインし直してください。";
+
+// Force quit application keyword
+"ask.plugin.kill.title" = "アプリを強制終了";
+"ask.plugin.kill.placeholder" = "強制終了するアプリ名を入力";
+"ask.plugin.kill.running" = "実行中 · PID %@";
+"ask.plugin.kill.action" = "強制終了";
+"ask.plugin.kill.empty" = "一致する実行中のアプリがありません";
+"ask.plugin.kill.warning" = "強制終了すると未保存の変更が失われる場合があります。";
+"ask.plugin.kill.failed" = "「%@」を強制終了できませんでした。";
+"ask.settings.keywords.kind.kill.hint" = "実行中のアプリを一覧表示し、選択したアプリを強制終了します。";

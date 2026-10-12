@@ -4727,3 +4727,13 @@
 "auth.web.browserUnavailable" = "브라우저를 시작할 수 없습니다. 다시 시도하세요.";
 "auth.web.restartRequired" = "로그인을 완료할 수 없습니다. 이전 인증 코드는 재사용할 수 없으니 새로 로그인하세요.";
 "auth.web.storageFailed" = "키체인에 세션을 저장할 수 없습니다. 키체인을 잠금 해제하고 다시 로그인하세요.";
+
+// Force quit application keyword
+"ask.plugin.kill.title" = "앱 강제 종료";
+"ask.plugin.kill.placeholder" = "강제 종료할 앱 이름 입력";
+"ask.plugin.kill.running" = "실행 중 · PID %@";
+"ask.plugin.kill.action" = "강제 종료";
+"ask.plugin.kill.empty" = "일치하는 실행 중인 앱이 없습니다";
+"ask.plugin.kill.warning" = "강제 종료하면 저장하지 않은 변경 사항이 손실될 수 있습니다.";
+"ask.plugin.kill.failed" = "“%@” 앱을 강제 종료할 수 없습니다.";
+"ask.settings.keywords.kind.kill.hint" = "실행 중인 앱을 표시하고 선택한 앱을 강제 종료합니다.";

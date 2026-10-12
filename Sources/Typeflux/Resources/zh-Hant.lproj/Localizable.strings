@@ -4761,3 +4761,13 @@
 "auth.web.browserUnavailable" = "無法啟動瀏覽器，請重試。";
 "auth.web.restartRequired" = "無法完成登入，請重新開始；先前的授權碼無法重試。";
 "auth.web.storageFailed" = "無法將工作階段儲存至鑰匙圈，請解鎖鑰匙圈後重新登入。";
+
+// Force quit application keyword
+"ask.plugin.kill.title" = "強制結束應用程式";
+"ask.plugin.kill.placeholder" = "輸入要強制結束的應用程式名稱";
+"ask.plugin.kill.running" = "執行中 · PID %@";
+"ask.plugin.kill.action" = "強制結束";
+"ask.plugin.kill.empty" = "沒有符合的執行中應用程式";
+"ask.plugin.kill.warning" = "強制結束可能遺失尚未儲存的內容。";
+"ask.plugin.kill.failed" = "無法強制結束「%@」。";
+"ask.settings.keywords.kind.kill.hint" = "列出執行中的應用程式，強制結束選取的應用程式。";

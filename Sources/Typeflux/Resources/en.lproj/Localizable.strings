@@ -4776,3 +4776,13 @@
 "auth.web.browserUnavailable" = "The browser could not start. Try again.";
 "auth.web.restartRequired" = "Sign-in could not be completed. Start a new login; the previous code cannot be retried.";
 "auth.web.storageFailed" = "Your session could not be saved in Keychain. Unlock Keychain and start again.";
+
+// Force quit application keyword
+"ask.plugin.kill.title" = "Force Quit Apps";
+"ask.plugin.kill.placeholder" = "Type an app name to force quit";
+"ask.plugin.kill.running" = "Running · PID %@";
+"ask.plugin.kill.action" = "Force Quit";
+"ask.plugin.kill.empty" = "No matching running apps";
+"ask.plugin.kill.warning" = "Force quitting may lose unsaved changes.";
+"ask.plugin.kill.failed" = "Couldn’t force quit “%@”.";
+"ask.settings.keywords.kind.kill.hint" = "List running apps and force quit the selected app.";
