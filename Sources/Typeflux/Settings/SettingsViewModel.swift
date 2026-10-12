@@ -100,7 +100,13 @@ final class StudioViewModel: ObservableObject {
     }
 
     @Published var selectedLanguageProviderID: String?
-    /// Presents the custom provider sheet from the model page header or its provider list.
+    /// The Models page tab shown; switch it through `selectModelPageTab(_:)`.
+    @Published private(set) var modelPageTab: ModelPageTab = .scenes
+    /// Filters the provider list on the Speech Recognition and Language Model tabs.
+    @Published var modelSearchQuery = ""
+    /// Shows the selected speech provider's settings in place of the speech provider list.
+    @Published var isShowingSpeechProviderDetail = false
+    /// Presents the custom provider sheet from the model page header.
     @Published var isAddingModelEndpoint = false
     @Published var modelDomain: StudioModelDomain = .stt
     @Published var focusedModelProvider: StudioModelProviderID
@@ -921,6 +927,11 @@ final class StudioViewModel: ObservableObject {
             lastVoiceInputSection = section
         }
         searchQuery = ""
+        if section == .models {
+            // The Models page reopens on its last tab, at the list rather than a speech provider's form.
+            modelSearchQuery = ""
+            isShowingSpeechProviderDetail = false
+        }
         if section == .home || section == .history {
             applyHistoryRetentionPolicy()
             refreshHistory(reset: true)
@@ -1378,6 +1389,26 @@ final class StudioViewModel: ObservableObject {
     func setModelDomain(_ domain: StudioModelDomain) {
         modelDomain = domain
         focusedModelProvider = activeProvider(for: domain)
+    }
+
+    /// Shows a Models page tab at its top level: any open provider detail closes and the search clears.
+    func selectModelPageTab(_ tab: ModelPageTab) {
+        modelPageTab = tab
+        modelSearchQuery = ""
+        selectedLanguageProviderID = nil
+        isShowingSpeechProviderDetail = false
+        if let domain = tab.domain {
+            setModelDomain(domain)
+        }
+    }
+
+    /// Whether a provider's own settings replace the shown tab's list.
+    var isShowingModelProviderDetail: Bool {
+        switch modelPageTab {
+        case .scenes: false
+        case .speech: isShowingSpeechProviderDetail
+        case .language: selectedLanguageProviderID != nil
+        }
     }
 
     func focusModelProvider(_ provider: StudioModelProviderID) {

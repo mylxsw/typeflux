@@ -1504,7 +1504,8 @@ final class WorkflowController {
                         SettingsWindowController.shared.show(
                             settingsStore: settingsStore,
                             historyStore: historyStore,
-                            initialSection: .models
+                            initialSection: .models,
+                            initialModelDomain: .llm
                         )
                     }
                 )

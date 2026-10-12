@@ -184,6 +184,41 @@ enum StudioModelDomain: String, CaseIterable, Identifiable {
     }
 }
 
+/// Tabs of the Models page, in display order: the models each feature uses, then the two provider lists.
+enum ModelPageTab: String, CaseIterable, Identifiable {
+    case scenes
+    case speech
+    case language
+
+    init(domain: StudioModelDomain) {
+        switch domain {
+        case .stt: self = .speech
+        case .llm: self = .language
+        }
+    }
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .scenes: L("models.tab.scenes")
+        case .speech: L("models.tab.speech")
+        case .language: L("models.tab.language")
+        }
+    }
+
+    /// The provider domain listed on this tab; the scenes tab lists none.
+    var domain: StudioModelDomain? {
+        switch self {
+        case .scenes: nil
+        case .speech: .stt
+        case .language: .llm
+        }
+    }
+}
+
 /// Groups in the Agent settings page's pane list, in display order.
 enum AgentSettingsPaneGroup: String, CaseIterable {
     case general

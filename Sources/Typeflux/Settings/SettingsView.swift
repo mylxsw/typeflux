@@ -428,8 +428,9 @@ struct StudioView: View {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                 if viewModel.currentSection.isVoiceInput {
                     voiceInputHeader
-                } else if viewModel.currentSection != .hotkeys,
-                          viewModel.currentSection != .models || viewModel.selectedLanguageProviderID == nil {
+                } else if viewModel.currentSection == .models {
+                    modelsHeader
+                } else if viewModel.currentSection != .hotkeys {
                     pageHeader
                 }
 
@@ -823,13 +824,26 @@ struct StudioView: View {
 
     /// Voice Input pages share one header: their tabs, with the shown page's actions on the right.
     private var voiceInputHeader: some View {
-        VStack(spacing: StudioTheme.Spacing.none) {
+        tabbedHeader {
             VoiceInputTabBar(
                 selection: viewModel.currentSection,
                 count: viewModel.voiceInputTabCount,
                 onSelect: viewModel.navigate
             )
-            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// The Models page header: its tabs, with the shown tab's actions on the right.
+    private var modelsHeader: some View {
+        tabbedHeader {
+            ModelPageTabBar(selection: viewModel.modelPageTab, onSelect: viewModel.selectModelPageTab)
+        }
+    }
+
+    private func tabbedHeader(@ViewBuilder tabs: () -> some View) -> some View {
+        VStack(spacing: StudioTheme.Spacing.none) {
+            tabs()
+                .frame(maxWidth: .infinity, alignment: .leading)
             // Overlaid so taller buttons keep the tab underline on the divider, centred on the tab titles.
             .overlay {
                 HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
@@ -919,13 +933,26 @@ struct StudioView: View {
             } else if viewModel.currentSection == .models {
                 Spacer()
 
-                StudioIconButton(
-                    systemImage: "plus",
-                    variant: .ghost
-                ) {
-                    viewModel.isAddingModelEndpoint = true
+                // Provider lists can be searched; a provider's own settings have nothing to search.
+                if let domain = viewModel.modelPageTab.domain, !viewModel.isShowingModelProviderDetail {
+                    HStack(spacing: StudioTheme.Spacing.small) {
+                        SettingsSearchBox(
+                            placeholder: L("models.search"),
+                            text: $viewModel.modelSearchQuery,
+                            width: 220
+                        )
+
+                        if domain == .llm {
+                            StudioButton(
+                                title: L("models.addEndpoint"),
+                                systemImage: "plus",
+                                variant: .secondary
+                            ) {
+                                viewModel.isAddingModelEndpoint = true
+                            }
+                        }
+                    }
                 }
-                .studioTooltip(L("models.addEndpoint"), yOffset: 34)
             } else if viewModel.currentSection == .account {
                 Spacer()
             } else if viewModel.currentSection.isVoiceInput {
@@ -1011,15 +1038,6 @@ struct StudioView: View {
                 - (viewModel.currentSection == .models ? 0 : StudioTheme.Layout.shellContentBottomInset),
             0
         )
-    }
-
-    private func modelDomainTabTitle(for domain: StudioModelDomain) -> String {
-        switch domain {
-        case .stt:
-            L("settings.models.domain.stt")
-        case .llm:
-            L("settings.models.domain.llm")
-        }
     }
 
     private var personasPage: some View {

@@ -1779,7 +1779,10 @@
 "models.invalidResponse" = "The provider returned an invalid model response";
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
-"models.back" = "Model settings";
+"models.back" = "戻る";
+"models.tab.scenes" = "モデル構成";
+"models.tab.speech" = "音声認識";
+"models.tab.language" = "大規模言語モデル";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
 "models.fixedSpeech" = "Speech to text · one fixed model";
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
@@ -1803,12 +1806,12 @@
 "models.rewriteBlocked" = "書き換えと推敲には使用できません：%@";
 "models.visionGuessed" = "モデル名からビジョン対応と推定しました。「···」メニューで変更できます";
 "ask.models.visionTrial" = "ビジョン対応は未確認です。画像の送信を試します";
-"models.usageHint" = "ラベルはそのモデルを使用中のシナリオを示します。「利用シーン」または「···」メニューから変更できます。";
+"models.usageHint" = "ラベルはそのモデルを使用中の機能を示します。「モデル構成」または「···」メニューから変更できます。";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
 "models.emptyCatalog" = "The provider returned no models";
 "models.loadFailed" = "Could not load models.";
-"models.subscription" = "The selected speech provider requires an active subscription. Renew or select a local model in Application scenarios.";
+"models.subscription" = "選択した音声サービスには有効なサブスクリプションが必要です。更新するか、「モデル構成」でローカルモデルを選択してください。";
 
 "models.noAvailable" = "この入力に使用できるモデルがありません。ログイン状態とモデル設定を確認してください。";
 
