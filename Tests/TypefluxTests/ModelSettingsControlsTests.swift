@@ -8,6 +8,50 @@ import Testing
 struct ModelSettingsControlsTests {
     private typealias UI = SettingsBehaviorTestSupport
 
+    @Test(arguments: [AppLanguage.english, .simplifiedChinese, .traditionalChinese, .japanese, .korean])
+    func `models title stays above tabs in lists and provider details`(language: AppLanguage) async throws {
+        try await withModel { _, model in
+            model.setAppLanguage(language)
+            model.setInterfaceStyle(.classic)
+            model.setAppearanceMode(.dark)
+            for width: CGFloat in [720, 1100] {
+                for tab in ModelPageTab.allCases {
+                    for detail in tab == .scenes ? [false] : [false, true] {
+                        model.selectModelPageTab(tab)
+                        if detail {
+                            if tab == .speech {
+                                model.focusModelProvider(.whisperAPI)
+                                model.isShowingSpeechProviderDetail = true
+                            } else {
+                                model.selectedLanguageProviderID = "openAI"
+                            }
+                        }
+                        try await UI.withWindow(StudioView(viewModel: model), width: width, height: 800) { window, host in
+                            let title = try #require(UI.elements(in: host).first {
+                                $0.value("accessibilityIdentifier") as? String == "studio.page.title"
+                                    && UI.contains(StudioSection.models.title, in: $0.object)
+                            })
+                            let firstTab = try UI.button(ModelPageTab.scenes.title, in: host)
+                            let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
+                            #expect(title.frame.minY > firstTab.frame.maxY)
+                            #expect(abs(title.frame.minX - firstTab.frame.minX) < 2)
+                            #expect(bounds.contains(title.frame), "The title stays inside the viewport")
+                            if detail {
+                                #expect(model.isShowingModelProviderDetail)
+                                let back = try #require(UI.elements(in: host).first {
+                                    $0.value("accessibilityIdentifier") as? String == "models.provider.back"
+                                })
+                                #expect(back.frame.maxY < firstTab.frame.minY)
+                                #expect(bounds.contains(back.frame))
+                            }
+                            try UI.snapshot(host, name: "models-title-\(tab.rawValue)-\(detail)-\(language.rawValue)-\(Int(width))")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Test func `scene fields match settings menu height`() async throws {
         try await UI.withFixture { store in
             let library = AskModelLibrary(defaults: store.defaults, automaticallyLoadsCatalog: false)
