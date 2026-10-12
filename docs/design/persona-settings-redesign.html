@@ -145,30 +145,19 @@ body.light .prow.on .nm { color: var(--accent); }
 .prow .nm { flex: 1; min-width: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .prow .nm .pre { color: var(--text3); font-weight: 400; }
 .prow.on .nm .pre { color: inherit; opacity: .7; }
-.prow .marks { display: flex; gap: 4px; flex: none; }
-.mk { font-size: 10.5px; font-weight: 600; line-height: 18px; padding: 0 6px; border-radius: 5px; white-space: nowrap; }
-.mk.def { background: var(--ok-soft); color: var(--ok); }
-.mk.aux { background: var(--ai-soft); color: var(--ai); }
-.mk.app { background: var(--tile); color: var(--text2); }
-.mk.off { background: transparent; color: var(--text3); border: 1px dashed var(--border); line-height: 16px; }
 .prow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex: none; }
 .empty { text-align: center; color: var(--text3); padding: 28px 12px; font-size: 12.5px; }
 .empty b { display: block; color: var(--text2); margin-bottom: 4px; }
 
 /* ---------- Detail ---------- */
 .detail { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; position: relative; }
-.dhead { display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px 12px; }
+.dhead { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border-soft); }
 .dhead .meta { flex: 1; min-width: 0; }
 .dhead h2 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
 .dhead h2 input { font-size: 18px; font-weight: 700; border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 1px 6px; margin-left: -7px; outline: none; width: 100%; min-width: 0; }
 .dhead h2 input:hover { border-color: var(--border); }
 .dhead h2 input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--field); }
-.dhead .sub { color: var(--text3); font-size: 12.5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dhead .acts { display: flex; gap: 6px; align-items: center; position: relative; }
-.uses { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 0 18px 12px; border-bottom: 1px solid var(--border-soft); }
-.uses .lbl { color: var(--text3); font-size: 12px; margin-right: 2px; }
-.uses .none { color: var(--text3); font-size: 12px; }
-.uses .lnk { color: var(--accent); cursor: pointer; font-size: 12px; background: none; border: 0; padding: 0; }
 .dbody { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 18px 14px; gap: 10px; }
 .note { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; background: var(--tile); color: var(--text2); font-size: 12.5px; }
 .note .sp { flex: 1; }
@@ -440,13 +429,6 @@ function renderUsage() {
 }
 
 /* ---------- Roster ---------- */
-// Short, single-line marks keep every row the same height; the detail pane spells them out.
-function marksOf(id) {
-  return usesOf(id).map(u => {
-    const t = u.k === 'def' ? '默认' : u.k === 'aux' ? '辅助' : u.apps.length === 1 ? u.apps[0].app : `${u.apps.length} 个应用`;
-    return `<span class="mk ${u.k}" title="${esc(u.t)}">${esc(t)}</span>`;
-  }).join('');
-}
 // A shared "候选：" style prefix is de-emphasised so the distinctive part of the name reads first.
 function nameHTML(name) {
   const m = name.match(/^(.{1,6}[:：])\s*(.+)$/);
@@ -455,14 +437,14 @@ function nameHTML(name) {
 function rowHTML(p) {
   const isDirty = draft && draft.id === p.id && dirty();
   return `<div class="prow ${sel === p.id && !creating ? 'on' : ''}" data-id="${p.id}" title="${esc(p.name)}">
-    <span class="nm">${nameHTML(p.name)}</span>${isDirty ? '<span class="dot" title="未保存"></span>' : ''}<span class="marks">${marksOf(p.id)}</span></div>`;
+    <span class="nm">${nameHTML(p.name)}</span>${isDirty ? '<span class="dot" title="未保存"></span>' : ''}</div>`;
 }
 function renderRoster() {
   const k = q.trim().toLowerCase();
   const match = (p) => !k || p.name.toLowerCase().includes(k) || p.prompt.toLowerCase().includes(k) || summary(p).toLowerCase().includes(k);
   const sys = personas.filter(p => p.sys && match(p)), mine = personas.filter(p => !p.sys && match(p));
   let h = '';
-  if (creating) h += `<div class="gl">新建中</div><div class="prow on"><span class="nm">${esc(creating.name || '未命名人设')}</span><span class="mk app">未保存</span></div>`;
+  if (creating) h += `<div class="gl">新建中</div><div class="prow on"><span class="nm">${esc(creating.name || '未命名人设')}</span></div>`;
   if (mine.length) h += `<div class="gl">我的人设<span class="c">${mine.length}</span></div>` + mine.map(rowHTML).join('');
   if (sys.length) h += `<div class="gl">内置<span class="c">${sys.length}</span></div>` + sys.map(rowHTML).join('');
   if (!sys.length && !mine.length) h += `<div class="empty"><b>没有找到「${esc(q)}」</b>可以搜索名称或人设定义里的文字。<br><br><button class="btn sm" id="createFromSearch">新建「${esc(q)}」</button></div>`;
@@ -471,11 +453,6 @@ function renderRoster() {
 }
 
 /* ---------- Detail ---------- */
-function usesHTML(id) {
-  const u = usesOf(id);
-  if (!u.length) return `<span class="lbl">使用于</span><span class="none">暂未使用 ·</span><button class="lnk" data-act="useMenu">设为听写默认、辅助输入或绑定应用</button>`;
-  return `<span class="lbl">使用于</span>` + u.map(x => `<span class="badge ${x.k}" ${x.apps ? 'style="cursor:pointer" data-act="openApps"' : ''}>${x.k === 'def' ? '✓ ' : ''}${esc(x.t)}</span>`).join('');
-}
 function renderDetail() {
   const el = $('detail');
   if (creating) return renderCreate(el);
@@ -488,18 +465,16 @@ function renderDetail() {
     <div class="dhead">
       <div class="meta">
         <h2>${p.sys ? esc(p.name) + ' <span class="badge sys">内置</span>' : `<input id="nameIn" value="${esc(draft.name)}" aria-label="人设名称" placeholder="人设名称">`}</h2>
-        <div class="sub">${p.sys ? esc(summary(p)) : '我的人设 · 点名称即可改名'}</div>
       </div>
       <div class="acts">
         <button class="btn" data-act="useMenu">设为…<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5L5 6.5 8 3.5"/></svg></button>
         <button class="ibtn boxed" data-act="moreMenu" aria-label="更多"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg></button>
       </div>
     </div>
-    <div class="uses">${usesHTML(p.id)}</div>
     <div class="dbody">
       ${p.sys ? `<div class="note"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
         内置人设由 Typeflux 维护，会随版本改进。<span class="sp"></span><button class="btn sm" data-act="duplicate">复制一份来修改</button></div>` : ''}
-      <div class="flabel">人设定义<span class="aux">· 发给模型的改写指令</span><span class="sp"></span><span class="aux" id="charCount">${chars} 字</span></div>
+      <div class="flabel">人设定义<span class="sp"></span><span class="aux" id="charCount">${chars} 字</span></div>
       ${p.sys ? `<div class="prompt ro">${esc(p.prompt)}</div>` : `<textarea class="prompt" id="promptIn" spellcheck="false" placeholder="描述这个人设要把口述改成什么样，例如：改成礼貌、简洁的工作消息，保留人名和数字。">${esc(draft.prompt)}</textarea>`}
     </div>
     ${p.sys ? '' : `<div class="savebar" id="savebar" hidden></div>`}`;
@@ -526,7 +501,7 @@ function renderCreate(el) {
   el.innerHTML = `
     <div class="dhead">
       <div class="meta"><h2><input id="nameIn" value="${esc(creating.name)}" placeholder="给人设起个名字，例如：周报助手" aria-label="人设名称"></h2></div></div>
-    <div class="dbody" style="border-top:1px solid var(--border-soft);padding-top:12px">
+    <div class="dbody">
       <div class="flabel">人设定义<span class="sp"></span>
         <button class="tplbtn" data-act="tplMenu" aria-label="起点">起点：<b>${esc(templateLabel(creating.template))}</b><svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5L5 6.5 8 3.5"/></svg></button>
         <span class="aux" id="charCount">${creating.prompt.length} 字</span></div>
@@ -778,7 +753,7 @@ document.addEventListener('keydown', (e) => {
 
 /* ---------- Stage states ---------- */
 const CAPTIONS = {
-  builtin: '<b>① 浏览内置人设</b> · 顶部三张卡回答「在哪里用哪个人设」，下方只管理人设本身。列表只显示名称和使用标签。内置人设只读，提供「复制一份来修改」。',
+  builtin: '<b>① 浏览内置人设</b> · 顶部三张卡回答「在哪里用哪个人设」，下方只管理人设本身。列表只显示名称；「在哪里使用」只看顶部三张卡和「设为…」菜单里的勾选。内置人设只读，提供「复制一份来修改」。',
   custom: '<b>② 编辑我的人设</b> · 名称直接在标题处改；有修改时底部才出现保存条（⌘S），列表标出未保存的圆点；切换前会提示保存。',
   create: '<b>③ 新建人设</b> · 定义输入框占满详情区；「起点」是定义标题行右侧的小菜单（空白 / 基于内置 / 复制我的人设），换起点覆盖已输入内容时可撤销。',
   apps: '<b>④ 应用专属规则</b> · 从右侧抽屉管理，不离开页面；每条规则可换人设、暂停、删除（可撤销）；从已启动的应用里一键添加。',
