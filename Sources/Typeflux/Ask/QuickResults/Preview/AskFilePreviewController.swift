@@ -68,7 +68,9 @@ final class AskFilePreviewController {
 
     func request(_ hit: AskFileHit?, neighbours: [AskFileHit] = [], empty: Bool = false) {
         guard !empty else { dismissNow(); return }
-        if hit == selected, hit != nil {
+        if let hit, hit.path == selected?.path {
+            // Query-specific ranking and highlights do not change the previewed file.
+            selected = hit; state.hit = hit
             grace?.cancel(); grace = nil; return
         }
         generation += 1

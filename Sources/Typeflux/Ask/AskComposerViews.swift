@@ -309,7 +309,9 @@ struct AskComposer: View {
 
     private func updateFilePreview() {
         guard launcher else { return }
-        guard showsQuickResults, !quickResultsArePending, let results = quickResults else {
+        // Pending rows preserve the previous selection while the new query runs.
+        if showsQuickResults, quickResultsArePending { return }
+        guard showsQuickResults, let results = quickResults else {
             onFilePreview(nil, [], true); return
         }
         let hit = results.file(at: results.highlightedRow)

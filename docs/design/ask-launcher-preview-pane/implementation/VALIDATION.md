@@ -1,4 +1,4 @@
-Validated on macOS 26.6.2 (25G83), Apple Silicon, Swift 6.4 and Xcode 27.0 (27A266a), on 2026-10-12. Production source is commit `9623db8c`; full-suite test fixtures are commit `c1c5c0d2`.
+Initial implementation validated on macOS 26.6.2 (25G83), Apple Silicon, Swift 6.4 and Xcode 27.0 (27A266a), on 2026-10-12. The following full-suite and coverage results use production source `9623db8c` and test fixtures `c1c5c0d2`; review-fix validation is recorded below.
 
 | Check | Result |
 | --- | --- |
@@ -34,3 +34,15 @@ Per-file line coverage in the new module: clock 100%, content 100%, controller 9
 Full regression testing exposed old launcher size/home-row/menu-height/glass expectations on the starting main branch, plus UI readiness races. The separate test-only commit aligns those assertions with the existing adaptive launcher, scopes popover lookup to its presenting window, waits for actual history/menu content, and controls streamed chunks explicitly. It does not change launcher production layout.
 
 The [screenshots and implementation decisions](README.md) cover light/dark image, PDF, code and table fixtures, format fallbacks, bounded reads, and the repository's five existing locales.
+
+Review follow-up (2026-10-12): pending search results now preserve the displayed preview, and same-path hits update their header metadata without cancelling or restarting a load or crossfade. Two new regression tests cover a deliberately stalled file search through settlement, unchanged panel visibility and content identity, clearing the query, and score/match/highlight changes during dwell and after loading.
+
+```sh
+swift build --enable-code-coverage
+swift test --no-parallel --enable-code-coverage \
+  --filter 'AskFilePreview|AskQuickSearchSessionTests|AskLauncherMotionTests'
+```
+
+Build passed (15.96s); **53 tests in 9 suites passed** (29.388s), including all 30 preview tests. This follow-up runs the relevant preview, staged-search and launcher-motion suites; the earlier full-suite results above remain scoped to their stated revision.
+
+Profiles from this follow-up run cover **4/4 changed executable production lines (100%)**: both updated composer guards and the controller's same-path comparison and metadata assignment, measured with `llvm-profdata merge -sparse` and `llvm-cov show`.

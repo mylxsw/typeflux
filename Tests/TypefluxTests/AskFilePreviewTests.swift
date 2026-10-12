@@ -181,6 +181,33 @@ struct AskFilePreviewPlacementTests {
 @Suite("File preview selection timing", .exclusiveUIState)
 @MainActor
 struct AskFilePreviewControllerTests {
+    @Test func `query metadata changes keep the same file load and content identity`() {
+        let clock = PreviewTestClock(), loader = PreviewTestLoader()
+        let controller = AskFilePreviewController(loader: loader, clock: clock)
+        let first = previewHit("xcode.swift"), neighbour = previewHit("next.png")
+        controller.request(first, neighbours: [neighbour])
+        clock.advance(0.05)
+        let cancellations = loader.cancelled
+        var updated = first
+        updated.score = 42; updated.match = 10; updated.highlights = [0 ..< 4]
+        controller.request(updated)
+        #expect(controller.state.hit == updated)
+        clock.advance(0.07)
+        #expect(loader.requests.count == 1, "Metadata changes must not restart the dwell timer")
+        loader.completions[0](.init(kind: .text, text: "let value = 1"))
+        let contentID = controller.state.contentID
+        updated.name = "Xcode.swift"; updated.highlights = [0 ..< 5]
+        controller.request(updated)
+        clock.advance(1)
+        #expect(controller.isVisible)
+        #expect(controller.state.hit == updated)
+        #expect(controller.state.content?.text == "let value = 1")
+        #expect(controller.state.contentID == contentID)
+        #expect(loader.requests.count == 1)
+        #expect(loader.cancelled == cancellations)
+        #expect(loader.prefetched == [neighbour])
+    }
+
     @Test func `debounce skeleton and stale results`() {
         let clock = PreviewTestClock(), loader = PreviewTestLoader()
         let controller = AskFilePreviewController(loader: loader, clock: clock)
