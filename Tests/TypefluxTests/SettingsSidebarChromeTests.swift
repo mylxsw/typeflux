@@ -9,7 +9,7 @@ struct SettingsSidebarChromeTests {
     private typealias UI = SettingsBehaviorTestSupport
 
     @Test(arguments: InterfaceStyle.allCases)
-    func `shared footer keeps login reachable after dismissal`(style: InterfaceStyle) async throws {
+    func `chat footer keeps login and settings reachable after dismissal`(style: InterfaceStyle) async throws {
         try await UI.withFixture { settings in
             var logins = 0
             var settingsOpened = 0
@@ -61,7 +61,7 @@ struct SettingsSidebarChromeTests {
             var localModeOpened = 0
             let settingsFooter = SidebarAccountFooter(
                 auth: AuthState.shared, compact: false, defaults: settings.defaults,
-                onSignIn: {}, onOpenAccount: {}, onOpenSettings: {}
+                onSignIn: {}, onOpenAccount: {}
             ).environment(\.interfaceStyle, style)
             let chatFooter = SidebarAccountFooter(
                 auth: AuthState.shared, compact: false, defaults: settings.defaults,
@@ -74,6 +74,8 @@ struct SettingsSidebarChromeTests {
                     try await UI.wait {
                         UI.contains("Typeflux Cloud", in: settingsHost) && UI.contains("Typeflux Cloud", in: chatHost)
                     }
+                    #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: settingsHost))
+                    #expect(UI.contains(L("sidebar.settingsAccessibility"), in: chatHost))
                     try UI.button(L("ask.cloudPromo.dismiss"), in: settingsHost).press()
                     try await UI.wait {
                         !UI.contains("Typeflux Cloud", in: settingsHost) && !UI.contains("Typeflux Cloud", in: chatHost)
@@ -81,6 +83,8 @@ struct SettingsSidebarChromeTests {
                     try UI.button(L("ask.local.identity"), in: chatHost).press()
                     #expect(localModeOpened == 1)
                     #expect(signInButtons(in: settingsHost) == 1 && signInButtons(in: chatHost) == 1)
+                    #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: settingsHost))
+                    #expect(UI.contains(L("sidebar.settingsAccessibility"), in: chatHost))
                 }
             }
         }
@@ -94,10 +98,11 @@ struct SettingsSidebarChromeTests {
             var logins = 0
             let footer = SidebarAccountFooter(
                 auth: auth, compact: false, defaults: settings.defaults,
-                onSignIn: { logins += 1 }, onOpenAccount: {}, onOpenSettings: {}
+                onSignIn: { logins += 1 }, onOpenAccount: {}
             ).environment(\.interfaceStyle, style)
             try await UI.withWindow(footer, width: 256, height: 280) { _, host in
                 try await UI.wait { UI.contains("Typeflux Cloud", in: host) }
+                #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: host))
                 auth.userProfile = UserProfile(id: "u", email: "demir@example.com", name: "Demir Von",
                                                status: 1, provider: "google", createdAt: "", updatedAt: "")
                 auth.isLoggedIn = true
@@ -106,11 +111,48 @@ struct SettingsSidebarChromeTests {
                 auth.userProfile = nil
                 try await UI.wait { UI.contains(L("sidebar.appName"), in: host) }
                 #expect(signInButtons(in: host) == 0)
+                #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: host))
                 auth.isLoggedIn = false
                 try await UI.wait { UI.contains("Typeflux Cloud", in: host) && UI.contains(L("ask.local.identity"), in: host) }
                 try UI.button(L("ask.cloudPromo.signIn"), in: host).press()
                 #expect(logins == 1)
                 #expect(settings.defaults.double(forKey: AskCloudPromo.dismissedKey) == 0)
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases, [1100.0, 720.0])
+    func `settings follows launcher in inline and compact navigation`(style: InterfaceStyle, width: Double) async throws {
+        try await UI.withFixture { settings in
+            var selected: StudioSection?
+            let shell = StudioShell(
+                currentSection: .launcher, onSelect: { selected = $0 }, onAccountAction: {},
+                searchText: .constant(""), searchPlaceholder: "", accountDefaults: settings.defaults
+            ) { _ in Text("Launcher content") }
+                .environment(\.interfaceStyle, style)
+            try await UI.withWindow(shell, width: width, height: 650) { window, host in
+                #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: host))
+                let navigationHost: NSView
+                if width < 1040 {
+                    try UI.button(L("ask.sidebar.toggle"), in: host).press()
+                    try await UI.wait { !(window.childWindows ?? []).isEmpty }
+                    let popup = try #require(window.childWindows?.first)
+                    navigationHost = try #require(popup.contentView)
+                } else {
+                    navigationHost = host
+                }
+                try await UI.wait { UI.contains(L("studio.section.settings"), in: navigationHost) }
+                #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: navigationHost))
+                let launcher = try UI.button(L("studio.section.launcher"), in: navigationHost)
+                let settingsButton = try UI.button(L("studio.section.settings"), in: navigationHost)
+                #expect(settingsButton.frame.maxY <= launcher.frame.minY)
+                try settingsButton.press()
+                #expect(selected == .settings)
+                try UI.snapshot(navigationHost, name: "settings-navigation-\(style.rawValue)-\(Int(width))")
+                if width < 1040 {
+                    try UI.button(L("ask.sidebar.toggle"), in: host).press()
+                    try await UI.wait { (window.childWindows ?? []).isEmpty }
+                }
             }
         }
     }

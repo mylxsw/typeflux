@@ -17,7 +17,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     /// Sections that appear in the upper sidebar group. `.home` stands for the whole Voice Input group.
     static var sidebarUpperCases: [StudioSection] {
-        [.home, .models, .agent, .launcher]
+        [.home, .models, .agent, .launcher, .settings]
     }
 
     /// Voice Input pages, in tab order. They share one sidebar entry and switch through tabs.

@@ -669,9 +669,6 @@ struct StudioShell<Content: View>: View {
             }
             Text(currentSection.shellTitle).font(.system(size: 13, weight: .semibold)).lineLimit(1)
             Spacer(minLength: 0)
-            AskIconGhostButton(label: L("sidebar.settingsAccessibility"), systemImage: "gearshape") {
-                onSelect(.settings)
-            }
         }
         .padding(.trailing, 12)
         .frame(height: AskMetrics.titleBarRowHeight)
@@ -776,8 +773,7 @@ struct StudioSidebar: View {
             }
 
             SidebarAccountFooter(auth: auth, compact: compact, defaults: defaults,
-                                 onSignIn: onAccountAction, onOpenAccount: onAccountAction,
-                                 onOpenSettings: { onSelect(.settings) })
+                                 onSignIn: onAccountAction, onOpenAccount: onAccountAction)
         }
         .environment(\.locale, localization.locale)
     }
