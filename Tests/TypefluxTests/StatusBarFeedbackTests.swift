@@ -14,10 +14,10 @@ struct StatusBarFeedbackTests {
             for compact in [false, true] {
                 let sidebar = StudioSidebar(
                     currentSection: .settings, onSelect: { _ in }, onAccountAction: {},
-                    defaults: settings.defaults, compact: compact
+                    defaults: settings.defaults
                 ).environment(\.interfaceStyle, style)
                 try await UI.withWindow(sidebar, width: 256, height: compact ? 400 : 750) { _, host in
-                    try await UI.wait { UI.contains(L("sidebar.appName"), in: host) }
+                    try await UI.wait { UI.contains(L("studio.section.settings"), in: host) }
                     #expect(!UI.contains(L("history.action.more"), in: host))
                     #expect(!UI.elements(in: host).contains {
                         $0.value("accessibilityIdentifier") as? String == "studio.supportMenu"

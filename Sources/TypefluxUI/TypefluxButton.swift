@@ -29,7 +29,7 @@ public struct TypefluxButton<Label: View>: View {
         switch kind {
         case .primary: button.buttonStyle(.borderedProminent)
         case .regular: button.buttonStyle(.bordered)
-        case .destructive: button.buttonStyle(.bordered).tint(TypefluxColor.danger.color)
+        case .destructive: button.buttonStyle(.bordered)
         case .borderless: button.buttonStyle(.borderless)
         case .link: button.buttonStyle(.link)
         }

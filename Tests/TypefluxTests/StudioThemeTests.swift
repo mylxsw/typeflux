@@ -28,7 +28,7 @@ final class StudioThemeTests: XCTestCase {
     func testSettingsWindowNavigationYieldsToNarrowContent() {
         for width: CGFloat in [720, 900, 1039, 1040, 1100, 1440] {
             let layout = StudioShellLayout(width: width)
-            XCTAssertEqual(layout.sidebarInline, width >= 1040)
+            XCTAssertEqual(layout.sidebarWidth, width >= 1040 ? 220 : 0)
             XCTAssertGreaterThanOrEqual(layout.contentWidth, 672)
             XCTAssertLessThanOrEqual(layout.contentWidth + layout.sidebarWidth + layout.horizontalInset * 2, width)
         }

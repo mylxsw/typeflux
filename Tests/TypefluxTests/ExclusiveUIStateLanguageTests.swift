@@ -408,7 +408,10 @@ extension ExclusiveUIStateLanguageTests {
         for (file, lines) in sources {
             for (index, line) in lines.enumerated() {
                 guard let type = name(declaration, line) else { continue }
-                let attributes = lines[..<index].reversed().prefix { $0.hasPrefix("@") || $0.hasPrefix("//") }
+                // Suite traits may wrap onto indented continuation lines.
+                let attributes = lines[..<index].reversed().prefix {
+                    $0.hasPrefix("@") || $0.hasPrefix("//") || $0.first?.isWhitespace == true || $0 == ")"
+                }
                 let suiteLines = attributes.filter { $0.hasPrefix("@Suite") }
                 let bodies = [body(lines, after: index)] + extensionBodies[type, default: []]
                 let isSuite = !suiteLines.isEmpty || bodies.contains { matches(testAttribute, $0) }

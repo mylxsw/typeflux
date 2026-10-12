@@ -24,7 +24,7 @@ struct ModelCatalogView: View {
                     .buttonStyle(ModelActionStyle(primary: true))
                     .disabled(addedCount == 0).keyboardShortcut(.defaultAction)
             }
-            SettingsSearchBox(placeholder: L("models.search"), text: $search, width: nil)
+            TypefluxInlineSearch(text: $search, prompt: L("models.search"))
             ModelSurface {
                 ScrollView {
                     LazyVStack(spacing: 0) {

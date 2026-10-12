@@ -42,7 +42,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
         self == .home ? "waveform" : iconName
     }
 
-    /// The title shown in the compact navigation bar.
+    /// The grouped section title. Window toolbars use the individual page's heading.
     var shellTitle: String {
         isVoiceInput ? L("studio.section.voiceInput") : heading
     }
