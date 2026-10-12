@@ -86,6 +86,15 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testVoiceInputSidebarTitleHasLocalizedValueForAllSupportedLanguages() throws {
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            let localized = bundle.localizedString(forKey: "studio.section.voiceInput", value: nil, table: nil)
+
+            XCTAssertNotEqual(localized, "studio.section.voiceInput", "Missing localized value for \(language.rawValue)")
+        }
+    }
+
     func testVoiceProcessingTimeoutCopyAndFormatArgumentsExistInEveryLanguage() throws {
         let plainKeys = [
             "settings.advanced.voiceProcessingTimeout.title",

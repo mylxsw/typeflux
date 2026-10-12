@@ -72,6 +72,7 @@
 "feedback.error.invalidResponse" = "收到的反馈响应无效。";
 
 "studio.section.home" = "概览";
+"studio.section.voiceInput" = "语音输入";
 "studio.section.models" = "模型";
 "studio.section.personas" = "人设";
 "studio.section.vocabulary" = "词库";

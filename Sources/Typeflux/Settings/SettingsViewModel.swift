@@ -89,6 +89,8 @@ final class StudioViewModel: ObservableObject {
     @Published var directFeedbackRequestID: UUID?
 
     @Published var currentSection: StudioSection
+    /// The Voice Input tab last shown; the sidebar's Voice Input entry returns to it.
+    private(set) var lastVoiceInputSection: StudioSection = .home
     @Published var searchQuery = "" {
         didSet {
             if currentSection == .home || currentSection == .history {
@@ -314,6 +316,9 @@ final class StudioViewModel: ObservableObject {
         let currentPersonas = settingsStore.personas
 
         currentSection = initialSection
+        if initialSection.isVoiceInput {
+            lastVoiceInputSection = initialSection
+        }
         let initialSTTProvider = Self.visibleSTTProvider(from: settingsStore.sttProvider)
         let initialLLMRemoteProvider = settingsStore.llmRemoteProvider
         if initialSTTProvider != settingsStore.sttProvider {
@@ -894,8 +899,25 @@ final class StudioViewModel: ObservableObject {
         navigate(to: .launcher)
     }
 
+    /// Opens a sidebar entry. The Voice Input entry reopens the tab shown last.
+    func navigateFromSidebar(to section: StudioSection) {
+        navigate(to: section == .home ? lastVoiceInputSection : section)
+    }
+
+    /// The count shown beside a Voice Input tab, if the tab has one.
+    func voiceInputTabCount(for section: StudioSection) -> Int? {
+        switch section {
+        case .vocabulary: vocabularyEntries.count
+        case .personas: personas.count
+        default: nil
+        }
+    }
+
     func navigate(to section: StudioSection) {
         currentSection = section
+        if section.isVoiceInput {
+            lastVoiceInputSection = section
+        }
         searchQuery = ""
         if section == .home || section == .history {
             applyHistoryRetentionPolicy()

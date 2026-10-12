@@ -72,6 +72,7 @@
 "feedback.error.invalidResponse" = "フィードバックの応答が無効です。";
 
 "studio.section.home" = "概要";
+"studio.section.voiceInput" = "音声入力";
 "studio.section.models" = "モデル";
 "studio.section.personas" = "ペルソナ";
 "studio.section.vocabulary" = "語彙";

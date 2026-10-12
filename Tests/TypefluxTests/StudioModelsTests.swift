@@ -50,7 +50,39 @@ final class StudioModelsTests: XCTestCase {
 
     func testSidebarUpperCases() {
         let upper = StudioSection.sidebarUpperCases
-        XCTAssertEqual(upper, [.home, .vocabulary, .history, .personas, .models, .agent, .launcher, .hotkeys])
+        XCTAssertEqual(upper, [.home, .models, .agent, .launcher, .hotkeys])
+    }
+
+    func testVoiceInputCasesAreTheTabsInOrder() {
+        XCTAssertEqual(StudioSection.voiceInputCases, [.home, .vocabulary, .history, .personas])
+    }
+
+    func testIsVoiceInputOnlyForVoiceInputPages() {
+        for section in StudioSection.allCases {
+            XCTAssertEqual(section.isVoiceInput, StudioSection.voiceInputCases.contains(section), "\(section)")
+        }
+    }
+
+    func testVoiceInputPagesSelectTheVoiceInputSidebarEntry() {
+        for section in StudioSection.voiceInputCases {
+            XCTAssertEqual(section.sidebarSection, .home, "\(section)")
+        }
+        XCTAssertEqual(StudioSection.models.sidebarSection, .models)
+        XCTAssertEqual(StudioSection.settings.sidebarSection, .settings)
+    }
+
+    func testVoiceInputSidebarEntryUsesGroupTitleAndIcon() {
+        XCTAssertEqual(StudioSection.home.sidebarTitle, L("studio.section.voiceInput"))
+        XCTAssertEqual(StudioSection.home.sidebarIconName, "waveform")
+        XCTAssertEqual(StudioSection.launcher.sidebarTitle, StudioSection.launcher.title)
+        XCTAssertEqual(StudioSection.launcher.sidebarIconName, StudioSection.launcher.iconName)
+    }
+
+    func testShellTitleNamesTheVoiceInputGroupForItsPages() {
+        for section in StudioSection.voiceInputCases {
+            XCTAssertEqual(section.shellTitle, L("studio.section.voiceInput"), "\(section)")
+        }
+        XCTAssertEqual(StudioSection.agent.shellTitle, StudioSection.agent.heading)
     }
 
     func testSidebarLowerCases() {

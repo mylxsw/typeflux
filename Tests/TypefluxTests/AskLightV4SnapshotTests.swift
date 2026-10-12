@@ -20,7 +20,7 @@ struct AskLightV4SnapshotTests {
                                         (.classic, false, "classic-light"), (.liquidGlass, true, "glass-dark")] {
                 settings.interfaceStyle = style
                 settings.appearanceMode = dark ? .dark : .light
-                for section in [StudioSection.settings, .vocabulary, .personas, .hotkeys] {
+                for section in [StudioSection.settings, .home, .vocabulary, .history, .personas, .hotkeys] {
                     let model = StudioViewModel(settingsStore: settings, historyStore: SnapshotHistoryStore(),
                                                 initialSection: section, modelLibrary: library)
                     model.vocabularyEntries = [

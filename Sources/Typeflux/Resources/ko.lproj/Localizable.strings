@@ -72,6 +72,7 @@
 "feedback.error.invalidResponse" = "피드백 응답이 올바르지 않습니다.";
 
 "studio.section.home" = "개요";
+"studio.section.voiceInput" = "음성 입력";
 "studio.section.models" = "모델";
 "studio.section.personas" = "페르소나";
 "studio.section.vocabulary" = "어휘";
