@@ -184,7 +184,16 @@ final class StatusBarMenuSupportTests: XCTestCase {
             L("menu.openVoiceStudio"), L("menu.toolbox"), L("menu.voiceInput"), L("menu.settings")
         ])
         let items = try XCTUnwrap(controller.menu?.items)
-        XCTAssertEqual(items.count, 11)
+        #if DEBUG
+            XCTAssertEqual(items.count, 12)
+            XCTAssertEqual(items[9].title, "Dev")
+            let gallery = try XCTUnwrap(items[9].submenu?.items.first)
+            XCTAssertEqual(gallery.title, "Component Gallery")
+            XCTAssertEqual(gallery.action, #selector(TypefluxGalleryWindowController.showGallery))
+            XCTAssertTrue(gallery.target is TypefluxGalleryWindowController)
+        #else
+            XCTAssertEqual(items.count, 11)
+        #endif
         XCTAssertTrue(items[4].isSeparatorItem)
         XCTAssertEqual(items[5].title, L("menu.setupGuide"))
         XCTAssertEqual(items[6].title, L("menu.checkForUpdates"))
@@ -195,9 +204,10 @@ final class StatusBarMenuSupportTests: XCTestCase {
         ])
         XCTAssertTrue(feedbackMenu.items.allSatisfy { $0.isEnabled && $0.action != nil })
         XCTAssertEqual(items[8].title, L("menu.about"))
-        XCTAssertTrue(items[9].isSeparatorItem)
-        XCTAssertEqual(items[10].title, L("menu.quit"))
-        XCTAssertEqual(items[10].keyEquivalent, "q")
+        let footer = Array(items.suffix(2))
+        XCTAssertTrue(footer[0].isSeparatorItem)
+        XCTAssertEqual(footer[1].title, L("menu.quit"))
+        XCTAssertEqual(footer[1].keyEquivalent, "q")
         XCTAssertNil(settingsItem.submenu)
         XCTAssertFalse(titles.contains(L("menu.appearance")))
     }

@@ -272,42 +272,8 @@ extension View {
     }
 }
 
-final class StudioRoundedVisualEffectView: NSVisualEffectView {
-    var preferredCornerRadius: CGFloat?
-
-    override func layout() {
-        super.layout()
-        layer?.cornerRadius = preferredCornerRadius ?? 0
-    }
-}
-
-struct StudioVisualEffectBlur: NSViewRepresentable {
-    let material: NSVisualEffectView.Material
-    let blendingMode: NSVisualEffectView.BlendingMode
-    let cornerRadius: CGFloat?
-
-    func makeNSView(context _: Context) -> StudioRoundedVisualEffectView {
-        let view = StudioRoundedVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        view.isEmphasized = true
-        view.wantsLayer = true
-        view.layer?.masksToBounds = true
-        view.layer?.backgroundColor = NSColor.clear.cgColor
-        view.preferredCornerRadius = cornerRadius
-        return view
-    }
-
-    func updateNSView(_ nsView: StudioRoundedVisualEffectView, context _: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
-        nsView.state = .active
-        nsView.isEmphasized = true
-        nsView.preferredCornerRadius = cornerRadius
-        nsView.needsLayout = true
-    }
-}
+typealias StudioRoundedVisualEffectView = RoundedVisualEffectView
+typealias StudioVisualEffectBlur = VisualEffectBlur
 
 private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
     @Environment(\.liquidGlassIntensity) private var intensity

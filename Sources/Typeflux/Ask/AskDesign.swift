@@ -8,247 +8,56 @@ import SwiftUI
 /// backplates are opaque. The launcher card is the one exception: it is glass
 /// (`AskGlassBackground`), and falls back to `launcherSurface` when the user
 /// turns on Reduce Transparency.
+@available(*, deprecated, message: "Use TypefluxUI tokens for new components.")
 enum AskTheme {
-    static let accent = StudioTheme.accent
-
-    // Neutral greys chosen to match the settings window (`StudioTheme.shellSurface`
-    // and `sidebar` composited over their material); opaque on purpose.
-    static let surface = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0.985, alpha: 1),
-        dark: NSColor(calibratedWhite: 0.122, alpha: 1)
-    )
-    /// One step above `surface`: composer footer, tool cards, inline banners.
-    static let raisedSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0.965, alpha: 1),
-        dark: NSColor(calibratedWhite: 0.150, alpha: 1)
-    )
-    static let sidebarSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0.940, alpha: 1),
-        dark: NSColor(calibratedWhite: 0.075, alpha: 1)
-    )
-    static let controlSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0.925, alpha: 1),
-        dark: NSColor(calibratedWhite: 0.180, alpha: 1)
-    )
-    static let border = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.08),
-        dark: NSColor(calibratedWhite: 1.0, alpha: 0.10)
-    )
-    static let separator = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.08),
-        dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
-    )
-    static let accentSoft = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.906, green: 0.937, blue: 1.0, alpha: 1),
-        dark: NSColor(calibratedRed: 0.082, green: 0.149, blue: 0.243, alpha: 1)
-    )
-    /// Marks conversations kept on this Mac (the lock icon, the header chip).
-    static let privateTint = privateColor(lightAlpha: 1, darkAlpha: 1)
-    static let privateFill = privateColor(lightAlpha: 0.10, darkAlpha: 0.13)
-    static let privateHeaderFill = privateColor(lightAlpha: 0.10, darkAlpha: 0.12)
-
-    /// Resolve the system colour in the requested appearance before returning
-    /// it from a dynamic provider; a nested semantic colour can retain Aqua.
-    private static func privateColor(lightAlpha: CGFloat, darkAlpha: CGFloat) -> Color {
-        Color(nsColor: NSColor(name: nil) { appearance in
-            guard appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua else {
-                return NSColor(srgbRed: 147 / 255, green: 51 / 255, blue: 234 / 255, alpha: lightAlpha)
-            }
-            var resolved = NSColor.systemPurple
-            appearance.performAsCurrentDrawingAppearance {
-                resolved = (NSColor.systemPurple.usingColorSpace(.sRGB) ?? .systemPurple)
-                    .withAlphaComponent(darkAlpha)
-            }
-            return resolved
-        })
-    }
-
-    static let accentText = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 29 / 255, green: 78 / 255, blue: 216 / 255, alpha: 1),
-        dark: NSColor(calibratedRed: 0.557, green: 0.741, blue: 1.0, alpha: 1)
-    )
-    static let successSoft = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.894, green: 0.965, blue: 0.929, alpha: 1),
-        dark: NSColor(calibratedRed: 0.071, green: 0.161, blue: 0.114, alpha: 1)
-    )
-    static let warningSoft = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.984, green: 0.941, blue: 0.882, alpha: 1),
-        dark: NSColor(calibratedRed: 0.165, green: 0.125, blue: 0.082, alpha: 1)
-    )
-    static let dangerSoft = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.984, green: 0.918, blue: 0.918, alpha: 1),
-        dark: NSColor(calibratedRed: 0.173, green: 0.094, blue: 0.094, alpha: 1)
-    )
-    // Design-board values are specified in sRGB. `calibratedWhite` uses the
-    // gamma 1.8 generic grey space, so 0.18 there renders as #3D3D3D, not #2E2E2E.
-
-    /// The workspace composer card and empty-state cards: one step lighter than
-    /// the transcript canvas in dark, plain white in light.
-    static let composerSurface = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
-        dark: NSColor(srgbRed: 0.180, green: 0.180, blue: 0.180, alpha: 1)
-    )
-    /// The floating launcher's frost and opaque fallback. A deeper neutral in
-    /// dark mode keeps bright windows behind the panel from washing out its text;
-    /// a cool off-white in light mode keeps the glass from reading as paper.
-    static let launcherSurface = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.965, green: 0.969, blue: 0.980, alpha: 1),
-        dark: NSColor(srgbRed: 0.110, green: 0.110, blue: 0.110, alpha: 1)
-    )
-    /// Neutral diffuse glass in both appearances. The opaque accessibility
-    /// fallback keeps its brighter reading surface in `launcherSurface`.
-    static let launcherGlassTint = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 226 / 255, green: 226 / 255, blue: 226 / 255, alpha: 1),
-        dark: NSColor(srgbRed: 18 / 255, green: 18 / 255, blue: 18 / 255, alpha: 1)
-    )
-    /// Popovers opened from the composer (model and reasoning choosers).
-    static let popoverSurface = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
-        dark: NSColor(srgbRed: 0.196, green: 0.196, blue: 0.196, alpha: 1)
-    )
-    /// Cards inside the usage panel, one step above the panel itself.
-    static let panelCard = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.949, green: 0.953, blue: 0.961, alpha: 1),
-        dark: NSColor(srgbRed: 0.239, green: 0.239, blue: 0.239, alpha: 1)
-    )
-    /// Recessed track behind the usage panel's segmented control.
-    static let segmentTrack = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.918, green: 0.922, blue: 0.933, alpha: 1),
-        dark: NSColor(srgbRed: 0.180, green: 0.180, blue: 0.180, alpha: 1)
-    )
-    /// The launcher's idle edge. It floats over arbitrary windows, so it needs a
-    /// firmer outline than the workspace composer's `border` to read as a panel.
-    static let floatingBorder = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0, alpha: 0.12),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.18)
-    )
-    /// The launcher's hairline on glass. The light card is clear enough to vanish
-    /// into a white window without it; dark glass keeps its own rim.
-    static let floatingGlassEdge = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.08),
-        dark: .clear
-    )
-
-    // The launcher's own washes. Its card is glass over arbitrary windows, so in
-    // light mode these are translucent and take on the backdrop instead of
-    // pasting opaque greys on it. Dark mode uses neutral launcher washes.
-
-    /// Rules inside the launcher: under the editor and above its bottom bar.
-    static let launcherSeparator = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.08),
-        dark: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.04)
-    )
-    /// The highlighted home row or keyword chip, outlined by `launcherSelectionEdge`.
-    static let launcherSelection = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.10),
-        dark: NSColor(srgbRed: 0.196, green: 0.196, blue: 0.196, alpha: 1)
-    )
-    static let launcherSelectionEdge = StudioTheme.dynamic(
-        light: .clear,
-        dark: .clear
-    )
-    /// The `fy`, `dict` keyword labels.
-    static let launcherKeyword = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.06),
-        dark: NSColor(srgbRed: 0.22, green: 0.22, blue: 0.22, alpha: 0.72)
-    )
-    static let launcherKeywordText = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.27, green: 0.27, blue: 0.27, alpha: 1),
-        dark: NSColor(srgbRed: 0.70, green: 0.70, blue: 0.70, alpha: 1)
-    )
-    /// A neutral row icon's tile: a subtle raised wash over the glass.
-    static let launcherTile = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.24),
-        dark: NSColor(calibratedWhite: 0.720, alpha: 0.14)
-    )
-    static let launcherTileEdge = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.04),
-        dark: .clear
-    )
-    /// Keyword chips at rest.
-    static let launcherChipFill = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.08),
-        dark: .clear
-    )
-    static let launcherChipEdge = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.07),
-        dark: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.05)
-    )
-    /// The ⌘1…⌘9 badges: white keycaps in light mode, an outline in dark.
-    static let launcherShortcutFill = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
-        dark: .clear
-    )
-    static let launcherShortcutEdge = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.14),
-        dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
-    )
-    /// Times, shortcut badges and key hints stay readable over neutral selections.
-    static let launcherMetaText = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.27, green: 0.27, blue: 0.27, alpha: 1),
-        dark: NSColor(srgbRed: 0.65, green: 0.65, blue: 0.65, alpha: 1)
-    )
-    static let launcherPlaceholderText = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.47, green: 0.47, blue: 0.47, alpha: 1),
-        dark: NSColor(srgbRed: 0.52, green: 0.52, blue: 0.52, alpha: 1)
-    )
-    /// A footer switch that is on (screenshot, memory): a tinted well behind the
-    /// accent icon, so "on" reads by shape as well as colour.
-    static let switchOnFill = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.10),
-        dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1.00, alpha: 0.22)
-    )
-    static let switchOnEdge = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.20),
-        dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1.00, alpha: 0.35)
-    )
-    /// The design board's glass tint for in-window panels (sidebar, header
-    /// pills, composer): a cool graphite in dark, white in light. Frosted at
-    /// `AskGlassPlacement.inWindow.frost(dark:)`, so the backdrop's glows show through.
-    static let glassFill = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
-        dark: NSColor(srgbRed: 0.173, green: 0.173, blue: 0.204, alpha: 1)
-    )
-    /// The pressed (or hovered field) wash, one step above `hoverFill`.
-    static let pressFill = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0, alpha: 0.09),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.12)
-    )
-    /// Translucent hover wash, so borderless controls read the same on any surface.
-    static let hoverFill = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0, alpha: 0.06),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.08)
-    )
-    static let monoSurface = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.957, green: 0.965, blue: 0.976, alpha: 1),
-        dark: NSColor(calibratedRed: 0.063, green: 0.071, blue: 0.086, alpha: 1)
-    )
-
-    /// Hairlines group white cards and divide the library's reading column.
-    static let cardBorder = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.09),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.10)
-    )
-    static let librarySeparator = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.06),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.07)
-    )
-    static let noteQuestionSurface = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.048)
-    )
-    static let keycapSurface = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.08)
-    )
-    static let userBubble = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 37 / 255, green: 99 / 255, blue: 235 / 255, alpha: 0.08),
-        dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1, alpha: 0.18)
-    )
-    static let userBubbleEdge = StudioTheme.dynamic(
-        light: .clear,
-        dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1, alpha: 0.42)
-    )
+    static let accent = LegacyAskPalette.accent
+    static let surface = LegacyAskPalette.surface
+    static let raisedSurface = LegacyAskPalette.raisedSurface
+    static let sidebarSurface = LegacyAskPalette.sidebarSurface
+    static let controlSurface = LegacyAskPalette.controlSurface
+    static let border = LegacyAskPalette.border
+    static let separator = LegacyAskPalette.separator
+    static let accentSoft = LegacyAskPalette.accentSoft
+    static let privateTint = LegacyAskPalette.privateTint
+    static let privateFill = LegacyAskPalette.privateFill
+    static let privateHeaderFill = LegacyAskPalette.privateHeaderFill
+    static let accentText = LegacyAskPalette.accentText
+    static let successSoft = LegacyAskPalette.successSoft
+    static let warningSoft = LegacyAskPalette.warningSoft
+    static let dangerSoft = LegacyAskPalette.dangerSoft
+    static let composerSurface = LegacyAskPalette.composerSurface
+    static let launcherSurface = LegacyAskPalette.launcherSurface
+    static let launcherGlassTint = LegacyAskPalette.launcherGlassTint
+    static let popoverSurface = LegacyAskPalette.popoverSurface
+    static let panelCard = LegacyAskPalette.panelCard
+    static let segmentTrack = LegacyAskPalette.segmentTrack
+    static let floatingBorder = LegacyAskPalette.floatingBorder
+    static let floatingGlassEdge = LegacyAskPalette.floatingGlassEdge
+    static let launcherSeparator = LegacyAskPalette.launcherSeparator
+    static let launcherSelection = LegacyAskPalette.launcherSelection
+    static let launcherSelectionEdge = LegacyAskPalette.launcherSelectionEdge
+    static let launcherKeyword = LegacyAskPalette.launcherKeyword
+    static let launcherKeywordText = LegacyAskPalette.launcherKeywordText
+    static let launcherTile = LegacyAskPalette.launcherTile
+    static let launcherTileEdge = LegacyAskPalette.launcherTileEdge
+    static let launcherChipFill = LegacyAskPalette.launcherChipFill
+    static let launcherChipEdge = LegacyAskPalette.launcherChipEdge
+    static let launcherShortcutFill = LegacyAskPalette.launcherShortcutFill
+    static let launcherShortcutEdge = LegacyAskPalette.launcherShortcutEdge
+    static let launcherMetaText = LegacyAskPalette.launcherMetaText
+    static let launcherPlaceholderText = LegacyAskPalette.launcherPlaceholderText
+    static let switchOnFill = LegacyAskPalette.switchOnFill
+    static let switchOnEdge = LegacyAskPalette.switchOnEdge
+    static let glassFill = LegacyAskPalette.glassFill
+    static let pressFill = LegacyAskPalette.pressFill
+    static let hoverFill = LegacyAskPalette.hoverFill
+    static let monoSurface = LegacyAskPalette.monoSurface
+    static let cardBorder = LegacyAskPalette.cardBorder
+    static let librarySeparator = LegacyAskPalette.librarySeparator
+    static let noteQuestionSurface = LegacyAskPalette.noteQuestionSurface
+    static let keycapSurface = LegacyAskPalette.keycapSurface
+    static let userBubble = LegacyAskPalette.userBubble
+    static let userBubbleEdge = LegacyAskPalette.userBubbleEdge
 
     /// A readable title for a tool call; raw tool names never reach the transcript.
     /// `mcpServer` names the server of an MCP tool when the caller knows it.
