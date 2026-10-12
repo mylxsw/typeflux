@@ -50,9 +50,9 @@ final class ClipboardPanelNumberShortcutTests: XCTestCase {
         XCTAssertFalse(try press("2", flags: []))
         XCTAssertFalse(try press("2", flags: [.command, .shift]))
         XCTAssertEqual(pasted, ["text match"])
-        model.category = .text
+        model.category = .snippet
         XCTAssertTrue(try press("1"))
-        XCTAssertEqual(pasted, ["text match", "text match"])
+        XCTAssertEqual(pasted, ["text match"])
     }
 
     @MainActor

@@ -23,4 +23,5 @@ struct ClipboardItem: Identifiable, Equatable {
     var sourceBundleID: String?
     var sourceAppName: String?
     var isPinned: Bool
+    var snippet: ClipboardSnippet?
 }

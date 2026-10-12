@@ -449,7 +449,7 @@
 "clipboard.settings.pause.oneHour" = "1 時間停止";
 "clipboard.settings.pause.untilResumed" = "再開するまで停止";
 "clipboard.settings.retention" = "保持期間";
-"clipboard.settings.retention.subtitle" = "音声履歴とは別に設定します。ピン留めした項目は期限切れになりません。";
+"clipboard.settings.retention.subtitle" = "音声履歴とは別に管理します。スニペットとピン留めした項目は無期限に保持されます。";
 "clipboard.settings.retention.oneDay" = "1 日";
 "clipboard.settings.retention.oneWeek" = "1 週間";
 "clipboard.settings.retention.oneMonth" = "1 か月";
@@ -476,8 +476,8 @@
 "clipboard.action.editBeforePaste" = "編集してからペースト";
 "clipboard.action.showOnlyApp" = "%@ のみ表示";
 "clipboard.action.deleteAllFromApp" = "%@ の項目をすべて削除…";
-"clipboard.confirm.clearUnpinned" = "ピン留めしていないクリップボード項目 %d 件を削除しますか？音声入力の結果は残ります。";
-"clipboard.confirm.deleteApp" = "%2$@ からコピーしたピン留めしていない項目 %1$d 件を削除しますか？";
+"clipboard.confirm.clearUnpinned" = "ピン留めされていない%d件を削除しますか？スニペットと音声履歴は保持されます。";
+"clipboard.confirm.deleteApp" = "%2$@からコピーした未固定の%1$d件を削除しますか？スニペットは保持されます。";
 "clipboard.notice.nothingToClear" = "削除できるピン留めしていない項目はありません";
 "clipboard.notice.paused" = "クリップボードの記録を一時停止しました";
 "clipboard.notice.resumed" = "クリップボードの記録を再開しました";
@@ -502,9 +502,9 @@
 "clipboard.settings.ignored.choose" = "記録しない";
 "clipboard.settings.usage.reveal" = "Finder で表示";
 "clipboard.settings.usage.clearAll.title" = "ピン留めしていないクリップボード項目をすべて削除しますか？";
-"clipboard.settings.usage.clearAll.message" = "ピン留めした項目と音声入力の結果は残ります。この操作は取り消せません。";
+"clipboard.settings.usage.clearAll.message" = "スニペット、固定項目と音声履歴は保持されます。元に戻せません。";
 "clipboard.settings.usage.deleteApp.title" = "%@ のピン留めしていない項目を削除しますか？";
-"clipboard.settings.usage.deleteApp.message" = "ピン留めした項目は残ります。この操作は取り消せません。";
+"clipboard.settings.usage.deleteApp.message" = "スニペットと固定項目は保持されます。元に戻せません。";
 "clipboard.settings.usage.deleteApp.help" = "このアプリのピン留めしていない項目を削除";
 "clipboard.settings.usage.items" = "%d 件";
 "clipboard.settings.usage.row" = "%1$@ · %2$d 件";
@@ -4658,6 +4658,31 @@
 "settings.pane.appearance" = "外観";
 
 "settings.inputAndCapture.title" = "入力とスクリーンショット";
+
+// Clipboard snippets
+"clipboard.tab.clipboard" = "クリップボード";
+"clipboard.tab.snippet" = "スニペット";
+"clipboard.action.saveSnippet" = "スニペットとして保存…";
+"clipboard.action.editSnippet" = "スニペットを編集…";
+"clipboard.snippet.permanent" = "無期限に保持";
+"clipboard.snippet.voiceAlias" = "音声：%@";
+"clipboard.snippet.name" = "名前";
+"clipboard.snippet.content" = "内容";
+"clipboard.snippet.alias" = "音声エイリアス（任意）";
+"clipboard.snippet.aliasHint" = "「insert snippet」に続けてエイリアスを話すと、原文が挿入されます。";
+"clipboard.snippet.retentionHint" = "ピン留め不要。履歴を消去してもスニペットは保持されます。";
+"clipboard.snippet.save" = "保存";
+"clipboard.snippet.saved" = "スニペットを保存しました";
+"clipboard.snippet.search" = "スニペットを検索";
+"clipboard.snippet.empty" = "テキストを右クリックしてスニペットを保存できます。";
+"clipboard.snippet.confirmDelete" = "スニペット「%@」を削除しますか？元に戻せません。";
+"clipboard.snippet.error.invalidName" = "名前は1〜60文字で入力してください。";
+"clipboard.snippet.error.emptyText" = "内容を入力してください。";
+"clipboard.snippet.error.invalidAlias" = "音声エイリアスは40文字以内で入力してください。";
+"clipboard.snippet.error.duplicateAlias" = "この音声エイリアスは使用されています。";
+"clipboard.snippet.error.missingItem" = "元のテキストがありません。編集画面を閉じて再試行してください。";
+"clipboard.snippet.error.unavailable" = "保存できませんでした。下書きは保持されています。再試行してください。";
+"clipboard.snippet.notFound" = "この音声エイリアスに一致するスニペットはありません。";
 
 // Launcher file preview
 "launcher.search.preview" = "ファイルをプレビュー";

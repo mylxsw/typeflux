@@ -5,6 +5,69 @@ import AudioToolbox
 import XCTest
 
 final class WorkflowControllerProcessingTests: XCTestCase {
+    func testSnippetVoiceInvocationBypassesPersonaAndPreservesExactText() async throws {
+        let injector = MockProcessingTextInjector()
+        let history = MockProcessingHistoryStore()
+        let controller = makeWorkflowController(textInjector: injector,
+            sttTranscriber: MockProcessingTranscriber(transcript: "插入片段 邮件签名。"), historyStore: history)
+        let store = InMemoryClipboardHistoryStore()
+        let exact = "  繁體內容.\n    indent\n"
+        _ = try store.saveSnippet(id: nil, name: "Signature", text: exact, alias: "邮件签名", source: nil, at: Date())
+        controller.clipboardHistoryStore = store
+        await controller.process(
+            audioFile: AudioFile(fileURL: URL(fileURLWithPath: "/tmp/mock.wav"), duration: 1),
+            record: HistoryRecord(date: Date(), recordingStatus: .succeeded),
+            selectionSnapshot: TextSelectionSnapshot(), selectedText: nil, askContextText: nil, inputContext: nil,
+            personaPrompt: "Rewrite into different words", recordingIntent: .dictation,
+            sessionID: controller.processingSessionID
+        )
+        XCTAssertEqual(injector.insertedTexts, [exact])
+        XCTAssertEqual(history.list().last?.postProcessedText, exact)
+        XCTAssertEqual(history.list().last?.processingStatus, .skipped)
+        XCTAssertEqual(history.list().last?.transcriptText, "插入片段 邮件签名。")
+    }
+
+    func testUnknownSnippetDoesNotInsertAndCancelledSessionCannotDeliver() async throws {
+        let injector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: injector)
+        var record = HistoryRecord(date: Date())
+        var timing = HistoryPipelineTiming()
+        try await controller.processSnippetCommand(alias: "missing", sessionID: controller.processingSessionID,
+                                                    record: &record, pipelineTiming: &timing)
+        XCTAssertEqual(record.applyStatus, .skipped)
+        XCTAssertTrue(injector.insertedTexts.isEmpty)
+        do {
+            try await controller.processSnippetCommand(alias: "missing", sessionID: UUID(),
+                                                        record: &record, pipelineTiming: &timing)
+            XCTFail("Expected a cancelled session")
+        } catch is CancellationError {} catch { XCTFail("Unexpected error: \(error)") }
+    }
+
+    func testHistoryPanelSavesVoiceSnapshotAndDeletesOnlySnippetAfterConfirmation() throws {
+        let harness = makeClipboardPanelHarness(voiceTexts: ["voice original"])
+        harness.controller.handleHistoryPickerRequested()
+        harness.model.perform(.saveSnippet)
+        harness.model.snippetDraft?.name = "Saved voice"
+        harness.model.commitSnippet()
+        XCTAssertNil(harness.model.snippetError)
+        XCTAssertEqual(harness.model.category, .snippet)
+        XCTAssertEqual(harness.model.selectedEntry?.text, "voice original")
+        XCTAssertEqual(harness.historyStore.list().count, 1)
+        harness.controller.enforceClipboardRetentionPolicy(now: .distantFuture)
+        XCTAssertEqual(harness.store.storedItems.count, 1)
+        harness.model.perform(.editSnippet)
+        harness.model.snippetDraft?.text = "updated"
+        harness.model.commitSnippet()
+        XCTAssertEqual(harness.store.storedItems.first?.text, "updated")
+        XCTAssertEqual(harness.historyStore.list().first?.finalText, "voice original")
+        harness.model.perform(.delete)
+        XCTAssertEqual(harness.store.storedItems.count, 1)
+        harness.model.confirmPending()
+        XCTAssertTrue(harness.store.storedItems.isEmpty)
+        XCTAssertEqual(harness.historyStore.list().count, 1)
+        harness.controller.dismissHistoryPicker()
+    }
+
     override func setUp() {
         super.setUp()
         KeychainTokenStore.useInMemoryStoreForTesting = true

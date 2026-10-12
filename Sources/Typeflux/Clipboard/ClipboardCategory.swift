@@ -1,22 +1,16 @@
 import Foundation
 
-/// The panel's filter tabs.
+/// The panel separates temporary clipboard history from permanent snippets.
 enum ClipboardCategory: String, CaseIterable, Identifiable {
     case all
-    case text
-    case image
-    case file
-    case voice
+    case snippet
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .all: L("clipboard.tab.all")
-        case .text: L("clipboard.tab.text")
-        case .image: L("clipboard.tab.image")
-        case .file: L("clipboard.tab.file")
-        case .voice: L("clipboard.tab.voice")
+        case .all: L("clipboard.tab.clipboard")
+        case .snippet: L("clipboard.tab.snippet")
         }
     }
 }

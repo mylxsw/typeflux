@@ -451,7 +451,7 @@
 "clipboard.settings.pause.oneHour" = "暫停 1 小時";
 "clipboard.settings.pause.untilResumed" = "暫停到手動恢復";
 "clipboard.settings.retention" = "保留時長";
-"clipboard.settings.retention.subtitle" = "與語音歷史分開設定。已釘選的內容永不過期。";
+"clipboard.settings.retention.subtitle" = "獨立於語音歷史。片段和固定記錄永不過期。";
 "clipboard.settings.retention.oneDay" = "1 天";
 "clipboard.settings.retention.oneWeek" = "1 週";
 "clipboard.settings.retention.oneMonth" = "1 個月";
@@ -478,8 +478,8 @@
 "clipboard.action.editBeforePaste" = "編輯後貼上";
 "clipboard.action.showOnlyApp" = "只看 %@";
 "clipboard.action.deleteAllFromApp" = "刪除 %@ 的全部記錄…";
-"clipboard.confirm.clearUnpinned" = "刪除 %d 筆未釘選的剪貼簿內容？語音輸入結果會保留。";
-"clipboard.confirm.deleteApp" = "刪除從 %2$@ 拷貝的 %1$d 筆未釘選內容？";
+"clipboard.confirm.clearUnpinned" = "刪除 %d 筆未固定的剪貼簿記錄？片段和語音記錄會保留。";
+"clipboard.confirm.deleteApp" = "刪除從 %2$@ 複製的 %1$d 筆未固定記錄？片段會保留。";
 "clipboard.notice.nothingToClear" = "沒有可刪除的未釘選內容";
 "clipboard.notice.paused" = "已暫停記錄剪貼簿";
 "clipboard.notice.resumed" = "已恢復記錄剪貼簿";
@@ -504,9 +504,9 @@
 "clipboard.settings.ignored.choose" = "不記錄";
 "clipboard.settings.usage.reveal" = "在 Finder 中顯示";
 "clipboard.settings.usage.clearAll.title" = "刪除全部未釘選的剪貼簿內容？";
-"clipboard.settings.usage.clearAll.message" = "已釘選的內容和語音輸入結果會保留。此操作無法還原。";
+"clipboard.settings.usage.clearAll.message" = "片段、固定記錄和語音記錄會保留。此操作無法復原。";
 "clipboard.settings.usage.deleteApp.title" = "刪除來自 %@ 的未釘選內容？";
-"clipboard.settings.usage.deleteApp.message" = "已釘選的內容會保留。此操作無法還原。";
+"clipboard.settings.usage.deleteApp.message" = "片段和固定記錄會保留。此操作無法復原。";
 "clipboard.settings.usage.deleteApp.help" = "刪除此 App 的未釘選內容";
 "clipboard.settings.usage.items" = "共 %d 筆";
 "clipboard.settings.usage.row" = "%1$@ · %2$d 筆";
@@ -4709,3 +4709,28 @@
 "emoji.match.contains" = "部分符合";
 "emoji.match.intent" = "意圖聯想";
 "emoji.match.typo" = "拼字容錯";
+
+// Clipboard snippets
+"clipboard.tab.clipboard" = "剪貼簿";
+"clipboard.tab.snippet" = "片段";
+"clipboard.action.saveSnippet" = "儲存為片段…";
+"clipboard.action.editSnippet" = "編輯片段…";
+"clipboard.snippet.permanent" = "永久保留";
+"clipboard.snippet.voiceAlias" = "語音：%@";
+"clipboard.snippet.name" = "名稱";
+"clipboard.snippet.content" = "內容";
+"clipboard.snippet.alias" = "語音別名（選填）";
+"clipboard.snippet.aliasHint" = "說「插入片段」加上別名，即可插入原文。";
+"clipboard.snippet.retentionHint" = "儲存到片段，無需固定，不受歷史清理影響。";
+"clipboard.snippet.save" = "儲存";
+"clipboard.snippet.saved" = "片段已儲存";
+"clipboard.snippet.search" = "搜尋片段";
+"clipboard.snippet.empty" = "尚無片段，右鍵點選文字即可儲存。";
+"clipboard.snippet.confirmDelete" = "刪除片段「%@」？此操作無法復原。";
+"clipboard.snippet.error.invalidName" = "請輸入 1–60 字的名稱。";
+"clipboard.snippet.error.emptyText" = "片段內容不能為空。";
+"clipboard.snippet.error.invalidAlias" = "語音別名不能超過 40 字。";
+"clipboard.snippet.error.duplicateAlias" = "此語音別名已被使用。";
+"clipboard.snippet.error.missingItem" = "原文字已不存在，請關閉編輯框後重試。";
+"clipboard.snippet.error.unavailable" = "片段儲存失敗，草稿已保留，請重試。";
+"clipboard.snippet.notFound" = "找不到此語音別名對應的片段。";

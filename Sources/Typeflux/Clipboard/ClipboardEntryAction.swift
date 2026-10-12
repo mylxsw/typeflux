@@ -7,6 +7,8 @@ enum ClipboardEntryAction: Equatable, CaseIterable {
     case pastePlainText
     /// Text: edit in the panel, then paste; the stored entry is unchanged.
     case editBeforePaste
+    case saveSnippet
+    case editSnippet
     case copy
     case quickLook
     case revealInFinder
@@ -24,7 +26,8 @@ enum ClipboardEntryAction: Equatable, CaseIterable {
     var requiresContent: Bool {
         switch self {
         case .paste, .pastePlainText, .copy, .quickLook, .revealInFinder, .saveToDownloads, .copyImageText: true
-        case .editBeforePaste, .retryTranscription, .showOnlyApp, .togglePin, .delete, .deleteAllFromApp: false
+        case .saveSnippet, .editSnippet, .editBeforePaste, .retryTranscription, .showOnlyApp,
+             .togglePin, .delete, .deleteAllFromApp: false
         }
     }
 
@@ -39,12 +42,16 @@ enum ClipboardEntryAction: Equatable, CaseIterable {
         }
         actions.append(.copy)
         actions += contentActions(for: entry)
+        if entry.kind.isTextual, entry.text != nil {
+            actions.append(entry.snippet == nil ? .saveSnippet : .editSnippet)
+        }
         let fromApp = ClipboardAppFilter(entry: entry) != nil
         if fromApp {
             actions.append(.showOnlyApp)
         }
-        actions.append(contentsOf: [.togglePin, .delete])
-        if fromApp {
+        if entry.snippet == nil { actions.append(.togglePin) }
+        actions.append(.delete)
+        if fromApp, entry.snippet == nil {
             actions.append(.deleteAllFromApp)
         }
         return actions
@@ -97,8 +104,8 @@ enum ClipboardEntryAction: Equatable, CaseIterable {
         case .quickLook: "⌘Y"
         case .togglePin: "⌘P"
         case .delete: "⌘⌫"
-        case .revealInFinder, .saveToDownloads, .copyImageText, .retryTranscription, .showOnlyApp,
-             .deleteAllFromApp: nil
+        case .saveSnippet, .editSnippet, .revealInFinder, .saveToDownloads, .copyImageText, .retryTranscription,
+             .showOnlyApp, .deleteAllFromApp: nil
         }
     }
 }

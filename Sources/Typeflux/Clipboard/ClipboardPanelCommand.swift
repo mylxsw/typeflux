@@ -3,6 +3,7 @@ import Foundation
 /// Panel-level requests the clipboard panel model forwards to its owner, as opposed to actions
 /// on a single entry (`ClipboardEntryAction`).
 enum ClipboardPanelCommand: Equatable {
+    case deleteSnippet(ClipboardEntry)
     case togglePause
     case openSettings
     /// Deletes every unpinned clipboard item; voice history is kept.
@@ -15,11 +16,13 @@ enum ClipboardPanelCommand: Equatable {
 
 /// A destructive panel command waiting for the user to confirm it in the panel.
 enum ClipboardPanelConfirmation: Equatable {
+    case deleteSnippet(ClipboardEntry)
     case clearUnpinned(count: Int)
     case deleteApp(ClipboardAppFilter, count: Int)
 
     var command: ClipboardPanelCommand {
         switch self {
+        case let .deleteSnippet(entry): .deleteSnippet(entry)
         case .clearUnpinned: .clearUnpinned
         case let .deleteApp(app, _): .deleteApp(bundleID: app.bundleID)
         }
@@ -27,6 +30,7 @@ enum ClipboardPanelConfirmation: Equatable {
 
     var message: String {
         switch self {
+        case let .deleteSnippet(entry): L("clipboard.snippet.confirmDelete", entry.title)
         case let .clearUnpinned(count): L("clipboard.confirm.clearUnpinned", count)
         case let .deleteApp(app, count): L("clipboard.confirm.deleteApp", count, app.name)
         }
