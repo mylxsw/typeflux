@@ -9,12 +9,12 @@
 Use the package manifest in `Package.swift` as the source of truth.
 
 - `swift build`: compile the app target.
-- `swift test` or `make test`: run the full test suite.
+- `swift test` or `make test`: run the full test suite once at final validation, after all requested changes are complete.
 - `swift test --filter TypefluxTests.LLMRouterTests`: run one test class.
 - `scripts/setup_dev_cert.sh` **(run once)**: create a local self-signed code-signing identity ("Typeflux Dev") in a dedicated passwordless keychain. Required for stable macOS privacy permission grants (microphone, accessibility) across rebuilds.
 - `make run`: build, bundle, and launch `~/Applications/Typeflux Dev.app`.
 - `make dev`: launch the dev app with terminal logs attached.
-- `make coverage`: run coverage and write HTML output to `coverage-report/`.
+- `make coverage`: run full-suite coverage at final validation and write HTML output to `coverage-report/`.
 - `make format`: format code via `scripts/format.sh`.
 
 ## Coding Style & Naming Conventions
@@ -23,7 +23,18 @@ Follow existing Swift style in the repo: 4-space indentation, one top-level type
 
 ## Testing Guidelines
 
-Add tests in `Tests/TypefluxTests` for logic, routing, parsing, and provider behavior. Match production names where possible, for example `LLMRouter.swift` with `LLMRouterTests.swift`. Keep test names behavior-focused, such as `testCompleteRoutesToOpenAI`. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage. Run `swift test` before opening a PR; run `make coverage` for larger changes that touch core workflow paths. Swift Testing suites that host windows, send native events, switch or read `AppLocalization.shared` (including through `L()`), or otherwise run on the main actor must carry `.exclusiveUIState` (see `Tests/TypefluxTests/ExclusiveUIStateTrait.swift`); `.serialized` alone does not stop other suites from changing that shared state mid-test, and an `interface:` argument does not pin the language `L()` reads. `ExclusiveUIStateLanguageTests` audits this. Look up windows through the object that presented them, not by identifier alone, since windows from earlier tests can stay in `NSApp.windows`.
+Add tests in `Tests/TypefluxTests` for logic, routing, parsing, and provider behavior. Match production names where possible, for example `LLMRouter.swift` with `LLMRouterTests.swift`. Keep test names behavior-focused, such as `testCompleteRoutesToOpenAI`. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage. Complete final full-suite validation before opening a PR; for larger changes that touch core workflow paths, use `make coverage` as that final run. Follow the test execution policy below during implementation and failure retries. Swift Testing suites that host windows, send native events, switch or read `AppLocalization.shared` (including through `L()`), or otherwise run on the main actor must carry `.exclusiveUIState` (see `Tests/TypefluxTests/ExclusiveUIStateTrait.swift`); `.serialized` alone does not stop other suites from changing that shared state mid-test, and an `interface:` argument does not pin the language `L()` reads. `ExclusiveUIStateLanguageTests` audits this. Look up windows through the object that presented them, not by identifier alone, since windows from earlier tests can stay in `NSApp.windows`.
+
+### Test Execution Policy for Agents
+
+The full test suite takes a long time. Follow this policy for the entire requested task, including tasks with multiple changes:
+
+- During implementation, prefer focused tests for the changed behavior and directly affected dependencies. Use `swift test --filter <TestClassName>` or `swift test --filter <TestClassName>/<TestMethodName>`; do not run the full suite after each edit or subtask.
+- If tests fail, fix the cause and rerun only the failed tests with `--filter`. If exact test selection is unavailable, rerun the smallest containing suite. Do not rerun the full suite to retry failures, including failures discovered in the final full run.
+- If a run fails before tests execute (for example, a build or test-runner failure), fix the cause and retry the focused command. Do not switch to the full suite.
+- Only after all requested changes are complete and focused checks pass, run one final full test suite (`swift test` or `make test`). Do not repeat the full suite merely to confirm a failed-test fix.
+- Treat full-suite coverage runs (`make coverage`) as final validation too. When coverage is required, use that run as the final full test pass instead of also running a duplicate `swift test` or `make test` pass.
+- Report the focused checks, final full-suite result, and any failed-test retries separately. If full validation cannot finish, state the limitation clearly.
 
 ## Commit & Pull Request Guidelines
 

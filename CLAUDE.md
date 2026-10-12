@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Build
 swift build
 
-# Run all tests
+# Final validation only: run all tests once after all requested changes are complete
 swift test
 # or
 make test
@@ -29,7 +29,7 @@ make run
 # Launch dev app with terminal logs attached (most useful for development)
 make dev
 
-# Generate code coverage report (HTML output in coverage-report/)
+# Final validation with coverage (replaces the plain full test run; HTML in coverage-report/)
 make coverage
 
 # Format code (runs scripts/format.sh)
@@ -125,6 +125,17 @@ The app must run as a `.app` bundle (not a bare CLI binary) for macOS privacy pe
 ## Testing
 
 Tests live in `Tests/TypefluxTests/`. The test target imports the main `Typeflux` executable target directly. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage. Run `swift test --filter <TestClassName>` to run a subset. Use `@Sendable` closures with the `Recorder` actor pattern (see `RequestRetryTests`) for concurrency-safe test helpers. Swift Testing suites that host windows, send native events, switch or read `AppLocalization.shared` (including through `L()`), or otherwise run on the main actor must carry `.exclusiveUIState` (see `Tests/TypefluxTests/ExclusiveUIStateTrait.swift`); `.serialized` alone does not stop other suites from changing that shared state mid-test, and an `interface:` argument does not pin the language `L()` reads. `ExclusiveUIStateLanguageTests` audits this. Look up windows through the object that presented them, not by identifier alone, since windows from earlier tests can stay in `NSApp.windows`.
+
+### Test Execution Policy for Agents
+
+The full test suite takes a long time. Follow this policy for the entire requested task, including tasks with multiple changes:
+
+- During implementation, prefer focused tests for the changed behavior and directly affected dependencies. Use `swift test --filter <TestClassName>` or `swift test --filter <TestClassName>/<TestMethodName>`; do not run the full suite after each edit or subtask.
+- If tests fail, fix the cause and rerun only the failed tests with `--filter`. If exact test selection is unavailable, rerun the smallest containing suite. Do not rerun the full suite to retry failures, including failures discovered in the final full run.
+- If a run fails before tests execute (for example, a build or test-runner failure), fix the cause and retry the focused command. Do not switch to the full suite.
+- Only after all requested changes are complete and focused checks pass, run one final full test suite (`swift test` or `make test`). Do not repeat the full suite merely to confirm a failed-test fix.
+- Treat full-suite coverage runs (`make coverage`) as final validation too. When coverage is required, use that run as the final full test pass instead of also running a duplicate `swift test` or `make test` pass.
+- Report the focused checks, final full-suite result, and any failed-test retries separately. If full validation cannot finish, state the limitation clearly.
 
 ## Development Standards
 
