@@ -4713,3 +4713,17 @@
 "personas.redesign.shortcutsHelp" = "단축키 설정";
 "personas.redesign.close" = "닫기";
 "personas.redesign.noneShort" = "페르소나 사용 안 함";
+
+// Website sign-in
+"auth.web.description" = "Typeflux 웹사이트에서 이메일, Google, GitHub 또는 Apple로 안전하게 로그인하세요.";
+"auth.web.waiting" = "브라우저 로그인을 기다리는 중…";
+"auth.web.exchanging" = "로그인 완료 중…";
+"auth.web.continue" = "브라우저에서 계속";
+"auth.web.reopen" = "로그인 페이지 다시 열기";
+"auth.web.reopenHint" = "동일한 브라우저를 사용하세요. 브라우저 세션이 사라졌다면 취소하고 다시 시작하세요.";
+"auth.web.cancel" = "취소";
+"auth.web.cancelled" = "로그인이 취소되었습니다. 다시 시작할 수 있습니다.";
+"auth.web.expired" = "로그인이 만료되었습니다. 다시 시작하세요.";
+"auth.web.browserUnavailable" = "브라우저를 시작할 수 없습니다. 다시 시도하세요.";
+"auth.web.restartRequired" = "로그인을 완료할 수 없습니다. 이전 인증 코드는 재사용할 수 없으니 새로 로그인하세요.";
+"auth.web.storageFailed" = "키체인에 세션을 저장할 수 없습니다. 키체인을 잠금 해제하고 다시 로그인하세요.";

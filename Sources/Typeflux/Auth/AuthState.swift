@@ -43,6 +43,7 @@ final class AuthState: ObservableObject {
     }
 
     static let shared = AuthState()
+    lazy var webLoginCoordinator = makeWebLoginCoordinator()
 
     let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "AuthState")
     let loadStoredToken: () -> (token: String, expiresAt: Int)?
@@ -206,7 +207,8 @@ final class AuthState: ObservableObject {
 
     // MARK: - Login
 
-    func handleLoginSuccess(token: String, expiresAt: Int, refreshToken: String? = nil) async {
+    func handleLoginSuccess(token: String, expiresAt: Int, refreshToken: String? = nil,
+                            sessionAlreadyPersisted: Bool = false) async {
         RecentInputMemoryStore.shared.invalidateObservations()
         let normalizedExpiresAt = normalizeLoginExpiry(expiresAt)
         sessionGeneration += 1
@@ -214,7 +216,9 @@ final class AuthState: ObservableObject {
         inMemorySessionToken = (token, normalizedExpiresAt)
         cachedStoredToken = (token, normalizedExpiresAt)
         cachedRefreshToken = refreshToken
-        saveStoredSession(token, normalizedExpiresAt, refreshToken)
+        if !sessionAlreadyPersisted {
+            saveStoredSession(token, normalizedExpiresAt, refreshToken)
+        }
         logger.info(
             "Login session saved: expiresAt=\(normalizedExpiresAt, privacy: .public), refreshTokenProvided=\((refreshToken?.isEmpty == false), privacy: .public)"
         )
@@ -231,6 +235,7 @@ final class AuthState: ObservableObject {
     // MARK: - Logout
 
     func logout(clearRecentInputMemory: Bool = true) {
+        webLoginCoordinator.cancel()
         RecentInputMemoryStore.shared.invalidateObservations()
         if clearRecentInputMemory {
             RecentInputMemoryStore.shared.clear(owner: userProfile?.id ?? loadStoredUserProfile()?.id ?? "local")

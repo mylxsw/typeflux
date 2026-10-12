@@ -1,0 +1,69 @@
+{
+  "files": {
+    "AppLoginURLRouter.swift": {
+      "count": 13,
+      "covered": 13,
+      "percent": 100
+    },
+    "AuthState+WebLogin.swift": {
+      "count": 36,
+      "covered": 29,
+      "percent": 80.55555555555556
+    },
+    "WebLoginAPI.swift": {
+      "count": 56,
+      "covered": 55,
+      "percent": 98.21428571428571
+    },
+    "WebLoginBrowser.swift": {
+      "count": 25,
+      "covered": 16,
+      "percent": 64
+    },
+    "WebLoginCoordinator.swift": {
+      "count": 165,
+      "covered": 165,
+      "percent": 100
+    },
+    "WebLoginProtocol.swift": {
+      "count": 131,
+      "covered": 124,
+      "percent": 94.65648854961832
+    },
+    "WebLoginView.swift": {
+      "count": 94,
+      "covered": 87,
+      "percent": 92.5531914893617
+    }
+  },
+  "core": {
+    "covered": 386,
+    "count": 401,
+    "percent": 96.25935162094763
+  },
+  "new": {
+    "covered": 489,
+    "count": 520,
+    "percent": 94.03846153846153
+  },
+  "macos_source": {
+    "covered": 170619,
+    "count": 218374,
+    "percent": 78.13155412274355
+  },
+  "test_summaries": [
+    "\t Executed 13 tests, with 0 failures (0 unexpected) in 3.155 (3.157) seconds",
+    "\t Executed 168 tests, with 0 failures (0 unexpected) in 24.680 (24.696) seconds",
+    "\t Executed 7 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds",
+    "\t Executed 3787 tests, with 17 tests skipped and 0 failures (0 unexpected) in 206.183 (206.376) seconds",
+    "\t Executed 3787 tests, with 17 tests skipped and 0 failures (0 unexpected) in 206.183 (206.378) seconds",
+    "\u2718 Test run with 2716 tests in 412 suites failed after 1417.037 seconds with 5 issues."
+  ],
+  "failures": [
+    "\u2718 Test noticesAndFailuresFitTheirContentAfterCapsuleTransitions(style:) recorded an issue with 1 argument style \u2192 .liquidGlass at OverlayTransitionRenderingTests.swift:40:35: Expectation failed: Date() < deadline",
+    "\u2718 Test noticesAndFailuresFitTheirContentAfterCapsuleTransitions(style:) recorded an issue with 1 argument style \u2192 .classic at OverlayTransitionRenderingTests.swift:40:35: Expectation failed: Date() < deadline",
+    "\u2718 Test resultDialogFitsShortTextAndCapsLongTextAfterRecording(style:) recorded an issue with 1 argument style \u2192 .liquidGlass at OverlayTransitionRenderingTests.swift:75:35: Expectation failed: Date() < deadline",
+    "\u2718 Test resultDialogFitsShortTextAndCapsLongTextAfterRecording(style:) recorded an issue with 1 argument style \u2192 .classic at OverlayTransitionRenderingTests.swift:75:35: Expectation failed: Date() < deadline",
+    "\u2718 Test realCaptureKeepsAppPagePixelsBehindCaptureControls() recorded an issue at ScreenshotCaptureWindowPolicyTests.swift:102:9: Expectation failed: pixels.bytes[offset + 1] > 200"
+  ]
+}

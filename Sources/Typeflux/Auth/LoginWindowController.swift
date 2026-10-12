@@ -78,6 +78,9 @@ final class LoginWindowController: NSObject {
 
 extension LoginWindowController: NSWindowDelegate {
     func windowWillClose(_: Notification) {
+        if !AuthState.shared.isLoggedIn {
+            AuthState.shared.webLoginCoordinator.cancel()
+        }
         if let window {
             DockVisibilityController.shared.windowDidHide(window)
         }

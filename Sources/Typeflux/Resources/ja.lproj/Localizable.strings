@@ -4713,3 +4713,17 @@
 "personas.redesign.shortcutsHelp" = "ショートカット設定";
 "personas.redesign.close" = "閉じる";
 "personas.redesign.noneShort" = "ペルソナなし";
+
+// Website sign-in
+"auth.web.description" = "Typeflux のウェブサイトでメール、Google、GitHub、Apple を使って安全にログインします。";
+"auth.web.waiting" = "ブラウザでのログインを待っています…";
+"auth.web.exchanging" = "ログインを完了しています…";
+"auth.web.continue" = "ブラウザで続ける";
+"auth.web.reopen" = "ログインページを再度開く";
+"auth.web.reopenHint" = "同じブラウザを使用してください。セッションが失われた場合はキャンセルしてやり直してください。";
+"auth.web.cancel" = "キャンセル";
+"auth.web.cancelled" = "ログインをキャンセルしました。やり直せます。";
+"auth.web.expired" = "ログインの有効期限が切れました。やり直してください。";
+"auth.web.browserUnavailable" = "ブラウザを起動できませんでした。もう一度お試しください。";
+"auth.web.restartRequired" = "ログインを完了できませんでした。前の認証コードは再利用できないため、最初からやり直してください。";
+"auth.web.storageFailed" = "キーチェーンに保存できませんでした。キーチェーンを解除してログインし直してください。";
