@@ -112,13 +112,9 @@ final class ClipboardFeedTests: XCTestCase {
             pinnedVoiceRecordIDs: []
         )
         XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "").count, 4)
-        XCTAssertEqual(ClipboardFeed.filter(entries, category: .text, query: "").map(\.title), ["Quarterly Report"])
-        XCTAssertEqual(ClipboardFeed.filter(entries, category: .file, query: "").map(\.title), ["Report.pdf"])
-        XCTAssertEqual(ClipboardFeed.filter(entries, category: .image, query: "").count, 1)
-        XCTAssertEqual(ClipboardFeed.filter(entries, category: .voice, query: "").map(\.kind), [.voice])
+        XCTAssertTrue(ClipboardFeed.filter(entries, category: .snippet, query: "").isEmpty)
         XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: " report ").count, 3)
         XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "safari").count, 1)
-        XCTAssertTrue(ClipboardFeed.filter(entries, category: .voice, query: "pdf").isEmpty)
     }
 
     func testSections() {
@@ -169,7 +165,6 @@ final class ClipboardFeedTests: XCTestCase {
         XCTAssertEqual(
             ClipboardFeed.filter(all, category: .all, query: "", sourceBundleID: "com.apple.Safari").map(\.id), [safari.id]
         )
-        XCTAssertTrue(ClipboardFeed.filter(all, category: .voice, query: "", sourceBundleID: "com.apple.Safari").isEmpty)
     }
 
 }

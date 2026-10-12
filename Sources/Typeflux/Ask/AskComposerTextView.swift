@@ -28,6 +28,8 @@ struct AskComposerTextView: NSViewRepresentable {
     var onSlashQuery: ((AskSlashQuery?, Bool) -> Void)?
     /// Arrow, Return, Tab and Escape while the command palette is open; true when handled.
     var onCommandKey: ((AskCommandKey) -> Bool)?
+    /// Plain left/right for a result grid; false leaves native caret movement intact.
+    var onHorizontalArrow: ((Int) -> Bool)?
     /// Delete in an empty editor; true when it removed something instead.
     var onEmptyBackspace: (() -> Bool)?
     /// Launcher-local ⌘O. The model checks recording and draft readiness.
@@ -73,6 +75,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onDropTargetChange = onDropTargetChange
         editor.onSlashQuery = onSlashQuery
         editor.onCommandKey = onCommandKey
+        editor.onHorizontalArrow = onHorizontalArrow
         editor.onEmptyBackspace = onEmptyBackspace
         editor.onContextShortcut = onContextShortcut
         editor.onOpenChat = onOpenChat
@@ -112,6 +115,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onDropTargetChange = onDropTargetChange
         editor.onSlashQuery = onSlashQuery
         editor.onCommandKey = onCommandKey
+        editor.onHorizontalArrow = onHorizontalArrow
         editor.onEmptyBackspace = onEmptyBackspace
         editor.onContextShortcut = onContextShortcut
         editor.onOpenChat = onOpenChat
@@ -161,6 +165,7 @@ struct AskComposerTextView: NSViewRepresentable {
         var onDropTargetChange: (Bool) -> Void = { _ in }
         var onSlashQuery: ((AskSlashQuery?, Bool) -> Void)?
         var onCommandKey: ((AskCommandKey) -> Bool)?
+        var onHorizontalArrow: ((Int) -> Bool)?
         var onEmptyBackspace: (() -> Bool)?
         var onOpenChat: (() -> Void)?
         var onContextShortcut: (() -> Bool)?
@@ -487,6 +492,9 @@ struct AskComposerTextView: NSViewRepresentable {
                 }
                 return
             }
+            if !hasMarkedText(), [123, 124].contains(event.keyCode),
+               event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
+               onHorizontalArrow?(event.keyCode == 123 ? -1 : 1) == true { return }
             if !hasMarkedText(), let key = AskCommandKey(event), key != .commandC || selectedRange().length == 0,
                key != .right || caretAtEnd {
                 if event.isARepeat, case .number = key { return }

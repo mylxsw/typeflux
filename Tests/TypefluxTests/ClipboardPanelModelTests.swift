@@ -31,7 +31,7 @@ final class ClipboardPanelModelTests: XCTestCase {
 
     func testResetShowsEverythingAndSelectsTheFirstRow() {
         model.query = "x"
-        model.category = .file
+        model.category = .snippet
         model.reset(entries: entries)
         XCTAssertEqual(model.visibleEntries.count, 5)
         XCTAssertEqual(model.selectedIndex, 0)
@@ -48,8 +48,8 @@ final class ClipboardPanelModelTests: XCTestCase {
         XCTAssertEqual(model.selectedIndex, 0)
 
         model.moveSelection(by: 1)
-        model.category = .text
-        XCTAssertEqual(model.visibleEntries.map(\.title), ["plain words"])
+        model.category = .snippet
+        XCTAssertTrue(model.visibleEntries.isEmpty)
         XCTAssertEqual(model.selectedIndex, 0)
     }
 
@@ -73,11 +73,11 @@ final class ClipboardPanelModelTests: XCTestCase {
     func testCycleCategoryWrapsBothWays() {
         model.reset(entries: entries)
         model.cycleCategory(forward: false)
-        XCTAssertEqual(model.category, .voice)
+        XCTAssertEqual(model.category, .snippet)
         model.cycleCategory(forward: true)
         XCTAssertEqual(model.category, .all)
         model.cycleCategory(forward: true)
-        XCTAssertEqual(model.category, .text)
+        XCTAssertEqual(model.category, .snippet)
     }
 
     func testReplaceEntriesKeepsTheSelectedRow() {
@@ -156,10 +156,10 @@ final class ClipboardPanelModelTests: XCTestCase {
         model.quickPaste(number: 2)
         XCTAssertEqual(performed.map(\.1), ["plain words"])
         XCTAssertEqual(model.selectedIndex, 1)
-        model.category = .text
+        model.category = .snippet
         model.quickPaste(number: 1)
         model.quickPaste(number: 2)
-        XCTAssertEqual(performed.map(\.1), ["plain words", "plain words"])
+        XCTAssertEqual(performed.map(\.1), ["plain words"])
         XCTAssertEqual(model.selectedIndex, 0)
     }
 
@@ -299,7 +299,7 @@ final class ClipboardPanelModelTests: XCTestCase {
         let before = model.scrollToTopRequest
         model.moveSelection(by: 2)
         XCTAssertEqual(model.scrollToTopRequest, before)
-        model.category = .text
+        model.category = .snippet
         XCTAssertEqual(model.scrollToTopRequest, before + 1)
     }
 

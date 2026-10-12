@@ -58,6 +58,7 @@ struct ClipboardPanelView: View {
         )
         .overlay(alignment: .bottom) { noticeToast }
         .overlay { if model.editingText != nil { ClipboardEditBeforePaste(model: model) } }
+        .overlay { if model.snippetDraft != nil { ClipboardSnippetEditor(model: model) } }
         .overlay(alignment: .bottom) {
             if let pending = model.pendingConfirmation {
                 ClipboardConfirmationBar(
@@ -70,6 +71,9 @@ struct ClipboardPanelView: View {
         .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
         .onAppear { searchFocused = true }
         .onChange(of: focusRequest) { _ in searchFocused = true }
+        .onChange(of: model.snippetDraft == nil) { closed in
+            if closed { searchFocused = true }
+        }
         .onChange(of: model.editingText == nil) { closed in
             if closed { searchFocused = true }
         }
@@ -108,7 +112,7 @@ struct ClipboardPanelView: View {
                     searchFocused = true
                 }
             }
-            TextField(L("clipboard.search.placeholder"), text: $model.query)
+            TextField(L(model.category == .snippet ? "clipboard.snippet.search" : "clipboard.search.placeholder"), text: $model.query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 17))
                 .focused($searchFocused)
@@ -247,7 +251,7 @@ struct ClipboardPanelView: View {
         VStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 30, weight: .light))
-            Text(model.query.isEmpty ? L("clipboard.empty") : L("clipboard.search.noResults", model.query))
+            Text(model.query.isEmpty ? L(model.category == .snippet ? "clipboard.snippet.empty" : "clipboard.empty") : L("clipboard.search.noResults", model.query))
                 .font(.system(size: 12.5))
         }
         .foregroundStyle(StudioTheme.textSecondary)
@@ -271,8 +275,10 @@ extension ClipboardPanelView {
                 if entry.kind.isTextual == false {
                     footerButton(.quickLook, entry: entry)
                 }
-                footerButton(.togglePin, entry: entry)
-                Divider().frame(height: 14).padding(.horizontal, 4)
+                if entry.snippet == nil {
+                    footerButton(.togglePin, entry: entry)
+                    Divider().frame(height: 14).padding(.horizontal, 4)
+                }
                 footerButton(.paste, entry: entry, primary: true)
             }
         }

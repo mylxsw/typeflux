@@ -26,7 +26,7 @@ struct EmojiPresentation: Equatable, Sendable {
 
 struct AskEmojiPlugin: AskLauncherPlugin {
     static let id = "emoji"
-    static let keywords = [AskKeyword(keyword: "emoji", pluginID: id, aliases: ["表情"])]
+    static let keywords = [AskKeyword(keyword: "em", pluginID: id, aliases: ["emoji"])]
     var id: String {
         Self.id
     }

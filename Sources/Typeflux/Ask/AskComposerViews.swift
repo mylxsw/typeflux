@@ -810,11 +810,7 @@ struct AskComposer: View {
     /// Arrows wrap through visible plugin items; the header owns the AI action.
     private func movePluginHighlight(_ delta: Int) {
         if plugins.output?.emoji != nil {
-            let index = plugins.output?.selectedItem ?? 0
-            let count = plugins.output?.items.count ?? 0
-            if let next = EmojiResultsView.nextIndex(index, delta: delta * EmojiResultsView.columns, count: count) {
-                plugins.selectItem(next)
-            }
+            _ = moveEmojiSelection(delta * EmojiResultsView.columns)
             return
         }
         if pluginHighlight == 0, plugins.moveSelection(delta) { return }
@@ -822,6 +818,17 @@ struct AskComposer: View {
         if let indices = plugins.output?.selectableIndices, let index = delta < 0 ? indices.last : indices.first {
             plugins.selectItem(index)
         }
+    }
+
+    /// The search editor keeps focus while all four arrows choose emoji results.
+    private func moveEmojiSelection(_ delta: Int) -> Bool {
+        guard launcher, !active, plugins.plugin?.id == AskEmojiPlugin.id else { return false }
+        guard plugins.isPlanCurrent else { return true }
+        guard let output = plugins.output, output.emoji != nil, !output.items.isEmpty else { return false }
+        if let next = EmojiResultsView.nextIndex(output.selectedItem, delta: delta, count: output.items.count) {
+            plugins.selectItem(next)
+        }
+        return true
     }
 
     /// ⌫ in an empty editor in keyword mode turns the chip back into text.
@@ -1540,6 +1547,7 @@ struct AskComposer: View {
             onDropTargetChange: { editorDropTargeted = $0 },
             onSlashQuery: launcher ? nil : slashChanged,
             onCommandKey: commandKey,
+            onHorizontalArrow: launcher ? moveEmojiSelection : nil,
             onEmptyBackspace: launcher ? { removeKeyword() || removeLastContext() } : nil,
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil

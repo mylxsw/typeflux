@@ -45,13 +45,9 @@ final class ClipboardContentClassifierTests: XCTestCase {
     }
 
     func testKindCategoriesAndTextuality() {
-        XCTAssertEqual(ClipboardEntryKind.voice.category, .voice)
-        XCTAssertEqual(ClipboardEntryKind.code.category, .text)
-        XCTAssertEqual(ClipboardEntryKind.images.category, .image)
-        XCTAssertEqual(ClipboardEntryKind.audio.category, .file)
         XCTAssertTrue(ClipboardEntryKind.link.isTextual)
         XCTAssertFalse(ClipboardEntryKind.image.isTextual)
-        XCTAssertEqual(ClipboardCategory.allCases.map(\.id), ["all", "text", "image", "file", "voice"])
+        XCTAssertEqual(ClipboardCategory.allCases.map(\.id), ["all", "snippet"])
         XCTAssertTrue(ClipboardCategory.allCases.allSatisfy { !$0.title.isEmpty && !$0.title.hasPrefix("clipboard.") })
     }
 }

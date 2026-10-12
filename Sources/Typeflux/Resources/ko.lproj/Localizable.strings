@@ -449,7 +449,7 @@
 "clipboard.settings.pause.oneHour" = "1시간 동안 정지";
 "clipboard.settings.pause.untilResumed" = "다시 시작할 때까지 정지";
 "clipboard.settings.retention" = "보관 기간";
-"clipboard.settings.retention.subtitle" = "음성 기록과 별도로 설정합니다. 고정한 항목은 만료되지 않습니다.";
+"clipboard.settings.retention.subtitle" = "음성 기록과 별도로 관리합니다. 스니펫과 고정 항목은 만료되지 않습니다.";
 "clipboard.settings.retention.oneDay" = "1일";
 "clipboard.settings.retention.oneWeek" = "1주";
 "clipboard.settings.retention.oneMonth" = "1개월";
@@ -476,8 +476,8 @@
 "clipboard.action.editBeforePaste" = "편집 후 붙여넣기";
 "clipboard.action.showOnlyApp" = "%@만 보기";
 "clipboard.action.deleteAllFromApp" = "%@의 모든 항목 삭제…";
-"clipboard.confirm.clearUnpinned" = "고정되지 않은 클립보드 항목 %d개를 삭제할까요? 음성 입력 결과는 유지됩니다.";
-"clipboard.confirm.deleteApp" = "%2$@에서 복사한 고정되지 않은 항목 %1$d개를 삭제할까요?";
+"clipboard.confirm.clearUnpinned" = "고정되지 않은 항목 %d개를 삭제할까요? 스니펫과 음성 기록은 유지됩니다.";
+"clipboard.confirm.deleteApp" = "%2$@에서 복사한 고정되지 않은 항목 %1$d개를 삭제할까요? 스니펫은 유지됩니다.";
 "clipboard.notice.nothingToClear" = "삭제할 고정되지 않은 항목이 없습니다";
 "clipboard.notice.paused" = "클립보드 기록을 일시 정지했습니다";
 "clipboard.notice.resumed" = "클립보드 기록을 다시 시작했습니다";
@@ -502,9 +502,9 @@
 "clipboard.settings.ignored.choose" = "기록 안 함";
 "clipboard.settings.usage.reveal" = "Finder에서 보기";
 "clipboard.settings.usage.clearAll.title" = "고정되지 않은 클립보드 항목을 모두 삭제할까요?";
-"clipboard.settings.usage.clearAll.message" = "고정한 항목과 음성 입력 결과는 유지됩니다. 이 작업은 되돌릴 수 없습니다.";
+"clipboard.settings.usage.clearAll.message" = "스니펫, 고정 항목 및 음성 기록은 유지됩니다. 되돌릴 수 없습니다.";
 "clipboard.settings.usage.deleteApp.title" = "%@의 고정되지 않은 항목을 삭제할까요?";
-"clipboard.settings.usage.deleteApp.message" = "고정한 항목은 유지됩니다. 이 작업은 되돌릴 수 없습니다.";
+"clipboard.settings.usage.deleteApp.message" = "스니펫과 고정 항목은 유지됩니다. 되돌릴 수 없습니다.";
 "clipboard.settings.usage.deleteApp.help" = "이 앱의 고정되지 않은 항목 삭제";
 "clipboard.settings.usage.items" = "%d개 항목";
 "clipboard.settings.usage.row" = "%1$@ · %2$d개";
@@ -4658,6 +4658,31 @@
 "settings.pane.appearance" = "외관";
 
 "settings.inputAndCapture.title" = "입력 및 캡처";
+
+// Clipboard snippets
+"clipboard.tab.clipboard" = "클립보드";
+"clipboard.tab.snippet" = "스니펫";
+"clipboard.action.saveSnippet" = "스니펫으로 저장…";
+"clipboard.action.editSnippet" = "스니펫 편집…";
+"clipboard.snippet.permanent" = "영구 보관";
+"clipboard.snippet.voiceAlias" = "음성: %@";
+"clipboard.snippet.name" = "이름";
+"clipboard.snippet.content" = "내용";
+"clipboard.snippet.alias" = "음성 별칭 (선택)";
+"clipboard.snippet.aliasHint" = "“insert snippet” 다음에 별칭을 말하면 원문이 삽입됩니다.";
+"clipboard.snippet.retentionHint" = "고정할 필요 없이 보관되며 기록 정리 시에도 유지됩니다.";
+"clipboard.snippet.save" = "저장";
+"clipboard.snippet.saved" = "스니펫이 저장되었습니다";
+"clipboard.snippet.search" = "스니펫 검색";
+"clipboard.snippet.empty" = "텍스트를 마우스 오른쪽 버튼으로 클릭하여 저장하세요.";
+"clipboard.snippet.confirmDelete" = "스니펫 “%@”을 삭제할까요? 되돌릴 수 없습니다.";
+"clipboard.snippet.error.invalidName" = "이름을 1~60자로 입력하세요.";
+"clipboard.snippet.error.emptyText" = "내용을 입력하세요.";
+"clipboard.snippet.error.invalidAlias" = "음성 별칭은 40자 이하여야 합니다.";
+"clipboard.snippet.error.duplicateAlias" = "이미 사용 중인 음성 별칭입니다.";
+"clipboard.snippet.error.missingItem" = "원본 텍스트가 없습니다. 편집기를 닫고 다시 시도하세요.";
+"clipboard.snippet.error.unavailable" = "저장하지 못했습니다. 초안은 유지됩니다. 다시 시도하세요.";
+"clipboard.snippet.notFound" = "이 음성 별칭과 일치하는 스니펫이 없습니다.";
 
 // Launcher file preview
 "launcher.search.preview" = "파일 미리보기";

@@ -453,7 +453,7 @@
 "clipboard.settings.pause.oneHour" = "暂停 1 小时";
 "clipboard.settings.pause.untilResumed" = "暂停到手动恢复";
 "clipboard.settings.retention" = "保留时长";
-"clipboard.settings.retention.subtitle" = "与语音历史分开设置。已固定的内容永不过期。";
+"clipboard.settings.retention.subtitle" = "独立于语音历史。片段和固定记录永不过期。";
 "clipboard.settings.retention.oneDay" = "1 天";
 "clipboard.settings.retention.oneWeek" = "1 周";
 "clipboard.settings.retention.oneMonth" = "1 个月";
@@ -480,8 +480,8 @@
 "clipboard.action.editBeforePaste" = "编辑后粘贴";
 "clipboard.action.showOnlyApp" = "只看 %@";
 "clipboard.action.deleteAllFromApp" = "删除 %@ 的全部记录…";
-"clipboard.confirm.clearUnpinned" = "删除 %d 条未固定的剪贴板内容？语音输入结果会保留。";
-"clipboard.confirm.deleteApp" = "删除从 %2$@ 复制的 %1$d 条未固定内容？";
+"clipboard.confirm.clearUnpinned" = "删除 %d 条未固定的剪贴板记录？片段和语音记录会保留。";
+"clipboard.confirm.deleteApp" = "删除从 %2$@ 复制的 %1$d 条未固定记录？片段会保留。";
 "clipboard.notice.nothingToClear" = "没有可删除的未固定内容";
 "clipboard.notice.paused" = "已暂停记录剪贴板";
 "clipboard.notice.resumed" = "已恢复记录剪贴板";
@@ -506,9 +506,9 @@
 "clipboard.settings.ignored.choose" = "不记录";
 "clipboard.settings.usage.reveal" = "在访达中显示";
 "clipboard.settings.usage.clearAll.title" = "删除全部未固定的剪贴板内容？";
-"clipboard.settings.usage.clearAll.message" = "已固定的内容和语音输入结果会保留。此操作无法撤销。";
+"clipboard.settings.usage.clearAll.message" = "片段、固定记录和语音记录会保留。此操作无法撤销。";
 "clipboard.settings.usage.deleteApp.title" = "删除来自 %@ 的未固定内容？";
-"clipboard.settings.usage.deleteApp.message" = "已固定的内容会保留。此操作无法撤销。";
+"clipboard.settings.usage.deleteApp.message" = "片段和固定记录会保留。此操作无法撤销。";
 "clipboard.settings.usage.deleteApp.help" = "删除此应用的未固定内容";
 "clipboard.settings.usage.items" = "共 %d 条";
 "clipboard.settings.usage.row" = "%1$@ · %2$d 条";
@@ -4724,3 +4724,28 @@
 "emoji.match.contains" = "包含匹配";
 "emoji.match.intent" = "意图联想";
 "emoji.match.typo" = "拼写容错";
+
+// Clipboard snippets
+"clipboard.tab.clipboard" = "剪贴板";
+"clipboard.tab.snippet" = "片段";
+"clipboard.action.saveSnippet" = "保存为片段…";
+"clipboard.action.editSnippet" = "编辑片段…";
+"clipboard.snippet.permanent" = "永久保留";
+"clipboard.snippet.voiceAlias" = "语音：%@";
+"clipboard.snippet.name" = "名称";
+"clipboard.snippet.content" = "内容";
+"clipboard.snippet.alias" = "语音别名（可选）";
+"clipboard.snippet.aliasHint" = "说“插入片段”加上别名，即可插入原文。";
+"clipboard.snippet.retentionHint" = "保存到片段，无需固定，不受历史清理影响。";
+"clipboard.snippet.save" = "保存";
+"clipboard.snippet.saved" = "片段已保存";
+"clipboard.snippet.search" = "搜索片段";
+"clipboard.snippet.empty" = "还没有片段，右键一条文字即可保存。";
+"clipboard.snippet.confirmDelete" = "删除片段“%@”？此操作无法撤销。";
+"clipboard.snippet.error.invalidName" = "请输入 1–60 字的名称。";
+"clipboard.snippet.error.emptyText" = "片段内容不能为空。";
+"clipboard.snippet.error.invalidAlias" = "语音别名不能超过 40 字。";
+"clipboard.snippet.error.duplicateAlias" = "这个语音别名已被使用。";
+"clipboard.snippet.error.missingItem" = "原文字已不存在，请关闭编辑框后重试。";
+"clipboard.snippet.error.unavailable" = "片段保存失败，草稿已保留，请重试。";
+"clipboard.snippet.notFound" = "没有找到此语音别名对应的片段。";

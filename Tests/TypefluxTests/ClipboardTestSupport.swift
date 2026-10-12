@@ -215,9 +215,31 @@ final class InMemoryClipboardHistoryStore: ClipboardHistoryStore {
         return Array(storedItems.sorted { $0.date > $1.date }.prefix(limit))
     }
 
+    func saveSnippet(id: UUID?, name: String, text: String, alias: String,
+                     source: ClipboardSource?, at date: Date) throws -> ClipboardItem {
+        let snippet = try ClipboardSnippet.validated(name: name, text: text, alias: alias)
+        let key = ClipboardSnippet.normalizedAlias(snippet.alias)
+        if !key.isEmpty, storedItems.contains(where: {
+            $0.id != id && $0.snippet.map { ClipboardSnippet.normalizedAlias($0.alias) == key } == true
+        }) { throw ClipboardSnippetError.duplicateAlias }
+        let itemID = id ?? UUID()
+        if let id, !storedItems.contains(where: { $0.id == id && $0.payload == .text }) {
+            throw ClipboardSnippetError.missingItem
+        }
+        var item = storedItems.first { $0.id == id } ?? ClipboardItem(
+            id: itemID, payload: .text, date: date, text: text, filePaths: [], imagePath: nil,
+            imagePixelWidth: nil, imagePixelHeight: nil, byteSize: 0, contentHash: "",
+            sourceBundleID: source?.bundleID, sourceAppName: source?.appName, isPinned: false
+        )
+        item.text = text; item.date = date; item.byteSize = Int64(text.utf8.count)
+        item.contentHash = "snippet:\(itemID.uuidString)"; item.snippet = snippet; item.isPinned = false
+        storedItems.removeAll { $0.id == itemID }; storedItems.append(item)
+        return item
+    }
+
     func setPinned(_ pinned: Bool, id: UUID) {
         guard let index = storedItems.firstIndex(where: { $0.id == id }) else { return }
-        storedItems[index].isPinned = pinned
+        if storedItems[index].snippet == nil { storedItems[index].isPinned = pinned }
     }
 
     func delete(id: UUID) {
@@ -226,7 +248,7 @@ final class InMemoryClipboardHistoryStore: ClipboardHistoryStore {
 
     func purge(olderThan cutoff: Date) {
         purgeCutoffs.append(cutoff)
-        storedItems.removeAll { !$0.isPinned && $0.date < cutoff }
+        storedItems.removeAll { !$0.isPinned && $0.snippet == nil && $0.date < cutoff }
     }
 
     func trim(toMaxCount maxCount: Int) {
@@ -238,7 +260,7 @@ final class InMemoryClipboardHistoryStore: ClipboardHistoryStore {
     func deleteUnpinned(sourceBundleID: String?) {
         lock.lock()
         defer { lock.unlock() }
-        storedItems.removeAll { !$0.isPinned && (sourceBundleID == nil || $0.sourceBundleID == sourceBundleID) }
+        storedItems.removeAll { !$0.isPinned && $0.snippet == nil && (sourceBundleID == nil || $0.sourceBundleID == sourceBundleID) }
     }
 
     func trim(toMaxImageBytes maxBytes: Int64) {

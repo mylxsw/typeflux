@@ -73,7 +73,7 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
 
     func setPinned(_ pinned: Bool, id: UUID) {
         mutate("Clipboard pin failed") {
-            try self.execute(sql: "UPDATE clipboard_items SET pinned = ? WHERE id = ?;") { statement in
+            try self.execute(sql: "UPDATE clipboard_items SET pinned = ? WHERE id = ? AND snippet_name IS NULL;") { statement in
                 sqlite3_bind_int(statement, 1, pinned ? 1 : 0)
                 self.bind(id.uuidString, at: 2, in: statement)
             }
@@ -96,7 +96,7 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
     func purge(olderThan cutoff: Date) {
         mutateIfChanged("Clipboard purge failed") {
             let stale = try self.fetchItems(
-                sql: "SELECT \(Self.columns) FROM clipboard_items WHERE pinned = 0 AND date < ?;",
+                sql: "SELECT \(Self.columns) FROM clipboard_items WHERE snippet_name IS NULL AND pinned = 0 AND date < ?;",
                 bind: { sqlite3_bind_double($0, 1, cutoff.timeIntervalSince1970) }
             )
             try self.delete(stale)
@@ -107,13 +107,13 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
     func trim(toMaxCount maxCount: Int) {
         mutateIfChanged("Clipboard trim failed") {
             let overflow = try self.fetchItems(
-                sql: "SELECT \(Self.columns) FROM clipboard_items WHERE pinned = 0 ORDER BY date DESC LIMIT -1 OFFSET ?;",
+                sql: "SELECT \(Self.columns) FROM clipboard_items WHERE snippet_name IS NULL AND pinned = 0 ORDER BY date DESC LIMIT -1 OFFSET ?;",
                 bind: { sqlite3_bind_int64($0, 1, Int64(max(0, maxCount))) }
             )
             try self.delete(overflow)
             let imageOverflow = try self.fetchItems(
                 sql: """
-                SELECT \(Self.columns) FROM clipboard_items WHERE pinned = 0 AND payload = 'image'
+                SELECT \(Self.columns) FROM clipboard_items WHERE snippet_name IS NULL AND pinned = 0 AND payload = 'image'
                 ORDER BY date DESC LIMIT -1 OFFSET ?;
                 """,
                 bind: { sqlite3_bind_int64($0, 1, Int64(max(0, self.maximumImageCount))) }
@@ -214,7 +214,7 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
 
     private func insert(_ item: ClipboardItem) throws {
         let sql = """
-        INSERT INTO clipboard_items (\(Self.columns)) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO clipboard_items (\(Self.columns)) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         try execute(sql: sql) { statement in
             self.bind(item.id.uuidString, at: 1, in: statement)
@@ -230,6 +230,10 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
             self.bind(item.sourceBundleID, at: 11, in: statement)
             self.bind(item.sourceAppName, at: 12, in: statement)
             sqlite3_bind_int(statement, 13, item.isPinned ? 1 : 0)
+            self.bind(item.snippet?.name, at: 14, in: statement)
+            self.bind(item.snippet?.alias, at: 15, in: statement)
+            let alias = item.snippet.map { ClipboardSnippet.normalizedAlias($0.alias) }
+            self.bind(alias?.isEmpty == false ? alias : nil, at: 16, in: statement)
         }
     }
 
@@ -251,7 +255,7 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
 
     private static let columns = """
     id, payload, date, text, file_paths, image_path, image_width, image_height, byte_size, \
-    content_hash, source_bundle_id, source_app_name, pinned
+    content_hash, source_bundle_id, source_app_name, pinned, snippet_name, snippet_alias, snippet_alias_key
     """
 
     private func openDatabase() throws {
@@ -280,6 +284,27 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
             pinned INTEGER NOT NULL DEFAULT 0
         );
         """)
+        // Additive migration preserves IDs, pins, payloads and image paths in existing databases.
+        try execute(sql: "BEGIN IMMEDIATE;")
+        do {
+            var statement: OpaquePointer?
+            guard sqlite3_prepare_v2(database, "PRAGMA table_info(clipboard_items);", -1, &statement, nil) == SQLITE_OK else {
+                throw databaseError(message: "Failed to read clipboard schema")
+            }
+            var columns = Set<String>()
+            while sqlite3_step(statement) == SQLITE_ROW {
+                if let name = string(at: 1, in: statement) { columns.insert(name) }
+            }
+            sqlite3_finalize(statement)
+            for name in ["snippet_name", "snippet_alias", "snippet_alias_key"] where !columns.contains(name) {
+                try execute(sql: "ALTER TABLE clipboard_items ADD COLUMN \(name) TEXT;")
+            }
+            try execute(sql: "CREATE UNIQUE INDEX IF NOT EXISTS idx_clipboard_snippet_alias ON clipboard_items(snippet_alias_key);")
+            try execute(sql: "COMMIT;")
+        } catch {
+            try? execute(sql: "ROLLBACK;")
+            throw error
+        }
         try execute(sql: "CREATE INDEX IF NOT EXISTS idx_clipboard_items_date ON clipboard_items(date DESC);")
         try execute(sql: """
         CREATE TABLE IF NOT EXISTS clipboard_pinned_voice_records (
@@ -287,6 +312,81 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
             pinned_at REAL NOT NULL
         );
         """)
+    }
+}
+
+// MARK: - Permanent text snapshots
+
+extension SQLiteClipboardHistoryStore {
+    func saveSnippet(id: UUID?, name: String, text: String, alias: String,
+                     source: ClipboardSource?, at date: Date) throws -> ClipboardItem {
+        let snippet = try ClipboardSnippet.validated(name: name, text: text, alias: alias)
+        let saved: ClipboardItem = try queue.sync {
+            try execute(sql: "BEGIN IMMEDIATE;")
+            do {
+                let itemID = id ?? UUID()
+                let aliasKey = ClipboardSnippet.normalizedAlias(snippet.alias)
+                if !aliasKey.isEmpty {
+                    let conflicts = try fetchItems(
+                        sql: "SELECT \(Self.columns) FROM clipboard_items WHERE snippet_alias_key = ? AND id != ?;"
+                    ) {
+                        self.bind(aliasKey, at: 1, in: $0)
+                        self.bind(itemID.uuidString, at: 2, in: $0)
+                    }
+                    guard conflicts.isEmpty else { throw ClipboardSnippetError.duplicateAlias }
+                }
+                var item: ClipboardItem
+                if let id {
+                    guard let existing = try fetchItems(
+                        sql: "SELECT \(Self.columns) FROM clipboard_items WHERE id = ?;",
+                        bind: { self.bind(id.uuidString, at: 1, in: $0) }
+                    ).first, existing.payload == .text else { throw ClipboardSnippetError.missingItem }
+                    item = existing
+                } else {
+                    item = ClipboardItem(
+                        id: itemID, payload: .text, date: date, text: text, filePaths: [], imagePath: nil,
+                        imagePixelWidth: nil, imagePixelHeight: nil, byteSize: 0, contentHash: "",
+                        sourceBundleID: source?.bundleID, sourceAppName: source?.appName, isPinned: false
+                    )
+                }
+                item.text = text
+                item.date = date
+                item.byteSize = Int64(text.utf8.count)
+                item.isPinned = false
+                item.snippet = snippet
+                // A saved snapshot is independent of capture deduplication, including after edits.
+                item.contentHash = "snippet:\(item.id.uuidString)"
+                if id != nil {
+                    try updateSnippet(item)
+                } else {
+                    try insert(item)
+                }
+                try execute(sql: "COMMIT;")
+                return item
+            } catch {
+                try? execute(sql: "ROLLBACK;")
+                throw error
+            }
+        }
+        notifyChange()
+        return saved
+    }
+
+    private func updateSnippet(_ item: ClipboardItem) throws {
+        let aliasKey = ClipboardSnippet.normalizedAlias(item.snippet?.alias ?? "")
+        try execute(sql: """
+        UPDATE clipboard_items SET text = ?, date = ?, byte_size = ?, content_hash = ?, pinned = 0,
+        snippet_name = ?, snippet_alias = ?, snippet_alias_key = ? WHERE id = ?;
+        """) {
+            self.bind(item.text, at: 1, in: $0)
+            sqlite3_bind_double($0, 2, item.date.timeIntervalSince1970)
+            sqlite3_bind_int64($0, 3, item.byteSize)
+            self.bind(item.contentHash, at: 4, in: $0)
+            self.bind(item.snippet?.name, at: 5, in: $0)
+            self.bind(item.snippet?.alias, at: 6, in: $0)
+            self.bind(aliasKey.isEmpty ? nil : aliasKey, at: 7, in: $0)
+            self.bind(item.id.uuidString, at: 8, in: $0)
+        }
     }
 }
 
@@ -328,7 +428,10 @@ private extension SQLiteClipboardHistoryStore {
             contentHash: hash,
             sourceBundleID: string(at: 10, in: statement),
             sourceAppName: string(at: 11, in: statement),
-            isPinned: sqlite3_column_int(statement, 12) != 0
+            isPinned: sqlite3_column_int(statement, 12) != 0,
+            snippet: string(at: 13, in: statement).map {
+                ClipboardSnippet(name: $0, alias: string(at: 14, in: statement) ?? "")
+            }
         )
     }
 
@@ -397,7 +500,7 @@ extension SQLiteClipboardHistoryStore {
     func deleteUnpinned(sourceBundleID: String?) {
         mutateIfChanged("Clipboard bulk delete failed") {
             // `?1 IS NULL` makes a missing app mean every app.
-            let filter = "pinned = 0 AND (?1 IS NULL OR source_bundle_id = ?1)"
+            let filter = "snippet_name IS NULL AND pinned = 0 AND (?1 IS NULL OR source_bundle_id = ?1)"
             let doomed = try self.fetchItems(sql: "SELECT \(Self.columns) FROM clipboard_items WHERE \(filter);") {
                 self.bind(sourceBundleID, at: 1, in: $0)
             }
