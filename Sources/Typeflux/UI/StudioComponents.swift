@@ -1296,6 +1296,7 @@ struct StudioSettingRow<Accessory: View>: View {
 struct StudioTextInputCard<LabelTrailing: View>: View {
     let label: String
     let placeholder: String
+    var horizontal = false
     @Binding var text: String
     var secure: Bool = false
     @ViewBuilder var labelTrailing: () -> LabelTrailing
@@ -1305,25 +1306,19 @@ struct StudioTextInputCard<LabelTrailing: View>: View {
         placeholder: String,
         text: Binding<String>,
         secure: Bool = false,
+        horizontal: Bool = false,
         @ViewBuilder labelTrailing: @escaping () -> LabelTrailing = { EmptyView() }
     ) {
         self.label = label
         self.placeholder = placeholder
+        self.horizontal = horizontal
         _text = text
         self.secure = secure
         self.labelTrailing = labelTrailing
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            HStack(alignment: .center) {
-                Text(label)
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                Spacer()
-                labelTrailing()
-            }
-
+        StudioInputLayout(label: label, horizontal: horizontal, labelTrailing: labelTrailing) {
             Group {
                 if secure {
                     SecureField(placeholder, text: $text)
@@ -1341,6 +1336,7 @@ struct StudioTextInputCard<LabelTrailing: View>: View {
 struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
     let label: String
     let placeholder: String
+    var horizontal = false
     let suggestions: [String]
     @Binding var text: String
     @ViewBuilder var labelTrailing: () -> LabelTrailing
@@ -1350,10 +1346,12 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
         placeholder: String,
         text: Binding<String>,
         suggestions: [String],
+        horizontal: Bool = false,
         @ViewBuilder labelTrailing: @escaping () -> LabelTrailing = { EmptyView() }
     ) {
         self.label = label
         self.placeholder = placeholder
+        self.horizontal = horizontal
         _text = text
         self.suggestions = suggestions
         self.labelTrailing = labelTrailing
@@ -1371,15 +1369,7 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            HStack(alignment: .center) {
-                Text(label)
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                Spacer()
-                labelTrailing()
-            }
-
+        StudioInputLayout(label: label, horizontal: horizontal, labelTrailing: labelTrailing) {
             ZStack(alignment: .trailing) {
                 TextField(placeholder, text: $text)
                     .textFieldStyle(ModelFieldStyle(trailingAccessoryWidth: normalizedSuggestions.isEmpty ? 0 : 24))
@@ -1411,6 +1401,39 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                 }
             }
             .frame(height: SettingsControlMetrics.height)
+        }
+    }
+}
+
+/// Keep legacy stacked forms unchanged while provider connections share a horizontal row.
+private struct StudioInputLayout<Field: View, LabelTrailing: View>: View {
+    let label: String
+    let horizontal: Bool
+    @ViewBuilder var labelTrailing: () -> LabelTrailing
+    @ViewBuilder var field: () -> Field
+
+    var body: some View {
+        if horizontal {
+            VStack(spacing: 0) {
+                ModelFormRow(title: label) {
+                    HStack(spacing: 8) {
+                        field()
+                        labelTrailing()
+                    }
+                }
+                ModelRowDivider()
+            }
+        } else {
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                HStack {
+                    Text(label)
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                    Spacer()
+                    labelTrailing()
+                }
+                field()
+            }
         }
     }
 }

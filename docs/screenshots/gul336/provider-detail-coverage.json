@@ -1,0 +1,69 @@
+{
+  "covered": 219,
+  "executable": 242,
+  "percent": 90.5,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Settings/ModelFormRow.swift",
+      "executable": 19,
+      "covered": 19,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelSettingsPage.swift",
+      "executable": 0,
+      "covered": 0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelVisualStyle.swift",
+      "executable": 2,
+      "covered": 2,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ProviderModelsView.swift",
+      "executable": 1,
+      "covered": 1,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsView.swift",
+      "executable": 190,
+      "covered": 167,
+      "uncovered": [
+        4114,
+        4160,
+        4161,
+        4162,
+        4172,
+        4173,
+        4174,
+        4175,
+        4176,
+        4177,
+        4178,
+        4179,
+        4180,
+        4187,
+        4188,
+        4189,
+        4190,
+        4191,
+        4192,
+        4193,
+        4194,
+        4195,
+        4467
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/UI/StudioComponents.swift",
+      "executable": 30,
+      "covered": 30,
+      "uncovered": []
+    }
+  ],
+  "base": "b81497b8a5543ff294f2bd0ea41544c5ec812519",
+  "method": "LLVM LCOV executable lines intersected with git diff --unified=0 b81497b8 -- Sources; final focused suite only, without profile merging."
+}

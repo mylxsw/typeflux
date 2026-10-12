@@ -108,12 +108,13 @@ struct ModelDetailHeader: View {
     let title: String
     let icon: StudioModelProviderID
     let connected: Bool
+    var backTitle: String?
     var onBack: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if let onBack {
-                ModelProviderBackButton(title: ModelPageTab.language.title, action: onBack)
+                ModelProviderBackButton(title: backTitle ?? ModelPageTab.language.title, action: onBack)
             }
             HStack(spacing: 12) {
                 ModelIconTile(size: 38) {
@@ -121,6 +122,7 @@ struct ModelDetailHeader: View {
                 }
                 Text(title).font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
+                    .accessibilityIdentifier("models.provider.title")
                 Spacer(minLength: 12)
                 ModelConnectionStatus(connected: connected)
             }
