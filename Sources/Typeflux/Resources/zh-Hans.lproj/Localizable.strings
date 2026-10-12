@@ -4677,3 +4677,20 @@
 "settings.pane.appearance" = "外观";
 
 "settings.inputAndCapture.title" = "输入与截屏";
+
+// Launcher file preview
+"launcher.search.preview" = "预览文件";
+"launcher.search.preview.subtitle" = "高亮文件时，在启动器旁显示预览。";
+"ask.preview.loading" = "正在加载预览…";
+"ask.preview.pages" = "共 %d 页";
+"ask.preview.lines" = "共 %d 行";
+"ask.preview.noAutoplay" = "不自动播放";
+"ask.preview.truncated" = "预览已截断";
+"ask.preview.kind.image" = "图片";
+"ask.preview.kind.pdf" = "PDF";
+"ask.preview.kind.text" = "文本";
+"ask.preview.kind.markdown" = "Markdown";
+"ask.preview.kind.table" = "表格";
+"ask.preview.kind.document" = "文档";
+"ask.preview.kind.video" = "视频";
+"ask.preview.kind.audio" = "音频";

@@ -4655,3 +4655,20 @@
 "settings.pane.appearance" = "外観";
 
 "settings.inputAndCapture.title" = "入力とスクリーンショット";
+
+// Launcher file preview
+"launcher.search.preview" = "ファイルをプレビュー";
+"launcher.search.preview.subtitle" = "ファイルを選択するとランチャーの横にプレビューを表示します。";
+"ask.preview.loading" = "プレビューを読み込み中…";
+"ask.preview.pages" = "全 %d ページ";
+"ask.preview.lines" = "全 %d 行";
+"ask.preview.noAutoplay" = "自動再生なし";
+"ask.preview.truncated" = "プレビューは省略されています";
+"ask.preview.kind.image" = "画像";
+"ask.preview.kind.pdf" = "PDF";
+"ask.preview.kind.text" = "テキスト";
+"ask.preview.kind.markdown" = "Markdown";
+"ask.preview.kind.table" = "表";
+"ask.preview.kind.document" = "書類";
+"ask.preview.kind.video" = "動画";
+"ask.preview.kind.audio" = "音声";

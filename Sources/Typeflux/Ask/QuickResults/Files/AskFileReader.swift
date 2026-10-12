@@ -55,6 +55,12 @@ final class AskFileReader: AskFileReading {
         try stream(request, isCancelled: isCancelled) { response in
             result.entries += response.entries
             result.path = response.path ?? result.path
+            result.text = response.text ?? result.text
+            result.truncated = response.truncated ?? result.truncated
+            result.fileSize = response.fileSize ?? result.fileSize
+            result.modified = response.modified ?? result.modified
+            result.imageWidth = response.imageWidth ?? result.imageWidth
+            result.imageHeight = response.imageHeight ?? result.imageHeight
             result.error = response.error ?? result.error
             result.skippedMounts = (result.skippedMounts ?? []) + (response.skippedMounts ?? [])
             return true
