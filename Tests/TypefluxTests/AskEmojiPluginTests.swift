@@ -34,10 +34,12 @@ struct AskEmojiPluginTests {
     @Test func `registration and legacy conflicts`() {
         #expect(AskPluginRegistry.pluginIDs.contains(AskEmojiPlugin.id))
         let defaults = AskPluginRegistry.keywords(saved: nil, known: nil)
-        #expect(defaults.first { $0.pluginID == AskEmojiPlugin.id }?.allKeywords == ["emoji", "表情"])
+        #expect(defaults.first { $0.pluginID == AskEmojiPlugin.id }?.allKeywords == ["em", "emoji"])
         let reserved = AskPluginRegistry.keywords(saved: nil, known: nil, reserved: ["emoji"])
-        #expect(reserved.first { $0.pluginID == AskEmojiPlugin.id }?.allKeywords == ["表情"])
-        let both = AskPluginRegistry.keywords(saved: nil, known: nil, reserved: ["emoji", "表情"])
+        #expect(reserved.first { $0.pluginID == AskEmojiPlugin.id }?.allKeywords == ["em"])
+        let defaultReserved = AskPluginRegistry.keywords(saved: nil, known: nil, reserved: ["em"])
+        #expect(defaultReserved.first { $0.pluginID == AskEmojiPlugin.id }?.allKeywords == ["emoji"])
+        let both = AskPluginRegistry.keywords(saved: nil, known: nil, reserved: ["em", "emoji"])
         #expect(!both.contains { $0.pluginID == AskEmojiPlugin.id })
         let saved = [AskKeyword(keyword: "custom", pluginID: AskEmojiPlugin.id, enabled: false)]
         let preserved = AskPluginRegistry.keywords(saved: saved, known: AskPluginRegistry.coveredGroups)
@@ -52,6 +54,17 @@ struct AskEmojiPluginTests {
             interface: .english,
             secondLanguage: "zh"
         ).isEmpty)
+    }
+
+    @Test(arguments: ["em", "emoji", "EM", "EMOJI"])
+    func `default and additional triggers reach the same emoji plugin`(_ word: String) throws {
+        let defaults = AskPluginRegistry.keywords(saved: nil, known: nil)
+        let keyword = try #require(defaults.first { $0.pluginID == AskEmojiPlugin.id })
+        #expect(keyword.keyword == "em")
+        #expect(keyword.aliases == ["emoji"])
+        #expect(AskKeywordMatcher.match(word, keywords: defaults) == .hint(keyword))
+        #expect(AskKeywordMatcher.match(word + " smile", keywords: defaults) == .active(keyword, argument: "smile"))
+        #expect(AskKeywordMatcher.match(word + "extra smile", keywords: defaults) == nil)
     }
 
     @Test func `live plugin and actions`() async throws {
@@ -275,7 +288,7 @@ struct AskEmojiPluginTests {
                 )
                 let view = VStack(spacing: 0) {
                     HStack {
-                        AskKeywordChip(title: "emoji",
+                        AskKeywordChip(title: AskEmojiPlugin.keywords[0].keyword,
                                        symbol: plugin.symbol); Text(
                             query.isEmpty ? L("emoji.placeholder") : query
                         ); Spacer()

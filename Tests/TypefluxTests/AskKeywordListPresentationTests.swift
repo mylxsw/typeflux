@@ -36,7 +36,7 @@ struct AskKeywordListPresentationTests {
         let rows = rows(input)
         #expect(rows.filter { $0.kind != .system }.map(\.keyword) == [
             "fy", "dict", "rw", "sum", "ex", "custom", "g", "bd", "gh", "f", "tab", "bmk", "chat", "prefix", "setting",
-            "history", "clip", "emoji"
+            "history", "clip", "em"
         ])
         #expect(rows.allSatisfy { $0.kind != .workflow })
         #expect(Set(rows.map(\.id)).count == rows.count)

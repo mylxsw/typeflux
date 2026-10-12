@@ -1,6 +1,6 @@
 # Emoji search
 
-Typeflux now includes native offline emoji search (`emoji` / `表情`), with live results, typo tolerance and common expression suggestions. New users can use the built-in keyword directly. This legacy workflow remains available for existing installations and custom scripts; its keyword is preserved on upgrade.
+Typeflux now includes native offline emoji search (default keyword `em`, additional keyword `emoji`), with live results, typo tolerance and common expression suggestions. New users can use the built-in keyword directly. This legacy workflow remains available for existing installations and custom scripts; its keyword is preserved on upgrade.
 
 Find emoji by English or Chinese keywords and copy a result.
 
