@@ -391,6 +391,14 @@ struct StudioView: View {
             let viewportHeight = viewportContentHeight(from: viewportSize)
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+                if viewModel.currentSection.isVoiceInput || viewModel.currentSection == .settings {
+                    StudioHeroHeader(
+                        eyebrow: viewModel.currentSection.eyebrow,
+                        title: viewModel.currentSection.shellTitle
+                    )
+                    .accessibilityIdentifier("studio.page.title")
+                }
+
                 if viewModel.currentSection.isVoiceInput {
                     voiceInputHeader
                 } else if viewModel.currentSection == .settings {
