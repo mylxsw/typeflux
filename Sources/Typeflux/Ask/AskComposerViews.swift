@@ -86,6 +86,8 @@ struct AskComposer: View {
     var onToggleUsage: (() -> Void)?
     var onFilePreview: (AskFileHit?, [AskFileHit], Bool) -> Void
     @ObservedObject private var voice: AskVoiceInput
+    /// The local history shown in place of launcher results.
+    @ObservedObject private var inputHistory: AskLauncherInputHistoryStore
     /// The launcher's keyword mode (`fy` → translate).
     @ObservedObject private var plugins: AskPluginSession
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -115,6 +117,7 @@ struct AskComposer: View {
         self.onFilePreview = onFilePreview
         self.voice = model.voiceInput
         self.plugins = model.plugins
+        self.inputHistory = model.launcherInputHistory
         self._quickSearch = StateObject(wrappedValue: launcher ? model.quickSearch : AskQuickSearchSession())
         self._voiceShortcut = State(initialValue: model.modelLibrary.settings.activationHotkey)
     }
@@ -237,6 +240,7 @@ struct AskComposer: View {
     }
 
     private func submit() {
+        if launcher, model.launcherInputHistoryKey(.enter) { return }
         if model.consumeModeCommand(launcher: launcher) { closePalette(); return }
         // Submitting in keyword mode asks the AI, like ⌘Return, when there is something to ask.
         if launcher, plugins.isActive, !active {
@@ -274,7 +278,8 @@ struct AskComposer: View {
     /// quotes, files or chosen tools mean the text is written for the AI.
     private var showsQuickResults: Bool {
         guard launcher, quickSearch.isVisible,
-              presentedQuickResults != nil, !paletteOpen, pluginDisplay == nil else { return false }
+              presentedQuickResults != nil, !paletteOpen, !model.launcherHistoryMode,
+              pluginDisplay == nil else { return false }
         let value = draft.wrappedValue
         return (value.references ?? []).isEmpty && (value.attachments ?? []).isEmpty
             && (value.skills ?? []).isEmpty && (value.mcpServers ?? []).isEmpty
@@ -284,6 +289,7 @@ struct AskComposer: View {
     /// ordinary questions must not re-render on every keystroke for this.
     private func refreshQuickResults(resetActions: Bool = true) {
         guard launcher, searchVisible, quickSearch.isVisible else { return }
+        if model.launcherHistoryMode { quickSearch.cancel(); quickResults = nil; return }
         if refreshPlugins() { quickSearch.cancel(); quickResults = nil; return }
         let sources = AskQuickResults.Sources(apps: model.quickAppsEnabled ? model.appIndex : nil,
                                               files: model.quickFilesEnabled ? model.fileIndex : nil,
@@ -401,6 +407,7 @@ struct AskComposer: View {
         }
         guard results.isEnabled(row), let value = results.value(of: row) else { return }
         AskQuickResults.copy(value)
+        model.recordLauncherInput(destination: .calculation, label: "= " + value)
         if close {
             model.finishQuickResult()
             onDismiss()
@@ -846,7 +853,8 @@ struct AskComposer: View {
     /// The launcher offers its starting points until something is typed. They
     /// stay (disabled) while dictating, so the panel never jumps mid-recording.
     var showsLauncherSuggestions: Bool {
-        launcher && !launcherCollapsed && !plugins.isActive && !draft.wrappedValue.hasText && (draft.wrappedValue.references ?? []).isEmpty
+        launcher && !model.launcherHistoryMode && !launcherCollapsed && !plugins.isActive
+            && !draft.wrappedValue.hasText && (draft.wrappedValue.references ?? []).isEmpty
             && (draft.wrappedValue.attachments ?? []).isEmpty && !model.isLoadingAttachments(launcher: true) && !paletteOpen
     }
 
@@ -957,8 +965,21 @@ struct AskComposer: View {
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
             .onChange(of: showsQuickResults) { _ in updateFilePreview(); reportHeight() }
             // The home fills in as the context arrives after the panel shows.
+            .onChange(of: model.launcherPresentationID) { _ in
+                guard launcher else { return }
+                suggestionIndex = 0; pluginHighlight = 0; pluginReserve = 0; quickReserve = 0
+                quickActions = nil; contextPanelOpen = false; closePalette()
+                refreshQuickResults(); reportHeight()
+            }
+            .onChange(of: model.launcherHistoryMode) { _ in
+                guard launcher else { return }
+                quickReserve = 0; pluginReserve = 0; quickActions = nil
+                refreshQuickResults(); updateFilePreview(); reportHeight()
+            }
+            .onChange(of: historyHeight) { _ in reportHeight() }
             .onChange(of: homeHeight) { _ in reportHeight() }
             .onChange(of: draft.wrappedValue.text) { _ in
+                if launcher, model.launcherHistoryMode { model.launcherHistoryIndex = 0 }
                 refreshQuickResults()
                 if !draft.wrappedValue.hasText {
                     reserveSettle?.cancel()
@@ -1127,9 +1148,13 @@ struct AskComposer: View {
             if active {
                 // Recording takes the results' place at their height, so the panel stays put.
                 AskVoicePanel(live: voice.live, listening: listening, height: voicePanelHeight, token: contextToken)
+            } else if model.launcherHistoryMode {
+                AskLauncherInputHistoryView(model: model, store: inputHistory,
+                                            viewportHeight: launcherResultsViewportHeight)
             } else if showsLauncherSuggestions {
                 AskLauncherSuggestions(sections: home, highlighted: $suggestionIndex, onPick: pick,
-                                       viewportHeight: launcherResultsViewportHeight)
+                                       viewportHeight: launcherResultsViewportHeight,
+                                       onHistory: model.openLauncherInputHistory)
                     .disabled(active)
             } else if let pluginDisplay, pluginDisplay.systemMonitor {
                 SystemMonitorLauncherView(store: model.systemMonitorWindow.store, model: model.systemMonitor,
@@ -1382,6 +1407,12 @@ struct AskComposer: View {
     }
 
     private func commandKey(_ key: AskCommandKey) -> Bool {
+        if launcher, !paletteOpen, model.launcherInputHistoryKey(key) { return true }
+        if launcher, !active, !paletteOpen, !plugins.isActive, !draft.wrappedValue.hasText,
+           key == .up, !showsLauncherSuggestions || suggestionIndex == 0 {
+            model.openLauncherInputHistory()
+            return true
+        }
         if launcher, !active, key == .escape { return escapeKey() }
         if (key == .enter || key == .commandEnter),
            AskPermissionMode.command(draft.wrappedValue.text).recognized,
@@ -1528,6 +1559,7 @@ struct AskComposer: View {
     /// Quotes waiting in the draft name what the follow-up is about. The
     /// launcher says what it does besides asking: search and calculate.
     private var placeholder: String {
+        if launcher, model.launcherHistoryMode { return L("ask.inputHistory.filter") }
         if launcher, let plugin = plugins.plugin {
             let lines = draft.wrappedValue.sentSelection.map { AskPresentation.lineCount($0) }
             return plugin.placeholder(selectionLines: lines)
@@ -1537,16 +1569,26 @@ struct AskComposer: View {
             ?? L(model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder")
     }
 
+    private func historyKey(_ key: AskCommandKey) -> Bool {
+        launcher && model.launcherInputHistoryKey(key)
+    }
+
+    private func emptyLauncherBackspace() -> Bool {
+        if model.launcherHistoryMode { model.leaveLauncherInputHistory(); return true }
+        return removeKeyword() || removeLastContext()
+    }
+
     private var editorField: some View {
         AskComposerTextView(
             text: draft.text,
             placeholder: placeholder,
             placeholderSingleLine: launcher,
             placeholderColor: launcher ? AskTheme.launcherPlaceholderText : StudioTheme.textSecondary,
-            defersCompositionUpdates: plugins.plugin?.id == AskEmojiPlugin.id,
+            defersCompositionUpdates: model.launcherHistoryMode || plugins.plugin?.id == AskEmojiPlugin.id,
             usesKeyViewTabs: plugins.plugin?.id == AskEmojiPlugin.id,
             voice: voice,
             contextID: contextID,
+            caretRequestID: launcher ? model.launcherHistoryFillID : nil,
             fontSize: chrome.editorFontSize,
             maximumHeight: layout.editorMaximumHeight,
             onSubmit: submit,
@@ -1556,8 +1598,9 @@ struct AskComposer: View {
             onDropTargetChange: { editorDropTargeted = $0 },
             onSlashQuery: launcher ? nil : slashChanged,
             onCommandKey: commandKey,
+            onHistoryKey: historyKey,
             onHorizontalArrow: launcher ? moveEmojiSelection : nil,
-            onEmptyBackspace: launcher ? { removeKeyword() || removeLastContext() } : nil,
+            onEmptyBackspace: launcher ? emptyLauncherBackspace : nil,
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil
         )
@@ -1590,6 +1633,12 @@ struct AskComposer: View {
                 AskKeywordChip(title: plugin.title, symbol: plugin.symbol,
                                detail: plugin.chipDetail(for: keyword, language: AppLocalization.shared.language))
                     .padding(.vertical, 2)
+            }
+            if !active, model.launcherHistoryMode {
+                Text(L("ask.inputHistory.chip")).font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(AskTheme.accent).padding(.horizontal, 7).padding(.vertical, 6)
+                    .background(AskTheme.launcherSelection, in: RoundedRectangle(cornerRadius: 6))
+                    .padding(.top, 3)
             }
             editorField
                 // The text sits 2pt high in its view; this centres it on the 34pt buttons.
@@ -1698,9 +1747,11 @@ struct AskComposer: View {
     }
 
     private var launcherHint: String {
+        if !active, model.launcherHistoryMode { return L("ask.inputHistory.hint") }
         if !active, let pluginDisplay { return AskPluginResultsView.hint(for: pluginDisplay) }
         if !active, showsLauncherSuggestions, let item = highlightedHomeItem {
-            return AskLauncherSuggestions.hint(for: item, hasContext: contextToken != nil)
+            let hint = AskLauncherSuggestions.hint(for: item, hasContext: contextToken != nil)
+            return inputHistory.enabled ? L("ask.inputHistory.homeHint") + " · " + hint : hint
         }
         return AskLauncherContext.hint(voice: active ? voice.phase : .idle,
                                 quickResults: showsQuickResults && !showsLauncherSuggestions ? presentedQuickResults : nil,
@@ -1708,9 +1759,17 @@ struct AskComposer: View {
     }
 
     /// The launcher's results area: its starting points or quick results.
+    private var historyHeight: CGFloat {
+        launcher && model.launcherHistoryMode
+            ? AskLauncherInputHistoryView.height(count: model.launcherHistoryEntries.count) : 0
+    }
+
     private var resultsHeight: CGFloat {
+        if model.launcherHistoryMode { return historyHeight }
         if showsLauncherSuggestions { return homeHeight }
         if pluginDisplay != nil { return pluginHeight }
+        // Attachments, tools and quotes hide quick results, including their reserved height.
+        if showsStrip || !(draft.wrappedValue.references ?? []).isEmpty { return 0 }
         if showsQuickResults, let quickResults = presentedQuickResults {
             return AskLauncherHeightReserve.holding(quickReserve, content: AskQuickResultsView.height(for: quickResults))
         }
@@ -2058,7 +2117,8 @@ struct AskComposer: View {
         let height = launcherCollapsed ? AskLauncherWindowMode.simpleHeight : desiredLauncherHeight
         // Other layout preferences may change with the first edit too. Hold the
         // native frame until the first search batch instead of resizing an empty list.
-        if launcher, quickSearch.isVisible, draft.wrappedValue.hasText, !active, !launcherCollapsed, !paletteOpen,
+        if launcher, !model.launcherHistoryMode, quickSearch.isVisible, draft.wrappedValue.hasText,
+           !active, !launcherCollapsed, !paletteOpen,
            !contextPanelOpen, pluginDisplay == nil, !showsStrip,
            (draft.wrappedValue.references ?? []).isEmpty, presentedQuickResults == nil,
            quickSearch.isSearching || !quickSearch.isCurrent(text: draft.wrappedValue.text),

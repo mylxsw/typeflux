@@ -154,7 +154,6 @@ struct AskLauncherMotionTests {
         }
         let fixture = try AskTestFixture()
         fixture.model.appIndex = index
-        fixture.model.launcherDraft.text = "alpha"
         let controller = AskConversationWindowController(
             settings: fixture.model.modelLibrary.settings,
             model: fixture.model,
@@ -163,6 +162,7 @@ struct AskLauncherMotionTests {
         )
         defer { controller.dismissLauncher(); fixture.model.resetSession() }
         controller.showLauncher()
+        fixture.model.launcherDraft.text = "alpha"
         let window = try #require(controller.launcherWindow)
         let content = try #require(window.contentView)
         try await fixture.wait { !fixture.model.capturing && fixture.model.quickSearch.results?.apps.count == 1 }

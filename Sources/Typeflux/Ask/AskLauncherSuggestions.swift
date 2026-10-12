@@ -49,6 +49,7 @@ struct AskLauncherSuggestions: View {
     var onPick: (AskLauncherHome.Item) -> Void
     var now = Date()
     var viewportHeight: CGFloat?
+    var onHistory: (() -> Void)?
 
     private var secondaryText: Color {
         colorScheme == .dark ? AskTheme.launcherMetaText : StudioTheme.textSecondary
@@ -157,6 +158,10 @@ struct AskLauncherSuggestions: View {
     }
 
     private func handle(_ key: AskLauncherHomeKeyMonitor.Key, items: [AskLauncherHome.Item]) -> Bool {
+        if case .vertical(-1) = key, highlighted == 0 || items.isEmpty, let onHistory {
+            onHistory()
+            return true
+        }
         guard !items.isEmpty else { return false }
         switch key {
         case let .vertical(delta):
@@ -384,6 +389,7 @@ struct AskLauncherHomeKeyMonitor: NSViewRepresentable {
             guard window != nil else { return }
             monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
                 guard let self, event.window === self.window,
+                      (self.window?.firstResponder as? NSTextView)?.hasMarkedText() != true,
                       let key = AskLauncherHomeKeyMonitor.key(keyCode: event.keyCode, modifiers: event.modifierFlags,
                                                               characters: event.charactersIgnoringModifiers)
                 else { return event }

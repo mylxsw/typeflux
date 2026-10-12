@@ -4786,3 +4786,27 @@
 "ask.plugin.kill.warning" = "Force quitting may lose unsaved changes.";
 "ask.plugin.kill.failed" = "Couldn’t force quit “%@”.";
 "ask.settings.keywords.kind.kill.hint" = "List running apps and force quit the selected app.";
+
+// Launcher input history
+"ask.inputHistory.title" = "Recent input";
+"ask.inputHistory.disabled" = "Input history is off";
+"ask.inputHistory.noMatches" = "No matching input";
+"ask.inputHistory.empty" = "No input history yet";
+"ask.inputHistory.disabled.detail" = "Turn on Remember input history in Launcher settings.";
+"ask.inputHistory.empty.detail" = "Run a search or close an unfinished input to save it here.";
+"ask.inputHistory.clear" = "Clear input history…";
+"ask.inputHistory.deleteAll" = "Clear all";
+"ask.inputHistory.clear.detail" = "This removes all input history from this Mac.";
+"ask.inputHistory.fill" = "Fill in";
+"ask.inputHistory.unsent" = "Unsent";
+"ask.inputHistory.askAI" = "Ask AI";
+"ask.inputHistory.copy" = "Copy text";
+"ask.inputHistory.delete" = "Delete";
+"ask.inputHistory.filter" = "Filter recent input…";
+"ask.inputHistory.chip" = "↺ Recent";
+"ask.inputHistory.hint" = "↩ Fill in · ⌘↩ Ask AI · ⌘⌫ Delete · esc Back";
+"ask.inputHistory.homeHint" = "↑ Recent input";
+"ask.inputHistory.remember" = "Remember input history";
+"ask.inputHistory.limit" = "Entries to keep";
+"ask.inputHistory.privacy" = "Input history stays on this Mac. Captured context, attachments and AI answers are excluded.";
+"ask.inputHistory.noMatches.detail" = "Try another filter. Escape clears it and returns to the launcher.";

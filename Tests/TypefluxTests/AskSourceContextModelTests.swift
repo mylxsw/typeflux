@@ -49,7 +49,8 @@ private struct SourceContextFixture {
     func restore() async {
         await model.prepareLauncher()
         model.launcherDraft.text = "Unfinished question"
-        await model.prepareLauncher()
+        // Explicitly restored context (e.g. a saved chat draft) remains refreshable.
+        model.restoreLauncherContextMarker(true)
     }
 
     func cleanUp() {
@@ -110,16 +111,17 @@ struct AskSourceContextModelTests {
         #expect(f.model.error == nil)
     }
 
-    @Test func reopeningTypedDraftPreservesContextUntilFreshCaptureOrReset() async throws {
+    @Test func preparationCapturesCurrentContextAndKeepsTextTypedDuringOpening() async throws {
         let f = try SourceContextFixture()
         defer { f.cleanUp() }
         await f.restore()
         let before = f.model.launcherDraft
         f.capture.context.source = "Changed app"
         await f.model.prepareLauncher()
-        #expect(f.capture.requests.count == 1)
-        #expect(f.model.launcherDraft == before)
-        #expect(f.model.launcherContextRestored)
+        #expect(f.capture.requests.count == 2)
+        #expect(f.model.launcherDraft.text == before.text)
+        #expect(f.model.launcherDraft.source == "Changed app")
+        #expect(!f.model.launcherContextRestored)
         f.model.launcherDraft.text = ""
         f.model.launcherDraft.sourceOff = true
         await f.model.prepareLauncher()
@@ -132,16 +134,18 @@ struct AskSourceContextModelTests {
         #expect(!f.model.launcherContextRestored)
     }
 
-    @Test func restoringCachedDraftKeepsSourceAndExclusionWithoutRecapture() async throws {
+    @Test func cachedLauncherDraftDoesNotRestoreStaleSourceOrInput() async throws {
         let f = try SourceContextFixture()
         defer { f.cleanUp() }
         var saved = AskDraft(text: "Saved question", screenshot: "saved-image", selection: "Saved selection", source: "Saved app")
         saved.sourceOff = true; saved.sourceBundleID = "test.saved"
         try await f.base.cache.saveDraft(saved, key: "launcher", owner: "owner")
         await f.model.prepareLauncher()
-        #expect(f.model.launcherDraft == saved)
-        #expect(f.model.launcherContextRestored)
-        #expect(f.capture.requests.isEmpty)
+        #expect(f.model.launcherDraft.text.isEmpty)
+        #expect(f.model.launcherDraft.source == f.capture.context.source)
+        #expect(f.model.launcherDraft.sourceOff == nil)
+        #expect(!f.model.launcherContextRestored)
+        #expect(f.capture.requests.count == 1)
     }
 
     @Test func explicitRefreshReplacesOnlySourceAndClearsSelectionWhilePreservingIndependentContent() async throws {

@@ -13,6 +13,9 @@ struct LauncherSettingsView: View {
 
     @State var quickCalculatorEnabled = true
     @State var quickNumberConversionsEnabled = true
+    @State var inputHistoryEnabled = true
+    @State var inputHistoryLimit = 100
+    @State private var confirmingClearInputHistory = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -35,6 +38,10 @@ struct LauncherSettingsView: View {
             }
         }
         .onAppear(perform: reload)
+        .alert(L("ask.inputHistory.clear"), isPresented: $confirmingClearInputHistory) {
+            Button(L("common.cancel"), role: .cancel) {}
+            Button(L("ask.inputHistory.deleteAll"), role: .destructive) { settings.clearLauncherInputHistory() }
+        } message: { Text(L("ask.inputHistory.clear.detail")) }
     }
 
     @ViewBuilder private var basicsPane: some View {
@@ -55,11 +62,46 @@ struct LauncherSettingsView: View {
                 }
             }
         }
+        ModelSurface {
+            VStack(alignment: .leading, spacing: 0) {
+                AgentSettingsRow(icon: "clock.arrow.circlepath", title: L("ask.inputHistory.remember")) {
+                    Toggle("", isOn: Binding(get: { inputHistoryEnabled }, set: setInputHistoryEnabled))
+                        .labelsHidden().toggleStyle(.switch)
+                        .accessibilityLabel(L("ask.inputHistory.remember"))
+                        .accessibilityIdentifier("launcher.settings.inputHistory")
+                }
+                ModelRowDivider(leading: 56)
+                AgentSettingsRow(icon: "list.number", title: L("ask.inputHistory.limit")) {
+                    Picker("", selection: Binding(get: { inputHistoryLimit }, set: setInputHistoryLimit)) {
+                        ForEach([50, 100, 200], id: \.self) { Text(String($0)).tag($0) }
+                    }
+                    .labelsHidden().frame(width: 100)
+                    .accessibilityLabel(L("ask.inputHistory.limit"))
+                }
+                ModelRowDivider(leading: 56)
+                AgentSettingsRow(icon: "trash", title: L("ask.inputHistory.clear")) {
+                    Button(L("common.clear")) { confirmingClearInputHistory = true }
+                }
+            }
+        }
+        Text(L("ask.inputHistory.privacy")).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
     }
 
     func reload() {
         quickCalculatorEnabled = settings.askQuickCalculatorEnabled
         quickNumberConversionsEnabled = settings.askQuickNumberConversionsEnabled
+        inputHistoryEnabled = settings.askLauncherInputHistoryEnabled
+        inputHistoryLimit = settings.askLauncherInputHistoryLimit
+    }
+
+    func setInputHistoryEnabled(_ enabled: Bool) {
+        inputHistoryEnabled = enabled
+        settings.askLauncherInputHistoryEnabled = enabled
+    }
+
+    func setInputHistoryLimit(_ limit: Int) {
+        inputHistoryLimit = limit
+        settings.askLauncherInputHistoryLimit = limit
     }
 
     func setQuickCalculator(_ enabled: Bool) {

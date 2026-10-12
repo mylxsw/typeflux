@@ -36,6 +36,6 @@ extension AskConversationModel {
     }
 
     var launcherIsCollapsed: Bool {
-        launcherWindowMode.isCollapsed(draft: launcherDraft, engaged: launcherNeedsFullWindow)
+        launcherWindowMode.isCollapsed(draft: launcherDraft, engaged: launcherNeedsFullWindow || launcherHistoryMode)
     }
 }

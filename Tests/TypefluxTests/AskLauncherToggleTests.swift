@@ -106,7 +106,7 @@ struct AskLauncherToggleTests {
             #expect(!launcher.canBecomeMain)
             let editor = try #require(launcher.firstResponder as? NSTextView)
             #expect(editor.isEditable)
-            #expect(editor.string == "Unfinished question")
+            #expect(editor.string.isEmpty)
 
             // An already-visible launcher must also restore editor focus.
             launcher.makeFirstResponder(nil)
@@ -121,7 +121,7 @@ struct AskLauncherToggleTests {
         }
     }
 
-    @Test func repeatedToggleOpensClosesAndPreservesDraft() async throws {
+    @Test func repeatedToggleOpensBlankAndRecordsAbandonedInput() async throws {
         _ = NSApplication.shared
         let f = try AskTestFixture(authenticated: false)
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
@@ -133,9 +133,11 @@ struct AskLauncherToggleTests {
             controller.toggleLauncher()
             try await f.wait { panel() != nil }
             #expect(panel() != nil)
+            #expect(f.model.launcherDraft.text.isEmpty)
+            f.model.launcherDraft.text = "Unfinished question"
             controller.toggleLauncher()
             #expect(panel() == nil)
-            #expect(f.model.launcherDraft.text == "Unfinished question")
+            #expect(f.model.launcherInputHistory.history.entries.first?.text == "Unfinished question")
         }
     }
 

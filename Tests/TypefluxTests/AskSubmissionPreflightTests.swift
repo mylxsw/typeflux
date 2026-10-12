@@ -63,7 +63,7 @@ struct AskSubmissionPreflightTests {
         #expect(shown == 0)
         if launcher {
             try await Task.sleep(for: .milliseconds(350))
-            #expect(try await fixture.cache.draft(key: "launcher", owner: fixture.model.owner) == original)
+            #expect(try await fixture.cache.draft(key: "launcher", owner: fixture.model.owner)?.text.isEmpty == true)
         }
     }
 

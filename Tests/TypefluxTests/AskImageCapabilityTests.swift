@@ -86,7 +86,7 @@ struct AskImageCapabilityTests {
         #expect(try await f.cache.draft(key: "first", owner: "owner") == nil)
         #expect(f.model.selectedId == "second")
         #expect(try await f.cache.draft(key: "second", owner: "owner")?.text == "Keep this other draft")
-        #expect(try await f.cache.draft(key: "launcher", owner: "owner")?.text == "Keep the launcher draft")
+        #expect(try await f.cache.draft(key: "launcher", owner: "owner")?.text.isEmpty == true)
     }
 
     @Test func refreshDiscoversImageModelsWithoutSelectingOrResuming() async throws {

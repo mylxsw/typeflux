@@ -27,8 +27,17 @@ extension AskConversationModel {
 
     @discardableResult
     func focusBrowserTab(_ target: AskBrowserTabTarget) async -> Bool {
+        let presentation = launcherPresentationID
+        let input = launcherDraft.text, keyword = plugins.keyword?.keyword
+        let recordsInput = plugins.request?.chain.isEmpty != false
         do {
             try await browserSearch.focus(target)
+            if recordsInput {
+                recordLauncherInput(destination: .web, label: target.browser.title, text: input, keyword: keyword)
+            }
+            // Browser automation can outlive this opening or edits made while it was pending.
+            guard presentation == launcherPresentationID, launcherDraft.text == input,
+                  plugins.keyword?.keyword == keyword else { return false }
             finishPluginResult()
             finishQuickResult()
             return true
@@ -48,6 +57,7 @@ extension AskConversationModel {
 
     /// Opens an application or settings pane from the launcher and ranks it higher next time.
     func openQuickApp(_ app: AskAppEntry) {
+        recordLauncherInput(destination: .application, label: app.name)
         appIndex.recordLaunch(app)
         if let settingsURL = app.settingsURL { openURL(settingsURL) } else { openApplication(app.url) }
         finishQuickResult()
@@ -62,6 +72,7 @@ extension AskConversationModel {
     /// Starts a question about a file: the launcher leaves keyword mode, empties its
     /// text and takes the file as an attachment.
     func attachFileToLauncher(_ url: URL) {
+        recordLauncherInput(destination: .file, label: url.lastPathComponent)
         plugins.deactivate()
         launcherDraft.text = ""
         addAttachments([.file(url)], launcher: true)
@@ -82,6 +93,7 @@ extension AskConversationModel {
             openQuickApp(app)
             return .close
         }
+        recordLauncherInput(destination: .application, label: app.name)
         finishQuickResult()
         return .close
     }
@@ -138,6 +150,7 @@ extension AskConversationModel {
         case .quit:
             return .stay
         }
+        recordLauncherInput(destination: .file, label: file.name)
         finishQuickResult()
         return .close
     }

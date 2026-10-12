@@ -311,6 +311,7 @@ extension AskConversationModel {
             Task { await focusBrowserTab(target) }
             return .stay
         case let .open(url):
+            if plugins.keyword == nil { recordLauncherInput(destination: .web, label: url.host ?? "") }
             finishPluginResult()
             if url.isFileURL { fileIndex.recordOpen(url.path) }
             openURL(url)
@@ -442,13 +443,17 @@ extension AskConversationModel {
         let argument = launcherDraft.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let text = prompt ??
             (argument.isEmpty ? plugins.plugin.map { L("ask.plugin.askAI.selection", $0.title) } ?? "" : argument)
+        recordLauncherInput(destination: .askAI)
         plugins.deactivate()
         launcherDraft.text = text
-        submitLauncher()
+        // A failed submission must not save a generated prompt as abandoned input.
+        launcherExecutedInput = AskLauncherInputHistory.identity(text)
+        submitLauncher(recordInput: false)
     }
 
     /// The result was used: the next launch starts empty, out of keyword mode.
     func finishPluginResult() {
+        if plugins.keyword != nil { recordLauncherInput(destination: .keyword, label: plugins.plugin?.title ?? "") }
         releaseLauncherScreenshot()
         launcherClipboardPreview = nil
         answerWorkflowApproval(false)
@@ -456,8 +461,7 @@ extension AskConversationModel {
         finishQuickResult()
     }
 
-    /// Closing the launcher in keyword mode puts the keyword back in front of
-    /// its text, so the saved draft opens in the same mode next time.
+    /// Closing folds the keyword into its text after input history has recorded it.
     func foldLauncherKeyword() {
         releaseLauncherScreenshot()
         launcherClipboardPreview = nil

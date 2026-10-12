@@ -340,7 +340,8 @@ struct AskConversationTests {
         #expect(f.capture.calls == 1); #expect(f.model.launcherDraft.selection == "Selected words")
         f.model.launcherDraft.text = "First question"
         await f.model.prepareLauncher()
-        #expect(f.capture.calls == 1)
+        #expect(f.capture.calls == 2)
+        #expect(f.model.launcherDraft.text == "First question")
         var shown = 0; f.model.onShowConversation = { shown += 1 }
         f.model.submitLauncher()
         try await f.wait { f.model.busyIds.isEmpty }

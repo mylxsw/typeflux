@@ -165,21 +165,21 @@ struct AskLauncherPolishTests {
         #expect(AskContextCapture.missingScreenshotWarning(allowed: true) == L("ask.capture.unavailable"))
     }
 
-    @Test func aKeptDraftWithoutItsScreenshotDoesNotReadAsAttached() async throws {
+    @Test func freshPreparationReplacesEarlierCaptureWarnings() async throws {
         let fixture = try AskTestFixture()
-        // The first opening takes the account (and captures); the next keeps the unfinished draft.
+        // Every preparation captures the current context, even if text was typed early.
         await fixture.model.prepareLauncher()
         let captures = fixture.capture.calls
         fixture.model.launcherDraft = AskDraft(text: "Unfinished question", includeScreenshot: true)
         fixture.model.captureWarning = nil
         await fixture.model.prepareLauncher()
-        #expect(fixture.model.launcherContextRestored)
-        #expect(fixture.model.captureWarning == L("ask.capture.permission"), "the capture double has no permission")
-        #expect(fixture.capture.calls == captures, "a kept draft is not captured again")
+        #expect(!fixture.model.launcherContextRestored)
+        #expect(fixture.model.captureWarning == nil)
+        #expect(fixture.capture.calls == captures + 1)
 
         fixture.model.captureWarning = "Earlier failure"
         await fixture.model.prepareLauncher()
-        #expect(fixture.model.captureWarning == "Earlier failure", "the reason from the last capture stays")
+        #expect(fixture.model.captureWarning == nil, "fresh capture replaces the old failure")
 
         fixture.model.launcherDraft.screenshot = "data:image/jpeg;base64,YQ=="
         fixture.model.captureWarning = nil

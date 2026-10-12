@@ -4737,3 +4737,27 @@
 "ask.plugin.kill.warning" = "강제 종료하면 저장하지 않은 변경 사항이 손실될 수 있습니다.";
 "ask.plugin.kill.failed" = "“%@” 앱을 강제 종료할 수 없습니다.";
 "ask.settings.keywords.kind.kill.hint" = "실행 중인 앱을 표시하고 선택한 앱을 강제 종료합니다.";
+
+// Launcher input history
+"ask.inputHistory.title" = "최근 입력";
+"ask.inputHistory.disabled" = "입력 기록이 꺼져 있습니다";
+"ask.inputHistory.noMatches" = "일치하는 입력이 없습니다";
+"ask.inputHistory.empty" = "아직 입력 기록이 없습니다";
+"ask.inputHistory.disabled.detail" = "런처 설정에서 입력 기록 저장을 켜세요.";
+"ask.inputHistory.empty.detail" = "검색을 실행하거나 미완성 입력을 닫으면 여기에 저장됩니다.";
+"ask.inputHistory.clear" = "입력 기록 지우기…";
+"ask.inputHistory.deleteAll" = "모두 지우기";
+"ask.inputHistory.clear.detail" = "이 Mac의 모든 입력 기록이 삭제됩니다.";
+"ask.inputHistory.fill" = "채우기";
+"ask.inputHistory.unsent" = "미전송";
+"ask.inputHistory.askAI" = "AI에게 질문";
+"ask.inputHistory.copy" = "텍스트 복사";
+"ask.inputHistory.delete" = "삭제";
+"ask.inputHistory.filter" = "최근 입력 필터…";
+"ask.inputHistory.chip" = "↺ 최근";
+"ask.inputHistory.hint" = "↩ 채우기 · ⌘↩ AI 질문 · ⌘⌫ 삭제 · esc 돌아가기";
+"ask.inputHistory.homeHint" = "↑ 최근 입력";
+"ask.inputHistory.remember" = "입력 기록 저장";
+"ask.inputHistory.limit" = "보관할 항목 수";
+"ask.inputHistory.privacy" = "입력 기록은 이 Mac에만 저장됩니다. 캡처한 컨텍스트, 첨부 파일, AI 답변은 포함되지 않습니다.";
+"ask.inputHistory.noMatches.detail" = "다른 필터를 시도하세요. esc로 필터를 지우고 돌아갈 수 있습니다.";
