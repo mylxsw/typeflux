@@ -49,7 +49,7 @@ final class SettingsPolishTests: XCTestCase {
                 options: [(label: "Responses", value: 1)],
                 selection: .constant(1)
             )),
-            36,
+            SettingsControlMetrics.menuHeight,
             accuracy: 0.5
         )
         XCTAssertEqual(height(Button("Save") {}.buttonStyle(ModelActionStyle(primary: true))), field, accuracy: 0.5)
