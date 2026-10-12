@@ -380,10 +380,10 @@ struct AskQuickResults: Equatable {
     /// Where results are copied. Tests point it at a private pasteboard.
     @MainActor static var pasteboard = NSPasteboard.general
 
-    @MainActor static func copy(_ text: String, to pasteboard: NSPasteboard? = nil) {
+    @MainActor @discardableResult static func copy(_ text: String, to pasteboard: NSPasteboard? = nil) -> Bool {
         let target = pasteboard ?? Self.pasteboard
         target.clearContents()
-        target.setString(text, forType: .string)
+        return target.setString(text, forType: .string)
     }
 
     /// Puts the image at `url` on the pasteboard as one item: the image itself, for

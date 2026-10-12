@@ -4680,3 +4680,30 @@
 "settings.pane.appearance" = "Appearance";
 
 "settings.inputAndCapture.title" = "Input and Capture";
+
+// Built-in emoji search
+"emoji.title" = "Emoji";
+"emoji.placeholder" = "Search names, keywords, or describe a feeling";
+"emoji.summary" = "Find emoji offline by keywords, pinyin, typos, and common expressions";
+"ask.settings.keywords.kind.emoji.hint" = "Offline emoji search";
+"emoji.insert" = "Insert";
+"emoji.scope.all" = "All";
+"emoji.scope.recent" = "Recent";
+"emoji.scope.favorites" = "Favorites";
+"emoji.clearRecent" = "Clear recent";
+"emoji.local" = "On this Mac";
+"emoji.variant" = "Skin tone";
+"emoji.favorite" = "Favorite emoji";
+"emoji.unfavorite" = "Unfavorite emoji";
+"emoji.empty.all" = "No matching emoji";
+"emoji.empty.recent" = "No recently used emoji match";
+"emoji.empty.favorites" = "No favorite emoji match";
+"emoji.empty.hint" = "Try a shorter keyword, or clear the search. Use the star to save favorites.";
+"emoji.loadFailed" = "Could not load the emoji catalog. Try again.";
+"emoji.match.browse" = "Common emoji";
+"emoji.match.exact" = "Exact emoji";
+"emoji.match.keyword" = "Keyword / pinyin match";
+"emoji.match.prefix" = "Prefix match";
+"emoji.match.contains" = "Partial match";
+"emoji.match.intent" = "Suggested for this expression";
+"emoji.match.typo" = "Spelling correction";

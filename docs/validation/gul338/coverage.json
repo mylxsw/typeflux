@@ -1,0 +1,46 @@
+{
+  "scope": "New emoji Swift source files; final focused instrumented regression",
+  "files": [
+    {
+      "file": "Typeflux/Ask/AskConversationModel+Emoji.swift",
+      "count": 49,
+      "covered": 42,
+      "percent": 85.71428571428571
+    },
+    {
+      "file": "Typeflux/Ask/QuickResults/Plugins/Emoji/AskEmojiPlugin.swift",
+      "count": 163,
+      "covered": 161,
+      "percent": 98.77300613496932
+    },
+    {
+      "file": "Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiCatalog.swift",
+      "count": 95,
+      "covered": 93,
+      "percent": 97.89473684210527
+    },
+    {
+      "file": "Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiGridKeyboard.swift",
+      "count": 58,
+      "covered": 54,
+      "percent": 93.10344827586206
+    },
+    {
+      "file": "Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift",
+      "count": 469,
+      "covered": 387,
+      "percent": 82.51599147121536
+    },
+    {
+      "file": "Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiSearchService.swift",
+      "count": 308,
+      "covered": 303,
+      "percent": 98.37662337662337
+    }
+  ],
+  "total": {
+    "count": 1142,
+    "covered": 1040,
+    "percent": 91.06830122591944
+  }
+}

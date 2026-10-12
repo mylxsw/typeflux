@@ -557,7 +557,7 @@ struct AskComposer: View {
             return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, optionName: plugin.optionName,
                                     phase: plugins.phase, previous: plugins.previous, partial: plugins.partial,
                                     comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
-                                    offersAskAI: asks && plugin.id != AskSystemMonitorPlugin.id,
+                                    offersAskAI: asks && ![AskSystemMonitorPlugin.id, AskEmojiPlugin.id].contains(plugin.id),
                                     savesNoteWhenDone: plugins.savesNoteWhenDone,
                                     systemMonitor: plugin.id == AskSystemMonitorPlugin.id)
         }
@@ -673,6 +673,7 @@ struct AskComposer: View {
             }
             return true
         }
+        if plugins.plugin?.id == AskEmojiPlugin.id, !plugins.isPlanCurrent { return true }
         switch key {
         case .up, .down: movePluginHighlight(key == .up ? -1 : 1)
         case let .number(number):
@@ -788,6 +789,14 @@ struct AskComposer: View {
 
     /// Arrows wrap through visible plugin items; the header owns the AI action.
     private func movePluginHighlight(_ delta: Int) {
+        if plugins.output?.emoji != nil {
+            let index = plugins.output?.selectedItem ?? 0
+            let count = plugins.output?.items.count ?? 0
+            if let next = EmojiResultsView.nextIndex(index, delta: delta * EmojiResultsView.columns, count: count) {
+                plugins.selectItem(next)
+            }
+            return
+        }
         if pluginHighlight == 0, plugins.moveSelection(delta) { return }
         pluginHighlight = 0
         if let indices = plugins.output?.selectableIndices, let index = delta < 0 ? indices.last : indices.first {
@@ -1307,6 +1316,10 @@ struct AskComposer: View {
                 return true
             }
         }
+        if plugins.plugin?.id == AskEmojiPlugin.id, !draft.wrappedValue.text.isEmpty {
+            draft.wrappedValue.text = ""
+            return true
+        }
         if model.launcherClipboardPreview != nil {
             model.launcherClipboardPreview = nil
             return true
@@ -1363,6 +1376,12 @@ struct AskComposer: View {
         if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
            plugins.hint?.pluginID != AskClipboardPlugin.id || pluginHighlight == 0,
            model.enterLauncherKeywordFromText(pluginID: AskClipboardPlugin.id) {
+            pluginHighlight = 0
+            pluginReserve = 0
+            return true
+        }
+        if launcher, key == .enter, !plugins.isActive,
+           model.enterLauncherKeywordFromText(pluginID: AskEmojiPlugin.id) {
             pluginHighlight = 0
             pluginReserve = 0
             return true
@@ -1487,6 +1506,8 @@ struct AskComposer: View {
             text: draft.text,
             placeholder: placeholder,
             placeholderSingleLine: launcher,
+            defersCompositionUpdates: plugins.plugin?.id == AskEmojiPlugin.id,
+            usesKeyViewTabs: plugins.plugin?.id == AskEmojiPlugin.id,
             voice: voice,
             contextID: contextID,
             fontSize: chrome.editorFontSize,

@@ -4680,3 +4680,30 @@
 "settings.pane.appearance" = "外观";
 
 "settings.inputAndCapture.title" = "输入与截屏";
+
+// Built-in emoji search
+"emoji.title" = "表情";
+"emoji.placeholder" = "搜索名称、关键词，或描述你的心情";
+"emoji.summary" = "离线搜索表情，支持关键词、拼音、错拼及常见表达";
+"ask.settings.keywords.kind.emoji.hint" = "离线表情搜索";
+"emoji.insert" = "插入";
+"emoji.scope.all" = "全部";
+"emoji.scope.recent" = "最近使用";
+"emoji.scope.favorites" = "收藏";
+"emoji.clearRecent" = "清空最近使用";
+"emoji.local" = "本地搜索";
+"emoji.variant" = "肤色";
+"emoji.favorite" = "收藏表情";
+"emoji.unfavorite" = "取消收藏表情";
+"emoji.empty.all" = "没有匹配的表情";
+"emoji.empty.recent" = "没有符合的最近使用表情";
+"emoji.empty.favorites" = "没有符合的收藏表情";
+"emoji.empty.hint" = "试试更短的关键词，或清空搜索；点击星号收藏常用表情。";
+"emoji.loadFailed" = "无法加载表情词库，请重试。";
+"emoji.match.browse" = "常用表情";
+"emoji.match.exact" = "完整表情匹配";
+"emoji.match.keyword" = "关键词 / 拼音匹配";
+"emoji.match.prefix" = "前缀匹配";
+"emoji.match.contains" = "包含匹配";
+"emoji.match.intent" = "意图联想";
+"emoji.match.typo" = "拼写容错";

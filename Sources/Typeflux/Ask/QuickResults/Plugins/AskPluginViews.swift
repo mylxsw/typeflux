@@ -183,6 +183,7 @@ struct AskPluginResultsView: View {
     /// The result's height: a flat list, or a card with header, text (and the
     /// original when comparing), a note and actions.
     static func cardHeight(output: AskPluginOutput?, failure: AskPluginFailure?, comparing: Bool) -> CGFloat {
+        if output?.emoji != nil { return EmojiResultsView.height }
         if let output, output.wordCard == nil, !output.items.isEmpty {
             return itemsHeight(output.items.count) + (output.note != nil ? 12 + noteHeight : 0)
         }
@@ -448,7 +449,12 @@ struct AskPluginResultsView: View {
     @ViewBuilder
     private func card(plan: AskPluginPlan, output: AskPluginOutput?, failure: AskPluginFailure?, running: Bool,
                       streaming: Bool = false) -> some View {
-        if let output, output.wordCard == nil, !output.items.isEmpty {
+        if let output, let emoji = output.emoji {
+            EmojiResultsView(output: output, presentation: emoji, onSelect: onSelectItem,
+                             onMain: onMain, onAction: onAction)
+                .disabled(running)
+                .opacity(running ? 0.5 : 1)
+        } else if let output, output.wordCard == nil, !output.items.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
                 itemList(output, pending: running, dimmed: running && plan.mode != .live)
                 if let note = output.note {

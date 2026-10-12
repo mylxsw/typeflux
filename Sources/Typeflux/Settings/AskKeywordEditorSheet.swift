@@ -94,6 +94,7 @@ struct AskKeywordEditorSheet: View {
         case .setting: "setting"
         case .history: "history"
         case .clip: "clip"
+        case .emoji: "emoji"
         case .system: ""
         case .workflow: ""
         }
@@ -204,6 +205,8 @@ struct AskKeywordEditorSheet: View {
                     }
                 }
             }
+        case .emoji:
+            hint(L("emoji.summary"))
         case .system:
             field(L("ask.system.title")) {
                 Picker("", selection: $draft.systemCommand) {
