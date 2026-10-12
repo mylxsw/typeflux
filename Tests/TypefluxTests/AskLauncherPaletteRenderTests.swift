@@ -110,7 +110,7 @@ struct AskLauncherPaletteRenderTests {
     }
 
     private enum Backdrop: String, CaseIterable, CustomStringConvertible {
-        case page, wallpaper
+        case page, wallpaper, darkWindow
         var description: String { rawValue }
 
         @ViewBuilder var view: some View {
@@ -151,6 +151,21 @@ struct AskLauncherPaletteRenderTests {
                                    startRadius: 0, endRadius: 360)
                     RadialGradient(colors: [Color(red: 0.24, green: 0.86, blue: 0.59), .clear], center: .bottom,
                                    startRadius: 0, endRadius: 320)
+                }
+            case .darkWindow:
+                ZStack {
+                    Color(.sRGB, white: 0.16, opacity: 1)
+                    HStack(spacing: 0) {
+                        Color(red: 0.05, green: 0.48, blue: 0.65)
+                        Color(red: 0.25, green: 0.40, blue: 0.75)
+                        Color(red: 0.28, green: 0.55, blue: 0.40)
+                        Color(red: 0.72, green: 0.43, blue: 0.12)
+                    }.frame(height: 130)
+                    VStack(spacing: 12) {
+                        ForEach(0 ..< 12) { _ in
+                            Rectangle().fill(Color.white.opacity(0.12)).frame(height: 1)
+                        }
+                    }
                 }
             }
         }

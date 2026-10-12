@@ -1534,6 +1534,7 @@ struct AskComposer: View {
             text: draft.text,
             placeholder: placeholder,
             placeholderSingleLine: launcher,
+            placeholderColor: launcher ? AskTheme.launcherPlaceholderText : StudioTheme.textSecondary,
             defersCompositionUpdates: plugins.plugin?.id == AskEmojiPlugin.id,
             usesKeyViewTabs: plugins.plugin?.id == AskEmojiPlugin.id,
             voice: voice,
@@ -1682,12 +1683,12 @@ struct AskComposer: View {
         .frame(height: layout.footerHeight)
         .frame(maxWidth: .infinity)
         .background {
-            if showsGlassLauncherBar {
+            if showsGlassLauncherBar && colorScheme == .light {
                 // A translucent tray with breathing room distinguishes controls from results
                 // without adding a second blur or changing their hit targets.
                 let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
-                shape.fill(colorScheme == .dark ? Color.black.opacity(0.16) : Color.white.opacity(0.26))
-                    .overlay(shape.strokeBorder(Color.white.opacity(colorScheme == .dark ? 0.12 : 0.30), lineWidth: 1))
+                shape.fill(Color.white.opacity(0.26))
+                    .overlay(shape.strokeBorder(Color.white.opacity(0.30), lineWidth: 1))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 4)
                     .allowsHitTesting(false)

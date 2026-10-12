@@ -80,12 +80,7 @@ struct AskLauncherLightPaletteTests {
 
     @Test func darkModeKeepsTheSharedTokens() {
         let pairs: [(Color, Color)] = [
-            (AskTheme.launcherSeparator, AskTheme.separator),
-            (AskTheme.launcherSelection, AskTheme.accentSoft),
-            (AskTheme.launcherKeyword, AskTheme.accentSoft),
-            (AskTheme.launcherChipEdge, AskTheme.separator),
-            (AskTheme.launcherShortcutEdge, AskTheme.separator),
-            (AskTheme.launcherMetaText, StudioTheme.textSecondary)
+            (AskTheme.launcherShortcutEdge, AskTheme.separator)
         ]
         for (launcher, shared) in pairs {
             #expect(resolve(launcher, dark: true).isClose(to: resolve(shared, dark: true)))
@@ -94,6 +89,27 @@ struct AskLauncherLightPaletteTests {
                       AskTheme.launcherShortcutFill] {
             #expect(resolve(clear, dark: true).alpha == 0)
         }
+    }
+
+    @Test func `dark launcher selection and keywords stay neutral and readable`() {
+        for color in [AskTheme.launcherSelection, AskTheme.launcherKeyword, AskTheme.launcherKeywordText] {
+            let value = resolve(color, dark: true)
+            #expect(abs(value.red - value.green) < 0.005)
+            #expect(abs(value.red - value.blue) < 0.005)
+        }
+        #expect(contrast(resolve(StudioTheme.textPrimary, dark: true),
+                         resolve(AskTheme.launcherSelection, dark: true)) >= 7)
+        #expect(contrast(resolve(AskTheme.launcherMetaText, dark: true),
+                         resolve(AskTheme.launcherSelection, dark: true)) >= 4.5)
+        #expect(contrast(resolve(AskTheme.launcherPlaceholderText, dark: true),
+                         resolve(AskTheme.launcherSurface, dark: true)) >= 4.5)
+        let text = resolve(AskTheme.launcherKeywordText, dark: true)
+        let keyword = resolve(AskTheme.launcherKeyword, dark: true)
+        // The keyword's translucent fill cannot exceed its opaque source luminance
+        // over the launcher's dark surface.
+        #expect(contrast(text, keyword) >= 4.5)
+        #expect(resolve(AskTheme.launcherKeywordText, dark: false)
+            .isClose(to: resolve(AskTheme.accentText, dark: false)))
     }
 
     @Test func metaTextStepsBelowSecondaryInLightMode() {

@@ -43,11 +43,16 @@ struct AskSuggestion: Equatable, Identifiable {
 /// to continue, and keyword chips. ↑/↓ move between rows (the chip row is one
 /// stop, ←/→ move along it), Return runs the highlight and ⌘1…⌘9 run a row.
 struct AskLauncherSuggestions: View {
+    @Environment(\.colorScheme) private var colorScheme
     var sections: [AskLauncherHome.Section]
     @Binding var highlighted: Int
     var onPick: (AskLauncherHome.Item) -> Void
     var now = Date()
     var viewportHeight: CGFloat?
+
+    private var secondaryText: Color {
+        colorScheme == .dark ? AskTheme.launcherMetaText : StudioTheme.textSecondary
+    }
 
     static let rowHeight: CGFloat = 44
     static let rowSpacing: CGFloat = 2
@@ -206,9 +211,9 @@ struct AskLauncherSuggestions: View {
 
     private func header(_ title: String, subtitle: String?) -> some View {
         HStack(spacing: 6) {
-            Text(title).foregroundStyle(StudioTheme.textSecondary)
+            Text(title).foregroundStyle(secondaryText)
             if let subtitle {
-                Text(subtitle).foregroundStyle(StudioTheme.textSecondary).lineLimit(1).truncationMode(.tail)
+                Text(subtitle).foregroundStyle(secondaryText).lineLimit(1).truncationMode(.tail)
             }
             Spacer(minLength: 0)
         }
@@ -306,7 +311,7 @@ struct AskLauncherSuggestions: View {
 
     private func keywordLabel(_ keyword: String) -> some View {
         Text(keyword).font(.system(size: 10.5, design: .monospaced))
-            .foregroundStyle(AskTheme.accentText)
+            .foregroundStyle(AskTheme.launcherKeywordText)
             .padding(.horizontal, 5)
             .frame(height: 18)
             .background(AskTheme.launcherKeyword, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
@@ -317,7 +322,7 @@ struct AskLauncherSuggestions: View {
             HStack(spacing: 6) {
                 keywordLabel(chip.keyword.keyword)
                 Text(chip.title).font(.system(size: 12.5))
-                    .foregroundStyle(highlighted ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .foregroundStyle(highlighted ? StudioTheme.textPrimary : secondaryText)
                     .lineLimit(1)
             }
             .padding(.leading, 5)

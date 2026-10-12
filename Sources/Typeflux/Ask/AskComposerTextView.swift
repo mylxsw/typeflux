@@ -10,6 +10,7 @@ struct AskComposerTextView: NSViewRepresentable {
     @Environment(\.isEnabled) private var isEnabled
     var placeholder: String
     var placeholderSingleLine = false
+    var placeholderColor: Color = StudioTheme.textSecondary
     var defersCompositionUpdates = false
     var usesKeyViewTabs = false
     var voice: AskVoiceInput? = nil
@@ -57,6 +58,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.insertionPointColor = .labelColor
         editor.placeholder = placeholder
         editor.placeholderSingleLine = placeholderSingleLine
+        editor.placeholderColor = NSColor(placeholderColor)
         editor.textContainerInset = NSSize(width: 0, height: 4)
         editor.textContainer?.lineFragmentPadding = Self.lineFragmentPadding
         editor.isVerticallyResizable = true
@@ -107,6 +109,7 @@ struct AskComposerTextView: NSViewRepresentable {
         if editor.isEditable != isEnabled { editor.isEditable = isEnabled }
         editor.placeholder = placeholder
         editor.placeholderSingleLine = placeholderSingleLine
+        editor.placeholderColor = NSColor(placeholderColor)
         editor.setAccessibilityLabel(placeholder)
         editor.onSubmit = onSubmit; editor.onDismiss = onDismiss
         editor.onHeightChange = onHeightChange
@@ -179,6 +182,9 @@ struct AskComposerTextView: NSViewRepresentable {
         var placeholderSingleLine = false {
             didSet { if placeholderSingleLine != oldValue { needsDisplay = true; reportHeight() } }
         }
+        var placeholderColor = NSColor(StudioTheme.textSecondary) {
+            didSet { if placeholderColor != oldValue { needsDisplay = true } }
+        }
 
         /// Composition changes the native text before textDidChange publishes
         /// the draft. Drawing here keeps the hint and marked text in sync.
@@ -189,7 +195,7 @@ struct AskComposerTextView: NSViewRepresentable {
             paragraph.lineBreakMode = placeholderSingleLine ? .byTruncatingTail : .byWordWrapping
             return NSAttributedString(string: placeholder, attributes: [
                 .font: font ?? NSFont.systemFont(ofSize: StudioTheme.Typography.bodyLarge),
-                .foregroundColor: NSColor(StudioTheme.textSecondary),
+                .foregroundColor: placeholderColor,
                 .paragraphStyle: paragraph
             ])
         }

@@ -113,6 +113,13 @@ struct AskGlassBackground: View {
     /// `.circular` for pills: a continuous corner near half the height draws a
     /// stray sliver at each end of the outline.
     var cornerStyle: RoundedCornerStyle = .continuous
+    /// Large dark launchers use a diffuse backdrop and quieter native optics.
+    /// Small popovers and conversation chrome retain the regular glass policy.
+    var diffuseLauncher = false
+
+    private var usesDiffuseBackdrop: Bool { diffuseLauncher && colorScheme == .dark }
+    private var launcherTintOpacity: Double { 0.48 + intensity.value * 0.30 }
+    private var launcherTint: Color { Color(.sRGB, white: 18 / 255, opacity: 1) }
 
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: corner, style: cornerStyle) }
 
@@ -130,27 +137,39 @@ struct AskGlassBackground: View {
         ZStack {
             switch effectiveMaterial {
             case .liquidGlass:
-                if placement == .windowEdge, colorScheme == .light {
-                    // Keep the edge column's backdrop independent of the canvas.
-                    // The native glass above supplies adaptive contrast and optics.
-                    StudioVisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow,
-                                           cornerRadius: corner)
+                if usesDiffuseBackdrop {
+                    diffuseBackdrop
+                    liquidGlass.opacity(0.16)
+                    shape.fill(launcherTint.opacity(launcherTintOpacity))
+                } else {
+                    if placement == .windowEdge, colorScheme == .light {
+                        // Keep the edge column's backdrop independent of the canvas.
+                        // The native glass above supplies adaptive contrast and optics.
+                        StudioVisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow,
+                                               cornerRadius: corner)
+                    }
+                    frosting
+                    liquidGlass
+                    shape.fill(opaqueFill.opacity(intensity.extraTintOpacity))
                 }
-                frosting
-                liquidGlass
-                shape.fill(opaqueFill.opacity(intensity.extraTintOpacity))
             case .visualEffect:
-                fallback
-                frosting
+                if usesDiffuseBackdrop {
+                    diffuseBackdrop
+                    shape.fill(launcherTint.opacity(launcherTintOpacity))
+                } else {
+                    fallback
+                    frosting
+                }
             case .opaque:
                 shape.fill(opaqueFill)
             }
         }
         .clipShape(shape)
         .overlay {
-            // A floating panel also needs a fine specular edge over flat dark
-            // windows. In-window native glass keeps the system's own highlights.
-            if effectiveMaterial == .visualEffect || (effectiveMaterial == .liquidGlass && placement == .floating) {
+            // Small floating cards keep a specular edge; the large dark launcher
+            // leaves its outline to the subdued native optics.
+            if !usesDiffuseBackdrop && (effectiveMaterial == .visualEffect ||
+                (effectiveMaterial == .liquidGlass && placement == .floating)) {
                 rim
             }
             if effectiveMaterial == .opaque, contrast == .increased {
@@ -181,6 +200,12 @@ struct AskGlassBackground: View {
     private var fallback: some View {
         StudioVisualEffectBlur(material: placement.fallbackMaterial, blendingMode: placement.blending,
                                cornerRadius: corner)
+    }
+
+    /// System HUD blur spreads backdrop colors without the bright regular-glass
+    /// backplate. No fixed gradients or private blur filters are involved.
+    private var diffuseBackdrop: some View {
+        StudioVisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: corner)
     }
 
     /// Bright on the light-facing corner, fading along the edge.

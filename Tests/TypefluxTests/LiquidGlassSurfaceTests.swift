@@ -6,6 +6,33 @@ import Testing
 @Suite("Shared Liquid Glass surfaces", .serialized, .exclusiveUIState)
 @MainActor
 struct LiquidGlassSurfaceTests {
+    @Test func `launcher diffusion stays scoped and accessibility removes every effect`() async throws {
+        #if compiler(>=6.2)
+            guard #available(macOS 26.0, *) else { return }
+            for dark in [false, true] {
+                for material in [AskGlassMaterial.liquidGlass, .visualEffect, .opaque] {
+                    let view = AskComposerChrome.launcher.glassBackground(material)
+                        .environment(\.colorScheme, dark ? .dark : .light)
+                    let window = makeWindow(view, dark: dark, size: .init(width: 320, height: 160))
+                    defer { window.orderOut(nil); window.close() }
+                    try await Task.sleep(for: .milliseconds(100))
+                    let layers = try descendants(#require(window.contentView))
+                    let blur = layers.compactMap { $0 as? NSVisualEffectView }
+                    let native = layers.compactMap { $0 as? NSGlassEffectView }
+                    if material == .opaque {
+                        #expect(blur.isEmpty && native.isEmpty)
+                    } else if dark {
+                        #expect(blur.contains { $0.material == .hudWindow && $0.blendingMode == .behindWindow })
+                        #expect(native.count == (material == .liquidGlass ? 1 : 0))
+                    } else {
+                        #expect(!blur.contains { $0.material == .hudWindow })
+                    }
+                }
+            }
+            #expect(!AskComposerChrome.workspace.glassBackground(.liquidGlass).diffuseLauncher)
+        #endif
+    }
+
     @Test func composerShadowPreservesTheBackdropUnderGlass() async throws {
         let backdrop = Color(red: 0.1, green: 0.3, blue: 0.7)
         let baseline = makeWindow(backdrop, dark: false, size: .init(width: 160, height: 100))

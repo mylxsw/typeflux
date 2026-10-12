@@ -56,7 +56,7 @@ struct AskLightV4PaletteTests {
         }
     }
 
-    @Test func `dark tokens keep their previous values`() throws {
+    @Test func `dark workspace tokens and neutral launcher palette`() throws {
         func grey(_ alpha: Double) -> Color {
             Color(nsColor: NSColor(calibratedWhite: 1, alpha: alpha))
         }
@@ -65,12 +65,12 @@ struct AskLightV4PaletteTests {
         }
         let pairs: [(Color, Color)] = [
             (AskTheme.border, grey(0.10)), (AskTheme.separator, grey(0.07)),
-            (AskTheme.launcherSeparator, grey(0.07)), (AskTheme.librarySeparator, grey(0.07)),
+            (AskTheme.launcherSeparator, grey(0.04)), (AskTheme.librarySeparator, grey(0.07)),
             (AskTheme.cardBorder, grey(0.10)), (AskTheme.accentText, calibrated(0.557, 0.741, 1)),
-            (AskTheme.launcherMetaText, Color(nsColor: NSColor(calibratedWhite: 0.720, alpha: 1))),
-            (AskTheme.launcherSelection, calibrated(0.082, 0.149, 0.243)),
+            (AskTheme.launcherMetaText, rgb(166, 166, 166)),
+            (AskTheme.launcherSelection, rgb(50, 50, 50)),
             (AskTheme.launcherSelectionEdge, .clear),
-            (AskTheme.launcherKeyword, calibrated(0.082, 0.149, 0.243)),
+            (AskTheme.launcherKeyword, rgb(56, 56, 56, 0.72)),
             (AskTheme.switchOnFill, calibrated(0.09, 0.55, 1, 0.22)),
             (AskTheme.switchOnEdge, calibrated(0.09, 0.55, 1, 0.35)),
             (AskTheme.privateTint, Color(nsColor: .systemPurple)),
