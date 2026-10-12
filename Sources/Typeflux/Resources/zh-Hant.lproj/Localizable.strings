@@ -1786,7 +1786,10 @@
 "models.invalidResponse" = "The provider returned an invalid model response";
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
-"models.back" = "Model settings";
+"models.back" = "返回";
+"models.tab.scenes" = "模型配置";
+"models.tab.speech" = "語音識別";
+"models.tab.language" = "大語言模型";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
 "models.fixedSpeech" = "Speech to text · one fixed model";
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
@@ -1810,12 +1813,12 @@
 "models.rewriteBlocked" = "無法用於轉譯與潤色：%@";
 "models.visionGuessed" = "根據模型名稱推斷支援視覺，可在「···」選單中變更";
 "ask.models.visionTrial" = "視覺能力未確認，將嘗試傳送圖片";
-"models.usageHint" = "標籤表示該模型目前被哪個場景使用；可在「應用場景」或「···」選單中變更。";
+"models.usageHint" = "標籤表示該模型目前被哪個功能使用；可在「模型配置」或「···」選單中變更。";
 "models.deleteHint" = "Scenes and conversations using this model will need a new selection. No replacement will be chosen automatically.";
 "models.alreadyAdded" = "Already added";
 "models.emptyCatalog" = "The provider returned no models";
 "models.loadFailed" = "Could not load models.";
-"models.subscription" = "The selected speech provider requires an active subscription. Renew or select a local model in Application scenarios.";
+"models.subscription" = "所選語音服務需要有效訂閱，請續訂或在「模型配置」中選擇本地模型。";
 
 "models.noAvailable" = "暫無適用於目前輸入的可用模型，請檢查登入狀態和模型設定。";
 
@@ -4679,3 +4682,30 @@
 "ask.preview.kind.document" = "文件";
 "ask.preview.kind.video" = "影片";
 "ask.preview.kind.audio" = "音訊";
+
+// Built-in emoji search
+"emoji.title" = "表情";
+"emoji.placeholder" = "搜尋名稱、關鍵詞，或描述你的心情";
+"emoji.summary" = "離線搜尋表情，支援關鍵詞、拼音、錯拼及常見表達";
+"ask.settings.keywords.kind.emoji.hint" = "離線表情搜尋";
+"emoji.insert" = "插入";
+"emoji.scope.all" = "全部";
+"emoji.scope.recent" = "最近使用";
+"emoji.scope.favorites" = "收藏";
+"emoji.clearRecent" = "清空最近使用";
+"emoji.local" = "本機搜尋";
+"emoji.variant" = "膚色";
+"emoji.favorite" = "收藏表情";
+"emoji.unfavorite" = "取消收藏表情";
+"emoji.empty.all" = "沒有符合的表情";
+"emoji.empty.recent" = "沒有符合的最近使用表情";
+"emoji.empty.favorites" = "沒有符合的收藏表情";
+"emoji.empty.hint" = "試試更短的關鍵詞，或清空搜尋；點擊星號收藏常用表情。";
+"emoji.loadFailed" = "無法載入表情詞庫，請重試。";
+"emoji.match.browse" = "常用表情";
+"emoji.match.exact" = "完整表情符合";
+"emoji.match.keyword" = "關鍵詞 / 拼音符合";
+"emoji.match.prefix" = "前綴符合";
+"emoji.match.contains" = "部分符合";
+"emoji.match.intent" = "意圖聯想";
+"emoji.match.typo" = "拼字容錯";

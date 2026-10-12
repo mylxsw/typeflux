@@ -10,6 +10,8 @@ struct AskComposerTextView: NSViewRepresentable {
     @Environment(\.isEnabled) private var isEnabled
     var placeholder: String
     var placeholderSingleLine = false
+    var defersCompositionUpdates = false
+    var usesKeyViewTabs = false
     var voice: AskVoiceInput? = nil
     var contextID: String = "launcher"
     var fontSize: CGFloat = StudioTheme.Typography.bodyLarge
@@ -62,6 +64,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.delegate = context.coordinator
         editor.voice = voice
         editor.contextID = contextID
+        editor.usesKeyViewTabs = usesKeyViewTabs
         editor.onSubmit = onSubmit
         editor.onDismiss = onDismiss
         editor.onHeightChange = onHeightChange
@@ -89,6 +92,7 @@ struct AskComposerTextView: NSViewRepresentable {
         guard let editor = scroll.documentView as? Editor else { return }
         if editor.contextID != contextID { editor.voice?.cancel(ifOwnedBy: editor) }
         editor.contextID = contextID
+        editor.usesKeyViewTabs = usesKeyViewTabs
         editor.voice = voice
         editor.setAccessibilityLabel(placeholder)
         // An inactive window retains its first responder. It must not compete
@@ -124,7 +128,7 @@ struct AskComposerTextView: NSViewRepresentable {
         init(_ parent: AskComposerTextView) { self.parent = parent }
         func textDidChange(_ notification: Notification) {
             guard let editor = notification.object as? NSTextView else { return }
-            parent.text = editor.string
+            if !parent.defersCompositionUpdates || !editor.hasMarkedText() { parent.text = editor.string }
             (editor as? Editor)?.reportHeight()
             (editor as? Editor)?.reportSlash()
         }
@@ -139,6 +143,7 @@ struct AskComposerTextView: NSViewRepresentable {
     final class Editor: NSTextView {
         weak var voice: AskVoiceInput?
         var contextID = "launcher"
+        var usesKeyViewTabs = false
         static let mouseHoldDelay: TimeInterval = 0.35
         private var holdTimer: Timer?
         private var mouseDownEvent: NSEvent?
@@ -473,6 +478,15 @@ struct AskComposerTextView: NSViewRepresentable {
             if event.keyCode == 51, string.isEmpty, !hasMarkedText(),
                event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
                onEmptyBackspace?() == true { return }
+            if usesKeyViewTabs, event.keyCode == 48, !hasMarkedText(),
+               event.modifierFlags.isDisjoint(with: [.command, .option, .control]) {
+                if event.modifierFlags.contains(.shift) {
+                    window?.selectPreviousKeyView(self)
+                } else {
+                    window?.selectNextKeyView(self)
+                }
+                return
+            }
             if !hasMarkedText(), let key = AskCommandKey(event), key != .commandC || selectedRange().length == 0,
                key != .right || caretAtEnd {
                 if event.isARepeat, case .number = key { return }

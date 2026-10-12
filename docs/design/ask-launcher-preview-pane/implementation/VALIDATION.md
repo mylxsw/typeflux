@@ -46,3 +46,13 @@ swift test --no-parallel --enable-code-coverage \
 Build passed (15.96s); **53 tests in 9 suites passed** (29.388s), including all 30 preview tests. This follow-up runs the relevant preview, staged-search and launcher-motion suites; the earlier full-suite results above remain scoped to their stated revision.
 
 Profiles from this follow-up run cover **4/4 changed executable production lines (100%)**: both updated composer guards and the controller's same-path comparison and metadata assignment, measured with `llvm-profdata merge -sparse` and `llvm-cov show`.
+
+Merge validation (2026-10-12): integrated main `c4979618`, including the merged design PR #428. Resolved append conflicts in English, Simplified Chinese and Traditional Chinese by preserving all 15 preview keys and all 25 emoji keys in each file. Verified that preview keys occur once in each of the five supported locales.
+
+```sh
+swift build --enable-code-coverage
+swift test --no-parallel --enable-code-coverage \
+  --filter 'AskFilePreview|AskQuickSearchSessionTests|AskLauncherMotionTests|AskEmojiPluginTests|EmojiSearchTests|LocalizationResourceTests'
+```
+
+Build passed (47.10s). XCTest: **23 tests passed**, zero failures. Swift Testing: **68 tests in 11 suites passed** (35.594s), zero issues. These checks cover the combined preview, emoji-search, launcher-motion and localization changes; the full-suite results above retain their original revision scope.

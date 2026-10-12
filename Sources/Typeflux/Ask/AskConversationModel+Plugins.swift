@@ -19,7 +19,8 @@ enum AskPluginRegistry {
         AskScreenshotTextPlugin.id,
         AskBrowserSearchPlugin.tabsID,
         AskBrowserSearchPlugin.bookmarksID,
-        AskSystemMonitorPlugin.id
+        AskSystemMonitorPlugin.id,
+        AskEmojiPlugin.id
     ] + AskSystemCommand.allCases.map(\.id)
 
     static var defaultKeywords: [AskKeyword] {
@@ -32,6 +33,7 @@ enum AskPluginRegistry {
                     + AskScreenshotTextPlugin.keywords
                     + AskBrowserSearchPlugin.keywords
                     + AskSystemMonitorPlugin.keywords
+                    + AskEmojiPlugin.keywords
                     + AskSystemCommand.allCases.map {
                         AskKeyword(keyword: $0.defaultKeyword, pluginID: $0.id)
                     }))
@@ -213,7 +215,8 @@ extension AskConversationModel {
             AskBrowserSearchPlugin(kind: .bookmark, service: browserSearch, settings: { [weak settings] in
                 settings?.askBrowserSearchSettings ?? AskBrowserSearchSettings()
             }),
-            AskSystemMonitorPlugin()
+            AskSystemMonitorPlugin(),
+            AskEmojiPlugin(usage: { [weak self] in self?.emojiUsage.value ?? EmojiUsage() })
         ] + AskSystemCommand.allCases.map { AskSystemCommandPlugin(command: $0) } + workflowPlugins()
     }
 
@@ -228,9 +231,20 @@ extension AskConversationModel {
     // One case per kind of action; splitting it would only scatter them.
     // swiftlint:disable:next cyclomatic_complexity function_body_length
     func performPluginAction(_ action: AskPluginAction) -> PluginActionOutcome {
+        if plugins.plugin?.id == AskEmojiPlugin.id {
+            guard plugins.isPlanCurrent, plugins.output != nil else { return .stay }
+            switch action.kind {
+            case let .copy(text), let .writeBack(text):
+                guard selectedEmoji(copying: text) != nil else { return .stay }
+            default: break
+            }
+        }
         // Using a result is what makes a word typed on the fly count as looked up.
         plugins.settleWordBook()
         switch action.kind {
+        case let .emoji(action):
+            performEmojiAction(action)
+            return .stay
         case let .systemCommand(command):
             return performSystemCommand(command)
         case .openChat:
@@ -258,12 +272,13 @@ extension AskConversationModel {
             if launcherClipboardPreview == nil { confirm(L("ask.plugin.clip.unavailable")) }
             return .stay
         case let .copy(text):
-            AskQuickResults.copy(text)
+            if AskQuickResults.copy(text) { recordEmoji(selectedEmoji(copying: text)) }
             finishPluginResult()
             return .close
         case let .writeBack(text):
+            let emoji = selectedEmoji(copying: text)
             finishPluginResult()
-            writeBack(text)
+            writeBack(text) { [weak self] in self?.recordEmoji(emoji) }
             return .close
         case let .speak(text, language):
             speak(text, language)
@@ -401,7 +416,8 @@ extension AskConversationModel {
 
     /// ⌘C: copies and keeps the launcher open, saying so in the bottom bar.
     func copyPluginText(_ text: String) {
-        AskQuickResults.copy(text)
+        if plugins.plugin?.id == AskEmojiPlugin.id, selectedEmoji(copying: text) == nil { return }
+        if AskQuickResults.copy(text) { recordEmoji(selectedEmoji(copying: text)) }
         confirm(L("ask.plugin.copied"))
     }
 
@@ -438,15 +454,20 @@ extension AskConversationModel {
     /// Types `text` into the app the launcher came from, over its selection when
     /// it still has one. The launcher has closed by now; if typing fails the
     /// text is on the clipboard and the next launcher says so.
-    func writeBack(_ text: String) {
-        guard let deliverText else { AskQuickResults.copy(text); return }
+    func writeBack(_ text: String, onDelivered: @escaping @MainActor () -> Void = {}) {
+        guard let deliverText else {
+            if AskQuickResults.copy(text) { onDelivered() }
+            confirm(L("ask.plugin.writeBack.failed"), for: .seconds(8))
+            return
+        }
         Task { [weak self] in
             // Let the source app take its own window's focus back first.
             try? await Task.sleep(for: .milliseconds(150))
             do {
                 try await deliverText(text)
+                onDelivered()
             } catch {
-                AskQuickResults.copy(text)
+                if AskQuickResults.copy(text) { onDelivered() }
                 self?.confirm(L("ask.plugin.writeBack.failed"), for: .seconds(8))
             }
         }
