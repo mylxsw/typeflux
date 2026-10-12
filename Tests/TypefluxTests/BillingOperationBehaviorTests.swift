@@ -335,14 +335,16 @@ final class BillingOperationFixture {
 
     func hasButton(in host: NSView) -> Bool {
         SettingsBehaviorTestSupport.elements(in: host).contains {
-            $0.role == NSAccessibility.Role.button.rawValue && $0.label.hasPrefix(entry.title)
+            [NSAccessibility.Role.button.rawValue, NSAccessibility.Role.link.rawValue].contains($0.role)
+                && $0.label.hasPrefix(entry.title)
                 && ($0.value("isAccessibilityEnabled") as? Bool == true)
         }
     }
 
     func button(in host: NSView) throws -> SettingsBehaviorTestSupport.Element {
         try #require(SettingsBehaviorTestSupport.elements(in: host).first {
-            $0.role == NSAccessibility.Role.button.rawValue && $0.label.hasPrefix(entry.title)
+            [NSAccessibility.Role.button.rawValue, NSAccessibility.Role.link.rawValue].contains($0.role)
+                && $0.label.hasPrefix(entry.title)
         }, "Missing billing entry: \(entry) / \(entry.title)")
     }
 

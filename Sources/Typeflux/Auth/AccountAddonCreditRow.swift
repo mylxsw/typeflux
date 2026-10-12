@@ -11,24 +11,24 @@ struct AccountAddonCreditRow: View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
                 Text(L("account.addon.title"))
-                    .font(.system(size: compact ? 11.5 : 12.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .font(compact ? .subheadline : .callout)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 Spacer(minLength: 8)
                 Text(AccountUsageDisplayFormatter.creditAmount(addon.remaining))
-                    .font(.system(size: compact ? 13 : 14, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .font(compact ? .body.weight(.semibold) : .headline)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .monospacedDigit()
             }
             if let note = AccountStatusText.addonExpiry(addon, locale: localization.locale) {
                 HStack(spacing: 5) {
                     if addon.expiresSoon {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.body.weight(.semibold))
                     }
                     Text(note).fixedSize(horizontal: false, vertical: true)
                 }
-                .font(.system(size: 11))
-                .foregroundStyle(addon.expiresSoon ? StudioTheme.warning : StudioTheme.textTertiary)
+                .font(.body)
+                .foregroundStyle(addon.expiresSoon ? TypefluxColor.warning.color : TypefluxColor.tertiaryLabel.color)
             }
         }
         .accessibilityElement(children: .combine)

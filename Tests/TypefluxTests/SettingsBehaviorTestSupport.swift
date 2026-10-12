@@ -9,6 +9,7 @@ enum SettingsBehaviorTestSupport {
 
     struct Element {
         let object: NSObject
+        var window: NSWindow?
 
         func value(_ key: String) -> Any? {
             if object.responds(to: NSSelectorFromString(key)) { return object.value(forKey: key) }
@@ -43,6 +44,7 @@ enum SettingsBehaviorTestSupport {
         }
 
         func press() throws {
+            if try pressNativeSegment() || pressNativeSwitch() { return }
             if let button = object as? NSButton {
                 button.performClick(nil)
                 return
@@ -58,15 +60,52 @@ enum SettingsBehaviorTestSupport {
             }
             _ = try #require(object.responds(to: selector), "The rendered control must expose a press action")
             let press = unsafeBitCast(object.method(for: selector), to: Press.self)
-            #expect(press(object, selector))
+            let accepted = press(object, selector)
+            #expect(accepted, "The control must accept its press action: \(label)")
+        }
+
+        private func pressNativeSegment() throws -> Bool {
+            guard role == NSAccessibility.Role.radioButton.rawValue, let window,
+                  let content = window.contentView else { return false }
+            func segments(in view: NSView) -> [NSSegmentedControl] {
+                (view as? NSSegmentedControl).map { [$0] } ?? view.subviews.flatMap { segments(in: $0) }
+            }
+            for control in segments(in: content) {
+                if let index = (0 ..< control.segmentCount).first(where: { control.label(forSegment: $0) == label }) {
+                    control.selectedSegment = index
+                    let action = try #require(control.action)
+                    let sent = NSApp.sendAction(action, to: control.target, from: control)
+                    #expect(sent, "The native segmented control must send its selection")
+                    return true
+                }
+            }
+            Issue.record("Missing native segmented control for \(label)")
+            throw ReadinessTimeout()
+        }
+
+        private func pressNativeSwitch() -> Bool {
+            guard role == NSAccessibility.Role.checkBox.rawValue, let window,
+                  let content = window.contentView else { return false }
+            func switches(in view: NSView) -> [NSSwitch] {
+                (view as? NSSwitch).map { [$0] } ?? view.subviews.flatMap { switches(in: $0) }
+            }
+            if let control = switches(in: content).first(where: {
+                let rect = window.convertToScreen($0.convert($0.bounds, to: nil))
+                return rect.intersects(frame)
+            }) {
+                control.performClick(nil)
+                return true
+            }
+            return false
         }
     }
 
     static func elements(in root: Any) -> [Element] {
+        let window = (root as? NSWindow) ?? (root as? NSView)?.window
         var seen = Set<ObjectIdentifier>()
         func walk(_ node: Any) -> [Element] {
             guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return [] }
-            let element = Element(object: object)
+            let element = Element(object: object, window: window)
             let children = (element.value("accessibilityChildren") as? [Any] ?? [])
                 + (element.value("accessibilityRows") as? [Any] ?? [])
             return [element] + children.flatMap(walk)
@@ -75,7 +114,9 @@ enum SettingsBehaviorTestSupport {
     }
 
     static func button(_ title: String, in root: Any) throws -> Element {
-        try #require(elements(in: root).first { $0.role == NSAccessibility.Role.button.rawValue && $0.label == title },
+        let roles = [NSAccessibility.Role.button.rawValue, NSAccessibility.Role.radioButton.rawValue,
+                     NSAccessibility.Role.link.rawValue]
+        return try #require(elements(in: root).first { roles.contains($0.role) && $0.label == title },
                      "Missing rendered button: \(title)")
     }
 

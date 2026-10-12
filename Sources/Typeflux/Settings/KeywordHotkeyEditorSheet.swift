@@ -6,6 +6,7 @@ struct KeywordHotkeyEditorSheet: View {
     @ObservedObject var model: HotkeySettingsModel
     @State var draft: KeywordHotkeyDraft
     let onDone: () -> Void
+    @State private var confirmsDeletion = false
     @StateObject private var recorder = HotkeyRecorder()
 
     private var result: HotkeyConflictChecker.Result? {
@@ -17,33 +18,37 @@ struct KeywordHotkeyEditorSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading) {
             Text(L(draft.isNew ? "hotkeys.keyword.sheet.addTitle" : "hotkeys.keyword.sheet.editTitle"))
-                .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                .padding(.horizontal, 22).padding(.top, 20).padding(.bottom, 6)
-            hint(L("hotkeys.keyword.sheet.hint"))
-                .padding(.horizontal, 22).padding(.bottom, 18)
-            VStack(alignment: .leading, spacing: 14) {
-                field(L("hotkeys.keyword.sheet.keyword")) { keywordPicker }
-                field(L("hotkeys.keyword.sheet.shortcut")) { shortcutField }
+                .font(.headline)
+            TypefluxForm {
+                TypefluxFormSection(L("hotkeys.keyword.sheet.hint")) {
+                    TypefluxSettingsRow(L("hotkeys.keyword.sheet.keyword")) { keywordPicker }
+                    TypefluxSettingsRow(L("hotkeys.keyword.sheet.shortcut")) { shortcutField }
+                }
             }
-            .padding(.horizontal, 22)
-            footer.padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 20)
+            footer
         }
-        .frame(width: 480)
-        .background(ModelVisualStyle.canvas)
+        .padding().frame(width: 480, height: 400)
         .onDisappear { recorder.stop() }
+        .alert(L("hotkeys.keyword.delete"), isPresented: $confirmsDeletion) {
+            Button(L("common.cancel"), role: .cancel) {}
+            Button(L("hotkeys.keyword.delete"), role: .destructive) {
+                model.delete(draft.hotkey.id)
+                onDone()
+            }
+        } message: { Text(draft.hotkey.keyword) }
     }
 
     private var keywordPicker: some View {
-        Picker("", selection: Binding(
+        TypefluxPopup(L("hotkeys.keyword.sheet.keyword"), selection: Binding(
             get: { selected?.id ?? "" },
             set: { id in
                 if let option = model.options.first(where: { $0.id == id }) {
                     draft.select(option)
                 }
             }
-        )) {
+        ), borderless: true) {
             if selected == nil {
                 Text(draft.hotkey.keyword.isEmpty ? L("hotkeys.keyword.sheet.choose")
                     : L("hotkeys.keyword.status.missing")).tag("")
@@ -52,7 +57,7 @@ struct KeywordHotkeyEditorSheet: View {
                 Text(optionLabel(option)).tag(option.id)
             }
         }
-        .labelsHidden().frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityLabel(L("hotkeys.keyword.sheet.keyword"))
         .accessibilityIdentifier("hotkeys.keyword.sheet.keyword")
     }
@@ -64,48 +69,39 @@ struct KeywordHotkeyEditorSheet: View {
 
     @ViewBuilder private var shortcutField: some View {
         HStack(spacing: 8) {
-            Button(action: toggleRecording) {
+            TypefluxButton(kind: .borderless, action: toggleRecording) {
                 HStack(spacing: 8) {
                     if draft.hotkey.binding == nil, !recorder.isRecording {
-                        Image(systemName: "keyboard").foregroundStyle(StudioTheme.textSecondary)
+                        Image(systemName: "keyboard").foregroundStyle(TypefluxColor.secondaryLabel.color)
                         Text(L("hotkeys.keyword.sheet.record"))
-                            .font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                            .font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     } else {
                         HotkeyKeysView(binding: draft.hotkey.binding, isRecording: recorder.isRecording)
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 10).frame(minHeight: 40)
-                .background(ModelVisualStyle.input,
-                            in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius))
-                .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius)
-                    .strokeBorder(recorder.isRecording ? StudioTheme.accent : ModelVisualStyle.border))
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
             .help(L("hotkeys.recordHelp"))
             .accessibilityLabel(L("hotkeys.keyword.sheet.record"))
             .accessibilityValue(recorder.isRecording ? L("hotkeys.recording")
                 : draft.hotkey.binding.map(HotkeyFormat.display) ?? L("settings.shortcuts.none"))
             .accessibilityIdentifier("hotkeys.keyword.sheet.record")
             if draft.hotkey.binding != nil, !recorder.isRecording {
-                Button { draft.hotkey.binding = nil } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(StudioTheme.textTertiary)
+                TypefluxIconButton(L("settings.shortcuts.unset"), systemImage: "xmark.circle.fill") {
+                    draft.hotkey.binding = nil
                 }
-                .buttonStyle(.plain).help(L("settings.shortcuts.unset"))
             }
         }
         if recorder.isRecording {
             hint(L("hotkeys.recording.hint"))
         } else if let result, let problem = result.problem {
-            Text(model.message(for: problem)).font(.system(size: 11.5)).foregroundStyle(StudioTheme.danger)
+            Text(model.message(for: problem)).font(.subheadline).foregroundStyle(TypefluxColor.danger.color)
             if draft.keywordOwner(in: result) != nil {
-                Toggle(L("hotkeys.keyword.sheet.takeKeys"), isOn: $draft.takesKeys)
-                    .toggleStyle(.checkbox).font(.system(size: 12))
+                TypefluxCheckbox(L("hotkeys.keyword.sheet.takeKeys"), isOn: $draft.takesKeys)
                     .accessibilityIdentifier("hotkeys.keyword.sheet.takeKeys")
             }
         } else if result?.overridesSystemShortcut == true {
-            Text(L("hotkeys.conflict.system")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning)
+            Text(L("hotkeys.conflict.system")).font(.subheadline).foregroundStyle(TypefluxColor.warning.color)
         } else {
             hint(L("hotkeys.keyword.sheet.shortcutHint"))
         }
@@ -114,28 +110,16 @@ struct KeywordHotkeyEditorSheet: View {
     private var footer: some View {
         HStack(spacing: 8) {
             if !draft.isNew {
-                Button(role: .destructive) {
-                    model.delete(draft.hotkey.id)
-                    onDone()
-                } label: {
-                    Text(L("hotkeys.keyword.delete")).foregroundStyle(StudioTheme.danger)
-                }
-                .buttonStyle(ModelActionStyle())
+                TypefluxButton(L("hotkeys.keyword.delete"), kind: .destructive) { confirmsDeletion = true }
             }
             Spacer()
-            Toggle(isOn: $draft.hotkey.enabled) {
-                Text(L("ask.settings.keywords.enabled")).font(.system(size: 12.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
-            .toggleStyle(.switch).controlSize(.small).padding(.trailing, 6)
-            Button(L("ask.workflow.cancel"), action: onDone)
-                .buttonStyle(ModelActionStyle())
-                .keyboardShortcut(.cancelAction)
-            Button(L(draft.isNew ? "ask.settings.keywords.sheet.add" : "ask.settings.keywords.save")) {
+            TypefluxSwitch(L("ask.settings.keywords.enabled"), isOn: $draft.hotkey.enabled)
+            TypefluxButton(L("ask.workflow.cancel"), action: onDone).keyboardShortcut(.cancelAction)
+            TypefluxButton(L(draft.isNew ? "ask.settings.keywords.sheet.add" : "ask.settings.keywords.save"),
+                           kind: .primary) {
                 model.save(draft.hotkey, takingFrom: draft.takesKeys ? draft.keywordOwner(in: result) : nil)
                 onDone()
             }
-            .buttonStyle(ModelActionStyle(primary: true))
             .keyboardShortcut(.return, modifiers: .command)
             .disabled(!draft.canSave(with: result) || recorder.isRecording)
             .accessibilityIdentifier("hotkeys.keyword.sheet.save")
@@ -150,17 +134,8 @@ struct KeywordHotkeyEditorSheet: View {
         recorder.start { binding in draft.record(binding) }
     }
 
-    private func field(_ label: String, @ViewBuilder content: () -> some View) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(label).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                .frame(width: 76, alignment: .leading)
-            VStack(alignment: .leading, spacing: 5) { content() }
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
     private func hint(_ text: String) -> some View {
-        Text(text).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+        Text(text).font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             .fixedSize(horizontal: false, vertical: true)
     }
 }

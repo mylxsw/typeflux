@@ -77,7 +77,7 @@ struct AppearanceSettingsTests {
                 try await UI.wait { UI.contains("界面语言", in: host) }
                 #expect(settings.appLanguage == .simplifiedChinese)
                 #expect(!UI.contains(L("settings.appearance.subtitle"), in: host))
-                #expect(!UI.contains(L("settings.glassIntensity.subtitle"), in: host))
+                #expect(UI.contains(L("settings.glassIntensity.subtitle"), in: host))
             }
             let restored = SettingsStore(defaults: settings.defaults)
             #expect(restored.liquidGlassIntensity == 0.82)

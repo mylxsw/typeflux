@@ -72,8 +72,9 @@ public struct TypefluxWindow<Detail: View>: View {
             searchableDetail.frame(maxWidth: .infinity, maxHeight: .infinity)
                 .environment(\.typefluxToolbarSearchQuery, searchEnabled ? searchState.query : nil)
                 .background(TypefluxColor.contentBackground.color)
-                .navigationTitle(title)
+                .navigationTitle("")
                 .toolbar {
+                    titleToolbarItem
                     if searchEnabled {
                         #if compiler(>=6.2)
                             if #available(macOS 26, *) {
@@ -90,6 +91,27 @@ public struct TypefluxWindow<Detail: View>: View {
                 .background(TypefluxWindowTitleBridge(title: title).frame(width: 0, height: 0))
         }
         .navigationSplitViewStyle(.balanced)
+    }
+
+    @ToolbarContentBuilder private var titleToolbarItem: some ToolbarContent {
+        #if compiler(>=6.2)
+            if #available(macOS 26, *) {
+                titleItem.sharedBackgroundVisibility(.hidden)
+            } else {
+                titleItem
+            }
+        #else
+            titleItem
+        #endif
+    }
+
+    private var titleItem: some ToolbarContent {
+        ToolbarItem(id: TypefluxWindowTitleBridge.itemIdentifier, placement: .principal) {
+            Text(title).font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier(TypefluxWindowTitleBridge.itemIdentifier)
+        }
     }
 
     @ViewBuilder private var searchableDetail: some View {
