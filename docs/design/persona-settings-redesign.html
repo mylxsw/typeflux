@@ -110,7 +110,7 @@ body.narrow .usage .slot.apps .apps-row { flex: 1; min-width: 0; }
 .slot .ico.g { background: var(--ok-soft); color: var(--ok); }
 .slot .ico.p { background: var(--ai-soft); color: var(--ai); }
 .slot .ico.b { background: var(--accent-soft); color: var(--accent); }
-.picker { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px 0 6px; border-radius: 8px; border: 1px solid var(--border); background: var(--field); cursor: pointer; min-width: 0; text-align: left; }
+.picker { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--field); cursor: pointer; min-width: 0; text-align: left; }
 .picker:hover { border-color: var(--text3); }
 .picker .nm { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .picker .chev { color: var(--text3); }
@@ -135,7 +135,7 @@ body.narrow .roster { width: 250px; }
 .rlist { flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
 .gl { font-size: 11.5px; font-weight: 600; color: var(--text3); margin: 10px 6px 4px; display: flex; gap: 6px; }
 .gl:first-child { margin-top: 2px; }
-.prow { display: flex; align-items: center; gap: 10px; padding: 6px 8px; min-height: 44px; border-radius: 9px; cursor: pointer; position: relative; }
+.prow { display: flex; align-items: center; gap: 10px; padding: 7px 10px; min-height: 36px; border-radius: 9px; cursor: pointer; position: relative; }
 .prow:hover { background: var(--card-hover); }
 .prow.on { background: var(--accent-soft); }
 .prow .meta { flex: 1; min-width: 0; }
@@ -143,8 +143,6 @@ body.narrow .roster { width: 250px; }
 .prow .nm .t { overflow: hidden; text-overflow: ellipsis; }
 .prow .tags { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
 .prow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex: none; }
-.av { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; }
-.av.lg { width: 46px; height: 46px; border-radius: 12px; font-size: 19px; }
 .empty { text-align: center; color: var(--text3); padding: 28px 12px; font-size: 12.5px; }
 .empty b { display: block; color: var(--text2); margin-bottom: 4px; }
 
@@ -290,11 +288,11 @@ textarea.prompt:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(-
     <section class="usage" id="usage">
       <div class="slot">
         <div class="top"><span class="ico g"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 7v2M5 4v8M8 2v12M11 5v6M14 7v2"/></svg></span>听写默认<span class="sp"></span><span class="keys"><kbd>fn</kbd></span></div>
-        <button class="picker" data-slot="default"><span class="av" id="defAv" style="width:22px;height:22px;border-radius:6px;font-size:11px"></span><span class="nm" id="defName"></span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4l2.5-2.5L7.5 4M2.5 6l2.5 2.5L7.5 6"/></svg></button>
+        <button class="picker" data-slot="default"><span class="nm" id="defName"></span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4l2.5-2.5L7.5 4M2.5 6l2.5 2.5L7.5 6"/></svg></button>
       </div>
       <div class="slot">
         <div class="top"><span class="ico p"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="5" r="2.5"/><path d="M1.5 14c.5-3 2.3-4.5 4.5-4.5s4 1.5 4.5 4.5M11.5 3.5c1 .8 1 2.2 0 3M13.5 2c2 1.8 2 4.2 0 6"/></svg></span>辅助输入<span class="sp"></span><span class="keys"><kbd>⌥</kbd><kbd>fn</kbd></span></div>
-        <button class="picker" data-slot="aux"><span class="av" id="auxAv" style="width:22px;height:22px;border-radius:6px;font-size:11px"></span><span class="nm" id="auxName"></span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4l2.5-2.5L7.5 4M2.5 6l2.5 2.5L7.5 6"/></svg></button>
+        <button class="picker" data-slot="aux"><span class="nm" id="auxName"></span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4l2.5-2.5L7.5 4M2.5 6l2.5 2.5L7.5 6"/></svg></button>
       </div>
       <div class="slot apps">
         <div class="top"><span class="ico b"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg></span>应用专属<span class="sp"></span><span class="hint" id="appsHint"></span></div>
@@ -333,7 +331,6 @@ textarea.prompt:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(-
 </div>
 
 <script>
-const PALETTE = ['#2f8cff', '#29c76e', '#a970ff', '#eb8040', '#20b2aa', '#e5577a', '#c9a227', '#6f7bf7'];
 const SYS_TF = 'tf', SYS_EN = 'en';
 const TF_PROMPT = `人设语言模式：继承。
 - 不要自行决定输出语言。
@@ -400,18 +397,6 @@ let sel = SYS_TF, q = '', draft = null, creating = null, pendingSelect = null, u
 const $ = (id) => document.getElementById(id);
 const byId = (id) => personas.find(p => p.id === id);
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-function hash(s) { let h = 0; for (const c of s) h = (h * 31 + c.codePointAt(0)) >>> 0; return h; }
-function glyph(p) {
-  if (!p) return '∅';
-  if (p.id === SYS_TF) return '∞';
-  const n = p.name.replace(/^候选[:：]\s*/, '');
-  return /^[A-Za-z]/.test(n) ? n[0].toUpperCase() : n[0];
-}
-function avStyle(p) {
-  if (!p) return 'background:var(--tile);color:var(--text3)';
-  const c = p.id === SYS_TF ? '#2f8cff' : PALETTE[hash(p.name) % PALETTE.length];
-  return `background:${c}26;color:${c}`;
-}
 function summary(p) {
   if (p.summary) return p.summary;
   // Custom personas have no summary field: show the first meaningful line without Markdown markers.
@@ -435,10 +420,7 @@ const dirty = () => !!draft && (draft.name !== byId(draft.id)?.name || draft.pro
 /* ---------- Usage strip ---------- */
 function renderUsage() {
   const d = byId(settings.def), a = byId(settings.aux);
-  const mini = 'width:22px;height:22px;border-radius:6px;font-size:11px;';
-  $('defAv').textContent = glyph(d); $('defAv').style.cssText = mini + avStyle(d);
   $('defName').textContent = d ? d.name : '不使用人设（原样输出）';
-  $('auxAv').textContent = glyph(a); $('auxAv').style.cssText = mini + avStyle(a);
   $('auxName').textContent = a.name;
   const active = rules.filter(r => r.on);
   $('appStack').innerHTML = rules.slice(0, 4).map(r => `<span class="ai" style="background:${r.color};${r.on && appsEnabled ? '' : 'opacity:.4'}">${esc(r.app[0])}</span>`).join('');
@@ -453,7 +435,6 @@ function rowHTML(p) {
   const tags = usesOf(p.id).map(u => `<span class="badge ${u.k}">${u.k === 'def' ? '✓ ' : ''}${esc(u.t)}</span>`).join('');
   const isDirty = draft && draft.id === p.id && dirty();
   return `<div class="prow ${sel === p.id && !creating ? 'on' : ''}" data-id="${p.id}">
-    <span class="av" style="${avStyle(p)}">${esc(glyph(p))}</span>
     <div class="meta"><div class="nm"><span class="t">${esc(p.name)}</span>${isDirty ? '<span class="dot" title="未保存"></span>' : ''}</div>
       ${tags ? `<div class="tags">${tags}</div>` : ''}</div></div>`;
 }
@@ -462,7 +443,7 @@ function renderRoster() {
   const match = (p) => !k || p.name.toLowerCase().includes(k) || p.prompt.toLowerCase().includes(k) || summary(p).toLowerCase().includes(k);
   const sys = personas.filter(p => p.sys && match(p)), mine = personas.filter(p => !p.sys && match(p));
   let h = '';
-  if (creating) h += `<div class="gl">新建中</div><div class="prow on"><span class="av" style="background:var(--accent-soft);color:var(--accent)">+</span><div class="meta"><div class="nm">${esc(creating.name || '未命名人设')}</div></div></div>`;
+  if (creating) h += `<div class="gl">新建中</div><div class="prow on"><div class="meta"><div class="nm">${esc(creating.name || '未命名人设')}</div></div></div>`;
   if (mine.length) h += `<div class="gl">我的人设 · ${mine.length}</div>` + mine.map(rowHTML).join('');
   if (sys.length) h += `<div class="gl">内置 · ${sys.length}</div>` + sys.map(rowHTML).join('');
   if (!sys.length && !mine.length) h += `<div class="empty"><b>没有找到「${esc(q)}」</b>可以搜索名称或人设定义里的文字。<br><br><button class="btn sm" id="createFromSearch">新建「${esc(q)}」</button></div>`;
@@ -486,7 +467,6 @@ function renderDetail() {
   const chars = (draft ? draft.prompt : p.prompt).length;
   el.innerHTML = `
     <div class="dhead">
-      <span class="av lg" style="${avStyle(p)}">${esc(glyph(p))}</span>
       <div class="meta">
         <h2>${p.sys ? esc(p.name) + ' <span class="badge sys">内置</span>' : `<input id="nameIn" value="${esc(draft.name)}" aria-label="人设名称" placeholder="人设名称">`}</h2>
         <div class="sub">${p.sys ? esc(summary(p)) : '我的人设 · 点名称即可改名'}</div>
@@ -525,7 +505,7 @@ const TEMPLATE_LABEL = { blank: '空白', [SYS_TF]: '基于 Typeflux', [SYS_EN]:
 function templateLabel(t) { return TEMPLATE_LABEL[t] || `复制「${byId(t)?.name || ''}」`; }
 function renderCreate(el) {
   el.innerHTML = `
-    <div class="dhead"><span class="av lg" style="background:var(--accent-soft);color:var(--accent)">+</span>
+    <div class="dhead">
       <div class="meta"><h2><input id="nameIn" value="${esc(creating.name)}" placeholder="给人设起个名字，例如：周报助手" aria-label="人设名称"></h2></div></div>
     <div class="dbody" style="border-top:1px solid var(--border-soft);padding-top:12px">
       <div class="flabel">人设定义<span class="sp"></span>
@@ -554,8 +534,7 @@ function applyTemplate(t) {
 }
 function openTemplateMenu(anchor) {
   const m = $('moreMenu');
-  const item = (t, p, hint) => `<div class="mi" data-t="${t}"><span class="ck">${creating.template === t ? '✓' : ''}</span>
-    <span class="av" style="width:20px;height:20px;border-radius:5px;font-size:10px;${p ? avStyle(p) : 'background:var(--tile);color:var(--text2)'}">${p ? esc(glyph(p)) : '✎'}</span><span class="mt">${esc(t === 'blank' || t === SYS_TF || t === SYS_EN ? templateLabel(t) : p.name)}</span><span class="mh">${hint || ''}</span></div>`;
+  const item = (t, p, hint) => `<div class="mi" data-t="${t}"><span class="ck">${creating.template === t ? '✓' : ''}</span><span class="mt">${esc(t === 'blank' || t === SYS_TF || t === SYS_EN ? templateLabel(t) : p.name)}</span><span class="mh">${hint || ''}</span></div>`;
   m.innerHTML = item('blank', null, '自己写')
     + item(SYS_TF, byId(SYS_TF), '整理口述') + item(SYS_EN, byId(SYS_EN), '翻译为英文')
     + '<div class="sep"></div><div class="mg">复制我的人设</div>' + personas.filter(p => !p.sys).map(p => item(p.id, p)).join('');
@@ -577,8 +556,7 @@ function placeMenu(menu, anchor, alignRight) {
 }
 function openPicker(anchor, current, allowNone, onPick, opts = {}) {
   const m = $('pickMenu');
-  const item = (p) => `<div class="mi" data-pick="${p ? p.id : ''}"><span class="ck">${(p ? p.id : null) === current ? '✓' : ''}</span>
-    <span class="av" style="width:20px;height:20px;border-radius:5px;font-size:10px;${avStyle(p)}">${esc(glyph(p))}</span><span class="mt">${p ? esc(p.name) : '不使用人设'}</span><span class="mh">${p ? esc(summary(p)).slice(0, 14) : '原样输出'}</span></div>`;
+  const item = (p) => `<div class="mi" data-pick="${p ? p.id : ''}"><span class="ck">${(p ? p.id : null) === current ? '✓' : ''}</span><span class="mt">${p ? esc(p.name) : '不使用人设'}</span><span class="mh">${p ? esc(summary(p)).slice(0, 14) : '原样输出'}</span></div>`;
   m.innerHTML = (opts.title ? `<div class="mg">${opts.title}</div>` : '')
     + (allowNone ? item(null) + '<div class="sep"></div>' : '')
     + '<div class="mg">我的人设</div>' + personas.filter(p => !p.sys).map(item).join('')
@@ -693,7 +671,7 @@ function renderRules() {
     return `<div class="rule ${r.on ? '' : 'off'}" data-r="${r.id}">
       <span class="appicon" style="background:${r.color}">${esc(r.app[0])}</span>
       <div class="an"><b>${esc(r.app)}</b><span>${esc(r.bundle)}</span></div>
-      <div class="rp"><button class="picker ${missing ? 'missing' : ''}" data-rp="${r.id}"><span class="av" style="width:18px;height:18px;border-radius:5px;font-size:9px;${avStyle(p)}">${esc(glyph(p))}</span>
+      <div class="rp"><button class="picker ${missing ? 'missing' : ''}" data-rp="${r.id}">
         <span class="nm">${missing ? '人设已不存在' : p ? esc(p.name) : '不使用人设'}</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4l2.5-2.5L7.5 4M2.5 6l2.5 2.5L7.5 6"/></svg></button></div>
       <span class="switch ${r.on ? 'on' : ''}" data-rs="${r.id}" title="${r.on ? '暂停' : '启用'}"></span>
       <button class="ibtn" data-rd="${r.id}" aria-label="删除规则"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg></button></div>`;
