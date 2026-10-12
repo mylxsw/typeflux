@@ -94,6 +94,7 @@ struct AskKeywordEditorSheet: View {
         case .setting: "setting"
         case .history: "history"
         case .clip: "clip"
+        case .kill: "kill"
         case .emoji: "emoji"
         case .system: ""
         case .workflow: ""
@@ -205,6 +206,8 @@ struct AskKeywordEditorSheet: View {
                     }
                 }
             }
+        case .kill:
+            hint(L("ask.settings.keywords.kind.kill.hint"))
         case .emoji:
             hint(L("emoji.summary"))
         case .system:

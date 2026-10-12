@@ -4776,3 +4776,13 @@
 "auth.web.browserUnavailable" = "无法启动浏览器，请重试。";
 "auth.web.restartRequired" = "无法完成登录，请重新发起；之前的授权码不能重试。";
 "auth.web.storageFailed" = "无法将会话保存到钥匙串，请解锁钥匙串后重新登录。";
+
+// Force quit application keyword
+"ask.plugin.kill.title" = "强制退出应用";
+"ask.plugin.kill.placeholder" = "输入要强制退出的应用名称";
+"ask.plugin.kill.running" = "正在运行 · PID %@";
+"ask.plugin.kill.action" = "强制退出";
+"ask.plugin.kill.empty" = "没有匹配的运行中应用";
+"ask.plugin.kill.warning" = "强制退出可能丢失未保存的内容。";
+"ask.plugin.kill.failed" = "无法强制退出“%@”。";
+"ask.settings.keywords.kind.kill.hint" = "列出正在运行的应用，强制退出选中的应用。";

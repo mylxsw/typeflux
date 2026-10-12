@@ -16,6 +16,7 @@ extension AskKeywordKind {
         case .history: Color.blue
         case .clip: Color.teal
         case .emoji: Color.orange
+        case .kill: Color.red
         case .system: Color.gray
         case .workflow: Color.orange
         }

@@ -19,6 +19,7 @@ enum AskPluginRegistry {
         AskScreenshotTextPlugin.id,
         AskBrowserSearchPlugin.tabsID,
         AskBrowserSearchPlugin.bookmarksID,
+        AskKillAppPlugin.id,
         AskSystemMonitorPlugin.id,
         AskEmojiPlugin.id
     ] + AskSystemCommand.allCases.map(\.id)
@@ -32,6 +33,7 @@ enum AskPluginRegistry {
                     .keywords + AskNotesPlugin.keywords + AskScreenshotPlugin.keywords
                     + AskScreenshotTextPlugin.keywords
                     + AskBrowserSearchPlugin.keywords
+                    + AskKillAppPlugin.keywords
                     + AskSystemMonitorPlugin.keywords
                     + AskEmojiPlugin.keywords
                     + AskSystemCommand.allCases.map {
@@ -215,6 +217,7 @@ extension AskConversationModel {
             AskBrowserSearchPlugin(kind: .bookmark, service: browserSearch, settings: { [weak settings] in
                 settings?.askBrowserSearchSettings ?? AskBrowserSearchSettings()
             }),
+            AskKillAppPlugin(),
             AskSystemMonitorPlugin(),
             AskEmojiPlugin(usage: { [weak self] in self?.emojiUsage.value ?? EmojiUsage() })
         ] + AskSystemCommand.allCases.map { AskSystemCommandPlugin(command: $0) } + workflowPlugins()
@@ -245,6 +248,17 @@ extension AskConversationModel {
         case let .emoji(action):
             performEmojiAction(action)
             return .stay
+        case let .killApp(target):
+            guard plugins.plugin?.id == AskKillAppPlugin.id, plugins.isPlanCurrent,
+                  plugins.output?.selected?.actions.contains(action) == true else { return .stay }
+            guard AskKillAppPlugin.forceQuit(target) else {
+                confirm(L("ask.plugin.kill.failed", target.app.name), for: .seconds(3))
+                plugins.rerun(with: [:], selection: nil, text: launcherDraft.text,
+                              language: AppLocalization.shared.language)
+                return .stay
+            }
+            finishPluginResult()
+            return .close
         case let .systemCommand(command):
             return performSystemCommand(command)
         case .openChat:
@@ -326,6 +340,7 @@ extension AskConversationModel {
             else { return .stay }
             let listsAtOnce = [
                 AskPrefixPlugin.id,
+                AskKillAppPlugin.id,
                 AskHistoryPlugin.id,
                 AskClipboardPlugin.id,
                 AskNotesPlugin.id,
