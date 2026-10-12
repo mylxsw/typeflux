@@ -15,7 +15,7 @@ protocol ScreenshotPinPresenting: AnyObject {
     /// - Parameter rect: where the region was, in global Quartz points; the pin opens there.
     func pin(_ image: CGImage, scale: CGFloat, at rect: CGRect, onEvent: @escaping (ScreenshotPinEvent) -> Void)
     var pinCount: Int { get }
-    /// Pins that let clicks through; only the menu bar can take them back.
+    /// Pins that let clicks through; their recovery controls and the menu bar stay available.
     var clickThroughCount: Int { get }
     /// Every pin takes the mouse again.
     func restoreMouse()
@@ -46,6 +46,7 @@ final class ScreenshotPinPanel: NSPanel {
 @MainActor
 final class ScreenshotPinController: ScreenshotPinPresenting {
     private(set) var panels: [ScreenshotPinPanel] = []
+    private var recoveryPanels: [ObjectIdentifier: ScreenshotPinPanel] = [:]
     private let primaryDisplayHeight: () -> CGFloat
 
     init(primaryDisplayHeight: @escaping () -> CGFloat = { NSScreen.screens.first?.frame.height ?? 0 }) {
@@ -102,10 +103,54 @@ final class ScreenshotPinController: ScreenshotPinPresenting {
             panel.setFrame(state.frame(keepingTopLeftOf: panel.frame, imageSize: view.imageSize), display: true)
             panel.alphaValue = state.opacity
             panel.ignoresMouseEvents = state.clickThrough
+            updateRecoveryControls(for: panel, clickThrough: state.clickThrough)
         }
     }
 
+    /// A separate child window still receives clicks when the image lets them through.
+    func recoveryPanel(for panel: ScreenshotPinPanel) -> ScreenshotPinPanel? {
+        recoveryPanels[ObjectIdentifier(panel)]
+    }
+
+    private func updateRecoveryControls(for panel: ScreenshotPinPanel, clickThrough: Bool) {
+        guard clickThrough else {
+            removeRecoveryControls(for: panel)
+            return
+        }
+        let recovery: ScreenshotPinPanel
+        if let existing = recoveryPanel(for: panel) {
+            recovery = existing
+        } else {
+            recovery = ScreenshotPinPanel(frame: .zero)
+            recovery.isMovableByWindowBackground = false
+            let controls = ScreenshotPinRecoveryView()
+            controls.onRestore = { [weak panel] in
+                (panel?.contentView as? ScreenshotPinView)?.state.clickThrough = false
+            }
+            controls.onClose = { [weak self, weak panel] in
+                guard let panel else { return }
+                self?.close(panel)
+            }
+            recovery.contentView = controls
+            recovery.makeFirstResponder(controls)
+            recoveryPanels[ObjectIdentifier(panel)] = recovery
+            panel.addChildWindow(recovery, ordered: .above)
+        }
+        let size = ScreenshotPinRecoveryView.size
+        recovery.setFrame(CGRect(x: panel.frame.midX - size.width / 2, y: panel.frame.minY + 8,
+                                 width: size.width, height: size.height), display: true)
+        recovery.orderFrontRegardless()
+    }
+
+    private func removeRecoveryControls(for panel: ScreenshotPinPanel) {
+        guard let recovery = recoveryPanels.removeValue(forKey: ObjectIdentifier(panel)) else { return }
+        panel.removeChildWindow(recovery)
+        recovery.orderOut(nil)
+        recovery.contentView = nil
+    }
+
     private func close(_ panel: ScreenshotPinPanel) {
+        removeRecoveryControls(for: panel)
         panel.orderOut(nil)
         (panel.contentView as? ScreenshotPinView)?.releaseImage()
         panel.contentView = nil
