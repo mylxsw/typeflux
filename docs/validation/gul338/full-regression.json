@@ -1,0 +1,28 @@
+{
+  "command": "swift test --enable-code-coverage",
+  "xctest": {
+    "tests": 3774,
+    "skipped": 17,
+    "failures": 0
+  },
+  "swift_testing": {
+    "tests": 2607,
+    "suites": 395,
+    "issues": 35,
+    "failed_tests": [
+      "✘ Test launcherUsesCompactCornersWithoutChangingHeaderLayout() failed after 3.528 seconds with 2 issues.",
+      "✘ Test fixedLauncherIs800By600PointsAndCentredOnALargeDisplay() failed after 3.528 seconds with 2 issues.",
+      "✘ Test fixedLauncherFitsInsideASmallerDisplay() failed after 3.528 seconds with 2 issues.",
+      "✘ Test fixedLauncherRestoresAnAnchorAndClampsOutOfBoundsPositions() failed after 3.528 seconds with 1 issue.",
+      "✘ Test launcherHeightIsTheComposerCardPlusItsGutter() failed after 29.623 seconds with 2 issues.",
+      "✘ Test applicationsFillTheSpaceBetweenHistoryAndKeywords() failed after 42.195 seconds with 6 issues.",
+      "✘ Test recentConversationsAreNewestFirstAndLimitedToThree() failed after 43.701 seconds with 5 issues.",
+      "✘ Test nativeLibrariesShareColumnsAndKeepActionsReachable(style:) with 2 test cases failed after 229.803 seconds with 1 issue.",
+      "✘ Test controlsStayAttachedToTheirEdgesAsResultsChange(appearance:) with 2 test cases failed after 290.165 seconds with 8 issues.",
+      "✘ Test theListKeepsItsHeightWhileMatchesComeAndGo() failed after 137.808 seconds with 1 issue.",
+      "✘ Test glassFrostStaysDarkOverWhiteInBothMaterialPaths() failed after 41.319 seconds with 3 issues.",
+      "✘ Test doubleClickingTheTopEdgeCentresAndForgets() failed after 36.049 seconds with 2 issues."
+    ]
+  },
+  "notes": "Run before final stale-action and localized variant-name hardening; final focused regression recorded separately."
+}

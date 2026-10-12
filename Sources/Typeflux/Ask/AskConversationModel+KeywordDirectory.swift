@@ -20,7 +20,7 @@ extension AskConversationModel {
         else { return }
         let listsAtOnce = [
             AskPrefixPlugin.id, AskHistoryPlugin.id, AskClipboardPlugin.id, AskNotesPlugin.id,
-            AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID
+            AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID, AskEmojiPlugin.id
         ]
         plugins.enter(current.keyword, waitingForInput: !listsAtOnce.contains(current.keyword.pluginID))
         launcherDraft.text = ""

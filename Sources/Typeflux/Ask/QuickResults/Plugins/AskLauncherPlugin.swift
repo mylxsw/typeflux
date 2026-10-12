@@ -102,6 +102,7 @@ struct AskPluginPlan: Equatable, Sendable {
 struct AskPluginAction: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
         case openChat
+        case emoji(EmojiAction)
         case systemCommand(AskSystemCommand)
         case openSettings
         case signIn
@@ -248,6 +249,7 @@ struct AskPluginOutput: Equatable, Sendable {
     var recordsAtOnce = false
     /// Whether the looked-up word is starred; nil when it cannot be.
     var starred: Bool?
+    var emoji: EmojiPresentation?
     /// A short fact beside the source, such as how often the word was looked up.
     var detail: String?
 

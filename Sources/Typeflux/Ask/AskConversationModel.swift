@@ -94,6 +94,7 @@ final class AskConversationModel: ObservableObject {
     /// What result windows opened from the launcher can do.
     var resultWindowServices: AskResultDocument.Services { AskResultWindowController.shared.services }
     /// The system monitor in the launcher (`top`); see `AskConversationModel+SystemMonitor`.
+    lazy var emojiUsage = EmojiUsageStore(defaults: modelLibrary.settings.defaults)
     let systemMonitor = SystemMonitorLauncherModel()
     /// The monitor's own window (⌘O from the launcher); tests use their own.
     lazy var systemMonitorWindow: SystemMonitorWindowController = .shared
