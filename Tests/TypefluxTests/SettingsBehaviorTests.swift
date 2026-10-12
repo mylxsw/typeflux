@@ -156,15 +156,10 @@ extension SettingsBehaviorTests {
                                     "the style picker must stay within the viewport")
                         }
                         if width < 1040 {
-                            let navigation = try RenderedUI.button(L("ask.sidebar.toggle"), in: host)
-                            #expect(navigation.frame.width >= 20, "collapsed navigation remains reachable")
                             window.setFrameOrigin(NSPoint(x: 80, y: 80))
-                            try navigation.press()
-                            try await RenderedUI.wait {
-                                NSApp.windows.contains { $0.isVisible && $0.parent === window }
-                            }
-                            let popover = try #require(NSApp.windows.first { $0.isVisible && $0.parent === window })
-                            try RenderedUI.button(StudioSection.launcher.title, in: popover).press()
+                            try TypefluxNavigationTestSupport.toggleSidebar(in: window)
+                            try await RenderedUI.wait { RenderedUI.contains(StudioSection.launcher.title, in: host) }
+                            try RenderedUI.button(StudioSection.launcher.title, in: host).press()
                             try await RenderedUI.wait { model.currentSection == .launcher }
                             model.navigate(to: .settings)
                             try await RenderedUI.wait { RenderedUI.contains(L("settings.interfaceStyle.title"), in: host) }

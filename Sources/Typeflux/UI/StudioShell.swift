@@ -22,7 +22,7 @@ struct StudioShell<Content: View>: View {
             } detail: {
                 GeometryReader { proxy in
                     Group {
-                        if [.models, .personas].contains(currentSection) {
+                        if [.models, .personas, .settings, .account].contains(currentSection) {
                             pageContent(size: proxy.size)
                         } else {
                             ScrollView { pageContent(size: proxy.size) }
@@ -46,7 +46,7 @@ struct StudioShell<Content: View>: View {
             .frame(width: contentWidth, alignment: .topLeading)
             .padding(.horizontal, inset)
             .padding(.top, 12)
-            .padding(.bottom, [.models, .personas].contains(currentSection) ? 0 : 12)
+            .padding(.bottom, [.models, .personas, .settings, .account].contains(currentSection) ? 0 : 12)
             .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }

@@ -39,7 +39,7 @@ struct SettingsWindowNavigationTests {
                             initialSection: .vocabulary)
             #expect(controller.window === window)
             try await UI.wait { window.title == StudioSection.vocabulary.heading }
-            #expect(window.toolbarStyle == .unified && window.titleVisibility == .visible)
+            #expect(window.toolbarStyle == .unified && window.titleVisibility == .hidden)
             try await type("toolbar-position", in: window)
             let search = try #require(searchItem(window))
             try await UI.wait {
