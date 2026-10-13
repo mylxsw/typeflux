@@ -193,8 +193,8 @@ struct PersonaLibraryVisualTests {
         }
         #expect(fixture.store.personas.first { $0.id == persona.id }?.prompt == "Guarded save")
         model.personaPendingDeletion = persona
-        try await Task.sleep(for: .milliseconds(50))
-        try press("personas.confirmDelete", in: window)
+        try await Task.sleep(for: .milliseconds(250))
+        try press("personas.confirmDelete", title: L("common.delete"), in: window)
         #expect(!model.personas.contains { $0.id == persona.id })
         try await Task.sleep(for: .milliseconds(50))
         try press("personas.undoAction", in: window)
@@ -218,9 +218,8 @@ struct PersonaLibraryVisualTests {
         model.searchQuery = ""
         try await Task.sleep(for: .milliseconds(50))
         let editorPrompt = model.personaDraftPrompt
-        try press("personas.defaultSelection", in: window)
+        try UnifiedSettingsBehaviorTests.selectPopupItem(L("personas.redesign.none"), in: window)
         try await Task.sleep(for: .milliseconds(100))
-        try press("personas.pick.none", in: window)
         #expect(model.defaultPersonaSelectionID == nil)
         #expect(model.personaDraftPrompt == editorPrompt)
     }

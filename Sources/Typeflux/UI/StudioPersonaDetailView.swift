@@ -11,68 +11,61 @@ struct StudioPersonaDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            header
-            Divider()
-            if readOnly {
-                HStack(spacing: 8) {
-                    Image(systemName: "lock")
-                    Text(L("personas.redesign.builtInNote")).font(.system(size: 11)).lineLimit(2)
-                    Spacer(minLength: 0)
-                    Button(L("personas.redesign.copyToEdit")) {
-                        if let persona = viewModel.selectedPersona {
-                            viewModel.duplicatePersona(persona)
+        TypefluxForm {
+            StudioPersonaUsageStrip(viewModel: viewModel)
+            Section {
+                header
+                if readOnly {
+                    TypefluxSettingsRow(L("personas.redesign.builtInNote")) {
+                        Button(L("personas.redesign.copyToEdit")) {
+                            if let persona = viewModel.selectedPersona {
+                                viewModel.duplicatePersona(persona)
+                            }
+                        }.buttonStyle(.bordered)
+                    }
+                }
+                HStack {
+                    Text(L("settings.personas.prompt"))
+                    Spacer()
+                    if viewModel.isCreatingPersonaDraft {
+                        templateMenu
+                    } else {
+                        Text(L("personas.redesign.characterCount", viewModel.personaDraftPrompt.count))
+                    }
+                }.font(.subheadline).foregroundStyle(.secondary)
+                definition
+                if viewModel.isCreatingPersonaDraft || viewModel.hasPersonaDraftChanges {
+                    HStack {
+                        Spacer()
+                        Button(L(viewModel
+                                .isCreatingPersonaDraft ? "common.cancel" : "personas.redesign.discardChanges")) {
+                            viewModel.cancelPersonaEditing()
                         }
-                    }
-                    .buttonStyle(.plain).font(.system(size: 11)).fixedSize()
-                    .padding(.horizontal, 8).padding(.vertical, 5)
-                    .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 6))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(StudioTheme.border))
+                        Button(L(viewModel
+                                .isCreatingPersonaDraft ? "personas.redesign.create" : "personas.redesign.save")) {
+                            viewModel.savePersonaDraft()
+                        }.buttonStyle(.borderedProminent).disabled(!viewModel.canSavePersonaDraft)
+                            .accessibilityIdentifier("personas.saveDraft").keyboardShortcut("s", modifiers: .command)
+                    }.accessibilityIdentifier("personas.saveBar")
                 }
-                .foregroundStyle(StudioTheme.textSecondary)
-                .padding(10)
-                .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8))
-            }
-            HStack {
-                Text(L("settings.personas.prompt"))
-                Spacer()
-                if viewModel.isCreatingPersonaDraft {
-                    templateMenu
-                } else {
-                    Text(L("personas.redesign.characterCount", viewModel.personaDraftPrompt.count))
-                }
-            }
-            .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-            definition
-            if viewModel.isCreatingPersonaDraft {
-                HStack {
-                    Spacer()
-                    StudioButton(title: L("common.cancel"), systemImage: nil, variant: .ghost) {
-                        viewModel.cancelPersonaEditing()
-                    }
-                    StudioButton(title: L("personas.redesign.create"), systemImage: nil, variant: .primary,
-                                 isDisabled: !viewModel.canSavePersonaDraft) { viewModel.savePersonaDraft() }
-                        .accessibilityIdentifier("personas.saveDraft")
-                        .keyboardShortcut("s", modifiers: .command)
-                }
-            } else if viewModel.hasPersonaDraftChanges {
-                HStack {
-                    Spacer()
-                    StudioButton(title: L("personas.redesign.discardChanges"), systemImage: nil, variant: .ghost) {
-                        viewModel.cancelPersonaEditing()
-                    }
-                    StudioButton(title: L("personas.redesign.save"), systemImage: nil, variant: .primary,
-                                 isDisabled: !viewModel.canSavePersonaDraft) { viewModel.savePersonaDraft() }
-                        .accessibilityIdentifier("personas.saveDraft")
-                        .keyboardShortcut("s", modifiers: .command)
-                }
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier("personas.saveBar")
             }
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .modifier(PersonaPanelModifier())
+        .safeAreaInset(edge: .bottom) {
+            if let message = viewModel.personaUndoMessage, viewModel.personaPendingDeletion == nil {
+                Group {
+                    HStack {
+                        Text(message).font(.callout)
+                        Spacer()
+                        Button(L("personas.redesign.undo")) { viewModel.undoPersonaChange() }
+                            .accessibilityIdentifier("personas.undoAction")
+                        TypefluxIconButton(L("personas.redesign.close"), systemImage: "xmark") {
+                            viewModel.dismissPersonaUndo()
+                        }
+                    }.padding(8).background(TypefluxColor.contentBackground.color)
+                        .accessibilityIdentifier("personas.undo")
+                }
+            }
+        }
         .task(id: viewModel.personaDraftCreationID) {
             guard viewModel.isCreatingPersonaDraft else { return }
             nameFocused = true
@@ -86,12 +79,11 @@ struct StudioPersonaDetailView: View {
         HStack(spacing: 8) {
             if readOnly {
                 Text(viewModel.personaDraftName).lineLimit(1)
-                Text(L("personas.redesign.builtIn")).font(.system(size: 10))
-                    .foregroundStyle(StudioTheme.textSecondary).padding(.horizontal, 6).padding(.vertical, 3)
-                    .background(StudioTheme.controlSurface, in: Capsule())
+                Text(L("personas.redesign.builtIn")).font(.subheadline)
+                    .foregroundStyle(.secondary)
             } else {
                 TextField(L("settings.personas.namePlaceholder"), text: $viewModel.personaDraftName)
-                    .textFieldStyle(.plain).focused($nameFocused)
+                    .textFieldStyle(.roundedBorder).focused($nameFocused)
                     .accessibilityLabel(L("settings.personas.name"))
                     .accessibilityIdentifier("personas.name")
             }
@@ -104,14 +96,12 @@ struct StudioPersonaDetailView: View {
                         Divider()
                         Button(L("personas.redesign.delete"), role: .destructive) { onDelete(persona) }
                     }
-                } label: { Image(systemName: "ellipsis").frame(width: 22, height: 20) }
+                } label: { Image(systemName: "ellipsis") }
                     .menuStyle(.borderlessButton).menuIndicator(.hidden)
                     .accessibilityLabel(L("personas.redesign.more"))
             }
         }
-        .font(.system(size: 18, weight: .semibold))
-        .foregroundStyle(StudioTheme.textPrimary)
-        .frame(height: 28)
+        .font(.body)
     }
 
     private func usageMenu(_ persona: PersonaProfile) -> some View {
@@ -130,16 +120,8 @@ struct StudioPersonaDetailView: View {
             }
             Divider()
             Button(L("personas.redesign.useInApp")) { viewModel.openPersonaAppRules(adding: true, preset: persona.id) }
-        } label: {
-            Text(L("personas.redesign.setAs")).font(.system(size: 11))
-                .padding(.horizontal, 9).padding(.vertical, 6)
-                .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 7))
-                .overlay(RoundedRectangle(cornerRadius: 7).stroke(StudioTheme.border))
-        }
-        .menuStyle(.borderlessButton)
-        .padding(.horizontal, 8).padding(.vertical, 5)
-        .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 7))
-        .overlay(RoundedRectangle(cornerRadius: 7).stroke(StudioTheme.border))
+        } label: { Text(L("personas.redesign.setAs")) }
+            .menuStyle(.borderlessButton)
     }
 
     private var templateMenu: some View {
@@ -162,20 +144,13 @@ struct StudioPersonaDetailView: View {
     private var definition: some View {
         Group {
             if readOnly {
-                ScrollView {
-                    Text(viewModel.personaDraftPrompt).textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .topLeading).padding(12)
-                }
+                Text(viewModel.personaDraftPrompt).textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
             } else {
                 TextEditor(text: $viewModel.personaDraftPrompt)
-                    .scrollContentBackground(.hidden).padding(8)
+                    .frame(minHeight: 180)
                     .accessibilityIdentifier("personas.definition")
             }
-        }
-        .font(.system(size: 13)).lineSpacing(5).foregroundStyle(StudioTheme.textPrimary)
-        .frame(minHeight: 0, maxHeight: .infinity)
-        .background(StudioTheme.controlSurface.opacity(readOnly ? 0.25 : 1), in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(StudioTheme.border))
-        .accessibilityLabel(L("settings.personas.prompt"))
+        }.font(.body).accessibilityLabel(L("settings.personas.prompt"))
     }
 }

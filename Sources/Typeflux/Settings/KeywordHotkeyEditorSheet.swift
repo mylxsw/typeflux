@@ -18,26 +18,32 @@ struct KeywordHotkeyEditorSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text(L(draft.isNew ? "hotkeys.keyword.sheet.addTitle" : "hotkeys.keyword.sheet.editTitle"))
-                .font(.headline)
+        TypefluxSheet(title: L(draft.isNew ? "hotkeys.keyword.sheet.addTitle" : "hotkeys.keyword.sheet.editTitle"),
+                      cancelTitle: L("ask.workflow.cancel"),
+                      confirmTitle: L(draft.isNew ? "ask.settings.keywords.sheet.add" : "ask.settings.keywords.save"),
+                      isConfirmEnabled: draft.canSave(with: result) && !recorder.isRecording,
+                      confirmIdentifier: "hotkeys.keyword.sheet.save", cancel: onDone, confirm: save) {
             TypefluxForm {
                 TypefluxFormSection(L("hotkeys.keyword.sheet.hint")) {
                     TypefluxSettingsRow(L("hotkeys.keyword.sheet.keyword")) { keywordPicker }
                     TypefluxSettingsRow(L("hotkeys.keyword.sheet.shortcut")) { shortcutField }
                 }
-            }
-            footer
-        }
-        .padding().frame(width: 480, height: 400)
-        .onDisappear { recorder.stop() }
-        .alert(L("hotkeys.keyword.delete"), isPresented: $confirmsDeletion) {
-            Button(L("common.cancel"), role: .cancel) {}
-            Button(L("hotkeys.keyword.delete"), role: .destructive) {
-                model.delete(draft.hotkey.id)
-                onDone()
-            }
-        } message: { Text(draft.hotkey.keyword) }
+                Section {
+                    TypefluxSwitch(L("ask.settings.keywords.enabled"), isOn: $draft.hotkey.enabled)
+                    if !draft.isNew {
+                        TypefluxButton(L("hotkeys.keyword.delete"), kind: .destructive) { confirmsDeletion = true }
+                    }
+                }
+            }.frame(height: 300)
+        }.frame(width: 480)
+            .onDisappear { recorder.stop() }
+            .alert(L("hotkeys.keyword.delete"), isPresented: $confirmsDeletion) {
+                Button(L("common.cancel"), role: .cancel) {}
+                Button(L("hotkeys.keyword.delete"), role: .destructive) {
+                    model.delete(draft.hotkey.id)
+                    onDone()
+                }
+            } message: { Text(draft.hotkey.keyword) }
     }
 
     private var keywordPicker: some View {
@@ -107,23 +113,9 @@ struct KeywordHotkeyEditorSheet: View {
         }
     }
 
-    private var footer: some View {
-        HStack(spacing: 8) {
-            if !draft.isNew {
-                TypefluxButton(L("hotkeys.keyword.delete"), kind: .destructive) { confirmsDeletion = true }
-            }
-            Spacer()
-            TypefluxSwitch(L("ask.settings.keywords.enabled"), isOn: $draft.hotkey.enabled)
-            TypefluxButton(L("ask.workflow.cancel"), action: onDone).keyboardShortcut(.cancelAction)
-            TypefluxButton(L(draft.isNew ? "ask.settings.keywords.sheet.add" : "ask.settings.keywords.save"),
-                           kind: .primary) {
-                model.save(draft.hotkey, takingFrom: draft.takesKeys ? draft.keywordOwner(in: result) : nil)
-                onDone()
-            }
-            .keyboardShortcut(.return, modifiers: .command)
-            .disabled(!draft.canSave(with: result) || recorder.isRecording)
-            .accessibilityIdentifier("hotkeys.keyword.sheet.save")
-        }
+    private func save() {
+        model.save(draft.hotkey, takingFrom: draft.takesKeys ? draft.keywordOwner(in: result) : nil)
+        onDone()
     }
 
     private func toggleRecording() {

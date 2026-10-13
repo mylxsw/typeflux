@@ -85,7 +85,6 @@ struct AskLauncherPluginSettingsView: View {
     @State private var filter: AskKeywordKind?
     @Binding private var query: String
     @State private var editing: AskKeywordSheetItem?
-    @State private var adding = false
     @State private var confirmingRestore = false
     @State private var collapsedSections: Set<AskKeywordSection> = [.system]
 
@@ -113,13 +112,13 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            toolbar
+        TypefluxForm {
+            Section { toolbar }
             listCard
             Text(L("ask.settings.keywords.listFootnote"))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 4)
+                .font(.subheadline).foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 4)
             Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
-                .buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(TypefluxColor.accent.color)
+                .buttonStyle(.plain).font(.subheadline).foregroundStyle(TypefluxColor.accent.color)
                 .padding(.horizontal, 4)
                 .accessibilityIdentifier("ask.settings.keywords.restore")
         }
@@ -164,60 +163,42 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     private var addButton: some View {
-        Button { adding = true } label: {
-            Label(L("ask.settings.keywords.add"), systemImage: "plus")
-        }
-        .buttonStyle(.borderedProminent)
-        .fixedSize()
-        .accessibilityIdentifier("ask.settings.keywords.add")
-        .popover(isPresented: $adding, arrowEdge: .bottom) { addMenu }
-    }
-
-    private var addMenu: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        TypefluxMenu {
             ForEach([AskKeywordKind.translate, .prompt, .web, .system], id: \.self) { kind in
-                addItem(kind, title: kind.title) {
-                    adding = false
+                AskKeywordMenuItem(kind: kind, title: kind.title) {
                     editing = AskKeywordSheetItem(draft: AskKeywordDraft(adding: kind))
                 }
             }
-        }
-        .padding(6).frame(width: 300)
-    }
-
-    private func addItem(_ kind: AskKeywordKind, title: String, action: @escaping () -> Void) -> some View {
-        AskKeywordMenuItem(kind: kind, title: title, action: action)
+        } label: { Label(L("ask.settings.keywords.add"), systemImage: "plus") }
+            .accessibilityIdentifier("ask.settings.keywords.add")
     }
 
     // MARK: - List
 
     private var listCard: some View {
         let shown = AskKeywordListPresentation.filter(rows, kind: filter, query: toolbarQuery ?? query)
-        return VStack(alignment: .leading, spacing: 12) {
+        return Group {
             if shown.isEmpty {
-                StudioCard(padding: 0) { AgentSettingsEmptyRow(text: L(
-                    "ask.settings.keywords.noMatch",
-                    toolbarQuery ?? query
-                )) }
+                TypefluxEmptyState(L("ask.settings.keywords.noMatch", toolbarQuery ?? query),
+                                   systemImage: "magnifyingglass", description: "")
             }
             ForEach(AskKeywordSection.allCases, id: \.self) { section in
                 let group = shown.filter { section.kinds.contains($0.kind) }
                 if !group.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        AskKeywordSectionHeader(section: section, count: group.count,
-                                                expanded: !collapsedSections.contains(section)) {
-                            toggleSection(section)
-                        }
-                        if !collapsedSections.contains(section) {
-                            StudioCard(padding: 0) {
-                                VStack(alignment: .leading, spacing: 0) {
-                                    ForEach(Array(group.enumerated()), id: \.element.id) { index, row in
-                                        if index > 0 { ModelRowDivider(leading: 56) }
-                                        AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
-                                    }
+                    Section {
+                        DisclosureGroup(section.title + " · \(group.count)", isExpanded: Binding(
+                            get: { !collapsedSections.contains(section) },
+                            set: { expanded in
+                                if expanded == collapsedSections.contains(section) {
+                                    toggleSection(section)
                                 }
                             }
+                        )) {
+                            ForEach(group) { row in
+                                AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
+                            }
                         }
+                        .accessibilityIdentifier("ask.settings.keywords.section." + section.rawValue)
                     }
                 }
             }
@@ -251,7 +232,9 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     private func save(_ keyword: AskKeyword, replacing original: AskKeyword?) {
-        if let original { settings.renameKeywordHotkeys(from: original, to: keyword) }
+        if let original {
+            settings.renameKeywordHotkeys(from: original, to: keyword)
+        }
         list.save(keyword, replacing: original)
         persist()
         editing = nil

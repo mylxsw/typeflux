@@ -19,20 +19,17 @@ struct LauncherSettingsView: View {
     @State private var confirmingClearInputHistory = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        Group {
             switch pane {
             case .basics:
                 basicsPane
             case .search:
                 LauncherSearchSettingsView(settings: settings)
             case .keywords:
-                AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 AskLauncherPluginSettingsView(settings: settings, workflows: workflows, query: searchQuery)
             case .translation:
-                AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 AskTranslationSettingsView(settings: settings)
             case .clipboard:
-                AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 ClipboardSettingsView(settings: settings, history: clipboardHistory, onEditShortcut: onEditShortcut)
             case .workflows:
                 AskWorkflowSettingsView(store: workflows, settings: settings, searchQuery: searchQuery.wrappedValue)
@@ -45,47 +42,40 @@ struct LauncherSettingsView: View {
         } message: { Text(L("ask.inputHistory.clear.detail")) }
     }
 
-    @ViewBuilder private var basicsPane: some View {
-        AgentPaneHeader(symbol: pane.symbol, title: pane.title)
-        StudioCard(padding: 0) {
-            VStack(alignment: .leading, spacing: 0) {
+    private var basicsPane: some View {
+        TypefluxForm {
+            Section {
                 AgentSettingsRow(icon: "plus.forwardslash.minus", title: L("ask.settings.quick.calculator.title")) {
-                    Toggle("", isOn: Binding(get: { quickCalculatorEnabled }, set: setQuickCalculator))
-                        .labelsHidden().toggleStyle(.switch)
-                        .accessibilityLabel(L("ask.settings.quick.calculator.title"))
+                    TypefluxSwitch(L("ask.settings.quick.calculator.title"),
+                                   isOn: Binding(get: { quickCalculatorEnabled }, set: setQuickCalculator),
+                                   labelsHidden: true)
                 }
-                ModelRowDivider(leading: 56)
                 AgentSettingsRow(icon: "number", title: L("ask.settings.quick.numberConversions.title")) {
-                    Toggle("", isOn: Binding(get: { quickNumberConversionsEnabled }, set: setQuickNumberConversions))
-                        .labelsHidden().toggleStyle(.switch)
-                        .accessibilityLabel(L("ask.settings.quick.numberConversions.title"))
+                    TypefluxSwitch(L("ask.settings.quick.numberConversions.title"),
+                                   isOn: Binding(get: { quickNumberConversionsEnabled },
+                                                 set: setQuickNumberConversions), labelsHidden: true)
                         .accessibilityIdentifier("launcher.settings.numberConversions")
                 }
             }
-        }
-        StudioCard(padding: 0) {
-            VStack(alignment: .leading, spacing: 0) {
+            Section {
                 AgentSettingsRow(icon: "clock.arrow.circlepath", title: L("ask.inputHistory.remember")) {
-                    Toggle("", isOn: Binding(get: { inputHistoryEnabled }, set: setInputHistoryEnabled))
-                        .labelsHidden().toggleStyle(.switch)
-                        .accessibilityLabel(L("ask.inputHistory.remember"))
+                    TypefluxSwitch(L("ask.inputHistory.remember"),
+                                   isOn: Binding(get: { inputHistoryEnabled }, set: setInputHistoryEnabled),
+                                   labelsHidden: true)
                         .accessibilityIdentifier("launcher.settings.inputHistory")
                 }
-                ModelRowDivider(leading: 56)
                 AgentSettingsRow(icon: "list.number", title: L("ask.inputHistory.limit")) {
-                    Picker("", selection: Binding(get: { inputHistoryLimit }, set: setInputHistoryLimit)) {
+                    TypefluxPopup(L("ask.inputHistory.limit"),
+                                  selection: Binding(get: { inputHistoryLimit }, set: setInputHistoryLimit),
+                                  borderless: true) {
                         ForEach([50, 100, 200], id: \.self) { Text(String($0)).tag($0) }
-                    }
-                    .labelsHidden().frame(width: 100)
-                    .accessibilityLabel(L("ask.inputHistory.limit"))
+                    }.frame(width: 100)
                 }
-                ModelRowDivider(leading: 56)
                 AgentSettingsRow(icon: "trash", title: L("ask.inputHistory.clear")) {
                     Button(L("common.clear")) { confirmingClearInputHistory = true }
                 }
-            }
+            } footer: { Text(L("ask.inputHistory.privacy")).font(.subheadline) }
         }
-        Text(L("ask.inputHistory.privacy")).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
     }
 
     func reload() {
