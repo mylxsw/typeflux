@@ -10,7 +10,6 @@ struct AskCommandPaletteView: View {
     var onHighlight: (Int) -> Void
     var onManage: (() -> Void)?
     @Environment(\.interfaceStyle) private var style
-    private var corner: CGFloat { style.usesGlass ? 16 : 10 }
 
     static let rowHeight: CGFloat = 44
     static let groupHeight: CGFloat = 26
@@ -41,6 +40,16 @@ struct AskCommandPaletteView: View {
 
     var body: some View {
         let starts = compact ? [] : Self.groupStarts(state)
+        TypefluxGlassContainer(radius: .spotlightResults, placement: .inWindow) {
+            content(starts: starts)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L("ask.command.title"))
+        .accessibilityIdentifier("ask.command.palette")
+    }
+
+    private func content(starts: Set<Int>) -> some View {
         VStack(spacing: 0) {
             header
             if !compact { Divider().opacity(0.5) }
@@ -50,16 +59,21 @@ struct AskCommandPaletteView: View {
                         ForEach(Array(state.rows.enumerated()), id: \.offset) { index, match in
                             if starts.contains(index) {
                                 Text(match.command.group.title)
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(StudioTheme.textTertiary)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                                     .frame(height: Self.groupHeight, alignment: .bottomLeading)
                                     .padding(.horizontal, 12)
                             }
-                            AskCommandRow(match: match, highlighted: index == state.highlighted)
-                                .id(index)
-                                .contentShape(Rectangle())
-                                .onTapGesture { onPick(index) }
-                                .onHover { if $0 { onHighlight(index) } }
+                            Button { onPick(index) } label: {
+                                AskCommandRow(match: match, highlighted: index == state.highlighted)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(!match.command.enabled)
+                            .accessibilityLabel(match.command.title.isEmpty ? match.command.name : match.command.title)
+                            .accessibilityValue(match.command.plain ? match.command.name : "/" + match.command.name)
+                            .accessibilityHint(match.command.disabledReason ?? match.command.detail ?? "")
+                            .id(index)
+                            .onHover { if $0, match.command.enabled { onHighlight(index) } }
                         }
                     }
                     .padding(.horizontal, 6)
@@ -75,29 +89,22 @@ struct AskCommandPaletteView: View {
                 footer
             }
         }
-        .background(AskTheme.popoverSurface, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous)
-            .strokeBorder(AskTheme.border, lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(L("ask.command.title"))
-        .accessibilityIdentifier("ask.command.palette")
     }
 
     private var header: some View {
         HStack(spacing: 6) {
             Image(systemName: state.parent == nil ? "command" : "chevron.left")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
             if let parent = state.parent {
-                Text(verbatim: "/" + parent.name).font(.system(size: 12, weight: .semibold, design: .monospaced))
-                Text(parent.title).font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(verbatim: "/" + parent.name).font(.callout.weight(.semibold).monospaced())
+                Text(parent.title).font(.callout)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             } else {
-                Text(L("ask.command.title")).font(.system(size: 12, weight: .semibold))
+                Text(L("ask.command.title")).font(.callout.weight(.semibold))
             }
             Spacer()
         }
-        .foregroundStyle(StudioTheme.textSecondary)
+        .foregroundStyle(TypefluxColor.secondaryLabel.color)
         .padding(.horizontal, 14)
         .frame(height: compact ? 24 : 32)
     }
@@ -109,106 +116,12 @@ struct AskCommandPaletteView: View {
             if let onManage {
                 Button(L("ask.command.manage"), action: onManage)
                     .buttonStyle(.plain)
-                    .foregroundStyle(AskTheme.accentText)
+                    .foregroundStyle(TypefluxColor.accent.color)
             }
         }
-        .font(.system(size: 11))
-        .foregroundStyle(StudioTheme.textTertiary)
+        .font(.subheadline)
+        .foregroundStyle(TypefluxColor.secondaryLabel.color)
         .padding(.horizontal, 14)
         .frame(height: 36)
-    }
-}
-
-private struct AskCommandRow: View {
-    let match: AskCommandMatcher.Match
-    var highlighted: Bool
-    @Environment(\.colorScheme) private var colorScheme
-
-    private var command: AskCommand { match.command }
-    private var selectionFill: Color {
-        guard highlighted else { return .clear }
-        return colorScheme == .light ? AskTheme.launcherSelection : AskTheme.accent.opacity(0.14)
-    }
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: command.symbol)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(highlighted ? AskTheme.accent : StudioTheme.textSecondary)
-                .frame(width: 28, height: 28)
-                .background(highlighted ? AskTheme.accent.opacity(0.16) : AskTheme.hoverFill,
-                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 6) {
-                    name
-                    if !command.title.isEmpty {
-                        Text(command.title).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
-                    }
-                    if let badge = command.badge {
-                        Text(badge).font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .padding(.horizontal, 5).padding(.vertical, 1)
-                            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 4))
-                    }
-                }
-                if let detail = command.detail, !detail.isEmpty {
-                    Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
-                }
-            }
-            Spacer(minLength: 8)
-            trailing.font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-        }
-        .padding(.horizontal, 8)
-        .frame(height: AskCommandPaletteView.rowHeight)
-        .background(selectionFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay {
-            if highlighted, colorScheme == .light {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5)
-                    .allowsHitTesting(false)
-            }
-        }
-        .opacity(command.enabled ? 1 : 0.45)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(highlighted ? [.isSelected, .isButton] : .isButton)
-    }
-
-    /// The name with the typed letters underlined; submenu rows have no slash.
-    private var name: some View {
-        var text = AttributedString(command.plain ? command.name : "/" + command.name)
-        let offset = command.plain ? 0 : 1
-        let characters = Array(text.characters.indices)
-        for index in match.highlights where index + offset < characters.count {
-            let start = characters[index + offset]
-            let end = text.characters.index(after: start)
-            text[start ..< end].underlineStyle = .single
-            text[start ..< end].foregroundColor = AskTheme.accent
-        }
-        return Text(text)
-            .font(.system(size: 13, weight: .semibold, design: command.plain ? .default : .monospaced))
-            .foregroundStyle(highlighted && colorScheme == .dark ? AskTheme.accentText : StudioTheme.textPrimary)
-            .lineLimit(1)
-    }
-
-    @ViewBuilder private var trailing: some View {
-        if let reason = command.disabledReason {
-            Text(reason).lineLimit(1)
-        } else if command.selected {
-            Image(systemName: "checkmark").foregroundStyle(AskTheme.accent)
-        } else {
-            switch command.kind {
-            case let .toggle(on):
-                Text(L(on ? "ask.command.on" : "ask.command.off")).foregroundStyle(on ? AskTheme.accentText : StudioTheme.textTertiary)
-            case .submenu:
-                HStack(spacing: 4) {
-                    if let value = command.trailing { Text(value).lineLimit(1) }
-                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
-                }
-            case .argument:
-                Text((command.trailing ?? "") + " ⇥").lineLimit(1)
-            default:
-                if let value = command.trailing { AskKeyHint(text: value) }
-            }
-        }
     }
 }

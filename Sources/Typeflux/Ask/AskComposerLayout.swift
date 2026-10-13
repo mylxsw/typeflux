@@ -9,6 +9,7 @@ struct AskComposerLayout: Equatable {
     var availableHeight: CGFloat?
     var paletteOpen = false
     var supplementalHeight: CGFloat = 0
+    var style: InterfaceStyle = .liquidGlass
 
     /// Reserve one complete command row before the draft can consume the
     /// remaining viewport. This budget does not depend on the compact card's
@@ -42,11 +43,11 @@ struct AskComposerLayout: Equatable {
     }
 
     var editorTopInset: CGFloat {
-        launcher ? AskComposerChrome.launcher.editorTopInset : usesCompactMetrics ? 6 : 14
+        launcher ? AskComposerChrome.of(launcher: true, style: style).editorTopInset : usesCompactMetrics ? 6 : 14
     }
 
     var editorBottomInset: CGFloat {
-        launcher ? AskComposerChrome.launcher.editorBottomInset : usesCompactMetrics ? 2 : 4
+        launcher ? AskComposerChrome.of(launcher: true, style: style).editorBottomInset : usesCompactMetrics ? 2 : 4
     }
 
     var footerHeight: CGFloat {

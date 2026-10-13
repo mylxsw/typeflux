@@ -114,9 +114,7 @@ public struct TypefluxSpotlightPanel: View {
             .foregroundStyle(selection.selectedID == item.id ? selectedText : TypefluxColor.label.color)
             .padding(.horizontal, 10).padding(.vertical, 6)
             .frame(maxWidth: .infinity, minHeight: style == .classic ? 34 : 40, alignment: .leading)
-            .background(selection.selectedID == item.id ? TypefluxColor.selection.color : .clear,
-                        in: RoundedRectangle(cornerRadius: TypefluxRadius.sidebarRow.value(for: style)))
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: selection.selectedID == item.id))
         }
         .buttonStyle(.plain)
         .disabled(!item.isEnabled)

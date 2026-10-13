@@ -25,7 +25,7 @@ struct AskSearchPaletteView: View {
                 Color.black.opacity(0.18)
                     .contentShape(Rectangle())
                     .onTapGesture { onClose() }
-                card(listHeight: Self.listHeight(in: geometry.size.height))
+                card(listHeight: Self.listHeight(in: geometry.size.height, style: style))
                     .askPopIn(anchor: .top)
                     .padding(.horizontal, 12)
                     .padding(.top, Self.topInset(in: geometry.size.height))
@@ -38,6 +38,7 @@ struct AskSearchPaletteView: View {
         }
         .onChange(of: query) { _ in refresh() }
         .onChange(of: conversations) { _ in refresh() }
+        .onChange(of: available) { _ in refresh() }
         .background(AskArrowKeyMonitor { delta in state.move(delta) })
     }
 
@@ -45,41 +46,49 @@ struct AskSearchPaletteView: View {
         height < 500 ? AskMetrics.titleBarRowHeight : AskMetrics.titleBarRowHeight + 18
     }
 
-    static func listHeight(in height: CGFloat) -> CGFloat {
-        max(0, min(listMaxHeight, height - topInset(in: height) - 55 - 12))
+    static func listHeight(in height: CGFloat, style: InterfaceStyle = .liquidGlass) -> CGFloat {
+        let header = TypefluxControlHeight.spotlightInput.value(for: style)
+        let gap = TypefluxSpotlightMetrics.resultsSpacing(for: style) + (style == .classic ? 1 : 0)
+        return max(0, min(listMaxHeight, height - topInset(in: height) - header - gap - 12))
     }
 
     private func card(listHeight: CGFloat) -> some View {
-        VStack(spacing: 0) {
+        TypefluxSpotlightLayout(placement: .inWindow) {
             HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass").font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Image(systemName: "magnifyingglass").font(.title3)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                    .accessibilityHidden(true)
                 TextField(L("ask.search.placeholder"), text: $query)
                     .accessibilityIdentifier("ask.workspace.search.field")
                     .textFieldStyle(.plain)
-                    .font(.system(size: 16))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .font(.title3)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .focused($focused)
                     .onSubmit(run)
-                Text(verbatim: "esc")
-                    .font(.system(size: 10.5, weight: .medium))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .padding(.horizontal, 6)
-                    .frame(height: 18)
-                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                    .onTapGesture { onClose() }
-                    .accessibilityLabel(L("ask.remove"))
-                    .accessibilityIdentifier("ask.workspace.search.close")
-                    .accessibilityAddTraits(.isButton)
             }
-            .padding(.horizontal, 18)
-            .frame(height: 54)
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
+            .padding(.horizontal, 16)
+            .frame(height: TypefluxControlHeight.spotlightInput.value(for: style))
+        } modes: {
+            TypefluxSpotlightModeControl(placement: .inWindow) {
+                Button(action: onClose) {
+                    Image(systemName: "xmark").font(.body)
+                        .frame(width: style == .classic ? 30 : 56,
+                               height: style == .classic ? 26 : 56)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                .help("Esc")
+                .accessibilityLabel(L("ask.remove"))
+                .accessibilityIdentifier("ask.workspace.search.close")
+            }
+            .padding(.trailing, style == .classic ? 10 : 0)
+            .padding(.top, style == .classic ? 13 : 0)
+        } results: {
             list(maxHeight: listHeight)
         }
         .frame(maxWidth: Self.width)
-        .askInWindowGlass(corner: style.ask.paletteCorner, opaqueFill: AskTheme.popoverSurface,
-                          elevation: .popover)
+        .accessibilityIdentifier("ask.workspace.search.palette")
     }
 
     private func list(maxHeight: CGFloat) -> some View {
@@ -100,8 +109,8 @@ struct AskSearchPaletteView: View {
                     }
                     if state.rows.isEmpty {
                         Text(L(conversations.isEmpty ? "ask.history.empty" : "ask.history.searchEmpty"))
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(StudioTheme.textTertiary)
+                            .font(.callout)
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 26)
                     }
@@ -118,8 +127,8 @@ struct AskSearchPaletteView: View {
 
     private func header(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(StudioTheme.textTertiary)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
             .padding(.horizontal, 12)
             .padding(.top, 8)
             .padding(.bottom, 3)
@@ -129,25 +138,23 @@ struct AskSearchPaletteView: View {
         let highlighted = state.highlighted == index
         return Button { state.highlighted = index; run() } label: {
             HStack(spacing: 10) {
-                Image(systemName: symbol(row)).font(.system(size: 13))
-                    .foregroundStyle(highlighted ? Color.white : StudioTheme.textSecondary)
+                Image(systemName: symbol(row)).font(.body)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                     .frame(width: 18)
-                Text(title(row)).font(.system(size: 13.5))
-                    .foregroundStyle(highlighted ? Color.white : StudioTheme.textPrimary)
+                Text(title(row)).font(.body)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted))
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 if let trailing = trailing(row) {
-                    Text(trailing).font(.system(size: 11))
-                        .foregroundStyle(highlighted ? Color.white.opacity(0.8) : StudioTheme.textTertiary)
+                    Text(trailing).font(.subheadline)
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                         .monospacedDigit()
                 }
             }
             .padding(.horizontal, 12)
             .frame(height: Self.rowHeight)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(highlighted ? AskTheme.accent : Color.clear,
-                        in: RoundedRectangle(cornerRadius: style.usesGlass ? 10 : 6, style: .continuous))
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
         .onHover { if $0 { state.highlighted = index } }
@@ -186,70 +193,5 @@ struct AskSearchPaletteView: View {
         case let .conversation(item)?: onOpen(item.id)
         case nil: break
         }
-    }
-}
-
-/// Delivers ↑ and ↓ to `onMove` while it is in the window, before the focused
-/// text field turns them into caret moves. `onKeyPress` needs macOS 14.
-struct AskArrowKeyMonitor: NSViewRepresentable {
-    var onMove: (Int) -> Void
-
-    static let upKeyCode: UInt16 = 126
-    static let downKeyCode: UInt16 = 125
-
-    /// The highlight step for a key, or nil when the key is not an arrow.
-    static func delta(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> Int? {
-        guard modifiers.isDisjoint(with: [.command, .option, .control, .shift]) else { return nil }
-        switch keyCode {
-        case upKeyCode: return -1
-        case downKeyCode: return 1
-        default: return nil
-        }
-    }
-
-    final class MonitorView: NSView {
-        var onMove: (Int) -> Void = { _ in }
-        private var monitor: Any?
-
-        override func viewDidMoveToWindow() {
-            super.viewDidMoveToWindow()
-            removeMonitor()
-            guard window != nil else { return }
-            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-                guard let self, event.window === self.window,
-                      let delta = AskArrowKeyMonitor.delta(keyCode: event.keyCode, modifiers: event.modifierFlags)
-                else { return event }
-                self.onMove(delta)
-                return nil
-            }
-        }
-
-        override func removeFromSuperview() {
-            removeMonitor()
-            super.removeFromSuperview()
-        }
-
-        private func removeMonitor() {
-            if let monitor { NSEvent.removeMonitor(monitor) }
-            monitor = nil
-        }
-
-        deinit {
-            if let monitor { NSEvent.removeMonitor(monitor) }
-        }
-    }
-
-    func makeNSView(context _: Context) -> MonitorView {
-        let view = MonitorView()
-        view.onMove = onMove
-        return view
-    }
-
-    func updateNSView(_ view: MonitorView, context _: Context) {
-        view.onMove = onMove
-    }
-
-    static func dismantleNSView(_ view: MonitorView, coordinator _: ()) {
-        view.removeFromSuperview()
     }
 }

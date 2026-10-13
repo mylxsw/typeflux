@@ -3,7 +3,6 @@ import TypefluxUI
 
 /// Replaces the launcher's results; recall fills the editor and always searches again.
 struct AskLauncherInputHistoryView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var model: AskConversationModel
     @ObservedObject var store: AskLauncherInputHistoryStore
     @State private var confirmingClear = false
@@ -18,26 +17,26 @@ struct AskLauncherInputHistoryView: View {
         let entries = model.launcherHistoryEntries
         let selected = model.highlightedLauncherHistory?.id
         VStack(spacing: 0) {
-            Rectangle().fill(LegacyAskPalette.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1).padding(.horizontal, 12)
             HStack {
                 Text(L("ask.inputHistory.title"))
                 Spacer()
                 Text("↑ ↓")
             }
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(LegacyStudioPalette.textSecondary)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
             .padding(.horizontal, 16)
             .frame(height: AskLauncherSuggestions.headerHeight)
             if entries.isEmpty {
                 VStack(spacing: 8) {
-                    Image(systemName: "clock.arrow.circlepath").font(.system(size: 22))
+                    Image(systemName: "clock.arrow.circlepath").font(.title)
                     Text(L(!store.enabled ? "ask.inputHistory.disabled" : model.launcherDraft.hasText
                            ? "ask.inputHistory.noMatches" : "ask.inputHistory.empty"))
                     Text(L(!store.enabled ? "ask.inputHistory.disabled.detail" : model.launcherDraft.hasText
                            ? "ask.inputHistory.noMatches.detail" : "ask.inputHistory.empty.detail"))
-                        .font(.system(size: 11))
+                        .font(.subheadline)
                 }
-                .foregroundStyle(LegacyStudioPalette.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .accessibilityIdentifier("ask.inputHistory.empty")
             } else {
@@ -68,39 +67,37 @@ struct AskLauncherInputHistoryView: View {
         Button { model.fillLauncherInputHistory(entry) } label: {
             HStack(spacing: 10) {
                 Image(systemName: symbol(entry.destination))
-                    .font(.system(size: 15))
-                    .foregroundStyle(entry.destination == .unsent ? Color.orange : LegacyAskPalette.accent)
+                    .font(.title3)
+                    .foregroundStyle(selected ? TypefluxSpotlightRow.labelColor(selected: true)
+                        : entry.destination == .unsent ? TypefluxColor.warning.color : TypefluxColor.accent.color)
                     .frame(width: 26)
                 if let keyword = entry.keyword {
-                    Text(keyword).font(.system(size: 11, weight: .semibold))
+                    Text(keyword).font(.subheadline.weight(.semibold))
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: selected))
                         .padding(.horizontal, 6).padding(.vertical, 3)
-                        .background(LegacyAskPalette.launcherSelection, in: RoundedRectangle(cornerRadius: 5))
+                        .background(TypefluxColor.controlBackground.color.opacity(0.2),
+                                    in: RoundedRectangle(cornerRadius: 5))
                 }
-                Text(displayText(entry)).font(.system(size: 13)).lineLimit(1)
-                    .foregroundStyle(LegacyStudioPalette.textPrimary)
+                Text(displayText(entry)).font(.body).lineLimit(1)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: selected))
                 if let caption = caption(entry) {
                     Text(caption)
-                        .font(.system(size: 11)).lineLimit(1).foregroundStyle(LegacyStudioPalette.textSecondary)
+                        .font(.subheadline).lineLimit(1)
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: selected, secondary: true))
                 }
                 Spacer(minLength: 0)
                 if selected {
-                    Text(L("ask.inputHistory.fill") + " →").font(.system(size: 10))
-                        .foregroundStyle(LegacyAskPalette.accent)
+                    Text(L("ask.inputHistory.fill") + " →").font(.footnote)
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: selected))
                 }
                 Text(AskLauncherSuggestions.relative(entry.date, now: Date()))
-                    .font(.system(size: 10)).foregroundStyle(LegacyStudioPalette.textSecondary)
+                    .font(.footnote)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: selected, secondary: true))
             }
             .padding(.horizontal, 10)
             .frame(height: AskLauncherSuggestions.rowHeight)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(selected ? selectionFill : .clear, in: RoundedRectangle(cornerRadius: 9))
-            .overlay {
-                if selected {
-                    RoundedRectangle(cornerRadius: 9)
-                        .strokeBorder(LegacyAskPalette.accent.opacity(0.2), lineWidth: 0.5)
-                }
-            }
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: selected))
         }
         .buttonStyle(.plain)
         .modifier(AskLauncherNumberBadge(number: AskLauncherNumberShortcuts.number(at: index)))
@@ -114,10 +111,6 @@ struct AskLauncherInputHistoryView: View {
             Button(L("ask.inputHistory.delete"), role: .destructive) { model.deleteLauncherInputHistory(entry) }
             Button(L("ask.inputHistory.clear"), role: .destructive) { confirmingClear = true }
         }
-    }
-
-    private var selectionFill: Color {
-        colorScheme == .dark ? LegacyAskPalette.accent.opacity(0.12) : LegacyAskPalette.launcherSelection
     }
 
     private func caption(_ entry: AskLauncherInputHistory.Entry) -> String? {

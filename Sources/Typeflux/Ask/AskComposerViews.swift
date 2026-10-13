@@ -13,6 +13,7 @@ struct AskLauncherView: View {
     @State private var hovering = false
     @State private var showingNumberHints = false
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.interfaceStyle) private var interfaceStyle
 
     var body: some View {
         GeometryReader { geometry in
@@ -31,7 +32,7 @@ struct AskLauncherView: View {
             .environment(\.askLauncherNumberHints, showingNumberHints)
             .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
             .background(AskLauncherEscapeMonitor())
-            .tint(AskTheme.accent)
+            .tint(TypefluxColor.accent.color)
             .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
             .popover(item: $model.launcherClipboardPreview) { entry in
                 ClipboardPreviewPane(entry: entry, isMissing: entry.contentURLs.contains {
@@ -61,7 +62,7 @@ struct AskLauncherView: View {
             .help(L("ask.launcher.drag"))
             .accessibilityIdentifier("ask.launcher.grip")
             .padding(.top, AskMetrics.launcherGutter)
-            .padding(.horizontal, AskMetrics.launcherCardCorner)
+            .padding(.horizontal, TypefluxRadius.spotlightInput.value(for: interfaceStyle))
     }
 
     /// The card's top points, clear of the editor row's controls (they start 14pt down).
@@ -177,7 +178,8 @@ struct AskComposer: View {
     private var layout: AskComposerLayout {
         AskComposerLayout(launcher: launcher, compact: compact, width: availableWidth ?? measuredWidth,
                           availableHeight: availableHeight, paletteOpen: paletteOpen,
-                          supplementalHeight: hasSupplementalContent ? max(40, supplementalHeight) : 0)
+                          supplementalHeight: hasSupplementalContent ? max(40, supplementalHeight) : 0,
+                          style: interfaceStyle)
     }
     private var paletteMaximumHeight: CGFloat? { layout.paletteMaximumHeight(composerHeight: cardHeight) }
     private var compactPalette: Bool {
@@ -231,12 +233,6 @@ struct AskComposer: View {
         if !interfaceStyle.usesGlass { return chrome.glass ? .opaque : nil }
         return chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
                                                                         style: interfaceStyle) : nil
-    }
-
-    private var showsGlassLauncherBar: Bool {
-        guard launcher, let glass else { return false }
-        return AskGlassBackground.effectiveMaterial(glass, reduceTransparency: reduceTransparency,
-            increasedContrast: contrast == .increased).drawsOwnEdge
     }
 
     private func submit() {
@@ -866,7 +862,7 @@ struct AskComposer: View {
     }
 
     private var launcherHomeViewportHeight: CGFloat {
-        let chromeHeight = AskMetrics.launcherHeight(editor: editorHeight, banners: 0)
+        let chromeHeight = AskMetrics.launcherHeight(editor: editorHeight, banners: 0, style: interfaceStyle)
             - AskMetrics.launcherGutter * 2 + supplementalHeight
         // Fit against a stable budget rather than the animated panel height,
         // otherwise a collapsed panel cannot grow to show its home rows.
@@ -960,6 +956,7 @@ struct AskComposer: View {
             .onPreferenceChange(AskComposerHeight.self) { height in
                 if !launcher, abs(cardHeight - height) > 0.5 { cardHeight = height }
             }
+            .onChange(of: interfaceStyle) { _ in reportHeight() }
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: launcherCollapsed) { _ in reportHeight() }
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
@@ -1054,13 +1051,66 @@ struct AskComposer: View {
     }
 
     private var card: some View {
-        VStack(spacing: 0) {
-            if launcher && !launcherCollapsed {
+        Group {
+            if launcher {
+                launcherCard
+            } else {
+                workspaceCard
+            }
+        }
+        .askAttachmentDrop(model: model, launcher: launcher, targeted: $cardDropTargeted)
+        .overlay(alignment: .top) {
+            if !launcher, paletteOpen {
+                let height = paletteHeight
+                paletteView
+                    .frame(height: height)
+                    .offset(y: -height - 8)
+                    .transition(.opacity)
+            }
+        }
+        .transaction { transaction in
+            if launcher {
+                transaction.animation = nil
+                transaction.disablesAnimations = true
+            }
+        }
+    }
+
+    private var launcherCard: some View {
+        TypefluxSpotlightLayout(showsResults: !launcherCollapsed) {
+            launcherHeader
+                .modifier(AskVoiceBorder(voice: voice, context: contextID,
+                                        radius: TypefluxRadius.spotlightInput.value(for: interfaceStyle),
+                                        idle: .clear, sheen: false))
+                .overlay {
+                    if dropTargeted {
+                        RoundedRectangle(cornerRadius: TypefluxRadius.spotlightInput.value(for: interfaceStyle))
+                            .strokeBorder(TypefluxColor.accent.color, lineWidth: 2)
+                            .allowsHitTesting(false)
+                    }
+                }
+        } modes: {
+            launcherModeControls
+        } results: {
+            VStack(spacing: 0) {
                 supplementalContent
                     .background(GeometryReader { geometry in
                         Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
                     })
-            } else if !launcher && hasSupplementalContent {
+                ZStack(alignment: .top) {
+                    Color.clear
+                    launcherResults
+                }
+                .frame(height: launcherResultsViewportHeight, alignment: .top)
+                .clipped()
+                launcherBar
+            }
+        }
+    }
+
+    private var workspaceCard: some View {
+        VStack(spacing: 0) {
+            if hasSupplementalContent {
                 ScrollView(.vertical) {
                     supplementalContent
                         .background(GeometryReader { geometry in
@@ -1069,25 +1119,8 @@ struct AskComposer: View {
                 }
                 .frame(height: min(max(1, supplementalHeight), layout.supplementalMaximumHeight))
             }
-            if launcher {
-                launcherHeader
-            } else {
-                editorRow
-                footer
-            }
-            if launcher && !launcherCollapsed {
-                ZStack(alignment: .top) {
-                    // EmptyView does not participate in layout. Keep a real
-                    // viewport while the last results disappear during shrinkage.
-                    Color.clear
-                    launcherResults
-                }
-                .frame(height: launcherResultsViewportHeight, alignment: .top)
-                .clipped()
-            }
-            if launcher && !launcherCollapsed {
-                launcherBar
-            }
+            editorRow
+            footer
         }
         .background {
             if let glass {
@@ -1112,24 +1145,6 @@ struct AskComposer: View {
                 RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
                     .strokeBorder(AskTheme.privateTint.opacity(0.45), lineWidth: 1)
                     .allowsHitTesting(false)
-            }
-        }
-        .askAttachmentDrop(model: model, launcher: launcher, targeted: $cardDropTargeted)
-        // The workspace palette floats above the card without moving the transcript.
-        .overlay(alignment: .top) {
-            if !launcher, paletteOpen {
-                // Its height is known, so it sits exactly 8 pt above the card.
-                let height = paletteHeight
-                paletteView
-                    .frame(height: height)
-                    .offset(y: -height - 8)
-                    .transition(.opacity)
-            }
-        }
-        .transaction { transaction in
-            if launcher {
-                transaction.animation = nil
-                transaction.disablesAnimations = true
             }
         }
     }
@@ -1655,31 +1670,50 @@ struct AskComposer: View {
             if active {
                 AskVoiceElapsed(live: voice.live)
                     .frame(height: AskMetrics.composerControlHeight)
-                Button { voice.cancel() } label: {
-                    Image(systemName: "xmark").font(.system(size: 12, weight: .semibold))
-                        .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
-                .help(L("ask.voice.cancel"))
-                .accessibilityLabel(L("ask.voice.cancel"))
-                .accessibilityIdentifier("ask.voice.cancel")
-            }
-            AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
-                .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
-                .accessibilityIdentifier("ask.composer.voice")
-            if !active {
-                AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
-                                         tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
-                                          action: runLauncherChatAction)
             }
         }
         .padding(.horizontal, chrome.horizontalInset)
         .padding(.top, layout.editorTopInset)
         .padding(.bottom, layout.editorBottomInset)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: TypefluxControlHeight.spotlightInput.value(for: interfaceStyle),
+               alignment: .leading)
+        .accessibilityIdentifier("ask.launcher.input")
+    }
+
+    private var launcherModeControls: some View {
+        let size = interfaceStyle.usesGlass
+            ? TypefluxControlHeight.spotlightModeButton.value(for: interfaceStyle) : AskMetrics.composerControlHeight
+        return HStack(spacing: interfaceStyle.usesGlass ? 8 : 2) {
+            if active {
+                TypefluxSpotlightModeControl {
+                    Button { voice.cancel() } label: {
+                        Image(systemName: "xmark").font(.body)
+                            .frame(width: size, height: size)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                    .help(L("ask.voice.cancel"))
+                    .accessibilityLabel(L("ask.voice.cancel"))
+                    .accessibilityIdentifier("ask.voice.cancel")
+                }
+            }
+            TypefluxSpotlightModeControl {
+                AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
+                    .frame(width: size, height: size)
+                    .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
+                    .accessibilityIdentifier("ask.composer.voice")
+            }
+            if !active {
+                TypefluxSpotlightModeControl {
+                    AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
+                                              tint: privateTint ? AskTheme.privateTint : TypefluxColor.accent.color,
+                                              size: size, action: runLauncherChatAction)
+                }
+            }
+        }
+        .padding(.trailing, interfaceStyle.usesGlass ? 0 : chrome.horizontalInset)
+        .padding(.top, interfaceStyle.usesGlass ? 0 : layout.editorTopInset)
     }
 
     /// Under the results: the model and switches, then what the keys do now.
@@ -1741,9 +1775,7 @@ struct AskComposer: View {
         .frame(height: layout.footerHeight)
         .frame(maxWidth: .infinity)
         .overlay(alignment: .top) {
-            if !showsGlassLauncherBar {
-                Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
-            }
+            Divider().padding(.horizontal, 12)
         }
     }
 
@@ -2104,7 +2136,7 @@ struct AskComposer: View {
         let panel = recording ? voicePanelHeight : 0
         let keyword = !recording ? pluginHeight : 0
         if launcher {
-            return AskMetrics.launcherHeight(editor: editorHeight, banners: 0)
+            return AskMetrics.launcherHeight(editor: editorHeight, banners: 0, style: interfaceStyle)
                 + supplementalHeight + commands + quick + panel + keyword
                 + (!recording && showsLauncherSuggestions ? homeHeight : 0)
         }
@@ -2115,7 +2147,7 @@ struct AskComposer: View {
     }
 
     private func reportHeight() {
-        let height = launcherCollapsed ? AskLauncherWindowMode.simpleHeight : desiredLauncherHeight
+        let height = launcherCollapsed ? AskLauncherWindowMode.simpleHeight(for: interfaceStyle) : desiredLauncherHeight
         // Other layout preferences may change with the first edit too. Hold the
         // native frame until the first search batch instead of resizing an empty list.
         if launcher, !model.launcherHistoryMode, quickSearch.isVisible, draft.wrappedValue.hasText,

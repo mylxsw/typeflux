@@ -13,8 +13,10 @@ enum AskLauncherWindowMode: String, CaseIterable, Sendable {
             && (draft.skills ?? []).isEmpty && (draft.mcpServers ?? []).isEmpty
     }
 
-    static var simpleHeight: CGFloat {
-        AskMetrics.launcherHeaderHeight(editor: 32) + AskMetrics.launcherGutter * 2
+    static var simpleHeight: CGFloat { simpleHeight(for: .liquidGlass) }
+
+    static func simpleHeight(for style: InterfaceStyle) -> CGFloat {
+        AskMetrics.launcherHeaderHeight(editor: 32, style: style) + AskMetrics.launcherGutter * 2
     }
 }
 

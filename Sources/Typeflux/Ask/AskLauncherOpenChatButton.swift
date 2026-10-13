@@ -17,21 +17,29 @@ struct AskLauncherOpenChatButton: View {
     var mode: AskLauncherChatAction = .openChat
     var enabled: Bool
     var tint: Color = AskTheme.accent
+    var size = AskSendButton.size
     var action: () -> Void
 
     var body: some View {
         Group {
             if mode == .askAI {
-                AskSendButton(enabled: enabled, tint: tint, animatesEmphasis: false, action: action)
+                Button(action: action) {
+                    Image(systemName: "arrow.up").font(.headline)
+                        .frame(width: size, height: size)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(tint)
+                .disabled(!enabled)
             } else {
                 Button(action: action) {
                     Image(systemName: "macwindow")
-                        .font(.system(size: 16, weight: .medium))
-                        .frame(width: AskSendButton.size, height: AskSendButton.size)
+                        .font(.title3)
+                        .frame(width: size, height: size)
                         .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .buttonStyle(.borderless)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .disabled(!enabled)
             }
         }
