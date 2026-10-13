@@ -10,12 +10,14 @@ public struct TypefluxSheet<Content: View>: View {
     private let confirmIdentifier: String
     private let isConfirmEnabled: Bool
     private let role: ButtonRole?
+    private let cancelIdentifier: String
     private let cancel: () -> Void
     private let confirm: () -> Void
     private let content: Content
 
     public init(title: String, cancelTitle: String, confirmTitle: String, isConfirmEnabled: Bool = true,
                 role: ButtonRole? = nil, confirmIdentifier: String = "typeflux.sheet.confirm",
+                cancelIdentifier: String = "typeflux.sheet.cancel",
                 cancelShortcut: KeyboardShortcut? = .cancelAction,
                 confirmShortcut: KeyboardShortcut? = .defaultAction, cancel: @escaping () -> Void, confirm: @escaping () -> Void,
                 @ViewBuilder content: () -> Content) {
@@ -27,6 +29,7 @@ public struct TypefluxSheet<Content: View>: View {
         self.confirmShortcut = confirmShortcut
         self.isConfirmEnabled = isConfirmEnabled
         self.role = role
+        self.cancelIdentifier = cancelIdentifier
         self.cancel = cancel
         self.confirm = confirm
         self.content = content()
@@ -40,7 +43,7 @@ public struct TypefluxSheet<Content: View>: View {
                 HStack(spacing: 8) {
                     Spacer()
                     Button(cancelTitle, role: .cancel, action: cancel).keyboardShortcut(cancelShortcut)
-                        .accessibilityIdentifier("typeflux.sheet.cancel")
+                        .accessibilityIdentifier(cancelIdentifier)
                     Button(confirmTitle, role: role, action: confirm).buttonStyle(.borderedProminent)
                         .keyboardShortcut(confirmShortcut).disabled(!isConfirmEnabled)
                         .accessibilityIdentifier(confirmIdentifier)

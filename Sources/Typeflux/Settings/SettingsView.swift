@@ -182,10 +182,11 @@ struct StudioView: View {
 
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
     init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics,
-         settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview) {
+         settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview,
+         imageSettingsModel: AskImageSettingsModel? = nil) {
         self.viewModel = viewModel
         _interfaceStyleObserver = StateObject(wrappedValue: InterfaceStyleObserver(settings: viewModel.askToolSettings))
-        _imageSettings = StateObject(wrappedValue: AskImageSettingsModel(
+        _imageSettings = StateObject(wrappedValue: imageSettingsModel ?? AskImageSettingsModel(
             store: AskImageSettings(defaults: viewModel.askToolSettings.defaults)
         ))
         _launcherPane = State(initialValue: launcherPane)
@@ -232,7 +233,7 @@ struct StudioView: View {
                 }
             }
             .frame(
-                height: [.models, .personas, .settings, .account].contains(viewModel.currentSection)
+                height: [.models, .personas, .agent, .launcher, .settings, .account].contains(viewModel.currentSection)
                     ? viewportHeight : nil,
                 alignment: .top
             )
@@ -998,22 +999,25 @@ struct StudioView: View {
         SettingsPaneLayout(sections: AgentSettingsPane.sections, selection: $agentPane, compact: compact,
                            status: agentPaneStatus) {
             if agentPane == .mcpServers {
-                AgentPaneHeader(symbol: AgentCapability.mcpServers.symbol, title: AgentCapability.mcpServers.title) {
-                    if !viewModel.mcpServers.isEmpty {
-                        Button { beginMCPImport() } label: {
-                            Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
+                TypefluxForm {
+                    AgentPaneHeader(symbol: AgentCapability.mcpServers.symbol,
+                                    title: AgentCapability.mcpServers.title) {
+                        if !viewModel.mcpServers.isEmpty {
+                            Button { beginMCPImport() } label: {
+                                Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
+                            }
+                            .buttonStyle(.bordered)
+                            Button {
+                                viewModel.beginAddMCPServer()
+                                isMCPServerDialogPresented = true
+                            } label: {
+                                Label(L("agent.mcp.addServer"), systemImage: "plus")
+                            }
+                            .buttonStyle(.borderedProminent)
                         }
-                        .buttonStyle(.bordered)
-                        Button {
-                            viewModel.beginAddMCPServer()
-                            isMCPServerDialogPresented = true
-                        } label: {
-                            Label(L("agent.mcp.addServer"), systemImage: "plus")
-                        }
-                        .buttonStyle(.borderedProminent)
                     }
+                    agentMCPServersTabContent
                 }
-                agentMCPServersTabContent
             } else {
                 AskToolsSettingsView(
                     settings: viewModel.askToolSettings,
@@ -1065,46 +1069,35 @@ struct StudioView: View {
 
     @ViewBuilder private var agentMCPServersTabContent: some View {
         if viewModel.mcpServers.isEmpty {
-            StudioCard(padding: 0) {
-                AgentEmptyState(
-                    symbol: "server.rack",
-                    title: L("agent.mcp.emptyTitle"),
-                    message: L("agent.mcp.emptyMessage")
-                ) {
-                    Button {
-                        viewModel.beginAddMCPServer()
-                        isMCPServerDialogPresented = true
-                    } label: {
-                        Label(L("agent.mcp.addServer"), systemImage: "plus")
+            Section {
+                TypefluxEmptyState(L("agent.mcp.emptyTitle"), systemImage: "server.rack",
+                                   description: L("agent.mcp.emptyMessage")) {
+                    HStack {
+                        Button {
+                            viewModel.beginAddMCPServer()
+                            isMCPServerDialogPresented = true
+                        } label: { Label(L("agent.mcp.addServer"), systemImage: "plus") }
+                            .buttonStyle(.borderedProminent)
+                        Button { beginMCPImport() } label: {
+                            Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
+                        }.buttonStyle(.bordered)
                     }
-                    .buttonStyle(.borderedProminent)
-                    Button { beginMCPImport() } label: {
-                        Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
-                    }
-                    .buttonStyle(.bordered)
                 }
             }
         } else {
-            VStack(alignment: .leading, spacing: 8) {
-                StudioCard(padding: 0) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        if filteredMCPServers.isEmpty {
-                            AgentSettingsEmptyRow(text: L("personas.redesign.noResults", toolbarSearch.query))
-                        }
-                        ForEach(Array(filteredMCPServers.enumerated()), id: \.element.id) { index, server in
-                            if index > 0 { ModelRowDivider(leading: 66) }
-                            mcpServerRow(server)
-                        }
-                    }
+            TypefluxFormSection(AgentCapability.mcpServers.title, footer: L("agent.mcp.listHint")) {
+                if filteredMCPServers.isEmpty {
+                    TypefluxEmptyState(L("personas.redesign.noResults", toolbarSearch.query),
+                                       systemImage: "magnifyingglass", description: "")
                 }
-                Text(L("agent.mcp.listHint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
+                ForEach(filteredMCPServers) { mcpServerRow($0) }
             }
         }
     }
 
     private func mcpServerRow(_ server: MCPServerConfig) -> some View {
-        let status = MCPServerStatusPresentation(enabled: server.enabled, result: viewModel.mcpServerTestResults[server.id])
+        let status = MCPServerStatusPresentation(enabled: server.enabled,
+            result: viewModel.mcpServerTestResults[server.id])
         return VStack(alignment: .leading, spacing: 0) {
             AgentSettingsRow(
                 icon: "server.rack",
@@ -1114,15 +1107,12 @@ struct StudioView: View {
                 subtitleLineLimit: 1
             ) {
                 HStack(spacing: 12) {
-                    HStack(spacing: 6) {
-                        if status.isTesting {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Circle().fill(status.color).frame(width: 7, height: 7)
-                        }
-                        Text(status.label).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
+                    if status.isTesting { ProgressView().controlSize(.small) }
+                    TypefluxStatus(status.label, tone: status.tone)
+                    TypefluxIconButton(L("agent.mcp.edit"), systemImage: "pencil") {
+                        viewModel.beginEditMCPServer(server)
+                        isMCPServerDialogPresented = true
                     }
-                    .fixedSize()
 
                     Toggle("", isOn: Binding(
                         get: { server.enabled },
@@ -1135,7 +1125,7 @@ struct StudioView: View {
                     Menu {
                         mcpServerMenuItems(server)
                     } label: {
-                        Image(systemName: "ellipsis").font(.system(size: 13, weight: .semibold))
+                        Image(systemName: "ellipsis").font(.body)
                     }
                     .menuStyle(.borderlessButton)
                     .menuIndicator(.hidden)
@@ -1145,20 +1135,16 @@ struct StudioView: View {
             }
 
             if case let .failure(message)? = viewModel.mcpServerTestResults[server.id] {
-                Text(message).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
+                Text(message).font(.subheadline).foregroundStyle(StudioTheme.danger)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 12)
+
             } else if case let .success(tools)? = viewModel.mcpServerTestResults[server.id], !tools.isEmpty {
                 Text(L("agent.mcp.toolList", tools.map(\.name).joined(separator: ", ")))
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(2)
-                    .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 12)
+                    .font(.subheadline).foregroundStyle(StudioTheme.textSecondary).lineLimit(2)
+
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture {
-            viewModel.beginEditMCPServer(server)
-            isMCPServerDialogPresented = true
-        }
         .contextMenu { mcpServerMenuItems(server) }
     }
 
@@ -1183,63 +1169,11 @@ struct StudioView: View {
     }
 
     private var mcpImportSheet: some View {
-        let parsed = Result(catching: { try MCPServerImport.parse(mcpImportText, existingNames: viewModel.mcpServers.map(\.name)) })
-        let servers = (try? parsed.get())?.servers ?? []
-        return VStack(alignment: .leading, spacing: 14) {
-            Text(L("agent.mcp.import.title"))
-                .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-            Text(L("agent.mcp.import.hint")).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            TextEditor(text: $mcpImportText)
-                .font(.system(size: 12, design: .monospaced))
-                .scrollContentBackground(.hidden)
-                .padding(6)
-                .frame(height: 180)
-                .background(TypefluxColor.controlBackground.color,
-                            in: RoundedRectangle(
-                                cornerRadius: TypefluxRadius.textField.value(for: .classic),
-                                style: .continuous
-                            ))
-                .overlay(RoundedRectangle(
-                    cornerRadius: TypefluxRadius.textField.value(for: .classic),
-                    style: .continuous
-                )
-                .strokeBorder(TypefluxColor.separator.color))
-                .accessibilityLabel(L("agent.mcp.import.title"))
-            if !mcpImportText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                switch parsed {
-                case let .success(result):
-                    VStack(alignment: .leading, spacing: 4) {
-                        if !result.servers.isEmpty {
-                            Text(L("agent.mcp.import.preview", result.servers.count,
-                                   result.servers.map(\.name).joined(separator: L("agent.listSeparator"))))
-                        }
-                        if !result.skipped.isEmpty {
-                            Text(L("agent.mcp.import.skipped", result.skipped.joined(separator: L("agent.listSeparator"))))
-                                .foregroundStyle(StudioTheme.warning)
-                        }
-                    }
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                case let .failure(error):
-                    Text(error.localizedDescription).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
-                }
-            }
-            HStack {
-                Spacer()
-                Button(L("common.cancel")) { isMCPImportPresented = false }.buttonStyle(.bordered)
-                Button(L("agent.mcp.import.confirm")) {
-                    viewModel.importMCPServers(servers)
-                    isMCPImportPresented = false
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(servers.isEmpty)
-                .keyboardShortcut(.defaultAction)
-            }
-        }
-        .padding(24)
-        .frame(width: 520)
-        .background(TypefluxColor.windowBackground.color)
+        MCPServerImportSheet(text: $mcpImportText, existingNames: viewModel.mcpServers.map(\.name),
+                             cancel: { isMCPImportPresented = false }, confirm: { servers in
+                                 viewModel.importMCPServers(servers)
+                                 isMCPImportPresented = false
+                             })
     }
 
     private var mcpServerDialog: some View {
@@ -3648,7 +3582,8 @@ private struct VocabularyTermCard: View {
         } else {
             // Light: a neutral sparkle; dark keeps the original accent asterisk.
             Image(systemName: colorScheme == .dark ? "asterisk" : "sparkles")
-                .font(.system(size: StudioTheme.Typography.iconRegular, weight: colorScheme == .dark ? .bold : .regular))
+                .font(.system(size: StudioTheme.Typography.iconRegular,
+                    weight: colorScheme == .dark ? .bold : .regular))
                 .foregroundStyle(colorScheme == .dark ? StudioTheme.warning : StudioTheme.textTertiary)
         }
     }

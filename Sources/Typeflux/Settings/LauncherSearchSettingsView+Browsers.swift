@@ -3,7 +3,7 @@ import SwiftUI
 
 extension LauncherSearchSettingsView {
     var browsersTab: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        Group {
             browserSection(kind: .tab)
             browserSection(kind: .bookmark)
             AgentSettingsSection(title: L("ask.browser.permissions"), footnote: L("ask.browser.permissionHint")) {
@@ -13,12 +13,12 @@ extension LauncherSearchSettingsView {
                             URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!
                         )
                 }
-                ModelRowDivider(leading: 66)
                 AgentSettingsActionRow(icon: "lock.open", title: L("launcher.search.fda.open")) {
                     NSWorkspace.shared.open(AskFullDiskAccess.settingsURL)
                 }
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("launcher.search.browsers")
     }
 
@@ -30,42 +30,39 @@ extension LauncherSearchSettingsView {
             AgentSettingsRow(icon: tabs ? "rectangle.on.rectangle" : "bookmark",
                              title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"),
                              subtitle: tabs ? "tab" : "bmk") {
-                Toggle("", isOn: browserBinding(tabs ? \.tabsEnabled : \.bookmarksEnabled))
-                    .labelsHidden().toggleStyle(.switch)
-                    .accessibilityLabel(L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"))
+                TypefluxSwitch(L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"),
+                               isOn: browserBinding(tabs ? \.tabsEnabled : \.bookmarksEnabled), labelsHidden: true)
                     .accessibilityIdentifier("launcher.search.browser.\(kind.rawValue).enabled")
             }
-            ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "magnifyingglass", title: L("ask.browser.direct"),
                              subtitle: L("ask.browser.directHint")) {
-                Toggle("", isOn: browserBinding(tabs ? \.directTabs : \.directBookmarks))
-                    .labelsHidden().toggleStyle(.switch).disabled(!enabled)
-                    .accessibilityLabel(L("ask.browser.direct"))
+                TypefluxSwitch(L("ask.browser.direct"),
+                               isOn: browserBinding(tabs ? \.directTabs : \.directBookmarks), labelsHidden: true)
+                    .disabled(!enabled)
             }
             ForEach(AskSearchBrowser.allCases) { browser in
-                ModelRowDivider(leading: 66)
                 AgentSettingsRow(icon: "globe", title: browser.title) {
-                    Toggle("", isOn: Binding(get: {
+                    TypefluxSwitch(browser.title, isOn: Binding(get: {
                         (tabs ? browserPreferences.tabBrowsers : browserPreferences.bookmarkBrowsers).contains(browser)
                     }, set: { value in
                         updateBrowsers { preferences in
                             var selected = tabs ? preferences.tabBrowsers : preferences.bookmarkBrowsers
                             selected.removeAll { $0 == browser }
-                            if value { selected.append(browser) }
+                            if value {
+                                selected.append(browser)
+                            }
                             if tabs {
                                 preferences.tabBrowsers = selected
                             } else {
                                 preferences.bookmarkBrowsers = selected
                             }
                         }
-                    }))
-                    .labelsHidden().toggleStyle(.switch).disabled(!enabled)
-                    .accessibilityLabel(browser.title)
-                    .accessibilityIdentifier("launcher.search.browser.\(kind.rawValue).\(browser.id)")
+                    }), labelsHidden: true)
+                        .disabled(!enabled)
+                        .accessibilityIdentifier("launcher.search.browser.\(kind.rawValue).\(browser.id)")
                 }
             }
             if !tabs {
-                ModelRowDivider(leading: 66)
                 bookmarkBrowserRow.disabled(!enabled)
             }
         }

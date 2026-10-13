@@ -20,9 +20,9 @@ struct AskImageSettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        TypefluxForm {
             AgentPaneHeader(symbol: "photo.badge.plus", title: L("imagegen.title")) {
-                AgentStatusBadge(level: model.status.level, label: model.status.label)
+                TypefluxStatus(model.status.label, tone: model.status.level.tone)
                 Toggle("", isOn: Binding(get: { model.enabled }, set: {
                     model.setEnabled($0)
                     onSaved(model.store.enabled, model.store.isReady)
@@ -32,11 +32,8 @@ struct AskImageSettingsView: View {
             }
             AgentSettingsSection(title: L("imagegen.connection")) {
                 connectionFields
-                ModelRowDivider(leading: 18)
                 modelField
-                ModelRowDivider(leading: 18)
                 advancedOptions
-                Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 actions
             }
         }
@@ -49,53 +46,43 @@ struct AskImageSettingsView: View {
         model.configuration.baseURL
     }
 
+    @ViewBuilder
     private var connectionFields: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            formRow(L("imagegen.provider"), required: true) {
-                TypefluxPopup(title: L("imagegen.provider"),
-                              options: AskImageProvider.allCases.map { (label: $0.title, value: $0) },
-                              selection: Binding(get: { model.configuration.provider }, set: {
-                                  showsKey = false
-                                  model.select($0)
-                              }))
-            }
-            ModelRowDivider(leading: 18)
-            formRow(L("imagegen.endpoint"), required: true) {
-                VStack(alignment: .leading, spacing: 8) {
-                    TextField("https://", text: Binding(get: { endpoint }, set: model.setEndpoint))
-                        .textFieldStyle(.roundedBorder)
-                    if model.configuration.provider == .bailian {
-                        HStack(spacing: 8) {
-                            regionButton("imagegen.beijing", endpoint: "https://dashscope.aliyuncs.com/api/v1")
-                            regionButton("imagegen.singapore", endpoint: "https://dashscope-intl.aliyuncs.com/api/v1")
-                        }
-                        hint("imagegen.bailian.help")
+        formRow(L("imagegen.provider"), required: true) {
+            TypefluxPopup(title: L("imagegen.provider"),
+                          options: AskImageProvider.allCases.map { (label: $0.title, value: $0) },
+                          selection: Binding(get: { model.configuration.provider }, set: {
+                              showsKey = false
+                              model.select($0)
+                          }))
+        }
+        formRow(L("imagegen.endpoint"), required: true) {
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("https://", text: Binding(get: { endpoint }, set: model.setEndpoint))
+                    .textFieldStyle(.roundedBorder)
+                if model.configuration.provider == .bailian {
+                    HStack(spacing: 8) {
+                        regionButton("imagegen.beijing", endpoint: "https://dashscope.aliyuncs.com/api/v1")
+                        regionButton("imagegen.singapore", endpoint: "https://dashscope-intl.aliyuncs.com/api/v1")
                     }
+                    hint("imagegen.bailian.help")
                 }
             }
-            ModelRowDivider(leading: 18)
-            formRow("API Key", required: true) { keyField }
         }
+        formRow("API Key", required: true) { keyField }
     }
 
     private var keyField: some View {
-        Group {
-            if showsKey {
-                TextField("API Key", text: $model.key)
-            } else {
-                SecureField("API Key", text: $model.key)
-            }
-        }
-        .textFieldStyle(.roundedBorder)
-        .overlay(alignment: .trailing) {
-            Button { showsKey.toggle() } label: {
-                Image(systemName: showsKey ? "eye.slash" : "eye")
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 26, height: 26).contentShape(Rectangle())
-            }
-            .buttonStyle(.plain).padding(.trailing, 3)
-            .help(L(showsKey ? "models.hideKey" : "models.showKey"))
-            .accessibilityLabel(L(showsKey ? "models.hideKey" : "models.showKey"))
+        HStack(spacing: 8) {
+            Group {
+                if showsKey {
+                    TextField("API Key", text: $model.key)
+                } else {
+                    SecureField("API Key", text: $model.key)
+                }
+            }.textFieldStyle(.roundedBorder).accessibilityLabel("API Key")
+            TypefluxIconButton(L(showsKey ? "models.hideKey" : "models.showKey"),
+                               systemImage: showsKey ? "eye.slash" : "eye") { showsKey.toggle() }
         }
     }
 
@@ -109,12 +96,10 @@ struct AskImageSettingsView: View {
                         Button(name) { model.configuration.model = name }
                     }
                 } label: {
-                    Image(systemName: "list.bullet").font(.system(size: SettingsControlMetrics.fontSize))
+                    Image(systemName: "list.bullet").font(.body)
                         .foregroundStyle(StudioTheme.textSecondary)
                 }
                 .menuStyle(.borderlessButton).menuIndicator(.hidden)
-                .frame(width: SettingsControlMetrics.height, height: SettingsControlMetrics.height)
-                .textFieldStyle(.roundedBorder)
                 .help(L("imagegen.models.suggestions"))
                 .accessibilityLabel(L("imagegen.models.suggestions"))
             }
@@ -122,28 +107,24 @@ struct AskImageSettingsView: View {
     }
 
     private var advancedOptions: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            AgentDisclosureButton(title: L("imagegen.advanced"), expanded: $showsAdvanced)
-            if showsAdvanced {
-                AgentFormRow(label: L("imagegen.size")) {
-                    TextField(L("imagegen.providerDefault"), text: $model.configuration.size)
+        DisclosureGroup(L("imagegen.advanced"), isExpanded: $showsAdvanced) {
+            AgentFormRow(label: L("imagegen.size")) {
+                TextField(L("imagegen.providerDefault"), text: $model.configuration.size).textFieldStyle(.roundedBorder)
+            }
+            if [.openAI, .openRouter].contains(model.configuration.provider) {
+                AgentFormRow(label: L("imagegen.quality")) {
+                    TextField(L("imagegen.providerDefault"), text: $model.configuration.quality)
                         .textFieldStyle(.roundedBorder)
                 }
-                if [.openAI, .openRouter].contains(model.configuration.provider) {
-                    AgentFormRow(label: L("imagegen.quality")) {
-                        TextField(L("imagegen.providerDefault"), text: $model.configuration.quality)
-                            .textFieldStyle(.roundedBorder)
-                    }
-                }
-                if model.configuration.provider == .openRouter {
-                    AgentFormRow(label: L("imagegen.routing")) {
-                        TextField(L("imagegen.routing.auto"), text: $model.configuration.routingProvider)
-                            .textFieldStyle(.roundedBorder)
-                    }
-                }
-                hint("imagegen.options.help")
             }
-        }.padding(.horizontal, 18).padding(.vertical, 12)
+            if model.configuration.provider == .openRouter {
+                AgentFormRow(label: L("imagegen.routing")) {
+                    TextField(L("imagegen.routing.auto"), text: $model.configuration.routingProvider)
+                        .textFieldStyle(.roundedBorder)
+                }
+            }
+            hint("imagegen.options.help")
+        }
     }
 
     private var actions: some View {
@@ -162,7 +143,7 @@ struct AskImageSettingsView: View {
                 }
                 Spacer(minLength: 8)
                 if model.hasChanges {
-                    Text(L("imagegen.unsaved")).font(.system(size: 12)).foregroundStyle(StudioTheme.warning)
+                    Text(L("imagegen.unsaved")).font(.subheadline).foregroundStyle(StudioTheme.warning)
                 }
                 Button(L("ask.models.save")) {
                     model.save()
@@ -176,15 +157,14 @@ struct AskImageSettingsView: View {
                     Image(systemName: model.noticeIsError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                     Text(notice).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
                 }
-                .font(.system(size: 12))
+                .font(.subheadline)
                 .foregroundStyle(model.noticeIsError ? StudioTheme.danger : StudioTheme.success)
             }
-        }.padding(.horizontal, 18).padding(.vertical, 12)
+        }
     }
 
     private func formRow(_ label: String, required: Bool = false, @ViewBuilder field: () -> some View) -> some View {
         AgentFormRow(label: label, required: required, field: field)
-            .padding(.horizontal, 18).padding(.vertical, 12)
     }
 
     private func regionButton(_ title: String, endpoint: String) -> some View {
@@ -194,7 +174,7 @@ struct AskImageSettingsView: View {
     }
 
     private func hint(_ key: String) -> some View {
-        Text(L(key)).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+        Text(L(key)).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
             .fixedSize(horizontal: false, vertical: true)
     }
 }

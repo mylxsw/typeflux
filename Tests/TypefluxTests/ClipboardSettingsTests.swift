@@ -1,6 +1,6 @@
 import AppKit
-@testable import Typeflux
 import SwiftUI
+@testable import Typeflux
 import XCTest
 
 /// Settings → Launcher → Clipboard: stored preferences, the settings model, and how the monitor,
@@ -205,9 +205,8 @@ final class ClipboardSettingsTests: XCTestCase {
     func testSettingsPaneDraws() throws {
         settings.pauseClipboardRecording(for: .oneHour)
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            let host = NSHostingView(rootView: ScrollView {
-                LauncherSettingsView(settings: settings, pane: .clipboard).padding(24)
-            }.frame(width: 760, height: 1100))
+            let host = NSHostingView(rootView: LauncherSettingsView(settings: settings, pane: .clipboard)
+                .padding(24).frame(width: 760, height: 1100))
             host.appearance = NSAppearance(named: appearance)
             host.frame = NSRect(x: 0, y: 0, width: 760, height: 1100)
             host.layoutSubtreeIfNeeded()
@@ -224,7 +223,8 @@ final class ClipboardSettingsTests: XCTestCase {
     @MainActor
     func testSettingsCanOpenAtTheClipboardPane() {
         let viewModel = StudioViewModel(
-            settingsStore: settings, historyStore: SQLiteHistoryStore(baseDir: directory.appendingPathComponent("history")),
+            settingsStore: settings,
+            historyStore: SQLiteHistoryStore(baseDir: directory.appendingPathComponent("history")),
             initialSection: .settings
         )
         XCTAssertNil(viewModel.launcherPaneRequest)
@@ -243,7 +243,10 @@ final class ClipboardSettingsTests: XCTestCase {
         let image = PasteboardContents(imageData: png)
         XCTAssertNil(ClipboardCaptureRules.capture(from: image, plainTextOnly: true))
         let imageWithURL = PasteboardContents(string: "https://example.com/a.png", imageData: png)
-        XCTAssertEqual(ClipboardCaptureRules.capture(from: imageWithURL, plainTextOnly: true), .text("https://example.com/a.png"))
+        XCTAssertEqual(
+            ClipboardCaptureRules.capture(from: imageWithURL, plainTextOnly: true),
+            .text("https://example.com/a.png")
+        )
         guard case .image = ClipboardCaptureRules.capture(from: imageWithURL) else {
             return XCTFail("Without the option the image wins")
         }
@@ -253,11 +256,18 @@ final class ClipboardSettingsTests: XCTestCase {
         final class Pasteboard: PasteboardReading {
             var changeCount = 0
             var contents = PasteboardContents()
-            func readContents() -> PasteboardContents { contents }
+            func readContents() -> PasteboardContents {
+                contents
+            }
         }
         let pasteboard = Pasteboard()
         let store = InMemoryClipboardHistoryStore()
-        var policy = ClipboardCapturePolicy(isRecording: false, plainTextOnly: true, maxItemCount: 200, maxImageBytes: 99)
+        var policy = ClipboardCapturePolicy(
+            isRecording: false,
+            plainTextOnly: true,
+            maxItemCount: 200,
+            maxImageBytes: 99
+        )
         let monitor = ClipboardMonitor(
             pasteboard: pasteboard, store: store, isEnabled: { true }, policy: { policy },
             sourceProvider: { nil }, suppression: ClipboardCaptureSuppression(gracePeriod: 0, uptime: { 0 })
@@ -310,7 +320,7 @@ final class ClipboardSettingsTests: XCTestCase {
         var ids = Set(store.items(limit: 10).map(\.id))
         XCTAssertFalse(ids.contains(old.id))
         XCTAssertTrue(ids.contains(middle.id))
-        XCTAssertFalse(FileManager.default.fileExists(atPath: try XCTUnwrap(old.imagePath)))
+        XCTAssertFalse(try FileManager.default.fileExists(atPath: XCTUnwrap(old.imagePath)))
 
         store.trim(toMaxImageBytes: 0)
         ids = Set(store.items(limit: 10).map(\.id))

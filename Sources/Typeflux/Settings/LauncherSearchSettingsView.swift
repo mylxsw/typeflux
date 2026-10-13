@@ -28,14 +28,19 @@ struct LauncherSearchSettingsView: View {
     @State var browserPreferences = AskBrowserSearchSettings()
     @State var status = AskFileIndexStatus()
     @State var hasFullDiskAccess = false
-    @State private var newExtension = ""
-    @State private var newFolderName = ""
+    @State private var permissionTask: Task<Void, Never>?
+    @State var newExtension = ""
+    @State var newFolderName = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            AgentPaneHeader(symbol: LauncherSettingsPane.search.symbol, title: LauncherSettingsPane.search.title)
-            StudioSegmentedControl(options: Tab.allCases.map { (label: $0.title, value: $0) }, selection: $tab)
-                .accessibilityIdentifier("launcher.search.tabs")
+        TypefluxForm {
+            Section {
+                TypefluxSettingsRow(LauncherSettingsPane.search.title) {
+                    TypefluxPopup(LauncherSettingsPane.search.title, selection: $tab, borderless: true) {
+                        ForEach(Tab.allCases) { Text($0.title).tag($0) }
+                    }.accessibilityIdentifier("launcher.search.tabs")
+                }
+            }
             switch tab {
             case .general: generalTab
             case .apps: appsTab
@@ -45,6 +50,7 @@ struct LauncherSearchSettingsView: View {
             }
         }
         .onAppear(perform: reload)
+        .onDisappear { permissionTask?.cancel() }
         .onReceive(NotificationCenter.default.publisher(for: AskFileIndex.didChange)) { _ in status = index.status }
     }
 
@@ -58,13 +64,11 @@ struct LauncherSearchSettingsView: View {
                     previewEnabled = $0; settings.askFilePreviewEnabled = $0
                 })).labelsHidden().toggleStyle(.switch).accessibilityLabel(L("launcher.search.preview"))
             }
-            ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "wand.and.stars", title: L("launcher.search.fuzzy"),
                              subtitle: L("launcher.search.fuzzy.subtitle"), subtitleLineLimit: nil) {
                 Toggle("", isOn: binding(\.fuzzy)).labelsHidden().toggleStyle(.switch)
                     .accessibilityLabel(L("launcher.search.fuzzy"))
             }
-            ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "list.number", title: L("launcher.search.limit"),
                              subtitle: L("launcher.search.limit.subtitle"), subtitleLineLimit: nil) {
                 TypefluxPopup(title: L("launcher.search.limit"),
@@ -72,16 +76,13 @@ struct LauncherSearchSettingsView: View {
                               selection: binding(\.limit))
                     .frame(width: 90)
             }
-            ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "photo", title: L("launcher.search.icons"),
                              subtitle: L("launcher.search.icons.subtitle"), subtitleLineLimit: nil) {
-                StudioSegmentedControl(
-                    options: AskLauncherSearchSettings.FileIcons.allCases.map { (
-                        label: L("launcher.search.icons.\($0.rawValue)"),
-                        value: $0
-                    ) },
-                    selection: binding(\.fileIcons), size: .compact
-                )
+                TypefluxSegmentedControl(L("launcher.search.icons"), selection: binding(\.fileIcons)) {
+                    ForEach(AskLauncherSearchSettings.FileIcons.allCases, id: \.self) {
+                        Text(L("launcher.search.icons.\($0.rawValue)")).tag($0)
+                    }
+                }
                 .accessibilityLabel(L("launcher.search.icons"))
             }
         }
@@ -89,10 +90,8 @@ struct LauncherSearchSettingsView: View {
             AgentSettingsRow(icon: "lock.shield", title: L("launcher.search.fda"),
                              subtitle: L("launcher.search.fda.subtitle"), subtitleLineLimit: nil) {
                 HStack(spacing: 10) {
-                    Circle().fill(hasFullDiskAccess ? StudioTheme.success : StudioTheme.textTertiary)
-                        .frame(width: 7, height: 7).accessibilityHidden(true)
-                    Text(L(hasFullDiskAccess ? "launcher.search.fda.granted" : "launcher.search.fda.missing"))
-                        .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    TypefluxStatus(L(hasFullDiskAccess ? "launcher.search.fda.granted" : "launcher.search.fda.missing"),
+                                   tone: hasFullDiskAccess ? .success : .warning)
                     if !hasFullDiskAccess {
                         Button(L("launcher.search.fda.open")) { NSWorkspace.shared.open(AskFullDiskAccess.settingsURL) }
                             .controlSize(.small)
@@ -105,7 +104,7 @@ struct LauncherSearchSettingsView: View {
     // MARK: - Applications
 
     @ViewBuilder private var appsTab: some View {
-        StudioCard(padding: 0) {
+        Section {
             AgentSettingsRow(icon: "square.grid.2x2", title: L("ask.settings.quick.apps.title")) {
                 Toggle("", isOn: Binding(get: { appsEnabled }, set: setAppsEnabled))
                     .labelsHidden().toggleStyle(.switch)
@@ -119,14 +118,12 @@ struct LauncherSearchSettingsView: View {
                 pathRow(root, icon: root.hasSuffix(".app") ? "app" : "folder") {
                     update { $0.appRoots.removeAll { $0 == root } }
                 }
-                ModelRowDivider(leading: 66)
             }
             AgentSettingsActionRow(icon: "plus", title: L("launcher.search.add")) {
                 if let paths = Self.pickFolders(allowApps: true) {
                     update { $0.appRoots = Self.adding(paths, to: $0.appRoots) }
                 }
             }
-            ModelRowDivider(leading: 66)
             AgentSettingsActionRow(icon: "arrow.counterclockwise", title: L("launcher.search.reset")) {
                 update { $0.appRoots = AskLauncherSearchSettings.defaultAppRoots }
             }
@@ -143,7 +140,7 @@ struct LauncherSearchSettingsView: View {
     // MARK: - Files
 
     @ViewBuilder private var filesTab: some View {
-        StudioCard(padding: 0) {
+        Section {
             AgentSettingsRow(icon: "doc.text.magnifyingglass", title: L("ask.settings.quick.files.title")) {
                 Toggle("", isOn: Binding(get: { filesEnabled }, set: setFilesEnabled))
                     .labelsHidden().toggleStyle(.switch)
@@ -155,18 +152,15 @@ struct LauncherSearchSettingsView: View {
                              footnote: L("launcher.search.files.footnote")) {
             if search.fileRoots.isEmpty {
                 AgentSettingsEmptyRow(text: L("launcher.search.files.empty"))
-                ModelRowDivider(leading: 18)
             }
             ForEach(search.fileRoots, id: \.self) { root in
                 pathRow(root, icon: "folder") { update { $0.fileRoots.removeAll { $0 == root } } }
-                ModelRowDivider(leading: 66)
             }
             AgentSettingsActionRow(icon: "plus", title: L("launcher.search.add")) {
                 if let paths = Self.pickFolders(allowApps: false) {
                     update { $0.fileRoots = Self.adding(paths, to: $0.fileRoots) }
                 }
             }
-            ModelRowDivider(leading: 66)
             HStack(spacing: 8) {
                 quickAdd(L("launcher.search.files.icloud"), "~/Library/Mobile Documents")
                 quickAdd(L("launcher.search.files.cloudStorage"), "~/Library/CloudStorage")
@@ -176,11 +170,9 @@ struct LauncherSearchSettingsView: View {
                 }
                 .controlSize(.small)
             }
-            .padding(.horizontal, 18).padding(.vertical, 10)
         }
         AgentSettingsSection(title: L("launcher.search.index")) {
             indexStatus
-            ModelRowDivider(leading: 18)
             HStack(spacing: 8) {
                 Button(L("launcher.search.index.rebuild")) { index.rebuild() }
                     .disabled(!filesEnabled || status.isBuilding)
@@ -189,7 +181,6 @@ struct LauncherSearchSettingsView: View {
                 Spacer()
             }
             .controlSize(.small)
-            .padding(.horizontal, 18).padding(.vertical, 10)
         }
     }
 
@@ -223,12 +214,11 @@ struct LauncherSearchSettingsView: View {
 
     private func statusCell(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-            Text(value).font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+            Text(title).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+            Text(value).font(.body).foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 18).padding(.vertical, 12)
     }
 
     private func quickAdd(_ title: String, _ path: String) -> some View {
@@ -236,108 +226,19 @@ struct LauncherSearchSettingsView: View {
             .controlSize(.small)
             .disabled(search.fileRoots.contains(path))
     }
-
-    // MARK: - Exclusions
-
-    @ViewBuilder private var excludeTab: some View {
-        AgentSettingsSection(title: L("launcher.search.exclude.paths"), detail: "\(search.excludedPaths.count)") {
-            ForEach(search.excludedPaths, id: \.self) { path in
-                pathRow(path, icon: "folder.badge.minus") { update { $0.excludedPaths.removeAll { $0 == path } } }
-                ModelRowDivider(leading: 66)
-            }
-            AgentSettingsActionRow(icon: "plus", title: L("launcher.search.add")) {
-                if let paths = Self.pickFolders(allowApps: false) {
-                    update { $0.excludedPaths = Self.adding(paths, to: $0.excludedPaths) }
-                }
-            }
-        }
-        tagSection(title: L("launcher.search.exclude.types"), values: search.excludedExtensions,
-                   placeholder: L("launcher.search.exclude.types.placeholder"), text: $newExtension,
-                   clean: AskLauncherSearchSettings
-                       .cleanExtension) { values in update { $0.excludedExtensions = values } }
-        tagSection(title: L("launcher.search.exclude.names"), values: search.excludedFolderNames,
-                   placeholder: L("launcher.search.exclude.names.placeholder"), text: $newFolderName,
-                   clean: AskLauncherSearchSettings
-                       .cleanFolderName) { values in update { $0.excludedFolderNames = values } }
-        AgentSettingsSection(title: L("launcher.search.exclude.more"),
-                             footnote: L("launcher.search.exclude.footnote")) {
-            AgentSettingsRow(icon: "eye.slash", title: L("launcher.search.hidden"),
-                             subtitle: L("launcher.search.hidden.subtitle"), subtitleLineLimit: nil) {
-                Toggle("", isOn: binding(\.includeHidden)).labelsHidden().toggleStyle(.switch)
-                    .accessibilityLabel(L("launcher.search.hidden"))
-            }
-            ModelRowDivider(leading: 66)
-            AgentSettingsActionRow(icon: "arrow.counterclockwise", title: L("launcher.search.reset")) {
-                update {
-                    $0.excludedPaths = AskLauncherSearchSettings.defaultExcludedPaths
-                    $0.excludedExtensions = []
-                    $0.excludedFolderNames = AskLauncherSearchSettings.defaultExcludedFolderNames
-                    $0.includeHidden = false
-                }
-            }
-        }
-    }
-
-    private func tagSection(title: String, values: [String], placeholder: String, text: Binding<String>,
-                            clean: @escaping (String) -> String?, save: @escaping ([String]) -> Void) -> some View {
-        AgentSettingsSection(title: title, detail: "\(values.count)") {
-            VStack(alignment: .leading, spacing: 10) {
-                if !values.isEmpty {
-                    AgentFlowLayout(spacing: 6) {
-                        ForEach(values, id: \.self) { value in
-                            HStack(spacing: 4) {
-                                Text(value).font(.system(size: 12, design: .monospaced))
-                                Button { save(values.filter { $0 != value }) } label: {
-                                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
-                                }
-                                .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
-                                .accessibilityLabel(L("ask.remove"))
-                            }
-                            .padding(.leading, 8).padding(.trailing, 6).frame(height: 22)
-                            .background(
-                                TypefluxColor.controlBackground.color,
-                                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            )
-                        }
-                    }
-                }
-                HStack(spacing: 8) {
-                    TextField(placeholder, text: text).textFieldStyle(.roundedBorder).frame(maxWidth: 240)
-                        .onSubmit { add(text, clean: clean, to: values, save: save) }
-                    Button(L("launcher.search.add")) { add(text, clean: clean, to: values, save: save) }
-                        .controlSize(.small)
-                        .disabled(clean(text.wrappedValue) == nil)
-                }
-            }
-            .padding(.horizontal, 18).padding(.vertical, 12)
-        }
-    }
-
-    private func add(
-        _ text: Binding<String>,
-        clean: (String) -> String?,
-        to values: [String],
-        save: ([String]) -> Void
-    ) {
-        guard let value = clean(text.wrappedValue) else { return }
-        if !values.contains(value) {
-            save(values + [value])
-        }
-        text.wrappedValue = ""
-    }
 }
 
 extension LauncherSearchSettingsView {
     // MARK: - Pieces
 
-    private func pathRow(_ path: String, icon: String, remove: @escaping () -> Void) -> some View {
+    func pathRow(_ path: String, icon: String, remove: @escaping () -> Void) -> some View {
         AgentSettingsRow(icon: icon, title: AskFileLabels.folder(path),
                          subtitle: path, subtitleLineLimit: 1) {
-            AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove"), action: remove)
+            TypefluxIconButton(L("ask.remove") + " " + path, systemImage: "minus", action: remove)
         }
     }
 
-    private func binding<Value>(_ keyPath: WritableKeyPath<AskLauncherSearchSettings, Value>) -> Binding<Value> {
+    func binding<Value>(_ keyPath: WritableKeyPath<AskLauncherSearchSettings, Value>) -> Binding<Value> {
         Binding(get: { search[keyPath: keyPath] }, set: { value in update { $0[keyPath: keyPath] = value } })
     }
 
@@ -371,8 +272,10 @@ extension LauncherSearchSettingsView {
         previewEnabled = settings.askFilePreviewEnabled
         status = index.status
         let check = fullDiskAccess
-        Task {
+        permissionTask?.cancel()
+        permissionTask = Task {
             let granted = await Task.detached(priority: .utility) { check() }.value
+            guard !Task.isCancelled else { return }
             hasFullDiskAccess = granted
         }
     }

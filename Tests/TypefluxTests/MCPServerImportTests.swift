@@ -5,7 +5,8 @@ final class MCPServerImportTests: XCTestCase {
     func testImportsClaudeDesktopConfiguration() throws {
         let json = """
         {"mcpServers": {
-          "notion": {"command": "npx", "args": ["-y", "@notionhq/notion-mcp-server", 3], "env": {"NOTION_TOKEN": "t", "PORT": 8080}},
+          "notion": {"command": "npx", "args": ["-y", "@notionhq/notion-mcp-server", 3], "env": {"NOTION_TOKEN": "t",
+              "PORT": 8080}},
           "linear": {"url": "https://mcp.linear.app/mcp", "headers": {"Authorization": "Bearer x"}},
           "broken": {"args": ["x"]},
           "text": "not an object"
@@ -25,7 +26,8 @@ final class MCPServerImportTests: XCTestCase {
     }
 
     func testImportsVSCodeAndBareMaps() throws {
-        let vscode = try MCPServerImport.parse(#"{"servers": {"a": {"type": "http", "url": " https://a.example/mcp "}}}"#)
+        let vscode = try MCPServerImport
+            .parse(#"{"servers": {"a": {"type": "http", "url": " https://a.example/mcp "}}}"#)
         XCTAssertEqual(vscode.servers.map(\.name), ["a"])
         guard case let .http(http) = vscode.servers[0].transport else { return XCTFail("Expected HTTP") }
         XCTAssertEqual(http.url, "https://a.example/mcp")
@@ -78,7 +80,13 @@ final class MCPServerImportTests: XCTestCase {
             let status = MCPServerStatusPresentation(enabled: enabled, result: result)
             XCTAssertEqual(status.state, expected)
             XCTAssertFalse(status.label.isEmpty)
-            _ = status.color
+            let expectedTone: TypefluxTone = switch expected {
+            case .disabled, .untested: .inactive
+            case .testing: .warning
+            case .connected: .success
+            case .failed: .danger
+            }
+            XCTAssertEqual(status.tone, expectedTone)
         }
         XCTAssertTrue(MCPServerStatusPresentation(enabled: true, result: .testing).isTesting)
         XCTAssertEqual(MCPServerStatusPresentation(enabled: true, result: .success(tools: [tool])).label,
