@@ -27,21 +27,22 @@ struct AskComposerChromeTests {
         #expect(workspace.placement == .inWindow)
     }
 
-    @Test func launcherFollowsSpotlightMetricsInBothStyles() {
+    @Test func launcherKeepsTheMainSizingInBothStyles() {
         for style in InterfaceStyle.allCases {
             let launcher = AskComposerChrome.of(launcher: true, style: style)
-            let height = TypefluxControlHeight.spotlightInput.value(for: style)
+            #expect(launcher.corner == TypefluxRadius.spotlightResults.value(for: style))
+            #expect(launcher.editorTopInset == 12)
+            #expect(launcher.editorBottomInset == 12)
             #expect(launcher.horizontalInset == 12)
-            #expect(launcher.corner == TypefluxRadius.spotlightInput.value(for: style))
-            #expect(AskMetrics.launcherHeaderHeight(editor: 32, style: style) == height)
-            #expect(AskMetrics.launcherHeaderHeight(editor: 33, style: style) == height)
-            #expect(AskMetrics.launcherHeaderHeight(editor: 60, style: style) == height + 26)
             #expect(launcher.footerHeight == 48)
-            #expect((launcher.footerHeight - AskMetrics.composerControlHeight) / 2 == 7)
-            let full = AskMetrics.launcherHeight(editor: 32, banners: 0, style: style)
-            let simple = AskLauncherWindowMode.simpleHeight(for: style)
-            let gap = TypefluxSpotlightMetrics.resultsSpacing(for: style) + (style == .classic ? 1 : 0)
-            #expect(full - simple == launcher.footerHeight + gap)
+            let layout = AskComposerLayout(launcher: true, compact: false, width: 680, availableHeight: nil)
+            #expect(layout.editorTopInset == launcher.editorTopInset)
+            #expect(layout.editorBottomInset == launcher.editorBottomInset)
+            #expect(AskMetrics.launcherHeaderHeight(editor: 32) == 58)
+            #expect(AskMetrics.launcherHeaderHeight(editor: 33) == 58)
+            #expect(AskMetrics.launcherHeaderHeight(editor: 60) == 84)
+            #expect(AskMetrics.launcherHeight(editor: 32, banners: 0) == 118)
+            #expect(AskLauncherWindowMode.simpleHeight == 70)
         }
     }
 

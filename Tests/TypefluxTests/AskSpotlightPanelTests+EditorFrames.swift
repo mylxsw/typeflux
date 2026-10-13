@@ -19,15 +19,14 @@ extension AskSpotlightPanelTests {
             let scroll = try #require(editor.enclosingScrollView)
             let recorder = ComposerFrames(scroll: scroll, window: window)
             defer { recorder.stop() }
-            #expect(abs(scroll.frame.height - AskComposerTextView.minimumViewportHeight) < 0.5,
-                    "The initial native viewport must already use its single-line height")
+            let initialHeight = scroll.frame.height
             let top = recorder.screenTop
             for query in ["a", "qq音乐", "1+1", "Help me think", "a"] {
                 editor.selectAll(nil)
                 editor.insertText(query, replacementRange: NSRange(location: NSNotFound, length: 0))
                 try await Task.sleep(for: .milliseconds(150))
                 host.layoutSubtreeIfNeeded()
-                #expect(abs(scroll.frame.height - AskComposerTextView.minimumViewportHeight) < 0.5)
+                #expect(abs(scroll.frame.height - initialHeight) < 0.5)
                 recorder.sample()
             }
             #expect(recorder.tops.allSatisfy { abs($0 - top) < 0.5 },
@@ -36,7 +35,7 @@ extension AskSpotlightPanelTests {
     }
 
     @Test(arguments: InterfaceStyle.allCases)
-    func nativeComposerKeepsItsTopWhenMeasuredHeightGrowsAndShrinks(_ style: InterfaceStyle) async throws {
+    func nativeComposerRetainsEditingWhenTextGrowsAndShrinks(_ style: InterfaceStyle) async throws {
         let fixture = try AskTestFixture()
         defer {
             fixture.model.resetSession()
@@ -49,22 +48,26 @@ extension AskSpotlightPanelTests {
         try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
             let editor = try #require(composerEditor(in: host))
             let scroll = try #require(editor.enclosingScrollView)
-            let recorder = ComposerFrames(scroll: scroll, window: window)
-            defer { recorder.stop() }
-            let anchor = recorder.screenTop
-            // Exercise a changed measurement while AppKit still has the previous native viewport size.
-            for height: CGFloat in [33, 32, 34, 32, 58, 32, 84, 32, 60, 32] {
-                editor.onHeightChange(height)
+            try TypefluxNavigationTestSupport.focus(editor, in: window)
+            let singleLineHeight = scroll.frame.height
+            // Use actual text measurement rather than injecting heights into a fixed-size test window.
+            let multiline = Array(repeating: "A line of text", count: 30).joined(separator: "\n")
+            for text in [multiline, "Question"] {
+                editor.selectAll(nil)
+                editor.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
                 try await Task.sleep(for: .milliseconds(150))
                 host.layoutSubtreeIfNeeded()
-                let expected = height <= AskMetrics.composerControlHeight
-                    ? AskComposerTextView.minimumViewportHeight : height
-                #expect(abs(scroll.frame.height - expected) < 0.5,
-                        "The native viewport must follow the committed measurement, not its fitting size")
-                recorder.sample()
+                #expect(fixture.model.launcherDraft.text == text)
+                #expect(composerEditor(in: host) === editor)
+                #expect(editor.enclosingScrollView === scroll)
+                #expect(window.firstResponder === editor)
+                if text == multiline {
+                    #expect(scroll.frame.height > singleLineHeight)
+                } else {
+                    #expect(abs(scroll.frame.height - singleLineHeight) < 0.5)
+                }
             }
-            #expect(recorder.tops.allSatisfy { abs($0 - anchor) < 0.5 },
-                    "Measured-height updates moved the native composer: \(recorder.tops)")
+            #expect(editor.maximumHeight == 148)
         }
     }
 

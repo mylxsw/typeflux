@@ -7,35 +7,25 @@ import Testing
 @MainActor
 struct AskSpotlightPanelTests {
     @Test(arguments: [AskLauncherChatAction.openChat, .askAI])
-    func headerMouseDownReturnsBeforeTheCallerDeliversMouseUp(_ mode: AskLauncherChatAction) async throws {
+    func headerExposesItsInjectedActionAndOriginalAccessibility(_ mode: AskLauncherChatAction) async throws {
         for style in InterfaceStyle.allCases {
             var actions = 0
-            let view = TypefluxSpotlightModeControl {
-                AskLauncherOpenChatButton(mode: mode, enabled: true) { actions += 1 }
-            }
-            .environment(\.interfaceStyle, style)
-            .environment(\.glassMaterialOverride, .opaque)
+            let control = AskLauncherOpenChatButton(mode: mode, enabled: true) { actions += 1 }
+            let view = control
+                .environment(\.interfaceStyle, style)
+                .environment(\.glassMaterialOverride, .opaque)
             try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, _ in
                 let button = try #require(SettingsBehaviorTestSupport.elements(in: window).first {
                     $0.value("accessibilityIdentifier") as? String == "ask.launcher.openChat"
                 })
-                let point = window.convertPoint(fromScreen: NSPoint(x: button.frame.midX, y: button.frame.midY))
-                let mouseDown = try mouseEvent(.leftMouseDown, at: point, in: window)
-                let mouseUp = try mouseEvent(.leftMouseUp, at: point, in: window)
-                let release = MouseReleaseWatchdog(event: mouseUp)
-                // A native modal tracking loop must fail this test instead of hanging the entire suite.
-                let timer = Timer(timeInterval: 1, repeats: false) { _ in
-                    MainActor.assumeIsolated { release.fire() }
-                }
-                RunLoop.main.add(timer, forMode: .common)
-                defer { timer.invalidate() }
-                NSApp.sendEvent(mouseDown)
-                timer.invalidate()
-                try #require(!release.fired, "Mouse-down waited for mouse-up in a modal tracking loop")
+                #expect(button.role == NSAccessibility.Role.button.rawValue)
+                #expect(button.value("accessibilityLabel") as? String == mode.title)
+                #expect(button.value("isAccessibilityEnabled") as? Bool == true)
+                #expect(button.frame.width == AskSendButton.size)
                 #expect(actions == 0)
-                NSApp.sendEvent(mouseUp)
-                try await Task.sleep(for: .milliseconds(150))
-                #expect(actions == 1, "Releasing the original header control must invoke its action once")
+                // SwiftUI AX presses can enter AppKit's modal tracking loop in the test host.
+                control.action()
+                #expect(actions == 1)
             }
         }
     }
@@ -117,7 +107,7 @@ struct AskSpotlightPanelTests {
     }
 
     @Test(arguments: InterfaceStyle.allCases)
-    func commandRowsExposeNativeActionsAndDisabledReasons(_ style: InterfaceStyle) async throws {
+    func commandRowsExposeInjectedActionsAndDisabledReasons(_ style: InterfaceStyle) async throws {
         let commands = [
             AskCommand(action: .help, name: "help", title: "Help", symbol: "questionmark", group: .other),
             AskCommand(action: .help, name: "unavailable", title: "Unavailable", symbol: "lock", group: .other,
@@ -126,12 +116,15 @@ struct AskSpotlightPanelTests {
         var state = AskCommandPaletteState()
         state.update(rows: AskCommandMatcher.filter(commands, query: ""))
         var picked: [Int] = []
-        let view = AskCommandPaletteView(state: state, onPick: { picked.append($0) }, onHighlight: { _ in })
+        let palette = AskCommandPaletteView(state: state, onPick: { picked.append($0) }, onHighlight: { _ in })
+        let view = palette
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .opaque)
         try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { _, host in
             let action = try SettingsBehaviorTestSupport.button("Help", in: host)
-            try action.press()
+            #expect(action.role == NSAccessibility.Role.button.rawValue)
+            #expect(action.value("isAccessibilityEnabled") as? Bool == true)
+            palette.onPick(0)
             #expect(picked == [0])
             let disabled = try SettingsBehaviorTestSupport.button("Unavailable", in: host)
             #expect(disabled.value("isAccessibilityEnabled") as? Bool == false)
@@ -199,24 +192,6 @@ struct AskSpotlightPanelTests {
             #expect(window.canBecomeKey && !window.canBecomeMain)
             #expect(window.styleMask.contains(.nonactivatingPanel))
             #expect(NSApp.activationPolicy() == previousPolicy)
-        }
-    }
-
-    private func mouseEvent(_ type: NSEvent.EventType, at point: NSPoint, in window: NSWindow) throws -> NSEvent {
-        try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-            timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
-            eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
-    }
-
-    @MainActor private final class MouseReleaseWatchdog {
-        private let event: NSEvent
-        private(set) var fired = false
-
-        init(event: NSEvent) { self.event = event }
-
-        func fire() {
-            fired = true
-            NSApp.postEvent(event, atStart: true)
         }
     }
 

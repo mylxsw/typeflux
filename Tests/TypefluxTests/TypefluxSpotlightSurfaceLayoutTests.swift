@@ -8,25 +8,22 @@ import Testing
 @MainActor
 struct TypefluxSpotlightSurfaceLayoutTests {
     @Test(arguments: InterfaceStyle.allCases)
-    func collapsedAndExpandedSurfacesHaveTheSpecifiedHeight(_ style: InterfaceStyle) {
-        for expanded in [false, true] {
-            let inputHeight = TypefluxControlHeight.spotlightInput.value(for: style)
-            let view = TypefluxSpotlightSurface(showsResults: expanded) {
-                Text("Search").frame(maxWidth: .infinity).frame(height: inputHeight)
-            } modes: {
-                TypefluxSpotlightModeControl {
-                    Text("Mode").frame(width: 30, height: 26)
+    func decorationPreservesTheSuppliedContentSize(_ style: InterfaceStyle) {
+        for editor: CGFloat in [32, 58, 148] {
+            for results: CGFloat in [0, 120, 300] {
+                let content = VStack(spacing: 0) {
+                    Text("Search").frame(height: editor).padding(.vertical, 12)
+                    Color.clear.frame(height: results)
+                    Text("Hints").frame(height: 48)
                 }
-            } results: {
-                Text("Results").frame(height: 120)
+                .frame(width: 600)
+                let plain = NSHostingView(rootView: content.environment(\.interfaceStyle, style))
+                let surface = NSHostingView(rootView: TypefluxSpotlightSurface { content }
+                    .environment(\.interfaceStyle, style)
+                    .environment(\.glassMaterialOverride, .opaque))
+                #expect(abs(surface.fittingSize.width - plain.fittingSize.width) < 0.5)
+                #expect(abs(surface.fittingSize.height - plain.fittingSize.height) < 0.5)
             }
-            .environment(\.interfaceStyle, style)
-            .environment(\.glassMaterialOverride, .opaque)
-            .frame(width: 600)
-            let host = NSHostingView(rootView: view)
-            let gap = TypefluxSpotlightMetrics.resultsSpacing(for: style) + (style == .classic ? 1 : 0)
-            let expected = inputHeight + (expanded ? 120 + gap : 0)
-            #expect(abs(host.fittingSize.height - expected) <= 1)
         }
     }
 
@@ -39,76 +36,42 @@ struct TypefluxSpotlightSurfaceLayoutTests {
     }
 
     @Test(arguments: InterfaceStyle.allCases)
-    func inputStaysAtTheTopWhileResultsAppearAndDisappear(_ style: InterfaceStyle) async throws {
-        let state = ResultState()
-        let view = ChangingResults(state: state)
-            .environment(\.interfaceStyle, style)
-            .environment(\.glassMaterialOverride, .opaque)
-        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
-            let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
-            func topInset() -> CGFloat {
-                let frame = window.convertToScreen(field.convert(field.bounds, to: nil))
-                return window.frame.maxY - frame.maxY
-            }
-            let anchor = topInset()
-            for height: CGFloat in [0, 80, 260, 0, 120] {
-                state.height = height
-                try await Task.sleep(for: .milliseconds(80))
-                host.layoutSubtreeIfNeeded()
-                #expect(abs(topInset() - anchor) < 0.5)
-                #expect(TypefluxNavigationTestSupport.searchField(in: host) === field,
-                        "Changing results must keep the existing native input")
-            }
+    func decorationPreservesNativeEditorFramesWhileContentAndWindowResize(_ style: InterfaceStyle) async throws {
+        let state = LayoutState()
+        let view = HStack(spacing: 0) {
+            ComposerContent(state: state, context: "baseline")
+            TypefluxSpotlightSurface { ComposerContent(state: state, context: "surface") }
         }
-    }
-
-    @Test(arguments: InterfaceStyle.allCases)
-    func inputKeepsItsHeightWhenResultsTemporarilyExceedTheViewport(_ style: InterfaceStyle) async throws {
-        let state = ResultState()
-        let view = ChangingResults(state: state)
-            .environment(\.interfaceStyle, style)
-            .environment(\.glassMaterialOverride, .opaque)
-            .frame(width: 600, height: 140, alignment: .top)
-            .clipped()
+        .environment(\.interfaceStyle, style)
+        .environment(\.glassMaterialOverride, .opaque)
         try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
-            let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
-            func screenFrame() -> NSRect { window.convertToScreen(field.convert(field.bounds, to: nil)) }
-            let anchor = screenFrame()
-            for height: CGFloat in [900, 0, 300, 1200, 40] {
-                state.height = height
-                try await Task.sleep(for: .milliseconds(80))
-                host.layoutSubtreeIfNeeded()
-                #expect(abs(screenFrame().maxY - anchor.maxY) < 0.5)
-                #expect(abs(screenFrame().height - anchor.height) < 0.5)
-                #expect(TypefluxNavigationTestSupport.searchField(in: host) === field)
+            func editor(_ context: String) throws -> AskComposerTextView.Editor {
+                try #require(TypefluxNavigationTestSupport.descendants(of: host)
+                    .compactMap { $0 as? AskComposerTextView.Editor }.first { $0.contextID == context })
             }
-        }
-    }
-
-    @Test(arguments: InterfaceStyle.allCases)
-    func inputStaysAtTheTopDuringNativeViewportResizeNotifications(_ style: InterfaceStyle) async throws {
-        let state = ResultState()
-        let view = ChangingResults(state: state)
-            .environment(\.interfaceStyle, style)
-            .environment(\.glassMaterialOverride, .opaque)
-        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
-            let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
-            let recorder = InputResizeRecorder(input: field)
-            let anchor = recorder.screenTop
-            defer { recorder.stop() }
-            for height: CGFloat in [200, 450, 180, 600, 220] {
-                state.height = height / 2
+            let baseline = try editor("baseline")
+            let decorated = try editor("surface")
+            let plainScroll = try #require(baseline.enclosingScrollView)
+            let surfaceScroll = try #require(decorated.enclosingScrollView)
+            for (editorHeight, resultsHeight): (CGFloat, CGFloat) in [
+                (32, 0), (32, 300), (58, 300), (148, 300), (32, 0), (32, 120)
+            ] {
+                state.editorHeight = editorHeight
+                state.resultsHeight = resultsHeight
+                let windowHeight = editorHeight + resultsHeight + 108
                 var frame = window.frame
-                frame.origin.y = frame.maxY - height
-                frame.size.height = height
+                frame.origin.y = frame.maxY - windowHeight
+                frame.size.height = windowHeight
                 window.setFrame(frame, display: false)
-                host.layoutSubtreeIfNeeded()
                 try await Task.sleep(for: .milliseconds(80))
-                recorder.sample()
+                host.layoutSubtreeIfNeeded()
+                let plainFrame = plainScroll.convert(plainScroll.bounds, to: nil)
+                let surfaceFrame = surfaceScroll.convert(surfaceScroll.bounds, to: nil)
+                #expect(abs(surfaceFrame.maxY - plainFrame.maxY) < 0.5)
+                #expect(abs(surfaceFrame.height - plainFrame.height) < 0.5)
+                #expect(try editor("baseline") === baseline)
+                #expect(try editor("surface") === decorated)
             }
-            #expect(!recorder.samples.isEmpty)
-            #expect(recorder.samples.allSatisfy { abs($0 - anchor) < 0.5 },
-                    "Input moved during native resizing: \(recorder.samples)")
         }
     }
 
@@ -117,68 +80,37 @@ struct TypefluxSpotlightSurfaceLayoutTests {
         for options in [TypefluxAccessibilityOptions(reduceTransparency: true),
                         TypefluxAccessibilityOptions(increasedContrast: true)] {
             let view = TypefluxSpotlightSurface {
-                Text("Search").frame(height: 56)
-            } modes: {
-                TypefluxSpotlightModeControl { Text("Mode") }
-            } results: {
-                Text("Results").frame(height: 100)
+                Text("Search").frame(height: 58)
             }
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .visualEffect)
             .environment(\.typefluxAccessibilityOptions, options)
             try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { _, host in
-                #expect(!descendants(host).contains { $0 is NSVisualEffectView })
+                #expect(!TypefluxNavigationTestSupport.descendants(of: host).contains { $0 is NSVisualEffectView })
             }
         }
     }
 
-    private func descendants(_ view: NSView) -> [NSView] {
-        [view] + view.subviews.flatMap(descendants)
+    @MainActor private final class LayoutState: ObservableObject {
+        @Published var editorHeight: CGFloat = 32
+        @Published var resultsHeight: CGFloat = 0
     }
 
-    @MainActor private final class InputResizeRecorder {
-        private let input: NSView
-        private var observers: [NSObjectProtocol] = []
-        private(set) var samples: [CGFloat] = []
-
-        init(input: NSView) {
-            self.input = input
-            var ancestor: NSView? = input
-            while let current = ancestor {
-                current.postsFrameChangedNotifications = true
-                observers.append(NotificationCenter.default.addObserver(
-                    forName: NSView.frameDidChangeNotification, object: current, queue: nil
-                ) { [weak self] _ in MainActor.assumeIsolated { self?.sample() } })
-                ancestor = current.superview
-            }
-        }
-
-        var screenTop: CGFloat {
-            input.window?.convertToScreen(input.convert(input.bounds, to: nil)).maxY ?? 0
-        }
-
-        func sample() { samples.append(screenTop) }
-        func stop() { observers.forEach(NotificationCenter.default.removeObserver) }
-    }
-
-    @MainActor private final class ResultState: ObservableObject {
-        @Published var height: CGFloat = 120
-    }
-
-    private struct ChangingResults: View {
-        @ObservedObject var state: ResultState
-        @Environment(\.interfaceStyle) private var style
+    private struct ComposerContent: View {
+        @ObservedObject var state: LayoutState
+        let context: String
 
         var body: some View {
-            TypefluxSpotlightSurface(showsResults: state.height > 0, fillsAvailableHeight: true) {
-                TypefluxNativeSearchField(text: .constant(""), focused: .constant(false), prompt: "Search",
-                                          identifier: "spotlight.test.input")
-                    .frame(height: TypefluxControlHeight.spotlightInput.value(for: style))
-            } modes: {
-                EmptyView()
-            } results: {
-                Text("Results").frame(height: state.height)
+            VStack(spacing: 0) {
+                AskComposerTextView(text: .constant("Question"), placeholder: "Search", contextID: context,
+                                    onSubmit: {})
+                    .frame(height: state.editorHeight)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
+                Color.clear.frame(height: state.resultsHeight)
+                Text("Hints").frame(height: 48)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
     }
 }

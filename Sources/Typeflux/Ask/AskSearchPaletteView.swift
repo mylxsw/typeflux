@@ -25,7 +25,7 @@ struct AskSearchPaletteView: View {
                 Color.black.opacity(0.18)
                     .contentShape(Rectangle())
                     .onTapGesture { onClose() }
-                card(listHeight: Self.listHeight(in: geometry.size.height, style: style))
+                card(listHeight: Self.listHeight(in: geometry.size.height))
                     .askPopIn(anchor: .top)
                     .padding(.horizontal, 12)
                     .padding(.top, Self.topInset(in: geometry.size.height))
@@ -46,46 +46,39 @@ struct AskSearchPaletteView: View {
         height < 500 ? AskMetrics.titleBarRowHeight : AskMetrics.titleBarRowHeight + 18
     }
 
-    static func listHeight(in height: CGFloat, style: InterfaceStyle = .liquidGlass) -> CGFloat {
-        let header = TypefluxControlHeight.spotlightInput.value(for: style)
-        let gap = TypefluxSpotlightMetrics.resultsSpacing(for: style) + (style == .classic ? 1 : 0)
-        return max(0, min(listMaxHeight, height - topInset(in: height) - header - gap - 12))
+    static func listHeight(in height: CGFloat) -> CGFloat {
+        max(0, min(listMaxHeight, height - topInset(in: height) - 55 - 12))
     }
 
     private func card(listHeight: CGFloat) -> some View {
         TypefluxSpotlightSurface(placement: .inWindow) {
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass").font(.title3)
-                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
-                    .accessibilityHidden(true)
-                TextField(L("ask.search.placeholder"), text: $query)
-                    .accessibilityIdentifier("ask.workspace.search.field")
-                    .textFieldStyle(.plain)
-                    .font(.title3)
-                    .foregroundStyle(TypefluxColor.label.color)
-                    .focused($focused)
-                    .onSubmit(run)
-            }
-            .padding(.horizontal, 16)
-            .frame(height: TypefluxControlHeight.spotlightInput.value(for: style))
-        } modes: {
-            TypefluxSpotlightModeControl(placement: .inWindow) {
-                Button(action: onClose) {
-                    Image(systemName: "xmark").font(.body)
-                        .frame(width: style == .classic ? 30 : 56,
-                               height: style == .classic ? 26 : 56)
-                        .contentShape(Circle())
+            VStack(spacing: 0) {
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass").font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                    TextField(L("ask.search.placeholder"), text: $query)
+                        .accessibilityIdentifier("ask.workspace.search.field")
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 16))
+                        .foregroundStyle(TypefluxColor.label.color)
+                        .focused($focused)
+                        .onSubmit(run)
+                    Text(verbatim: "esc")
+                        .font(.system(size: 10.5, weight: .medium))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                        .padding(.horizontal, 6)
+                        .frame(height: 18)
+                        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                        .onTapGesture { onClose() }
+                        .accessibilityLabel(L("ask.remove"))
+                        .accessibilityIdentifier("ask.workspace.search.close")
+                        .accessibilityAddTraits(.isButton)
                 }
-                .buttonStyle(AskPressableStyle(scale: 1))
-                .foregroundStyle(TypefluxColor.secondaryLabel.color)
-                .help("Esc")
-                .accessibilityLabel(L("ask.remove"))
-                .accessibilityIdentifier("ask.workspace.search.close")
+                .padding(.horizontal, 18)
+                .frame(height: 54)
+                Rectangle().fill(AskTheme.separator).frame(height: 1)
+                list(maxHeight: listHeight).background(TypefluxColor.contentBackground.color)
             }
-            .padding(.trailing, style == .classic ? 10 : 0)
-            .padding(.top, style == .classic ? 13 : 0)
-        } results: {
-            list(maxHeight: listHeight)
         }
         .frame(maxWidth: Self.width)
     }
@@ -108,8 +101,8 @@ struct AskSearchPaletteView: View {
                     }
                     if state.rows.isEmpty {
                         Text(L(conversations.isEmpty ? "ask.history.empty" : "ask.history.searchEmpty"))
-                            .font(.callout)
-                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(StudioTheme.textTertiary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 26)
                     }
@@ -126,8 +119,8 @@ struct AskSearchPaletteView: View {
 
     private func header(_ title: String) -> some View {
         Text(title)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(TypefluxColor.secondaryLabel.color)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(StudioTheme.textTertiary)
             .padding(.horizontal, 12)
             .padding(.top, 8)
             .padding(.bottom, 3)
@@ -137,15 +130,15 @@ struct AskSearchPaletteView: View {
         let highlighted = state.highlighted == index
         return Button { state.highlighted = index; run() } label: {
             HStack(spacing: 10) {
-                Image(systemName: symbol(row)).font(.body)
+                Image(systemName: symbol(row)).font(.system(size: 13))
                     .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                     .frame(width: 18)
-                Text(title(row)).font(.body)
+                Text(title(row)).font(.system(size: 13.5))
                     .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted))
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 if let trailing = trailing(row) {
-                    Text(trailing).font(.subheadline)
+                    Text(trailing).font(.system(size: 11))
                         .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                         .monospacedDigit()
                 }

@@ -261,9 +261,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             let frame = screen.visibleFrame
             let anchor = launcherAnchor(on: screen)
             panel.setFrame(AskLauncherPlacement.preferredFrame(on: frame, anchor: anchor,
-                           height: AskLauncherWindowMode.openingHeight(collapsed: model.launcherIsCollapsed,
-                                                                      cachedHeight: launcherHeight,
-                                                                      style: settings.interfaceStyle)),
+                           height: model.launcherIsCollapsed ? AskLauncherWindowMode.simpleHeight : launcherHeight),
                            display: false)
             launcherOpeningTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
         }

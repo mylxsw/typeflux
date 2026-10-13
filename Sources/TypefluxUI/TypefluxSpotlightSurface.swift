@@ -12,10 +12,7 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
     private let onEscape: () -> Void
     private let results: Results
     private let hints: Hints
-    private let customInput: AnyView?
-    private let customModes: AnyView?
-    private let showsResults: Bool
-    private let fillsAvailableHeight: Bool
+    private let usesSuppliedLayout: Bool
     private let placement: GlassPlacement
 
     public init(query: Binding<String>, mode: Binding<String>, focused: Binding<Bool>, prompt: String,
@@ -30,46 +27,39 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
         self.onEscape = onEscape
         self.results = results()
         self.hints = hints()
-        customInput = nil
-        customModes = nil
-        showsResults = true
-        fillsAvailableHeight = false
+        usesSuppliedLayout = false
         placement = .floating
     }
 
-    /// Rich composers retain their editor, action controls and result/footer routing on the same shared surface.
-    public init<Input: View, Modes: View>(showsResults: Bool = true, placement: GlassPlacement = .floating,
-                                          fillsAvailableHeight: Bool = false,
-                                          @ViewBuilder input: () -> Input, @ViewBuilder modes: () -> Modes,
-                                          @ViewBuilder results: () -> Results) where Hints == EmptyView {
+    /// Decorate an existing rich editor layout without supplying frames, spacing or size proposals.
+    public init(placement: GlassPlacement = .floating, @ViewBuilder content: () -> Results)
+        where Hints == EmptyView {
         _query = .constant("")
         _mode = .constant("")
         _focused = .constant(false)
         prompt = ""
-        self.modes = []
+        modes = []
         onEscape = {}
-        customInput = AnyView(input())
-        customModes = AnyView(modes())
-        self.results = results()
+        results = content()
         hints = EmptyView()
-        self.showsResults = showsResults
-        self.fillsAvailableHeight = fillsAvailableHeight
+        usesSuppliedLayout = true
         self.placement = placement
     }
 
-    private var usesCustomChrome: Bool { customInput != nil }
-
     @ViewBuilder public var body: some View {
-        if usesCustomChrome {
-            customPanel
-                .foregroundStyle(TypefluxColor.label.color)
-                .frame(maxWidth: .infinity, maxHeight: fillsAvailableHeight ? .infinity : nil, alignment: .top)
+        if usesSuppliedLayout {
+            results
+                .background {
+                    TypefluxGlassContainer(radius: .spotlightResults, placement: placement) { Color.clear }
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
         } else {
             nativePanel
         }
     }
 
-    // Keep the accepted native search hierarchy: its field editor and focus callbacks depend on it.
     private var nativePanel: some View {
         Group {
             if style == .classic {
@@ -99,53 +89,6 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
         .accessibilityIdentifier("typeflux.spotlight.surface")
         // Restore focus after the native views have reconciled the new mode.
         .onChange(of: mode) { _ in focused = true }
-    }
-
-    @ViewBuilder private var customPanel: some View {
-        if style == .classic {
-            VStack(spacing: 0) {
-                customHeader
-                if showsResults {
-                    VStack(spacing: 0) {
-                        Divider()
-                        results
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: fillsAvailableHeight ? .infinity : nil, alignment: .top)
-            .background { surface(.spotlightResults) }
-            .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
-        } else {
-            TypefluxGlassGroup(spacing: TypefluxSpotlightMetrics.resultsSpacing(for: style)) {
-                VStack(spacing: TypefluxSpotlightMetrics.resultsSpacing(for: style)) {
-                    customHeader
-                    if showsResults {
-                        results.background { surface(.spotlightResults) }
-                            .clipShape(RoundedRectangle(
-                                cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: fillsAvailableHeight ? .infinity : nil, alignment: .top)
-            }
-        }
-    }
-
-    private var customHeader: some View {
-        HStack(alignment: .top, spacing: 8) {
-            customInput.background { if style.usesGlass { surface(.spotlightInput) } }
-            customModes
-        }
-        // Result updates can temporarily exceed the viewport before the native panel grows.
-        // Reserve the editor's full height; only the results may yield to a smaller proposal.
-        .fixedSize(horizontal: false, vertical: true)
-        .layoutPriority(1)
-    }
-
-    /// Rich editors stay outside the material's hosting hierarchy during a resize.
-    private func surface(_ radius: TypefluxRadius) -> some View {
-        TypefluxGlassContainer(radius: radius, placement: placement) { Color.clear }
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
     }
 
     private var input: some View {

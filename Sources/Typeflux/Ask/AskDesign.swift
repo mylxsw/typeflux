@@ -128,6 +128,8 @@ enum AskMetrics {
     static let launcherWindowHeight: CGFloat = 600
     /// Breathing room around the launcher card.
     static let launcherGutter: CGFloat = 6
+    /// Compact corners for the floating launcher, shared by its glass and content clip.
+    static let launcherCardCorner: CGFloat = 16
     /// Height of every footer control: menus, context chips, microphone and send.
     static let composerControlHeight: CGFloat = 34
     /// Horizontal padding inside the footer's text menus (model, reasoning).
@@ -195,10 +197,9 @@ enum AskMetrics {
     /// `banners` counts the notice rows inside the card; each adds its height plus the gap above it.
     /// `suggestions` is the height of the launcher's home under the editor (`AskLauncherSuggestions`).
     static func launcherHeight(editor: CGFloat, banners: Int, suggestions: CGFloat = 0, attachments: Bool = false,
-                               attachmentHeight: CGFloat? = nil, style: InterfaceStyle = .liquidGlass) -> CGFloat {
-        let chrome = AskComposerChrome.of(launcher: true, style: style)
-        return launcherHeaderHeight(editor: editor, style: style) + chrome.footerHeight + launcherGutter * 2
-            + TypefluxSpotlightMetrics.resultsSpacing(for: style) + (style == .classic ? 1 : 0)
+                               attachmentHeight: CGFloat? = nil) -> CGFloat {
+        let chrome = AskComposerChrome.launcher
+        return launcherHeaderHeight(editor: editor) + chrome.footerHeight + launcherGutter * 2
             + CGFloat(banners) * (bannerHeight + bannerSpacing)
             + max(0, suggestions)
             + (attachments ? attachmentHeight.map { max(0, $0) + 10 } ?? attachmentStripHeight : 0)
@@ -207,9 +208,10 @@ enum AskMetrics {
     /// The attachment strip above the editor: one row of chips and its top padding.
     static let attachmentStripHeight: CGFloat = 40
 
-    /// The editor's first line follows Spotlight's 52pt Classic / 56pt Glass input.
-    static func launcherHeaderHeight(editor: CGFloat, style: InterfaceStyle = .liquidGlass) -> CGFloat {
-        let chrome = AskComposerChrome.of(launcher: true, style: style)
+    /// The launcher's first row: the editor beside the context token and the
+    /// microphone and send buttons. One line of text keeps it at 58pt.
+    static func launcherHeaderHeight(editor: CGFloat) -> CGFloat {
+        let chrome = AskComposerChrome.launcher
         return max(composerControlHeight, editor) + chrome.editorTopInset + chrome.editorBottomInset
     }
 }
@@ -237,13 +239,13 @@ struct AskComposerChrome: Equatable {
     /// in larger text, and the model and switches sit in a quieter bottom bar.
     static let launcher = AskComposerChrome(
         fill: AskTheme.launcherSurface,
-        corner: TypefluxRadius.spotlightInput.value(for: .liquidGlass),
+        corner: TypefluxRadius.spotlightResults.value(for: .liquidGlass),
         editorFontSize: 17,
         horizontalInset: 12,
         idleBorder: AskTheme.floatingBorder,
         glass: true,
-        editorTopInset: 11,
-        editorBottomInset: 11,
+        editorTopInset: 12,
+        editorBottomInset: 12,
         footerHeight: 48,
         footerLeadingInset: 7
     )
@@ -266,7 +268,9 @@ struct AskComposerChrome: Equatable {
         return chrome
     }()
 
-    /// The workspace card in Classic uses a solid surface and a tighter corner.
+    /// The workspace card in the classic style: a solid card with a hairline,
+    /// in the tighter corners of the flat design. The launcher keeps its shape
+    /// in both styles; only its material changes.
     static let classicWorkspace: AskComposerChrome = {
         var chrome = workspace
         chrome.corner = AskStyleMetrics.classic.composerCorner
@@ -278,10 +282,7 @@ struct AskComposerChrome: Equatable {
     static func of(launcher: Bool, style: InterfaceStyle = .liquidGlass) -> AskComposerChrome {
         if launcher {
             var chrome = Self.launcher
-            chrome.corner = TypefluxRadius.spotlightInput.value(for: style)
-            let inset = (TypefluxControlHeight.spotlightInput.value(for: style) - AskMetrics.composerControlHeight) / 2
-            chrome.editorTopInset = inset
-            chrome.editorBottomInset = inset
+            chrome.corner = TypefluxRadius.spotlightResults.value(for: style)
             return chrome
         }
         return style.usesGlass ? .workspace : .classicWorkspace
