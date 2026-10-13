@@ -11,7 +11,6 @@ enum AskLibrarySnapshot {
         _ = NSApplication.shared
         let content = view.environment(\.interfaceStyle, style)
             .environment(\.colorScheme, dark ? .dark : .light)
-            .environment(\.accessibilityReduceMotion, true)
             .environment(\.glassMaterialOverride, .opaque)
             .environment(\.typefluxAccessibilityOptions,
                          TypefluxAccessibilityOptions(reduceTransparency: true, increasedContrast: increasedContrast))
