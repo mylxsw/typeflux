@@ -878,7 +878,7 @@ final class AskConversationModel: ObservableObject {
     func submitDraft() {
         if consumeModeCommand(launcher: false) { return }
         normalizeScreenshotChoices()
-        guard !isLoadingAttachments(launcher: false) else { return }
+        guard !isLoadingAttachments(launcher: false), !isEditingQueued || draft.canSend else { return }
         if isEditingQueued { saveQueuedEdit(); return }
         if canQueue, let id = selected?.id {
             sendQueue.enqueue(draft, to: id)

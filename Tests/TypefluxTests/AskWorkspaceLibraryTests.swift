@@ -35,12 +35,29 @@ struct AskWorkspaceLibraryTests {
         #expect(AskMetrics.composerMaxWidth - chrome.horizontalInset * 2 == AskMetrics.transcriptMaxWidth)
     }
 
-    @Test func classicSurfacesUseTheirSystemColorRoles() {
-        #expect(AskClassic.canvas == Color(nsColor: .textBackgroundColor))
-        #expect(AskClassic.sidebar == TypefluxColor.sidebarBackground.color)
-        #expect(AskClassic.card == Color(nsColor: .controlBackgroundColor))
-        #expect(AskClassic.cardBorder == Color(nsColor: .separatorColor))
-        #expect(AskClassic.selection == Color(nsColor: .selectedContentBackgroundColor))
+    @Test(arguments: [false, true])
+    func classicSurfacesUseTheirSystemColorRoles(dark: Bool) throws {
+        let name: NSAppearance.Name = dark ? .darkAqua : .aqua
+        let appearance = try #require(NSAppearance(named: name))
+        let pairs: [(Color, TypefluxColor)] = [
+            (AskClassic.canvas, .contentBackground), (AskClassic.sidebar, .windowBackground),
+            (AskClassic.card, .controlBackground), (AskClassic.cardBorder, .separator),
+            (AskClassic.selection, .selection)
+        ]
+        for (actual, token) in pairs {
+            var actualRGB: NSColor?
+            var expectedRGB: NSColor?
+            appearance.performAsCurrentDrawingAppearance {
+                actualRGB = NSColor(cgColor: NSColor(actual).cgColor)?.usingColorSpace(.sRGB)
+                expectedRGB = NSColor(cgColor: token.nsColor.cgColor)?.usingColorSpace(.sRGB)
+            }
+            let value = try #require(actualRGB, "Unresolved Classic \(token.rawValue) in \(name)")
+            let expected = try #require(expectedRGB, "Unresolved system \(token.rawValue) in \(name)")
+            #expect(abs(value.redComponent - expected.redComponent) < 0.002)
+            #expect(abs(value.greenComponent - expected.greenComponent) < 0.002)
+            #expect(abs(value.blueComponent - expected.blueComponent) < 0.002)
+            #expect(abs(value.alphaComponent - expected.alphaComponent) < 0.002)
+        }
     }
 
     @Test func toolbarActionsKeepKeyboardAndAccessibilityMetadata() {

@@ -250,7 +250,16 @@ struct AskComposerResponsiveTests {
             }
             fixture.model.draft.text = ""
             try await settle(host)
-            #expect(try queueAction("ask.queue.save", in: window).value("accessibilityEnabled") as? Bool == false)
+            let disabledSave = try queueAction("ask.queue.save", in: window)
+            #expect(disabledSave.value("accessibilityEnabled") as? Bool == false)
+            #expect(disabledSave.frame.width >= 20 && disabledSave.frame.height >= 20)
+            #expect(window.frame.contains(disabledSave.frame), "Empty drafts keep the disabled save control visible")
+            #expect(disabledSave.label == L("ask.queue.save"))
+            try disabledSave.press()
+            fixture.model.submitDraft()
+            #expect(fixture.model.isEditingQueued && fixture.model.queuedMessages.first?.draft.text == "Queued request")
+            try await AskLibraryTestSupport.capture(window,
+                name: "queued-edit-empty-\(style.rawValue)-\(dark ? "dark" : "light")")
             fixture.model.draft.text = "Updated request"
             try await settle(host)
             try queueAction("ask.queue.save", in: window).press()
@@ -341,9 +350,13 @@ struct AskComposerResponsiveTests {
     }
 
     private func queueAction(_ identifier: String, in window: NSWindow) throws -> SettingsBehaviorTestSupport.Element {
-        let root = try accessibilityElement(identifier: identifier, in: window)
-        let element = try #require(SettingsBehaviorTestSupport.elements(in: root).first {
-            $0.role == NSAccessibility.Role.button.rawValue
+        // Include native controls even when SwiftUI omits disabled proxies from AX children.
+        let identified = AskWorkspaceTestAccessibility.elements(in: window).filter {
+            $0.value("accessibilityIdentifier") as? String == identifier
+        }
+        let candidates = identified.flatMap { [$0] + SettingsBehaviorTestSupport.elements(in: $0.object) }
+        let element = try #require(candidates.first {
+            $0.role == NSAccessibility.Role.button.rawValue && $0.frame.width > 0 && $0.frame.height > 0
         }, "Missing accessible button: \(identifier)")
         return SettingsBehaviorTestSupport.Element(object: element.object, window: window)
     }

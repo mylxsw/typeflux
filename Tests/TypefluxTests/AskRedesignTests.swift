@@ -171,9 +171,12 @@ struct AskRedesignLayoutTests {
             let token: TypefluxColor = style.usesGlass ? .sidebarBackground : .windowBackground
             var expected: NSColor?
             try #require(NSAppearance(named: appearance)).performAsCurrentDrawingAppearance {
-                expected = token.nsColor.usingColorSpace(.sRGB)
+                // Freeze the dynamic color in this appearance before color-space conversion.
+                expected = NSColor(cgColor: token.nsColor.cgColor)?.usingColorSpace(.sRGB)
             }
-            #expect(colorDistance(sidebar, try #require(expected)) < 0.006)
+            let expectedRGB = try #require(expected, "Cannot resolve \(token.rawValue) in \(appearance)")
+            #expect(colorDistance(sidebar, expectedRGB) < 0.006,
+                    "\(style.rawValue), \(appearance): sidebar \(sidebar) vs \(expectedRGB)")
             if style.usesGlass {
                 #expect(colorDistance(sidebar, transcript) > 0.01)
             } else {
@@ -198,20 +201,29 @@ struct AskRedesignLayoutTests {
 
     private func render<V: View>(_ view: V, size: NSSize,
                                  appearance: NSAppearance.Name) async throws -> NSBitmapImageRep {
+        let application = NSApplication.shared
+        let previousAppearance = application.appearance
+        let drawingAppearance = try #require(NSAppearance(named: appearance))
+        application.appearance = drawingAppearance
+        defer { application.appearance = previousAppearance }
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.isOpaque = false
         window.backgroundColor = .clear
-        window.appearance = NSAppearance(named: appearance)
+        window.appearance = drawingAppearance
         let hosting = NSHostingView(rootView: view)
+        hosting.appearance = drawingAppearance
         window.contentView = hosting
         window.orderFront(nil)
         defer { TypefluxNavigationTestSupport.closeWindow(window) }
         try await Task.sleep(for: .milliseconds(120))
         hosting.layoutSubtreeIfNeeded()
         let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
-        hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+        drawingAppearance.performAsCurrentDrawingAppearance {
+            hosting.displayIfNeeded()
+            hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+        }
         return bitmap
     }
 }

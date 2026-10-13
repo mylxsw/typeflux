@@ -161,7 +161,7 @@ struct AskQueueEditActions: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Button(action: onCancel) {
+            TypefluxButton(kind: .regular, action: onCancel) {
                 if compact {
                     Label(L("ask.queue.cancel"), systemImage: "xmark")
                         .labelStyle(.iconOnly)
@@ -170,10 +170,9 @@ struct AskQueueEditActions: View {
                     Text(L("ask.queue.cancel"))
                 }
             }
-            .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
             .accessibilityLabel(L("ask.queue.cancel"))
             .accessibilityIdentifier("ask.queue.cancel")
-            Button(action: onSave) {
+            TypefluxButton(kind: .primary, action: onSave) {
                 if compact {
                     Label(L("ask.queue.save"), systemImage: "checkmark")
                         .labelStyle(.iconOnly)
@@ -182,7 +181,6 @@ struct AskQueueEditActions: View {
                     Label(L("ask.queue.save"), systemImage: "checkmark")
                 }
             }
-            .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
             .disabled(!canSave)
             .accessibilityLabel(L("ask.queue.save"))
             .accessibilityIdentifier("ask.queue.save")

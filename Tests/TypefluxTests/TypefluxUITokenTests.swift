@@ -12,8 +12,9 @@ struct TypefluxUITokenTests {
             var sidebar: NSColor?
             var reading: NSColor?
             appearance.performAsCurrentDrawingAppearance {
-                sidebar = TypefluxColor.sidebarBackground.nsColor.usingColorSpace(.sRGB)
-                reading = TypefluxColor.contentBackground.nsColor.usingColorSpace(.sRGB)
+                // This token backs Liquid Glass's opaque sidebar, rather than Classic's window surface.
+                sidebar = NSColor(cgColor: TypefluxColor.sidebarBackground.nsColor.cgColor)?.usingColorSpace(.sRGB)
+                reading = NSColor(cgColor: TypefluxColor.contentBackground.nsColor.cgColor)?.usingColorSpace(.sRGB)
             }
             let left = try #require(sidebar)
             let right = try #require(reading)
