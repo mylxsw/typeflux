@@ -156,7 +156,7 @@ struct AskResponsiveWorkspaceTests {
         host.window.makeFirstResponder(editor)
         try changePresentation("ask.workspace.sidebar", in: host)
         try await settle(host.window)
-        #expect(host.defaults.bool(forKey: "ask.sidebarCollapsed"))
+        #expect(UserDefaults.standard.bool(forKey: "ask.sidebarCollapsed"))
 
         try await resize(host.window, to: NSSize(width: 440, height: 320))
         try changePresentation("ask.workspace.sidebar", in: host)
@@ -165,7 +165,7 @@ struct AskResponsiveWorkspaceTests {
         try key("\u{1b}", code: 53, in: host.window)
         try await settle(host.window)
         #expect(find(identifier: "ask.workspace.drawer.close", in: host.window) == nil)
-        #expect(host.defaults.bool(forKey: "ask.sidebarCollapsed"))
+        #expect(UserDefaults.standard.bool(forKey: "ask.sidebarCollapsed"))
 
         #expect(host.window.makeFirstResponder(editor))
         #expect(host.window.firstResponder === editor)
@@ -194,7 +194,7 @@ struct AskResponsiveWorkspaceTests {
         try await settle(host.window)
         #expect(find(label: L("ask.usage.close"), in: host.window) == nil)
         try await resize(host.window, to: Self.sizes[0])
-        #expect(host.defaults.bool(forKey: "ask.sidebarCollapsed"))
+        #expect(UserDefaults.standard.bool(forKey: "ask.sidebarCollapsed"))
         #expect(host.fixture.model.draft.text == "Keep this unfinished question")
     }
 
@@ -331,11 +331,11 @@ struct AskResponsiveWorkspaceTests {
         let presentation = host.controller.workspacePresentation
         switch identifier {
         case "ask.workspace.sidebar":
-            let collapsed = host.defaults.bool(forKey: "ask.sidebarCollapsed")
+            let collapsed = UserDefaults.standard.bool(forKey: "ask.sidebarCollapsed")
             let size = try #require(host.window.contentView).bounds.size
             presentation.toggleSidebar(layout: AskWorkspaceLayout(size: size, sidebarCollapsed: collapsed,
                 showsUsage: presentation.showsUsage), collapsed: collapsed, reduceMotion: false) {
-                host.defaults.set($0, forKey: "ask.sidebarCollapsed")
+                UserDefaults.standard.set($0, forKey: "ask.sidebarCollapsed")
             }
         case "ask.workspace.usage":
             presentation.toggleUsage(runId: host.fixture.model.selected?.run?.id, reduceMotion: false)
@@ -478,12 +478,9 @@ struct AskResponsiveWorkspaceTests {
         let profile = AuthState.shared.userProfile
         let loggedIn = AuthState.shared.isLoggedIn
         let collapsed = UserDefaults.standard.object(forKey: "ask.sidebarCollapsed")
-        let activationPolicy = NSApplication.shared.activationPolicy()
 
         init() {
-            _ = NSApplication.shared
-            NSApp.setActivationPolicy(.regular)
-            NSApp.activate(ignoringOtherApps: true)
+            TypefluxTestApplicationEnvironment.prepare()
             // SwiftUI builds its native accessibility tree only while an AX
             // client requests the enhanced interface; no system permission is changed.
             NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
@@ -500,7 +497,6 @@ struct AskResponsiveWorkspaceTests {
             AuthState.shared.isLoggedIn = loggedIn
             NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
             UserDefaults.standard.set(collapsed, forKey: "ask.sidebarCollapsed")
-            NSApp.setActivationPolicy(activationPolicy)
         }
     }
 }

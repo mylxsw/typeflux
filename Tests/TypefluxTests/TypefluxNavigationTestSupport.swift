@@ -127,10 +127,8 @@ enum TypefluxNavigationTestSupport {
             if let control = matching {
                 try SettingsBehaviorTestSupport.Element(object: control, window: window).press()
             } else {
-                // Route through this window's SwiftUI hosting tree, then consume delayed runloop stops
-                // just as pressThroughAccessibility does. Callers assert the actual command's effect.
-                defer { SettingsBehaviorTestSupport.drainPendingRunLoopStops() }
-                _ = window.performKeyEquivalent(with: event)
+                // A SwiftUI shortcut can synthesize a cell click. Invoke its bound model route instead.
+                throw AppKitTestActions.ModelActionRequired()
             }
             return
         }

@@ -20,9 +20,8 @@ struct AskConversationView: View {
     @State private var transcriptCoveredBottom: CGFloat = 0
     /// Files are dragged over the transcript; they attach to the draft when dropped.
     @State private var transcriptDropTargeted = false
-    /// Set by the toggle inside its animation. Driving the layout from the
-    /// `@AppStorage` value alone re-rendered outside the animation, so the
-    /// sidebar popped in and out instead of sliding.
+    /// The presentation's sidebar choice drives the animated layout; this preference
+    /// supplies the initial choice for future windows.
     @AppStorage("ask.sidebarCollapsed") private var storedSidebarCollapsed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.interfaceStyle) private var style

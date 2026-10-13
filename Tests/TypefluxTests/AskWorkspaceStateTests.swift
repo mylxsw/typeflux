@@ -44,6 +44,8 @@ struct AskWorkspaceStateTests {
         state.toggleUsage(runId: "run", reduceMotion: true)
         #expect(state.showsUsage)
         #expect(state.usageRunId == "run")
+        state.setUsage(true, reduceMotion: true)
+        #expect(state.usageRunId == "run")
         #expect(!state.showsSidebarDrawer && !state.isSearching)
         var closedWorkflow = false
         state.openSearch(reduceMotion: true) { closedWorkflow = true }
