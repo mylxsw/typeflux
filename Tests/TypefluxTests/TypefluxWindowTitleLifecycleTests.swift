@@ -50,6 +50,8 @@ struct TypefluxWindowTitleLifecycleTests {
         defer { window.contentView = nil; window.close() }
         #expect(window.title == "Settings")
         #expect(window.titleVisibility == .hidden)
+        window.title = ""
+        try await SettingsBehaviorTestSupport.wait { window.title == "Settings" }
         window.titleVisibility = .visible
         window.toolbar = NSToolbar(identifier: "TitleLifecycle")
         try await SettingsBehaviorTestSupport.wait { window.titleVisibility == .hidden }
@@ -57,9 +59,11 @@ struct TypefluxWindowTitleLifecycleTests {
         view.synchronize()
         #expect(window.title == "Account")
         window.contentView = nil
+        window.title = "Detached"
         window.titleVisibility = .visible
         try await Task.sleep(for: .milliseconds(80))
         #expect(window.titleVisibility == .visible)
+        #expect(window.title == "Detached", "title observation ends with the hosted view")
         #expect(window.contentView == nil)
     }
 }

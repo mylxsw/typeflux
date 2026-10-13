@@ -8,6 +8,26 @@ import Testing
 struct SettingsWindowNavigationTests {
     private typealias UI = SettingsBehaviorTestSupport
 
+    @Test func `pane row identifiers select nested cells despite status labels`() async throws {
+        try await UI.withFixture { _ in
+            var selection = AgentSettingsPane.overview
+            let list = SettingsPaneList(sections: AgentSettingsPane.sections,
+                                        selection: Binding(get: { selection }, set: { selection = $0 }),
+                                        status: { _ in AgentCapabilityStatus.mcpStatus(for: []) })
+            try await UI.withWindow(list, width: 260, height: 640) { window, host in
+                for pane in [AgentSettingsPane.skills, .memory, .mcpServers, .overview] {
+                    try await selectPane(pane, in: host)
+                    try await wait("Pane binding selected \(pane.id)", in: window) { selection == pane }
+                    let (table, row) = try #require(paneRow(pane, in: host))
+                    let identifier = "settings.pane.\(pane.id)"
+                    #expect(paneCellElements(in: table, row: row).contains {
+                        $0.value("accessibilityIdentifier") as? String == identifier
+                    })
+                }
+            }
+        }
+    }
+
     @Test func `all pages have native toolbar titles and keep sidebar order`() async throws {
         try await UI.withFixture { settings in
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -195,15 +215,20 @@ struct SettingsWindowNavigationTests {
 
     private func paneRow<Pane: SettingsPaneItem & CaseIterable>(_ pane: Pane, in host: NSView) -> (NSTableView, Int)? {
         host.layoutSubtreeIfNeeded()
+        let identifier = "settings.pane.\(pane.id)"
         let titles = Set(Pane.allCases.map(\.title))
         for table in UI.nativeViews(in: host).compactMap({ $0 as? NSTableView }) {
             guard table.window === host.window, !table.isHiddenOrHasHiddenAncestor else { continue }
             var rows: [String: Int] = [:]
             for index in 0 ..< table.numberOfRows {
-                guard let row = table.rowView(atRow: index, makeIfNecessary: true) else { continue }
-                let elements = UI.elements(in: row)
+                let elements = paneCellElements(in: table, row: index)
+                if elements.contains(where: { $0.value("accessibilityIdentifier") as? String == identifier }) {
+                    return (table, index)
+                }
                 for title in titles where elements.contains(where: {
-                    $0.text == title || $0.label == title || $0.label.hasPrefix(title + ", ")
+                    let text = $0.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let label = $0.label.trimmingCharacters(in: .whitespacesAndNewlines)
+                    return text == title || label == title || label.hasPrefix(title + ", ")
                 }) {
                     rows[title] = index
                 }
@@ -212,6 +237,25 @@ struct SettingsWindowNavigationTests {
             if rows.count == titles.count, let index = rows[pane.title] { return (table, index) }
         }
         return nil
+    }
+
+    private func paneCellElements(in table: NSTableView, row: Int) -> [UI.Element] {
+        // AppKit row views need not expose their hosting cells as AX children. Read the cells and
+        // their native subviews explicitly rather than relying on the row container's label.
+        var roots: [Any] = (0 ..< table.numberOfColumns).compactMap {
+            table.view(atColumn: $0, row: row, makeIfNecessary: true)
+        }
+        if let view = table.rowView(atRow: row, makeIfNecessary: true) { roots.append(view) }
+        let accessibilityRows = UI.Element(object: table, window: table.window)
+            .value("accessibilityRows") as? [Any] ?? []
+        if accessibilityRows.count == table.numberOfRows { roots.append(accessibilityRows[row]) }
+        var seen = Set<ObjectIdentifier>()
+        return roots.flatMap { root -> [UI.Element] in
+            let native = (root as? NSView).map { UI.nativeViews(in: $0) } ?? []
+            return (UI.elements(in: root) + native.flatMap { UI.elements(in: $0) }).filter {
+                seen.insert(ObjectIdentifier($0.object)).inserted
+            }
+        }
     }
 
     private func wait(_ description: String, in window: NSWindow, _ condition: () -> Bool) async throws {

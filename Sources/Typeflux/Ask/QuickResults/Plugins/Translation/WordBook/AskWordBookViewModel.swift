@@ -369,8 +369,10 @@ final class AskWordBookViewModel: ObservableObject {
     // MARK: - Changes
 
     func toggleStar(_ entry: AskWordBookEntry) {
-        let starred = !entry.isStarred
-        store.setStarred(starred, lookup: entry.lookup, at: now())
+        // A row or toolbar can still hold its previous value until SwiftUI redraws.
+        let current = isTransient(entry) ? entry : (store.entry(forKey: entry.key) ?? entry)
+        let starred = !current.isStarred
+        store.setStarred(starred, lookup: current.lookup, at: now())
         notice = L(starred ? "ask.wordBook.starred" : "ask.wordBook.unstarred", entry.headword)
         if isTransient(entry) {
             transient = nil
@@ -386,9 +388,11 @@ final class AskWordBookViewModel: ObservableObject {
             transient = nil
             return
         }
+        // Undo must restore the persisted entry, including changes since the control rendered.
+        guard let current = store.entry(forKey: entry.key) else { reload(); return }
         let index = entries.firstIndex { $0.key == entry.key }
         store.delete(keys: [entry.key])
-        deleted = [entry]
+        deleted = [current]
         notice = L("ask.wordBook.deleted", entry.headword)
         reload()
         if let index, !entries.isEmpty { selectedKey = entries[min(index, entries.count - 1)].key }

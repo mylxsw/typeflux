@@ -12,6 +12,7 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
         var title = ""
         var actionTitles: Set<String> = []
         private var active = false
+        private var titleObservation: NSKeyValueObservation?
         private var visibilityObservation: NSKeyValueObservation?
         private var toolbarObservation: NSKeyValueObservation?
         private var centerObservation: NSKeyValueObservation?
@@ -22,6 +23,7 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
             stop()
             guard let window else { return }
             active = true
+            titleObservation = window.observe(\.title) { [weak self] _, _ in self?.schedule() }
             visibilityObservation = window.observe(\.titleVisibility) { [weak self] _, _ in self?.schedule() }
             toolbarObservation = window.observe(\.toolbar) { [weak self] _, _ in self?.schedule() }
             synchronize()
@@ -70,6 +72,7 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
 
         func stop() {
             active = false
+            titleObservation = nil
             visibilityObservation = nil
             toolbarObservation = nil
             centerObservation = nil

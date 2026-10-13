@@ -19,7 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appearanceObserver: NSObjectProtocol?
 
     func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
-        // Typeflux stays available in the menu bar after its settings and other windows close.
+        // Library and settings windows can close while the menu bar app keeps running.
         false
     }
 

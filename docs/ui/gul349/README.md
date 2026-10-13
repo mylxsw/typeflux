@@ -98,7 +98,7 @@ Helper regressions cover sender identity, disabled controls, checkbox/switch sta
 
 Keyboard helpers dispatch the supplied window's existing search/table/keyboard monitor handlers rather than `NSApp.sendEvent`. Command-F explicitly assigns the owned search field as first responder; Escape exercises the same search bridge. Button shortcuts use native wiring when present; otherwise they call the supplied window's `performKeyEquivalent(with:)` and run the same drain in `defer`, since SwiftUI shortcuts need not appear on native button cells. Tests check actual effects, including two windows with identical sheet Cancel shortcuts. The vocabulary sheet test retains its prefilled-field/save/Escape checks and named readiness phases. No key-window readiness wait remains in these paths. SettingsPolish and TypefluxUIControlsBehaviorTests also use the shared helpers.
 
-The Agent/Launcher navigation test previously waited for pane Buttons, but main's `SettingsPaneList` renders `List(selection:)` rows. It now recognizes the complete pane roster within the owned native table and selects the matching row, using the same technique as the existing persona-list test. All waits in this case name the pane/phase; failures also record window title, native query, editor presence and table row counts. Search filtering, absence of inline fields, Escape clear/collapse and the Basics page's lack of search remain required.
+The Agent/Launcher navigation test previously waited for pane Buttons, but main's `SettingsPaneList` renders `List(selection:)` rows. The subsequent row-only lookup also failed: the acceptance owner reported native tables with 13 and 5 rows, while the first Skills lookup timed out. Pane rows now expose stable `settings.pane.<id>` identifiers. The driver inspects each native column's cell view, its native descendants and AX elements, plus index-compatible AX rows. Identifier matching takes precedence over the full-roster label fallback, so row-container labels and status/count formatting do not determine selection. A standalone pane-list regression covers Skills/Memory/MCP/Overview selection with status labels and verifies the identifiers. The integration case still waits for the window title after native selection; search filtering, absence of inline fields, Escape clear/collapse and Basics' lack of search remain required.
 
 Persona selectors have explicit accessibility containers so their identifiers survive SwiftUI's popup wrapper. The organization regression waits for both selectors, verifies positive frames entirely inside the host, and checks the vertical ordering used by main's redesigned usage strip instead of the previous horizontal layout.
 
@@ -106,7 +106,7 @@ The two-window Back test seeds each root's independent detail selection, checks 
 
 The New word regression follows removal of native toolbar action priorities in the preceding rework. Primary actions now retain high priority, including native groups whose action appears only in the group label. This keeps New word accessible in the default narrow window alongside the fixed voice-input tabs. The original VoiceInputNavigationTests assertion is unchanged; additional coverage checks a populated 900-point vocabulary window can open/cancel the add sheet and preserve its record. Title bridge metadata observations still stop on detach, and user-priority items are preserved.
 
-The shared application fixture retains its delegate/Dock isolation and repairs AX if an older helper disabled it. These are fixture contracts, not a termination workaround. Production close contains no added quit call; settings controller tests inject their Dock policy dependency. Main is `bcd424bd`, retaining both `imageSettingsModel:` and `initialHistoryID:` and the combined agent/launcher/vocabulary/history layout lists.
+The shared application fixture retains its delegate/Dock isolation and repairs AX if an older helper disabled it. These are fixture contracts, not a termination workaround. Production close contains no added quit call; settings controller tests inject their Dock policy dependency. Main is now `e9ebc63b` (#453). There is exactly one `Element.press()` implementation, in main's `SettingsBehaviorTestSupport+Press.swift`: it preserves main's identifier matching, window validation, generic controls and cell/matrix/segment handling, while retaining #455's AX fallback and deferred runloop drain. Main's cancellation check and title observation remain present. `withWindow` delegates to the shared `withWindows`/`HostedWindow` lifecycle, retaining process preparation and throwing/cancelled teardown. Both `imageSettingsModel:` and `initialHistoryID:` and the combined agent/launcher/vocabulary/history layout lists remain present.
 
 Start the latest recheck with the helper and all three reported regressions, including the persona identifier consumers:
 
@@ -121,6 +121,17 @@ rg -q 'Test "empty search adds the query through a sheet and keyboard dismissal 
 rg -q 'Test "history search filter navigation and deletion preserve a complete list" passed' artifacts/gul349-proxy-regressions.log &&
 rg -q 'Executed [0-9]+ tests?, with 0 failures' artifacts/gul349-proxy-regressions.log &&
 rg -q '✔ Test run with .* passed' artifacts/gul349-proxy-regressions.log
+```
+
+Then check the merged helper against #453's full Notes/Word Book/Library filter together with the settings regressions. The Notes mode-command tests still route through the owned `AskNotesWindow.performKeyEquivalent`; no global key-window dispatcher was reintroduced. Keep main's default popup-test opt-in guards.
+
+```bash
+set -o pipefail
+swift test --no-parallel --filter 'AskNotebook.*|AskNotes.*|AskWordBook.*|AskLibrary.*|TypefluxPopupMenuTests|LocalizationResourceTests|TypefluxWindowTitleLifecycleTests|ExclusiveUIStateLanguageTests|SettingsBehaviorTestSupportTests|TypefluxNavigationTestSupportTests|SettingsWindowNavigationTests|HistorySettingsBackButtonTests|VocabularyHistorySettingsTests' 2>&1 | tee artifacts/gul349-library-merged.log &&
+rg -q 'Test "pane row identifiers select nested cells despite status labels" passed' artifacts/gul349-library-merged.log &&
+rg -q 'Test "agent and launcher lists share toolbar search without inline fields" passed' artifacts/gul349-library-merged.log &&
+rg -q 'Executed [0-9]+ tests?, with 0 failures' artifacts/gul349-library-merged.log &&
+rg -q '✔ Test run with .* passed' artifacts/gul349-library-merged.log
 ```
 
 No builds, tests, screenshots or macrun were run for this rework. Static review covered macOS 13 APIs, actor/access levels, per-window target ownership, disabled state, menu/keyboard paths and teardown. Acceptance must confirm both XCTest's zero-failure result and `✔ Test run with … passed`, including the unchanged VoiceInput navigation regression. Screenshot and coverage samples below are historical.
@@ -144,7 +155,7 @@ Before the final Back toolbar correction, on macOS 26.6.2 with Swift 6.4 and SDK
 - Merged focused/snapshot coverage covered 547 of 574 changed executable production lines (95.3%); `coverage-summary.json` records that earlier sample, rather than coverage of the final head.
 - Strict SwiftLint on new/rewritten files and the changed shared library passed with zero diagnostics. Existing production files retained 29 legacy diagnostics versus 33 at the base, with no new diagnostics on changed lines. Two unchanged test diagnostics remain. Whole-repository SwiftLint was not clean; see `lint-summary.json`.
 
-After reading the centralization instruction, the in-flight focused rerun was cancelled and no further Mac work was started. Acceptance round 3 subsequently confirmed the Back action effects. At `00720dda`, the acceptance owner reported 154 XCTest tests with zero failures and a completed Swift Testing summary of 70 tests in 16 suites with 5 issues in the three cases above. The current test-driver changes remain unverified on Mac. `git diff --check` and localization-key/placeholder checks were performed locally before the original submission.
+After reading the centralization instruction, the in-flight focused rerun was cancelled and no further Mac work was started. Acceptance round 3 subsequently confirmed the Back action effects. At `3b3b4e6c`, the acceptance owner reported 154 XCTest tests with zero failures and a completed Swift Testing summary of 71 tests in 16 suites with 3 issues from the single pane-selection case. The current cell-view/identifier driver and shared-helper merge remain unverified on Mac. `git diff --check` and localization-key/placeholder checks were performed locally before the original submission.
 
 ## Self-review
 
