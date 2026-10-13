@@ -9,7 +9,6 @@ struct AskLibraryWindowLifecycleTests {
 
     @Test func closingTheLastWindowDoesNotRequestApplicationTermination() {
         #expect(!AppDelegate().applicationShouldTerminateAfterLastWindowClosed(NSApplication.shared))
-        #expect(!UITestApplicationLifetime().applicationShouldTerminateAfterLastWindowClosed(NSApplication.shared))
     }
 
     @Test func wordBookTitleIsSynchronousAndSurvivesHostingUpdates() async throws {

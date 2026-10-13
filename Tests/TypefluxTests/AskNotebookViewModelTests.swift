@@ -400,7 +400,9 @@ struct AskNotebookViewModelTests {
             try await TypefluxNavigationTestSupport.withWindow(AskNotesView(model: notes) {}
                 .environment(\.interfaceStyle, .classic)) { window, _ in
                 let field = try await AskLibraryTestSupport.search("Other", in: window)
-                try await SettingsBehaviorTestSupport.wait { field.stringValue.isEmpty }
+                try await SettingsBehaviorTestSupport.wait("Rejected Notes query restoration") {
+                    field.stringValue.isEmpty
+                }
                 #expect(notes.searchText.isEmpty && notes.selectedID == note.id)
                 #expect(notes.editing && notes.draftBody == "must survive" && notes.hasUnsavedDraft)
                 #expect(notes.notice == L("ask.notes.saveFailed"))

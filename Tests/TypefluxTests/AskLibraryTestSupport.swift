@@ -75,7 +75,9 @@ enum AskLibraryTestSupport {
         window.makeKeyAndOrderFront(nil)
         try TypefluxNavigationTestSupport.sendKey(3, characters: "f", modifiers: .command, to: window)
         let item = try #require(window.toolbar?.items.compactMap { $0 as? NSSearchToolbarItem }.first)
-        try await SettingsBehaviorTestSupport.wait { item.searchField.currentEditor() != nil }
+        try await SettingsBehaviorTestSupport.wait("Library search editor in window \(window.windowNumber)") {
+            item.searchField.currentEditor() != nil
+        }
         let editor = try #require(item.searchField.currentEditor() as? NSTextView)
         editor.insertText(query, replacementRange: NSRange(location: 0, length: editor.string.utf16.count))
         item.searchField.validateEditing()

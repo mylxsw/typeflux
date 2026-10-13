@@ -623,7 +623,7 @@ struct AskWordBookRenderTests {
     }
 
     @Test func wordBookStates() async throws {
-        _ = NSApplication.shared
+        TypefluxTestApplicationEnvironment.prepare()
         // Screenshots are in Chinese; plain runs keep the language, which other suites read while they wait.
         let previous = AppLocalization.shared.language
         let snapshots = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] != nil
@@ -678,9 +678,7 @@ struct AskWordBookRenderTests {
     }
 
     @Test func longWordCardsFitEveryWindowSizeAndStyle() async throws {
-        _ = NSApplication.shared
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        TypefluxTestApplicationEnvironment.prepare()
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previous) }

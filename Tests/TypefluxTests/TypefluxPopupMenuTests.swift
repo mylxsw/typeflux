@@ -9,8 +9,7 @@ final class TypefluxPopupMenuTests: XCTestCase {
         guard ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_MENU_TESTS"] == "1" else {
             throw XCTSkip("Run native menu tracking in a dedicated test process")
         }
-        let previousPolicy = activateTestApplication()
-        defer { NSApp.setActivationPolicy(previousPolicy) }
+        TypefluxTestApplicationEnvironment.prepare()
         for options in [TypefluxPopupMenuFixture.options, []] {
             let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 100),
                 styleMask: [.titled], backing: .buffered, defer: false)
@@ -42,8 +41,7 @@ final class TypefluxPopupMenuTests: XCTestCase {
         guard ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_MENU_TESTS"] == "1" else {
             throw XCTSkip("Run with TYPEFLUX_SETTINGS_MENU_TESTS=1 in a dedicated test process")
         }
-        let previousPolicy = activateTestApplication()
-        defer { NSApp.setActivationPolicy(previousPolicy) }
+        TypefluxTestApplicationEnvironment.prepare()
         let options = TypefluxPopupMenuFixture.options
         for studio in [false, true] {
             let state = TypefluxPopupMenuState()
@@ -90,13 +88,6 @@ final class TypefluxPopupMenuTests: XCTestCase {
                 return nil
             }
         }
-    }
-
-    private func activateTestApplication() -> NSApplication.ActivationPolicy {
-        _ = NSApplication.shared
-        let previous = NSApp.activationPolicy()
-        NSApp.setActivationPolicy(.regular)
-        return previous
     }
 
     private func descendants(_ view: NSView) -> [NSView] {

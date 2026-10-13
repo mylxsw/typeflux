@@ -30,7 +30,9 @@ struct ExclusiveUIStateTrait: SuiteTrait, TestTrait, TestScoping {
             let activity = process.beginActivity(options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical],
                                                  reason: "Running an AppKit UI test")
             defer { process.endActivity(activity) }
-            try await UITestApplicationLifetime.protecting(function)
+            // Prepare the host before any UI suite, including those with their own window fixtures.
+            await TypefluxTestApplicationEnvironment.prepare()
+            try await function()
         }
     }
 }

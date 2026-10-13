@@ -10,9 +10,7 @@ struct AskLibraryWindowSnapshotTests {
     @Test(arguments: InterfaceStyle.allCases, [false, true])
     func libraryStates(style: InterfaceStyle, dark: Bool) async throws {
         guard ProcessInfo.processInfo.environment["TYPEFLUX_LIBRARY_SNAPSHOTS"] != nil else { return }
-        let previousPolicy = NSApplication.shared.activationPolicy()
-        NSApp.setActivationPolicy(.regular)
-        defer { NSApp.setActivationPolicy(previousPolicy) }
+        TypefluxTestApplicationEnvironment.prepare()
         try await AskLibraryTestSupport.withLibraries(style: style, dark: dark) { libraries in
             let noteWindow = try #require(libraries.notes.window)
             let wordWindow = try #require(libraries.words.window)

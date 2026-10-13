@@ -84,7 +84,7 @@ struct AskNotebookVisualTests {
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
     func theWindowDrawsItsStates(style: InterfaceStyle) async throws {
-        _ = NSApplication.shared
+        TypefluxTestApplicationEnvironment.prepare()
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previous) }
@@ -151,8 +151,7 @@ struct AskNotebookVisualTests {
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
     func minimumWindowKeepsActionsAndSplitEditorReachable(style: InterfaceStyle) async throws {
-        _ = NSApplication.shared
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        TypefluxTestApplicationEnvironment.prepare()
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previous) }
@@ -197,9 +196,7 @@ struct AskNotebookVisualTests {
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
     func resizingKeepsNotesAndActionsInsideTheirColumns(style: InterfaceStyle) async throws {
-        _ = NSApplication.shared
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        TypefluxTestApplicationEnvironment.prepare()
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previous) }
@@ -252,9 +249,7 @@ struct AskNotebookVisualTests {
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
     func resultWindowKeepsItsIconToolbarReachableWhileResizing(style: InterfaceStyle) async throws {
-        _ = NSApplication.shared
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        TypefluxTestApplicationEnvironment.prepare()
         let recorder = AskResultServicesRecorder()
         let controller = AskResultWindowController()
         controller.defaults = UserDefaults(suiteName: "result-resizing-\(UUID().uuidString)")!
