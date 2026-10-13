@@ -145,8 +145,8 @@ struct WorkflowOutputActionsVisualTests {
         }
     }
 
-    @Test(arguments: [1042.0, 1220.0, 1450.0])
-    func `output form keeps the same insets as other steps`(width: Double) async throws {
+    @Test(arguments: [1042.0, 1220.0, 1450.0], [AskWorkflowEditorView.Panel.assistant, .test])
+    func `output form keeps the same insets as other steps`(width: Double, panel: AskWorkflowEditorView.Panel) async throws {
         try await chinese {
             let fixture = try AskWorkflowFixture()
             let model = try editor(fixture)
@@ -156,7 +156,7 @@ struct WorkflowOutputActionsVisualTests {
                                   styleMask: [.borderless], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: .darkAqua)
-            let hosting = NSHostingView(rootView: AskWorkflowEditorView(model: model, store: fixture.store))
+            let hosting = NSHostingView(rootView: AskWorkflowEditorView(model: model, store: fixture.store, panel: panel))
             window.contentView = hosting
             window.orderFront(nil)
             defer { TypefluxNavigationTestSupport.closeWindow(window) }
@@ -165,6 +165,7 @@ struct WorkflowOutputActionsVisualTests {
                 return AskWorkspaceTestAccessibility.frame(identifier: "ask.workflow.editor.output.add.onSuccess",
                                                             in: window) != nil
                     && AskWorkspaceTestAccessibility.frame(identifier: "ask.workflow.editor.center", in: window) != nil
+                    && AskWorkspaceTestAccessibility.frame(identifier: "ask.workflow.editor.sidePanel", in: window) != nil
             }
             let frame = try controlFrame(
                 identifier: "ask.workflow.editor.output.add.onSuccess", in: window
@@ -175,9 +176,13 @@ struct WorkflowOutputActionsVisualTests {
             #expect(abs(frame.minX - center.minX - 20) < 0.5)
             #expect(frame.maxX <= center.maxX - 20 + 0.5)
             #expect(center.maxX <= hosting.bounds.width - 340 + 0.5, "The assistant remains beside the form")
-            try await render(AskWorkflowEditorView(model: model, store: fixture.store),
+            let sidePanel = try controlFrame(identifier: "ask.workflow.editor.sidePanel", in: window)
+            #expect(center.maxX <= sidePanel.minX + 0.5, "The center and side panel must not overlap")
+            #expect(abs(sidePanel.width - 340) < 0.5)
+            #expect(sidePanel.maxX <= hosting.bounds.width + 0.5)
+            try await render(AskWorkflowEditorView(model: model, store: fixture.store, panel: panel),
                              size: NSSize(width: width, height: 900),
-                             name: "implemented-output-insets-\(Int(width)).png")
+                             name: "implemented-output-insets-\(panel.rawValue)-\(Int(width)).png")
         }
     }
 

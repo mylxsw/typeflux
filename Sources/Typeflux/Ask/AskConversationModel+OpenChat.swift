@@ -60,7 +60,9 @@ extension AskConversationModel {
                 if !transfers { launcherDraft.text = "" }
             }
             persistDrafts()
-            onShowConversation?()
+            // The handoff is complete. A newly created composer must be editable when
+            // its window lays out and assigns first responder, rather than waiting for defer.
+            isOpeningChat = false; onShowConversation?()
             return true
         } catch {
             confirm(L("ask.cache.failed"))

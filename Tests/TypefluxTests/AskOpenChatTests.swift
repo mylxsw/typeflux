@@ -6,6 +6,21 @@ import Testing
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct AskOpenChatTests {
+    @Test func presentationCallbackReceivesAnEditableCompletedHandoff() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession(); try? FileManager.default.removeItem(at: fixture.root) }
+        var presentations = 0
+        fixture.model.onShowConversation = { [weak model = fixture.model] in
+            presentations += 1
+            #expect(model?.isOpeningChat == false, "The presented composer must no longer be disabled by the handoff")
+        }
+        #expect(await fixture.model.openChatFromLauncher())
+        fixture.model.launcherDraft.text = "Transfer this question"
+        #expect(await fixture.model.openChatFromLauncher())
+        #expect(fixture.model.draft.text == "Transfer this question")
+        #expect(presentations == 2)
+    }
+
     @Test func `empty open keeps current conversation and ignores captured context`() async throws {
         let f = try AskTestFixture()
         await f.api.seed(.init(id: "old", title: "Old", revision: 1, updatedAt: Date(), messages: []))
