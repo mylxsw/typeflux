@@ -20,7 +20,11 @@ public struct TypefluxSpotlightModeSurface<Content: View>: View {
             let diameter = TypefluxControlHeight.spotlightModeButton.value(for: style)
             TypefluxGlassContainer(radius: .spotlightInput) {
                 content.frame(width: diameter, height: diameter)
-                    .background(selected ? TypefluxColor.accent.color : .clear, in: Circle())
+                    .background {
+                        Circle().fill(selected ? TypefluxColor.accent.color : .clear)
+                            .frame(width: diameter, height: diameter)
+                            .accessibilityHidden(true)
+                    }
             }
             .frame(width: diameter, height: diameter)
             .clipShape(Circle())

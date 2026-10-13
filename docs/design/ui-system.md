@@ -100,7 +100,7 @@ Native menus use the system metrics above. Custom composer menu cards use `Typef
 | --- | --- |
 | Settings, model/provider pages, vocabulary and history | `TypefluxWindow`, toolbar search and native grouped forms/lists/tables |
 | Notes, word book and Ask libraries | Native split navigation and solid detail panes |
-| Launcher and clipboard | `TypefluxSpotlightPanel`, navigation glass and solid result content |
+| Launcher and clipboard | `TypefluxSpotlightPanel`, glass input/mode/result navigation; solid reading previews and opaque Classic/accessibility fallbacks |
 | Workflow editor | `TypefluxWindow` with toolbar actions, native radio/segmented controls and solid code/form/test panes |
 | System monitor | Floating navigation shell with `TypefluxGlassContainer`, solid metrics and native mode/sort segments |
 | Onboarding | Grouped `TypefluxForm`, native choices/fields/actions and a navigation footer with accessibility fallback |

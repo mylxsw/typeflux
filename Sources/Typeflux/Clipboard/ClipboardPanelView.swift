@@ -21,6 +21,7 @@ struct ClipboardPanelView: View {
     @ObservedObject var layout = ClipboardPanelLayout()
     @State private var searchFocused = false
     @State private var hoveredIndex: Int?
+    @State private var showingNumberHints = false
     @State private var rowFrames = ClipboardRowFrames()
     private var effectiveStyle: InterfaceStyle { interfaceStyle ?? environmentStyle }
 
@@ -31,12 +32,13 @@ struct ClipboardPanelView: View {
                                  modes: ClipboardCategory.allCases.map { $0.spotlightMode },
                                  inputSystemImage: "clipboard", onEscape: model.cancel) {
             HStack(spacing: 0) {
-                list.frame(width: Self.width)
+                list.frame(width: Self.width - panelInset * 2)
                 if model.showsPreview || previewWidth > 0 { preview }
             }
         } hints: {
             footer
         }
+        .padding(panelInset)
         .frame(width: viewportWidth, height: Self.height)
         .allowsHitTesting(!isModal)
         .accessibilityHidden(isModal)
@@ -51,6 +53,8 @@ struct ClipboardPanelView: View {
             }
         }
         .environment(\.interfaceStyle, effectiveStyle)
+        .environment(\.askLauncherNumberHints, showingNumberHints)
+        .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
         .onAppear { searchFocused = !isModal }
         .onChange(of: focusRequest) { _ in searchFocused = !isModal }
         .onChange(of: isModal) { presented in searchFocused = !presented }
@@ -59,6 +63,8 @@ struct ClipboardPanelView: View {
     private var isModal: Bool {
         model.snippetDraft != nil || model.editingText != nil || model.pendingConfirmation != nil
     }
+
+    private var panelInset: CGFloat { TypefluxSpacing.small.value(for: effectiveStyle) }
 
     private var viewportWidth: CGFloat {
         layout.width ?? Self.size(showsPreview: model.showsPreview).width
@@ -70,6 +76,7 @@ struct ClipboardPanelView: View {
     private var preview: some View {
         let entry = model.previewEntry ?? model.selectedEntry
         return ClipboardPreviewPane(entry: entry, isMissing: entry.map(model.isMarkedMissing) ?? false)
+            .background(TypefluxColor.contentBackground.color)
             .overlay(alignment: .leading) {
                 Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 0.5)
             }

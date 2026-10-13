@@ -69,7 +69,8 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
             if style == .classic {
                 TypefluxGlassContainer(radius: .spotlightResults) {
                     VStack(spacing: 0) {
-                        TypefluxSpotlightHeader(input: { input }, modes: { modeButtons }).padding(.trailing, 10)
+                        TypefluxSpotlightHeader(focused: focused, input: { input }, modes: { modeButtons })
+                            .padding(.trailing, 10)
                         Divider()
                         resultPanel
                     }
@@ -78,7 +79,7 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
             } else {
                 TypefluxGlassGroup(spacing: 12) {
                     VStack(spacing: 12) {
-                        TypefluxSpotlightHeader(input: { input }, modes: { modeButtons })
+                        TypefluxSpotlightHeader(focused: focused, input: { input }, modes: { modeButtons })
                         TypefluxGlassContainer(radius: .spotlightResults) { resultPanel }
                             .clipShape(RoundedRectangle(
                                 cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
@@ -87,6 +88,7 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
             }
         }
         .foregroundStyle(TypefluxColor.label.color)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("typeflux.spotlight.surface")
         // Restore focus after the native views have reconciled the new mode.
         .onChange(of: mode) { _ in focused = true }
@@ -140,8 +142,9 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
 
     private var resultPanel: some View {
         VStack(spacing: 0) {
-            // Result content is always solid; glass belongs to the panel's navigation chrome.
-            results.background(TypefluxColor.contentBackground.color)
+            // Floating result rows are navigation. The enclosing glass container supplies the
+            // opaque Classic/accessibility fallback without covering Liquid Glass with a white canvas.
+            results
             Divider()
             hints
         }

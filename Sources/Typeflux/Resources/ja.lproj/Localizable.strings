@@ -3639,6 +3639,8 @@
 "ask.home.section.page" = "このウェブページについて";
 "ask.home.section.recent" = "会話を続ける";
 "ask.home.section.keywords" = "よく使う";
+"ask.home.more" = "その他";
+"ask.home.more.help" = "その他のキーワード";
 "ask.home.section.tryKeywords" = "キーワードを試す：入力してスペース";
 "ask.home.text.translate" = "翻訳";
 "ask.home.text.translate.detail" = "書式を保持";

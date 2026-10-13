@@ -86,6 +86,8 @@ struct TypefluxNativeSearchField: NSViewRepresentable {
         field.setAccessibilityIdentifier(identifier)
         field.isBezeled = !borderless
         field.drawsBackground = !borderless
+        field.focusRingType = borderless ? .none : .default
+        field.cell?.focusRingType = borderless ? .none : .default
         if let cell = field.cell as? NSSearchFieldCell {
             if borderless {
                 cell.searchButtonCell = nil

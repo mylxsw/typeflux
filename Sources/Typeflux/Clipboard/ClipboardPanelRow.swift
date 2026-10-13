@@ -17,6 +17,7 @@ struct ClipboardPanelRow: View, Equatable {
     var onPerform: (ClipboardEntryAction) -> Void = { _ in }
     var onHover: (Bool) -> Void = { _ in }
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.askLauncherNumberHints) private var showingNumberHints
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.entry == rhs.entry && lhs.index == rhs.index && lhs.isSelected == rhs.isSelected
@@ -43,8 +44,9 @@ struct ClipboardPanelRow: View, Equatable {
                     .foregroundStyle(isSelected ? rowText : TypefluxColor.secondaryLabel.color)
             }
             Text(number.map { "⌘\($0)" } ?? "")
-                .font(.footnote.monospacedDigit())
-                .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: isSelected, secondary: true))
+                .font(.footnote.weight(showingNumberHints ? .semibold : .regular).monospacedDigit())
+                .foregroundStyle(isSelected ? rowText : showingNumberHints
+                    ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
                 .frame(width: 24, alignment: .trailing)
                 .accessibilityHidden(number == nil)
         }

@@ -15,24 +15,32 @@ struct FloatingPanelFidelityTests {
         #expect(AskLauncherSpotlightLayout.chromeAdjustment(editor: 32, style: .classic, collapsed: false) == -6)
     }
 
-    @Test func clipboardModesStayEqualAndSeparateFromResults() async throws {
+    @Test(arguments: [GlassMaterial.opaque, .liquidGlass])
+    func clipboardModesStayEqualAndSeparateFromResults(_ material: GlassMaterial) async throws {
         let model = ClipboardPanelModel()
         model.reset(entries: [ClipboardTestSupport.entry(.text, text: "Text")])
         let view = ClipboardPanelView(model: model, focusRequest: 0)
             .environment(\.interfaceStyle, .liquidGlass)
-            .environment(\.glassMaterialOverride, .opaque)
+            .environment(\.glassMaterialOverride, material)
         try await TypefluxNavigationTestSupport.withWindow(view,
             size: ClipboardPanelView.size(showsPreview: false), nonactivating: true) { window, host in
+            @MainActor func modeButtons() -> [SettingsBehaviorTestSupport.Element] {
+                SettingsBehaviorTestSupport.elements(in: host).filter {
+                    ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("typeflux.spotlight.mode.") == true
+                        && ["AXButton", "AXRadioButton"].contains($0.role)
+                }
+            }
             for category in ClipboardCategory.allCases {
                 model.category = category
-                try await TypefluxNavigationTestSupport.wait("five equal mode buttons", in: window, host: host) {
-                    let modes = SettingsBehaviorTestSupport.elements(in: host).filter {
-                        ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("typeflux.spotlight.mode.") == true
-                    }
-                    return modes.count == 5 && modes.allSatisfy {
-                        abs($0.frame.width - 56) < 1 && abs($0.frame.height - 56) < 1
-                    }
-                }
+                try await TypefluxNavigationTestSupport.wait("five equal mode buttons", in: window, host: host,
+                    diagnostics: {
+                        modeButtons().map { "\($0.label): \($0.frame)" }.joined(separator: "; ")
+                    }, until: {
+                        let modes = modeButtons()
+                        return modes.count == 5 && modes.allSatisfy {
+                            abs($0.frame.width - 56) < 1 && abs($0.frame.height - 56) < 1
+                        }
+                    })
                 let buttons = try ClipboardCategory.allCases.map {
                     try SettingsBehaviorTestSupport.button($0.title, in: host)
                 }.sorted { $0.frame.minX < $1.frame.minX }
@@ -41,7 +49,12 @@ struct FloatingPanelFidelityTests {
                 }
                 let search = try #require(TypefluxNavigationTestSupport.searchField(in: host))
                 let fieldFrame = window.convertToScreen(search.convert(search.bounds, to: nil))
+                #expect(search.focusRingType == .none)
                 #expect(fieldFrame.maxX < buttons[0].frame.minX)
+                let viewport = window.convertToScreen(host.convert(host.bounds, to: nil))
+                #expect(buttons[0].frame.minX > viewport.minX)
+                #expect(try #require(buttons.last).frame.maxX <= viewport.maxX - 7)
+                #expect(buttons[0].frame.maxY <= viewport.maxY - 7)
             }
             model.category = .all
             try await TypefluxNavigationTestSupport.wait("persistent quick paste hint", in: window, host: host) {
@@ -51,6 +64,59 @@ struct FloatingPanelFidelityTests {
                 $0.value("accessibilityIdentifier") as? String == "clipboard.more"
             })
             #expect(!SettingsBehaviorTestSupport.contains(L("clipboard.action.pin"), in: host))
+        }
+    }
+
+    @Test func overflowFitsWholeChipsAndTracksKeyboardSelection() {
+        #expect(AskLauncherKeywordLayout.fitting(widths: [100, 100, 100, 100, 100],
+                                                availableWidth: 250, spacing: 6) == [0, 1])
+        #expect(AskLauncherKeywordLayout.fitting(widths: [100, 100, 100, 100, 100],
+                                                availableWidth: 250, spacing: 6, selected: 3) == [2, 3])
+        #expect(AskLauncherKeywordLayout.fitting(widths: [80, 90], availableWidth: 180, spacing: 6) == [0, 1])
+        #expect(AskLauncherKeywordLayout.fitting(widths: [400], availableWidth: 200, spacing: 6).isEmpty)
+        #expect(AskLauncherKeywordLayout.fitting(widths: [], availableWidth: 250, spacing: 6).isEmpty)
+        #expect(AskLauncherKeywordLayout.fitting(widths: [100], availableWidth: -1, spacing: 6).isEmpty)
+    }
+
+    @Test func nativeMenuTrackingSuspendsHomeKeysAndReleasesItsObservers() async throws {
+        let monitor = AskLauncherHomeKeyMonitor.MonitorView()
+        try await TypefluxNavigationTestSupport.withWindow(Color.clear) { _, host in
+            host.addSubview(monitor)
+            let menu = NSMenu()
+            let submenu = NSMenu()
+            #expect(monitor.capturesHomeKeys)
+            NotificationCenter.default.post(name: NSMenu.didBeginTrackingNotification, object: menu)
+            NotificationCenter.default.post(name: NSMenu.didBeginTrackingNotification, object: submenu)
+            #expect(!monitor.capturesHomeKeys)
+            NotificationCenter.default.post(name: NSMenu.didEndTrackingNotification, object: submenu)
+            #expect(!monitor.capturesHomeKeys)
+            NotificationCenter.default.post(name: NSMenu.didEndTrackingNotification, object: menu)
+            #expect(monitor.capturesHomeKeys)
+            monitor.removeFromSuperview()
+            NotificationCenter.default.post(name: NSMenu.didBeginTrackingNotification, object: menu)
+            #expect(monitor.capturesHomeKeys, "Detached monitors must stop observing native menus")
+        }
+    }
+
+    @Test func narrowKeywordRowOffersOverflowAndKeepsItsButtonsInsideTheViewport() async throws {
+        let keywords = AskOpenChatPlugin.keywords
+        let keyword = try #require(keywords.first)
+        let chips = (0 ..< 5).map { index in
+            var value = keyword
+            value.keyword = "chat\(index)"
+            return AskLauncherHome.Chip(keyword: value, title: "Long conversation keyword \(index)", symbol: "bubble.left")
+        }
+        let view = AskLauncherSuggestions(sections: [.keywords(chips: chips, teaching: true)],
+                                           highlighted: .constant(0), onPick: { _ in })
+        try await TypefluxNavigationTestSupport.withWindow(view, size: NSSize(width: 440, height: 100)) { window, host in
+            let more = try #require(SettingsBehaviorTestSupport.elements(in: window).first {
+                $0.value("accessibilityIdentifier") as? String == "ask.launcher.keywords.more"
+            })
+            let viewport = window.convertToScreen(host.convert(host.bounds, to: nil))
+            #expect(more.frame.maxX < viewport.maxX)
+            for element in SettingsBehaviorTestSupport.elements(in: host) where element.role == "AXButton" {
+                #expect(element.frame.minX >= viewport.minX && element.frame.maxX <= more.frame.minX)
+            }
         }
     }
 

@@ -194,27 +194,13 @@ struct AskLauncherSuggestions: View {
             header(L("ask.home.section.apps"), subtitle: nil)
             rowList(rows, items: items, numbers: numbers, current: current)
         case let .keywords(chips, _):
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(chips) { chip in
-                            let item = AskLauncherHome.Item.chip(chip)
-                            chipView(chip, highlighted: item.id == current)
-                                .fixedSize(horizontal: true, vertical: false)
-                                .id(item.id)
-                                .onHover { hoveredID = $0 ? item.id : (hoveredID == item.id ? nil : hoveredID) }
-                        }
-                    }
-                    .padding(.horizontal, Self.contentInset)
-                    .frame(height: Self.chipRowHeight)
-                }
-                .onChange(of: current) { id in
-                    if let id, id.hasPrefix("chip.") { proxy.scrollTo(id) }
-                }
-            }
-            .frame(height: Self.chipRowHeight)
-            .modifier(TypefluxHorizontalScrollFade())
-            .accessibilityIdentifier("ask.launcher.keywords")
+            AskLauncherKeywordRow(chips: chips, selectedID: current,
+                                  chipView: { chip, selected in chipView(chip, highlighted: selected) },
+                                  onPickOverflow: { chip in
+                                      let item = AskLauncherHome.Item.chip(chip)
+                                      if let index = items.firstIndex(of: item) { highlighted = index }
+                                      onPick(item)
+                                  })
         }
     }
 
@@ -350,84 +336,5 @@ struct AskLauncherSuggestions: View {
         .buttonStyle(.plain)
         .accessibilityLabel(chip.keyword.keyword + " " + chip.title)
         .accessibilityAddTraits(highlighted ? .isSelected : [])
-    }
-}
-
-/// The home's keys, read before the editor sees them: ↑/↓, ←/→ and ⌘1…⌘9.
-/// The handler returns false to let a key through to the editor.
-struct AskLauncherHomeKeyMonitor: NSViewRepresentable {
-    enum Key: Equatable {
-        case vertical(Int)
-        case horizontal(Int)
-        case number(Int)
-    }
-
-    var onKey: (Key) -> Bool
-
-    static let leftKeyCode: UInt16 = 123
-    static let rightKeyCode: UInt16 = 124
-
-    /// The key an event stands for, or nil for every other key.
-    static func key(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, characters: String?) -> Key? {
-        let modifiers = modifiers.intersection([.command, .option, .control, .shift])
-        if let digit = AskLauncherNumberShortcuts.number(keyCode: keyCode, modifiers: modifiers,
-                                                         characters: characters) {
-            return .number(digit)
-        }
-        guard modifiers.isEmpty else { return nil }
-        if let delta = AskArrowKeyMonitor.delta(keyCode: keyCode, modifiers: []) { return .vertical(delta) }
-        switch keyCode {
-        case leftKeyCode: return .horizontal(-1)
-        case rightKeyCode: return .horizontal(1)
-        default: return nil
-        }
-    }
-
-    final class MonitorView: NSView {
-        var onKey: (Key) -> Bool = { _ in false }
-        private var monitor: Any?
-
-        override func viewDidMoveToWindow() {
-            super.viewDidMoveToWindow()
-            removeMonitor()
-            guard window != nil else { return }
-            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-                guard let self, event.window === self.window,
-                      (self.window?.firstResponder as? NSTextView)?.hasMarkedText() != true,
-                      let key = AskLauncherHomeKeyMonitor.key(keyCode: event.keyCode, modifiers: event.modifierFlags,
-                                                              characters: event.charactersIgnoringModifiers)
-                else { return event }
-                if event.isARepeat, case .number = key { return nil }
-                return self.onKey(key) ? nil : event
-            }
-        }
-
-        override func removeFromSuperview() {
-            removeMonitor()
-            super.removeFromSuperview()
-        }
-
-        private func removeMonitor() {
-            if let monitor { NSEvent.removeMonitor(monitor) }
-            monitor = nil
-        }
-
-        deinit {
-            if let monitor { NSEvent.removeMonitor(monitor) }
-        }
-    }
-
-    func makeNSView(context _: Context) -> MonitorView {
-        let view = MonitorView()
-        view.onKey = onKey
-        return view
-    }
-
-    func updateNSView(_ view: MonitorView, context _: Context) {
-        view.onKey = onKey
-    }
-
-    static func dismantleNSView(_ view: MonitorView, coordinator _: ()) {
-        view.removeFromSuperview()
     }
 }

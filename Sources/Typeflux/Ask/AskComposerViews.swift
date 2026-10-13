@@ -1176,7 +1176,6 @@ struct AskComposer: View {
         if !launcherCollapsed {
             VStack(spacing: 0) {
                 supplementalContent
-                    .background(TypefluxColor.contentBackground.color)
                     .background(GeometryReader { geometry in
                         Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
                     })
@@ -1186,7 +1185,6 @@ struct AskComposer: View {
                     launcherResults
                 }
                 .frame(height: launcherResultsViewportHeight, alignment: .top)
-                .background(TypefluxColor.contentBackground.color)
                 .clipped()
                 launcherBar
             }
@@ -1198,7 +1196,7 @@ struct AskComposer: View {
                         .allowsHitTesting(false)
                 }
             }
-            .accessibilityIdentifier("ask.launcher.results")
+            .accessibilityElement(children: .contain)
         }
     }
 
@@ -1784,7 +1782,7 @@ struct AskComposer: View {
             }
         }
         .padding(.trailing, interfaceStyle == .classic ? TypefluxSpacing.small.value(for: interfaceStyle) : 0)
-        .accessibilityIdentifier("ask.launcher.header")
+        .accessibilityElement(children: .contain)
     }
 
     private var launcherModeDiameter: CGFloat {
