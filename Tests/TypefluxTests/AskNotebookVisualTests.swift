@@ -188,11 +188,9 @@ struct AskNotebookVisualTests {
         try await waitForUI { copied == expectedBody }
         #expect(copied == expectedBody, "the compact copy action remains clickable")
         model.notice = nil
-        // At minimum size the mode picker lives in the native More menu; its shortcut stays active.
-        _ = try #require(accessibilityElement("ask.notes.more", in: window))
-        try TypefluxNavigationTestSupport.sendKey(14, characters: "e", modifiers: [.command, .option], to: window)
+        try AskNotesToolbarTestSupport.chooseMode(.split, in: window)
         try await waitForUI { model.mode == .split }
-        #expect(model.mode == .split, "split mode stays reachable through its shortcut")
+        #expect(model.mode == .split, "the native More menu switches to split mode at minimum width")
         try await capture(window, "\(prefix)-12-minimum-split.png")
         try await checkSplitControls(window, model: model)
     }

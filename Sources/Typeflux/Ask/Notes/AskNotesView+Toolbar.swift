@@ -58,17 +58,23 @@ extension AskNotesView {
     }
 
     private var compactActions: some View {
-        Section {
-            ForEach(toolbarGroups.flatMap(\.actions).filter { $0.id != "notes.copy" }) { action in
-                Button(role: action.role, action: action.perform) {
-                    Label(action.title, systemImage: action.systemImage)
+        Group {
+            Section {
+                ForEach(toolbarGroups.flatMap(\.actions).filter {
+                    $0.id != "notes.copy" && $0.id != "notes.edit"
+                }) { action in
+                    Button(role: action.role, action: action.perform) {
+                        Label(action.title, systemImage: action.systemImage)
+                    }
+                    .disabled(!action.isEnabled)
                 }
-                .disabled(!action.isEnabled)
             }
             if !model.inTrash, !model.selecting {
-                Picker(L("ask.notes.edit"), selection: Binding(get: { model.mode }, set: model.setMode)) {
+                // Keep each mode directly reachable in the native menu at minimum window width.
+                Section {
                     ForEach(AskNotesViewModel.Mode.allCases, id: \.self) { mode in
-                        Text(L("ask.notes.mode." + mode.rawValue)).tag(mode)
+                        Button(L("ask.notes.mode." + mode.rawValue)) { model.setMode(mode) }
+                            .accessibilityIdentifier("ask.notes.mode." + mode.rawValue)
                     }
                 }
                 .disabled(model.selected == nil)

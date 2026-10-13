@@ -141,6 +141,12 @@ struct AskLibraryVisualConsistencyTests {
             try click(copy.frame, in: window)
             try await SettingsBehaviorTestSupport.wait { copied == expectedBody }
             #expect(copied?.isEmpty == false)
+            for mode in [AskNotesViewModel.Mode.split, .edit, .read] {
+                try AskNotesToolbarTestSupport.chooseMode(mode, in: window)
+                try await SettingsBehaviorTestSupport.wait { notes.mode == mode }
+                #expect(notes.mode == mode, "each native mode action remains reachable at minimum width")
+                try await Task.sleep(for: .milliseconds(200))
+            }
             _ = try await AskLibraryTestSupport.search("Reading", in: window)
             try await SettingsBehaviorTestSupport.wait { notes.searchText == "Reading" }
             let searchingCopy = try AskLibraryTestSupport.action("notes.copy", in: window)
