@@ -8,6 +8,30 @@ import Testing
 struct AskChatFidelityTests {
     private typealias UI = SettingsBehaviorTestSupport
 
+    @Test func paletteQueryAndKeyboardSelectionUpdateBeforeTheNextDraw() {
+        let model = AskPaletteModel()
+        model.update(conversations: [.init(id: "swift", title: "Swift actors", updatedAt: .now)],
+                     available: [.newConversation, .toggleSidebar])
+        model.move(1)
+        #expect(model.state.highlightedRow == .action(.toggleSidebar))
+        model.query = "swift"
+        #expect(model.state.highlightedRow?.id == "conversation:swift")
+        model.query = "no matching results"
+        model.move(-1)
+        #expect(model.state.highlightedRow == nil)
+        model.query = ""
+        model.move(-1)
+        #expect(model.state.highlightedRow?.id == "conversation:swift")
+        model.move(1)
+        #expect(model.state.highlightedRow == .action(.newConversation))
+        model.highlight(1)
+        #expect(model.state.highlightedRow == .action(.toggleSidebar))
+        model.highlight(99)
+        #expect(model.state.highlightedRow == .action(.toggleSidebar))
+        model.update(conversations: [], available: [])
+        #expect(model.state.rows.isEmpty && model.state.highlightedRow == nil)
+    }
+
     @Test(arguments: InterfaceStyle.allCases)
     func accountRowKeepsActionsWithoutPromotion(style: InterfaceStyle) async throws {
         try await UI.withFixture { settings in

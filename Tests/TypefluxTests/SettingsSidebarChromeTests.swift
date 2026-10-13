@@ -160,25 +160,52 @@ struct SettingsSidebarChromeTests {
                 window.setContentSize(size)
                 window.setFrameOrigin(NSPoint(x: 80, y: 80))
                 let host = try #require(window.contentView)
-                try await UI.wait {
-                    toolbarElements(in: window).contains {
-                        $0.value("accessibilityIdentifier") as? String == "history.filterMenu"
-                    }
+                try await UI.wait("Native history filter menu") {
+                    window.toolbar?.items.contains {
+                        $0.itemIdentifier.rawValue.contains("history.filterMenu")
+                    } == true
                 }
                 // The toolbar can appear before the asynchronous history rows are loaded.
-                try await UI.wait {
-                    UI.elements(in: host).contains {
-                        $0.role == NSAccessibility.Role.button.rawValue && $0.label == L("common.expand")
+                try await UI.wait("History navigation rows") {
+                    guard controller.viewModel?.displayedHistory.count == 8 else { return false }
+                    return UI.elements(in: host).contains {
+                        $0.role == NSAccessibility.Role.button.rawValue
+                            && ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("history.open.") == true
                     }
                 }
                 try await Task.sleep(for: .milliseconds(180))
                 let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
-                for label in [L("history.action.exportMarkdown"), L("common.clear"), L("common.expand")] {
+                for label in [L("history.action.exportMarkdown"), L("common.clear")] {
                     let button = try #require(toolbarElements(in: window).first {
                         $0.role == NSAccessibility.Role.button.rawValue && $0.label == label
                     })
                     #expect(button.frame.width >= 20)
                     #expect(button.frame.minX >= bounds.minX - 1 && button.frame.maxX <= bounds.maxX + 1)
+                }
+                let row = try #require(UI.elements(in: host).first {
+                    $0.role == NSAccessibility.Role.button.rawValue
+                        && ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("history.open.") == true
+                })
+                #expect(row.frame.width >= 20 && bounds.contains(row.frame))
+                if size.width == 1100 {
+                    try row.press()
+                    try await UI.wait("History detail navigation") {
+                        toolbarElements(in: window).contains {
+                            ($0.object as? NSButton)?.isEnabled == true
+                                && $0.value("accessibilityIdentifier") as? String
+                                    == HistorySettingsBackButton.accessibilityIdentifier
+                        }
+                    }
+                    let back = try #require(toolbarElements(in: window).first {
+                        $0.value("accessibilityIdentifier") as? String
+                            == HistorySettingsBackButton.accessibilityIdentifier
+                    })
+                    try back.press()
+                    try await UI.wait("Returning to history navigation rows") {
+                        UI.elements(in: host).contains {
+                            ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("history.open.") == true
+                        }
+                    }
                 }
                 if size.width < 1040 { try TypefluxNavigationTestSupport.toggleSidebar(in: window) }
                 try await UI.wait { UI.contains(L("ask.local.identity"), in: window) }
@@ -196,10 +223,10 @@ struct SettingsSidebarChromeTests {
             defer { lightWindow.close() }
             lightWindow.setContentSize(NSSize(width: 720, height: 500))
             lightWindow.setFrameOrigin(NSPoint(x: 80, y: 80))
-            try await UI.wait {
-                toolbarElements(in: lightWindow).contains {
-                    $0.value("accessibilityIdentifier") as? String == "history.filterMenu"
-                }
+            try await UI.wait("Light history filter menu") {
+                lightWindow.toolbar?.items.contains {
+                    $0.itemIdentifier.rawValue.contains("history.filterMenu")
+                } == true
             }
             #expect(lightWindow.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .aqua)
             try await capture(lightWindow, name: "settings-history-\(style.rawValue)-720-light")

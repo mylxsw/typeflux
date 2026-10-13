@@ -32,7 +32,6 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private(set) var workspacePresentation = AskWorkspaceState()
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
-    private var conversationFocusTask: Task<Void, Never>?
     private(set) var conversationRefreshTask: Task<Void, Never>?
     private(set) var maintenanceTasks: [Task<Void, Never>] = []
     private var clickMonitor: Any?
@@ -514,7 +513,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
         conversationWindow.makeKeyAndOrderFront(nil)
         focusEditor(in: conversationWindow)
-        restoreConversationFocus(in: conversationWindow)
+        workspacePresentation.focusComposer()
         conversationRefreshTask = Task { await model.refreshHistory(); await model.loadSavedChatDrafts() }
     }
 
@@ -537,7 +536,6 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
         }
         model.voiceInput.cancel()
-        if sender === conversationWindow { conversationFocusTask?.cancel() }
         sender.orderOut(nil)
         dockVisibility.windowDidHide(sender)
         return false
@@ -545,24 +543,13 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
-        if window === conversationWindow { conversationFocusTask?.cancel() }
         dockVisibility.windowDidHide(window)
     }
 
-    /// Opening from the launcher temporarily disables the editor. Focus after that handoff settles.
-    private func restoreConversationFocus(in window: NSWindow) {
-        conversationFocusTask?.cancel()
-        conversationFocusTask = Task { [weak self, weak window] in
-            await Task.yield()
-            for _ in 0 ..< 30 {
-                guard !Task.isCancelled, let self, let window, self.conversationWindow === window,
-                      window.isVisible, window.attachedSheet == nil,
-                      !self.workspacePresentation.isSearching, !self.workspacePresentation.showsSidebarDrawer
-                else { return }
-                if window.isKeyWindow, !self.model.isOpeningChat, self.focusEditor(in: window) { return }
-                try? await Task.sleep(for: .milliseconds(10))
-            }
-        }
+    func windowDidDeminiaturize(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === conversationWindow,
+              !workspacePresentation.isSearching, !workspacePresentation.showsSidebarDrawer else { return }
+        workspacePresentation.focusComposer()
     }
 
     private func showControl(_ active: Bool) {

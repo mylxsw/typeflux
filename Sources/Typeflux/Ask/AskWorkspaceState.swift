@@ -8,6 +8,9 @@ final class AskWorkspaceState: ObservableObject {
     @Published var sidebarChoice: Bool?
     @Published var showsSidebarDrawer = false
     @Published var isSearching = false
+    @Published private(set) var composerFocusRequestID: UUID?
+
+    func focusComposer() { composerFocusRequestID = UUID() }
 
     init(showsUsage: Bool = false, runId: String? = nil) {
         self.showsUsage = showsUsage
@@ -58,5 +61,16 @@ final class AskWorkspaceState: ObservableObject {
             closeDrawer(reduceMotion: reduceMotion, closeWorkflow: closeWorkflow)
             isSearching = true
         }
+    }
+}
+
+private struct AskComposerFocusRequestKey: EnvironmentKey {
+    static let defaultValue: UUID? = nil
+}
+
+extension EnvironmentValues {
+    var askComposerFocusRequest: UUID? {
+        get { self[AskComposerFocusRequestKey.self] }
+        set { self[AskComposerFocusRequestKey.self] = newValue }
     }
 }

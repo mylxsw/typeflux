@@ -7,16 +7,20 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
     static let itemIdentifier = "typeflux.window.title"
     let title: String
     var actionTitles: Set<String> = []
+    var trailingItemIdentifiers: Set<String> = []
 
     final class TitleView: NSView {
         var title = ""
         var actionTitles: Set<String> = []
+        var trailingItemIdentifiers: Set<String> = []
         private var active = false
         private var titleObservation: NSKeyValueObservation?
         private var visibilityObservation: NSKeyValueObservation?
         private var toolbarObservation: NSKeyValueObservation?
         private var centerObservation: NSKeyValueObservation?
         private weak var observedToolbar: NSToolbar?
+        private var itemObservers: [NSObjectProtocol] = []
+        private var synchronizing = false
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
@@ -35,17 +39,29 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
         }
 
         func synchronize() {
-            guard active, let window else { return }
+            guard active, !synchronizing, let window else { return }
+            synchronizing = true
+            defer { synchronizing = false }
             if window.title != title { window.title = title }
             if window.titleVisibility != .hidden { window.titleVisibility = .hidden }
             if observedToolbar !== window.toolbar {
                 centerObservation = nil
+                itemObservers.forEach(NotificationCenter.default.removeObserver)
+                itemObservers = []
                 observedToolbar = window.toolbar
                 centerObservation = window.toolbar?.observe(\.centeredItemIdentifiers) { [weak self] _, _ in
                     self?.schedule()
                 }
+                if let toolbar = window.toolbar {
+                    itemObservers = [NSToolbar.willAddItemNotification, NSToolbar.didRemoveItemNotification].map { name in
+                        NotificationCenter.default.addObserver(forName: name, object: toolbar, queue: .main) {
+                            [weak self] _ in MainActor.assumeIsolated { self?.schedule() }
+                        }
+                    }
+                }
             }
             if let toolbar = window.toolbar {
+                TypefluxToolbarAlignment.alignTrailingItems(in: toolbar, identifiers: trailingItemIdentifiers)
                 let identifier = NSToolbarItem.Identifier(TypefluxWindowTitleBridge.itemIdentifier)
                 if toolbar.centeredItemIdentifiers.contains(identifier) {
                     toolbar.centeredItemIdentifiers.remove(identifier)
@@ -77,19 +93,25 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
             toolbarObservation = nil
             centerObservation = nil
             observedToolbar = nil
+            itemObservers.forEach(NotificationCenter.default.removeObserver)
+            itemObservers = []
         }
+
+        deinit { itemObservers.forEach(NotificationCenter.default.removeObserver) }
     }
 
     func makeNSView(context _: Context) -> TitleView {
         let view = TitleView()
         view.title = title
         view.actionTitles = actionTitles
+        view.trailingItemIdentifiers = trailingItemIdentifiers
         return view
     }
 
     func updateNSView(_ view: TitleView, context _: Context) {
         view.title = title
         view.actionTitles = actionTitles
+        view.trailingItemIdentifiers = trailingItemIdentifiers
         view.synchronize()
         view.schedule()
     }

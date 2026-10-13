@@ -43,7 +43,11 @@ public struct TypefluxToolbar: ToolbarContent {
 
     private func prominentItem(_ action: TypefluxToolbarAction) -> some ToolbarContent {
         ToolbarItem(id: action.accessibilityIdentifier, placement: .primaryAction) {
-            TypefluxToolbarButton(action: action, prominent: true)
+            if separatesProminent {
+                TypefluxProminentToolbarButton(action: action)
+            } else {
+                TypefluxToolbarButton(action: action, prominent: true)
+            }
         }
     }
 }

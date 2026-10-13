@@ -10,8 +10,7 @@ struct AskSearchPaletteView: View {
     var onAction: (AskPaletteAction) -> Void
     var onOpen: (String) -> Void
     var onClose: () -> Void
-    @State private var query = ""
-    @State private var state = AskPaletteState(actions: [], conversations: [], highlighted: nil)
+    @StateObject private var model = AskPaletteModel()
     @Environment(\.interfaceStyle) private var style
     @FocusState private var focused: Bool
 
@@ -35,14 +34,13 @@ struct AskSearchPaletteView: View {
             refresh()
             DispatchQueue.main.async { focused = true }
         }
-        .onChange(of: query) { _ in refresh() }
         .onChange(of: conversations) { _ in refresh() }
         .onChange(of: available) { _ in refresh() }
         .background(TypefluxWindowKeyHandler { event in
             guard (event.window?.firstResponder as? NSTextView)?.hasMarkedText() != true,
                   event.modifierFlags.isDisjoint(with: [.command, .option, .control, .shift]) else { return false }
             if let delta = AskArrowKeyMonitor.delta(keyCode: event.keyCode, modifiers: event.modifierFlags) {
-                state.move(delta)
+                model.move(delta)
                 return true
             }
             if event.keyCode == 36 || event.keyCode == 76 { run(); return true }
@@ -94,7 +92,7 @@ struct AskSearchPaletteView: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass").font(.title3).fontWeight(.medium)
                 .foregroundStyle(TypefluxColor.secondaryLabel.color)
-            TextField(L("ask.search.placeholder"), text: $query)
+            TextField(L("ask.search.placeholder"), text: $model.query)
                 .accessibilityIdentifier("ask.workspace.search.field")
                 .textFieldStyle(.plain)
                 .font(.title3)
@@ -183,7 +181,7 @@ struct AskSearchPaletteView: View {
 
     private func rowView(_ row: AskPaletteRow, index: Int) -> some View {
         let highlighted = state.highlighted == index
-        return Button { state.highlighted = index; run() } label: {
+        return Button { model.highlight(index); run() } label: {
             HStack(spacing: 10) {
                 Image(systemName: symbol(row)).font(.body)
                     .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
@@ -204,7 +202,7 @@ struct AskSearchPaletteView: View {
             .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
-        .onHover { if $0 { state.highlighted = index } }
+        .onHover { if $0 { model.highlight(index) } }
         .id(row.id)
         .accessibilityIdentifier("ask.workspace.search.result." + row.id)
         .accessibilityAddTraits(highlighted ? .isSelected : [])
@@ -232,8 +230,10 @@ struct AskSearchPaletteView: View {
     }
 
     private func refresh() {
-        state = AskPaletteState.make(query: query, conversations: conversations, available: available)
+        model.update(conversations: conversations, available: available)
     }
+
+    private var state: AskPaletteState { model.state }
 
     private func run() {
         switch state.highlightedRow {

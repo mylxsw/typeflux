@@ -12,7 +12,6 @@ struct AskConversationView: View {
     @State private var collapsedGroups: Set<String> = []
     /// Which conversations the sidebar lists while some are kept on this Mac.
     @State private var historyFilter = AskHistoryFilter.all
-    /// The selected row's pill slides between rows instead of jumping.
     @Namespace private var selectionSpace
     /// Height of the banners and composer floating over the transcript's bottom edge.
     @State private var bottomChromeHeight: CGFloat = 0
@@ -85,6 +84,7 @@ struct AskConversationView: View {
         }
         .tint(TypefluxColor.accent.color)
         .environment(\.askUsesLibraryTokens, true)
+        .environment(\.askComposerFocusRequest, presentation.composerFocusRequestID)
         .environment(\.askArtifactAccess, model.artifactAccess)
         .environment(\.askTerminalAccess, model.terminalAccess)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
@@ -165,7 +165,8 @@ struct AskConversationView: View {
             }
             .typefluxSearchable(state: toolbarSearch, prompt: L("ask.search.conversations"))
             .navigationTitle("")
-            .typefluxWindowChrome(title: workspaceTitle, actionTitles: [L("ask.sidebar.toggle"), L("ask.new")])
+            .typefluxWindowChrome(title: workspaceTitle, actionTitles: [L("ask.sidebar.toggle"), L("ask.new")],
+                                  trailingItemIdentifiers: ["ask.workspace.status", "ask.actions", "ask.workspace.new"])
             .toolbar {
                 ToolbarItem(id: "ask.workspace.sidebar", placement: .navigation) {
                     TypefluxIconButton(L("ask.sidebar.toggle"), systemImage: "sidebar.left", action: toggleSidebar)
@@ -177,7 +178,7 @@ struct AskConversationView: View {
                 TypefluxToolbarTitle(workspaceTitle, width: toolbarTitleWidth)
                 #if compiler(>=6.2)
                     if #available(macOS 26, *) {
-                        ToolbarSpacer(.flexible, placement: .automatic)
+                        ToolbarSpacer(.flexible, placement: .primaryAction)
                     }
                 #endif
                 if let center = toolbarCenter {

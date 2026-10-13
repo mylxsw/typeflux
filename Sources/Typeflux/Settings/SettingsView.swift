@@ -624,7 +624,7 @@ struct StudioView: View {
                 HistorySettingsBackButton(selectedID: $selectedHistoryID)
                     .disabled(!isShowingHistoryDetail)
             }
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(id: "history.filterMenu", placement: .primaryAction) {
                 Menu {
                     Picker(L("history.filter.title"), selection: historyFilterBinding) {
                         ForEach(HistorySettingsFilter.allCases) { filter in Text(filter.title).tag(filter) }

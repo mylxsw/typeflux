@@ -97,6 +97,7 @@ struct AskComposer: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.askWindowDrag) private var windowDrag
     @Environment(\.interfaceStyle) private var interfaceStyle
+    @Environment(\.askComposerFocusRequest) private var composerFocusRequest
 
     init(model: AskConversationModel, compact: Bool = false, availableWidth: CGFloat? = nil,
          availableHeight: CGFloat? = nil,
@@ -1660,6 +1661,7 @@ struct AskComposer: View {
             voice: voice,
             contextID: contextID,
             caretRequestID: launcher ? model.launcherHistoryFillID : nil,
+            focusRequestID: launcher ? nil : composerFocusRequest,
             fontSize: chrome.editorFontSize,
             maximumHeight: layout.editorMaximumHeight,
             onSubmit: submit,

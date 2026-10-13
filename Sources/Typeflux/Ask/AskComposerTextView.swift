@@ -17,6 +17,8 @@ struct AskComposerTextView: NSViewRepresentable {
     var contextID: String = "launcher"
     /// Explicitly recalled input moves the caret even when its text equals the filter.
     var caretRequestID: UUID?
+    /// An explicit workspace request waits for this editor to be attached and enabled.
+    var focusRequestID: UUID?
     var fontSize: CGFloat = NSFont.preferredFont(forTextStyle: .body).pointSize
     var maximumHeight: CGFloat = 148
     var onSubmit: () -> Void
@@ -52,6 +54,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.identifier = NSUserInterfaceItemIdentifier("ask.composer")
         editor.isRichText = false
         editor.isEditable = isEnabled
+        editor.focusRequestID = focusRequestID
         editor.isAutomaticQuoteSubstitutionEnabled = false
         editor.isAutomaticDashSubstitutionEnabled = false
         editor.isAutomaticTextReplacementEnabled = false
@@ -93,7 +96,8 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.string = text
         if caretRequestID != nil { editor.setSelectedRange(NSRange(location: (text as NSString).length, length: 0)) }
         DispatchQueue.main.async { [weak editor] in
-            guard let editor, let window = editor.window, window.isKeyWindow else { return }
+            guard let editor, editor.focusRequestID == nil, editor.isEditable,
+                  let window = editor.window, window.isKeyWindow else { return }
             window.makeFirstResponder(editor)
         }
         return scroll
@@ -114,6 +118,8 @@ struct AskComposerTextView: NSViewRepresentable {
             DispatchQueue.main.async { [weak editor] in editor?.publishFocus() }
         }
         if editor.isEditable != isEnabled { editor.isEditable = isEnabled }
+        editor.focusRequestID = focusRequestID
+        editor.scheduleRequestedFocus()
         editor.placeholder = placeholder
         editor.placeholderSingleLine = placeholderSingleLine
         editor.placeholderColor = NSColor(placeholderColor)
@@ -164,6 +170,18 @@ struct AskComposerTextView: NSViewRepresentable {
         weak var voice: AskVoiceInput?
         var contextID = "launcher"
         var caretRequestID: UUID?
+        var focusRequestID: UUID?
+        private var fulfilledFocusRequestID: UUID?
+
+        func scheduleRequestedFocus() {
+            guard let request = focusRequestID, request != fulfilledFocusRequestID else { return }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.focusRequestID == request, self.fulfilledFocusRequestID != request,
+                      self.isEditable, !self.isHiddenOrHasHiddenAncestor, let window = self.window,
+                      window.isVisible, !window.isMiniaturized, window.attachedSheet == nil else { return }
+                if window.makeFirstResponder(self) { self.fulfilledFocusRequestID = request }
+            }
+        }
         var usesKeyViewTabs = false
         static let mouseHoldDelay: TimeInterval = 0.35
         private var holdTimer: Timer?
@@ -348,6 +366,7 @@ struct AskComposerTextView: NSViewRepresentable {
                     queue: .main
                 ) { [weak self] _ in
                     self?.publishFocus()
+                    self?.scheduleRequestedFocus()
                 },
                 NotificationCenter.default.addObserver(
                     forName: NSWindow.didResignKeyNotification,
@@ -358,6 +377,7 @@ struct AskComposerTextView: NSViewRepresentable {
                     self?.clearFocus()
                 }
             ]
+            scheduleRequestedFocus()
         }
         override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
         override func becomeFirstResponder() -> Bool {
