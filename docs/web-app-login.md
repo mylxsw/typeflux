@@ -41,7 +41,7 @@ native OAuth schemes, billing scheme and Keychain namespace are preserved. Conse
 this does **not** isolate legacy sessions or eliminate Launch Services collisions for the old
 shared scheme when both app bundles are installed. The new development flow has an independent
 callback, and cross-client callbacks are rejected. Test production/dev coexistence through
-ASWebAuthenticationSession before enabling rollout; a misrouted production cold callback fails
+the default browser and Launch Services before enabling rollout; a misrouted production cold callback fails
 closed and requires a fresh login in the intended app.
 
 ## State, storage and recovery
@@ -50,7 +50,7 @@ closed and requires a fresh login in the intended app.
   URL validation and strict single-value callback parsing. Callback code/state are the only
   accepted parameters. The frozen callback has no transaction ID: state correlates it with
   the sole active transaction. Unknown fields, wrong paths/clients and expired attempts fail.
-- `WebLoginCoordinator` owns the retained authentication session and its lifecycle, with injectable
+- `WebLoginCoordinator` owns the pending browser login and its lifecycle, with injectable
   API, browser, pending-state store, clock, proof generator and AuthState boundary. Only one
   login runs at a time. Cancel, logout, session replacement and late callbacks cannot restore an
   obsolete session. Browser `start()` failure is visible. Expiry clears the pending verifier.
@@ -65,16 +65,21 @@ closed and requires a fresh login in the intended app.
   app discards them; an unsolicited/cold callback never exchanges a code and shows restart guidance.
   Completed sessions still persist/restore using the existing Keychain mechanism. Recreating a
   coordinator clears any injected stale pending state. Cancellation clears memory immediately.
-- Reopen starts another retained authentication session for the same validated URL. The website
-  can reject it if browser binding was lost; UI explicitly explains using the same browser or
-  cancelling and starting again. It does not attempt to reissue a code or silently fall back.
-- Five existing UI languages include waiting, reopen, cancel and failure recovery text. Closing
-  the login window or leaving its view cancels an unfinished flow. Existing logged-in users are
-  not signed out when the feature is enabled or disabled.
+- Clicking login calls `WebLoginEntryController` and opens the validated website URL in the default
+  browser through `NSWorkspace.open`. It does not show a native login window or a system authentication
+  confirmation. Repeated clicks while creating/exchanging do not create duplicate requests; while
+  waiting they reopen the same transaction. Callback URL handling never silently starts a new login.
+- Closing the browser tab does not notify the App. Pending state expires automatically; logout and
+  quitting also discard it. Reopening uses the same default browser and transaction. No browser tabs
+  are closed by the App. The embedded onboarding view retains explicit cancellation.
+- Failures are shown only when they occur, in five languages. Creation errors distinguish network,
+  ATS, endpoint/proxy, rejected client configuration, rate limiting and server failures. Raw response
+  bodies are never displayed. Ambiguous token exchange failures still require a fresh transaction.
+- With Web auth disabled, the original native login window remains available. Existing logged-in
+  users are not signed out when the feature changes.
 
-The integration uses the macOS 13-compatible AuthenticationServices API and retains the package's
-macOS 13 deployment target. The shipped dependency/binary policy remains **macOS 13.4+**;
-this change does not raise it. See [Apple's authentication session documentation](https://developer.apple.com/documentation/authenticationservices/aswebauthenticationsession).
+The default-browser adapter uses AppKit and preserves the macOS deployment target and the shipped
+macOS 13.4+ dependency/binary policy.
 
 ## Validation and rollback
 
