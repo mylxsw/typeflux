@@ -89,42 +89,15 @@ struct StudioLightFollowupTests {
         }
     }
 
-    @Test func `related chip hover changes only light text and border`() {
-        for hovering in [false, true] {
-            #expect(AskWordBookRelatedChip.border(dark: true, hovering: hovering) == .clear)
-            #expect(AskWordBookRelatedChip.textColor(dark: true, hovering: hovering) == StudioTheme.textPrimary)
-            #expect(AskWordBookRelatedChip.textColor(dark: true, hovering: hovering, label: true) == StudioTheme
-                .textTertiary)
-        }
-        #expect(AskWordBookRelatedChip.border(dark: false, hovering: false) == AskTheme.cardBorder)
-        #expect(AskWordBookRelatedChip.border(dark: false, hovering: true) == StudioTheme.accent)
-        #expect(AskWordBookRelatedChip.textColor(dark: false, hovering: false) == StudioTheme.textPrimary)
-        #expect(AskWordBookRelatedChip.textColor(dark: false, hovering: false, label: true) == StudioTheme.textTertiary)
-        #expect(AskWordBookRelatedChip.textColor(dark: false, hovering: true) == StudioTheme.accent)
-        #expect(AskWordBookRelatedChip.textColor(dark: false, hovering: true, label: true) == StudioTheme.accent)
-    }
-
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
-    func `related chips use a white fill and keep lookup actions`(style: InterfaceStyle) async throws {
+    func `native related word buttons keep lookup actions`(style: InterfaceStyle) async throws {
         try await SettingsBehaviorTestSupport.withFixture { _ in
-            for label in [nil, "", "plural"] as [String?] {
+            for dark in [false, true] {
                 var lookedUp = false
-                let chip = AskWordBookRelatedChip(word: "delivery speed", label: label) { lookedUp = true }
-                let size = NSHostingView(rootView: chip).fittingSize
-                let inset = Int((280 - size.width) / 2) + 4
-                let light = try await render(chip, style: style, dark: false)
-                let white = try await render(Color.white, style: style, dark: false)
-                // Empty horizontal padding inside the chip, away from its outline.
-                try expectPixel(light, white, x: inset, y: 90)
-                let dark = try await render(chip, style: style, dark: true)
-                let original = try await render(Color.clear.frame(width: size.width, height: size.height)
-                    .askWordBookControl(), style: style, dark: true)
-                try expectPixel(dark, original, x: inset, y: 90)
-                try await SettingsBehaviorTestSupport.withWindow(chip) { _, host in
-                    let button = try #require(SettingsBehaviorTestSupport.elements(in: host).first {
-                        $0.role == NSAccessibility.Role.button.rawValue
-                    })
-                    try button.press()
+                let button = TypefluxButton("delivery speed", action: { lookedUp = true })
+                    .environment(\.interfaceStyle, style).environment(\.colorScheme, dark ? .dark : .light)
+                try await SettingsBehaviorTestSupport.withWindow(button) { _, host in
+                    try SettingsBehaviorTestSupport.button("delivery speed", in: host).press()
                     #expect(lookedUp)
                 }
             }

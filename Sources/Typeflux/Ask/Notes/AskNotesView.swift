@@ -1,48 +1,29 @@
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-typealias AskNotesLayout = AskLibraryLayout
-
-/// The notes window, drawn like the conversation window and following the interface
-/// style: shelves in the side panel, the list, and the chosen note to read or edit
-/// (`docs/design/notebook-redesign.md`).
+/// A native library window with a note list sidebar and a solid reading column.
 struct AskNotesView: View {
     @ObservedObject var model: AskNotesViewModel
     var onClose: () -> Void
     @FocusState private var focus: AskNotesField?
     @State private var dropTargeted = false
-    @Environment(\.interfaceStyle) private var style
-    @Environment(\.colorScheme) private var colorScheme
-
-    static let sidebarWidth = AskLibraryLayout.sidebarWidth
-    static let listWidth = AskLibraryLayout.maximumListWidth
+    @StateObject private var search = TypefluxSearchState()
+    static let expandedToolbarMinimumWidth: CGFloat = 1200
 
     var body: some View {
         GeometryReader { geometry in
-            let layout = AskNotesLayout(width: geometry.size.width)
-            HStack(spacing: 0) {
-                if layout.sidebarInline {
-                    AskNotesSidebar(model: model)
-                        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill,
-                                      glassInset: [.leading, .top, .bottom])
-                        .frame(width: layout.sidebarWidth, height: geometry.size.height)
-                        .clipped()
-                }
-                AskNotesList(model: model, focus: $focus, sidebarCollapsed: !layout.sidebarInline)
-                    .frame(width: layout.listWidth, height: geometry.size.height)
-                    .clipped()
-                    .overlay(alignment: .trailing) {
-                        Rectangle().fill(AskTheme.librarySeparator).frame(width: colorScheme == .light ? 1 : 0.5)
-                    }
-                AskNoteDetailView(model: model, focus: $focus)
-                    .frame(width: layout.detailWidth, height: geometry.size.height)
-                    .clipped()
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
+            libraryWindow(compact: geometry.size.width < Self.expandedToolbarMinimumWidth || search.isExpanded)
         }
-        // One surface for the whole window, as in the conversation window.
-        .background(AskWindowBackdrop())
-        .ignoresSafeArea(.container, edges: .top)
+        .onAppear { search.query = model.searchText }
+        .onChange(of: search.query) { query in
+            model.searchText = query
+            // Saving a failed draft can reject a filter change. Keep the native field truthful.
+            if search.query != model.searchText { search.query = model.searchText }
+        }
+        .onChange(of: model.searchText) { query in
+            if search.query != query { search.query = query }
+        }
         .overlay(alignment: .bottom) { noticeBar }
         .overlay { if dropTargeted { dropOverlay } }
         .onDrop(of: [.fileURL], isTargeted: $dropTargeted) { providers in
@@ -50,8 +31,21 @@ struct AskNotesView: View {
             return true
         }
         .background(shortcuts)
-        .tint(AskTheme.accent)
+        .tint(TypefluxColor.accent.color)
         .accessibilityIdentifier("ask.notes")
+    }
+
+    /// Keep the direct copy action reachable while secondary actions collapse into a native menu.
+    private func libraryWindow(compact: Bool) -> some View {
+        TypefluxWindow(title: L("ask.notes.title"), search: search, searchPrompt: L("ask.notes.search"),
+                       groups: compact ? [] : toolbarGroups, prominent: TypefluxToolbarAction(
+                        id: "notes.new", title: L("ask.notes.new"), systemImage: "square.and.pencil",
+                        perform: { model.createNote() })) {
+            AskNotesList(model: model)
+        } detail: {
+            AskNoteDetailView(model: model, focus: $focus)
+        }
+        .toolbar { libraryToolbar(compact: compact) }
     }
 
     /// Reads the dropped files' URLs, then hands them over on the main actor.
@@ -75,16 +69,16 @@ struct AskNotesView: View {
     }
 
     private var dropOverlay: some View {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
-            .fill(AskTheme.accent.opacity(0.10))
-            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(AskTheme.accent.opacity(0.8), style: StrokeStyle(lineWidth: 2, dash: [8, 6])))
+        Rectangle()
+            .fill(TypefluxColor.accent.color.opacity(0.10))
+            .overlay(Rectangle()
+                .strokeBorder(TypefluxColor.accent.color.opacity(0.8), style: StrokeStyle(lineWidth: 2, dash: [8, 6])))
             .overlay {
                 VStack(spacing: 6) {
-                    Image(systemName: "square.and.arrow.down").font(.system(size: 26))
-                    Text(L("ask.notes.dropTitle")).font(.system(size: 15, weight: .semibold))
-                    Text(L("ask.notes.dropSubtitle")).font(.system(size: 12.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    Image(systemName: "square.and.arrow.down").font(.largeTitle)
+                    Text(L("ask.notes.dropTitle")).font(.headline)
+                    Text(L("ask.notes.dropSubtitle")).font(.callout)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
             }
             .padding(10)
@@ -94,31 +88,31 @@ struct AskNotesView: View {
     @ViewBuilder private var noticeBar: some View {
         if let notice = model.notice {
             HStack(spacing: 10) {
-                Text(notice).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                Text(notice).font(.callout).foregroundStyle(TypefluxColor.label.color).lineLimit(1)
                 if model.draftConflict {
                     Button(L("ask.notes.saveCopy")) { model.saveDraftCopy() }
-                        .buttonStyle(.plain).font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(AskTheme.accent)
+                        .buttonStyle(.plain).font(.callout).fontWeight(.semibold)
+                        .foregroundStyle(TypefluxColor.accent.color)
                 }
                 if model.noticeOffersUndo, !model.deleted.isEmpty {
                     Button(L("ask.notes.undo")) { model.undoDelete() }
-                        .buttonStyle(.plain).font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(AskTheme.accent)
+                        .buttonStyle(.plain).font(.callout).fontWeight(.semibold)
+                        .foregroundStyle(TypefluxColor.accent.color)
                 }
                 if model.noticeReveals != nil {
                     Button(L("ask.notes.showInFinder")) { model.revealNoticeTarget() }
-                        .buttonStyle(.plain).font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(AskTheme.accent)
+                        .buttonStyle(.plain).font(.callout).fontWeight(.semibold)
+                        .foregroundStyle(TypefluxColor.accent.color)
                 }
                 Button { model.notice = nil } label: {
-                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
+                    Image(systemName: "xmark").font(.caption)
                 }
-                .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+                .buttonStyle(.plain).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .accessibilityLabel(L("ask.artifact.close"))
             }
             .padding(.horizontal, 14).frame(height: 34)
-            .askInWindowGlass(corner: style.usesGlass ? 17 : 8, opaqueFill: AskTheme.glassFill, elevation: .popover)
-            .padding(.bottom, 66)
+            .background(TypefluxColor.contentBackground.color)
+            .padding(.bottom, 12)
             .transition(.opacity)
             .accessibilityIdentifier("ask.notes.notice")
         }
@@ -126,17 +120,11 @@ struct AskNotesView: View {
 
     /// Keys for the list and the chosen note; typing in a field or the editor keeps its own keys.
     private var shortcuts: some View {
-        let typing = focus != nil || model.editing
+        let typing = focus != nil || model.editing || search.isFocused
         return ZStack {
             Button("") { model.createNote() }.keyboardShortcut("n")
-            Button("") { focus = .search }.keyboardShortcut("f")
-            Button("") { model.toggleEditing() }.keyboardShortcut("e")
-            Button("") { model.setMode(model.mode == .split ? .read : .split) }
-                .keyboardShortcut("e", modifiers: [.command, .option])
             Button("") { model.exportSelected(.markdown) }.keyboardShortcut("e", modifiers: [.command, .shift])
             Button("") { model.togglePin() }.keyboardShortcut("p", modifiers: [.command, .shift])
-            Button("") { model.moveSelection(-1) }.keyboardShortcut(.upArrow, modifiers: []).disabled(typing)
-            Button("") { model.moveSelection(1) }.keyboardShortcut(.downArrow, modifiers: []).disabled(typing)
             Button("") { model.copySelectedRich() }
                 .keyboardShortcut("c", modifiers: [.command, .shift]).disabled(typing)
             Button("") { model.openSelectedInWindow() }.keyboardShortcut("o")
@@ -153,7 +141,9 @@ struct AskNotesView: View {
     }
 
     private func escape() {
-        if model.editing {
+        if search.escape() {
+            return
+        } else if model.editing {
             model.setMode(.read)
         } else if focus != nil {
             focus = nil

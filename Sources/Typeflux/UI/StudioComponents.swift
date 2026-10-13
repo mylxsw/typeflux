@@ -595,30 +595,6 @@ struct StudioGlassBackground: View {
     }
 }
 
-/// The sidebar row's background. In light the selected row is a raised white
-/// block (hairline + 1pt shadow) on the grey sidebar; in dark it keeps the
-/// notes-row selection wash.
-struct StudioSidebarRowBackground: ViewModifier {
-    var selected: Bool
-    var corner: CGFloat
-    @Environment(\.colorScheme) private var colorScheme
-
-    static func usesRaisedBlock(selected: Bool, dark: Bool) -> Bool { selected && !dark }
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if Self.usesRaisedBlock(selected: selected, dark: colorScheme == .dark) {
-            let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
-            content
-                .background(shape.fill(StudioTheme.sidebarSelection)
-                    .shadow(color: Color.black.opacity(0.06), radius: 0, x: 0, y: 1))
-                .overlay(shape.strokeBorder(StudioTheme.sidebarSelectionStroke, lineWidth: 1))
-        } else {
-            content.askNotesRow(selected: selected, hovering: false, corner: corner)
-        }
-    }
-}
-
 struct StudioSectionTitle: View {
     let title: String
 

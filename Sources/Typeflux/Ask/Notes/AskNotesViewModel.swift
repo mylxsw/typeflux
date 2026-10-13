@@ -225,6 +225,24 @@ final class AskNotesViewModel: ObservableObject {
         selectedID = id
     }
 
+    /// Native List selection preserves the same save barrier as keyboard navigation.
+    var listSelection: Set<UUID> {
+        selecting ? picked : Set(selectedID.map { [$0] } ?? [])
+    }
+
+    func selectFromList(_ selection: Set<UUID>) {
+        let visible = selection.intersection(Set(notes.map(\.id)))
+        guard selection.isEmpty || !visible.isEmpty, visible != listSelection else { return }
+        if inTrash || (!selecting && visible.count <= 1) {
+            select(notes.first { visible.contains($0.id) }?.id)
+        } else {
+            guard finishEditing() else { return }
+            selecting = true
+            picked = visible
+            pickAnchor = notes.first { visible.contains($0.id) }?.id
+        }
+    }
+
     /// The arrows in the list.
     func moveSelection(_ delta: Int) {
         guard !notes.isEmpty else { return }

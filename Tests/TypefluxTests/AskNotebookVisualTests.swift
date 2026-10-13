@@ -84,7 +84,7 @@ struct AskNotebookVisualTests {
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
     func theWindowDrawsItsStates(style: InterfaceStyle) async throws {
-        _ = NSApplication.shared
+        TypefluxTestApplicationEnvironment.prepare()
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previous) }
@@ -151,8 +151,7 @@ struct AskNotebookVisualTests {
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
     func minimumWindowKeepsActionsAndSplitEditorReachable(style: InterfaceStyle) async throws {
-        _ = NSApplication.shared
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        TypefluxTestApplicationEnvironment.prepare()
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previous) }
@@ -177,30 +176,27 @@ struct AskNotebookVisualTests {
         try checkReadControls(window)
         let source = try accessibilityButton(L("ask.notes.openConversation"), in: window)
         #expect(accessibilityFrame(source).height <= 28, "the source action stays on one line")
-        try click(accessibilityFrame(source), in: window)
+        try press(source, in: window)
         try await waitForUI { openedConversation == "conv" }
         #expect(openedConversation == "conv", "the compact source action remains clickable")
-        let copy = try #require(accessibilityElement(L("ask.plugin.action.copy"),
-                                                     attribute: "accessibilityLabel", in: window))
+        let copy = try AskLibraryTestSupport.action("notes.copy", in: window)
+        let expectedBody = try #require(model.selected?.body)
         var copied: String?
         model.copy = { copied = $0 }
-        try click(accessibilityFrame(copy), in: window)
-        try await waitForUI { copied == model.selected?.body }
-        #expect(copied == model.selected?.body, "the compact copy action remains clickable")
+        try copy.press()
+        try await waitForUI { copied == expectedBody }
+        #expect(copied == expectedBody, "the compact copy action remains clickable")
         model.notice = nil
-        let split = try accessibilityButton(L("ask.notes.mode.split"), in: window)
-        try click(accessibilityFrame(split), in: window)
+        try AskNotesToolbarTestSupport.chooseMode(.split, in: window)
         try await waitForUI { model.mode == .split }
-        #expect(model.mode == .split, "the mode picker remains clickable")
+        #expect(model.mode == .split, "the native More menu switches to split mode at minimum width")
         try await capture(window, "\(prefix)-12-minimum-split.png")
         try await checkSplitControls(window, model: model)
     }
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
     func resizingKeepsNotesAndActionsInsideTheirColumns(style: InterfaceStyle) async throws {
-        _ = NSApplication.shared
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        TypefluxTestApplicationEnvironment.prepare()
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previous) }
@@ -226,12 +222,10 @@ struct AskNotebookVisualTests {
             let readerFrame = screenFrame(reader, in: window)
             #expect(accessibilityFrame(row).maxX < readerFrame.minX,
                     "the list must not overlap the note during resizing")
-            #expect(readerFrame.width >= 300 && readerFrame.maxX <= window.frame.maxX + 1)
+            #expect(readerFrame.width >= 300 && readerFrame.width <= 680
+                    && readerFrame.maxX <= window.frame.maxX + 1)
             #expect(model.selectedID == chat, "resizing keeps the selected note")
-            if width < 1100 {
-                let toggle = try accessibilityButton(L("ask.sidebar.toggle"), in: window)
-                #expect(accessibilityFrame(toggle).width >= 20, "collapsed navigation stays reachable")
-            }
+
         }
         model.setMode(.split)
         let draft = "## Draft kept during resizing\n\n" + Self.answer
@@ -255,9 +249,7 @@ struct AskNotebookVisualTests {
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
     func resultWindowKeepsItsIconToolbarReachableWhileResizing(style: InterfaceStyle) async throws {
-        _ = NSApplication.shared
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        TypefluxTestApplicationEnvironment.prepare()
         let recorder = AskResultServicesRecorder()
         let controller = AskResultWindowController()
         controller.defaults = UserDefaults(suiteName: "result-resizing-\(UUID().uuidString)")!
@@ -297,13 +289,13 @@ struct AskNotebookVisualTests {
             }
         }
         let insert = try #require(accessibilityElement("ask.result.insert", in: window))
-        #expect(accessibilityValue("accessibilityHelp", of: insert)?.contains("⌥↩") == true,
+        #expect((insert.value(forKey: "accessibilityHelp") as? String)?.contains("⌥↩") == true,
                 "the icon's tooltip includes its shortcut")
-        try click(accessibilityFrame(insert), in: window)
+        try press(insert, in: window)
         try await waitForUI { !recorder.inserted.isEmpty }
         #expect(recorder.inserted.first?.0 == document.body)
         let ask = try #require(accessibilityElement("ask.result.askAI", in: window))
-        try click(accessibilityFrame(ask), in: window)
+        try press(ask, in: window)
         try await waitForUI { !recorder.asked.isEmpty }
         #expect(!recorder.asked.isEmpty, "the last action remains clickable")
         window.appearance = NSAppearance(named: .aqua)
@@ -331,28 +323,22 @@ struct AskNotebookVisualTests {
     }
 
     private func checkReadControls(_ window: NSWindow) throws {
-        let layout = AskNotesLayout(width: window.contentView?.bounds.width ?? window.frame.width)
-        let left = window.frame.minX + layout.sidebarWidth + layout.listWidth
-        // ViewThatFits does not always expose a container in AppKit's AX tree.
-        // Measure each real control, which also detects one clipped action in an otherwise visible bar.
-        let labels = [L("ask.plugin.action.copy"), L("ask.notes.rich"), L("ask.result.askAI"), L("ask.notes.edit"),
-                      L("ask.plugin.action.openInWindow") + " ⌘O", L("ask.notes.delete") + " ⌘⌫"]
-        for label in labels {
-            let button = try #require(accessibilityElement(label, attribute: "accessibilityLabel", in: window),
-                                      "\(label)")
-            let frame = accessibilityFrame(button)
-            #expect(frame.width >= 20 && frame.height >= 20, "\(label) has a usable hit target")
-            #expect(frame.minX >= left - 1 && frame.maxX <= window.frame.maxX + 1,
-                    "\(label) stays within the narrow detail column")
+        let compact = (window.contentView?.bounds.width ?? 0) < AskNotesView.expandedToolbarMinimumWidth
+        let identifiers = compact ? ["notes.copy"] : ["notes.copy", "notes.pin", "notes.edit", "notes.delete"]
+        for identifier in identifiers {
+            let action = try AskLibraryTestSupport.action(identifier, in: window)
+            let frame = action.frame
+            #expect(frame.width >= 20 && frame.height >= 20, "visible actions keep usable hit targets")
+            #expect(frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1,
+                    "visible toolbar actions stay inside the window")
         }
-        for mode in AskNotesViewModel.Mode.allCases {
-            let button = try accessibilityButton(L("ask.notes.mode." + mode.rawValue), in: window)
-            let frame = accessibilityFrame(button)
-            let label = L("ask.notes.mode." + mode.rawValue) as NSString
-            let textWidth = label.size(withAttributes: [.font: NSFont.systemFont(ofSize: 12, weight: .semibold)]).width
-            #expect(frame.width >= textWidth + 8, "the mode name has room to remain readable")
-            #expect(frame.minX >= left - 1 && frame.maxX <= window.frame.maxX + 1)
+        if compact {
+            let menu = try #require(accessibilityElement("ask.notes.more", in: window))
+            let frame = accessibilityFrame(menu)
+            #expect(frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1,
+                    "collapsed actions remain reachable through the native menu")
         }
+        #expect(window.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true)
     }
 
     private func checkSplitControls(_ window: NSWindow, model: AskNotesViewModel) async throws {
@@ -364,8 +350,7 @@ struct AskNotebookVisualTests {
         let preview = try #require(views.compactMap { $0 as? AskNoteReaderText.ReaderView }.first)
         let previewFrame = screenFrame(preview, in: window)
         #expect(editorFrame.width >= 100 && previewFrame.width >= 100, "both split columns remain usable")
-        let layout = AskNotesLayout(width: content.bounds.width)
-        if layout.detailWidth < 600 {
+        if previewFrame.maxY <= editorFrame.minY {
             #expect(previewFrame.maxY <= editorFrame.minY, "stacked editing keeps the preview below the editor")
         } else {
             #expect(editorFrame.maxX <= previewFrame.minX, "the editor cannot overlap the rendered preview")
@@ -390,7 +375,7 @@ struct AskNotebookVisualTests {
         #expect(tableFrame.minX >= editorFrame.minX - 1 && tableFrame.maxX <= editorFrame.maxX + 1,
                 "the last formatting action fits or becomes reachable by scrolling")
         let before = model.draftBody
-        try click(tableFrame, in: window)
+        try press(table, in: window)
         try await waitForUI { model.draftBody != before }
         #expect(model.draftBody != before && model.draftBody.contains("|---|---|"),
                 "the last formatting action is reachable after scrolling")
@@ -413,60 +398,19 @@ struct AskNotebookVisualTests {
 
     private func accessibilityElement(_ value: String, attribute: String = "accessibilityIdentifier",
                                       in window: NSWindow) -> NSObject? {
-        accessibilityElements(in: window).first { accessibilityValue(attribute, of: $0) == value }
+        AskLibraryTestSupport.elements(in: window).first { $0.value(attribute) as? String == value }?.object
     }
 
     private func accessibilityButton(_ label: String, in window: NSWindow) throws -> NSObject {
-        let elements = accessibilityElements(in: window)
-        if let button = elements.first(where: {
-            accessibilityValue("accessibilityLabel", of: $0) == label
-                && accessibilityValue("accessibilityRole", of: $0) == NSAccessibility.Role.button.rawValue
-        }) { return button }
-        let description = elements.compactMap { object -> String? in
-            let label = accessibilityValue("accessibilityLabel", of: object) ?? ""
-            let identifier = accessibilityValue("accessibilityIdentifier", of: object) ?? ""
-            guard !label.isEmpty || !identifier.isEmpty else { return nil }
-            let role = accessibilityValue("accessibilityRole", of: object) ?? ""
-            return "role=\(role), identifier=\(identifier), label=\(label)"
-        }.prefix(120).joined(separator: "\n")
-        return try #require(nil as NSObject?, "Missing AXButton \(label). AX elements:\n\(description)")
-    }
-
-    private func accessibilityValue(_ attribute: String, of object: NSObject) -> String? {
-        guard object.responds(to: NSSelectorFromString(attribute)) else { return nil }
-        return object.value(forKey: attribute) as? String
-    }
-
-    private func accessibilityElements(in window: NSWindow) -> [NSObject] {
-        var seen = Set<ObjectIdentifier>()
-        var elements: [NSObject] = []
-        func walk(_ node: Any) {
-            guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return }
-            elements.append(object)
-            if object.responds(to: NSSelectorFromString("accessibilityChildren")),
-               let children = object.value(forKey: "accessibilityChildren") as? [Any] {
-                children.forEach(walk)
-            }
-            if let view = object as? NSView {
-                view.subviews.forEach(walk)
-            }
-        }
-        walk(window)
-        if let content = window.contentView { walk(content) }
-        return elements
+        try SettingsBehaviorTestSupport.button(label, in: window).object
     }
 
     private func accessibilityFrame(_ element: NSObject) -> NSRect {
-        (element.value(forKey: "accessibilityFrame") as? NSValue)?.rectValue ?? .zero
+        SettingsBehaviorTestSupport.Element(object: element).frame
     }
 
-    private func click(_ frame: NSRect, in window: NSWindow) throws {
-        let point = window.convertPoint(fromScreen: NSPoint(x: frame.midX, y: frame.midY))
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
-                eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)))
-        }
+    private func press(_ object: NSObject, in window: NSWindow) throws {
+        try SettingsBehaviorTestSupport.Element(object: object, window: window).press()
     }
 
 }

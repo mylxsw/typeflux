@@ -7,12 +7,7 @@ import Testing
 enum TypefluxNavigationTestSupport {
     static func withWindow(_ view: some View, size: NSSize = NSSize(width: 900, height: 600),
                            run: (NSWindow, NSView) async throws -> Void) async throws {
-        _ = NSApplication.shared
-        let previousPolicy = NSApp.activationPolicy()
-        NSApp.setActivationPolicy(.regular)
-        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
-        let previous = NSApp.accessibilityAttributeValue(attribute)
-        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        TypefluxTestApplicationEnvironment.prepare()
         let window = NSWindow(contentRect: NSRect(origin: NSPoint(x: 100, y: 100), size: size),
                               styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -25,9 +20,8 @@ enum TypefluxNavigationTestSupport {
                 window.endSheet(sheet); sheet.close()
             }
             window.contentView = nil
+            window.orderOut(nil)
             window.close()
-            NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute)
-            NSApp.setActivationPolicy(previousPolicy)
         }
         try await Task.sleep(for: .milliseconds(250))
         window.makeKey()

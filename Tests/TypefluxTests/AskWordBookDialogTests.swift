@@ -293,6 +293,42 @@ struct AskWordBookViewModelTests {
         model.undoDelete()
     }
 
+    @Test func staleRowValuesCannotOverwriteFavouriteStateOrTheUndoSnapshot() throws {
+        let (model, store, _, suite) = try fixture()
+        defer { UserDefaults().removePersistentDomain(forName: suite) }
+        let beta = try #require(model.entries.first { $0.headword == "beta" })
+        model.selectedKey = beta.key
+        model.toggleStar(beta)
+        #expect(store.entry(forKey: beta.key)?.isStarred == true)
+        model.delete(beta)
+        #expect(model.deleted.first?.isStarred == true)
+        model.delete(beta)
+        #expect(model.deleted.first?.isStarred == true, "a vanished row cannot replace the valid undo snapshot")
+        model.undoDelete()
+        #expect(store.entry(forKey: beta.key)?.isStarred == true)
+        model.toggleStar(beta)
+        #expect(store.entry(forKey: beta.key)?.isStarred == false,
+                "a repeated click must toggle the stored state rather than the old row value")
+    }
+
+    @Test func starringATransientCardKeepsAnExistingFavouriteAndSavesTheNewCard() async throws {
+        let (model, store, _, suite) = try fixture()
+        defer { UserDefaults().removePersistentDomain(forName: suite) }
+        let beta = try #require(model.entries.first { $0.headword == "beta" })
+        store.setStarred(true, lookup: beta.lookup, at: Self.now)
+        model.reload()
+        model.recordsHistory = false
+        let card = AskWordCard(headword: "beta", senses: [.init(pos: "n.", meanings: ["new card"])])
+        model.dictionary = AskTestWordLookup(answer: .card(card))
+        await model.lookUp("beta")
+        let loose = try #require(model.displayed)
+        #expect(model.isTransient(loose) && !loose.isStarred)
+        model.toggleStar(loose)
+        #expect(store.entry(forKey: beta.key)?.isStarred == true)
+        #expect(store.entry(forKey: beta.key)?.lookup.card == card)
+        #expect(model.transient == nil)
+    }
+
     @Test func copyingReadingAloudAndAskingTheAI() throws {
         let (model, _, _, suite) = try fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
@@ -419,16 +455,13 @@ struct AskWordBookViewModelTests {
             == "→ Japanese")
     }
 
-    @Test func marksTodayInTheWeekAndFoldsTheSidebarWhenNarrow() throws {
+    @Test func marksTodayInTheWeek() throws {
         let (model, _, _, suite) = try fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         // Friday: the week starts on Monday.
         #expect(model.todayIndex == 4)
         model.now = { Self.now.addingTimeInterval(3 * 86400) }
         #expect(model.todayIndex == 0, "Monday starts a new week")
-        #expect(AskWordBookView.isCompact(AskWordBookWindowController.minimumSize.width))
-        #expect(!AskWordBookView.isCompact(AskWordBookWindowController.defaultSize.width))
-        #expect(AskWordBookView.sidebarWidth == AskNotesView.sidebarWidth)
     }
 
     @Test func theViewDrawsEveryState() async throws {
@@ -465,16 +498,11 @@ struct AskWordBookViewModelTests {
         let entry = AskWordBookEntry(id: UUID(), lookup: AskWordBookLookup(headword: "w", source: "en", target: "zh-Hans",
                                                                           card: wordBookCard),
                                      lookupCount: 3, firstLookedUpAt: Self.now, lastLookedUpAt: Self.now, starredAt: Self.now)
-        for view in [AnyView(AskWordBookRow(entry: entry, selected: true, select: {}, star: {})),
-                     AnyView(AskWordBookRow(entry: entry, selected: false, select: {}, star: {})),
+        for view in [AnyView(AskWordBookRow(entry: entry)),
                      AnyView(AskWordBookSectionTitle(text: "t", hint: "h")),
-                     AnyView(AskWordBookKeyHint(key: "⌘L")),
-                     AnyView(Text("f").askLibrarySearchSurface(focused: true)),
-                     AnyView(Text("p").askWordBookPopover(corner: 10)),
-                     AnyView(Button("z") {}.buttonStyle(AskWordBookHoverStyle()).disabled(true)),
-                     AnyView(AskWordBookFlow { Text("a"); Text("b"); Text("c") }.frame(width: 20)),
-                     AnyView(Button("x") {}.buttonStyle(AskWordBookPressStyle())),
-                     AnyView(Button("y") {}.buttonStyle(AskWordBookChipStyle()))] {
+                     AnyView(TypefluxTag("new", tone: .accent)),
+                     AnyView(TypefluxButton("word") {}),
+                     AnyView(AskWordBookFlow { Text("a"); Text("b"); Text("c") }.frame(width: 20))] {
             let hosting = NSHostingView(rootView: view)
             hosting.frame = NSRect(x: 0, y: 0, width: 320, height: 80)
             hosting.layoutSubtreeIfNeeded()
@@ -513,10 +541,8 @@ struct AskWordBookWindowTests {
         #expect(window.contentMinSize == AskWordBookWindowController.minimumSize)
         let content = try #require(window.contentView)
         #expect(content.bounds.width == AskWordBookWindowController.defaultSize.width)
-        let layout = AskLibraryLayout(width: content.bounds.width)
-        #expect(layout.sidebarInline, "a fresh window shows the library sidebar alongside the word list")
-        #expect(layout.detailWidth >= AskLibraryLayout.readingWidth,
-                "the default window leaves enough room to read a word card with its sidebar visible")
+        #expect(window.isOpaque && window.backgroundColor == .windowBackgroundColor,
+                "the content surface stays solid")
         settings.interfaceStyle = .classic
         #expect(controller.interfaceStyle?.style == .classic)
         settings.interfaceStyle = .liquidGlass
@@ -555,7 +581,6 @@ struct AskWordBookWindowTests {
             controller.show()
             let restored = try #require(controller.window?.contentView)
             #expect(restored.bounds.width == 900, "the initial size migration does not override later manual resizing")
-            #expect(!AskLibraryLayout(width: restored.bounds.width).sidebarInline)
         }
     }
 }
@@ -567,8 +592,8 @@ struct AskWordBookWindowTests {
 struct AskWordBookRenderTests {
     private func render(_ model: AskWordBookViewModel, size: NSSize, dark: Bool, name: String,
                         style: InterfaceStyle = .liquidGlass, checksBounds: Bool = false) async throws {
-        let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
-                                        backing: .buffered, defer: false)
+        let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size),
+                                        styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.backgroundColor = dark ? NSColor(white: 0.1, alpha: 1) : NSColor(white: 0.93, alpha: 1)
@@ -582,18 +607,11 @@ struct AskWordBookRenderTests {
         hosting.layoutSubtreeIfNeeded()
         #expect(hosting.fittingSize.height > 0)
         if checksBounds {
-            let bounds = window.convertToScreen(hosting.bounds)
-            for label in [L("ask.plugin.action.copyDefinition"), L("ask.quick.askAI"),
-                          L("ask.plugin.action.regenerate"), L("ask.wordBook.delete")] {
-                let button = try SettingsBehaviorTestSupport.button(label, in: hosting)
-                #expect(button.frame.width >= 20 && button.frame.height >= 20)
-                #expect(button.frame.minX >= bounds.minX - 1 && button.frame.maxX <= bounds.maxX + 1,
-                        "every detail action must remain inside the window")
-            }
+            #expect(window.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true)
             let meaning = try #require(SettingsBehaviorTestSupport.elements(in: hosting).first {
                 $0.text == "交付速度；软件功能从开发到上线的效率和速度"
             })
-            #expect(meaning.frame.width <= size.width - 350,
+            #expect(meaning.frame.width <= AskLibraryLayout.readingWidth,
                     "a long meaning wraps within the detail column")
         }
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
@@ -605,7 +623,7 @@ struct AskWordBookRenderTests {
     }
 
     @Test func wordBookStates() async throws {
-        _ = NSApplication.shared
+        TypefluxTestApplicationEnvironment.prepare()
         // Screenshots are in Chinese; plain runs keep the language, which other suites read while they wait.
         let previous = AppLocalization.shared.language
         let snapshots = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] != nil
@@ -660,9 +678,7 @@ struct AskWordBookRenderTests {
     }
 
     @Test func longWordCardsFitEveryWindowSizeAndStyle() async throws {
-        _ = NSApplication.shared
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        TypefluxTestApplicationEnvironment.prepare()
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previous) }

@@ -7,10 +7,9 @@ import XCTest
 final class TypefluxPopupMenuTests: XCTestCase {
     func testUnavailableSelectionKeepsItsLabelUntilAValidOptionIsChosen() async throws {
         guard ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_MENU_TESTS"] == "1" else {
-            throw XCTSkip("Run native menu tracking in a dedicated test process")
+            throw XCTSkip("Native SwiftUI menu inspection requires TYPEFLUX_SETTINGS_MENU_TESTS=1")
         }
-        let previousPolicy = activateTestApplication()
-        defer { NSApp.setActivationPolicy(previousPolicy) }
+        TypefluxTestApplicationEnvironment.prepare()
         for options in [TypefluxPopupMenuFixture.options, []] {
             let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 100),
                 styleMask: [.titled], backing: .buffered, defer: false)
@@ -21,7 +20,7 @@ final class TypefluxPopupMenuTests: XCTestCase {
             window.contentView = host
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
-            defer { window.close() }
+            defer { window.contentView = nil; window.orderOut(nil); window.close() }
             try await Task.sleep(for: .milliseconds(100))
             let button = try XCTUnwrap(descendants(host).compactMap { $0 as? NSPopUpButton }.first)
             XCTAssertEqual(button.title, "Unavailable model")
@@ -38,12 +37,10 @@ final class TypefluxPopupMenuTests: XCTestCase {
     }
 
     func testSharedAndStudioPickersShowOptionsDirectlyAndUpdateSelection() async throws {
-        // Native menu tracking must run separately from other window tests.
         guard ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_MENU_TESTS"] == "1" else {
-            throw XCTSkip("Run with TYPEFLUX_SETTINGS_MENU_TESTS=1 in a dedicated test process")
+            throw XCTSkip("Native SwiftUI menu inspection requires TYPEFLUX_SETTINGS_MENU_TESTS=1")
         }
-        let previousPolicy = activateTestApplication()
-        defer { NSApp.setActivationPolicy(previousPolicy) }
+        TypefluxTestApplicationEnvironment.prepare()
         let options = TypefluxPopupMenuFixture.options
         for studio in [false, true] {
             let state = TypefluxPopupMenuState()
@@ -55,7 +52,7 @@ final class TypefluxPopupMenuTests: XCTestCase {
             window.contentView = host
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
-            defer { window.orderOut(nil); window.close() }
+            defer { window.contentView = nil; window.orderOut(nil); window.close() }
             try await Task.sleep(for: .milliseconds(100))
             host.layoutSubtreeIfNeeded()
             let button = try XCTUnwrap(descendants(host).compactMap { $0 as? NSPopUpButton }.first)
@@ -69,13 +66,11 @@ final class TypefluxPopupMenuTests: XCTestCase {
                     host.hitTest(hostPoint) === button,
                     "The native menu must receive a click at \(point)"
                 )
-                try inspectMenu(using: button, clickAt: point) { menu in
+                try inspectMenu(using: button) { menu in
                     XCTAssertEqual(menu.items.count, options.count)
                     return nil
                 }
             }
-            // Let AppKit finish closing the previous tracking loop before reopening the control.
-            try await Task.sleep(for: .milliseconds(200))
             try inspectMenu(using: button) { menu in
                 let items = menu.items.filter { !$0.isSeparatorItem && !$0.isHidden }
                 XCTAssertEqual(items.map(\.title), options.map(\.label))
@@ -92,63 +87,29 @@ final class TypefluxPopupMenuTests: XCTestCase {
         }
     }
 
-    private func activateTestApplication() -> NSApplication.ActivationPolicy {
-        _ = NSApplication.shared
-        let previous = NSApp.activationPolicy()
-        NSApp.setActivationPolicy(.regular)
-        return previous
-    }
-
     private func descendants(_ view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap(descendants)
     }
 
     private func inspectMenu(
         using button: NSPopUpButton,
-        clickAt point: NSPoint? = nil,
-        check: @escaping (NSMenu) throws -> Int?
+        check: (NSMenu) throws -> Int?
     ) throws {
-        var inspected = false
-        var failure: Error?
-        // SwiftUI builds native menu items only when menu tracking begins.
-        let timer = Timer(timeInterval: 0.2, repeats: false) { _ in
-            MainActor.assumeIsolated {
-                guard let menu = button.menu else { return }
-                menu.cancelTrackingWithoutAnimation()
-                do {
-                    if let index = try check(menu) {
-                        menu.performActionForItem(at: index)
-                    }
-                    inspected = true
-                } catch {
-                    failure = error
-                }
-            }
+        // Prepare SwiftUI's lazy items through AppKit's notifications/delegate, without opening a tracking loop.
+        NotificationCenter.default.post(name: NSPopUpButton.willPopUpNotification, object: button)
+        if let cell = button.cell {
+            NotificationCenter.default.post(name: NSPopUpButtonCell.willPopUpNotification, object: cell)
         }
-        RunLoop.main.add(timer, forMode: .eventTracking)
-        RunLoop.main.add(timer, forMode: .common)
-        if let point, let window = button.window {
-            let location = button.convert(point, to: nil)
-            let down = try XCTUnwrap(NSEvent.mouseEvent(with: .leftMouseDown, location: location,
-                                                        modifierFlags: [],
-                                                        timestamp: ProcessInfo.processInfo.systemUptime,
-                                                        windowNumber: window.windowNumber, context: nil,
-                                                        eventNumber: 0, clickCount: 1, pressure: 1))
-            window.sendEvent(down)
-            let mouseUp = try XCTUnwrap(NSEvent.mouseEvent(with: .leftMouseUp, location: location,
-                                                      modifierFlags: [],
-                                                      timestamp: ProcessInfo.processInfo.systemUptime,
-                                                      windowNumber: window.windowNumber, context: nil,
-                                                      eventNumber: 1, clickCount: 1, pressure: 0))
-            window.sendEvent(mouseUp)
-        } else {
-            button.performClick(nil)
+        let menu = try XCTUnwrap(button.menu)
+        menu.delegate?.menuNeedsUpdate?(menu)
+        menu.update()
+        menu.delegate?.menuWillOpen?(menu)
+        defer { menu.delegate?.menuDidClose?(menu) }
+        XCTAssertFalse(menu.items.isEmpty, "The native menu must expose its options without tracking")
+        if let index = try check(menu) {
+            XCTAssertTrue(menu.items[index].isEnabled)
+            menu.performActionForItem(at: index)
         }
-        timer.invalidate()
-        if let failure {
-            throw failure
-        }
-        XCTAssertTrue(inspected, "The native menu must open")
     }
 }
 

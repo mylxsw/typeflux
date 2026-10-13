@@ -3,13 +3,13 @@ import SwiftUI
 
 /// The one word book window. Translation results open it (⌘B) on the word they show,
 /// and `dict word` opens it looking the word up; see `docs/design/word-book-redesign.md`
-/// and, for its look, `docs/design/word-book-studio.md`.
+/// and, for its library template, `docs/design/ui-system.md`.
 @MainActor
 final class AskWordBookWindowController: NSObject, NSWindowDelegate {
     static let shared = AskWordBookWindowController()
     static let defaultSize = NSSize(width: 1320, height: 800)
     static let minimumSize = NSSize(width: 720, height: 480)
-    // Start the wider three-column layout fresh instead of restoring an old compact frame.
+    // Preserve the user's saved frame across the library template migration.
     var frameAutosaveName: NSWindow.FrameAutosaveName = "AskWordBook.v2"
 
     private var store: (any AskWordBookStoring)?
@@ -71,14 +71,15 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
             DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
+            synchronizeTitle(window)
             return
         }
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: Self.defaultSize),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
-        // Set up like the main window: a transparent title bar over the view's own backdrop.
-        window.isOpaque = false
-        window.backgroundColor = .clear
+        // Native split-view chrome supplies the sidebar material; content remains solid.
+        window.isOpaque = true
+        window.backgroundColor = .windowBackgroundColor
         window.title = L("ask.wordBook.title")
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
@@ -87,7 +88,7 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         window.toolbarStyle = .unified
         let root = AskWordBookView(model: model) { [weak window] in window?.performClose(nil) }
         let content = interfaceStyle.map { AnyView(root.interfaceStyle(following: $0)) } ?? AnyView(root)
-        let hosting = TransparentAskHostingView(rootView: content)
+        let hosting = NSHostingView(rootView: content)
         hosting.sizingOptions = []
         window.contentView = hosting
         window.contentMinSize = Self.minimumSize
@@ -104,11 +105,21 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         // AppKit can recalculate content limits when the unified toolbar first attaches.
         window.contentMinSize = Self.minimumSize
         NSApp.activate(ignoringOtherApps: true)
+        synchronizeTitle(window)
     }
 
-    func windowWillClose(_: Notification) {
-        if let window { DockVisibilityController.shared.windowDidHide(window) }
+    private func synchronizeTitle(_ window: NSWindow) {
+        // Hosting NavigationSplitView can overwrite metadata while installing its empty navigation title.
+        window.title = L("ask.wordBook.title")
+        window.titleVisibility = .hidden
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard let closed = notification.object as? NSWindow, closed === window else { return }
         window = nil
+        closed.contentView = nil
+        closed.toolbar = nil
+        DockVisibilityController.shared.windowDidHide(closed)
         model = nil
     }
 }

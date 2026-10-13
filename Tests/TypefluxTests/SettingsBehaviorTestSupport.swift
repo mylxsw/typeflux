@@ -5,8 +5,6 @@ import Testing
 
 @MainActor
 enum SettingsBehaviorTestSupport {
-    private typealias Press = @convention(c) (AnyObject, Selector) -> Bool
-
     struct Element {
         let object: NSObject
         var window: NSWindow?
@@ -42,90 +40,6 @@ enum SettingsBehaviorTestSupport {
                   let size = object.accessibilityAttributeValue(.size) as? NSValue else { return .zero }
             return NSRect(origin: position.pointValue, size: size.sizeValue)
         }
-
-        @MainActor func press() throws {
-            if try pressNativeSegment() || pressNativeSwitch() || pressNativeToolbarAction() { return }
-            if let button = object as? NSButton {
-                button.performClick(nil)
-                return
-            }
-            if let cell = object as? NSButtonCell {
-                cell.performClick(nil)
-                return
-            }
-            let selector = NSSelectorFromString("accessibilityPerformPress")
-            if !object.responds(to: selector), object.accessibilityActionNames().contains(.press) {
-                object.accessibilityPerformAction(.press)
-                return
-            }
-            _ = try #require(object.responds(to: selector), "The rendered control must expose a press action")
-            let press = unsafeBitCast(object.method(for: selector), to: Press.self)
-            let accepted = press(object, selector)
-            #expect(accepted, "The control must accept its press action: \(label)")
-        }
-
-        @MainActor private func pressNativeToolbarAction() throws -> Bool {
-            guard role == NSAccessibility.Role.button.rawValue, object is NSView, let window else { return false }
-            for view in window.toolbar?.items.compactMap(\.view) ?? [] {
-                if let button = SettingsBehaviorTestSupport.elements(in: view).first(where: {
-                    $0.role == role && $0.label == label && $0.object !== object
-                }) {
-                    try button.press()
-                    return true
-                }
-            }
-            func controls(in view: NSView) -> [NSSegmentedControl] {
-                (view as? NSSegmentedControl).map { [$0] } ?? view.subviews.flatMap { controls(in: $0) }
-            }
-            for control in window.toolbar?.items.flatMap({ $0.view.map { controls(in: $0) } ?? [] }) ?? [] {
-                if let index = (0 ..< control.segmentCount).first(where: {
-                    control.toolTip(forSegment: $0) == label || control.label(forSegment: $0) == label
-                }) {
-                    control.selectedSegment = index
-                    control.sendAction(control.action, to: control.target)
-                    return true
-                }
-            }
-            return false
-        }
-
-        private func pressNativeSegment() throws -> Bool {
-            guard role == NSAccessibility.Role.radioButton.rawValue, let window,
-                  let content = window.contentView else { return false }
-            func segments(in view: NSView) -> [NSSegmentedControl] {
-                (view as? NSSegmentedControl).map { [$0] } ?? view.subviews.flatMap { segments(in: $0) }
-            }
-            let toolbarSegments = window.toolbar?.items.flatMap { item in
-                item.view.map { segments(in: $0) } ?? []
-            } ?? []
-            for control in segments(in: content) + toolbarSegments {
-                if let index = (0 ..< control.segmentCount).first(where: { control.label(forSegment: $0) == label }) {
-                    control.selectedSegment = index
-                    let action = try #require(control.action)
-                    let sent = NSApp.sendAction(action, to: control.target, from: control)
-                    #expect(sent, "The native segmented control must send its selection")
-                    return true
-                }
-            }
-            Issue.record("Missing native segmented control for \(label)")
-            throw ReadinessTimeout()
-        }
-
-        private func pressNativeSwitch() -> Bool {
-            guard role == NSAccessibility.Role.checkBox.rawValue, let window,
-                  let content = window.contentView else { return false }
-            func switches(in view: NSView) -> [NSSwitch] {
-                (view as? NSSwitch).map { [$0] } ?? view.subviews.flatMap { switches(in: $0) }
-            }
-            if let control = switches(in: content).first(where: {
-                let rect = window.convertToScreen($0.convert($0.bounds, to: nil))
-                return rect.intersects(frame)
-            }) {
-                control.performClick(nil)
-                return true
-            }
-            return false
-        }
     }
 
     static func elements(in root: Any) -> [Element] {
@@ -152,11 +66,12 @@ enum SettingsBehaviorTestSupport {
         elements(in: root).contains { $0.text == text || $0.label == text }
     }
 
-    static func wait(_ condition: () -> Bool) async throws {
+    static func wait(_ description: String = "The expected UI state", _ condition: () -> Bool) async throws {
         let deadline = ContinuousClock.now + .seconds(3)
         while !condition() {
+            try Task.checkCancellation()
             guard ContinuousClock.now < deadline else {
-                Issue.record("The expected UI state did not become ready within three seconds")
+                Issue.record("\(description) did not become ready within three seconds")
                 throw ReadinessTimeout()
             }
             try await Task.sleep(for: .milliseconds(10))
@@ -164,10 +79,7 @@ enum SettingsBehaviorTestSupport {
     }
 
     static func withFixture(_ check: (SettingsStore) async throws -> Void) async throws {
-        _ = NSApplication.shared
-        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
-        let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
-        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        TypefluxTestApplicationEnvironment.prepare()
         let previousLanguage = AppLocalization.shared.language
         let previousMemoryStore = KeychainTokenStore.useInMemoryStoreForTesting
         let previousKeys = KeychainTokenStore.inMemoryLock.withLock { KeychainTokenStore.inMemoryValues }
@@ -191,7 +103,6 @@ enum SettingsBehaviorTestSupport {
             KeychainTokenStore.useInMemoryStoreForTesting = previousMemoryStore
             AuthState.shared.isLoggedIn = previousLogin
             AppLocalization.shared.setLanguage(previousLanguage)
-            NSApp.accessibilitySetValue(previousAccessibility ?? false, forAttribute: attribute)
         }
         let defaults = try #require(fixtureDefaults)
         let settings = SettingsStore(defaults: defaults)
@@ -202,6 +113,7 @@ enum SettingsBehaviorTestSupport {
 
     static func withWindow(_ content: some View, width: CGFloat = 980, height: CGFloat = 780,
                            check: (NSWindow, NSView) async throws -> Void) async throws {
+        TypefluxTestApplicationEnvironment.prepare()
         let window = NSWindow(contentRect: NSRect(x: -10000, y: -10000, width: width, height: height),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
