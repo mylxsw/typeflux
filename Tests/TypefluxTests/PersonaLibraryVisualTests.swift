@@ -218,7 +218,7 @@ struct PersonaLibraryVisualTests {
         model.searchQuery = ""
         try await Task.sleep(for: .milliseconds(50))
         let editorPrompt = model.personaDraftPrompt
-        try UnifiedSettingsBehaviorTests.selectPopupItem(L("personas.redesign.none"), in: window)
+        try UnifiedSettingsBehaviorTests.selectPopupItem(L("personas.redesign.none"), model: model, in: window)
         try await Task.sleep(for: .milliseconds(100))
         #expect(model.defaultPersonaSelectionID == nil)
         #expect(model.personaDraftPrompt == editorPrompt)

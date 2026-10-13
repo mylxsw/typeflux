@@ -35,7 +35,7 @@ extension UnifiedSettingsBehaviorTests {
         }
     }
 
-    @Test func `persona menu selection targets each picker and preserves the unsaved definition`() async throws {
+    @Test func `persona selection bindings target each usage and preserve the unsaved definition`() async throws {
         try await SettingsBehaviorTestSupport.withFixture { _ in
             let fixture = try PersonaLibraryFixture()
             defer { fixture.cleanUp() }
@@ -45,19 +45,18 @@ extension UnifiedSettingsBehaviorTests {
             let originalDefault = model.defaultPersonaSelectionID
             let view = StudioPersonaLibraryView(viewModel: model) { model.personaPendingDeletion = $0 }
             try await SettingsBehaviorTestSupport.withWindow(view, width: 950, height: 650) { window, host in
-                window.setFrameOrigin(NSPoint(x: 100, y: 100))
                 try await SettingsBehaviorTestSupport.wait {
                     regressionElements("personas.auxiliarySelection", in: host).count == 1
                         && regressionElements("personas.defaultSelection", in: host).count == 1
                 }
-                try Self.selectPopupItem(fixture.custom.name, identifier: "personas.auxiliarySelection", in: window)
+                try Self.selectPopupItem(fixture.custom.name, identifier: "personas.auxiliarySelection",
+                                         model: model, in: window)
                 #expect(model.auxiliaryPersonaID == fixture.custom.id.uuidString)
                 #expect(model.defaultPersonaSelectionID == originalDefault)
-                // Let AppKit finish closing the first tracking loop before opening the next picker.
-                try await Task.sleep(for: .milliseconds(200))
                 try Self.selectPopupItem(
                     L("personas.redesign.none"),
                     identifier: "personas.defaultSelection",
+                    model: model,
                     in: window
                 )
                 #expect(model.defaultPersonaSelectionID == nil)
