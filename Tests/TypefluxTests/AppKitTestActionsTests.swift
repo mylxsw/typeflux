@@ -189,7 +189,7 @@ struct AppKitTestActionsTests {
         var drained = false
         override func accessibilityPerformPress() -> Bool {
             presses += 1
-            CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode) { [weak self] in
+            CFRunLoopPerformBlock(CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue) { [weak self] in
                 MainActor.assumeIsolated { self?.drained = true }
             }
             return true
