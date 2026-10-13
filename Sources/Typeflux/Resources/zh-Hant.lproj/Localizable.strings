@@ -1622,6 +1622,7 @@
 "ask.search.actions" = "操作";
 "ask.search.conversations" = "對話";
 "ask.search.placeholder" = "Search conversations or actions";
+"ask.search.execute" = "執行";
 "ask.launcher.hint" = "↩ Send";
 "ask.launcher.drag" = "拖動以移動 · 按兩下回到中間";
 "ask.quick.calculator" = "計算機";

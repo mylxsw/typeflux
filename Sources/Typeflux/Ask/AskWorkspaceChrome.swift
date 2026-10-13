@@ -5,6 +5,7 @@ import SwiftUI
 /// breathes; Reduce Motion keeps it still.
 struct AskRunToneDot: View {
     let tone: AskRunTone
+    var tint: Color? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var dim = false
 
@@ -21,10 +22,10 @@ struct AskRunToneDot: View {
 
     var body: some View {
         Circle()
-            .fill(Self.color(tone))
+            .fill(tint ?? Self.color(tone))
             .frame(width: 6, height: 6)
             .opacity(dim ? 0.35 : 1)
-            .shadow(color: tone == .running ? Self.color(tone).opacity(0.7) : .clear, radius: 3)
+            .shadow(color: tone == .running ? (tint ?? Self.color(tone)).opacity(0.7) : .clear, radius: 3)
             .onAppear { animate() }
             .onChange(of: tone) { _ in animate() }
             .accessibilityHidden(true)

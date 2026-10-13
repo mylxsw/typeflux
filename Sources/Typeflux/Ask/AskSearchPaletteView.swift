@@ -17,7 +17,6 @@ struct AskSearchPaletteView: View {
 
     static let width: CGFloat = 560
     static let listMaxHeight: CGFloat = 360
-    static let rowHeight: CGFloat = 36
 
     var body: some View {
         GeometryReader { geometry in
@@ -25,7 +24,7 @@ struct AskSearchPaletteView: View {
                 Color.black.opacity(0.18)
                     .contentShape(Rectangle())
                     .onTapGesture { onClose() }
-                card(listHeight: Self.listHeight(in: geometry.size.height))
+                card(listHeight: Self.listHeight(in: geometry.size.height, style: style))
                     .askPopIn(anchor: .top)
                     .padding(.horizontal, 12)
                     .padding(.top, Self.topInset(in: geometry.size.height))
@@ -46,47 +45,87 @@ struct AskSearchPaletteView: View {
         height < 500 ? AskMetrics.titleBarRowHeight : AskMetrics.titleBarRowHeight + 18
     }
 
-    static func listHeight(in height: CGFloat) -> CGFloat {
-        max(0, min(listMaxHeight, height - topInset(in: height) - 55 - 12))
+    static func chromeHeight(style: InterfaceStyle) -> CGFloat {
+        TypefluxControlHeight.spotlightInput.value(for: style)
+            + TypefluxControlHeight.toolbarItem.value(for: style)
+            + (style.usesGlass ? TypefluxSpacing.regular.value(for: style) : 0) + 1
+    }
+
+    static func listHeight(in height: CGFloat, style: InterfaceStyle = .liquidGlass) -> CGFloat {
+        max(0, min(listMaxHeight, height - topInset(in: height) - chromeHeight(style: style) - 12))
     }
 
     private func card(listHeight: CGFloat) -> some View {
-        TypefluxSpotlightSurface(placement: .inWindow) {
-            VStack(spacing: 0) {
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass").font(.title3).fontWeight(.medium)
-                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
-                    TextField(L("ask.search.placeholder"), text: $query)
-                        .accessibilityIdentifier("ask.workspace.search.field")
-                        .textFieldStyle(.plain)
-                        .font(.title3)
-                        .foregroundStyle(TypefluxColor.label.color)
-                        .focused($focused)
-                        .onSubmit(run)
-                    Text(verbatim: "esc")
-                        .font(.caption).fontWeight(.medium)
-                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
-                        .padding(.horizontal, 6)
-                        .frame(height: 18)
-                        .background(
-                            TypefluxColor.label.color.opacity(0.06),
-                            in: RoundedRectangle(
-                                cornerRadius: TypefluxRadius.textField.value(for: style),
-                                style: .continuous
-                            )
-                        )
-                        .onTapGesture { onClose() }
-                        .accessibilityLabel(L("ask.remove"))
-                        .accessibilityIdentifier("ask.workspace.search.close")
-                        .accessibilityAddTraits(.isButton)
+        Group {
+            if style.usesGlass {
+                TypefluxGlassGroup(spacing: TypefluxSpacing.regular.value(for: style)) {
+                    VStack(spacing: TypefluxSpacing.regular.value(for: style)) {
+                        TypefluxGlassContainer(radius: .spotlightInput, placement: .inWindow) { input }
+                        TypefluxSpotlightSurface(placement: .inWindow) { results(listHeight: listHeight) }
+                    }
                 }
-                .padding(.horizontal, 18)
-                .frame(height: 54)
-                Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
-                list(maxHeight: listHeight).background(TypefluxColor.contentBackground.color)
+            } else {
+                TypefluxSpotlightSurface(placement: .inWindow) {
+                    VStack(spacing: 0) {
+                        input
+                        Divider()
+                        results(listHeight: listHeight)
+                    }
+                }
             }
         }
         .frame(maxWidth: Self.width)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+        .accessibilityIdentifier("ask.workspace.search.palette")
+    }
+
+    private var input: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass").font(.title3).fontWeight(.medium)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
+            TextField(L("ask.search.placeholder"), text: $query)
+                .accessibilityIdentifier("ask.workspace.search.field")
+                .textFieldStyle(.plain)
+                .font(.title3)
+                .foregroundStyle(TypefluxColor.label.color)
+                .focused($focused)
+                .onSubmit(run)
+            Button(action: onClose) {
+                Text(verbatim: "esc")
+                    .font(.caption).fontWeight(.medium)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                    .padding(.horizontal, 6)
+                    .frame(height: 18)
+                    .background(TypefluxColor.label.color.opacity(0.06),
+                                in: RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: style),
+                                                     style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .help(L("clipboard.hint.close"))
+            .accessibilityLabel(L("clipboard.hint.close"))
+            .accessibilityIdentifier("ask.workspace.search.close")
+        }
+        .padding(.horizontal, TypefluxSpacing.large.value(for: style))
+        .frame(height: TypefluxControlHeight.spotlightInput.value(for: style))
+    }
+
+    private func results(listHeight: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            list(maxHeight: listHeight).background(TypefluxColor.contentBackground.color)
+            Divider()
+            HStack(spacing: TypefluxSpacing.large.value(for: style)) {
+                Text("↑↓ " + L("clipboard.hint.navigate"))
+                Text("↵ " + L("ask.search.execute"))
+                Spacer(minLength: 0)
+                Text("esc " + L("clipboard.hint.close"))
+            }
+            .font(.footnote)
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
+            .padding(.horizontal, TypefluxSpacing.large.value(for: style))
+            .frame(height: TypefluxControlHeight.toolbarItem.value(for: style))
+            .accessibilityIdentifier("ask.workspace.search.hints")
+        }
     }
 
     private func list(maxHeight: CGFloat) -> some View {
@@ -150,13 +189,14 @@ struct AskSearchPaletteView: View {
                 }
             }
             .padding(.horizontal, 12)
-            .frame(height: Self.rowHeight)
+            .frame(height: TypefluxControlHeight.spotlightRow.value(for: style))
             .frame(maxWidth: .infinity, alignment: .leading)
             .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
         .onHover { if $0 { state.highlighted = index } }
         .id(row.id)
+        .accessibilityIdentifier("ask.workspace.search.result." + row.id)
         .accessibilityAddTraits(highlighted ? .isSelected : [])
     }
 

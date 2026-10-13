@@ -11,17 +11,20 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage private var dismissedAt: Double
     let compact: Bool
+    /// Library windows can keep promotion on the account page while reusing the identity row.
+    let showsPromotion: Bool
     let onSignIn: () -> Void
     let onOpenAccount: () -> Void
     let onOpenSettings: (() -> Void)?
     let signedOutIdentity: SignedOutIdentity
 
-    init(auth: AuthState, compact: Bool, defaults: UserDefaults = .standard,
+    init(auth: AuthState, compact: Bool, defaults: UserDefaults = .standard, showsPromotion: Bool = true,
          onSignIn: @escaping () -> Void, onOpenAccount: @escaping () -> Void,
          onOpenSettings: (() -> Void)? = nil,
          @ViewBuilder signedOutIdentity: () -> SignedOutIdentity) {
         self.auth = auth
         self.compact = compact
+        self.showsPromotion = showsPromotion
         self.onSignIn = onSignIn
         self.onOpenAccount = onOpenAccount
         self.onOpenSettings = onOpenSettings
@@ -30,7 +33,7 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
     }
 
     private var showsPromo: Bool {
-        !compact && !auth.isLoggedIn && AskCloudPromo.isVisible(dismissedAt: dismissedAt)
+        showsPromotion && !compact && !auth.isLoggedIn && AskCloudPromo.isVisible(dismissedAt: dismissedAt)
     }
 
     var body: some View {
@@ -90,10 +93,10 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
 }
 
 extension SidebarAccountFooter where SignedOutIdentity == AskSignedOutIdentity {
-    init(auth: AuthState, compact: Bool, defaults: UserDefaults = .standard,
+    init(auth: AuthState, compact: Bool, defaults: UserDefaults = .standard, showsPromotion: Bool = true,
          onSignIn: @escaping () -> Void, onOpenAccount: @escaping () -> Void,
          onOpenSettings: (() -> Void)? = nil) {
-        self.init(auth: auth, compact: compact, defaults: defaults,
+        self.init(auth: auth, compact: compact, defaults: defaults, showsPromotion: showsPromotion,
                   onSignIn: onSignIn, onOpenAccount: onOpenAccount, onOpenSettings: onOpenSettings) {
             AskSignedOutIdentity(subtitle: L("ask.local.identity.localMode"),
                                  detail: L("ask.local.identity.localMode"), action: nil)

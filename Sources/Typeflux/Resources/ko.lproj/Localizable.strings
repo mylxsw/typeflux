@@ -1615,6 +1615,7 @@
 "ask.search.actions" = "작업";
 "ask.search.conversations" = "대화";
 "ask.search.placeholder" = "Search conversations or actions";
+"ask.search.execute" = "실행";
 "ask.launcher.hint" = "↩ Send";
 "ask.launcher.drag" = "드래그해 이동 · 더블클릭하면 가운데로";
 "ask.quick.calculator" = "계산기";

@@ -113,7 +113,7 @@ public struct TypefluxSpotlightPanel: View {
             }
             .foregroundStyle(selection.selectedID == item.id ? selectedText : TypefluxColor.label.color)
             .padding(.horizontal, 10).padding(.vertical, 6)
-            .frame(maxWidth: .infinity, minHeight: style == .classic ? 34 : 40, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: TypefluxControlHeight.spotlightRow.value(for: style), alignment: .leading)
             .modifier(TypefluxSpotlightRow(selected: selection.selectedID == item.id))
         }
         .buttonStyle(.plain)

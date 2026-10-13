@@ -18,6 +18,7 @@ public enum TypefluxControlHeight: String, CaseIterable, Sendable {
     case tableRow
     case menuItem
     case spotlightInput
+    case spotlightRow
     case spotlightModeButton
 
     // Each exhaustive case is one row of the specification's metric table.
@@ -40,6 +41,7 @@ public enum TypefluxControlHeight: String, CaseIterable, Sendable {
         case .tableRow: style == .classic ? 24 : 28
         case .menuItem: style == .classic ? 22 : 24
         case .spotlightInput: style == .classic ? 52 : 56
+        case .spotlightRow: style == .classic ? 34 : 40
         case .spotlightModeButton: style == .classic ? 52 : 56
         }
     }

@@ -407,6 +407,7 @@ struct AskConversationView: View {
     private var accountFooter: some View {
         SidebarAccountFooter(auth: auth, compact: layout.isShort,
                              defaults: model.modelLibrary.settings.defaults,
+                             showsPromotion: false,
                              onSignIn: { LoginWindowController.shared.show() },
                              onOpenAccount: { model.onOpenSettings?(.account) },
                              onOpenSettings: { model.onOpenSettings?(.settings) }) {
@@ -514,6 +515,7 @@ struct AskConversationView: View {
             .animation(AskMotion.panelAnimation(reduceMotion: reduceMotion), value: model.selectedId)
         }
         .listStyle(.sidebar)
+        .accessibilityIdentifier("ask.workspace.history")
         .scrollContentBackground(.hidden)
         .background(AskHistoryPullRefresh(
             isRefreshing: model.isRefreshingHistory,
@@ -939,6 +941,8 @@ struct AskConversationView: View {
                 // drawing first and scrolling a frame later made every load
                 // flash the top of the conversation before jumping to the end.
                 .opacity(restoredTranscript != nil && restoredTranscript == model.selectedId ? 1 : 0)
+                .accessibilityIdentifier(restoredTranscript != nil && restoredTranscript == model.selectedId
+                    ? "ask.workspace.transcript" : "ask.workspace.transcript.loading")
                 .overlay(alignment: .top) {
                     if model.isLoadingSelection, model.selected == nil {
                         AskDelayedProgress(title: L("ask.loading"))

@@ -66,12 +66,14 @@ struct AskWorkspaceLayoutTests {
     }
 
     @Test func searchPaletteFitsShortWindowsAndCapsTallOnes() {
-        for height: CGFloat in [280, 320, 499, 500, 880] {
-            let inset = AskSearchPaletteView.topInset(in: height)
-            let list = AskSearchPaletteView.listHeight(in: height)
-            #expect(inset + 55 + list + 12 <= height)
-            #expect(list > 0 && list <= AskSearchPaletteView.listMaxHeight)
+        for style in InterfaceStyle.allCases {
+            for height: CGFloat in [280, 320, 499, 500, 880] {
+                let inset = AskSearchPaletteView.topInset(in: height)
+                let list = AskSearchPaletteView.listHeight(in: height, style: style)
+                #expect(inset + AskSearchPaletteView.chromeHeight(style: style) + list + 12 <= height)
+                #expect(list > 0 && list <= AskSearchPaletteView.listMaxHeight)
+            }
+            #expect(AskSearchPaletteView.listHeight(in: 0, style: style) == 0)
         }
-        #expect(AskSearchPaletteView.listHeight(in: 0) == 0)
     }
 }

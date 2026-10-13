@@ -951,8 +951,17 @@ struct AskComposer: View {
             sendError: launcher && model.submissionIssues[launcher] == nil ? model.error : nil,
             voiceError: voice.error,
             attachment: model.attachmentNotice(launcher: launcher),
-            screenshot: launcher ? model.launcherScreenshotNotice : model.screenshotNotice
+            screenshot: screenshotWarning ?? (launcher ? model.launcherScreenshotNotice : model.screenshotNotice),
+            model: launcher ? nil : model.modelLibrary.selectionExplanation(
+                for: model.modelReference(launcher: false), hasImage: model.hasConversationImages,
+                loggedIn: model.cloudAvailable(launcher: false)
+            )
         )
+    }
+    private var screenshotWarning: String? {
+        let value = draft.wrappedValue
+        guard !launcher, value.includeScreenshot, value.screenshot == nil, !model.capturingScreenshot else { return nil }
+        return model.captureWarning
     }
     @State private var noticesExpanded = false
     private var noticeRows: Int {
@@ -961,7 +970,10 @@ struct AskComposer: View {
 
     private func dismiss(_ kind: AskComposerNotice.Kind) -> (() -> Void)? {
         switch kind {
+        case .model:
+            return nil
         case .screenshot:
+            if screenshotWarning != nil { return nil }
             return { if launcher { model.launcherScreenshotNotice = nil } else { model.screenshotNotice = nil } }
         case .attachment:
             return { model.dismissAttachmentNotice(launcher: launcher) }

@@ -1615,6 +1615,7 @@
 "ask.search.actions" = "アクション";
 "ask.search.conversations" = "会話";
 "ask.search.placeholder" = "Search conversations or actions";
+"ask.search.execute" = "実行";
 "ask.launcher.hint" = "↩ Send";
 "ask.launcher.drag" = "ドラッグで移動 · ダブルクリックで中央へ";
 "ask.quick.calculator" = "計算機";

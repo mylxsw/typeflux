@@ -6,6 +6,17 @@ import Testing
 @Suite("Ask composer notices", .exclusiveUIState)
 @MainActor
 struct AskComposerNoticeTests {
+    @Test func unavailableModelIsAnExplainedWarningAndKeepsPriority() {
+        let notices = AskComposerNotice.resolve(sendError: nil, voiceError: "voice", attachment: nil,
+                                                screenshot: "permission", model: "Select another model")
+        #expect(notices.map(\.kind) == [.model, .voice, .screenshot])
+        #expect(notices.first?.text == "Select another model")
+        #expect(notices.first?.tone == .warning)
+        #expect(notices.first?.systemImage == "cpu")
+        #expect(AskComposerNotice.resolve(sendError: nil, voiceError: nil, attachment: nil,
+                                          screenshot: nil, model: "  ").isEmpty)
+    }
+
     @Test func noticesAreOrderedMostUrgentFirst() {
         let notices = AskComposerNotice.resolve(sendError: "send", voiceError: "voice",
                                                 attachment: "file", screenshot: "shot")

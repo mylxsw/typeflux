@@ -17,6 +17,13 @@ extension RegisteredProvider {
 }
 
 extension AskModelLibrary {
+    /// The same explanation appears in the chooser and above the workspace editor.
+    func selectionExplanation(for reference: String, hasImage: Bool, loggedIn: Bool,
+                              scenario: String = "ask") -> String? {
+        guard let (provider, model) = registry.resolve(reference) else { return L("ask.models.unavailable") }
+        return selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: loggedIn, scenario: scenario)
+    }
+
     /// Presentation only: saved defaults and conversation routing keep their original references.
     func presentationReference(for reference: String, scenario: String = "ask") -> String {
         guard scenario == "ask", reference == "cloud:default",

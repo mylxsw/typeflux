@@ -6,7 +6,7 @@ import SwiftUI
 struct AskComposerNotice: Identifiable, Equatable {
     /// Declared most urgent first: the order is the display priority.
     enum Kind: Int, CaseIterable, Comparable {
-        case sendError, voice, attachment, screenshot
+        case sendError, model, voice, attachment, screenshot
 
         static func < (lhs: Kind, rhs: Kind) -> Bool { lhs.rawValue < rhs.rawValue }
     }
@@ -20,6 +20,7 @@ struct AskComposerNotice: Identifiable, Equatable {
     var systemImage: String? {
         switch kind {
         case .sendError: return nil
+        case .model: return "cpu"
         case .voice: return "mic.slash"
         case .attachment: return "paperclip"
         case .screenshot: return nil
@@ -28,9 +29,10 @@ struct AskComposerNotice: Identifiable, Equatable {
 
     /// The notices to show, most urgent first; empty texts are skipped.
     static func resolve(sendError: String?, voiceError: String?, attachment: String?,
-                        screenshot: String?) -> [AskComposerNotice] {
+                        screenshot: String?, model: String? = nil) -> [AskComposerNotice] {
         let candidates: [(Kind, String?)] = [
-            (.sendError, sendError), (.voice, voiceError), (.attachment, attachment), (.screenshot, screenshot)
+            (.sendError, sendError), (.model, model), (.voice, voiceError),
+            (.attachment, attachment), (.screenshot, screenshot)
         ]
         return candidates.compactMap { kind, text in
             guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
