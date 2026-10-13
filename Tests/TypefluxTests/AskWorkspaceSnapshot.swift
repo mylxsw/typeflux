@@ -16,6 +16,7 @@ enum AskWorkspaceSnapshot {
             .defaultAppStorage(defaults)
             .environment(\.interfaceStyle, style)
             .environment(\.colorScheme, dark ? .dark : .light)
+            .environment(\.controlActiveState, .key)
             .environment(\.typefluxAccessibilityOptions, accessibility)
             .transaction { $0.animation = nil; $0.disablesAnimations = true }
         let hosting = NSHostingView(rootView: view)
@@ -41,6 +42,7 @@ enum AskWorkspaceSnapshot {
             hosting.superview?.layoutSubtreeIfNeeded()
             hosting.layoutSubtreeIfNeeded()
             guard hosting.bounds.width > 0, hosting.bounds.height > 0,
+                  window.title == (model.selected?.title ?? L("ask.new")),
                   window.toolbar?.items.contains(where: { $0 is NSSearchToolbarItem }) == true,
                   let editor = SettingsBehaviorTestSupport.nativeViews(in: hosting)
                     .compactMap({ $0 as? AskComposerTextView.Editor }).first,

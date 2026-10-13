@@ -40,7 +40,15 @@ struct AskChatFidelityTests {
             onOpen: { opened.append($0) }, onClose: { closed += 1 })
             .environment(\.interfaceStyle, style)
         try await UI.withWindow(palette, width: 440, height: 320) { window, host in
-            try await UI.wait { UI.contains("Swift actors", in: host) }
+            try await UI.wait {
+                let hasField = UI.nativeViews(in: host).compactMap { $0 as? NSTextField }.contains {
+                    $0.placeholderString == L("ask.search.placeholder")
+                }
+                return hasField && UI.elements(in: host).contains {
+                    $0.value("accessibilityIdentifier") as? String
+                        == "ask.workspace.search.result.action:newConversation"
+                }
+            }
             let field = try #require(UI.nativeViews(in: host).compactMap { $0 as? NSTextField }.first {
                 $0.placeholderString == L("ask.search.placeholder")
             })
@@ -110,7 +118,25 @@ struct AskChatFidelityTests {
             fixture.model.draft.screenshot = nil
             fixture.model.captureWarning = L("ask.capture.permission")
             try await UI.wait { UI.contains(L("ask.capture.permission"), in: host) }
+            #expect(!UI.contains(L("ask.context.screen.failed"), in: host))
+            #expect(!UI.contains(L("ask.capture.optIn"), in: host))
+            _ = try UI.button(L("ask.context.screen.grant"), in: host)
             #expect(!UI.nativeViews(in: host).compactMap { $0 as? AskComposerTextView.Editor }.isEmpty)
+        }
+    }
+
+    @Test func permissionExplanationWrapsAndGrantsFromTheOwningAction() async throws {
+        var grants = 0
+        let notice = AskScreenshotPermissionNotice(text: L("ask.capture.permission")) { grants += 1 }
+        try await UI.withWindow(notice.padding(12), width: 300, height: 140) { window, host in
+            try await UI.wait { UI.contains(L("ask.capture.permission"), in: host) }
+            let explanation = try #require(UI.elements(in: host).first {
+                $0.value("accessibilityIdentifier") as? String == "ask.screenshot.permission.explanation"
+            })
+            #expect(explanation.frame.height > 20)
+            #expect(window.frame.contains(explanation.frame))
+            try UI.button(L("ask.context.screen.grant"), in: host).press()
+            #expect(grants == 1)
         }
     }
 }

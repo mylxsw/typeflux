@@ -37,12 +37,12 @@ struct TypefluxToolbarButton: View {
         #if compiler(>=6.2)
             if #available(macOS 26, *), style.usesGlass, !reduceTransparency, contrast != .increased,
                !accessibility.reduceTransparency, !accessibility.increasedContrast {
-                button.buttonStyle(.glassProminent)
+                button.buttonStyle(.glassProminent).tint(TypefluxColor.accent.color)
             } else {
-                button.buttonStyle(.borderedProminent)
+                button.buttonStyle(.borderedProminent).tint(TypefluxColor.accent.color)
             }
         #else
-            button.buttonStyle(.borderedProminent)
+            button.buttonStyle(.borderedProminent).tint(TypefluxColor.accent.color)
         #endif
     }
 }

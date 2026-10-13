@@ -6,6 +6,23 @@ import TypefluxUI
 @Suite("TypefluxUI token resolution", .exclusiveUIState)
 @MainActor
 struct TypefluxUITokenTests {
+    @Test func sidebarBackingStaysDistinctFromTheReadingSurface() throws {
+        for name in [NSAppearance.Name.aqua, .darkAqua] {
+            let appearance = try #require(NSAppearance(named: name))
+            var sidebar: NSColor?
+            var reading: NSColor?
+            appearance.performAsCurrentDrawingAppearance {
+                sidebar = TypefluxColor.sidebarBackground.nsColor.usingColorSpace(.sRGB)
+                reading = TypefluxColor.contentBackground.nsColor.usingColorSpace(.sRGB)
+            }
+            let left = try #require(sidebar)
+            let right = try #require(reading)
+            #expect(left.alphaComponent == 1)
+            #expect(abs(left.redComponent - right.redComponent) + abs(left.greenComponent - right.greenComponent)
+                + abs(left.blueComponent - right.blueComponent) > 0.01)
+        }
+    }
+
     @Test func `every style appearance accessibility and capability combination`() {
         for style in InterfaceStyle.allCases {
             for scheme in [ColorScheme.light, .dark] {
@@ -70,7 +87,7 @@ struct TypefluxUITokenTests {
                                  .windowBackgroundColor, .textBackgroundColor, .controlBackgroundColor, .separatorColor,
                                  .controlAccentColor, .selectedContentBackgroundColor, .systemGreen, .systemOrange,
                                  .systemRed]
-        for (token, expected) in zip(TypefluxColor.allCases, system) {
+        for (token, expected) in zip(TypefluxColor.allCases.filter { $0 != .sidebarBackground }, system) {
             #expect(token.nsColor == expected)
             #expect(token.color == Color(nsColor: expected))
         }

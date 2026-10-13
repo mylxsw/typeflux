@@ -167,13 +167,6 @@ struct AskConversationView: View {
             .navigationTitle("")
             .typefluxWindowChrome(title: workspaceTitle, actionTitles: [L("ask.sidebar.toggle"), L("ask.new")])
             .toolbar {
-                ToolbarItem(id: "typeflux.window.title", placement: .principal) {
-                    Text(workspaceTitle).font(.headline).lineLimit(1).truncationMode(.tail)
-                        .frame(width: toolbarTitleWidth, height: TypefluxControlHeight.toolbarItem.value(for: style))
-                        .help(workspaceTitle)
-                        .accessibilityAddTraits(.isHeader)
-                        .accessibilityIdentifier("typeflux.window.title")
-                }
                 ToolbarItem(id: "ask.workspace.sidebar", placement: .navigation) {
                     TypefluxIconButton(L("ask.sidebar.toggle"), systemImage: "sidebar.left", action: toggleSidebar)
                         .frame(width: TypefluxControlWidth.toolbarItem.value(for: style),
@@ -181,6 +174,12 @@ struct AskConversationView: View {
                         .keyboardShortcut("s", modifiers: [.command, .control])
                         .accessibilityIdentifier("ask.workspace.sidebar")
                 }
+                TypefluxToolbarTitle(workspaceTitle, width: toolbarTitleWidth)
+                #if compiler(>=6.2)
+                    if #available(macOS 26, *) {
+                        ToolbarSpacer(.flexible, placement: .automatic)
+                    }
+                #endif
                 if let center = toolbarCenter {
                     ToolbarItem(id: "ask.workspace.status", placement: .primaryAction) {
                         center
@@ -188,7 +187,7 @@ struct AskConversationView: View {
                                    height: TypefluxControlHeight.toolbarItem.value(for: style))
                     }
                 }
-                TypefluxToolbar(groups: toolbarGroups, prominent: newConversationAction)
+                TypefluxToolbar(groups: toolbarGroups, prominent: newConversationAction, separatesProminent: true)
             }
             .toolbarBackground(TypefluxColor.windowBackground.color, for: .windowToolbar)
             .toolbarBackground(style.usesGlass ? .automatic : .visible, for: .windowToolbar)
@@ -485,15 +484,20 @@ struct AskConversationView: View {
 
     private var historyList: some View {
         let items = visibleConversations
+        let sections = AskHistorySection.make(items, title: historyGroup)
         return List(selection: historySelection) {
             Group {
-                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                    if index == 0 || historyGroup(items[index - 1].updatedAt) != historyGroup(item.updatedAt) {
-                        groupHeader(historyGroup(item.updatedAt), first: index == 0)
-                    }
-                    if !collapsedGroups.contains(historyGroup(item.updatedAt)) {
-                        historyRow(item).tag(item.id)
-                            .listRowInsets(EdgeInsets())
+                ForEach(sections) { section in
+                    Section {
+                        if !collapsedGroups.contains(section.id) {
+                            ForEach(section.items) { item in
+                                historyRow(item).tag(item.id)
+                                    .listRowInsets(EdgeInsets())
+                            }
+                        }
+                    } header: {
+                        groupHeader(section.id, first: section.id == sections.first?.id)
+                            .textCase(nil)
                     }
                 }
                 if model.historyHasMore {

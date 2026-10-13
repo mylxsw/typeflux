@@ -169,6 +169,10 @@ struct AccountView: View {
 
     private var signedOutCard: some View {
         TypefluxFormSection(L("auth.account.signedOutTitle"), footer: L("auth.account.signedOutSubtitle")) {
+            ForEach(AskCloudPromo.features, id: \.self) { feature in
+                Label(L(feature.key), systemImage: feature.symbol)
+                    .font(.body).foregroundStyle(TypefluxColor.secondaryLabel.color)
+            }
             TypefluxButton(L("auth.account.signIn"), kind: .primary) { handlePrimaryAction() }
         }
     }

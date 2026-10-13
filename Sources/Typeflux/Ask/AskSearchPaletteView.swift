@@ -38,7 +38,17 @@ struct AskSearchPaletteView: View {
         .onChange(of: query) { _ in refresh() }
         .onChange(of: conversations) { _ in refresh() }
         .onChange(of: available) { _ in refresh() }
-        .background(AskArrowKeyMonitor { delta in state.move(delta) })
+        .background(TypefluxWindowKeyHandler { event in
+            guard (event.window?.firstResponder as? NSTextView)?.hasMarkedText() != true,
+                  event.modifierFlags.isDisjoint(with: [.command, .option, .control, .shift]) else { return false }
+            if let delta = AskArrowKeyMonitor.delta(keyCode: event.keyCode, modifiers: event.modifierFlags) {
+                state.move(delta)
+                return true
+            }
+            if event.keyCode == 36 || event.keyCode == 76 { run(); return true }
+            if event.keyCode == 53 { onClose(); return true }
+            return false
+        })
     }
 
     static func topInset(in height: CGFloat) -> CGFloat {

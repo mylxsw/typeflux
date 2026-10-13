@@ -157,6 +157,7 @@ struct AskComposer: View {
         guard !launcher else { return [] }
         return AskAttachmentStrip.contentItems(draft: draft.wrappedValue, screenshotState: screenshotState,
                                                capturing: model.capturingScreenshot)
+            .filter { screenshotPermissionNotice == nil || $0.kind != .screenshot }
     }
     /// The launcher's captured app, selection and screenshot; nil when nothing was captured.
     private var contextToken: AskLauncherContext.Token? {
@@ -951,7 +952,8 @@ struct AskComposer: View {
             sendError: launcher && model.submissionIssues[launcher] == nil ? model.error : nil,
             voiceError: voice.error,
             attachment: model.attachmentNotice(launcher: launcher),
-            screenshot: screenshotWarning ?? (launcher ? model.launcherScreenshotNotice : model.screenshotNotice),
+            screenshot: screenshotPermissionNotice == nil
+                ? screenshotWarning ?? (launcher ? model.launcherScreenshotNotice : model.screenshotNotice) : nil,
             model: launcher ? nil : model.modelLibrary.selectionExplanation(
                 for: model.modelReference(launcher: false), hasImage: model.hasConversationImages,
                 loggedIn: model.cloudAvailable(launcher: false)
@@ -962,6 +964,12 @@ struct AskComposer: View {
         let value = draft.wrappedValue
         guard !launcher, value.includeScreenshot, value.screenshot == nil, !model.capturingScreenshot else { return nil }
         return model.captureWarning
+    }
+    private var screenshotPermissionNotice: String? {
+        guard !launcher, model.screenshotCapability(launcher: false).canAttach else { return nil }
+        if !model.screenCaptureAllowed { return L("ask.capture.permission") }
+        if case let .failed(permission, message) = screenshotState, permission { return message }
+        return nil
     }
     @State private var noticesExpanded = false
     private var noticeRows: Int {
@@ -1260,19 +1268,23 @@ struct AskComposer: View {
     private var submissionIssue: AskSubmissionIssue? { model.submissionIssues[launcher] }
 
     private var showsScreenshotPermissionHint: Bool {
-        !draft.wrappedValue.includeScreenshot && !model.screenCaptureAllowed
+        screenshotPermissionNotice == nil && !draft.wrappedValue.includeScreenshot && !model.screenCaptureAllowed
             && model.screenshotCapability(launcher: launcher).canAttach
     }
 
     private var hasSupplementalContent: Bool {
-        showsScreenshotPermissionHint || submissionIssue != nil || !notices
+        screenshotPermissionNotice != nil || showsScreenshotPermissionHint || submissionIssue != nil || !notices
             .isEmpty || (!launcher && !model.queuedMessages.isEmpty) || editingQueued
             || !(draft.wrappedValue.references ?? []).isEmpty || showsStrip
     }
 
     private var supplementalContent: some View {
         VStack(spacing: 0) {
-            if showsScreenshotPermissionHint {
+            if let message = screenshotPermissionNotice {
+                AskScreenshotPermissionNotice(text: message, grant: model.openScreenCaptureSettings)
+                    .padding(.horizontal, chrome.horizontalInset)
+                    .padding(.top, TypefluxSpacing.small.value(for: interfaceStyle))
+            } else if showsScreenshotPermissionHint {
                 Button { screenshotAction?() } label: {
                     Label(L("ask.capture.optIn"), systemImage: "camera.viewfinder")
                         .font(.subheadline)
@@ -2062,7 +2074,7 @@ struct AskComposer: View {
             memoryOff: model.memorySwitchedOff(launcher: launcher),
             memoryPinned: !newConversation && model.selected?.memory?.isEmpty == false,
             pinnedMemory: newConversation ? nil : model.selected?.memory
-        )
+        ).map { $0.kind == .screenshot ? screenshotSwitch($0) : $0 }
     }
 
     private var screenshotState: AskScreenshotState {
@@ -2102,6 +2114,12 @@ struct AskComposer: View {
 
     private func screenshotSwitch(_ item: AskContextItem) -> AskContextItem {
         var item = item
+        if screenshotPermissionNotice != nil {
+            item.style = .neutral
+            item.systemImage = "camera.viewfinder"
+            item.title = L("ask.screenshot")
+            item.detail = nil
+        }
         if draft.wrappedValue.includeScreenshot {
             item.hint = L("ask.context.screenshot.removeHint")
         }

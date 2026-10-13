@@ -284,20 +284,21 @@ extension AskOpenChatTests {
     }
 
     @Test func `window reuses and restores minimized conversation with editor focus`() async throws {
-        _ = NSApplication.shared
+        TypefluxTestApplicationEnvironment.prepare()
         let f = try AskTestFixture()
         _ = f.model.credentials()
         let controller = AskConversationWindowController(settings: f.model.modelLibrary.settings, model: f.model)
         defer { controller.dismissLauncher(); f.model.resetSession() }
         #expect(await f.model.openChatFromLauncher())
-        let window = try #require(NSApp.windows
-            .first { $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-conversations" && $0.isVisible })
+        let window = try #require(controller.conversationWindow)
         defer { window.close() }
         window.miniaturize(nil)
         #expect(await f.model.openChatFromLauncher())
         #expect(!window.isMiniaturized)
         #expect(window.isVisible)
-        try await Task.sleep(for: .milliseconds(100))
+        try await SettingsBehaviorTestSupport.wait("Restored conversation editor focus") {
+            window.firstResponder is AskComposerTextView.Editor
+        }
         #expect(window.firstResponder is AskComposerTextView.Editor)
         #expect(NSApp.windows.count(where: { $0.identifier == window.identifier && $0.isVisible }) == 1)
     }

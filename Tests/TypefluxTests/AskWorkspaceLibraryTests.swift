@@ -37,7 +37,7 @@ struct AskWorkspaceLibraryTests {
 
     @Test func classicSurfacesUseTheirSystemColorRoles() {
         #expect(AskClassic.canvas == Color(nsColor: .textBackgroundColor))
-        #expect(AskClassic.sidebar == Color(nsColor: .windowBackgroundColor))
+        #expect(AskClassic.sidebar == TypefluxColor.sidebarBackground.color)
         #expect(AskClassic.card == Color(nsColor: .controlBackgroundColor))
         #expect(AskClassic.cardBorder == Color(nsColor: .separatorColor))
         #expect(AskClassic.selection == Color(nsColor: .selectedContentBackgroundColor))

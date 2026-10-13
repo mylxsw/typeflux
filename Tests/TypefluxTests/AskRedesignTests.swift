@@ -143,8 +143,10 @@ struct AskRedesignLayoutTests {
     @Test func workspaceKeepsTheWiderSidebarDistinctFromTheTranscript() async throws {
         _ = NSApplication.shared
         let fixture = try AskTestFixture()
+        let defaults = fixture.model.modelLibrary.settings.defaults
+        defaults.set(false, forKey: "ask.sidebarCollapsed")
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            let bitmap = try await render(AskConversationView(model: fixture.model),
+            let bitmap = try await render(AskConversationView(model: fixture.model).defaultAppStorage(defaults),
                                           size: NSSize(width: 1100, height: 740), appearance: appearance)
             let sidebar = try pixel(bitmap, x: 240, y: 400)
             let transcript = try pixel(bitmap, x: 300, y: 400)

@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// Owns account state, identity, and Cloud promotion for both sidebars.
+/// Owns account state and identity for both sidebars; Cloud features live on the account page.
 /// Chat supplies a settings action; the settings window uses its navigation menu instead.
-/// Signed out, exactly one sign-in action shows: the Cloud card, or a pill once the card is
-/// closed or the sidebar is compact. Only the signed-out identity varies: chat offers local
-/// mode; settings shows status only.
+/// Signed out, one compact sign-in action leaves room for the full identity and status.
+/// Legacy callers can opt into the dismissible promotion; Chat offers local-mode details.
 struct SidebarAccountFooter<SignedOutIdentity: View>: View {
     @ObservedObject var auth: AuthState
     @ObservedObject private var localization = AppLocalization.shared
@@ -18,7 +17,7 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
     let onOpenSettings: (() -> Void)?
     let signedOutIdentity: SignedOutIdentity
 
-    init(auth: AuthState, compact: Bool, defaults: UserDefaults = .standard, showsPromotion: Bool = true,
+    init(auth: AuthState, compact: Bool, defaults: UserDefaults = .standard, showsPromotion: Bool = false,
          onSignIn: @escaping () -> Void, onOpenAccount: @escaping () -> Void,
          onOpenSettings: (() -> Void)? = nil,
          @ViewBuilder signedOutIdentity: () -> SignedOutIdentity) {
@@ -53,15 +52,18 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
                 identity.layoutPriority(1)
                 Spacer(minLength: 4)
                 if !auth.isLoggedIn, !showsPromo {
-                    Button(L("ask.cloudPromo.signIn"), action: onSignIn)
-                        .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
-                        .help(AskCloudPromo.summary)
-                        .accessibilityHint(AskCloudPromo.summary)
-                        .accessibilityIdentifier("sidebar.signIn")
+                    TypefluxButton(kind: .borderless, action: onSignIn) {
+                        Image(systemName: "person.crop.circle.badge.plus").font(.body)
+                            .frame(width: 32, height: 32).contentShape(Rectangle())
+                    }
+                    .accessibilityLabel(L("ask.cloudPromo.signIn"))
+                    .help(L("ask.cloudPromo.signIn") + " · " + AskCloudPromo.summary)
+                    .accessibilityHint(AskCloudPromo.summary)
+                    .accessibilityIdentifier("sidebar.signIn")
                 }
                 if let onOpenSettings {
                     Button(action: onOpenSettings) {
-                        Image(systemName: "gearshape").font(.system(size: 15))
+                        Image(systemName: "gearshape").font(.body)
                             .foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .frame(width: 32, height: 32)
                             .contentShape(Circle())
@@ -74,7 +76,7 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
             }
             .padding(.leading, 12)
             .padding(.trailing, 10)
-            .frame(height: auth.isLoggedIn ? 52 : 56)
+            .frame(minHeight: auth.isLoggedIn ? 52 : 56)
         }
         .accessibilityIdentifier("sidebar.accountFooter")
         .environment(\.locale, localization.locale)
@@ -93,7 +95,7 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
 }
 
 extension SidebarAccountFooter where SignedOutIdentity == AskSignedOutIdentity {
-    init(auth: AuthState, compact: Bool, defaults: UserDefaults = .standard, showsPromotion: Bool = true,
+    init(auth: AuthState, compact: Bool, defaults: UserDefaults = .standard, showsPromotion: Bool = false,
          onSignIn: @escaping () -> Void, onOpenAccount: @escaping () -> Void,
          onOpenSettings: (() -> Void)? = nil) {
         self.init(auth: auth, compact: compact, defaults: defaults, showsPromotion: showsPromotion,
