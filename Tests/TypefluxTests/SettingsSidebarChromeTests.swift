@@ -223,7 +223,7 @@ struct SettingsSidebarChromeTests {
 }
 
 private extension SettingsSidebarChromeTests {
-    func toolbarElements(in window: NSWindow) -> [UI.Element] {
+    private func toolbarElements(in window: NSWindow) -> [UI.Element] {
         (window.toolbar?.items.compactMap(\.view).flatMap { UI.elements(in: $0) } ?? []) + UI.elements(in: window)
     }
 
