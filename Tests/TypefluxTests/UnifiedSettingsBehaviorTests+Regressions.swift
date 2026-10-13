@@ -6,6 +6,67 @@ import Testing
 /// These regressions share the suite's exclusive UI state and acceptance filter.
 @MainActor
 extension UnifiedSettingsBehaviorTests {
+    @Test(arguments: [AskBrowserSearchEntry.Kind.tab, .bookmark])
+    func `browser source identifiers remain distinct and edits preserve the other source`(
+        kind: AskBrowserSearchEntry.Kind
+    ) async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            for style in InterfaceStyle.allCases {
+                settings.askBrowserSearchSettings.tabsEnabled = false
+                settings.askBrowserSearchSettings.bookmarksEnabled = false
+                let view = LauncherSearchSettingsView(settings: settings, index: AskTestFileIndex(),
+                                                      fullDiskAccess: { true }, tab: .browsers)
+                    .environment(\.interfaceStyle, style)
+                try await SettingsBehaviorTestSupport.withWindow(view, width: 640, height: 900) { _, host in
+                    let identifier = "launcher.search.browser.\(kind.rawValue).enabled"
+                    try await SettingsBehaviorTestSupport.wait { regressionElements(identifier, in: host).count == 1 }
+                    let matchingSwitch = regressionElements(identifier, in: host).first
+                    let toggle = try #require(matchingSwitch)
+                    let frame = toggle.frame
+                    #expect(frame.width > 0 && frame.height > 0)
+                    try toggle.press()
+                    #expect(settings.askBrowserSearchSettings.tabsEnabled == (kind == .tab))
+                    #expect(settings.askBrowserSearchSettings.bookmarksEnabled == (kind == .bookmark))
+                    try toggle.press()
+                    #expect(!settings.askBrowserSearchSettings.tabsEnabled)
+                    #expect(!settings.askBrowserSearchSettings.bookmarksEnabled)
+                }
+            }
+        }
+    }
+
+    @Test func `persona menu selection targets each picker and preserves the unsaved definition`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            let fixture = try PersonaLibraryFixture()
+            defer { fixture.cleanUp() }
+            let model = fixture.model
+            model.selectPersona(fixture.custom.id)
+            model.personaDraftPrompt = "Unsaved definition"
+            let originalDefault = model.defaultPersonaSelectionID
+            let view = StudioPersonaLibraryView(viewModel: model) { model.personaPendingDeletion = $0 }
+            try await SettingsBehaviorTestSupport.withWindow(view, width: 950, height: 650) { window, host in
+                window.setFrameOrigin(NSPoint(x: 100, y: 100))
+                try await SettingsBehaviorTestSupport.wait {
+                    regressionElements("personas.auxiliarySelection", in: host).count == 1
+                        && regressionElements("personas.defaultSelection", in: host).count == 1
+                }
+                try Self.selectPopupItem(fixture.custom.name, identifier: "personas.auxiliarySelection", in: window)
+                #expect(model.auxiliaryPersonaID == fixture.custom.id.uuidString)
+                #expect(model.defaultPersonaSelectionID == originalDefault)
+                // Let AppKit finish closing the first tracking loop before opening the next picker.
+                try await Task.sleep(for: .milliseconds(200))
+                try Self.selectPopupItem(
+                    L("personas.redesign.none"),
+                    identifier: "personas.defaultSelection",
+                    in: window
+                )
+                #expect(model.defaultPersonaSelectionID == nil)
+                #expect(model.auxiliaryPersonaID == fixture.custom.id.uuidString)
+                #expect(model.personaDraftPrompt == "Unsaved definition")
+            }
+        }
+    }
+
     @Test func `keyword disclosure actions keep row identities and sorted persisted state`() async throws {
         try await SettingsBehaviorTestSupport.withFixture { _ in
             let fixture = try AskWorkflowFixture()

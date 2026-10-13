@@ -18,6 +18,7 @@ extension LauncherSearchSettingsView {
                 }
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("launcher.search.browsers")
     }
 
@@ -29,20 +30,19 @@ extension LauncherSearchSettingsView {
             AgentSettingsRow(icon: tabs ? "rectangle.on.rectangle" : "bookmark",
                              title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"),
                              subtitle: tabs ? "tab" : "bmk") {
-                Toggle("", isOn: browserBinding(tabs ? \.tabsEnabled : \.bookmarksEnabled))
-                    .labelsHidden().toggleStyle(.switch)
-                    .accessibilityLabel(L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"))
+                TypefluxSwitch(L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"),
+                               isOn: browserBinding(tabs ? \.tabsEnabled : \.bookmarksEnabled), labelsHidden: true)
                     .accessibilityIdentifier("launcher.search.browser.\(kind.rawValue).enabled")
             }
             AgentSettingsRow(icon: "magnifyingglass", title: L("ask.browser.direct"),
                              subtitle: L("ask.browser.directHint")) {
-                Toggle("", isOn: browserBinding(tabs ? \.directTabs : \.directBookmarks))
-                    .labelsHidden().toggleStyle(.switch).disabled(!enabled)
-                    .accessibilityLabel(L("ask.browser.direct"))
+                TypefluxSwitch(L("ask.browser.direct"),
+                               isOn: browserBinding(tabs ? \.directTabs : \.directBookmarks), labelsHidden: true)
+                    .disabled(!enabled)
             }
             ForEach(AskSearchBrowser.allCases) { browser in
                 AgentSettingsRow(icon: "globe", title: browser.title) {
-                    Toggle("", isOn: Binding(get: {
+                    TypefluxSwitch(browser.title, isOn: Binding(get: {
                         (tabs ? browserPreferences.tabBrowsers : browserPreferences.bookmarkBrowsers).contains(browser)
                     }, set: { value in
                         updateBrowsers { preferences in
@@ -57,10 +57,9 @@ extension LauncherSearchSettingsView {
                                 preferences.bookmarkBrowsers = selected
                             }
                         }
-                    }))
-                    .labelsHidden().toggleStyle(.switch).disabled(!enabled)
-                    .accessibilityLabel(browser.title)
-                    .accessibilityIdentifier("launcher.search.browser.\(kind.rawValue).\(browser.id)")
+                    }), labelsHidden: true)
+                        .disabled(!enabled)
+                        .accessibilityIdentifier("launcher.search.browser.\(kind.rawValue).\(browser.id)")
                 }
             }
             if !tabs {

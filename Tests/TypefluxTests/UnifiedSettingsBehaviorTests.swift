@@ -131,22 +131,6 @@ struct UnifiedSettingsBehaviorTests {
         }
     }
 
-    /// Native menu selection sends the same action as keyboard selection without opening a system menu.
-    static func selectPopupItem(_ title: String, in window: NSWindow) throws {
-        @MainActor func popups(in view: NSView) -> [NSPopUpButton] {
-            (view as? NSPopUpButton).map { [$0] } ?? view.subviews.flatMap { popups(in: $0) }
-        }
-        let contentView = window.contentView
-        let content = try #require(contentView)
-        let matchingPopup = popups(in: content).first { $0.itemTitles.contains(title) }
-        let popup = try #require(matchingPopup)
-        popup.selectItem(withTitle: title)
-        let popupAction = popup.action
-        let action = try #require(popupAction)
-        let sent = NSApp.sendAction(action, to: popup.target, from: popup)
-        #expect(sent)
-    }
-
     private func control(_ identifier: String, in root: Any) throws -> Controls.Element {
         let element = Controls.elements(in: root).first {
             $0.value("accessibilityIdentifier") as? String == identifier
