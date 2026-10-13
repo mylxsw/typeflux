@@ -332,12 +332,7 @@ struct AskResponsiveWorkspaceTests {
     private func click(_ element: AccessibleElement, in window: NSWindow) throws {
         let frame = window.convertFromScreen(element.accessibilityFrame())
         let point = NSPoint(x: frame.midX, y: frame.midY)
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
-                context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
-            NSApp.sendEvent(event)
-        }
+        try AskWorkspaceTestMouse.click(at: point, in: window)
     }
 
     private func key(_ characters: String, code: UInt16, modifiers: NSEvent.ModifierFlags = [], in window: NSWindow) throws {

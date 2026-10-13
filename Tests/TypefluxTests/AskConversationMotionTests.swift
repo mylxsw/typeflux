@@ -15,6 +15,7 @@ extension AskComposerInteractionTests {
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let fixture = try await motionFixture()
+        defer { fixture.model.resetSession() }
         let (window, hosting) = try await hostMotionView(AskConversationView(model: fixture.model).defaultAppStorage(defaults))
         defer { window.close() }
         let editor = try #require(motionEditors(hosting).first)
@@ -22,10 +23,16 @@ extension AskComposerInteractionTests {
         let samples = try await clickAndSample(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.sidebar", in: window),
                                                in: window) { editor.convert(editor.bounds, to: nil).minX }
         let end = try #require(samples.last)
+        try #require(defaults.bool(forKey: "ask.sidebarCollapsed"), "The toolbar must update the sidebar preference")
         #expect(end < start - 50, "The transcript column takes the sidebar's space")
         #expect(samples.contains { $0 < start - 1 && $0 > end + 1 }, "Expected intermediate frames, got \(samples)")
-        #expect(defaults.bool(forKey: "ask.sidebarCollapsed"))
-        fixture.model.resetSession()
+        let expanded = try await clickAndSample(
+            AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.sidebar", in: window), in: window
+        ) { editor.convert(editor.bounds, to: nil).minX }
+        let expandedEnd = try #require(expanded.last)
+        #expect(!defaults.bool(forKey: "ask.sidebarCollapsed"))
+        #expect(abs(expandedEnd - start) < 2, "Expanding restores the native sidebar's width")
+        #expect(motionEditors(hosting).first === editor, "Toggling must preserve the live composer editor")
     }
 
     @Test func usagePanelSlidesWhenToggled() async throws {
@@ -35,6 +42,7 @@ extension AskComposerInteractionTests {
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let fixture = try await motionFixture()
+        defer { fixture.model.resetSession() }
         let (window, hosting) = try await hostMotionView(AskConversationView(model: fixture.model).defaultAppStorage(defaults))
         defer { window.close() }
         let editor = try #require(motionEditors(hosting).first)
@@ -44,7 +52,6 @@ extension AskComposerInteractionTests {
         let end = try #require(samples.last)
         #expect(end < start - 50, "The usage panel takes room from the transcript column")
         #expect(samples.contains { $0 < start - 1 && $0 > end + 1 }, "Expected intermediate frames, got \(samples)")
-        fixture.model.resetSession()
     }
 
     private func motionFixture() async throws -> AskTestFixture {
@@ -59,22 +66,12 @@ extension AskComposerInteractionTests {
         return fixture
     }
 
-    /// Clicks until the layout starts to move (a loaded test host can drop a
-    /// click that lands before the header is laid out), then samples each frame.
+    /// A single complete click must update the layout within a bounded sampling window.
     private func clickAndSample(_ point: NSPoint, in window: NSWindow,
                                 _ value: () -> CGFloat) async throws -> [CGFloat] {
-        let start = value()
         var values: [CGFloat] = []
-        for _ in 0 ..< 3 where values.allSatisfy({ abs($0 - start) < 0.5 }) {
-            try clickPoint(point, in: window)
-            values = []
-            for _ in 0 ..< 20 {
-                try await Task.sleep(for: .milliseconds(16))
-                values.append(value())
-                if abs(values.last! - start) >= 0.5 { break }
-            }
-        }
-        for _ in 0 ..< 60 {
+        try AskWorkspaceTestMouse.click(at: point, in: window)
+        for _ in 0 ..< 80 {
             try await Task.sleep(for: .milliseconds(16))
             values.append(value())
         }
@@ -85,16 +82,6 @@ extension AskComposerInteractionTests {
         (view as? AskComposerTextView.Editor).map { [$0] } ?? view.subviews.flatMap(motionEditors)
     }
 
-    private func clickPoint(_ point: NSPoint, in window: NSWindow) throws {
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                        timestamp: ProcessInfo.processInfo.systemUptime,
-                                                        windowNumber: window.windowNumber, context: nil, eventNumber: 0,
-                                                        clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
-            NSApp.sendEvent(event)
-        }
-    }
-
     private func hostMotionView<V: View>(_ view: V) async throws -> (NSWindow, NSView) {
         _ = NSApplication.shared
         let window = MotionWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740),
@@ -103,7 +90,7 @@ extension AskComposerInteractionTests {
         window.isReleasedWhenClosed = false
         let hosting = NSHostingView(rootView: view)
         window.contentView = hosting
-        window.orderFront(nil)
+        window.makeKeyAndOrderFront(nil)
         try await Task.sleep(for: .milliseconds(400))
         hosting.layoutSubtreeIfNeeded()
         return (window, hosting)

@@ -37,14 +37,7 @@ extension AskComposerInteractionTests {
         try await Task.sleep(for: .milliseconds(300))
 
         func click(_ point: NSPoint) throws {
-            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-                let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                            timestamp: ProcessInfo.processInfo.systemUptime,
-                                                            windowNumber: window.windowNumber, context: nil,
-                                                            eventNumber: 0, clickCount: 1,
-                                                            pressure: type == .leftMouseDown ? 1 : 0))
-                NSApp.sendEvent(event)
-            }
+            try AskWorkspaceTestMouse.click(at: point, in: window)
         }
         /// Rows where the fill's blue is drawn at `column`, in points from the top.
         func blueRows(atX column: CGFloat) throws -> [CGFloat] {
@@ -106,14 +99,7 @@ extension AskComposerInteractionTests {
         try await Task.sleep(for: .milliseconds(400))
 
         func click(_ point: NSPoint, in target: NSWindow) throws {
-            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-                let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                            timestamp: ProcessInfo.processInfo.systemUptime,
-                                                            windowNumber: target.windowNumber, context: nil,
-                                                            eventNumber: 0, clickCount: 1,
-                                                            pressure: type == .leftMouseDown ? 1 : 0))
-                NSApp.sendEvent(event)
-            }
+            try AskWorkspaceTestMouse.click(at: point, in: target)
         }
 
         try click(AskWorkspaceTestAccessibility.center(identifier: "ask.test.model", in: window), in: window)

@@ -29,14 +29,7 @@ extension AskComposerInteractionTests {
             try await Task.sleep(for: .milliseconds(400))
 
             func clickHeader(_ point: NSPoint) throws {
-                for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-                    let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                              timestamp: ProcessInfo.processInfo.systemUptime,
-                                                              windowNumber: window.windowNumber,
-                                                              context: nil, eventNumber: 0,
-                                                              clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
-                    NSApp.sendEvent(event)
-                }
+                try AskWorkspaceTestMouse.click(at: point, in: window)
             }
 
             #expect(fixture.model.selectedId == nil)
@@ -80,13 +73,7 @@ extension AskComposerInteractionTests {
             try await Task.sleep(for: .milliseconds(400))
             #expect(fixture.model.selectedId == "compose")
             let point = try AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.new", in: window)
-            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-                let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                            timestamp: ProcessInfo.processInfo.systemUptime,
-                                                            windowNumber: window.windowNumber, context: nil, eventNumber: 0,
-                                                            clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
-                NSApp.sendEvent(event)
-            }
+            try AskWorkspaceTestMouse.click(at: point, in: window)
             try await fixture.wait { fixture.model.selectedId == nil }
             #expect(fixture.model.selectedId == nil, "collapsed: \(collapsed)")
             fixture.model.resetSession()

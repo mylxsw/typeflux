@@ -248,11 +248,22 @@ struct AskComposerResponsiveTests {
         var selected = false
         var state: NSControl.StateValue?
         var titles: [String] = []
+        let escape = try #require(NSEvent.keyEvent(
+            with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+            windowNumber: button.window?.windowNumber ?? 0, context: nil, characters: "\u{1b}",
+            charactersIgnoringModifiers: "\u{1b}", isARepeat: false, keyCode: 53
+        ))
+        var escapePosted = false
         // SwiftUI populates the NSMenu only when tracking starts. Run the
         // selection in that tracking loop, then close it before dispatching.
         let timer = Timer(timeInterval: 0.2, repeats: false) { _ in
             MainActor.assumeIsolated {
-                guard let menu = button.menu else { return }
+                guard let menu = button.menu else {
+                    // A missing menu must fail the test instead of trapping the runner in tracking.
+                    escapePosted = true
+                    NSApp.postEvent(escape, atStart: true)
+                    return
+                }
                 titles = menu.items.map(\.title)
                 let index = menu.items.firstIndex { $0.title == title }
                 menu.cancelTrackingWithoutAnimation()
@@ -265,8 +276,11 @@ struct AskComposerResponsiveTests {
         }
         RunLoop.main.add(timer, forMode: .eventTracking)
         RunLoop.main.add(timer, forMode: .common)
+        defer {
+            timer.invalidate()
+            if escapePosted { AskWorkspaceTestMouse.removeIfQueued(escape, matching: .keyDown) }
+        }
         button.performClick(nil)
-        timer.invalidate()
         try #require(selected, "Menu item \(title) missing from \(titles)")
         return state
     }
@@ -300,14 +314,7 @@ struct AskComposerResponsiveTests {
         let rect = try #require(element.value(forKey: "accessibilityFrame") as? NSValue).rectValue
         let frame = window.convertFromScreen(rect)
         let point = NSPoint(x: frame.midX, y: frame.midY)
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                        timestamp: ProcessInfo.processInfo.systemUptime,
-                                                        windowNumber: window.windowNumber,
-                                                        context: nil, eventNumber: 0, clickCount: 1,
-                                                        pressure: type == .leftMouseDown ? 1 : 0))
-            NSApp.sendEvent(event)
-        }
+        try AskWorkspaceTestMouse.click(at: point, in: window)
     }
 
     private func findEditor(_ view: NSView) -> AskComposerTextView.Editor? {

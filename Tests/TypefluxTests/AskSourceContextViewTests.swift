@@ -315,13 +315,7 @@ extension AskComposerInteractionTests {
     }
 
     private func sendSourceClick(at point: NSPoint, in window: NSWindow) throws {
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                       timestamp: ProcessInfo.processInfo.systemUptime,
-                                                       windowNumber: window.windowNumber, context: nil, eventNumber: 0,
-                                                       clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
-            NSApp.sendEvent(event)
-        }
+        try AskWorkspaceTestMouse.click(at: point, in: window)
     }
 
     private func sourceVoiceButton(in root: NSView) -> AskVoiceButton.Control? {

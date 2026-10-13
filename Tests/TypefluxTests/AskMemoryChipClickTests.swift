@@ -89,13 +89,7 @@ extension AskComposerInteractionTests {
         let anchor = try #require(anchor)
         let frame = anchor.convert(anchor.bounds, to: nil)
         let point = NSPoint(x: frame.midX, y: frame.midY)
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                        timestamp: ProcessInfo.processInfo.systemUptime,
-                                                        windowNumber: window.windowNumber, context: nil, eventNumber: 0,
-                                                        clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
-            NSApp.sendEvent(event)
-        }
+        try AskWorkspaceTestMouse.click(at: point, in: window)
     }
 
     private func hostChipView<V: View>(_ view: V, size: NSSize) async throws -> (NSWindow, NSView) {
