@@ -64,7 +64,9 @@ struct ScreenshotCaptureWindowPolicyTests {
 
     @Test(.enabled(if: CGPreflightScreenCaptureAccess()))
     func realCaptureKeepsAppPagePixelsBehindCaptureControls() async throws {
-        let screen = try #require(NSScreen.screens.first)
+        let screen = try #require(NSScreen.screens.first {
+            ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == CGMainDisplayID()
+        }, "The fixture must use the same display as the capture request")
         let area = screen.visibleFrame
         let pageFrame = CGRect(x: area.midX - 120, y: area.midY - 90, width: 240, height: 180)
         let page = NSWindow(contentRect: pageFrame, styleMask: [.borderless], backing: .buffered, defer: false)
@@ -72,7 +74,9 @@ struct ScreenshotCaptureWindowPolicyTests {
         page.title = "Typeflux screenshot regression test"
         page.isOpaque = true
         page.backgroundColor = .green
-        page.level = .floating
+        // Keep the fixture above windows left by earlier suites. The excluded red control
+        // uses the same level and is ordered above this green page explicitly.
+        page.level = .screenSaver
         let control = ScreenshotFloatingPanel(frame: pageFrame)
         control.isOpaque = true
         control.backgroundColor = .red

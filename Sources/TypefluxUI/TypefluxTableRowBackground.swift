@@ -5,6 +5,8 @@ import SwiftUI
 struct TypefluxTableRowBackground: NSViewRepresentable {
     let tableIdentifier: String
     var stylesRowOnly = false
+    // Refresh the native surface after document changes, including removal of the last row.
+    var rowCount = 0
 
     final class RowBackgroundView: NSView {
         var tableIdentifier = ""
@@ -41,6 +43,11 @@ struct TypefluxTableRowBackground: NSViewRepresentable {
                 refreshScheduled = false
                 guard rowStylingActive, window != nil, let table = contentTable(),
                       let scroll = table.enclosingScrollView else { return }
+                // AppKit may restore the table's background when its rows are updated.
+                if scroll.drawsBackground { scroll.drawsBackground = false }
+                if scroll.contentView.drawsBackground { scroll.contentView.drawsBackground = false }
+                if table.backgroundColor.alphaComponent != 0 { table.backgroundColor = .clear }
+                if table.usesAlternatingRowBackgroundColors { table.usesAlternatingRowBackgroundColors = false }
                 if stylesRowOnly {
                     // Cell lifecycle updates also cover rows inserted without changing the table's frame.
                     guard let rowView = enclosingRowView() else { return }
@@ -53,10 +60,6 @@ struct TypefluxTableRowBackground: NSViewRepresentable {
                 }
                 observeRows(table, clip: scroll.contentView)
                 // SwiftUI owns the delegate, selection, sorting and scroll geometry. Change only surfaces.
-                if scroll.drawsBackground { scroll.drawsBackground = false }
-                if scroll.contentView.drawsBackground { scroll.contentView.drawsBackground = false }
-                if table.backgroundColor != .clear { table.backgroundColor = .clear }
-                if table.usesAlternatingRowBackgroundColors { table.usesAlternatingRowBackgroundColors = false }
                 table.effectiveAppearance.performAsCurrentDrawingAppearance {
                     table.enumerateAvailableRowViews { rowView, row in
                         self.applyRowStripe(rowView, row: row)

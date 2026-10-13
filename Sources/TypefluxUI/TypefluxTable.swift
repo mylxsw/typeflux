@@ -32,7 +32,7 @@ public struct TypefluxTable<Row: Identifiable, Columns: TableColumnContent>: Vie
             table
                 .scrollContentBackground(.hidden)
                 .background(TypefluxColor.contentBackground.color)
-                .background(TypefluxTableRowBackground(tableIdentifier: identifier)
+                .background(TypefluxTableRowBackground(tableIdentifier: identifier, rowCount: rows.count)
                     .frame(width: 0, height: 0))
         }
     }

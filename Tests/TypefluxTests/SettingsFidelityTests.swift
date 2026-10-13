@@ -134,7 +134,7 @@ struct SettingsFidelityTests {
     }
 
     @Test(arguments: [720.0, 1100.0])
-    func `vocabulary transfer menu stays in the right action group`(width: Double) async throws {
+    func `vocabulary toolbar places import before add in the right action group`(width: Double) async throws {
         try await UI.withFixture { settings in
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: directory) }
@@ -143,21 +143,29 @@ struct SettingsFidelityTests {
             controller.show(settingsStore: settings, historyStore: FileHistoryStore(baseDir: directory),
                             initialSection: .vocabulary)
             let window = try #require(controller.window)
-            defer { window.close() }
+            defer { TypefluxNavigationTestSupport.closeWindow(window) }
             window.setContentSize(NSSize(width: width, height: 500))
+            let identifiers = ["typeflux.toolbar.vocabulary.import", "typeflux.toolbar.vocabulary.add"]
             try await UI.wait {
-                UI.elements(in: window).contains {
-                    $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.vocabulary.import"
-                        && $0.frame.width > 0
+                identifiers.allSatisfy { identifier in
+                    AskLibraryTestSupport.elements(in: window).contains {
+                        $0.value("accessibilityIdentifier") as? String == identifier
+                            && !$0.frame.isEmpty && window.frame.contains($0.frame)
+                    }
                 }
             }
-            let transfer = try #require(UI.elements(in: window).first {
-                $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.vocabulary.import"
-            })
-            let add = try UI.button(L("vocabulary.action.newWord"), in: window)
-            #expect(transfer.frame.minX >= add.frame.maxX)
-            #expect(transfer.frame.minX > window.frame.midX)
-            #expect(!UI.elements(in: window).contains {
+            // Native toolbar roots precede SwiftUI's duplicate AX proxies; identify both controls explicitly.
+            let frames = try identifiers.map { identifier in
+                try #require(AskLibraryTestSupport.elements(in: window).first {
+                    $0.value("accessibilityIdentifier") as? String == identifier
+                        && !$0.frame.isEmpty && window.frame.contains($0.frame)
+                }).frame
+            }
+            let transfer = frames[0]
+            let add = frames[1]
+            #expect(transfer.maxX <= add.minX + 1)
+            #expect(transfer.minX > window.frame.midX)
+            #expect(!AskWorkspaceTestAccessibility.elements(in: window).contains {
                 $0.value("accessibilityIdentifier") as? String == "vocabulary.transferMenu"
             })
         }

@@ -3,8 +3,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// One row of a result list: icon, title, subtitle, and on the chosen row what
-/// Return does ("↩ Copy"). A soft accent wash marks keyboard focus without
-/// competing with the title or the list's section heading.
+/// Return does ("↩ Copy"). Native selection uses the system accent and
+/// contrasting selected text colors in both interface styles.
 struct AskPluginItemRow: View {
     var item: AskPluginItem
     /// The plugin's symbol, for rows without an icon of their own.
@@ -41,9 +41,11 @@ struct AskPluginItemRow: View {
             }
             .padding(.horizontal, 8)
             .frame(height: height)
-            .modifier(TypefluxSpotlightRow(selected: filled))
         }
         .buttonStyle(.plain)
+        // Paint outside the button label: the native plain style can dim its label
+        // in an inactive window, which must not blend the selection with the panel.
+        .modifier(TypefluxSpotlightRow(selected: filled))
         .disabled(!item.valid)
         .accessibilityLabel(item.subtitle.isEmpty ? item.title : item.title + ", " + item.subtitle)
         .accessibilityAddTraits(item.valid && selected ? .isSelected : [])

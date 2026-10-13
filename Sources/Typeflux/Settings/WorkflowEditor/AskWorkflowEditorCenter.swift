@@ -50,6 +50,9 @@ struct AskWorkflowEditorCenter: View {
                 configArea
             }
         }
+        .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.workflow.editor.center")
         .alert(L("ask.workflow.editor.addFile"), isPresented: $addingFile) {
             TextField("helper.py", text: $newFile)
             Button(L("ask.workflow.editor.add")) { model.addFile(newFile); newFile = "" }

@@ -207,12 +207,26 @@ final class StudioViewModel: ObservableObject {
 
     @Published var mcpServers: [MCPServerConfig]
     @Published var mcpDraftName: String = ""
-    @Published var mcpDraftTransportType: MCPTransportType = .stdio
-    @Published var mcpDraftStdioCommand: String = ""
-    @Published var mcpDraftStdioArgs: String = ""
-    @Published var mcpDraftStdioEnv: String = ""
-    @Published var mcpDraftHTTPURL: String = ""
-    @Published var mcpDraftHTTPHeaders: String = ""
+    // Invalidate a connection test synchronously with the edit. A view's deferred
+    // onChange can otherwise cancel a newer test that already uses these values.
+    @Published var mcpDraftTransportType: MCPTransportType = .stdio {
+        didSet { if oldValue != mcpDraftTransportType { resetMCPDraftConnectionTest() } }
+    }
+    @Published var mcpDraftStdioCommand: String = "" {
+        didSet { if oldValue != mcpDraftStdioCommand { resetMCPDraftConnectionTest() } }
+    }
+    @Published var mcpDraftStdioArgs: String = "" {
+        didSet { if oldValue != mcpDraftStdioArgs { resetMCPDraftConnectionTest() } }
+    }
+    @Published var mcpDraftStdioEnv: String = "" {
+        didSet { if oldValue != mcpDraftStdioEnv { resetMCPDraftConnectionTest() } }
+    }
+    @Published var mcpDraftHTTPURL: String = "" {
+        didSet { if oldValue != mcpDraftHTTPURL { resetMCPDraftConnectionTest() } }
+    }
+    @Published var mcpDraftHTTPHeaders: String = "" {
+        didSet { if oldValue != mcpDraftHTTPHeaders { resetMCPDraftConnectionTest() } }
+    }
     @Published var mcpDraftEnabled: Bool = true
     @Published var mcpDraftAutoConnect: Bool = false
     @Published var mcpDraftEditingServerID: UUID?
@@ -1774,6 +1788,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func beginAddMCPServer() {
+        resetMCPDraftConnectionTest()
         mcpDraftEditingServerID = nil
         mcpDraftName = ""
         mcpDraftTransportType = .stdio
@@ -1789,6 +1804,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func beginEditMCPServer(_ server: MCPServerConfig) {
+        resetMCPDraftConnectionTest()
         mcpDraftEditingServerID = server.id
         mcpDraftName = server.name
         mcpDraftEnabled = server.enabled

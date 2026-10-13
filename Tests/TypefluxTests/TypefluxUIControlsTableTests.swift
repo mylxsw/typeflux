@@ -76,9 +76,11 @@ struct TypefluxUIControlsTableTests {
             #expect(abs(scroll.frame.height - host.bounds.height) < 1)
             #expect(NSLocationInRange(3, native.rows(in: native.visibleRect)))
             source.rows.removeAll()
-            try await SettingsBehaviorTestSupport.wait { native.numberOfRows == 0 }
+            try await SettingsBehaviorTestSupport.wait {
+                native.numberOfRows == 0 && native.backgroundColor.alphaComponent == 0
+            }
             #expect(abs(scroll.frame.height - host.bounds.height) < 1)
-            #expect(!native.usesAlternatingRowBackgroundColors && native.backgroundColor == .clear)
+            #expect(!native.usesAlternatingRowBackgroundColors && native.backgroundColor.alphaComponent == 0)
         }
     }
 
@@ -102,10 +104,11 @@ struct TypefluxUIControlsTableTests {
                 let scroll = try #require(native.enclosingScrollView)
                 try await SettingsBehaviorTestSupport.wait {
                     !native.usesAlternatingRowBackgroundColors && !scroll.drawsBackground
+                        && native.backgroundColor.alphaComponent == 0
                 }
                 #expect(abs(scroll.frame.height - host.bounds.height) < 1)
                 #expect(!scroll.contentView.drawsBackground)
-                #expect(native.backgroundColor == .clear)
+                #expect(native.backgroundColor.alphaComponent == 0)
                 let stripe = try #require(native.rowView(atRow: 1, makeIfNecessary: false))
                 try await SettingsBehaviorTestSupport.wait {
                     stripe.backgroundColor == NSColor.alternatingContentBackgroundColors.last

@@ -36,6 +36,25 @@ struct SettingsSidebarChromeTests {
     }
 
     @Test(arguments: InterfaceStyle.allCases)
+    func `account only footers preserve historical promo dismissal preferences`(style: InterfaceStyle) async throws {
+        try await UI.withFixture { settings in
+            let dismissedAt = Date().timeIntervalSince1970
+            settings.defaults.set(dismissedAt, forKey: AskCloudPromo.dismissedKey)
+            let footer = SidebarAccountFooter(auth: AuthState.shared, compact: false, defaults: settings.defaults,
+                                              onSignIn: {}, onOpenAccount: {}, onOpenSettings: {})
+                .environment(\.interfaceStyle, style)
+            for _ in 0 ..< 2 {
+                try await UI.withWindow(footer, width: 256, height: 56) { _, host in
+                    try await UI.wait { signInButtons(in: host) == 1 }
+                    #expect(!UI.contains("Typeflux Cloud", in: host))
+                    #expect(!UI.contains(L("ask.cloudPromo.dismiss"), in: host))
+                    #expect(settings.defaults.double(forKey: AskCloudPromo.dismissedKey) == dismissedAt)
+                }
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
     func `single account rows preserve chat local mode without duplicate status`(style: InterfaceStyle) async throws {
         try await UI.withFixture { settings in
             var localModeOpened = 0
@@ -139,7 +158,7 @@ struct SettingsSidebarChromeTests {
             controller.modelLibrary = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
             controller.show(settingsStore: settings, historyStore: history, initialSection: .history)
             let window = try #require(controller.window)
-            defer { window.close() }
+            defer { TypefluxNavigationTestSupport.closeWindow(window) }
             #expect(window.toolbarStyle == .unified)
             #expect(window.toolbar != nil)
             for size in [NSSize(width: 1100, height: 800), NSSize(width: 1440, height: 900),
@@ -147,20 +166,31 @@ struct SettingsSidebarChromeTests {
                 window.setContentSize(size)
                 window.setFrameOrigin(NSPoint(x: 80, y: 80))
                 let host = try #require(window.contentView)
-                try await UI.wait { UI.contains(L("history.filter.title"), in: window) }
-                // The toolbar can appear before the asynchronous history rows are loaded.
-                try await UI.wait {
+                try await UI.wait("History filter toolbar at width \(size.width)") {
+                    AskWorkspaceTestAccessibility.frame(identifier: "history.filterMenu", in: window) != nil
+                }
+                // Native rows navigate to detail; the old in-row Expand control is gone.
+                try await UI.wait("Loaded history navigation rows at width \(size.width)") {
                     UI.elements(in: host).contains {
-                        ($0.value("accessibilityIdentifier") as? String ?? "").hasPrefix("history.open.")
+                        ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("history.open.") == true
                     }
                 }
                 try await Task.sleep(for: .milliseconds(180))
                 let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
-                for label in [L("history.action.exportMarkdown"), L("common.clear")] {
-                    let button = try UI.button(label, in: window)
-                    #expect(button.frame.width >= 20)
-                    #expect(button.frame.minX >= bounds.minX - 1 && button.frame.maxX <= bounds.maxX + 1)
+                let identifiers = ["typeflux.toolbar.history.export", "typeflux.toolbar.history.clear"]
+                try await UI.wait("History toolbar actions at width \(size.width)") {
+                    identifiers.allSatisfy { AskWorkspaceTestAccessibility.frame(identifier: $0, in: window) != nil }
                 }
+                for identifier in identifiers {
+                    let frame = try #require(AskWorkspaceTestAccessibility.frame(identifier: identifier, in: window))
+                    #expect(frame.width >= 20)
+                    #expect(frame.minX >= bounds.minX - 1 && frame.maxX <= bounds.maxX + 1)
+                }
+                let row = try #require(UI.elements(in: host).first {
+                    ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("history.open.") == true
+                        && !$0.frame.isEmpty
+                })
+                #expect(row.frame.minX >= bounds.minX - 1 && row.frame.maxX <= bounds.maxX + 1)
                 if !UI.elements(in: window).contains(where: {
                     $0.label == L("ask.cloudPromo.signIn") && $0.frame.width > 0 && $0.frame.height > 0
                         && window.frame.contains($0.frame)
@@ -177,16 +207,21 @@ struct SettingsSidebarChromeTests {
                 #expect(!UI.contains("Typeflux Cloud", in: window))
                 try await capture(window, name: "settings-history-\(style.rawValue)-\(Int(size.width))-dark")
             }
-            window.close()
+            TypefluxNavigationTestSupport.closeWindow(window)
             settings.appearanceMode = .light
             let lightController = SettingsWindowController()
             lightController.modelLibrary = controller.modelLibrary
             lightController.show(settingsStore: settings, historyStore: history, initialSection: .history)
             let lightWindow = try #require(lightController.window)
-            defer { lightWindow.close() }
+            defer { TypefluxNavigationTestSupport.closeWindow(lightWindow) }
             lightWindow.setContentSize(NSSize(width: 720, height: 500))
             lightWindow.setFrameOrigin(NSPoint(x: 80, y: 80))
-            try await UI.wait { UI.contains(L("history.filter.title"), in: lightWindow) }
+            let lightHost = try #require(lightWindow.contentView)
+            try await UI.wait("Light History navigation rows") {
+                UI.elements(in: lightHost).contains {
+                    ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("history.open.") == true
+                }
+            }
             #expect(lightWindow.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .aqua)
             try await capture(lightWindow, name: "settings-history-\(style.rawValue)-720-light")
         }

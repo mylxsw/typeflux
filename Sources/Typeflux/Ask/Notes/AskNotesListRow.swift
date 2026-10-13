@@ -6,30 +6,23 @@ struct AskNotesListRow: View {
     @ObservedObject var model: AskNotesViewModel
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(spacing: 8) {
             Image(systemName: note.pinned ? "pin.fill" : note.source.symbol)
                 .foregroundStyle(TypefluxColor.accent.color)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Text(note.title.isEmpty ? L("ask.notes.untitled") : note.title)
-                        .font(.headline).lineLimit(1)
+                        .font(.headline).foregroundStyle(TypefluxColor.label.color).lineLimit(1)
                     Spacer(minLength: 4)
-                    Text(Self.shortDate(listDate)).font(.caption)
-                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
-                if !note.excerpt.isEmpty {
-                    Text(note.excerpt).font(.callout).lineLimit(2)
-                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
-                }
-                if !note.tags.isEmpty {
-                    Text(note.tags.prefix(3).map { "#" + $0 }.joined(separator: " "))
-                        .font(.caption).foregroundStyle(TypefluxColor.secondaryLabel.color).lineLimit(1)
-                }
+                Text(Self.shortDate(listDate) + "  " + note.excerpt)
+                    .font(.footnote).foregroundStyle(TypefluxColor.secondaryLabel.color).lineLimit(1)
             }
         }
-        .padding(.vertical, 4)
+        .modifier(TypefluxLibraryRow(selected: model.listSelection.contains(note.id)))
         .contextMenu { contextMenu }
         .accessibilityElement(children: .combine)
+        .accessibilityValue(note.tags.map { "#" + $0 }.joined(separator: " "))
         .accessibilityIdentifier("ask.notes.row")
     }
 

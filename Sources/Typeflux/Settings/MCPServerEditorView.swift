@@ -30,13 +30,6 @@ struct MCPServerEditorView: View {
             }
         }).frame(width: 560)
             .onDisappear { viewModel.resetMCPDraftConnectionTest() }
-            .onChange(of: connectionFields) { _ in viewModel.resetMCPDraftConnectionTest() }
-    }
-
-    private var connectionFields: [String] {
-        [String(describing: viewModel.mcpDraftTransportType), viewModel.mcpDraftStdioCommand,
-         viewModel.mcpDraftStdioArgs, viewModel.mcpDraftStdioEnv,
-         viewModel.mcpDraftHTTPURL, viewModel.mcpDraftHTTPHeaders]
     }
 
     @ViewBuilder

@@ -192,14 +192,21 @@ struct GroupedSettingsBehaviorTests {
                             initialSection: .settings)
             let window = try #require(controller.window)
             let model = try #require(controller.viewModel)
-            defer { window.close() }
+            defer { TypefluxNavigationTestSupport.closeWindow(window) }
             window.setContentSize(NSSize(width: 1100, height: 800))
             for section in [StudioSection.settings, .vocabulary, .account] {
                 model.navigate(to: section)
-                try await RenderedUI.wait { window.title == section.heading }
-                try await Task.sleep(for: .milliseconds(300))
-                let title = try #require(RenderedUI.elements(in: window).first {
+                try await RenderedUI.wait("Detail toolbar title for \(section.rawValue)") {
+                    window.title == section.heading && AskWorkspaceTestAccessibility.elements(in: window).contains {
+                        $0.value("accessibilityIdentifier") as? String == "typeflux.window.title"
+                            && ($0.text == section.heading || $0.label == section.heading) && !$0.frame.isEmpty
+                    }
+                }
+                // Native toolbar views are separate accessibility roots on recent macOS versions.
+                let title = try #require(AskWorkspaceTestAccessibility.elements(in: window).first {
                     $0.value("accessibilityIdentifier") as? String == "typeflux.window.title"
+                        && ($0.text == section.heading || $0.label == section.heading)
+                        && !$0.frame.isEmpty
                 })
                 #expect(title.text == section.heading || title.label == section.heading)
                 #expect(window.titleVisibility == .hidden)

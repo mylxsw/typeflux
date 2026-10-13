@@ -575,8 +575,6 @@ struct StudioView: View {
     private var pageToolbarGroups: [TypefluxToolbarGroup] {
         if viewModel.currentSection == .vocabulary {
             return [TypefluxToolbarGroup(id: "vocabulary", actions: [
-                TypefluxToolbarAction(id: "vocabulary.add", title: L("vocabulary.action.newWord"),
-                                      systemImage: "plus", perform: beginAddingVocabulary),
                 TypefluxToolbarAction(id: "vocabulary.import", title: L("vocabulary.action.importFile"),
                                       systemImage: "arrow.down.doc", isEnabled: !viewModel.isSynchronizingVocabulary,
                                       menuActions: [
@@ -597,7 +595,9 @@ struct StudioView: View {
                                                                 systemImage: "square.and.arrow.up",
                                                                 perform: viewModel.exportVocabulary)
                                       ],
-                                      perform: viewModel.importVocabulary)
+                                      perform: viewModel.importVocabulary),
+                TypefluxToolbarAction(id: "vocabulary.add", title: L("vocabulary.action.newWord"),
+                                      systemImage: "plus", perform: beginAddingVocabulary)
             ])]
         }
         if viewModel.currentSection == .history {

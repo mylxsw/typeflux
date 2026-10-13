@@ -15,6 +15,7 @@ extension AskNotesMoreMenu.Coordinator {
             addCompactActions(to: menu)
             menu.addItem(.separator())
         }
+        addFilters(to: menu)
         if model.inTrash {
             add(L("ask.notes.trash.empty"), id: "emptyTrash", to: menu,
                 enabled: !model.notes.isEmpty, action: model.emptyTrash)
@@ -29,6 +30,39 @@ extension AskNotesMoreMenu.Coordinator {
         addDetailActions(to: menu)
     }
 
+    private func addFilters(to menu: NSMenu) {
+        let model = self.model
+        let item = NSMenuItem(title: model.title(of: model.scope), action: nil, keyEquivalent: "")
+        item.identifier = .init("ask.notes.filter")
+        let filter = NSMenu()
+        filter.autoenablesItems = false
+        item.submenu = filter
+        let scopes: [AskNoteQuery.Scope] = [.all, .pinned, .recent, .trash]
+            + AskNoteSource.allCases.filter { model.sources[$0, default: 0] > 0 }.map { .source($0) }
+            + model.commands.map { .command($0.name) } + model.tags.map { .tag($0.name) }
+        for (index, scope) in scopes.enumerated() {
+            add(model.title(of: scope), id: "filter.\(index)", to: filter, checked: model.scope == scope) {
+                model.scope = scope
+            }
+        }
+        filter.addItem(.separator())
+        for sort in [AskNoteQuery.Sort.updated, .created, .title] {
+            add(L("ask.notes.sort." + sort.rawValue), id: "sort." + sort.rawValue, to: filter,
+                checked: model.sort == sort) { model.sort = sort }
+        }
+        if model.agentSettings != nil {
+            filter.addItem(.separator())
+            add(L("ask.notes.agent.enabled"), id: "agent.enabled", to: filter, checked: model.agentEnabled) {
+                model.setAgentEnabled(!model.agentEnabled)
+            }
+            for (index, tag) in model.tags.enumerated() {
+                add("#" + tag.name, id: "agent.tag.\(index)", to: filter,
+                    checked: !model.isHiddenFromAgent(tag.name)) { model.toggleHiddenFromAgent(tag.name) }
+            }
+        }
+        menu.addItem(item)
+    }
+
     private func addCompactActions(to menu: NSMenu) {
         let model = self.model
         let enabled = model.selected != nil && !model.selecting
@@ -40,6 +74,17 @@ extension AskNotesMoreMenu.Coordinator {
         } else {
             add(L(model.selected?.pinned == true ? "ask.notes.unpin" : "ask.notes.pin"), id: "pin", to: menu,
                 enabled: enabled, action: model.togglePin)
+            add(L("ask.notes.share"), id: "share", to: menu,
+                enabled: enabled && model.sharingText != nil) { [weak self] in
+                guard let text = model.sharingText else { return }
+                // Open after the actions menu finishes tracking, using the note chosen at activation time.
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, let button = view?.button, button.window != nil else { return }
+                    let picker = NSSharingServicePicker(items: [text])
+                    sharePicker = picker
+                    picker.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                }
+            }
             add(L("ask.notes.delete"), id: "delete", to: menu, enabled: enabled, action: model.deleteSelected)
         }
         menu.addItem(.separator())

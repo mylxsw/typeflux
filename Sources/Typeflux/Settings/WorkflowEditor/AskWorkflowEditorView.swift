@@ -18,7 +18,7 @@ struct AskWorkflowEditorView: View {
     @State private var editingInfo = false
     @State private var showingGallery = false
 
-    enum Panel: String { case assistant, test }
+    enum Panel: String, Sendable { case assistant, test }
 
     /// Opens the script step's run settings, for snapshots.
     private let showsRunSettings: Bool
@@ -49,10 +49,15 @@ struct AskWorkflowEditorView: View {
                             empty
                         }
                     }
-                    .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
+                    // The native split view can give its sidebar more than the ideal width.
+                    // Let the center accept the remaining viewport instead of overflowing it.
+                    .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
                     if showsPanel, model.draft != nil {
                         Divider()
-                        rightPanel.frame(width: 340)
+                        rightPanel.frame(width: 340).layoutPriority(1)
+                            .accessibilityElement(children: .contain)
+                            .accessibilityIdentifier("ask.workflow.editor.sidePanel")
                     }
                 }
             }.background(TypefluxColor.contentBackground.color)

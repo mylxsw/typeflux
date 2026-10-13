@@ -8,19 +8,26 @@ final class SettingsPolishTests: XCTestCase {
     private var suite: String!
     private var root: URL!
     private var settings: SettingsStore!
+    private var previousLanguage: AppLanguage!
+    private var previousLogin = false
 
     override func setUp() {
-        _ = NSApplication.shared
-        // SwiftUI exposes its accessibility tree only while assistive clients request it.
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        TypefluxTestApplicationEnvironment.prepare()
+        previousLanguage = AppLocalization.shared.language
+        previousLogin = AuthState.shared.isLoggedIn
+        AuthState.shared.isLoggedIn = false
+        AppLocalization.shared.setLanguage(.english)
         suite = "settings-polish-" + UUID().uuidString
         root = FileManager.default.temporaryDirectory.appendingPathComponent(suite)
         settings = SettingsStore(defaults: UserDefaults(suiteName: suite)!)
+        settings.appLanguage = .english
     }
 
     override func tearDown() {
         settings.defaults.removePersistentDomain(forName: suite)
         try? FileManager.default.removeItem(at: root)
+        AppLocalization.shared.setLanguage(previousLanguage)
+        AuthState.shared.isLoggedIn = previousLogin
     }
 
     private func viewModel() -> StudioViewModel {
@@ -83,6 +90,51 @@ final class SettingsPolishTests: XCTestCase {
         XCTAssertEqual(model.mcpConnectionTestState, .idle)
     }
 
+    func testConnectionEditsInvalidateDraftResultsBeforeStartingTheNextTest() {
+        let model = viewModel()
+        let edits: [@MainActor (StudioViewModel) -> Void] = [
+            { $0.mcpDraftTransportType = .http },
+            { $0.mcpDraftStdioCommand = "/usr/bin/example" },
+            { $0.mcpDraftStdioArgs = "--example" },
+            { $0.mcpDraftStdioEnv = "EXAMPLE=value" },
+            { $0.mcpDraftHTTPURL = "https://mcp.example.com" },
+            { $0.mcpDraftHTTPHeaders = "X-Example=value" }
+        ]
+        for edit in edits {
+            model.mcpConnectionTestState = .failure(message: "Previous transport")
+            edit(model)
+            XCTAssertEqual(model.mcpConnectionTestState, .idle,
+                           "The old connection result must be invalidated in the same edit")
+            model.mcpConnectionTestState = .testing
+            XCTAssertEqual(model.mcpConnectionTestState, .testing,
+                           "Starting a new test immediately after an edit must remain testing")
+        }
+    }
+
+    func testUnchangedTransportAndMetadataEditsKeepTheDraftConnectionResult() {
+        let model = viewModel()
+        model.mcpDraftHTTPURL = "https://mcp.example.com"
+        model.mcpConnectionTestState = .success(tools: [])
+        let currentURL = model.mcpDraftHTTPURL
+        model.mcpDraftHTTPURL = currentURL
+        model.mcpDraftName = "Renamed fixture"
+        model.mcpDraftEnabled = false
+        XCTAssertEqual(model.mcpConnectionTestState, .success(tools: []))
+    }
+
+    func testEditingAnActiveDraftRejectsItsCancelledCompletion() async {
+        let model = viewModel()
+        model.mcpDraftTransportType = .http
+        model.mcpDraftHTTPURL = "://"
+        model.testMCPDraftConnection()
+        XCTAssertEqual(model.mcpConnectionTestState, .testing)
+        model.mcpDraftHTTPURL = "https://mcp.example.com"
+        XCTAssertEqual(model.mcpConnectionTestState, .idle)
+        // The queued invalid-URL test must not publish after the edit cancelled it.
+        for _ in 0 ..< 20 { await Task.yield() }
+        XCTAssertEqual(model.mcpConnectionTestState, .idle)
+    }
+
     func testClosingDraftDoesNotClearSavedServerConnectionResult() async {
         let model = viewModel()
         let server = MCPServerConfig(name: "Invalid fixture", transport: .http(.init(url: "")))
@@ -102,32 +154,36 @@ final class SettingsPolishTests: XCTestCase {
     func testAgentPageOpensMCPFormAndCancelClearsItsLoadingState() async throws {
         let model = viewModel()
         try await withWindow(StudioView(viewModel: model), width: 1100, height: 800) { window, hosting in
-            let tab = try XCTUnwrap(self.elements(in: hosting).first {
-                $0.accessibilityRole() == .button && ($0.accessibilityLabel() ?? "")
-                    .hasPrefix(AgentSettingsPane.mcpServers.title)
-            })
-            try self.click(tab, in: window)
-            try await Task.sleep(for: .milliseconds(100))
+            try await self.selectPane(.mcpServers, in: hosting)
+            try await self.wait("MCP add action after native pane selection") {
+                self.elements(in: hosting).contains { $0.accessibilityLabel() == L("agent.mcp.addServer") }
+            }
             let add = try XCTUnwrap(self.elements(in: hosting)
                 .first { $0.accessibilityLabel() == L("agent.mcp.addServer") })
             try self.click(add, in: window)
-            try await Task.sleep(for: .milliseconds(150))
+            try await self.wait("MCP editor sheet") { window.attachedSheet?.contentView != nil }
             let sheet = try XCTUnwrap(window.attachedSheet)
             let content = try XCTUnwrap(sheet.contentView)
             let save = try XCTUnwrap(self.elements(in: content).first { $0.accessibilityLabel() == L("common.save") })
             XCTAssertEqual(save.value("isAccessibilityEnabled") as? Bool, false)
             model.mcpDraftName = "Loading fixture"
             model.mcpDraftStdioCommand = "/usr/local/bin/example"
-            try await Task.sleep(for: .milliseconds(100))
             model.mcpConnectionTestState = .testing
-            try await Task.sleep(for: .milliseconds(100))
+            try await self.wait("MCP testing action disabled") {
+                self.elements(in: content).contains {
+                    $0.accessibilityLabel() == L("agent.mcp.testing") && $0.accessibilityRole() == .button
+                        && $0.value("isAccessibilityEnabled") as? Bool == false
+                }
+            }
             let test = try XCTUnwrap(self.elements(in: content)
                 .first { $0.accessibilityLabel() == L("agent.mcp.testing") && $0.accessibilityRole() == .button })
             XCTAssertEqual(test.value("isAccessibilityEnabled") as? Bool, false)
             let cancel = try XCTUnwrap(self.elements(in: content)
                 .first { $0.accessibilityLabel() == L("common.cancel") })
             try self.click(cancel, in: sheet)
-            try await Task.sleep(for: .milliseconds(200))
+            try await self.wait("MCP cancellation closes the sheet and clears testing") {
+                window.attachedSheet == nil && model.mcpConnectionTestState == .idle
+            }
             XCTAssertNil(window.attachedSheet)
             XCTAssertEqual(model.mcpConnectionTestState, .idle)
             XCTAssertTrue(model.mcpServers.isEmpty)
@@ -280,14 +336,13 @@ final class SettingsPolishTests: XCTestCase {
     func testImageDraftSurvivesLeavingAndReturningToItsAgentPane() async throws {
         try await withWindow(StudioView(viewModel: viewModel()), width: 1100, height: 800) { window, hosting in
             @MainActor func open(_ pane: AgentSettingsPane) async throws {
-                let button = try XCTUnwrap(self.elements(in: hosting).first {
-                    $0.accessibilityRole() == .button && ($0.accessibilityLabel() ?? "").hasPrefix(pane.title)
-                })
-                try self.click(button, in: window)
-                try await Task.sleep(for: .milliseconds(100))
+                try await self.selectPane(pane, in: hosting)
                 hosting.layoutSubtreeIfNeeded()
             }
             try await open(.imageGeneration)
+            try await self.wait("Image model field after native pane selection") {
+                self.elements(in: hosting).contains { $0.accessibilityIdentifier() == "imagegen-model" }
+            }
             let field = try XCTUnwrap(self.elements(in: hosting)
                 .first { $0.accessibilityIdentifier() == "imagegen-model" })
             try self.click(field, in: window)
@@ -297,6 +352,12 @@ final class SettingsPolishTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(100))
             try await open(.codeExecution)
             try await open(.imageGeneration)
+            try await self.wait("Restored unsaved image model after pane navigation") {
+                self.elements(in: hosting).contains {
+                    $0.accessibilityIdentifier() == "imagegen-model"
+                        && $0.accessibilityValue() as? String == "manual-unsaved-image-model"
+                }
+            }
             let restored = try XCTUnwrap(self.elements(in: hosting)
                 .first { $0.accessibilityIdentifier() == "imagegen-model" })
             XCTAssertEqual(restored.accessibilityValue() as? String, "manual-unsaved-image-model")
@@ -328,24 +389,32 @@ final class SettingsPolishTests: XCTestCase {
             let save = try XCTUnwrap(self.elements(in: hosting)
                 .first { $0.accessibilityLabel() == L("ask.models.save") })
             try self.click(save, in: window)
-            for _ in 0 ..< 10 {
-                await Task.yield()
+            try await self.wait("Image settings save callback") {
+                !model.hasChanges && callbacks == 1
             }
             XCTAssertFalse(model.hasChanges)
             XCTAssertEqual(store.configuration.model, "manual-custom-image")
             XCTAssertEqual(savedKey, "fixture-key")
             XCTAssertEqual(callbacks, 1)
+            try await self.wait("Accessible API Key reveal control") {
+                self.elements(in: hosting).contains { $0.accessibilityLabel() == L("models.showKey") }
+            }
             let reveal = try XCTUnwrap(self.elements(in: hosting)
                 .first { $0.accessibilityLabel() == L("models.showKey") })
             try self.click(reveal, in: window)
-            for _ in 0 ..< 10 {
-                await Task.yield()
+            try await self.wait("Accessible API Key hide control") {
+                self.elements(in: hosting).contains { $0.accessibilityLabel() == L("models.hideKey") }
             }
             XCTAssertNotNil(self.elements(in: hosting).first { $0.accessibilityLabel() == L("models.hideKey") })
             model.select(.openAI)
             model.key = "fixture-openai-key"
             model.loading = true
-            try await Task.sleep(for: .milliseconds(100))
+            try await self.wait("Disabled image model refresh action") {
+                self.elements(in: hosting).contains {
+                    $0.accessibilityLabel() == L("imagegen.models.refresh")
+                        && $0.accessibilityRole() == .button && $0.value("isAccessibilityEnabled") as? Bool == false
+                }
+            }
             let refresh = try XCTUnwrap(self.elements(in: hosting).first {
                 $0.accessibilityLabel() == L("imagegen.models.refresh") && $0.accessibilityRole() == .button
             })
@@ -439,13 +508,59 @@ final class SettingsPolishTests: XCTestCase {
     }
 
     private func elements(in element: Any) -> [Element] {
-        var seen = Set<ObjectIdentifier>()
-        func walk(_ node: Any) -> [Element] {
-            guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return [] }
-            let element = Element(object: object)
-            return [element] + (element.value("accessibilityChildren") as? [Any] ?? []).flatMap(walk)
+        SettingsBehaviorTestSupport.elements(in: element).map { Element(object: $0.object) }
+    }
+
+    // XCTest failures must be reported through XCTest, not Swift Testing's issue state machine.
+    private func wait(_ description: String, file: StaticString = #filePath, line: UInt = #line,
+                      _ condition: () -> Bool) async throws {
+        let deadline = ContinuousClock.now + .seconds(3)
+        while !condition() {
+            try Task.checkCancellation()
+            guard ContinuousClock.now < deadline else {
+                XCTFail("\(description) did not become ready within three seconds", file: file, line: line)
+                throw ReadinessTimeout()
+            }
+            try await Task.sleep(for: .milliseconds(10))
         }
-        return walk(element)
+    }
+
+    private struct ReadinessTimeout: Error {}
+
+    private func selectPane(_ pane: AgentSettingsPane, in host: NSView) async throws {
+        let window = try XCTUnwrap(host.window)
+        try await self.wait("Native Agent pane row: \(pane.title)") {
+            self.paneRow(pane, in: host) != nil
+        }
+        let (table, row) = try XCTUnwrap(paneRow(pane, in: host))
+        // UI System v2 uses List(selection:), with native selection notifications.
+        table.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        table.scrollRowToVisible(row)
+        try await self.wait("Agent pane navigation: \(pane.title)") {
+            window.title.contains(pane.title)
+        }
+    }
+
+    private func paneRow(_ pane: AgentSettingsPane, in host: NSView) -> (NSTableView, Int)? {
+        host.layoutSubtreeIfNeeded()
+        for table in SettingsBehaviorTestSupport.nativeViews(in: host).compactMap({ $0 as? NSTableView }) {
+            guard table.window === host.window, !table.isHiddenOrHasHiddenAncestor else { continue }
+            for row in 0 ..< table.numberOfRows {
+                let cells = (0 ..< table.numberOfColumns).compactMap {
+                    table.view(atColumn: $0, row: row, makeIfNecessary: true)
+                }
+                let values = cells.flatMap {
+                    SettingsBehaviorTestSupport.nativeViews(in: $0).flatMap {
+                        SettingsBehaviorTestSupport.elements(in: $0)
+                    }
+                }
+                if values.contains(where: {
+                    $0.value("accessibilityIdentifier") as? String == "settings.pane.\(pane.id)"
+                        || $0.text == pane.title || $0.label == pane.title || $0.label.hasPrefix(pane.title + ", ")
+                }) { return (table, row) }
+            }
+        }
+        return nil
     }
 
     private func click(_ element: Element, in window: NSWindow) throws {
@@ -500,7 +615,7 @@ final class SettingsPolishTests: XCTestCase {
             .background(TypefluxColor.windowBackground.color))
         window.contentView = hosting
         window.orderFront(nil)
-        defer { window.orderOut(nil); window.close() }
+        defer { TypefluxNavigationTestSupport.closeWindow(window) }
         try await Task.sleep(for: .milliseconds(100))
         hosting.layoutSubtreeIfNeeded()
         let bitmap = try XCTUnwrap(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))

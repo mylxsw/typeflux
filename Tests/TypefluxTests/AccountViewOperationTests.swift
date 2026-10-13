@@ -18,11 +18,14 @@ struct AccountViewOperationTests {
                     let content = try #require(sheet.contentView)
                     try await SettingsBehaviorTestSupport.wait { fields(in: content).count == 3 }
                     let inputs = fields(in: content)
-                    for key in ["auth.account.currentPassword", "auth.account.newPassword",
-                                "auth.account.confirmNewPassword"] {
-                        #expect(SettingsBehaviorTestSupport.elements(in: content).contains {
-                            $0.role == NSAccessibility.Role.textField.rawValue && $0.label == L(key)
-                        })
+                    // Inspect the actual native input, not a SwiftUI accessibility proxy.
+                    for (input, key) in zip(inputs, ["auth.account.currentPassword", "auth.account.newPassword",
+                                                     "auth.account.confirmNewPassword"]) {
+                        #expect(input is NSSecureTextField, "Password entry must remain protected")
+                        #expect(input.accessibilityRole() == .textField)
+                        #expect(input.accessibilitySubrole() == .secureTextField)
+                        #expect(input.isAccessibilityElement())
+                        #expect(input.accessibilityLabel() == L(key))
                     }
                     let current = inputs[0]
                     let new = inputs[1]
