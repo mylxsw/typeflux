@@ -63,7 +63,7 @@ struct LauncherSettingsView: View {
                 }
             }
         }
-        ModelSurface {
+        StudioCard(padding: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 AgentSettingsRow(icon: "clock.arrow.circlepath", title: L("ask.inputHistory.remember")) {
                     Toggle("", isOn: Binding(get: { inputHistoryEnabled }, set: setInputHistoryEnabled))
