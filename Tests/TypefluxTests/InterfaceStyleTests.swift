@@ -90,9 +90,12 @@ struct InterfaceStyleTests {
     }
 
     @Test func menuAndHoverCardCornersFollowTheStyle() {
-        #expect(AskGlassCardSurface<EmptyView>.corner(.menu, style: .classic) == 10)
-        #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: .classic) == 8)
-        #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: .liquidGlass) == 14)
+        #expect(AskGlassCardSurface<EmptyView>.corner(.menu, style: .classic)
+            == TypefluxRadius.menu.value(for: .classic))
+        #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: .classic)
+            == TypefluxRadius.popover.value(for: .classic))
+        #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: .liquidGlass)
+            == TypefluxRadius.popover.value(for: .liquidGlass))
     }
 
     // MARK: - Following settings

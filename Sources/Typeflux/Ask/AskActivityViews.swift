@@ -5,7 +5,7 @@ import SwiftUI
 /// reasoning line: what it did, unfolded on demand into its steps. Only a step
 /// waiting for a decision keeps a card, because it needs the user.
 struct AskActivityBlock: View {
-    static let corner: CGFloat = 18
+    static let corner = TypefluxRadius.form.value(for: .liquidGlass)
     static let lineHeight: CGFloat = 26
 
     let group: AskActivityGroup
@@ -26,7 +26,7 @@ struct AskActivityBlock: View {
     @State private var hovering = false
     @Environment(\.interfaceStyle) private var style
     /// The waiting card's corner: the glass card's, or the flat design's tighter one.
-    private var cardCorner: CGFloat { style.usesGlass ? Self.corner : 10 }
+    private var cardCorner: CGFloat { TypefluxRadius.form.value(for: style) }
 
     /// Folded by default, even while working: the line itself names the step under way.
     private var expanded: Bool { userExpanded ?? startsExpanded ?? (status == .attention) }
@@ -78,11 +78,11 @@ struct AskActivityBlock: View {
                 if running {
                     ProgressView().controlSize(.mini).frame(width: 14, height: 14)
                 } else if status == .paused {
-                    Image(systemName: "pause.fill").font(.system(size: 9))
+                    Image(systemName: "pause.fill").font(.footnote)
                         .foregroundStyle(StudioTheme.warning)
                         .frame(width: 14, height: 14)
                 } else {
-                    Image(systemName: AskActivity.symbol(group)).font(.system(size: 11))
+                    Image(systemName: AskActivity.symbol(group)).font(.subheadline)
                         .frame(width: 14, height: 14)
                 }
                 Text(title)
@@ -102,10 +102,10 @@ struct AskActivityBlock: View {
                     .lineLimit(1)
                     .layoutPriority(1)
                 }
-                Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
+                Image(systemName: "chevron.right").font(.footnote).fontWeight(.bold)
                     .rotationEffect(.degrees(expanded ? 90 : 0))
             }
-            .font(.system(size: 12.5))
+            .font(.callout)
             .foregroundStyle(hovering || expanded || running ? StudioTheme.textSecondary : StudioTheme.textTertiary)
             .padding(.leading, 8)
             .padding(.trailing, 10)
@@ -139,8 +139,8 @@ struct AskActivityBlock: View {
         // The card scrolls with the transcript, so it takes the glass card's
         // shape and hairline on an opaque surface: live glass belongs to the
         // floating controls layer.
-        .askInWindowGlass(corner: cardCorner, opaqueFill: AskTheme.raisedSurface)
-        .environment(\.askGlassMaterialOverride, .opaque)
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: cardCorner))
+        .overlay(RoundedRectangle(cornerRadius: cardCorner).strokeBorder(TypefluxColor.separator.color))
         .overlay(RoundedRectangle(cornerRadius: cardCorner, style: .continuous)
             .strokeBorder(StudioTheme.warning.opacity(0.55)))
     }
@@ -148,21 +148,21 @@ struct AskActivityBlock: View {
     private var cardHeader: some View {
         Button(action: toggle) {
             HStack(spacing: 10) {
-                Image(systemName: "exclamationmark").font(.system(size: 10, weight: .heavy))
+                Image(systemName: "exclamationmark").font(.footnote).fontWeight(.heavy)
                     .foregroundStyle(.black)
                     .frame(width: 20, height: 20)
                     .background(StudioTheme.warning, in: Circle())
                 Text(title)
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .font(.body).fontWeight(.semibold)
                     .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
                 Text(AskActivity.categorySummary(group.steps))
-                    .font(.system(size: 12))
+                    .font(.callout)
                     .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
                 Spacer(minLength: 6)
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.footnote).fontWeight(.semibold)
                     .foregroundStyle(StudioTheme.textSecondary)
                     .rotationEffect(.degrees(expanded ? 180 : 0))
             }
@@ -203,9 +203,9 @@ private struct AskStepNote: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            if let symbol { Image(systemName: symbol).font(.system(size: 10)) }
+            if let symbol { Image(systemName: symbol).font(.footnote) }
             Text(text)
-                .font(.system(size: 12.5))
+                .font(.callout)
                 .lineSpacing(2)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
@@ -265,7 +265,7 @@ struct AskToolStepRow: View {
             Button { withAnimation(.easeOut(duration: 0.18)) { expanded.toggle() } } label: {
                 HStack(spacing: 8) {
                     Image(systemName: AskPresentation.toolSymbol(call))
-                        .font(.system(size: 10.5))
+                        .font(.footnote)
                         .foregroundStyle(StudioTheme.textTertiary)
                         .frame(width: Self.iconSize, height: Self.iconSize)
                     Text(AskTheme.toolTitle(call))
@@ -279,16 +279,16 @@ struct AskToolStepRow: View {
                     }
                     Spacer(minLength: 6)
                     if Self.showsStatus(state) {
-                        Text(statusText).font(.system(size: 11, weight: .medium)).foregroundStyle(state.tint)
+                        Text(statusText).font(.subheadline).fontWeight(.medium).foregroundStyle(state.tint)
                             .lineLimit(1)
                             .layoutPriority(1)
                     }
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(.footnote).fontWeight(.semibold)
                         .foregroundStyle(StudioTheme.textTertiary)
                         .rotationEffect(.degrees(expanded ? 90 : 0))
                 }
-                .font(.system(size: 12.5))
+                .font(.callout)
                 .frame(minHeight: 22)
                 .contentShape(Rectangle())
             }
@@ -393,7 +393,7 @@ private struct AskArtifactCard: View {
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L("ask.artifact.caption", AskTheme.toolTitle(AskToolCall(id: artifact.id, function: .init(name: artifact.toolName, arguments: "{}")))))
-                        .font(.system(size: 11.5))
+                        .font(.subheadline)
                         .foregroundStyle(StudioTheme.textTertiary)
                     HStack(spacing: 2) {
                         AskGhostButton(title: copied ? L("ask.copied") : L("ask.copy"),
@@ -410,7 +410,7 @@ private struct AskArtifactCard: View {
                         }
                     }
                     if let saveError {
-                        Text(saveError).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
+                        Text(saveError).font(.callout).foregroundStyle(StudioTheme.danger)
                     }
                 }
             }
@@ -449,13 +449,13 @@ private struct AskSourceList: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Text(L("ask.sources")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+            Text(L("ask.sources")).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
             ForEach(Array(sources.prefix(6).enumerated()), id: \.offset) { index, url in
                 AskChip(title: "\(index + 1) " + (url.host ?? url.absoluteString), systemImage: "link",
                         action: { NSWorkspace.shared.open(url) }, help: url.absoluteString)
             }
             if sources.count > 6 {
-                Text("+\(sources.count - 6)").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text("+\(sources.count - 6)").font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
             }
         }
     }

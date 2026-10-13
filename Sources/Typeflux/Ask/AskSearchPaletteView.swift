@@ -25,7 +25,7 @@ struct AskSearchPaletteView: View {
                 Color.black.opacity(0.18)
                     .contentShape(Rectangle())
                     .onTapGesture { onClose() }
-                card(listHeight: Self.listHeight(in: geometry.size.height))
+                card(listHeight: Self.listHeight(in: geometry.size.height, style: style))
                     .askPopIn(anchor: .top)
                     .padding(.horizontal, 12)
                     .padding(.top, Self.topInset(in: geometry.size.height))
@@ -45,41 +45,50 @@ struct AskSearchPaletteView: View {
         height < 500 ? AskMetrics.titleBarRowHeight : AskMetrics.titleBarRowHeight + 18
     }
 
-    static func listHeight(in height: CGFloat) -> CGFloat {
-        max(0, min(listMaxHeight, height - topInset(in: height) - 55 - 12))
+    static func listHeight(in height: CGFloat, style: InterfaceStyle = .liquidGlass) -> CGFloat {
+        let input = TypefluxControlHeight.spotlightInput.value(for: style)
+        let gap: CGFloat = style == .classic ? 1 : 12
+        return max(0, min(listMaxHeight, height - topInset(in: height) - input - gap - 12))
     }
 
-    private func card(listHeight: CGFloat) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass").font(.system(size: 15, weight: .medium))
+    @ViewBuilder private func card(listHeight: CGFloat) -> some View {
+        if style == .classic {
+            TypefluxGlassContainer(radius: .spotlightResults, placement: .inWindow) {
+                VStack(spacing: 0) {
+                    input
+                    Divider()
+                    list(maxHeight: listHeight)
+                }
+            }.frame(maxWidth: Self.width)
+        } else {
+            TypefluxGlassGroup(spacing: 12) {
+                VStack(spacing: 12) {
+                    TypefluxGlassContainer(radius: .spotlightInput, placement: .inWindow) { input }
+                    TypefluxGlassContainer(radius: .spotlightResults, placement: .inWindow) {
+                        list(maxHeight: listHeight)
+                    }
+                }
+            }.frame(maxWidth: Self.width)
+        }
+    }
+
+    private var input: some View {
+        HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass").font(.title3).fontWeight(.medium)
                     .foregroundStyle(StudioTheme.textTertiary)
                 TextField(L("ask.search.placeholder"), text: $query)
                     .accessibilityIdentifier("ask.workspace.search.field")
                     .textFieldStyle(.plain)
-                    .font(.system(size: 16))
+                    .font(.title3)
                     .foregroundStyle(StudioTheme.textPrimary)
                     .focused($focused)
                     .onSubmit(run)
-                Text(verbatim: "esc")
-                    .font(.system(size: 10.5, weight: .medium))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .padding(.horizontal, 6)
-                    .frame(height: 18)
-                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                    .onTapGesture { onClose() }
+                TypefluxIconButton(L("ask.remove"), systemImage: "xmark", action: onClose)
                     .accessibilityLabel(L("ask.remove"))
                     .accessibilityIdentifier("ask.workspace.search.close")
-                    .accessibilityAddTraits(.isButton)
-            }
-            .padding(.horizontal, 18)
-            .frame(height: 54)
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
-            list(maxHeight: listHeight)
         }
-        .frame(maxWidth: Self.width)
-        .askInWindowGlass(corner: style.ask.paletteCorner, opaqueFill: AskTheme.popoverSurface,
-                          elevation: .popover)
+        .padding(.horizontal, 18)
+        .frame(height: TypefluxControlHeight.spotlightInput.value(for: style))
     }
 
     private func list(maxHeight: CGFloat) -> some View {
@@ -100,7 +109,7 @@ struct AskSearchPaletteView: View {
                     }
                     if state.rows.isEmpty {
                         Text(L(conversations.isEmpty ? "ask.history.empty" : "ask.history.searchEmpty"))
-                            .font(.system(size: 12.5))
+                            .font(.callout)
                             .foregroundStyle(StudioTheme.textTertiary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 26)
@@ -118,7 +127,7 @@ struct AskSearchPaletteView: View {
 
     private func header(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 11, weight: .semibold))
+            .font(.subheadline).fontWeight(.semibold)
             .foregroundStyle(StudioTheme.textTertiary)
             .padding(.horizontal, 12)
             .padding(.top, 8)
@@ -129,15 +138,15 @@ struct AskSearchPaletteView: View {
         let highlighted = state.highlighted == index
         return Button { state.highlighted = index; run() } label: {
             HStack(spacing: 10) {
-                Image(systemName: symbol(row)).font(.system(size: 13))
+                Image(systemName: symbol(row)).font(.body)
                     .foregroundStyle(highlighted ? Color.white : StudioTheme.textSecondary)
                     .frame(width: 18)
-                Text(title(row)).font(.system(size: 13.5))
+                Text(title(row)).font(.body)
                     .foregroundStyle(highlighted ? Color.white : StudioTheme.textPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 if let trailing = trailing(row) {
-                    Text(trailing).font(.system(size: 11))
+                    Text(trailing).font(.subheadline)
                         .foregroundStyle(highlighted ? Color.white.opacity(0.8) : StudioTheme.textTertiary)
                         .monospacedDigit()
                 }
@@ -146,7 +155,7 @@ struct AskSearchPaletteView: View {
             .frame(height: Self.rowHeight)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(highlighted ? AskTheme.accent : Color.clear,
-                        in: RoundedRectangle(cornerRadius: style.usesGlass ? 10 : 6, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: TypefluxRadius.sidebarRow.value(for: style)))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

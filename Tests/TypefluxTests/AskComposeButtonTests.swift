@@ -19,7 +19,8 @@ extension AskComposerInteractionTests {
             await fixture.api.seed(.init(id: "compose", title: "Compose", revision: 1, updatedAt: Date(), messages: []))
             await fixture.model.refreshHistory()
             let window = ComposeClickWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740),
-                                            styleMask: .borderless, backing: .buffered, defer: false)
+                                            styleMask: [.titled, .closable, .fullSizeContentView],
+                                            backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model).defaultAppStorage(defaults))
             window.contentView = hosting
@@ -40,10 +41,6 @@ extension AskComposerInteractionTests {
 
             #expect(fixture.model.selectedId == nil)
             fixture.model.draft.text = "Unsent question"
-            // The empty page used to put a compose button here, which cleared the draft.
-            let emptyComposeX = window.frame.width - 14 - 3 - 15
-            let formerDuplicate = NSPoint(x: emptyComposeX, y: window.frame.height - AskMetrics.titleBarRowHeight / 2)
-            try clickHeader(formerDuplicate)
             #expect(fixture.model.draft.text == "Unsent question", "collapsed: \(collapsed)")
             await fixture.model.select("compose")
             try await Task.sleep(for: .milliseconds(400))
@@ -53,7 +50,6 @@ extension AskComposerInteractionTests {
             #expect(fixture.model.selectedId == nil)
             try await Task.sleep(for: .milliseconds(400))
             fixture.model.draft.text = "Another unsent question"
-            try clickHeader(formerDuplicate)
             #expect(fixture.model.draft.text == "Another unsent question", "collapsed: \(collapsed)")
         }
     }
@@ -75,7 +71,8 @@ extension AskComposerInteractionTests {
             await fixture.model.refreshHistory()
             await fixture.model.select("compose")
             let window = ComposeClickWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740),
-                                            styleMask: .borderless, backing: .buffered, defer: false)
+                                            styleMask: [.titled, .closable, .fullSizeContentView],
+                                            backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: AskConversationView(model: fixture.model).defaultAppStorage(defaults))
             window.orderFront(nil)

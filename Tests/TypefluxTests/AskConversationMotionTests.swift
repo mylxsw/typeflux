@@ -97,7 +97,8 @@ extension AskComposerInteractionTests {
 
     private func hostMotionView<V: View>(_ view: V) async throws -> (NSWindow, NSView) {
         _ = NSApplication.shared
-        let window = MotionWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740), styleMask: .borderless,
+        let window = MotionWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740),
+                                  styleMask: [.titled, .closable, .fullSizeContentView],
                                   backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         let hosting = NSHostingView(rootView: view)

@@ -2,35 +2,31 @@
 import AppKit
 import SwiftUI
 
-/// Design tokens for the Ask surfaces.
-///
-/// The workspace is a standalone window placed directly over the desktop, so its
-/// backplates are opaque. The launcher card is the one exception: it is glass
-/// (`AskGlassBackground`), and falls back to `launcherSurface` when the user
-/// turns on Reduce Transparency.
+/// Compatibility names for Ask surfaces. Shared colours resolve to TypefluxUI semantic tokens.
+/// Navigation owns glass materials; transcript and composer content remain solid.
 @available(*, deprecated, message: "Use TypefluxUI tokens for new components.")
 enum AskTheme {
-    static let accent = LegacyAskPalette.accent
-    static let surface = LegacyAskPalette.surface
-    static let raisedSurface = LegacyAskPalette.raisedSurface
-    static let sidebarSurface = LegacyAskPalette.sidebarSurface
-    static let controlSurface = LegacyAskPalette.controlSurface
-    static let border = LegacyAskPalette.border
-    static let separator = LegacyAskPalette.separator
-    static let accentSoft = LegacyAskPalette.accentSoft
-    static let privateTint = LegacyAskPalette.privateTint
+    static let accent = TypefluxColor.accent.color
+    static let surface = TypefluxColor.controlBackground.color
+    static let raisedSurface = TypefluxColor.windowBackground.color
+    static let sidebarSurface = TypefluxColor.windowBackground.color
+    static let controlSurface = TypefluxColor.controlBackground.color
+    static let border = TypefluxColor.separator.color
+    static let separator = TypefluxColor.separator.color
+    static let accentSoft = TypefluxColor.accent.color.opacity(0.12)
+    static let privateTint = Color(nsColor: .systemPurple)
     static let privateFill = LegacyAskPalette.privateFill
     static let privateHeaderFill = LegacyAskPalette.privateHeaderFill
-    static let accentText = LegacyAskPalette.accentText
-    static let successSoft = LegacyAskPalette.successSoft
-    static let warningSoft = LegacyAskPalette.warningSoft
-    static let dangerSoft = LegacyAskPalette.dangerSoft
-    static let composerSurface = LegacyAskPalette.composerSurface
+    static let accentText = TypefluxColor.accent.color
+    static let successSoft = TypefluxColor.success.color.opacity(0.12)
+    static let warningSoft = TypefluxColor.warning.color.opacity(0.12)
+    static let dangerSoft = TypefluxColor.danger.color.opacity(0.12)
+    static let composerSurface = TypefluxColor.controlBackground.color
     static let launcherSurface = LegacyAskPalette.launcherSurface
     static let launcherGlassTint = LegacyAskPalette.launcherGlassTint
-    static let popoverSurface = LegacyAskPalette.popoverSurface
-    static let panelCard = LegacyAskPalette.panelCard
-    static let segmentTrack = LegacyAskPalette.segmentTrack
+    static let popoverSurface = TypefluxColor.windowBackground.color
+    static let panelCard = TypefluxColor.controlBackground.color
+    static let segmentTrack = TypefluxColor.controlBackground.color
     static let floatingBorder = LegacyAskPalette.floatingBorder
     static let floatingGlassEdge = LegacyAskPalette.floatingGlassEdge
     static let launcherSeparator = LegacyAskPalette.launcherSeparator
@@ -49,15 +45,15 @@ enum AskTheme {
     static let switchOnFill = LegacyAskPalette.switchOnFill
     static let switchOnEdge = LegacyAskPalette.switchOnEdge
     static let glassFill = LegacyAskPalette.glassFill
-    static let pressFill = LegacyAskPalette.pressFill
-    static let hoverFill = LegacyAskPalette.hoverFill
-    static let monoSurface = LegacyAskPalette.monoSurface
-    static let cardBorder = LegacyAskPalette.cardBorder
-    static let librarySeparator = LegacyAskPalette.librarySeparator
+    static let pressFill = TypefluxColor.label.color.opacity(0.1)
+    static let hoverFill = TypefluxColor.label.color.opacity(0.06)
+    static let monoSurface = TypefluxColor.controlBackground.color
+    static let cardBorder = TypefluxColor.separator.color
+    static let librarySeparator = TypefluxColor.separator.color
     static let noteQuestionSurface = LegacyAskPalette.noteQuestionSurface
     static let keycapSurface = LegacyAskPalette.keycapSurface
-    static let userBubble = LegacyAskPalette.userBubble
-    static let userBubbleEdge = LegacyAskPalette.userBubbleEdge
+    static let userBubble = TypefluxColor.controlBackground.color
+    static let userBubbleEdge = TypefluxColor.separator.color
 
     /// A readable title for a tool call; raw tool names never reach the transcript.
     /// `mcpServer` names the server of an MCP tool when the caller knows it.
@@ -130,7 +126,7 @@ enum AskMetrics {
     static let launcherGutter: CGFloat = 6
     /// Compact corners for the floating launcher, shared by its glass and content clip.
     static let launcherCardCorner: CGFloat = 16
-    /// Height of every footer control: menus, context chips, microphone and send.
+    /// Legacy launcher footer height; native workspace controls size themselves.
     static let composerControlHeight: CGFloat = 34
     /// Horizontal padding inside the footer's text menus (model, reasoning).
     static let composerControlPadding: CGFloat = 10
@@ -155,25 +151,25 @@ enum AskMetrics {
     static let collapsedTitleInset: CGFloat = trafficLightInset + titleBarButtonWidth * 3 + 6 + 12
     /// One centred reading column shared by the transcript and the composer, so
     /// questions, answers and the input line up instead of spanning the window.
-    /// The design board's reading column is 720pt of content; the composer
+    /// The library template's reading column is 680pt of content; the composer
     /// card is 20pt wider on each side so its text lines up with the column.
-    static let columnWidth: CGFloat = 768
+    static let columnWidth: CGFloat = 728
     static let columnInset: CGFloat = 24
-    static let composerMaxWidth: CGFloat = 760
+    static let composerMaxWidth: CGFloat = 728
     /// The empty state's three suggestion cards.
     static let suggestionsMaxWidth: CGFloat = 680
     static let transcriptMaxWidth: CGFloat = columnWidth - columnInset * 2
     static let bubbleMaxWidth: CGFloat = 560
     /// The sidebar floats as a glass panel inset from the window edges; its
-    /// corner is concentric with the 12pt rows inset 8pt inside it.
+    /// corner is concentric with the 10pt rows inset 8pt inside it.
     static let sidebarPanelInset: CGFloat = 8
-    static let sidebarPanelCorner: CGFloat = 20
-    static let sidebarRowCorner: CGFloat = 12
+    static let sidebarPanelCorner = TypefluxRadius.sidebar.value(for: .liquidGlass)
+    static let sidebarRowCorner = TypefluxRadius.sidebarRow.value(for: .liquidGlass)
     /// Where text starts in the sidebar: the list's 8pt inset plus a row's 10pt
     /// padding, so the account name lines up with the history titles.
     static let sidebarTextLeading: CGFloat = sidebarPanelInset + 10
     /// Title and action capsules floating in the header over the transcript.
-    static let headerCapsuleHeight: CGFloat = 38
+    static let headerCapsuleHeight = TypefluxControlHeight.toolbarItem.value(for: .liquidGlass)
     /// How far the transcript fades out where it meets the window's top and bottom edges.
     static let transcriptEdgeFade: CGFloat = 28
     /// Space between the window's bottom edge and the composer card. Nothing
@@ -186,7 +182,7 @@ enum AskMetrics {
     /// Top of the header pills: centred in the title bar row.
     static var headerCapsuleTop: CGFloat { (titleBarRowHeight - headerCapsuleHeight) / 2 }
     /// The ⌘K search card, a glass card over the dimmed window.
-    static let paletteCorner: CGFloat = 22
+    static let paletteCorner = TypefluxRadius.spotlightResults.value(for: .liquidGlass)
     /// Widest the composer's model name may grow before it truncates in the middle.
     static let modelMenuMaxWidth: CGFloat = 132
     /// The saved-screenshot card above the composer and its thumbnail.
@@ -216,11 +212,8 @@ enum AskMetrics {
     }
 }
 
-/// Surface of the shared composer. The launcher and the workspace are the same
-/// feature behind different triggers, so they share every control, state and
-/// metric: one glass card floating over whatever is behind it. The launcher's
-/// glass samples the windows under its panel; the workspace's samples the
-/// transcript scrolling beneath it.
+/// Shared composer geometry. The floating launcher uses navigation glass;
+/// the workspace uses a solid content surface with the same editor behavior.
 struct AskComposerChrome: Equatable {
     var fill: Color
     var corner: CGFloat
@@ -250,16 +243,16 @@ struct AskComposerChrome: Equatable {
         footerLeadingInset: 7
     )
 
-    /// The launcher's card inside the conversation window. It sits on the
-    /// window's own surface, so the opaque fallback needs only the regular border.
+    /// The workspace composer is content, so it uses a solid surface and a semantic border.
     static let workspace: AskComposerChrome = {
         var chrome = launcher
         chrome.idleBorder = AskTheme.border
         chrome.placement = .inWindow
-        chrome.fill = AskTheme.glassFill
-        // The design board's in-window card: 28pt corners, 15pt text 20pt in, a 48pt footer.
-        chrome.corner = 28
-        chrome.editorFontSize = 15
+        chrome.fill = TypefluxColor.controlBackground.color
+        chrome.glass = false
+        // Content uses solid library surfaces in both styles.
+        chrome.corner = AskStyleMetrics.liquidGlass.composerCorner
+        chrome.editorFontSize = NSFont.preferredFont(forTextStyle: .body).pointSize
         chrome.horizontalInset = 20
         chrome.editorTopInset = 14
         chrome.editorBottomInset = 4
@@ -325,8 +318,7 @@ enum AskActivityState {
     var needsAttention: Bool { self == .attention || self == .failed }
 }
 
-/// Every switch, attachment and source label in the composer is a capsule.
-/// Native check boxes and bare text links are intentionally not used here.
+/// Compatibility label for attachment and context tokens with semantic state tint.
 struct AskChip: View {
     /// `unavailable` is a solid, muted chip whose tooltip gives the reason. A
     /// dashed outline used to read as a broken control.
@@ -341,31 +333,14 @@ struct AskChip: View {
     var disabled = false
 
     var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: systemImage).font(.system(size: 11, weight: .medium))
-            Text(title).lineLimit(1)
-            if let onRemove {
-                Button(action: onRemove) {
-                    Image(systemName: "xmark").font(.system(size: 8, weight: .bold)).opacity(0.6)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L("ask.remove"))
-            }
-        }
-        .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(foreground)
-        .padding(.horizontal, 10)
-        .frame(height: 26)
-        .background(fill, in: Capsule())
-        .overlay(Capsule().strokeBorder(stroke))
-        .contentShape(Capsule())
-        .onTapGesture { if !disabled { action?() } }
-        .accessibilityAddTraits(action == nil ? [] : .isButton)
-        .opacity(disabled && style != .unavailable ? 0.55 : 1)
-        .accessibilityLabel(title)
-        .accessibilityValue(disabled ? L("ask.image.disabled") : "")
-        .accessibilityHint(help ?? title)
-        .help(help ?? title)
+        TypefluxToken(title, removeLabel: L("ask.remove"), systemImage: systemImage,
+                      action: disabled ? nil : action, onRemove: onRemove)
+            .foregroundStyle(foreground)
+            .opacity(disabled && style != .unavailable ? 0.55 : 1)
+            .accessibilityLabel(title)
+            .accessibilityValue(disabled ? L("ask.image.disabled") : "")
+            .accessibilityHint(help ?? title)
+            .help(help ?? title)
     }
 
     private var foreground: Color {
@@ -377,20 +352,6 @@ struct AskChip: View {
         }
     }
 
-    private var fill: Color {
-        switch style {
-        case .active: return AskTheme.accentSoft
-        case .warning: return AskTheme.warningSoft
-        default: return .clear
-        }
-    }
-
-    private var stroke: Color {
-        switch style {
-        case .active, .warning: return .clear
-        default: return AskTheme.border
-        }
-    }
 }
 
 struct AskStatusBadge: View {
@@ -1121,13 +1082,8 @@ enum AskPresentation {
     }
 }
 
-/// The conversation window's surface under both the floating sidebar and the
-/// transcript. It reuses the settings window's tokens and material stack, so
-/// both windows read as one app.
-/// The workspace's canvas: frosted glass over the desktop. The window blurs
-/// whatever is behind it and lays the app's own tint over that, so a colourful
-/// wallpaper reads only as a soft cast, never as the window's colour. The
-/// classic style is an opaque canvas instead.
+/// Legacy backdrop for floating previews. Library windows let TypefluxWindow own
+/// navigation materials and draw solid detail content.
 struct AskWindowBackdrop: View {
     @Environment(\.liquidGlassIntensity) private var intensity
     @Environment(\.colorScheme) private var colorScheme
@@ -1222,7 +1178,7 @@ struct AskPopoverHeader: View {
             Spacer(minLength: 8)
             if let trailing { Text(trailing) }
         }
-        .font(.system(size: 11, weight: .semibold))
+        .font(.subheadline).fontWeight(.semibold)
         .foregroundStyle(StudioTheme.textTertiary)
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -1251,26 +1207,26 @@ struct AskPopoverRow<Accessory: View>: View {
     @Environment(\.interfaceStyle) private var style
 
     var body: some View {
-        Button(action: action) {
+        TypefluxButton(kind: .borderless, action: action) {
             HStack(spacing: 10) {
-                Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
+                Image(systemName: "checkmark").font(.subheadline).bold()
                     .foregroundStyle(AskTheme.accentText)
                     .frame(width: 14)
                     .opacity(selected ? 1 : 0)
                 if let modelIcon { modelIcon }
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
-                        Text(title).font(.system(size: 13))
+                        Text(title).font(.body)
                             .foregroundStyle(StudioTheme.textPrimary)
                             .lineLimit(1).truncationMode(.middle)
                         if let note {
-                            Text(verbatim: "· " + note).font(.system(size: 11, weight: .medium))
+                            Text(verbatim: "· " + note).font(.subheadline).fontWeight(.medium)
                                 .foregroundStyle(StudioTheme.textSecondary)
                                 .lineLimit(1).fixedSize()
                         }
                     }
                     if let caption, !caption.isEmpty {
-                        Text(caption).font(.system(size: 11))
+                        Text(caption).font(.subheadline)
                             .foregroundStyle(StudioTheme.textSecondary)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
@@ -1281,7 +1237,7 @@ struct AskPopoverRow<Accessory: View>: View {
                     .foregroundStyle(StudioTheme.textSecondary)
             }
             .padding(.horizontal, 10)
-            .frame(minHeight: 32)
+            .frame(minHeight: TypefluxControlHeight.menuItem.value(for: style))
             .padding(.vertical, 5)
             .frame(maxWidth: .infinity, alignment: .leading)
             // A soft hover wash matches the launcher and keeps text colours stable.
@@ -1289,7 +1245,6 @@ struct AskPopoverRow<Accessory: View>: View {
                         in: RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
         }
-        .buttonStyle(.plain)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.45)
         .onHover { hovering = enabled && $0 }
@@ -1364,35 +1319,18 @@ struct AskMultiplierBadge: View {
     }
 }
 
-/// A two-option segmented control in the design's neutral style: a recessed
-/// track and a raised thumb, instead of the system control's blue fill.
+/// Compatibility wrapper around the library's native segmented picker.
 struct AskSegmentedControl<Value: Hashable>: View {
     var options: [(value: Value, title: String)]
     @Binding var selection: Value
+    var title: String = ""
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
-                let selected = option.value == selection
-                Button { selection = option.value } label: {
-                    Text(option.title)
-                        .font(.system(size: 11.5, weight: .medium))
-                        .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 26)
-                        .background(selected ? AskTheme.panelCard : Color.clear,
-                                    in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                        .shadow(color: Color.black.opacity(selected ? 0.18 : 0), radius: 1.5, y: 1)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
+        TypefluxSegmentedControl(title, selection: $selection) {
+            ForEach(options.indices, id: \.self) { index in
+                Text(options[index].title).tag(options[index].value)
             }
         }
-        .padding(3)
-        .background(AskTheme.segmentTrack, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-        .animation(.easeOut(duration: 0.15), value: selection)
     }
 }
 
@@ -1469,9 +1407,6 @@ struct AskTitleBarButton: View {
     var label: String
     var shortcut: String?
     var action: () -> Void
-    @State private var hovering = false
-    @Environment(\.interfaceStyle) private var style
-
     static var size: CGSize { CGSize(width: AskMetrics.titleBarButtonWidth, height: 28) }
 
     static func help(label: String, shortcut: String?) -> String {
@@ -1479,16 +1414,7 @@ struct AskTitleBarButton: View {
     }
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 14, weight: .regular))
-                .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                .frame(width: Self.size.width, height: Self.size.height)
-                .background(hovering ? AskTheme.hoverFill : .clear, in: style.controlShape(height: Self.size.height))
-                .contentShape(style.controlShape(height: Self.size.height))
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-        .help(Self.help(label: label, shortcut: shortcut))
-        .accessibilityLabel(label)
+        TypefluxIconButton(label, systemImage: symbol, action: action)
+            .help(Self.help(label: label, shortcut: shortcut))
     }
 }

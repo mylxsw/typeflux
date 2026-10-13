@@ -5,6 +5,25 @@ import Testing
 @Suite("Ask native pull refresh", .exclusiveUIState)
 @MainActor
 struct AskHistoryPullRefreshTests {
+    @Test func listBackgroundFindsItsNativeTableAndReleasesItOnDetach() async throws {
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 240, height: 200))
+        let scroll = NSScrollView(frame: container.bounds)
+        scroll.documentView = NSTableView(frame: container.bounds)
+        let probe = AskHistoryPullRefresh.Probe(frame: container.bounds)
+        container.addSubview(scroll)
+        container.addSubview(probe)
+        let window = NSWindow(contentRect: container.bounds, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = container
+        window.orderFront(nil)
+        defer { window.orderOut(nil); window.close() }
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(probe.enclosingScrollView == nil)
+        #expect(probe.scrollView === scroll)
+        probe.removeFromSuperview()
+        #expect(probe.scrollView == nil)
+    }
+
     private func pull(_ probe: AskHistoryPullRefresh.Probe, momentum: NSEvent.Phase = [], atTop: Bool = true,
                       phases: [NSEvent.Phase]) {
         for phase in phases { probe.observeWheel(phase: phase, momentum: momentum, atTop: atTop) }

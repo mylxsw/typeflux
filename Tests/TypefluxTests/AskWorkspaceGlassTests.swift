@@ -115,9 +115,9 @@ struct AskWorkspaceGlassTests {
         #expect(AskMetrics.headerCapsuleHeight >= AskMetrics.composerControlHeight)
     }
 
-    @Test func activityBlockStaysSofterThanTheComposer() {
+    @Test func activityBlockUsesTheLibraryContentRadius() {
         #expect(AskActivityBlock.corner > 0)
-        #expect(AskActivityBlock.corner < AskComposerChrome.workspace.corner)
+        #expect(AskActivityBlock.corner == TypefluxRadius.form.value(for: .liquidGlass))
     }
 
     @Test func transcriptFollowsTheEndOnlyWhenItIsAboveTheComposer() {

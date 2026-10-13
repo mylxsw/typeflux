@@ -11,6 +11,7 @@ struct AskHistoryRow: View {
     let selected: Bool
     let busy: Bool
     let selectionSpace: Namespace.ID
+    var usesNativeSelection = false
     var onSelect: () -> Void
     var onRename: (String) async throws -> Void = { _ in }
     var onDelete: () -> Void
@@ -26,6 +27,8 @@ struct AskHistoryRow: View {
         Group {
             if let editingTitle {
                 contents(editorTitle: editingTitle)
+            } else if usesNativeSelection {
+                contents(editorTitle: nil)
             } else {
                 Button(action: onSelect) { contents(editorTitle: nil) }
                     .buttonStyle(AskPressableStyle.subtle)
@@ -45,7 +48,7 @@ struct AskHistoryRow: View {
             // A conversation still working shows a breathing accent dot.
             if busy { AskRunToneDot(tone: .running) }
             if stored {
-                Image(systemName: "lock").font(.system(size: 10.5, weight: .medium))
+                Image(systemName: "lock").font(.footnote).fontWeight(.medium)
                     .foregroundStyle(AskTheme.privateTint)
                     .help(L("ask.storage.local"))
                     .accessibilityLabel(L("ask.storage.local"))
@@ -55,32 +58,31 @@ struct AskHistoryRow: View {
                     .id(editSession)
                     .padding(.horizontal, 4)
                     .frame(height: 24)
-                    .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 4))
-                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(AskTheme.accent.opacity(0.7), lineWidth: 1))
+                    .background(AskTheme.controlSurface,
+                                in: RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: style)))
+                    .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: style))
+                        .strokeBorder(AskTheme.accent.opacity(0.7), lineWidth: 1))
                 if let renameError {
                     Image(systemName: "exclamationmark.circle")
-                        .font(.system(size: 11))
+                        .font(.subheadline)
                         .foregroundStyle(StudioTheme.warning)
                         .help(renameError)
                         .accessibilityLabel(renameError)
                 }
             } else {
-                Text(savingTitle ?? title)
-                    .font(.system(size: 13, weight: selected ? .semibold : .regular))
-                    .foregroundStyle(selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                    .lineLimit(1)
+                titleLabel
                 Spacer(minLength: 4)
             }
             if savingTitle != nil {
                 ProgressView().controlSize(.mini)
             } else if editorTitle == nil, !busy {
                 Text(AskPresentation.historyTimeLabel(updatedAt))
-                    .font(.system(size: 11))
+                    .font(.subheadline)
                     .foregroundStyle(StudioTheme.textTertiary)
                     .monospacedDigit()
             }
         }
-        .padding(.leading, style.usesGlass ? 12 : 10)
+        .padding(.leading, usesNativeSelection ? 10 : (style.usesGlass ? 12 : 10))
         .padding(.trailing, 10)
         .frame(height: style.ask.sidebarRowHeight)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -90,7 +92,7 @@ struct AskHistoryRow: View {
             let shape = RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous)
             ZStack {
                 if hovering, !selected { shape.fill(AskTheme.hoverFill).transition(.opacity) }
-                if selected {
+                if selected, !usesNativeSelection {
                     if colorScheme == .light {
                         shape.fill(.white)
                             .overlay(shape.strokeBorder(AskTheme.librarySeparator, lineWidth: 0.5))
@@ -111,6 +113,16 @@ struct AskHistoryRow: View {
             .animation(.easeOut(duration: 0.15), value: hovering)
         }
         .contentShape(RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous))
+    }
+
+    @ViewBuilder private var titleLabel: some View {
+        let text = Text(savingTitle ?? title)
+            .font(.body).fontWeight(selected ? .semibold : .regular).lineLimit(1)
+        if usesNativeSelection {
+            text
+        } else {
+            text.foregroundStyle(selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+        }
     }
 
     private func beginRename() {

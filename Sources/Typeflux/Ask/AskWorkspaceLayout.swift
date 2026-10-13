@@ -10,6 +10,7 @@ struct AskWorkspaceLayout: Equatable {
     let sidebarCollapsed: Bool
     let showsUsage: Bool
     var rightPanelWidth: CGFloat? = nil
+    var contentWidth: CGFloat?
 
     var usageInline: Bool {
         showsUsage && size.width >= Self.comfortableContentWidth + usageWidth
@@ -21,7 +22,8 @@ struct AskWorkspaceLayout: Equatable {
     }
 
     var mainWidth: CGFloat {
-        max(0, size.width - (sidebarInline ? AskMetrics.sidebarWidth : 0) - (usageInline ? usageWidth : 0))
+        max(0, contentWidth ?? (size.width - (sidebarInline ? AskMetrics.sidebarWidth : 0)
+            - (usageInline ? usageWidth : 0)))
     }
 
     var compactContent: Bool { mainWidth < Self.comfortableContentWidth }

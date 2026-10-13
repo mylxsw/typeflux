@@ -36,7 +36,8 @@ public struct TypefluxToolbar: ToolbarContent {
         .disabled(!action.isEnabled)
         .help(action.title)
         .accessibilityLabel(action.title)
-        .accessibilityIdentifier("typeflux.toolbar." + action.id)
+        .accessibilityIdentifier(action.accessibilityIdentifier)
+        .keyboardShortcut(action.keyboardShortcut)
     }
 
     @ViewBuilder private func prominentButton(_ action: TypefluxToolbarAction) -> some View {

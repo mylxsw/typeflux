@@ -90,7 +90,13 @@ extension AskComposerInteractionTests {
                                        styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: .aqua)
-        window.contentView = NSHostingView(rootView: AskConversationView(model: fixture.model))
+        window.contentView = NSHostingView(rootView: AskModelMenu(
+            library: library, reference: Binding(get: { fixture.model.modelReference(launcher: false) },
+                                                set: { fixture.model.selectModel($0, launcher: false) }),
+            compact: true, cloudAvailable: true, effort: Binding(
+                get: { fixture.model.reasoningEffort }, set: { fixture.model.reasoningEffort = $0 }
+            )
+        ).accessibilityIdentifier("ask.test.model").frame(maxWidth: .infinity, maxHeight: .infinity))
         window.orderFront(nil)
         let presenter = AskGlassMenuPresenter.shared
         defer {
@@ -110,11 +116,8 @@ extension AskComposerInteractionTests {
             }
         }
 
-        // Open the chip's menu: the chip sits in the composer footer, left of centre.
-        for x in stride(from: CGFloat(380), through: 560, by: 20) where !presenter.isShowing {
-            try click(NSPoint(x: x, y: 46), in: window)
-            try await Task.sleep(for: .milliseconds(150))
-        }
+        try click(AskWorkspaceTestAccessibility.center(identifier: "ask.test.model", in: window), in: window)
+        try await Task.sleep(for: .milliseconds(150))
         #expect(presenter.isShowing, "the chip opened its glass menu")
         let panel = try #require(presenter.panel)
         try await Task.sleep(for: .milliseconds(400))

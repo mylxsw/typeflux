@@ -27,36 +27,36 @@ struct AskLightV4PaletteTests {
         Color(.sRGB, red: red / 255, green: green / 255, blue: blue / 255, opacity: alpha)
     }
 
-    @Test func `light workspace tokens and neutral launcher palette`() throws {
+    @Test func lightWorkspaceTokensAndNeutralLauncherPalette() throws {
         let pairs: [(Color, Color)] = [
-            (AskTheme.border, rgb(15, 23, 42, 0.08)),
-            (AskTheme.separator, rgb(15, 23, 42, 0.08)),
+            (AskTheme.border, TypefluxColor.separator.color),
+            (AskTheme.separator, TypefluxColor.separator.color),
             (AskTheme.launcherSeparator, rgb(15, 23, 42, 0.08)),
-            (AskTheme.cardBorder, rgb(15, 23, 42, 0.09)),
-            (AskTheme.librarySeparator, rgb(15, 23, 42, 0.06)),
-            (AskTheme.accentText, rgb(29, 78, 216)),
+            (AskTheme.cardBorder, TypefluxColor.separator.color),
+            (AskTheme.librarySeparator, TypefluxColor.separator.color),
+            (AskTheme.accentText, TypefluxColor.accent.color),
             (AskTheme.launcherMetaText, rgb(69, 69, 69)),
             (AskTheme.launcherSelection, rgb(0, 0, 0, 0.10)),
             (AskTheme.launcherSelectionEdge, .clear),
             (AskTheme.launcherKeyword, rgb(0, 0, 0, 0.06)),
             (AskTheme.switchOnFill, rgb(37, 99, 235, 0.10)),
             (AskTheme.switchOnEdge, rgb(37, 99, 235, 0.20)),
-            (AskTheme.privateTint, rgb(147, 51, 234)),
+            (AskTheme.privateTint, Color(nsColor: .systemPurple)),
             (AskTheme.privateFill, rgb(147, 51, 234, 0.10)),
             (AskTheme.privateHeaderFill, rgb(147, 51, 234, 0.10)),
             (AskTheme.launcherShortcutFill, .white),
             (AskTheme.launcherShortcutEdge, rgb(15, 23, 42, 0.14)),
             (AskTheme.keycapSurface, .white),
             (AskTheme.noteQuestionSurface, .white),
-            (AskTheme.userBubble, rgb(37, 99, 235, 0.08)),
-            (AskTheme.userBubbleEdge, .clear)
+            (AskTheme.userBubble, TypefluxColor.controlBackground.color),
+            (AskTheme.userBubbleEdge, TypefluxColor.separator.color)
         ]
         for (index, pair) in pairs.enumerated() {
             try expectColor(pair.0, pair.1, dark: false, context: "light token \(index)")
         }
     }
 
-    @Test func `dark workspace tokens and neutral launcher palette`() throws {
+    @Test func darkWorkspaceTokensAndNeutralLauncherPalette() throws {
         func grey(_ alpha: Double) -> Color {
             Color(nsColor: NSColor(calibratedWhite: 1, alpha: alpha))
         }
@@ -64,9 +64,9 @@ struct AskLightV4PaletteTests {
             Color(nsColor: NSColor(calibratedRed: red, green: green, blue: blue, alpha: alpha))
         }
         let pairs: [(Color, Color)] = [
-            (AskTheme.border, grey(0.10)), (AskTheme.separator, grey(0.07)),
-            (AskTheme.launcherSeparator, grey(0.04)), (AskTheme.librarySeparator, grey(0.07)),
-            (AskTheme.cardBorder, grey(0.10)), (AskTheme.accentText, calibrated(0.557, 0.741, 1)),
+            (AskTheme.border, TypefluxColor.separator.color), (AskTheme.separator, TypefluxColor.separator.color),
+            (AskTheme.launcherSeparator, grey(0.04)), (AskTheme.librarySeparator, TypefluxColor.separator.color),
+            (AskTheme.cardBorder, TypefluxColor.separator.color), (AskTheme.accentText, TypefluxColor.accent.color),
             (AskTheme.launcherMetaText, rgb(166, 166, 166)),
             (AskTheme.launcherSelection, rgb(50, 50, 50)),
             (AskTheme.launcherSelectionEdge, .clear),
@@ -77,10 +77,10 @@ struct AskLightV4PaletteTests {
             (AskTheme.privateFill, Color(nsColor: .systemPurple).opacity(0.13)),
             (AskTheme.privateHeaderFill, Color(nsColor: .systemPurple).opacity(0.12)),
             (AskTheme.launcherShortcutFill, .clear), (AskTheme.launcherShortcutEdge, grey(0.07)),
-            (AskTheme.keycapSurface, AskTheme.hoverFill),
-            (AskTheme.noteQuestionSurface, AskTheme.hoverFill.opacity(0.6)),
-            (AskTheme.userBubble, AskTheme.accent.opacity(0.18)),
-            (AskTheme.userBubbleEdge, AskTheme.accent.opacity(0.42))
+            (AskTheme.keycapSurface, LegacyAskPalette.hoverFill),
+            (AskTheme.noteQuestionSurface, LegacyAskPalette.hoverFill.opacity(0.6)),
+            (AskTheme.userBubble, TypefluxColor.controlBackground.color),
+            (AskTheme.userBubbleEdge, TypefluxColor.separator.color)
         ]
         for (index, pair) in pairs.enumerated() {
             try expectColor(pair.0, pair.1, dark: true, context: "dark token \(index)")
@@ -90,7 +90,7 @@ struct AskLightV4PaletteTests {
         #expect(AskGlassPlacement.menu.frost(dark: true) == 0.90)
     }
 
-    @Test func `private colours render like the original system purple in dark`() async throws {
+    @Test func privateColoursRenderLikeTheOriginalSystemPurpleInDark() async throws {
         let application = NSApplication.shared
         let appearance = application.appearance
         application.appearance = NSAppearance(named: .aqua)
@@ -110,7 +110,7 @@ struct AskLightV4PaletteTests {
         }
     }
 
-    @Test func `orb changes only its light palette`() throws {
+    @Test func orbChangesOnlyItsLightPalette() throws {
         let light = [rgb(91, 141, 239), rgb(79, 70, 229), rgb(55, 48, 163),
                      rgb(79, 70, 229), rgb(91, 141, 239), rgb(91, 141, 239)]
         let dark: [Color] = [Color(red: 0.18, green: 0.42, blue: 1), Color(red: 0.55, green: 0.36, blue: 0.96),
@@ -146,7 +146,7 @@ struct AskLightV4PaletteTests {
     }
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
-    func `clipboard keycaps are white in light and keep the dark wash`(style: InterfaceStyle) async throws {
+    func clipboardKeycapsAreWhiteInLightAndKeepTheDarkWash(style: InterfaceStyle) async throws {
         let keycap = ClipboardKeycap(text: "").frame(width: 160, height: 60)
         let light = try await render(keycap, style: style, dark: false)
         #expect(light.redComponent > 0.99 && light.blueComponent > 0.99)
@@ -167,7 +167,7 @@ struct AskLightV4PaletteTests {
     }
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
-    func `history selection rises as a white card in light`(style: InterfaceStyle) async throws {
+    func historySelectionRisesAsAWhiteCardInLight(style: InterfaceStyle) async throws {
         let light = try await render(HistorySelection(), style: style, dark: false)
         #expect(light.redComponent > 0.99 && light.blueComponent > 0.99)
         let dark = try await render(HistorySelection(), style: style, dark: true)
@@ -179,7 +179,7 @@ struct AskLightV4PaletteTests {
     }
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
-    func `content cards are white in light and retain their dark material`(style: InterfaceStyle) async throws {
+    func contentCardsAreWhiteInLightAndRetainTheirDarkMaterial(style: InterfaceStyle) async throws {
         for elevated in [false, true] {
             let card = Color.clear.frame(width: 160, height: 60)
                 .askContentCard(corner: 12, opaqueFill: AskTheme.glassFill, elevatedInLight: elevated)

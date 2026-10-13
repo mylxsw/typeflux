@@ -4,6 +4,13 @@ import Testing
 
 @Suite("Ask responsive layout")
 struct AskWorkspaceLayoutTests {
+    @Test func nativeDetailWidthControlsComposerSizing() {
+        let layout = AskWorkspaceLayout(size: CGSize(width: 1180, height: 760), sidebarCollapsed: false,
+                                        showsUsage: false, contentWidth: 440)
+        #expect(layout.mainWidth == 440)
+        #expect(layout.compactContent)
+        #expect(layout.composerWidth < 440)
+    }
     @Test(arguments: [CGSize(width: 1180, height: 760), CGSize(width: 760, height: 560),
                       CGSize(width: 440, height: 880), CGSize(width: 960, height: 320),
                       CGSize(width: 440, height: 320), AskWorkspaceLayout.minimumWindowSize])

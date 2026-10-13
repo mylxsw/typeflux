@@ -157,8 +157,8 @@ struct AskTranscriptText: NSViewRepresentable {
 }
 
 enum AskMarkdownText {
-    /// Body text on the design board: 14.5pt with a ~1.7 line height.
-    static let bodySize: CGFloat = 14.5
+    /// AppKit text rendering uses the same semantic body style as SwiftUI.
+    static var bodySize: CGFloat { NSFont.preferredFont(forTextStyle: .body).pointSize }
     static let lineSpacing: CGFloat = 6
     static let paragraphSpacing: CGFloat = 10
     /// Where list text starts; the marker hangs in the space before it.
@@ -205,12 +205,14 @@ enum AskMarkdownText {
     }
 
     static func headingFont(level: Int) -> NSFont {
+        let style: NSFont.TextStyle
         switch level {
-        case 1: return .systemFont(ofSize: 20, weight: .bold)
-        case 2: return .systemFont(ofSize: 17, weight: .bold)
-        case 3: return .systemFont(ofSize: 15.5, weight: .bold)
-        default: return .systemFont(ofSize: bodySize, weight: .bold)
+        case 1: style = .title1
+        case 2: style = .title2
+        case 3: style = .title3
+        default: style = .body
         }
+        return NSFontManager.shared.convert(NSFont.preferredFont(forTextStyle: style), toHaveTrait: .boldFontMask)
     }
 
     static func render(_ text: String, markdown: Bool = true) -> NSAttributedString {

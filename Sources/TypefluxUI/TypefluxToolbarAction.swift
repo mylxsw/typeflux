@@ -6,15 +6,26 @@ public struct TypefluxToolbarAction: Identifiable {
     public let systemImage: String
     public let role: ButtonRole?
     public let isEnabled: Bool
+    public let accessibilityIdentifier: String
+    public let shortcut: KeyEquivalent?
+    public let modifiers: EventModifiers
     public let perform: () -> Void
 
+    public var keyboardShortcut: KeyboardShortcut? {
+        shortcut.map { KeyboardShortcut($0, modifiers: modifiers) }
+    }
+
     public init(id: String, title: String, systemImage: String, role: ButtonRole? = nil,
-                isEnabled: Bool = true, perform: @escaping () -> Void) {
+                isEnabled: Bool = true, accessibilityIdentifier: String? = nil,
+                shortcut: KeyEquivalent? = nil, modifiers: EventModifiers = .command, perform: @escaping () -> Void) {
         self.id = id
         self.title = title
         self.systemImage = systemImage
         self.role = role
         self.isEnabled = isEnabled
+        self.accessibilityIdentifier = accessibilityIdentifier ?? "typeflux.toolbar." + id
+        self.shortcut = shortcut
+        self.modifiers = modifiers
         self.perform = perform
     }
 }
