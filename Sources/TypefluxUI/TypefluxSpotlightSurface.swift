@@ -61,63 +61,83 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
 
     @ViewBuilder public var body: some View {
         if usesCustomChrome {
-            chrome
+            customPanel
+                .foregroundStyle(TypefluxColor.label.color)
+                .frame(maxWidth: .infinity, maxHeight: fillsAvailableHeight ? .infinity : nil, alignment: .top)
         } else {
-            chrome.accessibilityIdentifier("typeflux.spotlight.surface")
+            nativePanel
         }
     }
 
-    private var chrome: some View {
-        panel
-            .foregroundStyle(TypefluxColor.label.color)
-            .frame(maxWidth: .infinity, maxHeight: fillsAvailableHeight ? .infinity : nil, alignment: .top)
-            // Restore focus after the native views have reconciled the new mode.
-            .onChange(of: mode) { _ in focused = true }
-    }
-
-    @ViewBuilder private var panel: some View {
+    // Keep the accepted native search hierarchy: its field editor and focus callbacks depend on it.
+    private var nativePanel: some View {
         Group {
             if style == .classic {
-                VStack(spacing: 0) {
-                    HStack(alignment: usesCustomChrome ? .top : .center, spacing: 8) {
-                        inputContents
-                        modeContents
-                    }
-                    .padding(.trailing, usesCustomChrome ? 0 : 10)
-                    if showsResults {
+                TypefluxGlassContainer(radius: .spotlightResults) {
+                    VStack(spacing: 0) {
+                        HStack(spacing: 8) { input; modeButtons }.padding(.trailing, 10)
                         Divider()
                         resultPanel
                     }
                 }
-                .background { surface(.spotlightResults) }
                 .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
             } else {
                 TypefluxGlassGroup(spacing: 12) {
                     VStack(spacing: 12) {
-                        HStack(alignment: usesCustomChrome ? .top : .center, spacing: 8) {
-                            inputContents.background { surface(.spotlightInput) }
-                            modeContents
+                        HStack(spacing: 8) {
+                            TypefluxGlassContainer(radius: .spotlightInput) { input }
+                            modeButtons
                         }
-                        if showsResults {
-                            resultPanel.background { surface(.spotlightResults) }
-                                .clipShape(RoundedRectangle(
-                                    cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
-                        }
+                        TypefluxGlassContainer(radius: .spotlightResults) { resultPanel }
+                            .clipShape(RoundedRectangle(
+                                cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
+                    }
+                }
+            }
+        }
+        .foregroundStyle(TypefluxColor.label.color)
+        .accessibilityIdentifier("typeflux.spotlight.surface")
+        // Restore focus after the native views have reconciled the new mode.
+        .onChange(of: mode) { _ in focused = true }
+    }
+
+    @ViewBuilder private var customPanel: some View {
+        if style == .classic {
+            VStack(spacing: 0) {
+                customHeader
+                if showsResults {
+                    Divider()
+                    results
+                }
+            }
+            .background { surface(.spotlightResults) }
+            .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
+        } else {
+            TypefluxGlassGroup(spacing: TypefluxSpotlightMetrics.resultsSpacing(for: style)) {
+                VStack(spacing: TypefluxSpotlightMetrics.resultsSpacing(for: style)) {
+                    customHeader
+                    if showsResults {
+                        results.background { surface(.spotlightResults) }
+                            .clipShape(RoundedRectangle(
+                                cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
                     }
                 }
             }
         }
     }
 
-    @ViewBuilder private var inputContents: some View {
-        if let customInput { customInput } else { input }
+    private var customHeader: some View {
+        HStack(alignment: .top, spacing: 8) {
+            customInput.background { if style.usesGlass { surface(.spotlightInput) } }
+            customModes
+        }
+        // Result updates can temporarily exceed the viewport before the native panel grows.
+        // Reserve the editor's full height; only the results may yield to a smaller proposal.
+        .fixedSize(horizontal: false, vertical: true)
+        .layoutPriority(1)
     }
 
-    @ViewBuilder private var modeContents: some View {
-        if let customModes { customModes } else { modeButtons }
-    }
-
-    /// Keep native input views outside the material's hosting hierarchy during a resize.
+    /// Rich editors stay outside the material's hosting hierarchy during a resize.
     private func surface(_ radius: TypefluxRadius) -> some View {
         TypefluxGlassContainer(radius: radius, placement: placement) { Color.clear }
             .allowsHitTesting(false)
@@ -180,16 +200,12 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
         }
     }
 
-    @ViewBuilder private var resultPanel: some View {
-        if usesCustomChrome {
-            results
-        } else {
-            VStack(spacing: 0) {
-                // Result content is always solid; glass belongs to the panel's navigation chrome.
-                results.background(TypefluxColor.contentBackground.color)
-                Divider()
-                hints
-            }
+    private var resultPanel: some View {
+        VStack(spacing: 0) {
+            // Result content is always solid; glass belongs to the panel's navigation chrome.
+            results.background(TypefluxColor.contentBackground.color)
+            Divider()
+            hints
         }
     }
 }

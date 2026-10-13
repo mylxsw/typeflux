@@ -63,6 +63,29 @@ struct TypefluxSpotlightSurfaceLayoutTests {
     }
 
     @Test(arguments: InterfaceStyle.allCases)
+    func inputKeepsItsHeightWhenResultsTemporarilyExceedTheViewport(_ style: InterfaceStyle) async throws {
+        let state = ResultState()
+        let view = ChangingResults(state: state)
+            .environment(\.interfaceStyle, style)
+            .environment(\.glassMaterialOverride, .opaque)
+            .frame(width: 600, height: 140, alignment: .top)
+            .clipped()
+        try await TypefluxNavigationTestSupport.withWindow(view) { window, host in
+            let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
+            func screenFrame() -> NSRect { window.convertToScreen(field.convert(field.bounds, to: nil)) }
+            let anchor = screenFrame()
+            for height: CGFloat in [900, 0, 300, 1200, 40] {
+                state.height = height
+                try await Task.sleep(for: .milliseconds(80))
+                host.layoutSubtreeIfNeeded()
+                #expect(abs(screenFrame().maxY - anchor.maxY) < 0.5)
+                #expect(abs(screenFrame().height - anchor.height) < 0.5)
+                #expect(TypefluxNavigationTestSupport.searchField(in: host) === field)
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
     func accessibilityOverridesRemoveTheVisualEffect(_ style: InterfaceStyle) async throws {
         for options in [TypefluxAccessibilityOptions(reduceTransparency: true),
                         TypefluxAccessibilityOptions(increasedContrast: true)] {

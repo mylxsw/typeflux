@@ -243,6 +243,42 @@ struct ClipboardSpotlightBehaviorTests {
 }
 
 extension ClipboardSpotlightBehaviorTests {
+    @Test func repeatedModalCancellationRestoresTheSameSearchFieldAndQuery() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let model = ClipboardPanelModel()
+            model.reset(entries: [ClipboardTestSupport.entry(.text, text: "Original")])
+            let controller = ClipboardPanelController(settingsStore: settings)
+            defer { controller.dismiss() }
+            for style in InterfaceStyle.allCases {
+                settings.interfaceStyle = style
+                controller.present(model)
+                let window = try #require(controller.presentedWindow)
+                let host = try #require(window.contentView)
+                try await SettingsBehaviorTestSupport.wait {
+                    TypefluxNavigationTestSupport.searchField(in: host)?.currentEditor() != nil
+                }
+                let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
+                let editor = try #require(field.currentEditor() as? NSTextView)
+                editor.insertText("Orig", replacementRange: NSRange(location: 0, length: editor.string.utf16.count))
+                field.validateEditing()
+                try await SettingsBehaviorTestSupport.wait { model.query == "Orig" }
+                for action in [ClipboardEntryAction.saveSnippet, .editBeforePaste, .saveSnippet, .editBeforePaste] {
+                    model.perform(action)
+                    try await SettingsBehaviorTestSupport.wait { field.currentEditor() == nil }
+                    #expect(try press(53, window: window, controller: controller))
+                    try await SettingsBehaviorTestSupport.wait {
+                        guard let activeEditor = field.currentEditor() else { return false }
+                        return window.firstResponder === activeEditor
+                    }
+                    #expect(TypefluxNavigationTestSupport.searchField(in: host) === field)
+                    #expect(model.query == "Orig" && field.stringValue == "Orig")
+                }
+                model.query = ""
+                controller.dismiss()
+            }
+        }
+    }
+
     private func descendants(_ view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap(descendants)
     }

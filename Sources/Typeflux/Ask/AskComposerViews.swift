@@ -1619,7 +1619,7 @@ struct AskComposer: View {
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil
         )
-        .frame(height: min(editorHeight, layout.editorMaximumHeight))
+        .frame(height: min(editorHeight, layout.editorMaximumHeight), alignment: launcher ? .top : .center)
         .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection))
     }
 
@@ -1677,8 +1677,9 @@ struct AskComposer: View {
         .padding(.horizontal, chrome.horizontalInset)
         .padding(.top, layout.editorTopInset)
         .padding(.bottom, layout.editorBottomInset)
-        .frame(maxWidth: .infinity, minHeight: TypefluxControlHeight.spotlightInput.value(for: interfaceStyle),
-               alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: AskMetrics.launcherHeaderHeight(editor: min(editorHeight, layout.editorMaximumHeight),
+                                                       style: interfaceStyle), alignment: .topLeading)
     }
 
     private var launcherModeControls: some View {
