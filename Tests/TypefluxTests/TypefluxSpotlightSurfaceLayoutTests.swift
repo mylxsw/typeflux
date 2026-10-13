@@ -40,9 +40,8 @@ struct TypefluxSpotlightSurfaceLayoutTests {
                                                                           _ material: GlassMaterial) async throws {
         let state = LayoutState()
         let view = HStack(spacing: 0) {
-            ComposerContent(state: state, context: "baseline")
-            ComposerContent(state: state, context: "surface")
-                .background { TypefluxSpotlightSurface { Color.clear } }
+            ComposerContent(state: state, context: "baseline", decorated: false)
+            ComposerContent(state: state, context: "surface", decorated: true)
         }
         .environment(\.interfaceStyle, style)
         .environment(\.glassMaterialOverride, material)
@@ -101,6 +100,7 @@ struct TypefluxSpotlightSurfaceLayoutTests {
     private struct ComposerContent: View {
         @ObservedObject var state: LayoutState
         let context: String
+        let decorated: Bool
 
         var body: some View {
             VStack(spacing: 0) {
@@ -109,7 +109,16 @@ struct TypefluxSpotlightSurfaceLayoutTests {
                     .frame(height: state.editorHeight)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 12)
-                Color.clear.frame(height: state.resultsHeight)
+                Group {
+                    if decorated {
+                        TypefluxSpotlightSurface {
+                            Color.clear.background(TypefluxColor.contentBackground.color)
+                        }
+                    } else {
+                        Color.clear
+                    }
+                }
+                .frame(height: state.resultsHeight)
                 Text("Hints").frame(height: 48)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

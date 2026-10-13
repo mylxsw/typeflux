@@ -13,13 +13,23 @@ struct AskLauncherPaletteRenderTests {
     }
 
     @Test func `permission menu stays neutral under the accent tint`() async throws {
+        let empty = try census(await render(Color.white, size: NSSize(width: 60, height: 30)))
+        #expect(empty.grey == 0 && empty.blue == 0 && empty.red == 0,
+                "The sampling background must not count as label ink")
         for mode in [AskPermissionMode.strict, .standard] {
-            let menu = AskPermissionModeMenu(mode: mode, compact: true, onSelect: { _ in }).tint(AskTheme.accent)
+            // System secondary-label colours carry alpha. Sample their visible composite over a light canvas.
+            let menu = AskPermissionModeMenu(mode: mode, compact: true, onSelect: { _ in })
+                .tint(AskTheme.accent)
+                .environment(\.colorScheme, .light)
+                .background(Color.white)
             let census = try census(await render(menu, size: NSSize(width: 60, height: 30)))
             #expect(census.blue == 0, "a menu must not look like a switch that is on")
             #expect(census.grey > 0)
         }
-        let yolo = AskPermissionModeMenu(mode: .yolo, compact: true, onSelect: { _ in }).tint(AskTheme.accent)
+        let yolo = AskPermissionModeMenu(mode: .yolo, compact: true, onSelect: { _ in })
+            .tint(AskTheme.accent)
+            .environment(\.colorScheme, .light)
+            .background(Color.white)
         let census = try census(await render(yolo, size: NSSize(width: 90, height: 30)))
         #expect(census.red > 0)
         #expect(census.blue == 0)

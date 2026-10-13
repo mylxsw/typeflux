@@ -211,7 +211,7 @@ extension AskLauncherToggleTests {
         #expect(topDrift < 0.5, "the panel's top edge moved by \(topDrift)")
         let driftDetail = "the editor and its controls moved by \(editorDrift); "
             + "at window height \(recorder.heights[peak]), editor height \(recorder.editorHeights[peak]), "
-            + "editor top \(recorder.editorTops[peak]), anchor \(editorAnchor)"
+            + "editor top \(recorder.editorTops[peak]), anchor \(editorAnchor), anchor height \(editorHeight)"
         #expect(editorDrift < 0.5, Comment(rawValue: driftDetail))
     }
 

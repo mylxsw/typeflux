@@ -28,7 +28,8 @@ struct AskComposerChromeTests {
     @Test func launcherKeepsTheMainSizingInBothStyles() {
         for style in InterfaceStyle.allCases {
             let launcher = AskComposerChrome.of(launcher: true, style: style)
-            #expect(launcher.corner == TypefluxRadius.spotlightResults.value(for: style))
+            #expect(launcher == .launcher)
+            #expect(launcher.corner == AskMetrics.launcherCardCorner)
             #expect(launcher.editorTopInset == 12)
             #expect(launcher.editorBottomInset == 12)
             #expect(launcher.horizontalInset == 12)

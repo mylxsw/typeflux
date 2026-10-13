@@ -1080,9 +1080,11 @@ struct AskComposer: View {
                     // EmptyView does not participate in layout. Keep a real
                     // viewport while the last results disappear during shrinkage.
                     Color.clear
-                    launcherResults
+                    // Keep material hosting below the native editor's accepted layout hierarchy.
+                    TypefluxSpotlightSurface {
+                        launcherResults.background(TypefluxColor.contentBackground.color)
+                    }
                 }
-                .background(TypefluxColor.contentBackground.color)
                 .frame(height: launcherResultsViewportHeight, alignment: .top)
                 .clipped()
             }
@@ -1091,9 +1093,7 @@ struct AskComposer: View {
             }
         }
         .background {
-            if launcher {
-                TypefluxSpotlightSurface { Color.clear }
-            } else if let glass {
+            if let glass {
                 chrome.glassBackground(glass)
             } else {
                 chrome.fill

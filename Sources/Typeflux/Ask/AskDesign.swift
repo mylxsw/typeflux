@@ -227,7 +227,7 @@ struct AskComposerChrome: Equatable {
     /// in larger text, and the model and switches sit in a quieter bottom bar.
     static let launcher = AskComposerChrome(
         fill: AskTheme.launcherSurface,
-        corner: TypefluxRadius.spotlightResults.value(for: .liquidGlass),
+        corner: AskMetrics.launcherCardCorner,
         editorFontSize: 17,
         horizontalInset: 12,
         idleBorder: AskTheme.floatingBorder,
@@ -268,11 +268,7 @@ struct AskComposerChrome: Equatable {
     }()
 
     static func of(launcher: Bool, style: InterfaceStyle = .liquidGlass) -> AskComposerChrome {
-        if launcher {
-            var chrome = Self.launcher
-            chrome.corner = TypefluxRadius.spotlightResults.value(for: style)
-            return chrome
-        }
+        if launcher { return .launcher }
         return style.usesGlass ? .workspace : .classicWorkspace
     }
 
