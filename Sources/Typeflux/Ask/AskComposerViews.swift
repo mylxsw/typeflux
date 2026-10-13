@@ -1223,7 +1223,7 @@ struct AskComposer: View {
             if showsScreenshotPermissionHint {
                 Button { screenshotAction?() } label: {
                     Label(L("ask.capture.optIn"), systemImage: "camera.viewfinder")
-                        .font(.system(size: 11))
+                        .font(.subheadline)
                         .foregroundStyle(StudioTheme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -1636,7 +1636,7 @@ struct AskComposer: View {
                     .padding(.vertical, 2)
             }
             if !active, model.launcherHistoryMode {
-                Text(L("ask.inputHistory.chip")).font(.system(size: 11, weight: .semibold))
+                Text(L("ask.inputHistory.chip")).font(.subheadline).fontWeight(.semibold)
                     .foregroundStyle(AskTheme.accent).padding(.horizontal, 7).padding(.vertical, 6)
                     .background(AskTheme.launcherSelection, in: RoundedRectangle(cornerRadius: 6))
                     .padding(.top, 3)
@@ -1656,7 +1656,7 @@ struct AskComposer: View {
                 AskVoiceElapsed(live: voice.live)
                     .frame(height: AskMetrics.composerControlHeight)
                 Button { voice.cancel() } label: {
-                    Image(systemName: "xmark").font(.system(size: 12, weight: .semibold))
+                    Image(systemName: "xmark").font(.callout).fontWeight(.semibold)
                         .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
                         .contentShape(Circle())
                 }
@@ -1721,7 +1721,7 @@ struct AskComposer: View {
                     ViewThatFits(in: .horizontal) {
                         ForEach(AskLauncherContext.hintTiers(launcherHint), id: \.self) { hint in
                             Text(hint)
-                                .font(.system(size: 11))
+                                .font(.subheadline)
                                 .foregroundStyle(AskTheme.launcherMetaText)
                                 .lineLimit(1)
                         }
@@ -1921,7 +1921,7 @@ struct AskComposer: View {
             get: { model.modelReference(launcher: launcher) },
             set: { model.selectModel($0, launcher: launcher) }
         ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
-           hasImage: !launcher && model.hasConversationImages, compact: true,
+           hasImage: !launcher && model.hasConversationImages, compact: true, usesNativePopover: !launcher,
            condensed: layout.condensedFooter,
            showsChevron: false,
            cloudAvailable: model.cloudAvailable(launcher: launcher),
@@ -1954,7 +1954,7 @@ struct AskComposer: View {
             }
         } label: {
             Image(systemName: "slider.horizontal.3")
-                .font(.system(size: 13))
+                .font(.body)
                 .frame(width: 26, height: AskMetrics.composerControlHeight)
         }
         .menuStyle(.borderlessButton)
@@ -2012,6 +2012,7 @@ struct AskComposer: View {
                         .accessibilityIdentifier("ask.context.screenshot.toggle")
                 } else {
                     AskIconChip(item: item, action: memoryToggle)
+                        .accessibilityIdentifier("ask.context.memory.toggle")
                 }
             }
         }
@@ -2086,7 +2087,7 @@ struct AskComposer: View {
                 if active { Text(L(listening ? "ask.voice.listening" : "ask.voice.transcribing")) }
             }
         }
-        .font(.system(size: 11.5, weight: .semibold))
+        .font(.subheadline).fontWeight(.semibold)
         .foregroundStyle(listening ? AskTheme.accent : StudioTheme.textSecondary)
         .fixedSize()
         .accessibilityElement(children: .ignore)
@@ -2163,9 +2164,11 @@ private struct AskContextPreview: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(L("ask.context.screen.full")).font(.system(size: 13, weight: .semibold))
-            Text(L("ask.context.screen.scope")).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-            if let date = draft.capturedAt { Text(date, style: .time).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary) }
+            Text(L("ask.context.screen.full")).font(.body).fontWeight(.semibold)
+            Text(L("ask.context.screen.scope")).font(.callout).foregroundStyle(StudioTheme.textSecondary)
+            if let date = draft.capturedAt {
+                Text(date, style: .time).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+            }
             if let dataURL = draft.screenshot, let image = AskImage.decode(dataURL) {
                 Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 230)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -2175,10 +2178,10 @@ private struct AskContextPreview: View {
                 }
             }
             if let warning {
-                Text(warning).font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
+                Text(warning).font(.subheadline).foregroundStyle(StudioTheme.warning)
                     .accessibilityIdentifier("ask.context.screenshot.warning")
             }
-            Text(L("ask.context.notice")).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+            Text(L("ask.context.notice")).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
         }
         .padding(18)
         .frame(width: 400)

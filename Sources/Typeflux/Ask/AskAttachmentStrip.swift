@@ -222,7 +222,6 @@ struct AskAttachmentChip: View {
     var refreshDisabled = false
     var actionLabel: String?
     var onAction: (() -> Void)?
-    @State private var hovering = false
 
     static let height: CGFloat = 30
 
@@ -231,6 +230,7 @@ struct AskAttachmentChip: View {
             if let onTap {
                 Button(action: onTap) { face }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(item.title)
                     .accessibilityIdentifier("ask.content.\(item.kind.rawValue).preview")
             } else {
                 face
@@ -241,7 +241,7 @@ struct AskAttachmentChip: View {
             }
             if let actionLabel, let onAction {
                 Button(actionLabel, action: onAction)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.subheadline).fontWeight(.medium)
                     .foregroundStyle(StudioTheme.warning)
                     .buttonStyle(.plain)
                     .padding(.horizontal, 4)
@@ -249,27 +249,12 @@ struct AskAttachmentChip: View {
                     .accessibilityIdentifier("ask.content.screenshot.action")
             }
             if let onRemove {
-                Button(action: onRemove) {
-                    Image(systemName: "xmark").font(.system(size: 8.5, weight: .bold))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .frame(width: 24, height: 24)
-                        .background(hovering ? AskTheme.hoverFill : Color.clear, in: Circle())
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .help(L("ask.remove"))
-                .accessibilityLabel(L("ask.remove") + " " + item.title)
-                .accessibilityIdentifier("ask.content.\(item.kind.rawValue).remove")
+                TypefluxIconButton(L("ask.remove") + " " + item.title, systemImage: "xmark",
+                                   size: .mini, action: onRemove)
+                    .accessibilityIdentifier("ask.content.\(item.kind.rawValue).remove")
             }
         }
-        .padding(.leading, 4)
-        .padding(.trailing, onRemove == nil ? 10 : 5)
-        .frame(height: Self.height)
-        .background(hovering ? AskTheme.hoverFill : AskTheme.hoverFill.opacity(0.35), in: Capsule())
-        .overlay(Capsule().strokeBorder(item.style == .warning || item.style == .unavailable
-                    ? StudioTheme.warning.opacity(0.6) : AskTheme.border, lineWidth: 0.5))
-        .contentShape(Capsule())
-        .onHover { hovering = $0 }
+        .modifier(TypefluxTokenSurface())
         .help([item.title, item.detail, item.hint].compactMap { $0 }.joined(separator: "\n"))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(item.title
@@ -281,14 +266,14 @@ struct AskAttachmentChip: View {
             leading
             if restored {
                 Text(L("ask.context.source.previous"))
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.footnote).fontWeight(.medium)
                     .foregroundStyle(StudioTheme.textSecondary)
                     .padding(.horizontal, 4).padding(.vertical, 2)
                     .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 4))
                     .fixedSize()
             }
             Text(item.title)
-                .font(.system(size: 12, weight: .medium))
+                .font(.callout).fontWeight(.medium)
                 .foregroundStyle(item.style == .warning || item.style == .unavailable
                                  ? StudioTheme.warning : StudioTheme.textPrimary)
                 .lineLimit(1).truncationMode(sourceMetadata ? .tail : .middle)
@@ -298,12 +283,12 @@ struct AskAttachmentChip: View {
             if sourceMetadata || item.kind == .screenshot && (item.style == .warning || item.style == .unavailable),
                let detail = item.detail {
                 Text("· " + detail)
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1).truncationMode(.tail)
                     .frame(maxWidth: 180, alignment: .leading)
             }
             if let caption {
-                Text(caption).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                Text(caption).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
                     .lineLimit(1).fixedSize()
             }
         }
@@ -325,7 +310,7 @@ struct AskAttachmentChip: View {
             Image(nsImage: icon).resizable().frame(width: 22, height: 22)
         } else {
             Image(systemName: item.systemImage)
-                .font(.system(size: 10.5, weight: .semibold))
+                .font(.footnote).fontWeight(.semibold)
                 .foregroundStyle(item.style == .warning || item.style == .unavailable
                                  ? StudioTheme.warning : StudioTheme.textSecondary)
                 .frame(width: 22, height: 22)

@@ -658,7 +658,7 @@ struct AskConversationVisualTests {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
+        window.titleVisibility = .visible
         window.isReleasedWhenClosed = false
         window.toolbar = NSToolbar(identifier: "ask-effort-hold")
         window.toolbarStyle = .unified
@@ -718,7 +718,7 @@ struct AskConversationVisualTests {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
+        window.titleVisibility = .visible
         window.isReleasedWhenClosed = false
         window.toolbar = NSToolbar(identifier: "ask-storage-hold")
         window.toolbarStyle = .unified

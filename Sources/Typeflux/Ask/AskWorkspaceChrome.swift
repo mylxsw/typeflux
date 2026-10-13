@@ -65,60 +65,6 @@ struct AskPressableStyle: ButtonStyle {
     }
 }
 
-/// An SF Symbol button inside the header's actions capsule.
-struct AskHeaderIconButton: View {
-    var symbol: String
-    var label: String
-    var shortcut: String?
-    var active = false
-    var action: () -> Void
-    @State private var hovering = false
-    @Environment(\.interfaceStyle) private var style
-
-    static func ink(active: Bool, hovering: Bool) -> Color {
-        if active { return AskTheme.accent }
-        return hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary
-    }
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 13.5, weight: .regular))
-                .foregroundStyle(AskHeaderIconButton.ink(active: active, hovering: hovering))
-                .frame(width: 30, height: 28)
-                .background(hovering || active ? AskTheme.hoverFill : Color.clear, in: style.controlShape(height: 28))
-                .contentShape(style.controlShape(height: 28))
-        }
-        .buttonStyle(AskPressableStyle())
-        .onHover { hovering = $0 }
-        .help(AskTitleBarButton.help(label: label, shortcut: shortcut))
-        .accessibilityLabel(label)
-    }
-}
-
-/// A drawn line icon (usage, trash) inside the header's actions capsule.
-struct AskHeaderLineButton: View {
-    var kind: AskLineGlyph.Kind
-    var label: String
-    var active = false
-    var action: () -> Void
-    @State private var hovering = false
-    @Environment(\.interfaceStyle) private var style
-
-    var body: some View {
-        Button(action: action) {
-            AskLineIcon(kind: kind, size: 15)
-                .foregroundStyle(AskHeaderIconButton.ink(active: active, hovering: hovering))
-                .frame(width: 30, height: 28)
-                .background(hovering || active ? AskTheme.hoverFill : Color.clear, in: style.controlShape(height: 28))
-                .contentShape(style.controlShape(height: 28))
-        }
-        .buttonStyle(AskPressableStyle())
-        .onHover { hovering = $0 }
-        .help(label)
-        .accessibilityLabel(label)
-    }
-}
-
 /// An icon-only action under an answer. The words live in the tooltip and the
 /// accessibility label, so the strip stays as quiet as the design's.
 struct AskIconGhostButton: View {
@@ -131,7 +77,7 @@ struct AskIconGhostButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemImage).font(.system(size: 12.5))
+            Image(systemName: systemImage).font(.callout)
                 .foregroundStyle(active ? StudioTheme.success
                     : (hovering ? StudioTheme.textPrimary : StudioTheme.textTertiary))
                 .frame(width: 28, height: 28)
@@ -151,7 +97,7 @@ struct AskKeyHint: View {
 
     var body: some View {
         Text(verbatim: text)
-            .font(.system(size: 11, weight: .medium))
+            .font(.subheadline).fontWeight(.medium)
             .foregroundStyle(StudioTheme.textTertiary)
             .padding(.horizontal, 6)
             .frame(height: 18)
@@ -207,11 +153,11 @@ struct AskSentAttachmentChip: View {
                     .frame(width: 26, height: 18)
                     .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
             } else if let systemImage {
-                Image(systemName: systemImage).font(.system(size: 10.5, weight: .medium))
+                Image(systemName: systemImage).font(.footnote).fontWeight(.medium)
             }
             Text(title).lineLimit(1)
         }
-        .font(.system(size: 11.5))
+        .font(.subheadline)
         .foregroundStyle(StudioTheme.textSecondary)
         .padding(.leading, thumbnail == nil ? 9 : 4)
         .padding(.trailing, 9)

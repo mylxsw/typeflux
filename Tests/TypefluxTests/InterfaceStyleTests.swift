@@ -44,12 +44,12 @@ struct InterfaceStyleTests {
 
     // MARK: - Geometry
 
-    @Test func glassMetricsKeepTheDesignBoardValues() {
+    @Test func glassMetricsFollowTheSharedLibrarySpecification() {
         let glass = InterfaceStyle.liquidGlass.ask
-        #expect(glass.sidebarRowHeight == 38)
+        #expect(glass.sidebarRowHeight == TypefluxControlHeight.sidebarRow.value(for: .liquidGlass))
         #expect(glass.sidebarRowCorner == AskMetrics.sidebarRowCorner)
-        #expect(glass.composerCorner == 28)
-        #expect(glass.suggestionCorner == 18)
+        #expect(glass.composerCorner == TypefluxRadius.form.value(for: .liquidGlass))
+        #expect(glass.suggestionCorner == TypefluxRadius.form.value(for: .liquidGlass))
         #expect(glass.paletteCorner == AskMetrics.paletteCorner)
         #expect(glass.headerChipHeight == AskMetrics.headerCapsuleHeight)
     }
@@ -90,9 +90,12 @@ struct InterfaceStyleTests {
     }
 
     @Test func menuAndHoverCardCornersFollowTheStyle() {
-        #expect(AskGlassCardSurface<EmptyView>.corner(.menu, style: .classic) == 10)
-        #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: .classic) == 8)
-        #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: .liquidGlass) == 14)
+        #expect(AskGlassCardSurface<EmptyView>.corner(.menu, style: .classic)
+            == TypefluxRadius.menu.value(for: .classic))
+        #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: .classic)
+            == TypefluxRadius.popover.value(for: .classic))
+        #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: .liquidGlass)
+            == TypefluxRadius.popover.value(for: .liquidGlass))
     }
 
     // MARK: - Following settings

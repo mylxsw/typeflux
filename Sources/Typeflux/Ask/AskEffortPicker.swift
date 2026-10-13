@@ -2,10 +2,7 @@ import SwiftUI
 
 extension AskTheme {
     /// The heaviest reasoning level reads in violet, apart from the accent levels below it.
-    static let reasoningTopText = StudioTheme.dynamic(
-        light: NSColor(calibratedRed: 0.49, green: 0.25, blue: 0.94, alpha: 1),
-        dark: NSColor(calibratedRed: 0.71, green: 0.55, blue: 1.0, alpha: 1)
-    )
+    static let reasoningTopText = Color(nsColor: .systemPurple)
 
     /// The colour a reasoning level's name takes in the card title: violet at the model's
     /// highest level, the accent below it, `defaultColor` for "Auto".
@@ -29,6 +26,7 @@ struct AskModelEffortCard: View {
     var onManage: (() -> Void)?
     var offersCloudSignIn = false
     var close: () -> Void = {}
+    var nativeControls = false
     @State var page: Page
     /// The glass menu hosts this card in its own panel, rendered once from a snapshot:
     /// writes through the bindings reach the model but never redraw the card. These
@@ -38,7 +36,7 @@ struct AskModelEffortCard: View {
 
     init(library: AskModelLibrary, reference: Binding<String>, effort: Binding<AskReasoningEffort>,
          hasImage: Bool = false, loggedIn: Bool, onManage: (() -> Void)? = nil, offersCloudSignIn: Bool = false,
-         close: @escaping () -> Void = {}, page: Page = .effort) {
+         close: @escaping () -> Void = {}, page: Page = .effort, nativeControls: Bool = false) {
         self.library = library
         _reference = reference
         _effort = effort
@@ -47,6 +45,7 @@ struct AskModelEffortCard: View {
         self.onManage = onManage
         self.offersCloudSignIn = offersCloudSignIn
         self.close = close
+        self.nativeControls = nativeControls
         _page = State(initialValue: page)
         _liveEffort = State(initialValue: effort.wrappedValue)
         _liveReference = State(initialValue: reference.wrappedValue)
@@ -83,6 +82,8 @@ struct AskModelEffortCard: View {
             if page == .models { modelsPage } else { effortPage }
         }
         .frame(width: page == .models ? Self.modelsWidth : Self.width)
+        .onChange(of: reference) { liveReference = $0 }
+        .onChange(of: effort) { liveEffort = $0 }
     }
 
     @ViewBuilder private var effortPage: some View {
@@ -92,7 +93,7 @@ struct AskModelEffortCard: View {
                 Color.clear.frame(width: 24, height: 24)
                 VStack(spacing: 1) {
                     Text(levels.isEmpty ? library.name(for: liveReference) : shown.label)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.body).fontWeight(.semibold)
                         .foregroundStyle(levels.isEmpty ? StudioTheme.textPrimary
                             : AskTheme.reasoningText(shown, in: levels, defaultColor: StudioTheme.textPrimary))
                         .lineLimit(1)
@@ -104,9 +105,9 @@ struct AskModelEffortCard: View {
                             }
                             Text(levels.isEmpty ? L("ask.reasoning.changeModel") : library.name(for: liveReference))
                                 .lineLimit(1).truncationMode(.middle)
-                            Image(systemName: "chevron.right").font(.system(size: 8, weight: .semibold))
+                            Image(systemName: "chevron.right").font(.footnote).fontWeight(.semibold)
                         }
-                        .font(.system(size: 11.5))
+                        .font(.subheadline)
                         .foregroundStyle(StudioTheme.textSecondary)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .contentShape(Rectangle())
@@ -116,7 +117,7 @@ struct AskModelEffortCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 Button { effortSelection.wrappedValue = .providerDefault } label: {
-                    Image(systemName: "arrow.counterclockwise").font(.system(size: 12, weight: .medium))
+                    Image(systemName: "arrow.counterclockwise").font(.callout).fontWeight(.medium)
                         .foregroundStyle(StudioTheme.textSecondary)
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
@@ -129,7 +130,7 @@ struct AskModelEffortCard: View {
             }
             if levels.isEmpty {
                 Text(L("ask.reasoning.unsupported"))
-                    .font(.system(size: 11.5))
+                    .font(.subheadline)
                     .foregroundStyle(StudioTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -138,10 +139,16 @@ struct AskModelEffortCard: View {
                     .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .padding(.top, 10)
             } else {
-                AskEffortSlider(levels: levels, effort: effortSelection)
-                    .padding(.top, 10)
+                if nativeControls {
+                    TypefluxPopup(L("ask.reasoning.title"), selection: effortSelection) {
+                        Text(AskReasoningEffort.providerDefault.label).tag(AskReasoningEffort.providerDefault)
+                        ForEach(levels, id: \.self) { level in Text(level.label).tag(level) }
+                    }.padding(.top, 10)
+                } else {
+                    AskEffortSlider(levels: levels, effort: effortSelection).padding(.top, 10)
+                }
                 Text(shown.caption)
-                    .font(.system(size: 11))
+                    .font(.subheadline)
                     .foregroundStyle(StudioTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -155,10 +162,10 @@ struct AskModelEffortCard: View {
         VStack(alignment: .leading, spacing: 0) {
             Button { page = .effort } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "chevron.left").font(.system(size: 10, weight: .semibold))
+                    Image(systemName: "chevron.left").font(.footnote).fontWeight(.semibold)
                     Text(L("ask.reasoning.title"))
                 }
-                .font(.system(size: 12.5))
+                .font(.callout)
                 .foregroundStyle(StudioTheme.textSecondary)
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .contentShape(Rectangle())

@@ -30,7 +30,7 @@ struct AskContextUsageButton: View {
                 }
                 .frame(width: 16, height: 16)
                 Text(Self.percentText(context.fraction))
-                    .font(.system(size: 12)).monospacedDigit()
+                    .font(.callout).monospacedDigit()
             }
             .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
             .padding(.leading, 9)
@@ -61,12 +61,25 @@ struct AskUsagePanel: View {
     @Environment(\.interfaceStyle) private var style
     @Binding var runId: String?
     var close: () -> Void
-    @StateObject private var details = AskUsageDetails()
+    @StateObject private var details: AskUsageDetails
     private var items: [AskUsageInvocation] { details.items }
     private var cursor: Int64? { details.cursor }
     private var loading: Bool { details.loading }
     private var loadError: Bool { details.loadError }
     @FocusState private var closeFocused: Bool
+
+    @MainActor
+    init(model: AskConversationModel, compact: Bool = false, focusCloseOnAppear: Bool = false,
+         floating: Bool = false, runId: Binding<String?>, close: @escaping () -> Void,
+         details: AskUsageDetails? = nil) {
+        self.model = model
+        self.compact = compact
+        self.focusCloseOnAppear = focusCloseOnAppear
+        self.floating = floating
+        _runId = runId
+        self.close = close
+        _details = StateObject(wrappedValue: details ?? AskUsageDetails())
+    }
 
     private var usage: AskConversationUsage? { model.selected?.usage }
     private var local: Bool { model.selectedId.map(model.isLocal) ?? false }
@@ -78,16 +91,10 @@ struct AskUsagePanel: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(L("ask.usage.title")).font(.system(size: 13, weight: .semibold))
+                Text(L("ask.usage.title")).font(.body).fontWeight(.semibold)
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
-                Button(action: close) {
-                    Image(systemName: "xmark").font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+                TypefluxIconButton(L("ask.usage.close"), systemImage: "xmark", action: close)
                 .keyboardShortcut(focusCloseOnAppear ? .cancelAction : nil)
                 .focused($closeFocused)
                 .accessibilityLabel(L("ask.usage.close"))
@@ -107,7 +114,11 @@ struct AskUsagePanel: View {
                     if let context = model.usageContext { contextCard(context) }
                     if let budget = model.selected?.run?.budget { AskBudgetView(budget: budget) }
                     if scopeOptions.count > 1 {
-                        AskSegmentedControl(options: scopeOptions, selection: $runId)
+                        TypefluxSegmentedControl(L("ask.usage.title"), selection: $runId) {
+                            ForEach(scopeOptions.indices, id: \.self) { index in
+                                Text(scopeOptions[index].title).tag(scopeOptions[index].value)
+                            }
+                        }
                             .padding(.top, 4)
                     }
                     if model.hasUsageRecords, let totals {
@@ -116,8 +127,8 @@ struct AskUsagePanel: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Image(systemName: "chart.pie").accessibilityHidden(true)
                             Text(L("ask.usage.empty"))
-                                .font(.system(size: 13, weight: .semibold))
-                            Text(L("ask.usage.emptyHelp")).font(.system(size: 11))
+                                .font(.body).fontWeight(.semibold)
+                            Text(L("ask.usage.emptyHelp")).font(.subheadline)
                         }
                         .foregroundStyle(StudioTheme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -127,7 +138,7 @@ struct AskUsagePanel: View {
                         .accessibilityHint(L("ask.usage.emptyHelp"))
                         .accessibilityIdentifier("ask.usage.empty")
                     } else if !loading {
-                        Text(L("ask.usage.unavailable")).font(.system(size: 12))
+                        Text(L("ask.usage.unavailable")).font(.callout)
                             .foregroundStyle(StudioTheme.textSecondary)
                     }
                     if usage?.historicalGap == true { help("ask.usage.historicalGap") }
@@ -144,7 +155,7 @@ struct AskUsagePanel: View {
                     Text(credits.unlimited ? "∞" : AccountUsageDisplayFormatter.count(Int64(credits.remaining)))
                         .monospacedDigit()
                 }
-                .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                .font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
                 .padding(.horizontal, 16).padding(.vertical, compact ? 8 : 12)
                 // Account-wide data is independently refreshed by AuthState.
             }
@@ -180,7 +191,7 @@ struct AskUsagePanel: View {
             cardLabel(L("ask.usage.remaining")) {
                 Text(L(context.capacity == nil ? "ask.usage.capacityUnknown"
                        : context.isHigh ? "ask.usage.high" : "ask.usage.available"))
-                    .font(.system(size: 10.5, weight: .medium))
+                    .font(.footnote).fontWeight(.medium)
                     .foregroundStyle(context.isHigh ? StudioTheme.warning : StudioTheme.success)
             }
             figure(context.remaining.map { "≈ " + AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—",
@@ -195,7 +206,7 @@ struct AskUsagePanel: View {
                        value: AccountUsageDisplayFormatter.count(Int64(context.outputReserve)))
                 if let capacity = context.capacity {
                     Text(L("ask.usage.capacity") + " " + AccountUsageDisplayFormatter.count(Int64(capacity)))
-                        .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                        .font(.footnote).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
                 }
                 Spacer(minLength: 0)
             }
@@ -208,7 +219,7 @@ struct AskUsagePanel: View {
         card {
             cardLabel(L("ask.usage.spent")) {
                 Text(L(runId == nil ? "ask.usage.conversation" : "ask.usage.round"))
-                    .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
+                    .font(.footnote).foregroundStyle(StudioTheme.textTertiary)
             }
             figure(local ? totals.tokenText(totals.totalTokens) : totals.creditsText,
                    unit: local ? "tokens" : "credits")
@@ -235,7 +246,7 @@ struct AskUsagePanel: View {
     /// Individual model calls, each a row that expands in place.
     @ViewBuilder private var callsSection: some View {
         if !items.isEmpty || loading || loadError || cursor != nil {
-            Text(L("ask.usage.calls")).font(.system(size: 11, weight: .semibold))
+            Text(L("ask.usage.calls")).font(.subheadline).fontWeight(.semibold)
                 .foregroundStyle(StudioTheme.textTertiary)
                 .padding(.top, 4)
             VStack(spacing: 0) {
@@ -245,9 +256,10 @@ struct AskUsagePanel: View {
                 }
                 if loading { ProgressView().controlSize(.small).padding(10) }
             }
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
+            .background(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style), style: .continuous)
+                .strokeBorder(AskTheme.border))
             if loadError {
-                Text(L("ask.usage.loadError")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.usage.loadError")).font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
                 Button { Task { await load(reset: false) } } label: {
                     Label(L("ask.retry"), systemImage: "arrow.clockwise")
                 }
@@ -255,7 +267,7 @@ struct AskUsagePanel: View {
                 .accessibilityIdentifier("ask.usage.retry")
             } else if cursor != nil {
                 Button(L("ask.usage.more")) { Task { await load(reset: false) } }.buttonStyle(.plain)
-                    .font(.system(size: 11.5)).foregroundStyle(AskTheme.accentText)
+                    .font(.subheadline).foregroundStyle(AskTheme.accentText)
             }
         }
     }
@@ -264,13 +276,15 @@ struct AskUsagePanel: View {
         VStack(alignment: .leading, spacing: compact ? 6 : 9, content: content)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, compact ? 10 : 14).padding(.vertical, compact ? 9 : 13)
-            .background(AskTheme.panelCard, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
+            .background(AskTheme.panelCard,
+                        in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style), style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style), style: .continuous)
+                .strokeBorder(AskTheme.border))
     }
 
     private func cardLabel<Trailing: View>(_ title: String, @ViewBuilder trailing: () -> Trailing) -> some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title).font(.system(size: 11, weight: .medium)).foregroundStyle(StudioTheme.textTertiary)
+            Text(title).font(.subheadline).fontWeight(.medium).foregroundStyle(StudioTheme.textTertiary)
             Spacer(minLength: 8)
             trailing()
         }
@@ -279,9 +293,9 @@ struct AskUsagePanel: View {
     /// The card's one large number, with its unit set small beside it.
     private func figure(_ value: String, unit: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 5) {
-            Text(value).font(.system(size: compact ? 21 : 26, weight: .semibold)).monospacedDigit()
+            Text(value).font(compact ? .title : .largeTitle).fontWeight(.semibold).monospacedDigit()
                 .foregroundStyle(StudioTheme.textPrimary)
-            Text(verbatim: unit).font(.system(size: 13, weight: .medium))
+            Text(verbatim: unit).font(.body).fontWeight(.medium)
                 .foregroundStyle(StudioTheme.textTertiary)
         }
         .lineLimit(1)
@@ -307,7 +321,7 @@ struct AskUsagePanel: View {
     private func legend(color: Color, title: String, value: String) -> some View {
         HStack(spacing: 5) {
             RoundedRectangle(cornerRadius: 2, style: .continuous).fill(color).frame(width: 7, height: 7)
-            Text(title + " " + value).font(.system(size: 10.5))
+            Text(title + " " + value).font(.footnote)
                 .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
         }
     }
@@ -319,7 +333,7 @@ struct AskUsagePanel: View {
                 withAnimation(.easeOut(duration: 0.15)) { expandedCall = expanded ? nil : item.id }
             } label: {
                 HStack(spacing: 7) {
-                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
+                    Image(systemName: "chevron.right").font(.footnote).fontWeight(.bold)
                         .foregroundStyle(StudioTheme.textTertiary)
                         .rotationEffect(.degrees(expanded ? 90 : 0))
                     Text(L(item.purpose == "summary" ? "ask.usage.summary" : "ask.usage.inference"))
@@ -327,7 +341,7 @@ struct AskUsagePanel: View {
                     Spacer(minLength: 8)
                     Text(invocationCost(item)).foregroundStyle(StudioTheme.textPrimary).monospacedDigit()
                 }
-                .font(.system(size: 12, weight: .medium))
+                .font(.callout).fontWeight(.medium)
                 .padding(.horizontal, 12)
                 .frame(height: 36)
                 .contentShape(Rectangle())
@@ -336,7 +350,7 @@ struct AskUsagePanel: View {
             if expanded {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(model.modelLibrary.name(for: item.modelRef))
-                        .font(.system(size: 11, weight: .medium)).foregroundStyle(StudioTheme.textSecondary)
+                        .font(.subheadline).fontWeight(.medium).foregroundStyle(StudioTheme.textSecondary)
                         .padding(.bottom, 4)
                     if let tokens = item.tokens {
                         detail("ask.usage.input", String(tokens.promptTokens))
@@ -350,7 +364,7 @@ struct AskUsagePanel: View {
                         help(item.source == "estimated" ? "ask.usage.estimated"
                              : item.source == "client" ? "ask.usage.clientSource" : "ask.usage.providerSource")
                     }
-                    Text(item.createdAt, style: .time).font(.system(size: 10.5))
+                    Text(item.createdAt, style: .time).font(.footnote)
                         .foregroundStyle(StudioTheme.textTertiary).padding(.top, 4)
                 }
                 .padding(.leading, 28).padding(.trailing, 12).padding(.bottom, 10)
@@ -375,14 +389,14 @@ struct AskUsagePanel: View {
         HStack {
             Text(L(title)).foregroundStyle(StudioTheme.textSecondary)
             Spacer()
-            Text(value).font(.system(size: 12, weight: .semibold)).monospacedDigit()
+            Text(value).font(.callout).fontWeight(.semibold).monospacedDigit()
                 .foregroundStyle(StudioTheme.textPrimary)
         }
-        .font(.system(size: 12))
+        .font(.callout)
         .padding(.vertical, 7)
     }
 
-    private func help(_ key: String) -> some View { Text(L(key)).font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true) }
+    private func help(_ key: String) -> some View { Text(L(key)).font(.footnote).foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true) }
 
     @MainActor private func load(reset: Bool) async {
         let id = model.selectedId

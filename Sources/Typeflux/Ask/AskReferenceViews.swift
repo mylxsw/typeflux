@@ -61,17 +61,17 @@ struct AskReferenceEditor: View {
     private var header: some View {
         HStack(spacing: 8) {
             Image(systemName: "quote.opening")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.callout).fontWeight(.semibold)
                 .foregroundStyle(AskTheme.accentText)
             Text(position ?? L("ask.quote"))
-                .font(.system(size: 13, weight: .semibold))
+                .font(.body).fontWeight(.semibold)
                 .foregroundStyle(StudioTheme.textPrimary)
             Spacer(minLength: 8)
             if let locate {
                 // Leaving for the source closes the popover, which keeps the edit.
                 Button(action: locate) {
                     Label(L("ask.references.locate"), systemImage: "arrow.up.forward.square")
-                        .font(.system(size: 12))
+                        .font(.callout)
                         .foregroundStyle(AskTheme.accentText)
                 }
                 .buttonStyle(.plain)
@@ -82,7 +82,7 @@ struct AskReferenceEditor: View {
     private var quote: some View {
         ScrollView {
             Text(reference.text.trimmingCharacters(in: .whitespacesAndNewlines))
-                .font(.system(size: 12.5))
+                .font(.callout)
                 .lineSpacing(4)
                 .foregroundStyle(StudioTheme.textSecondary)
                 .textSelection(.enabled)
@@ -102,7 +102,7 @@ struct AskReferenceEditor: View {
     private var questionField: some View {
         TextField(L("ask.references.optional"), text: $reference.question, axis: .vertical)
             .textFieldStyle(.plain)
-            .font(.system(size: 12.5))
+            .font(.callout)
             .foregroundStyle(StudioTheme.textPrimary)
             .lineLimit(1...3)
             .focused($focused)
@@ -121,7 +121,7 @@ struct AskReferenceEditor: View {
                 let active = reference.question == action.question
                 Button { reference.question = action.question; focused = true } label: {
                     Label(action.question, systemImage: action.systemImage)
-                        .font(.system(size: 11.5))
+                        .font(.subheadline)
                         .foregroundStyle(active ? AskTheme.accentText : StudioTheme.textSecondary)
                         .padding(.horizontal, 9)
                         .frame(height: 24)
@@ -157,7 +157,7 @@ struct AskReferenceEditor: View {
                     .keyboardShortcut(.cancelAction)
             }
         }
-        .font(.system(size: 11.5))
+        .font(.subheadline)
         .foregroundStyle(StudioTheme.textTertiary)
     }
 
@@ -334,7 +334,7 @@ struct AskReferenceChip: View {
             Button(action: action) {
                 HStack(spacing: 6) {
                     Image(systemName: intent.systemImage)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.subheadline).fontWeight(.medium)
                         .foregroundStyle(AskTheme.accentText)
                     if let label = intent.label {
                         Text(label).fontWeight(.semibold).foregroundStyle(AskTheme.accentText)
@@ -350,7 +350,7 @@ struct AskReferenceChip: View {
                             .lineLimit(1).truncationMode(.tail)
                     }
                 }
-                .font(.system(size: 12))
+                .font(.callout)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
@@ -359,7 +359,7 @@ struct AskReferenceChip: View {
                 // Kept in the layout while hidden, so pills never re-wrap on
                 // hover. Only the pointer reveals it, as on the design board.
                 Button(action: onRemove) {
-                    Image(systemName: "xmark").font(.system(size: 7.5, weight: .bold))
+                    Image(systemName: "xmark").font(.footnote).fontWeight(.bold)
                         .foregroundStyle(StudioTheme.textSecondary)
                         .frame(width: 16, height: 16)
                         .background(AskTheme.pressFill, in: Circle())
@@ -475,7 +475,7 @@ struct AskReferenceStrip: View {
             if items.count > Self.collapsedLimit {
                 Button { expanded.toggle() } label: {
                     Text(expanded ? L("ask.references.collapse") : "+\(items.count - shown)")
-                        .font(.system(size: 12))
+                        .font(.callout)
                         .foregroundStyle(StudioTheme.textSecondary)
                         .padding(.horizontal, 10)
                         .frame(height: AskReferenceChip.height)
@@ -489,7 +489,7 @@ struct AskReferenceStrip: View {
             if items.count > 1 {
                 Button { editing = nil; references = nil } label: {
                     Text(L("ask.references.clear"))
-                        .font(.system(size: 11.5))
+                        .font(.subheadline)
                         .foregroundStyle(StudioTheme.textTertiary)
                         .padding(.horizontal, 6)
                         .frame(height: AskReferenceChip.height)

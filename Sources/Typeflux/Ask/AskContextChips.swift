@@ -6,6 +6,9 @@ import SwiftUI
 /// chip; the words live in a hover card, so a long window title can no longer
 /// push the whole group into an overflow menu.
 struct AskContextItem: Identifiable, Equatable {
+    /// Semantic context state, also used by the launcher's compact icon face.
+    enum Style: Equatable { case neutral, active, warning, unavailable }
+
     enum Kind: String, CaseIterable {
         case screenshot, source, selection, memory
     }
@@ -21,7 +24,7 @@ struct AskContextItem: Identifiable, Equatable {
     var systemImage: String
     /// Draws this app's icon in place of `systemImage` when it can be resolved.
     var appBundleID: String?
-    var style: AskChip.Style
+    var style: Style
     var title: String
     var detail: String?
     var hint: String?
@@ -172,116 +175,6 @@ enum AskContextChips {
 /// circle, ring or glow around it. After a short hover a card
 /// above it gives the name, the details and what a click does. Removal is a
 /// corner badge that appears on hover.
-struct AskIconChip: View {
-    let item: AskContextItem
-    var action: (() -> Void)?
-    var onRemove: (() -> Void)?
-    /// Captured screenshot preview, supplied by the launcher only.
-    var screenshot: NSImage?
-    @Environment(\.isEnabled) private var enabled
-    @State private var hovering = false
-    @State private var showingCard = false
-    @State private var hoverTask: Task<Void, Never>?
-    @State private var anchor = AskHoverAnchor.Holder()
-    @State private var cardID = UUID()
-
-    private struct CardContent: Equatable {
-        let item: AskContextItem
-        let screenshot: NSImage?
-    }
-
-    private var cardContent: CardContent { CardContent(item: item, screenshot: screenshot) }
-
-    var body: some View {
-        Button {
-            dismissCard()
-            // A read-only chip answers a click with its explanation, so it never feels dead.
-            if let action { action() } else { explain() }
-        } label: {
-            AskIconChipFace(item: item, hovering: hovering)
-        }
-        .buttonStyle(.plain)
-        .overlay(alignment: .topTrailing) {
-            if hovering, item.removable, let onRemove {
-                Button {
-                    dismissCard()
-                    onRemove()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 7, weight: .bold))
-                        .foregroundStyle(Color.white)
-                        .frame(width: 14, height: 14)
-                        .background(Color(nsColor: .systemGray), in: Circle())
-                        .overlay(Circle().strokeBorder(AskTheme.composerSurface, lineWidth: 1.5))
-                }
-                .buttonStyle(.plain)
-                // Mostly inside the chip, so reaching for it never ends the hover.
-                .offset(x: 1, y: -1)
-                .accessibilityHidden(true)
-            }
-        }
-        .onHover(perform: hover)
-        .onDisappear(perform: dismissCard)
-        .onChange(of: cardContent) { content in
-            if showingCard { showCard(content) } else if hovering { scheduleCard(content) }
-        }
-        .onChange(of: enabled) { if !$0 { hovering = false; dismissCard() } }
-        // The card is a click-through panel, not a popover: a popover swallowed
-        // the click meant for the chip. See AskHoverCardPresenter.
-        .background(AskHoverAnchor(holder: anchor))
-        .accessibilityElement(children: .ignore)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityLabel(item.title)
-        .accessibilityHint([item.sourceAppName.map { L("ask.context.selection.source", $0) },
-                            item.detail, item.hint].compactMap { $0 }.joined(separator: ", "))
-        .accessibilityAction {
-            dismissCard()
-            if let action { action() } else { explain() }
-        }
-        .accessibilityAction(named: L("ask.remove")) { if item.removable { onRemove?() } }
-    }
-
-    private func hover(_ inside: Bool) {
-        hovering = inside && enabled
-        hoverTask?.cancel()
-        guard hovering else { dismissCard(); return }
-        scheduleCard(cardContent)
-    }
-
-    private func scheduleCard(_ content: CardContent) {
-        hoverTask?.cancel()
-        hoverTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: AskContextChips.hoverDelay)
-            guard !Task.isCancelled, hovering else { return }
-            showCard(content)
-        }
-    }
-
-    /// Shows the card for a click. Leaving the chip hides it as usual; opened
-    /// without the pointer on the chip (keyboard, VoiceOver) it closes by itself.
-    private func explain() {
-        showCard(cardContent)
-        hoverTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: AskContextChips.explainDuration)
-            guard !Task.isCancelled, !hovering else { return }
-            dismissCard()
-        }
-    }
-
-    private func showCard(_ content: CardContent) {
-        guard enabled, let view = anchor.view else { return }
-        AskHoverCardPresenter.shared.show(AskContextCard(items: [content.item], screenshot: content.screenshot),
-                                         owner: cardID, anchor: view)
-        showingCard = true
-    }
-
-    private func dismissCard() {
-        hoverTask?.cancel()
-        showingCard = false
-        AskHoverCardPresenter.shared.hide(owner: cardID)
-    }
-}
-
 struct AskIconChipFace: View {
     let item: AskContextItem
     var hovering = false
@@ -350,7 +243,7 @@ struct AskIconChipFace: View {
     }
 
     /// On is the accent, hover brightens an off icon.
-    static func iconColor(_ style: AskChip.Style, hovering: Bool) -> Color {
+    static func iconColor(_ style: AskContextItem.Style, hovering: Bool) -> Color {
         switch style {
         case .active: return AskTheme.accent
         case .warning: return StudioTheme.warning

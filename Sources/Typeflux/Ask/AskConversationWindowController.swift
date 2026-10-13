@@ -29,6 +29,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     let filePreview: AskFilePreviewController
     private var launcherOpeningTop: CGFloat?
     private(set) var conversationWindow: NSWindow?
+    private(set) var workspacePresentation = AskWorkspaceState()
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
     private(set) var conversationRefreshTask: Task<Void, Never>?
@@ -421,21 +422,20 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         dismissLauncher()
         if conversationWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
-            // Translucent like the settings window, so both share the same glass.
+            // Ask's panels draw solid content and library navigation materials.
             window.isOpaque = false
             window.backgroundColor = .clear
             window.title = L("workflow.ask.answerTitle")
             window.titlebarAppearsTransparent = true
-            window.titleVisibility = .hidden
+            window.titleVisibility = .visible
             window.isReleasedWhenClosed = false
             window.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-conversations")
             window.delegate = self
-            // An empty unified toolbar gives the title bar its 52pt height and centres
-            // the traffic lights, so the in-window tools can share their centre line.
-            window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.ask-conversations.toolbar")
             window.toolbarStyle = .unified
             window.titlebarSeparatorStyle = .none
-            let hosting = TransparentAskHostingView(rootView: AskConversationView(model: model)
+            workspacePresentation = AskWorkspaceState(runId: model.selected?.run?.id)
+            let hosting = TransparentAskHostingView(rootView: AskConversationView(
+                model: model, presentation: workspacePresentation)
                 .interfaceStyle(following: interfaceStyle))
             // The window owns its size: without this, resizing content (e.g. hiding
             // the sidebar) can make the hosting view resize or zoom the window.

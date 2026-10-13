@@ -1,28 +1,26 @@
+import AppKit
 import SwiftUI
 import Testing
 @testable import Typeflux
 
 @Suite("Ask composer chrome")
 struct AskComposerChromeTests {
-    @Test func workspaceSharesTheLaunchersGlassCard() {
+    @Test func workspaceUsesSolidContentWhileTheLauncherUsesGlass() {
         let launcher = AskComposerChrome.of(launcher: true)
         let workspace = AskComposerChrome.of(launcher: false)
         #expect(launcher.glass)
-        #expect(workspace.glass)
-        // The same controls; the launcher reads as a search field in larger type,
-        // and the in-window card takes the design board's larger corner, wider
-        // text inset and its own glass tint.
+        #expect(!workspace.glass)
+        // The workspace retains the composer layout while using the library content tokens.
         #expect(launcher.editorFontSize == 17)
-        #expect(workspace.editorFontSize == 15)
+        #expect(workspace.editorFontSize == NSFont.preferredFont(forTextStyle: .body).pointSize)
         #expect(workspace.editorTopInset == 14)
         #expect(workspace.footerLeadingInset == 10)
-        #expect(workspace.corner == 28)
+        #expect(workspace.corner == TypefluxRadius.form.value(for: .liquidGlass))
         #expect(workspace.horizontalInset == 20)
         #expect(workspace.footerHeight == 48)
-        #expect(workspace.fill == AskTheme.glassFill)
+        #expect(workspace.fill == TypefluxColor.controlBackground.color)
         #expect(launcher.fill == AskTheme.launcherSurface)
-        // The launcher uses a deeper frost and samples other windows; the
-        // workspace samples its own transcript with the in-window tint.
+        // Only the floating launcher uses a glass material.
         #expect(launcher.placement == .floating)
         #expect(workspace.placement == .inWindow)
     }
@@ -51,7 +49,7 @@ struct AskComposerChromeTests {
     }
 
     @Test func opaqueFallbackBordersMatchTheirSurface() {
-        #expect(AskComposerChrome.workspace.fill == AskTheme.glassFill)
+        #expect(AskComposerChrome.workspace.fill == TypefluxColor.controlBackground.color)
         #expect(AskComposerChrome.workspace.idleBorder == AskTheme.border)
         #expect(AskComposerChrome.launcher.idleBorder == AskTheme.floatingBorder)
     }

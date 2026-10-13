@@ -12,6 +12,7 @@ struct AskModelMenu: View {
     /// there, so it loses its border and only fills under the pointer. Settings
     /// keeps the bordered field it was designed with.
     var compact = false
+    var usesNativePopover = false
     /// Narrow workspace cards reserve room for send and voice controls.
     var condensed = false
     /// Composer footers hide the chevron; settings retain their field indicator.
@@ -23,6 +24,7 @@ struct AskModelMenu: View {
     /// Composer only: the reasoning level, shown after the model name and chosen on the
     /// chip's card. Settings choose a model alone.
     var effort: Binding<AskReasoningEffort>? = nil
+    var controlIdentifier = "ask.model.menu"
     @ObservedObject private var auth = AuthState.shared
     @State private var expanded = false
     @State private var hovering = false
@@ -55,30 +57,16 @@ struct AskModelMenu: View {
     private var stroke: Color { compact ? .clear : TypefluxColor.separator.color }
 
     var body: some View {
-        Button { expanded.toggle() } label: {
-            if fieldStyle {
-                HStack { modelLabel; Image(systemName: "chevron.up.chevron.down").font(.caption) }
-                    .frame(width: 240)
-            } else {
-                modelLabel
-                    .font(.system(size: compact ? 13.5 : 13, weight: compact ? .semibold : .medium))
-                    .padding(.leading, compact ? 12 : 11)
-                    .padding(.trailing, compact ? 10 : 11)
-                    .frame(height: compact ? AskMetrics.composerControlHeight : 32)
-                    .background(fill, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(stroke))
-                    .contentShape(Rectangle())
-            }
-        }
-        .buttonStyle(.plain).disabled(disabled)
+        modelButton
+        .disabled(disabled)
         .onHover { hovering = $0 }
         .help(currentReason ?? L("ask.models.conversationOnly"))
-        .askMenu(isPresented: $expanded, glass: compact) {
+        .askMenu(isPresented: $expanded, glass: compact && !usesNativePopover) {
             if let effort, compact {
                 AskModelEffortCard(library: library, reference: $reference, effort: effort, hasImage: hasImage,
                                    loggedIn: loggedIn, onManage: onManage,
                                    offersCloudSignIn: scenario == "ask" && !auth.isLoggedIn,
-                                   close: { expanded = false })
+                                   close: { expanded = false }, nativeControls: usesNativePopover)
             } else {
                 AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,
                                 hasImage: hasImage, loggedIn: loggedIn, dismiss: { expanded = false },
@@ -100,6 +88,30 @@ struct AskModelMenu: View {
         }
     }
 
+    @ViewBuilder private var modelButton: some View {
+        if usesNativePopover {
+            TypefluxButton(kind: .borderless, action: { expanded.toggle() }, label: { modelLabel.font(.body) })
+                .accessibilityIdentifier(controlIdentifier)
+        } else {
+            Button { expanded.toggle() } label: {
+                if fieldStyle {
+                    HStack { modelLabel; Image(systemName: "chevron.up.chevron.down").font(.caption) }
+                        .frame(width: 240)
+                } else {
+                    modelLabel
+                        .font(.system(size: compact ? 13.5 : 13, weight: compact ? .semibold : .medium))
+                        .padding(.leading, compact ? 12 : 11)
+                        .padding(.trailing, compact ? 10 : 11)
+                        .frame(height: compact ? AskMetrics.composerControlHeight : 32)
+                        .background(fill, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(stroke))
+                        .contentShape(Rectangle())
+                }
+            }.buttonStyle(.plain)
+                .accessibilityIdentifier(controlIdentifier)
+        }
+    }
+
     private var modelLabel: some View {
         HStack(spacing: compact ? 6 : 8) {
             if let (provider, model) = library.registry.resolve(library.presentationReference(
@@ -116,7 +128,7 @@ struct AskModelMenu: View {
             }
             if let shownEffort, !condensed {
                 Text(shownEffort.label)
-                    .font(.system(size: 13.5, weight: .regular))
+                    .font(.body).fontWeight(.regular)
                     .foregroundStyle(shownEffort.isTop(in: effortLevels)
                         ? AskTheme.reasoningTopText : StudioTheme.textSecondary)
                     .lineLimit(1).fixedSize()
@@ -129,7 +141,7 @@ struct AskModelMenu: View {
             }
             if showsChevron, !fieldStyle {
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.footnote).fontWeight(.medium)
                     .foregroundStyle(StudioTheme.textSecondary)
             }
         }
@@ -207,7 +219,7 @@ struct AskModelChoices: View {
                     dismiss()
                 } label: {
                     Label(L("ask.models.makeDefault"), systemImage: "gearshape")
-                        .font(.system(size: 13)).frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                        .font(.body).frame(maxWidth: .infinity, alignment: .leading).padding(16)
                         .contentShape(Rectangle())
                 }.buttonStyle(.plain).disabled(!selectionAvailable)
             }
@@ -225,14 +237,14 @@ struct AskModelChoices: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     if choices.isEmpty {
-                        Text(L("models.noAvailable")).font(.system(size: 12))
+                        Text(L("models.noAvailable")).font(.callout)
                             .foregroundStyle(StudioTheme.textTertiary).padding(14)
                     } else if showsUnavailableSelection && !selectionAvailable {
-                        Text(L("ask.models.unavailable")).font(.system(size: 12))
+                        Text(L("ask.models.unavailable")).font(.callout)
                             .foregroundStyle(StudioTheme.textTertiary)
                             .padding(.horizontal, 14).padding(.top, 12)
                     } else if hasImage, compatible.flatMap(\.models).count < choices.flatMap(\.models).count {
-                        Label(L("ask.models.imageOnly"), systemImage: "info.circle").font(.system(size: 11.5))
+                        Label(L("ask.models.imageOnly"), systemImage: "info.circle").font(.subheadline)
                             .foregroundStyle(StudioTheme.textSecondary)
                             .padding(.horizontal, 14).padding(.top, 8).padding(.bottom, 2)
                     }
@@ -256,9 +268,9 @@ struct AskModelChoices: View {
                                 AskModelCapabilities(model: model)
                                 if let multiplier = model.pricing?.multiplier,
                                    let text = AskMultiplierBadge.text(multiplier) {
-                                    Text(text).font(.system(size: 11)).monospacedDigit()
+                                    Text(text).font(.subheadline).monospacedDigit()
                                 } else if let tag = Self.sourceTag(provider) {
-                                    Text(tag).font(.system(size: 11))
+                                    Text(tag).font(.subheadline)
                                 }
                             }
                             .help(model.displayName + " — " + (model.pricing == nil
@@ -272,7 +284,7 @@ struct AskModelChoices: View {
                                       selected: false) {
                             dismiss(); LoginWindowController.shared.show()
                         } accessory: {
-                            Text(L("ask.cloudPromo.signIn")).font(.system(size: 11.5, weight: .semibold))
+                            Text(L("ask.cloudPromo.signIn")).font(.subheadline).fontWeight(.semibold)
                                 .foregroundStyle(Color.white)
                                 .padding(.horizontal, 10).frame(height: 22)
                                 .background(Capsule().fill(AskTheme.accent))
@@ -298,7 +310,7 @@ struct AskModelChoices: View {
                     AskPopoverRow(title: L("ask.models.manage") + "…", caption: nil, selected: false) {
                         dismiss(); onManage()
                     } accessory: {
-                        Text(verbatim: "⌘,").font(.system(size: 11))
+                        Text(verbatim: "⌘,").font(.subheadline)
                     }
                 }
             }
@@ -355,7 +367,7 @@ struct AskModelChoices: View {
                 Text(L("ask.models.unavailable")).font(.caption).foregroundStyle(.secondary).padding(10)
             }
             ForEach(choices) { provider in
-                Text(provider.name).font(.system(size: 11, weight: .semibold))
+                Text(provider.name).font(.subheadline).fontWeight(.semibold)
                     .foregroundStyle(StudioTheme.textSecondary)
                     .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
                 ForEach(provider.models) { model in
@@ -385,12 +397,12 @@ struct AskModelChoices: View {
                 }
                 Spacer(minLength: 8)
                 if recoveryProviders != nil, let price = model.pricing?.label {
-                    Text(price).font(.system(size: 11, weight: .medium)).fixedSize()
+                    Text(price).font(.subheadline).fontWeight(.medium).fixedSize()
                         .foregroundStyle(StudioTheme.textSecondary)
                         .help(L("models.cloud.priceExplanation"))
                 }
                 if selected {
-                    Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold))
+                    Image(systemName: "checkmark").font(.callout).fontWeight(.semibold)
                 }
             }
             .foregroundStyle(selected ? TypefluxColor.accent.color : StudioTheme.textPrimary)
@@ -419,7 +431,7 @@ struct AskModelCapabilities: View {
         HStack(spacing: 4) {
             ForEach(Self.badges(model), id: \.text) { item in
                 Text(item.text)
-                    .font(.system(size: 10))
+                    .font(.footnote)
                     .padding(.horizontal, 6)
                     .frame(height: 16)
                     .overlay(Capsule().strokeBorder(lineWidth: 0.5))

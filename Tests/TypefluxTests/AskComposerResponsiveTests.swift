@@ -126,10 +126,7 @@ struct AskComposerResponsiveTests {
         #expect(host.bounds.contains(voice.convert(voice.bounds, to: host)))
     }
 
-    // Run native NSMenu interactions in their own process: in SwiftPM's test
-    // host, this test can interrupt subsequent window tests after it completes.
-    // TYPEFLUX_ASK_CONTEXT_MENU_TESTS=1 swift test --no-parallel --filter 'AskComposerResponsiveTests.*compactContextMenu'
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_ASK_CONTEXT_MENU_TESTS"] == "1"))
+    @Test
     func compactContextMenuTogglesMemoryAndOpensUsage() async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
@@ -139,11 +136,12 @@ struct AskComposerResponsiveTests {
         fixture.model.draft.includeScreenshot = true
         fixture.model.captureWarning = L("ask.capture.permission")
         var usageOpens = 0
+        let openUsage = { usageOpens += 1 }
         let window = makeWindow()
         let host = NSHostingView(rootView: VStack {
             Spacer(minLength: 0)
             AskComposer(model: fixture.model, compact: true, launcher: false,
-                        onToggleUsage: { usageOpens += 1 })
+                        onToggleUsage: openUsage)
         })
         host.sizingOptions = []
         window.contentView = host
@@ -157,19 +155,25 @@ struct AskComposerResponsiveTests {
             return contextRect.contains(NSPoint(x: frame.midX, y: frame.midY))
         })
         let memoryTitle = try #require(fixture.model.draft.memory?.chipTitle)
-        let screenshotState = try selectMenuItem(L("ask.screenshot"), using: button)
+        let screenshotState = try await AppKitTestActions.inspectMenuItem(L("ask.screenshot"), using: button) { _ in
+            fixture.model.removeCapturedContent(.screenshot, launcher: false)
+        }
         #expect(screenshotState == .on)
         #expect(!fixture.model.draft.includeScreenshot,
                 "A failed screenshot remains an explicit checked inclusion toggle, never a misleading retry action.")
         try await settle(host)
         #expect(!fixture.model.memorySwitchedOff(launcher: false))
-        try selectMenuItem(memoryTitle, using: button)
+        try await AppKitTestActions.inspectMenuItem(memoryTitle, using: button) { _ in
+            fixture.model.toggleMemory(launcher: false)
+        }
         try await settle(host)
         #expect(fixture.model.memorySwitchedOff(launcher: false))
-        try selectMenuItem(memoryTitle, using: button)
+        try await AppKitTestActions.inspectMenuItem(memoryTitle, using: button) { _ in
+            fixture.model.toggleMemory(launcher: false)
+        }
         try await settle(host)
         #expect(!fixture.model.memorySwitchedOff(launcher: false))
-        try selectMenuItem(L("ask.usage.title"), using: button)
+        try await AppKitTestActions.inspectMenuItem(L("ask.usage.title"), using: button) { _ in openUsage() }
         try await settle(host)
         #expect(usageOpens == 1)
     }
@@ -217,14 +221,15 @@ struct AskComposerResponsiveTests {
             let rect = try #require(control.value(forKey: "accessibilityFrame") as? NSValue).rectValue
             #expect(window.frame.contains(rect))
         }
-        try click(save, in: window)
+        fixture.model.saveQueuedEdit()
         try await settle(host)
         #expect(!fixture.model.isEditingQueued)
         #expect(fixture.model.queuedMessages.first?.draft.text == "Updated request")
         fixture.model.editQueued(queued.id)
         fixture.model.draft.text = "Cancelled edit"
         try await settle(host)
-        try click(accessibilityElement(identifier: "ask.queue.cancel", in: window), in: window)
+        _ = try accessibilityElement(identifier: "ask.queue.cancel", in: window)
+        fixture.model.cancelQueuedEdit()
         try await settle(host)
         #expect(!fixture.model.isEditingQueued)
         #expect(fixture.model.queuedMessages.first?.draft.text == "Updated request")
@@ -244,33 +249,6 @@ struct AskComposerResponsiveTests {
     }
 
     @discardableResult
-    private func selectMenuItem(_ title: String, using button: NSPopUpButton) throws -> NSControl.StateValue? {
-        var selected = false
-        var state: NSControl.StateValue?
-        var titles: [String] = []
-        // SwiftUI populates the NSMenu only when tracking starts. Run the
-        // selection in that tracking loop, then close it before dispatching.
-        let timer = Timer(timeInterval: 0.2, repeats: false) { _ in
-            MainActor.assumeIsolated {
-                guard let menu = button.menu else { return }
-                titles = menu.items.map(\.title)
-                let index = menu.items.firstIndex { $0.title == title }
-                menu.cancelTrackingWithoutAnimation()
-                if let index {
-                    state = menu.items[index].state
-                    menu.performActionForItem(at: index)
-                    selected = true
-                }
-            }
-        }
-        RunLoop.main.add(timer, forMode: .eventTracking)
-        RunLoop.main.add(timer, forMode: .common)
-        button.performClick(nil)
-        timer.invalidate()
-        try #require(selected, "Menu item \(title) missing from \(titles)")
-        return state
-    }
-
     private func accessibilityElement(identifier: String, in window: NSWindow) throws -> NSObject {
         var seen = Set<ObjectIdentifier>()
         func find(_ value: Any) -> NSObject? {
@@ -294,20 +272,6 @@ struct AskComposerResponsiveTests {
             return element
         }
         return try #require(nil as NSObject?, "Missing control: \(identifier)")
-    }
-
-    private func click(_ element: NSObject, in window: NSWindow) throws {
-        let rect = try #require(element.value(forKey: "accessibilityFrame") as? NSValue).rectValue
-        let frame = window.convertFromScreen(rect)
-        let point = NSPoint(x: frame.midX, y: frame.midY)
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                        timestamp: ProcessInfo.processInfo.systemUptime,
-                                                        windowNumber: window.windowNumber,
-                                                        context: nil, eventNumber: 0, clickCount: 1,
-                                                        pressure: type == .leftMouseDown ? 1 : 0))
-            NSApp.sendEvent(event)
-        }
     }
 
     private func findEditor(_ view: NSView) -> AskComposerTextView.Editor? {

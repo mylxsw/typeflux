@@ -22,24 +22,27 @@ struct AskDesignFidelityTests {
 
     @Test func designMetricsMatchTheBoard() {
         #expect(AskMetrics.sidebarWidth == 264)
-        #expect(AskMetrics.headerCapsuleHeight == 38)
-        #expect(AskMetrics.transcriptMaxWidth == 720)
-        #expect(AskMetrics.composerMaxWidth == 760)
+        #expect(AskMetrics.headerCapsuleHeight == 36)
+        #expect(AskMetrics.transcriptMaxWidth == 680)
+        #expect(AskMetrics.composerMaxWidth == 720)
         #expect(AskMetrics.composerControlHeight == 34)
         #expect(AskSendButton.size == 36)
         #expect(AskMetrics.suggestionsMaxWidth == 680)
         let workspace = AskComposerChrome.workspace
-        #expect(workspace.corner == 28)
+        #expect(workspace.corner == TypefluxRadius.form.value(for: .liquidGlass))
         #expect(workspace.footerHeight == 48)
-        #expect(workspace.fill == AskTheme.glassFill)
+        #expect(workspace.fill == TypefluxColor.controlBackground.color)
     }
 
     // MARK: - Transcript
 
     @Test func headingSizesFollowTheBoard() {
-        #expect(AskMarkdownText.headingFont(level: 1).pointSize == 20)
-        #expect(AskMarkdownText.headingFont(level: 2).pointSize == 17)
-        #expect(AskMarkdownText.headingFont(level: 3).pointSize == 15.5)
+        #expect(AskMarkdownText.headingFont(level: 1).pointSize
+            == NSFont.preferredFont(forTextStyle: .title1).pointSize)
+        #expect(AskMarkdownText.headingFont(level: 2).pointSize
+            == NSFont.preferredFont(forTextStyle: .title2).pointSize)
+        #expect(AskMarkdownText.headingFont(level: 3).pointSize
+            == NSFont.preferredFont(forTextStyle: .title3).pointSize)
         #expect(AskMarkdownText.headingFont(level: 4).pointSize == AskMarkdownText.bodySize)
         #expect(AskMarkdownText.headingFont(level: 6).pointSize == AskMarkdownText.bodySize)
     }

@@ -58,11 +58,14 @@ struct AskHistoryPullRefresh: NSViewRepresentable {
         private var monitor: Any?
         private var gesture = AskHistoryPullGesture()
         private var lastDistance: CGFloat = 0
+        private weak var nativeScrollView: NSScrollView?
+        var scrollView: NSScrollView? { enclosingScrollView ?? nativeScrollView }
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             if let monitor { NSEvent.removeMonitor(monitor); self.monitor = nil }
             NotificationCenter.default.removeObserver(self)
+            nativeScrollView = nil
             _ = gesture.end(cancelled: true)
             guard window != nil else { return }
             monitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
@@ -73,7 +76,16 @@ struct AskHistoryPullRefresh: NSViewRepresentable {
             DispatchQueue.main.async { [weak self] in self?.attachToScrollView() }
         }
         private func attachToScrollView() {
-            guard window != nil, let scroll = enclosingScrollView else { return }
+            guard window != nil else { return }
+            if enclosingScrollView == nil {
+                // A List background sits beside its native scroll view rather than inside it.
+                var ancestor = superview
+                while let scope = ancestor, nativeScrollView == nil {
+                    nativeScrollView = Self.tableScrollView(in: scope)
+                    ancestor = scope.superview
+                }
+            }
+            guard let scroll = scrollView else { return }
             scroll.verticalScrollElasticity = .allowed
             let clip = scroll.contentView
             clip.postsBoundsChangedNotifications = true
@@ -83,9 +95,16 @@ struct AskHistoryPullRefresh: NSViewRepresentable {
                 name: NSView.boundsDidChangeNotification, object: clip
             )
         }
+        private static func tableScrollView(in view: NSView) -> NSScrollView? {
+            if let scroll = view as? NSScrollView, scroll.documentView is NSTableView { return scroll }
+            for child in view.subviews {
+                if let scroll = tableScrollView(in: child) { return scroll }
+            }
+            return nil
+        }
         @objc private func clipBoundsChanged() { reportOverscroll() }
         private func currentOverscroll() -> CGFloat {
-            guard let scroll = enclosingScrollView else { return 0 }
+            guard let scroll = scrollView else { return 0 }
             return AskHistoryPullGesture.overscroll(
                 bounds: scroll.contentView.bounds,
                 documentBounds: scroll.documentView?.bounds ?? .zero,
@@ -95,7 +114,7 @@ struct AskHistoryPullRefresh: NSViewRepresentable {
         }
         private func atTop() -> Bool { currentOverscroll() > 0 || restingAtTop() }
         private func restingAtTop() -> Bool {
-            guard let scroll = enclosingScrollView else { return false }
+            guard let scroll = scrollView else { return false }
             let bounds = scroll.contentView.bounds
             return scroll.documentView?.isFlipped == true
                 ? bounds.minY <= -scroll.contentInsets.top + 1
@@ -109,7 +128,7 @@ struct AskHistoryPullRefresh: NSViewRepresentable {
             if distance != lastDistance { lastDistance = distance; onDistance(distance) }
         }
         func observe(_ event: NSEvent) {
-            guard event.type == .scrollWheel, event.window === window, let scroll = enclosingScrollView,
+            guard event.type == .scrollWheel, event.window === window, let scroll = scrollView,
                   scroll.bounds.contains(scroll.convert(event.locationInWindow, from: nil))
             else { return }
             observeWheel(phase: event.phase, momentum: event.momentumPhase, atTop: atTop())

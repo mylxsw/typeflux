@@ -5,7 +5,7 @@ import Testing
 
 /// The light palette (v4): a white content area, a grey sidebar, neutral text
 /// and a single blue accent. Every dark value is pinned to its pre-v4 number.
-@Suite("Studio light palette")
+@Suite("Studio semantic palette", .exclusiveUIState)
 struct StudioLightPaletteTests {
     private struct RGBA {
         var red, green, blue, alpha: Double
@@ -30,19 +30,17 @@ struct StudioLightPaletteTests {
             "got \(value), want #\(String(hex, radix: 16)) @ \(alpha)", sourceLocation: sourceLocation)
     }
 
-    @Test func lightTextAndStatusTokens() {
-        expect(StudioTheme.textPrimary, hex: 0x1D1D1F)
-        expect(StudioTheme.textSecondary, hex: 0x515154)
-        expect(StudioTheme.textTertiary, hex: 0x6E6E73)
-        expect(StudioTheme.placeholder, hex: 0xA1A1A6)
-        expect(StudioTheme.accent, hex: 0x2563EB)
-        expect(StudioTheme.accentHover, hex: 0x1D4ED8)
-        expect(StudioTheme.accentText, hex: 0x1D4ED8)
-        expect(StudioTheme.accentSoft, hex: 0x2563EB, alpha: 0.10)
-        expect(StudioTheme.border, hex: 0x0F172A, alpha: 0.08)
-        expect(StudioTheme.success, hex: 0x16A34A)
-        expect(StudioTheme.warning, hex: 0xD97706)
-        expect(StudioTheme.danger, hex: 0xDC2626)
+    @Test func textAndStatusTokensFollowSystemRoles() {
+        #expect(StudioTheme.textPrimary == TypefluxColor.label.color)
+        #expect(StudioTheme.textSecondary == TypefluxColor.secondaryLabel.color)
+        #expect(StudioTheme.textTertiary == TypefluxColor.tertiaryLabel.color)
+        #expect(StudioTheme.accent == TypefluxColor.accent.color)
+        #expect(StudioTheme.accentText == TypefluxColor.accent.color)
+        #expect(StudioTheme.accentSoft == TypefluxColor.accent.color.opacity(0.12))
+        #expect(StudioTheme.border == TypefluxColor.separator.color)
+        #expect(StudioTheme.success == TypefluxColor.success.color)
+        #expect(StudioTheme.warning == TypefluxColor.warning.color)
+        #expect(StudioTheme.danger == TypefluxColor.danger.color)
     }
 
     @Test func lightSurfaceTokens() {
@@ -53,15 +51,13 @@ struct StudioLightPaletteTests {
         expect(StudioTheme.cardFill, hex: 0xFFFFFF)
         expect(StudioTheme.cardStroke, hex: 0x0F172A, alpha: 0.09)
         expect(StudioTheme.filterChipSelectedFill, hex: 0xF3F4F6)
-        expect(AskClassic.sidebar, hex: 0xF3F4F6)
+        #expect(AskClassic.sidebar == TypefluxColor.windowBackground.color)
         #expect(StudioTheme.Opacity.sidePanelFill == 0.94)
     }
 
-    @Test func darkValuesAreUnchanged() {
+    @Test func unmigratedCompatibilityValuesRemainStable() {
         let checks: [(Color, Double, Double)] = [
-            (StudioTheme.textPrimary, 0.935, 1), (StudioTheme.textSecondary, 0.720, 1),
-            (StudioTheme.textTertiary, 0.560, 1), (StudioTheme.sidebarSelection, 1.0, 0.11),
-            (StudioTheme.border, 1.0, 0.115), (StudioTheme.accentText, 0.935, 1),
+            (StudioTheme.sidebarSelection, 1.0, 0.11),
             (StudioTheme.cardFill, 1.0, 0.08), (StudioTheme.sidePanelStroke, 1.0, 0),
         ]
         for (color, white, alpha) in checks {
@@ -71,9 +67,6 @@ struct StudioLightPaletteTests {
             let expected = resolve(Color(nsColor: NSColor(calibratedWhite: white, alpha: alpha)), dark: true)
             expectRGBA(value, expected)
         }
-        let accent = resolve(StudioTheme.accent, dark: true)
-        let originalAccent = Color(nsColor: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1, alpha: 1))
-        expectRGBA(accent, resolve(originalAccent, dark: true))
         let panel = resolve(StudioTheme.sidePanelFill, dark: true)
         #expect(abs(panel.red - 0.173) < 0.004 && abs(panel.blue - 0.204) < 0.004)
     }

@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// White, outlined content cards in light mode; the existing material in dark.
-/// Sidebar and window backplates deliberately use their own chrome.
+/// Library content stays solid; legacy floating surfaces retain their existing material.
 struct AskContentCardSurface: ViewModifier {
     var corner: CGFloat
     var opaqueFill: Color
@@ -9,9 +8,14 @@ struct AskContentCardSurface: ViewModifier {
     var elevation: AskElevation? = .panel
     var elevatedInLight = true
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.askUsesLibraryTokens) private var libraryTokens
 
     func body(content: Content) -> some View {
-        if colorScheme == .light {
+        if libraryTokens {
+            let shape = RoundedRectangle(cornerRadius: corner, style: cornerStyle)
+            content.background(TypefluxColor.controlBackground.color, in: shape)
+                .overlay(shape.strokeBorder(TypefluxColor.separator.color).allowsHitTesting(false))
+        } else if colorScheme == .light {
             let shape = RoundedRectangle(cornerRadius: corner, style: cornerStyle)
             content
                 .background(shape.fill(.white))

@@ -1,14 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Tokens for the Ask surfaces in the classic interface style: the flat,
-/// opaque design macOS used before Liquid Glass. The layout is the glass
-/// design's (sidebar, title row, empty state, floating composer); only the
-/// material changes. Panels sit flush with the window edges and are divided by
-/// hairlines, cards are solid with a hairline border, and only what floats
-/// above the window (menus, the ⌘K palette, the drawer) casts a shadow.
-///
-/// Colours are specified in sRGB, like the design board's.
+/// Compatibility colours for Classic surfaces, backed by the shared semantic palette.
 enum AskClassic {
     /// Opaque launchers need a quiet outline rather than a bright glass rim.
     static let launcherBorder = StudioTheme.dynamic(
@@ -16,43 +9,14 @@ enum AskClassic {
         dark: NSColor(calibratedWhite: 1, alpha: 0.06)
     )
 
-    /// The conversation column and the title row above it.
-    static let canvas = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
-        dark: NSColor(srgbRed: 0.118, green: 0.118, blue: 0.118, alpha: 1)
-    )
-    /// The history column: a step off the canvas, lighter in dark like the
-    /// system's source lists, a cool grey in light.
-    static let sidebar = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.953, green: 0.957, blue: 0.965, alpha: 1),
-        dark: NSColor(srgbRed: 0.149, green: 0.149, blue: 0.149, alpha: 1)
-    )
-    /// The composer and the empty state's cards, raised off the canvas.
-    static let card = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
-        dark: NSColor(srgbRed: 0.165, green: 0.165, blue: 0.165, alpha: 1)
-    )
-    /// A card under the pointer.
-    static let cardHover = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.973, green: 0.973, blue: 0.980, alpha: 1),
-        dark: NSColor(srgbRed: 0.200, green: 0.200, blue: 0.200, alpha: 1)
-    )
-    /// Edges of cards and fields: one firmer step than the glass hairline,
-    /// because nothing else (no rim light, no shadow) separates them.
-    static let cardBorder = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.11),
-        dark: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.11)
-    )
-    /// The rules between columns and under the title row.
-    static let divider = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.10),
-        dark: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.55)
-    )
-    /// A selected history row: the system's unemphasised source-list selection.
-    static let selection = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.08),
-        dark: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.10)
-    )
+    static let canvas = TypefluxColor.contentBackground.color
+    static let sidebar = TypefluxColor.windowBackground.color
+    static let card = TypefluxColor.controlBackground.color
+    static let cardHover = TypefluxColor.label.color.opacity(0.06)
+    static let cardBorder = TypefluxColor.separator.color
+    static let divider = TypefluxColor.separator.color
+    static let selection = TypefluxColor.selection.color
+
 }
 
 /// Geometry that differs between the two interface styles. Everything not
@@ -74,21 +38,24 @@ struct AskStyleMetrics: Equatable {
     /// The private chip in the title row.
     var headerChipHeight: CGFloat
 
-    static let liquidGlass = AskStyleMetrics(
-        sidebarRowHeight: 38, sidebarRowCorner: AskMetrics.sidebarRowCorner,
-        searchFieldHeight: 34, searchFieldCorner: 12, filterCorner: 9,
-        suggestionCorner: 18, composerCorner: 28, paletteCorner: AskMetrics.paletteCorner,
-        menuCorner: 18, hoverCardCorner: 14, menuRowCorner: 10,
-        headerChipHeight: AskMetrics.headerCapsuleHeight
-    )
+    static let liquidGlass = library(style: .liquidGlass)
+    static let classic = library(style: .classic)
 
-    static let classic = AskStyleMetrics(
-        sidebarRowHeight: 32, sidebarRowCorner: 6,
-        searchFieldHeight: 28, searchFieldCorner: 7, filterCorner: 7,
-        suggestionCorner: 10, composerCorner: 12, paletteCorner: 12,
-        menuCorner: 10, hoverCardCorner: 8, menuRowCorner: 4,
-        headerChipHeight: 24
-    )
+    private static func library(style: InterfaceStyle) -> Self {
+        Self(sidebarRowHeight: TypefluxControlHeight.sidebarRow.value(for: style),
+             sidebarRowCorner: TypefluxRadius.sidebarRow.value(for: style),
+             searchFieldHeight: TypefluxControlHeight.textField.value(for: style),
+             searchFieldCorner: TypefluxRadius.textField.value(for: style),
+             filterCorner: TypefluxRadius.segmented.value(for: style),
+             suggestionCorner: TypefluxRadius.form.value(for: style),
+             composerCorner: TypefluxRadius.form.value(for: style),
+             paletteCorner: TypefluxRadius.spotlightResults.value(for: style),
+             menuCorner: TypefluxRadius.menu.value(for: style),
+             hoverCardCorner: TypefluxRadius.popover.value(for: style),
+             menuRowCorner: TypefluxRadius.menuHighlight.value(for: style),
+             headerChipHeight: TypefluxControlHeight.toolbarItem.value(for: style))
+    }
+
 }
 
 extension InterfaceStyle {
@@ -114,9 +81,8 @@ struct AskClassicDivider: View {
     }
 }
 
-/// The chrome of a column at a window edge: the sidebar, the usage panel and
-/// the drawers. Liquid Glass floats it as an inset glass panel; classic lays
-/// it flush against the edge, solid, with a hairline on its inner side. A
+/// Chrome for auxiliary columns and drawers at a window edge. Liquid Glass floats
+/// an inset glass panel; classic lays it flush, solid, with a hairline on its inner side. A
 /// classic drawer over the conversation also casts a shadow along that side.
 struct AskSidePanelChrome: ViewModifier {
     /// The window edge the column sits against.
@@ -128,14 +94,11 @@ struct AskSidePanelChrome: ViewModifier {
     /// Over the conversation, as a drawer, rather than beside it.
     var floating = false
     @Environment(\.interfaceStyle) private var style
-    @Environment(\.colorScheme) private var colorScheme
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if style.usesGlass {
-            content
-                .askInWindowGlass(corner: AskMetrics.sidebarPanelCorner, opaqueFill: glassFill,
-                                  placement: colorScheme == .light ? .windowEdge : .inWindow)
+            TypefluxGlassContainer(radius: .sidebar, placement: .inWindow) { content }
                 .padding(glassInset, AskMetrics.sidebarPanelInset)
         } else {
             content

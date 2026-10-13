@@ -115,9 +115,9 @@ struct AskWorkspaceGlassTests {
         #expect(AskMetrics.headerCapsuleHeight >= AskMetrics.composerControlHeight)
     }
 
-    @Test func activityBlockStaysSofterThanTheComposer() {
+    @Test func activityBlockUsesTheLibraryContentRadius() {
         #expect(AskActivityBlock.corner > 0)
-        #expect(AskActivityBlock.corner < AskComposerChrome.workspace.corner)
+        #expect(AskActivityBlock.corner == TypefluxRadius.form.value(for: .liquidGlass))
     }
 
     @Test func transcriptFollowsTheEndOnlyWhenItIsAboveTheComposer() {
@@ -143,18 +143,5 @@ struct AskWorkspaceGlassTests {
         AskBottomChromeHeight.reduce(value: &value) { 80 }
         #expect(value == 120)
         #expect(AskBottomChromeHeight.defaultValue == 0)
-    }
-
-    @Test func collapsedTitleClearsTheThreeButtonPill() {
-        // Traffic lights, then a pill of toggle + search + compose (3pt padding each side).
-        let pillEnd = AskMetrics.trafficLightInset + AskMetrics.titleBarButtonWidth * 3 + 6
-        #expect(AskMetrics.collapsedTitleInset >= pillEnd + 8)
-        #expect(AskTitleBarButton.size.width == AskMetrics.titleBarButtonWidth)
-        #expect(AskTitleBarButton.size.height < AskMetrics.headerCapsuleHeight)
-    }
-
-    @Test func titleBarButtonHelpCarriesItsShortcut() {
-        #expect(AskTitleBarButton.help(label: "新对话", shortcut: "⌘N") == "新对话 ⌘N")
-        #expect(AskTitleBarButton.help(label: "搜索对话", shortcut: nil) == "搜索对话")
     }
 }
