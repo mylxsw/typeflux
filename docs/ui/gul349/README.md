@@ -37,9 +37,11 @@ swift test --no-parallel --filter 'HistorySettingsBackButtonTests|VocabularyHist
 
 ## Return-navigation rework
 
-The acceptance owner built latest main + PR #455 successfully, but reproduced the existing detail → Back → list test failure three times: the grouped toolbar Back element rejected its accessibility press. Back now has a dedicated navigation `ToolbarItem` hosting an AppKit `NSButton`, with its coordinator and enabled state directly bound to the presenting window's history selection. The existing failing assertion is retained, without changing the press helper. `HistorySettingsBackButtonTests` adds real toolbar native-click/accessibility-press checks, disabled/list transitions, section scope, and two-window selection isolation.
+The acceptance owner's second pass built latest main + PR #455 and passed 131 XCTest tests and the original return-navigation test, but the new Back test still reported an enabled button on the list and a rejected accessibility press. The main-actor factory correction from `1323d73` is retained.
 
-The branch was rebased onto main `19c39385`. This rework was reviewed for the macOS 13 deployment target, identifier scope, access levels and target cleanup. No builds, tests, snapshots or remote Mac operations were run for the rework; validation remains with the acceptance owner. All screenshot and coverage samples below are historical and do not establish that the rework passes.
+Back now hosts its real `NSButton` inside a generic native view in a dedicated navigation `ToolbarItem`. The contents receive `.disabled` when no selected record is being presented; each representable update applies that environment to the child button and restores its coordinator, target and action. The target is bound to the presenting window's selection and cleared on teardown. Tests resolve the hosted control again after toolbar updates, check its identifier/target/selector, and retain the disabled-state and accepted-accessibility-press assertions. They also cover native clicks, record deletion, section scope and two-window isolation. The original failing assertion and press helper are unchanged.
+
+The branch was rebased onto main `2a1d65b2`. This rework was reviewed for the macOS 13 deployment target, identifier scope, access levels and target cleanup. No builds, tests, snapshots or remote Mac operations were run for the rework; validation remains with the acceptance owner. All screenshot and coverage samples below are historical and do not establish that the rework passes.
 
 ## Earlier validation and limits
 

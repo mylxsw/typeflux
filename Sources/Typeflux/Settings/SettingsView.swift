@@ -618,6 +618,7 @@ struct StudioView: View {
         if viewModel.currentSection == .history {
             ToolbarItem(id: HistorySettingsBackButton.toolbarIdentifier, placement: .navigation) {
                 HistorySettingsBackButton(selectedID: $selectedHistoryID)
+                    .disabled(!isShowingHistoryDetail)
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
@@ -638,6 +639,11 @@ struct StudioView: View {
                     .accessibilityIdentifier("history.filterMenu")
             }
         }
+    }
+
+    private var isShowingHistoryDetail: Bool {
+        guard let selectedHistoryID else { return false }
+        return viewModel.displayedHistory.contains { $0.id == selectedHistoryID }
     }
 
     @ViewBuilder

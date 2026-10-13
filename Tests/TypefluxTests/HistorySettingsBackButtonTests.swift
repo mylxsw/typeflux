@@ -12,23 +12,27 @@ struct HistorySettingsBackButtonTests {
         try await withModels { model, _ in
             try await withWindow(model) { window, host in
                 try await RenderedUI.wait { backButton(in: window) != nil }
-                let back = try #require(backButton(in: window))
-                #expect(!back.isEnabled)
+                #expect(try !requireBackButton(in: window).isEnabled)
                 for accessibilityPress in [false, true] {
                     try await openDetail(in: host)
-                    try await RenderedUI.wait { back.isEnabled }
+                    try await RenderedUI.wait { backButton(in: window)?.isEnabled == true }
+                    let back = try requireBackButton(in: window)
                     if accessibilityPress {
                         #expect(back.accessibilityPerformPress())
                     } else {
                         back.performClick(nil)
                     }
                     try await RenderedUI.wait { !RenderedUI.contains(L("history.detail.rawTranscript"), in: host) }
-                    try await RenderedUI.wait { !back.isEnabled }
+                    try await RenderedUI.wait { backButton(in: window)?.isEnabled == false }
                     #expect(RenderedUI.contains("Back fixture", in: host))
                 }
                 model.navigate(to: .vocabulary)
                 try await RenderedUI.wait { backButton(in: window) == nil }
                 model.navigate(to: .history)
+                try await RenderedUI.wait { backButton(in: window)?.isEnabled == false }
+                try await openDetail(in: host)
+                model.deleteHistoryRecord(id: try #require(model.displayedHistory.first?.id))
+                try await RenderedUI.wait { !RenderedUI.contains(L("history.detail.rawTranscript"), in: host) }
                 try await RenderedUI.wait { backButton(in: window)?.isEnabled == false }
             }
         }
@@ -41,17 +45,19 @@ struct HistorySettingsBackButtonTests {
                     try await openDetail(in: firstHost)
                     try await openDetail(in: secondHost)
                     try await RenderedUI.wait {
-                        backButton(in: firstWindow)?.isEnabled == true && backButton(in: secondWindow)?.isEnabled == true
+                        backButton(in: firstWindow)?.isEnabled == true
+                            && backButton(in: secondWindow)?.isEnabled == true
                     }
-                    let firstBack = try #require(backButton(in: firstWindow))
-                    let secondBack = try #require(backButton(in: secondWindow))
+                    let firstBack = try requireBackButton(in: firstWindow)
+                    let secondBack = try requireBackButton(in: secondWindow)
                     #expect(firstBack !== secondBack)
                     #expect(firstBack.accessibilityPerformPress())
-                    try await RenderedUI.wait { !firstBack.isEnabled }
+                    try await RenderedUI.wait { backButton(in: firstWindow)?.isEnabled == false }
                     #expect(RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost))
-                    #expect(secondBack.isEnabled)
-                    secondBack.performClick(nil)
-                    try await RenderedUI.wait { !secondBack.isEnabled }
+                    let currentSecondBack = try requireBackButton(in: secondWindow)
+                    #expect(currentSecondBack.isEnabled)
+                    currentSecondBack.performClick(nil)
+                    try await RenderedUI.wait { backButton(in: secondWindow)?.isEnabled == false }
                     #expect(!RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost))
                 }
             }
@@ -62,12 +68,24 @@ struct HistorySettingsBackButtonTests {
         guard let view = window.toolbar?.items.first(where: {
             $0.itemIdentifier.rawValue == HistorySettingsBackButton.toolbarIdentifier
         })?.view else { return nil }
-        func descendants(_ view: NSView) -> [NSView] {
-            [view] + view.subviews.flatMap(descendants)
+        // Inspect the hosted control, never an AppKit-created toolbar proxy or a button retained across updates.
+        var pending = [view]
+        while let current = pending.popLast() {
+            if let hosted = current as? HistorySettingsBackButton.ToolbarView, hosted.window === window {
+                return hosted.button
+            }
+            pending.append(contentsOf: current.subviews)
         }
-        return descendants(view).compactMap { $0 as? NSButton }.first {
-            $0.accessibilityIdentifier() == HistorySettingsBackButton.accessibilityIdentifier
-        }
+        return nil
+    }
+
+    private func requireBackButton(in window: NSWindow) throws -> NSButton {
+        let button = try #require(backButton(in: window))
+        #expect(button.window === window)
+        #expect(button.accessibilityIdentifier() == HistorySettingsBackButton.accessibilityIdentifier)
+        #expect(button.target is HistorySettingsBackButton.Coordinator)
+        #expect(button.action == #selector(HistorySettingsBackButton.Coordinator.goBack(_:)))
+        return button
     }
 
     private func openDetail(in host: NSView) async throws {

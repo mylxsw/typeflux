@@ -1,11 +1,37 @@
 import AppKit
 import SwiftUI
 
-/// A dedicated native toolbar button keeps press actions and enabled state tied to this window's selection.
+/// Host a native control as custom toolbar content, with a target owned by this window's selection.
 struct HistorySettingsBackButton: NSViewRepresentable {
     static let toolbarIdentifier = "typeflux.history.back"
     static let accessibilityIdentifier = "typeflux.toolbar.history.back"
     @Binding var selectedID: UUID?
+
+    final class ToolbarView: NSView {
+        let button = NSButton(title: "", target: nil, action: nil)
+
+        override init(frame: NSRect) {
+            super.init(frame: frame)
+            button.bezelStyle = .rounded
+            button.imagePosition = .imageOnly
+            button.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(button)
+            NSLayoutConstraint.activate([
+                button.leadingAnchor.constraint(equalTo: leadingAnchor),
+                button.trailingAnchor.constraint(equalTo: trailingAnchor),
+                button.topAnchor.constraint(equalTo: topAnchor),
+                button.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+        }
+
+        required init?(coder _: NSCoder) {
+            return nil
+        }
+
+        override var intrinsicContentSize: NSSize {
+            button.intrinsicContentSize
+        }
+    }
 
     @MainActor
     final class Coordinator: NSObject {
@@ -17,7 +43,7 @@ struct HistorySettingsBackButton: NSViewRepresentable {
         }
 
         @objc func goBack(_ sender: NSButton) {
-            guard sender.isEnabled else { return }
+            guard sender.isEnabled, selection.wrappedValue != nil else { return }
             selection.wrappedValue = nil
         }
     }
@@ -26,27 +52,31 @@ struct HistorySettingsBackButton: NSViewRepresentable {
         Coordinator(selection: $selectedID)
     }
 
-    func makeNSView(context: Context) -> NSButton {
-        let button = NSButton(title: "", target: context.coordinator, action: #selector(Coordinator.goBack(_:)))
-        button.bezelStyle = .rounded
-        button.imagePosition = .imageOnly
-        button.setAccessibilityIdentifier(Self.accessibilityIdentifier)
-        updateNSView(button, context: context)
-        return button
+    func makeNSView(context: Context) -> ToolbarView {
+        // Keep the control and its target/action inside the hosted custom view.
+        let view = ToolbarView(frame: .zero)
+        updateNSView(view, context: context)
+        return view
     }
 
-    func updateNSView(_ button: NSButton, context: Context) {
+    func updateNSView(_ view: ToolbarView, context: Context) {
+        let button = view.button
         let title = L("history.action.back")
         context.coordinator.selection = $selectedID
+        button.target = context.coordinator
+        button.action = #selector(Coordinator.goBack(_:))
         button.title = title
         button.image = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: title)
         button.toolTip = title
         button.setAccessibilityLabel(title)
-        button.isEnabled = selectedID != nil
+        button.setAccessibilityIdentifier(Self.accessibilityIdentifier)
+        button.isEnabled = context.environment.isEnabled && selectedID != nil
+        view.invalidateIntrinsicContentSize()
     }
 
-    static func dismantleNSView(_ button: NSButton, coordinator _: Coordinator) {
-        button.target = nil
-        button.action = nil
+    static func dismantleNSView(_ view: ToolbarView, coordinator _: Coordinator) {
+        view.button.isEnabled = false
+        view.button.target = nil
+        view.button.action = nil
     }
 }
