@@ -249,6 +249,9 @@ final class AgentSettingsRedesignTests: XCTestCase {
             let png = try await render(view, appearance: appearance, height: 1600)
             XCTAssertGreaterThan(png.count, 4000)
         }
+    }
+
+    func testSearchFormLinksAndEngineNames() {
         XCTAssertEqual(AgentSearchForm.keyURL(for: .tavily)?.host, "app.tavily.com")
         XCTAssertNotNil(AgentSearchForm.keyURL(for: .brave))
         XCTAssertNil(AgentSearchForm.keyURL(for: .cloudflare))
