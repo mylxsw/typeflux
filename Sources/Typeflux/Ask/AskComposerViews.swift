@@ -1619,7 +1619,9 @@ struct AskComposer: View {
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil
         )
-        .frame(height: min(editorHeight, layout.editorMaximumHeight))
+        // The native scroll view can keep its previous fitting height during a result update.
+        // Anchor that view at the launcher's input top instead of centering it in the new height.
+        .frame(height: min(editorHeight, layout.editorMaximumHeight), alignment: launcher ? .top : .center)
         .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection))
     }
 

@@ -33,6 +33,35 @@ extension AskSpotlightPanelTests {
         }
     }
 
+    @Test(arguments: InterfaceStyle.allCases)
+    func nativeComposerKeepsItsTopWhenMeasuredHeightGrowsAndShrinks(_ style: InterfaceStyle) async throws {
+        let fixture = try AskTestFixture()
+        defer {
+            fixture.model.resetSession()
+            try? FileManager.default.removeItem(at: fixture.root)
+        }
+        fixture.model.launcherDraft.text = "Question"
+        let view = AskLauncherView(model: fixture.model, onDismiss: {})
+            .environment(\.interfaceStyle, style)
+            .environment(\.glassMaterialOverride, .opaque)
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
+            let editor = try #require(composerEditor(in: host))
+            let scroll = try #require(editor.enclosingScrollView)
+            let recorder = ComposerFrames(scroll: scroll, window: window)
+            defer { recorder.stop() }
+            let anchor = recorder.screenTop
+            // Exercise a changed measurement while AppKit still has the previous native viewport size.
+            for height: CGFloat in [58, 32, 84, 32, 60, 32] {
+                editor.onHeightChange(height)
+                try await Task.sleep(for: .milliseconds(150))
+                host.layoutSubtreeIfNeeded()
+                recorder.sample()
+            }
+            #expect(recorder.tops.allSatisfy { abs($0 - anchor) < 0.5 },
+                    "Measured-height updates moved the native composer: \(recorder.tops)")
+        }
+    }
+
     private func composerEditor(in view: NSView) -> AskComposerTextView.Editor? {
         (view as? AskComposerTextView.Editor) ?? view.subviews.lazy.compactMap(composerEditor(in:)).first
     }
