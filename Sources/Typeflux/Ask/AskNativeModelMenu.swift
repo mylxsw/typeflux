@@ -25,16 +25,7 @@ struct AskNativeModelMenu<Label: View>: View {
             ForEach(providers) { provider in
                 Section(provider.name) {
                     ForEach(provider.models) { model in
-                        let reason = library.selectionReason(model, provider: provider, hasImage: hasImage,
-                                                             loggedIn: loggedIn, scenario: scenario)
-                        Button { reference = model.reference } label: {
-                            Label(model.displayName, systemImage: selectedReference == model.reference
-                                ? "checkmark" : provider.isCloud ? "cloud" : "cpu")
-                        }
-                        .disabled(reason != nil)
-                        .help(reason ?? model.displayName)
-                        .accessibilityHint(reason ?? "")
-                        .accessibilityIdentifier("ask.model.choice." + model.reference)
+                        modelChoice(model, provider: provider)
                     }
                 }
             }
@@ -55,15 +46,33 @@ struct AskNativeModelMenu<Label: View>: View {
                                                            loggedIn: loggedIn, scenario: scenario) != nil)
             }
             if let onManage {
-                Button(action: onManage) { Label(L("ask.models.manage"), systemImage: "gearshape") }
+                Button(action: onManage) { SwiftUI.Label(L("ask.models.manage"), systemImage: "gearshape") }
             }
             if offersSignIn {
                 Button { LoginWindowController.shared.show() } label: {
-                    Label(L("ask.cloudPromo.signIn"), systemImage: "cloud")
+                    SwiftUI.Label(L("ask.cloudPromo.signIn"), systemImage: "cloud")
                 }
             }
         } label: { label() }
         .menuIndicator(.hidden)
         .fixedSize()
+    }
+
+    private func modelChoice(_ model: RegisteredModel, provider: RegisteredProvider) -> some View {
+        let reason = library.selectionReason(model, provider: provider, hasImage: hasImage,
+                                             loggedIn: loggedIn, scenario: scenario)
+        let symbol: String
+        if selectedReference == model.reference {
+            symbol = "checkmark"
+        } else {
+            symbol = provider.isCloud ? "cloud" : "cpu"
+        }
+        return Button { reference = model.reference } label: {
+            SwiftUI.Label(model.displayName, systemImage: symbol)
+        }
+        .disabled(reason != nil)
+        .help(reason ?? model.displayName)
+        .accessibilityHint(reason ?? "")
+        .accessibilityIdentifier("ask.model.choice." + model.reference)
     }
 }
