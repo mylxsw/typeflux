@@ -71,6 +71,7 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
             DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
+            synchronizeTitle(window)
             return
         }
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: Self.defaultSize),
@@ -104,6 +105,13 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         // AppKit can recalculate content limits when the unified toolbar first attaches.
         window.contentMinSize = Self.minimumSize
         NSApp.activate(ignoringOtherApps: true)
+        synchronizeTitle(window)
+    }
+
+    private func synchronizeTitle(_ window: NSWindow) {
+        // Hosting NavigationSplitView can overwrite metadata while installing its empty navigation title.
+        window.title = L("ask.wordBook.title")
+        window.titleVisibility = .hidden
     }
 
     func windowWillClose(_ notification: Notification) {

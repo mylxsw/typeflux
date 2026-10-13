@@ -123,9 +123,6 @@ struct AskNotesView: View {
         let typing = focus != nil || model.editing || search.isFocused
         return ZStack {
             Button("") { model.createNote() }.keyboardShortcut("n")
-            Button("") { model.toggleEditing() }.keyboardShortcut("e")
-            Button("") { model.setMode(model.mode == .split ? .read : .split) }
-                .keyboardShortcut("e", modifiers: [.command, .option])
             Button("") { model.exportSelected(.markdown) }.keyboardShortcut("e", modifiers: [.command, .shift])
             Button("") { model.togglePin() }.keyboardShortcut("p", modifiers: [.command, .shift])
             Button("") { model.copySelectedRich() }

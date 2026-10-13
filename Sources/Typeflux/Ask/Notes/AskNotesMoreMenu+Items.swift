@@ -108,6 +108,13 @@ extension AskNotesMoreMenu.Coordinator {
         item.target = self
         item.isEnabled = enabled
         item.state = checked ? .on : .off
+        if id == "ask.notes.mode.split" {
+            item.keyEquivalent = "e"
+            item.keyEquivalentModifierMask = [.command, .option]
+        } else if id == "ask.notes.mode.edit" {
+            item.keyEquivalent = "e"
+            item.keyEquivalentModifierMask = .command
+        }
         actions[id] = action
         menu.addItem(item)
     }

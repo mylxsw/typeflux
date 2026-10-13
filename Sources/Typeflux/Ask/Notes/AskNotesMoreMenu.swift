@@ -15,6 +15,9 @@ struct AskNotesMoreMenu: NSViewRepresentable {
             button.bezelStyle = .texturedRounded
             button.imagePosition = .imageOnly
             (button.cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow
+            setAccessibilityElement(false)
+            setAccessibilityChildren([button])
+            button.setAccessibilityElement(true)
             button.translatesAutoresizingMaskIntoConstraints = false
             addSubview(button)
             NSLayoutConstraint.activate([
@@ -28,6 +31,28 @@ struct AskNotesMoreMenu: NSViewRepresentable {
         required init?(coder _: NSCoder) { return nil }
 
         override var intrinsicContentSize: NSSize { NSSize(width: 32, height: 28) }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            configureToolbarItem()
+            DispatchQueue.main.async { [weak self] in self?.configureToolbarItem() }
+        }
+
+        override func layout() {
+            super.layout()
+            configureToolbarItem()
+        }
+
+        private func configureToolbarItem() {
+            guard let item = window?.toolbar?.items.first(where: {
+                guard let host = $0.view else { return false }
+                return host === self || isDescendant(of: host)
+            }) else { return }
+            if item.visibilityPriority != .high { item.visibilityPriority = .high }
+            let title = L("ask.notes.more")
+            if item.label != title { item.label = title }
+            if item.paletteLabel != title { item.paletteLabel = title }
+        }
     }
 
     @MainActor
@@ -83,6 +108,7 @@ struct AskNotesMoreMenu: NSViewRepresentable {
         coordinator.view = view
         view.button.isEnabled = context.environment.isEnabled
         view.button.toolTip = L("ask.notes.more")
+        view.button.setAccessibilityElement(true)
         view.button.setAccessibilityLabel(L("ask.notes.more"))
         view.button.setAccessibilityIdentifier(Self.accessibilityIdentifier)
         coordinator.refresh()

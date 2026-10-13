@@ -12,6 +12,25 @@ struct AskLibraryWindowLifecycleTests {
         #expect(!UITestApplicationLifetime().applicationShouldTerminateAfterLastWindowClosed(NSApplication.shared))
     }
 
+    @Test func wordBookTitleIsSynchronousAndSurvivesHostingUpdates() async throws {
+        try await AskLibraryTestSupport.withLibraries(style: .classic, dark: false) { libraries in
+            let window = try #require(libraries.words.window)
+            libraries.words.show(selecting: libraries.wordKey)
+            #expect(window.title == L("ask.wordBook.title"))
+            window.title = ""
+            try await SettingsBehaviorTestSupport.wait { window.title == L("ask.wordBook.title") }
+            window.close()
+            libraries.words.show(selecting: libraries.wordKey)
+            let reopened = try #require(libraries.words.window)
+            #expect(reopened.title == L("ask.wordBook.title"), "show returns with correct native metadata")
+            try await SettingsBehaviorTestSupport.wait {
+                reopened.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true
+                    && reopened.title == L("ask.wordBook.title")
+            }
+            #expect(reopened.title == L("ask.wordBook.title"))
+        }
+    }
+
     @Test func closingLibrariesReleasesTheirHostedActionsAndLeavesTheAppAvailable() async throws {
         try await AskLibraryTestSupport.withLibraries(style: .classic, dark: false) { libraries in
             let notes = try #require(libraries.notes.window)

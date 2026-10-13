@@ -42,7 +42,11 @@ extension AskNotesView {
         }
         ToolbarItem(placement: .primaryAction) { AskNotesFilterMenu(model: model) }
         ToolbarItem(id: "notes.more", placement: .primaryAction) {
-            AskNotesMoreMenu(model: model, compact: compact).frame(width: 32, height: 28)
+            AskNotesMoreMenu(model: model, compact: compact)
+                .frame(width: 32, height: 28)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(L("ask.notes.more"))
+                .accessibilityIdentifier(AskNotesMoreMenu.accessibilityIdentifier)
         }
         if !compact, model.selected != nil, !model.inTrash, !model.selecting {
             ToolbarItem(placement: .principal) {

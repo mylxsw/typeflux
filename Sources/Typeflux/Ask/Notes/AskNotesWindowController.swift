@@ -70,9 +70,10 @@ final class AskNotesWindowController: NSObject, NSWindowDelegate {
             NSApp.activate(ignoringOtherApps: true)
             return
         }
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: Self.defaultSize),
+        let window = AskNotesWindow(contentRect: NSRect(origin: .zero, size: Self.defaultSize),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
+        window.notesModel = model
         // Native split-view chrome supplies the sidebar material; content remains solid.
         window.isOpaque = true
         window.backgroundColor = .windowBackgroundColor

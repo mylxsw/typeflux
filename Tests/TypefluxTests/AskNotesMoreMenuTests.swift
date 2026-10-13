@@ -5,6 +5,31 @@ import Testing
 @Suite("Eager Notes toolbar menu", .serialized, .exclusiveUIState)
 @MainActor
 struct AskNotesMoreMenuTests {
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func moreIsVisibleAndExposesItsIdentifierAcrossWindowWidths(style: InterfaceStyle, dark: Bool) async throws {
+        try await AskLibraryTestSupport.withLibraries(style: style, dark: dark) { libraries in
+            let window = try #require(libraries.notes.window)
+            for width in [680, 940, 1320, 680] {
+                window.setContentSize(NSSize(width: width, height: 500))
+                try await SettingsBehaviorTestSupport.wait {
+                    AskLibraryTestSupport.elements(in: window).contains {
+                        $0.value("accessibilityIdentifier") as? String == "ask.notes.more"
+                            && $0.frame.width >= 20 && $0.frame.height >= 20
+                            && $0.frame.minX >= window.frame.minX - 1 && $0.frame.maxX <= window.frame.maxX + 1
+                    }
+                }
+                let button = try #require(AskNotesToolbarTestSupport.button(in: window))
+                #expect(button.isAccessibilityElement())
+                #expect(button.accessibilityIdentifier() == "ask.notes.more")
+                #expect(!button.isHiddenOrHasHiddenAncestor)
+                let visible = window.toolbar?.visibleItems?.contains { item in
+                    item.view.map { button.isDescendant(of: $0) } == true
+                }
+                #expect(visible == true, "More must stay in the visible toolbar at minimum width")
+            }
+        }
+    }
+
     @Test func modesExistBeforeOpeningAndDispatchToTheSelectedNote() async throws {
         try await AskLibraryTestSupport.withLibraries(style: .classic, dark: false) { libraries in
             let window = try #require(libraries.notes.window)
@@ -16,6 +41,8 @@ struct AskNotesMoreMenuTests {
             let modes = menu.items.filter { $0.identifier?.rawValue.hasPrefix("ask.notes.mode.") == true }
             #expect(modes.map(\.title) == [L("ask.notes.preview"), L("ask.notes.mode.edit"), L("ask.notes.mode.split")])
             #expect(modes.allSatisfy { $0.isEnabled && !$0.isHidden && $0.target is AskNotesMoreMenu.Coordinator })
+            let split = try #require(modes.first { $0.identifier?.rawValue == "ask.notes.mode.split" })
+            #expect(split.keyEquivalent == "e" && split.keyEquivalentModifierMask == [.command, .option])
             for mode in [AskNotesViewModel.Mode.split, .edit, .read] {
                 try AskNotesToolbarTestSupport.chooseMode(mode, in: window)
                 #expect(notes.mode == mode)
