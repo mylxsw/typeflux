@@ -23,32 +23,38 @@ struct StudioPersonaRosterView: View {
                     viewModel.beginCreatingPersona()
                 }.accessibilityIdentifier("personas.create")
             }.padding(8)
-            List(selection: selection) {
-                if viewModel.isCreatingPersonaDraft {
-                    Section(L("personas.redesign.creating")) {
-                        name(
-                            viewModel.personaDraftName.isEmpty ? L("personas.redesign.new") : viewModel
-                                .personaDraftName,
-                            dirty: viewModel.hasPersonaDraftChanges
-                        ).tag(viewModel.personaDraftCreationID)
-                    }
+            if viewModel.filteredPersonas.isEmpty, !viewModel.searchQuery.isEmpty,
+               !viewModel.isCreatingPersonaDraft {
+                VStack {
+                    TypefluxEmptyState(L("personas.redesign.noResults", viewModel.searchQuery),
+                                       systemImage: "magnifyingglass", description: "")
+                    Button(L("personas.redesign.createSearch", viewModel.searchQuery)) {
+                        viewModel.beginCreatingPersona(name: viewModel.searchQuery
+                            .trimmingCharacters(in: .whitespacesAndNewlines))
+                    }.accessibilityIdentifier("personas.createFromSearch")
                 }
-                group(title: L("settings.personas.custom"), personas: viewModel.filteredCustomPersonas)
-                group(title: L("personas.redesign.builtIn"), personas: viewModel.filteredBuiltInPersonas)
-            }.listStyle(.inset)
-                .overlay {
-                    if viewModel.filteredPersonas.isEmpty, !viewModel.searchQuery.isEmpty,
-                       !viewModel.isCreatingPersonaDraft {
-                        TypefluxEmptyState(L("personas.redesign.noResults", viewModel.searchQuery),
-                                           systemImage: "magnifyingglass", description: "") {
-                            Button(L("personas.redesign.createSearch", viewModel.searchQuery)) {
-                                viewModel.beginCreatingPersona(name: viewModel.searchQuery
-                                    .trimmingCharacters(in: .whitespacesAndNewlines))
-                            }.accessibilityIdentifier("personas.createFromSearch")
-                        }
-                    }
-                }
+                .padding(12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                roster
+            }
         }
+    }
+
+    private var roster: some View {
+        List(selection: selection) {
+            if viewModel.isCreatingPersonaDraft {
+                Section(L("personas.redesign.creating")) {
+                    name(
+                        viewModel.personaDraftName.isEmpty ? L("personas.redesign.new") : viewModel
+                            .personaDraftName,
+                        dirty: viewModel.hasPersonaDraftChanges
+                    ).tag(viewModel.personaDraftCreationID)
+                }
+            }
+            group(title: L("settings.personas.custom"), personas: viewModel.filteredCustomPersonas)
+            group(title: L("personas.redesign.builtIn"), personas: viewModel.filteredBuiltInPersonas)
+        }.listStyle(.inset)
     }
 
     @ViewBuilder private func group(title: String, personas: [PersonaProfile]) -> some View {

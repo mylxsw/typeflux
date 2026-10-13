@@ -9,6 +9,20 @@ struct StudioPersonaLibraryView: View {
         HSplitView {
             StudioPersonaRosterView(viewModel: viewModel, onDelete: onDelete)
                 .frame(minWidth: 180, idealWidth: 230, maxWidth: 300)
+                .alert(L("settings.personas.deleteDialog.title"), isPresented: Binding(
+                    get: { viewModel.personaPendingDeletion != nil },
+                    set: {
+                        if !$0 {
+                            viewModel.personaPendingDeletion = nil
+                        }
+                    }
+                ), presenting: viewModel.personaPendingDeletion) { persona in
+                    Button(L("common.delete"), role: .destructive) {
+                        viewModel.deletePersona(id: persona.id)
+                        viewModel.personaPendingDeletion = nil
+                    }.accessibilityIdentifier("personas.confirmDelete")
+                    Button(L("common.cancel"), role: .cancel) { viewModel.personaPendingDeletion = nil }
+                } message: { persona in Text(viewModel.personaDeletionMessage(for: persona)) }
             StudioPersonaDetailView(viewModel: viewModel, onDelete: onDelete)
                 .frame(minWidth: 300, maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -20,20 +34,6 @@ struct StudioPersonaLibraryView: View {
                 }
             }
         )) { StudioPersonaAppRulesDrawer(viewModel: viewModel) }
-        .confirmationDialog(L("settings.personas.deleteDialog.title"), isPresented: Binding(
-            get: { viewModel.personaPendingDeletion != nil },
-            set: {
-                if !$0 {
-                    viewModel.personaPendingDeletion = nil
-                }
-            }
-        ), titleVisibility: .visible, presenting: viewModel.personaPendingDeletion) { persona in
-            Button(L("common.delete"), role: .destructive) {
-                viewModel.deletePersona(id: persona.id)
-                viewModel.personaPendingDeletion = nil
-            }.accessibilityIdentifier("personas.confirmDelete")
-            Button(L("common.cancel"), role: .cancel) { viewModel.personaPendingDeletion = nil }
-        } message: { persona in Text(viewModel.personaDeletionMessage(for: persona)) }
         .onAppear {
             if viewModel.selectedPersonaID == nil, !viewModel.isCreatingPersonaDraft {
                 viewModel.selectPersona(SettingsStore.defaultPersonaID)

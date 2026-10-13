@@ -4,12 +4,16 @@ struct StudioPersonaUsageStrip: View {
     @ObservedObject var viewModel: StudioViewModel
 
     var body: some View {
-        Section {
-            selectionRow(auxiliary: false)
-            selectionRow(auxiliary: true)
-            TypefluxSettingsRow(L("personas.redesign.apps"), description: appRuleSummary) {
-                Button(L("personas.redesign.manage")) { viewModel.openPersonaAppRules() }
-                    .accessibilityIdentifier("personas.appRules")
+        GroupBox {
+            VStack(spacing: 12) {
+                selectionRow(auxiliary: false)
+                Divider()
+                selectionRow(auxiliary: true)
+                Divider()
+                TypefluxSettingsRow(L("personas.redesign.apps"), description: appRuleSummary) {
+                    Button(L("personas.redesign.manage")) { viewModel.openPersonaAppRules() }
+                        .accessibilityIdentifier("personas.appRules")
+                }
             }
         }
     }

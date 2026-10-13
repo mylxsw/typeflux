@@ -112,15 +112,22 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     var body: some View {
-        TypefluxForm {
-            Section { toolbar }
-            listCard
-            Text(L("ask.settings.keywords.listFootnote"))
-                .font(.subheadline).foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 4)
-            Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
-                .buttonStyle(.plain).font(.subheadline).foregroundStyle(TypefluxColor.accent.color)
-                .padding(.horizontal, 4)
-                .accessibilityIdentifier("ask.settings.keywords.restore")
+        VStack(alignment: .leading, spacing: 12) {
+            toolbar
+                .frame(maxWidth: .infinity)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    listCard
+                    Text(L("ask.settings.keywords.listFootnote"))
+                        .font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+                    Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
+                        .buttonStyle(.borderless)
+                        .accessibilityIdentifier("ask.settings.keywords.restore")
+                }
+                .frame(maxWidth: 640, alignment: .leading)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+            }
         }
         .onAppear(perform: reload)
         .sheet(item: $editing) { item in
@@ -170,6 +177,7 @@ struct AskLauncherPluginSettingsView: View {
                 }
             }
         } label: { Label(L("ask.settings.keywords.add"), systemImage: "plus") }
+            .fixedSize()
             .accessibilityIdentifier("ask.settings.keywords.add")
     }
 
@@ -185,33 +193,29 @@ struct AskLauncherPluginSettingsView: View {
             ForEach(AskKeywordSection.allCases, id: \.self) { section in
                 let group = shown.filter { section.kinds.contains($0.kind) }
                 if !group.isEmpty {
-                    Section {
-                        DisclosureGroup(section.title + " · \(group.count)", isExpanded: Binding(
-                            get: { !collapsedSections.contains(section) },
-                            set: { expanded in
-                                if expanded == collapsedSections.contains(section) {
-                                    toggleSection(section)
-                                }
-                            }
-                        )) {
-                            ForEach(group) { row in
-                                AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
-                            }
+                    TypefluxListSection(section.title, count: group.count, isExpanded: Binding(
+                        get: { !collapsedSections.contains(section) },
+                        set: { setSection(section, expanded: $0) }
+                    ), identifier: "ask.settings.keywords.section." + section.rawValue,
+                    expandedValue: L("ask.settings.keywords.expanded"),
+                    collapsedValue: L("ask.settings.keywords.collapsed")) {
+                        ForEach(group) { row in
+                            AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
+                                .padding(12)
                         }
-                        .accessibilityIdentifier("ask.settings.keywords.section." + section.rawValue)
                     }
                 }
             }
         }
     }
 
-    private func toggleSection(_ section: AskKeywordSection) {
-        if collapsedSections.contains(section) {
+    private func setSection(_ section: AskKeywordSection, expanded: Bool) {
+        if expanded {
             collapsedSections.remove(section)
         } else {
             collapsedSections.insert(section)
         }
-        settings.defaults.set(collapsedSections.map(\.rawValue), forKey: "ask.keywordCollapsedSections")
+        settings.defaults.set(collapsedSections.map(\.rawValue).sorted(), forKey: "ask.keywordCollapsedSections")
     }
 
     // MARK: - Actions

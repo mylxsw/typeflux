@@ -26,30 +26,30 @@ struct StudioPersonaAppRulesDrawer: View {
                       confirmTitle: L("common.done"), confirmIdentifier: "personas.closeRules",
                       cancel: { viewModel.closePersonaAppRules() }, confirm: { viewModel.closePersonaAppRules() },
                       content: {
-                          TypefluxForm {
-                              Section {
-                                  Toggle(L("personas.redesign.enableRules"), isOn: Binding(
-                                      get: { viewModel.personaAppBindingsEnabled },
-                                      set: viewModel.setPersonaAppBindingsEnabled
-                                  )).toggleStyle(.switch).accessibilityIdentifier("personas.rulesEnabled")
-                              }
-                              Section {
-                                  if viewModel.personaAppBindings.isEmpty {
-                                      TypefluxEmptyState(
-                                          L("settings.personaAppBindings.empty"),
-                                          systemImage: "app",
-                                          description: ""
-                                      )
+                          VStack(alignment: .leading, spacing: 12) {
+                              Toggle(L("personas.redesign.enableRules"), isOn: Binding(
+                                  get: { viewModel.personaAppBindingsEnabled },
+                                  set: viewModel.setPersonaAppBindingsEnabled
+                              )).toggleStyle(.switch).accessibilityIdentifier("personas.rulesEnabled")
+                              TypefluxForm {
+                                  Section {
+                                      if viewModel.personaAppBindings.isEmpty {
+                                          TypefluxEmptyState(
+                                              L("settings.personaAppBindings.empty"),
+                                              systemImage: "app",
+                                              description: ""
+                                          )
+                                      }
+                                      ForEach(viewModel.personaAppBindings) { rule($0) }
+                                      Button { viewModel.openPersonaAppRules(adding: true) } label: {
+                                          Label(L("settings.personaAppBindings.add"), systemImage: "plus")
+                                      }
                                   }
-                                  ForEach(viewModel.personaAppBindings) { rule($0) }
-                                  Button { viewModel.openPersonaAppRules(adding: true) } label: {
-                                      Label(L("settings.personaAppBindings.add"), systemImage: "plus")
+                                  if viewModel.isAddingPersonaAppRule {
+                                      Section { addFlow }
                                   }
-                              }
-                              if viewModel.isAddingPersonaAppRule {
-                                  Section { addFlow }
-                              }
-                          }.frame(height: 500)
+                              }.frame(height: 460)
+                          }
                       }).frame(width: 640)
             .task {
                 loading = true
