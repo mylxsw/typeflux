@@ -200,7 +200,16 @@ struct AskWorkflowEditorCenter: View {
 extension View {
     /// The rounded card code and diffs sit in, inset from the editor's edges.
     func codeCard() -> some View {
-        background(Color(nsColor: .textBackgroundColor).opacity(0.55))
+        modifier(AskWorkflowCodeCard())
+    }
+}
+
+private struct AskWorkflowCodeCard: ViewModifier {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
+    func body(content: Content) -> some View {
+        content
+            .background(Color(nsColor: .textBackgroundColor).opacity(0.55))
             .clipShape(RoundedRectangle(
                 cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
                 style: .continuous
