@@ -274,7 +274,7 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         XCTAssertTrue(key(126, ""))
         XCTAssertEqual(model.selectedIndex, 0)
         XCTAssertTrue(key(48, "\t"))
-        XCTAssertEqual(model.category, .snippet)
+        XCTAssertEqual(model.category, .text)
         XCTAssertTrue(key(48, "\t", .shift))
         XCTAssertEqual(model.category, .all)
         XCTAssertTrue(key(35, "p", .command))

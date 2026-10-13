@@ -4822,3 +4822,10 @@
 "auth.web.requestRejected" = "The login request was rejected. Check the development/production client and callback configuration.";
 "auth.web.serviceUnavailable" = "The login service is unavailable. Check the API and database, then try again.";
 "auth.web.rateLimited" = "Too many login attempts. Wait a moment and try again.";
+
+// Clipboard Spotlight modes and keyboard hints
+"clipboard.tab.link" = "Links";
+"clipboard.hint.navigate" = "Select";
+"clipboard.hint.plainPaste" = "Plain text";
+"clipboard.hint.quickPaste" = "Paste";
+"clipboard.hint.close" = "Close";

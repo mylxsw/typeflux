@@ -5,6 +5,8 @@ public struct TypefluxSheet<Content: View>: View {
     private let title: String
     private let cancelTitle: String
     private let confirmTitle: String
+    private let confirmShortcut: KeyboardShortcut?
+    private let confirmIdentifier: String
     private let isConfirmEnabled: Bool
     private let role: ButtonRole?
     private let cancel: () -> Void
@@ -12,11 +14,14 @@ public struct TypefluxSheet<Content: View>: View {
     private let content: Content
 
     public init(title: String, cancelTitle: String, confirmTitle: String, isConfirmEnabled: Bool = true,
-                role: ButtonRole? = nil, cancel: @escaping () -> Void, confirm: @escaping () -> Void,
+                role: ButtonRole? = nil, confirmIdentifier: String = "typeflux.sheet.confirm",
+                confirmShortcut: KeyboardShortcut? = .defaultAction, cancel: @escaping () -> Void, confirm: @escaping () -> Void,
                 @ViewBuilder content: () -> Content) {
         self.title = title
         self.cancelTitle = cancelTitle
         self.confirmTitle = confirmTitle
+        self.confirmIdentifier = confirmIdentifier
+        self.confirmShortcut = confirmShortcut
         self.isConfirmEnabled = isConfirmEnabled
         self.role = role
         self.cancel = cancel
@@ -34,8 +39,8 @@ public struct TypefluxSheet<Content: View>: View {
                     Button(cancelTitle, role: .cancel, action: cancel).keyboardShortcut(.cancelAction)
                         .accessibilityIdentifier("typeflux.sheet.cancel")
                     Button(confirmTitle, role: role, action: confirm).buttonStyle(.borderedProminent)
-                        .keyboardShortcut(.defaultAction).disabled(!isConfirmEnabled)
-                        .accessibilityIdentifier("typeflux.sheet.confirm")
+                        .keyboardShortcut(confirmShortcut).disabled(!isConfirmEnabled)
+                        .accessibilityIdentifier(confirmIdentifier)
                 }
             }.padding(20)
         }

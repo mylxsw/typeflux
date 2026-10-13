@@ -4773,3 +4773,10 @@
 "auth.web.requestRejected" = "ログイン要求が拒否されました。開発用・本番用クライアントとコールバック URL の設定を確認してください。";
 "auth.web.serviceUnavailable" = "ログインサービスを利用できません。API とデータベースを確認して再試行してください。";
 "auth.web.rateLimited" = "ログイン試行が多すぎます。しばらく待ってから再試行してください。";
+
+// Clipboard Spotlight modes and keyboard hints
+"clipboard.tab.link" = "リンク";
+"clipboard.hint.navigate" = "選択";
+"clipboard.hint.plainPaste" = "標準テキスト";
+"clipboard.hint.quickPaste" = "貼り付け";
+"clipboard.hint.close" = "閉じる";

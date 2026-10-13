@@ -4807,3 +4807,10 @@
 "auth.web.requestRejected" = "登入請求遭拒，請檢查開發/正式用戶端及回呼位址設定。";
 "auth.web.serviceUnavailable" = "登入服務暫時無法使用，請檢查 API 和資料庫後重試。";
 "auth.web.rateLimited" = "登入嘗試過於頻繁，請稍後重試。";
+
+// Clipboard Spotlight modes and keyboard hints
+"clipboard.tab.link" = "連結";
+"clipboard.hint.navigate" = "選擇";
+"clipboard.hint.plainPaste" = "純文字";
+"clipboard.hint.quickPaste" = "貼上";
+"clipboard.hint.close" = "關閉";

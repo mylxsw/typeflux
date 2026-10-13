@@ -19,6 +19,7 @@ struct ClipboardPanelRow: View, Equatable {
     var onPerform: (ClipboardEntryAction) -> Void = { _ in }
     var onHover: (Bool) -> Void = { _ in }
     @State private var info: ClipboardMediaInfo?
+    @Environment(\.interfaceStyle) private var style
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.entry == rhs.entry && lhs.index == rhs.index && lhs.isSelected == rhs.isSelected
@@ -35,30 +36,39 @@ struct ClipboardPanelRow: View, Equatable {
             .frame(maxWidth: .infinity, alignment: .leading)
             if entry.isPinned {
                 Image(systemName: "pin.fill")
-                    .font(.system(size: 10))
+                    .font(.footnote)
                     .foregroundStyle(Color.yellow)
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isSelected ? AskTheme.launcherSelection : isHovered ? AskTheme.hoverFill : Color.clear)
+            RoundedRectangle(cornerRadius: TypefluxRadius.sidebarRow.value(for: style), style: .continuous)
+                .fill(isSelected ? TypefluxColor.selection.color
+                    : isHovered ? TypefluxColor.controlBackground.color : Color.clear)
         )
         .overlay {
             if isSelected {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: TypefluxRadius.sidebarRow.value(for: style), style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5)
                     .allowsHitTesting(false)
             }
         }
+        .foregroundStyle(rowText)
         .contentShape(Rectangle())
         .overlay(ClipboardRowClickArea(onClick: onClick))
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("clipboard.result." + entry.id)
         .accessibilityAction { onClick(1) }
         .onHover(perform: onHover)
         .contextMenu { contextMenu }
         .modifier(AskLauncherNumberBadge(number: number))
         .task(id: entry.id) { await loadInfo() }
+    }
+
+    private var rowText: Color {
+        isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : TypefluxColor.label.color
     }
 
     @ViewBuilder
@@ -86,7 +96,7 @@ struct ClipboardPanelRow: View, Equatable {
     private var title: some View {
         // A row shows one line; don't lay out megabytes of text.
         Text(String(entry.title.prefix(300)))
-            .font(entry.kind == .code ? .system(size: 12.5, design: .monospaced) : .system(size: 13.5))
+            .font(entry.kind == .code ? .body.monospaced() : .body)
             .lineLimit(1)
             .truncationMode(.tail)
             .opacity(isMissing ? 0.55 : 1)
@@ -97,8 +107,8 @@ struct ClipboardPanelRow: View, Equatable {
         HStack(spacing: 6) {
             if let caption {
                 Text(caption)
-                    .font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .font(.callout)
+                    .foregroundStyle(rowText)
                     .truncationMode(.middle)
                 Circle().frame(width: 2, height: 2)
             }
@@ -114,8 +124,8 @@ struct ClipboardPanelRow: View, Equatable {
                 Text(L("clipboard.entry.missing")).foregroundStyle(Color.orange)
             }
         }
-        .font(.system(size: 11.5))
-        .foregroundStyle(StudioTheme.textSecondary)
+        .font(.subheadline)
+        .foregroundStyle(isSelected ? rowText : TypefluxColor.secondaryLabel.color)
         .lineLimit(1)
     }
 
