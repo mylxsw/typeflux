@@ -25,7 +25,10 @@ struct FloatingPanelFidelityTests {
             .environment(\.interfaceStyle, .liquidGlass)
             .environment(\.glassMaterialOverride, material)
         try await TypefluxNavigationTestSupport.withWindow(view,
-            size: ClipboardPanelView.size(showsPreview: false), nonactivating: true) { window, host in
+            size: ClipboardPanelView.size(showsPreview: false, style: .liquidGlass),
+            nonactivating: true) { window, host in
+            #expect(window.frame.width == 680)
+            #expect(host.bounds.width == 680)
             @MainActor func modeButtons() -> [SettingsBehaviorTestSupport.Element] {
                 SettingsBehaviorTestSupport.elements(in: host).filter {
                     ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("typeflux.spotlight.mode.") == true

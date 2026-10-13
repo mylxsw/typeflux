@@ -56,9 +56,13 @@ On macOS 26, native controls always take the Tahoe shape, and an app cannot forc
 | Menu / item / highlight | r6 / 22 / r4 | r14 / 24 / r8 |
 | Custom composer menu card / choice row / hover card | r14 / r8 / r10 | r18 / r10 / r14 |
 | Popover / sheet | r10 / r10 | r18 / r22 |
-| Spotlight panel | 52 input, single r12 panel | 56 capsule input + 56 round mode buttons + r24 results |
+| Spotlight panel | 640 wide, 52 input, single r12 panel | 680 wide, 56 capsule input + 56 round mode buttons + r24 results |
 
 Text styles (macOS values): largeTitle 26, title 22, title2 17, title3 15, headline 13 bold, body 13, callout 12, subheadline 11, footnote 10.
+
+The custom Spotlight display input follows template C's system font at 20pt in Classic and 21pt in Liquid Glass,
+through `TypefluxSpotlightMetrics.inputFont`. Panel width uses `TypefluxControlWidth.spotlightPanel`;
+the clipboard's optional reading preview adds 280pt to either style.
 
 Native menus use the system metrics above. Custom composer menu cards use `TypefluxRadius.menuCard` and `menuRow` at a 6pt row inset; `hoverCard` is smaller than the enclosing menu. These roles keep the floating choice rows concentric without changing native menu or popover geometry.
 

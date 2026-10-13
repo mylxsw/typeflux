@@ -7,10 +7,13 @@ struct ClipboardPanelPlacementTests {
     private let screen = NSRect(x: 0, y: 40, width: 1512, height: 900)
     private let size = NSSize(width: 640, height: 560)
 
-    @Test func everyPreviewWidthKeepsTheCentreAndTopEdgeOnBothDisplays() {
+    @Test(arguments: InterfaceStyle.allCases)
+    func everyPreviewWidthKeepsTheCentreAndTopEdgeOnBothDisplays(_ style: InterfaceStyle) {
+        let width: CGFloat = style == .classic ? 640 : 680
+        let size = NSSize(width: width, height: 560)
         for display in [screen, NSRect(x: -1920, y: -200, width: 1920, height: 1050)] {
             let start = ClipboardPanelPlacement.frame(size: size, screen: display)
-            for width: CGFloat in stride(from: 640, through: 920, by: 7) {
+            for width in stride(from: width, through: width + 280, by: 7) {
                 let next = ClipboardPanelPlacement.resized(start, width: width, screen: display)
                 #expect(next.midX == display.midX)
                 #expect(next.maxY == start.maxY)
@@ -20,14 +23,18 @@ struct ClipboardPanelPlacementTests {
         }
     }
 
-    @Test func pointerPlacementKeepsItsOpeningAnchorAndStaysInsideTheScreen() {
+    @Test(arguments: InterfaceStyle.allCases)
+    func pointerPlacementKeepsItsOpeningAnchorAndStaysInsideTheScreen(_ style: InterfaceStyle) {
+        let width: CGFloat = style == .classic ? 640 : 680
+        let size = NSSize(width: width, height: 560)
         let start = ClipboardPanelPlacement.frame(size: size, screen: screen, position: .mouse,
                                                   mouse: NSPoint(x: 800, y: 500))
-        let next = ClipboardPanelPlacement.resized(start, width: 920, screen: screen, centerX: start.midX)
+        let next = ClipboardPanelPlacement.resized(start, width: width + 280, screen: screen, centerX: start.midX)
         #expect(next.midX == start.midX)
         #expect(next.maxY == start.maxY)
-        let nearEdge = ClipboardPanelPlacement.resized(start, width: 920, screen: screen, centerX: screen.maxX)
+        let nearEdge = ClipboardPanelPlacement.resized(start, width: width + 280, screen: screen, centerX: screen.maxX)
         #expect(nearEdge.maxX <= screen.maxX - AskLauncherPlacement.screenMargin)
+        #expect(nearEdge.minX >= screen.minX + AskLauncherPlacement.screenMargin)
     }
 
     @Test func resizeWithoutADisplayKeepsTheCurrentCentre() {

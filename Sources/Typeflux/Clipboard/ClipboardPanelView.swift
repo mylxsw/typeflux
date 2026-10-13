@@ -3,12 +3,16 @@ import SwiftUI
 
 /// Spotlight chrome around the clipboard list, preview and existing panel actions.
 struct ClipboardPanelView: View {
-    /// Width of the list; the preview pane adds `ClipboardPreviewPane.width` to its right.
-    static let width: CGFloat = 512
+    /// Default Liquid Glass width. Style-aware hosts use `width(for:)`; the preview adds 280pt.
+    static var width: CGFloat { width(for: .liquidGlass) }
     static let height: CGFloat = 560
 
-    static func size(showsPreview: Bool) -> NSSize {
-        NSSize(width: width + (showsPreview ? ClipboardPreviewPane.width : 0), height: height)
+    static func width(for style: InterfaceStyle) -> CGFloat {
+        TypefluxControlWidth.spotlightPanel.value(for: style)
+    }
+
+    static func size(showsPreview: Bool, style: InterfaceStyle = .liquidGlass) -> NSSize {
+        NSSize(width: width(for: style) + (showsPreview ? ClipboardPreviewPane.width : 0), height: height)
     }
 
     private static let listSpace = "ClipboardPanelView.list"
@@ -32,7 +36,7 @@ struct ClipboardPanelView: View {
                                  modes: ClipboardCategory.allCases.map { $0.spotlightMode },
                                  inputSystemImage: "clipboard", onEscape: model.cancel) {
             HStack(spacing: 0) {
-                list.frame(width: Self.width - panelInset * 2)
+                list.frame(width: Self.width(for: effectiveStyle) - panelInset * 2)
                 if model.showsPreview || previewWidth > 0 { preview }
             }
         } hints: {
@@ -67,10 +71,10 @@ struct ClipboardPanelView: View {
     private var panelInset: CGFloat { TypefluxSpacing.small.value(for: effectiveStyle) }
 
     private var viewportWidth: CGFloat {
-        layout.width ?? Self.size(showsPreview: model.showsPreview).width
+        layout.width ?? Self.size(showsPreview: model.showsPreview, style: effectiveStyle).width
     }
 
-    private var previewWidth: CGFloat { max(0, viewportWidth - Self.width) }
+    private var previewWidth: CGFloat { max(0, viewportWidth - Self.width(for: effectiveStyle)) }
 
     /// Keep the content mounted during collapse and reveal it from the list's right edge.
     private var preview: some View {

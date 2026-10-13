@@ -7,6 +7,9 @@ import Testing
 @MainActor
 struct ClipboardSpotlightSnapshotTests {
     @Test func panelStatesRenderInBothStylesAndAppearances() async throws {
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.english)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let configured = ProcessInfo.processInfo.environment["TYPEFLUX_CLIPBOARD_SPOTLIGHT_SNAPSHOTS"]
         let directory = configured.map { URL(fileURLWithPath: $0) }
             ?? FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -62,10 +65,31 @@ struct ClipboardSpotlightSnapshotTests {
                                  TypefluxAccessibilityOptions(reduceTransparency: reduced, increasedContrast: !reduced))
                     // Accessibility must win even over an explicit glass override.
                     .environment(\.glassMaterialOverride, .liquidGlass)
-                try await TypefluxUISnapshot.render(view, size: ClipboardPanelView.size(showsPreview: false),
+                try await TypefluxUISnapshot.render(view, size: ClipboardPanelView.size(showsPreview: false, style: .liquidGlass),
                                                     style: .liquidGlass, dark: dark, increasedContrast: !reduced,
                                                     file: directory.appendingPathComponent(
                                                         "\(reduced ? "reduce-transparency" : "increase-contrast")-\(dark ? "dark" : "light").png"))
+            }
+        }
+    }
+
+    @Test func localizedPlaceholdersRenderInBothStylesAndAppearances() async throws {
+        let configured = ProcessInfo.processInfo.environment["TYPEFLUX_CLIPBOARD_SPOTLIGHT_SNAPSHOTS"]
+        let directory = configured.map { URL(fileURLWithPath: $0) }
+            ?? FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let previousLanguage = AppLocalization.shared.language
+        defer {
+            AppLocalization.shared.setLanguage(previousLanguage)
+            if configured == nil { try? FileManager.default.removeItem(at: directory) }
+        }
+        for language in [AppLanguage.english, .simplifiedChinese] {
+            AppLocalization.shared.setLanguage(language)
+            for style in InterfaceStyle.allCases {
+                for dark in [false, true] {
+                    let model = ClipboardPanelModel()
+                    let name = "placeholder-\(language.rawValue)-\(style.rawValue)-\(dark ? "dark" : "light").png"
+                    try await render(model, style: style, dark: dark, directory: directory, name: name)
+                }
             }
         }
     }
@@ -87,19 +111,30 @@ struct ClipboardSpotlightSnapshotTests {
                 for dark in [false, true] {
                     settings.interfaceStyle = style
                     settings.appearanceMode = dark ? .dark : .light
-                    controller.present(model)
-                    let window = try #require(controller.presentedWindow)
-                    for preview in [false, true] {
-                        model.showsPreview = preview
-                        let name = "native-\(preview ? "preview" : "panel")-\(style.rawValue)-\(dark ? "dark" : "light").png"
+                    let suffix = "\(style.rawValue)-\(dark ? "dark" : "light").png"
+                    for language in [AppLanguage.english, .simplifiedChinese] {
+                        settings.appLanguage = language
+                        AppLocalization.shared.setLanguage(language)
+                        model.showsPreview = false
+                        model.category = .all
+                        controller.present(model)
+                        let window = try #require(controller.presentedWindow)
+                        #expect(window.frame.size == ClipboardPanelView.size(showsPreview: false, style: style))
+                        let name = "native-placeholder-\(language.rawValue)-" + suffix
                         try await capture(window, file: directory.appendingPathComponent(name))
+                        if language == .english {
+                            for preview in [false, true] {
+                                model.showsPreview = preview
+                                #expect(window.frame.size == ClipboardPanelView.size(showsPreview: preview, style: style))
+                                let name = "native-\(preview ? "preview" : "panel")-" + suffix
+                                try await capture(window, file: directory.appendingPathComponent(name))
+                            }
+                            model.showsPreview = false
+                            model.category = .snippet
+                            try await capture(window, file: directory.appendingPathComponent("native-mode-snippet-" + suffix))
+                        }
+                        controller.dismiss()
                     }
-                    model.showsPreview = false
-                    model.category = .snippet
-                    let name = "native-mode-snippet-\(style.rawValue)-\(dark ? "dark" : "light").png"
-                    try await capture(window, file: directory.appendingPathComponent(name))
-                    model.category = .all
-                    controller.dismiss()
                 }
             }
         }
@@ -120,7 +155,7 @@ struct ClipboardSpotlightSnapshotTests {
     private func render(_ model: ClipboardPanelModel, style: InterfaceStyle, dark: Bool,
                         directory: URL, name: String) async throws {
         try await TypefluxUISnapshot.render(ClipboardPanelView(model: model, focusRequest: 0),
-                                            size: ClipboardPanelView.size(showsPreview: model.showsPreview),
+                                            size: ClipboardPanelView.size(showsPreview: model.showsPreview, style: style),
                                             style: style, dark: dark, file: directory.appendingPathComponent(name))
     }
 

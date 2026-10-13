@@ -19,6 +19,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     private var focusRequest = 0
     private var quickLookURLs: [URL] = []
     private var previewObservation: AnyCancellable?
+    private var styleObservation: AnyCancellable?
     private let layout = ClipboardPanelLayout()
     /// The launcher's scalar spring also drives the clipboard's width.
     private let previewWidthAnimator = AskLauncherHeightAnimator()
@@ -41,13 +42,16 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         actionsMenu?.cancelTracking()
         previewWidthAnimator.stop()
         previewObservation = nil
+        styleObservation = nil
         self.model = model
         model.onShowActions = { [weak self] in self?.showActionsMenu() }
         focusRequest += 1
-        layout.setWidth(ClipboardPanelView.size(showsPreview: model.showsPreview).width)
+        let style = settingsStore.interfaceStyle
+        let size = ClipboardPanelView.size(showsPreview: model.showsPreview, style: style)
+        layout.setWidth(size.width, style: style)
         let panel = panel(for: model)
         applyAppearance(to: panel)
-        panel.setContentSize(ClipboardPanelView.size(showsPreview: model.showsPreview))
+        panel.setContentSize(size)
         position(panel)
         previewCenterX = settingsStore.clipboardPanelPosition == .mouse
             ? panel.frame.midX : panel.screen?.visibleFrame.midX
@@ -56,26 +60,32 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         previewObservation = model.$showsPreview.dropFirst().removeDuplicates().sink { [weak self] shows in
             self?.resizeForPreview(shows)
         }
+        styleObservation = interfaceStyleObserver.$style.dropFirst().removeDuplicates().sink { [weak self] _ in
+            guard let self, let model = self.model else { return }
+            self.resizeForPreview(model.showsPreview, animated: false)
+        }
     }
 
     /// One spring drives the native frame and content viewport around the same horizontal centre.
-    private func resizeForPreview(_ shows: Bool) {
+    private func resizeForPreview(_ shows: Bool, animated: Bool = true) {
         guard let panel, let hostingView else { return }
+        let style = settingsStore.interfaceStyle
         let screen = panel.screen ?? NSScreen.main
         previewWidthAnimator.update(
-            from: panel.frame.width, to: ClipboardPanelView.size(showsPreview: shows).width,
-            animated: panel.isVisible && !reduceMotion(), framesPerSecond: screen?.maximumFramesPerSecond ?? 60
+            from: panel.frame.width, to: ClipboardPanelView.size(showsPreview: shows, style: style).width,
+            animated: animated && panel.isVisible && !reduceMotion(),
+            framesPerSecond: screen?.maximumFramesPerSecond ?? 60
         ) { [weak self, weak panel, weak hostingView] width in
             guard let self, let panel, let hostingView else { return }
             CATransaction.begin()
             CATransaction.setDisableActions(true)
             let frame = ClipboardPanelPlacement.resized(
-                panel.frame, width: ClipboardPanelLayout.boundedWidth(width),
+                panel.frame, width: ClipboardPanelLayout.boundedWidth(width, style: style),
                 screen: screen?.visibleFrame, centerX: self.previewCenterX
             )
             panel.setFrame(frame, display: false)
             // AppKit rounds window frames to pixels; the viewport must use the committed size.
-            self.layout.setWidth(panel.frame.width)
+            self.layout.setWidth(panel.frame.width, style: style)
             hostingView.frame = NSRect(origin: .zero, size: panel.frame.size)
             hostingView.layoutSubtreeIfNeeded()
             panel.displayIfNeeded()
@@ -87,6 +97,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         actionsMenu?.cancelTracking()
         previewWidthAnimator.stop()
         previewObservation = nil
+        styleObservation = nil
         closeQuickLook()
         removeMonitors()
         panel?.orderOut(nil)
@@ -100,7 +111,8 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         actionsMenu = menu
         defer { actionsMenu = nil }
         withExtendedLifetime(presenter) {
-            menu.popUp(positioning: nil, at: NSPoint(x: ClipboardPanelView.width - 16, y: 32), in: host)
+            let x = ClipboardPanelView.width(for: settingsStore.interfaceStyle) - 16
+            menu.popUp(positioning: nil, at: NSPoint(x: x, y: 32), in: host)
         }
     }
 
@@ -127,7 +139,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             hostingView.rootView = rootView
             return panel
         }
-        let size = NSSize(width: ClipboardPanelView.width, height: ClipboardPanelView.height)
+        let size = ClipboardPanelView.size(showsPreview: model.showsPreview, style: settingsStore.interfaceStyle)
         let panel = ClipboardPanelWindow(
             contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.borderless, .nonactivatingPanel],

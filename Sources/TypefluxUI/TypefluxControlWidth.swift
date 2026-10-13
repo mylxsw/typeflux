@@ -6,6 +6,7 @@ public enum TypefluxControlWidth: String, CaseIterable, Sendable {
     case toolbarSearch
     case switchControl
     case checkbox
+    case spotlightPanel
 
     public func value(for style: InterfaceStyle) -> CGFloat {
         switch self {
@@ -13,6 +14,7 @@ public enum TypefluxControlWidth: String, CaseIterable, Sendable {
         case .toolbarSearch: style == .classic ? 200 : 240
         case .switchControl: style == .classic ? 32 : 38
         case .checkbox: style == .classic ? 14 : 16
+        case .spotlightPanel: style == .classic ? 640 : 680
         }
     }
 }

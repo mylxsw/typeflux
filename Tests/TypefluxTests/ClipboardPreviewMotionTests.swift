@@ -6,12 +6,15 @@ import Testing
 @MainActor
 @Suite(.exclusiveUIState)
 struct ClipboardPreviewMotionTests {
-    @Test func openingAndClosingHaveIntermediateFramesAndKeepTheWindowCentred() async throws {
-        try await withPanel { controller, model, panel, host in
+    @Test(arguments: InterfaceStyle.allCases)
+    func openingAndClosingHaveIntermediateFramesAndKeepTheWindowCentred(_ style: InterfaceStyle) async throws {
+        let closedWidth = ClipboardPanelView.width(for: style)
+        let openWidth = ClipboardPanelView.size(showsPreview: true, style: style).width
+        try await withPanel(style: style) { controller, model, panel, host in
             let center = panel.frame.midX
             let top = panel.frame.maxY
             #expect(host.sizingOptions.isEmpty, "SwiftUI cannot independently resize the window")
-            try snapshot(host, name: "closed")
+            try snapshot(host, name: "closed", style: style)
             for shows in [true, false] {
                 let start = panel.frame.width
                 model.showsPreview = shows
@@ -22,28 +25,31 @@ struct ClipboardPreviewMotionTests {
                 for _ in 0 ..< 150 where controller.isResizingPreview {
                     try await Task.sleep(for: .milliseconds(10))
                     checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
-                    if panel.frame.width > 512 && panel.frame.width < 792 { intermediate += 1 }
-                    if !captured, (612 ... 712).contains(panel.frame.width) {
-                        try snapshot(host, name: shows ? "opening" : "closing")
+                    if panel.frame.width > closedWidth && panel.frame.width < openWidth { intermediate += 1 }
+                    if !captured, (closedWidth + 100 ... closedWidth + 200).contains(panel.frame.width) {
+                        try snapshot(host, name: shows ? "opening" : "closing", style: style)
                         captured = true
                     }
                 }
                 #expect(intermediate >= 2)
                 #expect(!controller.isResizingPreview)
-                #expect(panel.frame.width == ClipboardPanelView.size(showsPreview: shows).width)
-                try snapshot(host, name: shows ? "open" : "closed-again")
+                #expect(panel.frame.width == ClipboardPanelView.size(showsPreview: shows, style: style).width)
+                try snapshot(host, name: shows ? "open" : "closed-again", style: style)
             }
         }
     }
 
-    @Test func rapidReversalsKeepTheCurrentFrameAndLandOnTheLastRequestedState() async throws {
-        try await withPanel { controller, model, panel, host in
+    @Test(arguments: InterfaceStyle.allCases)
+    func rapidReversalsKeepTheCurrentFrameAndLandOnTheLastRequestedState(_ style: InterfaceStyle) async throws {
+        let closedWidth = ClipboardPanelView.width(for: style)
+        let openWidth = ClipboardPanelView.size(showsPreview: true, style: style).width
+        try await withPanel(style: style) { controller, model, panel, host in
             let center = panel.frame.midX
             let top = panel.frame.maxY
             model.togglePreview()
             try await Task.sleep(for: .milliseconds(80))
             let middle = panel.frame
-            #expect(middle.width > 512 && middle.width < 792)
+            #expect(middle.width > closedWidth && middle.width < openWidth)
             model.togglePreview()
             #expect(panel.frame == middle, "Reversing cannot snap to either endpoint")
             try await Task.sleep(for: .milliseconds(40))
@@ -55,28 +61,30 @@ struct ClipboardPreviewMotionTests {
                 checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
             }
             #expect(!controller.isResizingPreview)
-            #expect(panel.frame.width == 792)
+            #expect(panel.frame.width == openWidth)
             #expect(model.showsPreview)
         }
     }
 
-    @Test func reducedMotionAppliesTheCentredSizeImmediately() async throws {
-        try await withPanel { controller, model, panel, host in
+    @Test(arguments: InterfaceStyle.allCases)
+    func reducedMotionAppliesTheCentredSizeImmediately(_ style: InterfaceStyle) async throws {
+        try await withPanel(style: style) { controller, model, panel, host in
             controller.reduceMotion = { true }
             let center = panel.frame.midX
             let top = panel.frame.maxY
             model.togglePreview()
-            #expect(panel.frame.width == 792)
+            #expect(panel.frame.width == ClipboardPanelView.size(showsPreview: true, style: style).width)
             #expect(!controller.isResizingPreview)
             checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
             model.togglePreview()
-            #expect(panel.frame.width == 512)
+            #expect(panel.frame.width == ClipboardPanelView.width(for: style))
             checkSynchronized(controller: controller, panel: panel, host: host, center: center, top: top)
         }
     }
 
-    @Test func dismissalCancelsTheMotionAndReopeningUsesTheRequestedSize() async throws {
-        try await withPanel { controller, model, panel, host in
+    @Test(arguments: InterfaceStyle.allCases)
+    func dismissalCancelsTheMotionAndReopeningUsesTheRequestedSize(_ style: InterfaceStyle) async throws {
+        try await withPanel(style: style) { controller, model, panel, host in
             model.togglePreview()
             try await Task.sleep(for: .milliseconds(40))
             controller.dismiss()
@@ -86,24 +94,27 @@ struct ClipboardPreviewMotionTests {
             #expect(panel.frame == stopped)
             controller.present(model)
             #expect(controller.presentedWindow === panel)
-            #expect(panel.frame.width == 792)
+            #expect(panel.frame.width == ClipboardPanelView.size(showsPreview: true, style: style).width)
             #expect(!controller.isResizingPreview)
             checkSynchronized(controller: controller, panel: panel, host: host, center: try #require(panel.screen).visibleFrame.midX,
                               top: panel.frame.maxY)
         }
     }
 
-    @Test func standaloneLayoutUsesFinalSizeAndControlledLayoutBoundsTheWidth() {
+    @Test(arguments: InterfaceStyle.allCases)
+    func standaloneLayoutUsesFinalSizeAndControlledLayoutBoundsTheWidth(_ style: InterfaceStyle) {
         let layout = ClipboardPanelLayout()
+        let closedWidth = ClipboardPanelView.width(for: style)
+        let openWidth = ClipboardPanelView.size(showsPreview: true, style: style).width
         #expect(layout.width == nil)
-        layout.setWidth(100)
-        #expect(layout.width == 512)
-        layout.setWidth(780)
-        #expect(layout.width == 780)
-        layout.setWidth(780)
-        #expect(layout.width == 780)
-        layout.setWidth(1200)
-        #expect(layout.width == 792)
+        layout.setWidth(100, style: style)
+        #expect(layout.width == closedWidth)
+        layout.setWidth(closedWidth + 100, style: style)
+        #expect(layout.width == closedWidth + 100)
+        layout.setWidth(closedWidth + 100, style: style)
+        #expect(layout.width == closedWidth + 100)
+        layout.setWidth(1200, style: style)
+        #expect(layout.width == openWidth)
     }
 
     private func checkSynchronized(controller: ClipboardPanelController, panel: NSWindow, host: NSHostingView<AnyView>,
@@ -114,12 +125,12 @@ struct ClipboardPreviewMotionTests {
         #expect(controller.contentViewportWidth == panel.frame.width)
     }
 
-    private func snapshot(_ host: NSHostingView<AnyView>, name: String) throws {
+    private func snapshot(_ host: NSHostingView<AnyView>, name: String, style: InterfaceStyle) throws {
         guard let output = ProcessInfo.processInfo.environment["TYPEFLUX_CLIPBOARD_SNAPSHOT_DIR"] else { return }
         host.layoutSubtreeIfNeeded()
         let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: rep)
-        let canvas = NSImage(size: ClipboardPanelView.size(showsPreview: true))
+        let canvas = NSImage(size: ClipboardPanelView.size(showsPreview: true, style: style))
         canvas.lockFocus()
         NSColor(white: 0.08, alpha: 1).setFill()
         NSRect(origin: .zero, size: canvas.size).fill()
@@ -128,10 +139,11 @@ struct ClipboardPreviewMotionTests {
         canvas.unlockFocus()
         let tiff = try #require(canvas.tiffRepresentation)
         let png = try #require(NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]))
-        try png.write(to: URL(fileURLWithPath: output).appendingPathComponent("clipboard-motion-\(name).png"))
+        try png.write(to: URL(fileURLWithPath: output).appendingPathComponent("clipboard-motion-\(name)-\(style.rawValue).png"))
     }
 
     private func withPanel(
+        style: InterfaceStyle,
         _ body: (ClipboardPanelController, ClipboardPanelModel, NSWindow, NSHostingView<AnyView>) async throws -> Void
     ) async throws {
         let suite = "ClipboardPreviewMotionTests.\(UUID().uuidString)"
@@ -139,6 +151,7 @@ struct ClipboardPreviewMotionTests {
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = SettingsStore(defaults: defaults)
         settings.appearanceMode = .dark
+        settings.interfaceStyle = style
         let controller = ClipboardPanelController(settingsStore: settings)
         controller.reduceMotion = { false }
         let model = ClipboardPanelModel()
