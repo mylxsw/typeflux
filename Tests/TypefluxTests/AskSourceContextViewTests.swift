@@ -284,12 +284,6 @@ extension AskComposerInteractionTests {
         return walk(root).sorted { $0.convert($0.bounds, to: nil).minX < $1.convert($1.bounds, to: nil).minX }
     }
 
-    private func clickSourceChip(_ anchor: NSView, in window: NSWindow) throws {
-        let frame = anchor.convert(anchor.bounds, to: nil)
-        let point = NSPoint(x: frame.midX, y: frame.midY)
-        try sendSourceClick(at: point, in: window)
-    }
-
     private func hostSourceContext<V: View>(_ view: V, size: NSSize) async throws -> NSWindow {
         TypefluxTestApplicationEnvironment.prepare()
         let window = SourceContextTestWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
