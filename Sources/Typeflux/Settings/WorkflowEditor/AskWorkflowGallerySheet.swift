@@ -141,7 +141,8 @@ struct AskWorkflowGallerySheet: View {
                     .foregroundStyle(StudioTheme.textSecondary)
                     .frame(maxWidth: .infinity).padding(.top, 80)
             } else {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 0), spacing: 14), count: 3), spacing: 14) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 0), spacing: 14), count: 3),
+                    spacing: 14) {
                     ForEach(items) { item in card(item) }
                 }
                 .padding(.top, 14)
@@ -314,13 +315,13 @@ extension AskWorkflowGallerySheet {
 
     private func facts(_ item: AskWorkflowGallery.Item) -> some View {
         let rows: [(String, AnyView)] = [
-            (L("ask.workflow.trust.keywords"), AnyView(AgentFlowLayout(spacing: 5) {
+            (L("ask.workflow.trust.keywords"), AnyView(AskFlowLayout(spacing: 5) {
                 ForEach(item.keywords, id: \.self) { AskWorkflowChip(text: $0) }
                 Text(L("ask.workflow.gallery.renameHint", (item.keywords.first ?? "fx") + "2"))
                     .foregroundStyle(StudioTheme.textSecondary)
             })),
             (L("ask.workflow.gallery.runtime"), AnyView(Text(runtimeText(item)))),
-            (L("ask.workflow.gallery.does"), AnyView(AgentFlowLayout(spacing: 5) {
+            (L("ask.workflow.gallery.does"), AnyView(AskFlowLayout(spacing: 5) {
                 ForEach(item.hosts, id: \.self) { host in
                     AskWorkflowGalleryTag(text: L("ask.workflow.gallery.visits", host), color: .orange)
                 }
