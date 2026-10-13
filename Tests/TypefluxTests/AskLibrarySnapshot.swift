@@ -21,7 +21,7 @@ enum AskLibrarySnapshot {
                               styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        window.titleVisibility = .hidden
+        window.titleVisibility = .visible
         window.toolbarStyle = .unified
         window.titlebarAppearsTransparent = true
         window.appearance = NSAppearance(named: increasedContrast

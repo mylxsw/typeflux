@@ -421,12 +421,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         dismissLauncher()
         if conversationWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
-            // The split view draws solid detail content and owns navigation materials.
+            // Ask's panels draw solid content and library navigation materials.
             window.isOpaque = false
             window.backgroundColor = .clear
             window.title = L("workflow.ask.answerTitle")
             window.titlebarAppearsTransparent = true
-            window.titleVisibility = .hidden
+            window.titleVisibility = .visible
             window.isReleasedWhenClosed = false
             window.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.ask-conversations")
             window.delegate = self

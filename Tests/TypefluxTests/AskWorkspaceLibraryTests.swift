@@ -123,34 +123,4 @@ struct AskWorkspaceLibraryTests {
             #expect(runID == nil)
         }
     }
-
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_UI_NAVIGATION_LIVE"] == "1"),
-          arguments: InterfaceStyle.allCases)
-    func libraryToolbarKeepsOneSidebarActionAndDispatchesNativeActions(style: InterfaceStyle) async throws {
-        var sidebarCalls = 0
-        var newCalls = 0
-        let sidebar = TypefluxToolbarAction(id: "sidebar", title: "Toggle history", systemImage: "sidebar.left",
-                                           shortcut: "s", modifiers: [.command, .control]) { sidebarCalls += 1 }
-        let new = TypefluxToolbarAction(id: "new", title: "New conversation", systemImage: "plus") { newCalls += 1 }
-        let view = TypefluxWindow(title: "Conversation", search: TypefluxSearchState(), searchPrompt: "Search",
-                                  prominent: new, sidebarToggle: sidebar) {
-            List { Text("History") }
-        } detail: { Text("Solid content") }
-        try await TypefluxNavigationTestSupport.withWindow(view.environment(\.interfaceStyle, style)) { window, _ in
-            try SettingsBehaviorTestSupport.button("New conversation", in: window).press()
-            #expect(newCalls == 1)
-            let automaticItems = window.toolbar?.items.filter {
-                $0.itemIdentifier == .toggleSidebar
-                    || $0.itemIdentifier.rawValue.localizedCaseInsensitiveContains("toggleSidebar")
-            } ?? []
-            if #available(macOS 14, *) {
-                #expect(automaticItems.isEmpty)
-                try SettingsBehaviorTestSupport.button("Toggle history", in: window).press()
-                #expect(sidebarCalls == 1)
-            } else {
-                #expect(automaticItems.count == 1)
-                #expect(sidebarCalls == 0)
-            }
-        }
-    }
 }

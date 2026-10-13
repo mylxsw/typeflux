@@ -30,7 +30,6 @@ struct AskConversationView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.interfaceStyle) private var style
     @State private var windowSize = AskWorkspaceLayout.minimumWindowSize
-    @State private var contentWidth: CGFloat?
     @State private var showsSidebarDrawer = false
     @FocusState private var drawerCloseFocused: Bool
     @State private var previousResponder: NSResponder?
@@ -106,7 +105,7 @@ struct AskConversationView: View {
 
     private var layout: AskWorkspaceLayout {
         AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed, showsUsage: showsUsage || showsWorkflow,
-                           rightPanelWidth: showsWorkflow ? 390 : nil, contentWidth: contentWidth)
+                           rightPanelWidth: showsWorkflow ? 390 : nil)
     }
 
     private var showsWorkflow: Bool { model.authoringSession?.isPresented == true && !showsUsage }
@@ -135,30 +134,60 @@ struct AskConversationView: View {
 
     private var workspace: some View {
         ZStack(alignment: .topLeading) {
-            TypefluxWindow(title: workspaceTitle, search: toolbarSearch, searchPrompt: L("ask.search.conversations"),
-                           groups: toolbarGroups, prominent: newConversationAction,
-                           sidebarVisibility: sidebarVisibility, center: toolbarCenter,
-                           sidebarWidth: AskMetrics.sidebarWidth, sidebarToggle: sidebarAction) {
-                sidebar
-            } detail: {
+            workspaceWindow
+                .background { workspaceShortcuts }
+                .disabled(hasModal)
+                .accessibilityHidden(hasModal)
+            if hasDrawer { drawer }
+            if isSearching { searchPalette }
+        }
+        .clipped()
+    }
+
+    /// Ask owns panel animation and persistence; the library supplies native controls and surfaces.
+    private var workspaceWindow: some View {
+        NavigationStack {
+            HStack(spacing: 0) {
+                if !sidebarHidden {
+                    sidebar
+                        .frame(width: AskMetrics.sidebarWidth)
+                        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill,
+                                      glassInset: [.top, .leading, .bottom])
+                        .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
+                }
                 HStack(spacing: 0) {
-                    content.background(GeometryReader { geometry in
-                        Color.clear.onAppear { contentWidth = geometry.size.width }
-                            .onChange(of: geometry.size.width) { contentWidth = $0 }
-                    })
+                    content
                     if layout.usageInline {
                         rightPanel.id(model.selectedId)
                             .transition(AskMotion.panel(edge: .trailing, reduceMotion: reduceMotion))
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(TypefluxColor.contentBackground.color)
             }
-            .background { workspaceShortcuts }
-            .disabled(hasModal)
-            .accessibilityHidden(hasModal)
-            if hasDrawer { drawer }
-            if isSearching { searchPalette }
+            .typefluxSearchable(state: toolbarSearch, prompt: L("ask.search.conversations"))
+            .navigationTitle(workspaceTitle)
+            .toolbar {
+                ToolbarItem(id: "ask.workspace.sidebar", placement: .navigation) {
+                    TypefluxIconButton(L("ask.sidebar.toggle"), systemImage: "sidebar.left", action: toggleSidebar)
+                        .frame(width: TypefluxControlWidth.toolbarItem.value(for: style),
+                               height: TypefluxControlHeight.toolbarItem.value(for: style))
+                        .keyboardShortcut("s", modifiers: [.command, .control])
+                        .accessibilityIdentifier("ask.workspace.sidebar")
+                }
+                if let center = toolbarCenter {
+                    ToolbarItem(id: "ask.workspace.status", placement: .primaryAction) {
+                        center
+                            .frame(maxWidth: layout.compactContent ? 36 : 180)
+                            .frame(height: TypefluxControlHeight.toolbarItem.value(for: style))
+                            .fixedSize(horizontal: true, vertical: true)
+                    }
+                }
+                TypefluxToolbar(groups: toolbarGroups, prominent: newConversationAction)
+            }
+            .toolbarBackground(TypefluxColor.windowBackground.color, for: .windowToolbar)
+            .toolbarBackground(style.usesGlass ? .automatic : .visible, for: .windowToolbar)
         }
-        .clipped()
     }
 
     // MARK: - Sidebar
@@ -226,7 +255,7 @@ struct AskConversationView: View {
         }
     }
 
-    /// NavigationSplitView supplies the sidebar's native material and toolbar clearance.
+    /// Native sidebar selection stays inside Ask's animated panel.
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
             if showsHistoryFilter {
@@ -237,27 +266,8 @@ struct AskConversationView: View {
         }
     }
 
-    private var sidebarVisibility: Binding<NavigationSplitViewVisibility> {
-        Binding(get: { sidebarHidden ? .detailOnly : .all }, set: { visibility in
-            // On 14+ the explicit toolbar action owns the preference. Native resizing must not change it.
-            if #available(macOS 14, *) { return }
-            if visibility == .detailOnly {
-                sidebarChoice = true
-                storedSidebarCollapsed = true
-            } else if sidebarHidden {
-                toggleSidebar()
-            }
-        })
-    }
-
     private var workspaceTitle: String {
         model.selected?.title ?? model.conversations.first(where: { $0.id == model.selectedId })?.title ?? L("ask.new")
-    }
-
-    private var sidebarAction: TypefluxToolbarAction {
-        .init(id: "ask.sidebar", title: L("ask.sidebar.toggle"), systemImage: "sidebar.left",
-              accessibilityIdentifier: "ask.workspace.sidebar", shortcut: "s", modifiers: [.command, .control],
-              perform: toggleSidebar)
     }
 
     private var newConversationAction: TypefluxToolbarAction {
@@ -332,11 +342,6 @@ struct AskConversationView: View {
             .background {
                 if layout.compactContent {
                     Button(L("ask.search"), action: openSearch).keyboardShortcut("k", modifiers: .command)
-                        .hidden().accessibilityHidden(true)
-                }
-                if #unavailable(macOS 14) {
-                    Button(L("ask.sidebar.toggle"), action: toggleSidebar)
-                        .keyboardShortcut("s", modifiers: [.command, .control])
                         .hidden().accessibilityHidden(true)
                 }
             }
@@ -509,6 +514,7 @@ struct AskConversationView: View {
 
         }
         .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
         .background(AskHistoryPullRefresh(
             isRefreshing: model.isRefreshingHistory,
             onDistance: { pullDistance = $0 },
