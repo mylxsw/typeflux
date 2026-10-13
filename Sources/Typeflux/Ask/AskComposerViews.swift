@@ -1077,7 +1077,7 @@ struct AskComposer: View {
     }
 
     private var launcherCard: some View {
-        TypefluxSpotlightLayout(showsResults: !launcherCollapsed, fillsAvailableHeight: true) {
+        TypefluxSpotlightSurface(showsResults: !launcherCollapsed, fillsAvailableHeight: true) {
             launcherHeader
                 .modifier(AskVoiceBorder(voice: voice, context: contextID,
                                         radius: TypefluxRadius.spotlightInput.value(for: interfaceStyle),

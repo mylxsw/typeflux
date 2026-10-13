@@ -53,7 +53,7 @@ struct AskSearchPaletteView: View {
     }
 
     private func card(listHeight: CGFloat) -> some View {
-        TypefluxSpotlightLayout(placement: .inWindow) {
+        TypefluxSpotlightSurface(placement: .inWindow) {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass").font(.title3)
                     .foregroundStyle(TypefluxColor.secondaryLabel.color)

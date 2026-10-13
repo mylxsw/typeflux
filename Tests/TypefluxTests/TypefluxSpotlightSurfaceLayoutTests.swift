@@ -6,12 +6,12 @@ import Testing
 
 @Suite("Spotlight layout and accessibility", .exclusiveUIState)
 @MainActor
-struct TypefluxSpotlightLayoutTests {
+struct TypefluxSpotlightSurfaceLayoutTests {
     @Test(arguments: InterfaceStyle.allCases)
     func collapsedAndExpandedSurfacesHaveTheSpecifiedHeight(_ style: InterfaceStyle) {
         for expanded in [false, true] {
             let inputHeight = TypefluxControlHeight.spotlightInput.value(for: style)
-            let view = TypefluxSpotlightLayout(showsResults: expanded) {
+            let view = TypefluxSpotlightSurface(showsResults: expanded) {
                 Text("Search").frame(maxWidth: .infinity).frame(height: inputHeight)
             } modes: {
                 TypefluxSpotlightModeControl {
@@ -66,7 +66,7 @@ struct TypefluxSpotlightLayoutTests {
     func accessibilityOverridesRemoveTheVisualEffect(_ style: InterfaceStyle) async throws {
         for options in [TypefluxAccessibilityOptions(reduceTransparency: true),
                         TypefluxAccessibilityOptions(increasedContrast: true)] {
-            let view = TypefluxSpotlightLayout {
+            let view = TypefluxSpotlightSurface {
                 Text("Search").frame(height: 56)
             } modes: {
                 TypefluxSpotlightModeControl { Text("Mode") }
@@ -95,7 +95,7 @@ struct TypefluxSpotlightLayoutTests {
         @Environment(\.interfaceStyle) private var style
 
         var body: some View {
-            TypefluxSpotlightLayout(showsResults: state.height > 0, fillsAvailableHeight: true) {
+            TypefluxSpotlightSurface(showsResults: state.height > 0, fillsAvailableHeight: true) {
                 TypefluxNativeSearchField(text: .constant(""), focused: .constant(false), prompt: "Search",
                                           identifier: "spotlight.test.input")
                     .frame(height: TypefluxControlHeight.spotlightInput.value(for: style))
