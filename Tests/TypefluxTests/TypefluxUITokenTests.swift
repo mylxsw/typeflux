@@ -57,6 +57,10 @@ struct TypefluxUITokenTests {
         }
         #expect(tokens.spacing(.sidebarInset) == (tokens.style == .classic ? 0 : 8))
         #expect(tokens.spacing(.sidebarRowInset) == 8)
+        for (token, value) in zip([TypefluxSpacing.compact, .small, .regular, .large, .section],
+                                  [CGFloat(4), 8, 12, 16, 24]) {
+            #expect(tokens.spacing(token) == value)
+        }
         #expect(tokens.radius(.sidebar) == tokens.radius(.window) - tokens.spacing(.sidebarInset) || tokens
             .style == .classic)
     }

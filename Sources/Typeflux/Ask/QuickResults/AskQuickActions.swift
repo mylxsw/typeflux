@@ -28,7 +28,8 @@ enum AskQuickAction: Equatable {
         switch self {
         case .open: L("ask.quick.action.open")
         case .openWith: L("ask.quick.action.openWith")
-        case let .openIn(url): FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+        case let .openIn(url): FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app",
+                                                                                                      with: "")
         case .reveal: L("ask.quick.action.reveal")
         case .quickLook: L("ask.quick.action.quickLook")
         case .copyPath: L("ask.quick.action.copyPath")
@@ -106,7 +107,8 @@ struct AskQuickActionPanel: Equatable {
     }
 
     /// The actions for an application, settings pane, file or folder; nil when there is nothing beyond opening.
-    static func make(for target: Target, running: (String) -> Bool = AskQuickActionPanel.isRunning) -> AskQuickActionPanel? {
+    static func make(for target: Target,
+                     running: (String) -> Bool = AskQuickActionPanel.isRunning) -> AskQuickActionPanel? {
         let actions: [AskQuickAction]
         switch target {
         case let .app(app):
@@ -148,7 +150,7 @@ struct AskQuickActionPanelView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(panel.title).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+            Text(panel.title).font(.system(size: 11)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .lineLimit(1).truncationMode(.middle)
                 .padding(.horizontal, 8).padding(.top, 4).padding(.bottom, 4)
             ForEach(Array(panel.actions.enumerated()), id: \.offset) { index, action in
@@ -159,14 +161,16 @@ struct AskQuickActionPanelView: View {
         }
         .padding(5)
         .frame(width: Self.width)
-        .background(AskTheme.popoverSurface, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(AskTheme.separator, lineWidth: 1))
+        .background(TypefluxColor.windowBackground.color, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(TypefluxColor.separator.color,
+                                                                                     lineWidth: 1))
         .shadow(color: .black.opacity(0.28), radius: 18, y: 8)
     }
 
     private func row(_ action: AskQuickAction, highlighted: Bool) -> some View {
         let confirm = highlighted && panel.confirming
-        let tint: Color = highlighted ? .white : action.destructive ? StudioTheme.danger : StudioTheme.textPrimary
+        let tint: Color = highlighted ? .white : action.destructive ? TypefluxColor.danger.color : TypefluxColor.label
+            .color
         return HStack(spacing: 8) {
             Group {
                 if case let .openIn(url) = action {
@@ -179,14 +183,16 @@ struct AskQuickActionPanelView: View {
             Text(confirm ? L("ask.quick.action.trash.confirm") : action.title).font(.system(size: 12.5)).lineLimit(1)
             Spacer(minLength: 6)
             if let shortcut = action.shortcut {
-                Text(shortcut).font(.system(size: 11)).foregroundStyle(highlighted ? Color.white.opacity(0.8) : StudioTheme.textTertiary)
+                Text(shortcut).font(.system(size: 11))
+                    .foregroundStyle(highlighted ? Color.white.opacity(0.8) : TypefluxColor.tertiaryLabel.color)
             }
         }
         .foregroundStyle(tint)
         .padding(.horizontal, 8)
         .frame(height: 28)
-        .background(highlighted ? (action.destructive ? StudioTheme.danger : AskTheme.accent) : Color.clear,
-                    in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(highlighted ? (action.destructive ? TypefluxColor.danger.color : TypefluxColor.accent.color) : Color
+            .clear,
+            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .contentShape(Rectangle())
     }
 }
@@ -215,7 +221,7 @@ struct AskFileIconView: View {
                 Image(nsImage: shown).resizable().interpolation(.high).scaledToFit()
             } else {
                 Image(systemName: url.hasDirectoryPath ? "folder" : "doc")
-                    .resizable().scaledToFit().padding(3).foregroundStyle(StudioTheme.textTertiary)
+                    .resizable().scaledToFit().padding(3).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: thumbnail ? 4 : 0, style: .continuous))

@@ -21,7 +21,7 @@ struct AskBudgetView: View {
         VStack(alignment: .leading, spacing: 7) {
             Text(L("ask.budget.title")).font(.system(size: 12, weight: .semibold))
             Text(L(budget.metering == "client_reported" ? "ask.budget.client" : "ask.budget.estimate"))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
             Text(L("ask.budget.tokens", budget.actual.tokens, budget.occupied.tokens, budget.limits.tokens))
             Text(L("ask.budget.web", budget.occupied.webRequests, budget.limits.webRequests))
             if budget.pending > 0 {
@@ -29,13 +29,13 @@ struct AskBudgetView: View {
             }
             if let reason = budget
                 .stopReason {
-                Text(L("ask.budget.stopped", L(Self.reasonKey(reason)))).foregroundStyle(StudioTheme.warning)
+                Text(L("ask.budget.stopped", L(Self.reasonKey(reason)))).foregroundStyle(TypefluxColor.warning.color)
             }
         }
         .font(.system(size: 11))
-        .foregroundStyle(StudioTheme.textPrimary)
+        .foregroundStyle(TypefluxColor.label.color)
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AskTheme.panelCard, in: RoundedRectangle(cornerRadius: 10))
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 10))
     }
 }

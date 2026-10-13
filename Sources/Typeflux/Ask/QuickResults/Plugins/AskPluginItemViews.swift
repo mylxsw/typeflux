@@ -69,7 +69,7 @@ struct AskPluginItemIcon: View {
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: filled, secondary: true))
                     .frame(width: 28, height: 28)
-                    .background(filled ? Color.clear : AskTheme.hoverFill,
+                    .background(filled ? Color.clear : TypefluxColor.label.color.opacity(0.06),
                                 in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
         }

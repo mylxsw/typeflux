@@ -14,18 +14,18 @@ struct AskConversationOrb: View {
 
     static let period: TimeInterval = 8
     static let colors: [Color] = [
-        StudioTheme.dynamic(light: NSColor(srgbRed: 91 / 255, green: 141 / 255, blue: 239 / 255, alpha: 1),
-                            dark: NSColor(srgbRed: 0.18, green: 0.42, blue: 1, alpha: 1)),
-        StudioTheme.dynamic(light: NSColor(srgbRed: 79 / 255, green: 70 / 255, blue: 229 / 255, alpha: 1),
-                            dark: NSColor(srgbRed: 0.55, green: 0.36, blue: 0.96, alpha: 1)),
-        StudioTheme.dynamic(light: NSColor(srgbRed: 55 / 255, green: 48 / 255, blue: 163 / 255, alpha: 1),
-                            dark: NSColor(srgbRed: 1, green: 0.30, blue: 0.55, alpha: 1)),
-        StudioTheme.dynamic(light: NSColor(srgbRed: 79 / 255, green: 70 / 255, blue: 229 / 255, alpha: 1),
-                            dark: NSColor(srgbRed: 1, green: 0.70, blue: 0.28, alpha: 1)),
-        StudioTheme.dynamic(light: NSColor(srgbRed: 91 / 255, green: 141 / 255, blue: 239 / 255, alpha: 1),
-                            dark: NSColor(srgbRed: 0.18, green: 0.90, blue: 0.84, alpha: 1)),
-        StudioTheme.dynamic(light: NSColor(srgbRed: 91 / 255, green: 141 / 255, blue: 239 / 255, alpha: 1),
-                            dark: NSColor(srgbRed: 0.18, green: 0.42, blue: 1, alpha: 1))
+        LegacyStudioPalette.dynamic(light: NSColor(srgbRed: 91 / 255, green: 141 / 255, blue: 239 / 255, alpha: 1),
+                                    dark: NSColor(srgbRed: 0.18, green: 0.42, blue: 1, alpha: 1)),
+        LegacyStudioPalette.dynamic(light: NSColor(srgbRed: 79 / 255, green: 70 / 255, blue: 229 / 255, alpha: 1),
+                                    dark: NSColor(srgbRed: 0.55, green: 0.36, blue: 0.96, alpha: 1)),
+        LegacyStudioPalette.dynamic(light: NSColor(srgbRed: 55 / 255, green: 48 / 255, blue: 163 / 255, alpha: 1),
+                                    dark: NSColor(srgbRed: 1, green: 0.30, blue: 0.55, alpha: 1)),
+        LegacyStudioPalette.dynamic(light: NSColor(srgbRed: 79 / 255, green: 70 / 255, blue: 229 / 255, alpha: 1),
+                                    dark: NSColor(srgbRed: 1, green: 0.70, blue: 0.28, alpha: 1)),
+        LegacyStudioPalette.dynamic(light: NSColor(srgbRed: 91 / 255, green: 141 / 255, blue: 239 / 255, alpha: 1),
+                                    dark: NSColor(srgbRed: 0.18, green: 0.90, blue: 0.84, alpha: 1)),
+        LegacyStudioPalette.dynamic(light: NSColor(srgbRed: 91 / 255, green: 141 / 255, blue: 239 / 255, alpha: 1),
+                                    dark: NSColor(srgbRed: 0.18, green: 0.42, blue: 1, alpha: 1))
     ]
     /// How far the outline strays from a circle, as a share of the radius.
     static let calmWobble = 0.07

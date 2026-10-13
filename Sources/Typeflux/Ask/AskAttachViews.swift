@@ -15,7 +15,7 @@ struct AskAttachButton: View {
         Button { expanded.toggle() } label: {
             Image(systemName: "plus")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(hovering || expanded ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .foregroundStyle(hovering || expanded ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color)
                 .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
                 .contentShape(Circle())
         }
@@ -33,13 +33,14 @@ struct AskAttachButton: View {
                                  expanded = false
                                  model.restoreCapturedContent(kind, launcher: launcher)
                              }, choose: { choice in
-                expanded = false
-                switch choice {
-                case .files: model.pickAttachments(folders: false, launcher: launcher)
-                case .folder: model.pickAttachments(folders: true, launcher: launcher)
-                case .clipboard: model.addAttachments(AskAttachmentSource.read(from: .general), launcher: launcher)
-                }
-            })
+                                 expanded = false
+                                 switch choice {
+                                 case .files: model.pickAttachments(folders: false, launcher: launcher)
+                                 case .folder: model.pickAttachments(folders: true, launcher: launcher)
+                                 case .clipboard: model.addAttachments(AskAttachmentSource.read(from: .general),
+                                                                       launcher: launcher)
+                                 }
+                             })
         }
         // ⌘U picks files directly, without opening the menu.
         .background {
@@ -126,8 +127,8 @@ struct AskAttachChoices: View {
                      _ choice: Choice, enabled: Bool = true) -> some View {
         AskPopoverRow(title: L(title), caption: L(caption), selected: false,
                       enabled: enabled, action: { choose(choice) }, accessory: {
-            Image(systemName: symbol).font(.system(size: 12, weight: .medium))
-        })
+                          Image(systemName: symbol).font(.system(size: 12, weight: .medium))
+                      })
     }
 }
 

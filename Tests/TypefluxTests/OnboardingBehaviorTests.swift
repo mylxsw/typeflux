@@ -17,11 +17,11 @@ struct OnboardingBehaviorTests {
                 try await RenderedUI.wait { model.appLanguage == .traditionalChinese }
                 #expect(SettingsStore(defaults: settings.defaults).appLanguage == .traditionalChinese)
                 #expect(AppLocalization.shared.language == .traditionalChinese)
-                let next = try RenderedUI.button(L("onboarding.action.continue").uppercased(), in: host)
+                let next = try RenderedUI.button(L("onboarding.action.continue"), in: host)
                 #expect(window.frame.contains(next.frame))
                 try next.press()
                 try await RenderedUI.wait { model.currentStep == .account }
-                try await RenderedUI.wait { RenderedUI.contains(L("onboarding.account.skip").uppercased(), in: host) }
+                try await RenderedUI.wait { RenderedUI.contains(L("onboarding.account.skip"), in: host) }
                 try RenderedUI.button(L("onboarding.action.back"), in: host).press()
                 try await RenderedUI.wait { model.currentStep == .language }
                 #expect(model.appLanguage == .traditionalChinese)
@@ -36,8 +36,8 @@ struct OnboardingBehaviorTests {
             let model = OnboardingViewModel(settingsStore: settings, onComplete: { completions += 1 })
             model.currentStep = .account
             try await RenderedUI.withWindow(OnboardingView(viewModel: model, appearanceMode: .dark)) { _, host in
-                try await RenderedUI.wait { RenderedUI.contains(L("onboarding.account.skip").uppercased(), in: host) }
-                try RenderedUI.button(L("onboarding.account.skip").uppercased(), in: host).press()
+                try await RenderedUI.wait { RenderedUI.contains(L("onboarding.account.skip"), in: host) }
+                try RenderedUI.button(L("onboarding.account.skip"), in: host).press()
                 try await RenderedUI.wait { model.currentStep == .stt }
                 #expect(!model.useCloudAccountModels)
                 #expect(model.visibleSteps == [.language, .account, .stt, .llm, .permissions, .shortcuts])
@@ -58,7 +58,7 @@ struct OnboardingBehaviorTests {
             try await RenderedUI.withWindow(OnboardingView(viewModel: model, appearanceMode: .light)) { window, host in
                 try await RenderedUI.wait { RenderedUI.contains(L("settings.models.whisper.endpoint"), in: host) }
                 #expect(RenderedUI.contains(L("common.apiKey"), in: host))
-                try RenderedUI.button(L("onboarding.action.continue").uppercased(), in: host).press()
+                try RenderedUI.button(L("onboarding.action.continue"), in: host).press()
                 try await RenderedUI.wait { window.attachedSheet != nil }
                 #expect(model.currentStep == .stt)
                 #expect(model.showIncompleteSTTConfigurationAlert)
@@ -66,7 +66,7 @@ struct OnboardingBehaviorTests {
                 try RenderedUI.button(L("common.ok"), in: sheet).press()
                 try await RenderedUI.wait { window.attachedSheet == nil }
                 model.whisperAPIKey = "fixture-key"
-                try RenderedUI.button(L("onboarding.action.continue").uppercased(), in: host).press()
+                try RenderedUI.button(L("onboarding.action.continue"), in: host).press()
                 try await RenderedUI.wait { model.currentStep == .llm }
                 let reloaded = SettingsStore(defaults: settings.defaults)
                 #expect(reloaded.sttProvider == .whisperAPI)
@@ -102,7 +102,7 @@ struct OnboardingBehaviorTests {
                     model.selectLLMRemoteProvider(.openAI)
                     model.llmAPIKey = ""
                     try await RenderedUI.wait { RenderedUI.contains(L("common.apiKey"), in: host) }
-                    try RenderedUI.button(L("onboarding.action.continue").uppercased(), in: host).press()
+                    try RenderedUI.button(L("onboarding.action.continue"), in: host).press()
                     try await RenderedUI.wait { window.attachedSheet != nil }
                     #expect(model.currentStep == .llm)
                     #expect(model.showIncompleteLLMConfigurationAlert)
@@ -158,13 +158,13 @@ struct OnboardingBehaviorTests {
                 try await RenderedUI.wait { RenderedUI.contains("Fixture missing microphone", in: host) }
                 #expect(RenderedUI.contains("Fixture speech ready", in: host))
                 try RenderedUI.snapshot(host, name: "onboarding-permissions")
-                try RenderedUI.button(L("onboarding.action.skip").uppercased(), in: host).press()
+                try RenderedUI.button(L("onboarding.action.skip"), in: host).press()
                 try await RenderedUI.wait { model.currentStep == .shortcuts }
                 #expect(!settings.isOnboardingCompleted)
                 #expect(completions == 0)
                 try await RenderedUI
-                    .wait { RenderedUI.contains(L("onboarding.action.getStarted").uppercased(), in: host) }
-                let finish = try RenderedUI.button(L("onboarding.action.getStarted").uppercased(), in: host)
+                    .wait { RenderedUI.contains(L("onboarding.action.getStarted"), in: host) }
+                let finish = try RenderedUI.button(L("onboarding.action.getStarted"), in: host)
                 #expect(window.frame.contains(finish.frame))
                 try finish.press()
                 try await RenderedUI.wait { settings.isOnboardingCompleted }

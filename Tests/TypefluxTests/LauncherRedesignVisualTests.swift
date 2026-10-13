@@ -43,7 +43,7 @@ struct LauncherRedesignVisualTests {
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: light ? .aqua : .darkAqua)
         let hosting = NSHostingView(rootView: view.frame(width: size.width, height: size.height)
-            .background(StudioTheme.windowBackground))
+            .background(TypefluxColor.windowBackground.color))
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
         window.orderFront(nil)
@@ -283,8 +283,8 @@ struct LauncherRedesignVisualTests {
             )
             // The settings window at its default size, sidebar and pane list included.
             try await render(StudioView(viewModel: viewModel, launcherPane: .keywords),
-                             size: NSSize(width: StudioTheme.Layout.settingsWindowWidth,
-                                          height: StudioTheme.Layout.settingsWindowHeight),
+                             size: NSSize(width: StudioWindowMetrics.settingsWindowWidth,
+                                          height: StudioWindowMetrics.settingsWindowHeight),
                              name: "gul229-studio-kw-list.png")
         }
     }

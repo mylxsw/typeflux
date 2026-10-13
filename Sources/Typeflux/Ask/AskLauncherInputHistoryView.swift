@@ -3,6 +3,7 @@ import TypefluxUI
 
 /// Replaces the launcher's results; recall fills the editor and always searches again.
 struct AskLauncherInputHistoryView: View {
+    @Environment(\.interfaceStyle) private var style
     @ObservedObject var model: AskConversationModel
     @ObservedObject var store: AskLauncherInputHistoryStore
     @State private var confirmingClear = false
@@ -31,9 +32,9 @@ struct AskLauncherInputHistoryView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "clock.arrow.circlepath").font(.title)
                     Text(L(!store.enabled ? "ask.inputHistory.disabled" : model.launcherDraft.hasText
-                           ? "ask.inputHistory.noMatches" : "ask.inputHistory.empty"))
+                            ? "ask.inputHistory.noMatches" : "ask.inputHistory.empty"))
                     Text(L(!store.enabled ? "ask.inputHistory.disabled.detail" : model.launcherDraft.hasText
-                           ? "ask.inputHistory.noMatches.detail" : "ask.inputHistory.empty.detail"))
+                            ? "ask.inputHistory.noMatches.detail" : "ask.inputHistory.empty.detail"))
                         .font(.subheadline)
                 }
                 .foregroundStyle(TypefluxColor.secondaryLabel.color)
@@ -76,7 +77,7 @@ struct AskLauncherInputHistoryView: View {
                         .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: selected))
                         .padding(.horizontal, 6).padding(.vertical, 3)
                         .background(TypefluxColor.controlBackground.color.opacity(0.2),
-                                    in: RoundedRectangle(cornerRadius: 5))
+                                    in: RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: style)))
                 }
                 Text(displayText(entry)).font(.body).lineLimit(1)
                     .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: selected))

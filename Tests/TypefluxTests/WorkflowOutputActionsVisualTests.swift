@@ -44,7 +44,7 @@ struct WorkflowOutputActionsVisualTests {
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: light ? .aqua : .darkAqua)
         let hosting = NSHostingView(rootView: view.frame(width: size.width, height: size.height)
-            .background(StudioTheme.windowBackground))
+            .background(TypefluxColor.windowBackground.color))
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
         window.orderFront(nil)

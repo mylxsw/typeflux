@@ -23,16 +23,9 @@ struct HistorySettingsPage: View {
                     ForEach(viewModel.groupedHistory) { section in
                         Section(section.id) {
                             ForEach(section.records) { record in
-                                TypefluxNavigationRow(record.previewText,
-                                                      systemImage: record.hasFailure ? "exclamationmark" : "waveform",
-                                                      color: record.hasFailure ? TypefluxColor.danger
-                                                          .color : .accentColor,
-                                                      detail: record.timestampText) {
+                                HistorySettingsNavigationRow(record: record, viewModel: viewModel) {
                                     selectedID = record.id
                                 }
-                                .lineLimit(2)
-                                .accessibilityIdentifier("history.open.\(record.id)")
-                                .contextMenu { HistorySettingsActions(record: record, viewModel: viewModel) }
                             }
                         }
                     }

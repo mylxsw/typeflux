@@ -15,16 +15,16 @@ struct StudioSidebarRowBackground: ViewModifier {
         if Self.usesRaisedBlock(selected: selected, dark: colorScheme == .dark) {
             let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
             content
-                .background(shape.fill(StudioTheme.sidebarSelection)
+                .background(shape.fill(TypefluxColor.selection.color.opacity(0.12))
                     .shadow(color: Color.black.opacity(0.06), radius: 0, x: 0, y: 1))
-                .overlay(shape.strokeBorder(StudioTheme.sidebarSelectionStroke, lineWidth: 1))
+                .overlay(shape.strokeBorder(TypefluxColor.separator.color, lineWidth: 1))
         } else {
             content.background {
                 if selected {
                     let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
                     if style.usesGlass {
-                        shape.fill(AskTheme.accent.opacity(0.18))
-                            .overlay(shape.strokeBorder(AskTheme.accent.opacity(0.4), lineWidth: 0.5))
+                        shape.fill(TypefluxColor.accent.color.opacity(0.18))
+                            .overlay(shape.strokeBorder(TypefluxColor.accent.color.opacity(0.4), lineWidth: 0.5))
                     } else {
                         shape.fill(AskClassic.selection)
                     }

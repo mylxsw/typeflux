@@ -54,9 +54,9 @@ struct ClipboardPreviewPane: View {
                 ClipboardThumbnailView(
                     url: entry.fileURLs.first, maxPixelSize: 520, placeholder: "doc", contentMode: .fit
                 )
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 300)
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .frame(maxWidth: .infinity)
+                .frame(height: 300)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 Text(entry.title)
                     .font(.system(size: 12.5, weight: .medium))
                     .lineLimit(2)
@@ -73,9 +73,9 @@ struct ClipboardPreviewPane: View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 10, verticalSpacing: 4) {
             ForEach(Self.detailRows(for: entry, info: info), id: \.label) { row in
                 GridRow {
-                    Text(row.label).foregroundStyle(StudioTheme.textSecondary.opacity(0.75))
+                    Text(row.label).foregroundStyle(TypefluxColor.secondaryLabel.color.opacity(0.75))
                     Text(row.value)
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .lineLimit(row.label == L("clipboard.preview.location") ? 3 : 1)
                         .truncationMode(.middle)
                         .textSelection(.enabled)

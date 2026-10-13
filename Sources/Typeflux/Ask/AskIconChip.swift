@@ -25,25 +25,25 @@ struct AskIconChip: View {
 
     var body: some View {
         chipControl
-        .onHover(perform: hover)
-        .onDisappear(perform: dismissCard)
-        .onChange(of: cardContent) { content in
-            if showingCard { showCard(content) } else if hovering { scheduleCard(content) }
-        }
-        .onChange(of: enabled) { if !$0 { hovering = false; dismissCard() } }
-        // The card is a click-through panel, not a popover: a popover swallowed
-        // the click meant for the chip. See AskHoverCardPresenter.
-        .background(AskHoverAnchor(holder: anchor))
-        .accessibilityElement(children: libraryTokens ? .contain : .ignore)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityLabel(item.title)
-        .accessibilityHint([item.sourceAppName.map { L("ask.context.selection.source", $0) },
-                            item.detail, item.hint].compactMap { $0 }.joined(separator: ", "))
-        .accessibilityAction {
-            dismissCard()
-            if let action { action() } else { explain() }
-        }
-        .accessibilityAction(named: L("ask.remove")) { if item.removable { onRemove?() } }
+            .onHover(perform: hover)
+            .onDisappear(perform: dismissCard)
+            .onChange(of: cardContent) { content in
+                if showingCard { showCard(content) } else if hovering { scheduleCard(content) }
+            }
+            .onChange(of: enabled) { if !$0 { hovering = false; dismissCard() } }
+            // The card is a click-through panel, not a popover: a popover swallowed
+            // the click meant for the chip. See AskHoverCardPresenter.
+            .background(AskHoverAnchor(holder: anchor))
+            .accessibilityElement(children: libraryTokens ? .contain : .ignore)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(item.title)
+            .accessibilityHint([item.sourceAppName.map { L("ask.context.selection.source", $0) },
+                                item.detail, item.hint].compactMap { $0 }.joined(separator: ", "))
+            .accessibilityAction {
+                dismissCard()
+                if let action { action() } else { explain() }
+            }
+            .accessibilityAction(named: L("ask.remove")) { if item.removable { onRemove?() } }
     }
 
     @ViewBuilder private var chipControl: some View {
@@ -69,11 +69,11 @@ struct AskIconChip: View {
                         onRemove()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 7, weight: .bold))
+                            .font(.system(.footnote, weight: .bold))
                             .foregroundStyle(Color.white)
                             .frame(width: 14, height: 14)
                             .background(Color(nsColor: .systemGray), in: Circle())
-                            .overlay(Circle().strokeBorder(AskTheme.composerSurface, lineWidth: 1.5))
+                            .overlay(Circle().strokeBorder(TypefluxColor.controlBackground.color, lineWidth: 1.5))
                     }
                     .buttonStyle(.plain)
                     // Mostly inside the chip, so reaching for it never ends the hover.
@@ -114,7 +114,7 @@ struct AskIconChip: View {
     private func showCard(_ content: CardContent) {
         guard enabled, let view = anchor.view else { return }
         AskHoverCardPresenter.shared.show(AskContextCard(items: [content.item], screenshot: content.screenshot),
-                                         owner: cardID, anchor: view)
+                                          owner: cardID, anchor: view)
         showingCard = true
     }
 

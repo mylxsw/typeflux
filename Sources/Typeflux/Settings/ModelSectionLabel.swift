@@ -11,7 +11,7 @@ struct ModelSectionLabel: View {
                 Text(detail).font(.body)
             }
         }
-        .foregroundStyle(StudioTheme.textTertiary)
+        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
         .padding(.horizontal, 4)
     }
 }

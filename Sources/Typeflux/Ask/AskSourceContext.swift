@@ -11,7 +11,7 @@ struct AskSourceRefreshButton: View {
         Button(action: action) {
             Image(systemName: "arrow.clockwise")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .frame(width: 24, height: 24)
                 .contentShape(Rectangle())
         }
@@ -58,14 +58,14 @@ struct AskSourceContextDetails: View {
                     }
                 }
                 Text(L("ask.context.source.metadataOnly"))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(size: 11)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 if draft.sourceOff == true {
                     Text(L("ask.context.source.excluded"))
-                        .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                        .font(.system(size: 11)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
             } else {
                 Text(L("ask.context.source.none"))
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(size: 12)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             if source != nil || refresh != nil {
                 HStack(spacing: 8) {
@@ -77,17 +77,17 @@ struct AskSourceContextDetails: View {
                     if source != nil {
                         let key = draft.sourceOff == true ? "ask.context.source.restore" : "ask.context.source.remove"
                         Button(L(key), action: toggleSource)
-                        .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
-                        .accessibilityIdentifier(key)
+                            .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                            .accessibilityIdentifier(key)
                     }
                 }
             }
             if let warning {
-                Text(warning).font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
+                Text(warning).font(.system(size: 11)).foregroundStyle(TypefluxColor.warning.color)
                     .accessibilityIdentifier("ask.context.refresh.warning")
             }
         }
-        .foregroundStyle(StudioTheme.textPrimary)
+        .foregroundStyle(TypefluxColor.label.color)
         .fixedSize(horizontal: false, vertical: true)
         .padding(16)
         .frame(width: 340)
@@ -106,7 +106,7 @@ struct AskSourceContextDetails: View {
 
     private func metadataRow(_ label: String, value: String) -> some View {
         GridRow(alignment: .top) {
-            Text(label).foregroundStyle(StudioTheme.textSecondary)
+            Text(label).foregroundStyle(TypefluxColor.secondaryLabel.color)
             Text(value).textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -128,8 +128,8 @@ struct AskSelectedTextDetails: View {
                 .font(.system(size: 13, weight: .semibold))
             if let source, !source.isEmpty {
                 Text(L("ask.context.selection.source", source)
-                     + (restored ? " · " + L("ask.context.source.previous") : ""))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                    + (restored ? " · " + L("ask.context.source.previous") : ""))
+                    .font(.system(size: 11)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             ScrollView {
                 Text(text).font(.system(size: 12))
@@ -138,7 +138,7 @@ struct AskSelectedTextDetails: View {
                     .padding(10)
             }
             .frame(maxHeight: 240)
-            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8))
+            .background(TypefluxColor.label.color.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
             HStack {
                 Spacer()
                 Button(L("ask.selection.remove"), action: onRemove)
@@ -149,7 +149,7 @@ struct AskSelectedTextDetails: View {
                     .accessibilityIdentifier("ask.context.selection.remove")
             }
         }
-        .foregroundStyle(StudioTheme.textPrimary)
+        .foregroundStyle(TypefluxColor.label.color)
         .padding(16)
         .frame(width: 360)
         .background(TypefluxColor.contentBackground.color)

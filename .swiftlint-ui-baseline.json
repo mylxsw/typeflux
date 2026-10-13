@@ -1,0 +1,2108 @@
+[
+  {
+    "file": "Sources/Typeflux/App/AskAnswerWindowController.swift",
+    "rule": "typeflux_literal_nscolor",
+    "match": "NSColor(calibratedRed:",
+    "count": 13
+  },
+  {
+    "file": "Sources/Typeflux/App/AskAnswerWindowController.swift",
+    "rule": "typeflux_literal_nscolor",
+    "match": "NSColor(calibratedWhite:",
+    "count": 5
+  },
+  {
+    "file": "Sources/Typeflux/App/AskAnswerWindowController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 1.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 14",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 9.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountCard.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountCard.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountFooter.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountFooter.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountFooter.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountFooter.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 9.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAccountFooter.swift",
+    "rule": "typeflux_literal_nscolor",
+    "match": "NSColor(calibratedWhite:",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskActivityViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskActivityViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskApprovalViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskApprovalViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 6
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskApprovalViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskApprovalViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskApprovalViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 15",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskApprovalViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 9",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskApprovalViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 14",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskApprovalViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAttachViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAttachViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 14",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAttachmentStrip.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 4",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskAttachmentStrip.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskCapturedContentFeedbackView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskClassicStyle.swift",
+    "rule": "typeflux_literal_nscolor",
+    "match": "NSColor(calibratedWhite:",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskComposerNotices.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskComposerNotices.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskContextChips.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskContextChips.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskContextChips.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskContextChips.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 15",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskContextChips.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 9",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskContextChips.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskConversationOrb.swift",
+    "rule": "typeflux_literal_nscolor",
+    "match": "NSColor(srgbRed:",
+    "count": 12
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskConversationViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskConversationViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 18",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskConversationViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 7",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskConversationViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: style.usesGlass ? 10",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 14",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskCreditPauseViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskCreditPauseViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskCreditPauseViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskCreditPauseViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskCreditPauseViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 14",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskCreditPauseViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 15",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskCreditPauseViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskCreditPauseViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 14",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 6
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 5
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 16",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 9",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: expands ? 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 3",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 5",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskDesign.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 7",
+    "count": 4
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskEffortPicker.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskImageRecoveryPicker.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskImageRecoveryPicker.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskImageRecoveryPicker.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 14",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskImageRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskImageRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskImageRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskImageRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 15",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskImageRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskImageRecoveryViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 4
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 14",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 6.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 8.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 4",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherContextToken.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 9",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherNumberShortcuts.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherNumberShortcuts.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 4",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherSuggestions.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherSuggestions.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherSuggestions.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherSuggestions.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 9",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLauncherVoiceViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLocalMode.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 5
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLocalMode.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLocalMode.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLocalMode.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLocalMode.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLocalMode.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 4
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskLocalMode.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskMessageProvenance.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskMessageProvenance.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskModelViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system( size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskModelViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskPermissionModeMenu.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskPlanList.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskPlanList.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskQueueViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskQueueViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskQueueViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 4
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskQueueViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskQueueViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 7",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskReferenceViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 9",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskSourceContext.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 5
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskSourceContext.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskSourceContext.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskSourceContext.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskSubmissionIssue.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskSubmissionIssue.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskUsageViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 2",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskVoiceButton.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 15",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskVoiceButton.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 2.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskWorkspaceChrome.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/AskWorkspaceChrome.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Budget/AskBudgetView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Budget/AskBudgetView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Budget/AskBudgetView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Project/AskProjectReviewView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Project/AskProjectReviewView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Project/AskProjectReviewView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Project/AskProjectTerminalCard.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Project/AskProjectTerminalCard.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 13",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: thumbnail ? 4",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 9",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginItemViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 5
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 4
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 28",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 7
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 7",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 9",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 25",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 27",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 32",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 9",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: card.translatedText == nil ? 22",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowActionsSummaryView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowActionsSummaryView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowActionsSummaryView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowNoticePanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system( size: 20",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 5
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 16",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 2",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 4",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 4
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 16",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 8",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 9",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 12",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 14",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/ResultWindow/AskResultWindowView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 4
+  },
+  {
+    "file": "Sources/Typeflux/Ask/ResultWindow/AskResultWindowView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/ResultWindow/AskResultWindowView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/ResultWindow/AskResultWindowView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/ResultWindow/AskResultWindowView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 7",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/ResultWindow/AskResultWindowView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 13
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 11
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 7
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13.5",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 14",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 15",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 8.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 9",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 12",
+    "count": 16
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 14",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 17",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 18",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 7",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 9",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardEntryPreview.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardEntryPreview.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardEntryPreview.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardEntryPreview.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 4",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardEntryPreview.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardInlineMedia.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardInlineMedia.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardInlineMedia.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardInlineMedia.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 14",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardInlineMedia.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 9",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardInlineMedia.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 7",
+    "count": 4
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: compact ? 6.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 4",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: compact ? 6",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardWaveformView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardWaveformView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Clipboard/ClipboardWaveformView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 7",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Dev/TypefluxControlGallerySection.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 11
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 14",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 15.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 17",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 19",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 30",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 9.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: compact ? 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_nscolor",
+    "match": "NSColor(calibratedRed:",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 11",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 14",
+    "count": 4
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 16",
+    "count": 5
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 2",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 22",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 24",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Overlay/OverlayController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: compact ? 14",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/Pin/ScreenshotPinController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/Pin/ScreenshotPinController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/Pin/ScreenshotPinController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 9",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 4
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 9
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 14",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 3",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 6
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 7",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotOverlayChromeView.swift",
+    "rule": "typeflux_literal_nscolor",
+    "match": "NSColor(srgbRed:",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotPermissionGuideController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotPermissionGuideController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotPermissionGuideController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotPermissionGuideController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 16",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotPermissionGuideController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 26",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotSensitiveInfoPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotSensitiveInfoPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotSensitiveInfoPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotSensitiveInfoPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotSensitiveInfoPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotSensitiveInfoPanel.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotSensitiveInfoPanel.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotSensitiveInfoPanel.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotToastController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotToastController.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 14",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/ScreenshotToastController.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureBar.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureBar.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureBar.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureBar.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 3
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureBar.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureBar.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureBar.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowRunDetails.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowRunDetails.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowRunDetails.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 17",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowRunDetails.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11.5",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 15",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 20",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/RecentInputMemoryManagementView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Settings/SettingsControls.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/SettingsControls.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/SettingsControls.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 12",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/SettingsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font( .system( size: 13",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/SettingsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/Settings/SettingsView.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/UI/MarkdownSwiftUIView.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 1.5",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/UI/SidebarAccountFooter.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 15",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/UI/SidebarAccountIdentity.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/UI/SidebarAccountIdentity.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 13",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/UI/SidebarAccountIdentity.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 11",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/UI/SidebarAccountIdentity.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 9",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/UI/StudioComponents.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 10",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/UI/StudioComponents.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 4",
+    "count": 1
+  },
+  {
+    "file": "Sources/Typeflux/UI/StudioSegmentedControl.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 6",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/UI/StudioSegmentedControl.swift",
+    "rule": "typeflux_literal_radius",
+    "match": "cornerRadius: 8",
+    "count": 2
+  },
+  {
+    "file": "Sources/Typeflux/Workflow/LocalModelDownloadAlertPresenter.swift",
+    "rule": "typeflux_literal_font",
+    "match": ".font(.system(size: 42",
+    "count": 1
+  }
+]

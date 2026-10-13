@@ -4,9 +4,9 @@ extension AskKeywordKind {
     /// The tile colour that tells the kinds apart in the list.
     var tint: Color {
         switch self {
-        case .translate: StudioTheme.accent
+        case .translate: TypefluxColor.accent.color
         case .prompt: Color.purple
-        case .web: StudioTheme.success
+        case .web: TypefluxColor.success.color
         case .files: Color.teal
         case .tabs: Color.orange
         case .bookmarks: Color.blue

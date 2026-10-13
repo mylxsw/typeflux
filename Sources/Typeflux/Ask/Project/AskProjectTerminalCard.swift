@@ -45,13 +45,13 @@ struct AskProjectTerminalCard: View {
                 Text(L("ask.terminal.exit", String(exit)))
             }
             if value.lostBytes > 0 {
-                Text(L("ask.terminal.lost", String(value.lostBytes))).foregroundStyle(StudioTheme.danger)
+                Text(L("ask.terminal.lost", String(value.lostBytes))).foregroundStyle(TypefluxColor.danger.color)
             }
             if value.truncated {
                 Text(L("ask.terminal.truncated"))
             }
             if value.status.persistenceFailed {
-                Text(L("ask.terminal.logFailed")).foregroundStyle(StudioTheme.danger)
+                Text(L("ask.terminal.logFailed")).foregroundStyle(TypefluxColor.danger.color)
             }
             ScrollView { Text(value.text).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -64,12 +64,12 @@ struct AskProjectTerminalCard: View {
                 }.disabled(value.status.state != .ready)
             }
             if let error {
-                Text(error).foregroundStyle(StudioTheme.danger)
+                Text(error).foregroundStyle(TypefluxColor.danger.color)
             }
         }
         .font(.system(size: 12))
         .padding(12)
-        .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 10))
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 10))
         .task {
             do {
                 repeat {
@@ -95,7 +95,7 @@ struct AskProjectTerminalCard: View {
                     }
                     AskDevelopmentWebView(preview: preview, error: $error)
                     if let error {
-                        Text(error).foregroundStyle(StudioTheme.danger)
+                        Text(error).foregroundStyle(TypefluxColor.danger.color)
                     }
                 }.padding(20).frame(width: 760, height: 560)
             }

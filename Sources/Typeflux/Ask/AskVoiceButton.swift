@@ -57,23 +57,23 @@ struct AskVoiceButton: NSViewRepresentable {
         var pressed = false
         var reduceMotion = false
 
-
         /// No circle behind the microphone: recording turns the icon into an
         /// accent stop square, hover brightens it.
         static func iconColor(phase: AskVoiceInput.Phase, hovered: Bool) -> Color {
-            if phase == .listening { return AskTheme.accent }
-            return hovered ? StudioTheme.textPrimary : StudioTheme.textSecondary
+            if phase == .listening { return TypefluxColor.accent.color }
+            return hovered ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color
         }
 
         var body: some View {
             ZStack {
                 if phase == .transcribing {
-                    Circle().stroke(AskTheme.border, lineWidth: 1.5).frame(width: 16, height: 16)
+                    Circle().stroke(TypefluxColor.separator.color, lineWidth: 1.5).frame(width: 16, height: 16)
                     TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { context in
                         Circle().trim(from: 0, to: 0.7)
-                            .stroke(AskTheme.accent, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                            .stroke(TypefluxColor.accent.color, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
                             .frame(width: 16, height: 16)
-                            .rotationEffect(.degrees(reduceMotion ? -90 : context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 0.9) * 400))
+                            .rotationEffect(.degrees(reduceMotion ? -90 : context.date.timeIntervalSinceReferenceDate
+                                    .truncatingRemainder(dividingBy: 0.9) * 400))
                     }
                 } else {
                     // Borderless like the other composer controls; the icon carries hover and recording.
@@ -136,7 +136,9 @@ struct AskVoiceButton: NSViewRepresentable {
         override func updateTrackingAreas() {
             super.updateTrackingAreas()
             if let hoverTracking { removeTrackingArea(hoverTracking) }
-            let tracking = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self)
+            let tracking = NSTrackingArea(rect: .zero,
+                                          options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+                                          owner: self)
             addTrackingArea(tracking)
             hoverTracking = tracking
         }
@@ -181,7 +183,8 @@ struct AskVoiceButton: NSViewRepresentable {
         override func mouseUp(with event: NSEvent) { finish(with: event) }
 
         private func finish(with event: NSEvent, outside: Bool = false) {
-            let inside = !outside && event.window === window && bounds.contains(convert(event.locationInWindow, from: nil))
+            let inside = !outside && event.window === window && bounds.contains(convert(event.locationInWindow,
+                                                                                        from: nil))
             voice?.releaseButton(inside: inside, at: event.timestamp)
             clearTracking()
         }

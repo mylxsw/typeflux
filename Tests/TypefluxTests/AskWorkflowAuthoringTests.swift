@@ -5,20 +5,24 @@ import Testing
 @Suite("Workflow authoring in Chat", .exclusiveUIState)
 @MainActor
 struct AskWorkflowAuthoringTests {
-    private func authoring(_ fixture: AskWorkflowFixture, owner: @escaping () -> String = { "alice" }) -> AskWorkflowAuthoringStore {
+    private func authoring(_ fixture: AskWorkflowFixture,
+                           owner: @escaping () -> String = { "alice" }) -> AskWorkflowAuthoringStore {
         .init(workflows: fixture.store, root: fixture.home.appendingPathComponent("Authoring"),
               staging: .init(root: fixture.home.appendingPathComponent("previews")), owner: owner)
     }
 
     private func proposal(_ session: AskWorkflowAuthoringSession, script: String = "print hello",
                           output: String = "text") -> AskWorkflowProposal {
-        let object = AskWorkflowFixture.inline(session.draft.manifest!.id, keyword: "wfchat", script: script, output: output)
+        let object = AskWorkflowFixture.inline(session.draft.manifest!.id, keyword: "wfchat", script: script,
+                                               output: output)
         return .init(summary: "Updated", manifestText: AskWorkflowDraft.format(object), files: [:], deletes: [])
     }
 
     private func call(_ name: String, _ args: [String: Any] = [:]) throws -> AskToolCall {
         .init(id: UUID().uuidString, function: .init(name: name,
-            arguments: String(decoding: try JSONSerialization.data(withJSONObject: args), as: UTF8.self)))
+                                                     arguments: String(decoding: try JSONSerialization
+                                                         .data(withJSONObject: args),
+                                                         as: UTF8.self)))
     }
 
     @Test func draftsPersistByOwnerAndConversationWithoutInstalling() throws {
@@ -103,7 +107,8 @@ struct AskWorkflowAuthoringTests {
         defer { session.close() }
         let png = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 16, height: 16), type: .png)
         _ = session.submit(proposal(session,
-            script: "print -r -- '\(png.base64EncodedString())' | /usr/bin/base64 -D > result.png; print result.png", output: "image"))
+                                    script: "print -r -- '\(png.base64EncodedString())' | /usr/bin/base64 -D > result.png; print result.png",
+                                    output: "image"))
         session.tester.searchPath = { "/bin:/usr/bin" }
         let results = try #require(await session.testLatestProposal([.init(query: "input")]))
         #expect(results.count == 1 && results[0].succeeded)
@@ -112,7 +117,8 @@ struct AskWorkflowAuthoringTests {
         #expect(fixture.store.workflows.isEmpty && !session.isRunning)
         #expect(preview.result.input.query == "input" && preview.manifest.output.display == .image)
         let image = AskWorkflowImage.resolve("result.png", folder: preview.folder,
-            cache: fixture.home.appendingPathComponent("images"), home: fixture.home.path)
+                                             cache: fixture.home.appendingPathComponent("images"),
+                                             home: fixture.home.path)
         guard case .success = image else { Issue.record("Preview image must remain readable"); return }
         let saved = try session.save()
         #expect(!FileManager.default.fileExists(atPath: saved.folder.appendingPathComponent("result.png").path))
@@ -159,8 +165,9 @@ struct AskWorkflowAuthoringTests {
 
     @Test func toolsAreDiscoverableScopedAndExecutionRequiresFreshApproval() async throws {
         let fixture = try AskWorkflowFixture()
-        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: fixture.settings.defaults)),
-                                  settings: fixture.settings, owner: { "alice" })
+        let tools =
+            AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: fixture.settings.defaults)),
+                          settings: fixture.settings, owner: { "alice" })
         let authoring = authoring(fixture)
         tools.workflowAuthoring = authoring
         #expect(tools.workflowAuthoringEnabled)
@@ -173,14 +180,15 @@ struct AskWorkflowAuthoringTests {
         _ = try await tools.execute(call("workflow_start", ["name": "Unique lines"]), conversationId: "c")
         let session = try #require(authoring.session("c"))
         let object = AskWorkflowFixture.inline(session.draft.manifest!.id, keyword: "wfchat", script: "print hello")
-        let output = try await tools.execute(call("workflow_propose", ["summary": "First", "manifest": object]), conversationId: "c")
+        let output = try await tools.execute(call("workflow_propose", ["summary": "First", "manifest": object]),
+                                             conversationId: "c")
         #expect(!output.isError && fixture.store.workflows.isEmpty)
         let test = try call("workflow_test", ["inputs": [["query": ""]]])
         #expect(tools.risk(of: test) == .destructive)
         #expect(tools.risk(of: read) == .read)
         for name in AskLocalTools.workflowChatNames {
-            #expect(AskTheme.toolTitle(try call(name)) != name)
-            #expect(!AskTheme.toolTitle(try call(name)).hasPrefix("ask.tool."))
+            #expect(AskToolPresentation.toolTitle(try call(name)) != name)
+            #expect(!AskToolPresentation.toolTitle(try call(name)).hasPrefix("ask.tool."))
         }
         await #expect(throws: (any Error).self) { try await tools.execute(test, conversationId: "c") }
         let binding = try await tools.approvalBinding(for: test, conversationId: "c")
@@ -200,7 +208,8 @@ struct AskWorkflowAuthoringTests {
         let savedState = try JSONSerialization.jsonObject(with: Data(savedRead.content.utf8)) as? [String: Any]
         #expect(savedState?["isNew"] as? Bool == false)
         #expect(savedState?["hasUnsavedChanges"] as? Bool == false)
-        #expect(try await tools.execute(call("workflow_list"), conversationId: "c").content.contains("local.unique-lines"))
+        #expect(try await tools.execute(call("workflow_list"), conversationId: "c").content
+            .contains("local.unique-lines"))
         #expect(!(try await tools.execute(read, conversationId: "another").isError))
         fixture.settings.askDisabledSkills.insert(AskWorkflowAuthorSkill.name)
         #expect(!tools.workflowAuthoringEnabled)
@@ -211,15 +220,22 @@ struct AskWorkflowAuthoringTests {
 
     @Test func freshChatCanInspectEnvironmentAndLoadsAuthoringGuidanceWithoutOpeningDraft() async throws {
         let fixture = try AskWorkflowFixture()
-        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: fixture.settings.defaults)),
-                                  settings: fixture.settings, owner: { "alice" })
+        let tools =
+            AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: fixture.settings.defaults)),
+                          settings: fixture.settings, owner: { "alice" })
         let store = authoring(fixture)
         tools.workflowAuthoring = store
-        tools.workflowEnvironmentProbe = AskWorkflowEnvironmentProbe(searchPath: { "/bin:/usr/bin" }, osVersion: "macOS test")
-        let environment = try await tools.execute(call("workflow_environment", ["commands": ["curl", "python3", "not-installed-xyz"]]),
-                                                  conversationId: "fresh")
+        tools.workflowEnvironmentProbe = AskWorkflowEnvironmentProbe(searchPath: { "/bin:/usr/bin" },
+                                                                     osVersion: "macOS test")
+        let environment = try await tools.execute(call("workflow_environment", ["commands": [
+            "curl",
+            "python3",
+            "not-installed-xyz"
+        ]]),
+        conversationId: "fresh")
         #expect(!environment.isError)
-        let report = try #require(try JSONSerialization.jsonObject(with: Data(environment.content.utf8)) as? [String: Any])
+        let report = try #require(try JSONSerialization
+            .jsonObject(with: Data(environment.content.utf8)) as? [String: Any])
         #expect(report["hasDraft"] as? Bool == false)
         let commands = try #require(report["commands"] as? [String: Any])
         #expect(commands["curl"] as? String == "/usr/bin/curl")
@@ -248,16 +264,19 @@ struct AskWorkflowAuthoringTests {
         defer { session.close() }
         var object = AskWorkflowFixture.inline(session.draft.manifest!.id, keyword: "wfchat", script: "sleep 5")
         object["run"] = ["mode": "onSubmit", "timeoutSeconds": 1]
-        _ = session.submit(.init(summary: "Slow", manifestText: AskWorkflowDraft.format(object), files: [:], deletes: []))
+        _ = session.submit(.init(summary: "Slow", manifestText: AskWorkflowDraft.format(object), files: [:],
+                                 deletes: []))
         session.tester.searchPath = { "/bin:/usr/bin" }
         let result = try #require(await session.testLatestProposal([.init(query: "")])?.first)
         #expect(result.timedOut && !result.succeeded)
-        var truncated = AskWorkflowTestResult(input: .init(query: ""), exitCode: 0, stdout: "partial", stderr: "", duration: 0)
+        var truncated = AskWorkflowTestResult(input: .init(query: ""), exitCode: 0, stdout: "partial", stderr: "",
+                                              duration: 0)
         truncated.truncated = true
         #expect(!truncated.succeeded && truncated.takesFailureActions)
         object["command"] = ["runtime": "zsh", "inline": "print hello"]
         object["output"] = ["display": "none", "onSuccess": [["action": "copy", "value": "{output}"]]]
-        _ = session.submit(.init(summary: "Copy preview", manifestText: AskWorkflowDraft.format(object), files: [:], deletes: []))
+        _ = session.submit(.init(summary: "Copy preview", manifestText: AskWorkflowDraft.format(object), files: [:],
+                                 deletes: []))
         let actions = try #require(await session.testLatestProposal([.init(query: "")])?.first)
         #expect(actions.succeeded && !actions.actionSteps.isEmpty)
         #expect(actions.actionOutcomes.isEmpty)
@@ -269,7 +288,8 @@ struct AskWorkflowAuthoringTests {
         defer { session.close() }
         var object = AskWorkflowFixture.inline(session.draft.manifest!.id, keyword: "wfchat", script: "print hello")
         object["input"] = ["argument": "required", "selection": "never"]
-        _ = session.submit(.init(summary: "Input", manifestText: AskWorkflowDraft.format(object), files: [:], deletes: []))
+        _ = session.submit(.init(summary: "Input", manifestText: AskWorkflowDraft.format(object), files: [:],
+                                 deletes: []))
         session.tester.runner = AskWorkflowFailingRunner(error: AskLocalError.message("must not launch"))
         let result = try #require(await session.testLatestProposal([.init(query: "")])?.first)
         #expect(result.failure == L("ask.workflow.needsInput"))
@@ -308,15 +328,18 @@ struct AskWorkflowAuthoringTests {
     @Test func chatRunUsesWorkflowToolsAndApprovalJournal() async throws {
         let fixture = try AskWorkflowFixture()
         let api = AskTestAPI()
-        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: fixture.settings.defaults)),
-                                  settings: fixture.settings, owner: { "o" })
+        let tools =
+            AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: fixture.settings.defaults)),
+                          settings: fixture.settings, owner: { "o" })
         let authoring = authoring(fixture, owner: { "o" })
         tools.workflowAuthoring = authoring
         let model = AskConversationModel(api: api,
-            cache: try AskConversationCache(url: fixture.home.appendingPathComponent("chat.sqlite")),
-            tools: tools, capture: AskTestCapture(), deviceId: "device",
-            modelLibrary: AskModelLibrary(defaults: fixture.settings.defaults, automaticallyLoadsCatalog: false),
-            session: { ("o", "token") })
+                                         cache: try AskConversationCache(url: fixture.home
+                                             .appendingPathComponent("chat.sqlite")),
+                                         tools: tools, capture: AskTestCapture(), deviceId: "device",
+                                         modelLibrary: AskModelLibrary(defaults: fixture.settings.defaults,
+                                                                       automaticallyLoadsCatalog: false),
+                                         session: { ("o", "token") })
         model.workflowAuthoring = authoring
         defer { model.resetSession() }
         await api.setTool(try call("workflow_start", ["name": "Tool"]))
@@ -344,7 +367,6 @@ struct AskWorkflowAuthoringTests {
         #expect(authoring.session(id) == nil)
     }
 
-
     @Test func restoredInstalledDraftReloadsStoreAndPersistenceErrorsAreVisible() throws {
         let fixture = try AskWorkflowFixture()
         let registry = authoring(fixture)
@@ -353,7 +375,8 @@ struct AskWorkflowAuthoringTests {
         _ = try session.save()
         let freshStore = AskWorkflowStore(settings: fixture.settings, root: fixture.root)
         #expect(freshStore.workflows.isEmpty)
-        let restoredRegistry = AskWorkflowAuthoringStore(workflows: freshStore, root: registry.root, staging: registry.staging, owner: { "alice" })
+        let restoredRegistry = AskWorkflowAuthoringStore(workflows: freshStore, root: registry.root,
+                                                         staging: registry.staging, owner: { "alice" })
         let restored = try #require(restoredRegistry.session("c"))
         #expect(!freshStore.workflows.isEmpty && restored.problems.isEmpty)
         _ = try restored.save()
@@ -363,5 +386,4 @@ struct AskWorkflowAuthoringTests {
         #expect(restored.message != nil)
         #expect(throws: (any Error).self) { try restoredRegistry.start("new", name: "Other", workflowID: nil) }
     }
-
 }

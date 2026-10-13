@@ -72,7 +72,7 @@ struct StudioPersonaAppRulesDrawer: View {
             PersonaAppIcon(identifier: binding.appIdentifier, url: candidate?.appURL)
             VStack(alignment: .leading, spacing: 3) {
                 Text(candidate?.displayName ?? binding.appIdentifier).fontWeight(.medium).lineLimit(1)
-                Text(binding.appIdentifier).font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
+                Text(binding.appIdentifier).font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -103,7 +103,7 @@ struct StudioPersonaAppRulesDrawer: View {
                 Text(L("settings.personaAppBindings.addTitle")).fontWeight(.semibold)
                 Spacer()
                 Button(L("common.cancel")) { viewModel.isAddingPersonaAppRule = false }
-                    .buttonStyle(.plain).foregroundStyle(StudioTheme.textSecondary)
+                    .buttonStyle(.plain).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             PersonaSelectionMenu(viewModel: viewModel, selection: viewModel.personaAppBindingDraftPersonaID) {
                 viewModel.personaAppBindingDraftPersonaID = $0
@@ -118,7 +118,7 @@ struct StudioPersonaAppRulesDrawer: View {
             if loading {
                 ProgressView().frame(maxWidth: .infinity)
             } else if filteredCandidates.isEmpty {
-                Text(L("settings.personaAppBindings.picker.empty")).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("settings.personaAppBindings.picker.empty")).foregroundStyle(TypefluxColor.secondaryLabel.color)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -128,7 +128,7 @@ struct StudioPersonaAppRulesDrawer: View {
                 .frame(height: 180)
             }
             Divider()
-            Text(L("personas.redesign.manualApp")).foregroundStyle(StudioTheme.textSecondary)
+            Text(L("personas.redesign.manualApp")).foregroundStyle(TypefluxColor.secondaryLabel.color)
             HStack {
                 TextField(
                     L("settings.personaAppBindings.appIdentifierPlaceholder"),
@@ -140,7 +140,7 @@ struct StudioPersonaAppRulesDrawer: View {
                     .disabled(!viewModel.canSavePersonaAppBinding)
             }
             if viewModel.hasPersonaAppRule(viewModel.personaAppBindingDraftIdentifier) {
-                Text(L("personas.redesign.existingRule")).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("personas.redesign.existingRule")).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
         }
     }
@@ -156,14 +156,14 @@ struct StudioPersonaAppRulesDrawer: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(candidate.displayName).lineLimit(1)
                     Text(candidate.bundleIdentifier ?? candidate.preferredIdentifier)
-                        .font(.subheadline).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
+                        .font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color).lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 if exists {
                     Text(L("personas.redesign.existingRule")).font(.subheadline)
                 } else if candidate.isRunning {
                     Text(L("settings.personaAppBindings.picker.runningBadge")).font(.subheadline)
-                        .foregroundStyle(StudioTheme.success)
+                        .foregroundStyle(TypefluxColor.success.color)
                 }
             }
             .padding(.vertical, 8).contentShape(Rectangle())

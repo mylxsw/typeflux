@@ -242,7 +242,7 @@ struct AskAttachmentChip: View {
             if let actionLabel, let onAction {
                 Button(actionLabel, action: onAction)
                     .font(.subheadline).fontWeight(.medium)
-                    .foregroundStyle(StudioTheme.warning)
+                    .foregroundStyle(TypefluxColor.warning.color)
                     .buttonStyle(.plain)
                     .padding(.horizontal, 4)
                     .frame(height: 24)
@@ -267,15 +267,15 @@ struct AskAttachmentChip: View {
             if restored {
                 Text(L("ask.context.source.previous"))
                     .font(.footnote).fontWeight(.medium)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .padding(.horizontal, 4).padding(.vertical, 2)
-                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 4))
+                    .background(TypefluxColor.label.color.opacity(0.06), in: RoundedRectangle(cornerRadius: 4))
                     .fixedSize()
             }
             Text(item.title)
                 .font(.callout).fontWeight(.medium)
                 .foregroundStyle(item.style == .warning || item.style == .unavailable
-                                 ? StudioTheme.warning : StudioTheme.textPrimary)
+                    ? TypefluxColor.warning.color : TypefluxColor.label.color)
                 .lineLimit(1).truncationMode(sourceMetadata ? .tail : .middle)
                 .frame(maxWidth: sourceMetadata ? 160 : 240, alignment: .leading)
                 .fixedSize(horizontal: sourceMetadata, vertical: false)
@@ -283,12 +283,12 @@ struct AskAttachmentChip: View {
             if sourceMetadata || item.kind == .screenshot && (item.style == .warning || item.style == .unavailable),
                let detail = item.detail {
                 Text("· " + detail)
-                    .font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineLimit(1).truncationMode(.tail)
                     .frame(maxWidth: 180, alignment: .leading)
             }
             if let caption {
-                Text(caption).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+                Text(caption).font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .lineLimit(1).fixedSize()
             }
         }
@@ -305,14 +305,14 @@ struct AskAttachmentChip: View {
                 .frame(width: 32, height: 22)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(AskTheme.border, lineWidth: 0.5))
+                    .strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5))
         } else if let bundle = item.appBundleID, let icon = AskContextChips.appIcon(bundle) {
             Image(nsImage: icon).resizable().frame(width: 22, height: 22)
         } else {
             Image(systemName: item.systemImage)
                 .font(.footnote).fontWeight(.semibold)
                 .foregroundStyle(item.style == .warning || item.style == .unavailable
-                                 ? StudioTheme.warning : StudioTheme.textSecondary)
+                    ? TypefluxColor.warning.color : TypefluxColor.secondaryLabel.color)
                 .frame(width: 22, height: 22)
         }
     }

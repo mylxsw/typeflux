@@ -10,14 +10,14 @@ struct AskComposerTextView: NSViewRepresentable {
     @Environment(\.isEnabled) private var isEnabled
     var placeholder: String
     var placeholderSingleLine = false
-    var placeholderColor: Color = StudioTheme.textSecondary
+    var placeholderColor: Color = TypefluxColor.secondaryLabel.color
     var defersCompositionUpdates = false
     var usesKeyViewTabs = false
     var voice: AskVoiceInput? = nil
     var contextID: String = "launcher"
     /// Explicitly recalled input moves the caret even when its text equals the filter.
     var caretRequestID: UUID?
-    var fontSize: CGFloat = StudioTheme.Typography.bodyLarge
+    var fontSize: CGFloat = NSFont.preferredFont(forTextStyle: .body).pointSize
     var maximumHeight: CGFloat = 148
     var onSubmit: () -> Void
     var onDismiss: () -> Void = {}
@@ -197,7 +197,7 @@ struct AskComposerTextView: NSViewRepresentable {
         var placeholderSingleLine = false {
             didSet { if placeholderSingleLine != oldValue { needsDisplay = true; reportHeight() } }
         }
-        var placeholderColor = NSColor(StudioTheme.textSecondary) {
+        var placeholderColor = NSColor(TypefluxColor.secondaryLabel.color) {
             didSet { if placeholderColor != oldValue { needsDisplay = true } }
         }
 
@@ -209,7 +209,7 @@ struct AskComposerTextView: NSViewRepresentable {
             let paragraph = NSMutableParagraphStyle()
             paragraph.lineBreakMode = placeholderSingleLine ? .byTruncatingTail : .byWordWrapping
             return NSAttributedString(string: placeholder, attributes: [
-                .font: font ?? NSFont.systemFont(ofSize: StudioTheme.Typography.bodyLarge),
+                .font: font ?? NSFont.systemFont(ofSize: NSFont.preferredFont(forTextStyle: .body).pointSize),
                 .foregroundColor: placeholderColor,
                 .paragraphStyle: paragraph
             ])
@@ -257,7 +257,8 @@ struct AskComposerTextView: NSViewRepresentable {
         /// Hands files or images on `pasteboard` to `onAttach`; false leaves it to the text system.
         @discardableResult
         func attach(from pasteboard: NSPasteboard, textWins: Bool = true) -> Bool {
-            guard let onAttach, isEditable, AskAttachmentSource.canRead(from: pasteboard, textWins: textWins) else { return false }
+            guard let onAttach, isEditable,
+                  AskAttachmentSource.canRead(from: pasteboard, textWins: textWins) else { return false }
             let sources = AskAttachmentSource.read(from: pasteboard, textWins: textWins)
             guard !sources.isEmpty else { return false }
             onAttach(sources)
@@ -289,7 +290,10 @@ struct AskComposerTextView: NSViewRepresentable {
             super.acceptableDragTypes + [.fileURL, .png, .tiff]
         }
         private func attachesDrop(_ sender: NSDraggingInfo) -> Bool {
-            onAttach != nil && isEditable && AskAttachmentSource.canRead(from: sender.draggingPasteboard, textWins: false)
+            onAttach != nil && isEditable && AskAttachmentSource.canRead(
+                from: sender.draggingPasteboard,
+                textWins: false
+            )
         }
         override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
             guard attachesDrop(sender) else { return super.draggingEntered(sender) }
@@ -323,7 +327,10 @@ struct AskComposerTextView: NSViewRepresentable {
             guard let window else { cancelInteraction(); return }
             // Route eligible presses before AppKit/SwiftUI gesture arbitration or
             // NSTextView's selection tracker can claim the stream.
-            inputMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseDragged]) { [weak self] event in
+            inputMonitor = NSEvent.addLocalMonitorForEvents(matching: [
+                .leftMouseDown,
+                .leftMouseDragged
+            ]) { [weak self] event in
                 guard let self else { return event }
                 if event.type == .leftMouseDragged, self.mouseDownEvent != nil {
                     self.mouseDragged(with: event)
@@ -335,10 +342,18 @@ struct AskComposerTextView: NSViewRepresentable {
                 return nil
             }
             windowObservers = [
-                NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
+                NotificationCenter.default.addObserver(
+                    forName: NSWindow.didBecomeKeyNotification,
+                    object: window,
+                    queue: .main
+                ) { [weak self] _ in
                     self?.publishFocus()
                 },
-                NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
+                NotificationCenter.default.addObserver(
+                    forName: NSWindow.didResignKeyNotification,
+                    object: window,
+                    queue: .main
+                ) { [weak self] _ in
                     self?.cancelInteraction()
                     self?.clearFocus()
                 }
@@ -394,7 +409,8 @@ struct AskComposerTextView: NSViewRepresentable {
             mouseDownEvent = event
             mouseInsertionIndex = characterIndexForInsertion(at: convert(event.locationInWindow, from: nil))
             let selected = selectedRange()
-            if selected.length == 0 || mouseInsertionIndex < selected.location || mouseInsertionIndex > NSMaxRange(selected) {
+            if selected.length == 0 || mouseInsertionIndex < selected
+                .location || mouseInsertionIndex > NSMaxRange(selected) {
                 setSelectedRange(NSRange(location: mouseInsertionIndex, length: 0))
             }
             // Do not enter NSTextView's synchronous selection tracking loop while
@@ -414,7 +430,8 @@ struct AskComposerTextView: NSViewRepresentable {
                 self.finishMouseHold()
                 return nil
             }
-            globalReleaseMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] _ in self?.finishMouseHold() }
+            globalReleaseMonitor = NSEvent
+                .addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] _ in self?.finishMouseHold() }
         }
         override func mouseDragged(with event: NSEvent) {
             guard let down = mouseDownEvent else { super.mouseDragged(with: event); return }
@@ -425,7 +442,10 @@ struct AskComposerTextView: NSViewRepresentable {
             holdTimer?.invalidate(); holdTimer = nil
             mouseSelecting = true
             let index = characterIndexForInsertion(at: convert(event.locationInWindow, from: nil))
-            setSelectedRange(NSRange(location: min(mouseInsertionIndex, index), length: abs(index - mouseInsertionIndex)))
+            setSelectedRange(NSRange(
+                location: min(mouseInsertionIndex, index),
+                length: abs(index - mouseInsertionIndex)
+            ))
             autoscroll(with: event)
         }
         override func mouseUp(with event: NSEvent) {
@@ -468,7 +488,8 @@ struct AskComposerTextView: NSViewRepresentable {
             return true
         }
         static func isOpenChatShortcut(_ event: NSEvent) -> Bool {
-            event.type == .keyDown && event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command
+            event.type == .keyDown && event.modifierFlags
+                .intersection([.command, .option, .control, .shift]) == .command
                 && event.charactersIgnoringModifiers?.lowercased() == "o"
         }
         override func performKeyEquivalent(with event: NSEvent) -> Bool {
@@ -488,7 +509,8 @@ struct AskComposerTextView: NSViewRepresentable {
             return super.performKeyEquivalent(with: event)
         }
         static func isContextShortcut(_ event: NSEvent) -> Bool {
-            event.type == .keyDown && event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command
+            event.type == .keyDown && event.modifierFlags
+                .intersection([.command, .option, .control, .shift]) == .command
                 && event.charactersIgnoringModifiers?.lowercased() == "k"
         }
         /// → belongs to the editor unless the caret is past the last character.

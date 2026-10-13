@@ -4,7 +4,7 @@ import SwiftUI
 /// Compatibility colours for Classic surfaces, backed by the shared semantic palette.
 enum AskClassic {
     /// Opaque launchers need a quiet outline rather than a bright glass rim.
-    static let launcherBorder = StudioTheme.dynamic(
+    static let launcherBorder = LegacyStudioPalette.dynamic(
         light: NSColor(calibratedWhite: 0, alpha: 0.12),
         dark: NSColor(calibratedWhite: 1, alpha: 0.06)
     )
@@ -16,7 +16,6 @@ enum AskClassic {
     static let cardBorder = TypefluxColor.separator.color
     static let divider = TypefluxColor.separator.color
     static let selection = TypefluxColor.selection.color
-
 }
 
 /// Geometry that differs between the two interface styles. Everything not
@@ -55,7 +54,6 @@ struct AskStyleMetrics: Equatable {
              menuRowCorner: TypefluxRadius.menuHighlight.value(for: style),
              headerChipHeight: TypefluxControlHeight.toolbarItem.value(for: style))
     }
-
 }
 
 extension InterfaceStyle {

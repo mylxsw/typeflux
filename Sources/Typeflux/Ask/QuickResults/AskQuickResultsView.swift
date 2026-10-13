@@ -69,7 +69,7 @@ struct AskQuickResultsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1).padding(.horizontal, 12)
             if !results.listRows.isEmpty || results.notice != nil {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: Self.contentHeight(for: results) > visibleHeight) {
@@ -123,7 +123,8 @@ struct AskQuickResultsView: View {
 
     private func resultRow(_ row: AskQuickResults.Row, index: Int) -> some View {
         content(row, index: index, highlighted: index == results.highlighted)
-            .modifier(AskLauncherNumberBadge(number: actions == nil ? AskLauncherNumberShortcuts.number(at: index) : nil))
+            .modifier(AskLauncherNumberBadge(number: actions == nil ? AskLauncherNumberShortcuts
+                    .number(at: index) : nil))
             .onContinuousHover { phase in
                 if case .active = phase, actions == nil, pointer.moved(to: NSEvent.mouseLocation) {
                     onHighlight(index)
@@ -133,7 +134,7 @@ struct AskQuickResultsView: View {
 
     private func sectionTitle(_ section: Section) -> some View {
         Text(section == .calculation && results.calculation?.isNumericInput == true
-             ? L("ask.quick.numberConversions") : section.title)
+            ? L("ask.quick.numberConversions") : section.title)
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(TypefluxColor.secondaryLabel.color)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -147,7 +148,11 @@ struct AskQuickResultsView: View {
     @ViewBuilder private func content(_ row: AskQuickResults.Row, index: Int, highlighted: Bool) -> some View {
         switch row {
         case let .feature(featureIndex): featureRow(results.features[featureIndex], row: row, highlighted: highlighted)
-        case let .browser(browserIndex): browserRow(results.browserEntries[browserIndex], row: row, highlighted: highlighted)
+        case let .browser(browserIndex): browserRow(
+                results.browserEntries[browserIndex],
+                row: row,
+                highlighted: highlighted
+            )
         case .calculation: calculationRow(highlighted: highlighted)
         case let .format(formatIndex): formatRow(results.formats[formatIndex], index: index, highlighted: highlighted)
         case let .app(appIndex): appRow(results.apps[appIndex], row: row, highlighted: highlighted)
@@ -159,16 +164,22 @@ struct AskQuickResultsView: View {
     }
 
     private func browserRow(_ entry: AskBrowserSearchEntry, row: AskQuickResults.Row, highlighted: Bool) -> some View {
-        let icon = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.browser.bundleID).map(AskPluginItem.Icon.fileIcon)
-        return AskPluginItemRow(item: entry.item(settings: .init(), icon: icon), symbol: entry.kind == .tab ? "rectangle.on.rectangle" : "bookmark",
-                               selected: highlighted, emphasized: true, height: Self.appHeight) { onRun(row, true) }
+        let icon = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.browser.bundleID)
+            .map(AskPluginItem.Icon.fileIcon)
+        return AskPluginItemRow(
+            item: entry.item(settings: .init(), icon: icon),
+            symbol: entry.kind == .tab ? "rectangle.on.rectangle" : "bookmark",
+            selected: highlighted,
+            emphasized: true,
+            height: Self.appHeight
+        ) { onRun(row, true) }
     }
 
     private func featureRow(_ entry: AskLauncherSearchEntry, row: AskQuickResults.Row, highlighted: Bool) -> some View {
         Button { onRun(row, true) } label: {
             HStack(spacing: 12) {
                 tile(entry.symbol, tint: highlighted
-                     ? TypefluxSpotlightRow.labelColor(selected: true) : TypefluxColor.accent.color)
+                    ? TypefluxSpotlightRow.labelColor(selected: true) : TypefluxColor.accent.color)
                 Text(entry.title).font(.body)
                     .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted)).lineLimit(1)
                 if !entry.keyword.keyword.isEmpty {
@@ -177,7 +188,7 @@ struct AskQuickResultsView: View {
                 }
                 Spacer(minLength: 8)
                 Text(highlighted
-                     ? L(entry.command == nil ? "ask.plugin.prefix.enter" : "ask.system.run") + " ↩" : entry.detail)
+                    ? L(entry.command == nil ? "ask.plugin.prefix.enter" : "ask.system.run") + " ↩" : entry.detail)
                     .font(.subheadline)
                     .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                     .lineLimit(1)
@@ -367,8 +378,8 @@ struct AskQuickResultsView: View {
                     .help(format.kind == .base64 ? L("ask.quick.format.base64.alphabet") : format.kind.title)
                 Text(format.value).font(.callout.monospacedDigit())
                     .foregroundStyle(TypefluxSpotlightRow.labelColor(
-                                selected: highlighted, secondary: results.stale
-                            ))
+                        selected: highlighted, secondary: results.stale
+                    ))
                     .lineLimit(1).truncationMode(.tail)
                 Spacer(minLength: 8)
                 Image(systemName: done ? "checkmark" : "doc.on.doc").font(.subheadline)

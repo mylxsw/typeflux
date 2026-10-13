@@ -24,7 +24,7 @@ struct RecentInputMemoryManagementView: View {
         VStack(spacing: 0) {
             HStack {
                 Text(L("settings.advanced.recentInputMemory.manage"))
-                    .font(.studioDisplay(StudioTheme.Typography.subsectionTitle, weight: .semibold))
+                    .font(.system(.title3, weight: .semibold))
                 Spacer()
                 Button {
                     dismiss()
@@ -33,19 +33,19 @@ struct RecentInputMemoryManagementView: View {
                 }
                 .accessibilityLabel(L("settings.advanced.recentInputMemory.close"))
             }
-            .padding(StudioTheme.Spacing.large)
+            .padding(18)
 
             Text(L("memory.recentScope")).font(.caption).foregroundStyle(.secondary).padding(.horizontal)
             Text(L("memory.boundaries")).font(.caption).foregroundStyle(.secondary).padding(.horizontal)
             TextField(L("memory.search"), text: $query).padding()
             if let error = viewModel.memoryOperationError {
-                Text(error).font(.caption).foregroundStyle(StudioTheme.danger).padding(.horizontal)
+                Text(error).font(.caption).foregroundStyle(TypefluxColor.danger.color).padding(.horizontal)
             }
             Divider()
 
             HStack(spacing: 0) {
                 ScrollView {
-                    VStack(spacing: StudioTheme.Spacing.small) {
+                    VStack(spacing: 10) {
                         appFilterRow(
                             title: L("settings.advanced.globalSoul.manage"),
                             icon: "sparkles.rectangle.stack",
@@ -71,34 +71,34 @@ struct RecentInputMemoryManagementView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(StudioTheme.Spacing.large)
+                    .padding(18)
                 }
                 .frame(width: 210)
-                .background(StudioTheme.shellSurface)
+                .background(TypefluxColor.contentBackground.color)
 
                 Divider()
 
                 ScrollView {
                     if isGlobalSoulSelected {
                         globalSoulCard
-                            .padding(StudioTheme.Spacing.large)
+                            .padding(18)
                     } else if displayedApplications.isEmpty {
                         Text(L("settings.advanced.recentInputMemory.empty"))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .frame(maxWidth: .infinity, minHeight: 280)
                     } else {
-                        LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+                        LazyVStack(alignment: .leading, spacing: 14) {
                             ForEach(displayedApplications, id: \.self) { appIdentifier in
                                 appCard(for: appIdentifier)
                             }
                         }
-                        .padding(StudioTheme.Spacing.large)
+                        .padding(18)
                     }
                 }
             }
         }
         .frame(width: 820, height: 680)
-        .background(StudioTheme.modalSurface)
+        .background(TypefluxColor.windowBackground.color)
         .onAppear { viewModel.refreshRecentInputMemoryApplications() }
         .onReceive(NotificationCenter.default.publisher(for: .globalSoulDidChange)) { _ in
             viewModel.refreshRecentInputMemoryApplications()
@@ -120,7 +120,7 @@ struct RecentInputMemoryManagementView: View {
             isGlobalSoulSelected = selectsGlobalSoul
             selectedAppIdentifier = appIdentifier
         } label: {
-            HStack(spacing: StudioTheme.Spacing.small) {
+            HStack(spacing: 10) {
                 if let icon {
                     Image(systemName: icon)
                         .frame(width: 22)
@@ -137,12 +137,12 @@ struct RecentInputMemoryManagementView: View {
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 Text("\(count)")
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, StudioTheme.Spacing.medium)
-            .padding(.vertical, StudioTheme.Spacing.small)
-            .background(isSelected ? StudioTheme.selectionSurface : Color.clear)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(isSelected ? TypefluxColor.selection.color.opacity(0.12) : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .contentShape(RoundedRectangle(cornerRadius: 8))
         }
@@ -152,10 +152,10 @@ struct RecentInputMemoryManagementView: View {
 
     private var globalSoulCard: some View {
         StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+            VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Text(L("settings.advanced.globalSoul.manage"))
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                     Spacer()
                     Button(L("settings.advanced.globalSoul.delete"), role: .destructive) {
                         viewModel.deleteGlobalSoulMemory()
@@ -168,11 +168,11 @@ struct RecentInputMemoryManagementView: View {
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text(soul.updatedAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .font(.system(.subheadline))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 } else {
                     Text(L("settings.advanced.globalSoul.empty"))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
             }
         }
@@ -183,8 +183,8 @@ struct RecentInputMemoryManagementView: View {
             $0.appIdentifier == appIdentifier && (query.isEmpty || $0.text.localizedCaseInsensitiveContains(query))
         }
         return StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-                HStack(spacing: StudioTheme.Spacing.medium) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 14) {
                     if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: appIdentifier) {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path))
                             .resizable()
@@ -192,10 +192,10 @@ struct RecentInputMemoryManagementView: View {
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(displayName(for: appIdentifier))
-                            .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                            .font(.system(.body, weight: .semibold))
                         Text(appIdentifier)
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .font(.system(.subheadline))
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                     Spacer()
                 }
@@ -220,14 +220,14 @@ struct RecentInputMemoryManagementView: View {
 
                 if memories.isEmpty {
                     Text(L("settings.advanced.recentInputMemory.emptyApp"))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 } else {
                     ForEach(memories) { memory in
-                        HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
-                            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                        HStack(alignment: .top, spacing: 14) {
+                            VStack(alignment: .leading, spacing: 10) {
                                 Text(memory.recordedAt.formatted(date: .abbreviated, time: .shortened))
-                                    .font(.studioBody(StudioTheme.Typography.caption))
-                                    .foregroundStyle(StudioTheme.textSecondary)
+                                    .font(.system(.subheadline))
+                                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                                 Text(memory.text)
                                     .textSelection(.enabled)
                                     .frame(maxWidth: .infinity, alignment: .leading)

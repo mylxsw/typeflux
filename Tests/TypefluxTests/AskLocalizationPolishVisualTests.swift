@@ -47,7 +47,8 @@ struct AskLocalizationPolishVisualTests {
             let directoryOutput = try await prefix.run(directoryRequest, plan: directoryPlan)
             directoryDisplays.append(("directory-" + query, AskPluginDisplay(
                 hint: nil, title: prefix.title, symbol: prefix.symbol,
-                phase: .done(directoryPlan, directoryOutput), offersAskAI: false)))
+                phase: .done(directoryPlan, directoryOutput), offersAskAI: false
+            )))
         }
         for (theme, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for (name, display) in [("history", historyDisplay), ("sign-in", failureDisplay)] + directoryDisplays {
@@ -55,7 +56,7 @@ struct AskLocalizationPolishVisualTests {
                     AskPluginResultsView(display: display, question: "", onMain: {}, onAction: { _ in },
                                          onAskAI: {}, onHighlight: { _ in })
                     Text(AskPluginResultsView.hint(for: display)).font(.system(size: 11)).padding(12)
-                }.background(AskTheme.launcherSurface), size: NSSize(width: 680, height: 210),
+                }.background(LegacyAskPalette.launcherSurface), size: NSSize(width: 680, height: 210),
                 appearance: appearance, file: root.appendingPathComponent("\(name)-\(theme).png"))
             }
             let issue = AskSubmissionIssue(text: L("ask.local.modelRequired"), offersModels: true, offersSignIn: true)
@@ -71,14 +72,18 @@ struct AskLocalizationPolishVisualTests {
                     Text(mode.title + " · " + mode.detail).font(.system(size: 12))
                 }
                 AskCloudPromoCard(onSignIn: {}, onDismiss: {})
-            }.padding(16).background(AskTheme.launcherSurface), size: NSSize(width: 680, height: 360),
+            }.padding(16).background(LegacyAskPalette.launcherSurface), size: NSSize(width: 680, height: 360),
             appearance: appearance, file: root.appendingPathComponent("controls-\(theme).png"))
             try await render(AskUsagePanel(model: fixture.model, runId: .constant(nil), close: {})
                 .environment(\.askGlassMaterialOverride, .opaque), size: NSSize(width: 360, height: 300),
                 appearance: appearance, file: root.appendingPathComponent("usage-\(theme).png"))
-            try await render(AskComposer(model: fixture.model, launcher: false).padding(16).background(AskTheme.launcherSurface),
-                             size: NSSize(width: 760, height: 200), appearance: appearance,
-                             file: root.appendingPathComponent("composer-\(theme).png"))
+            try await render(
+                AskComposer(model: fixture.model, launcher: false).padding(16)
+                    .background(LegacyAskPalette.launcherSurface),
+                size: NSSize(width: 760, height: 200),
+                appearance: appearance,
+                file: root.appendingPathComponent("composer-\(theme).png")
+            )
         }
         session.deactivate()
     }
@@ -89,7 +94,7 @@ struct AskLocalizationPolishVisualTests {
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: appearance)
         let hosting = NSHostingView(rootView: view.frame(width: size.width, height: size.height, alignment: .top)
-            .background(AskTheme.launcherSurface))
+            .background(LegacyAskPalette.launcherSurface))
         hosting.sizingOptions = []
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
@@ -110,10 +115,16 @@ struct AskLocalizationPolishVisualTests {
             return [node] + (value(node, "accessibilityChildren") as? [NSObject] ?? []).flatMap(nodes)
         }
         let tree = (nodes(window) + nodes(hosting)).map { node in
-            ["accessibilityRole", "accessibilityIdentifier", "accessibilityLabel", "accessibilityValue", "accessibilityTitle"]
-                .reduce(into: [String: String]()) { fields, key in
-                    if let text = value(node, key) as? String { fields[key] = text }
-                }
+            [
+                "accessibilityRole",
+                "accessibilityIdentifier",
+                "accessibilityLabel",
+                "accessibilityValue",
+                "accessibilityTitle"
+            ]
+            .reduce(into: [String: String]()) { fields, key in
+                if let text = value(node, key) as? String { fields[key] = text }
+            }
         }.filter { !$0.isEmpty }
         try JSONSerialization.data(withJSONObject: tree, options: [.prettyPrinted, .sortedKeys])
             .write(to: file.deletingPathExtension().appendingPathExtension("ax.json"))

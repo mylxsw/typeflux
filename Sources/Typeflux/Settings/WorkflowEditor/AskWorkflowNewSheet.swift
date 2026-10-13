@@ -5,6 +5,8 @@ import SwiftUI
 /// or copy the open one. Keywords are checked as they are typed. While the
 /// assistant writes the workflow, its steps are listed here.
 struct AskWorkflowNewSheet: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     enum Mode: String, Identifiable, CaseIterable {
         case assistant, template, duplicate
         var id: String {
@@ -41,10 +43,10 @@ struct AskWorkflowNewSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(L("ask.workflow.editor.new.title")).font(.system(size: 15, weight: .semibold))
+                Text(L("ask.workflow.editor.new.title")).font(.system(.title3, weight: .semibold))
                 Text(mode == .assistant ? L("ask.workflow.editor.new.aiSubtitle") :
                     L("ask.workflow.editor.new.subtitle"))
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(.callout)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             if !generating {
                 modePicker
@@ -78,31 +80,13 @@ struct AskWorkflowNewSheet: View {
     }
 
     private var modePicker: some View {
-        HStack(spacing: 2) {
-            modeButton(.assistant, title: "✦ " + L("ask.workflow.editor.new.ai"))
-            modeButton(.template, title: L("ask.workflow.editor.new.template"))
+        TypefluxSegmentedControl(L("ask.workflow.editor.newTitle"), selection: $mode) {
+            Text(L("ask.workflow.editor.new.ai")).tag(Mode.assistant)
+            Text(L("ask.workflow.editor.new.template")).tag(Mode.template)
             if model.workflow != nil {
-                modeButton(.duplicate, title: L("ask.workflow.editor.new.duplicateShort"))
+                Text(L("ask.workflow.editor.new.duplicateShort")).tag(Mode.duplicate)
             }
         }
-        .padding(2)
-        .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 9))
-        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(StudioTheme.border))
-        .fixedSize()
-    }
-
-    private func modeButton(_ value: Mode, title: String) -> some View {
-        let selected = mode == value
-        return Button { mode = value } label: {
-            Text(title).font(.system(size: 12)).foregroundStyle(selected ? .white : StudioTheme.textSecondary)
-                .padding(.horizontal, 12).frame(height: 26)
-                .background(
-                    selected ? (value == .assistant ? AskWorkflowEditorStyle.assistant : AskTheme.accent) : .clear,
-                    in: RoundedRectangle(cornerRadius: 7)
-                )
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - With the assistant
@@ -110,10 +94,10 @@ struct AskWorkflowNewSheet: View {
     /// Describe it; the language and keyword are optional and tucked away.
     @ViewBuilder private var assistantFields: some View {
         if generating, !description.isEmpty {
-            Text(description).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary).lineLimit(2)
+            Text(description).font(.system(.callout)).foregroundStyle(TypefluxColor.secondaryLabel.color).lineLimit(2)
                 .padding(.leading, 10)
                 .overlay(alignment: .leading) {
-                    Rectangle().fill(AskWorkflowEditorStyle.assistant.opacity(0.6)).frame(width: 2)
+                    Rectangle().fill(TypefluxColor.accent.color.opacity(0.6)).frame(width: 2)
                 }
         }
         if generating {
@@ -124,20 +108,23 @@ struct AskWorkflowNewSheet: View {
                 result
             }
         } else {
-            TextEditor(text: $description).font(.system(size: 13)).frame(height: 96)
+            TextEditor(text: $description).font(.system(.body)).frame(height: 96)
                 .scrollContentBackground(.hidden).padding(6)
-                .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 11))
-                .overlay(RoundedRectangle(cornerRadius: 11)
-                    .strokeBorder(AskWorkflowEditorStyle.assistant.opacity(0.55)))
+                .background(
+                    TypefluxColor.controlBackground.color,
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle))
+                )
+                .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle))
+                    .strokeBorder(TypefluxColor.accent.color.opacity(0.55)))
                 .overlay(alignment: .topLeading) {
                     if description.isEmpty {
-                        Text(L("ask.workflow.editor.new.aiPlaceholder")).font(.system(size: 13))
-                            .foregroundStyle(StudioTheme.textTertiary).padding(11).allowsHitTesting(false)
+                        Text(L("ask.workflow.editor.new.aiPlaceholder")).font(.system(.body))
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color).padding(11).allowsHitTesting(false)
                     }
                 }
                 .accessibilityIdentifier("ask.workflow.editor.new.description")
             HStack(spacing: 6) {
-                Text(L("ask.workflow.editor.new.examples")).foregroundStyle(StudioTheme.textTertiary)
+                Text(L("ask.workflow.editor.new.examples")).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 ForEach(["markdown", "ip", "code"], id: \.self) { example in
                     Button(L("ask.workflow.editor.new.example." + example)) {
                         description = L("ask.workflow.editor.new.example." + example + ".text")
@@ -151,9 +138,9 @@ struct AskWorkflowNewSheet: View {
                     Label(L("ask.workflow.editor.new.options"),
                           systemImage: showsOptions ? "chevron.down" : "chevron.right")
                 }
-                .buttonStyle(.borderless).foregroundStyle(StudioTheme.textSecondary)
+                .buttonStyle(.borderless).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
-            .font(.system(size: 11.5))
+            .font(.system(.subheadline))
             if showsOptions {
                 options
             }
@@ -163,13 +150,13 @@ struct AskWorkflowNewSheet: View {
     private var options: some View {
         HStack(spacing: 16) {
             HStack(spacing: 6) {
-                Text(L("ask.workflow.trust.keywords")).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.workflow.trust.keywords")).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 TextField(L("ask.workflow.editor.new.keywordAuto"), text: $keyword).textFieldStyle(.roundedBorder)
-                    .font(.system(size: 12.5, design: .monospaced)).frame(width: 90)
+                    .font(.system(.callout, design: .monospaced)).frame(width: 90)
                 keywordStatus
             }
             HStack(spacing: 6) {
-                Text(L("ask.workflow.editor.new.language")).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.workflow.editor.new.language")).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 Picker("", selection: $runtime) {
                     Text(L("ask.workflow.editor.new.languageAuto")).tag(AskWorkflowRuntime?.none)
                     ForEach([AskWorkflowRuntime.python3, .node, .zsh], id: \.self) {
@@ -180,9 +167,8 @@ struct AskWorkflowNewSheet: View {
             }
             Spacer()
         }
-        .font(.system(size: 12))
+        .font(.system(.callout))
     }
-
 }
 
 extension AskWorkflowNewSheet {
@@ -191,10 +177,10 @@ extension AskWorkflowNewSheet {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 if let error = assistant.error {
-                    Image(systemName: "xmark.octagon").foregroundStyle(StudioTheme.danger)
-                    Text(error).foregroundStyle(StudioTheme.danger).lineLimit(3)
+                    Image(systemName: "xmark.octagon").foregroundStyle(TypefluxColor.danger.color)
+                    Text(error).foregroundStyle(TypefluxColor.danger.color).lineLimit(3)
                 } else if model.pendingRun != nil {
-                    Image(systemName: "exclamationmark.triangle").foregroundStyle(StudioTheme.warning)
+                    Image(systemName: "exclamationmark.triangle").foregroundStyle(TypefluxColor.warning.color)
                     Text(L("ask.workflow.editor.new.askRun"))
                 } else if assistant.isBusy {
                     ProgressView().controlSize(.small)
@@ -205,10 +191,10 @@ extension AskWorkflowNewSheet {
                 }
                 Spacer()
                 if let proposal = model.latestProposal {
-                    Text(versionText(proposal)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(versionText(proposal)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
-            .font(.system(size: 12.5))
+            .font(.system(.callout))
             if let run = model.pendingRun {
                 AskWorkflowRiskChips(risks: run.risks, new: Set(run.risks), showsAbsent: false)
                 HStack {
@@ -221,7 +207,7 @@ extension AskWorkflowNewSheet {
                     }
                     .accessibilityIdentifier("ask.workflow.assistant.preview")
                     Button(L("ask.workflow.assistant.approval.allow")) { model.resolvePendingRun(true) }
-                        .buttonStyle(.borderedProminent).tint(AskWorkflowEditorStyle.assistant)
+                        .buttonStyle(.borderedProminent).tint(TypefluxColor.accent.color)
                         .accessibilityIdentifier("ask.workflow.assistant.allow")
                 }
                 .controlSize(.small)
@@ -229,17 +215,20 @@ extension AskWorkflowNewSheet {
             DisclosureGroup(isExpanded: $showsSteps) {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(Array(steps.enumerated()), id: \.offset) { _, step in
-                        Label(step, systemImage: "checkmark.circle").foregroundStyle(StudioTheme.textSecondary)
+                        Label(step, systemImage: "checkmark.circle").foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                 }
-                .font(.system(size: 11.5)).padding(.top, 4).frame(maxWidth: .infinity, alignment: .leading)
+                .font(.system(.subheadline)).padding(.top, 4).frame(maxWidth: .infinity, alignment: .leading)
             } label: {
-                Text(L("ask.workflow.editor.new.details", steps.count)).font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(L("ask.workflow.editor.new.details", steps.count)).font(.system(.subheadline))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
         }
         .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-        .background(StudioTheme.controlSurface.opacity(0.5), in: RoundedRectangle(cornerRadius: 11))
+        .background(
+            TypefluxColor.controlBackground.color.opacity(0.5),
+            in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle))
+        )
     }
 
     /// The finished workflow: what to type, what the assistant said, how a test run
@@ -253,12 +242,13 @@ extension AskWorkflowNewSheet {
         let test = tests.last { $0.succeeded && !$0.input.query.isEmpty } ?? tests.last { $0.succeeded } ?? tests.last
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(StudioTheme.success)
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(TypefluxColor.success.color)
                 Text(L("ask.workflow.editor.new.doneTitle", manifest?.name ?? keyword))
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                 Spacer()
                 if let proposal = model.latestProposal {
-                    Text(versionText(proposal)).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(versionText(proposal)).font(.system(.subheadline))
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
             if !keyword.isEmpty {
@@ -267,13 +257,13 @@ extension AskWorkflowNewSheet {
                     AskWorkflowChip(text: keyword, style: .token)
                     Text(L("ask.workflow.editor.new.usage.after"))
                 }
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(.callout)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             if let test, let manifest {
                 AskWorkflowLauncherPreview(name: manifest.name, keyword: keyword, query: test.input.query,
                                            result: test, output: manifest.output, timeout: manifest.timeout)
             } else if let reply = lastReply {
-                Text(reply).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(5)
+                Text(reply).font(.system(.callout)).foregroundStyle(TypefluxColor.secondaryLabel.color).lineLimit(5)
             }
             if let risks = model.latestProposal?.risks, !risks.isEmpty {
                 AskWorkflowRiskChips(risks: risks.sorted(), new: [], showsAbsent: false)
@@ -364,22 +354,25 @@ extension AskWorkflowNewSheet {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     AskWorkflowBadge(text: tile.runtime, color: .blue)
-                    Text(tile.title).font(.system(size: 12.5, weight: .semibold)).lineLimit(1)
+                    Text(tile.title).font(.system(.callout, weight: .semibold)).lineLimit(1)
                 }
-                Text(tile.detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text(tile.detail).font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .lineLimit(2).frame(height: 30, alignment: .topLeading)
-                Text(tile.code).font(.system(size: 10.5, design: .monospaced))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(tile.code).font(.system(.footnote, design: .monospaced))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineLimit(2).frame(maxWidth: .infinity, minHeight: 34, alignment: .topLeading)
-                    .padding(7).background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
+                    .padding(7).background(
+                        Color(nsColor: .textBackgroundColor),
+                        in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle))
+                    )
             }
             .padding(11)
             .background(
-                selected ? StudioTheme.accentSoft : StudioTheme.controlSurface,
-                in: RoundedRectangle(cornerRadius: 11)
+                selected ? TypefluxColor.accent.color.opacity(0.12) : TypefluxColor.controlBackground.color,
+                in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle))
             )
-            .overlay(RoundedRectangle(cornerRadius: 11)
-                .strokeBorder(selected ? AskTheme.accent.opacity(0.75) : StudioTheme.border))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle))
+                .strokeBorder(selected ? TypefluxColor.accent.color.opacity(0.75) : TypefluxColor.separator.color))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -392,7 +385,7 @@ extension AskWorkflowNewSheet {
             field(L("ask.workflow.editor.name"), text: $name, placeholder: L("ask.workflow.editor.new.namePlaceholder"))
             VStack(alignment: .leading, spacing: 4) {
                 field(L("ask.workflow.trust.keywords"), text: $keyword, placeholder: "fx", mono: true)
-                keywordStatus.font(.system(size: 11))
+                keywordStatus.font(.system(.subheadline))
             }
             .frame(width: 160)
             field(L("ask.workflow.editor.new.id"), text: Binding(get: { id }, set: { id = $0; editedID = true }),
@@ -403,10 +396,10 @@ extension AskWorkflowNewSheet {
     @ViewBuilder private var keywordStatus: some View {
         if !keyword.isEmpty {
             if let problem = keywordProblem {
-                Text(problem).foregroundStyle(StudioTheme.danger).lineLimit(2)
+                Text(problem).foregroundStyle(TypefluxColor.danger.color).lineLimit(2)
             } else {
                 Label(L("ask.workflow.editor.new.keywordFree"), systemImage: "checkmark")
-                    .foregroundStyle(StudioTheme.success)
+                    .foregroundStyle(TypefluxColor.success.color)
             }
         }
     }
@@ -414,7 +407,7 @@ extension AskWorkflowNewSheet {
     private var footer: some View {
         HStack(alignment: .center) {
             if !generating {
-                Text(footnote).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text(footnote).font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
@@ -431,7 +424,7 @@ extension AskWorkflowNewSheet {
                         }
                     }
                     .keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
-                    .tint(AskWorkflowEditorStyle.assistant)
+                    .tint(TypefluxColor.accent.color)
                     .accessibilityIdentifier("ask.workflow.editor.new.save")
                 } else {
                     Button(L("ask.workflow.editor.close")) { done() }
@@ -444,7 +437,7 @@ extension AskWorkflowNewSheet {
                         create()
                     }
                     .keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
-                    .tint(mode == .assistant ? AskWorkflowEditorStyle.assistant : AskTheme.accent)
+                    .tint(mode == .assistant ? TypefluxColor.accent.color : TypefluxColor.accent.color)
                     .disabled(!canCreate)
                     .accessibilityIdentifier("ask.workflow.editor.new.create")
             }
@@ -461,9 +454,9 @@ extension AskWorkflowNewSheet {
 
     private func field(_ title: String, text: Binding<String>, placeholder: String, mono: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+            Text(title).font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             TextField(placeholder, text: text).textFieldStyle(.roundedBorder)
-                .font(mono ? .system(size: 12.5, design: .monospaced) : .system(size: 12.5))
+                .font(mono ? .system(.callout, design: .monospaced) : .system(.callout))
         }
     }
 

@@ -58,7 +58,7 @@ struct AgentSearchForm: View {
                 if !missing.isEmpty {
                     Text(L("agent.search.missing",
                            missing.map { $0.title(for: provider) }.joined(separator: L("agent.listSeparator"))))
-                        .font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+                        .font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
             if let result = connection.result {
@@ -68,7 +68,7 @@ struct AgentSearchForm: View {
                     Text(result).fixedSize(horizontal: false, vertical: true)
                 }
                 .font(.subheadline)
-                .foregroundStyle(succeeded ? StudioTheme.success : StudioTheme.danger)
+                .foregroundStyle(succeeded ? TypefluxColor.success.color : TypefluxColor.danger.color)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -81,7 +81,7 @@ struct AgentSearchForm: View {
                 Link(L("ask.settings.search.cloudflare.guide"),
                      destination: URL(string: "https://developers.cloudflare.com/web-search/how-to-use/")!)
             }
-            .font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+            .font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
         } else if let url = Self.keyURL(for: provider) {
             Link(L("agent.search.getKey", AgentCapabilityStatus.searchProviderName(provider)), destination: url)
                 .font(.subheadline)

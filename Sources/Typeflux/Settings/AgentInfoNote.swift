@@ -7,7 +7,7 @@ struct AgentInfoNote: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "info.circle").foregroundStyle(TypefluxColor.accent.color)
-            Text(text).foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
+            Text(text).foregroundStyle(TypefluxColor.secondaryLabel.color).fixedSize(horizontal: false, vertical: true)
         }
         .font(.callout)
         .frame(maxWidth: .infinity, alignment: .leading)

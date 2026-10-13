@@ -59,7 +59,7 @@ final class ModelIconTests: XCTestCase {
                     Text("Claude Sonnet 4").font(.system(size: 13))
                 }
             }
-            .padding(16).frame(width: 400).background(StudioTheme.cardSurface)
+            .padding(16).frame(width: 400).background(TypefluxColor.contentBackground.color)
             .environment(\.colorScheme, dark ? .dark : .light)
             let renderer = ImageRenderer(content: content)
             renderer.scale = 2

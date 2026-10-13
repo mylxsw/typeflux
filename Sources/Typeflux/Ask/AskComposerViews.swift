@@ -20,28 +20,28 @@ struct AskLauncherView: View {
                         onDismiss: onDismiss, onHeightChange: onHeightChange,
                         onWindowHeightChange: onWindowHeightChange, onFilePreview: onFilePreview)
         }
-            .padding(AskMetrics.launcherGutter)
-            // Pinned to the panel's top edge: SwiftUI draws new results before the panel
-            // takes their height, and centred content would shift the editor and its
-            // controls up or down for that frame.
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .overlay(alignment: .top) { if let drag { grip(drag) } }
-            .onHover { hovering = $0 }
-            .environment(\.askWindowDrag, drag)
-            .environment(\.askLauncherNumberHints, showingNumberHints)
-            .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
-            .background(AskLauncherEscapeMonitor())
-            .tint(TypefluxColor.accent.color)
-            .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
-            .popover(item: $model.launcherClipboardPreview) { entry in
-                ClipboardPreviewPane(entry: entry, isMissing: entry.contentURLs.contains {
-                    !FileManager.default.fileExists(atPath: $0.path)
-                })
-                    .frame(height: 420)
-                    .background(StudioTheme.surface)
-                    .preferredColorScheme(colorScheme)
-            }
-            .onDisappear { model.launcherClipboardPreview = nil }
+        .padding(AskMetrics.launcherGutter)
+        // Pinned to the panel's top edge: SwiftUI draws new results before the panel
+        // takes their height, and centred content would shift the editor and its
+        // controls up or down for that frame.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .overlay(alignment: .top) { if let drag { grip(drag) } }
+        .onHover { hovering = $0 }
+        .environment(\.askWindowDrag, drag)
+        .environment(\.askLauncherNumberHints, showingNumberHints)
+        .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
+        .background(AskLauncherEscapeMonitor())
+        .tint(TypefluxColor.accent.color)
+        .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
+        .popover(item: $model.launcherClipboardPreview) { entry in
+            ClipboardPreviewPane(entry: entry, isMissing: entry.contentURLs.contains {
+                !FileManager.default.fileExists(atPath: $0.path)
+            })
+            .frame(height: 420)
+            .background(TypefluxColor.controlBackground.color)
+            .preferredColorScheme(colorScheme)
+        }
+        .onDisappear { model.launcherClipboardPreview = nil }
     }
 
     /// A strip along the top edge, above the editor's controls, marked by a short
@@ -52,7 +52,7 @@ struct AskLauncherView: View {
         AskWindowDragArea(handlers: drag)
             .frame(height: Self.gripHeight)
             .overlay(alignment: .top) {
-                Capsule().fill(StudioTheme.textTertiary)
+                Capsule().fill(TypefluxColor.tertiaryLabel.color)
                     .frame(width: 36, height: 4)
                     .padding(.top, 3)
                     .opacity(hovering ? 0.5 : 0)
@@ -221,7 +221,7 @@ struct AskComposer: View {
             value.idleBorder = AskClassic.launcherBorder
         }
         if !launcher, colorScheme == .light {
-            value.idleBorder = AskTheme.border
+            value.idleBorder = TypefluxColor.separator.color
         }
         return value
     }
@@ -236,7 +236,7 @@ struct AskComposer: View {
     private var showsGlassLauncherBar: Bool {
         guard launcher, let glass else { return false }
         return AskGlassBackground.effectiveMaterial(glass, reduceTransparency: reduceTransparency,
-            increasedContrast: contrast == .increased).drawsOwnEdge
+                                                    increasedContrast: contrast == .increased).drawsOwnEdge
     }
 
     private func submit() {
@@ -294,8 +294,10 @@ struct AskComposer: View {
         let sources = AskQuickResults.Sources(apps: model.quickAppsEnabled ? model.appIndex : nil,
                                               files: model.quickFilesEnabled ? model.fileIndex : nil,
                                               settings: model.launcherSearchSettings,
-                                              entries: model.launcherSearchEntries(language: AppLocalization.shared.language),
-                                              browsers: model.browserSearch, browserSettings: model.browserSearchSettings)
+                                              entries: model
+                                                  .launcherSearchEntries(language: AppLocalization.shared.language),
+                                              browsers: model.browserSearch,
+                                              browserSettings: model.browserSearchSettings)
         if resetActions { quickActions = nil }
         quickSearch.update(text: draft.wrappedValue.text,
                            chinese: AppLocalization.shared.language == .simplifiedChinese,
@@ -305,7 +307,8 @@ struct AskComposer: View {
 
     private func refreshSearchIndex(resetActions: Bool = false) {
         guard launcher, searchVisible, quickSearch.isVisible else { return }
-        if [AskFileSearchPlugin.id, AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID].contains(plugins.keyword?.pluginID ?? "") {
+        if [AskFileSearchPlugin.id, AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID]
+            .contains(plugins.keyword?.pluginID ?? "") {
             plugins.refreshLiveResults(text: draft.wrappedValue.text, selection: draft.wrappedValue.sentSelection,
                                        language: AppLocalization.shared.language)
         } else {
@@ -323,7 +326,8 @@ struct AskComposer: View {
         let hit = results.file(at: results.highlightedRow)
         var neighbours: [AskFileHit] = []
         if let hit, let index = results.files.firstIndex(of: hit) {
-            neighbours = [index - 1, index + 1].compactMap { results.files.indices.contains($0) ? results.files[$0] : nil }
+            neighbours = [index - 1, index + 1]
+                .compactMap { results.files.indices.contains($0) ? results.files[$0] : nil }
         }
         onFilePreview(hit, neighbours, results.rows.isEmpty)
     }
@@ -331,7 +335,10 @@ struct AskComposer: View {
     private func quickResultsChanged() {
         updateFilePreview()
         let next = presentedQuickResults
-        let reserve = AskLauncherHeightReserve.holding(quickReserve, content: next.map { AskQuickResultsView.height(for: $0) } ?? 0)
+        let reserve = AskLauncherHeightReserve.holding(
+            quickReserve,
+            content: next.map { AskQuickResultsView.height(for: $0) } ?? 0
+        )
         if reserve != quickReserve { quickReserve = reserve }
         reportHeight()
         scheduleReserveSettle()
@@ -355,7 +362,8 @@ struct AskComposer: View {
         let quick = AskLauncherHeightReserve.settled(quickReserve,
                                                      content: quickResults.map(AskQuickResultsView.height(for:)) ?? 0)
         let plugin = AskLauncherHeightReserve.settled(pluginReserve,
-                                                      content: pluginDisplay.map(AskPluginResultsView.height(for:)) ?? 0)
+                                                      content: pluginDisplay
+                                                          .map(AskPluginResultsView.height(for:)) ?? 0)
         guard quick != quickReserve || plugin != pluginReserve else { return }
         quickReserve = quick; pluginReserve = plugin
         reportHeight()
@@ -416,7 +424,8 @@ struct AskComposer: View {
 
     /// File mode with the same text: every file that matches, with filters.
     private func showAllFiles() {
-        guard let keyword = plugins.availableKeywords.first(where: { $0.enabled && $0.pluginID == AskFileSearchPlugin.id })
+        guard let keyword = plugins.availableKeywords
+            .first(where: { $0.enabled && $0.pluginID == AskFileSearchPlugin.id })
         else { return }
         draft.wrappedValue.text = keyword.keyword + " " + draft.wrappedValue.text
     }
@@ -546,9 +555,11 @@ struct AskComposer: View {
             guard let file, file.kind != .folder else { return false }
             AskQuickLook.shared.toggle(file.url)
         case .commandR:
-            if let file { runFileAction(.reveal, file) } else if let app { runAppAction(.reveal, app) } else { return false }
+            if let file { runFileAction(.reveal, file) } else if let app { runAppAction(.reveal, app) }
+            else { return false }
         case .shiftCommandC:
-            if let file { runFileAction(.copyPath, file) } else if let app { runAppAction(.copyPath, app) } else { return false }
+            if let file { runFileAction(.copyPath, file) } else if let app { runAppAction(.copyPath, app) }
+            else { return false }
         case .optionCommandC:
             guard let file, file.kind != .folder else { return false }
             runFileAction(.copyFile, file)
@@ -559,7 +570,8 @@ struct AskComposer: View {
             guard let file, file.kind != .folder else { return false }
             runFileAction(.openWith, file)
         case .commandC:
-            guard case let .browser(index) = results.highlightedRow, results.browserEntries.indices.contains(index) else { return false }
+            guard case let .browser(index) = results.highlightedRow,
+                  results.browserEntries.indices.contains(index) else { return false }
             AskQuickResults.copy(results.browserEntries[index].url)
         case .escape, .shiftTab, .commandD, .commandE, .commandZ, .commandS, .commandB, .commandO,
              .commandDelete, .optionCommandDelete:
@@ -581,12 +593,21 @@ struct AskComposer: View {
             let asks = AskPluginDisplay.offersAskAI(question: draft.wrappedValue.text,
                                                     selection: draft.wrappedValue.sentSelection,
                                                     usesSelection: plugin.usesSelectionInput, output: plugins.output)
-            return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, optionName: plugin.optionName,
-                                    phase: plugins.phase, previous: plugins.previous, partial: plugins.partial,
-                                    comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
-                                    offersAskAI: asks && ![AskKillAppPlugin.id, AskSystemMonitorPlugin.id, AskEmojiPlugin.id].contains(plugin.id),
-                                    savesNoteWhenDone: plugins.savesNoteWhenDone,
-                                    systemMonitor: plugin.id == AskSystemMonitorPlugin.id)
+            return AskPluginDisplay(
+                hint: nil,
+                title: plugin.title,
+                symbol: plugin.symbol,
+                optionName: plugin.optionName,
+                phase: plugins.phase,
+                previous: plugins.previous,
+                partial: plugins.partial,
+                comparing: plugins.comparing,
+                highlighted: asks ? pluginHighlight : 0,
+                offersAskAI: asks && ![AskKillAppPlugin.id, AskSystemMonitorPlugin.id, AskEmojiPlugin.id]
+                    .contains(plugin.id),
+                savesNoteWhenDone: plugins.savesNoteWhenDone,
+                systemMonitor: plugin.id == AskSystemMonitorPlugin.id
+            )
         }
         if quickSearch.presentation?.features.isEmpty != false,
            let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
@@ -608,13 +629,18 @@ struct AskComposer: View {
             return true
         }
         if plugins.isActive {
-            plugins.update(text: text, selection: draft.wrappedValue.sentSelection, language: AppLocalization.shared.language)
+            plugins.update(
+                text: text,
+                selection: draft.wrappedValue.sentSelection,
+                language: AppLocalization.shared.language
+            )
             if quickResults != nil { quickResults = nil; quickReserve = 0 }
             reportHeight()
             return true
         }
         // Local entry points default to their feature; text-processing hints default to Ask AI.
-        if let hint = plugins.hint, hint != previousHint { pluginHighlight = plugins.plugin(for: hint)?.entersOnReturn == true ? 0 : 1 }
+        if let hint = plugins.hint,
+           hint != previousHint { pluginHighlight = plugins.plugin(for: hint)?.entersOnReturn == true ? 0 : 1 }
         return false
     }
 
@@ -653,7 +679,8 @@ struct AskComposer: View {
                 plugins.run()
             }
         case let .failed(_, failure):
-            if let action = failure.action(for: .enter) { performPluginAction(action) } else if failure.retry { plugins.run() }
+            if let action = failure.action(for: .enter) { performPluginAction(action) }
+            else if failure.retry { plugins.run() }
         case let .done(_, output):
             if plugins.isPlanCurrent, let action = output.action(for: .enter) { performPluginAction(action) }
         case let .running(plan):
@@ -739,7 +766,8 @@ struct AskComposer: View {
                 return ![.shiftCommandC, .commandS, .commandB, .commandO].contains(key)
             }
             // ⇧⌘C copies and stays, like ⌘C.
-            if shortcut == .shiftCommandC, case let .copy(text) = action.kind { model.copyPluginText(text) } else { performPluginAction(action) }
+            if shortcut == .shiftCommandC,
+               case let .copy(text) = action.kind { model.copyPluginText(text) } else { performPluginAction(action) }
         case .commandE:
             let offered: AskPluginAction?
             switch plugins.phase {
@@ -847,7 +875,10 @@ struct AskComposer: View {
     }
 
     private var pluginHeight: CGFloat {
-        pluginDisplay.map { AskLauncherHeightReserve.holding(pluginReserve, content: AskPluginResultsView.height(for: $0)) } ?? 0
+        pluginDisplay.map { AskLauncherHeightReserve.holding(
+            pluginReserve,
+            content: AskPluginResultsView.height(for: $0)
+        ) } ?? 0
     }
 
     /// The launcher offers its starting points until something is typed. They
@@ -855,7 +886,8 @@ struct AskComposer: View {
     var showsLauncherSuggestions: Bool {
         launcher && !model.launcherHistoryMode && !launcherCollapsed && !plugins.isActive
             && !draft.wrappedValue.hasText && (draft.wrappedValue.references ?? []).isEmpty
-            && (draft.wrappedValue.attachments ?? []).isEmpty && !model.isLoadingAttachments(launcher: true) && !paletteOpen
+            && (draft.wrappedValue.attachments ?? []).isEmpty && !model
+            .isLoadingAttachments(launcher: true) && !paletteOpen
     }
 
     /// What the launcher's home offers for its context; empty outside the launcher.
@@ -1013,7 +1045,8 @@ struct AskComposer: View {
                 reportHeight()
                 scheduleReserveSettle()
             }
-            .onChange(of: draft.wrappedValue.sentSelection) { _ in if launcher, plugins.isActive { refreshQuickResults() } }
+            .onChange(of: draft.wrappedValue.sentSelection) { _ in
+                if launcher, plugins.isActive { refreshQuickResults() } }
             .onChange(of: noticeRows) { _ in reportHeight() }
             .onChange(of: submissionIssue) { _ in reportHeight() }
             .onChange(of: showsStrip) { _ in reportHeight() }
@@ -1041,10 +1074,11 @@ struct AskComposer: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: AskFileIndex.didChange)
                 .debounce(for: .milliseconds(80), scheduler: RunLoop.main)) { notification in
-                if (notification.object as AnyObject?) === model.fileIndex { refreshSearchIndex() }
+                    if (notification.object as AnyObject?) === model.fileIndex { refreshSearchIndex() }
             }
             .onReceive(NotificationCenter.default.publisher(for: .askLauncherSearchSettingsDidChange)) { notification in
-                if let store = notification.object as? SettingsStore, store.defaults === model.modelLibrary.settings.defaults {
+                if let store = notification.object as? SettingsStore,
+                   store.defaults === model.modelLibrary.settings.defaults {
                     refreshSearchIndex(resetActions: true)
                 }
             }
@@ -1108,12 +1142,12 @@ struct AskComposer: View {
         .overlay {
             if editingQueued || dropTargeted {
                 RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
-                    .strokeBorder(AskTheme.accent, lineWidth: dropTargeted ? 2 : 1.5)
+                    .strokeBorder(TypefluxColor.accent.color, lineWidth: dropTargeted ? 2 : 1.5)
                     .allowsHitTesting(false)
             } else if privateTint {
                 // Signed in, a conversation kept on this Mac keeps a quiet private edge.
                 RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
-                    .strokeBorder(AskTheme.privateTint.opacity(0.45), lineWidth: 1)
+                    .strokeBorder(Color(nsColor: .systemPurple).opacity(0.45), lineWidth: 1)
                     .allowsHitTesting(false)
             }
         }
@@ -1174,7 +1208,8 @@ struct AskComposer: View {
                                      onHighlight: { pluginHighlight = $0 },
                                      onSelectItem: { id in
                                          guard plugins.isPlanCurrent, let output = plugins.output,
-                                               let index = output.items.firstIndex(where: { $0.id == id }) else { return false }
+                                               let index = output.items.firstIndex(where: { $0.id == id })
+                                         else { return false }
                                          return plugins.selectItem(index)
                                      })
             } else if showsQuickResults, let quickResults = presentedQuickResults {
@@ -1195,7 +1230,8 @@ struct AskComposer: View {
                                         guard !quickResultsArePending, quickResults.rows.indices.contains(index),
                                               let current = self.quickResults,
                                               let target = current.rows.firstIndex(where: {
-                                                  current.identity(of: $0) == quickResults.identity(of: quickResults.rows[index])
+                                                  current.identity(of: $0) == quickResults
+                                                      .identity(of: quickResults.rows[index])
                                               }) else { return }
                                         self.quickResults?.highlight(target)
                                     },
@@ -1217,7 +1253,8 @@ struct AskComposer: View {
     }
 
     private var hasSupplementalContent: Bool {
-        showsScreenshotPermissionHint || submissionIssue != nil || !notices.isEmpty || (!launcher && !model.queuedMessages.isEmpty) || editingQueued
+        showsScreenshotPermissionHint || submissionIssue != nil || !notices
+            .isEmpty || (!launcher && !model.queuedMessages.isEmpty) || editingQueued
             || !(draft.wrappedValue.references ?? []).isEmpty || showsStrip
     }
 
@@ -1227,7 +1264,7 @@ struct AskComposer: View {
                 Button { screenshotAction?() } label: {
                     Label(L("ask.capture.optIn"), systemImage: "camera.viewfinder")
                         .font(.subheadline)
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(.plain)
@@ -1336,7 +1373,10 @@ struct AskComposer: View {
             switch command.kind {
             case .submenu:
                 parent = command
-                rows = AskCommandMatcher.filter(AskCommandCatalog.submenu(command.action, context: context), query: argument)
+                rows = AskCommandMatcher.filter(
+                    AskCommandCatalog.submenu(command.action, context: context),
+                    query: argument
+                )
             case .argument:
                 var waiting = command
                 waiting.detail = argument.isEmpty ? command.trailing : argument
@@ -1498,7 +1538,8 @@ struct AskComposer: View {
             dismissedSlash = slash?.range.location
             closePalette()
         case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE,
-             .commandZ, .commandS, .commandB, .commandO, .right, .commandY, .optionCommandC, .shiftCommandEnter, .commandDown,
+             .commandZ, .commandS, .commandB, .commandO, .right, .commandY, .optionCommandC, .shiftCommandEnter,
+             .commandDown,
              .number, .commandDelete, .optionCommandDelete:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
@@ -1556,7 +1597,10 @@ struct AskComposer: View {
         let prefix = text.isEmpty || text.last?.isWhitespace == true ? "/" : " /"
         draft.wrappedValue.text = text + prefix
         dismissedSlash = nil
-        slashChanged(AskSlashQuery.parse(draft.wrappedValue.text, caret: (draft.wrappedValue.text as NSString).length), typed: true)
+        slashChanged(
+            AskSlashQuery.parse(draft.wrappedValue.text, caret: (draft.wrappedValue.text as NSString).length),
+            typed: true
+        )
     }
 
     /// Quotes waiting in the draft name what the follow-up is about. The
@@ -1586,7 +1630,7 @@ struct AskComposer: View {
             text: draft.text,
             placeholder: placeholder,
             placeholderSingleLine: launcher,
-            placeholderColor: launcher ? AskTheme.launcherPlaceholderText : StudioTheme.textSecondary,
+            placeholderColor: launcher ? LegacyAskPalette.launcherPlaceholderText : TypefluxColor.secondaryLabel.color,
             defersCompositionUpdates: model.launcherHistoryMode || plugins.plugin?.id == AskEmojiPlugin.id,
             usesKeyViewTabs: plugins.plugin?.id == AskEmojiPlugin.id,
             voice: voice,
@@ -1640,8 +1684,8 @@ struct AskComposer: View {
             }
             if !active, model.launcherHistoryMode {
                 Text(L("ask.inputHistory.chip")).font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(AskTheme.accent).padding(.horizontal, 7).padding(.vertical, 6)
-                    .background(AskTheme.launcherSelection, in: RoundedRectangle(cornerRadius: 6))
+                    .foregroundStyle(TypefluxColor.accent.color).padding(.horizontal, 7).padding(.vertical, 6)
+                    .background(LegacyAskPalette.launcherSelection, in: RoundedRectangle(cornerRadius: 6))
                     .padding(.top, 3)
             }
             editorField
@@ -1664,18 +1708,22 @@ struct AskComposer: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .help(L("ask.voice.cancel"))
                 .accessibilityLabel(L("ask.voice.cancel"))
                 .accessibilityIdentifier("ask.voice.cancel")
             }
             AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
                 .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
+                .accessibilityLabel(AskVoiceButton.title(
+                    phase: voice.phase,
+                    contextMatches: voice.context == contextID
+                ))
                 .accessibilityIdentifier("ask.composer.voice")
             if !active {
                 AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
-                                         tint: privateTint ? AskTheme.privateTint : TypefluxColor.accent.color,
+                                          tint: privateTint ? Color(nsColor: .systemPurple) : TypefluxColor.accent
+                                              .color,
                                           action: runLauncherChatAction)
             }
         }
@@ -1690,7 +1738,7 @@ struct AskComposer: View {
         HStack(spacing: 4) {
             composerTools
             permissionModeMenu
-            Rectangle().fill(AskTheme.launcherSeparator).frame(width: 1, height: 18).padding(.horizontal, 4)
+            Rectangle().fill(LegacyAskPalette.launcherSeparator).frame(width: 1, height: 18).padding(.horizontal, 4)
             contextChips
                 .disabled(active)
                 .opacity(Self.recordingDim(active))
@@ -1725,7 +1773,7 @@ struct AskComposer: View {
                         ForEach(AskLauncherContext.hintTiers(launcherHint), id: \.self) { hint in
                             Text(hint)
                                 .font(.subheadline)
-                                .foregroundStyle(AskTheme.launcherMetaText)
+                                .foregroundStyle(LegacyAskPalette.launcherMetaText)
                                 .lineLimit(1)
                         }
                         Color.clear.frame(width: 0, height: 0)
@@ -1745,7 +1793,7 @@ struct AskComposer: View {
         .frame(maxWidth: .infinity)
         .overlay(alignment: .top) {
             if !showsGlassLauncherBar {
-                Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
+                Rectangle().fill(LegacyAskPalette.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
             }
         }
     }
@@ -1758,8 +1806,9 @@ struct AskComposer: View {
             return inputHistory.enabled ? L("ask.inputHistory.homeHint") + " · " + hint : hint
         }
         return AskLauncherContext.hint(voice: active ? voice.phase : .idle,
-                                quickResults: showsQuickResults && !showsLauncherSuggestions ? presentedQuickResults : nil,
-                                hasContext: contextToken != nil)
+                                       quickResults: showsQuickResults && !showsLauncherSuggestions ?
+                                           presentedQuickResults : nil,
+                                       hasContext: contextToken != nil)
     }
 
     /// The launcher's results area: its starting points or quick results.
@@ -1775,7 +1824,10 @@ struct AskComposer: View {
         // Attachments, tools and quotes hide quick results, including their reserved height.
         if showsStrip || !(draft.wrappedValue.references ?? []).isEmpty { return 0 }
         if showsQuickResults, let quickResults = presentedQuickResults {
-            return AskLauncherHeightReserve.holding(quickReserve, content: AskQuickResultsView.height(for: quickResults))
+            return AskLauncherHeightReserve.holding(
+                quickReserve,
+                content: AskQuickResultsView.height(for: quickResults)
+            )
         }
         // Keep the viewport until typing settles, including a final empty batch.
         return quickReserve
@@ -1841,7 +1893,7 @@ struct AskComposer: View {
                     .opacity(Self.recordingDim(active))
                 Spacer(minLength: 0)
             } else {
-                Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
+                Rectangle().fill(TypefluxColor.separator.color).frame(width: 1, height: 18).padding(.horizontal, 4)
                 HStack(spacing: 0) {
                     contextChips
                         .disabled(active)
@@ -1877,7 +1929,10 @@ struct AskComposer: View {
                            enabled: launcher || !model.isLoadingSelection,
                            shortcut: voiceShortcut)
                 .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
+                .accessibilityLabel(AskVoiceButton.title(
+                    phase: voice.phase,
+                    contextMatches: voice.context == contextID
+                ))
                 .accessibilityIdentifier("ask.composer.voice")
             if editingQueued {
                 AskQueueEditActions(canSave: model.draft.canSend, compact: layout.condensedFooter,
@@ -1888,8 +1943,11 @@ struct AskComposer: View {
                     switch sendControl {
                     case .stop: AskStopButton { model.stop() }
                     case let .send(enabled):
-                        AskSendButton(enabled: enabled, tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
-                                      action: submit)
+                        AskSendButton(
+                            enabled: enabled,
+                            tint: privateTint ? Color(nsColor: .systemPurple) : TypefluxColor.accent.color,
+                            action: submit
+                        )
                     }
                 }
                 .accessibilityIdentifier("ask.composer.send")
@@ -1924,16 +1982,16 @@ struct AskComposer: View {
             get: { model.modelReference(launcher: launcher) },
             set: { model.selectModel($0, launcher: launcher) }
         ), disabled: active || (!launcher && (model.isBusy || model.isLoadingSelection)),
-           hasImage: !launcher && model.hasConversationImages, compact: true, usesNativePopover: !launcher,
-           condensed: layout.condensedFooter,
-           showsChevron: false,
-           cloudAvailable: model.cloudAvailable(launcher: launcher),
-           onManage: model.onOpenSettings.map { open in { open(.models) } },
-           effort: $model.reasoningEffort)
-        .opacity(Self.recordingDim(active))
-        // In the launcher the model outranks the key hints, which shorten instead.
-        .layoutPriority(launcher ? 1 : 0)
-        .accessibilityIdentifier("ask.composer.model")
+        hasImage: !launcher && model.hasConversationImages, compact: true, usesNativePopover: !launcher,
+        condensed: layout.condensedFooter,
+        showsChevron: false,
+        cloudAvailable: model.cloudAvailable(launcher: launcher),
+        onManage: model.onOpenSettings.map { open in { open(.models) } },
+        effort: $model.reasoningEffort)
+            .opacity(Self.recordingDim(active))
+            // In the launcher the model outranks the key hints, which shorten instead.
+            .layoutPriority(launcher ? 1 : 0)
+            .accessibilityIdentifier("ask.composer.model")
     }
 
     /// Secondary switches remain reachable without pushing primary actions out
@@ -2091,7 +2149,7 @@ struct AskComposer: View {
             }
         }
         .font(.subheadline).fontWeight(.semibold)
-        .foregroundStyle(listening ? AskTheme.accent : StudioTheme.textSecondary)
+        .foregroundStyle(listening ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
         .fixedSize()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(active ? L(listening ? "ask.voice.listening" : "ask.voice.transcribing") : "")
@@ -2113,9 +2171,9 @@ struct AskComposer: View {
                 + (!recording && showsLauncherSuggestions ? homeHeight : 0)
         }
         return AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
-                                                 suggestions: !recording && showsLauncherSuggestions ? homeHeight : 0,
-                                                 attachments: showsStrip,
-                                                 attachmentHeight: attachmentHeight) + commands + quick + panel + keyword
+                                         suggestions: !recording && showsLauncherSuggestions ? homeHeight : 0,
+                                         attachments: showsStrip,
+                                         attachmentHeight: attachmentHeight) + commands + quick + panel + keyword
     }
 
     private func reportHeight() {
@@ -2168,9 +2226,9 @@ private struct AskContextPreview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L("ask.context.screen.full")).font(.body).fontWeight(.semibold)
-            Text(L("ask.context.screen.scope")).font(.callout).foregroundStyle(StudioTheme.textSecondary)
+            Text(L("ask.context.screen.scope")).font(.callout).foregroundStyle(TypefluxColor.secondaryLabel.color)
             if let date = draft.capturedAt {
-                Text(date, style: .time).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+                Text(date, style: .time).font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             if let dataURL = draft.screenshot, let image = AskImage.decode(dataURL) {
                 Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 230)
@@ -2181,10 +2239,10 @@ private struct AskContextPreview: View {
                 }
             }
             if let warning {
-                Text(warning).font(.subheadline).foregroundStyle(StudioTheme.warning)
+                Text(warning).font(.subheadline).foregroundStyle(TypefluxColor.warning.color)
                     .accessibilityIdentifier("ask.context.screenshot.warning")
             }
-            Text(L("ask.context.notice")).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+            Text(L("ask.context.notice")).font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
         }
         .padding(18)
         .frame(width: 400)

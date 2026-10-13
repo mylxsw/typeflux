@@ -36,19 +36,19 @@ struct AskWorkspaceLibraryTests {
     }
 
     @Test func sharedCompatibilityNamesResolveToTheSameSemanticTokens() {
-        #expect(AskTheme.accent == StudioTheme.accent)
-        #expect(AskTheme.accentText == StudioTheme.accentText)
-        #expect(AskTheme.accentSoft == StudioTheme.accentSoft)
-        #expect(AskTheme.surface == StudioTheme.surface)
-        #expect(AskTheme.controlSurface == StudioTheme.controlSurface)
-        #expect(AskTheme.border == StudioTheme.border)
+        #expect(TypefluxColor.accent.color == TypefluxColor.accent.color)
+        #expect(TypefluxColor.accent.color == TypefluxColor.accent.color)
+        #expect(TypefluxColor.accent.color.opacity(0.12) == TypefluxColor.accent.color.opacity(0.12))
+        #expect(TypefluxColor.controlBackground.color == TypefluxColor.controlBackground.color)
+        #expect(TypefluxColor.controlBackground.color == TypefluxColor.controlBackground.color)
+        #expect(TypefluxColor.separator.color == TypefluxColor.separator.color)
     }
 
     @Test func toolbarActionsKeepKeyboardAndAccessibilityMetadata() {
         var calls = 0
         let action = TypefluxToolbarAction(id: "ask.new", title: "New conversation", systemImage: "square.and.pencil",
-                                          accessibilityIdentifier: "ask.workspace.new", shortcut: "n",
-                                          modifiers: [.command, .shift], perform: { calls += 1 })
+                                           accessibilityIdentifier: "ask.workspace.new", shortcut: "n",
+                                           modifiers: [.command, .shift], perform: { calls += 1 })
         action.perform()
         #expect(calls == 1)
         #expect(action.accessibilityIdentifier == "ask.workspace.new")
@@ -75,12 +75,12 @@ struct AskWorkspaceLibraryTests {
         for reference in ["cloud:reasoner", "missing:model"] {
             for page in [AskModelEffortCard.Page.effort, .models] {
                 let view = AskModelEffortCard(library: library, reference: .constant(reference),
-                                             effort: .constant(.providerDefault), loggedIn: true,
-                                             page: page, nativeControls: true)
+                                              effort: .constant(.providerDefault), loggedIn: true,
+                                              page: page, nativeControls: true)
                 let hosting = NSHostingView(rootView: view)
                 hosting.layoutSubtreeIfNeeded()
                 #expect(hosting.fittingSize.width == (page == .models
-                    ? AskModelEffortCard.modelsWidth : AskModelEffortCard.width))
+                        ? AskModelEffortCard.modelsWidth : AskModelEffortCard.width))
                 #expect(hosting.fittingSize.height > 0)
             }
         }

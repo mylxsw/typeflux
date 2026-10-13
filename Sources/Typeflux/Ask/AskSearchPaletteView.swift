@@ -68,7 +68,13 @@ struct AskSearchPaletteView: View {
                         .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .padding(.horizontal, 6)
                         .frame(height: 18)
-                        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                        .background(
+                            TypefluxColor.label.color.opacity(0.06),
+                            in: RoundedRectangle(
+                                cornerRadius: TypefluxRadius.textField.value(for: style),
+                                style: .continuous
+                            )
+                        )
                         .onTapGesture { onClose() }
                         .accessibilityLabel(L("ask.remove"))
                         .accessibilityIdentifier("ask.workspace.search.close")
@@ -76,7 +82,7 @@ struct AskSearchPaletteView: View {
                 }
                 .padding(.horizontal, 18)
                 .frame(height: 54)
-                Rectangle().fill(AskTheme.separator).frame(height: 1)
+                Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 list(maxHeight: listHeight).background(TypefluxColor.contentBackground.color)
             }
         }
@@ -102,7 +108,7 @@ struct AskSearchPaletteView: View {
                     if state.rows.isEmpty {
                         Text(L(conversations.isEmpty ? "ask.history.empty" : "ask.history.searchEmpty"))
                             .font(.callout)
-                            .foregroundStyle(StudioTheme.textTertiary)
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 26)
                     }
@@ -120,7 +126,7 @@ struct AskSearchPaletteView: View {
     private func header(_ title: String) -> some View {
         Text(title)
             .font(.subheadline).fontWeight(.semibold)
-            .foregroundStyle(StudioTheme.textTertiary)
+            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             .padding(.horizontal, 12)
             .padding(.top, 8)
             .padding(.bottom, 3)

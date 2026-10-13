@@ -93,7 +93,8 @@ struct AskApprovalCard: View {
     @State private var showsArguments = false
 
     /// The panel's tint: the accent, except red for destructive steps.
-    static func panelTint(_ risk: AskToolRisk) -> Color { risk == .destructive ? StudioTheme.danger : AskTheme.accent }
+    static func panelTint(_ risk: AskToolRisk) -> Color { risk == .destructive ? TypefluxColor.danger
+        .color : TypefluxColor.accent.color }
 
     /// Which button carries the primary style, as on the design board: allowing
     /// for the conversation when offered, else allowing once. A destructive step
@@ -114,10 +115,10 @@ struct AskApprovalCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
                         Image(systemName: AskPresentation.toolSymbol(call)).font(.system(size: 12))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                        Text(AskTheme.toolTitle(call, mcpServer: mcpServer))
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                        Text(AskToolPresentation.toolTitle(call, mcpServer: mcpServer))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .foregroundStyle(TypefluxColor.label.color)
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Text(AskApprovalPresentation.riskLabel(risk))
@@ -129,7 +130,7 @@ struct AskApprovalCard: View {
                             .fixedSize()
                     }
                     if let detail = targetSummary ?? AskApprovalPresentation.detail(call) {
-                        Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                        Text(detail).font(.system(size: 12)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .lineLimit(3).truncationMode(.middle).textSelection(.enabled).help(detail)
                     }
                 }
@@ -137,22 +138,24 @@ struct AskApprovalCard: View {
             }
             preview
             if let disclosure = AskApprovalPresentation.disclosure(call) {
-                Text(disclosure).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                Text(disclosure).font(.system(size: 11.5)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             Text(AskToolPolicy.action(call)).font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
             Text(L(canAllowForConversation ? "ask.approval.exactScope" : "ask.approval.singleUse"))
-                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(size: 11.5)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             if risk == .destructive {
-                Text(L("ask.approval.destructiveHint")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.approval.destructiveHint")).font(.system(size: 11.5))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             HStack(spacing: 8) {
                 Button { showsArguments.toggle() } label: {
                     HStack(spacing: 4) {
-                        Image(systemName: showsArguments ? "chevron.down" : "chevron.right").font(.system(size: 9, weight: .semibold))
+                        Image(systemName: showsArguments ? "chevron.down" : "chevron.right").font(.system(size: 9,
+                                                                                                          weight: .semibold))
                         Text(L("ask.approval.arguments")).font(.system(size: 11.5))
                     }
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -163,9 +166,10 @@ struct AskApprovalCard: View {
                     .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
                     .keyboardShortcut(.cancelAction)
                     .help(L("ask.approval.denyHelp"))
-                Button(action: onAllow) { Text(L(risk == .destructive ? "ask.approval.allowDestructive" : "ask.allowOnce")) }
+                Button(action: onAllow) {
+                    Text(L(risk == .destructive ? "ask.approval.allowDestructive" : "ask.allowOnce")) }
                     .buttonStyle(AskCapsuleButtonStyle(kind: risk == .destructive ? .destructive
-                        : (conversationFirst ? .secondary : .primary)))
+                            : (conversationFirst ? .secondary : .primary)))
                     .keyboardShortcut(.return, modifiers: .command)
                     .help(L("ask.approval.allowHelp"))
                 if canAllowForConversation {
@@ -189,19 +193,20 @@ struct AskApprovalCard: View {
         switch AskApprovalPresentation.preview(call) {
         case let .diff(removed, added):
             VStack(alignment: .leading, spacing: 0) {
-                diffLines(removed, prefix: "-", color: StudioTheme.danger)
-                diffLines(added, prefix: "+", color: StudioTheme.success)
+                diffLines(removed, prefix: "-", color: TypefluxColor.danger.color)
+                diffLines(added, prefix: "+", color: TypefluxColor.success.color)
             }
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AskTheme.separator))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(TypefluxColor.separator.color))
         case let .content(text):
             Text(text)
                 .font(.system(size: 11.5, design: .monospaced))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10).padding(.vertical, 8)
-                .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(TypefluxColor.controlBackground.color,
+                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         case .none:
             EmptyView()
         }

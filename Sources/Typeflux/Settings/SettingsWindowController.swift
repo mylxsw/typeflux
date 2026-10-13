@@ -99,8 +99,8 @@ final class SettingsWindowController: NSObject {
             contentRect: NSRect(
                 x: 0,
                 y: 0,
-                width: StudioTheme.Layout.settingsWindowWidth,
-                height: StudioTheme.Layout.settingsWindowHeight
+                width: StudioWindowMetrics.settingsWindowWidth,
+                height: StudioWindowMetrics.settingsWindowHeight
             ),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
@@ -120,8 +120,8 @@ final class SettingsWindowController: NSObject {
         window.isReleasedWhenClosed = false
         window.delegate = self
         let minimumWindowSize = NSSize(
-            width: StudioTheme.Layout.settingsWindowMinWidth,
-            height: StudioTheme.Layout.settingsWindowMinHeight
+            width: StudioWindowMetrics.settingsWindowMinWidth,
+            height: StudioWindowMetrics.settingsWindowMinHeight
         )
         window.minSize = minimumWindowSize
         window.contentMinSize = minimumWindowSize

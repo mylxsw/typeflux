@@ -11,24 +11,24 @@ struct StudioLightFollowupTests {
         try await SettingsBehaviorTestSupport.withFixture { _ in
             let button = Button("") {}.buttonStyle(AskCapsuleButtonStyle(expands: true))
             let light = try await render(button, style: style, dark: false)
-            let accent = try await render(AskTheme.accent, style: style, dark: false)
+            let accent = try await render(TypefluxColor.accent.color, style: style, dark: false)
             try expectPixel(light, accent, x: 260, y: 82)
             try expectPixel(light, accent, x: 260, y: 98)
             let background = try await render(Color.black, style: style, dark: false)
             try expectPixel(light, background, x: 140, y: 115)
             let dark = try await render(button, style: style, dark: true)
             let legacy = Color.clear.frame(width: 280, height: 36)
-                .background(AskTheme.accent, in: Capsule())
+                .background(TypefluxColor.accent.color, in: Capsule())
                 .overlay(Capsule().fill(LinearGradient(colors: [Color.white.opacity(0.18), .clear],
                                                        startPoint: .top, endPoint: .bottom)))
                 .overlay(Capsule().strokeBorder(Color.white.opacity(0.3), lineWidth: 0.5))
-                .shadow(color: AskTheme.accent.opacity(0.4), radius: 7, y: 3)
+                .shadow(color: TypefluxColor.accent.color.opacity(0.4), radius: 7, y: 3)
             let expected = try await render(legacy, style: style, dark: true)
             try expectPixel(dark, expected, x: 260, y: 82)
             try expectPixel(dark, expected, x: 260, y: 98)
             try expectPixel(dark, expected, x: 140, y: 115)
             let disabled = try await render(button.disabled(true), style: style, dark: false)
-            let muted = try await render(AskTheme.controlSurface, style: style, dark: false)
+            let muted = try await render(TypefluxColor.controlBackground.color, style: style, dark: false)
             try expectPixel(disabled, muted, x: 140, y: 90)
             for kind in [AskCapsuleButtonStyle.Kind.secondary, .destructive] {
                 _ = try await render(Button("") {}.buttonStyle(AskCapsuleButtonStyle(kind: kind)),
@@ -43,7 +43,7 @@ struct StudioLightFollowupTests {
             let backdrop = Color(red: 0.2, green: 0.4, blue: 0.6)
             let actual = try await render(AskCloudPromoCard(onSignIn: {}, onDismiss: {}), style: style,
                                           dark: false, backdrop: backdrop)
-            let expected = try await render(StudioTheme.cardFill, style: style,
+            let expected = try await render(TypefluxColor.contentBackground.color, style: style,
                                             dark: false, backdrop: backdrop)
             try expectPixel(actual, expected, x: 274, y: 90)
             // Both actions remain reachable after restyling the card.

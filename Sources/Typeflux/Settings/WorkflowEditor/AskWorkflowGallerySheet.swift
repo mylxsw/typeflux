@@ -5,6 +5,8 @@ import SwiftUI
 /// a card opens its detail page, and an added example with a newer version opens the
 /// differences before anything is overwritten.
 struct AskWorkflowGallerySheet: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var store: AskWorkflowStore
     var gallery: AskWorkflowGallery
     var builtIn: [AskKeyword]
@@ -50,8 +52,8 @@ struct AskWorkflowGallerySheet: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 Button(action: done) {
-                    Image(systemName: "xmark").font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary).frame(width: 26, height: 26)
+                    Image(systemName: "xmark").font(.system(.callout, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color).frame(width: 26, height: 26)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).keyboardShortcut(.cancelAction).padding(12)
@@ -59,7 +61,7 @@ struct AskWorkflowGallerySheet: View {
             }
         }
         .frame(width: 980, height: 640)
-        .background(StudioTheme.windowBackground)
+        .background(TypefluxColor.windowBackground.color)
         .background(Color(nsColor: .windowBackgroundColor))
         .task {
             guard missing == nil else { return }
@@ -72,19 +74,20 @@ struct AskWorkflowGallerySheet: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(L("ask.workflow.gallery.title")).font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+            Text(L("ask.workflow.gallery.title")).font(.system(.title2, weight: .semibold))
+                .foregroundStyle(TypefluxColor.label.color)
             HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass").foregroundStyle(StudioTheme.textTertiary)
+                Image(systemName: "magnifyingglass").foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 TextField(L("ask.workflow.gallery.search"), text: $search).textFieldStyle(.plain)
                     .accessibilityIdentifier("ask.workflow.gallery.search")
             }
-            .font(.system(size: 12.5)).padding(.horizontal, 9).frame(height: 30)
+            .font(.system(.callout)).padding(.horizontal, 9).frame(height: 30)
             .background(
                 TypefluxColor.controlBackground.color,
-                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
             )
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+                .strokeBorder(TypefluxColor.separator.color))
             .padding(.top, 16)
             VStack(spacing: 2) {
                 categoryRow(nil, title: L("ask.workflow.gallery.category.all"), count: gallery.items.count)
@@ -95,18 +98,18 @@ struct AskWorkflowGallerySheet: View {
             .padding(.top, 14)
             Spacer()
             if let note {
-                Label(note, systemImage: "checkmark.circle.fill").font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.success).fixedSize(horizontal: false, vertical: true)
+                Label(note, systemImage: "checkmark.circle.fill").font(.system(.callout))
+                    .foregroundStyle(TypefluxColor.success.color).fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("ask.workflow.gallery.note")
             }
             if let failure {
-                Label(failure, systemImage: "exclamationmark.triangle.fill").font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.danger).fixedSize(horizontal: false, vertical: true)
+                Label(failure, systemImage: "exclamationmark.triangle.fill").font(.system(.callout))
+                    .foregroundStyle(TypefluxColor.danger.color).fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(20)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(StudioTheme.surfaceMuted)
+        .background(TypefluxColor.controlBackground.color)
     }
 
     private func categoryRow(_ value: AskWorkflowGallery.Category?, title: String, count: Int) -> some View {
@@ -117,14 +120,17 @@ struct AskWorkflowGallerySheet: View {
             updating = nil
         } label: {
             HStack {
-                Text(title).font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                Text(title).font(.system(.body, weight: isSelected ? .semibold : .regular))
                 Spacer()
-                Text("\(count)").font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                Text("\(count)").font(.system(.callout)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
-            .foregroundStyle(StudioTheme.textPrimary)
+            .foregroundStyle(TypefluxColor.label.color)
             .padding(.horizontal, 12).frame(height: 34)
-            .background(isSelected ? StudioTheme.accentSoft : .clear,
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(isSelected ? TypefluxColor.accent.color.opacity(0.12) : .clear,
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                            style: .continuous
+                        ))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -137,12 +143,12 @@ struct AskWorkflowGallerySheet: View {
         let items = gallery.filtered(category: category, query: search)
         return Group {
             if items.isEmpty {
-                Text(L("ask.workflow.gallery.noResults")).font(.system(size: 13))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.workflow.gallery.noResults")).font(.system(.body))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .frame(maxWidth: .infinity).padding(.top, 80)
             } else {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 0), spacing: 14), count: 3),
-                    spacing: 14) {
+                          spacing: 14) {
                     ForEach(items) { item in card(item) }
                 }
                 .padding(.top, 14)
@@ -154,19 +160,19 @@ struct AskWorkflowGallerySheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 AskWorkflowGalleryTile(item: item, size: 30)
-                Text(item.name).font(.system(size: 14.5, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                Text(item.name).font(.system(.body, weight: .semibold)).foregroundStyle(TypefluxColor.label.color)
                     .lineLimit(2)
                     .help(item.name)
                 Spacer(minLength: 0)
             }
             .frame(height: 36, alignment: .leading)
-            Text(item.summary).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+            Text(item.summary).font(.system(.callout)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, minHeight: 34, alignment: .topLeading)
             Spacer(minLength: 0)
             HStack(spacing: 6) {
                 if missing?.contains(item.runtime) != true {
-                    Text(item.runtime.title).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(item.runtime.title).font(.system(.callout)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .fixedSize()
                 }
                 tags(item)
@@ -184,9 +190,16 @@ struct AskWorkflowGallerySheet: View {
             .frame(height: 24)
         }
         .padding(14).frame(maxWidth: .infinity).frame(height: 180)
-        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
-        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(
+            TypefluxColor.contentBackground.color,
+            in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+        )
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
+        .contentShape(RoundedRectangle(
+            cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+            style: .continuous
+        ))
         .onTapGesture { selected = item.id }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.workflow.gallery.card." + item.id)
@@ -201,11 +214,15 @@ struct AskWorkflowGallerySheet: View {
             .fixedSize()
             HStack(spacing: 4) {
                 if let first = item.keywords.first {
-                    Text(first).font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                    Text(first).font(.system(.subheadline, design: .monospaced))
+                        .foregroundStyle(TypefluxColor.label.color).lineLimit(1)
                         .padding(.horizontal, 6).frame(height: 18)
-                        .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 5))
-                        .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(StudioTheme.border))
+                        .background(
+                            TypefluxColor.controlBackground.color,
+                            in: RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle))
+                        )
+                        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle))
+                            .strokeBorder(TypefluxColor.separator.color))
                 }
                 if item.keywords.count > 1 {
                     AskWorkflowChip(text: "+\(item.keywords.count - 1)")
@@ -224,21 +241,24 @@ struct AskWorkflowGallerySheet: View {
             AskWorkflowGalleryTag(text: L("ask.workflow.gallery.network"), color: .orange).fixedSize()
         }
         if missing?.contains(item.runtime) == true {
-            AskWorkflowGalleryTag(text: L("ask.workflow.gallery.needs", item.runtime.title), color: StudioTheme.warning)
-                .fixedSize()
-                .help(L("ask.workflow.gallery.install." + item.runtime.rawValue))
+            AskWorkflowGalleryTag(
+                text: L("ask.workflow.gallery.needs", item.runtime.title),
+                color: TypefluxColor.warning.color
+            )
+            .fixedSize()
+            .help(L("ask.workflow.gallery.install." + item.runtime.rawValue))
         }
     }
 
     @ViewBuilder private func cardButton(_ item: AskWorkflowGallery.Item) -> some View {
         if store.hasUpdate(item) {
             Button(L("ask.workflow.gallery.viewUpdate")) { updating = item.id }
-                .buttonStyle(AskWorkflowActionStyle(small: true))
+                .buttonStyle(.bordered).controlSize(.small)
         } else if store.installed(item) != nil {
-            AskWorkflowGalleryTag(text: L("ask.workflow.gallery.added"), color: StudioTheme.success)
+            AskWorkflowGalleryTag(text: L("ask.workflow.gallery.added"), color: TypefluxColor.success.color)
         } else {
             Button(L("ask.workflow.gallery.add")) { add(item) }
-                .buttonStyle(AskWorkflowActionStyle(small: true))
+                .buttonStyle(.bordered).controlSize(.small)
                 .accessibilityIdentifier("ask.workflow.gallery.add." + item.id)
         }
     }
@@ -251,15 +271,16 @@ extension AskWorkflowGallerySheet {
     private func detail(_ item: AskWorkflowGallery.Item) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             Button { selected = nil } label: {
-                Text("‹ " + L("ask.workflow.gallery.title")).font(.system(size: 12.5)).foregroundStyle(AskTheme.accent)
+                Text("‹ " + L("ask.workflow.gallery.title")).font(.system(.callout))
+                    .foregroundStyle(TypefluxColor.accent.color)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("ask.workflow.gallery.back")
             HStack(alignment: .top, spacing: 14) {
                 AskWorkflowGalleryTile(item: item, size: 46)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.name).font(.system(size: 20, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                    Text(item.summary).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+                    Text(item.name).font(.system(.title2, weight: .semibold)).foregroundStyle(TypefluxColor.label.color)
+                    Text(item.summary).font(.system(.body)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
@@ -290,17 +311,17 @@ extension AskWorkflowGallerySheet {
     private func detailButtons(_ item: AskWorkflowGallery.Item) -> some View {
         HStack(spacing: 8) {
             if let installed = store.installed(item) {
-                AskWorkflowGalleryTag(text: L("ask.workflow.gallery.added"), color: StudioTheme.success)
+                AskWorkflowGalleryTag(text: L("ask.workflow.gallery.added"), color: TypefluxColor.success.color)
                 if store.hasUpdate(item) {
                     Button(L("ask.workflow.gallery.viewUpdate")) { updating = item.id }
-                        .buttonStyle(AskWorkflowActionStyle())
+                        .buttonStyle(.bordered)
                 }
                 Button(L("ask.workflow.gallery.openInEditor")) { open(installed.id) }
-                    .buttonStyle(AskWorkflowActionStyle())
+                    .buttonStyle(.bordered)
                     .accessibilityIdentifier("ask.workflow.gallery.open")
             } else {
                 Button(L("ask.workflow.gallery.addToMine")) { add(item) }
-                    .buttonStyle(AskWorkflowActionStyle(kind: .primary))
+                    .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("ask.workflow.gallery.addDetail")
             }
         }
@@ -308,7 +329,7 @@ extension AskWorkflowGallerySheet {
 
     private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(StudioTheme.textSecondary)
+            Text(title).font(.system(.callout, weight: .semibold)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             content()
         }
     }
@@ -318,7 +339,7 @@ extension AskWorkflowGallerySheet {
             (L("ask.workflow.trust.keywords"), AnyView(AskFlowLayout(spacing: 5) {
                 ForEach(item.keywords, id: \.self) { AskWorkflowChip(text: $0) }
                 Text(L("ask.workflow.gallery.renameHint", (item.keywords.first ?? "fx") + "2"))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             })),
             (L("ask.workflow.gallery.runtime"), AnyView(Text(runtimeText(item)))),
             (L("ask.workflow.gallery.does"), AnyView(AskFlowLayout(spacing: 5) {
@@ -326,7 +347,7 @@ extension AskWorkflowGallerySheet {
                     AskWorkflowGalleryTag(text: L("ask.workflow.gallery.visits", host), color: .orange)
                 }
                 ForEach(Array(Self.actions(item).enumerated()), id: \.offset) { _, title in
-                    AskWorkflowGalleryTag(text: title, color: StudioTheme.textSecondary)
+                    AskWorkflowGalleryTag(text: title, color: TypefluxColor.secondaryLabel.color)
                 }
                 if item.hosts.isEmpty, Self.actions(item).isEmpty {
                     Text(L("ask.workflow.gallery.showsOnly"))
@@ -334,7 +355,7 @@ extension AskWorkflowGallerySheet {
             })),
             (L("ask.workflow.gallery.demonstrates"), AnyView(Text(item.demonstrates))),
             (L("ask.workflow.trust.files"), AnyView(Text(item.files().keys.filter { $0 != AskWorkflowManifest.fileName }
-                    .sorted().joined(separator: " · ")).font(.system(size: 12, design: .monospaced))))
+                    .sorted().joined(separator: " · ")).font(.system(.callout, design: .monospaced))))
         ]
         return VStack(spacing: 0) {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
@@ -342,15 +363,19 @@ extension AskWorkflowGallerySheet {
                     Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(row.0).foregroundStyle(StudioTheme.textTertiary).frame(width: 76, alignment: .leading)
-                    row.1.foregroundStyle(StudioTheme.textPrimary).fixedSize(horizontal: false, vertical: true)
+                    Text(row.0).foregroundStyle(TypefluxColor.tertiaryLabel.color).frame(width: 76, alignment: .leading)
+                    row.1.foregroundStyle(TypefluxColor.label.color).fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .font(.system(size: 12.5)).padding(.horizontal, 14).padding(.vertical, 11)
+                .font(.system(.callout)).padding(.horizontal, 14).padding(.vertical, 11)
             }
         }
-        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+        .background(
+            TypefluxColor.contentBackground.color,
+            in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+        )
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
     }
 
     /// "Python 3 (comes with macOS, nothing to install)", or how to get it when it is missing.
@@ -375,14 +400,18 @@ extension AskWorkflowGallerySheet {
             ForEach(item.usage, id: \.example) { line in
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     AskWorkflowChip(text: line.example)
-                    Text(line.description).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textPrimary)
+                    Text(line.description).font(.system(.callout)).foregroundStyle(TypefluxColor.label.color)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+        .background(
+            TypefluxColor.contentBackground.color,
+            in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+        )
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
     }
 
     private func launcherPreview(_ item: AskWorkflowGallery.Item,
@@ -394,8 +423,12 @@ extension AskWorkflowGallerySheet {
             output: AskWorkflowManifest.Output(display: Self.previewDisplay(item)), timeout: item.manifest.timeout,
             folder: item.folder
         )
-        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+        .background(
+            TypefluxColor.contentBackground.color,
+            in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+        )
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
     }
 
     /// How the sample output shows: as the example shows it, and as text for one that shows
@@ -408,14 +441,18 @@ extension AskWorkflowGallerySheet {
     private func code(_ item: AskWorkflowGallery.Item, _ script: String) -> some View {
         let text = item.files()[script].flatMap { String(bytes: $0, encoding: .utf8) } ?? ""
         return ScrollView(.horizontal, showsIndicators: false) {
-            Text(Self.preview(text)).font(.system(size: 11.5, design: .monospaced))
-                .foregroundStyle(StudioTheme.textPrimary).textSelection(.enabled)
+            Text(Self.preview(text)).font(.system(.subheadline, design: .monospaced))
+                .foregroundStyle(TypefluxColor.label.color).textSelection(.enabled)
                 .fixedSize().padding(14)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(nsColor: .textBackgroundColor).opacity(0.55),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+                    in: RoundedRectangle(
+                        cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                        style: .continuous
+                    ))
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
     }
 
     static let previewLines = 20
@@ -449,32 +486,39 @@ extension AskWorkflowGallerySheet {
         let version = store.installed(item)?.manifest?.origin?.version ?? ""
         return VStack(alignment: .leading, spacing: 12) {
             Button { updating = nil } label: {
-                Text("‹ " + item.name).font(.system(size: 12.5)).foregroundStyle(AskTheme.accent)
+                Text("‹ " + item.name).font(.system(.callout)).foregroundStyle(TypefluxColor.accent.color)
             }
             .buttonStyle(.plain)
             HStack(spacing: 8) {
                 Text(L("ask.workflow.gallery.update.title", item.name, version, item.version))
-                    .font(.system(size: 17, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                    .font(.system(.title2, weight: .semibold)).foregroundStyle(TypefluxColor.label.color)
                 Spacer()
                 Button(L("ask.workflow.cancel")) { updating = nil }
-                    .buttonStyle(AskWorkflowActionStyle())
+                    .buttonStyle(.bordered)
                 Button(L("ask.workflow.gallery.update.apply")) { applyUpdate(item) }
-                    .buttonStyle(AskWorkflowActionStyle(kind: .primary))
+                    .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("ask.workflow.gallery.update.apply")
             }
             .padding(.trailing, 30)
             Text(update.userModified.isEmpty ? L("ask.workflow.gallery.update.hint")
                 : L("ask.workflow.gallery.update.modified", update.userModified.sorted().joined(separator: ", ")))
-                .font(.system(size: 12.5))
-                .foregroundStyle(update.userModified.isEmpty ? StudioTheme.textSecondary : StudioTheme.warning)
+                .font(.system(.callout))
+                .foregroundStyle(update.userModified.isEmpty ? TypefluxColor.secondaryLabel.color : TypefluxColor
+                    .warning.color)
                 .fixedSize(horizontal: false, vertical: true)
             AskWorkflowDiffView(old: update.current, new: update.updated, labels: (
                 L("ask.workflow.gallery.update.mine"), L("ask.workflow.gallery.update.new")
             ), suffix: L("ask.workflow.editor.diff.diffSuffix"), marked: update.userModified,
             markHint: L("ask.workflow.gallery.update.markHint")) { EmptyView() }
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(TypefluxColor.separator.color))
+                .clipShape(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                    style: .continuous
+                ))
+                .overlay(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                    style: .continuous
+                )
+                .strokeBorder(TypefluxColor.separator.color))
         }
         .padding(24)
     }
@@ -507,13 +551,20 @@ extension AskWorkflowGallerySheet {
 
 /// An example's icon on its color.
 struct AskWorkflowGalleryTile: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
     var item: AskWorkflowGallery.Item
     var size: CGFloat
 
     var body: some View {
-        Image(systemName: item.symbol).font(.system(size: size * 0.45, weight: .semibold)).foregroundStyle(.white)
+        Image(systemName: item.symbol).font(.system(.body, weight: .semibold)).foregroundStyle(.white)
             .frame(width: size, height: size)
-            .background(Self.color(item), in: RoundedRectangle(cornerRadius: size * 0.27, style: .continuous))
+            .background(
+                Self.color(item),
+                in: RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                    style: .continuous
+                )
+            )
     }
 
     static func color(_ item: AskWorkflowGallery.Item) -> Color {
@@ -526,26 +577,36 @@ struct AskWorkflowGalleryTile: View {
         case "pink": .pink
         case "teal": .teal
         case "indigo": .indigo
-        default: AskWorkflowEditorStyle.tileColor(for: item.id)
+        default: TypefluxColor.accent.color
         }
     }
 }
 
 /// A small colored label: "Network", "Added", "Copy to clipboard".
 struct AskWorkflowGalleryTag: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var text: String
     var color: Color
 
     var body: some View {
-        Text(text).font(.system(size: 11.5, weight: .medium)).foregroundStyle(color).lineLimit(1)
+        Text(text).font(.system(.subheadline, weight: .medium)).foregroundStyle(color).lineLimit(1)
             .padding(.horizontal, 7).frame(height: 21)
-            .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .background(
+                color.opacity(0.14),
+                in: RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                    style: .continuous
+                )
+            )
     }
 }
 
 /// Settings' empty state (§1.1): the first examples, each one click from being added,
 /// and the way to the whole gallery.
 struct AskWorkflowGalleryStarter: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var store: AskWorkflowStore
     var gallery: AskWorkflowGallery
     var builtIn: [AskKeyword]
@@ -558,28 +619,29 @@ struct AskWorkflowGalleryStarter: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(L("ask.workflow.gallery.emptyTitle")).font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-            Text(L("ask.workflow.gallery.emptyHint")).font(.system(size: 12))
-                .foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
+            Text(L("ask.workflow.gallery.emptyTitle")).font(.system(.body, weight: .semibold))
+                .foregroundStyle(TypefluxColor.label.color)
+            Text(L("ask.workflow.gallery.emptyHint")).font(.system(.callout))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color).fixedSize(horizontal: false, vertical: true)
             HStack(alignment: .top, spacing: 10) {
                 ForEach(gallery.items.prefix(Self.count)) { item in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 8) {
                             AskWorkflowGalleryTile(item: item, size: 24)
-                            Text(item.name).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                            Text(item.name).font(.system(.body, weight: .semibold)).lineLimit(1)
                         }
-                        Text(item.summary).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                        Text(item.summary).font(.system(.subheadline))
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .lineLimit(2).frame(maxWidth: .infinity, minHeight: 30, alignment: .topLeading)
                         HStack(spacing: 5) {
                             ForEach(item.keywords, id: \.self) { AskWorkflowChip(text: $0) }
                             Spacer(minLength: 4)
                             if let installed = store.installed(item) {
                                 Button(L("ask.workflow.editor.edit")) { open(installed.id) }
-                                    .buttonStyle(AskWorkflowActionStyle(small: true))
+                                    .buttonStyle(.bordered).controlSize(.small)
                             } else {
                                 Button(L("ask.workflow.gallery.add")) { add(item) }
-                                    .buttonStyle(AskWorkflowActionStyle(small: true))
+                                    .buttonStyle(.bordered).controlSize(.small)
                                     .accessibilityIdentifier("ask.workflow.gallery.starter.add." + item.id)
                             }
                         }
@@ -587,20 +649,26 @@ struct AskWorkflowGalleryStarter: View {
                     .padding(12).frame(maxWidth: .infinity)
                     .background(
                         TypefluxColor.contentBackground.color,
-                        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                            style: .continuous
+                        )
                     )
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(TypefluxColor.separator.color))
+                    .overlay(RoundedRectangle(
+                        cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                        style: .continuous
+                    )
+                    .strokeBorder(TypefluxColor.separator.color))
                 }
             }
             HStack {
                 Button(L("ask.workflow.gallery.browseAll", gallery.items.count), action: browse)
                     .buttonStyle(.borderless)
                 if let failure {
-                    Text(failure).font(.system(size: 11.5)).foregroundStyle(StudioTheme.danger)
+                    Text(failure).font(.system(.subheadline)).foregroundStyle(TypefluxColor.danger.color)
                 }
             }
-            .font(.system(size: 12.5))
+            .font(.system(.callout))
         }
         .padding(.horizontal, 18).padding(.vertical, 14)
     }

@@ -20,18 +20,18 @@ struct AskCreditPauseCard: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(L(presentation.titleKey))
                     .font(.system(size: 13.5, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .padding(.top, 5)
                 Text(bodyText)
                     .font(.system(size: 12.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineSpacing(3)
                     .padding(.top, 4)
                 balances.padding(.top, 12)
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.danger)
+                        .foregroundStyle(TypefluxColor.danger.color)
                         .padding(.top, 8)
                 }
                 if presentation.primary != nil || working {
@@ -44,9 +44,10 @@ struct AskCreditPauseCard: View {
         .padding(.leading, 16)
         .padding(.trailing, 18)
         .padding(.vertical, 16)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(AskTheme.raisedSurface))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(TypefluxColor.windowBackground.color))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .strokeBorder(available ? StudioTheme.success.opacity(0.32) : StudioTheme.warning.opacity(0.32)))
+            .strokeBorder(available ? TypefluxColor.success.color.opacity(0.32) : TypefluxColor.warning.color
+                .opacity(0.32)))
         .transaction {
             if reduceMotion {
                 $0.animation = nil; $0.disablesAnimations = true
@@ -65,10 +66,12 @@ struct AskCreditPauseCard: View {
     private var symbol: some View {
         Image(systemName: available ? "checkmark" : "pause.fill")
             .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(available ? StudioTheme.success : StudioTheme.warning)
+            .foregroundStyle(available ? TypefluxColor.success.color : TypefluxColor.warning.color)
             .frame(width: 32, height: 32)
-            .background(available ? AskTheme.successSoft : AskTheme.warningSoft,
-                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(
+                available ? TypefluxColor.success.color.opacity(0.12) : TypefluxColor.warning.color.opacity(0.12),
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
             .accessibilityHidden(true)
     }
 
@@ -83,10 +86,10 @@ struct AskCreditPauseCard: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.system(size: 11))
-                .foregroundStyle(StudioTheme.textTertiary)
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             Text(value.map(AccountUsageDisplayFormatter.creditAmount) ?? "—")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(value == 0 ? StudioTheme.textSecondary : StudioTheme.textPrimary)
+                .foregroundStyle(value == 0 ? TypefluxColor.secondaryLabel.color : TypefluxColor.label.color)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)

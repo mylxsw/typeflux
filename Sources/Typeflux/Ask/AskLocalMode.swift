@@ -80,7 +80,6 @@ struct AskHistoryFilterBar: View {
         }
         .frame(height: TypefluxControlHeight.segmented.value(for: style))
     }
-
 }
 
 /// The card behind the composer's storage icon: where the conversation is kept,
@@ -103,10 +102,10 @@ struct AskLocalModeCard: View {
                 Label(L(status.local ? "ask.storage.local" : "ask.storage.cloud"),
                       systemImage: status.local ? "lock" : "cloud")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                 Text(L(status.summaryKey))
                     .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if status.changeable {
@@ -115,13 +114,13 @@ struct AskLocalModeCard: View {
                     option(local: true)
                 }
             }
-            Rectangle().fill(AskTheme.separator).frame(height: 0.5)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 0.5)
             if status.local { localDetails } else { cloudDetails }
             if status.offersSignIn {
-                Rectangle().fill(AskTheme.separator).frame(height: 0.5)
+                Rectangle().fill(TypefluxColor.separator.color).frame(height: 0.5)
                 HStack(spacing: 8) {
                     Text(L("ask.local.card.cloudQuestion")).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     Spacer(minLength: 6)
                     Button(L("account.card.signIn"), action: onSignIn)
                         .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
@@ -144,26 +143,27 @@ struct AskLocalModeCard: View {
             row(L("ask.local.card.readPages"), L("ask.local.card.available"))
         }
         if let reason = status.modelReason {
-            Text(reason).font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
+            Text(reason).font(.system(size: 11)).foregroundStyle(TypefluxColor.warning.color)
                 .fixedSize(horizontal: false, vertical: true)
             Button(L("ask.submission.models"), action: onOpenModelSettings)
                 .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
         }
         if !status.searchConfigured {
             HStack(spacing: 8) {
-                Image(systemName: "info.circle").font(.system(size: 13)).foregroundStyle(StudioTheme.warning)
+                Image(systemName: "info.circle").font(.system(size: 13)).foregroundStyle(TypefluxColor.warning.color)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(L("ask.local.card.noSearch")).font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                     Text(L("ask.local.card.noSearchHint")).font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
                 Spacer(minLength: 6)
                 Button(L("ask.local.card.configure"), action: onOpenSearchSettings)
                     .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
             }
             .padding(.horizontal, 10).padding(.vertical, 8)
-            .background(StudioTheme.warning.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(TypefluxColor.warning.color.opacity(0.1),
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         note(L("ask.storage.card.localNote"))
     }
@@ -175,13 +175,13 @@ struct AskLocalModeCard: View {
     private func note(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 11))
-            .foregroundStyle(StudioTheme.textTertiary)
+            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             .fixedSize(horizontal: false, vertical: true)
     }
 
     private func option(local: Bool) -> some View {
         let chosen = status.local == local
-        let tint = local ? AskTheme.privateTint : AskTheme.accent
+        let tint = local ? Color(nsColor: .systemPurple) : TypefluxColor.accent.color
         return Button { onChoose(local) } label: {
             HStack(spacing: 10) {
                 Image(systemName: local ? "lock" : "cloud")
@@ -192,10 +192,10 @@ struct AskLocalModeCard: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(L(local ? "ask.storage.local" : "ask.storage.cloud"))
                         .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                     Text(L(local ? "ask.storage.local.detail" : "ask.storage.cloud.detail"))
                         .font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 6)
@@ -204,7 +204,8 @@ struct AskLocalModeCard: View {
                 }
             }
             .padding(.horizontal, 8).padding(.vertical, 7)
-            .background(chosen ? tint.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(chosen ? tint.opacity(0.08) : .clear,
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(chosen ? tint.opacity(0.5) : .clear, lineWidth: 1))
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -215,10 +216,11 @@ struct AskLocalModeCard: View {
 
     private func row(_ label: String, _ value: String, available: Bool = true) -> some View {
         HStack(spacing: 8) {
-            Text(label).foregroundStyle(StudioTheme.textSecondary).frame(width: 64, alignment: .leading)
-            Text(value).foregroundStyle(StudioTheme.textPrimary).lineLimit(1).truncationMode(.middle)
+            Text(label).foregroundStyle(TypefluxColor.secondaryLabel.color).frame(width: 64, alignment: .leading)
+            Text(value).foregroundStyle(TypefluxColor.label.color).lineLimit(1).truncationMode(.middle)
             Spacer(minLength: 6)
-            Circle().fill(available ? StudioTheme.success : StudioTheme.warning).frame(width: 6, height: 6)
+            Circle().fill(available ? TypefluxColor.success.color : TypefluxColor.warning.color).frame(width: 6,
+                                                                                                       height: 6)
                 .accessibilityLabel(L(available ? "ask.local.card.available" : "ask.models.unavailable"))
         }
         .font(.system(size: 12))
@@ -290,15 +292,15 @@ struct AskStorageButton: View {
 
     /// The private tint marks this Mac, hover or an open menu brightens the cloud.
     static func iconColor(local: Bool, active: Bool) -> Color {
-        if local { return AskTheme.privateTint }
-        return active ? StudioTheme.textPrimary : StudioTheme.textSecondary
+        if local { return Color(nsColor: .systemPurple) }
+        return active ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color
     }
 
     /// Kept on this Mac is a state, so it sits in a private-tinted well like an
     /// on switch; the cloud only gets the hover wash.
     static func wellFill(local: Bool, active: Bool) -> Color {
-        if local { return AskTheme.privateFill }
-        return active ? AskTheme.hoverFill : .clear
+        if local { return LegacyAskPalette.privateFill }
+        return active ? TypefluxColor.label.color.opacity(0.06) : .clear
     }
 }
 

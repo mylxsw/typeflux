@@ -18,7 +18,8 @@ struct AskHarnessUITests {
     }
 
     private func result(_ callId: String, image: String? = nil, error: Bool = false) -> AskMessage {
-        AskMessage(id: "t-" + callId, role: "tool", text: "ok", image: image, toolCallId: callId, isError: error, createdAt: now)
+        AskMessage(id: "t-" + callId, role: "tool", text: "ok", image: image, toolCallId: callId, isError: error,
+                   createdAt: now)
     }
 
     private func fits<V: View>(_ view: V, width: CGFloat = 640) -> CGFloat {
@@ -27,10 +28,13 @@ struct AskHarnessUITests {
         return hosting.fittingSize.height
     }
 
-    private let image = "data:image/png;base64," + (NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 4, pixelsHigh: 4, bitsPerSample: 8,
-                                                                        samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
-                                                                        colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
-        .representation(using: .png, properties: [:])!.base64EncodedString())
+    private let image = "data:image/png;base64," + (NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 4,
+                                                                     pixelsHigh: 4, bitsPerSample: 8,
+                                                                     samplesPerPixel: 4, hasAlpha: true,
+                                                                     isPlanar: false,
+                                                                     colorSpaceName: .deviceRGB, bytesPerRow: 0,
+                                                                     bitsPerPixel: 0)!
+            .representation(using: .png, properties: [:])!.base64EncodedString())
 
     // MARK: - Grouping
 
@@ -60,44 +64,57 @@ struct AskHarnessUITests {
     @Test func aBlockWithoutAnAnswerKeepsItsOutputsAndUserTurnsSplitBlocks() {
         let code = call("c", "run_code")
         let failed = call("x", "run_code")
-        let messages = [step("a1", [code, failed]), AskMessage(id: "u2", role: "user", text: "next", createdAt: now), step("a2", [call("k", "skill")])]
-        let items = AskActivity.items(messages, results: [result("c", image: image), result("x", image: image, error: true)])
+        let messages = [
+            step("a1", [code, failed]),
+            AskMessage(id: "u2", role: "user", text: "next", createdAt: now),
+            step("a2", [call("k", "skill")])
+        ]
+        let items = AskActivity.items(messages,
+                                      results: [result("c", image: image), result("x", image: image, error: true)])
         #expect(items.map(\.id) == ["a1", "u2", "a2"])
         #expect(items[0].outputs.artifacts.map(\.id) == ["c"])
         #expect(items[1].outputs.isEmpty)
     }
 
     @Test func outputsIgnoreNonWebURLs() {
-        let group = AskActivityGroup(id: "a", messages: [step("a", [call("f", "web_fetch", ["url": "file:///etc/passwd"]),
-                                                                    call("g", "web_fetch", ["url": 3])])])
+        let group = AskActivityGroup(id: "a",
+                                     messages: [step("a", [call("f", "web_fetch", ["url": "file:///etc/passwd"]),
+                                                           call("g", "web_fetch", ["url": 3])])])
         #expect(AskActivity.outputs(group, results: []).sources.isEmpty)
     }
 
     @Test func blockStatusFollowsApprovalLiveStreamingAndResults() {
-        let group = AskActivityGroup(id: "a", messages: [step("a", [call("c", "run_code"), call("d", "files", ["action": "read"])])])
+        let group = AskActivityGroup(id: "a",
+                                     messages: [step("a",
+                                                     [call("c", "run_code"), call("d", "files", ["action": "read"])])])
         let done = [result("c"), result("d")]
         #expect(AskActivity.status(group, results: done, streamingId: nil, approvalToolId: "d") == .attention)
         #expect(AskActivity.status(group, results: done, streamingId: nil, approvalToolId: nil, live: true) == .running)
         #expect(AskActivity.status(group, results: done, streamingId: "a", approvalToolId: nil) == .running)
         #expect(AskActivity.status(group, results: [result("c")], streamingId: nil, approvalToolId: nil) == .running)
-        #expect(AskActivity.status(group, results: [result("c"), result("d", error: true)], streamingId: nil, approvalToolId: nil) == .failed)
+        #expect(AskActivity.status(group, results: [result("c"), result("d", error: true)], streamingId: nil,
+                                   approvalToolId: nil) == .failed)
         #expect(AskActivity.status(group, results: done, streamingId: nil, approvalToolId: "other") == .done)
     }
 
     @Test func titlesSayWhatTheBlockDid() {
         let plan = [AskPlanItem(step: "A", status: "completed"), AskPlanItem(step: "B", status: "pending")]
         let group = AskActivityGroup(id: "a", messages: [step("a", [call("p", "update_plan"), call("s", "web_search"),
-                                                                    call("r", "research"), call("f", "files"), call("m", "mcp_x")])])
+                                                                    call("r", "research"), call("f", "files"), call("m",
+                                                                                                                    "mcp_x")])])
         let results = [result("s"), result("r"), result("f", error: true), result("m")]
         let summary = AskActivity.categorySummary(group.calls)
         // The step under way names the line while working.
-        #expect(AskActivity.title(group, status: .running, plan: nil, results: results) == AskTheme.toolTitle(group.steps[3]))
-        #expect(AskActivity.title(group, status: .attention, plan: nil, results: results) == L("ask.activity.attention"))
+        #expect(AskActivity.title(group, status: .running, plan: nil, results: results) == AskToolPresentation
+            .toolTitle(group.steps[3]))
+        #expect(AskActivity
+            .title(group, status: .attention, plan: nil, results: results) == L("ask.activity.attention"))
         #expect(AskActivity.title(group, status: .failed, plan: plan, results: results)
             == L("ask.activity.plan", 1, 2) + " · " + summary)
         #expect(AskActivity.title(group, status: .done, plan: [], results: [result("s")]) == summary)
         // "Other" never shows; such tools are named instead.
-        #expect(summary == [L("ask.activity.kind.search") + " 2", L("ask.activity.kind.files") + " 1", "MCP"].joined(separator: " · "))
+        #expect(summary == [L("ask.activity.kind.search") + " 2", L("ask.activity.kind.files") + " 1", "MCP"]
+            .joined(separator: " · "))
         #expect(!summary.contains(L("ask.activity.kind.other")))
         #expect(AskActivity.failures(group, results: results) == 1)
         #expect(AskActivity.failures(group, results: []) == 0)
@@ -111,18 +128,22 @@ struct AskHarnessUITests {
         let list = call("m", "memory", ["action": "list"])
         let group = AskActivityGroup(id: "a", messages: [step("a", [list])])
         let title = AskActivity.title(group, status: .done, plan: nil, results: [result("m")])
-        #expect(title == AskTheme.toolTitle(list))
+        #expect(title == AskToolPresentation.toolTitle(list))
         #expect(title.hasPrefix(L("ask.tool.memory")))
         #expect(AskActivity.stepNote(group, status: .done) == nil)
         #expect(AskActivity.stepNote(group, status: .running) == L("ask.activity.step", 1))
         #expect(AskActivity.symbol(group) == "brain")
         // A plan keeps its count in front, with the step summarized after it.
-        let planned = AskActivity.title(group, status: .done, plan: [AskPlanItem(step: "A", status: "completed")], results: [])
+        let planned = AskActivity.title(group, status: .done, plan: [AskPlanItem(step: "A", status: "completed")],
+                                        results: [])
         #expect(planned == L("ask.activity.plan", 1, 1) + " · " + L("ask.tool.memory"))
         // Repeated unnamed tools carry a count; the category ones keep their order.
-        let two = AskActivityGroup(id: "b", messages: [step("b", [call("x", "memory"), call("y", "memory", ["action": "remember"]),
-                                                                  call("z", "web_fetch", ["url": "https://a.b"])])])
-        #expect(AskActivity.categorySummary(two.calls) == L("ask.activity.kind.web") + " 1 · " + L("ask.tool.memory") + " 2")
+        let two = AskActivityGroup(id: "b",
+                                   messages: [step("b",
+                                                   [call("x", "memory"), call("y", "memory", ["action": "remember"]),
+                                                    call("z", "web_fetch", ["url": "https://a.b"])])])
+        #expect(AskActivity
+            .categorySummary(two.calls) == L("ask.activity.kind.web") + " 1 · " + L("ask.tool.memory") + " 2")
     }
 
     @Test func aBlockStillPlanningHasAFallbackTitleAndGlyph() {
@@ -131,7 +152,8 @@ struct AskHarnessUITests {
         #expect(AskActivity.title(planning, status: .done, plan: nil, results: []) == L("ask.tool.update_plan"))
         #expect(AskActivity.stepNote(planning, status: .running) == nil)
         #expect(AskActivity.symbol(planning) == "list.bullet.clipboard")
-        #expect(AskToolStepRow.showsStatus(.failed) && AskToolStepRow.showsStatus(.attention) && AskToolStepRow.showsStatus(.running))
+        #expect(AskToolStepRow.showsStatus(.failed) && AskToolStepRow.showsStatus(.attention) && AskToolStepRow
+            .showsStatus(.running))
         #expect(!AskToolStepRow.showsStatus(.done))
     }
 
@@ -144,7 +166,8 @@ struct AskHarnessUITests {
     @Test func blockPlanPrefersTheLiveRunPlanForTheLatestBlock() {
         let recorded = call("p", "update_plan", ["items": [["step": "Old", "status": "completed"]]])
         let group = AskActivityGroup(id: "a", messages: [step("a", [recorded], runId: "run")])
-        var run = AskRun(id: "run", deviceId: "d", status: "completed", steps: 2, updatedAt: now, tools: [], pending: [])
+        var run = AskRun(id: "run", deviceId: "d", status: "completed", steps: 2, updatedAt: now, tools: [],
+                         pending: [])
         run.plan = [AskPlanItem(step: "New", status: "in_progress")]
         #expect(AskActivity.plan(for: group, run: run, isLatest: true)?.first?.step == "New")
         #expect(AskActivity.plan(for: group, run: run, isLatest: false)?.first?.step == "Old")
@@ -180,23 +203,32 @@ struct AskHarnessUITests {
     // MARK: - Titles and status
 
     @Test func toolTitlesNeverShowRawNames() {
-        #expect(AskTheme.toolTitle(call("p", "update_plan")) == L("ask.tool.update_plan"))
-        #expect(AskTheme.toolTitle(call("r", "research", ["question": "Why"])) == L("ask.tool.research") + " · Why")
-        #expect(AskTheme.toolTitle(call("r", "research")) == L("ask.tool.research"))
-        #expect(AskTheme.toolTitle(call("f", "files", ["action": "search", "query": "release"])) == L("ask.files.action.search") + " · release")
-        #expect(AskTheme.toolTitle(call("f", "files", ["action": "list", "path": ""])) == L("ask.files.action.list"))
-        #expect(AskTheme.toolTitle(call("f", "files", ["action": "zip"])) == L("ask.tool.files"))
-        #expect(AskTheme.toolTitle(call("m", "mcp_delete_issue")) == "MCP · delete_issue")
-        #expect(AskTheme.toolTitle(call("m", "mcp_delete_issue"), mcpServer: "Linear") == "Linear · delete_issue")
-        #expect(AskTheme.toolTitle(call("b", "browser", ["action": "read"])) == L("ask.tool.browser") + " · " + L("ask.action.read"))
-        #expect(AskTheme.toolTitle(call("x", "custom")) == "custom")
+        #expect(AskToolPresentation.toolTitle(call("p", "update_plan")) == L("ask.tool.update_plan"))
+        #expect(AskToolPresentation
+            .toolTitle(call("r", "research", ["question": "Why"])) == L("ask.tool.research") + " · Why")
+        #expect(AskToolPresentation.toolTitle(call("r", "research")) == L("ask.tool.research"))
+        #expect(AskToolPresentation
+            .toolTitle(call("f", "files", ["action": "search", "query": "release"])) == L("ask.files.action.search") +
+            " · release")
+        #expect(AskToolPresentation
+            .toolTitle(call("f", "files", ["action": "list", "path": ""])) == L("ask.files.action.list"))
+        #expect(AskToolPresentation.toolTitle(call("f", "files", ["action": "zip"])) == L("ask.tool.files"))
+        #expect(AskToolPresentation.toolTitle(call("m", "mcp_delete_issue")) == "MCP · delete_issue")
+        #expect(AskToolPresentation
+            .toolTitle(call("m", "mcp_delete_issue"), mcpServer: "Linear") == "Linear · delete_issue")
+        #expect(AskToolPresentation
+            .toolTitle(call("b", "browser", ["action": "read"])) == L("ask.tool.browser") + " · " +
+            L("ask.action.read"))
+        #expect(AskToolPresentation.toolTitle(call("x", "custom")) == "custom")
         #expect(AskPresentation.toolSymbol(call("m", "mcp_delete_issue")) == "point.3.connected.trianglepath.dotted")
     }
 
     @Test func imageStatusDependsOnTheTool() {
         let withImage = result("c", image: image)
-        #expect(AskPresentation.toolStatusText(result: withImage, call: call("c", "run_code")) == L("ask.image.generated"))
-        #expect(AskPresentation.toolStatusText(result: withImage, call: call("c", "computer")) == L("ask.image.captured"))
+        #expect(AskPresentation
+            .toolStatusText(result: withImage, call: call("c", "run_code")) == L("ask.image.generated"))
+        #expect(AskPresentation
+            .toolStatusText(result: withImage, call: call("c", "computer")) == L("ask.image.captured"))
         #expect(AskPresentation.toolStatusText(result: withImage) == L("ask.image.captured"))
         #expect(AskPresentation.toolStatusText(result: result("c"), call: call("c", "run_code")) == L("ask.tool.done"))
     }
@@ -204,14 +236,23 @@ struct AskHarnessUITests {
     // MARK: - Approvals
 
     @Test func approvalPreviewsShowWhatWillChange() {
-        #expect(AskApprovalPresentation.preview(call("w", "files", ["action": "edit", "path": "/a", "old_text": "# A", "new_text": "# B"]))
-            == .diff(removed: "# A", added: "# B"))
-        #expect(AskApprovalPresentation.preview(call("w", "files", ["action": "write", "content": "hello"])) == .content("hello"))
+        #expect(AskApprovalPresentation.preview(call("w", "files",
+                                                     [
+                                                         "action": "edit",
+                                                         "path": "/a",
+                                                         "old_text": "# A",
+                                                         "new_text": "# B"
+                                                     ]))
+                == .diff(removed: "# A", added: "# B"))
+        #expect(AskApprovalPresentation
+            .preview(call("w", "files", ["action": "write", "content": "hello"])) == .content("hello"))
         #expect(AskApprovalPresentation.preview(call("w", "files", ["action": "write"])) == .none)
         #expect(AskApprovalPresentation.preview(call("c", "run_code", ["code": "print(1)"])) == .content("print(1)"))
-        #expect(AskApprovalPresentation.preview(call("t", "computer", ["action": "type", "text": "hi"])) == .content("hi"))
+        #expect(AskApprovalPresentation
+            .preview(call("t", "computer", ["action": "type", "text": "hi"])) == .content("hi"))
         #expect(AskApprovalPresentation.preview(call("t", "browser", ["action": "fill", "text": "x"])) == .content("x"))
-        #expect(AskApprovalPresentation.preview(call("m", "memory", ["action": "remember", "text": "likes tea"])) == .content("likes tea"))
+        #expect(AskApprovalPresentation
+            .preview(call("m", "memory", ["action": "remember", "text": "likes tea"])) == .content("likes tea"))
         #expect(AskApprovalPresentation.preview(call("d", "mcp_delete", ["id": "1"])) == .content("{\"id\":\"1\"}"))
         #expect(AskApprovalPresentation.detail(call("w", "files", ["path": "~/a/b.md"])) == "~/a/b.md")
         #expect(AskApprovalPresentation.detail(call("w", "run_code", ["path": "x"])) == nil)
@@ -230,19 +271,27 @@ struct AskHarnessUITests {
         let edit = call("w", "files", ["action": "edit", "path": "~/a.md", "old_text": "# A\nline", "new_text": "# B"])
         var denied = false, allowed = false, granted = false
         let card = AskApprovalCard(call: edit, risk: .write, canAllowForConversation: true,
-                                   onDeny: { denied = true }, onAllowForConversation: { granted = true }, onAllow: { allowed = true })
+                                   onDeny: { denied = true }, onAllowForConversation: { granted = true },
+                                   onAllow: { allowed = true })
         #expect(fits(card) > 80)
         card.onDeny(); card.onAllow(); card.onAllowForConversation()
         #expect(denied && allowed && granted)
-        #expect(fits(AskApprovalCard(call: call("d", "mcp_delete_issue", ["id": "1"]), risk: .destructive, mcpServer: "Linear",
+        #expect(fits(AskApprovalCard(call: call("d", "mcp_delete_issue", ["id": "1"]), risk: .destructive,
+                                     mcpServer: "Linear",
                                      onDeny: {}, onAllow: {})) > 60)
-        #expect(fits(AskApprovalCard(call: call("c", "run_code", ["code": "1"]), risk: .read, onDeny: {}, onAllow: {})) > 60)
+        #expect(fits(AskApprovalCard(call: call("c", "run_code", ["code": "1"]), risk: .read, onDeny: {},
+                                     onAllow: {})) >
+                60)
     }
 
     // MARK: - Views
 
     @Test func activityBlocksRenderInEveryState() {
-        let calls = [call("p", "update_plan", ["items": [["step": "A", "status": "in_progress"]]]), call("c", "run_code"), call("s", "web_search")]
+        let calls = [
+            call("p", "update_plan", ["items": [["step": "A", "status": "in_progress"]]]),
+            call("c", "run_code"),
+            call("s", "web_search")
+        ]
         var reasoning = step("a", calls, text: "Looking it up")
         reasoning.reasoning = "Thinking"
         let group = AskActivityGroup(id: "a", messages: [reasoning])
@@ -253,16 +302,22 @@ struct AskHarnessUITests {
         outputs.sources = (1 ... 8).map { URL(string: "https://example.com/\($0)")! }
         let collapsed = fits(AskActivityBlock(group: group, results: results, plan: plan, status: .done))
         // Working stays one folded line too; the line names the step under way.
-        let running = fits(AskActivityBlock(group: group, results: results, plan: plan, status: .running, streamingId: "a"))
+        let running = fits(AskActivityBlock(group: group, results: results, plan: plan, status: .running,
+                                            streamingId: "a"))
         #expect(running == collapsed)
         let plain = fits(AskActivityBlock(group: AskActivityGroup(id: "b", messages: [step("b", [calls[1]])]),
                                           results: results, plan: nil, status: .done))
         #expect(plain <= AskActivityBlock.lineHeight + 1)
-        #expect(fits(AskActivityBlock(group: group, results: results, plan: plan, status: .done, startsExpanded: true)) > collapsed)
-        #expect(fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention, startsExpanded: false))
-            < fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention)))
-        #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .attention, approvalToolId: "c")) > collapsed)
-        #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .failed, outputs: outputs)) > collapsed)
+        #expect(fits(AskActivityBlock(group: group, results: results, plan: plan, status: .done,
+                                      startsExpanded: true)) >
+                collapsed)
+        #expect(fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention,
+                                      startsExpanded: false))
+                < fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention)))
+        #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .attention,
+                                      approvalToolId: "c")) > collapsed)
+        #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .failed, outputs: outputs)) >
+            collapsed)
         #expect(fits(AskToolStepRow(call: calls[1], result: results[1])) > 10)
         #expect(fits(AskToolStepRow(call: calls[2], result: nil, preparing: true)) > 10)
         #expect(fits(AskToolStepRow(call: calls[2], result: nil, pending: true)) > 10)
@@ -323,9 +378,11 @@ struct AskHarnessUITests {
         for tab in AgentSettingsPane.allCases where tab != .mcpServers {
             for localMode in [true, false] {
                 settings.askNewConversationsStayLocal = localMode
-                let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes,
+                let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root),
+                                                notes: notes,
                                                 owner: { "o" }, pane: tab)
-                let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 900), styleMask: [.titled], backing: .buffered, defer: false)
+                let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 900), styleMask: [.titled],
+                                      backing: .buffered, defer: false)
                 window.isReleasedWhenClosed = false
                 let hosting = NSHostingView(rootView: view)
                 window.contentView = hosting
@@ -337,7 +394,8 @@ struct AskHarnessUITests {
                 window.close()
             }
         }
-        let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes, owner: { "o" })
+        let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes,
+                                        owner: { "o" })
         view.setSkill("email-reply", enabled: false)
         view.setSkill("meeting-notes", enabled: false)
         view.setSkill("meeting-notes", enabled: true)
@@ -356,11 +414,14 @@ struct AskHarnessUITests {
 
     @Test func disabledSkillsAreNotOfferedOrLoaded() async throws {
         let settings = store()
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-harness-skills-\(UUID().uuidString)")
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ask-harness-skills-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
-        let registry = MCPRegistry(settingsStore: MCPSettingsStore(defaults: UserDefaults(suiteName: "ask-harness-mcp-\(UUID().uuidString)")!))
+        let registry =
+            MCPRegistry(settingsStore: MCPSettingsStore(defaults: UserDefaults(suiteName: "ask-harness-mcp-\(UUID().uuidString)")!))
         let tools = AskLocalTools(registry: registry, settings: settings, skills: AskSkillLibrary(userDirectory: root),
-                                  notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")), owner: { "o" })
+                                  notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")),
+                                  owner: { "o" })
         settings.askDisabledSkills = ["email-reply"]
         #expect(!tools.enabledSkills.contains { $0.name == "email-reply" })
         let definitions = await tools.definitions(conversationId: nil)

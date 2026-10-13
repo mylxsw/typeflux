@@ -59,10 +59,22 @@ struct AskReferenceTests {
     @Test func usageOnlySnapshotKeepsOptimisticReferences() {
         let ref = reference()
         let message = AskMessage(id: UUID().uuidString, role: "user", text: "", createdAt: Date(), references: [ref])
-        let optimistic = AskConversation(id: UUID().uuidString, title: "Test", revision: 3, updatedAt: Date(), messages: [message])
+        let optimistic = AskConversation(
+            id: UUID().uuidString,
+            title: "Test",
+            revision: 3,
+            updatedAt: Date(),
+            messages: [message]
+        )
         var incoming = optimistic
         incoming.messages = []
-        incoming.usage = AskConversationUsage(version: 2, since: Date(), historicalGap: false, total: AskUsageTotals(), runs: [:])
+        incoming.usage = AskConversationUsage(
+            version: 2,
+            since: Date(),
+            historicalGap: false,
+            total: AskUsageTotals(),
+            runs: [:]
+        )
         let reconciled = optimistic.reconciling(incoming, preservingEqualRevisionContent: true)
         #expect(reconciled.messages == [message])
         #expect(reconciled.usage == incoming.usage)
@@ -198,13 +210,33 @@ struct AskReferenceTests {
         let conversationID = UUID().uuidString
         let sourceID = UUID().uuidString
         let source = "## A practical plan\n\nStart with the smallest useful workflow.\n\n- Keep the original context.\n- Test one assumption at a time.\n- Review the result before expanding."
-        let quoted = AskReference(messageId: sourceID, text: "Test one assumption at a time.", question: "How would I choose the first assumption?")
-        await f.api.seed(AskConversation(id: conversationID, title: "A practical plan", revision: 1, updatedAt: Date(), messages: [
-            AskMessage(id: UUID().uuidString, role: "user", text: "Help me plan a small product experiment.", createdAt: Date()),
-            AskMessage(id: sourceID, role: "assistant", text: source, createdAt: Date()),
-            AskMessage(id: UUID().uuidString, role: "user", text: "", createdAt: Date(), references: [quoted]),
-            AskMessage(id: UUID().uuidString, role: "assistant", text: "Start with the assumption that would change your next decision.", createdAt: Date())
-        ]))
+        let quoted = AskReference(
+            messageId: sourceID,
+            text: "Test one assumption at a time.",
+            question: "How would I choose the first assumption?"
+        )
+        await f.api.seed(AskConversation(
+            id: conversationID,
+            title: "A practical plan",
+            revision: 1,
+            updatedAt: Date(),
+            messages: [
+                AskMessage(
+                    id: UUID().uuidString,
+                    role: "user",
+                    text: "Help me plan a small product experiment.",
+                    createdAt: Date()
+                ),
+                AskMessage(id: sourceID, role: "assistant", text: source, createdAt: Date()),
+                AskMessage(id: UUID().uuidString, role: "user", text: "", createdAt: Date(), references: [quoted]),
+                AskMessage(
+                    id: UUID().uuidString,
+                    role: "assistant",
+                    text: "Start with the assumption that would change your next decision.",
+                    createdAt: Date()
+                )
+            ]
+        ))
         await f.model.select(conversationID)
         f.model.draft.text = "How do these suggestions fit together?"
         for _ in 0..<8 {
@@ -217,9 +249,14 @@ struct AskReferenceTests {
                 AskReferenceEditor(reference: reference(), save: { _ in }, cancel: {})
                 AskSentReferences(references: [reference()])
                 AskComposer(model: f.model, launcher: false)
-            }.padding(24).frame(width: 740).background(AskTheme.surface)
+            }.padding(24).frame(width: 740).background(TypefluxColor.controlBackground.color)
             let host = NSHostingView(rootView: view)
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 740, height: 530), styleMask: [.borderless], backing: .buffered, defer: false)
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 740, height: 530),
+                styleMask: [.borderless],
+                backing: .buffered,
+                defer: false
+            )
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: appearance)
             window.contentView = host
@@ -234,7 +271,12 @@ struct AskReferenceTests {
             window.close()
         }
         let workspace = NSHostingView(rootView: AskConversationView(model: f.model))
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 740), styleMask: [.borderless], backing: .buffered, defer: false)
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1000, height: 740),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: .darkAqua)
         window.contentView = workspace

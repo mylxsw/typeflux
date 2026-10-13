@@ -29,7 +29,7 @@ struct AccountPlanHeroCard: View {
     var body: some View {
         let status = status
         TypefluxFormSection(L("sidebar.accountCard.cloudAccount")) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+            VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 0) {
                     planLine()
                     if let note = status.periodNote {
@@ -52,7 +52,7 @@ struct AccountPlanHeroCard: View {
     }
 
     private func planLine() -> some View {
-        HStack(spacing: StudioTheme.Spacing.xSmall) {
+        HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
             Text(showsBilling
                 ? "\(L("sidebar.accountCard.cloudAccount")) · \(text(subscription.plan))"
                 : L("sidebar.accountCard.cloudAccount"))
@@ -61,7 +61,7 @@ struct AccountPlanHeroCard: View {
             if showsBilling {
                 TypefluxStatus(text(subscription.status), tone: statusTone)
             }
-            Spacer(minLength: StudioTheme.Spacing.xSmall)
+            Spacer(minLength: TypefluxSpacing.small.value(for: .classic))
             AccountRefreshIconButton(
                 helpText: L("auth.account.refreshOverview"),
                 isDisabled: authState.isLoadingSubscription || authState.isLoadingUsage
@@ -93,12 +93,12 @@ struct AccountPlanHeroCard: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                     Text(L(authState.subscription.treatsCreditsAsFreeAllowance
-                        ? "auth.account.usageFreeQuota" : "account.page.remaining"))
+                            ? "auth.account.usageFreeQuota" : "account.page.remaining"))
                         .font(.body.weight(.medium))
                         .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .lineLimit(1)
                 }
-                .padding(.top, StudioTheme.Spacing.medium)
+                .padding(.top, 14)
                 TypefluxProgress(L("auth.account.usageQuota"), value: credits.progress ?? 0)
                     .padding(.top, 10)
                     .accessibilityElement()
@@ -113,16 +113,16 @@ struct AccountPlanHeroCard: View {
             Text(L("auth.account.usageQuotaUnlimited"))
                 .font(.body.weight(.bold))
                 .foregroundStyle(TypefluxColor.label.color)
-                .padding(.top, StudioTheme.Spacing.medium)
+                .padding(.top, 14)
             addon(credits)
         case .unavailable:
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
+            HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
                 if authState.isLoadingUsage { TypefluxProgress(L("account.card.loading")).labelsHidden() }
                 Text(L(authState.isLoadingUsage ? "account.card.loading" : "account.card.quotaUnavailable"))
                     .font(.body)
                     .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
-            .padding(.top, StudioTheme.Spacing.medium)
+            .padding(.top, 14)
         }
     }
 
@@ -138,13 +138,13 @@ struct AccountPlanHeroCard: View {
 
     @ViewBuilder
     private func periodProgress(_ status: AccountStatusPresentation) -> some View {
-        HStack(spacing: StudioTheme.Spacing.xSmall) {
+        HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
             if let forecast = status.forecast {
                 Text(L("account.page.usedVsElapsed", AccountStatusText.percent(forecast.usedFraction),
                        AccountStatusText.percent(forecast.elapsedFraction)))
                     .monospacedDigit()
             }
-            Spacer(minLength: StudioTheme.Spacing.xSmall)
+            Spacer(minLength: TypefluxSpacing.small.value(for: .classic))
             if let range = periodRange {
                 Text(range)
             }
@@ -219,15 +219,15 @@ struct AccountPlanHeroCard: View {
         case .restore: (L("account.offer.restoreAction"), .billingPortal)
         default: paid ? (L("account.card.manage"), .billingPortal) : (L("account.offer.upgradeTitle"), .plans)
         }
-        return VStack(spacing: StudioTheme.Spacing.xSmall) {
+        return VStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
             TypefluxButton(kind: .primary) { onOpenBilling(primary.destination) } label: {
                 HStack {
                     if isOpeningBilling { TypefluxProgress(primary.title).labelsHidden().accessibilityHidden(true) }
                     Text(primary.title)
                 }
             }
-                .accessibilityLabel(primary.title)
-                .disabled(isOpeningBilling || authState.isSyncingSubscription)
+            .accessibilityLabel(primary.title)
+            .disabled(isOpeningBilling || authState.isSyncingSubscription)
             if paid {
                 // Fixing a payment or resuming happen in the same portal.
                 Text(L("account.card.manageHint"))

@@ -64,7 +64,11 @@ struct AskPresentationTests {
         #expect(quoted == "> first\n> second\n\n")
         let appended = AskPresentation.quote(existing: "my question", quoting: "answer")
         #expect(appended.hasPrefix("my question\n\n> answer"))
-        let clipped = AskPresentation.quote(existing: "", quoting: (1...10).map(String.init).joined(separator: "\n"), limit: 3)
+        let clipped = AskPresentation.quote(
+            existing: "",
+            quoting: (1...10).map(String.init).joined(separator: "\n"),
+            limit: 3
+        )
         #expect(clipped == "> 1\n> 2\n> 3\n> …\n\n")
     }
 
@@ -82,10 +86,10 @@ struct AskPresentationTests {
     }
 
     @Test func focusAloneKeepsTheNeutralBorder() {
-        #expect(AskVoiceBorder.borderColor(listening: false) == AskTheme.border)
+        #expect(AskVoiceBorder.borderColor(listening: false) == TypefluxColor.separator.color)
         #expect(AskVoiceBorder.borderWidth(listening: false) == 1)
         // Recording is unmistakable: a full-strength accent edge, thicker, plus a halo.
-        #expect(AskVoiceBorder.borderColor(listening: true) == AskTheme.accent)
+        #expect(AskVoiceBorder.borderColor(listening: true) == TypefluxColor.accent.color)
         #expect(AskVoiceBorder.borderWidth(listening: true) > AskVoiceBorder.borderWidth(listening: false))
         #expect(AskVoiceBorder.haloWidth > 0)
     }
@@ -122,7 +126,8 @@ struct AskRedesignLayoutTests {
         try await Task.sleep(for: .milliseconds(300))
         // Empty, the launcher offers its home under the controls.
         let suggested = AskMetrics.launcherHeight(editor: 32, banners: 0,
-                                                  suggestions: AskLauncherSuggestions.height(for: fixture.model.launcherHome()))
+                                                  suggestions: AskLauncherSuggestions
+                                                      .height(for: fixture.model.launcherHome()))
         #expect(reported >= suggested - 4)
         #expect(reported <= suggested + 4)
         let empty = reported
@@ -155,10 +160,12 @@ struct AskRedesignLayoutTests {
 
     private func pixel(_ bitmap: NSBitmapImageRep, x: Int, y: Int) throws -> NSColor {
         let scale = CGFloat(bitmap.pixelsWide) / bitmap.size.width
-        return try #require(bitmap.colorAt(x: Int(CGFloat(x) * scale), y: Int(CGFloat(y) * scale))?.usingColorSpace(.sRGB))
+        return try #require(bitmap.colorAt(x: Int(CGFloat(x) * scale), y: Int(CGFloat(y) * scale))?
+            .usingColorSpace(.sRGB))
     }
 
-    private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name) async throws -> NSBitmapImageRep {
+    private func render<V: View>(_ view: V, size: NSSize,
+                                 appearance: NSAppearance.Name) async throws -> NSBitmapImageRep {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -225,10 +232,10 @@ struct AskDesignPolishTests {
         // Anything the pricing label rejects shows no badge at all.
         #expect(AskMultiplierBadge.text("abc") == nil)
         #expect(AskMultiplierBadge.text("0") == nil)
-        #expect(AskMultiplierBadge.tone("1") == StudioTheme.success)
-        #expect(AskMultiplierBadge.tone("0.5") == StudioTheme.success)
-        #expect(AskMultiplierBadge.tone("5") == StudioTheme.warning)
-        #expect(AskMultiplierBadge.tone("abc") == StudioTheme.textSecondary)
+        #expect(AskMultiplierBadge.tone("1") == TypefluxColor.success.color)
+        #expect(AskMultiplierBadge.tone("0.5") == TypefluxColor.success.color)
+        #expect(AskMultiplierBadge.tone("5") == TypefluxColor.warning.color)
+        #expect(AskMultiplierBadge.tone("abc") == TypefluxColor.secondaryLabel.color)
     }
 
     @Test func lineGlyphsFollowTheDesignPathsAndScale() {
@@ -268,9 +275,9 @@ struct AskDesignPolishTests {
 
     @Test func designSurfacesAreDistinctFromEachOther() {
         // The composer card must not blend into the popover or panel cards.
-        #expect(AskTheme.composerSurface != AskTheme.popoverSurface)
-        #expect(AskTheme.panelCard != AskTheme.segmentTrack)
+        #expect(TypefluxColor.controlBackground.color != TypefluxColor.windowBackground.color)
+        #expect(TypefluxColor.controlBackground.color != TypefluxColor.controlBackground.color)
         // In-window glass has its own tint, distinct from the opaque cards.
-        #expect(AskTheme.glassFill != AskTheme.composerSurface)
+        #expect(LegacyAskPalette.glassFill != TypefluxColor.controlBackground.color)
     }
 }

@@ -58,9 +58,10 @@ struct AskPluginViewTests {
         ])
         func view(_ pending: Bool) -> some View {
             AskPluginResultsView(display: AskPluginDisplay(title: "Keywords", symbol: "list.bullet",
-                phase: pending ? .running(plan) : .done(plan, output), previous: pending ? output : nil),
-                question: "note", onMain: {}, onAction: { _ in }, onAskAI: {}, onHighlight: { _ in })
-                .background(AskTheme.composerSurface)
+                                                           phase: pending ? .running(plan) : .done(plan, output),
+                                                           previous: pending ? output : nil),
+                                 question: "note", onMain: {}, onAction: { _ in }, onAskAI: {}, onHighlight: { _ in })
+                .background(TypefluxColor.controlBackground.color)
         }
         let size = NSSize(width: AskMetrics.launcherWidth, height: 160)
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
@@ -102,16 +103,28 @@ struct AskPluginViewTests {
         let row = AskPluginResultsView.height(for: display(.waiting))
         #expect(row == AskPluginResultsView.height(for: display(.ready(plan))))
         let short = AskPluginResultsView.height(for: display(.done(plan, output())))
-        let long = AskPluginResultsView.height(for: display(.done(plan, output(String(repeating: "Long text ", count: 60)))))
+        let long = AskPluginResultsView.height(for: display(.done(
+            plan,
+            output(String(repeating: "Long text ", count: 60))
+        )))
         #expect(short > row && long > short)
-        let huge = AskPluginResultsView.height(for: display(.done(plan, output(String(repeating: "Line\n", count: 80)))))
+        let huge = AskPluginResultsView.height(for: display(.done(
+            plan,
+            output(String(repeating: "Line\n", count: 80))
+        )))
         #expect(huge - short <= AskPluginResultsView.maximumBodyHeight, "long results scroll inside the card")
         #expect(AskPluginResultsView.height(for: display(.done(plan, output()), comparing: true)) > short)
         #expect(AskPluginResultsView.height(for: display(.done(plan, output(note: "AI")))) > short)
-        #expect(AskPluginResultsView.height(for: display(.running(plan))) > row, "a skeleton while the first result comes")
+        #expect(
+            AskPluginResultsView.height(for: display(.running(plan))) > row,
+            "a skeleton while the first result comes"
+        )
         #expect(AskPluginResultsView.height(for: display(.running(plan), previous: output())) == short)
         let failed = AskPluginResultsView.height(for: display(.failed(plan, AskPluginFailure(message: "Offline"))))
-        let final = AskPluginResultsView.height(for: display(.failed(plan, AskPluginFailure(message: "Offline", retry: false))))
+        let final = AskPluginResultsView.height(for: display(.failed(
+            plan,
+            AskPluginFailure(message: "Offline", retry: false)
+        )))
         #expect(failed > final)
         let hint = AskPluginResultsView.height(for: display(.waiting, hint: AskTranslatePlugin.keywords[0]))
         #expect(hint < row)
@@ -129,8 +142,10 @@ struct AskPluginViewTests {
         #expect(AskPluginResultsView.hint(for: display(.running(plan))) == L("ask.plugin.hint.running"))
         #expect(AskPluginResultsView.hint(for: display(.done(plan, output())))
             == L("ask.plugin.hint.done", "Copy", "Replace") + " · " + L("ask.plugin.hint.askAI"))
-        #expect(AskPluginResultsView.hint(for: display(.failed(plan, AskPluginFailure(message: "x")))) == L("ask.plugin.hint.failed"))
-        #expect(AskPluginResultsView.hint(for: display(.failed(plan, AskPluginFailure(message: "x", retry: false)))).isEmpty)
+        #expect(AskPluginResultsView
+            .hint(for: display(.failed(plan, AskPluginFailure(message: "x")))) == L("ask.plugin.hint.failed"))
+        #expect(AskPluginResultsView.hint(for: display(.failed(plan, AskPluginFailure(message: "x", retry: false))))
+            .isEmpty)
         #expect(AskPluginResultsView.key(.enter) == "↩" && AskPluginResultsView.key(.optionEnter) == "⌥↩")
         #expect(AskPluginResultsView.key(.commandR) == "⌘R" && AskPluginResultsView.key(.commandD) == "⌘D")
         #expect(AskPluginResultsView.key(nil) == nil)
@@ -161,13 +176,25 @@ struct AskPluginViewTests {
         ])
         var shown = display(.ready(search))
         shown.optionName = "Engine"
-        #expect(AskPluginResultsView.hint(for: shown) == [L("ask.plugin.hint.action", "Open"), L("ask.plugin.hint.copy", "Copy link"),
-                                                           L("ask.plugin.hint.option", "Engine"), L("ask.plugin.hint.askAI")]
-                .joined(separator: " · "))
+        #expect(AskPluginResultsView.hint(for: shown) == [
+            L("ask.plugin.hint.action", "Open"),
+            L("ask.plugin.hint.copy", "Copy link"),
+            L("ask.plugin.hint.option", "Engine"),
+            L("ask.plugin.hint.askAI")
+        ]
+        .joined(separator: " · "))
         shown.phase = .ready(plan)
-        #expect(AskPluginResultsView.hint(for: shown) == L("ask.plugin.hint.ready") + " · " + L("ask.plugin.hint.option", "Engine"))
+        #expect(AskPluginResultsView.hint(for: shown) == L("ask.plugin.hint.ready") + " · " + L(
+            "ask.plugin.hint.option",
+            "Engine"
+        ))
         let copyOnly = AskPluginOutput(body: "x", original: "y", meta: [], source: "s",
-                                       actions: [AskPluginAction(kind: .copy("x"), title: "Copy", symbol: "doc", shortcut: .enter)])
+                                       actions: [AskPluginAction(
+                                           kind: .copy("x"),
+                                           title: "Copy",
+                                           symbol: "doc",
+                                           shortcut: .enter
+                                       )])
         #expect(AskPluginResultsView.hint(for: display(.done(plan, copyOnly)))
             == L("ask.plugin.hint.action", "Copy") + " · " + L("ask.plugin.hint.askAI"))
         #expect(search.action(for: .commandC)?.title == "Copy link" && plan.action(for: .commandC) == nil)
@@ -180,7 +207,10 @@ struct AskPluginViewTests {
         let dimmed = AskPluginResultsView.height(for: streaming)
         streaming.partial = long
         #expect(AskPluginResultsView.height(for: streaming) > dimmed)
-        #expect(AskPluginResultsView.height(for: streaming) == AskPluginResultsView.height(for: display(.done(plan, long))))
+        #expect(AskPluginResultsView.height(for: streaming) == AskPluginResultsView.height(for: display(.done(
+            plan,
+            long
+        ))))
     }
 }
 
@@ -229,21 +259,31 @@ struct AskPluginVisualTests {
                 fixture.model.plugins = AskPluginSession(plugins: [plugin]) { AskTranslatePlugin.keywords }
                 fixture.model.plugins.debounce = .milliseconds(1)
                 fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false, selection: selected,
-                                                       source: "Google Chrome — Release notes", sourceBundleID: "com.google.Chrome")
-                let view = AskLauncherView(model: fixture.model, onDismiss: {}).environment(\.askGlassMaterialOverride, .opaque)
+                                                       source: "Google Chrome — Release notes",
+                                                       sourceBundleID: "com.google.Chrome")
+                let view = AskLauncherView(model: fixture.model, onDismiss: {}).environment(
+                    \.askGlassMaterialOverride,
+                    .opaque
+                )
                 if run {
                     // Let the chip form and the plan land, then press Return's equivalent.
                     let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: height),
                                                     styleMask: [.borderless], backing: .buffered, defer: false)
                     window.contentView = NSHostingView(rootView: view)
                     window.orderFront(nil)
-                    for _ in 0 ..< 200 where fixture.model.plugins.plan == nil { try await Task.sleep(for: .milliseconds(5)) }
+                    for _ in 0 ..< 200
+                        where fixture.model.plugins.plan == nil { try await Task.sleep(for: .milliseconds(5)) }
                     fixture.model.plugins.run()
-                    for _ in 0 ..< 200 where fixture.model.plugins.output == nil { try await Task.sleep(for: .milliseconds(5)) }
+                    for _ in 0 ..< 200
+                        where fixture.model.plugins.output == nil { try await Task.sleep(for: .milliseconds(5)) }
                     window.orderOut(nil)
                 }
-                try await render(view, size: NSSize(width: AskMetrics.launcherWidth, height: height), appearance: appearance,
-                                 file: root.appendingPathComponent("plugin-\(file)-\(name).png"))
+                try await render(
+                    view,
+                    size: NSSize(width: AskMetrics.launcherWidth, height: height),
+                    appearance: appearance,
+                    file: root.appendingPathComponent("plugin-\(file)-\(name).png")
+                )
             }
         }
     }
@@ -274,19 +314,28 @@ extension AskPluginVisualTests {
                 defer { fixture.model.resetSession() }
                 fixture.model.plugins = AskPluginSession(plugins: plugins) { AskPluginRegistry.defaultKeywords }
                 fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false)
-                let view = AskLauncherView(model: fixture.model, onDismiss: {}).environment(\.askGlassMaterialOverride, .opaque)
+                let view = AskLauncherView(model: fixture.model, onDismiss: {}).environment(
+                    \.askGlassMaterialOverride,
+                    .opaque
+                )
                 if run {
                     let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: height),
                                                     styleMask: [.borderless], backing: .buffered, defer: false)
                     window.contentView = NSHostingView(rootView: view)
                     window.orderFront(nil)
-                    for _ in 0 ..< 200 where fixture.model.plugins.plan == nil { try await Task.sleep(for: .milliseconds(5)) }
+                    for _ in 0 ..< 200
+                        where fixture.model.plugins.plan == nil { try await Task.sleep(for: .milliseconds(5)) }
                     fixture.model.plugins.run()
-                    for _ in 0 ..< 200 where fixture.model.plugins.output == nil { try await Task.sleep(for: .milliseconds(5)) }
+                    for _ in 0 ..< 200
+                        where fixture.model.plugins.output == nil { try await Task.sleep(for: .milliseconds(5)) }
                     window.orderOut(nil)
                 }
-                try await render(view, size: NSSize(width: AskMetrics.launcherWidth, height: height), appearance: appearance,
-                                 file: root.appendingPathComponent("plugin-\(file)-\(name).png"))
+                try await render(
+                    view,
+                    size: NSSize(width: AskMetrics.launcherWidth, height: height),
+                    appearance: appearance,
+                    file: root.appendingPathComponent("plugin-\(file)-\(name).png")
+                )
             }
         }
     }
@@ -340,21 +389,31 @@ extension AskPluginVisualTests {
                 let device = AskTestTranslationEngine(available: local)
                 let plugin = AskTranslatePlugin(onDevice: local ? SnapshotWordEngine() : device, ai: device,
                                                 dictionary: dictionary, aiName: { "Typeflux Cloud" },
-                                                detector: AskTestLanguageDetector(language: card == apple ? "zh-Hans" : "en"))
+                                                detector: AskTestLanguageDetector(language: card == apple ? "zh-Hans" :
+                                                    "en"))
                 fixture.model.plugins = AskPluginSession(plugins: [plugin]) { AskTranslatePlugin.keywords }
                 fixture.model.plugins.debounce = .milliseconds(1)
                 fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false)
-                let view = AskLauncherView(model: fixture.model, onDismiss: {}).environment(\.askGlassMaterialOverride, .opaque)
+                let view = AskLauncherView(model: fixture.model, onDismiss: {}).environment(
+                    \.askGlassMaterialOverride,
+                    .opaque
+                )
                 let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: height),
                                                 styleMask: [.borderless], backing: .buffered, defer: false)
                 window.contentView = NSHostingView(rootView: view)
                 window.orderFront(nil)
-                for _ in 0 ..< 200 where fixture.model.plugins.plan == nil { try await Task.sleep(for: .milliseconds(5)) }
+                for _ in 0 ..< 200
+                    where fixture.model.plugins.plan == nil { try await Task.sleep(for: .milliseconds(5)) }
                 if fixture.model.plugins.output == nil { fixture.model.plugins.run() }
-                for _ in 0 ..< 200 where fixture.model.plugins.output == nil { try await Task.sleep(for: .milliseconds(5)) }
+                for _ in 0 ..< 200
+                    where fixture.model.plugins.output == nil { try await Task.sleep(for: .milliseconds(5)) }
                 window.orderOut(nil)
-                try await render(view, size: NSSize(width: AskMetrics.launcherWidth, height: height), appearance: appearance,
-                                 file: root.appendingPathComponent("plugin-\(file)-\(name).png"))
+                try await render(
+                    view,
+                    size: NSSize(width: AskMetrics.launcherWidth, height: height),
+                    appearance: appearance,
+                    file: root.appendingPathComponent("plugin-\(file)-\(name).png")
+                )
             }
         }
     }

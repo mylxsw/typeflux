@@ -1,29 +1,10 @@
 import AppKit
 import SwiftUI
 
-private struct OnboardingVisualEffectView: NSViewRepresentable {
-    let material: NSVisualEffectView.Material
-    let blendingMode: NSVisualEffectView.BlendingMode
-
-    func makeNSView(context _: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.state = .active
-        view.isEmphasized = false
-        view.material = material
-        view.blendingMode = blendingMode
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context _: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
-        nsView.state = .active
-        nsView.isEmphasized = false
-    }
-}
-
 // swiftlint:disable file_length type_body_length
 struct OnboardingView: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var viewModel: OnboardingViewModel
     let appearanceMode: AppearanceMode
     @ObservedObject private var localization = AppLocalization.shared
@@ -44,7 +25,7 @@ struct OnboardingView: View {
 
                 onboardingCanvas(in: proxy.size)
                     .padding(.horizontal, 20)
-                    .padding(.top, 52)
+                    .padding(.top, 12)
                     .padding(.bottom, 18)
             }
         }
@@ -96,58 +77,31 @@ struct OnboardingView: View {
     }
 
     private var windowBackdrop: some View {
-        ZStack {
-            StudioTheme.windowBackground
-                .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [
-                    isDarkMode
-                        ? Color(red: 0.085, green: 0.085, blue: 0.095)
-                        : Color(red: 0.985, green: 0.982, blue: 0.976),
-                    isDarkMode
-                        ? Color(red: 0.06, green: 0.06, blue: 0.07)
-                        : Color(red: 0.94, green: 0.95, blue: 0.965)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-
-            RadialGradient(
-                colors: [
-                    StudioTheme.accent.opacity(isDarkMode ? 0.16 : 0.10),
-                    Color.clear
-                ],
-                center: .topTrailing,
-                startRadius: 24,
-                endRadius: 460
-            )
-            .ignoresSafeArea()
-        }
+        TypefluxColor.contentBackground.color.ignoresSafeArea()
     }
 
     private func onboardingCanvas(in size: CGSize) -> some View {
-        ZStack(alignment: .bottom) {
-            canvasAmbientGlow
-            VStack(spacing: 0) {
-                canvasTopBar
-
-                ScrollView(showsIndicators: false) {
-                    stepContent(in: size)
-                        .padding(.horizontal, horizontalPadding(for: size.width))
-                        .padding(.top, 18)
-                        .padding(.bottom, 110)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                }
-            }
-
-            footerBar
-                .frame(maxWidth: min(canvasWidth(for: viewModel.currentStep), size.width - 44))
-                .padding(.horizontal, 22)
-                .padding(.bottom, 20)
+        TypefluxForm {
+            Section { stepContent(in: size) }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) { footerBar.padding(12) }
+        .toolbar {
+            ToolbarItem(id: "typeflux.window.title", placement: .principal) {
+                Text(stepTitle).font(.headline).accessibilityAddTraits(.isHeader)
+            }
+        }
+        .typefluxWindowChrome(title: stepTitle)
+    }
+
+    private var stepTitle: String {
+        switch viewModel.currentStep {
+        case .language: L("onboarding.language.title")
+        case .account: L("onboarding.account.title")
+        case .stt: L("onboarding.models.stt.title")
+        case .llm: L("onboarding.models.llm.title")
+        case .permissions: L("onboarding.permissions.title")
+        case .shortcuts: L("onboarding.shortcuts.title")
+        }
     }
 
     private var canvasAmbientGlow: some View {
@@ -232,12 +186,12 @@ struct OnboardingView: View {
                     alignCenter: false
                 )
 
-                LazyVGrid(columns: languageColumns, alignment: .leading, spacing: 18) {
+                TypefluxRadioGroup(L("onboarding.language.title"),
+                                   selection: Binding(get: { viewModel.appLanguage }, set: viewModel.setLanguage)) {
                     ForEach(AppLanguage.allCases) { language in
-                        languageCard(language)
-                            .gridCellColumns(language == .korean ? 2 : 1)
+                        Text(language.displayName).tag(language)
                     }
-                }
+                }.labelsHidden()
             }
             .frame(maxWidth: 740, alignment: .leading)
             .frame(maxWidth: .infinity)
@@ -290,15 +244,15 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 18) {
                 HStack(alignment: .center, spacing: 14) {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(StudioTheme.accent)
+                        .font(.system(.largeTitle))
+                        .foregroundStyle(TypefluxColor.accent.color)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(authState.userProfile?.resolvedDisplayName ?? L("provider.llm.typefluxCloud"))
-                            .font(.studioDisplay(18, weight: .bold))
+                            .font(.system(.title2, weight: .bold))
                             .foregroundStyle(onboardingPrimaryText)
                         Text(authState.userProfile?.email ?? L("onboarding.account.subtitle"))
-                            .font(.studioBody(12))
+                            .font(.system(.callout))
                             .foregroundStyle(onboardingSecondaryText)
                     }
 
@@ -307,64 +261,12 @@ struct OnboardingView: View {
 
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 13))
-                        .foregroundStyle(StudioTheme.accent)
+                        .font(.system(.body))
+                        .foregroundStyle(TypefluxColor.accent.color)
                     Text(L("onboarding.account.cloudReady"))
-                        .font(.studioBody(12))
+                        .font(.system(.callout))
                         .foregroundStyle(onboardingSecondaryText)
                 }
-            }
-        }
-    }
-
-    private func languageCard(_ language: AppLanguage) -> some View {
-        let isSelected = viewModel.appLanguage == language
-
-        return Button {
-            withAnimation(.easeOut(duration: 0.18)) {
-                viewModel.setLanguage(language)
-            }
-        } label: {
-            HStack(spacing: 14) {
-                Text(language.displayName)
-                    .font(.studioDisplay(15, weight: .bold))
-                    .foregroundStyle(onboardingPrimaryText)
-
-                Spacer()
-
-                languageSelectionIndicator(isSelected: isSelected)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
-            .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-            .background(languageCardFill(isSelected: isSelected))
-            .overlay(languageCardStroke(isSelected: isSelected))
-            .shadow(color: isSelected ? StudioTheme.accent.opacity(0.16) : .clear, radius: 20, x: 0, y: 10)
-        }
-        .buttonStyle(StudioInteractiveButtonStyle())
-    }
-
-    private func languageSelectionIndicator(isSelected: Bool) -> some View {
-        ZStack {
-            Circle()
-                .stroke(isSelected ? StudioTheme.accent.opacity(0.32) : onboardingSelectionRing, lineWidth: 1)
-                .frame(width: 28, height: 28)
-
-            if isSelected {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [StudioTheme.accent.opacity(0.72), StudioTheme.accent],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 28, height: 28)
-                    .shadow(color: StudioTheme.accent.opacity(0.45), radius: 16, x: 0, y: 6)
-
-                Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(onboardingSelectionCheckmark)
             }
         }
     }
@@ -399,7 +301,7 @@ struct OnboardingView: View {
                         }
                     }
                 }
-                .frame(width: OnboardingProviderStyle.listColumnWidth)
+                .frame(width: 280)
 
                 sttConfigPanel
                     .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -419,12 +321,12 @@ struct OnboardingView: View {
                     .fill(onboardingProgressTrack)
                     .frame(width: 140, height: 4)
                 Capsule(style: .continuous)
-                    .fill(StudioTheme.accent)
+                    .fill(TypefluxColor.accent.color)
                     .frame(width: 140 * progress, height: 4)
             }
 
             Text(label)
-                .font(.studioBody(10, weight: .semibold))
+                .font(.system(.footnote, weight: .semibold))
                 .foregroundStyle(onboardingTertiaryText)
         }
     }
@@ -542,7 +444,7 @@ struct OnboardingView: View {
                         }
                     }
                 }
-                .frame(width: OnboardingProviderStyle.listColumnWidth)
+                .frame(width: 280)
 
                 llmConfigPanel
                     .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -586,7 +488,7 @@ struct OnboardingView: View {
             VStack(spacing: 12) {
                 if FreeSTTModelRegistry.suggestedModelNames.isEmpty {
                     Text(L("settings.models.freeSTT.noSources"))
-                        .font(.studioBody(12))
+                        .font(.system(.callout))
                         .foregroundStyle(onboardingSecondaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
@@ -598,7 +500,7 @@ struct OnboardingView: View {
                 }
 
                 Text(L("settings.models.freeSTT.hint"))
-                    .font(.studioBody(12))
+                    .font(.system(.callout))
                     .foregroundStyle(onboardingSecondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -620,7 +522,7 @@ struct OnboardingView: View {
                         VStack(alignment: .leading, spacing: 5) {
                             HStack(spacing: 8) {
                                 Text(model.displayName)
-                                    .font(.studioBody(14, weight: .semibold))
+                                    .font(.system(.body, weight: .semibold))
                                     .foregroundStyle(onboardingPrimaryText)
 
                                 if let recommendationBadgeTitle = model.recommendationBadgeTitle {
@@ -629,7 +531,7 @@ struct OnboardingView: View {
                             }
 
                             Text(model.specs.summary)
-                                .font(.studioBody(12))
+                                .font(.system(.callout))
                                 .foregroundStyle(onboardingSecondaryText)
                                 .lineLimit(1)
                         }
@@ -637,8 +539,9 @@ struct OnboardingView: View {
                         Spacer()
 
                         Text(model.specs.sizeValue)
-                            .font(.studioBody(11, weight: .semibold))
-                            .foregroundStyle(isSelected ? StudioTheme.accent.opacity(0.92) : onboardingTertiaryText)
+                            .font(.system(.subheadline, weight: .semibold))
+                            .foregroundStyle(isSelected ? TypefluxColor.accent.color
+                                .opacity(0.92) : onboardingTertiaryText)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(
@@ -652,15 +555,15 @@ struct OnboardingView: View {
                     .background(languageCardFill(isSelected: isSelected))
                     .overlay(languageCardStroke(isSelected: isSelected))
                 }
-                .buttonStyle(StudioInteractiveButtonStyle())
+                .buttonStyle(.bordered)
             }
 
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "info.circle")
-                    .font(.system(size: 12))
+                    .font(.system(.callout))
                     .foregroundStyle(onboardingTertiaryText)
                 Text(L("onboarding.models.stt.local.hint"))
-                    .font(.studioBody(12))
+                    .font(.system(.callout))
                     .foregroundStyle(onboardingSecondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -670,7 +573,7 @@ struct OnboardingView: View {
 
     private func onboardingRecommendationPill(_ text: String) -> some View {
         Text(text)
-            .font(.studioBody(10, weight: .bold))
+            .font(.system(.footnote, weight: .bold))
             .foregroundStyle(Color.green.opacity(0.95))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -756,12 +659,12 @@ struct OnboardingView: View {
                     suggestions: GoogleCloudSpeechDefaults.suggestedModels
                 )
                 HStack(spacing: 12) {
-                    StudioButton(
+                    OnboardingActionButton(
                         title: googleCloudOAuthAuthorized
                             ? L("settings.models.googleCloud.oauth.reauthorize")
                             : L("settings.models.googleCloud.oauth.authorize"),
                         systemImage: "person.crop.circle.badge.checkmark",
-                        variant: .secondary,
+                        kind: .regular,
                         isDisabled: AppServerConfiguration.googleCloudOAuthClientID
                             .isEmpty || isAuthorizingGoogleCloudOAuth,
                         isLoading: isAuthorizingGoogleCloudOAuth
@@ -770,10 +673,10 @@ struct OnboardingView: View {
                     }
 
                     if googleCloudOAuthAuthorized {
-                        StudioButton(
+                        OnboardingActionButton(
                             title: L("settings.models.googleCloud.oauth.disconnect"),
                             systemImage: "xmark.circle",
-                            variant: .ghost
+                            kind: .borderless
                         ) {
                             GoogleCloudSpeechOAuthTokenStore.clear()
                             googleCloudOAuthAuthorized = false
@@ -868,7 +771,7 @@ struct OnboardingView: View {
                         if provider == .freeModel {
                             if FreeLLMModelRegistry.suggestedModelNames.isEmpty {
                                 Text(L("settings.models.freeModel.noSources"))
-                                    .font(.studioBody(12))
+                                    .font(.system(.callout))
                                     .foregroundStyle(Color.white.opacity(0.48))
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             } else {
@@ -879,7 +782,7 @@ struct OnboardingView: View {
                                 )
                             }
                             Text(L("settings.models.freeModel.hint"))
-                                .font(.studioBody(12))
+                                .font(.system(.callout))
                                 .foregroundStyle(Color.white.opacity(0.48))
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
@@ -931,26 +834,25 @@ struct OnboardingView: View {
     }
 
     private func onboardingConfigCard(@ViewBuilder content: () -> some View) -> some View {
-        content()
+        VStack(alignment: .leading, spacing: 12, content: content)
             .padding(16)
-            .background(onboardingCardFill)
-            .overlay(onboardingCardStroke)
+            .background(TypefluxColor.controlBackground.color)
     }
 
     private var sttConfigPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Configuration")
-                .font(.studioBody(10, weight: .semibold))
+                .font(.system(.footnote, weight: .semibold))
                 .tracking(1.4)
                 .textCase(.uppercase)
                 .foregroundStyle(onboardingTertiaryText)
 
             Text(viewModel.sttProvider.displayName)
-                .font(.studioDisplay(18, weight: .bold))
+                .font(.system(.title2, weight: .bold))
                 .foregroundStyle(onboardingPrimaryText)
 
             Text(sttProviderDescription(viewModel.sttProvider))
-                .font(.studioBody(12))
+                .font(.system(.callout))
                 .foregroundStyle(onboardingSecondaryText)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -960,7 +862,7 @@ struct OnboardingView: View {
                 } else {
                     onboardingConfigCard {
                         Text("This provider is ready to use with the current defaults.")
-                            .font(.studioBody(12))
+                            .font(.system(.callout))
                             .foregroundStyle(onboardingSecondaryText)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -973,23 +875,23 @@ struct OnboardingView: View {
                         Link(destination: url) {
                             HStack(spacing: 5) {
                                 Image(systemName: "key")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.system(.subheadline, weight: .semibold))
                                 Text(L("onboarding.models.getAPIKey"))
-                                    .font(.studioBody(12, weight: .semibold))
+                                    .font(.system(.callout, weight: .semibold))
                                 Image(systemName: "arrow.up.right")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(.system(.footnote, weight: .semibold))
                             }
-                            .foregroundStyle(StudioTheme.accent)
+                            .foregroundStyle(TypefluxColor.accent.color)
                         }
                     }
 
                     Spacer()
 
-                    StudioButton(
+                    OnboardingActionButton(
                         title: viewModel.sttConnectionTestState == .testing
                             ? L("settings.models.testingConnection") : L("settings.models.testConnection"),
                         systemImage: viewModel.sttConnectionTestState == .testing ? nil : "network",
-                        variant: .secondary,
+                        kind: .regular,
                         isDisabled: viewModel.sttConnectionTestState == .testing,
                         isLoading: viewModel.sttConnectionTestState == .testing
                     ) {
@@ -1007,19 +909,19 @@ struct OnboardingView: View {
     private var llmConfigPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Configuration")
-                .font(.studioBody(10, weight: .semibold))
+                .font(.system(.footnote, weight: .semibold))
                 .tracking(1.4)
                 .textCase(.uppercase)
                 .foregroundStyle(onboardingTertiaryText)
 
             Text(viewModel.llmProvider == .ollama ? L("provider.llm.ollama") : viewModel.llmRemoteProvider.displayName)
-                .font(.studioDisplay(18, weight: .bold))
+                .font(.system(.title2, weight: .bold))
                 .foregroundStyle(onboardingPrimaryText)
 
             Text(viewModel.llmProvider == .ollama
                 ? L("settings.models.card.ollama.summary")
                 : L("settings.models.card.\(viewModel.llmRemoteProvider.rawValue).summary"))
-                .font(.studioBody(12))
+                .font(.system(.callout))
                 .foregroundStyle(onboardingSecondaryText)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -1038,23 +940,23 @@ struct OnboardingView: View {
                         Link(destination: url) {
                             HStack(spacing: 5) {
                                 Image(systemName: "key")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.system(.subheadline, weight: .semibold))
                                 Text(L("onboarding.models.getAPIKey"))
-                                    .font(.studioBody(12, weight: .semibold))
+                                    .font(.system(.callout, weight: .semibold))
                                 Image(systemName: "arrow.up.right")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(.system(.footnote, weight: .semibold))
                             }
-                            .foregroundStyle(StudioTheme.accent)
+                            .foregroundStyle(TypefluxColor.accent.color)
                         }
                     }
 
                     Spacer()
 
-                    StudioButton(
+                    OnboardingActionButton(
                         title: viewModel.llmConnectionTestState == .testing
                             ? L("settings.models.testingConnection") : L("settings.models.testConnection"),
                         systemImage: viewModel.llmConnectionTestState == .testing ? nil : "network",
-                        variant: .secondary,
+                        kind: .regular,
                         isDisabled: viewModel.llmConnectionTestState == .testing,
                         isLoading: viewModel.llmConnectionTestState == .testing
                     ) {
@@ -1167,25 +1069,31 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(StudioTheme.success)
-                        .font(.system(size: 13))
+                        .foregroundStyle(TypefluxColor.success.color)
+                        .font(.system(.body))
                     Text(L("settings.models.connectionSuccess", totalMs, totalMs))
-                        .font(.studioBody(12, weight: .semibold))
-                        .foregroundStyle(StudioTheme.success)
+                        .font(.system(.callout, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.success.color)
                 }
                 if !preview.isEmpty {
                     Text(preview)
-                        .font(.studioBody(11))
+                        .font(.system(.subheadline))
                         .foregroundStyle(onboardingSecondaryText)
                         .padding(10)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(onboardingMutedSurface)
+                            RoundedRectangle(
+                                cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                                style: .continuous
+                            )
+                            .fill(onboardingMutedSurface)
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(onboardingSubtleBorder, lineWidth: 1)
+                            RoundedRectangle(
+                                cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                                style: .continuous
+                            )
+                            .stroke(onboardingSubtleBorder, lineWidth: 1)
                         )
                 }
             }
@@ -1193,20 +1101,20 @@ struct OnboardingView: View {
             HStack(alignment: .top, spacing: 6) {
                 Image(systemName: "info.circle")
                     .foregroundStyle(onboardingSecondaryText)
-                    .font(.system(size: 13))
+                    .font(.system(.body))
                 Text(message)
-                    .font(.studioBody(12))
+                    .font(.system(.callout))
                     .foregroundStyle(onboardingSecondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
         case let .failure(message):
             HStack(alignment: .top, spacing: 6) {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(StudioTheme.danger)
-                    .font(.system(size: 13))
+                    .foregroundStyle(TypefluxColor.danger.color)
+                    .font(.system(.body))
                 Text(message)
-                    .font(.studioBody(12))
-                    .foregroundStyle(StudioTheme.danger)
+                    .font(.system(.callout))
+                    .foregroundStyle(TypefluxColor.danger.color)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -1328,60 +1236,29 @@ struct OnboardingView: View {
         }
     }
 
-    private func modelProviderCard(
-        providerID: StudioModelProviderID,
-        title: String,
-        description: String,
-        badge: String,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                providerIconBadge(for: providerID, isSelected: isSelected)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.studioBody(14, weight: .semibold))
-                        .foregroundStyle(onboardingPrimaryText)
-                    Text(description)
-                        .font(.studioBody(11))
-                        .foregroundStyle(onboardingSecondaryText)
-                        .lineLimit(2)
+    private func modelProviderCard(providerID: StudioModelProviderID, title: String, description: String,
+                                   badge: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        TypefluxButton(kind: isSelected ? .primary : .regular, action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle").accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.body)
+                    Text(description).font(.subheadline).lineLimit(2)
                 }
-
-                Spacer()
-
-                Text(badge)
-                    .font(.studioBody(9, weight: .semibold))
-                    .tracking(0.8)
-                    .textCase(.uppercase)
-                    .foregroundStyle(isSelected ? StudioTheme.accent.opacity(0.95) : onboardingTertiaryText)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(isSelected ? onboardingSelectedBadgeFill : onboardingBadgeFill)
-                    )
-
-                languageSelectionIndicator(isSelected: isSelected)
-                    .scaleEffect(0.82)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 13)
-            .frame(maxWidth: .infinity)
-            .background(languageCardFill(isSelected: isSelected))
-            .overlay(languageCardStroke(isSelected: isSelected))
+                Spacer(minLength: 0)
+            }.frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(StudioInteractiveButtonStyle())
+        .accessibilityLabel(title)
+        .accessibilityHint(description + " · " + badge)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func providerIconBadge(for providerID: StudioModelProviderID, isSelected: Bool) -> some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(StudioTheme.modelProviderIconPlate)
+        RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .fill(LegacyStudioPalette.modelProviderIconPlate)
             .frame(width: 38, height: 38)
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
                     .stroke(providerIconBadgeBorder(isSelected: isSelected), lineWidth: 1)
             )
             .overlay(
@@ -1401,9 +1278,10 @@ struct OnboardingView: View {
                             .padding(providerID.usesExpandedLogo ? 1 : 6)
                     } else {
                         Image(systemName: providerSymbol(for: providerID))
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(.body, weight: .medium))
                             .foregroundStyle(
-                                isSelected ? StudioTheme.accent : StudioTheme.modelProviderFallbackSymbol
+                                isSelected ? TypefluxColor.accent.color : LegacyStudioPalette
+                                    .modelProviderFallbackSymbol
                             )
                     }
                 }
@@ -1411,7 +1289,7 @@ struct OnboardingView: View {
     }
 
     private func providerIconBadgeBorder(isSelected: Bool) -> Color {
-        isSelected ? StudioTheme.accent.opacity(0.55) : Color.black.opacity(0.12)
+        isSelected ? TypefluxColor.accent.color.opacity(0.55) : Color.black.opacity(0.12)
     }
 
     private func permissionsStep(contentHeight: CGFloat) -> some View {
@@ -1450,20 +1328,20 @@ struct OnboardingView: View {
 
         return HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
                     .fill(isGranted ? onboardingSelectedBadgeFill : onboardingMutedSurface)
                     .frame(width: 38, height: 38)
                 Image(systemName: permissionIcon(snapshot.id))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(isGranted ? StudioTheme.success : StudioTheme.accent.opacity(0.8))
+                    .font(.system(.body, weight: .semibold))
+                    .foregroundStyle(isGranted ? TypefluxColor.success.color : TypefluxColor.accent.color.opacity(0.8))
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(snapshot.title)
-                    .font(.studioBody(13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundStyle(onboardingPrimaryText)
                 Text(snapshot.detail)
-                    .font(.studioBody(11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(onboardingSecondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1472,19 +1350,19 @@ struct OnboardingView: View {
 
             if isGranted {
                 Text(snapshot.badgeText)
-                    .font(.studioBody(10, weight: .semibold))
-                    .foregroundStyle(StudioTheme.success.opacity(0.92))
+                    .font(.system(.footnote, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.success.color.opacity(0.92))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(StudioTheme.success.opacity(0.12))
+                            .fill(TypefluxColor.success.color.opacity(0.12))
                     )
             } else {
-                StudioButton(
+                OnboardingActionButton(
                     title: snapshot.actionTitle,
                     systemImage: "lock.open.display",
-                    variant: .primary,
+                    kind: .primary,
                     isDisabled: isRequesting,
                     isLoading: isRequesting
                 ) {
@@ -1501,20 +1379,20 @@ struct OnboardingView: View {
     private var permissionInstruction: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "hand.point.up.left.fill")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(StudioTheme.accent)
+                .font(.system(.title3, weight: .semibold))
+                .foregroundStyle(TypefluxColor.accent.color)
                 .frame(width: 34, height: 34)
                 .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(StudioTheme.accent.opacity(isDarkMode ? 0.16 : 0.10))
+                    RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+                        .fill(TypefluxColor.accent.color.opacity(isDarkMode ? 0.16 : 0.10))
                 )
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(L("onboarding.permissions.instruction.title"))
-                    .font(.studioBody(13, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
                     .foregroundStyle(onboardingPrimaryText)
                 Text(L("onboarding.permissions.instruction.subtitle"))
-                    .font(.studioBody(12))
+                    .font(.system(.callout))
                     .foregroundStyle(onboardingSecondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1522,11 +1400,11 @@ struct OnboardingView: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
                 .fill(onboardingMutedSurface)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
                 .stroke(onboardingSubtleBorder, lineWidth: 1)
         )
     }
@@ -1616,7 +1494,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 16) {
                 Text(title)
-                    .font(.studioDisplay(16, weight: .bold))
+                    .font(.system(.title3, weight: .bold))
                     .foregroundStyle(onboardingPrimaryText)
                     .lineLimit(1)
 
@@ -1627,7 +1505,7 @@ struct OnboardingView: View {
             }
 
             Text(subtitle)
-                .font(.studioBody(12))
+                .font(.system(.callout))
                 .foregroundStyle(onboardingSecondaryText)
                 .lineLimit(expanded ? 2 : 3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1640,7 +1518,7 @@ struct OnboardingView: View {
 
     private var globeKeyNotice: some View {
         let isReady = viewModel.isGlobeKeyReady
-        let accent: Color = isReady ? StudioTheme.success : StudioTheme.warning
+        let accent: Color = isReady ? TypefluxColor.success.color : TypefluxColor.warning.color
         let titleKey = isReady
             ? "onboarding.shortcuts.globeKeyNotice.ready.title"
             : "onboarding.shortcuts.globeKeyNotice.title"
@@ -1650,19 +1528,19 @@ struct OnboardingView: View {
 
         return HStack(alignment: .center, spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
                     .fill(accent.opacity(isDarkMode ? 0.22 : 0.14))
                 if isReady {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.system(.title2, weight: .semibold))
                         .foregroundStyle(accent)
                 } else {
                     VStack(spacing: 2) {
                         Text("FN")
-                            .font(.studioBody(10, weight: .bold))
+                            .font(.system(.footnote, weight: .bold))
                             .foregroundStyle(accent)
                         Image(systemName: "globe")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(.title3, weight: .semibold))
                             .foregroundStyle(accent)
                     }
                 }
@@ -1672,17 +1550,17 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .center, spacing: 14) {
                     Text(L(titleKey))
-                        .font(.studioDisplay(16, weight: .bold))
+                        .font(.system(.title3, weight: .bold))
                         .foregroundStyle(onboardingPrimaryText)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer(minLength: 12)
 
                     if !isReady {
-                        StudioButton(
+                        OnboardingActionButton(
                             title: L("onboarding.shortcuts.globeKeyNotice.button"),
                             systemImage: "arrow.up.forward.app",
-                            variant: .secondary
+                            kind: .regular
                         ) {
                             viewModel.openKeyboardSystemSettings()
                         }
@@ -1691,7 +1569,7 @@ struct OnboardingView: View {
                 }
 
                 Text(L(messageKey))
-                    .font(.studioBody(13))
+                    .font(.system(.body))
                     .foregroundStyle(onboardingSecondaryText)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1701,11 +1579,11 @@ struct OnboardingView: View {
         .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
                 .fill(accent.opacity(isDarkMode ? 0.10 : 0.06))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
                 .stroke(accent.opacity(isDarkMode ? 0.32 : 0.20), lineWidth: 1)
         )
         .animation(.easeInOut(duration: 0.25), value: isReady)
@@ -1714,22 +1592,23 @@ struct OnboardingView: View {
     private var externalKeyboardShortcutNotice: some View {
         HStack(alignment: .center, spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(StudioTheme.accent.opacity(isDarkMode ? 0.22 : 0.12))
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+                    .fill(TypefluxColor.accent.color.opacity(isDarkMode ? 0.22 : 0.12))
                 Image(systemName: "keyboard")
-                    .font(.system(size: 19, weight: .semibold))
-                    .foregroundStyle(StudioTheme.accent)
+                    .font(.system(.title2, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.accent.color)
             }
             .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: 12) {
                 Text(L("onboarding.shortcuts.externalKeyboard.title"))
-                    .font(.studioDisplay(16, weight: .bold))
+                    .font(.system(.title3, weight: .bold))
                     .foregroundStyle(onboardingPrimaryText)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(L("onboarding.shortcuts.externalKeyboard.message") + "\n" + L("onboarding.shortcuts.auxiliary.externalKeyboard"))
-                    .font(.studioBody(13))
+                Text(L("onboarding.shortcuts.externalKeyboard.message") + "\n" +
+                    L("onboarding.shortcuts.auxiliary.externalKeyboard"))
+                    .font(.system(.body))
                     .foregroundStyle(onboardingSecondaryText)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1744,12 +1623,12 @@ struct OnboardingView: View {
         .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(StudioTheme.accent.opacity(isDarkMode ? 0.09 : 0.05))
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
+                .fill(TypefluxColor.accent.color.opacity(isDarkMode ? 0.09 : 0.05))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(StudioTheme.accent.opacity(isDarkMode ? 0.28 : 0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
+                .stroke(TypefluxColor.accent.color.opacity(isDarkMode ? 0.28 : 0.18), lineWidth: 1)
         )
     }
 
@@ -1758,27 +1637,27 @@ struct OnboardingView: View {
 
         return HStack(alignment: .center, spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(StudioTheme.success.opacity(isDarkMode ? 0.22 : 0.14))
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+                    .fill(TypefluxColor.success.color.opacity(isDarkMode ? 0.22 : 0.14))
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(StudioTheme.success)
+                    .font(.system(.title2, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.success.color)
             }
             .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .center, spacing: 14) {
                     Text(String(format: L("onboarding.shortcuts.replacement.active.title"), replacementName))
-                        .font(.studioDisplay(16, weight: .bold))
+                        .font(.system(.title3, weight: .bold))
                         .foregroundStyle(onboardingPrimaryText)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Spacer(minLength: 12)
 
-                    StudioButton(
+                    OnboardingActionButton(
                         title: L("onboarding.shortcuts.replacement.restore"),
                         systemImage: "arrow.uturn.backward",
-                        variant: .secondary
+                        kind: .regular
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             viewModel.restoreDefaultFNShortcuts()
@@ -1794,7 +1673,7 @@ struct OnboardingView: View {
                         replacementName
                     )
                 )
-                .font(.studioBody(13))
+                .font(.system(.body))
                 .foregroundStyle(onboardingSecondaryText)
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1804,12 +1683,12 @@ struct OnboardingView: View {
         .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(StudioTheme.success.opacity(isDarkMode ? 0.10 : 0.06))
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
+                .fill(TypefluxColor.success.color.opacity(isDarkMode ? 0.10 : 0.06))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(StudioTheme.success.opacity(isDarkMode ? 0.32 : 0.20), lineWidth: 1)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
+                .stroke(TypefluxColor.success.color.opacity(isDarkMode ? 0.32 : 0.20), lineWidth: 1)
         )
         .animation(.easeInOut(duration: 0.25), value: viewModel.externalKeyboardShortcutReplacement)
     }
@@ -1824,8 +1703,8 @@ struct OnboardingView: View {
         } label: {
             HStack(spacing: 10) {
                 Text(shortcutReplacementKeycap(replacement))
-                    .font(.studioBody(13, weight: .bold))
-                    .foregroundStyle(StudioTheme.accent)
+                    .font(.system(.body, weight: .bold))
+                    .foregroundStyle(TypefluxColor.accent.color)
                     .frame(width: 54, alignment: .center)
 
                 Rectangle()
@@ -1833,21 +1712,24 @@ struct OnboardingView: View {
                     .frame(width: 1, height: 20)
 
                 Text(shortcutReplacementButtonTitle(replacement))
-                    .font(.studioBody(12, weight: .semibold))
+                    .font(.system(.callout, weight: .semibold))
                     .foregroundStyle(onboardingPrimaryText)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
                     .fill(onboardingCardSurface)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(StudioTheme.accent.opacity(isDarkMode ? 0.26 : 0.18), lineWidth: 1)
+                        RoundedRectangle(
+                            cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                            style: .continuous
+                        )
+                        .stroke(TypefluxColor.accent.color.opacity(isDarkMode ? 0.26 : 0.18), lineWidth: 1)
                     )
             )
         }
-        .buttonStyle(StudioInteractiveButtonStyle())
+        .buttonStyle(.bordered)
     }
 
     private var shortcutReplacementAppliedAlertMessage: String {
@@ -1909,7 +1791,7 @@ struct OnboardingView: View {
                 ForEach(Array(keys.enumerated()), id: \.offset) { index, key in
                     if index > 0 {
                         Text("+")
-                            .font(.studioBody(12, weight: .semibold))
+                            .font(.system(.callout, weight: .semibold))
                             .foregroundStyle(onboardingTertiaryText)
                     }
 
@@ -1919,7 +1801,7 @@ struct OnboardingView: View {
 
             if let pressCount {
                 Text("×\(pressCount)")
-                    .font(.studioBody(12, weight: .bold))
+                    .font(.system(.callout, weight: .bold))
                     .foregroundStyle(onboardingSecondaryText)
                     .baselineOffset(1)
             }
@@ -1929,237 +1811,94 @@ struct OnboardingView: View {
 
     private func hotkeyKeycap(_ key: String) -> some View {
         Text(key.uppercased())
-            .font(.studioBody(12, weight: .bold))
+            .font(.system(.callout, weight: .bold))
             .tracking(key.count > 1 ? 0.8 : 0.2)
             .foregroundStyle(onboardingPrimaryText)
             .padding(.horizontal, key.count > 2 ? 16 : 12)
             .frame(height: 30)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
                     .fill(onboardingMutedSurface)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
                     .stroke(onboardingSubtleBorder, lineWidth: 1)
             )
     }
 
     private var footerBar: some View {
-        HStack(spacing: 16) {
-            if viewModel.canGoBack {
-                footerSecondaryButton(
-                    title: L("onboarding.action.back"),
-                    systemImage: "arrow.left"
-                ) {
-                    viewModel.goBack()
-                }
-            }
-
-            Spacer()
-
-            if viewModel.currentStep == .account {
-                footerTertiaryButton(
-                    title: L("onboarding.account.skip"),
-                    foregroundColor: onboardingAccountSkipText
-                ) {
-                    viewModel.continueWithoutCloudAccount()
-                }
-            } else if viewModel.isSkippable {
-                footerTertiaryButton(title: L("onboarding.action.skip")) {
-                    viewModel.skip()
-                }
-            }
-
-            if viewModel.currentStep == .account {
-                if authState.isLoggedIn {
-                    footerPrimaryButton(title: L("onboarding.action.continue")) {
-                        viewModel.useCloudAccountModelsAndContinue()
+        TypefluxGlassContainer(radius: .popover, placement: .inWindow) {
+            HStack(spacing: 16) {
+                if viewModel.canGoBack {
+                    footerSecondaryButton(
+                        title: L("onboarding.action.back"),
+                        systemImage: "arrow.left"
+                    ) {
+                        viewModel.goBack()
                     }
                 }
-            } else {
-                footerPrimaryButton(
-                    title: viewModel.isLastStep ? L("onboarding.action.getStarted") : L("onboarding.action.continue")
-                ) {
-                    viewModel.advance()
+
+                Spacer()
+
+                if viewModel.currentStep == .account {
+                    footerTertiaryButton(
+                        title: L("onboarding.account.skip"),
+                        foregroundColor: onboardingAccountSkipText
+                    ) {
+                        viewModel.continueWithoutCloudAccount()
+                    }
+                } else if viewModel.isSkippable {
+                    footerTertiaryButton(title: L("onboarding.action.skip")) {
+                        viewModel.skip()
+                    }
+                }
+
+                if viewModel.currentStep == .account {
+                    if authState.isLoggedIn {
+                        footerPrimaryButton(title: L("onboarding.action.continue")) {
+                            viewModel.useCloudAccountModelsAndContinue()
+                        }
+                    }
+                } else {
+                    footerPrimaryButton(
+                        title: viewModel
+                            .isLastStep ? L("onboarding.action.getStarted") : L("onboarding.action.continue")
+                    ) {
+                        viewModel.advance()
+                    }
                 }
             }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(onboardingFooterSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(onboardingBorder, lineWidth: 1)
-        )
     }
 
     private func footerPrimaryButton(title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Text(title.uppercased())
-                    .font(.studioBody(12, weight: .bold))
-                    .tracking(0.8)
-                Image(systemName: viewModel.isLastStep ? "arrow.right" : "arrow.right")
-                    .font(.system(size: 12, weight: .bold))
-            }
-            .foregroundStyle(onboardingPrimaryButtonText)
-            .padding(.horizontal, 18)
-            .frame(height: 38)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(StudioTheme.accent)
-            )
-            .overlay(
-                Capsule(style: .continuous)
-                    .stroke(onboardingPrimaryButtonStroke, lineWidth: 1)
-            )
-        }
-        .buttonStyle(StudioInteractiveButtonStyle())
+        TypefluxButton(title, kind: .primary, size: .large, defaultAction: true, action: action)
     }
 
     private func footerSecondaryButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 12, weight: .bold))
-                Text(title)
-                    .font(.studioBody(12, weight: .semibold))
-            }
-            .foregroundStyle(onboardingPrimaryText)
-            .frame(height: 38)
-            .padding(.horizontal, 14)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(onboardingMutedSurface)
-            )
-            .overlay(
-                Capsule(style: .continuous)
-                    .stroke(onboardingSubtleBorder, lineWidth: 1)
-            )
-        }
-        .buttonStyle(StudioInteractiveButtonStyle())
+        TypefluxButton(size: .large, action: action) { Label(title, systemImage: systemImage) }
     }
 
-    private func footerTertiaryButton(
-        title: String,
-        foregroundColor: Color? = nil,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Text(title.uppercased())
-                .font(.studioBody(11, weight: .bold))
-                .tracking(1.0)
-                .foregroundStyle(foregroundColor ?? onboardingSecondaryText)
-                .frame(height: 38)
-                .padding(.horizontal, 10)
-        }
-        .buttonStyle(StudioInteractiveButtonStyle())
+    private func footerTertiaryButton(title: String, foregroundColor: Color? = nil,
+                                      action: @escaping () -> Void) -> some View {
+        TypefluxButton(title, kind: .borderless, action: action)
+            .foregroundStyle(foregroundColor ?? TypefluxColor.secondaryLabel.color)
     }
 
-    private func editorialStepHeader(
-        eyebrow: String? = nil,
-        title: String,
-        subtitle: String,
-        alignCenter: Bool,
-        trailing: AnyView? = nil,
-        showStepCounter: Bool = true
-    ) -> some View {
-        Group {
-            if alignCenter {
-                ZStack(alignment: .topTrailing) {
-                    VStack(alignment: .center, spacing: 8) {
-                        if let eyebrow, !eyebrow.isEmpty {
-                            Text(eyebrow)
-                                .font(.studioBody(9, weight: .semibold))
-                                .tracking(1.6)
-                                .textCase(.uppercase)
-                                .foregroundStyle(StudioTheme.accent.opacity(0.92))
-                        }
-
-                        Text(title)
-                            .font(.studioDisplay(30, weight: .bold))
-                            .foregroundStyle(onboardingPrimaryText)
-                            .lineLimit(2)
-
-                        Text(subtitle)
-                            .font(.studioBody(13))
-                            .foregroundStyle(onboardingSecondaryText)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .frame(maxWidth: .infinity)
-
-                    if showStepCounter {
-                        stepCounterPill
-                    }
-                }
-            } else {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        if let eyebrow, !eyebrow.isEmpty {
-                            Text(eyebrow)
-                                .font(.studioBody(9, weight: .semibold))
-                                .tracking(1.6)
-                                .textCase(.uppercase)
-                                .foregroundStyle(StudioTheme.accent.opacity(0.92))
-                        }
-
-                        Text(title)
-                            .font(.studioDisplay(30, weight: .bold))
-                            .foregroundStyle(onboardingPrimaryText)
-                            .lineLimit(2)
-
-                        Text(subtitle)
-                            .font(.studioBody(13))
-                            .foregroundStyle(onboardingSecondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 16)
-
-                    HStack(spacing: 10) {
-                        trailing
-                        if showStepCounter {
-                            stepCounterPill
-                        }
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: alignCenter ? .center : .leading)
-    }
-
-    private var stepCounterPill: some View {
-        Text(stepCounterText)
-            .font(.studioBody(10, weight: .semibold))
-            .foregroundStyle(onboardingTertiaryText)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(onboardingMutedSurface)
-            )
-            .overlay(
-                Capsule(style: .continuous)
-                    .stroke(onboardingSubtleBorder, lineWidth: 1)
-            )
-    }
-
-    private var onboardingCardFill: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .fill(onboardingCardSurface)
-    }
-
-    private var onboardingCardStroke: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .stroke(onboardingSubtleBorder, lineWidth: 1)
+    private func editorialStepHeader(eyebrow: String? = nil, title: String, subtitle: String,
+                                     alignCenter: Bool, trailing: AnyView? = nil,
+                                     showStepCounter: Bool = true) -> some View {
+        HStack {
+            Text(subtitle).font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
+                .fixedSize(horizontal: false, vertical: true)
+            if let trailing { trailing }
+        }.frame(maxWidth: .infinity, alignment: alignCenter ? .center : .leading)
     }
 
     private func languageCardFill(isSelected: Bool) -> some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
+        RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
             .fill(
                 isSelected
                     ? onboardingSelectedCardSurface
@@ -2169,12 +1908,12 @@ struct OnboardingView: View {
 
     private func languageCardStroke(isSelected: Bool) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
                 .stroke(isSelected ? onboardingSelectedBorder : onboardingSubtleBorder, lineWidth: 1)
 
             if isSelected {
-                RoundedRectangle(cornerRadius: 21, style: .continuous)
-                    .stroke(StudioTheme.accent.opacity(0.85), lineWidth: 1.2)
+                RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
+                    .stroke(TypefluxColor.accent.color.opacity(0.85), lineWidth: 1.2)
                     .padding(-2)
             }
         }
@@ -2196,51 +1935,49 @@ struct OnboardingView: View {
     }
 
     private var onboardingPrimaryText: Color {
-        StudioTheme.textPrimary.opacity(isDarkMode ? 0.96 : 0.98)
+        TypefluxColor.label.color
     }
 
     private var onboardingSecondaryText: Color {
-        StudioTheme.textSecondary.opacity(isDarkMode ? 0.9 : 0.96)
+        TypefluxColor.secondaryLabel.color
     }
 
     private var onboardingTertiaryText: Color {
-        StudioTheme.textTertiary.opacity(isDarkMode ? 0.94 : 0.98)
+        TypefluxColor.tertiaryLabel.color
     }
 
     private var onboardingAccountSkipText: Color {
-        StudioTheme.textTertiary.opacity(isDarkMode ? 0.56 : 0.62)
+        TypefluxColor.tertiaryLabel.color.opacity(isDarkMode ? 0.56 : 0.62)
     }
 
     private var onboardingCardSurface: Color {
-        isDarkMode ? Color.white.opacity(0.045) : StudioTheme.surface
+        TypefluxColor.controlBackground.color
     }
 
     private var onboardingMutedSurface: Color {
-        isDarkMode ? Color.white.opacity(0.05) : StudioTheme.surfaceMuted
+        TypefluxColor.controlBackground.color
     }
 
     private var onboardingSelectedCardSurface: Color {
         isDarkMode
             ? Color(red: 0.23, green: 0.23, blue: 0.25).opacity(0.96)
-            : StudioTheme.accentSoft
+            : TypefluxColor.accent.color.opacity(0.12)
     }
 
     private var onboardingBorder: Color {
-        isDarkMode ? Color.white.opacity(0.06) : StudioTheme.border.opacity(0.9)
+        TypefluxColor.separator.color
     }
 
     private var onboardingSubtleBorder: Color {
-        isDarkMode ? Color.white.opacity(0.05) : StudioTheme.border
+        TypefluxColor.separator.color
     }
 
     private var onboardingSelectedBorder: Color {
-        isDarkMode ? Color.white.opacity(0.28) : StudioTheme.accent.opacity(0.28)
+        isDarkMode ? Color.white.opacity(0.28) : TypefluxColor.accent.color.opacity(0.28)
     }
 
     private var onboardingFooterSurface: Color {
-        isDarkMode
-            ? Color(red: 0.12, green: 0.13, blue: 0.16).opacity(0.96)
-            : Color(red: 0.955, green: 0.958, blue: 0.965)
+        TypefluxColor.windowBackground.color
     }
 
     private var onboardingPrimaryButtonText: Color {
@@ -2256,7 +1993,7 @@ struct OnboardingView: View {
     }
 
     private var onboardingSelectionRing: Color {
-        isDarkMode ? Color(red: 0.27, green: 0.31, blue: 0.43) : StudioTheme.border
+        isDarkMode ? Color(red: 0.27, green: 0.31, blue: 0.43) : TypefluxColor.separator.color
     }
 
     private var onboardingSelectionCheckmark: Color {
@@ -2264,14 +2001,14 @@ struct OnboardingView: View {
     }
 
     private var onboardingProgressTrack: Color {
-        isDarkMode ? Color.white.opacity(0.08) : StudioTheme.border.opacity(0.72)
+        isDarkMode ? Color.white.opacity(0.08) : TypefluxColor.separator.color.opacity(0.72)
     }
 
     private var onboardingBadgeFill: Color {
-        isDarkMode ? Color.white.opacity(0.04) : StudioTheme.surfaceMuted
+        isDarkMode ? Color.white.opacity(0.04) : TypefluxColor.controlBackground.color
     }
 
     private var onboardingSelectedBadgeFill: Color {
-        isDarkMode ? Color.white.opacity(0.08) : StudioTheme.accentSoft
+        isDarkMode ? Color.white.opacity(0.08) : TypefluxColor.accent.color.opacity(0.12)
     }
 }

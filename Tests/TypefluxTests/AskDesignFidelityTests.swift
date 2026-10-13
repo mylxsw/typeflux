@@ -52,18 +52,22 @@ struct AskDesignFidelityTests {
         let intro = try #require(value.attribute(.font, at: 0, effectiveRange: nil) as? NSFont)
         #expect(intro.pointSize == AskMarkdownText.bodySize)
         let item = (value.string as NSString).range(of: "one")
-        let style = try #require(value.attribute(.paragraphStyle, at: item.location, effectiveRange: nil) as? NSParagraphStyle)
+        let style = try #require(value.attribute(.paragraphStyle, at: item.location,
+                                                 effectiveRange: nil) as? NSParagraphStyle)
         #expect(style.headIndent == AskMarkdownText.listIndent)
         #expect(style.tabStops.first?.location == AskMarkdownText.listIndent)
         #expect(value.string.contains("•\tone"))
         let code = (value.string as NSString).range(of: "code")
-        #expect(value.attribute(.backgroundColor, at: code.location, effectiveRange: nil) as? NSColor == AskMarkdownText.codeFill)
+        #expect(value.attribute(.backgroundColor, at: code.location, effectiveRange: nil) as? NSColor == AskMarkdownText
+            .codeFill)
         let block = (value.string as NSString).range(of: "let a = 1")
-        let blockStyle = try #require(value.attribute(.paragraphStyle, at: block.location, effectiveRange: nil) as? NSParagraphStyle)
+        let blockStyle = try #require(value.attribute(.paragraphStyle, at: block.location,
+                                                      effectiveRange: nil) as? NSParagraphStyle)
         #expect(blockStyle.textBlocks.first is AskCodeBlock)
         // The last list item keeps the body's paragraph gap before the next paragraph.
         let two = (value.string as NSString).range(of: "two")
-        let twoStyle = try #require(value.attribute(.paragraphStyle, at: two.location, effectiveRange: nil) as? NSParagraphStyle)
+        let twoStyle = try #require(value.attribute(.paragraphStyle, at: two.location,
+                                                    effectiveRange: nil) as? NSParagraphStyle)
         #expect(twoStyle.paragraphSpacing == AskMarkdownText.paragraphSpacing)
     }
 
@@ -87,7 +91,8 @@ struct AskDesignFidelityTests {
         // An inner cell strokes only the rule under its row.
         let strokes = AskTableCellBlock.strokes(rect, edges: inner, radius: 12)
         #expect(strokes.bounds.height < 1)
-        let outer = AskTableCellBlock.strokes(rect, edges: .init(top: true, bottom: true, left: true, right: true), radius: 12)
+        let outer = AskTableCellBlock.strokes(rect, edges: .init(top: true, bottom: true, left: true, right: true),
+                                              radius: 12)
         #expect(outer.bounds.width >= 99 && outer.bounds.height >= 39)
     }
 
@@ -162,7 +167,8 @@ struct AskDesignFidelityTests {
     // MARK: - Tool cards and approval
 
     @Test func toolStepsShowTheirToolTagAndDetail() {
-        let call = AskToolCall(id: "c", type: "function", function: .init(name: "browser", arguments: #"{"action":"read"}"#))
+        let call = AskToolCall(id: "c", type: "function",
+                               function: .init(name: "browser", arguments: #"{"action":"read"}"#))
         #expect(AskToolStepRow.tag(call) == "browser.read")
         let bare = AskToolCall(id: "b", type: "function", function: .init(name: "web_search", arguments: "{}"))
         #expect(AskToolStepRow.tag(bare) == "web_search")
@@ -178,8 +184,8 @@ struct AskDesignFidelityTests {
         #expect(AskApprovalCard.primaryIsConversation(risk: .write, canAllowForConversation: true))
         #expect(!AskApprovalCard.primaryIsConversation(risk: .write, canAllowForConversation: false))
         #expect(!AskApprovalCard.primaryIsConversation(risk: .destructive, canAllowForConversation: true))
-        #expect(AskApprovalCard.panelTint(.destructive) == StudioTheme.danger)
-        #expect(AskApprovalCard.panelTint(.read) == AskTheme.accent)
+        #expect(AskApprovalCard.panelTint(.destructive) == TypefluxColor.danger.color)
+        #expect(AskApprovalCard.panelTint(.read) == TypefluxColor.accent.color)
     }
 
     @Test @MainActor func approvalSitsInTheToolCardThatHoldsItsCall() {

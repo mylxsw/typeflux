@@ -36,7 +36,8 @@ struct AskConversationView: View {
         self.model = model
         self.auth = auth ?? .shared
         _presentation = StateObject(wrappedValue: presentation ?? AskWorkspaceState(
-            showsUsage: showsUsage, runId: model.selected?.run?.id))
+            showsUsage: showsUsage, runId: model.selected?.run?.id
+        ))
     }
 
     var body: some View {
@@ -82,7 +83,7 @@ struct AskConversationView: View {
                 previousResponder = nil
             }
         }
-        .tint(AskTheme.accent)
+        .tint(TypefluxColor.accent.color)
         .environment(\.askUsesLibraryTokens, true)
         .environment(\.askArtifactAccess, model.artifactAccess)
         .environment(\.askTerminalAccess, model.terminalAccess)
@@ -111,15 +112,15 @@ struct AskConversationView: View {
         if showsWorkflow, let session = model.authoringSession {
             AskWorkflowAuthoringPanel(session: session, focusCloseOnAppear: layout.usageOverlay,
                                       floating: layout.usageOverlay, close: {
-                session.isPresented = false
-                model.objectWillChange.send()
-            }, discard: {
-                guard let id = model.selectedId else { return }
-                do { try model.workflowAuthoring?.remove(id) }
-                catch { session.message = error.localizedDescription }
-            }, complete: { model.sendFollowUp($0) },
-               completing: model.runPhase?.isWorking == true, canComplete: !model.isBusy)
-            .frame(width: layout.usageInline ? layout.usageWidth : layout.drawerWidth)
+                                          session.isPresented = false
+                                          model.objectWillChange.send()
+                                      }, discard: {
+                                          guard let id = model.selectedId else { return }
+                                          do { try model.workflowAuthoring?.remove(id) }
+                                          catch { session.message = error.localizedDescription }
+                                      }, complete: { model.sendFollowUp($0) },
+                                      completing: model.runPhase?.isWorking == true, canComplete: !model.isBusy)
+                .frame(width: layout.usageInline ? layout.usageWidth : layout.drawerWidth)
         } else {
             AskUsagePanel(model: model, compact: layout.isShort, focusCloseOnAppear: layout.usageOverlay,
                           floating: layout.usageOverlay, runId: $presentation.usageRunId, close: { setUsage(false) })
@@ -148,7 +149,7 @@ struct AskConversationView: View {
                 if !sidebarHidden {
                     sidebar
                         .frame(width: AskMetrics.sidebarWidth)
-                        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill,
+                        .askSidePanel(edge: .leading, glassFill: LegacyAskPalette.glassFill,
                                       glassInset: [.top, .leading, .bottom])
                         .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
                 }
@@ -244,7 +245,7 @@ struct AskConversationView: View {
                     accountFooter
                 }
                 .frame(width: min(AskMetrics.sidebarWidth, layout.drawerWidth))
-                .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: .all, floating: true)
+                .askSidePanel(edge: .leading, glassFill: LegacyAskPalette.glassFill, glassInset: .all, floating: true)
                 .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
             } else {
                 rightPanel
@@ -288,8 +289,8 @@ struct AskConversationView: View {
 
     private var toolbarGroups: [TypefluxToolbarGroup] {
         var actions = [TypefluxToolbarAction(id: "ask.search", title: L("ask.search"), systemImage: "command",
-                                            accessibilityIdentifier: "ask.workspace.search", shortcut: "k",
-                                            perform: openSearch)]
+                                             accessibilityIdentifier: "ask.workspace.search", shortcut: "k",
+                                             perform: openSearch)]
         if let id = model.selectedId {
             actions.append(.init(id: "ask.usage", title: L("ask.usage.title"), systemImage: "chart.pie",
                                  accessibilityIdentifier: "ask.workspace.usage", perform: toggleUsage))
@@ -342,10 +343,10 @@ struct AskConversationView: View {
                 .disabled(model.isOpeningChat)
             }
         } label: { Label(L("ask.search.actions"), systemImage: "ellipsis").labelStyle(.iconOnly) }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .accessibilityLabel(L("ask.search.actions"))
-        .accessibilityIdentifier("ask.workspace.more")
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .accessibilityLabel(L("ask.search.actions"))
+            .accessibilityIdentifier("ask.workspace.more")
     }
 
     private var workspaceShortcuts: some View {
@@ -369,9 +370,10 @@ struct AskConversationView: View {
         if !model.savedChatDrafts.isEmpty {
             Menu {
                 ForEach(model.savedChatDrafts) { saved in
-                    Button(saved.draft.title.isEmpty ? L("ask.drafts.untitled") : String(saved.draft.title.prefix(60))) {
-                        Task { await model.restoreChatDraft(saved) }
-                    }
+                    Button(saved.draft.title
+                        .isEmpty ? L("ask.drafts.untitled") : String(saved.draft.title.prefix(60))) {
+                            Task { await model.restoreChatDraft(saved) }
+                        }
                 }
             } label: {
                 Image(systemName: "tray.full")
@@ -497,20 +499,19 @@ struct AskConversationView: View {
                     Button(L("ask.loadMore")) { Task { await model.refreshHistory(loadMore: true) } }
                         .buttonStyle(.plain)
                         .font(.subheadline)
-                        .foregroundStyle(AskTheme.accentText)
+                        .foregroundStyle(TypefluxColor.accent.color)
                         .padding(.top, 8)
                 }
                 if items.isEmpty {
                     Text(L(toolbarSearch.query.isEmpty ? "ask.history.empty" : "ask.history.searchEmpty"))
                         .font(.subheadline)
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .frame(maxWidth: .infinity)
                         .padding(.top, 24)
                 }
             }
             .listRowSeparator(.hidden)
             .animation(AskMotion.panelAnimation(reduceMotion: reduceMotion), value: model.selectedId)
-
         }
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
@@ -536,7 +537,7 @@ struct AskConversationView: View {
                 Text(title).font(.subheadline).fontWeight(.semibold)
                 Spacer(minLength: 0)
             }
-            .foregroundStyle(StudioTheme.textTertiary)
+            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             .padding(.horizontal, 8)
             .padding(.top, first ? 4 : 12)
             .padding(.bottom, 6)
@@ -567,10 +568,10 @@ struct AskConversationView: View {
                     .lineLimit(2)
             }
             .font(.subheadline)
-            .foregroundStyle(failed && !refreshing ? StudioTheme.warning : StudioTheme.textSecondary)
+            .foregroundStyle(failed && !refreshing ? TypefluxColor.warning.color : TypefluxColor.secondaryLabel.color)
             .padding(.horizontal, 12)
             .frame(minHeight: 26)
-            .background(AskTheme.controlSurface, in: Capsule())
+            .background(TypefluxColor.controlBackground.color, in: Capsule())
             .opacity(refreshing || failed ? 1 : progress)
             .offset(y: refreshing || failed ? 6 : max(0, pullDistance / 2 - 13))
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -618,14 +619,17 @@ struct AskConversationView: View {
             .animation(AskMotion.revealAnimation(reduceMotion: reduceMotion), value: model.selectedId == nil)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .mask(AskEdgeFade(topClear: 0,
-                bottomClear: layout.composerBottomInset,
-                fade: AskMetrics.transcriptEdgeFade,
-                topFade: 0))
+                              bottomClear: layout.composerBottomInset,
+                              fade: AskMetrics.transcriptEdgeFade,
+                              topFade: 0))
             .overlay {
                 if transcriptDropTargeted {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(AskTheme.accent, style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
-                        .background(AskTheme.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .strokeBorder(TypefluxColor.accent.color, style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                        .background(
+                            TypefluxColor.accent.color.opacity(0.06),
+                            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        )
                         .padding(12)
                         .allowsHitTesting(false)
                 }
@@ -662,7 +666,7 @@ struct AskConversationView: View {
                     }
                     if !layout.isVeryShort {
                         Text(L("ask.empty")).font(layout.isShort ? .title : .largeTitle).bold()
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .foregroundStyle(TypefluxColor.label.color)
                             .padding(.bottom, 9)
                     }
                     if !layout.isShort { emptyHint }
@@ -690,11 +694,11 @@ struct AskConversationView: View {
             ? AnyLayout(VStackLayout(spacing: layout.isVeryShort ? 4 : 8))
             : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
         return arrangement {
-            suggestion("ask.suggest.screen", systemImage: "display", tint: AskTheme.accent, shortcut: "1",
+            suggestion("ask.suggest.screen", systemImage: "display", tint: TypefluxColor.accent.color, shortcut: "1",
                        screenshot: true)
-            suggestion("ask.suggest.selection", systemImage: "character.bubble", tint: AskTheme.accent,
+            suggestion("ask.suggest.selection", systemImage: "character.bubble", tint: TypefluxColor.accent.color,
                        shortcut: "2", screenshot: false)
-            suggestion("ask.suggest.page", systemImage: "globe", tint: AskTheme.accent, shortcut: "3",
+            suggestion("ask.suggest.page", systemImage: "globe", tint: TypefluxColor.accent.color, shortcut: "3",
                        screenshot: false)
         }
     }
@@ -844,7 +848,8 @@ struct AskConversationView: View {
             embedded: embedded,
             onDeny: { model.approve(conversationId: id, allowed: false, expectedApprovalID: approvalID) },
             onAllowForConversation: { model.approveForConversation(id, expectedApprovalID: approvalID) },
-            onAllow: { model.approve(conversationId: id, allowed: true, expectedApprovalID: approvalID) })
+            onAllow: { model.approve(conversationId: id, allowed: true, expectedApprovalID: approvalID) }
+        )
     }
 
     /// When a transcript row first appeared: its message's time, or its first step's.
@@ -868,7 +873,10 @@ struct AskConversationView: View {
     private var transcript: some View {
         // Resolved once per render: asking each row would rescan the transcript.
         let regenerable = model.regenerableAnswerId
-        let items = AskActivity.items(transcriptMessages, results: model.selected?.messages.filter { $0.role == "tool" } ?? [])
+        let items = AskActivity.items(
+            transcriptMessages,
+            results: model.selected?.messages.filter { $0.role == "tool" } ?? []
+        )
         return GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
@@ -879,7 +887,8 @@ struct AskConversationView: View {
                                 .id(item.id)
                                 .background(GeometryReader { geometry in
                                     Color.clear.preference(key: AskTranscriptFrames.self,
-                                                           value: [item.id: geometry.frame(in: .named("ask-transcript"))])
+                                                           value: [item.id: geometry
+                                                               .frame(in: .named("ask-transcript"))])
                                 })
                         }
                         if model.showsResponseWaiting {
@@ -956,7 +965,8 @@ struct AskConversationView: View {
                         return
                     }
                     if let bottom = frames["bottom"], AskPresentation.isFollowingBottom(
-                        markerTop: bottom.minY, viewport: viewport.size.height, coveredBottom: bottomChromeHeight) {
+                        markerTop: bottom.minY, viewport: viewport.size.height, coveredBottom: bottomChromeHeight
+                    ) {
                         model.transcriptPositions[id] = "bottom"
                     } else if let first = frames.filter({ $0.key != "bottom" && $0.value.maxY > 0 })
                         .min(by: { $0.value.minY < $1.value.minY }) {
@@ -991,7 +1001,8 @@ struct AskConversationView: View {
     }
 
     @ViewBuilder
-    private func transcriptRow(_ item: AskTranscriptItem, items: [AskTranscriptItem], regenerable: String?) -> some View {
+    private func transcriptRow(_ item: AskTranscriptItem, items: [AskTranscriptItem],
+                               regenerable: String?) -> some View {
         let run = model.selected?.run
         let phase = model.runPhase
         let streamingId = phase?.isWorking == true ? run?.assistantId : nil
@@ -1012,7 +1023,8 @@ struct AskConversationView: View {
                            savedToNotes: model.answerNoteIDs[message.id] != nil)
         case let .activity(group):
             let results = model.selected?.messages.filter { $0.role == "tool" } ?? []
-            let isLatest = items.last(where: { if case .activity = $0.kind { return true }; return false })?.id == group.id
+            let isLatest = items.last(where: { if case .activity = $0.kind { return true }; return false })?.id == group
+                .id
             // The run's latest block stays live between steps, while no answer follows it yet,
             // and stops spinning with every other indicator once the run waits for a decision.
             let carriesRun = run?.isActive == true && items.last?.id == group.id
@@ -1047,9 +1059,19 @@ struct AskConversationView: View {
     private var steeredMessages: [AskMessage] {
         model.steeredMessages.map { item in
             let request = item.draft.request(deviceId: model.deviceId, tools: [], id: item.id)
-            return AskMessage(id: item.id, role: "user", text: request.text, selection: request.selection, source: request.source,
-                              image: request.image, createdAt: Date(), references: request.references, steered: true,
-                              attachments: request.attachments, mcpServers: request.mcpServers)
+            return AskMessage(
+                id: item.id,
+                role: "user",
+                text: request.text,
+                selection: request.selection,
+                source: request.source,
+                image: request.image,
+                createdAt: Date(),
+                references: request.references,
+                steered: true,
+                attachments: request.attachments,
+                mcpServers: request.mcpServers
+            )
         }
     }
 
@@ -1061,7 +1083,8 @@ struct AskConversationView: View {
             if !messages.contains(where: { $0.id == id }) {
                 messages.append(.init(id: id, role: "assistant", text: progress.text,
                                       toolCalls: progress.toolCalls, createdAt: run.updatedAt,
-                                      reasoning: progress.reasoning, reasoningMilliseconds: progress.reasoningMilliseconds))
+                                      reasoning: progress.reasoning,
+                                      reasoningMilliseconds: progress.reasoningMilliseconds))
             }
         }
         return messages
@@ -1147,22 +1170,25 @@ private struct AskMessageView: View {
                     Text(message.text)
                         .font(.body)
                         .lineSpacing(3)
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                         .textSelection(.enabled)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 15)
                         .padding(.vertical, 9)
-                        .background(AskTheme.userBubble,
+                        .background(TypefluxColor.controlBackground.color,
                                     in: AskBubbleShape(radius: TypefluxRadius.form.value(for: style), tail: 6))
                         .overlay(AskBubbleShape(radius: TypefluxRadius.form.value(for: style), tail: 6)
-                            .strokeBorder(AskTheme.userBubbleEdge, lineWidth: 0.5))
+                            .strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5))
                 }
                 AskMessageProvenanceView(message: message)
                 if message.steered == true {
-                    Label(L(steeredPending ? "ask.steered.pending" : "ask.steered"), systemImage: "arrow.turn.down.right")
-                        .font(.subheadline)
-                        .foregroundStyle(StudioTheme.textTertiary)
+                    Label(
+                        L(steeredPending ? "ask.steered.pending" : "ask.steered"),
+                        systemImage: "arrow.turn.down.right"
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
             .frame(maxWidth: AskMetrics.bubbleMaxWidth, alignment: .trailing)
@@ -1182,7 +1208,7 @@ private struct AskMessageView: View {
                 AskTranscriptText(text: message.text, onAsk: isStreaming ? nil : { text, question in
                     onReference(AskReference(messageId: message.id, text: text, question: question))
                 }, onSaveNote: isStreaming ? nil : onSaveNote.map { save -> (String) -> Void in { save($0) } })
-                .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
+                    .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
             }
             if !outputs.isEmpty, !isStreaming {
                 AskRunOutputsView(outputs: outputs)
@@ -1199,18 +1225,18 @@ private struct AskMessageView: View {
     /// produced again, the tag carries that action itself.
     private var interruptedTag: some View {
         HStack(spacing: 6) {
-            Circle().fill(StudioTheme.warning).frame(width: 6, height: 6)
+            Circle().fill(TypefluxColor.warning.color).frame(width: 6, height: 6)
             Text(L("ask.answer.interrupted"))
                 .font(.subheadline)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
             if canRegenerate, !isStreaming {
                 Button(action: onRegenerate) {
                     Text(L("ask.regenerate"))
                         .font(.subheadline).fontWeight(.medium)
-                        .foregroundStyle(AskTheme.accentText)
+                        .foregroundStyle(TypefluxColor.accent.color)
                         .padding(.horizontal, 8)
                         .frame(height: 20)
-                        .background(AskTheme.accent.opacity(0.12), in: Capsule())
+                        .background(TypefluxColor.accent.color.opacity(0.12), in: Capsule())
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -1219,7 +1245,7 @@ private struct AskMessageView: View {
         .padding(.leading, 10)
         .padding(.trailing, canRegenerate && !isStreaming ? 3 : 10)
         .frame(height: 26)
-        .background(AskTheme.hoverFill, in: Capsule())
+        .background(TypefluxColor.label.color.opacity(0.06), in: Capsule())
         .accessibilityElement(children: .contain)
     }
 
@@ -1249,8 +1275,8 @@ private struct AskMessageView: View {
                     .accessibilityIdentifier("ask.message.saveNote")
             }
             AskIconGhostButton(label: usageHelp, systemImage: "chart.bar.xaxis", action: onUsage)
-            .accessibilityLabel(L("ask.usage.title"))
-            .accessibilityValue(usageLabel)
+                .accessibilityLabel(L("ask.usage.title"))
+                .accessibilityValue(usageLabel)
         }
         .opacity(hovering || copied || savedToNotes ? 1 : 0)
         .animation(.easeOut(duration: 0.12), value: hovering)
@@ -1294,11 +1320,11 @@ struct AskReasoningView: View {
                             .rotationEffect(.degrees(expanded ? 90 : 0))
                     }
                 }
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .padding(.leading, 8)
                 .padding(.trailing, 10)
                 .frame(height: 26)
-                .background(reasoningHover ? AskTheme.hoverFill : Color.clear, in: Capsule())
+                .background(reasoningHover ? TypefluxColor.label.color.opacity(0.06) : Color.clear, in: Capsule())
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -1309,7 +1335,7 @@ struct AskReasoningView: View {
                 AskTranscriptText(text: text)
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
                     .padding(.leading, 12)
-                    .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 2) }
+                    .overlay(alignment: .leading) { Rectangle().fill(TypefluxColor.separator.color).frame(width: 2) }
             }
         }
         .onChange(of: active) { value in if !value { expanded = false } }
@@ -1351,14 +1377,14 @@ private struct AskSuggestionCard: View {
                 if compact {
                     HStack(spacing: 10) {
                         Image(systemName: systemImage)
-                            .foregroundStyle(available ? tint : StudioTheme.textTertiary)
+                            .foregroundStyle(available ? tint : TypefluxColor.tertiaryLabel.color)
                             .frame(width: 24, height: 24)
                             .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
                         VStack(alignment: .leading, spacing: 3) {
                             Text(title).font(.callout).fontWeight(.medium).lineLimit(1)
                             if !short {
                                 Text(captionAction.map { caption + " · " + $0 } ?? caption)
-                                    .font(.subheadline).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                                    .font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
                             }
                         }
                         Spacer(minLength: 0)
@@ -1369,21 +1395,24 @@ private struct AskSuggestionCard: View {
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
                         // The shortcut lives in the tooltip; the card face matches the design board.
-                        let iconTint = available ? tint : StudioTheme.textTertiary
+                        let iconTint = available ? tint : TypefluxColor.tertiaryLabel.color
                         Image(systemName: systemImage).font(.body)
                             .foregroundStyle(hovering && available ? Color.white : iconTint)
                             .frame(width: 30, height: 30)
                             .background(hovering && available ? iconTint : iconTint.opacity(0.14),
-                                        in: RoundedRectangle(cornerRadius: style.usesGlass ? 10 : 7, style: .continuous))
+                                        in: RoundedRectangle(
+                                            cornerRadius: style.usesGlass ? 10 : 7,
+                                            style: .continuous
+                                        ))
                             .overlay(RoundedRectangle(cornerRadius: style.usesGlass ? 10 : 7, style: .continuous)
                                 .strokeBorder(iconTint.opacity(0.35), lineWidth: 0.5))
                         Text(title).font(.body).fontWeight(.semibold)
-                            .foregroundStyle(available ? StudioTheme.textPrimary : StudioTheme.textTertiary)
+                            .foregroundStyle(available ? TypefluxColor.label.color : TypefluxColor.tertiaryLabel.color)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
-                        (Text(caption).foregroundColor(StudioTheme.textTertiary)
+                        (Text(caption).foregroundColor(TypefluxColor.tertiaryLabel.color)
                             + Text(captionAction.map { " · " + $0 } ?? "")
-                            .fontWeight(.semibold).foregroundColor(AskTheme.accentText))
+                            .fontWeight(.semibold).foregroundColor(TypefluxColor.accent.color))
                             .font(.subheadline).lineLimit(1)
                     }
                     .padding(.horizontal, 14)
@@ -1393,7 +1422,7 @@ private struct AskSuggestionCard: View {
                 }
             }
             .askContentCard(corner: Self.corner(style: style),
-                            opaqueFill: style.usesGlass ? AskTheme.composerSurface
+                            opaqueFill: style.usesGlass ? TypefluxColor.controlBackground.color
                                 : (hovering && available ? AskClassic.cardHover : AskClassic.card),
                             elevatedInLight: false)
             .contentShape(RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
@@ -1422,7 +1451,8 @@ struct AskSentFileChip: View {
             }
         } label: {
             AskSentAttachmentChip(
-                title: [attachment.name, AskAttachmentStrip.caption(attachment)].compactMap { $0 }.joined(separator: " · "),
+                title: [attachment.name, AskAttachmentStrip.caption(attachment)].compactMap { $0 }
+                    .joined(separator: " · "),
                 thumbnail: attachment.image.flatMap { AskAttachmentStrip.thumbnail(id: attachment.id, dataURL: $0) },
                 systemImage: AskAttachmentStrip.symbol(attachment)
             )

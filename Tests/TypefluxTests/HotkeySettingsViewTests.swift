@@ -21,7 +21,7 @@ struct HotkeySettingsViewTests {
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: light ? .aqua : .darkAqua)
         let hosting = NSHostingView(rootView: view.frame(width: size.width, height: size.height, alignment: .topLeading)
-            .background(StudioTheme.windowBackground))
+            .background(TypefluxColor.windowBackground.color))
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
         window.orderFront(nil)
@@ -54,7 +54,8 @@ struct HotkeySettingsViewTests {
                         })
                     }
                     let controlTitles = ["settings.inputAndCapture.title", "settings.shortcuts.quickInput.title",
-                                         "settings.shortcuts.launcherPosition.title", "settings.shortcuts.screenshot.saveLocation.title"]
+                                         "settings.shortcuts.launcherPosition.title",
+                                         "settings.shortcuts.screenshot.saveLocation.title"]
                     for title in controlTitles {
                         #expect(SettingsBehaviorTestSupport.contains(L(title), in: window))
                     }
@@ -117,7 +118,7 @@ struct HotkeySettingsViewTests {
                 baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-link-\(UUID())")
             ), initialSection: .launcher)
             try await SettingsBehaviorTestSupport.withWindow(StudioView(viewModel: model, launcherPane: .clipboard),
-                                                              width: 1100, height: 1000) { window, _ in
+                                                             width: 1100, height: 1000) { window, _ in
                 try SettingsBehaviorTestSupport.button(L("clipboard.settings.shortcut.change"), in: window).press()
                 try await SettingsBehaviorTestSupport.wait {
                     SettingsBehaviorTestSupport.contains(BuiltInHotkey.history.title, in: window)
@@ -149,8 +150,12 @@ struct HotkeySettingsViewTests {
         ), initialSection: .settings)
 
         for light in [false, true] {
-            try await render(StudioView(viewModel: model, settingsPane: .hotkeys), size: NSSize(width: 1100, height: 900),
-                             name: "hotkeys-empty-\(light ? "light" : "dark")", light: light) { window in
+            try await render(
+                StudioView(viewModel: model, settingsPane: .hotkeys),
+                size: NSSize(width: 1100, height: 900),
+                name: "hotkeys-empty-\(light ? "light" : "dark")",
+                light: light
+            ) { window in
                 #expect(SettingsBehaviorTestSupport.contains(AppHotkeyAction.openChat.title, in: window))
                 #expect(SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window))
                 #expect(SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.empty"), in: window))
@@ -171,8 +176,12 @@ struct HotkeySettingsViewTests {
                           keyword: "gone", pluginID: "workflow.gone")
         ]
         for light in [false, true] {
-            try await render(StudioView(viewModel: model, settingsPane: .hotkeys), size: NSSize(width: 1100, height: 1000),
-                             name: "hotkeys-page-\(light ? "light" : "dark")", light: light) { window in
+            try await render(
+                StudioView(viewModel: model, settingsPane: .hotkeys),
+                size: NSSize(width: 1100, height: 1000),
+                name: "hotkeys-page-\(light ? "light" : "dark")",
+                light: light
+            ) { window in
                 #expect(SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.status.missing"), in: window))
                 #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.empty"), in: window))
             }

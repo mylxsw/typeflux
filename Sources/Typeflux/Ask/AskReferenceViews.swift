@@ -47,8 +47,8 @@ struct AskReferenceEditor: View {
         }
         .padding(14)
         .frame(width: Self.width)
-        .background(AskTheme.popoverSurface)
-        .tint(AskTheme.accent)
+        .background(TypefluxColor.windowBackground.color)
+        .tint(TypefluxColor.accent.color)
         .onAppear {
             original = reference
             focused = true
@@ -62,17 +62,17 @@ struct AskReferenceEditor: View {
         HStack(spacing: 8) {
             Image(systemName: "quote.opening")
                 .font(.callout).fontWeight(.semibold)
-                .foregroundStyle(AskTheme.accentText)
+                .foregroundStyle(TypefluxColor.accent.color)
             Text(position ?? L("ask.quote"))
                 .font(.body).fontWeight(.semibold)
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
             Spacer(minLength: 8)
             if let locate {
                 // Leaving for the source closes the popover, which keeps the edit.
                 Button(action: locate) {
                     Label(L("ask.references.locate"), systemImage: "arrow.up.forward.square")
                         .font(.callout)
-                        .foregroundStyle(AskTheme.accentText)
+                        .foregroundStyle(TypefluxColor.accent.color)
                 }
                 .buttonStyle(.plain)
             }
@@ -84,7 +84,7 @@ struct AskReferenceEditor: View {
             Text(reference.text.trimmingCharacters(in: .whitespacesAndNewlines))
                 .font(.callout)
                 .lineSpacing(4)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, 12)
@@ -93,7 +93,7 @@ struct AskReferenceEditor: View {
         .frame(maxHeight: 104)
         .fixedSize(horizontal: false, vertical: true)
         .overlay(alignment: .leading) {
-            Rectangle().fill(AskTheme.accent).frame(width: 2)
+            Rectangle().fill(TypefluxColor.accent.color).frame(width: 2)
         }
     }
 
@@ -103,16 +103,19 @@ struct AskReferenceEditor: View {
         TextField(L("ask.references.optional"), text: $reference.question, axis: .vertical)
             .textFieldStyle(.plain)
             .font(.callout)
-            .foregroundStyle(StudioTheme.textPrimary)
+            .foregroundStyle(TypefluxColor.label.color)
             .lineLimit(1...3)
             .focused($focused)
             .onSubmit(commit)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .frame(minHeight: 34)
-            .background(AskTheme.composerSurface, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .background(
+                TypefluxColor.controlBackground.color,
+                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+            )
             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .strokeBorder(focused ? AskTheme.accent.opacity(0.6) : AskTheme.border))
+                .strokeBorder(focused ? TypefluxColor.accent.color.opacity(0.6) : TypefluxColor.separator.color))
     }
 
     private var suggestionRow: some View {
@@ -122,11 +125,11 @@ struct AskReferenceEditor: View {
                 Button { reference.question = action.question; focused = true } label: {
                     Label(action.question, systemImage: action.systemImage)
                         .font(.subheadline)
-                        .foregroundStyle(active ? AskTheme.accentText : StudioTheme.textSecondary)
+                        .foregroundStyle(active ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
                         .padding(.horizontal, 9)
                         .frame(height: 24)
-                        .background(active ? AskTheme.accentSoft : .clear, in: Capsule())
-                        .overlay(Capsule().strokeBorder(active ? .clear : AskTheme.border))
+                        .background(active ? TypefluxColor.accent.color.opacity(0.12) : .clear, in: Capsule())
+                        .overlay(Capsule().strokeBorder(active ? .clear : TypefluxColor.separator.color))
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -139,12 +142,12 @@ struct AskReferenceEditor: View {
             if let remove {
                 Button(L("ask.references.remove")) { finish(); remove() }
                     .buttonStyle(.plain)
-                    .foregroundStyle(StudioTheme.danger)
+                    .foregroundStyle(TypefluxColor.danger.color)
             }
             Spacer(minLength: 8)
             if tooLarge {
                 Label(L("ask.input.tooLarge"), systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(StudioTheme.warning)
+                    .foregroundStyle(TypefluxColor.warning.color)
                     .lineLimit(1)
             } else {
                 // The hints are the buttons, so the shortcuts work and a pointer can use them.
@@ -158,7 +161,7 @@ struct AskReferenceEditor: View {
             }
         }
         .font(.subheadline)
-        .foregroundStyle(StudioTheme.textTertiary)
+        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
     }
 
     private func commit() {
@@ -335,9 +338,9 @@ struct AskReferenceChip: View {
                 HStack(spacing: 6) {
                     Image(systemName: intent.systemImage)
                         .font(.subheadline).fontWeight(.medium)
-                        .foregroundStyle(AskTheme.accentText)
+                        .foregroundStyle(TypefluxColor.accent.color)
                     if let label = intent.label {
-                        Text(label).fontWeight(.semibold).foregroundStyle(AskTheme.accentText)
+                        Text(label).fontWeight(.semibold).foregroundStyle(TypefluxColor.accent.color)
                             .lineLimit(1).truncationMode(.tail)
                             .layoutPriority(1)
                     }
@@ -346,7 +349,8 @@ struct AskReferenceChip: View {
                     // tooltip and the popover instead.
                     if Self.showsExcerpt(intent) {
                         Text(reference.preview)
-                            .foregroundStyle(highlighted ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                            .foregroundStyle(highlighted ? TypefluxColor.label.color : TypefluxColor.secondaryLabel
+                                .color)
                             .lineLimit(1).truncationMode(.tail)
                     }
                 }
@@ -360,9 +364,9 @@ struct AskReferenceChip: View {
                 // hover. Only the pointer reveals it, as on the design board.
                 Button(action: onRemove) {
                     Image(systemName: "xmark").font(.footnote).fontWeight(.bold)
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .frame(width: 16, height: 16)
-                        .background(AskTheme.pressFill, in: Circle())
+                        .background(TypefluxColor.label.color.opacity(0.1), in: Circle())
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -390,16 +394,17 @@ struct AskReferenceChip: View {
     }
 
     private var fill: Color {
-        if selected { return AskTheme.accentSoft }
+        if selected { return TypefluxColor.accent.color.opacity(0.12) }
         switch style {
-        case .draft: return hovering ? AskTheme.hoverFill : AskTheme.hoverFill.opacity(0.75)
-        case .sent: return hovering ? AskTheme.hoverFill : .clear
+        case .draft: return hovering ? TypefluxColor.label.color.opacity(0.06) : TypefluxColor.label.color.opacity(0.06)
+            .opacity(0.75)
+        case .sent: return hovering ? TypefluxColor.label.color.opacity(0.06) : .clear
         }
     }
 
     private var stroke: Color {
-        if selected { return AskTheme.accent.opacity(0.45) }
-        return hovering || style == .sent ? AskTheme.border : AskTheme.separator
+        if selected { return TypefluxColor.accent.color.opacity(0.45) }
+        return hovering || style == .sent ? TypefluxColor.separator.color : TypefluxColor.separator.color
     }
 }
 
@@ -476,11 +481,14 @@ struct AskReferenceStrip: View {
                 Button { expanded.toggle() } label: {
                     Text(expanded ? L("ask.references.collapse") : "+\(items.count - shown)")
                         .font(.callout)
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .padding(.horizontal, 10)
                         .frame(height: AskReferenceChip.height)
                         .overlay(RoundedRectangle(cornerRadius: AskReferenceChip.corner, style: .continuous)
-                            .strokeBorder(AskTheme.border, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
+                            .strokeBorder(
+                                TypefluxColor.separator.color,
+                                style: StrokeStyle(lineWidth: 1, dash: [3, 2])
+                            ))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -490,7 +498,7 @@ struct AskReferenceStrip: View {
                 Button { editing = nil; references = nil } label: {
                     Text(L("ask.references.clear"))
                         .font(.subheadline)
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .padding(.horizontal, 6)
                         .frame(height: AskReferenceChip.height)
                         .contentShape(Rectangle())

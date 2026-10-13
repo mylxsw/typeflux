@@ -14,14 +14,14 @@ struct AskQueueBar: View {
                 row(first, index: 1, header: true)
                 if expanded {
                     ForEach(Array(items.dropFirst().enumerated()), id: \.element.id) { offset, item in
-                        Rectangle().fill(AskTheme.separator).frame(height: 1)
+                        Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                         row(item, index: offset + 2, header: false)
                     }
                 }
             }
             .padding(.horizontal, 14)
-            .background(AskTheme.hoverFill.opacity(0.6))
-            .overlay(alignment: .bottom) { Rectangle().fill(AskTheme.separator).frame(height: 1) }
+            .background(TypefluxColor.label.color.opacity(0.06).opacity(0.6))
+            .overlay(alignment: .bottom) { Rectangle().fill(TypefluxColor.separator.color).frame(height: 1) }
             .accessibilityElement(children: .contain)
             .accessibilityLabel(Self.countText(items.count, paused: model.isQueuePaused))
         }
@@ -46,28 +46,30 @@ struct AskQueueBar: View {
             if header {
                 Text(Self.countText(items.count, paused: model.isQueuePaused))
                     .font(.system(size: 11.5, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .lineLimit(1).fixedSize()
                     .padding(.horizontal, 8).frame(height: 20)
-                    .background(AskTheme.hoverFill, in: Capsule())
+                    .background(TypefluxColor.label.color.opacity(0.06), in: Capsule())
             } else {
-                Text("\(index)").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).monospacedDigit()
+                Text("\(index)").font(.system(size: 11.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
+                    .monospacedDigit()
                     .frame(minWidth: 20, alignment: .trailing)
             }
             if editing {
                 Text(L("ask.queue.editing"))
-                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(AskTheme.accentText)
+                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(TypefluxColor.accent.color)
                     .padding(.horizontal, 7).frame(height: 18)
-                    .background(AskTheme.accentSoft, in: Capsule())
+                    .background(TypefluxColor.accent.color.opacity(0.12), in: Capsule())
             }
             Text(Self.preview(item.draft))
                 .font(.system(size: 12.5))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
                 .lineLimit(1).truncationMode(.tail)
                 .help(item.draft.text)
                 .onTapGesture(count: 2) { model.editQueued(item.id) }
             if (item.draft.includeScreenshot && item.draft.screenshot != nil) || item.draft.sentSelection != nil {
-                Image(systemName: "paperclip").font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
+                Image(systemName: "paperclip").font(.system(size: 10.5))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             Spacer(minLength: 6)
             if header, model.isQueuePaused {
@@ -103,10 +105,11 @@ private struct AskQueueAction: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 11.5, weight: .medium))
-                .foregroundStyle(prominent ? AskTheme.accentText : StudioTheme.textSecondary)
+                .foregroundStyle(prominent ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
                 .lineLimit(1).fixedSize()
                 .padding(.horizontal, 8).frame(height: 22)
-                .background(prominent ? AskTheme.accentSoft : Color.clear, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .background(prominent ? TypefluxColor.accent.color.opacity(0.12) : Color.clear,
+                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -122,7 +125,7 @@ private struct AskQueueIcon: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(StudioTheme.textTertiary)
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .frame(width: 20, height: 22)
                 .contentShape(Rectangle())
         }
@@ -145,7 +148,7 @@ struct AskQueueEditingHeader: View {
             if keepsDraft { Text(L("ask.queue.stashed")).lineLimit(1).truncationMode(.head) }
         }
         .font(.system(size: 11.5))
-        .foregroundStyle(StudioTheme.textSecondary)
+        .foregroundStyle(TypefluxColor.secondaryLabel.color)
     }
 }
 
@@ -161,9 +164,9 @@ struct AskQueueEditActions: View {
             Button(action: onCancel) {
                 if compact { Image(systemName: "xmark") } else { Text(L("ask.queue.cancel")) }
             }
-                .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
-                .accessibilityLabel(L("ask.queue.cancel"))
-                .accessibilityIdentifier("ask.queue.cancel")
+            .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+            .accessibilityLabel(L("ask.queue.cancel"))
+            .accessibilityIdentifier("ask.queue.cancel")
             Button(action: onSave) {
                 if compact {
                     Image(systemName: "checkmark")
@@ -171,10 +174,10 @@ struct AskQueueEditActions: View {
                     Label(L("ask.queue.save"), systemImage: "checkmark")
                 }
             }
-                .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
-                .disabled(!canSave)
-                .accessibilityLabel(L("ask.queue.save"))
-                .accessibilityIdentifier("ask.queue.save")
+            .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
+            .disabled(!canSave)
+            .accessibilityLabel(L("ask.queue.save"))
+            .accessibilityIdentifier("ask.queue.save")
         }
     }
 }

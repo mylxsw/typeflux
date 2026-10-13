@@ -63,7 +63,7 @@ struct AskActivityBlock: View {
             if expanded {
                 content
                     .padding(.leading, 12)
-                    .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 2) }
+                    .overlay(alignment: .leading) { Rectangle().fill(TypefluxColor.separator.color).frame(width: 2) }
                     .padding(.bottom, 4)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
@@ -79,7 +79,7 @@ struct AskActivityBlock: View {
                     ProgressView().controlSize(.mini).frame(width: 14, height: 14)
                 } else if status == .paused {
                     Image(systemName: "pause.fill").font(.footnote)
-                        .foregroundStyle(StudioTheme.warning)
+                        .foregroundStyle(TypefluxColor.warning.color)
                         .frame(width: 14, height: 14)
                 } else {
                     Image(systemName: AskActivity.symbol(group)).font(.subheadline)
@@ -90,15 +90,15 @@ struct AskActivityBlock: View {
                     .truncationMode(.middle)
                     .modifier(AskShimmer(active: running))
                 if let note = AskActivity.stepNote(group, status: status, runStep: runStep) {
-                    Text("· " + note).foregroundStyle(StudioTheme.textTertiary.opacity(0.8)).lineLimit(1)
+                    Text("· " + note).foregroundStyle(TypefluxColor.tertiaryLabel.color.opacity(0.8)).lineLimit(1)
                         .layoutPriority(1)
                 }
                 if failures > 0, !running {
                     HStack(spacing: 4) {
-                        Circle().fill(StudioTheme.danger).frame(width: 6, height: 6)
+                        Circle().fill(TypefluxColor.danger.color).frame(width: 6, height: 6)
                         Text(L("ask.activity.failures", failures))
                     }
-                    .foregroundStyle(StudioTheme.danger)
+                    .foregroundStyle(TypefluxColor.danger.color)
                     .lineLimit(1)
                     .layoutPriority(1)
                 }
@@ -106,11 +106,12 @@ struct AskActivityBlock: View {
                     .rotationEffect(.degrees(expanded ? 90 : 0))
             }
             .font(.callout)
-            .foregroundStyle(hovering || expanded || running ? StudioTheme.textSecondary : StudioTheme.textTertiary)
+            .foregroundStyle(hovering || expanded || running ? TypefluxColor.secondaryLabel.color : TypefluxColor
+                .tertiaryLabel.color)
             .padding(.leading, 8)
             .padding(.trailing, 10)
             .frame(height: Self.lineHeight)
-            .background(hovering ? AskTheme.hoverFill : Color.clear, in: Capsule())
+            .background(hovering ? TypefluxColor.label.color.opacity(0.06) : Color.clear, in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -130,7 +131,7 @@ struct AskActivityBlock: View {
                 approval.padding(.horizontal, 14).padding(.bottom, 14)
             }
             if expanded {
-                Rectangle().fill(AskTheme.separator).frame(height: 1)
+                Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 content.padding(.horizontal, 14).padding(.vertical, 12)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
@@ -142,7 +143,7 @@ struct AskActivityBlock: View {
         .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: cardCorner))
         .overlay(RoundedRectangle(cornerRadius: cardCorner).strokeBorder(TypefluxColor.separator.color))
         .overlay(RoundedRectangle(cornerRadius: cardCorner, style: .continuous)
-            .strokeBorder(StudioTheme.warning.opacity(0.55)))
+            .strokeBorder(TypefluxColor.warning.color.opacity(0.55)))
     }
 
     private var cardHeader: some View {
@@ -151,19 +152,19 @@ struct AskActivityBlock: View {
                 Image(systemName: "exclamationmark").font(.footnote).fontWeight(.heavy)
                     .foregroundStyle(.black)
                     .frame(width: 20, height: 20)
-                    .background(StudioTheme.warning, in: Circle())
+                    .background(TypefluxColor.warning.color, in: Circle())
                 Text(title)
                     .font(.body).fontWeight(.semibold)
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .lineLimit(1)
                 Text(AskActivity.categorySummary(group.steps))
                     .font(.callout)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineLimit(1)
                 Spacer(minLength: 6)
                 Image(systemName: "chevron.down")
                     .font(.footnote).fontWeight(.semibold)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .rotationEffect(.degrees(expanded ? 180 : 0))
             }
             .padding(.horizontal, 14)
@@ -179,7 +180,9 @@ struct AskActivityBlock: View {
         VStack(alignment: .leading, spacing: 6) {
             if let plan, !plan.isEmpty {
                 AskPlanList(items: plan)
-                if !group.steps.isEmpty { Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 2) }
+                if !group.steps
+                    .isEmpty { Rectangle().fill(TypefluxColor.separator.color).frame(height: 1).padding(.vertical,
+                                                                                                        2) }
             }
             ForEach(group.messages) { message in
                 if let reasoning = message.reasoning, !reasoning.isEmpty, message.id != leadReasoning?.id {
@@ -210,7 +213,7 @@ private struct AskStepNote: View {
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .foregroundStyle(StudioTheme.textSecondary)
+        .foregroundStyle(TypefluxColor.secondaryLabel.color)
     }
 }
 
@@ -266,15 +269,15 @@ struct AskToolStepRow: View {
                 HStack(spacing: 8) {
                     Image(systemName: AskPresentation.toolSymbol(call))
                         .font(.footnote)
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .frame(width: Self.iconSize, height: Self.iconSize)
-                    Text(AskTheme.toolTitle(call))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    Text(AskToolPresentation.toolTitle(call))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .layoutPriority(1)
                     if let detail = Self.detail(call, result: result) {
-                        Text(detail).foregroundStyle(StudioTheme.textTertiary)
+                        Text(detail).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                             .lineLimit(1).truncationMode(.middle)
                     }
                     Spacer(minLength: 6)
@@ -285,7 +288,7 @@ struct AskToolStepRow: View {
                     }
                     Image(systemName: "chevron.right")
                         .font(.footnote).fontWeight(.semibold)
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .rotationEffect(.degrees(expanded ? 90 : 0))
                 }
                 .font(.callout)
@@ -294,7 +297,7 @@ struct AskToolStepRow: View {
             }
             .buttonStyle(.plain)
             .help(Self.tag(call))
-            .accessibilityLabel(AskTheme.toolTitle(call))
+            .accessibilityLabel(AskToolPresentation.toolTitle(call))
             .accessibilityValue(statusText)
             if expanded {
                 VStack(alignment: .leading, spacing: 8) {
@@ -303,7 +306,7 @@ struct AskToolStepRow: View {
                             Text(L("ask.tool.arguments")).tag(Pane.arguments)
                             Text(L("ask.tool.result")).tag(Pane.result)
                         }
-                            .frame(width: 112)
+                        .frame(width: 112)
                     }
                     if pane == .arguments || result == nil {
                         AskMonoBlock(title: "", text: call.function.arguments)
@@ -312,7 +315,7 @@ struct AskToolStepRow: View {
                            let receipt = AskProjectTerminalReceipt.decode(result.resultText) {
                             AskProjectTerminalCard(receipt: receipt)
                         } else if call.function.name == "project_files", result.isError != true,
-                           let review = AskProjectReview.decode(result.resultText) {
+                                  let review = AskProjectReview.decode(result.resultText) {
                             AskProjectReviewView(review: review, exportPatch: exportProjectPatch)
                         } else if !result.resultText.isEmpty {
                             AskMonoBlock(title: "", text: result.resultText,
@@ -385,7 +388,8 @@ private struct AskArtifactCard: View {
                         .frame(maxWidth: 320, maxHeight: 200)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.border))
+                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .strokeBorder(TypefluxColor.separator.color))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L("ask.preview"))
@@ -393,9 +397,12 @@ private struct AskArtifactCard: View {
                     Image(nsImage: image).resizable().scaledToFit().frame(maxWidth: 720, maxHeight: 640).padding()
                 }
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(L("ask.artifact.caption", AskTheme.toolTitle(AskToolCall(id: artifact.id, function: .init(name: artifact.toolName, arguments: "{}")))))
+                    Text(L("ask.artifact.caption",
+                           AskToolPresentation.toolTitle(AskToolCall(id: artifact.id,
+                                                                     function: .init(name: artifact.toolName,
+                                                                                     arguments: "{}")))))
                         .font(.subheadline)
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     HStack(spacing: 2) {
                         AskGhostButton(title: copied ? L("ask.copied") : L("ask.copy"),
                                        systemImage: copied ? "checkmark" : "doc.on.doc", active: copied) {
@@ -411,7 +418,7 @@ private struct AskArtifactCard: View {
                         }
                     }
                     if let saveError {
-                        Text(saveError).font(.callout).foregroundStyle(StudioTheme.danger)
+                        Text(saveError).font(.callout).foregroundStyle(TypefluxColor.danger.color)
                     }
                 }
             }
@@ -450,7 +457,7 @@ private struct AskSourceList: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Text(L("ask.sources")).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+            Text(L("ask.sources")).font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             ForEach(Array(sources.prefix(6).enumerated()), id: \.offset) { index, url in
                 TypefluxToken("\(index + 1) " + (url.host ?? url.absoluteString), removeLabel: L("ask.remove"),
                               systemImage: "link", action: { NSWorkspace.shared.open(url) })
@@ -459,7 +466,7 @@ private struct AskSourceList: View {
                     .help(url.absoluteString)
             }
             if sources.count > 6 {
-                Text("+\(sources.count - 6)").font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+                Text("+\(sources.count - 6)").font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
         }
     }

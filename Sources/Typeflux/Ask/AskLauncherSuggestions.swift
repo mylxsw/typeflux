@@ -43,6 +43,7 @@ struct AskSuggestion: Equatable, Identifiable {
 /// to continue, and keyword chips. ↑/↓ move between rows (the chip row is one
 /// stop, ←/→ move along it), Return runs the highlight and ⌘1…⌘9 run a row.
 struct AskLauncherSuggestions: View {
+    @Environment(\.interfaceStyle) private var style
     @Environment(\.colorScheme) private var colorScheme
     var sections: [AskLauncherHome.Section]
     @Binding var highlighted: Int
@@ -52,7 +53,7 @@ struct AskLauncherSuggestions: View {
     var onHistory: (() -> Void)?
 
     private var secondaryText: Color {
-        colorScheme == .dark ? AskTheme.launcherMetaText : StudioTheme.textSecondary
+        colorScheme == .dark ? LegacyAskPalette.launcherMetaText : TypefluxColor.secondaryLabel.color
     }
 
     static let rowHeight: CGFloat = 44
@@ -138,7 +139,7 @@ struct AskLauncherSuggestions: View {
             .map { ($0.element.id, $0.offset + 1) })
         let current = items.indices.contains(highlighted) ? items[highlighted].id : nil
         VStack(spacing: 0) {
-            Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
+            Rectangle().fill(LegacyAskPalette.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
                     if case .keywords = section, viewportHeight != nil { Spacer(minLength: 0) }
@@ -241,22 +242,22 @@ struct AskLauncherSuggestions: View {
 
     static func tint(_ tint: AskLauncherHome.Tint) -> Color {
         switch tint {
-        case .accent: return AskTheme.accent
+        case .accent: return TypefluxColor.accent.color
         case .orange: return .orange
         case .purple: return .purple
         case .green: return .green
-        case .neutral: return StudioTheme.textSecondary
+        case .neutral: return TypefluxColor.secondaryLabel.color
         }
     }
 
     /// A row icon's tile: coloured actions keep a wash of their tint; neutral
     /// rows sit on a raised launcher tile instead of a grey wash.
     static func tileFill(_ tint: AskLauncherHome.Tint) -> Color {
-        tint == .neutral ? AskTheme.launcherTile : Self.tint(tint).opacity(0.14)
+        tint == .neutral ? LegacyAskPalette.launcherTile : Self.tint(tint).opacity(0.14)
     }
 
     static func tileEdge(_ tint: AskLauncherHome.Tint) -> Color {
-        tint == .neutral ? AskTheme.launcherTileEdge : .clear
+        tint == .neutral ? LegacyAskPalette.launcherTileEdge : .clear
     }
 
     private func rowView(_ row: AskLauncherHome.Row, number: Int?, highlighted: Bool) -> some View {
@@ -298,11 +299,11 @@ struct AskLauncherSuggestions: View {
                 .resizable().interpolation(.high).scaledToFit().frame(width: 28, height: 28)
         } else {
             Image(systemName: row.symbol).font(.callout)
-            .foregroundStyle(highlighted ? TypefluxSpotlightRow.labelColor(selected: true) : Self.tint(row.tint))
-            .frame(width: 28, height: 28)
-            .background(Self.tileFill(row.tint), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .strokeBorder(Self.tileEdge(row.tint), lineWidth: 0.5))
+                .foregroundStyle(highlighted ? TypefluxSpotlightRow.labelColor(selected: true) : Self.tint(row.tint))
+                .frame(width: 28, height: 28)
+                .background(Self.tileFill(row.tint), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .strokeBorder(Self.tileEdge(row.tint), lineWidth: 0.5))
         }
     }
 
@@ -312,7 +313,8 @@ struct AskLauncherSuggestions: View {
             .padding(.horizontal, 5)
             .frame(height: 18)
             .background(highlighted ? Color.white.opacity(0.2) : TypefluxColor.controlBackground.color,
-                        in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: style),
+                                             style: .continuous))
     }
 
     private func chipView(_ chip: AskLauncherHome.Chip, highlighted: Bool) -> some View {
@@ -320,19 +322,20 @@ struct AskLauncherSuggestions: View {
             HStack(spacing: 6) {
                 keywordLabel(chip.keyword.keyword)
                 Text(chip.title).font(.callout)
-                    .foregroundStyle(highlighted ? StudioTheme.textPrimary : secondaryText)
+                    .foregroundStyle(highlighted ? TypefluxColor.label.color : secondaryText)
                     .lineLimit(1)
             }
             .padding(.leading, 5)
             .padding(.trailing, 9)
             .frame(height: Self.chipHeight)
-            .background(highlighted ? AskTheme.launcherSelection : AskTheme.launcherChipFill,
+            .background(highlighted ? LegacyAskPalette.launcherSelection : LegacyAskPalette.launcherChipFill,
                         in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.launcherChipEdge))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(LegacyAskPalette.launcherChipEdge))
             .overlay {
                 if highlighted {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5)
+                        .strokeBorder(LegacyAskPalette.launcherSelectionEdge, lineWidth: 0.5)
                 }
             }
             .contentShape(Rectangle())
@@ -360,7 +363,8 @@ struct AskLauncherHomeKeyMonitor: NSViewRepresentable {
     /// The key an event stands for, or nil for every other key.
     static func key(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, characters: String?) -> Key? {
         let modifiers = modifiers.intersection([.command, .option, .control, .shift])
-        if let digit = AskLauncherNumberShortcuts.number(keyCode: keyCode, modifiers: modifiers, characters: characters) {
+        if let digit = AskLauncherNumberShortcuts.number(keyCode: keyCode, modifiers: modifiers,
+                                                         characters: characters) {
             return .number(digit)
         }
         guard modifiers.isEmpty else { return nil }

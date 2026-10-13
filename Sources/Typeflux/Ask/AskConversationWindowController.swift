@@ -66,13 +66,14 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let search = AskSearchSettings(defaults: settings.defaults)
         let api: any AskAPI = services?.api ?? AskRoutedAPI(
             cloud: AskAPIClient(), local: AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
-            search.configuration
-        }), budgetEnabled: settings.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
-            let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
-            return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
-                                    maxOutput: model?.maxOutputTokens ?? 4096,
-                                    known: model?.contextWindowTokens != nil)
-        }))
+                search.configuration
+            }), budgetEnabled: settings.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
+                let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
+                return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
+                                        maxOutput: model?.maxOutputTokens ?? 4096,
+                                        known: model?.contextWindowTokens != nil)
+            })
+        )
         model = AskConversationModel(api: api, cache: cache, tools: tools,
                                      capture: services?.capture ?? AskContextCapture(
                                          injector: injector, memory: AskMemoryProvider(settings: settings),
@@ -80,9 +81,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                                      ),
                                      deviceId: deviceId,
                                      modelLibrary: modelLibrary, session: services?.session ?? {
-            // Signing in is optional: without a Cloud session every conversation stays on this Mac.
-            AskRoutedAPI.session(token: AuthState.shared.accessToken, owner: AuthState.shared.userProfile?.id)
-        })
+                                         // Signing in is optional: without a Cloud session every conversation stays on this Mac.
+                                         AskRoutedAPI.session(
+                                             token: AuthState.shared.accessToken,
+                                             owner: AuthState.shared.userProfile?.id
+                                         )
+                                     })
         super.init()
         maintenanceTasks.append(Task.detached(priority: .utility) { sandbox.pruneWorkspaces() })
         // Keyword plugins: translation falls back to the text-processing model, and
@@ -139,15 +143,15 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         }
         let notesWindow = services?.notesWindow ?? AskNotesWindowController.shared
         notesWindow.configure(store: notes, settings: settings, askAI: { [weak model] note in
-                                  Task { await model?.openChat(referencing: note) }
-                              },
-                              openConversation: { [weak self] id in
-                                  guard let self else { return }
-                                  self.showConversation()
-                                  Task { await self.model.select(id) }
-                              }, appearance: { [weak settings] in
-                                  settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
-                              })
+            Task { await model?.openChat(referencing: note) }
+        },
+        openConversation: { [weak self] id in
+            guard let self else { return }
+            self.showConversation()
+            Task { await self.model.select(id) }
+        }, appearance: { [weak settings] in
+            settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
+        })
         // Recently Deleted keeps notes for 30 days.
         maintenanceTasks.append(Task.detached(priority: .utility) {
             notes.purgeTrash(before: Date().addingTimeInterval(-AskNoteQuery.trashRetention))
@@ -265,7 +269,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             let frame = screen.visibleFrame
             let anchor = launcherAnchor(on: screen)
             panel.setFrame(AskLauncherPlacement.preferredFrame(on: frame, anchor: anchor,
-                           height: openingHeight),
+                                                               height: openingHeight),
                            display: false)
             launcherOpeningTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
         }
@@ -290,8 +294,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     /// ahead of the first press so that press pays no setup cost.
     private func launcherPanel() -> AskFloatingPanel {
         if let launcher { return launcher }
-        let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: launcherHeight),
-                                     styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        let panel = AskFloatingPanel(
+            contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: launcherHeight),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
         panel.level = .floating
         panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
         panel.isMovableByWindowBackground = false
@@ -304,15 +312,25 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             reset: { [weak self] in self?.recenterLauncher() }
         )
         let hosting = FirstMouseHostingView(rootView: AskLauncherView(model: model,
-            onDismiss: { [weak self] in self?.dismissLauncher() },
-            onWindowHeightChange: { [weak self] height in self?.updateLauncherHeight(height) }, drag: drag,
-            onFilePreview: { [weak self] hit, neighbours, empty in
-                guard let self else { return }
-                if self.settings.askFilePreviewEnabled, self.launcher?.isVisible == true {
-                    self.filePreview.request(hit, neighbours: neighbours, empty: empty)
-                } else { self.filePreview.dismissNow() }
-            })
-            .interfaceStyle(following: interfaceStyle))
+                                                                      onDismiss: { [weak self] in
+                                                                          self?.dismissLauncher() },
+                                                                      onWindowHeightChange: { [weak self] height in
+                                                                          self?.updateLauncherHeight(height) },
+                                                                      drag: drag,
+                                                                      onFilePreview: { [
+                                                                          weak self
+                                                                      ] hit, neighbours, empty in
+                                                                          guard let self else { return }
+                                                                          if self.settings.askFilePreviewEnabled,
+                                                                             self.launcher?.isVisible == true {
+                                                                              self.filePreview.request(
+                                                                                  hit,
+                                                                                  neighbours: neighbours,
+                                                                                  empty: empty
+                                                                              )
+                                                                          } else { self.filePreview.dismissNow() }
+                                                                      })
+                                                                      .interfaceStyle(following: interfaceStyle))
         // The height animator sizes the panel while preserving its top edge.
         hosting.sizingOptions = []
         panel.contentView = hosting
@@ -355,16 +373,24 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         guard let launcher else { return }
         let screen = launcherScreen?.visibleFrame
         let height = min(requestedHeight, screen.map { max(1, $0.height - AskLauncherPlacement.screenMargin * 2) }
-                         ?? requestedHeight)
+            ?? requestedHeight)
         launcherHeightAnimator.update(from: launcher.frame.height, to: height,
-                                      animated: launcher.isVisible && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+                                      animated: launcher.isVisible && !NSWorkspace.shared
+                                          .accessibilityDisplayShouldReduceMotion,
                                       framesPerSecond: launcher.screen?.maximumFramesPerSecond ?? 60,
-                                      rate: model.launcherDraft.text.isEmpty ? 60 : 28) { [weak self, weak launcher] height in
+                                      rate: model.launcherDraft.text.isEmpty ? 60 : 28) { [
+            weak self,
+            weak launcher
+        ] height in
             guard let self, let launcher else { return }
             CATransaction.begin()
             CATransaction.setDisableActions(true)
-            launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height,
-                              top: self.launcherOpeningTop, screen: launcher.screen?.visibleFrame), display: false)
+            launcher.setFrame(AskLauncherPlacement.resized(
+                launcher.frame,
+                height: height,
+                top: self.launcherOpeningTop,
+                screen: launcher.screen?.visibleFrame
+            ), display: false)
             self.filePreview.updateFrame()
             launcher.contentView?.layoutSubtreeIfNeeded()
             launcher.displayIfNeeded()
@@ -378,7 +404,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     /// While dragged the launcher follows the pointer, snapping to its screen's centre line.
     func dragLauncher(to origin: NSPoint) -> NSPoint {
         guard let launcher, let screen = launcherScreen else { return origin }
-        let snapped = AskLauncherPlacement.snapped(origin: origin, width: launcher.frame.width, screen: screen.visibleFrame)
+        let snapped = AskLauncherPlacement.snapped(
+            origin: origin,
+            width: launcher.frame.width,
+            screen: screen.visibleFrame
+        )
         launcherOpeningTop = snapped.y + launcher.frame.height
         return snapped
     }
@@ -391,7 +421,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         if frame != launcher.frame { launcher.setFrame(frame, display: true) }
         launcherOpeningTop = frame.maxY
         guard settings.askLauncherPosition == .lastPosition else { return }
-        settings.askLauncherAnchors[AskLauncherPlacement.key(for: screen)] = AskLauncherPlacement.anchor(of: frame, on: visible)
+        settings.askLauncherAnchors[AskLauncherPlacement.key(for: screen)] = AskLauncherPlacement.anchor(
+            of: frame,
+            on: visible
+        )
     }
 
     /// Double-clicking the top edge: back to the middle, forgetting this screen's position.
@@ -399,7 +432,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         guard let launcher, let screen = launcherScreen else { return }
         settings.askLauncherAnchors[AskLauncherPlacement.key(for: screen)] = nil
         let visible = screen.visibleFrame
-        launcher.setFrame(AskLauncherPlacement.preferredFrame(on: visible, height: launcher.frame.height), display: true)
+        launcher.setFrame(
+            AskLauncherPlacement.preferredFrame(on: visible, height: launcher.frame.height),
+            display: true
+        )
         launcherOpeningTop = AskLauncherPlacement.top(on: visible)
     }
 
@@ -424,7 +460,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     func showConversation() {
         dismissLauncher()
         if conversationWindow == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                backing: .buffered,
+                defer: false
+            )
             // Ask's panels draw solid content and library navigation materials.
             window.isOpaque = false
             window.backgroundColor = .clear
@@ -438,8 +479,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             window.titlebarSeparatorStyle = .none
             workspacePresentation = AskWorkspaceState(runId: model.selected?.run?.id)
             let hosting = TransparentAskHostingView(rootView: AskConversationView(
-                model: model, presentation: workspacePresentation)
-                .interfaceStyle(following: interfaceStyle))
+                model: model, presentation: workspacePresentation
+            )
+            .interfaceStyle(following: interfaceStyle))
             // The window owns its size: without this, resizing content (e.g. hiding
             // the sidebar) can make the hosting view resize or zoom the window.
             hosting.sizingOptions = []
@@ -512,27 +554,39 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         }
         conversationWindow?.orderOut(nil)
         if controlPanel == nil {
-            let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 380, height: 60), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+            let panel = AskFloatingPanel(
+                contentRect: NSRect(x: 0, y: 0, width: 380, height: 60),
+                styleMask: [.borderless, .nonactivatingPanel],
+                backing: .buffered,
+                defer: false
+            )
             panel.level = .floating; panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
             panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             panel.contentView = NSHostingView(rootView: AskControlView(model: model)
                 .interfaceStyle(following: interfaceStyle))
             controlPanel = panel
         }
-        if let frame = NSScreen.main?.visibleFrame { controlPanel?.setFrameOrigin(NSPoint(x: frame.midX - 190, y: frame.minY + 24)) }
+        if let frame = NSScreen.main?.visibleFrame { controlPanel?.setFrameOrigin(NSPoint(
+            x: frame.midX - 190,
+            y: frame.minY + 24
+        )) }
         controlPanel?.orderFrontRegardless()
     }
 
     private func installClickMonitors() {
         if clickMonitor == nil {
-            clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [
+                .leftMouseDown,
+                .rightMouseDown
+            ]) { [weak self] _ in
                 guard let self, !self.model.recordingIsActive() else { return }
                 self.dismissLauncher()
             }
         }
         if localClickMonitor == nil {
             localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
-                if let self, event.window != self.launcher, event.window == self.conversationWindow, !self.model.recordingIsActive() { self.dismissLauncher() }
+                if let self, event.window != self.launcher, event.window == self.conversationWindow,
+                   !self.model.recordingIsActive() { self.dismissLauncher() }
                 return event
             }
         }
@@ -573,14 +627,14 @@ private struct AskControlView: View {
     @ObservedObject var model: AskConversationModel
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "desktopcomputer").foregroundStyle(StudioTheme.warning)
+            Image(systemName: "desktopcomputer").foregroundStyle(TypefluxColor.warning.color)
             Text(L("ask.controlling")).font(.system(size: 13, weight: .medium))
             Spacer(minLength: 8)
             Button(L("ask.stopControl")) { model.stop(id: model.controllingConversationId) }
-                .foregroundStyle(StudioTheme.danger)
+                .foregroundStyle(TypefluxColor.danger.color)
         }
         .padding(.horizontal, 16).padding(.vertical, 12)
-        .background(AskTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(AskTheme.border))
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(TypefluxColor.separator.color))
     }
 }

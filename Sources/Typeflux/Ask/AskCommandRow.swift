@@ -16,8 +16,10 @@ struct AskCommandRow: View {
                 .font(.callout.weight(.medium))
                 .foregroundStyle(selected ? label : TypefluxColor.accent.color)
                 .frame(width: 28, height: 28)
-                .background(highlighted ? AskTheme.accent.opacity(0.16) : AskTheme.hoverFill,
-                            in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: style)))
+                .background(
+                    highlighted ? TypefluxColor.accent.color.opacity(0.16) : TypefluxColor.label.color.opacity(0.06),
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: style))
+                )
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 6) {
                     name
@@ -28,7 +30,7 @@ struct AskCommandRow: View {
                         Text(badge).font(.footnote.weight(.medium))
                             .foregroundStyle(secondaryLabel)
                             .padding(.horizontal, 5).padding(.vertical, 1)
-                            .background(AskTheme.hoverFill, in: RoundedRectangle(
+                            .background(TypefluxColor.label.color.opacity(0.06), in: RoundedRectangle(
                                 cornerRadius: TypefluxRadius.menuHighlight.value(for: style)
                             ))
                     }

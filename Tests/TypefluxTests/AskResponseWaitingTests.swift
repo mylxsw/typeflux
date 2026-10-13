@@ -85,7 +85,7 @@ struct AskResponseWaitingRenderTests {
         for frame in 0..<42 {
             let view = AskResponseWaitingView().bubble(elapsed: Double(frame) / 30)
                 .frame(width: 120, height: 72)
-                .background(AskTheme.surface)
+                .background(TypefluxColor.controlBackground.color)
                 .environment(\.colorScheme, .dark)
             let renderer = ImageRenderer(content: view)
             renderer.scale = 2
@@ -101,8 +101,9 @@ struct AskResponseWaitingRenderTests {
         defer { fixture.model.resetSession() }
         var value = AskConversation(id: "waiting", title: "Waiting for an answer", revision: 1,
                                     updatedAt: Date(), messages: [
-            .init(id: "question", role: "user", text: "Explain how this works", createdAt: Date())
-        ])
+                                        .init(id: "question", role: "user", text: "Explain how this works",
+                                              createdAt: Date())
+                                    ])
         await fixture.api.seed(value)
         await fixture.model.select(value.id)
         let route = try #require(fixture.model.credentials(for: value.id))
@@ -148,7 +149,8 @@ struct AskResponseWaitingRenderTests {
         value.run?.status = "waiting_inference"
         value.revision += 1
         try await fixture.model.accept(value, route: route)
-        #expect(!fixture.model.showsResponseWaiting, "A parked inference needs a resume decision, not a working indicator")
+        #expect(!fixture.model.showsResponseWaiting,
+                "A parked inference needs a resume decision, not a working indicator")
 
         value.run?.status = "cancelled"
         value.revision += 1
@@ -162,7 +164,7 @@ struct AskResponseWaitingRenderTests {
             let view = AskResponseWaitingView().bubble(elapsed: nil)
                 .frame(width: 200, height: 100, alignment: .leading)
                 .padding(24)
-                .background(AskTheme.surface)
+                .background(TypefluxColor.controlBackground.color)
                 .environment(\.colorScheme, dark ? .dark : .light)
             let renderer = ImageRenderer(content: view)
             renderer.scale = 2

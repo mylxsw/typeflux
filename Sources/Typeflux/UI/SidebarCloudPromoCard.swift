@@ -36,54 +36,18 @@ struct AskCloudPromoCard: View {
     var onSignIn: () -> Void
     var onDismiss: () -> Void
 
-    private var iconColor: Color {
-        colorScheme == .dark ? StudioTheme.textPrimary : StudioTheme.accent
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
-                Image(systemName: "cloud").font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(iconColor)
-                    .accessibilityHidden(true)
-                Text(verbatim: "Typeflux Cloud").font(.system(size: 12.5, weight: .semibold))
-                Spacer(minLength: 4)
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark").font(.system(size: 9.5, weight: .bold))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .frame(width: 22, height: 22)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(AskPressableStyle())
-                .help(L("ask.cloudPromo.dismiss"))
-                .accessibilityLabel(L("ask.cloudPromo.dismiss"))
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("Typeflux Cloud", systemImage: "cloud").font(.headline)
+                Spacer()
+                TypefluxIconButton(L("ask.cloudPromo.dismiss"), systemImage: "xmark", size: .small, action: onDismiss)
             }
-            .foregroundStyle(StudioTheme.textPrimary)
-            .padding(.leading, 2)
-            HStack(spacing: 4) {
-                ForEach(AskCloudPromo.features, id: \.self) { feature in
-                    VStack(spacing: 4) {
-                        Image(systemName: feature.symbol).font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(iconColor)
-                            .frame(height: 15)
-                            .accessibilityHidden(true)
-                        Text(L(feature.key)).font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                            .lineLimit(1).minimumScaleFactor(0.8)
-                    }
-                    .padding(.horizontal, 2).padding(.vertical, 7)
-                    .frame(maxWidth: .infinity)
-                    .background(StudioTheme.accentSoft, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-            }
-            .padding(.top, 7).padding(.bottom, 10)
-            Button(L("ask.cloudPromo.signIn"), action: onSignIn)
-                .buttonStyle(AskCapsuleButtonStyle(kind: .primary, expands: true))
+            Text(AskCloudPromo.summary).font(.subheadline).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            TypefluxButton(L("ask.cloudPromo.signIn"), kind: .primary, action: onSignIn)
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(StudioTheme.cardFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(StudioTheme.cardStroke, lineWidth: 0.5))
+        .padding(12)
+        .background(TypefluxColor.contentBackground.color)
     }
 }

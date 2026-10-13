@@ -1,19 +1,4 @@
-// swiftlint:disable file_length
 import SwiftUI
-
-/// Small pieces the editor's screens share, drawn like the design
-/// (`docs/design/ask-workflow-editor.html`).
-enum AskWorkflowEditorStyle {
-    static let token = Color.orange
-    static let assistant = Color.purple
-
-    /// A stable tile colour per workflow, so the list is easy to scan.
-    static func tileColor(for id: String) -> Color {
-        let palette: [Color] = [.green, .blue, .indigo, .teal, .orange, .pink, .purple, .cyan]
-        let sum = id.unicodeScalars.reduce(0) { $0 &+ Int($1.value) }
-        return palette[sum % palette.count]
-    }
-}
 
 /// A monospaced chip: a keyword, a file, or (as a token) a `{placeholder}`.
 struct AskWorkflowChip: View {
@@ -23,36 +8,12 @@ struct AskWorkflowChip: View {
     var style: Style = .plain
 
     var body: some View {
-        Text(text)
-            .font(.system(size: 11, design: .monospaced))
-            .foregroundStyle(foreground)
-            .padding(.horizontal, 6).frame(height: 18)
-            .background(background, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(border))
-            .lineLimit(1).fixedSize()
-    }
-
-    private var foreground: Color {
-        switch style {
-        case .plain: StudioTheme.textPrimary
-        case .token: AskWorkflowEditorStyle.token
-        case .problem: StudioTheme.danger
-        }
-    }
-
-    private var background: Color {
-        switch style {
-        case .plain: StudioTheme.controlSurface
-        case .token: AskWorkflowEditorStyle.token.opacity(0.14)
-        case .problem: StudioTheme.danger.opacity(0.08)
-        }
-    }
-
-    private var border: Color {
-        switch style {
-        case .plain: StudioTheme.border
-        case .token: AskWorkflowEditorStyle.token.opacity(0.35)
-        case .problem: StudioTheme.danger.opacity(0.6)
+        Group {
+            if style == .problem {
+                TypefluxTag(text, tone: .danger)
+            } else {
+                TypefluxToken(text, removeLabel: "")
+            }
         }
     }
 }
@@ -64,16 +25,11 @@ struct AskWorkflowBadge: View {
     var symbol: String?
 
     var body: some View {
-        HStack(spacing: 3) {
-            if let symbol {
-                Image(systemName: symbol).font(.system(size: 9, weight: .bold))
-            }
-            Text(text)
+        Label {
+            TypefluxTag(text)
+        } icon: {
+            if let symbol { Image(systemName: symbol).foregroundStyle(color) }
         }
-        .font(.system(size: 11, weight: .semibold)).foregroundStyle(color)
-        .padding(.horizontal, 7).frame(height: 20)
-        .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .fixedSize()
     }
 }
 
@@ -98,94 +54,17 @@ struct AskWorkflowRadioList<Value: Hashable>: View {
     var select: (Value) -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(choices.enumerated()), id: \.element.id) { index, choice in
-                if index > 0 {
-                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
-                }
-                row(choice)
-            }
-        }
-        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private func row(_ choice: AskWorkflowChoice<Value>) -> some View {
-        let selected = choice.value == selection
-        return Button { select(choice.value) } label: {
-            HStack(alignment: stacked ? .top : .center, spacing: 11) {
-                Circle()
-                    .strokeBorder(selected ? AskTheme.accent : StudioTheme.textTertiary, lineWidth: selected ? 5 : 1.5)
-                    .frame(width: 16, height: 16)
-                    .padding(.top, stacked ? 1 : 0)
-                if stacked {
-                    VStack(alignment: .leading, spacing: 2) {
-                        title(choice)
-                        if let detail = choice.detail, !detail.isEmpty {
-                            Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                } else {
-                    title(choice)
+        TypefluxRadioGroup("", selection: Binding(get: { selection }, set: select)) {
+            ForEach(choices) { choice in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(choice.title)
                     if let detail = choice.detail, !detail.isEmpty {
-                        Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                        Text(detail).font(.subheadline).foregroundStyle(.secondary)
                     }
-                }
-                Spacer(minLength: 0)
+                }.tag(choice.value)
             }
-            .padding(.horizontal, 14).padding(.vertical, stacked ? 10 : 0)
-            .frame(minHeight: 40)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    private func title(_ choice: AskWorkflowChoice<Value>) -> some View {
-        Text(choice.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
-            .lineLimit(1).fixedSize()
-    }
-}
-
-/// The editor's buttons: one height and radius everywhere. `primary` is the single
-/// main action, `assistant` the AI's, `ghost` a quiet one in a toolbar.
-struct AskWorkflowActionStyle: ButtonStyle {
-    enum Kind { case secondary, primary, assistant, ghost }
-
-    var kind: Kind = .secondary
-    var small = false
-    @Environment(\.isEnabled) private var enabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: small ? 12 : 12.5, weight: .medium))
-            .lineLimit(1)
-            .padding(.horizontal, small ? 9 : 12).frame(height: small ? 24 : 28)
-            .foregroundStyle(foreground)
-            .background(background, in: RoundedRectangle(cornerRadius: small ? 7 : 8, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: small ? 7 : 8, style: .continuous)
-                .strokeBorder(kind == .secondary ? TypefluxColor.separator.color : .clear))
-            .contentShape(Rectangle())
-            .opacity(enabled ? (configuration.isPressed ? 0.75 : 1) : 0.45)
-    }
-
-    private var foreground: Color {
-        switch kind {
-        case .primary, .assistant: .white
-        case .secondary: StudioTheme.textPrimary
-        case .ghost: StudioTheme.textSecondary
-        }
-    }
-
-    private var background: Color {
-        switch kind {
-        case .primary: AskTheme.accent
-        case .assistant: AskWorkflowEditorStyle.assistant
-        case .secondary: TypefluxColor.controlBackground.color
-        case .ghost: .clear
-        }
+        .labelsHidden()
     }
 }
 
@@ -194,88 +73,65 @@ struct AskWorkflowShortcutHint: View {
     var text: String
 
     var body: some View {
-        Text(text).font(.system(size: 11, design: .monospaced)).opacity(0.7)
+        Text(text).font(.system(.subheadline, design: .monospaced)).opacity(0.7)
     }
 }
 
 /// A launcher action as the launcher draws it: "↩ Copy".
 struct AskWorkflowActionChip: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var key: String
     var title: String
     var primary = false
 
     var body: some View {
         HStack(spacing: 4) {
-            Text(key).font(.system(size: 10.5, weight: .semibold)).opacity(0.75)
+            Text(key).font(.system(.footnote, weight: .semibold)).opacity(0.75)
             Text(title)
         }
-        .font(.system(size: 11)).foregroundStyle(primary ? AskTheme.accent : StudioTheme.textSecondary)
+        .font(.system(.subheadline))
+        .foregroundStyle(primary ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
         .padding(.horizontal, 7).frame(height: 21)
-        .background(primary ? AskTheme.accent.opacity(0.18) : StudioTheme.controlSurface,
-                    in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .background(primary ? TypefluxColor.accent.color.opacity(0.18) : TypefluxColor.controlBackground.color,
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                                         style: .continuous))
         .fixedSize()
     }
 }
 
-/// Segmented tabs, as the side panel and the test results use them: a track
-/// with the selected tab raised.
+/// Native segments shared by the side panel and test results.
 struct AskWorkflowTabs<Tab: Hashable>: View {
     struct Item {
         var tab: Tab
         var title: String
         var symbol: String?
         var badge: String?
-        var tint: Color = AskTheme.accent
+        var tint: Color = TypefluxColor.accent.color
     }
 
     var items: [Item]
     @Binding var selection: Tab
-    var size: CGFloat = 12
     /// Tabs share the width evenly instead of hugging their titles.
     var fills = false
 
     var body: some View {
-        HStack(spacing: 2) {
+        TypefluxSegmentedControl("", selection: $selection) {
             ForEach(items.indices, id: \.self) { index in
                 let item = items[index]
-                let selected = item.tab == selection
-                Button { selection = item.tab } label: {
-                    HStack(spacing: 5) {
-                        if let symbol = item.symbol {
-                            Image(systemName: symbol).font(.system(size: size - 2, weight: .semibold))
-                                .foregroundStyle(selected ? item.tint : StudioTheme.textTertiary)
-                        }
-                        Text(item.title).font(.system(size: size, weight: selected ? .semibold : .regular))
-                            .lineLimit(1)
-                        if let badge = item.badge {
-                            Text(badge).font(.system(size: 9.5, weight: .bold)).foregroundStyle(StudioTheme.danger)
-                                .padding(.horizontal, 4)
-                                .background(StudioTheme.danger.opacity(0.14), in: RoundedRectangle(cornerRadius: 4))
-                        }
-                    }
-                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                    .padding(.horizontal, 10).frame(height: size + 13)
-                    .frame(maxWidth: fills ? .infinity : nil)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(selected ? StudioTheme.selectionSurfaceRaised : Color.clear)
-                            .shadow(color: .black.opacity(selected ? 0.18 : 0), radius: 1, y: 1)
-                    )
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
+                Text([item.title, item.badge].compactMap { $0 }.joined(separator: " · "))
+                    .tag(item.tab)
             }
         }
-        .padding(2)
-        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+        .frame(maxWidth: fills ? .infinity : nil)
     }
 }
 
 /// The launcher as it would look for a run: the input row with the keyword chip,
 /// then the result card or the error, with the actions the launcher offers.
 struct AskWorkflowLauncherPreview: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var name: String
     var keyword: String
     var query: String
@@ -293,14 +149,18 @@ struct AskWorkflowLauncherPreview: View {
             if showsInput {
                 HStack(spacing: 8) {
                     HStack(spacing: 5) {
-                        Text(keyword).font(.system(size: 9, weight: .heavy)).foregroundStyle(.black)
+                        Text(keyword).font(.system(.footnote, weight: .heavy)).foregroundStyle(.black)
                             .frame(minWidth: 16, minHeight: 16).padding(.horizontal, 2)
-                            .background(Color.orange, in: RoundedRectangle(cornerRadius: 5))
-                        Text(name).font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.orange)
+                            .background(Color.orange,
+                                        in: RoundedRectangle(cornerRadius: TypefluxRadius.textField
+                                            .value(for: interfaceStyle)))
+                        Text(name).font(.system(.callout, weight: .semibold)).foregroundStyle(Color.orange)
                     }
                     .padding(.leading, 4).padding(.trailing, 8).frame(height: 24)
-                    .background(Color.orange.opacity(0.16), in: RoundedRectangle(cornerRadius: 7))
-                    Text(query).font(.system(size: 13.5)).lineLimit(1)
+                    .background(Color.orange.opacity(0.16),
+                                in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon
+                                    .value(for: interfaceStyle)))
+                    Text(query).font(.system(.body)).lineLimit(1)
                     Spacer()
                 }
                 .padding(.horizontal, 10).frame(height: 40)
@@ -308,8 +168,11 @@ struct AskWorkflowLauncherPreview: View {
             }
             card.padding(6)
         }
-        .background(StudioTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(StudioTheme.border))
+        .background(TypefluxColor.controlBackground.color,
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle),
+                                         style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
         .shadow(color: .black.opacity(0.18), radius: 12, y: 6)
     }
 
@@ -320,10 +183,10 @@ struct AskWorkflowLauncherPreview: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(name).font(.system(size: 12, weight: .semibold))
+                Text(name).font(.system(.callout, weight: .semibold))
                 Spacer()
-                Text(L("ask.workflow.editor.preview.kind")).font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(L("ask.workflow.editor.preview.kind")).font(.system(.subheadline))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             content
             // Long action names ("Open in Visual Studio Code") leave out the last chips rather than overflow.
@@ -335,9 +198,11 @@ struct AskWorkflowLauncherPreview: View {
             .padding(.top, 2)
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
-        .background(StudioTheme.controlSurface.opacity(0.6), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(failed ? StudioTheme.danger.opacity(0.55) : AskTheme.accent.opacity(0.55)))
+        .background(TypefluxColor.controlBackground.color.opacity(0.6),
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                                         style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(failed ? TypefluxColor.danger.color.opacity(0.55) : TypefluxColor.accent.color.opacity(0.55)))
     }
 
     private func chips(_ actions: [(String, String)]) -> some View {
@@ -351,24 +216,28 @@ struct AskWorkflowLauncherPreview: View {
 
     @ViewBuilder private var content: some View {
         if let result, let failure = result.failure {
-            Text(failure).font(.system(size: 12.5)).foregroundStyle(StudioTheme.danger)
+            Text(failure).font(.system(.callout)).foregroundStyle(TypefluxColor.danger.color)
         } else if let result, result.timedOut {
-            Text(L("ask.workflow.timedOut", Int(timeout))).font(.system(size: 12.5)).foregroundStyle(StudioTheme.danger)
+            Text(L("ask.workflow.timedOut", Int(timeout))).font(.system(.callout))
+                .foregroundStyle(TypefluxColor.danger.color)
         } else if let result, result.exitCode != 0 {
             Text(AskWorkflowPlugin.errorMessage(in: result.stdout) ?? L("ask.workflow.failed", Int(result.exitCode)))
-                .font(.system(size: 12.5)).foregroundStyle(StudioTheme.danger)
+                .font(.system(.callout)).foregroundStyle(TypefluxColor.danger.color)
             let tail = AskWorkflowPlugin.tail(result.stderr, lines: 3, folder: folder).trimmingCharacters(in: .newlines)
             if !tail.isEmpty {
-                Text(tail).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(StudioTheme.textSecondary)
+                Text(tail).font(.system(.footnote, design: .monospaced))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(8)
-                    .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 7))
+                    .background(Color(nsColor: .textBackgroundColor),
+                                in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon
+                                    .value(for: interfaceStyle)))
             }
         } else if result?.truncated == true {
-            Text(L("ask.workflow.truncated")).font(.system(size: 12.5)).foregroundStyle(StudioTheme.danger)
+            Text(L("ask.workflow.truncated")).font(.system(.callout)).foregroundStyle(TypefluxColor.danger.color)
         } else if output.display == .none
             || (result?.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? false) {
             Label(L("ask.workflow.editor.test.dismisses"), systemImage: "checkmark.circle")
-                .font(.system(size: 12.5)).foregroundStyle(StudioTheme.success)
+                .font(.system(.callout)).foregroundStyle(TypefluxColor.success.color)
         } else {
             switch decoded {
             case let .items(list):
@@ -382,7 +251,7 @@ struct AskWorkflowLauncherPreview: View {
             case let .text(text, note):
                 textLines(text)
                 if let note {
-                    Text(note).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(note).font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
         }
@@ -418,20 +287,21 @@ struct AskWorkflowLauncherPreview: View {
             if let picture = AskPluginResultsView.loadImage(image.url) {
                 Image(nsImage: picture).resizable().interpolation(.high)
                     .frame(width: size.width, height: size.height)
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                                                style: .continuous))
                     .frame(maxWidth: .infinity)
             }
         case let .failure(failure):
             if result == nil {
                 // No run yet: what an image result looks like.
-                Image(systemName: "qrcode").font(.system(size: 64, weight: .light))
-                    .foregroundStyle(StudioTheme.textPrimary).frame(maxWidth: .infinity).padding(.vertical, 6)
+                Image(systemName: "qrcode").font(.system(.largeTitle, weight: .light))
+                    .foregroundStyle(TypefluxColor.label.color).frame(maxWidth: .infinity).padding(.vertical, 6)
             } else {
                 let isData = name.lowercased().hasPrefix("data:")
                 textLines(isData ? AskWorkflowActionRunner.clipped(name, limit: 40) : name)
                 Text(failure == .notImage ? L("ask.workflow.image.invalid")
                     : L("ask.workflow.image.notFound", AskWorkflowActionRunner.clipped(name, limit: 40)))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    .font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
         }
     }
@@ -466,7 +336,7 @@ struct AskWorkflowLauncherPreview: View {
             }
             if items.count > shown.count {
                 Text(L("ask.workflow.editor.preview.moreItems", items.count - shown.count))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    .font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -475,10 +345,10 @@ struct AskWorkflowLauncherPreview: View {
     private func textLines(_ text: String) -> some View {
         let lines = text.components(separatedBy: "\n")
         return VStack(alignment: .leading, spacing: 2) {
-            Text(lines.first ?? "").font(.system(size: 14))
+            Text(lines.first ?? "").font(.system(.body))
             if lines.count > 1 {
-                Text(lines.dropFirst().joined(separator: "\n")).font(.system(size: 12.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(lines.dropFirst().joined(separator: "\n")).font(.system(.callout))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
         }
         .textSelection(.enabled)
@@ -511,6 +381,8 @@ struct AskWorkflowLauncherPreview: View {
 
 /// Risk tags, new ones highlighted; optionally also what the code does not do.
 struct AskWorkflowRiskChips: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var risks: [AskWorkflowRisk]
     var new: Set<AskWorkflowRisk>
     var showsAbsent: Bool
@@ -543,12 +415,13 @@ struct AskWorkflowRiskChips: View {
             }
             Text(text)
         }
-        .font(.system(size: 11))
-        .foregroundStyle(highlighted ? Color.orange : StudioTheme.textSecondary)
+        .font(.system(.subheadline))
+        .foregroundStyle(highlighted ? Color.orange : TypefluxColor.secondaryLabel.color)
         .padding(.horizontal, 7).padding(.vertical, 2)
-        .background((highlighted ? Color.orange : Color.gray).opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
-        .overlay(RoundedRectangle(cornerRadius: 6)
-            .strokeBorder(highlighted ? Color.orange.opacity(0.35) : StudioTheme.border))
+        .background((highlighted ? Color.orange : Color.gray).opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle)))
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle))
+            .strokeBorder(highlighted ? Color.orange.opacity(0.35) : TypefluxColor.separator.color))
         .fixedSize()
     }
 }

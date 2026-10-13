@@ -33,7 +33,7 @@ struct ScrollCaptureBar: View {
             Image(systemName: state.lastSegmentSuspicious ? "exclamationmark.triangle.fill"
                 : (state.axis == .horizontal ? "arrow.right.to.line.compact" : "arrow.down.to.line.compact"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(state.lastSegmentSuspicious ? Color.orange : AskTheme.accent)
+                .foregroundStyle(state.lastSegmentSuspicious ? Color.orange : TypefluxColor.accent.color)
                 .padding(.leading, 6)
             Text(Self.message(for: state))
                 .font(.system(size: 12.5, weight: .medium))
@@ -48,7 +48,7 @@ struct ScrollCaptureBar: View {
                     .buttonStyle(.link)
                     .font(.system(size: 12.5, weight: .medium))
             }
-            Rectangle().fill(AskTheme.border).frame(width: 1, height: 18).padding(.horizontal, 4)
+            Rectangle().fill(TypefluxColor.separator.color).frame(width: 1, height: 18).padding(.horizontal, 4)
             button(state.isAutomatic ? "pause.fill" : "play.fill",
                    title: L(state.isAutomatic ? "screenshot.scroll.pause" : "screenshot.scroll.automatic"),
                    key: "␣", showsTitle: true, isEnabled: state.canToggleAutomatic, action: actions.togglePause)
@@ -64,7 +64,7 @@ struct ScrollCaptureBar: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 11)
                 .frame(height: 30)
-                .background(RoundedRectangle(cornerRadius: 8).fill(AskTheme.accent))
+                .background(RoundedRectangle(cornerRadius: 8).fill(TypefluxColor.accent.color))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -73,8 +73,8 @@ struct ScrollCaptureBar: View {
         .padding(4)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(AskTheme.glassFill.opacity(0.96))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(AskTheme.border, lineWidth: 1))
+                .fill(LegacyAskPalette.glassFill.opacity(0.96))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(TypefluxColor.separator.color, lineWidth: 1))
         )
         .fixedSize()
     }

@@ -16,7 +16,7 @@ struct LauncherSettingsPolishTests {
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: light ? .aqua : .darkAqua)
         let hosting = NSHostingView(rootView: view.frame(width: size.width, height: size.height, alignment: .topLeading)
-            .background(StudioTheme.windowBackground))
+            .background(TypefluxColor.windowBackground.color))
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
         window.orderFront(nil)
@@ -115,7 +115,7 @@ struct LauncherSettingsPolishTests {
                                         .appendingPathComponent("History")),
                                     initialSection: .launcher)
         #expect(StudioSection.launcher.subheading == nil)
-        for height in [StudioTheme.Layout.settingsWindowHeight, StudioTheme.Layout.settingsWindowMinHeight] {
+        for height in [StudioWindowMetrics.settingsWindowHeight, StudioWindowMetrics.settingsWindowMinHeight] {
             for light in [false, true] {
                 for pane in LauncherSettingsPane.allCases {
                     try await render(StudioView(viewModel: model, launcherPane: pane),

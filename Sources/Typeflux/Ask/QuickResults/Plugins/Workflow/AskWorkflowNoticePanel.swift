@@ -54,7 +54,7 @@ struct AskWorkflowNoticeView: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "checkmark.circle.fill").foregroundStyle(StudioTheme.success)
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(TypefluxColor.success.color)
             Text(text.count > 80 ? String(text.prefix(80)) + "…" : text).lineLimit(1)
         }
         .font(.system(size: 12.5, weight: .medium))

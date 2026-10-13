@@ -8,18 +8,20 @@ import Testing
 struct AskKeywordColorTests {
     @Test func `ordinary plugins default to the existing accent color`() {
         let plugin: any AskLauncherPlugin = AskSettingsPlugin()
-        #expect(plugin.keywordColor == AskTheme.accent)
-        #expect(AskKeywordChip(title: "Settings", symbol: "gearshape").tint == AskTheme.accent)
+        #expect(plugin.keywordColor == TypefluxColor.accent.color)
+        #expect(AskKeywordChip(title: "Settings", symbol: "gearshape").tint == TypefluxColor.accent.color)
     }
 
     @Test func `destructive commands use danger while ordinary system commands stay blue`() {
         let destructive: Set<AskSystemCommand> = [.emptyTrash, .shutdown, .restart, .resetSpotlight]
         for command in AskSystemCommand.allCases {
             let plugin: any AskLauncherPlugin = AskSystemCommandPlugin(command: command)
-            #expect(plugin.keywordColor == (destructive.contains(command) ? StudioTheme.danger : AskTheme.accent))
+            #expect(plugin
+                .keywordColor ==
+                (destructive.contains(command) ? TypefluxColor.danger.color : TypefluxColor.accent.color))
         }
         let kill: any AskLauncherPlugin = AskKillAppPlugin()
-        #expect(kill.keywordColor == StudioTheme.danger)
+        #expect(kill.keywordColor == TypefluxColor.danger.color)
     }
 
     @Test(arguments: [AskKillAppPlugin.id, AskSystemCommand.shutdown.id, AskSettingsPlugin.id])
@@ -32,7 +34,9 @@ struct AskKeywordColorTests {
         #expect(session.detect(in: "ALIAS ") == "")
         #expect(session.keyword == keyword)
         let plugin = try #require(session.plugin)
-        #expect(plugin.keywordColor == (pluginID == AskSettingsPlugin.id ? AskTheme.accent : StudioTheme.danger))
+        #expect(plugin
+            .keywordColor ==
+            (pluginID == AskSettingsPlugin.id ? TypefluxColor.accent.color : TypefluxColor.danger.color))
     }
 
     /// Render the production composer to verify the color reaches the actual prefix.

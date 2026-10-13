@@ -57,7 +57,7 @@ struct ProviderModelsView: View {
                 } header: { modelsHeader(provider) }
                 if ModelSettingsPresentation.showsUsageHint(provider.models, rewriteReference: library.rewriteReference,
                                                             defaultReference: library.defaultReference) {
-                    Text(L("models.usageHint")).font(.body).foregroundStyle(StudioTheme.textTertiary)
+                    Text(L("models.usageHint")).font(.body).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .padding(.horizontal, 4).padding(.top, 10)
                 }
                 if provider.remote == .freeModel, let notice {
@@ -185,14 +185,15 @@ struct ProviderModelsView: View {
 }
 
 extension ProviderModelsView {
-    private func modelRow(_ model: RegisteredModel, provider: RegisteredProvider, canRewrite: Bool, canAsk: Bool) -> some View {
+    private func modelRow(_ model: RegisteredModel, provider: RegisteredProvider, canRewrite: Bool,
+                          canAsk: Bool) -> some View {
         HStack(spacing: 10) {
             ModelIcon(model: model, provider: provider)
             VStack(alignment: .leading, spacing: 3) {
-                Text(model.id).font(.body).foregroundStyle(StudioTheme.textPrimary)
+                Text(model.id).font(.body).foregroundStyle(TypefluxColor.label.color)
                     .lineLimit(1).truncationMode(.middle)
                 if let reason = model.exclusionReason {
-                    Text(reason).font(.body).foregroundStyle(StudioTheme.textTertiary)
+                    Text(reason).font(.body).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
             Spacer(minLength: 8)
@@ -253,7 +254,13 @@ extension ProviderModelsView {
     private func sceneBlockedNotes(_ model: RegisteredModel, provider: RegisteredProvider,
                                    canRewrite: Bool, canAsk: Bool) -> [String] {
         func reason(_ scenario: String) -> String {
-            library.selectionReason(model, provider: provider, hasImage: false, loggedIn: auth.isLoggedIn, scenario: scenario)
+            library.selectionReason(
+                model,
+                provider: provider,
+                hasImage: false,
+                loggedIn: auth.isLoggedIn,
+                scenario: scenario
+            )
                 ?? L("ask.models.unavailable")
         }
         return ModelSettingsPresentation.sceneBlockedNotes(rewrite: canRewrite ? nil : reason("rewrite"),
@@ -264,11 +271,11 @@ extension ProviderModelsView {
     private func visionIndicator(_ model: RegisteredModel) -> some View {
         switch model.effectiveVision {
         case true?:
-            Text(L("ask.models.badge.vision")).font(.body).foregroundStyle(StudioTheme.textSecondary)
+            Text(L("ask.models.badge.vision")).font(.body).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .lineLimit(1).fixedSize()
                 .help(L(model.visionIsGuessed ? "models.visionGuessed" : "ask.models.supportsImages"))
         case nil:
-            Text(L("models.visionUnknownShort")).font(.body).foregroundStyle(StudioTheme.textTertiary)
+            Text(L("models.visionUnknownShort")).font(.body).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .lineLimit(1).fixedSize()
                 .help(L("models.capabilityHint"))
         case false?:
@@ -278,7 +285,7 @@ extension ProviderModelsView {
 
     private func noticeText(_ text: String) -> some View {
         Text(text).font(.body)
-            .foregroundStyle(noticeIsSuccess ? StudioTheme.success : StudioTheme.danger)
+            .foregroundStyle(noticeIsSuccess ? TypefluxColor.success.color : TypefluxColor.danger.color)
             .lineLimit(2).textSelection(.enabled)
     }
 

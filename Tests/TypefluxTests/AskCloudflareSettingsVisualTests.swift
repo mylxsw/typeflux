@@ -12,7 +12,12 @@ final class AskCloudflareSettingsVisualTests: XCTestCase {
         _ = NSApplication.shared
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             let view = AgentSettingsSection(title: L("agent.settings.web")) {
-                AgentSettingsRow(icon: "globe", title: L("ask.settings.search.title"), subtitle: L("ask.settings.search.subtitle"), subtitleLineLimit: nil) {
+                AgentSettingsRow(
+                    icon: "globe",
+                    title: L("ask.settings.search.title"),
+                    subtitle: L("ask.settings.search.subtitle"),
+                    subtitleLineLimit: nil
+                ) {
                     Text("Cloudflare Web Search").font(.system(size: 13))
                 }
                 ModelRowDivider(leading: 66)
@@ -20,9 +25,17 @@ final class AskCloudflareSettingsVisualTests: XCTestCase {
                     SecureField("Cloudflare API Token", text: .constant("fixture-token"))
                         .textFieldStyle(.roundedBorder).frame(width: 240)
                 }
-                AskCloudflareSearchSettingsView(configuration: .constant(.init(accountID: "0123456789abcdef0123456789abcdef")))
-            }.padding(24).frame(width: 760, height: 600, alignment: .top).background(StudioTheme.surface)
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 600), styleMask: [.borderless], backing: .buffered, defer: false)
+                AskCloudflareSearchSettingsView(
+                    configuration: .constant(.init(accountID: "0123456789abcdef0123456789abcdef"))
+                )
+            }.padding(24).frame(width: 760, height: 600, alignment: .top)
+                .background(TypefluxColor.controlBackground.color)
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 760, height: 600),
+                styleMask: [.borderless],
+                backing: .buffered,
+                defer: false
+            )
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: appearance)
             let hosting = NSHostingView(rootView: view)
@@ -39,7 +52,9 @@ final class AskCloudflareSettingsVisualTests: XCTestCase {
             if let output = ProcessInfo.processInfo.environment["TYPEFLUX_CLOUDFLARE_SNAPSHOTS"] {
                 let directory = URL(fileURLWithPath: output)
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                try png.write(to: directory.appendingPathComponent(appearance == .aqua ? "cloudflare-light.png" : "cloudflare-dark.png"))
+                try png
+                    .write(to: directory
+                        .appendingPathComponent(appearance == .aqua ? "cloudflare-light.png" : "cloudflare-dark.png"))
             }
         }
     }

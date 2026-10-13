@@ -30,8 +30,8 @@ struct TypefluxUICompatibilityVisualTests {
         ) {
             StudioSegmentedPicker(options: InterfaceStyle.allCases.map { (label: $0.displayName, value: $0) },
                                   selection: .constant(InterfaceStyle.classic))
-                .frame(width: StudioTheme.Layout.appearancePickerWidth)
-        }.padding(24).background(StudioTheme.surface)
+                .frame(width: StudioWindowMetrics.appearancePickerWidth)
+        }.padding(24).background(TypefluxColor.controlBackground.color)
         try await TypefluxUISnapshot.renderMatrix(settings, size: NSSize(width: 900, height: 120),
                                                   directory: root, name: "settings")
     }

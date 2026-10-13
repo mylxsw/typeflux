@@ -85,7 +85,7 @@ struct AskTranslationSettingsView: View {
         return HStack(spacing: 10) {
             Text(provider.title)
                 .font(.body)
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
             TypefluxStatus(
                 L(configured ? "ask.translation.service.configured" : "ask.translation.service.notConfigured"),
                 tone: configured ? .success : .inactive

@@ -117,7 +117,10 @@ enum AskActivity {
                 ) {
                     refs.append(receipt.artifact)
                 }
-                if let receipt = try? JSONDecoder().decode(AskGeneratedImageReceipt.self, from: Data(result.resultText.utf8)) {
+                if let receipt = try? JSONDecoder().decode(
+                    AskGeneratedImageReceipt.self,
+                    from: Data(result.resultText.utf8)
+                ) {
                     refs += receipt.generatedImages
                 }
                 for ref in refs where !value.storedArtifacts.contains(where: { $0.id == ref.id }) {
@@ -170,7 +173,7 @@ enum AskActivity {
 
     /// The tool part of a readable title: "Memory" for "Memory · List".
     static func toolName(_ call: AskToolCall) -> String {
-        let title = AskTheme.toolTitle(call)
+        let title = AskToolPresentation.toolTitle(call)
         return title.components(separatedBy: " · ").first ?? title
     }
 
@@ -195,11 +198,12 @@ enum AskActivity {
 
     /// What the block did, in one line: the step itself when there is one,
     /// otherwise the kinds of steps it took; while working, the step under way.
-    static func title(_ group: AskActivityGroup, status: Status, plan: [AskPlanItem]?, results: [AskMessage]) -> String {
+    static func title(_ group: AskActivityGroup, status: Status, plan: [AskPlanItem]?,
+                      results: [AskMessage]) -> String {
         let steps = group.steps
         switch status {
         case .running, .paused:
-            return steps.last.map { AskTheme.toolTitle($0) } ?? L("ask.activity.working")
+            return steps.last.map { AskToolPresentation.toolTitle($0) } ?? L("ask.activity.working")
         case .attention: return L("ask.activity.attention")
         case .failed, .done:
             var parts: [String] = []
@@ -207,7 +211,7 @@ enum AskActivity {
                 parts.append(L("ask.activity.plan", plan.filter { $0.status == "completed" }.count, plan.count))
             }
             if steps.count == 1, parts.isEmpty {
-                parts.append(AskTheme.toolTitle(steps[0]))
+                parts.append(AskToolPresentation.toolTitle(steps[0]))
             } else if !steps.isEmpty {
                 parts.append(categorySummary(steps))
             }

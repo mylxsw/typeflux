@@ -33,9 +33,9 @@ struct StudioSegmentedControl<Value: Hashable>: View {
                 } label: {
                     HStack(spacing: 4) {
                         Text(option.label)
-                            .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                            .foregroundStyle(selected ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color)
                         if let count = counts[option.value] {
-                            Text("\(count)").foregroundStyle(StudioTheme.textTertiary)
+                            Text("\(count)").foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         }
                     }
                     .font(.system(size: size.fontSize, weight: .semibold))
@@ -43,7 +43,7 @@ struct StudioSegmentedControl<Value: Hashable>: View {
                     .padding(.horizontal, size.horizontalPadding).frame(height: size.itemHeight)
                     .background(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(selected ? StudioTheme.selectionSurfaceRaised : Color.clear)
+                            .fill(selected ? TypefluxColor.controlBackground.color : Color.clear)
                             .shadow(color: .black.opacity(selected ? 0.18 : 0), radius: 1, y: 1)
                     )
                     .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -54,8 +54,8 @@ struct StudioSegmentedControl<Value: Hashable>: View {
             }
         }
         .padding(2)
-        .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(StudioTheme.border))
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(TypefluxColor.separator.color))
         .fixedSize()
     }
 }

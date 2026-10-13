@@ -189,7 +189,7 @@ struct AskReferenceChipTests {
                                        position: L("ask.references.position", 3, count),
                                        locate: {}, remove: {})
                 }
-                .padding(16).frame(width: 700).background(AskTheme.composerSurface)
+                .padding(16).frame(width: 700).background(TypefluxColor.controlBackground.color)
                 let bitmap = try await render(view, appearance: appearance)
                 #expect(bitmap.pixelsWide > 0)
                 #expect(bitmap.pixelsHigh > 0)

@@ -13,9 +13,9 @@ struct AgentStatusDot: View {
 
     private var color: Color {
         switch level {
-        case .ready: StudioTheme.success
-        case .attention: StudioTheme.warning
-        case .off: StudioTheme.textTertiary
+        case .ready: TypefluxColor.success.color
+        case .attention: TypefluxColor.warning.color
+        case .off: TypefluxColor.tertiaryLabel.color
         }
     }
 }

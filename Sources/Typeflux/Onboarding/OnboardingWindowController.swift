@@ -9,6 +9,7 @@ final class OnboardingWindowController: NSObject {
     private var window: NSWindow?
     private var viewModel: OnboardingViewModel?
     private var onCompleteHandler: (() -> Void)?
+    private var interfaceStyleObserver: InterfaceStyleObserver?
 
     func bringToFront() {
         if let window {
@@ -45,10 +46,12 @@ final class OnboardingWindowController: NSObject {
             self?.handleComplete()
         }
 
+        let styleObserver = InterfaceStyleObserver(settings: settingsStore)
+        interfaceStyleObserver = styleObserver
         let view = OnboardingView(
             viewModel: viewModel,
             appearanceMode: settingsStore.appearanceMode
-        )
+        ).interfaceStyle(following: styleObserver)
         let hosting = NSHostingView(rootView: view)
 
         let window = NSWindow(
@@ -62,7 +65,7 @@ final class OnboardingWindowController: NSObject {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
-        window.backgroundColor = NSColor(StudioTheme.windowBackground)
+        window.backgroundColor = NSColor(TypefluxColor.windowBackground.color)
         window.contentView = hosting
         window.isReleasedWhenClosed = false
         window.delegate = self
@@ -87,6 +90,7 @@ final class OnboardingWindowController: NSObject {
         window?.close()
         window = nil
         viewModel = nil
+        interfaceStyleObserver = nil
 
         handler?()
     }

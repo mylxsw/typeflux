@@ -136,7 +136,7 @@ struct AppearanceSettingsTests {
                     for dark in [false, true] {
                         let view = AppearanceSettingsView(viewModel: model)
                             .environment(\.colorScheme, dark ? .dark : .light)
-                            .background(StudioTheme.windowBackground)
+                            .background(TypefluxColor.windowBackground.color)
                         try await UI.withWindow(view, width: width, height: 1000) { window, host in
                             window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
                             try await Task.sleep(for: .milliseconds(80))

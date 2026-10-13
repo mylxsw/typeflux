@@ -23,3 +23,26 @@ file_length:
   warning: 400
   error: 1000
   ignore_comment_only_lines: true
+
+custom_rules:
+  typeflux_literal_font:
+    name: "Use system text styles"
+    included: 'Sources/.*\.swift$'
+    excluded: 'Sources/TypefluxUI/.*'
+    regex: '\.font\s*\(\s*\.system\s*\(\s*size:\s*(?:\d+(?:\.\d+)?|[^,\n)]*\?\s*\d+(?:\.\d+)?)'
+    message: "Use Font.TextStyle or a TypefluxUI token."
+    severity: error
+  typeflux_literal_radius:
+    name: "Use shared radius tokens"
+    included: 'Sources/.*\.swift$'
+    excluded: 'Sources/TypefluxUI/.*'
+    regex: 'cornerRadius:\s*(?:\d+(?:\.\d+)?|[^,\n)]*\?\s*\d+(?:\.\d+)?)'
+    message: "Use TypefluxRadius instead of a numeric corner radius."
+    severity: error
+  typeflux_literal_nscolor:
+    name: "Use semantic colors"
+    included: 'Sources/.*\.swift$'
+    excluded: 'Sources/TypefluxUI/.*'
+    regex: 'NSColor\s*\(\s*(?:calibrated\w+|srgbRed)\s*:'
+    message: "Use system semantic colors or a TypefluxUI token."
+    severity: error

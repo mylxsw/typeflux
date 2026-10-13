@@ -97,7 +97,7 @@ struct AskComposerFootnote: View {
             Image(systemName: "checkmark.circle").font(.system(size: 11, weight: .medium))
             Text(text).font(.system(size: 11.5)).lineLimit(1)
         }
-        .foregroundStyle(StudioTheme.textTertiary)
+        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
         .padding(.horizontal, 6)
         .frame(maxWidth: AskMetrics.footnoteMaxWidth, alignment: .trailing)
     }

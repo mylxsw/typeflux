@@ -27,7 +27,8 @@ struct SystemMonitorMetricDisplay: Equatable {
         case .memory:
             let memory = snapshot.memory
             return Self(metric: metric, value: SystemMonitorFormat.percent(memory.usedPercent), unit: "%",
-                        detail: SystemMonitorFormat.memory(memory.used) + " / " + SystemMonitorFormat.memory(memory.total),
+                        detail: SystemMonitorFormat.memory(memory.used) + " / " + SystemMonitorFormat
+                            .memory(memory.total),
                         level: memory.pressure.level)
         case .disk:
             let rates = L("system.monitor.disk.detail", SystemMonitorFormat.shortRate(snapshot.diskRead),
@@ -110,50 +111,15 @@ struct SystemMonitorMetricDisplay: Equatable {
     static func summary(_ snapshot: SystemSnapshot?) -> String {
         guard let snapshot else { return L("system.monitor.summary.loading") }
         var parts = [L("system.monitor.metric.cpu") + " " + SystemMonitorFormat.percent(snapshot.cpu.total) + "%",
-                     L("system.monitor.metric.memory") + " " + SystemMonitorFormat.percent(snapshot.memory.usedPercent) + "%"]
+                     L("system.monitor.metric.memory") + " " + SystemMonitorFormat
+                         .percent(snapshot.memory.usedPercent) + "%"]
         if let root = snapshot.rootVolume {
             parts.append(L("system.monitor.metric.disk") + " " + SystemMonitorFormat.percent(root.usedPercent) + "%")
         }
-        parts.append("↓ " + SystemMonitorFormat.rate(snapshot.networkDown) + " ↑ " + SystemMonitorFormat.rate(snapshot.networkUp))
+        parts
+            .append("↓ " + SystemMonitorFormat.rate(snapshot.networkDown) + " ↑ " + SystemMonitorFormat
+                .rate(snapshot.networkUp))
         return parts.joined(separator: " · ")
-    }
-}
-
-/// The monitor's colours: one per metric, and the warning colours of its levels.
-enum SystemMonitorTheme {
-    static let cpu = StudioTheme.dynamic(light: NSColor(srgbRed: 0.12, green: 0.44, blue: 0.88, alpha: 1),
-                                         dark: NSColor(srgbRed: 0.24, green: 0.58, blue: 1, alpha: 1))
-    static let memory = StudioTheme.dynamic(light: NSColor(srgbRed: 0.54, green: 0.31, blue: 0.91, alpha: 1),
-                                            dark: NSColor(srgbRed: 0.69, green: 0.49, blue: 1, alpha: 1))
-    static let disk = StudioTheme.dynamic(light: NSColor(srgbRed: 0.11, green: 0.60, blue: 0.57, alpha: 1),
-                                          dark: NSColor(srgbRed: 0.17, green: 0.70, blue: 0.67, alpha: 1))
-    static let network = StudioTheme.dynamic(light: NSColor(srgbRed: 0.12, green: 0.67, blue: 0.39, alpha: 1),
-                                             dark: NSColor(srgbRed: 0.20, green: 0.78, blue: 0.35, alpha: 1))
-    /// The second line of a two-line chart: disk writes, uploads.
-    static let secondary = StudioTheme.dynamic(light: NSColor(srgbRed: 0.88, green: 0.47, blue: 0.16, alpha: 1),
-                                               dark: NSColor(srgbRed: 1, green: 0.62, blue: 0.25, alpha: 1))
-    /// The keyword chip and tile.
-    static let accent = disk
-
-    static func color(_ metric: SystemMonitorMetric) -> Color {
-        switch metric {
-        case .cpu: cpu
-        case .memory: memory
-        case .disk: disk
-        case .network: network
-        }
-    }
-
-    static func color(_ level: SystemMonitorLevel) -> Color? {
-        switch level {
-        case .normal: nil
-        case .elevated: StudioTheme.warning
-        case .critical: StudioTheme.danger
-        }
-    }
-
-    static func pressureColor(_ pressure: SystemMonitorMemoryPressure) -> Color {
-        color(pressure.level) ?? StudioTheme.success
     }
 }
 
@@ -166,12 +132,12 @@ struct SystemMonitorChartSeries {
 
     static func make(_ metric: SystemMonitorMetric, history: SystemMonitorHistory) -> Self {
         switch metric {
-        case .cpu: Self(values: [history.cpu.values], colors: [SystemMonitorTheme.cpu], maximum: 100)
-        case .memory: Self(values: [history.memory.values], colors: [SystemMonitorTheme.memory], maximum: 100)
+        case .cpu: Self(values: [history.cpu.values], colors: [SystemMonitorMetric.cpu.color], maximum: 100)
+        case .memory: Self(values: [history.memory.values], colors: [SystemMonitorMetric.memory.color], maximum: 100)
         case .disk: Self(values: [history.diskRead.values, history.diskWrite.values],
-                         colors: [SystemMonitorTheme.disk, SystemMonitorTheme.secondary], maximum: nil)
+                         colors: [SystemMonitorMetric.disk.color, TypefluxColor.warning.color], maximum: nil)
         case .network: Self(values: [history.networkDown.values, history.networkUp.values],
-                            colors: [SystemMonitorTheme.network, SystemMonitorTheme.secondary], maximum: nil)
+                            colors: [SystemMonitorMetric.network.color, TypefluxColor.warning.color], maximum: nil)
         }
     }
 

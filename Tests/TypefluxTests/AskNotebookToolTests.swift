@@ -49,7 +49,8 @@ struct AskNotebookToolTests {
         #expect(read.contains("title: Postgres 向量索引") && read.contains("tags: 数据库") && read.contains("## 参数"))
         let section = try notebook.execute(["action": "read", "id": index.id.uuidString, "heading": "参数"])
         #expect(section.contains("ef_construction") && !section.contains("选 HNSW"))
-        #expect(try notebook.execute(["action": "read", "id": index.id.uuidString, "heading": "x"]).contains("Headings: 结论 | 参数"))
+        #expect(try notebook.execute(["action": "read", "id": index.id.uuidString, "heading": "x"])
+            .contains("Headings: 结论 | 参数"))
         var long = makeTestNote("Long", body: String(repeating: "长", count: 9000))
         long.tags = []
         store.save(long)
@@ -79,18 +80,21 @@ struct AskNotebookToolTests {
         #expect(note.title == "Plan" && note.tags == ["x", "y"] && note.author == .agent && note.source == .manual)
         #expect(throws: AskLocalError.self) { try notebook.execute(["action": "create", "body": " "]) }
 
-        let appended = try notebook.execute(["action": "append", "id": index.id.uuidString, "body": "- 压测", "heading": "结论"])
+        let appended = try notebook.execute(["action": "append", "id": index.id.uuidString, "body": "- 压测",
+                                             "heading": "结论"])
         #expect(appended.contains("under \"结论\""))
         let changed = try #require(store.note(id: index.id))
         #expect(changed.body.contains("选 HNSW。\n\n- 压测\n\n## 参数") && changed.author == .agent)
         #expect(changed.originalBody == index.body && store.revisions(of: index.id).first?.body == index.body)
         #expect(try notebook.execute(["action": "append", "id": index.id.uuidString, "body": "tail", "heading": "nope"])
             .contains("no heading"))
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "append", "id": index.id.uuidString, "body": ""]) }
+        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "append", "id": index.id.uuidString,
+                                                                    "body": ""]) }
 
         _ = try notebook.execute(["action": "update", "id": index.id.uuidString, "find": "m = 16", "replace": "m = 24",
                                   "title": "Postgres HNSW"])
-        #expect(store.note(id: index.id)?.body.contains("m = 24") == true && store.note(id: index.id)?.title == "Postgres HNSW")
+        #expect(store.note(id: index.id)?.body.contains("m = 24") == true && store.note(id: index.id)?
+            .title == "Postgres HNSW")
         #expect(throws: AskLocalError.self) {
             try notebook.execute(["action": "update", "id": index.id.uuidString, "find": "missing", "replace": "x"])
         }
@@ -103,27 +107,32 @@ struct AskNotebookToolTests {
         _ = try notebook.execute(["action": "update", "id": index.id.uuidString, "body": "a a"])
         #expect(store.revisions(of: index.id).count == revisions, "an unchanged note keeps no revision")
 
-        let tagged = try notebook.execute(["action": "tag", "id": index.id.uuidString, "add": ["新"], "remove": ["数据库"], "pin": true])
+        let tagged = try notebook.execute(["action": "tag", "id": index.id.uuidString, "add": ["新"], "remove": ["数据库"],
+                                           "pin": true])
         #expect(tagged.contains("#新") && tagged.contains("pinned") && store.note(id: index.id)?.pinned == true)
         #expect(throws: AskLocalError.self) { try notebook.execute(["action": "tag", "id": index.id.uuidString]) }
 
         let deleted = try notebook.execute(["action": "delete", "id": index.id.uuidString])
         #expect(deleted.contains("Recently Deleted") && store.note(id: index.id)?.isDeleted == true)
         #expect(throws: AskLocalError.self) { try notebook.execute(["action": "delete", "id": index.id.uuidString]) }
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "update", "id": secret.id.uuidString, "body": "x"]) }
+        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "update", "id": secret.id.uuidString,
+                                                                    "body": "x"]) }
         var huge = makeTestNote("Huge", body: String(repeating: "x", count: 20000))
         huge.tags = []
         store.save(huge)
-        let clipped = try AskNotebookTool(store: store, hiddenTags: []).execute(["action": "read", "id": huge.id.uuidString])
+        let clipped = try AskNotebookTool(store: store, hiddenTags: []).execute(["action": "read",
+                                                                                 "id": huge.id.uuidString])
         #expect(clipped.count <= AskNotebookTool.outputLimit + 2)
     }
 
     @Test func theLocalToolsOfferTheNotebook() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("notebook-tools-\(UUID().uuidString)")
         let settings = SettingsStore(defaults: UserDefaults(suiteName: "notebook-tools-\(UUID().uuidString)")!)
-        let registry = MCPRegistry(settingsStore: MCPSettingsStore(defaults: UserDefaults(suiteName: "nb-mcp-\(UUID().uuidString)")!))
+        let registry =
+            MCPRegistry(settingsStore: MCPSettingsStore(defaults: UserDefaults(suiteName: "nb-mcp-\(UUID().uuidString)")!))
         let tools = AskLocalTools(registry: registry, settings: settings, skills: AskSkillLibrary(userDirectory: root),
-                                  notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("m.json")), owner: { "o" })
+                                  notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("m.json")),
+                                  owner: { "o" })
         tools.runningBundleIdentifiers = { [] }
         var names = await tools.definitions(conversationId: nil).map(\.name)
         #expect(!names.contains("notebook") && !tools.enabledSkills.contains { $0.name == "notebook" })
@@ -131,9 +140,10 @@ struct AskNotebookToolTests {
         tools.notebook = store
         names = await tools.definitions(conversationId: nil).map(\.name)
         #expect(names.contains("notebook") && tools.enabledSkills.contains { $0.name == "notebook" })
-        let search = AskToolCall(id: "1", function: .init(name: "notebook", arguments: #"{"action":"search","query":"HNSW"}"#))
+        let search = AskToolCall(id: "1",
+                                 function: .init(name: "notebook", arguments: #"{"action":"search","query":"HNSW"}"#))
         let append = AskToolCall(id: "2", function: .init(name: "notebook",
-                                                         arguments: #"{"action":"append","id":"\#(index.id.uuidString)","body":"more"}"#))
+                                                          arguments: #"{"action":"append","id":"\#(index.id.uuidString)","body":"more"}"#))
         #expect(tools.risk(of: search) == .read && tools.risk(of: append) == .write)
         let output = try await tools.execute(search, conversationId: "c")
         #expect(output.content.contains(index.id.uuidString))
@@ -143,9 +153,10 @@ struct AskNotebookToolTests {
         #expect(writeBinding.summary.contains("append"))
         #expect(AskApprovalPresentation.preview(append) == .content("more"))
         let replace = AskToolCall(id: "3", function: .init(name: "notebook",
-                                                          arguments: #"{"action":"update","id":"x","find":"a","replace":"b"}"#))
+                                                           arguments: #"{"action":"update","id":"x","find":"a","replace":"b"}"#))
         #expect(AskApprovalPresentation.preview(replace) == .diff(removed: "a", added: "b"))
-        #expect(AskTheme.toolTitle(search) == L("ask.tool.notebook") + " · " + L("ask.notebook.action.search") + " · HNSW")
+        #expect(AskToolPresentation
+            .toolTitle(search) == L("ask.tool.notebook") + " · " + L("ask.notebook.action.search") + " · HNSW")
         #expect(AskPresentation.toolSymbol(search) == "note.text")
 
         settings.askDisabledSkills = ["notebook"]
@@ -156,7 +167,8 @@ struct AskNotebookToolTests {
         names = await tools.definitions(conversationId: nil).map(\.name)
         #expect(!names.contains("notebook"))
         await #expect(throws: AskLocalError.self) { _ = try await tools.execute(search, conversationId: "c") }
-        await #expect(throws: AskLocalError.self) { _ = try await tools.approvalBinding(for: search, conversationId: "c") }
+        await #expect(throws: AskLocalError.self) {
+            _ = try await tools.approvalBinding(for: search, conversationId: "c") }
         settings.askNotebookAgentEnabled = true
         settings.askNotebookHiddenTags = ["数据库"]
         #expect(!(try await tools.execute(search, conversationId: "c")).content.contains(index.id.uuidString))
@@ -181,13 +193,15 @@ struct AskNotebookEntryTests {
         #expect(model.question(before: AskMessage(id: "x", role: "assistant", text: "", createdAt: Date())).isEmpty)
         model.toggleAnswerNote(answer)
         let note = try #require(store.list(AskNoteQuery()).first)
-        #expect(note.source == .chat && note.conversationID == "conv" && note.messageID == "a" && note.input == question.text)
+        #expect(note.source == .chat && note.conversationID == "conv" && note.messageID == "a" && note.input == question
+            .text)
         #expect(note.title == "HNSW 还是 IVFFlat？" && model.answerNoteIDs["a"] == note.id)
         #expect(model.commandFeedback == L("ask.notes.saved"))
         model.toggleAnswerNote(answer, excerpt: "  HNSW ")
         #expect(store.count(.all) == 2 && model.answerNoteIDs["a"] == note.id, "a selection is a note of its own")
         model.toggleAnswerNote(answer)
-        #expect(store.note(id: note.id)?.isDeleted == true && model.answerNoteIDs["a"] == nil && model.commandFeedback == L("ask.notes.removed"))
+        #expect(store.note(id: note.id)?.isDeleted == true && model.answerNoteIDs["a"] == nil && model
+            .commandFeedback == L("ask.notes.removed"))
         model.toggleAnswerNote(answer)
         var edited = try #require(store.list(AskNoteQuery(scope: .source(.chat))).first { $0.messageID == "a" })
         edited.editedAt = Date()
@@ -224,7 +238,8 @@ struct AskNotebookEntryTests {
         #expect(fixture.model.performPluginAction(.init(kind: .createNote("购物清单"), title: "", symbol: "")) == .close)
         #expect(created == ["购物清单"])
         #expect(AskSelectionAction.standard == [.explain, .translate, .ask, .copy])
-        #expect(AskSelectionAction.note.title == L("ask.notes.saveSelection") && AskSelectionAction.note.question.isEmpty)
+        #expect(AskSelectionAction.note.title == L("ask.notes.saveSelection") && AskSelectionAction.note.question
+            .isEmpty)
         #expect(AskSelectionAction.note.systemImage == "note.text.badge.plus")
     }
 }

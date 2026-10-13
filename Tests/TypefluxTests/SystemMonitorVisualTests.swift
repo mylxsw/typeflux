@@ -41,7 +41,8 @@ struct SystemMonitorVisualTests {
             let burst = index % 9 == 0 ? 180_000_000.0 : 0
             disk.0 += UInt64(12_000_000 + burst + 6_000_000 * sin(Double(index)))
             disk.1 += UInt64(3_500_000 + 2_000_000 * cos(Double(index) / 2))
-            network.0 += UInt64(2_400_000 + 1_800_000 * max(0, sin(Double(index) / 2)) + (index % 13 == 0 ? 9_000_000 : 0))
+            network
+                .0 += UInt64(2_400_000 + 1_800_000 * max(0, sin(Double(index) / 2)) + (index % 13 == 0 ? 9_000_000 : 0))
             network.1 += UInt64(180_000 + 90_000 * cos(Double(index) / 3))
             let processes = programs.indices.map { program in
                 SystemProcessCounters(pid: programs[program].0, name: programs[program].1, uid: programs[program].4,
@@ -109,7 +110,7 @@ struct SystemMonitorVisualTests {
         window.appearance = NSAppearance(named: light ? .aqua : .darkAqua)
         let hosting = NSHostingView(rootView: AskLauncherView(model: model, onDismiss: {}, onHeightChange: { _ in })
             .frame(width: size.width, height: size.height, alignment: .top)
-            .background(AskTheme.surface))
+            .background(TypefluxColor.controlBackground.color))
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
         window.orderFront(nil)
@@ -148,8 +149,8 @@ struct SystemMonitorVisualTests {
                     let controller = SystemMonitorWindowController(defaults: defaults, store: store)
                     let view = SystemMonitorWindowView(controller: controller, model: controller.model, store: store)
                     let hosting = NSHostingView(rootView: view.padding(24).background(Color(nsColor: light
-                        ? NSColor(srgbRed: 0.78, green: 0.83, blue: 0.92, alpha: 1)
-                        : NSColor(srgbRed: 0.13, green: 0.16, blue: 0.24, alpha: 1))))
+                            ? NSColor(srgbRed: 0.78, green: 0.83, blue: 0.92, alpha: 1)
+                            : NSColor(srgbRed: 0.13, green: 0.16, blue: 0.24, alpha: 1))))
                     let size = hosting.fittingSize
                     let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
                                           backing: .buffered, defer: false)

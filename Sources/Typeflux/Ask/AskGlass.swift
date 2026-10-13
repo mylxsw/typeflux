@@ -6,7 +6,7 @@ typealias AskGlassPlacement = GlassPlacement
 
 extension GlassMaterial {
     func idleBorder(_ border: Color, increasedContrast: Bool) -> Color {
-        drawsOwnEdge && !increasedContrast ? AskTheme.floatingGlassEdge : border
+        drawsOwnEdge && !increasedContrast ? LegacyAskPalette.floatingGlassEdge : border
     }
 }
 
@@ -35,7 +35,7 @@ struct AskGlassBackground: View {
     var body: some View {
         GlassBackground(material: material, corner: corner, opaqueFill: opaqueFill,
                         placement: placement, cornerStyle: cornerStyle, diffuseLauncher: diffuseLauncher,
-                        contrastBorder: AskTheme.border, diffuseTint: AskTheme.launcherGlassTint)
+                        contrastBorder: TypefluxColor.separator.color, diffuseTint: LegacyAskPalette.launcherGlassTint)
     }
 }
 
@@ -68,11 +68,16 @@ struct AskGlassCardSurface<Content: View>: View {
                                                                     style: style)
         content
             .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
-            .background(AskGlassBackground(material: material, corner: corner, opaqueFill: AskTheme.popoverSurface,
-                                           placement: .menu))
+            .background(AskGlassBackground(
+                material: material,
+                corner: corner,
+                opaqueFill: TypefluxColor.windowBackground.color,
+                placement: .menu
+            ))
             .overlay {
                 if !material.drawsOwnEdge || contrast == .increased {
-                    RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(AskTheme.border)
+                    RoundedRectangle(cornerRadius: corner, style: .continuous)
+                        .strokeBorder(TypefluxColor.separator.color)
                 }
             }
     }
@@ -135,7 +140,7 @@ struct AskInWindowGlass: ViewModifier {
             }
             // Always outlined, unlike the launcher: frosted with the window's own
             // colours, the pills and cards would otherwise vanish on a white window.
-            .overlay(shape.strokeBorder(AskTheme.border).allowsHitTesting(false))
+            .overlay(shape.strokeBorder(TypefluxColor.separator.color).allowsHitTesting(false))
             .overlay {
                 // Native glass owns its highlights; draw a rim only for legacy blur.
                 if material == .visualEffect {
@@ -163,7 +168,7 @@ enum AskRimLight {
 }
 
 extension View {
-    func askInWindowGlass(corner: CGFloat, opaqueFill: Color = AskTheme.glassFill,
+    func askInWindowGlass(corner: CGFloat, opaqueFill: Color = LegacyAskPalette.glassFill,
                           elevation: AskElevation? = .panel, placement: AskGlassPlacement = .inWindow) -> some View {
         modifier(AskInWindowGlass(corner: corner, opaqueFill: opaqueFill, placement: placement, elevation: elevation))
     }
@@ -182,7 +187,7 @@ struct AskInWindowGlassPill: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if style.usesGlass {
-            content.modifier(AskInWindowGlass(corner: height / 2, opaqueFill: AskTheme.glassFill,
+            content.modifier(AskInWindowGlass(corner: height / 2, opaqueFill: LegacyAskPalette.glassFill,
                                               cornerStyle: .circular, elevation: .control))
         } else {
             content

@@ -116,7 +116,7 @@ struct AskAccountFooterIdentity: View {
                 AskAvatar(name: name)
                 Text(name)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 if let badge = footer.badge {
@@ -126,7 +126,7 @@ struct AskAccountFooterIdentity: View {
             .padding(.leading, 4)
             .padding(.trailing, 8)
             .frame(height: 34)
-            .background(Capsule().fill(highlighted ? AskTheme.hoverFill : .clear))
+            .background(Capsule().fill(highlighted ? TypefluxColor.label.color.opacity(0.06) : .clear))
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -153,10 +153,10 @@ struct AskAccountFooterIdentity: View {
                 Image(systemName: "chevron.right").font(.system(size: 9.5, weight: .bold))
             }
             .font(.system(size: 12.5, weight: .semibold))
-            .foregroundStyle(AskTheme.accentText)
+            .foregroundStyle(TypefluxColor.accent.color)
             .padding(.horizontal, 8)
             .frame(height: 30)
-            .background(Capsule().fill(hovering ? AskTheme.hoverFill : .clear))
+            .background(Capsule().fill(hovering ? TypefluxColor.label.color.opacity(0.06) : .clear))
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -179,41 +179,41 @@ struct AskAccountBadge: View {
             .frame(height: 18)
             .background(Capsule().fill(AskAccountTone.fill(tone)))
             .overlay {
-                if tone == .neutral { Capsule().strokeBorder(AskTheme.border) }
+                if tone == .neutral { Capsule().strokeBorder(TypefluxColor.separator.color) }
             }
     }
 }
 
 enum AskAccountTone {
     /// A faint wash for the card's blocks, readable on glass in both appearances.
-    static let chip = StudioTheme.dynamic(
+    static let chip = LegacyStudioPalette.dynamic(
         light: NSColor(calibratedWhite: 0, alpha: 0.045),
         dark: NSColor(calibratedWhite: 1, alpha: 0.07)
     )
 
     static func foreground(_ tone: AccountStatusPresentation.Tone) -> Color {
         switch tone {
-        case .neutral: StudioTheme.textSecondary
-        case .accent: AskTheme.accentText
-        case .warning: StudioTheme.warning
-        case .danger: StudioTheme.danger
+        case .neutral: TypefluxColor.secondaryLabel.color
+        case .accent: TypefluxColor.accent.color
+        case .warning: TypefluxColor.warning.color
+        case .danger: TypefluxColor.danger.color
         }
     }
 
     static func fill(_ tone: AccountStatusPresentation.Tone) -> Color {
         switch tone {
         case .neutral: chip
-        case .accent: StudioTheme.accent.opacity(0.18)
-        case .warning: StudioTheme.warning.opacity(0.16)
-        case .danger: StudioTheme.danger.opacity(0.16)
+        case .accent: TypefluxColor.accent.color.opacity(0.18)
+        case .warning: TypefluxColor.warning.color.opacity(0.16)
+        case .danger: TypefluxColor.danger.color.opacity(0.16)
         }
     }
 
     static func bar(_ level: AccountStatusPresentation.QuotaLevel) -> Color {
         switch level {
-        case .normal: StudioTheme.accent
-        case .low: StudioTheme.warning
-        case .exhausted: StudioTheme.danger
+        case .normal: TypefluxColor.accent.color
+        case .low: TypefluxColor.warning.color
+        case .exhausted: TypefluxColor.danger.color
         }
     }
 }

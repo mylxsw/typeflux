@@ -73,7 +73,7 @@ struct AskWordCardView: View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 0) {
                 if let translation = card.translatedText {
-                    Text(translation).font(Font(Self.translatedWordFont)).foregroundStyle(StudioTheme.textPrimary)
+                    Text(translation).font(Font(Self.translatedWordFont)).foregroundStyle(TypefluxColor.label.color)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
@@ -86,13 +86,15 @@ struct AskWordCardView: View {
                         .padding(.top, Self.senseSpacing)
                 }
                 if !card.forms.isEmpty {
-                    Text(Self.formsText(card)).font(Font(Self.detailFont)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(Self.formsText(card)).font(Font(Self.detailFont))
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 8)
                 }
                 if !card.examples.isEmpty { examples }
                 if !card.synonyms.isEmpty {
-                    Text(Self.synonymsText(card)).font(Font(Self.detailFont)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(Self.synonymsText(card)).font(Font(Self.detailFont))
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, Self.sectionSpacing)
                         .textSelection(.enabled)
@@ -108,26 +110,29 @@ struct AskWordCardView: View {
     private var headword: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(card.headword).font(.system(size: card.translatedText == nil ? 22 : 13,
-                                            weight: card.translatedText == nil ? .semibold : .regular))
-                .foregroundStyle(StudioTheme.textSecondary)
+                                             weight: card.translatedText == nil ? .semibold : .regular))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .lineLimit(1).truncationMode(.tail)
                 .textSelection(.enabled)
             ForEach(Array(card.phonetics.enumerated()), id: \.offset) { _, phonetic in
                 HStack(spacing: 4) {
-                    Text(phonetic.label).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
-                    Text(phonetic.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                    Text(phonetic.label).font(.system(size: 10.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
+                    Text(phonetic.text).font(.system(size: 12.5)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .lineLimit(1)
                     Button {
-                        onAction(AskPluginAction(kind: .speak(card.headword, language: Self.voice(for: phonetic, default: language)),
-                                                 title: L("ask.plugin.action.speak"), symbol: "speaker.wave.2", shortcut: nil))
+                        onAction(AskPluginAction(kind: .speak(card.headword, language: Self.voice(for: phonetic,
+                                                                                                  default: language)),
+                                                 title: L("ask.plugin.action.speak"), symbol: "speaker.wave.2",
+                                                 shortcut: nil))
                     } label: {
                         Image(systemName: "speaker.wave.2").font(.system(size: 10))
                             .frame(width: 20, height: 20)
-                            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .background(TypefluxColor.label.color.opacity(0.06),
+                                        in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .accessibilityLabel(L("ask.plugin.action.speak") + " " + phonetic.label)
                 }
                 .fixedSize()
@@ -148,11 +153,11 @@ struct AskWordCardView: View {
     private func senseRow(_ sense: AskWordCard.Sense, first: Bool) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text(sense.pos).font(.system(size: 11.5, weight: .bold)).italic()
-                .foregroundStyle(AskTheme.accent)
+                .foregroundStyle(TypefluxColor.accent.color)
                 .frame(width: Self.posWidth, alignment: .trailing)
             Text(meanings(sense, first: first))
                 .font(Font(Self.meaningFont)).lineSpacing(2)
-                .tint(StudioTheme.textPrimary)
+                .tint(TypefluxColor.label.color)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .environment(\.openURL, OpenURLAction { url in
                     guard url.scheme == Self.meaningScheme, let index = Int(url.host ?? ""),
@@ -171,12 +176,12 @@ struct AskWordCardView: View {
         for (index, meaning) in sense.meanings.enumerated() {
             if index > 0 {
                 var separator = AttributedString(AskWordCard.meaningSeparator)
-                separator.foregroundColor = StudioTheme.textTertiary
+                separator.foregroundColor = TypefluxColor.tertiaryLabel.color
                 text += separator
             }
             var part = AttributedString(meaning)
             part.link = URL(string: "\(Self.meaningScheme)://\(index)")
-            part.foregroundColor = StudioTheme.textPrimary
+            part.foregroundColor = TypefluxColor.label.color
             if first, index == 0 { part.font = .system(size: 14.5, weight: .semibold) }
             text += part
         }
@@ -185,22 +190,23 @@ struct AskWordCardView: View {
 
     private var examples: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
             Text(L("ask.plugin.wordCard.examples")).font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(StudioTheme.textTertiary)
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .frame(height: Self.labelHeight, alignment: .bottom)
                 .padding(.top, 8)
             ForEach(Array(card.examples.enumerated()), id: \.offset) { _, example in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(Self.emphasized(example.source)).font(Font(Self.exampleFont))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                     if !example.target.isEmpty {
-                        Text(example.target).font(Font(Self.translationFont)).foregroundStyle(StudioTheme.textSecondary)
+                        Text(example.target).font(Font(Self.translationFont))
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, Self.exampleInset)
-                .overlay(alignment: .leading) { Rectangle().fill(AskTheme.separator).frame(width: 2) }
+                .overlay(alignment: .leading) { Rectangle().fill(TypefluxColor.separator.color).frame(width: 2) }
                 .padding(.top, 8)
                 .textSelection(.enabled)
             }
@@ -214,7 +220,7 @@ struct AskWordCardView: View {
         for (index, part) in example.components(separatedBy: "**").enumerated() {
             var run = AttributedString(part)
             if index.isMultiple(of: 2) == false {
-                run.foregroundColor = AskTheme.accent
+                run.foregroundColor = TypefluxColor.accent.color
                 run.font = .system(size: 13, weight: .semibold)
             }
             text += run

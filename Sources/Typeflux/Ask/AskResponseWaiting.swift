@@ -50,14 +50,14 @@ struct AskResponseWaitingView: View {
         HStack(spacing: 5) {
             ForEach(0..<3, id: \.self) { index in
                 Circle()
-                    .fill(StudioTheme.textSecondary)
+                    .fill(TypefluxColor.secondaryLabel.color)
                     .opacity(elapsed.map { AskResponseWaiting.opacity(dot: index, elapsed: $0) } ?? 0.65)
                     .frame(width: 7, height: 7)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 13)
-        .background(AskTheme.hoverFill, in: Capsule())
+        .background(TypefluxColor.label.color.opacity(0.06), in: Capsule())
     }
 }
 
@@ -66,6 +66,7 @@ extension AskConversationModel {
         guard let value = selected else { return false }
         return AskResponseWaiting.isVisible(
             phase: runPhase, pendingSubmission: hasPendingSubmission, run: value.run,
-            messages: value.messages, progress: liveProgress(value), hasError: error != nil)
+            messages: value.messages, progress: liveProgress(value), hasError: error != nil
+        )
     }
 }

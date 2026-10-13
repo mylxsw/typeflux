@@ -273,7 +273,7 @@ struct ClipboardThumbnailView: View {
 
     var body: some View {
         ZStack {
-            AskTheme.raisedSurface
+            TypefluxColor.windowBackground.color
             if let image {
                 Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode)
             } else {

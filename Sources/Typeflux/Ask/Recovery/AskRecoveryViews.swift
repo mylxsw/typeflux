@@ -22,11 +22,11 @@ struct AskRecoveryCard: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(L(presentation.titleKey))
                         .font(.system(size: 13.5, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                         .padding(.top, 5)
                     Text(L(presentation.bodyKey))
                         .font(.system(size: 12.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .lineSpacing(3)
                         .padding(.top, 4)
                     buttons.padding(.top, 14)
@@ -39,7 +39,8 @@ struct AskRecoveryCard: View {
             .padding(.vertical, 16)
             .background(background)
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(presentation.unknown ? StudioTheme.warning.opacity(0.32) : AskTheme.border))
+                .strokeBorder(presentation.unknown ? TypefluxColor.warning.color.opacity(0.32) : TypefluxColor.separator
+                    .color))
             .transaction {
                 if reduceMotion {
                     $0.animation = nil; $0.disablesAnimations = true
@@ -52,11 +53,12 @@ struct AskRecoveryCard: View {
     /// A warm wash only when the outcome is uncertain; otherwise the plain raised surface.
     private var background: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(AskTheme.raisedSurface)
+            .fill(TypefluxColor.windowBackground.color)
             .overlay {
                 if presentation.unknown {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(LinearGradient(colors: [AskTheme.warningSoft, AskTheme.raisedSurface.opacity(0)],
+                        .fill(LinearGradient(colors: [TypefluxColor.warning.color.opacity(0.12),
+                                                      TypefluxColor.windowBackground.color.opacity(0)],
                                              startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.7)))
                 }
             }
@@ -94,7 +96,7 @@ struct AskRecoveryCard: View {
                     Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
                 }
                 .font(.system(size: 12.5, weight: .medium))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .padding(.horizontal, 10)
                 .frame(height: 30)
                 .contentShape(Rectangle())
@@ -145,10 +147,10 @@ struct AskRecoveryInspector: View {
                         Text(L(presentation.unknown && model.selected?.run?.status == "cancelled"
                                 ? "ask.recovery.stopped" : presentation.titleKey))
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .foregroundStyle(TypefluxColor.label.color)
                         Text(L(presentation.bodyKey))
                             .font(.system(size: 12.5))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .lineSpacing(3)
                     }
                     .fixedSize(horizontal: false, vertical: true)
@@ -157,16 +159,16 @@ struct AskRecoveryInspector: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(L("ask.recovery.message"))
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         Text(message)
                             .font(.system(size: 13))
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .foregroundStyle(TypefluxColor.label.color)
                             .lineLimit(3)
                             .textSelection(.enabled)
                             .help(message)
                     }
                     .padding(.leading, 12)
-                    .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 2) }
+                    .overlay(alignment: .leading) { Rectangle().fill(TypefluxColor.separator.color).frame(width: 2) }
                     .padding(.leading, 52)
                 }
                 if !timeline.items.isEmpty {
@@ -180,9 +182,10 @@ struct AskRecoveryInspector: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(L("ask.recovery.inspect"))
                             .font(.system(size: 11.5, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textTertiary)
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         ForEach(options, id: \.self) { option in
-                            AskRecoveryOptionCard(action: option, bodyKey: option.optionBodyKey(active: presentation.active),
+                            AskRecoveryOptionCard(action: option,
+                                                  bodyKey: option.optionBodyKey(active: presentation.active),
                                                   recommended: option == options.first,
                                                   selected: option == selected) { choice = option }
                         }
@@ -193,12 +196,12 @@ struct AskRecoveryInspector: View {
             .padding(.horizontal, 22)
             .padding(.top, 22)
             .padding(.bottom, 16)
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
             footer
         }
         .frame(minWidth: 320, idealWidth: 480, maxWidth: 480, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
-        .background(AskTheme.popoverSurface)
+        .background(TypefluxColor.windowBackground.color)
         .transaction {
             if reduceMotion {
                 $0.animation = nil; $0.disablesAnimations = true
@@ -239,12 +242,12 @@ private struct AskRecoveryTimelineRow: View {
             dot
             Text(item.title)
                 .font(.system(size: 12.5, weight: item.state == .current ? .semibold : .regular))
-                .foregroundStyle(item.state == .upcoming ? StudioTheme.textTertiary
-                    : (item.state == .current ? StudioTheme.textPrimary : StudioTheme.textSecondary))
+                .foregroundStyle(item.state == .upcoming ? TypefluxColor.tertiaryLabel.color
+                    : (item.state == .current ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color))
                 .lineLimit(2)
             Spacer(minLength: 8)
             if let detail = item.detail {
-                Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text(detail).font(.system(size: 11.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
         }
     }
@@ -253,15 +256,15 @@ private struct AskRecoveryTimelineRow: View {
         switch item.state {
         case .done:
             Image(systemName: "checkmark").font(.system(size: 8, weight: .bold))
-                .foregroundStyle(StudioTheme.success)
-                .frame(width: 16, height: 16).background(AskTheme.successSoft, in: Circle())
+                .foregroundStyle(TypefluxColor.success.color)
+                .frame(width: 16, height: 16).background(TypefluxColor.success.color.opacity(0.12), in: Circle())
         case .current:
             Image(systemName: unknown ? "questionmark" : "pause.fill").font(.system(size: 8, weight: .bold))
-                .foregroundStyle(StudioTheme.warning)
-                .frame(width: 16, height: 16).background(AskTheme.warningSoft, in: Circle())
-                .overlay(Circle().strokeBorder(StudioTheme.warning.opacity(0.32)))
+                .foregroundStyle(TypefluxColor.warning.color)
+                .frame(width: 16, height: 16).background(TypefluxColor.warning.color.opacity(0.12), in: Circle())
+                .overlay(Circle().strokeBorder(TypefluxColor.warning.color.opacity(0.32)))
         case .upcoming:
-            Circle().strokeBorder(AskTheme.border, lineWidth: 1.5).frame(width: 16, height: 16)
+            Circle().strokeBorder(TypefluxColor.separator.color, lineWidth: 1.5).frame(width: 16, height: 16)
         }
     }
 }
@@ -274,31 +277,31 @@ private struct AskRecoveryOptionCard: View {
     let selected: Bool
     let choose: () -> Void
 
-    private var tint: Color { action.isDestructive ? StudioTheme.danger : AskTheme.accent }
+    private var tint: Color { action.isDestructive ? TypefluxColor.danger.color : TypefluxColor.accent.color }
 
     var body: some View {
         Button(action: choose) {
             HStack(alignment: .top, spacing: 12) {
                 Circle()
-                    .strokeBorder(selected ? tint : AskTheme.border, lineWidth: selected ? 5 : 1.5)
+                    .strokeBorder(selected ? tint : TypefluxColor.separator.color, lineWidth: selected ? 5 : 1.5)
                     .frame(width: 16, height: 16)
                     .padding(.top, 1)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 8) {
                         Text(L(action.optionTitleKey))
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .foregroundStyle(TypefluxColor.label.color)
                         if recommended {
                             Text(L("ask.recovery.recommended"))
                                 .font(.system(size: 10.5, weight: .semibold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 6).padding(.vertical, 1)
-                                .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 5))
+                                .background(TypefluxColor.accent.color, in: RoundedRectangle(cornerRadius: 5))
                         }
                     }
                     Text(L(bodyKey))
                         .font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -306,10 +309,12 @@ private struct AskRecoveryOptionCard: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(selected ? (action.isDestructive ? AskTheme.dangerSoft : AskTheme.accentSoft) : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(selected ?
+                (action.isDestructive ? TypefluxColor.danger.color.opacity(0.12) : TypefluxColor.accent.color
+                    .opacity(0.12)) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(selected ? tint : AskTheme.border))
+                .strokeBorder(selected ? tint : TypefluxColor.separator.color))
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -325,14 +330,15 @@ private struct AskRecoverySymbol: View {
         Image(systemName: presentation.unknown ? "questionmark" :
             (presentation.savedReceipts > 0 ? "arrow.triangle.2.circlepath" : "pause.fill"))
             .font(.system(size: size * 0.44, weight: .semibold))
-            .foregroundStyle(presentation.unknown ? StudioTheme.warning : AskTheme.accentText)
+            .foregroundStyle(presentation.unknown ? TypefluxColor.warning.color : TypefluxColor.accent.color)
             .frame(width: size, height: size)
-            .background(presentation.unknown ? AskTheme.warningSoft : AskTheme.accentSoft,
-                        in: RoundedRectangle(cornerRadius: size * 0.32, style: .continuous))
+            .background(presentation.unknown ? TypefluxColor.warning.color.opacity(0.12) : TypefluxColor.accent.color
+                .opacity(0.12),
+                in: RoundedRectangle(cornerRadius: size * 0.32, style: .continuous))
             .overlay {
                 if presentation.unknown {
                     RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
-                        .strokeBorder(StudioTheme.warning.opacity(0.32))
+                        .strokeBorder(TypefluxColor.warning.color.opacity(0.32))
                 }
             }
             .accessibilityHidden(true)

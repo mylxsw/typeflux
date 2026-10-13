@@ -119,7 +119,7 @@ struct AskLauncherPluginSettingsView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     listCard
                     Text(L("ask.settings.keywords.listFootnote"))
-                        .font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+                        .font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
                         .buttonStyle(.borderless)
                         .accessibilityIdentifier("ask.settings.keywords.restore")

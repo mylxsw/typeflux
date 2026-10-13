@@ -44,7 +44,13 @@ struct AskModelMenu: View {
 
     private var currentReason: String? {
         guard let (provider, model) = library.registry.resolve(reference) else { return L("ask.models.unavailable") }
-        return library.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: loggedIn, scenario: scenario)
+        return library.selectionReason(
+            model,
+            provider: provider,
+            hasImage: hasImage,
+            loggedIn: loggedIn,
+            scenario: scenario
+        )
     }
 
     private var corner: CGFloat {
@@ -52,40 +58,48 @@ struct AskModelMenu: View {
     }
     private var fill: Color {
         guard compact else { return TypefluxColor.controlBackground.color }
-        return hovering || expanded ? AskTheme.hoverFill : .clear
+        return hovering || expanded ? TypefluxColor.label.color.opacity(0.06) : .clear
     }
     private var stroke: Color { compact ? .clear : TypefluxColor.separator.color }
 
     var body: some View {
         modelButton
-        .disabled(disabled)
-        .onHover { hovering = $0 }
-        .help(currentReason ?? L("ask.models.conversationOnly"))
-        .askMenu(isPresented: $expanded, glass: compact && !usesNativePopover) {
-            if let effort, compact {
-                AskModelEffortCard(library: library, reference: $reference, effort: effort, hasImage: hasImage,
-                                   loggedIn: loggedIn, onManage: onManage,
-                                   offersCloudSignIn: scenario == "ask" && !auth.isLoggedIn,
-                                   close: { expanded = false }, nativeControls: usesNativePopover)
-            } else {
-                AskModelChoices(library: library, reference: $reference, scenario: scenario, showsDefaultAction: showsDefaultAction,
-                                hasImage: hasImage, loggedIn: loggedIn, dismiss: { expanded = false },
-                                composerStyle: compact, onManage: onManage,
-                                offersCloudSignIn: compact && scenario == "ask" && !auth.isLoggedIn)
+            .disabled(disabled)
+            .onHover { hovering = $0 }
+            .help(currentReason ?? L("ask.models.conversationOnly"))
+            .askMenu(isPresented: $expanded, glass: compact && !usesNativePopover) {
+                if let effort, compact {
+                    AskModelEffortCard(library: library, reference: $reference, effort: effort, hasImage: hasImage,
+                                       loggedIn: loggedIn, onManage: onManage,
+                                       offersCloudSignIn: scenario == "ask" && !auth.isLoggedIn,
+                                       close: { expanded = false }, nativeControls: usesNativePopover)
+                } else {
+                    AskModelChoices(
+                        library: library,
+                        reference: $reference,
+                        scenario: scenario,
+                        showsDefaultAction: showsDefaultAction,
+                        hasImage: hasImage,
+                        loggedIn: loggedIn,
+                        dismiss: { expanded = false },
+                        composerStyle: compact,
+                        onManage: onManage,
+                        offersCloudSignIn: compact && scenario == "ask" && !auth.isLoggedIn
+                    )
+                }
             }
-        }
-        .onChange(of: expanded) { isExpanded in
-            if isExpanded && library.automaticallyLoadsCatalog {
-                Task { await library.refresh(token: auth.accessToken) }
+            .onChange(of: expanded) { isExpanded in
+                if isExpanded && library.automaticallyLoadsCatalog {
+                    Task { await library.refresh(token: auth.accessToken) }
+                }
             }
-        }
-        .task(id: auth.accessToken) {
-            library.adoptLegacySelectionIfNeeded()
-            if library.automaticallyLoadsCatalog {
-                await library.refresh(token: auth.accessToken)
-                await library.probeOllama()
+            .task(id: auth.accessToken) {
+                library.adoptLegacySelectionIfNeeded()
+                if library.automaticallyLoadsCatalog {
+                    await library.refresh(token: auth.accessToken)
+                    await library.probeOllama()
+                }
             }
-        }
     }
 
     @ViewBuilder private var modelButton: some View {
@@ -99,7 +113,7 @@ struct AskModelMenu: View {
                         .frame(width: 240)
                 } else {
                     modelLabel
-                        .font(.system(size: compact ? 13.5 : 13, weight: compact ? .semibold : .medium))
+                        .font(.system(.body, weight: compact ? .semibold : .medium))
                         .padding(.leading, compact ? 12 : 11)
                         .padding(.trailing, compact ? 10 : 11)
                         .frame(height: compact ? AskMetrics.composerControlHeight : 32)
@@ -124,13 +138,13 @@ struct AskModelMenu: View {
             // footer, and a short one hugs its text instead of padding out to the cap.
             AskCappedWidth(maxWidth: condensed ? 84 : compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
                 Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
-                    .foregroundStyle(currentReason == nil ? StudioTheme.textPrimary : StudioTheme.warning)
+                    .foregroundStyle(currentReason == nil ? TypefluxColor.label.color : TypefluxColor.warning.color)
             }
             if let shownEffort, !condensed {
                 Text(shownEffort.label)
                     .font(.body).fontWeight(.regular)
                     .foregroundStyle(shownEffort.isTop(in: effortLevels)
-                        ? AskTheme.reasoningTopText : StudioTheme.textSecondary)
+                        ? AskReasoningPresentation.topColor : TypefluxColor.secondaryLabel.color)
                     .lineLimit(1).fixedSize()
             }
             if fieldStyle {
@@ -142,7 +156,7 @@ struct AskModelMenu: View {
             if showsChevron, !fieldStyle {
                 Image(systemName: "chevron.down")
                     .font(.footnote).fontWeight(.medium)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
         }
     }
@@ -192,15 +206,23 @@ struct AskModelChoices: View {
     var offersCloudSignIn = false
 
     private var selectedReference: String { library.presentationReference(for: reference, scenario: scenario) }
-    private var defaultReference: String { library.presentationReference(for: library.defaultReference, scenario: scenario) }
+    private var defaultReference: String { library.presentationReference(
+        for: library.defaultReference,
+        scenario: scenario
+    ) }
 
     var body: some View {
         if composerStyle { composerBody } else { standardBody }
     }
 
     private var standardBody: some View {
-        let available = recoveryProviders ?? library.selectableProviders(loggedIn: loggedIn, hasImage: hasImage, scenario: scenario)
-        let choices = available.filter { $0.id == preferredProviderID } + available.filter { $0.id != preferredProviderID }
+        let available = recoveryProviders ?? library.selectableProviders(
+            loggedIn: loggedIn,
+            hasImage: hasImage,
+            scenario: scenario
+        )
+        let choices = available.filter { $0.id == preferredProviderID } + available
+            .filter { $0.id != preferredProviderID }
         let selectionAvailable = choices.contains { $0.models.contains { $0.reference == selectedReference } }
         return VStack(alignment: .leading, spacing: 0) {
             Group {
@@ -238,14 +260,14 @@ struct AskModelChoices: View {
                 VStack(alignment: .leading, spacing: 0) {
                     if choices.isEmpty {
                         Text(L("models.noAvailable")).font(.callout)
-                            .foregroundStyle(StudioTheme.textTertiary).padding(14)
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color).padding(14)
                     } else if showsUnavailableSelection && !selectionAvailable {
                         Text(L("ask.models.unavailable")).font(.callout)
-                            .foregroundStyle(StudioTheme.textTertiary)
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                             .padding(.horizontal, 14).padding(.top, 12)
                     } else if hasImage, compatible.flatMap(\.models).count < choices.flatMap(\.models).count {
                         Label(L("ask.models.imageOnly"), systemImage: "info.circle").font(.subheadline)
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .padding(.horizontal, 14).padding(.top, 8).padding(.bottom, 2)
                     }
                     ForEach(Array(choices.enumerated()), id: \.element.id) { index, provider in
@@ -258,7 +280,11 @@ struct AskModelChoices: View {
                                                            library: library, loggedIn: loggedIn, scenario: scenario)
                             AskPopoverRow(title: model.name,
                                           note: model.reference == defaultReference ? L("ask.models.isDefault") : nil,
-                                          caption: blocked ?? Self.imageTrialCaption(model, provider: provider, hasImage: hasImage)
+                                          caption: blocked ?? Self.imageTrialCaption(
+                                              model,
+                                              provider: provider,
+                                              hasImage: hasImage
+                                          )
                                               ?? Self.caption(model),
                                           selected: selectedReference == model.reference,
                                           enabled: blocked == nil,
@@ -274,20 +300,23 @@ struct AskModelChoices: View {
                                 }
                             }
                             .help(model.displayName + " — " + (model.pricing == nil
-                                ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
+                                    ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
                         }
                     }
                     if offersCloudSignIn {
                         if !choices.isEmpty { AskPopoverDivider() }
                         AskPopoverHeader(title: "Typeflux Cloud")
-                        AskPopoverRow(title: L("ask.models.cloudLocked.title"), caption: L("ask.models.cloudLocked.caption"),
-                                      selected: false) {
+                        AskPopoverRow(
+                            title: L("ask.models.cloudLocked.title"),
+                            caption: L("ask.models.cloudLocked.caption"),
+                            selected: false
+                        ) {
                             dismiss(); LoginWindowController.shared.show()
                         } accessory: {
                             Text(L("ask.cloudPromo.signIn")).font(.subheadline).fontWeight(.semibold)
                                 .foregroundStyle(Color.white)
                                 .padding(.horizontal, 10).frame(height: 22)
-                                .background(Capsule().fill(AskTheme.accent))
+                                .background(Capsule().fill(TypefluxColor.accent.color))
                         }
                     }
                 }
@@ -341,7 +370,13 @@ struct AskModelChoices: View {
     static func imageReason(_ model: RegisteredModel, provider: RegisteredProvider, hasImage: Bool,
                             library: AskModelLibrary, loggedIn: Bool, scenario: String) -> String? {
         guard hasImage else { return nil }
-        return library.selectionReason(model, provider: provider, hasImage: true, loggedIn: loggedIn, scenario: scenario)
+        return library.selectionReason(
+            model,
+            provider: provider,
+            hasImage: true,
+            loggedIn: loggedIn,
+            scenario: scenario
+        )
     }
 
     /// The footer only offers what it can do: nothing when the selection already
@@ -368,7 +403,7 @@ struct AskModelChoices: View {
             }
             ForEach(choices) { provider in
                 Text(provider.name).font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
                 ForEach(provider.models) { model in
                     choice(model, provider: provider)
@@ -390,7 +425,8 @@ struct AskModelChoices: View {
                     ))
                     .lineLimit(recoveryProviders == nil ? nil : 2)
                     .truncationMode(.middle)
-                    if recoveryProviders == nil, let context = model.contextWindowTokens, let output = model.maxOutputTokens {
+                    if recoveryProviders == nil, let context = model.contextWindowTokens,
+                       let output = model.maxOutputTokens {
                         Text(String(format: L("models.cloud.parameters"), context, output))
                             .font(.caption2).foregroundStyle(.secondary)
                     }
@@ -398,14 +434,14 @@ struct AskModelChoices: View {
                 Spacer(minLength: 8)
                 if recoveryProviders != nil, let price = model.pricing?.label {
                     Text(price).font(.subheadline).fontWeight(.medium).fixedSize()
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .help(L("models.cloud.priceExplanation"))
                 }
                 if selected {
                     Image(systemName: "checkmark").font(.callout).fontWeight(.semibold)
                 }
             }
-            .foregroundStyle(selected ? TypefluxColor.accent.color : StudioTheme.textPrimary)
+            .foregroundStyle(selected ? TypefluxColor.accent.color : TypefluxColor.label.color)
             .padding(.horizontal, 12).padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(selected ? TypefluxColor.accent.color.opacity(0.15) : .clear,
@@ -413,7 +449,9 @@ struct AskModelChoices: View {
             .contentShape(Rectangle())
         }.buttonStyle(.plain)
             .accessibilityAddTraits(selected ? .isSelected : [])
-            .help(model.displayName + " — " + (model.pricing == nil ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
+            .help(model
+                .displayName + " — " +
+                (model.pricing == nil ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
     }
 }
 

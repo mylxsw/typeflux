@@ -11,9 +11,11 @@ struct AskWorkflowActionsSummaryView: View {
                 ForEach(Array(state.outcomes.enumerated()), id: \.offset) { index, outcome in
                     if let text = Self.text(for: outcome) {
                         if index > 0 {
-                            Text("·").foregroundStyle(StudioTheme.textTertiary)
+                            Text("·").foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         }
-                        Text(text).foregroundStyle(outcome.succeeded ? StudioTheme.success : StudioTheme.danger)
+                        Text(text)
+                            .foregroundStyle(outcome.succeeded ? TypefluxColor.success.color : TypefluxColor.danger
+                                .color)
                             .lineLimit(1)
                     }
                 }
@@ -21,9 +23,9 @@ struct AskWorkflowActionsSummaryView: View {
             .layoutPriority(1)
             Spacer(minLength: 8)
             if state.undone {
-                Text(L("ask.workflow.action.copyUndone")).foregroundStyle(StudioTheme.textTertiary)
+                Text(L("ask.workflow.action.copyUndone")).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             } else if state.canUndo {
-                Text(L("ask.workflow.action.undoHint")).foregroundStyle(StudioTheme.textTertiary)
+                Text(L("ask.workflow.action.undoHint")).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
         }
         .font(.system(size: 11.5))
@@ -46,9 +48,9 @@ struct AskWorkflowApprovalView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "network").foregroundStyle(StudioTheme.warning)
+            Image(systemName: "network").foregroundStyle(TypefluxColor.warning.color)
             Text(L("ask.workflow.approval.question", approval.workflowName, approval.host))
-                .foregroundStyle(StudioTheme.textPrimary).lineLimit(1).truncationMode(.middle)
+                .foregroundStyle(TypefluxColor.label.color).lineLimit(1).truncationMode(.middle)
                 .layoutPriority(1)
             Spacer(minLength: 8)
             button(L("ask.workflow.approval.deny"), key: "esc", primary: false) { answer(false) }
@@ -63,11 +65,11 @@ struct AskWorkflowApprovalView: View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Text(title)
-                Text(key).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text(key).font(.system(size: 10.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
-            .foregroundStyle(primary ? AskTheme.accent : StudioTheme.textSecondary)
+            .foregroundStyle(primary ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
             .padding(.horizontal, 7).frame(height: 20)
-            .background(primary ? AskTheme.accent.opacity(0.16) : AskTheme.hoverFill,
+            .background(primary ? TypefluxColor.accent.color.opacity(0.16) : TypefluxColor.label.color.opacity(0.06),
                         in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             .contentShape(Rectangle())
         }

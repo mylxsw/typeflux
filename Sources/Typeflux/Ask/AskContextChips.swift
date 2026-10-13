@@ -207,8 +207,8 @@ struct AskIconChipFace: View {
                         .foregroundStyle(Color.white)
                         .padding(.horizontal, 3)
                         .frame(minWidth: 15, minHeight: 15)
-                        .background(AskTheme.accent, in: Capsule())
-                        .overlay(Capsule().strokeBorder(AskTheme.composerSurface, lineWidth: 1.5))
+                        .background(TypefluxColor.accent.color, in: Capsule())
+                        .overlay(Capsule().strokeBorder(TypefluxColor.controlBackground.color, lineWidth: 1.5))
                         .offset(x: 2, y: -3)
                         .opacity(hovering && item.removable ? 0 : 1)
                 }
@@ -245,10 +245,10 @@ struct AskIconChipFace: View {
     /// On is the accent, hover brightens an off icon.
     static func iconColor(_ style: AskContextItem.Style, hovering: Bool) -> Color {
         switch style {
-        case .active: return AskTheme.accent
-        case .warning: return StudioTheme.warning
-        case .unavailable: return StudioTheme.textTertiary
-        case .neutral: return hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary
+        case .active: return TypefluxColor.accent.color
+        case .warning: return TypefluxColor.warning.color
+        case .unavailable: return TypefluxColor.tertiaryLabel.color
+        case .neutral: return hovering ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color
         }
     }
 }
@@ -270,10 +270,14 @@ struct AskOverflowChip: View {
         } label: {
             Text(verbatim: "+\(hidden.count)")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .padding(.horizontal, 10)
                 .frame(height: AskContextChips.chipSize)
-                .background(hovering ? AskTheme.hoverFill : AskTheme.hoverFill.opacity(0.6), in: Capsule())
+                .background(
+                    hovering ? TypefluxColor.label.color.opacity(0.06) : TypefluxColor.label.color.opacity(0.06)
+                        .opacity(0.6),
+                    in: Capsule()
+                )
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -298,10 +302,11 @@ struct AskOverflowChip: View {
                             Text(item.title).font(.system(size: 12, weight: .semibold))
                             if let source = item.sourceAppName {
                                 Text(L("ask.context.selection.source", source))
-                                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                                    .font(.system(size: 11)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                             }
                             if let detail = item.detail {
-                                Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                                Text(detail).font(.system(size: 11.5))
+                                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                                     .lineLimit(3)
                             }
                         }
@@ -336,7 +341,7 @@ struct AskContextCard: View {
             ForEach(items) { item in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.title).font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                     if item.kind == .screenshot, let screenshot {
                         Image(nsImage: screenshot)
                             .resizable().interpolation(.high).scaledToFit()
@@ -350,14 +355,15 @@ struct AskContextCard: View {
                     }
                     if let source = item.sourceAppName {
                         Text(L("ask.context.selection.source", source))
-                            .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                            .font(.system(size: 11)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                     if let detail = item.detail {
-                        Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                        Text(detail).font(.system(size: 11.5)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .lineLimit(3)
                     }
                     if let hint = item.hint {
-                        Text(hint).font(.system(size: 11, weight: .semibold)).foregroundStyle(AskTheme.accentText)
+                        Text(hint).font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(TypefluxColor.accent.color)
                             .padding(.top, 2)
                     }
                 }

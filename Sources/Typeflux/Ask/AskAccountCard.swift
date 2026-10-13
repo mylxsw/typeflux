@@ -34,7 +34,7 @@ struct AskAccountCard: View {
             if let billingError {
                 Text(billingError)
                     .font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.danger)
+                    .foregroundStyle(TypefluxColor.danger.color)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 10)
             }
@@ -53,7 +53,7 @@ struct AskAccountCard: View {
             HStack(spacing: 8) {
                 Text(auth.userProfile?.resolvedDisplayName ?? L("sidebar.appName"))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 if let badge = presentation.badge {
@@ -63,7 +63,7 @@ struct AskAccountCard: View {
             if let profile = auth.userProfile {
                 Text(verbatim: "\(profile.email) · \(AccountStatusText.provider(profile.provider))")
                     .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -80,11 +80,11 @@ struct AskAccountCard: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(L("auth.account.usageQuotaCurrentPeriod"))
                     .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 Spacer(minLength: 8)
                 quotaAmount(credits.balance)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .monospacedDigit()
             }
             if let progress = credits.progress {
@@ -102,13 +102,14 @@ struct AskAccountCard: View {
                 Spacer(minLength: 8)
                 if let note = presentation.periodNote {
                     Text(AccountStatusText.period(note, locale: localization.locale))
-                        .foregroundStyle(note == .paymentFailed ? StudioTheme.danger : StudioTheme.textTertiary)
+                        .foregroundStyle(note == .paymentFailed ? TypefluxColor.danger.color : TypefluxColor
+                            .tertiaryLabel.color)
                 }
             }
             .font(.system(size: 11))
-            .foregroundStyle(StudioTheme.textTertiary)
+            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             if let addon = credits.addon() {
-                Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 8)
+                Rectangle().fill(TypefluxColor.separator.color).frame(height: 1).padding(.vertical, 8)
                 AccountAddonCreditRow(addon: addon)
             }
         }
@@ -130,7 +131,7 @@ struct AskAccountCard: View {
             if auth.isLoadingUsage {
                 ProgressView().controlSize(.mini)
             } else {
-                Text(L("account.card.quotaUnavailable")).foregroundStyle(StudioTheme.textTertiary)
+                Text(L("account.card.quotaUnavailable")).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
         }
     }
@@ -150,13 +151,13 @@ struct AskAccountCard: View {
         VStack(alignment: .leading, spacing: 1) {
             Text(value)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Text(label)
                 .font(.system(size: 10.5))
-                .foregroundStyle(StudioTheme.textTertiary)
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -174,10 +175,10 @@ struct AskAccountCard: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(copy.title)
                     .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                 Text(copy.detail)
                     .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -194,7 +195,8 @@ struct AskAccountCard: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .frame(height: 28)
-                    .background(Capsule().fill(tone == .accent ? StudioTheme.accent : AskAccountTone.foreground(tone)))
+                    .background(Capsule()
+                        .fill(tone == .accent ? TypefluxColor.accent.color : AskAccountTone.foreground(tone)))
                     .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -216,11 +218,11 @@ struct AskAccountCard: View {
         if tone == .accent, colorScheme != .dark {
             // Light: a translucent white card on the sidebar, no gradient.
             shape.fill(Color.white.opacity(Self.promoCardOpacity))
-                .overlay(shape.strokeBorder(StudioTheme.sidePanelStroke, lineWidth: 1))
+                .overlay(shape.strokeBorder(TypefluxColor.separator.color, lineWidth: 1))
         } else if tone == .accent {
-            shape.fill(LinearGradient(colors: [StudioTheme.accent.opacity(0.16), Color.purple.opacity(0.13)],
+            shape.fill(LinearGradient(colors: [TypefluxColor.accent.color.opacity(0.16), Color.purple.opacity(0.13)],
                                       startPoint: .topLeading, endPoint: .bottomTrailing))
-                .overlay(shape.strokeBorder(StudioTheme.accent.opacity(0.25)))
+                .overlay(shape.strokeBorder(TypefluxColor.accent.color.opacity(0.25)))
         } else {
             shape.fill(AskAccountTone.fill(tone))
         }
@@ -228,7 +230,7 @@ struct AskAccountCard: View {
 
     private func links(_ presentation: AccountStatusPresentation) -> some View {
         VStack(spacing: 0) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 6).padding(.bottom, 4)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1).padding(.horizontal, 6).padding(.bottom, 4)
             AskAccountLinkRow(symbol: "person.crop.circle", title: L("account.card.profile"),
                               trailing: L("account.card.profileHint"), external: false, action: onOpenAccount)
             switch presentation.billingLink {
@@ -296,25 +298,25 @@ private struct AskAccountLinkRow: View {
             HStack(spacing: 9) {
                 Image(systemName: symbol)
                     .font(.system(size: 13))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .frame(width: 16)
                 Text(title)
                     .font(.system(size: 12.5))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                 Spacer(minLength: 8)
                 if let trailing {
-                    Text(trailing).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(trailing).font(.system(size: 11)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
                 if external {
                     Image(systemName: "arrow.up.right")
                         .font(.system(size: 9.5, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
             .padding(.horizontal, 8)
             .frame(height: 32)
             .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(hovering ? AskTheme.hoverFill : .clear))
+                .fill(hovering ? TypefluxColor.label.color.opacity(0.06) : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

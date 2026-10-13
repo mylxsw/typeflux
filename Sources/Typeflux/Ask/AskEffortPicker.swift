@@ -1,18 +1,5 @@
 import SwiftUI
 
-extension AskTheme {
-    /// The heaviest reasoning level reads in violet, apart from the accent levels below it.
-    static let reasoningTopText = Color(nsColor: .systemPurple)
-
-    /// The colour a reasoning level's name takes in the card title: violet at the model's
-    /// highest level, the accent below it, `defaultColor` for "Auto".
-    static func reasoningText(_ effort: AskReasoningEffort, in levels: [AskReasoningEffort],
-                              defaultColor: Color) -> Color {
-        if effort == .providerDefault { return defaultColor }
-        return effort.isTop(in: levels) ? reasoningTopText : accentText
-    }
-}
-
 /// The card behind the composer's model chip: the reasoning level on a slider, the
 /// model it applies to, and a second page listing the models.
 struct AskModelEffortCard: View {
@@ -94,13 +81,18 @@ struct AskModelEffortCard: View {
                 VStack(spacing: 1) {
                     Text(levels.isEmpty ? library.name(for: liveReference) : shown.label)
                         .font(.body).fontWeight(.semibold)
-                        .foregroundStyle(levels.isEmpty ? StudioTheme.textPrimary
-                            : AskTheme.reasoningText(shown, in: levels, defaultColor: StudioTheme.textPrimary))
+                        .foregroundStyle(levels.isEmpty ? TypefluxColor.label.color
+                            : AskReasoningPresentation.color(
+                                shown,
+                                in: levels,
+                                defaultColor: TypefluxColor.label.color
+                            ))
                         .lineLimit(1)
                         .animation(.easeOut(duration: 0.2), value: shown)
                     Button { page = .models } label: {
                         HStack(spacing: 2) {
-                            if let (provider, model) = library.registry.resolve(library.presentationReference(for: liveReference)) {
+                            if let (provider, model) = library.registry
+                                .resolve(library.presentationReference(for: liveReference)) {
                                 ModelIcon(model: model, provider: provider, size: 14)
                             }
                             Text(levels.isEmpty ? L("ask.reasoning.changeModel") : library.name(for: liveReference))
@@ -108,7 +100,7 @@ struct AskModelEffortCard: View {
                             Image(systemName: "chevron.right").font(.footnote).fontWeight(.semibold)
                         }
                         .font(.subheadline)
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .contentShape(Rectangle())
                     }
@@ -118,7 +110,7 @@ struct AskModelEffortCard: View {
                 .frame(maxWidth: .infinity)
                 Button { effortSelection.wrappedValue = .providerDefault } label: {
                     Image(systemName: "arrow.counterclockwise").font(.callout).fontWeight(.medium)
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -131,12 +123,15 @@ struct AskModelEffortCard: View {
             if levels.isEmpty {
                 Text(L("ask.reasoning.unsupported"))
                     .font(.subheadline)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 10).padding(.vertical, 8)
-                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(
+                        TypefluxColor.label.color.opacity(0.06),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    )
                     .padding(.top, 10)
             } else {
                 if nativeControls {
@@ -149,7 +144,7 @@ struct AskModelEffortCard: View {
                 }
                 Text(shown.caption)
                     .font(.subheadline)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 8)
@@ -166,7 +161,7 @@ struct AskModelEffortCard: View {
                     Text(L("ask.reasoning.title"))
                 }
                 .font(.callout)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .contentShape(Rectangle())
             }
@@ -220,13 +215,16 @@ struct AskEffortSlider: View {
             let width = geometry.size.width
             let center = Self.knobCenter(index: index, count: levels.count, width: width)
             ZStack(alignment: .leading) {
-                Capsule().fill(AskTheme.hoverFill)
+                Capsule().fill(TypefluxColor.label.color.opacity(0.06))
                     .overlay(Capsule().strokeBorder(Color.black.opacity(0.25), lineWidth: 0.5))
                     .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
                 ForEach(levels.indices, id: \.self) { stop in
-                    Circle().fill(StudioTheme.textTertiary)
+                    Circle().fill(TypefluxColor.tertiaryLabel.color)
                         .frame(width: 4, height: 4)
-                        .position(x: Self.knobCenter(index: stop, count: levels.count, width: width), y: Self.height / 2)
+                        .position(
+                            x: Self.knobCenter(index: stop, count: levels.count, width: width),
+                            y: Self.height / 2
+                        )
                         .opacity(!auto && stop <= index ? 0 : 1)
                 }
                 AskLiquidFill(top: effort.nearest(in: levels).isTop(in: levels))
@@ -259,8 +257,11 @@ struct AskEffortSlider: View {
 
     @ViewBuilder private var knob: some View {
         if auto {
-            Circle().strokeBorder(StudioTheme.textTertiary, style: StrokeStyle(lineWidth: 1.2, dash: [2.5, 2.5]))
-                .frame(width: Self.knob, height: Self.knob)
+            Circle().strokeBorder(
+                TypefluxColor.tertiaryLabel.color,
+                style: StrokeStyle(lineWidth: 1.2, dash: [2.5, 2.5])
+            )
+            .frame(width: Self.knob, height: Self.knob)
         } else {
             Circle()
                 .fill(RadialGradient(colors: [.white, Color(white: 0.94), Color(white: 0.88)],
@@ -301,7 +302,8 @@ struct AskLiquidFill: View {
         guard width > 1 else { return }
         let rect = CGRect(origin: .zero, size: size)
         let colors: [Color] = top
-            ? [Color(red: 0.56, green: 0.61, blue: 1.0), Color(red: 0.61, green: 0.42, blue: 1.0), Color(red: 0.54, green: 0.25, blue: 0.94)]
+            ? [Color(red: 0.56, green: 0.61, blue: 1.0), Color(red: 0.61, green: 0.42, blue: 1.0),
+               Color(red: 0.54, green: 0.25, blue: 0.94)]
             : [Color(red: 0.15, green: 0.39, blue: 0.92), Color(red: 0.23, green: 0.51, blue: 1.0)]
         canvas.fill(Path(rect), with: .linearGradient(Gradient(colors: colors), startPoint: .zero,
                                                       endPoint: CGPoint(x: width, y: 0)))
@@ -309,7 +311,8 @@ struct AskLiquidFill: View {
         let sweep = (time * 60).truncatingRemainder(dividingBy: Double(width) + 160) - 80
         canvas.fill(Path(rect), with: .linearGradient(
             Gradient(colors: [.white.opacity(0), .white.opacity(0.16), .white.opacity(0)]),
-            startPoint: CGPoint(x: sweep - 70, y: 0), endPoint: CGPoint(x: sweep + 70, y: 0)))
+            startPoint: CGPoint(x: sweep - 70, y: 0), endPoint: CGPoint(x: sweep + 70, y: 0)
+        ))
         // Drifting, twinkling points; the last stretch under the knob stays clear.
         let span = max(Double(width), 40) + 20
         for index in 0 ..< Self.particleCount {
@@ -320,14 +323,18 @@ struct AskLiquidFill: View {
             let top = 5 + Self.noise(index, 4) * Double(height - 10) + sin(time * 1.3 + phase) * 1.2
             let alpha = 0.35 + 0.65 * abs(sin(time * (0.6 + Self.noise(index, 5) * 1.6) + phase))
             let radius = 0.5 + Self.noise(index, 6) * 0.8
-            canvas.fill(Path(ellipseIn: CGRect(x: left - radius, y: top - radius, width: radius * 2, height: radius * 2)),
-                        with: .color(.white.opacity(alpha * 0.85)))
+            canvas.fill(
+                Path(ellipseIn: CGRect(x: left - radius, y: top - radius, width: radius * 2, height: radius * 2)),
+                with: .color(.white.opacity(alpha * 0.85))
+            )
         }
         // A glossy top half and a darker lower edge give the fill depth.
         canvas.fill(Path(rect), with: .linearGradient(
-            Gradient(stops: [.init(color: .white.opacity(0.26), location: 0), .init(color: .white.opacity(0.05), location: 0.48),
+            Gradient(stops: [.init(color: .white.opacity(0.26), location: 0),
+                             .init(color: .white.opacity(0.05), location: 0.48),
                              .init(color: .clear, location: 0.52), .init(color: .black.opacity(0.12), location: 1)]),
-            startPoint: .zero, endPoint: CGPoint(x: 0, y: height)))
+            startPoint: .zero, endPoint: CGPoint(x: 0, y: height)
+        ))
         canvas.stroke(Path(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), cornerRadius: height / 2),
                       with: .color(top ? Color(red: 0.78, green: 0.67, blue: 1).opacity(0.35)
                           : Color(red: 0.55, green: 0.71, blue: 1).opacity(0.35)), lineWidth: 1)

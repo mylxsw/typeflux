@@ -19,7 +19,7 @@ struct AskComposerChromeTests {
         #expect(workspace.horizontalInset == 20)
         #expect(workspace.footerHeight == 48)
         #expect(workspace.fill == TypefluxColor.controlBackground.color)
-        #expect(launcher.fill == AskTheme.launcherSurface)
+        #expect(launcher.fill == LegacyAskPalette.launcherSurface)
         // Only the floating launcher uses a glass material.
         #expect(launcher.placement == .floating)
         #expect(workspace.placement == .inWindow)
@@ -54,13 +54,13 @@ struct AskComposerChromeTests {
 
     @Test func opaqueFallbackBordersMatchTheirSurface() {
         #expect(AskComposerChrome.workspace.fill == TypefluxColor.controlBackground.color)
-        #expect(AskComposerChrome.workspace.idleBorder == AskTheme.border)
-        #expect(AskComposerChrome.launcher.idleBorder == AskTheme.floatingBorder)
+        #expect(AskComposerChrome.workspace.idleBorder == TypefluxColor.separator.color)
+        #expect(AskComposerChrome.launcher.idleBorder == LegacyAskPalette.floatingBorder)
     }
 
     @Test func recordingEdgeIsTheSameOnBothSurfaces() {
         for chrome in [AskComposerChrome.launcher, .workspace] {
-            #expect(AskVoiceBorder.borderColor(listening: true, idle: chrome.idleBorder) == AskTheme.accent)
+            #expect(AskVoiceBorder.borderColor(listening: true, idle: chrome.idleBorder) == TypefluxColor.accent.color)
             #expect(AskVoiceBorder.borderColor(listening: false, idle: chrome.idleBorder) == chrome.idleBorder)
         }
     }

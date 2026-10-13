@@ -25,7 +25,7 @@ struct ModelProviderIcon: View {
                 Image(nsImage: image)
                     .renderingMode(Self.isMonochrome(provider) ? .template : .original)
                     .resizable().interpolation(.high).scaledToFit().padding(3)
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
             } else {
                 Image(systemName: Self.symbol(for: provider))
                     .font(.system(size: size * 0.55, weight: .medium))

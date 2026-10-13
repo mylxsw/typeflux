@@ -659,14 +659,14 @@ final class StudioViewModel: ObservableObject {
 
     var localSTTPreparationTint: Color {
         if isLocalSTTPrepared {
-            return StudioTheme.success
+            return TypefluxColor.success.color
         }
 
         if localSTTStatus.hasPrefix(L("common.failedPrefix")) {
-            return StudioTheme.danger
+            return TypefluxColor.danger.color
         }
 
-        return StudioTheme.accent
+        return TypefluxColor.accent.color
     }
 
     var isOllamaFailed: Bool {
@@ -1954,7 +1954,10 @@ final class StudioViewModel: ObservableObject {
                     }
                     // Testing from Settings may open the browser to sign in; the token is reused afterwards.
                     client = HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: config.headers,
-                                                                 authorizer: MCPOAuthAuthorizer(resource: url, interactive: true)))
+                                                                 authorizer: MCPOAuthAuthorizer(
+                                                                     resource: url,
+                                                                     interactive: true
+                                                                 )))
                 }
                 testClient = client
                 try await client.connect()
@@ -3747,10 +3750,18 @@ final class StudioViewModel: ObservableObject {
                 ("\(prefix)-tls", L("history.stats.llmTLSHandshake") + suffix, attempt.tlsHandshakeMilliseconds),
                 ("\(prefix)-upload", L("history.stats.llmRequestUpload") + suffix, attempt.requestUploadMilliseconds),
                 ("\(prefix)-server", L("history.stats.llmServerWait") + suffix, attempt.serverWaitMilliseconds),
-                ("\(prefix)-download", L("history.stats.llmResponseDownload") + suffix, attempt.responseDownloadMilliseconds),
+                (
+                    "\(prefix)-download",
+                    L("history.stats.llmResponseDownload") + suffix,
+                    attempt.responseDownloadMilliseconds
+                ),
                 ("\(prefix)-sse", L("history.stats.llmSSEParsing") + suffix, attempt.sseParsingMilliseconds),
                 ("\(prefix)-json", L("history.stats.llmJSONParsing") + suffix, attempt.jsonParsingMilliseconds),
-                ("\(prefix)-client", L("history.stats.llmClientOverhead") + suffix, attempt.unaccountedClientMilliseconds)
+                (
+                    "\(prefix)-client",
+                    L("history.stats.llmClientOverhead") + suffix,
+                    attempt.unaccountedClientMilliseconds
+                )
             ])
         }
         let keyMetrics = keyMetricSources.compactMap { id, title, value in

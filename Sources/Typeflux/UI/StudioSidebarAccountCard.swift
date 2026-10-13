@@ -21,52 +21,52 @@ struct StudioSidebarAccountCard<Footer: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.none) {
+        VStack(alignment: .leading, spacing: 0) {
             identityRow
-                .padding(.horizontal, StudioTheme.Spacing.smallMedium)
-                .padding(.vertical, StudioTheme.Spacing.small)
+                .padding(.horizontal, TypefluxSpacing.regular.value(for: .classic))
+                .padding(.vertical, 10)
 
             divider
 
             if presentation.state != .signedOut {
                 cardBody
-                    .padding(.horizontal, StudioTheme.Spacing.smallMedium)
-                    .padding(.vertical, StudioTheme.Spacing.small)
+                    .padding(.horizontal, TypefluxSpacing.regular.value(for: .classic))
+                    .padding(.vertical, 10)
 
                 divider
             }
 
             footer
                 .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.horizontal, StudioTheme.Spacing.xSmall)
-                .padding(.vertical, StudioTheme.Spacing.xxxSmall)
+                .padding(.horizontal, TypefluxSpacing.small.value(for: .classic))
+                .padding(.vertical, TypefluxSpacing.compact.value(for: .classic))
         }
         .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
-                .fill(StudioTheme.cardSurface)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: .classic), style: .continuous)
+                .fill(TypefluxColor.contentBackground.color)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: .classic), style: .continuous)
                 .stroke(
                     presentation.needsAttention
-                        ? StudioTheme.warning.opacity(0.42)
-                        : StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                    lineWidth: StudioTheme.BorderWidth.thin
+                        ? TypefluxColor.warning.color.opacity(0.42)
+                        : TypefluxColor.separator.color.opacity(0.72),
+                    lineWidth: 1
                 )
         )
-        .padding(.horizontal, -StudioTheme.Spacing.small)
+        .padding(.horizontal, -10)
     }
 
     private var identityRow: some View {
-        HStack(spacing: StudioTheme.Spacing.xSmall) {
+        HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
             identityControl
 
-            Spacer(minLength: StudioTheme.Spacing.xxxSmall)
+            Spacer(minLength: TypefluxSpacing.compact.value(for: .classic))
 
             if presentation.state != .loading {
                 Button(action: action) {
                     Text(actionTitle)
-                        .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                        .font(.system(.callout, weight: .semibold))
                         .foregroundStyle(actionColor)
                         .lineLimit(1)
                         .fixedSize(horizontal: true, vertical: false)
@@ -111,18 +111,18 @@ struct StudioSidebarAccountCard<Footer: View>: View {
     }
 
     private var identityLabel: some View {
-        HStack(spacing: StudioTheme.Spacing.xSmall) {
+        HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
             Image(
                 systemName: presentation.usesFilledIdentityIcon
                     ? "person.circle.fill"
                     : "person.circle"
             )
-                .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
-                .foregroundStyle(identityColor)
-                .accessibilityHidden(true)
+            .font(.system(.body, weight: .medium))
+            .foregroundStyle(identityColor)
+            .accessibilityHidden(true)
 
             Text(identityTitle)
-                .font(.studioBody(StudioTheme.Typography.bodySmall, weight: identityFontWeight))
+                .font(.system(.callout, weight: identityFontWeight))
                 .foregroundStyle(identityColor)
                 .underline(isHoveringIdentity && isIdentityInteractive)
                 .lineLimit(1)
@@ -140,14 +140,14 @@ struct StudioSidebarAccountCard<Footer: View>: View {
             loadingContent
 
         case .unavailable:
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+            VStack(alignment: .leading, spacing: TypefluxSpacing.compact.value(for: .classic)) {
                 Text(L("sidebar.accountCard.cloudAccount"))
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .font(.system(.body, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.label.color)
 
                 Text(L("sidebar.accountCard.unavailable"))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(.callout))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
                     .allowsTightening(true)
@@ -160,22 +160,22 @@ struct StudioSidebarAccountCard<Footer: View>: View {
     }
 
     private var loadingContent: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
+        VStack(alignment: .leading, spacing: TypefluxSpacing.small.value(for: .classic)) {
             Text(L("sidebar.accountCard.cloudAccount"))
-                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.body, weight: .semibold))
+                .foregroundStyle(TypefluxColor.label.color)
 
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+            HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
+                VStack(alignment: .leading, spacing: 6) {
                     Capsule()
-                        .fill(StudioTheme.surfaceMuted)
+                        .fill(TypefluxColor.controlBackground.color)
                         .frame(width: 108, height: 6)
                     Capsule()
-                        .fill(StudioTheme.surfaceMuted.opacity(0.82))
+                        .fill(TypefluxColor.controlBackground.color.opacity(0.82))
                         .frame(width: 84, height: 6)
                 }
 
-                Spacer(minLength: StudioTheme.Spacing.xxxSmall)
+                Spacer(minLength: TypefluxSpacing.compact.value(for: .classic))
 
                 ProgressView()
                     .controlSize(.small)
@@ -188,19 +188,19 @@ struct StudioSidebarAccountCard<Footer: View>: View {
     @ViewBuilder
     private var accountContent: some View {
         if presentation.needsAttention {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+            VStack(alignment: .leading, spacing: TypefluxSpacing.compact.value(for: .classic)) {
                 Text(planTitle)
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .font(.system(.body, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.label.color)
 
                 Text(L("sidebar.accountCard.billingAttention"))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
-                    .foregroundStyle(StudioTheme.warning)
+                    .font(.system(.callout, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.warning.color)
                     .lineLimit(1)
 
                 Text(L("sidebar.accountCard.billingAttentionSubtitle"))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(.callout))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineLimit(2)
             }
         } else {
@@ -209,19 +209,19 @@ struct StudioSidebarAccountCard<Footer: View>: View {
     }
 
     private var accountUsage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+        VStack(alignment: .leading, spacing: TypefluxSpacing.compact.value(for: .classic)) {
             Text(planTitle)
-                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.body, weight: .semibold))
+                .foregroundStyle(TypefluxColor.label.color)
                 .lineLimit(1)
 
             ViewThatFits(in: .horizontal) {
-                HStack(alignment: .firstTextBaseline, spacing: StudioTheme.Spacing.xSmall) {
+                HStack(alignment: .firstTextBaseline, spacing: TypefluxSpacing.small.value(for: .classic)) {
                     quotaLabel
-                    Spacer(minLength: StudioTheme.Spacing.xSmall)
+                    Spacer(minLength: TypefluxSpacing.small.value(for: .classic))
                     quotaValue
                 }
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                VStack(alignment: .leading, spacing: TypefluxSpacing.compact.value(for: .classic)) {
                     quotaLabel
                     quotaValue
                 }
@@ -230,9 +230,10 @@ struct StudioSidebarAccountCard<Footer: View>: View {
             if let progress = presentation.progress {
                 GeometryReader { proxy in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(StudioTheme.surfaceMuted)
+                        Capsule().fill(TypefluxColor.controlBackground.color)
                         Capsule()
-                            .fill(presentation.creditPresentation.isExhausted ? StudioTheme.danger : StudioTheme.accent)
+                            .fill(presentation.creditPresentation.isExhausted ? TypefluxColor.danger
+                                .color : TypefluxColor.accent.color)
                             .frame(width: proxy.size.width * progress)
                     }
                 }
@@ -244,8 +245,8 @@ struct StudioSidebarAccountCard<Footer: View>: View {
 
     private var quotaLabel: some View {
         Text(L("sidebar.accountCard.cloudCredits"))
-            .font(.studioBody(StudioTheme.Typography.bodySmall))
-            .foregroundStyle(StudioTheme.textSecondary)
+            .font(.system(.callout))
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
             .fixedSize()
     }
 
@@ -257,7 +258,7 @@ struct StudioSidebarAccountCard<Footer: View>: View {
             case let .limited(remaining, limit):
                 Text(remainingText(remaining: remaining, limit: limit, compact: true))
                     .foregroundStyle(presentation.creditPresentation.isExhausted
-                        ? StudioTheme.danger : StudioTheme.textPrimary)
+                        ? TypefluxColor.danger.color : TypefluxColor.label.color)
                     .studioTooltip(remainingText(remaining: remaining, limit: limit, compact: false), yOffset: 18)
                     .accessibilityLabel(L(
                         "sidebar.accountCard.remaining",
@@ -265,22 +266,22 @@ struct StudioSidebarAccountCard<Footer: View>: View {
                     ))
             case .unavailable:
                 Text("—")
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .help(L("sidebar.accountCard.quotaUnavailable"))
                     .accessibilityLabel(L("sidebar.accountCard.quotaUnavailable"))
             }
         }
-        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-        .foregroundStyle(StudioTheme.textPrimary)
+        .font(.system(.body, weight: .semibold))
+        .foregroundStyle(TypefluxColor.label.color)
         .monospacedDigit()
         .fixedSize()
     }
 
     private var divider: some View {
         Rectangle()
-            .fill(StudioTheme.border.opacity(0.42))
-            .frame(height: StudioTheme.BorderWidth.thin)
-            .padding(.horizontal, StudioTheme.Spacing.smallMedium)
+            .fill(TypefluxColor.separator.color.opacity(0.42))
+            .frame(height: 1)
+            .padding(.horizontal, TypefluxSpacing.regular.value(for: .classic))
     }
 
     private var identityTitle: String {
@@ -296,8 +297,8 @@ struct StudioSidebarAccountCard<Footer: View>: View {
 
     private var identityColor: Color {
         presentation.state == .signedOut
-            ? StudioTheme.textSecondary
-            : StudioTheme.textPrimary
+            ? TypefluxColor.secondaryLabel.color
+            : TypefluxColor.label.color
     }
 
     private var identityFontWeight: Font.Weight {
@@ -328,7 +329,7 @@ struct StudioSidebarAccountCard<Footer: View>: View {
     }
 
     private var actionColor: Color {
-        presentation.needsAttention ? StudioTheme.warning : StudioTheme.accent
+        presentation.needsAttention ? TypefluxColor.warning.color : TypefluxColor.accent.color
     }
 
     private var actionAccessibilityTitle: String {

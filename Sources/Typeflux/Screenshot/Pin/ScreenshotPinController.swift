@@ -373,8 +373,8 @@ struct ScreenshotPinBar: View {
             button("xmark", help: L("screenshot.pin.close")) { perform(.close) }
         }
         .padding(3)
-        .background(RoundedRectangle(cornerRadius: 9).fill(AskTheme.glassFill.opacity(0.96)))
-        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(AskTheme.border, lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 9).fill(LegacyAskPalette.glassFill.opacity(0.96)))
+        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(TypefluxColor.separator.color, lineWidth: 1))
         .fixedSize()
     }
 
@@ -391,6 +391,6 @@ struct ScreenshotPinBar: View {
     }
 
     private var divider: some View {
-        Rectangle().fill(AskTheme.border).frame(width: 1, height: 14).padding(.horizontal, 3)
+        Rectangle().fill(TypefluxColor.separator.color).frame(width: 1, height: 14).padding(.horizontal, 3)
     }
 }

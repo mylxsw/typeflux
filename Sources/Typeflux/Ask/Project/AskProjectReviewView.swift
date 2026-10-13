@@ -14,22 +14,22 @@ struct AskProjectReviewView: View {
                 Spacer()
                 Button(L("ask.project.export")) { save() }.disabled(exportPatch == nil)
             }
-            Text(L("ask.project.staged")).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+            Text(L("ask.project.staged")).font(.system(size: 12)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             ForEach(review.files, id: \.self) {
                 Text($0).font(.system(size: 12, design: .monospaced)).textSelection(.enabled)
             }
             if review.truncated {
-                Text(L("ask.project.truncated")).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.project.truncated")).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             if !review.patch.isEmpty {
                 AskMonoBlock(title: "", text: review.patch)
             }
             if let error {
-                Text(error).foregroundStyle(StudioTheme.danger).font(.system(size: 12))
+                Text(error).foregroundStyle(TypefluxColor.danger.color).font(.system(size: 12))
             }
         }
         .padding(12)
-        .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 10))
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 10))
     }
 
     private func save() {

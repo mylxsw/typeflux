@@ -28,11 +28,11 @@ struct AskHistoryRenameTests {
         var body: some View {
             AskHistoryRow(title: recorder.title, updatedAt: Date(), selected: true, busy: busy,
                           selectionSpace: selection, onSelect: { recorder.selections += 1 }, onRename: {
-                recorder.saves.append($0)
-                if recorder.fails { throw AskLocalError.message("Could not save") }
-                recorder.title = $0
-            }, onDelete: {})
-            .padding(.horizontal, 8)
+                              recorder.saves.append($0)
+                              if recorder.fails { throw AskLocalError.message("Could not save") }
+                              recorder.title = $0
+                          }, onDelete: {})
+                .padding(.horizontal, 8)
         }
     }
 
@@ -50,11 +50,11 @@ struct AskHistoryRenameTests {
             window.isReleasedWhenClosed = false
             let content = NSView(frame: frame)
             hosting = NSHostingView(rootView: AnyView(Row(recorder: recorder, busy: busy)
-                .environment(\.interfaceStyle, style)
-                .environment(\.colorScheme, dark ? .dark : .light)
-                .transaction { $0.animation = nil; $0.disablesAnimations = true }
-                .frame(width: 248, height: 44)
-                .background(style.usesGlass ? AskTheme.surface : AskClassic.sidebar)))
+                    .environment(\.interfaceStyle, style)
+                    .environment(\.colorScheme, dark ? .dark : .light)
+                    .transaction { $0.animation = nil; $0.disablesAnimations = true }
+                    .frame(width: 248, height: 44)
+                    .background(style.usesGlass ? TypefluxColor.controlBackground.color : AskClassic.sidebar)))
             hosting.frame = NSRect(x: 0, y: 60, width: 248, height: 44)
             button = ClickTarget()
             button.onClick = { [recorder] in recorder.otherClicks += 1 }
@@ -88,7 +88,8 @@ struct AskHistoryRenameTests {
             hosting.layoutSubtreeIfNeeded()
             var seen = Set<ObjectIdentifier>()
             func actions(_ element: Any) -> [NSAccessibilityCustomAction] {
-                guard let object = element as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return [] }
+                guard let object = element as? NSObject,
+                      seen.insert(ObjectIdentifier(object)).inserted else { return [] }
                 let own = object.responds(to: NSSelectorFromString("accessibilityCustomActions"))
                     ? object.value(forKey: "accessibilityCustomActions") as? [NSAccessibilityCustomAction] ?? [] : []
                 let children = object.responds(to: NSSelectorFromString("accessibilityChildren"))
@@ -100,7 +101,6 @@ struct AskHistoryRenameTests {
             let handler = try #require(rename.handler)
             #expect(handler())
         }
-
     }
 
     private func settle() async throws { try await Task.sleep(for: .milliseconds(150)) }
@@ -121,8 +121,9 @@ struct AskHistoryRenameTests {
 
     private func key(_ text: String, code: UInt16, editor: NSTextView) async throws {
         let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
-            windowNumber: editor.window?.windowNumber ?? 0, context: nil, characters: text,
-            charactersIgnoringModifiers: text, isARepeat: false, keyCode: code))
+                                                  windowNumber: editor.window?.windowNumber ?? 0, context: nil,
+                                                  characters: text,
+                                                  charactersIgnoringModifiers: text, isARepeat: false, keyCode: code))
         editor.keyDown(with: event)
         try await settle()
     }
@@ -160,8 +161,10 @@ struct AskHistoryRenameTests {
         let editor = try await begin(host)
         editor.insertText("Updated title", replacementRange: editor.selectedRange())
         let point = host.button.convert(NSPoint(x: 40, y: 14), to: nil)
-        let down = try #require(NSEvent.mouseEvent(with: .leftMouseDown, location: point, modifierFlags: [], timestamp: 0,
-            windowNumber: host.window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        let down = try #require(NSEvent.mouseEvent(with: .leftMouseDown, location: point, modifierFlags: [],
+                                                   timestamp: 0,
+                                                   windowNumber: host.window.windowNumber, context: nil, eventNumber: 0,
+                                                   clickCount: 1, pressure: 1))
         NSApp.sendEvent(down)
         try await settle()
         #expect(host.recorder.saves == ["Updated title"])
@@ -262,8 +265,10 @@ struct AskHistoryRenameTests {
         host.draw()
         #expect(host.field != nil)
         let point = host.button.convert(NSPoint(x: 40, y: 14), to: nil)
-        let event = try #require(NSEvent.mouseEvent(with: .leftMouseDown, location: point, modifierFlags: [], timestamp: 0,
-            windowNumber: host.window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        let event = try #require(NSEvent.mouseEvent(with: .leftMouseDown, location: point, modifierFlags: [],
+                                                    timestamp: 0,
+                                                    windowNumber: host.window.windowNumber, context: nil,
+                                                    eventNumber: 0, clickCount: 1, pressure: 1))
         // Deliver the menu's closing click before the default-mode focus block.
         NSApp.sendEvent(event)
         for _ in 0..<60 {
@@ -291,7 +296,9 @@ struct AskHistoryRenameTests {
                     let png = try #require(bitmap.representation(using: .png, properties: [:]))
                     let root = URL(fileURLWithPath: directory)
                     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-                    try png.write(to: root.appendingPathComponent("rename-\(style.rawValue)-\(dark ? "dark" : "light").png"))
+                    try png
+                        .write(to: root
+                            .appendingPathComponent("rename-\(style.rawValue)-\(dark ? "dark" : "light").png"))
                 }
             }
         }
