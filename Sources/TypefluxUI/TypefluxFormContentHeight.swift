@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Bounded sheet forms fit their document and keep a persistent scrollbar when it overflows.
+/// Bounded sheet forms fit their document and use the system's scrollbar policy when they overflow.
 struct TypefluxFormContentHeight: NSViewRepresentable {
     @Binding var height: CGFloat?
 
@@ -36,7 +36,6 @@ struct TypefluxFormContentHeight: NSViewRepresentable {
                 observeForm(scroll: scroll, document: document)
                 if !scroll.hasVerticalScroller { scroll.hasVerticalScroller = true }
                 if !scroll.autohidesScrollers { scroll.autohidesScrollers = true }
-                if scroll.scrollerStyle != .legacy { scroll.scrollerStyle = .legacy }
                 let fittingHeight = document.fittingSize.height
                 let documentHeight = fittingHeight > 0 ? fittingHeight : document.bounds.height
                 let chromeHeight = max(0, scroll.frame.height - scroll.contentView.frame.height)

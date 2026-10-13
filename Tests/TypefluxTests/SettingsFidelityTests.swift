@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import Testing
 @testable import Typeflux
+@testable import TypefluxUI
 
 @Suite("Settings fidelity regressions", .exclusiveUIState)
 @MainActor
@@ -67,17 +68,98 @@ struct SettingsFidelityTests {
                             .first { $0.string == draft.prompt })
                         #expect(editor.alignment != .right)
                     }
-                    if let scroll = outerScroll(in: host) {
-                        #expect(scroll.scrollerStyle == .legacy)
-                        #expect(scroll.hasVerticalScroller)
-                    }
+                    let scroll = try #require(formScroll(in: host))
+                    try await UI.wait { scroll.hasVerticalScroller }
+                    #expect(scroll.verticalScroller != nil)
+                    scrollToBottom(scroll)
+                    host.layoutSubtreeIfNeeded()
                     let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
+                    #expect(bounds.contains(try element("ask.settings.keywords.sheet.enabled", in: host).frame))
                     let enabled = try UI.button(L("ask.settings.keywords.sheet.add"), in: host)
                     #expect(bounds.contains(enabled.frame))
                     try element("ask.settings.keywords.sheet.save", in: host).press()
                     #expect(saved?.keyword == "fixture" && saved?.aliases == ["extra"])
                 }
             }
+        }
+    }
+
+    @Test(arguments: [NSScroller.Style.overlay, .legacy])
+    func `form measurement preserves the installed scrollbar style`(scrollerStyle: NSScroller.Style) async throws {
+        TypefluxTestApplicationEnvironment.prepare()
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 400, height: 200))
+        let scroll = NSScrollView(frame: container.bounds)
+        scroll.documentView = NSView(frame: NSRect(x: 0, y: 0, width: 400, height: 600))
+        scroll.hasVerticalScroller = true
+        scroll.scrollerStyle = scrollerStyle
+        container.addSubview(scroll)
+        let measurement = TypefluxFormContentHeight.FormMeasurementView()
+        container.addSubview(measurement)
+        let window = NSWindow(contentRect: container.bounds, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = container
+        defer { measurement.stopMeasuringForm(); window.contentView = nil; window.close() }
+        let installedStyle = scroll.scrollerStyle
+        var height: CGFloat?
+        measurement.documentReport = { height = $0 }
+        measurement.scheduleFormMeasurement()
+        try await UI.wait { height != nil }
+        #expect(scroll.scrollerStyle == installedStyle)
+        #expect(scroll.hasVerticalScroller && scroll.verticalScroller != nil)
+        #expect(try #require(height) >= 600)
+    }
+
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func `keyword sheet title and buttons align with the grouped cards`(style: InterfaceStyle, dark: Bool) async throws {
+        try await UI.withFixture { _ in
+            var draft = AskKeywordDraft(adding: .prompt)
+            draft.keyword = "fixture"
+            draft.prompt = "Summarize {input}."
+            let sheet = AskKeywordEditorSheet(draft: draft, keywords: [], workflows: [], onSave: { _ in }, onCancel: {})
+                .environment(\.interfaceStyle, style)
+            try await UI.withWindow(sheet, width: 560, height: 780) { window, host in
+                window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+                try await UI.wait { fields(in: host).contains { $0.isEditable && $0.stringValue == "fixture" } }
+                let field = try #require(fields(in: host).first { $0.isEditable && $0.stringValue == "fixture" })
+                let inputFrame = window.convertToScreen(field.convert(field.bounds, to: nil))
+                let title = try element("typeflux.sheet.title", in: host)
+                let save = try element("ask.settings.keywords.sheet.save", in: host)
+                // The native card has its own small row inset; the sheet chrome aligns to the card edge.
+                #expect(inputFrame.minX - title.frame.minX >= 0)
+                #expect(inputFrame.minX - title.frame.minX <= 16)
+                #expect(save.frame.maxX - inputFrame.maxX >= 0)
+                #expect(save.frame.maxX - inputFrame.maxX <= 16)
+            }
+        }
+    }
+
+    @Test(arguments: [720.0, 1100.0])
+    func `vocabulary transfer menu stays in the right action group`(width: Double) async throws {
+        try await UI.withFixture { settings in
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let controller = SettingsWindowController()
+            controller.modelLibrary = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
+            controller.show(settingsStore: settings, historyStore: FileHistoryStore(baseDir: directory),
+                            initialSection: .vocabulary)
+            let window = try #require(controller.window)
+            defer { window.close() }
+            window.setContentSize(NSSize(width: width, height: 500))
+            try await UI.wait {
+                UI.elements(in: window).contains {
+                    $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.vocabulary.import"
+                        && $0.frame.width > 0
+                }
+            }
+            let transfer = try #require(UI.elements(in: window).first {
+                $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.vocabulary.import"
+            })
+            let add = try UI.button(L("vocabulary.action.newWord"), in: window)
+            #expect(transfer.frame.minX >= add.frame.maxX)
+            #expect(transfer.frame.minX > window.frame.midX)
+            #expect(!UI.elements(in: window).contains {
+                $0.value("accessibilityIdentifier") as? String == "vocabulary.transferMenu"
+            })
         }
     }
 
@@ -93,7 +175,10 @@ struct SettingsFidelityTests {
                                                onSave: { saved = $0 }, onCancel: {}).environment(\.interfaceStyle, style)
             try await UI.withWindow(sheet, width: 560, height: 500) { window, host in
                 try await UI.wait { outerScroll(in: host) != nil }
-                scrollToBottom(try #require(outerScroll(in: host)))
+                let scroll = try #require(outerScroll(in: host))
+                try await UI.wait { scroll.hasVerticalScroller }
+                #expect(scroll.hasVerticalScroller && scroll.verticalScroller != nil)
+                scrollToBottom(scroll)
                 host.layoutSubtreeIfNeeded()
                 let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
                 let enabled = try element("ask.settings.keywords.sheet.enabled", in: host)
@@ -101,6 +186,7 @@ struct SettingsFidelityTests {
                 try enabled.press()
                 let save = try element("ask.settings.keywords.sheet.save", in: host)
                 #expect(bounds.contains(save.frame))
+                #expect(bounds.contains(try element("typeflux.sheet.cancel", in: host).frame))
                 try save.press()
                 #expect(saved?.aliases.count == 12 && saved?.enabled == false)
             }
@@ -171,6 +257,12 @@ struct SettingsFidelityTests {
             guard let document = $0.documentView else { return false }
             return !(document is NSTextView) && document.bounds.height > $0.contentSize.height
         }
+    }
+
+    private func formScroll(in host: NSView) -> NSScrollView? {
+        UI.nativeViews(in: host).compactMap { $0 as? NSScrollView }.filter {
+            $0.documentView != nil && !($0.documentView is NSTextView)
+        }.max { $0.bounds.width * $0.bounds.height < $1.bounds.width * $1.bounds.height }
     }
 
     private func scrollToBottom(_ scroll: NSScrollView) {

@@ -579,6 +579,24 @@ struct StudioView: View {
                                       systemImage: "plus", perform: beginAddingVocabulary),
                 TypefluxToolbarAction(id: "vocabulary.import", title: L("vocabulary.action.importFile"),
                                       systemImage: "arrow.down.doc", isEnabled: !viewModel.isSynchronizingVocabulary,
+                                      menuActions: [
+                                          TypefluxToolbarAction(id: "vocabulary.importFile",
+                                                                title: L("vocabulary.action.importFile"),
+                                                                systemImage: "arrow.down.doc",
+                                                                perform: viewModel.importVocabulary),
+                                          TypefluxToolbarAction(id: "vocabulary.importClaude",
+                                                                title: L("vocabulary.action.importClaude"),
+                                                                systemImage: "arrow.down.doc",
+                                                                perform: viewModel.importClaudeVocabulary),
+                                          TypefluxToolbarAction(id: "vocabulary.importCodex",
+                                                                title: L("vocabulary.action.importCodex"),
+                                                                systemImage: "arrow.down.doc",
+                                                                perform: viewModel.importCodexVocabulary),
+                                          TypefluxToolbarAction(id: "vocabulary.export",
+                                                                title: L("vocabulary.action.export"),
+                                                                systemImage: "square.and.arrow.up",
+                                                                perform: viewModel.exportVocabulary)
+                                      ],
                                       perform: viewModel.importVocabulary)
             ])]
         }
@@ -601,19 +619,6 @@ struct StudioView: View {
 
     @ToolbarContentBuilder
     private var libraryPageToolbar: some ToolbarContent {
-        if viewModel.currentSection == .vocabulary {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button(L("vocabulary.action.export"), action: viewModel.exportVocabulary)
-                    Divider()
-                    Button(L("vocabulary.action.importClaude"), action: viewModel.importClaudeVocabulary)
-                    Button(L("vocabulary.action.importCodex"), action: viewModel.importCodexVocabulary)
-                } label: { Label(L("vocabulary.action.more"), systemImage: "ellipsis") }
-                    .disabled(viewModel.isSynchronizingVocabulary)
-                    .help(L("vocabulary.action.more"))
-                    .accessibilityIdentifier("vocabulary.transferMenu")
-            }
-        }
         if viewModel.currentSection == .history {
             if isShowingHistoryDetail {
                 ToolbarItem(id: HistorySettingsBackButton.toolbarIdentifier, placement: .navigation) {

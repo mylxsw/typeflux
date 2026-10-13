@@ -25,6 +25,7 @@ struct AskKeywordEditorSheet: View {
             cancelTitle: L("ask.workflow.cancel"),
             confirmTitle: L(draft.isNew ? "ask.settings.keywords.sheet.add" : "ask.settings.keywords.save"),
             isConfirmEnabled: draft.canSave(among: keywords, workflows: workflows),
+            usesGroupedForm: true,
             confirmIdentifier: "ask.settings.keywords.sheet.save", cancel: onCancel,
             confirm: { onSave(draft.result()) }, content: {
                 TypefluxForm(maximumContentHeight: 640) {

@@ -16,10 +16,34 @@ struct TypefluxToolbarButton: View {
 
     @ViewBuilder var body: some View {
         Group {
-            if prominent { prominentButton } else { button }
+            if !action.menuActions.isEmpty {
+                menu
+            } else if prominent {
+                prominentButton
+            } else {
+                button
+            }
         }
         .frame(width: TypefluxControlWidth.toolbarItem.value(for: style),
                height: TypefluxControlHeight.toolbarItem.value(for: style))
+    }
+
+    private var menu: some View {
+        Menu {
+            ForEach(action.menuActions) { item in
+                Button(item.title, role: item.role, action: item.perform)
+                    .disabled(!item.isEnabled)
+                    .accessibilityIdentifier(item.accessibilityIdentifier)
+                    .keyboardShortcut(item.keyboardShortcut)
+            }
+        } label: {
+            Label(action.title, systemImage: action.systemImage).labelStyle(.iconOnly)
+        }
+        .menuIndicator(.hidden)
+        .disabled(!action.isEnabled)
+        .help(action.title)
+        .accessibilityLabel(action.title)
+        .accessibilityIdentifier(action.accessibilityIdentifier)
     }
 
     private var button: some View {

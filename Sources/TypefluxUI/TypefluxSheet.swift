@@ -10,6 +10,7 @@ public struct TypefluxSheet<Content: View>: View {
     private let confirmIdentifier: String
     private let isConfirmEnabled: Bool
     private let scrollsContent: Bool
+    private let usesGroupedForm: Bool
     private let role: ButtonRole?
     private let cancelIdentifier: String
     private let cancel: () -> Void
@@ -17,7 +18,7 @@ public struct TypefluxSheet<Content: View>: View {
     private let content: Content
 
     public init(title: String, cancelTitle: String, confirmTitle: String, isConfirmEnabled: Bool = true,
-                scrollsContent: Bool = false,
+                scrollsContent: Bool = false, usesGroupedForm: Bool = false,
                 role: ButtonRole? = nil, confirmIdentifier: String = "typeflux.sheet.confirm",
                 cancelIdentifier: String = "typeflux.sheet.cancel",
                 cancelShortcut: KeyboardShortcut? = .cancelAction,
@@ -31,6 +32,7 @@ public struct TypefluxSheet<Content: View>: View {
         self.confirmShortcut = confirmShortcut
         self.isConfirmEnabled = isConfirmEnabled
         self.scrollsContent = scrollsContent
+        self.usesGroupedForm = usesGroupedForm
         self.role = role
         self.cancelIdentifier = cancelIdentifier
         self.cancel = cancel
@@ -42,6 +44,8 @@ public struct TypefluxSheet<Content: View>: View {
         TypefluxGlassContainer(radius: .sheet, placement: .inWindow) {
             VStack(alignment: .leading, spacing: 16) {
                 Text(title).font(.headline).accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("typeflux.sheet.title")
+                    .padding(.horizontal, chromeInset)
                 sheetContent
                 HStack(spacing: 8) {
                     Spacer()
@@ -51,9 +55,13 @@ public struct TypefluxSheet<Content: View>: View {
                         .keyboardShortcut(confirmShortcut).disabled(!isConfirmEnabled)
                         .accessibilityIdentifier(confirmIdentifier)
                 }
+                .padding(.horizontal, chromeInset)
             }.padding(20)
         }
     }
+
+    // Native grouped forms inset their cards another 20 points inside the form's bounds.
+    private var chromeInset: CGFloat { usesGroupedForm ? 20 : 0 }
 
     @ViewBuilder private var sheetContent: some View {
         if scrollsContent {

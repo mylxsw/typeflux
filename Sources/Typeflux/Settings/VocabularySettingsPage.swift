@@ -44,7 +44,7 @@ struct VocabularySettingsPage: View {
 
     private var table: some View {
         TypefluxTable(entries, selection: $selection, sortOrder: $sortOrder,
-                      onDelete: deleteSelection, identifier: "vocabulary.table", fillsAvailableHeight: false) {
+                      onDelete: deleteSelection, identifier: "vocabulary.table", stripesEmptyRows: false) {
             TableColumn(L("vocabulary.table.term"), value: \.term) { entry in
                 TypefluxTableCell(rowID: entry.id) { Text(entry.term).lineLimit(1).help(entry.term) }
             }.width(min: 120, ideal: 220)

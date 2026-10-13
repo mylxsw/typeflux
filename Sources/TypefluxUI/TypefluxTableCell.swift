@@ -3,6 +3,7 @@ import SwiftUI
 /// Wrap each column's content so hovering anywhere in a row reveals its actions.
 public struct TypefluxTableCell<ID: Hashable, Content: View>: View {
     @Environment(\.typefluxTableHoverState) private var hoverState
+    @Environment(\.typefluxTableStripesEmptyRows) private var stripesEmptyRows
     @State private var cellID = UUID()
     private let rowID: ID
     private let content: Content
@@ -17,5 +18,10 @@ public struct TypefluxTableCell<ID: Hashable, Content: View>: View {
             }
             .onDisappear { hoverState.wrappedValue.update(cell: cellID, row: AnyHashable(rowID), hovering: false) }
             .onChange(of: rowID) { hoverState.wrappedValue.updateRow(cell: cellID, row: AnyHashable($0)) }
+            .background {
+                if !stripesEmptyRows {
+                    TypefluxTableRowBackground(tableIdentifier: "", stylesRowOnly: true).frame(width: 0, height: 0)
+                }
+            }
     }
 }

@@ -10,6 +10,7 @@ struct MCPServerEditorView: View {
                           ? "agent.mcp.dialog.addTitle" : "agent.mcp.dialog.editTitle"),
         cancelTitle: L("common.cancel"), confirmTitle: L("common.save"),
         isConfirmEnabled: viewModel.canSaveMCPDraft,
+        usesGroupedForm: true,
         cancel: closeEditor, confirm: { viewModel.saveMCPDraft(); closeEditor() }, content: {
             TypefluxForm(maximumContentHeight: 640) {
                 Section { connectionCard }
