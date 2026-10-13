@@ -172,10 +172,16 @@ struct AskCommandRenderTests {
         try await settle(400)
         let editor = try #require(host.editor)
         host.window.makeFirstResponder(editor)
+        // Compare queries after a real edit has settled the native editor's metrics.
+        try await type("zxqv", in: editor)
+        try await f.wait { !f.model.quickSearch.isSearching }
+        // Native text measurement reports its height asynchronously after drawing.
+        host.draw()
+        try await settle()
         let closed = try #require(heights.last)
         #expect(closed > 0, "the native launcher has reported its height")
-        host.draw()
         let width = editor.frame.width
+        editor.selectAll(nil)
         try await type("/me", in: editor)
         // The search the text starts must finish before the height is final.
         try await f.wait { !f.model.quickSearch.isSearching }

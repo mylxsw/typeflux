@@ -1588,7 +1588,8 @@ struct AskComposer: View {
             }
             if !active, let keyword = plugins.keyword, let plugin = plugins.plugin {
                 AskKeywordChip(title: plugin.title, symbol: plugin.symbol,
-                               detail: plugin.chipDetail(for: keyword, language: AppLocalization.shared.language))
+                               detail: plugin.chipDetail(for: keyword, language: AppLocalization.shared.language),
+                               tint: plugin.keywordColor)
                     .padding(.vertical, 2)
             }
             editorField
