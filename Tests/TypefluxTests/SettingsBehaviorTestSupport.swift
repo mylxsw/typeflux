@@ -47,7 +47,10 @@ enum SettingsBehaviorTestSupport {
                              "Select menu items directly instead of starting menu tracking")
             if let button = object as? NSButton {
                 guard button.isEnabled else { return }
-                let action = try #require(button.action, "The native button must have an action: \(label)")
+                guard let action = button.action else {
+                    SettingsBehaviorTestSupport.pressThroughAccessibility(button)
+                    return
+                }
                 // AX role queries on unattached controls can be empty. Use the cell's native state behavior.
                 if button.accessibilityRole() == .radioButton {
                     button.state = .on
@@ -103,9 +106,11 @@ enum SettingsBehaviorTestSupport {
             if try pressNativeToolbarAction() || pressNativeSegment() || pressNativeSwitch() { return }
             // A SwiftUI NSResponder AX proxy can forward press to NSButtonCell.performClick.
             // Resolve its owned native control; fail visibly rather than guessing that AX press is safe.
-            let control = try #require(nativeControl(),
-                                       "No native action for \(label) (\(type(of: object))) at \(frame)")
-            try Element(object: control, window: window).press()
+            if let control = nativeControl(), (control as? NSButton)?.action != nil || !(control is NSButton) {
+                try Element(object: control, window: window).press()
+                return
+            }
+            SettingsBehaviorTestSupport.pressThroughAccessibility(object)
         }
 
         @MainActor func nativeControl() -> NSControl? {
@@ -331,4 +336,20 @@ enum SettingsBehaviorTestSupport {
     }
 
     private struct ReadinessTimeout: Error {}
+}
+
+extension SettingsBehaviorTestSupport {
+    /// SwiftUI buttons expose no native target/action, so they are pressed through AX. AppKit may run a nested
+    /// event loop for that press; drain the main run loop's pending blocks right away so a late HIToolbox
+    /// CFRunLoopStop stops this nested run instead of Swift Testing's outer CFRunLoopRun.
+    @MainActor static func pressThroughAccessibility(_ object: NSObject) {
+        typealias Press = @convention(c) (NSObject, Selector) -> Bool
+        let selector = NSSelectorFromString("accessibilityPerformPress")
+        if object.responds(to: selector) {
+            _ = unsafeBitCast(object.method(for: selector), to: Press.self)(object, selector)
+        } else {
+            object.accessibilityPerformAction(.press)
+        }
+        for _ in 0 ..< 3 { _ = CFRunLoopRunInMode(.defaultMode, 0, true) }
+    }
 }
