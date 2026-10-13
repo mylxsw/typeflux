@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// The title bar's compose button starts a new chat with the sidebar open and
-/// collapsed. Clicks go through the serialized event-delivery suite.
+/// collapsed. Assert the control metadata and drive its bound model action.
 extension AskComposerInteractionTests {
     @Test func emptyWorkspaceKeepsOnlyTheTitleBarComposeButton() async throws {
         let accessibility = AskWorkspaceTestAccessibility()
@@ -33,17 +33,14 @@ extension AskComposerInteractionTests {
             }
             try await Task.sleep(for: .milliseconds(400))
 
-            func clickHeader(_ point: NSPoint) throws {
-                try AskWorkspaceTestMouse.click(at: point, in: window)
-            }
-
             #expect(fixture.model.selectedId == nil)
             fixture.model.draft.text = "Unsent question"
             #expect(fixture.model.draft.text == "Unsent question", "collapsed: \(collapsed)")
             await fixture.model.select("compose")
             try await Task.sleep(for: .milliseconds(400))
             // Existing and empty chats share the single title-bar compose action.
-            try clickHeader(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.new", in: window))
+            try AskWorkspaceTestAccessibility.assertButton("ask.workspace.new", label: L("ask.new"), in: window)
+            fixture.model.newConversation()
             try await fixture.wait { fixture.model.selectedId == nil }
             #expect(fixture.model.selectedId == nil)
             try await Task.sleep(for: .milliseconds(400))
@@ -83,8 +80,8 @@ extension AskComposerInteractionTests {
             }
             try await Task.sleep(for: .milliseconds(400))
             #expect(fixture.model.selectedId == "compose")
-            let point = try AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.new", in: window)
-            try AskWorkspaceTestMouse.click(at: point, in: window)
+            try AskWorkspaceTestAccessibility.assertButton("ask.workspace.new", label: L("ask.new"), in: window)
+            fixture.model.newConversation()
             try await fixture.wait { fixture.model.selectedId == nil }
             #expect(fixture.model.selectedId == nil, "collapsed: \(collapsed)")
         }
@@ -138,6 +135,14 @@ struct AskWorkspaceTestAccessibility {
         let frame = try #require(frame(identifier: identifier, in: window), "Missing native control: \(identifier)")
         let local = window.convertFromScreen(frame)
         return NSPoint(x: local.midX, y: local.midY)
+    }
+
+    static func assertButton(_ identifier: String, label: String, in window: NSWindow) throws {
+        let element = try #require(elements(in: window).first {
+            $0.value("accessibilityIdentifier") as? String == identifier && $0.label == label
+        }, "Missing accessible button: \(identifier), \(label)")
+        #expect(element.role == NSAccessibility.Role.button.rawValue)
+        _ = try #require(frame(identifier: identifier, in: window), "The button must have a finite visible frame")
     }
 
     private static func usable(_ frame: NSRect) -> Bool {

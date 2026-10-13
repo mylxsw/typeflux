@@ -12,15 +12,16 @@ struct TypefluxUIControlsMenuTests {
         var selection = 0
         var selections = 0
         var actions = 0
+        let perform = { actions += 1 }
         let binding = Binding(get: { selection }, set: { selection = $0; selections += 1 })
         let scene = VStack {
             TypefluxPopup("Regular popup", selection: binding) { Text("Automatic").tag(0); Text("Manual").tag(1) }
             TypefluxPopup("Borderless popup", selection: binding, borderless: true) {
                 Text("Automatic").tag(0); Text("Manual").tag(1)
             }
-            TypefluxMenu { TypefluxButton("Import file") { actions += 1 } } label: { Text("Regular menu") }
+            TypefluxMenu { TypefluxButton("Import file", action: perform) } label: { Text("Regular menu") }
             TypefluxMenu(borderless: true) {
-                TypefluxButton("Import file") { actions += 1 }
+                TypefluxButton("Import file", action: perform)
             } label: { Text("Borderless menu") }
         }.padding(24)
         let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 400, height: 240),
@@ -34,14 +35,19 @@ struct TypefluxUIControlsMenuTests {
         host.layoutSubtreeIfNeeded()
         let controls = descendants(host).compactMap { $0 as? NSPopUpButton }
         #expect(controls.count == 4)
-        for control in controls { try await chooseNativeItem(using: control) }
+        for control in controls {
+            if control.pullsDown {
+                try await AppKitTestActions.inspectMenuItem("Import file", using: control) { item in
+                    #expect(item.isEnabled)
+                    perform()
+                }
+            } else {
+                try await AppKitTestActions.selectMenuItem("Manual", using: control)
+            }
+        }
         #expect(selection == 1)
         #expect(selections == 2)
         #expect(actions == 2)
-    }
-
-    private func chooseNativeItem(using button: NSPopUpButton) async throws {
-        try await AppKitTestActions.selectMenuItem(button.pullsDown ? "Import file" : "Manual", using: button)
     }
 
     private func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }

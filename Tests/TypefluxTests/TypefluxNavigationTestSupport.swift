@@ -87,7 +87,7 @@ enum TypefluxNavigationTestSupport {
         window.makeKeyAndOrderFront(nil)
         if let view = item.view,
            let button = SettingsBehaviorTestSupport.elements(in: view).first(where: {
-               $0.role == NSAccessibility.Role.button.rawValue
+               ($0.object as? NSControl)?.action != nil && $0.role == NSAccessibility.Role.button.rawValue
            }) {
             try button.press()
         } else {

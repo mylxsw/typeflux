@@ -1,24 +1,11 @@
 import AppKit
 import SwiftUI
 import Testing
-import CoreFoundation
 @testable import TypefluxUI
 
 @MainActor
 @Suite(.serialized, .exclusiveUIState)
 struct AppKitTestActionsTests {
-    @Test func swiftUIButtonsUseTheirDeclaredActionAndKeepDisabledActionsInert() async throws {
-        var calls = 0
-        for disabled in [false, true] {
-            try await TypefluxNavigationTestSupport.withWindow(
-                TypefluxButton("Declared action") { calls += 1 }.disabled(disabled).padding(24)
-            ) { _, host in
-                try SettingsBehaviorTestSupport.button("Declared action", in: host).press()
-                #expect(calls == 1)
-            }
-        }
-    }
-
     @Test func buttonActionsSendTheOriginalSenderWithoutTrackingOrActivation() throws {
         _ = NSApplication.shared
         let recorder = Recorder()
@@ -32,16 +19,11 @@ struct AppKitTestActionsTests {
         #expect(recorder.senders.count == 2)
     }
 
-    @Test func swiftUIShortcutProxiesPressWithoutAWindowAndDrainPendingRunloopBlocks() throws {
-        _ = NSApplication.shared
-        let button = AccessibilityButton(title: "Shortcut proxy", target: nil, action: nil)
-        #expect(button.window == nil)
-        try AppKitTestActions.press(button)
-        #expect(button.presses == 1)
-        #expect(button.drained)
-        button.isEnabled = false
-        try AppKitTestActions.press(button)
-        #expect(button.presses == 1)
+    @Test func controlsWithoutNativeActionsFailWithoutStartingAccessibilityTracking() {
+        let button = NontrackingButton(title: "SwiftUI proxy", target: nil, action: nil)
+        #expect(throws: (any Error).self) { try AppKitTestActions.press(button) }
+        #expect(throws: (any Error).self) { try SettingsBehaviorTestSupport.Element(object: button).press() }
+        #expect(button.trackingCalls == 0)
     }
 
     @Test func checkboxAndSwitchStateChangesPrecedeTheirActions() throws {
@@ -182,18 +164,6 @@ struct AppKitTestActionsTests {
         override func performClick(_: Any?) { trackingCalls += 1 }
         override func mouseDown(with _: NSEvent) { trackingCalls += 1 }
         override func accessibilityPerformPress() -> Bool { trackingCalls += 1; return false }
-    }
-
-    @MainActor private final class AccessibilityButton: NSButton {
-        var presses = 0
-        var drained = false
-        override func accessibilityPerformPress() -> Bool {
-            presses += 1
-            CFRunLoopPerformBlock(CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue) { [weak self] in
-                MainActor.assumeIsolated { self?.drained = true }
-            }
-            return true
-        }
     }
 
     @MainActor private final class PopUpContents: NSObject {

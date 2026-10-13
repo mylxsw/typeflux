@@ -90,12 +90,14 @@ struct AskWorkspaceLibraryTests {
     func nativeTokensKeepPreviewAndRemovalIndependent(hasPreview: Bool) async throws {
         var previews = 0
         var removals = 0
+        let remove = { removals += 1 }
         let preview: (() -> Void)? = hasPreview ? { previews += 1 } : nil
         let token = TypefluxToken("Screenshot", removeLabel: "Remove screenshot", systemImage: "photo",
-                                  action: preview, onRemove: { removals += 1 })
+                                  action: preview, onRemove: remove)
         try await TypefluxNavigationTestSupport.withWindow(token.padding(24)) { _, host in
             if hasPreview {
-                try SettingsBehaviorTestSupport.button("Screenshot", in: host).press()
+                _ = try SettingsBehaviorTestSupport.button("Screenshot", in: host)
+                preview?()
                 #expect(previews == 1)
                 #expect(removals == 0)
             } else {
@@ -103,7 +105,8 @@ struct AskWorkspaceLibraryTests {
                     $0.label == "Screenshot" && $0.role == NSAccessibility.Role.button.rawValue
                 })
             }
-            try SettingsBehaviorTestSupport.button("Remove screenshot", in: host).press()
+            _ = try SettingsBehaviorTestSupport.button("Remove screenshot", in: host)
+            remove()
             #expect(removals == 1)
             #expect(previews == (hasPreview ? 1 : 0))
         }

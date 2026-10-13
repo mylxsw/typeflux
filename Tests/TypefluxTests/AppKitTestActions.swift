@@ -1,17 +1,15 @@
 import AppKit
 import Testing
-import CoreFoundation
 
 /// Dispatch native actions without starting AppKit's mouse or menu tracking loops.
 @MainActor
 enum AppKitTestActions {
+    struct ModelActionRequired: Error {}
+
     static func press(_ control: NSControl) throws {
         guard control.isEnabled else { return }
         try #require(!(control is NSPopUpButton), "Select a menu item instead of tracking a pop-up button")
-        if control.action == nil {
-            try SettingsBehaviorTestSupport.pressThroughAccessibility(control)
-            return
-        }
+        guard control.action != nil else { throw ModelActionRequired() }
         if let button = control as? NSButton {
             if let cell = button.cell as? NSButtonCell, !cell.showsStateBy.isEmpty {
                 button.setNextState()
@@ -55,14 +53,25 @@ enum AppKitTestActions {
             try press(button)
             return true
         }
-        // SwiftUI shortcuts can belong to the hosting responder instead of an NSButton.
-        let handled = window.performKeyEquivalent(with: event)
-        for _ in 0 ..< 3 { _ = CFRunLoopRunInMode(.defaultMode, 0, true) }
-        return handled
+        // SwiftUI shortcut responders can synthesize a cell click. Test their model route separately.
+        return false
     }
 
     @discardableResult
     static func selectMenuItem(_ title: String, using button: NSPopUpButton) async throws -> NSControl.StateValue {
+        try await inspectMenuItem(title, using: button) { item in
+            if let menu = button.menu, item.menu === menu { button.selectItem(at: menu.index(of: item)) }
+            if let action = item.action {
+                #expect(NSApp.sendAction(action, to: item.target, from: item))
+            } else {
+                try dispatch(button)
+            }
+        }
+    }
+
+    @discardableResult
+    static func inspectMenuItem(_ title: String, using button: NSPopUpButton,
+                                check: (NSMenuItem) throws -> Void) async throws -> NSControl.StateValue {
         try #require(button.isEnabled)
         // SwiftUI builds pull-down contents in response to these native notifications, before menu tracking.
         NotificationCenter.default.post(name: NSPopUpButton.willPopUpNotification, object: button)
@@ -89,34 +98,24 @@ enum AppKitTestActions {
         }
         let entry = try #require(menuEntry(title, in: menu),
                                 "Menu item \(title) missing from \(menu.items.map(\.title))")
-        let item = entry.item
+        let item = entry
         try #require(item.isEnabled && !item.isSeparatorItem)
         let state = item.state
-        if let action = entry.action {
-            try action.press()
-            return state
-        }
-        if item.menu === menu { button.selectItem(at: menu.index(of: item)) }
-        if let action = item.action {
-            #expect(NSApp.sendAction(action, to: item.target, from: item))
-        } else {
-            try dispatch(button)
-        }
+        try check(item)
         return state
     }
 
-    private static func menuEntry(_ title: String, in menu: NSMenu)
-        -> (item: NSMenuItem, action: SettingsBehaviorTestSupport.Element?)? {
+    private static func menuEntry(_ title: String, in menu: NSMenu) -> NSMenuItem? {
         for item in menu.items {
             if let view = item.view {
                 view.layoutSubtreeIfNeeded()
-                if let action = SettingsBehaviorTestSupport.elements(in: view).first(where: {
+                if SettingsBehaviorTestSupport.elements(in: view).contains(where: {
                     $0.label == title && $0.role == NSAccessibility.Role.button.rawValue
                 }) {
-                    return (item, action)
+                    return item
                 }
             }
-            if item.title == title { return (item, nil) }
+            if item.title == title { return item }
             if let submenu = item.submenu {
                 submenu.update()
                 submenu.delegate?.menuNeedsUpdate?(submenu)

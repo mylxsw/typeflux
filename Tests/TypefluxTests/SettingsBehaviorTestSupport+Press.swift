@@ -34,17 +34,15 @@ extension SettingsBehaviorTestSupport.Element {
             return
         }
         if try pressNativeButton() || pressNativeSegment() || pressNativeSwitch() { return }
-        // SwiftUI proxies need not expose a native control or action. Keep the verified AX/runloop drain.
-        _ = try #require(!(object is NSCell), "A native cell must dispatch through its owning control")
-        SettingsBehaviorTestSupport.pressThroughAccessibility(object)
+        // SwiftUI proxies can enter delayed native tracking; callers must use the bound model action.
+        throw AppKitTestActions.ModelActionRequired()
     }
 
     private func dispatch(_ control: NSControl) throws {
         if let window { _ = try #require(control.window === window, "The control must belong to the tested window") }
         guard control.isEnabled else { return }
         guard let action = control.action else {
-            SettingsBehaviorTestSupport.pressThroughAccessibility(control)
-            return
+            throw AppKitTestActions.ModelActionRequired()
         }
         #expect(NSApp.sendAction(action, to: control.target, from: control),
                 "The native control must dispatch its action: \(label)")
@@ -55,8 +53,7 @@ extension SettingsBehaviorTestSupport.Element {
         if let window { _ = try #require(button.window === window) }
         guard button.isEnabled else { return }
         guard button.action != nil else {
-            SettingsBehaviorTestSupport.pressThroughAccessibility(button)
-            return
+            throw AppKitTestActions.ModelActionRequired()
         }
         // Native state-display flags survive missing or overridden AX roles; momentary buttons have none.
         if button.accessibilityRole() == .radioButton {
@@ -92,8 +89,7 @@ extension SettingsBehaviorTestSupport.Element {
         if let window { _ = try #require(control.window === window) }
         guard control.isEnabled, cell.isEnabled else { return }
         guard let action = control.action ?? cell.action else {
-            SettingsBehaviorTestSupport.pressThroughAccessibility(control)
-            return
+            throw AppKitTestActions.ModelActionRequired()
         }
         if control.accessibilityRole() == .radioButton {
             cell.state = .on

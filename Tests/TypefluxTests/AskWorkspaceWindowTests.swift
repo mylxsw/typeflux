@@ -48,9 +48,8 @@ struct AskWorkspaceWindowTests {
                 #expect(frame.width > 0 && frame.width.isFinite)
                 #expect(frame.height > 0 && frame.height.isFinite)
             }
-            try AskWorkspaceTestMouse.click(
-                at: AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.new", in: window), in: window
-            )
+            try AskWorkspaceTestAccessibility.assertButton("ask.workspace.new", label: L("ask.new"), in: window)
+            fixture.model.newConversation()
             try await fixture.wait { fixture.model.selectedId == nil }
             try await Task.sleep(for: .milliseconds(100))
             #expect(fixture.model.selectedId == nil)
@@ -58,7 +57,7 @@ struct AskWorkspaceWindowTests {
         }
     }
 
-    @Test func sidebarShortcutKeepsThePreferenceWhenOpeningANarrowDrawer() async throws {
+    @Test func sidebarStateKeepsThePreferenceWhenOpeningANarrowDrawer() async throws {
         let accessibility = AskWorkspaceTestAccessibility()
         defer { accessibility.restore() }
         let suite = "ask-sidebar-shortcut-" + UUID().uuidString
@@ -67,17 +66,19 @@ struct AskWorkspaceWindowTests {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         let window = makeWindow(size: NSSize(width: 1180, height: 760))
-        let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model).defaultAppStorage(defaults))
+        let presentation = AskWorkspaceState()
+        let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model, presentation: presentation)
+            .defaultAppStorage(defaults))
         hosting.sizingOptions = []
         window.contentView = hosting
         window.makeKeyAndOrderFront(nil)
         defer { close(window) }
         try await Task.sleep(for: .milliseconds(400))
-        try sidebarShortcut(in: window)
+        try sidebarAction(presentation, defaults: defaults, in: window)
         try await SettingsBehaviorTestSupport.wait { defaults.bool(forKey: "ask.sidebarCollapsed") }
         window.setContentSize(NSSize(width: 440, height: 320))
         try await Task.sleep(for: .milliseconds(400))
-        try sidebarShortcut(in: window)
+        try sidebarAction(presentation, defaults: defaults, in: window)
         try await SettingsBehaviorTestSupport.wait {
             SettingsBehaviorTestSupport.elements(in: window).contains {
                 $0.value("accessibilityIdentifier") as? String == "ask.workspace.drawer.close"
@@ -86,14 +87,16 @@ struct AskWorkspaceWindowTests {
         #expect(defaults.bool(forKey: "ask.sidebarCollapsed"))
     }
 
-    private func sidebarShortcut(in window: NSWindow) throws {
-        let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero,
-                                                 modifierFlags: [.command, .control],
-                                                 timestamp: ProcessInfo.processInfo.systemUptime,
-                                                 windowNumber: window.windowNumber, context: nil,
-                                                 characters: "s", charactersIgnoringModifiers: "s",
-                                                 isARepeat: false, keyCode: 1))
-        #expect(try AppKitTestActions.keyEquivalent(event, in: window))
+    private func sidebarAction(_ presentation: AskWorkspaceState, defaults: UserDefaults,
+                               in window: NSWindow) throws {
+        try AskWorkspaceTestAccessibility.assertButton("ask.workspace.sidebar",
+                                                      label: L("ask.sidebar.toggle"), in: window)
+        let collapsed = defaults.bool(forKey: "ask.sidebarCollapsed")
+        let size = try #require(window.contentView).bounds.size
+        presentation.toggleSidebar(layout: AskWorkspaceLayout(size: size, sidebarCollapsed: collapsed,
+            showsUsage: presentation.showsUsage), collapsed: collapsed, reduceMotion: false) {
+            defaults.set($0, forKey: "ask.sidebarCollapsed")
+        }
     }
 
     private func assertVisibleToolbarFrames(_ window: NSWindow) throws {

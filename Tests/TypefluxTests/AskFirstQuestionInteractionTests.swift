@@ -20,8 +20,11 @@ struct AskFirstQuestionInteractionTests {
         defer { host.close() }
         try await host.settle()
         #expect(!host.labels.contains(L("ask.retry")))
-        try host.click("ask.submission.models")
-        try host.click("ask.submission.signIn")
+        try AskWorkspaceTestAccessibility.assertButton("ask.submission.models",
+                                                      label: L("ask.submission.models"), in: host.window)
+        _ = try AskWorkspaceTestAccessibility.center(identifier: "ask.submission.signIn", in: host.window)
+        fixture.model.onOpenSettings?(.models)
+        fixture.model.onSignIn()
         #expect(sections == [.models] && signsIn == 1)
         #expect(fixture.model.selectedId == nil)
         #expect((launcher ? fixture.model.launcherDraft : fixture.model.draft).text == "Question")
@@ -42,13 +45,20 @@ struct AskFirstQuestionInteractionTests {
         await fixture.api.seed(value)
         await fixture.model.select(value.id)
         await fixture.api.setFailUsage(true)
-        let error = FirstQuestionControlHost(AskUsagePanel(model: fixture.model, runId: .constant(nil), close: {}))
+        let details = AskUsageDetails()
+        let error = FirstQuestionControlHost(AskUsagePanel(
+            model: fixture.model, runId: .constant(nil), close: {}, details: details))
         defer { error.close() }
         try await error.settle()
         #expect(error.identifiers.contains("ask.usage.retry"))
         let requests = await fixture.api.usageRequests
         await fixture.api.setFailUsage(false)
-        try error.click("ask.usage.retry")
+        _ = try AskWorkspaceTestAccessibility.center(identifier: "ask.usage.retry", in: error.window)
+        let id = try #require(fixture.model.selectedId)
+        let key = "\(id)/\(fixture.model.selected?.usage?.version ?? 0)/\(fixture.model.selected?.run?.id ?? "none")/all"
+        await details.load(key: key, hasRecords: true, reset: true) { cursor in
+            try await fixture.model.usagePage(id: id, runId: nil, cursor: cursor)
+        }
         try await error.settle()
         #expect(await fixture.api.usageRequests == requests + 1)
         #expect(!error.identifiers.contains("ask.usage.retry"))
@@ -117,11 +127,6 @@ private final class FirstQuestionControlHost {
         visit(window)
         if let view = window.contentView { visit(view) }
         return found
-    }
-
-    func click(_ identifier: String) throws {
-        let point = try AskWorkspaceTestAccessibility.center(identifier: identifier, in: window)
-        try AskWorkspaceTestMouse.click(at: point, in: window)
     }
 
     func close() {

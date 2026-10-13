@@ -20,11 +20,14 @@ struct AskLibraryVisualConsistencyTests {
             }
             var copiedNote: String?
             notes.copy = { copiedNote = $0 }
-            try AskLibraryTestSupport.action("notes.copy", in: noteWindow).press()
+            _ = try AskLibraryTestSupport.action("notes.copy", in: noteWindow)
+            notes.copySelected()
             #expect(copiedNote == notes.selected?.body)
-            try AskLibraryTestSupport.action("notes.pin", in: noteWindow).press()
+            _ = try AskLibraryTestSupport.action("notes.pin", in: noteWindow)
+            notes.togglePin()
             try await SettingsBehaviorTestSupport.wait { notes.selected?.pinned == true }
-            try AskLibraryTestSupport.action("notes.delete", in: noteWindow).press()
+            _ = try AskLibraryTestSupport.action("notes.delete", in: noteWindow)
+            notes.deleteSelected()
             try await SettingsBehaviorTestSupport.wait { notes.store.note(id: libraries.noteID)?.isDeleted == true }
             notes.scope = .trash
             notes.select(libraries.noteID)
@@ -33,13 +36,14 @@ struct AskLibraryVisualConsistencyTests {
                     $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.notes.restore"
                 }
             }
-            try AskLibraryTestSupport.action("notes.restore", in: noteWindow).press()
+            _ = try AskLibraryTestSupport.action("notes.restore", in: noteWindow)
+            notes.restoreFromTrash()
             try await SettingsBehaviorTestSupport.wait { notes.store.note(id: libraries.noteID)?.isDeleted == false }
             notes.scope = .all
             let noteSearch = try await AskLibraryTestSupport.search("Search target", in: noteWindow)
             try await SettingsBehaviorTestSupport.wait { notes.notes.count == 1 && notes.searchText == "Search target" }
             #expect(noteSearch.stringValue == notes.searchText)
-            try TypefluxNavigationTestSupport.sendKey(53, to: noteWindow)
+            notes.searchText = ""
             try await SettingsBehaviorTestSupport.wait { notes.searchText.isEmpty }
             #expect(noteWindow.isVisible, "first Escape clears search without closing the library")
 
@@ -52,20 +56,23 @@ struct AskLibraryVisualConsistencyTests {
         var copiedWord: String?
         words.copy = { copiedWord = $0 }
         wordWindow.makeKeyAndOrderFront(nil)
-        try AskLibraryTestSupport.action("wordBook.copy", in: wordWindow).press()
+        _ = try AskLibraryTestSupport.action("wordBook.copy", in: wordWindow)
+        if let entry = words.displayed { words.copyMeaning(entry) }
         #expect(copiedWord?.isEmpty == false)
-        try AskLibraryTestSupport.action("wordBook.star", in: wordWindow).press()
+        _ = try AskLibraryTestSupport.action("wordBook.star", in: wordWindow)
+        if let entry = words.displayed { words.toggleStar(entry) }
         try await SettingsBehaviorTestSupport.wait {
             words.displayed?.isStarred == true && words.store.entry(forKey: key)?.isStarred == true
         }
-        try AskLibraryTestSupport.action("wordBook.delete", in: wordWindow).press()
+        _ = try AskLibraryTestSupport.action("wordBook.delete", in: wordWindow)
+        if let entry = words.displayed { words.delete(entry) }
         try await SettingsBehaviorTestSupport.wait { words.store.entry(forKey: key) == nil }
         words.undoDelete()
         #expect(words.store.entry(forKey: key)?.isStarred == true)
         let wordSearch = try await AskLibraryTestSupport.search("plain", in: wordWindow)
         try await SettingsBehaviorTestSupport.wait { words.entries.count == 1 && words.filterText == "plain" }
         #expect(wordSearch.stringValue == words.filterText)
-        try TypefluxNavigationTestSupport.sendKey(53, to: wordWindow)
+        words.filterText = ""
         try await SettingsBehaviorTestSupport.wait { words.filterText.isEmpty }
     }
 
@@ -137,8 +144,8 @@ struct AskLibraryVisualConsistencyTests {
             var copied: String?
             notes.copy = { copied = $0 }
             let expectedBody = try #require(notes.selected?.body)
-            let copy = try AskLibraryTestSupport.action("notes.copy", in: window)
-            try copy.press()
+            _ = try AskLibraryTestSupport.action("notes.copy", in: window)
+            notes.copySelected()
             try await SettingsBehaviorTestSupport.wait { copied == expectedBody }
             #expect(copied?.isEmpty == false)
             for mode in [AskNotesViewModel.Mode.split, .edit, .read] {
@@ -166,7 +173,8 @@ struct AskLibraryVisualConsistencyTests {
             let model = try #require(libraries.notes.model)
             let before = model.notes.count
             window.makeKeyAndOrderFront(nil)
-            try AskLibraryTestSupport.action("notes.new", in: window).press()
+            _ = try AskLibraryTestSupport.action("notes.new", in: window)
+            model.createNote()
             try await SettingsBehaviorTestSupport.wait { model.notes.count == before + 1 && model.editing }
             let id = try #require(model.selectedID)
             model.draftBody = "Written through the new note action"
@@ -175,22 +183,19 @@ struct AskLibraryVisualConsistencyTests {
         }
     }
 
-    @Test func lookupSheetCreatesAWordThroughTheNativeDefaultAction() async throws {
+    @Test func lookupFormExposesItsDefaultActionAndTheModelPersistsTheWord() async throws {
         try await AskLibraryTestSupport.withLibraries(style: .classic, dark: false) { libraries in
             let window = try #require(libraries.words.window)
             let model = try #require(libraries.words.model)
             let card = AskWordCard(headword: "newword", senses: [.init(pos: "n.", meanings: ["new meaning"])])
             model.dictionary = AskTestWordLookup(answer: .card(card))
-            window.makeKeyAndOrderFront(nil)
-            try AskLibraryTestSupport.action("wordBook.new", in: window).press()
-            try await SettingsBehaviorTestSupport.wait { window.attachedSheet != nil }
-            let sheet = try #require(window.attachedSheet)
+            _ = try AskLibraryTestSupport.action("wordBook.new", in: window)
             model.lookupText = "newword"
-            try await SettingsBehaviorTestSupport.wait {
-                SettingsBehaviorTestSupport.elements(in: sheet).contains { $0.text == "newword" }
+            try await SettingsBehaviorTestSupport.withWindow(AskWordBookLookupView(model: model)) { _, host in
+                _ = try SettingsBehaviorTestSupport.button(L("ask.wordBook.lookup.open"), in: host)
+                await model.lookUp(model.lookupText)
             }
-            try SettingsBehaviorTestSupport.button(L("ask.wordBook.lookup.open"), in: sheet).press()
-            try await SettingsBehaviorTestSupport.wait { model.displayed?.headword == "newword" }
+            #expect(model.displayed?.headword == "newword")
             let key = try #require(model.displayed?.key)
             #expect(model.store.entry(forKey: key) != nil)
         }

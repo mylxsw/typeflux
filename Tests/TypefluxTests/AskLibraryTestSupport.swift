@@ -73,8 +73,8 @@ enum AskLibraryTestSupport {
 
     static func search(_ query: String, in window: NSWindow) async throws -> NSSearchField {
         window.makeKeyAndOrderFront(nil)
-        try TypefluxNavigationTestSupport.sendKey(3, characters: "f", modifiers: .command, to: window)
         let item = try #require(window.toolbar?.items.compactMap { $0 as? NSSearchToolbarItem }.first)
+        item.beginSearchInteraction()
         try await SettingsBehaviorTestSupport.wait("Library search editor in window \(window.windowNumber)") {
             item.searchField.currentEditor() != nil
         }

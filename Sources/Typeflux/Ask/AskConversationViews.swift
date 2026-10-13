@@ -4,12 +4,10 @@ import SwiftUI
 
 struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
-    @State private var showsUsage = false
-    @State private var usageRunId: String?
+    @StateObject private var presentation: AskWorkspaceState
     @State private var deleteId: String?
     @State private var pullDistance: CGFloat = 0
     @State private var restoredTranscript: String?
-    @State private var isSearching = false
     @StateObject private var toolbarSearch = TypefluxSearchState()
     @State private var collapsedGroups: Set<String> = []
     /// Which conversations the sidebar lists while some are kept on this Mac.
@@ -25,22 +23,21 @@ struct AskConversationView: View {
     /// Set by the toggle inside its animation. Driving the layout from the
     /// `@AppStorage` value alone re-rendered outside the animation, so the
     /// sidebar popped in and out instead of sliding.
-    @State private var sidebarChoice: Bool?
     @AppStorage("ask.sidebarCollapsed") private var storedSidebarCollapsed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.interfaceStyle) private var style
     @State private var windowSize = AskWorkspaceLayout.minimumWindowSize
-    @State private var showsSidebarDrawer = false
     @FocusState private var drawerCloseFocused: Bool
     @State private var previousResponder: NSResponder?
     @ObservedObject private var auth: AuthState
 
     @MainActor
-    init(model: AskConversationModel, showsUsage: Bool = false, auth: AuthState? = nil) {
+    init(model: AskConversationModel, showsUsage: Bool = false, auth: AuthState? = nil,
+         presentation: AskWorkspaceState? = nil) {
         self.model = model
         self.auth = auth ?? .shared
-        _showsUsage = State(initialValue: showsUsage)
-        _usageRunId = State(initialValue: model.selected?.run?.id)
+        _presentation = StateObject(wrappedValue: presentation ?? AskWorkspaceState(
+            showsUsage: showsUsage, runId: model.selected?.run?.id))
     }
 
     var body: some View {
@@ -52,19 +49,19 @@ struct AskConversationView: View {
         }
         // Measure the viewport, rather than the intrinsic width of its children.
         .onChange(of: model.selectedId) { _ in
-            usageRunId = nil
-            showsUsage = false
-            showsSidebarDrawer = false
+            presentation.usageRunId = nil
+            presentation.showsUsage = false
+            presentation.showsSidebarDrawer = false
         }
         .onChange(of: model.authoringSession?.revision) { _ in
-            if model.authoringSession?.isPresented == true { showsUsage = false }
+            if model.authoringSession?.isPresented == true { presentation.showsUsage = false }
         }
         .onChange(of: layout.sidebarInline) { inline in
-            if inline { showsSidebarDrawer = false }
+            if inline { presentation.showsSidebarDrawer = false }
         }
         .onChange(of: layout.usageOverlay) { overlay in
             // A resize must not queue a second drawer behind the open history.
-            if overlay, showsSidebarDrawer { showsUsage = false }
+            if overlay, presentation.showsSidebarDrawer { presentation.showsUsage = false }
         }
         .onChange(of: hasModal) { shown in
             if shown {
@@ -104,11 +101,12 @@ struct AskConversationView: View {
     }
 
     private var layout: AskWorkspaceLayout {
-        AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed, showsUsage: showsUsage || showsWorkflow,
+        AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed,
+                           showsUsage: presentation.showsUsage || showsWorkflow,
                            rightPanelWidth: showsWorkflow ? 390 : nil)
     }
 
-    private var showsWorkflow: Bool { model.authoringSession?.isPresented == true && !showsUsage }
+    private var showsWorkflow: Bool { model.authoringSession?.isPresented == true && !presentation.showsUsage }
 
     @ViewBuilder private var rightPanel: some View {
         if showsWorkflow, let session = model.authoringSession {
@@ -125,12 +123,12 @@ struct AskConversationView: View {
             .frame(width: layout.usageInline ? layout.usageWidth : layout.drawerWidth)
         } else {
             AskUsagePanel(model: model, compact: layout.isShort, focusCloseOnAppear: layout.usageOverlay,
-                          floating: layout.usageOverlay, runId: $usageRunId, close: { setUsage(false) })
+                          floating: layout.usageOverlay, runId: $presentation.usageRunId, close: { setUsage(false) })
         }
     }
 
-    private var hasDrawer: Bool { showsSidebarDrawer || layout.usageOverlay }
-    private var hasModal: Bool { hasDrawer || isSearching }
+    private var hasDrawer: Bool { presentation.showsSidebarDrawer || layout.usageOverlay }
+    private var hasModal: Bool { hasDrawer || presentation.isSearching }
 
     private var workspace: some View {
         ZStack(alignment: .topLeading) {
@@ -139,7 +137,7 @@ struct AskConversationView: View {
                 .disabled(hasModal)
                 .accessibilityHidden(hasModal)
             if hasDrawer { drawer }
-            if isSearching { searchPalette }
+            if presentation.isSearching { searchPalette }
         }
         .clipped()
     }
@@ -210,7 +208,7 @@ struct AskConversationView: View {
     // MARK: - Sidebar
 
     /// The user's choice: this window's latest toggle, else the stored preference.
-    private var sidebarCollapsed: Bool { sidebarChoice ?? storedSidebarCollapsed }
+    private var sidebarCollapsed: Bool { presentation.sidebarChoice ?? storedSidebarCollapsed }
 
     /// Hidden by the user, or stepping aside while the usage panel needs the
     /// room: three columns overflowed a narrow window and pushed the sidebar
@@ -218,12 +216,12 @@ struct AskConversationView: View {
     private var sidebarHidden: Bool { !layout.sidebarInline }
 
     private var drawer: some View {
-        ZStack(alignment: showsSidebarDrawer ? .leading : .trailing) {
+        ZStack(alignment: presentation.showsSidebarDrawer ? .leading : .trailing) {
             Color.black.opacity(0.24)
                 .contentShape(Rectangle())
                 .onTapGesture { closeDrawer() }
                 .accessibilityHidden(true)
-            if showsSidebarDrawer {
+            if presentation.showsSidebarDrawer {
                 VStack(spacing: 0) {
                     HStack {
                         Text(L("ask.search.conversations")).font(.body).fontWeight(.semibold)
@@ -263,13 +261,7 @@ struct AskConversationView: View {
     }
 
     private func closeDrawer() {
-        withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
-            if !showsSidebarDrawer {
-                showsUsage = false
-                model.authoringSession?.isPresented = false
-            }
-            showsSidebarDrawer = false
-        }
+        presentation.closeDrawer(reduceMotion: reduceMotion) { model.authoringSession?.isPresented = false }
     }
 
     /// Native sidebar selection stays inside Ask's animated panel.
@@ -365,17 +357,8 @@ struct AskConversationView: View {
     }
 
     private func toggleSidebar() {
-        withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
-            if !layout.sidebarInline,
-               windowSize.width - (layout.usageInline ? layout.usageWidth : 0)
-               < AskMetrics.sidebarWidth + AskWorkspaceLayout.comfortableContentWidth {
-                // Opening the drawer never overwrites a preference for a wider window.
-                if layout.usageOverlay { showsUsage = false }
-                showsSidebarDrawer.toggle()
-            } else {
-                sidebarChoice = !sidebarCollapsed
-                storedSidebarCollapsed = sidebarChoice ?? false
-            }
+        presentation.toggleSidebar(layout: layout, collapsed: sidebarCollapsed, reduceMotion: reduceMotion) {
+            storedSidebarCollapsed = $0
         }
     }
 
@@ -410,14 +393,11 @@ struct AskConversationView: View {
     }
 
     private func openSearch() {
-        withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) {
-            closeDrawer()
-            isSearching = true
-        }
+        presentation.openSearch(reduceMotion: reduceMotion) { model.authoringSession?.isPresented = false }
     }
 
     private func closeSearch() {
-        withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) { isSearching = false }
+        withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) { presentation.isSearching = false }
     }
 
     private var accountFooter: some View {
@@ -469,7 +449,7 @@ struct AskConversationView: View {
         case .newConversation: model.newConversation()
         case .newPrivateConversation: model.newConversation(storesLocally: true)
         case .toggleSidebar: toggleSidebar()
-        case .usage: if !showsUsage { toggleUsage() }
+        case .usage: if !presentation.showsUsage { toggleUsage() }
         case .attachScreenshot:
             model.draft.includeScreenshot = true
             if model.draft.screenshot == nil { Task { await model.refreshScreenshot(launcher: false) } }
@@ -489,7 +469,7 @@ struct AskConversationView: View {
     private var historySelection: Binding<String?> {
         Binding(get: { model.selectedId }, set: { id in
             guard let id, id != model.selectedId else { return }
-            showsSidebarDrawer = false
+            presentation.showsSidebarDrawer = false
             Task { await model.select(id) }
         })
     }
@@ -607,7 +587,7 @@ struct AskConversationView: View {
             selectionSpace: selectionSpace,
             usesNativeSelection: true,
             onSelect: {
-                showsSidebarDrawer = false
+                presentation.showsSidebarDrawer = false
                 Task { await model.select(item.id) }
             },
             onRename: { try await model.renameConversation(item.id, title: $0) },
@@ -663,18 +643,12 @@ struct AskConversationView: View {
     /// The toolbar icon and the composer's context ring both toggle the panel:
     /// the same control that opened it closes it again.
     private func toggleUsage() {
-        if !showsUsage { usageRunId = model.selected?.run?.id }
-        setUsage(!showsUsage)
+        presentation.toggleUsage(runId: model.selected?.run?.id, reduceMotion: reduceMotion)
     }
 
     /// The usage panel slides in from the trailing edge like the sidebar.
     private func setUsage(_ shown: Bool) {
-        guard shown != showsUsage else { return }
-        withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
-            showsSidebarDrawer = false
-            isSearching = false
-            showsUsage = shown
-        }
+        presentation.setUsage(shown, reduceMotion: reduceMotion)
     }
 
     private var emptyState: some View {
@@ -925,7 +899,7 @@ struct AskConversationView: View {
                         // The draft follows what happened to the run that wrote it.
                         if let session = model.authoringSession {
                             AskWorkflowAuthoringCard(session: session, selected: showsWorkflow, open: {
-                                showsUsage = false
+                                presentation.showsUsage = false
                                 session.isPresented = true
                                 model.objectWillChange.send()
                             }, close: {
@@ -1026,7 +1000,7 @@ struct AskConversationView: View {
                            onReference: { model.addReference($0) },
                            onLocate: model.locateReference,
                            usage: message.runId.flatMap { model.selected?.usage?.runs[$0] },
-                           onUsage: { usageRunId = message.runId; setUsage(true) },
+                           onUsage: { presentation.usageRunId = message.runId; setUsage(true) },
                            isStreaming: message.id == streamingId,
                            canRegenerate: regenerable == message.id,
                            onRegenerate: { model.regenerate(message.id) },

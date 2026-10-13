@@ -4,8 +4,8 @@ import Testing
 @testable import Typeflux
 
 /// The window's panels move instead of popping: after a toggle the transcript
-/// column passes through intermediate positions before it settles. These send
-/// clicks, so they live in the serialized event-delivery suite.
+/// column passes through intermediate positions before it settles. Drive the
+/// shared presentation actions without entering AppKit button tracking.
 extension AskComposerInteractionTests {
     @Test func sidebarSlidesWhenToggled() async throws {
         let accessibility = AskWorkspaceTestAccessibility()
@@ -16,7 +16,9 @@ extension AskComposerInteractionTests {
         defer { defaults.removePersistentDomain(forName: suite) }
         let fixture = try await motionFixture()
         defer { fixture.model.resetSession() }
-        let (window, hosting) = try await hostMotionView(AskConversationView(model: fixture.model).defaultAppStorage(defaults))
+        let presentation = AskWorkspaceState()
+        let (window, hosting) = try await hostMotionView(AskConversationView(
+            model: fixture.model, presentation: presentation).defaultAppStorage(defaults))
         defer {
             window.orderOut(nil)
             window.contentView = nil
@@ -25,15 +27,21 @@ extension AskComposerInteractionTests {
         }
         let editor = try #require(motionEditors(hosting).first)
         let start = editor.convert(editor.bounds, to: nil).minX
-        let samples = try await clickAndSample(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.sidebar", in: window),
-                                               in: window) { editor.convert(editor.bounds, to: nil).minX }
+        try AskWorkspaceTestAccessibility.assertButton("ask.workspace.sidebar",
+                                                      label: L("ask.sidebar.toggle"), in: window)
+        let toggle = {
+            presentation.toggleSidebar(layout: AskWorkspaceLayout(size: hosting.bounds.size,
+                sidebarCollapsed: defaults.bool(forKey: "ask.sidebarCollapsed"), showsUsage: presentation.showsUsage),
+                collapsed: defaults.bool(forKey: "ask.sidebarCollapsed"), reduceMotion: false) {
+                defaults.set($0, forKey: "ask.sidebarCollapsed")
+            }
+        }
+        let samples = try await changeAndSample(toggle) { editor.convert(editor.bounds, to: nil).minX }
         let end = try #require(samples.last)
         try #require(defaults.bool(forKey: "ask.sidebarCollapsed"), "The toolbar must update the sidebar preference")
         #expect(end < start - 50, "The transcript column takes the sidebar's space")
         #expect(samples.contains { $0 < start - 1 && $0 > end + 1 }, "Expected intermediate frames, got \(samples)")
-        let expanded = try await clickAndSample(
-            AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.sidebar", in: window), in: window
-        ) { editor.convert(editor.bounds, to: nil).minX }
+        let expanded = try await changeAndSample(toggle) { editor.convert(editor.bounds, to: nil).minX }
         let expandedEnd = try #require(expanded.last)
         #expect(!defaults.bool(forKey: "ask.sidebarCollapsed"))
         #expect(abs(expandedEnd - start) < 2, "Expanding restores the native sidebar's width")
@@ -48,7 +56,9 @@ extension AskComposerInteractionTests {
         defer { defaults.removePersistentDomain(forName: suite) }
         let fixture = try await motionFixture()
         defer { fixture.model.resetSession() }
-        let (window, hosting) = try await hostMotionView(AskConversationView(model: fixture.model).defaultAppStorage(defaults))
+        let presentation = AskWorkspaceState()
+        let (window, hosting) = try await hostMotionView(AskConversationView(
+            model: fixture.model, presentation: presentation).defaultAppStorage(defaults))
         defer {
             window.orderOut(nil)
             window.contentView = nil
@@ -57,8 +67,9 @@ extension AskComposerInteractionTests {
         }
         let editor = try #require(motionEditors(hosting).first)
         let start = editor.convert(editor.bounds, to: nil).maxX
-        let samples = try await clickAndSample(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.usage", in: window),
-                                               in: window) { editor.convert(editor.bounds, to: nil).maxX }
+        try AskWorkspaceTestAccessibility.assertButton("ask.workspace.usage", label: L("ask.usage.title"), in: window)
+        let toggle = { presentation.toggleUsage(runId: fixture.model.selected?.run?.id, reduceMotion: false) }
+        let samples = try await changeAndSample(toggle) { editor.convert(editor.bounds, to: nil).maxX }
         let end = try #require(samples.last)
         #expect(end < start - 50, "The usage panel takes room from the transcript column")
         #expect(samples.contains { $0 < start - 1 && $0 > end + 1 }, "Expected intermediate frames, got \(samples)")
@@ -76,11 +87,11 @@ extension AskComposerInteractionTests {
         return fixture
     }
 
-    /// A single complete click must update the layout within a bounded sampling window.
-    private func clickAndSample(_ point: NSPoint, in window: NSWindow,
-                                _ value: () -> CGFloat) async throws -> [CGFloat] {
+    /// The production state action must animate within a bounded sampling window.
+    private func changeAndSample(_ action: () -> Void,
+                                 _ value: () -> CGFloat) async throws -> [CGFloat] {
         var values: [CGFloat] = []
-        try AskWorkspaceTestMouse.click(at: point, in: window)
+        action()
         for _ in 0 ..< 80 {
             try await Task.sleep(for: .milliseconds(16))
             values.append(value())

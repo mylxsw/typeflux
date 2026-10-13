@@ -230,6 +230,7 @@ struct AskAttachmentChip: View {
             if let onTap {
                 Button(action: onTap) { face }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(item.title)
                     .accessibilityIdentifier("ask.content.\(item.kind.rawValue).preview")
             } else {
                 face

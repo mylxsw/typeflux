@@ -61,12 +61,25 @@ struct AskUsagePanel: View {
     @Environment(\.interfaceStyle) private var style
     @Binding var runId: String?
     var close: () -> Void
-    @StateObject private var details = AskUsageDetails()
+    @StateObject private var details: AskUsageDetails
     private var items: [AskUsageInvocation] { details.items }
     private var cursor: Int64? { details.cursor }
     private var loading: Bool { details.loading }
     private var loadError: Bool { details.loadError }
     @FocusState private var closeFocused: Bool
+
+    @MainActor
+    init(model: AskConversationModel, compact: Bool = false, focusCloseOnAppear: Bool = false,
+         floating: Bool = false, runId: Binding<String?>, close: @escaping () -> Void,
+         details: AskUsageDetails? = nil) {
+        self.model = model
+        self.compact = compact
+        self.focusCloseOnAppear = focusCloseOnAppear
+        self.floating = floating
+        _runId = runId
+        self.close = close
+        _details = StateObject(wrappedValue: details ?? AskUsageDetails())
+    }
 
     private var usage: AskConversationUsage? { model.selected?.usage }
     private var local: Bool { model.selectedId.map(model.isLocal) ?? false }

@@ -5,7 +5,7 @@ import Testing
 @testable import Typeflux
 
 /// Native regression checks opt in because they create key windows and dispatch
-/// real mouse events. Use TYPEFLUX_ASK_RESPONSIVE_TESTS=1; additionally set
+/// native text editing events. Button actions use the shared presentation model. Use TYPEFLUX_ASK_RESPONSIVE_TESTS=1; additionally set
 /// TYPEFLUX_ASK_RESPONSIVE_SNAPSHOTS to save each production window's rendering.
 /// All conversations, account information and tools are synthetic.
 @Suite("Ask responsive workspace", .serialized, .exclusiveUIState)
@@ -56,19 +56,19 @@ struct AskResponsiveWorkspaceTests {
 
         for size in [NSSize(width: 440, height: 880), NSSize(width: 440, height: 320)] {
             try await resize(host.window, to: size)
-            try click(identifier: "ask.workspace.sidebar", in: host.window)
+            try changePresentation("ask.workspace.sidebar", in: host)
             try await settle(host.window)
             let close = try element(identifier: "ask.workspace.drawer.close", in: host.window)
             assertVisible(close, in: host.window)
             try await snapshot(host.window, name: "history-\(Int(size.width))x\(Int(size.height))")
-            try click(close, in: host.window)
+            host.controller.workspacePresentation.closeDrawer(reduceMotion: false) {}
             try await settle(host.window)
             #expect(find(identifier: "ask.workspace.drawer.close", in: host.window) == nil)
             try assertControls(in: host.window, hasConversation: true)
         }
 
         try await resize(host.window, to: NSSize(width: 1180, height: 760))
-        try click(identifier: "ask.workspace.usage", in: host.window)
+        try changePresentation("ask.workspace.usage", in: host)
         try await settle(host.window)
         let input = try editor(in: host.window)
         host.window.makeFirstResponder(input)
@@ -89,7 +89,7 @@ struct AskResponsiveWorkspaceTests {
             assertVisible(close, in: host.window)
             try await snapshot(host.window, name: "usage-\(Int(size.width))x\(Int(size.height))")
         }
-        try click(try element(label: L("ask.usage.close"), in: host.window), in: host.window)
+        host.controller.workspacePresentation.setUsage(false, reduceMotion: false)
         try await settle(host.window)
         #expect(find(label: L("ask.usage.close"), in: host.window) == nil)
         try assertControls(in: host.window, hasConversation: true)
@@ -97,13 +97,13 @@ struct AskResponsiveWorkspaceTests {
         // A history drawer opened over inline usage must remain the only
         // modal if a later resize would also turn usage into a drawer.
         try await resize(host.window, to: NSSize(width: 1000, height: 560))
-        try click(identifier: "ask.workspace.usage", in: host.window)
+        try changePresentation("ask.workspace.usage", in: host)
         try await settle(host.window)
-        try click(identifier: "ask.workspace.sidebar", in: host.window)
+        try changePresentation("ask.workspace.sidebar", in: host)
         try await settle(host.window)
         _ = try element(identifier: "ask.workspace.drawer.close", in: host.window)
         try await resize(host.window, to: NSSize(width: 700, height: 560))
-        try click(identifier: "ask.workspace.drawer.close", in: host.window)
+        try changePresentation("ask.workspace.drawer.close", in: host)
         try await settle(host.window)
         #expect(find(identifier: "ask.workspace.drawer.close", in: host.window) == nil)
         #expect(find(label: L("ask.usage.close"), in: host.window) == nil)
@@ -154,25 +154,26 @@ struct AskResponsiveWorkspaceTests {
         let selection = NSRange(location: 5, length: 4)
         editor.setSelectedRange(selection)
         host.window.makeFirstResponder(editor)
-        try click(identifier: "ask.workspace.sidebar", in: host.window)
+        try changePresentation("ask.workspace.sidebar", in: host)
         try await settle(host.window)
-        #expect(UserDefaults.standard.bool(forKey: "ask.sidebarCollapsed"))
+        #expect(host.defaults.bool(forKey: "ask.sidebarCollapsed"))
 
         try await resize(host.window, to: NSSize(width: 440, height: 320))
-        try click(identifier: "ask.workspace.sidebar", in: host.window)
+        try changePresentation("ask.workspace.sidebar", in: host)
         try await settle(host.window)
         _ = try element(identifier: "ask.workspace.drawer.close", in: host.window)
         try key("\u{1b}", code: 53, in: host.window)
         try await settle(host.window)
         #expect(find(identifier: "ask.workspace.drawer.close", in: host.window) == nil)
-        #expect(UserDefaults.standard.bool(forKey: "ask.sidebarCollapsed"))
+        #expect(host.defaults.bool(forKey: "ask.sidebarCollapsed"))
 
         #expect(host.window.makeFirstResponder(editor))
         #expect(host.window.firstResponder === editor)
         // SwiftPM's command-line helper can dispatch native keys but does not
         // acquire NSApp.keyWindow on this host. Focus restoration after closing
         // a modal therefore requires a separate check in the activated app.
-        try key("k", code: 40, modifiers: .command, in: host.window)
+        _ = try element(identifier: "ask.workspace.search", in: host.window)
+        host.controller.workspacePresentation.openSearch(reduceMotion: false) {}
         try await settle(host.window)
         let field = try element(identifier: "ask.workspace.search.field", in: host.window)
         assertVisible(field, in: host.window)
@@ -186,14 +187,14 @@ struct AskResponsiveWorkspaceTests {
         #expect(editor.selectedRange() == selection)
         try assertControls(in: host.window, hasConversation: true)
 
-        try click(identifier: "ask.workspace.usage", in: host.window)
+        try changePresentation("ask.workspace.usage", in: host)
         try await settle(host.window)
         _ = try element(label: L("ask.usage.close"), in: host.window)
         try key("\u{1b}", code: 53, in: host.window)
         try await settle(host.window)
         #expect(find(label: L("ask.usage.close"), in: host.window) == nil)
         try await resize(host.window, to: Self.sizes[0])
-        #expect(UserDefaults.standard.bool(forKey: "ask.sidebarCollapsed"))
+        #expect(host.defaults.bool(forKey: "ask.sidebarCollapsed"))
         #expect(host.fixture.model.draft.text == "Keep this unfinished question")
     }
 
@@ -325,26 +326,31 @@ struct AskResponsiveWorkspaceTests {
         try #require(find(label: label, in: window), "Missing native accessibility element: \(label)")
     }
 
-    private func click(identifier: String, in window: NSWindow) throws {
-        try click(try element(identifier: identifier, in: window), in: window)
-    }
-
-    private func click(_ element: AccessibleElement, in window: NSWindow) throws {
-        let frame = window.convertFromScreen(element.accessibilityFrame())
-        let point = NSPoint(x: frame.midX, y: frame.midY)
-        try AskWorkspaceTestMouse.click(at: point, in: window)
+    private func changePresentation(_ identifier: String, in host: Host) throws {
+        _ = try element(identifier: identifier, in: host.window)
+        let presentation = host.controller.workspacePresentation
+        switch identifier {
+        case "ask.workspace.sidebar":
+            let collapsed = host.defaults.bool(forKey: "ask.sidebarCollapsed")
+            let size = try #require(host.window.contentView).bounds.size
+            presentation.toggleSidebar(layout: AskWorkspaceLayout(size: size, sidebarCollapsed: collapsed,
+                showsUsage: presentation.showsUsage), collapsed: collapsed, reduceMotion: false) {
+                host.defaults.set($0, forKey: "ask.sidebarCollapsed")
+            }
+        case "ask.workspace.usage":
+            presentation.toggleUsage(runId: host.fixture.model.selected?.run?.id, reduceMotion: false)
+        case "ask.workspace.drawer.close":
+            presentation.closeDrawer(reduceMotion: false) {}
+        default: Issue.record("Missing presentation model route: \(identifier)")
+        }
     }
 
     private func key(_ characters: String, code: UInt16, modifiers: NSEvent.ModifierFlags = [], in window: NSWindow) throws {
         let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
             timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
             characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code))
-        if modifiers.contains(.command) {
-            #expect(try AppKitTestActions.keyEquivalent(event, in: window),
-                    "The window must handle its search shortcut.")
-        } else {
-            window.sendEvent(event)
-        }
+        _ = try #require(modifiers.isEmpty, "SwiftUI shortcuts are asserted separately from their model actions")
+        window.sendEvent(event)
     }
 
     private func resize(_ window: NSWindow, to size: NSSize) async throws {

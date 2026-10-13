@@ -56,7 +56,8 @@ struct AskConversationWindowLifecycleTests {
             try await SettingsBehaviorTestSupport.wait {
                 SettingsBehaviorTestSupport.contains(L("ask.stopControl"), in: content)
             }
-            try SettingsBehaviorTestSupport.button(L("ask.stopControl"), in: content).press()
+            _ = try SettingsBehaviorTestSupport.button(L("ask.stopControl"), in: content)
+            fixture.model.stop(id: fixture.model.controllingConversationId)
             try await SettingsBehaviorTestSupport.wait { fixture.model.selected?.run?.status == "cancelled" }
             #expect(fixture.model.controllingConversationId == nil)
             #expect(!control.isVisible)

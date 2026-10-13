@@ -43,8 +43,13 @@ enum AskMessageProvenance {
 /// The summary replaces the captured attachment chips while retaining their previews.
 struct AskMessageProvenanceView: View {
     let message: AskMessage
+    var selectionPresented: Binding<Bool>?
+    var imagePresented: Binding<Bool>?
     @State private var showSelection = false
     @State private var showImage = false
+
+    private var selectionPresentation: Binding<Bool> { selectionPresented ?? $showSelection }
+    private var imagePresentation: Binding<Bool> { imagePresented ?? $showImage }
 
     var body: some View {
         let items = AskMessageProvenance.items(for: message)
@@ -68,11 +73,11 @@ struct AskMessageProvenanceView: View {
         case .source(_, let detail):
             Text(item.label).lineLimit(1).help(detail)
         case .selection(let text):
-            Button { showSelection.toggle() } label: { Text(item.label) }
+            Button { selectionPresentation.wrappedValue.toggle() } label: { Text(item.label) }
                 .buttonStyle(.plain)
                 .help(L("ask.context.previewHint"))
                 .accessibilityIdentifier("ask.message.selection")
-                .popover(isPresented: $showSelection) {
+                .popover(isPresented: selectionPresentation) {
                     ScrollView {
                         Text(text).font(.system(size: 12)).textSelection(.enabled)
                             .foregroundStyle(TypefluxColor.label.color)
@@ -84,11 +89,11 @@ struct AskMessageProvenanceView: View {
                     .background(TypefluxColor.contentBackground.color)
                 }
         case .screenshot(let url):
-            Button { showImage.toggle() } label: { Text(item.label) }
+            Button { imagePresentation.wrappedValue.toggle() } label: { Text(item.label) }
                 .buttonStyle(.plain)
                 .help(L("ask.context.previewHint"))
                 .accessibilityIdentifier("ask.message.screenshot")
-                .popover(isPresented: $showImage) {
+                .popover(isPresented: imagePresentation) {
                     if let image = AskImage.decode(url) {
                         Image(nsImage: image).resizable().scaledToFit().frame(width: 650).padding()
                     } else {

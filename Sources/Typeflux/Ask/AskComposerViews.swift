@@ -2012,6 +2012,7 @@ struct AskComposer: View {
                         .accessibilityIdentifier("ask.context.screenshot.toggle")
                 } else {
                     AskIconChip(item: item, action: memoryToggle)
+                        .accessibilityIdentifier("ask.context.memory.toggle")
                 }
             }
         }

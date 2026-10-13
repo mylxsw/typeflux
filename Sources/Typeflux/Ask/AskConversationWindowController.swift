@@ -29,6 +29,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     let filePreview: AskFilePreviewController
     private var launcherOpeningTop: CGFloat?
     private(set) var conversationWindow: NSWindow?
+    private(set) var workspacePresentation = AskWorkspaceState()
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
     private(set) var conversationRefreshTask: Task<Void, Never>?
@@ -432,7 +433,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             window.delegate = self
             window.toolbarStyle = .unified
             window.titlebarSeparatorStyle = .none
-            let hosting = TransparentAskHostingView(rootView: AskConversationView(model: model)
+            workspacePresentation = AskWorkspaceState(runId: model.selected?.run?.id)
+            let hosting = TransparentAskHostingView(rootView: AskConversationView(
+                model: model, presentation: workspacePresentation)
                 .interfaceStyle(following: interfaceStyle))
             // The window owns its size: without this, resizing content (e.g. hiding
             // the sidebar) can make the hosting view resize or zoom the window.

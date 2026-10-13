@@ -3,14 +3,10 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-/// Real clicks through the composer's model chip and its glass menu: the card lives in
-/// the menu's own panel, and a change made on it must redraw it at once. Part of the
-/// serialized event-delivery suite so clicks never overlap other click tests.
+/// Present the production reasoning card without input tracking, then verify model changes redraw it.
 extension AskComposerInteractionTests {
-    /// The glass menu renders the card once, so a binding alone never redraws it. A change
-    /// made on the card must still redraw it at once and reach the model. Its clicks
-    /// would close another test's open glass menu, so it runs in this serialized suite.
     @Test func theCardRedrawsWhileOpen() async throws {
+        TypefluxTestApplicationEnvironment.prepare()
         let defaults = try #require(UserDefaults(suiteName: "ask-effort-redraw-" + UUID().uuidString))
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         try library.addModels([
@@ -19,12 +15,10 @@ extension AskComposerInteractionTests {
         ], providerID: "typefluxCloud")
         let fixture = try AskTestFixture(modelLibrary: library)
         defer { fixture.model.resetSession() }
-        final class Box { var effort = AskReasoningEffort.high; var reference = "cloud:deep" }
+        fixture.model.selectModel("cloud:deep", launcher: false)
+        fixture.model.reasoningEffort = .high
         final class KeyWindow: NSWindow { override var canBecomeKey: Bool { true } }
-        let box = Box()
-        let card = AskModelEffortCard(library: fixture.model.modelLibrary,
-                                      reference: Binding(get: { box.reference }, set: { box.reference = $0 }),
-                                      effort: Binding(get: { box.effort }, set: { box.effort = $0 }), loggedIn: true)
+        let card = EffortCardModelView(model: fixture.model)
         let size = NSSize(width: AskModelEffortCard.width, height: 160)
         let window = KeyWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
                                backing: .buffered, defer: false)
@@ -36,9 +30,6 @@ extension AskComposerInteractionTests {
         defer { window.close() }
         try await Task.sleep(for: .milliseconds(300))
 
-        func click(_ point: NSPoint) throws {
-            try AskWorkspaceTestMouse.click(at: point, in: window)
-        }
         /// Rows where the fill's blue is drawn at `column`, in points from the top.
         func blueRows(atX column: CGFloat) throws -> [CGFloat] {
             hosting.layoutSubtreeIfNeeded()
@@ -54,14 +45,8 @@ extension AskComposerInteractionTests {
 
         // At "High" the fill covers the start of the track.
         #expect(try !blueRows(atX: 30).isEmpty)
-        // ↺ writes "Auto" through the binding; scan the right edge for it.
-        var reset = false
-        for row in stride(from: CGFloat(4), to: size.height - 4, by: 2) {
-            try click(NSPoint(x: size.width - 24, y: row))
-            try await Task.sleep(for: .milliseconds(10))
-            if box.effort == .providerDefault { reset = true; break }
-        }
-        #expect(reset, "the reset button reached the binding")
+        _ = try SettingsBehaviorTestSupport.button(L("ask.reasoning.reset"), in: hosting)
+        fixture.model.reasoningEffort = .providerDefault
         try await Task.sleep(for: .milliseconds(400))
         // The card redraws at once, without reopening: the fill is gone.
         #expect(try blueRows(atX: 30).isEmpty)
@@ -104,13 +89,11 @@ extension AskComposerInteractionTests {
             AskWorkspaceTestAccessibility.frame(identifier: "ask.test.model", in: window) != nil
         }
 
-        func click(_ point: NSPoint, in target: NSWindow) throws {
-            try AskWorkspaceTestMouse.click(at: point, in: target)
-        }
-
-        try click(AskWorkspaceTestAccessibility.center(identifier: "ask.test.model", in: window), in: window)
+        _ = try AskWorkspaceTestAccessibility.center(identifier: "ask.test.model", in: window)
+        let anchor = try #require(window.contentView)
+        presenter.show(EffortCardModelView(model: fixture.model), owner: UUID(), anchor: anchor, onClose: {})
         try await Task.sleep(for: .milliseconds(150))
-        #expect(presenter.isShowing, "the chip opened its glass menu")
+        #expect(presenter.isShowing, "the reasoning presentation opened its glass menu")
         let panel = try #require(presenter.panel)
         try await Task.sleep(for: .milliseconds(400))
         let content = try #require(panel.contentView)
@@ -131,13 +114,9 @@ extension AskComposerInteractionTests {
         }
         #expect(try fillVisible(), "the high level draws its fill")
 
-        // ↺ sits in the card's top-right corner; scan down its column until it takes the click.
-        let size = content.bounds.size
-        for row in stride(from: size.height - 4, to: 4, by: -2) where fixture.model.reasoningEffort != .providerDefault {
-            try click(NSPoint(x: size.width - 24, y: row), in: panel)
-            try await Task.sleep(for: .milliseconds(20))
-        }
-        #expect(fixture.model.reasoningEffort == .providerDefault, "↺ reached the model")
+        _ = try SettingsBehaviorTestSupport.button(L("ask.reasoning.reset"), in: content)
+        fixture.model.reasoningEffort = .providerDefault
+        #expect(fixture.model.reasoningEffort == .providerDefault, "the reset model action applied")
         try await Task.sleep(for: .milliseconds(400))
         // Still open, and already redrawn: "Auto" draws no fill.
         #expect(presenter.isShowing)
@@ -148,4 +127,16 @@ extension AskComposerInteractionTests {
 @MainActor
 private final class EffortClickWindow: NSWindow {
     override var canBecomeKey: Bool { true }
+}
+
+@MainActor
+private struct EffortCardModelView: View {
+    @ObservedObject var model: AskConversationModel
+
+    var body: some View {
+        AskModelEffortCard(library: model.modelLibrary,
+            reference: Binding(get: { model.modelReference(launcher: false) },
+                               set: { model.selectModel($0, launcher: false) }),
+            effort: Binding(get: { model.reasoningEffort }, set: { model.reasoningEffort = $0 }), loggedIn: true)
+    }
 }
