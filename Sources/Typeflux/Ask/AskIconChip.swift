@@ -62,6 +62,10 @@ struct AskIconChip: View {
                 AskIconChipFace(item: item, hovering: hovering)
             }
             .buttonStyle(.plain)
+            .typefluxAction {
+                dismissCard()
+                if let action { action() } else { explain() }
+            }
             .overlay(alignment: .topTrailing) {
                 if hovering, item.removable, let onRemove {
                     Button {

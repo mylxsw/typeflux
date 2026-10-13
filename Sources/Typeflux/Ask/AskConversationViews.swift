@@ -168,6 +168,11 @@ struct AskConversationView: View {
             .typefluxSearchable(state: toolbarSearch, prompt: L("ask.search.conversations"))
             .navigationTitle(workspaceTitle)
             .toolbar {
+                ToolbarItem(id: "ask.workspace.title", placement: .principal) {
+                    Text(workspaceTitle).font(.headline).lineLimit(1).truncationMode(.tail)
+                        .frame(width: toolbarTitleWidth, height: TypefluxControlHeight.toolbarItem.value(for: style))
+                        .help(workspaceTitle)
+                }
                 ToolbarItem(id: "ask.workspace.sidebar", placement: .navigation) {
                     TypefluxIconButton(L("ask.sidebar.toggle"), systemImage: "sidebar.left", action: toggleSidebar)
                         .frame(width: TypefluxControlWidth.toolbarItem.value(for: style),
@@ -178,9 +183,8 @@ struct AskConversationView: View {
                 if let center = toolbarCenter {
                     ToolbarItem(id: "ask.workspace.status", placement: .primaryAction) {
                         center
-                            .frame(maxWidth: layout.compactContent ? 36 : 180)
-                            .frame(height: TypefluxControlHeight.toolbarItem.value(for: style))
-                            .fixedSize(horizontal: true, vertical: true)
+                            .frame(width: toolbarStatusWidth,
+                                   height: TypefluxControlHeight.toolbarItem.value(for: style))
                     }
                 }
                 TypefluxToolbar(groups: toolbarGroups, prominent: newConversationAction)
@@ -188,6 +192,19 @@ struct AskConversationView: View {
             .toolbarBackground(TypefluxColor.windowBackground.color, for: .windowToolbar)
             .toolbarBackground(style.usesGlass ? .automatic : .visible, for: .windowToolbar)
         }
+    }
+
+    private var toolbarTitleWidth: CGFloat {
+        let itemWidth = TypefluxControlWidth.toolbarItem.value(for: style)
+        let actions = toolbarGroups.flatMap(\.actions).count + 2
+        let statusWidth: CGFloat = toolbarCenter == nil ? 0 : (layout.compactContent ? itemWidth : 180) + 8
+        let searchWidth = toolbarSearch.isExpanded ? TypefluxControlWidth.toolbarSearch.value(for: style) : itemWidth
+        let reserved = 110 + CGFloat(actions) * (itemWidth + 8) + statusWidth + searchWidth + 8
+        return max(1, min(220, windowSize.width - reserved))
+    }
+
+    private var toolbarStatusWidth: CGFloat {
+        layout.compactContent ? TypefluxControlWidth.toolbarItem.value(for: style) : 180
     }
 
     // MARK: - Sidebar

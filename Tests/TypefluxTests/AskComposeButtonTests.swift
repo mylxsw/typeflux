@@ -107,7 +107,7 @@ struct AskWorkspaceTestAccessibility {
     static func center(identifier: String, in window: NSWindow) throws -> NSPoint {
         var seen = Set<ObjectIdentifier>()
         func value(_ object: NSObject, _ key: String) -> Any? {
-            object.responds(to: NSSelectorFromString(key)) ? object.value(forKey: key) : nil
+            SettingsBehaviorTestSupport.Element(object: object, window: window).value(key)
         }
         func find(_ object: NSObject) -> NSRect? {
             guard seen.insert(ObjectIdentifier(object)).inserted else { return nil }
@@ -116,7 +116,9 @@ struct AskWorkspaceTestAccessibility {
                frame.rectValue.width > 0, frame.rectValue.height > 0 {
                 return frame.rectValue
             }
-            for child in value(object, "accessibilityChildren") as? [NSObject] ?? [] {
+            let children = value(object, "accessibilityChildren") as? [NSObject] ?? []
+            let subviews = (object as? NSView)?.subviews ?? []
+            for child in children + subviews {
                 if let found = find(child) { return found }
             }
             return nil

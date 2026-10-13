@@ -16,6 +16,7 @@ struct AskSourceRefreshButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .typefluxAction(action)
         .disabled(disabled)
         .help(help)
         .accessibilityLabel(help)
@@ -76,15 +77,8 @@ struct AskSourceContextDetails: View {
                     }
                     if source != nil {
                         let key = draft.sourceOff == true ? "ask.context.source.restore" : "ask.context.source.remove"
-                        Button(L(key)) {
-                            if draft.sourceOff == true {
-                                draft.sourceOff = nil
-                            } else if let onRemove {
-                                onRemove()
-                            } else {
-                                draft.sourceOff = true
-                            }
-                        }
+                        Button(L(key), action: toggleSource)
+                        .typefluxAction(toggleSource)
                         .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
                         .accessibilityIdentifier(key)
                     }
@@ -99,6 +93,17 @@ struct AskSourceContextDetails: View {
         .fixedSize(horizontal: false, vertical: true)
         .padding(16)
         .frame(width: 340)
+        .background(TypefluxColor.contentBackground.color)
+    }
+
+    private func toggleSource() {
+        if draft.sourceOff == true {
+            draft.sourceOff = nil
+        } else if let onRemove {
+            onRemove()
+        } else {
+            draft.sourceOff = true
+        }
     }
 
     private func metadataRow(_ label: String, value: String) -> some View {
@@ -139,6 +144,7 @@ struct AskSelectedTextDetails: View {
             HStack {
                 Spacer()
                 Button(L("ask.selection.remove"), action: onRemove)
+                    .typefluxAction(onRemove)
                     .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
                     .accessibilityIdentifier("ask.context.selection.remove")
             }
@@ -146,5 +152,6 @@ struct AskSelectedTextDetails: View {
         .foregroundStyle(StudioTheme.textPrimary)
         .padding(16)
         .frame(width: 360)
+        .background(TypefluxColor.contentBackground.color)
     }
 }

@@ -70,26 +70,34 @@ struct AskMessageProvenanceView: View {
         case .selection(let text):
             Button { showSelection.toggle() } label: { Text(item.label) }
                 .buttonStyle(.plain)
+                .typefluxAction { showSelection.toggle() }
                 .help(L("ask.context.previewHint"))
                 .accessibilityIdentifier("ask.message.selection")
                 .popover(isPresented: $showSelection) {
                     ScrollView {
                         Text(text).font(.system(size: 12)).textSelection(.enabled)
+                            .foregroundStyle(TypefluxColor.label.color)
+                            .accessibilityIdentifier("ask.message.selection.preview")
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .frame(width: 380, height: 220)
                     .padding(14)
+                    .background(TypefluxColor.contentBackground.color)
                 }
         case .screenshot(let url):
             Button { showImage.toggle() } label: { Text(item.label) }
                 .buttonStyle(.plain)
+                .typefluxAction { showImage.toggle() }
                 .help(L("ask.context.previewHint"))
                 .accessibilityIdentifier("ask.message.screenshot")
                 .popover(isPresented: $showImage) {
                     if let image = AskImage.decode(url) {
                         Image(nsImage: image).resizable().scaledToFit().frame(width: 650).padding()
                     } else {
-                        Text(L("ask.image.previewUnavailable")).font(.system(size: 12)).padding()
+                        Text(L("ask.image.previewUnavailable")).font(.body)
+                            .foregroundStyle(TypefluxColor.label.color)
+                            .padding().background(TypefluxColor.contentBackground.color)
+                            .accessibilityIdentifier("ask.message.screenshot.unavailable")
                     }
                 }
         }

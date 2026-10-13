@@ -20,6 +20,7 @@ struct AskAttachButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .typefluxAction { expanded.toggle() }
         .onHover { hovering = $0 }
         .disabled(disabled)
         .help(L("ask.attach.help"))

@@ -88,7 +88,7 @@ extension AskComposerInteractionTests {
                                                 set: { fixture.model.selectModel($0, launcher: false) }),
             compact: true, cloudAvailable: true, effort: Binding(
                 get: { fixture.model.reasoningEffort }, set: { fixture.model.reasoningEffort = $0 }
-            )
+            ), controlIdentifier: "ask.test.model"
         ).accessibilityIdentifier("ask.test.model").frame(maxWidth: .infinity, maxHeight: .infinity))
         window.orderFront(nil)
         let presenter = AskGlassMenuPresenter.shared

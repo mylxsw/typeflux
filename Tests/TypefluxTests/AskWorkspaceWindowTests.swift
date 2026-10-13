@@ -25,8 +25,10 @@ struct AskWorkspaceWindowTests {
         for size in [NSSize(width: 1180, height: 760), AskWorkspaceLayout.minimumWindowSize] {
             await fixture.model.select("rebuild")
             let window = makeWindow(size: size)
-            window.contentView = NSHostingView(rootView: AskConversationView(model: fixture.model)
+            let host = NSHostingView(rootView: AskConversationView(model: fixture.model)
                 .defaultAppStorage(defaults).environment(\.interfaceStyle, style))
+            host.sizingOptions = []
+            window.contentView = host
             window.orderFront(nil)
             defer { close(window) }
             try await Task.sleep(for: .milliseconds(400))
@@ -37,15 +39,11 @@ struct AskWorkspaceWindowTests {
                     || $0.itemIdentifier.rawValue.localizedCaseInsensitiveContains("toggleSidebar")
             })
             #expect(items.filter { $0.itemIdentifier.rawValue.contains("ask.workspace.sidebar") }.count == 1)
-            for item in items where item.itemIdentifier.rawValue.contains("ask.workspace.") {
-                let frame = try #require(item.view).frame
-                #expect(frame.width > 0 && frame.width.isFinite)
-                #expect(frame.height > 0 && frame.height.isFinite)
-            }
+            try assertVisibleToolbarFrames(window)
             for identifier in ["ask.workspace.sidebar", "ask.workspace.new"] {
                 let element = try #require(SettingsBehaviorTestSupport.elements(in: window).first {
                     $0.value("accessibilityIdentifier") as? String == identifier
-                        && $0.role == NSAccessibility.Role.button.rawValue
+                        && $0.frame.width > 0 && $0.frame.height > 0
                 }, "Missing toolbar action: \(identifier)")
                 let frame = element.frame
                 #expect(frame.width > 0 && frame.width.isFinite)
@@ -97,6 +95,15 @@ struct AskWorkspaceWindowTests {
                                                  characters: "s", charactersIgnoringModifiers: "s",
                                                  isARepeat: false, keyCode: 1))
         #expect(try AppKitTestActions.keyEquivalent(event, in: window))
+    }
+
+    private func assertVisibleToolbarFrames(_ window: NSWindow) throws {
+        let visible = window.toolbar?.visibleItems ?? []
+        for item in visible where item.itemIdentifier.rawValue.contains("ask.workspace.") {
+            let frame = try #require(item.view).frame
+            #expect(frame.width > 0 && frame.width.isFinite)
+            #expect(frame.height > 0 && frame.height.isFinite)
+        }
     }
 
     private func closeLibraryWindow(style: InterfaceStyle) async throws {

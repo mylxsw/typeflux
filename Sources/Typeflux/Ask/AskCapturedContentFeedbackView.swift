@@ -25,6 +25,7 @@ struct AskCapturedContentFeedbackView: View {
 
     private var undoButton: some View {
         Button(L("ask.context.undo"), action: undo)
+            .typefluxAction(undo)
             .buttonStyle(.plain)
             .fixedSize()
             .foregroundStyle(AskTheme.accent)

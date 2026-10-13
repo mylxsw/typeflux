@@ -44,12 +44,12 @@ struct InterfaceStyleTests {
 
     // MARK: - Geometry
 
-    @Test func glassMetricsKeepTheDesignBoardValues() {
+    @Test func glassMetricsFollowTheSharedLibrarySpecification() {
         let glass = InterfaceStyle.liquidGlass.ask
-        #expect(glass.sidebarRowHeight == 38)
+        #expect(glass.sidebarRowHeight == TypefluxControlHeight.sidebarRow.value(for: .liquidGlass))
         #expect(glass.sidebarRowCorner == AskMetrics.sidebarRowCorner)
-        #expect(glass.composerCorner == 28)
-        #expect(glass.suggestionCorner == 18)
+        #expect(glass.composerCorner == TypefluxRadius.form.value(for: .liquidGlass))
+        #expect(glass.suggestionCorner == TypefluxRadius.form.value(for: .liquidGlass))
         #expect(glass.paletteCorner == AskMetrics.paletteCorner)
         #expect(glass.headerChipHeight == AskMetrics.headerCapsuleHeight)
     }

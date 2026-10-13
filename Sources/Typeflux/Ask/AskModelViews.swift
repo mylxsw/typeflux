@@ -24,6 +24,7 @@ struct AskModelMenu: View {
     /// Composer only: the reasoning level, shown after the model name and chosen on the
     /// chip's card. Settings choose a model alone.
     var effort: Binding<AskReasoningEffort>? = nil
+    var controlIdentifier = "ask.model.menu"
     @ObservedObject private var auth = AuthState.shared
     @State private var expanded = false
     @State private var hovering = false
@@ -90,6 +91,7 @@ struct AskModelMenu: View {
     @ViewBuilder private var modelButton: some View {
         if usesNativePopover {
             TypefluxButton(kind: .borderless, action: { expanded.toggle() }, label: { modelLabel.font(.body) })
+                .accessibilityIdentifier(controlIdentifier)
         } else {
             Button { expanded.toggle() } label: {
                 if fieldStyle {
@@ -106,6 +108,8 @@ struct AskModelMenu: View {
                         .contentShape(Rectangle())
                 }
             }.buttonStyle(.plain)
+                .typefluxAction { expanded.toggle() }
+                .accessibilityIdentifier(controlIdentifier)
         }
     }
 

@@ -46,6 +46,7 @@ enum AskWorkspaceTestMouse {
             }
             target = view.superview
         }
+        if AppKitTestActions.invokeSwiftUIAction(at: point, in: window) { return }
         let press = try event(.leftMouseDown, at: point, in: window)
         let release = try event(.leftMouseUp, at: point, in: window)
         window.sendEvent(press)

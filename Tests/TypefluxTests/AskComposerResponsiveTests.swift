@@ -154,19 +154,19 @@ struct AskComposerResponsiveTests {
             return contextRect.contains(NSPoint(x: frame.midX, y: frame.midY))
         })
         let memoryTitle = try #require(fixture.model.draft.memory?.chipTitle)
-        let screenshotState = try selectMenuItem(L("ask.screenshot"), using: button)
+        let screenshotState = try await selectMenuItem(L("ask.screenshot"), using: button)
         #expect(screenshotState == .on)
         #expect(!fixture.model.draft.includeScreenshot,
                 "A failed screenshot remains an explicit checked inclusion toggle, never a misleading retry action.")
         try await settle(host)
         #expect(!fixture.model.memorySwitchedOff(launcher: false))
-        try selectMenuItem(memoryTitle, using: button)
+        try await selectMenuItem(memoryTitle, using: button)
         try await settle(host)
         #expect(fixture.model.memorySwitchedOff(launcher: false))
-        try selectMenuItem(memoryTitle, using: button)
+        try await selectMenuItem(memoryTitle, using: button)
         try await settle(host)
         #expect(!fixture.model.memorySwitchedOff(launcher: false))
-        try selectMenuItem(L("ask.usage.title"), using: button)
+        try await selectMenuItem(L("ask.usage.title"), using: button)
         try await settle(host)
         #expect(usageOpens == 1)
     }
@@ -241,8 +241,8 @@ struct AskComposerResponsiveTests {
     }
 
     @discardableResult
-    private func selectMenuItem(_ title: String, using button: NSPopUpButton) throws -> NSControl.StateValue? {
-        try AppKitTestActions.selectMenuItem(title, using: button)
+    private func selectMenuItem(_ title: String, using button: NSPopUpButton) async throws -> NSControl.StateValue? {
+        try await AppKitTestActions.selectMenuItem(title, using: button)
     }
 
     private func accessibilityElement(identifier: String, in window: NSWindow) throws -> NSObject {

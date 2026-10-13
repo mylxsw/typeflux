@@ -84,19 +84,12 @@ extension AskComposerInteractionTests {
     }
 
     private func openProvenancePreview(label: String, in window: NSWindow) async throws -> NSWindow {
-        let existingWindows = Set(NSApp.windows.filter(\.isVisible).map(\.windowNumber))
         let root = try #require(window.contentView)
         let frame = try #require(try provenanceText(in: root, matching: label).first?.frame)
         let point = root.convert(NSPoint(x: frame.midX, y: frame.midY), to: nil)
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                                       timestamp: ProcessInfo.processInfo.systemUptime,
-                                                       windowNumber: window.windowNumber, context: nil, eventNumber: 0,
-                                                       clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
-            NSApp.sendEvent(event)
-        }
+        try AskWorkspaceTestMouse.click(at: point, in: window)
         for _ in 0..<10 {
-            if let preview = NSApp.windows.first(where: { $0.isVisible && !existingWindows.contains($0.windowNumber) }) {
+            if let preview = (window.childWindows ?? []).first(where: \.isVisible) {
                 try await Task.sleep(for: .milliseconds(100))
                 return preview
             }

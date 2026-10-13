@@ -1,9 +1,35 @@
 import AppKit
+import SwiftUI
 import Testing
+@testable import TypefluxUI
 
 @MainActor
 @Suite(.serialized, .exclusiveUIState)
 struct AppKitTestActionsTests {
+    @Test func swiftUIButtonsUseTheirDeclaredActionAndKeepDisabledActionsInert() async throws {
+        var calls = 0
+        for disabled in [false, true] {
+            try await TypefluxNavigationTestSupport.withWindow(
+                TypefluxButton("Declared action") { calls += 1 }.disabled(disabled).padding(24)
+            ) { _, host in
+                try SettingsBehaviorTestSupport.button("Declared action", in: host).press()
+                #expect(calls == 1)
+            }
+        }
+    }
+
+    @Test func swiftUIActionViewsReleaseCallbacksWhenDetached() {
+        let view = TypefluxActionBridge.ActionView()
+        var calls = 0
+        view.action = { calls += 1 }
+        #expect(view.invoke())
+        view.enabled = false
+        #expect(!view.invoke())
+        TypefluxActionBridge.dismantleNSView(view, coordinator: ())
+        view.enabled = true
+        #expect(!view.invoke())
+        #expect(calls == 1)
+    }
     @Test func buttonActionsSendTheOriginalSenderWithoutTrackingOrActivation() throws {
         _ = NSApplication.shared
         let recorder = Recorder()
@@ -76,7 +102,7 @@ struct AppKitTestActionsTests {
         #expect(recorder.senders.first === matrix)
     }
 
-    @Test func menuItemActionsDispatchAfterUpdatingLazyContentsWithoutOpeningAMenu() throws {
+    @Test func menuItemActionsDispatchAfterUpdatingLazyContentsWithoutOpeningAMenu() async throws {
         _ = NSApplication.shared
         let recorder = Recorder()
         let button = NSPopUpButton(frame: .zero, pullsDown: true)
@@ -85,7 +111,7 @@ struct AppKitTestActionsTests {
         let delegate = MenuDelegate(recorder: recorder)
         menu.delegate = delegate
         button.menu = menu
-        let state = try AppKitTestActions.selectMenuItem("Action", using: button)
+        let state = try await AppKitTestActions.selectMenuItem("Action", using: button)
         #expect(state == .on)
         #expect(delegate.updates > 0)
         #expect(delegate.opens == 0)
@@ -93,7 +119,7 @@ struct AppKitTestActionsTests {
         #expect(recorder.senders.first is NSMenuItem)
     }
 
-    @Test func popupSelectionDispatchesTheControlWhenTheItemHasNoAction() throws {
+    @Test func popupSelectionDispatchesTheControlWhenTheItemHasNoAction() async throws {
         _ = NSApplication.shared
         let recorder = Recorder()
         let button = NSPopUpButton(frame: .zero, pullsDown: false)
@@ -101,10 +127,26 @@ struct AppKitTestActionsTests {
         button.menu?.autoenablesItems = false
         button.target = recorder
         button.action = #selector(Recorder.record)
-        try AppKitTestActions.selectMenuItem("Manual", using: button)
+        try await AppKitTestActions.selectMenuItem("Manual", using: button)
         #expect(button.titleOfSelectedItem == "Manual")
         #expect(recorder.senders.count == 1)
         #expect(recorder.senders.first === button)
+    }
+
+    @Test func delayedMenuContentsBalancePreparationWithoutTracking() async throws {
+        _ = NSApplication.shared
+        let recorder = Recorder()
+        let button = NSPopUpButton(frame: .zero, pullsDown: true)
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let delegate = MenuDelegate(recorder: recorder)
+        delegate.preparesOnOpen = true
+        menu.delegate = delegate
+        button.menu = menu
+        try await AppKitTestActions.selectMenuItem("Action", using: button)
+        #expect(delegate.opens == 1)
+        #expect(delegate.closes == 1)
+        #expect(recorder.senders.count == 1)
     }
 
     @MainActor private final class Recorder: NSObject {
@@ -128,9 +170,12 @@ struct AppKitTestActionsTests {
         let recorder: Recorder
         var updates = 0
         var opens = 0
+        var closes = 0
+        var preparesOnOpen = false
         init(recorder: Recorder) { self.recorder = recorder }
         func menuNeedsUpdate(_ menu: NSMenu) {
             updates += 1
+            guard !preparesOnOpen || opens > 0 else { return }
             menu.removeAllItems()
             let item = NSMenuItem(title: "Action", action: #selector(Recorder.record), keyEquivalent: "")
             item.target = recorder
@@ -138,5 +183,6 @@ struct AppKitTestActionsTests {
             menu.addItem(item)
         }
         func menuWillOpen(_: NSMenu) { opens += 1 }
+        func menuDidClose(_: NSMenu) { closes += 1 }
     }
 }

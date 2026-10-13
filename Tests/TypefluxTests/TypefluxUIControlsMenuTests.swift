@@ -34,14 +34,14 @@ struct TypefluxUIControlsMenuTests {
         host.layoutSubtreeIfNeeded()
         let controls = descendants(host).compactMap { $0 as? NSPopUpButton }
         #expect(controls.count == 4)
-        for control in controls { try chooseNativeItem(using: control) }
+        for control in controls { try await chooseNativeItem(using: control) }
         #expect(selection == 1)
         #expect(selections == 2)
         #expect(actions == 2)
     }
 
-    private func chooseNativeItem(using button: NSPopUpButton) throws {
-        try AppKitTestActions.selectMenuItem(button.pullsDown ? "Import file" : "Manual", using: button)
+    private func chooseNativeItem(using button: NSPopUpButton) async throws {
+        try await AppKitTestActions.selectMenuItem(button.pullsDown ? "Import file" : "Manual", using: button)
     }
 
     private func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
