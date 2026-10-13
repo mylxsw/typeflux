@@ -35,9 +35,9 @@ struct SettingsOrganizationTests {
                         let segments = window.toolbar?.items.filter {
                             $0.itemIdentifier.rawValue == "typeflux.window.segments"
                         } ?? []
-                        #expect(segments.count == ([.vocabulary, .settings].contains(section) ? 1 : 0))
+                        #expect(segments.count == (section == .vocabulary ? 1 : 0))
                         if section == .settings {
-                            _ = try UI.button(AppSettingsPane.general.title, in: window)
+                            _ = try UI.button(AppSettingsPane.general.title, in: host)
                         }
                         #expect(!UI.elements(in: host).contains {
                             $0.value("accessibilityIdentifier") as? String == "studio.page.title"

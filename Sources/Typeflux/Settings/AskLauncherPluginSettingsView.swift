@@ -112,15 +112,18 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     var body: some View {
-        TypefluxForm {
-            Section { toolbar }
-            listCard
-            Section {
-                Text(L("ask.settings.keywords.listFootnote"))
-                    .font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
-                Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
-                    .buttonStyle(.borderless)
-                    .accessibilityIdentifier("ask.settings.keywords.restore")
+        VStack(spacing: 12) {
+            toolbar
+                .frame(maxWidth: .infinity)
+            TypefluxForm {
+                listCard
+                Section {
+                    Text(L("ask.settings.keywords.listFootnote"))
+                        .font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
+                    Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
+                        .buttonStyle(.borderless)
+                        .accessibilityIdentifier("ask.settings.keywords.restore")
+                }
             }
         }
         .onAppear(perform: reload)
@@ -171,6 +174,7 @@ struct AskLauncherPluginSettingsView: View {
                 }
             }
         } label: { Label(L("ask.settings.keywords.add"), systemImage: "plus") }
+            .menuIndicator(.hidden)
             .fixedSize()
             .accessibilityIdentifier("ask.settings.keywords.add")
     }
@@ -187,10 +191,16 @@ struct AskLauncherPluginSettingsView: View {
             ForEach(AskKeywordSection.allCases, id: \.self) { section in
                 let group = shown.filter { section.kinds.contains($0.kind) }
                 if !group.isEmpty {
-                    TypefluxFormSection(section.title + " · " + String(group.count)) {
+                    Section {
                         Button { setSection(section, expanded: collapsedSections.contains(section)) } label: {
-                            Label(section.title, systemImage: collapsedSections.contains(section)
-                                ? "chevron.right" : "chevron.down")
+                            HStack {
+                                Label(section.title, systemImage: collapsedSections.contains(section)
+                                    ? "chevron.right" : "chevron.down")
+                                    .font(.headline)
+                                Spacer(minLength: 0)
+                                Text(group.count, format: .number).font(.subheadline)
+                                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                            }
                         }
                         .buttonStyle(.borderless)
                         .accessibilityLabel(section.title)

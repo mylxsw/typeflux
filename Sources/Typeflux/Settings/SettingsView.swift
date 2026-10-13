@@ -111,6 +111,7 @@ struct StudioView: View {
             let viewportHeight = max(viewportSize.height, 0)
 
             VStack(alignment: .leading, spacing: 20) {
+                if viewModel.currentSection == .settings { settingsHeader }
                 if viewModel.currentSection == .models {
                     GeometryReader { proxy in
                         modelsPage(viewportHeight: proxy.size.height)
@@ -557,14 +558,18 @@ struct StudioView: View {
                 ForEach(VocabularyFilter.allCases) { filter in Text(filter.title).tag(filter) }
             }.accessibilityIdentifier("vocabulary.sourceFilter"))
         }
-        if viewModel.currentSection == .settings {
-            return AnyView(TypefluxSegmentedControl(StudioSection.settings.title, selection: $settingsPane) {
-                ForEach(AppSettingsPane.allCases) { pane in
-                    Text(pane.title).tag(pane).accessibilityIdentifier("studio.settings.tab." + pane.rawValue)
-                }
-            })
-        }
         return nil
+    }
+
+    private var settingsHeader: some View {
+        TypefluxSegmentedControl(StudioSection.settings.title, selection: $settingsPane) {
+            ForEach(AppSettingsPane.allCases) { pane in
+                Text(pane.title).tag(pane).accessibilityIdentifier("studio.settings.tab." + pane.rawValue)
+            }
+        }
+        .fixedSize()
+        .frame(maxWidth: 640)
+        .frame(maxWidth: .infinity)
     }
 
     private var pageToolbarGroups: [TypefluxToolbarGroup] {

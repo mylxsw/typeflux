@@ -11,7 +11,7 @@ struct MCPServerEditorView: View {
         cancelTitle: L("common.cancel"), confirmTitle: L("common.save"),
         isConfirmEnabled: viewModel.canSaveMCPDraft,
         cancel: closeEditor, confirm: { viewModel.saveMCPDraft(); closeEditor() }, content: {
-            TypefluxForm {
+            TypefluxForm(maximumContentHeight: 640) {
                 Section { connectionCard }
                 Section {
                     settingRow("agent.mcp.enabled.title", subtitle: "agent.mcp.enabled.subtitle",
@@ -26,7 +26,7 @@ struct MCPServerEditorView: View {
                     }.disabled(!viewModel.canSaveMCPDraft || viewModel.mcpConnectionTestState == .testing)
                     mcpConnectionTestResultView
                 }
-            }.frame(minHeight: 300, idealHeight: 520, maxHeight: 520)
+            }
         }).frame(width: 560)
             .onDisappear { viewModel.resetMCPDraftConnectionTest() }
             .onChange(of: connectionFields) { _ in viewModel.resetMCPDraftConnectionTest() }

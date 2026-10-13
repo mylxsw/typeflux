@@ -147,22 +147,31 @@ struct SettingsSidebarChromeTests {
                 window.setContentSize(size)
                 window.setFrameOrigin(NSPoint(x: 80, y: 80))
                 let host = try #require(window.contentView)
-                try await UI.wait { UI.contains(L("history.keep.title"), in: host) }
+                try await UI.wait { UI.contains(L("history.filter.title"), in: window) }
                 // The toolbar can appear before the asynchronous history rows are loaded.
                 try await UI.wait {
                     UI.elements(in: host).contains {
-                        $0.role == NSAccessibility.Role.button.rawValue && $0.label == L("common.expand")
+                        ($0.value("accessibilityIdentifier") as? String ?? "").hasPrefix("history.open.")
                     }
                 }
                 try await Task.sleep(for: .milliseconds(180))
                 let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
-                for label in [L("history.action.exportMarkdown"), L("common.clear"), L("common.expand")] {
-                    let button = try UI.button(label, in: host)
+                for label in [L("history.action.exportMarkdown"), L("common.clear")] {
+                    let button = try UI.button(label, in: window)
                     #expect(button.frame.width >= 20)
                     #expect(button.frame.minX >= bounds.minX - 1 && button.frame.maxX <= bounds.maxX + 1)
                 }
-                if size.width < 1040 { try TypefluxNavigationTestSupport.toggleSidebar(in: window) }
-                try await UI.wait { UI.contains(L("ask.cloudPromo.signIn"), in: window) }
+                if !UI.elements(in: window).contains(where: {
+                    $0.label == L("ask.cloudPromo.signIn") && $0.frame.width > 0 && $0.frame.height > 0
+                        && window.frame.contains($0.frame)
+                }) {
+                    try TypefluxNavigationTestSupport.toggleSidebar(in: window)
+                }
+                try await UI.wait {
+                    UI.elements(in: window).contains {
+                        $0.label == L("ask.cloudPromo.signIn") && $0.frame.height > 0 && window.frame.contains($0.frame)
+                    }
+                }
                 let identity = try identity(in: window)
                 #expect(identity.frame.minY >= bounds.minY && identity.frame.maxX < bounds.minX + 264)
                 #expect(!UI.contains("Typeflux Cloud", in: window))
@@ -177,8 +186,7 @@ struct SettingsSidebarChromeTests {
             defer { lightWindow.close() }
             lightWindow.setContentSize(NSSize(width: 720, height: 500))
             lightWindow.setFrameOrigin(NSPoint(x: 80, y: 80))
-            let lightHost = try #require(lightWindow.contentView)
-            try await UI.wait { UI.contains(L("history.keep.title"), in: lightHost) }
+            try await UI.wait { UI.contains(L("history.filter.title"), in: lightWindow) }
             #expect(lightWindow.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .aqua)
             try await capture(lightWindow, name: "settings-history-\(style.rawValue)-720-light")
         }

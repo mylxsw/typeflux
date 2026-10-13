@@ -36,7 +36,8 @@ public struct TypefluxTable<Row: Identifiable, Columns: TableColumnContent>: Vie
                     .background(TypefluxTableContentHeight(height: $contentHeight, rowCount: rows.count,
                                                           identifier: identifier).frame(width: 0, height: 0))
                     .frame(height: min(geometry.size.height, contentHeight > 0 ? contentHeight :
-                        CGFloat(rows.count + 1) * TypefluxControlHeight.tableRow.value(for: style)))
+                        CGFloat(rows.count) * TypefluxControlHeight.tableRow.value(for: .liquidGlass)
+                            + TypefluxControlHeight.toolbar.value(for: style)))
             }
         }
     }

@@ -69,6 +69,8 @@ struct HistorySettingsBackButton: NSViewRepresentable {
         // the localized title over the chevron inside SwiftUI's toolbar hosting view.
         button.title = ""
         button.image = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: title)
+        // Assigning an image can change the cell's image position after initial construction.
+        button.imagePosition = .imageOnly
         button.toolTip = title
         button.setAccessibilityLabel(title)
         button.setAccessibilityIdentifier(Self.accessibilityIdentifier)

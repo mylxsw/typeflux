@@ -67,6 +67,10 @@ struct SettingsFidelityTests {
                             .first { $0.string == draft.prompt })
                         #expect(editor.alignment != .right)
                     }
+                    if let scroll = outerScroll(in: host) {
+                        #expect(scroll.scrollerStyle == .legacy)
+                        #expect(scroll.hasVerticalScroller)
+                    }
                     let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
                     let enabled = try UI.button(L("ask.settings.keywords.sheet.add"), in: host)
                     #expect(bounds.contains(enabled.frame))

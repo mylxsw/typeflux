@@ -39,9 +39,9 @@ struct TypefluxUIControlsTableTests {
 
     private func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
 
-    @Test(arguments: InterfaceStyle.allCases)
-    func `fitted tables stripe only real rows and scroll when rows grow`(style: InterfaceStyle) async throws {
-        for count in [2, 40] {
+    @Test(arguments: InterfaceStyle.allCases, [400.0, 720.0])
+    func `fitted tables stripe only real rows and scroll when rows grow`(style: InterfaceStyle, width: Double) async throws {
+        for count in [2, 4, 40] {
             let rows = (0 ..< count).map { TypefluxGalleryTable.Row(id: $0, term: "Term \($0)", uses: $0) }
             let table = TypefluxTable(rows, selection: .constant(Set<Int>()),
                                       sortOrder: .constant([KeyPathComparator(\TypefluxGalleryTable.Row.term)]),
@@ -50,16 +50,18 @@ struct TypefluxUIControlsTableTests {
                     TypefluxTableCell(rowID: row.id) { Text(row.term) }
                 }
             }.environment(\.interfaceStyle, style)
-            try await SettingsBehaviorTestSupport.withWindow(table, width: 640, height: 400) { _, host in
+            try await SettingsBehaviorTestSupport.withWindow(table, width: width, height: 400) { _, host in
                 try await SettingsBehaviorTestSupport.wait {
                     descendants(host).compactMap { $0 as? NSTableView }.first?.numberOfRows == count
                 }
                 let native = try #require(descendants(host).compactMap { $0 as? NSTableView }.first)
                 let scroll = try #require(native.enclosingScrollView)
                 #expect(native.usesAlternatingRowBackgroundColors)
-                if count == 2 {
-                    try await SettingsBehaviorTestSupport.wait { scroll.frame.height < 150 }
-                    #expect(scroll.frame.height >= native.rect(ofRow: count - 1).maxY)
+                if count < 40 {
+                    let required = native.rect(ofRow: count - 1).maxY + (native.headerView?.frame.height ?? 0)
+                    try await SettingsBehaviorTestSupport.wait { scroll.frame.height >= required }
+                    #expect(scroll.frame.height < 250)
+                    #expect(native.visibleRect.contains(native.rect(ofRow: count - 1)))
                 } else {
                     #expect(scroll.frame.height <= 400)
                     #expect(native.rect(ofRow: count - 1).maxY > scroll.contentSize.height)

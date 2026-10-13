@@ -27,7 +27,7 @@ struct AskKeywordEditorSheet: View {
             isConfirmEnabled: draft.canSave(among: keywords, workflows: workflows),
             confirmIdentifier: "ask.settings.keywords.sheet.save", cancel: onCancel,
             confirm: { onSave(draft.result()) }, content: {
-                TypefluxForm {
+                TypefluxForm(maximumContentHeight: 640) {
                     Section {
                         field(L("ask.settings.keywords.defaultKeyword")) {
                             TypefluxTextField(L("ask.settings.keywords.defaultKeyword"), text: $draft.keyword,
@@ -50,7 +50,7 @@ struct AskKeywordEditorSheet: View {
                                 .accessibilityIdentifier("ask.settings.keywords.sheet.delete")
                         }
                     }
-                }.frame(minHeight: 300, idealHeight: 520, maxHeight: 520)
+                }
             }).frame(width: 560)
             .onAppear { keywordFocused = draft.keyword.isEmpty }
     }
