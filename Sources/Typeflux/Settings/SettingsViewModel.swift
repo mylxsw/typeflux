@@ -261,6 +261,14 @@ final class StudioViewModel: ObservableObject {
     @Published var screenshotHotkey: HotkeyBinding?
     @Published var screenshotSaveDirectory: URL
     @Published var historyRetentionPolicy: HistoryRetentionPolicy
+    @Published var historyFilter: HistorySettingsFilter = .all {
+        didSet {
+            if historyFilter != oldValue, currentSection == .history {
+                refreshHistory(reset: true)
+            }
+        }
+    }
+
     @Published private(set) var historyRecords: [HistoryRecord]
     @Published private(set) var playingAudioRecordID: UUID?
     @Published var toastMessage: String?
@@ -303,6 +311,7 @@ final class StudioViewModel: ObservableObject {
     private var cloudServerTestTask: Task<Void, Never>?
     private var localSTTPreparationID: UUID?
     private var historyRefreshGeneration = 0
+    private var historyNextOffset = 0
     private let audioPreviewPlayer: HistoryAudioPreviewPlaying
 
     // swiftlint:disable:next function_body_length
@@ -1058,19 +1067,19 @@ final class StudioViewModel: ObservableObject {
             historyRecords = []
             displayedHistory = []
             canLoadMoreHistory = false
+            historyNextOffset = 0
+            isLoadingMoreHistory = false
         }
 
         let generation = nextHistoryRefreshGeneration()
         let searchQuery = historySearchQuery
+        let filter = currentSection == .history ? historyFilter : .all
         let historyStoreBox = historyStoreBox
-        let pageSize = Self.historyPageSize
+        let pageSize = reset ? Self.historyPageSize : max(Self.historyPageSize, historyRecords.count)
 
         historyRefreshQueue.async { [weak self] in
-            let records = historyStoreBox.base.list(
-                limit: pageSize,
-                offset: 0,
-                searchQuery: searchQuery
-            )
+            let page = HistorySettingsQuery.page(store: historyStoreBox.base, query: searchQuery,
+                                                 filter: filter, limit: pageSize, offset: 0)
 
             DispatchQueue.main.async {
                 guard let self else { return }
@@ -1078,9 +1087,10 @@ final class StudioViewModel: ObservableObject {
                     completion?()
                     return
                 }
-                self.historyRecords = records
-                self.displayedHistory = records.map(self.makeHistoryPresentation)
-                self.canLoadMoreHistory = records.count == Self.historyPageSize
+                self.historyRecords = page.records
+                self.displayedHistory = page.records.map(self.makeHistoryPresentation)
+                self.historyNextOffset = page.nextOffset
+                self.canLoadMoreHistory = page.hasMore
                 self.isLoadingMoreHistory = false
                 completion?()
             }
@@ -1091,21 +1101,23 @@ final class StudioViewModel: ObservableObject {
         guard !isLoadingMoreHistory, canLoadMoreHistory else { return }
 
         isLoadingMoreHistory = true
-        let nextPage = historyStore.list(
-            limit: Self.historyPageSize,
-            offset: historyRecords.count,
-            searchQuery: historySearchQuery
-        )
-
-        if nextPage.isEmpty {
-            canLoadMoreHistory = false
-        } else {
-            historyRecords.append(contentsOf: nextPage)
-            displayedHistory.append(contentsOf: nextPage.map(makeHistoryPresentation))
-            canLoadMoreHistory = nextPage.count == Self.historyPageSize
+        let generation = historyRefreshGeneration
+        let offset = historyNextOffset
+        let searchQuery = historySearchQuery
+        let filter = currentSection == .history ? historyFilter : .all
+        let store = historyStoreBox
+        historyRefreshQueue.async { [weak self] in
+            let page = HistorySettingsQuery.page(store: store.base, query: searchQuery, filter: filter,
+                                                 limit: Self.historyPageSize, offset: offset)
+            DispatchQueue.main.async {
+                guard let self, self.historyRefreshGeneration == generation else { return }
+                self.historyRecords.append(contentsOf: page.records)
+                self.displayedHistory.append(contentsOf: page.records.map(self.makeHistoryPresentation))
+                self.historyNextOffset = page.nextOffset
+                self.canLoadMoreHistory = page.hasMore
+                self.isLoadingMoreHistory = false
+            }
         }
-
-        isLoadingMoreHistory = false
     }
 
     func refreshHistoryWithFeedback() {
@@ -2616,10 +2628,14 @@ final class StudioViewModel: ObservableObject {
     }
 
     func clearHistory() {
+        _ = nextHistoryRefreshGeneration()
+        historyRefreshTask?.cancel()
         historyStore.clear()
         historyRecords = []
         displayedHistory = []
         canLoadMoreHistory = false
+        historyNextOffset = 0
+        isLoadingMoreHistory = false
         showToast(L("history.toast.cleared"))
     }
 
@@ -2717,6 +2733,11 @@ final class StudioViewModel: ObservableObject {
     }
 
     func deleteHistoryRecord(id: UUID) {
+        _ = nextHistoryRefreshGeneration()
+        isLoadingMoreHistory = false
+        if historyRecords.contains(where: { $0.id == id }) {
+            historyNextOffset = max(0, historyNextOffset - 1)
+        }
         if playingAudioRecordID == id {
             audioPreviewPlayer.stop()
             playingAudioRecordID = nil

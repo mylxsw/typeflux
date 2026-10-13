@@ -726,8 +726,8 @@
 "vocabulary.source.claude" = "Claude";
 "vocabulary.source.codex" = "Codex";
 "vocabulary.filter.all" = "すべて";
-"vocabulary.filter.automatic" = "自動追加";
-"vocabulary.filter.manual" = "手動で追加";
+"vocabulary.filter.automatic" = "自動";
+"vocabulary.filter.manual" = "手動";
 "vocabulary.filter.otherApps" = "他のアプリ";
 "vocabulary.intro.title" = "Typeflux が名前、製品、ドメイン用語をより確実にキャッチできるように支援します。";
 "vocabulary.intro.subtitle" = "手動入力は、認識ヒントとして Whisper 互換の文字起こしバックエンドに送信されます。";
@@ -4773,6 +4773,26 @@
 "auth.web.requestRejected" = "ログイン要求が拒否されました。開発用・本番用クライアントとコールバック URL の設定を確認してください。";
 "auth.web.serviceUnavailable" = "ログインサービスを利用できません。API とデータベースを確認して再試行してください。";
 "auth.web.rateLimited" = "ログイン試行が多すぎます。しばらく待ってから再試行してください。";
+
+// Vocabulary and history library pages
+"vocabulary.table.term" = "単語";
+"vocabulary.table.source" = "出典";
+"vocabulary.table.uses" = "使用回数";
+"vocabulary.table.added" = "追加日";
+"vocabulary.empty.noMatch" = "「%@」の結果がありません";
+"vocabulary.action.addQuery" = "「%@」を追加";
+"history.filter.title" = "履歴を絞り込む";
+"history.filter.all" = "すべての記録";
+"history.filter.failures" = "失敗した記録";
+"history.filter.audio" = "音声あり";
+"history.filter.text" = "テキストあり";
+"history.filter.reset" = "絞り込みをリセット";
+"history.empty.description" = "検索または絞り込みに一致する記録がありません。";
+"history.action.loadMore" = "さらに読み込む";
+"history.detail.title" = "記録の詳細";
+"history.detail.personaPrompt" = "ペルソナのプロンプト";
+"history.detail.applyMessage" = "挿入状態";
+"history.action.back" = "履歴に戻る";
 
 // Clipboard Spotlight modes and keyboard hints
 "clipboard.tab.link" = "リンク";

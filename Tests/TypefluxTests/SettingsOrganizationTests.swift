@@ -31,14 +31,21 @@ struct SettingsOrganizationTests {
                     for section in StudioSection.voiceInputCases + [.settings] {
                         model.navigate(to: section)
                         let tabTitle = section == .settings ? AppSettingsPane.general.title : StudioSection.home.title
-                        try await UI.wait {
-                            window.title == section.heading && UI.contains(tabTitle, in: host)
+                        try await UI.wait { window.title == section.heading }
+                        let tabRoot: Any
+                        if section == .settings {
+                            tabRoot = host
+                        } else {
+                            tabRoot = try #require(window.toolbar?.items.first {
+                                $0.itemIdentifier.rawValue == "typeflux.window.segments"
+                            }?.view)
                         }
+                        try await UI.wait { UI.contains(tabTitle, in: tabRoot) }
                         #expect(window.toolbar != nil)
                         #expect(!UI.elements(in: host).contains {
                             $0.value("accessibilityIdentifier") as? String == "studio.page.title"
                         })
-                        _ = try UI.button(tabTitle, in: host)
+                        _ = try UI.button(tabTitle, in: tabRoot)
                         try UI.snapshot(host, name: "page-title-\(section.rawValue)-\(language.rawValue)-\(Int(width))")
                     }
                 }

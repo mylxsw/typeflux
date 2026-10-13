@@ -1,0 +1,144 @@
+{
+  "basis": "ec1714dcebe299bf611764a8b9ea8652ac1246ef",
+  "validation_scope": "Earlier focused and snapshot runs before the final stable history Back toolbar correction; final-head coverage pending acceptance owner.",
+  "covered": 547,
+  "executable": 574,
+  "percent": 95.3,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Settings/HistorySettingsActions.swift",
+      "covered": 19,
+      "executable": 19,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/HistorySettingsDetailView.swift",
+      "covered": 52,
+      "executable": 52,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/HistorySettingsFilter.swift",
+      "covered": 14,
+      "executable": 14,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/HistorySettingsPage.swift",
+      "covered": 44,
+      "executable": 49,
+      "uncovered": [
+        40,
+        42,
+        43,
+        44,
+        49
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/HistorySettingsQuery.swift",
+      "covered": 20,
+      "executable": 21,
+      "uncovered": [
+        33
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsView.swift",
+      "covered": 91,
+      "executable": 99,
+      "uncovered": [
+        249,
+        250,
+        251,
+        252,
+        276,
+        277,
+        278,
+        279
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsViewModel.swift",
+      "covered": 42,
+      "executable": 42,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/VocabularyFilter.swift",
+      "covered": 19,
+      "executable": 19,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/VocabularySettingsPage.swift",
+      "covered": 72,
+      "executable": 80,
+      "uncovered": [
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/VocabularyTermSheet.swift",
+      "covered": 15,
+      "executable": 15,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/UI/HistoryPipelineLaneView.swift",
+      "covered": 29,
+      "executable": 29,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/UI/HistoryPipelineTimelineView.swift",
+      "covered": 32,
+      "executable": 32,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/UI/StudioShell.swift",
+      "covered": 5,
+      "executable": 5,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxTable.swift",
+      "covered": 8,
+      "executable": 8,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxTableDeleteKey.swift",
+      "covered": 61,
+      "executable": 65,
+      "uncovered": [
+        21,
+        53,
+        69,
+        70
+      ]
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxWindow.swift",
+      "covered": 5,
+      "executable": 5,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxWindowTitleBridge.swift",
+      "covered": 19,
+      "executable": 20,
+      "uncovered": [
+        9
+      ]
+    }
+  ]
+}

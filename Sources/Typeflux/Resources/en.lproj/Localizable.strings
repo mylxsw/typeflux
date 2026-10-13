@@ -735,9 +735,9 @@
 "vocabulary.source.claude" = "Claude";
 "vocabulary.source.codex" = "Codex";
 "vocabulary.filter.all" = "All";
-"vocabulary.filter.automatic" = "Auto-added";
-"vocabulary.filter.manual" = "Manually added";
-"vocabulary.filter.otherApps" = "Other Apps";
+"vocabulary.filter.automatic" = "Automatic";
+"vocabulary.filter.manual" = "Manual";
+"vocabulary.filter.otherApps" = "Other apps";
 "vocabulary.intro.title" = "Help Typeflux catch names, products, and domain terms more reliably.";
 "vocabulary.intro.subtitle" = "Manual entries are sent as recognition hints to Whisper-compatible transcription backends.";
 "vocabulary.search.placeholder" = "Search vocabulary...";
@@ -4822,6 +4822,26 @@
 "auth.web.requestRejected" = "The login request was rejected. Check the development/production client and callback configuration.";
 "auth.web.serviceUnavailable" = "The login service is unavailable. Check the API and database, then try again.";
 "auth.web.rateLimited" = "Too many login attempts. Wait a moment and try again.";
+
+// Vocabulary and history library pages
+"vocabulary.table.term" = "Term";
+"vocabulary.table.source" = "Source";
+"vocabulary.table.uses" = "Uses";
+"vocabulary.table.added" = "Date added";
+"vocabulary.empty.noMatch" = "No results for “%@”";
+"vocabulary.action.addQuery" = "Add “%@”";
+"history.filter.title" = "Filter history";
+"history.filter.all" = "All records";
+"history.filter.failures" = "Failed records";
+"history.filter.audio" = "With audio";
+"history.filter.text" = "With text";
+"history.filter.reset" = "Reset filters";
+"history.empty.description" = "No records match the current search or filter.";
+"history.action.loadMore" = "Load more";
+"history.detail.title" = "Record details";
+"history.detail.personaPrompt" = "Persona prompt";
+"history.detail.applyMessage" = "Insertion status";
+"history.action.back" = "Back to history";
 
 // Clipboard Spotlight modes and keyboard hints
 "clipboard.tab.link" = "Links";

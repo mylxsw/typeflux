@@ -1,0 +1,19 @@
+{
+  "validation_scope": "Earlier strict and baseline comparisons before the final Back toolbar and snapshot fixture edits; final-head lint pending acceptance owner.",
+  "new_and_rewritten_files_strict_diagnostics": 0,
+  "legacy_production_before": 33,
+  "legacy_production_after": 29,
+  "increased_rule_counts": [],
+  "legacy_test_diagnostics": [
+    {
+      "file": "TypefluxTests/SettingsOrganizationTests.swift",
+      "rule": "line_length",
+      "line": 20
+    },
+    {
+      "file": "TypefluxTests/SettingsOrganizationTests.swift",
+      "rule": "type_name",
+      "line": 9
+    }
+  ]
+}
