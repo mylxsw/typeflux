@@ -13,17 +13,13 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbol).font(.system(size: 17))
+            Image(systemName: symbol).font(.body)
                 .foregroundStyle(StudioTheme.textSecondary)
-                .frame(width: 36, height: 36)
-                .background(
-                    TypefluxColor.controlBackground.color,
-                    in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-                )
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 12) {
                     Button(action: edit) {
-                        Text(summary.title).font(.system(size: 14, weight: .semibold))
+                        Text(summary.title).font(.subheadline)
                             .foregroundStyle(titleHovered ? TypefluxColor.accent.color : StudioTheme.textPrimary)
                             .underline(titleHovered)
                             .lineLimit(1).truncationMode(.tail)
@@ -38,31 +34,31 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
                     HStack(spacing: 10) { controls }.fixedSize()
                 }
                 if !summary.description.isEmpty {
-                    Text(summary.description).font(.system(size: 12.5))
+                    Text(summary.description).font(.subheadline)
                         .foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(1).truncationMode(.tail)
                         .help(summary.description)
                 }
-                AgentFlowLayout(spacing: 6) {
+                AskFlowLayout(spacing: 6) {
                     if let runtime = summary.runtime {
-                        Text(runtime).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                        Text(runtime).font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
                     }
                     ForEach(Array(summary.keywords.enumerated()), id: \.offset) { _, keyword in
-                        AskKeywordListChip(keyword: keyword)
+                        AskKeywordLabel(keyword: keyword)
                     }
                     if summary.showsStatus {
-                        AgentStatusBadge(level: summary.level, label: summary.status)
+                        TypefluxStatus(summary.status, tone: summary.level.tone)
                             .accessibilityIdentifier("ask.workflow.status")
                     }
                     if let review {
                         Button(L("ask.workflow.review"), action: review)
-                            .buttonStyle(.plain).font(.system(size: 11.5, weight: .medium))
+                            .buttonStyle(.plain).font(.subheadline)
                             .foregroundStyle(StudioTheme.warning)
                             .accessibilityIdentifier("ask.workflow.review")
                     }
                     if let fix {
                         Button(L("ask.workflow.editor.fixButton"), action: fix)
-                            .buttonStyle(.plain).font(.system(size: 11.5, weight: .medium))
+                            .buttonStyle(.plain).font(.subheadline)
                             .foregroundStyle(StudioTheme.warning)
                             .accessibilityIdentifier("ask.workflow.fix")
                     }
@@ -70,7 +66,7 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
                 .controlSize(.small)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 ForEach(Array(summary.notices.enumerated()), id: \.offset) { _, notice in
-                    Text(notice).font(.system(size: 11.5))
+                    Text(notice).font(.subheadline)
                         .foregroundStyle(StudioTheme.warning)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
@@ -85,7 +81,7 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
                                 .accessibilityIdentifier("ask.workflow.runDetails")
                         }
                     }
-                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning)
+                    .font(.subheadline).foregroundStyle(StudioTheme.warning)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

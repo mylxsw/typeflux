@@ -3,7 +3,7 @@ import SwiftUI
 
 extension LauncherSearchSettingsView {
     var browsersTab: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        Group {
             browserSection(kind: .tab)
             browserSection(kind: .bookmark)
             AgentSettingsSection(title: L("ask.browser.permissions"), footnote: L("ask.browser.permissionHint")) {
@@ -13,7 +13,6 @@ extension LauncherSearchSettingsView {
                             URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!
                         )
                 }
-                ModelRowDivider(leading: 66)
                 AgentSettingsActionRow(icon: "lock.open", title: L("launcher.search.fda.open")) {
                     NSWorkspace.shared.open(AskFullDiskAccess.settingsURL)
                 }
@@ -35,7 +34,6 @@ extension LauncherSearchSettingsView {
                     .accessibilityLabel(L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"))
                     .accessibilityIdentifier("launcher.search.browser.\(kind.rawValue).enabled")
             }
-            ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "magnifyingglass", title: L("ask.browser.direct"),
                              subtitle: L("ask.browser.directHint")) {
                 Toggle("", isOn: browserBinding(tabs ? \.directTabs : \.directBookmarks))
@@ -43,7 +41,6 @@ extension LauncherSearchSettingsView {
                     .accessibilityLabel(L("ask.browser.direct"))
             }
             ForEach(AskSearchBrowser.allCases) { browser in
-                ModelRowDivider(leading: 66)
                 AgentSettingsRow(icon: "globe", title: browser.title) {
                     Toggle("", isOn: Binding(get: {
                         (tabs ? browserPreferences.tabBrowsers : browserPreferences.bookmarkBrowsers).contains(browser)
@@ -51,7 +48,9 @@ extension LauncherSearchSettingsView {
                         updateBrowsers { preferences in
                             var selected = tabs ? preferences.tabBrowsers : preferences.bookmarkBrowsers
                             selected.removeAll { $0 == browser }
-                            if value { selected.append(browser) }
+                            if value {
+                                selected.append(browser)
+                            }
                             if tabs {
                                 preferences.tabBrowsers = selected
                             } else {
@@ -65,7 +64,6 @@ extension LauncherSearchSettingsView {
                 }
             }
             if !tabs {
-                ModelRowDivider(leading: 66)
                 bookmarkBrowserRow.disabled(!enabled)
             }
         }
