@@ -91,7 +91,7 @@ struct HistorySettingsBackButtonTests {
             settings.historyRetentionPolicy = .forever
             let store = SQLiteHistoryStore(baseDir: root)
             store.save(record: HistoryRecord(date: Date(), transcriptText: "Back fixture"))
-            func model() -> StudioViewModel {
+            @MainActor func model() -> StudioViewModel {
                 StudioViewModel(settingsStore: settings, historyStore: store, initialSection: .history,
                                 modelLibrary: AskModelLibrary(defaults: settings.defaults,
                                                               automaticallyLoadsCatalog: false))
