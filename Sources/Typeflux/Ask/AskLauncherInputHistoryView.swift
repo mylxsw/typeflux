@@ -1,5 +1,4 @@
 import SwiftUI
-import TypefluxUI
 
 /// Replaces the launcher's results; recall fills the editor and always searches again.
 struct AskLauncherInputHistoryView: View {
@@ -18,14 +17,14 @@ struct AskLauncherInputHistoryView: View {
         let entries = model.launcherHistoryEntries
         let selected = model.highlightedLauncherHistory?.id
         VStack(spacing: 0) {
-            Rectangle().fill(LegacyAskPalette.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
+            Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
             HStack {
                 Text(L("ask.inputHistory.title"))
                 Spacer()
                 Text("↑ ↓")
             }
             .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(LegacyStudioPalette.textSecondary)
+            .foregroundStyle(StudioTheme.textSecondary)
             .padding(.horizontal, 16)
             .frame(height: AskLauncherSuggestions.headerHeight)
             if entries.isEmpty {
@@ -37,7 +36,7 @@ struct AskLauncherInputHistoryView: View {
                            ? "ask.inputHistory.noMatches.detail" : "ask.inputHistory.empty.detail"))
                         .font(.system(size: 11))
                 }
-                .foregroundStyle(LegacyStudioPalette.textSecondary)
+                .foregroundStyle(StudioTheme.textSecondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .accessibilityIdentifier("ask.inputHistory.empty")
             } else {
@@ -69,26 +68,26 @@ struct AskLauncherInputHistoryView: View {
             HStack(spacing: 10) {
                 Image(systemName: symbol(entry.destination))
                     .font(.system(size: 15))
-                    .foregroundStyle(entry.destination == .unsent ? Color.orange : LegacyAskPalette.accent)
+                    .foregroundStyle(entry.destination == .unsent ? Color.orange : AskTheme.accent)
                     .frame(width: 26)
                 if let keyword = entry.keyword {
                     Text(keyword).font(.system(size: 11, weight: .semibold))
                         .padding(.horizontal, 6).padding(.vertical, 3)
-                        .background(LegacyAskPalette.launcherSelection, in: RoundedRectangle(cornerRadius: 5))
+                        .background(AskTheme.launcherSelection, in: RoundedRectangle(cornerRadius: 5))
                 }
                 Text(displayText(entry)).font(.system(size: 13)).lineLimit(1)
-                    .foregroundStyle(LegacyStudioPalette.textPrimary)
+                    .foregroundStyle(StudioTheme.textPrimary)
                 if let caption = caption(entry) {
                     Text(caption)
-                        .font(.system(size: 11)).lineLimit(1).foregroundStyle(LegacyStudioPalette.textSecondary)
+                        .font(.system(size: 11)).lineLimit(1).foregroundStyle(StudioTheme.textSecondary)
                 }
                 Spacer(minLength: 0)
                 if selected {
                     Text(L("ask.inputHistory.fill") + " →").font(.system(size: 10))
-                        .foregroundStyle(LegacyAskPalette.accent)
+                        .foregroundStyle(AskTheme.accent)
                 }
                 Text(AskLauncherSuggestions.relative(entry.date, now: Date()))
-                    .font(.system(size: 10)).foregroundStyle(LegacyStudioPalette.textSecondary)
+                    .font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary)
             }
             .padding(.horizontal, 10)
             .frame(height: AskLauncherSuggestions.rowHeight)
@@ -97,7 +96,7 @@ struct AskLauncherInputHistoryView: View {
             .overlay {
                 if selected {
                     RoundedRectangle(cornerRadius: 9)
-                        .strokeBorder(LegacyAskPalette.accent.opacity(0.2), lineWidth: 0.5)
+                        .strokeBorder(AskTheme.accent.opacity(0.2), lineWidth: 0.5)
                 }
             }
             .contentShape(Rectangle())
@@ -117,7 +116,7 @@ struct AskLauncherInputHistoryView: View {
     }
 
     private var selectionFill: Color {
-        colorScheme == .dark ? LegacyAskPalette.accent.opacity(0.12) : LegacyAskPalette.launcherSelection
+        colorScheme == .dark ? AskTheme.accent.opacity(0.12) : AskTheme.launcherSelection
     }
 
     private func caption(_ entry: AskLauncherInputHistory.Entry) -> String? {
