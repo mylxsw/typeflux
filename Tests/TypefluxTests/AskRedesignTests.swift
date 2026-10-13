@@ -169,14 +169,12 @@ struct AskRedesignLayoutTests {
             #expect(sidebar.alphaComponent > 0.999)
             #expect(transcript.alphaComponent > 0.999)
             let token: TypefluxColor = style.usesGlass ? .sidebarBackground : .windowBackground
-            var expected: NSColor?
-            try #require(NSAppearance(named: appearance)).performAsCurrentDrawingAppearance {
-                // Freeze the dynamic color in this appearance before color-space conversion.
-                expected = NSColor(cgColor: token.nsColor.cgColor)?.usingColorSpace(.sRGB)
-            }
-            let expectedRGB = try #require(expected, "Cannot resolve \(token.rawValue) in \(appearance)")
-            // The opaque glass fallback composites its material over the token, so allow a
-            // small shift there; Classic draws the system token directly.
+            // Render the token through the same capture pipeline, so colour management cancels out.
+            let swatch = try await render(Rectangle().fill(token.color)
+                .environment(\.colorScheme, appearance == .aqua ? .light : .dark),
+                                          size: NSSize(width: 40, height: 40), appearance: appearance)
+            let expectedRGB = try pixel(swatch, x: 20, y: 20)
+            // The opaque glass fallback composites its material over the token; Classic draws it directly.
             #expect(colorDistance(sidebar, expectedRGB) < (style.usesGlass ? 0.03 : 0.006),
                     "\(style.rawValue), \(appearance): sidebar \(sidebar) vs \(expectedRGB)")
             if style.usesGlass {
