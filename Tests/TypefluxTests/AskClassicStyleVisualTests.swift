@@ -108,7 +108,7 @@ struct AskClassicStyleVisualTests {
     }
 
     /// Classic columns use the system's semantic surfaces and a flush divider.
-    private func expectFlushColumns(_ png: Data) throws {
+    private func expectFlushColumns(_ png: Data, dark: Bool) throws {
         let bitmap = try #require(NSBitmapImageRep(data: png))
         func white(_ column: Int, _ row: Int) throws -> CGFloat {
             try #require(bitmap.colorAt(x: column, y: row)?.usingColorSpace(.sRGB)).whiteComponentApproximation
@@ -117,7 +117,7 @@ struct AskClassicStyleVisualTests {
         let row = bitmap.pixelsHigh / 2
         var sidebar: CGFloat = 0
         var canvas: CGFloat = 0
-        try #require(NSAppearance(named: .aqua)).performAsCurrentDrawingAppearance {
+        try #require(NSAppearance(named: dark ? .darkAqua : .aqua)).performAsCurrentDrawingAppearance {
             sidebar = TypefluxColor.windowBackground.nsColor.usingColorSpace(.sRGB)?.whiteComponentApproximation ?? 0
             canvas = TypefluxColor.contentBackground.nsColor.usingColorSpace(.sRGB)?.whiteComponentApproximation ?? 0
         }
@@ -125,9 +125,9 @@ struct AskClassicStyleVisualTests {
         #expect(abs(try white(1, row) - sidebar) < 0.02, "sidebar must be flush with the window edge")
         #expect(abs(try white(200, row) - sidebar) < 0.02)
         #expect(abs(try white(Int(AskMetrics.sidebarWidth * 2) + 40, row) - canvas) < 0.02, "canvas")
-        let divider = (Int(AskMetrics.sidebarWidth * 2) - 4 ... Int(AskMetrics.sidebarWidth * 2) + 2)
-            .map { (try? white($0, row)) ?? 1 }.min() ?? 1
-        #expect(divider < min(sidebar, canvas) - 0.01, "the columns are divided by a hairline")
+        let dividerContrast = try (Int(AskMetrics.sidebarWidth * 2) - 2 ..< Int(AskMetrics.sidebarWidth * 2))
+            .map { abs(try white($0, row) - sidebar) }.max() ?? 0
+        #expect(dividerContrast > 0.01, "the columns are divided by a hairline in either appearance")
     }
 
     private func renderChat(_ fixture: AskTestFixture, _ scene: String, _ style: InterfaceStyle, dark: Bool,
@@ -163,7 +163,7 @@ struct AskClassicStyleVisualTests {
                                               style: style, dark: dark, size: .init(width: 1280, height: 800),
                                               settle: .milliseconds(600),
                                               invalidate: { fixture.model.objectWillChange.send() })
-                if style == .classic, !dark { try expectFlushColumns(thread) }
+                if style == .classic { try expectFlushColumns(thread, dark: dark) }
                 try await renderChat(fixture, "chat-usage", style, dark: dark, size: .init(width: 1480, height: 820),
                                      showsUsage: true)
                 try await renderChat(fixture, "chat-narrow", style, dark: dark, size: .init(width: 620, height: 720))

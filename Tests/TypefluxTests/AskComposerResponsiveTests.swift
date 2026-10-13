@@ -26,6 +26,37 @@ struct AskComposerResponsiveTests {
         }
     }
 
+    @Test func queuedEditReservesTwoFooterRowsOnlyInNarrowWorkspaces() {
+        for width: CGFloat in [296, 320, 336, 440, 599, 600, 960] {
+            for compact in [false, true] {
+                let workspace = AskComposerLayout(launcher: false, compact: compact, width: width,
+                                                   editingQueued: true)
+                #expect(workspace.stackedQueueActions == (width < 600))
+                #expect(workspace.footerHeight == workspace.footerRowHeight * (width < 600 ? 2 : 1))
+                let launcher = AskComposerLayout(launcher: true, compact: compact, width: width,
+                                                  editingQueued: true)
+                #expect(!launcher.stackedQueueActions)
+                #expect(launcher.footerHeight == AskComposerChrome.launcher.footerHeight)
+            }
+        }
+    }
+
+    @Test func narrowQueuedDraftAndCommandPickerFitWithAttachments() {
+        for height: CGFloat in [280, 320, 500, 700] {
+            let short = height < 500
+            let available = height - 52 - (short ? 12 : 24)
+            for supplements: CGFloat in [0, 40, 400] {
+                let layout = AskComposerLayout(launcher: false, compact: short, width: 296,
+                                               availableHeight: available, paletteOpen: true,
+                                               supplementalHeight: supplements, editingQueued: true)
+                #expect(layout.editorMaximumHeight >= 32)
+                if supplements > 0 { #expect(layout.supplementalMaximumHeight >= 20) }
+                #expect(layout.maximumCardHeight + (layout.paletteMaximumHeight(composerHeight: 0) ?? 0) + 8
+                    <= available)
+            }
+        }
+    }
+
     @Test func editorHeightLimitChangesWithoutDiscardingTextSelectionOrScrollability() async throws {
         let state = EditorState()
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 360, height: 320),
@@ -178,11 +209,16 @@ struct AskComposerResponsiveTests {
         #expect(usageOpens == 1)
     }
 
-    @Test func narrowQueuedEditKeepsVoiceSaveAndCancelReachable() async throws {
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func narrowQueuedEditKeepsVoiceSaveAndCancelReachable(style: InterfaceStyle, dark: Bool) async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         let fixture = try AskTestFixture()
+        defer {
+            fixture.model.resetSession()
+            try? FileManager.default.removeItem(at: fixture.root)
+        }
         let call = AskToolCall(id: "responsive-edit", type: "function",
                                function: .init(name: "browser", arguments: #"{"action":"read"}"#))
         await fixture.api.setTool(call)
@@ -203,33 +239,49 @@ struct AskComposerResponsiveTests {
             Spacer(minLength: 0)
             AskComposer(model: fixture.model, compact: true, launcher: false)
                 .padding(.horizontal, 12)
-        })
+        }.environment(\.interfaceStyle, style).environment(\.colorScheme, dark ? .dark : .light))
         host.sizingOptions = []
         window.contentView = host
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.makeKeyAndOrderFront(nil)
-        defer { fixture.model.resetSession(); window.close() }
-        try await settle(host)
-        #expect(fixture.model.isEditingQueued)
-        let voice = try #require(findVoice(host))
-        #expect(host.bounds.contains(voice.convert(voice.bounds, to: host)))
-        let voicePoint = voice.convert(NSPoint(x: voice.bounds.midX, y: voice.bounds.midY), to: host.superview)
-        #expect(host.hitTest(voicePoint) === voice)
-        let save = try accessibilityElement(identifier: "ask.queue.save", in: window)
-        let cancel = try accessibilityElement(identifier: "ask.queue.cancel", in: window)
-        let model = try accessibilityElement(identifier: "ask.composer.model", in: window)
-        for control in [save, cancel, model] {
-            let rect = try #require(control.value(forKey: "accessibilityFrame") as? NSValue).rectValue
-            #expect(window.frame.contains(rect))
+        defer { window.close() }
+        for width: CGFloat in [320, 360, 440, 640, 360] {
+            window.setContentSize(NSSize(width: width, height: 280))
+            try await settle(host)
+            #expect(fixture.model.isEditingQueued)
+            let voice = try #require(findVoice(host))
+            #expect(host.bounds.contains(voice.convert(voice.bounds, to: host)))
+            let voicePoint = voice.convert(NSPoint(x: voice.bounds.midX, y: voice.bounds.midY), to: host.superview)
+            #expect(host.hitTest(voicePoint) === voice)
+            let voiceFrame = window.convertToScreen(voice.convert(voice.bounds, to: nil))
+            var actionFrames: [NSRect] = []
+            for identifier in ["ask.queue.save", "ask.queue.cancel", "ask.composer.model"] {
+                let control = try accessibilityElement(identifier: identifier, in: window)
+                let rect = try #require(control.value(forKey: "accessibilityFrame") as? NSValue).rectValue
+                #expect(rect.width >= 20 && rect.height >= 20)
+                #expect(window.frame.contains(rect), "\(identifier) must fit at width \(width)")
+                #expect(!rect.intersects(voiceFrame))
+                actionFrames.append(rect)
+            }
+            #expect(!actionFrames[0].intersects(actionFrames[1]))
+            #expect(fixture.model.draft.text == "Updated request")
+            try await AskLibraryTestSupport.capture(window,
+                name: "queued-edit-\(style.rawValue)-\(dark ? "dark" : "light")-\(Int(width))")
         }
-        fixture.model.saveQueuedEdit()
+        fixture.model.draft.text = ""
+        try await settle(host)
+        #expect(try SettingsBehaviorTestSupport.button(L("ask.queue.save"), in: window)
+            .value("accessibilityEnabled") as? Bool == false)
+        fixture.model.draft.text = "Updated request"
+        try await settle(host)
+        try SettingsBehaviorTestSupport.button(L("ask.queue.save"), in: window).press()
         try await settle(host)
         #expect(!fixture.model.isEditingQueued)
         #expect(fixture.model.queuedMessages.first?.draft.text == "Updated request")
         fixture.model.editQueued(queued.id)
         fixture.model.draft.text = "Cancelled edit"
         try await settle(host)
-        _ = try accessibilityElement(identifier: "ask.queue.cancel", in: window)
-        fixture.model.cancelQueuedEdit()
+        try SettingsBehaviorTestSupport.button(L("ask.queue.cancel"), in: window).press()
         try await settle(host)
         #expect(!fixture.model.isEditingQueued)
         #expect(fixture.model.queuedMessages.first?.draft.text == "Updated request")

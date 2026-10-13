@@ -179,7 +179,8 @@ struct AskComposer: View {
     private var layout: AskComposerLayout {
         AskComposerLayout(launcher: launcher, compact: compact, width: availableWidth ?? measuredWidth,
                           availableHeight: availableHeight, paletteOpen: paletteOpen,
-                          supplementalHeight: hasSupplementalContent ? max(40, supplementalHeight) : 0)
+                          supplementalHeight: hasSupplementalContent ? max(40, supplementalHeight) : 0,
+                          editingQueued: editingQueued)
     }
     private var paletteMaximumHeight: CGFloat? { layout.paletteMaximumHeight(composerHeight: cardHeight) }
     private var compactPalette: Bool {
@@ -1969,7 +1970,7 @@ struct AskComposer: View {
     /// out every conversation is, so nothing needs telling apart.
     private var privateTint: Bool { model.isSignedIn && model.storesLocally(launcher: launcher) }
 
-    private var footer: some View {
+    private var footerRow: some View {
         HStack(spacing: 4) {
             composerTools
             permissionModeMenu
@@ -2012,19 +2013,11 @@ struct AskComposer: View {
             if !launcher, !layout.condensedFooter, onToggleUsage != nil, let context = model.usageContext {
                 AskContextUsageButton(context: context) { onToggleUsage?() }
             }
-            AskVoiceButton(voice: voice, contextID: contextID,
-                           enabled: launcher || !model.isLoadingSelection,
-                           shortcut: voiceShortcut)
-                .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                .accessibilityLabel(AskVoiceButton.title(
-                    phase: voice.phase,
-                    contextMatches: voice.context == contextID
-                ))
-                .accessibilityIdentifier("ask.composer.voice")
+            if !layout.stackedQueueActions {
+                footerVoiceButton
+            }
             if editingQueued {
-                AskQueueEditActions(canSave: model.draft.canSend, compact: layout.condensedFooter,
-                                    onCancel: { model.cancelQueuedEdit() },
-                                    onSave: { model.saveQueuedEdit() })
+                if !layout.stackedQueueActions { queueEditActions }
             } else {
                 Group {
                     switch sendControl {
@@ -2040,18 +2033,13 @@ struct AskComposer: View {
                 .accessibilityIdentifier("ask.composer.send")
             }
         }
-        .padding(.leading, chrome.footerLeadingInset)
-        .padding(.trailing, 10)
-        .frame(height: layout.footerHeight)
-        .frame(maxWidth: .infinity)
-        .background {
-            AskSlashShortcut(disabled: active || (!launcher && model.isLoadingSelection), action: startCommand)
-        }
+        .frame(height: layout.footerRowHeight)
     }
 
     private var permissionModeMenu: some View {
         AskPermissionModeMenu(mode: model.permissionMode(launcher: launcher),
-                              compact: launcher || layout.width < 800, bare: launcher) { mode in
+                              compact: launcher || layout.width < 800,
+                              bare: launcher || layout.stackedQueueActions) { mode in
             model.setPermissionMode(mode, launcher: launcher)
         }
         .disabled(active || (!launcher && model.isLoadingSelection))
@@ -2283,6 +2271,42 @@ struct AskComposer: View {
         if launcher {
             onWindowHeightChange(height)
         }
+    }
+}
+
+private extension AskComposer {
+    var footer: some View {
+        VStack(spacing: 0) {
+            footerRow
+            if layout.stackedQueueActions {
+                HStack(spacing: TypefluxSpacing.compact.value(for: interfaceStyle)) {
+                    Spacer(minLength: 0)
+                    footerVoiceButton
+                    queueEditActions
+                }
+                .frame(height: layout.footerRowHeight)
+            }
+        }
+        .padding(.leading, chrome.footerLeadingInset)
+        .padding(.trailing, 10)
+        .frame(height: layout.footerHeight)
+        .frame(maxWidth: .infinity)
+        .background {
+            AskSlashShortcut(disabled: active || (!launcher && model.isLoadingSelection), action: startCommand)
+        }
+    }
+
+    var footerVoiceButton: some View {
+        AskVoiceButton(voice: voice, contextID: contextID,
+                       enabled: launcher || !model.isLoadingSelection, shortcut: voiceShortcut)
+            .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+            .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
+            .accessibilityIdentifier("ask.composer.voice")
+    }
+
+    var queueEditActions: some View {
+        AskQueueEditActions(canSave: model.draft.canSend, compact: layout.condensedFooter,
+                            onCancel: { model.cancelQueuedEdit() }, onSave: { model.saveQueuedEdit() })
     }
 }
 

@@ -145,7 +145,8 @@ struct AskRedesignLayoutTests {
         fixture.model.resetSession()
     }
 
-    @Test func workspaceKeepsTheWiderSidebarDistinctFromTheTranscript() async throws {
+    @Test(arguments: InterfaceStyle.allCases)
+    func workspaceKeepsTheWiderSidebarDistinctFromTheTranscript(style: InterfaceStyle) async throws {
         _ = NSApplication.shared
         let fixture = try AskTestFixture()
         let defaults = fixture.model.modelLibrary.settings.defaults
@@ -159,7 +160,7 @@ struct AskRedesignLayoutTests {
             // explicitly and sample semantic surfaces away from the Liquid Glass inset.
             let bitmap = try await render(AskConversationView(model: fixture.model)
                 .defaultAppStorage(defaults)
-                .environment(\.interfaceStyle, .liquidGlass)
+                .environment(\.interfaceStyle, style)
                 .environment(\.askGlassMaterialOverride, .opaque)
                 .environment(\.colorScheme, appearance == .aqua ? .light : .dark),
                                           size: NSSize(width: 1100, height: 740), appearance: appearance)
@@ -167,11 +168,26 @@ struct AskRedesignLayoutTests {
             let transcript = try pixel(bitmap, x: 300, y: 400)
             #expect(sidebar.alphaComponent > 0.999)
             #expect(transcript.alphaComponent > 0.999)
-            let delta = abs(sidebar.redComponent - transcript.redComponent)
-                + abs(sidebar.greenComponent - transcript.greenComponent)
-                + abs(sidebar.blueComponent - transcript.blueComponent)
-            #expect(delta > 0.01)
+            let token: TypefluxColor = style.usesGlass ? .sidebarBackground : .windowBackground
+            var expected: NSColor?
+            try #require(NSAppearance(named: appearance)).performAsCurrentDrawingAppearance {
+                expected = token.nsColor.usingColorSpace(.sRGB)
+            }
+            #expect(colorDistance(sidebar, try #require(expected)) < 0.006)
+            if style.usesGlass {
+                #expect(colorDistance(sidebar, transcript) > 0.01)
+            } else {
+                // Tahoe can resolve both system backgrounds alike; Classic's flush
+                // separator still marks the boundary without a custom sidebar tint.
+                let divider = try pixel(bitmap, x: Int(AskMetrics.sidebarWidth) - 1, y: 400)
+                #expect(colorDistance(divider, sidebar) > 0.01)
+            }
         }
+    }
+
+    private func colorDistance(_ lhs: NSColor, _ rhs: NSColor) -> CGFloat {
+        abs(lhs.redComponent - rhs.redComponent) + abs(lhs.greenComponent - rhs.greenComponent)
+            + abs(lhs.blueComponent - rhs.blueComponent)
     }
 
     private func pixel(_ bitmap: NSBitmapImageRep, x: Int, y: Int) throws -> NSColor {

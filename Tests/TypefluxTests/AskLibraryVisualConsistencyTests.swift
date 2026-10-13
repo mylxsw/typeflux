@@ -151,6 +151,15 @@ struct AskLibraryVisualConsistencyTests {
             try copy.press()
             try await SettingsBehaviorTestSupport.wait { copied == expectedBody }
             #expect(copied?.isEmpty == false)
+            let more = try #require(AskNotesToolbarTestSupport.button(in: window)?.menu)
+            let pin = try #require(more.items.first { $0.identifier?.rawValue == "ask.notes.pin" })
+            let selectedID = try #require(notes.selectedID)
+            let wasPinned = try #require(notes.selected?.pinned)
+            try #require(pin.isEnabled && !pin.isHidden)
+            #expect(NSApp.sendAction(try #require(pin.action), to: pin.target, from: pin))
+            try await SettingsBehaviorTestSupport.wait { notes.selected?.pinned == !wasPinned }
+            #expect(notes.store.note(id: selectedID)?.pinned == !wasPinned,
+                    "The native More menu keeps pin reachable and persists the change at minimum width")
             for mode in [AskNotesViewModel.Mode.split, .edit, .read] {
                 try AskNotesToolbarTestSupport.chooseMode(mode, in: window)
                 try await SettingsBehaviorTestSupport.wait { notes.mode == mode }

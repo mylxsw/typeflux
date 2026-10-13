@@ -173,7 +173,7 @@ struct AskNotebookVisualTests {
         window.setContentSize(AskNotesWindowController.minimumSize)
         let prefix = style == .liquidGlass ? "glass" : "classic"
         try await capture(window, "\(prefix)-11-minimum-read.png")
-        try checkReadControls(window)
+        try checkReadControls(window, style: style)
         let source = try accessibilityButton(L("ask.notes.openConversation"), in: window)
         #expect(accessibilityFrame(source).height <= 28, "the source action stays on one line")
         try press(source, in: window)
@@ -215,7 +215,7 @@ struct AskNotebookVisualTests {
         for width in [1320, 1100, 1090, 940, 780, 680, 940, 1320] {
             window.setContentSize(NSSize(width: width, height: 620))
             try await capture(window, "resize-\(style.rawValue)-\(width)-read.png")
-            try checkReadControls(window)
+            try checkReadControls(window, style: style)
             let row = try #require(accessibilityElement("ask.notes.row", in: window))
             let content = try #require(window.contentView)
             let reader = try #require(descendants(content).compactMap { $0 as? AskNoteReaderText.ReaderView }.first)
@@ -322,8 +322,11 @@ struct AskNotebookVisualTests {
         }
     }
 
-    private func checkReadControls(_ window: NSWindow) throws {
-        let compact = (window.contentView?.bounds.width ?? 0) < AskNotesView.expandedToolbarMinimumWidth
+    private func checkReadControls(_ window: NSWindow, style: InterfaceStyle) throws {
+        let search = try #require(window.toolbar?.items.compactMap { $0 as? NSSearchToolbarItem }.first)
+        // Focusing search also collapses secondary actions, even in a wide window.
+        let compact = window.contentLayoutRect.width < AskNotesView.expandedToolbarMinimumWidth
+            || search.searchField.frame.width > TypefluxControlWidth.toolbarItem.value(for: style) + 1
         let identifiers = compact ? ["notes.copy"] : ["notes.copy", "notes.pin", "notes.share", "notes.delete"]
         for identifier in identifiers {
             let action = try AskLibraryTestSupport.action(identifier, in: window)
@@ -333,12 +336,18 @@ struct AskNotebookVisualTests {
                     "visible toolbar actions stay inside the window")
         }
         if compact {
-            let menu = try #require(accessibilityElement("ask.notes.more", in: window))
-            let frame = accessibilityFrame(menu)
+            let button = try #require(AskNotesToolbarTestSupport.button(in: window))
+            #expect(button.isEnabled && !button.isHiddenOrHasHiddenAncestor && button.window === window)
+            let frame = screenFrame(button, in: window)
             #expect(frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1,
                     "collapsed actions remain reachable through the native menu")
+            let menu = try #require(button.menu)
+            for identifier in ["pin", "share", "delete"] {
+                let item = try #require(menu.items.first { $0.identifier?.rawValue == "ask.notes." + identifier })
+                #expect(item.isEnabled && !item.isHidden && item.action != nil)
+                #expect(item.target is AskNotesMoreMenu.Coordinator)
+            }
         }
-        #expect(window.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true)
     }
 
     private func checkSplitControls(_ window: NSWindow, model: AskNotesViewModel) async throws {

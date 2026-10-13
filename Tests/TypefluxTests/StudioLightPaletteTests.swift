@@ -3,8 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-/// The light palette (v4): a white content area, a grey sidebar, neutral text
-/// and a single blue accent. Every dark value is pinned to its pre-v4 number.
+/// Library surfaces follow semantic system colors in both appearances.
 @Suite("Studio semantic palette", .exclusiveUIState)
 struct StudioLightPaletteTests {
     private struct RGBA {
@@ -31,8 +30,9 @@ struct StudioLightPaletteTests {
     }
 
     @Test func surfaceTokensUseSystemColors() {
-        #expect(AskClassic.sidebar == TypefluxColor.windowBackground.color)
         for dark in [false, true] {
+            expectRGBA(resolve(AskClassic.sidebar, dark: dark),
+                       resolve(TypefluxColor.windowBackground.color, dark: dark))
             for token in [TypefluxColor.windowBackground, .contentBackground, .controlBackground] {
                 let value = resolve(token.color, dark: dark)
                 let expected = resolve(Color(nsColor: token.nsColor), dark: dark)

@@ -74,36 +74,71 @@ struct ScreenshotCaptureWindowPolicyTests {
         page.title = "Typeflux screenshot regression test"
         page.isOpaque = true
         page.backgroundColor = .green
+        page.hasShadow = false
+        page.contentView = SolidCaptureView(frame: CGRect(origin: .zero, size: pageFrame.size),
+                                            color: NSColor(srgbRed: 0, green: 1, blue: 0, alpha: 1))
         // Keep the fixture above windows left by earlier suites. The excluded red control
         // uses the same level and is ordered above this green page explicitly.
         page.level = .screenSaver
         let control = ScreenshotFloatingPanel(frame: pageFrame)
         control.isOpaque = true
         control.backgroundColor = .red
+        control.contentView = SolidCaptureView(frame: CGRect(origin: .zero, size: pageFrame.size),
+                                               color: NSColor(srgbRed: 1, green: 0, blue: 0, alpha: 1))
         defer {
             control.close()
             page.close()
         }
         page.orderFrontRegardless()
-        control.orderFrontRegardless()
         page.displayIfNeeded()
+        control.orderFrontRegardless()
         control.displayIfNeeded()
         // Let the window server commit both surfaces before ScreenCaptureKit freezes them.
         try await Task.sleep(nanoseconds: 200_000_000)
-        let snapshot = try await ScreenCaptureService().snapshot(ScreenCaptureRequest(
+        let request = ScreenCaptureRequest(
             displays: .preferred(CGMainDisplayID()), resolution: .fitting(maxDimension: 640),
             windowExclusion: .screenshotControls
-        ))
+        )
+        // First prove that the red fixture covers the sample. The excluded capture must
+        // then reveal our opaque green content, independent of wallpaper or appearance.
+        let covered = try await ScreenCaptureService(captureControlWindowIDs: { [] }).snapshot(request)
+        let coveredPixel = try centerPixel(try #require(covered.displays.first), frame: pageFrame, screen: screen)
+        #expect(coveredPixel[0] > 200 && coveredPixel[1] < 50 && coveredPixel[2] < 50)
+        let snapshot = try await ScreenCaptureService().snapshot(request)
         #expect(snapshot.windows.contains { $0.id == CGWindowID(page.windowNumber) })
         #expect(!snapshot.windows.contains { $0.id == CGWindowID(control.windowNumber) })
-        let display = try #require(snapshot.displays.first)
-        let center = CGRect(x: pageFrame.midX - 5, y: pageFrame.midY - 5, width: 10, height: 10)
+        let pixel = try centerPixel(try #require(snapshot.displays.first), frame: pageFrame, screen: screen)
+        #expect(pixel[0] < 50)
+        #expect(pixel[1] > 200)
+        #expect(pixel[2] < 50)
+        #expect(pixel[3] > 250)
+    }
+
+    private func centerPixel(_ display: ScreenSnapshot.Display, frame: CGRect, screen: NSScreen) throws -> [UInt8] {
+        let center = CGRect(x: frame.midX - 5, y: frame.midY - 5, width: 10, height: 10)
         let crop = ScreenCaptureGeometry.flipped(center, primaryDisplayHeight: screen.frame.height)
         let image = try ScreenshotImageExporter.crop(display, to: crop)
         let pixels = try #require(ScreenshotMosaicEffects.Pixels(image, space: CGColorSpace(name: CGColorSpace.sRGB)!))
         let offset = ((pixels.height / 2) * pixels.width + pixels.width / 2) * 4
-        #expect(pixels.bytes[offset] < 50)
-        #expect(pixels.bytes[offset + 1] > 200)
-        #expect(pixels.bytes[offset + 2] < 50)
+        return Array(pixels.bytes[offset ..< offset + 4])
+    }
+
+    /// Empty NSWindow content can leave its background dependent on WindowServer composition.
+    private final class SolidCaptureView: NSView {
+        let color: NSColor
+
+        init(frame: NSRect, color: NSColor) {
+            self.color = color
+            super.init(frame: frame)
+        }
+
+        required init?(coder _: NSCoder) { return nil }
+
+        override var isOpaque: Bool { true }
+
+        override func draw(_ dirtyRect: NSRect) {
+            color.setFill()
+            bounds.fill()
+        }
     }
 }
