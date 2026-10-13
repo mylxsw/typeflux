@@ -10,7 +10,7 @@ struct TypefluxTableContentHeight: NSViewRepresentable {
     final class MeasurementView: NSView {
         var report: ((CGFloat) -> Void)?
         var rowCount = 0
-        var identifier = ""
+        var tableIdentifier = ""
         private var scheduled = false
 
         override func viewDidMoveToWindow() {
@@ -42,7 +42,7 @@ struct TypefluxTableContentHeight: NSViewRepresentable {
             var ancestor = superview
             while let view = ancestor {
                 if let table = descendants(view).compactMap({ $0 as? NSTableView }).first(where: {
-                    $0.accessibilityIdentifier() == identifier
+                    $0.accessibilityIdentifier() == tableIdentifier
                 }) { return table }
                 ancestor = view.superview
             }
@@ -58,7 +58,7 @@ struct TypefluxTableContentHeight: NSViewRepresentable {
 
     func updateNSView(_ view: MeasurementView, context _: Context) {
         view.rowCount = rowCount
-        view.identifier = identifier
+        view.tableIdentifier = identifier
         view.report = { measured in
             if abs(height - measured) > 0.5 { height = measured }
         }
