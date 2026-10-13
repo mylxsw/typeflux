@@ -117,19 +117,31 @@ enum TypefluxNavigationTestSupport {
         if keyEquivalent {
             // Native performKeyEquivalent can call performClick and enter AppKit's nested event loop.
             // Check the owned button's shortcut wiring, then dispatch its target/action directly.
-            func buttons(in view: NSView) -> [NSButton] {
-                (view as? NSButton).map { [$0] } ?? view.subviews.flatMap { buttons(in: $0) }
-            }
             let flags = modifiers.intersection([.command, .option, .control, .shift])
-            guard let button = window.contentView.flatMap({ view in
-                buttons(in: view).first {
-                    $0.keyEquivalent == text
-                        && $0.keyEquivalentModifierMask.intersection([.command, .option, .control, .shift]) == flags
+            let controls = window.contentView.map(SettingsBehaviorTestSupport.nativeViews) ?? []
+            let matching = controls.compactMap { $0 as? NSControl }.first {
+                guard !($0 is NSPopUpButton), let cell = $0.cell as? NSButtonCell,
+                      !(cell is NSPopUpButtonCell), !$0.isHiddenOrHasHiddenAncestor else { return false }
+                return cell.keyEquivalent == text
+                    && cell.keyEquivalentModifierMask.intersection([.command, .option, .control, .shift]) == flags
+            }
+            let control = try #require(matching, "Missing owned native shortcut: key \(code), modifiers \(flags)")
+            try SettingsBehaviorTestSupport.Element(object: control, window: window).press()
+            return
+        }
+        // Swift Testing does not run NSApp.run. Dispatch the same owned handlers that the local
+        // monitors use, without relying on WindowServer's key-window event delivery.
+        guard window.attachedSheet == nil, let content = window.contentView else { return }
+        for view in SettingsBehaviorTestSupport.nativeViews(in: content) {
+            if let bridge = view as? TypefluxSearchToolbarBridge.BridgeView, bridge.handle(event) {
+                if modifiers == .command, text.lowercased() == "f",
+                   let field = window.toolbar?.items.compactMap({ $0 as? NSSearchToolbarItem }).first?.searchField {
+                    #expect(window.makeFirstResponder(field), "Focus the search field in its owning window")
                 }
-            }) else { return } // An unregistered/disabled shortcut is ignored, as by AppKit.
-            try SettingsBehaviorTestSupport.Element(object: button, window: window).press()
-        } else {
-            NSApp.sendEvent(event)
+                return
+            }
+            if let monitor = view as? TypefluxKeyboardMonitor.MonitorView, monitor.handle(event) { return }
+            if let table = view as? TypefluxTableDeleteKey.KeyView, table.handle(event) { return }
         }
     }
 

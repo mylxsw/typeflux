@@ -1,10 +1,27 @@
 import AppKit
+import ObjectiveC
 import SwiftUI
 import Testing
 
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct SettingsBehaviorTestSupportTests {
+    @MainActor
+    private final class EventLoopProbe: NSApplication {
+        static var calls = 0
+        override func nextEvent(matching _: NSEvent.EventTypeMask, until _: Date?,
+                                inMode _: RunLoop.Mode, dequeue _: Bool) -> NSEvent? {
+            EventLoopProbe.calls += 1
+            return nil
+        }
+    }
+
+    @MainActor
+    private final class ButtonCellProbe: NSButtonCell {
+        static var calls = 0
+        override func performClick(_: Any?) { ButtonCellProbe.calls += 1 }
+    }
+
     @MainActor
     private final class Target: NSObject {
         var senders: [NSControl] = []
@@ -61,6 +78,77 @@ struct SettingsBehaviorTestSupportTests {
         try SettingsBehaviorTestSupport.Element(object: button).press()
         #expect(target.states == [.on, .off])
         #expect(target.senders.allSatisfy { $0 === button })
+    }
+
+    @Test func `mixed checkbox uses the native three state cycle before dispatch`() throws {
+        let target = Target()
+        let button = NSButton(checkboxWithTitle: "Mixed", target: target, action: #selector(Target.receive(_:)))
+        button.allowsMixedState = true
+        button.state = .on
+        for _ in 0 ..< 3 { try SettingsBehaviorTestSupport.Element(object: button).press() }
+        #expect(target.states == [.off, .mixed, .on])
+    }
+
+    @Test func `native radio remains selected on successive actions`() throws {
+        let target = Target()
+        let button = NSButton(radioButtonWithTitle: "Radio", target: target, action: #selector(Target.receive(_:)))
+        button.state = .off
+        for _ in 0 ..< 2 { try SettingsBehaviorTestSupport.Element(object: button).press() }
+        #expect(target.states == [.on, .on])
+    }
+
+    @Test func `SwiftUI button proxies dispatch without cell clicks or nested event polling`() async throws {
+        var actions = 0
+        let view = Button { actions += 1 } label: {
+            HStack { Text("Proxy action"); Image(systemName: "chevron.right") }
+        }.buttonStyle(.borderless).accessibilityLabel("Proxy action")
+        try await TypefluxNavigationTestSupport.withWindow(view) { window, host in
+            try await SettingsBehaviorTestSupport.wait("Rendered SwiftUI button") {
+                SettingsBehaviorTestSupport.contains("Proxy action", in: host)
+            }
+            let element = try SettingsBehaviorTestSupport.button("Proxy action", in: host)
+            let control = try #require(element.nativeControl())
+            #expect(control.window === window)
+            try withoutClickEventLoops { try element.press() }
+            #expect(actions == 1)
+        }
+    }
+
+    @Test func `proxy resolution stays in its own window when button labels match`() async throws {
+        var actions = [0, 0]
+        let views = (0 ..< 2).map { index in
+            AnyView(Button("Same title") { actions[index] += 1 }.buttonStyle(.bordered))
+        }
+        try await TypefluxNavigationTestSupport.withWindows(views) { windows in
+            for (index, hosted) in windows.enumerated() {
+                let element = try SettingsBehaviorTestSupport.button("Same title", in: hosted.host)
+                #expect(element.nativeControl()?.window === hosted.window)
+                try withoutClickEventLoops { try element.press() }
+                #expect(actions[index] == 1)
+            }
+            #expect(actions == [1, 1])
+        }
+    }
+
+    private func withoutClickEventLoops(_ press: () throws -> Void) throws {
+        // Install only around synchronous dispatch under exclusive UI state; always restore both IMPs.
+        let eventSelector = #selector(NSApplication.nextEvent(matching:until:inMode:dequeue:))
+        let clickSelector = #selector(NSButtonCell.performClick(_:))
+        let eventMethod = try #require(class_getInstanceMethod(NSApplication.self, eventSelector))
+        let eventProbe = try #require(class_getInstanceMethod(EventLoopProbe.self, eventSelector))
+        let clickMethod = try #require(class_getInstanceMethod(NSButtonCell.self, clickSelector))
+        let clickProbe = try #require(class_getInstanceMethod(ButtonCellProbe.self, clickSelector))
+        EventLoopProbe.calls = 0
+        ButtonCellProbe.calls = 0
+        let originalEvent = method_setImplementation(eventMethod, method_getImplementation(eventProbe))
+        let originalClick = method_setImplementation(clickMethod, method_getImplementation(clickProbe))
+        defer {
+            method_setImplementation(clickMethod, originalClick)
+            method_setImplementation(eventMethod, originalEvent)
+        }
+        try press()
+        #expect(ButtonCellProbe.calls == 0, "Press must not forward to NSButtonCell.performClick")
+        #expect(EventLoopProbe.calls == 0, "Press must not poll AppKit's nested event loop")
     }
 
     @Test func `switch state changes before its target receives each action`() throws {

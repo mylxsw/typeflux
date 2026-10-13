@@ -5,8 +5,6 @@ import Testing
 
 @MainActor
 enum SettingsBehaviorTestSupport {
-    private typealias Press = @convention(c) (AnyObject, Selector) -> Bool
-
     struct Element {
         let object: NSObject
         var window: NSWindow?
@@ -45,15 +43,17 @@ enum SettingsBehaviorTestSupport {
 
         @MainActor func press() throws {
             // AppKit click/AX simulation enters a nested event loop and can stop Swift Testing's outer runloop.
-            _ = try #require(!(object is NSPopUpButton), "Select menu items directly instead of starting menu tracking")
+            _ = try #require(!(object is NSPopUpButton) && !((object as? NSControl)?.cell is NSPopUpButtonCell),
+                             "Select menu items directly instead of starting menu tracking")
             if let button = object as? NSButton {
                 guard button.isEnabled else { return }
-                if role == NSAccessibility.Role.checkBox.rawValue {
-                    button.state = button.state == .on ? .off : .on
-                } else if role == NSAccessibility.Role.radioButton.rawValue {
-                    button.state = .on
-                }
                 let action = try #require(button.action, "The native button must have an action: \(label)")
+                // AX role queries on unattached controls can be empty. Use the cell's native state behavior.
+                if button.accessibilityRole() == .radioButton {
+                    button.state = .on
+                } else if let cell = button.cell as? NSButtonCell, !cell.showsStateBy.isEmpty {
+                    button.setNextState()
+                }
                 #expect(NSApp.sendAction(action, to: button.target, from: button),
                         "The native button must dispatch its action: \(label)")
                 return
@@ -61,6 +61,10 @@ enum SettingsBehaviorTestSupport {
             if let cell = object as? NSButtonCell {
                 if let button = cell.controlView as? NSButton {
                     try Element(object: button, window: window).press()
+                    return
+                }
+                if let control = cell.controlView as? NSControl, !(control is NSMatrix) {
+                    try Element(object: control, window: window).press()
                     return
                 }
                 let matrix = try #require(cell.controlView as? NSMatrix, "The button cell must have an owned control")
@@ -84,18 +88,54 @@ enum SettingsBehaviorTestSupport {
                 #expect(NSApp.sendAction(action, to: item.target, from: item))
                 return
             }
-            if try pressNativeToolbarAction() || pressNativeSegment() || pressNativeSwitch() { return }
-            // SwiftUI accessibility proxies can expose an action without being native button controls.
-            // Native buttons/cells/switches are handled above and never reach this AX fallback.
-            let selector = NSSelectorFromString("accessibilityPerformPress")
-            if !object.responds(to: selector), object.accessibilityActionNames().contains(.press) {
-                object.accessibilityPerformAction(.press)
+            if let control = object as? NSControl, let cell = control.cell as? NSButtonCell {
+                guard control.isEnabled, cell.isEnabled else { return }
+                let action = try #require(control.action ?? cell.action)
+                if control.accessibilityRole() == .radioButton {
+                    cell.state = .on
+                } else if !cell.showsStateBy.isEmpty {
+                    cell.setNextState()
+                }
+                let target = control.action != nil ? control.target : cell.target
+                #expect(NSApp.sendAction(action, to: target, from: control))
                 return
             }
-            _ = try #require(object.responds(to: selector), "The rendered control must expose a press action")
-            let press = unsafeBitCast(object.method(for: selector), to: Press.self)
-            // SwiftUI proxies can run their handler while returning false. Callers assert the model/UI effect.
-            _ = press(object, selector)
+            if try pressNativeToolbarAction() || pressNativeSegment() || pressNativeSwitch() { return }
+            // A SwiftUI NSResponder AX proxy can forward press to NSButtonCell.performClick.
+            // Resolve its owned native control; fail visibly rather than guessing that AX press is safe.
+            let control = try #require(nativeControl(),
+                                       "No native action for \(label) (\(type(of: object))) at \(frame)")
+            try Element(object: control, window: window).press()
+        }
+
+        @MainActor func nativeControl() -> NSControl? {
+            if let control = object as? NSControl {
+                return control is NSButton || control is NSSwitch || control.cell is NSButtonCell ? control : nil
+            }
+            if let cell = object as? NSButtonCell { return cell.controlView as? NSControl }
+            guard let window, !frame.isEmpty else { return nil }
+            let point = NSPoint(x: frame.midX, y: frame.midY)
+            let windowPoint = window.convertPoint(fromScreen: point)
+            let roots = [window.contentView].compactMap { $0 } + (window.toolbar?.items.compactMap(\.view) ?? [])
+            for root in roots {
+                // hitTest takes superview coordinates, including when the hosting view is flipped.
+                let local = root.superview?.convert(windowPoint, from: nil) ?? windowPoint
+                var hit = root.hitTest(local)
+                while let view = hit, view.window === window {
+                    if let control = view as? NSControl,
+                       control is NSButton || control is NSSwitch || control.cell is NSButtonCell {
+                        return control
+                    }
+                    hit = view.superview
+                }
+            }
+            // SwiftUI can hit its label/hosting layer instead of the backing cell's control.
+            // Restrict the fallback to native buttons covering this proxy's screen-space center.
+            return roots.flatMap(SettingsBehaviorTestSupport.nativeViews).compactMap { $0 as? NSControl }.first {
+                guard $0 is NSButton || $0 is NSSwitch || $0.cell is NSButtonCell,
+                      !$0.isHiddenOrHasHiddenAncestor, $0.window === window else { return false }
+                return window.convertToScreen($0.convert($0.bounds, to: nil)).contains(point)
+            }
         }
 
         @MainActor private func pressNativeToolbarAction() throws -> Bool {
@@ -154,7 +194,7 @@ enum SettingsBehaviorTestSupport {
                     return true
                 }
             }
-            return false // Other SwiftUI radio proxies can dispatch their own non-native action.
+            return false
         }
 
         @MainActor private func pressNativeSwitch() throws -> Bool {
@@ -179,6 +219,10 @@ enum SettingsBehaviorTestSupport {
             let action = try #require(control.action, "The native switch must have an action")
             #expect(NSApp.sendAction(action, to: control.target, from: control))
         }
+    }
+
+    static func nativeViews(in view: NSView) -> [NSView] {
+        [view] + view.subviews.flatMap { nativeViews(in: $0) }
     }
 
     static func elements(in root: Any) -> [Element] {

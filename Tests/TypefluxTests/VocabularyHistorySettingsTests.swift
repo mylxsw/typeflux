@@ -39,21 +39,37 @@ struct VocabularyHistorySettingsTests {
                 size: NSSize(width: 1680, height: 820)
             ) { window, host in
                 model.searchQuery = "NewTerm"
-                try await RenderedUI.wait { RenderedUI.contains(L("vocabulary.action.addQuery", "NewTerm"), in: host) }
+                try await RenderedUI.wait("Add-query action") {
+                    RenderedUI.contains(L("vocabulary.action.addQuery", "NewTerm"), in: host)
+                }
                 try RenderedUI.button(L("vocabulary.action.addQuery", "NewTerm"), in: host).press()
-                try await RenderedUI.wait { window.attachedSheet != nil }
+                try await RenderedUI.wait("Add-query sheet attachment") { window.attachedSheet != nil }
                 let sheet = try #require(window.attachedSheet)
-                try await RenderedUI.wait { RenderedUI.contains(L("vocabulary.sheet.title"), in: sheet) }
-                try await RenderedUI.wait { sheet.firstResponder is NSTextView }
+                try await RenderedUI.wait("Vocabulary sheet title") {
+                    RenderedUI.contains(L("vocabulary.sheet.title"), in: sheet)
+                }
+                let content = try #require(sheet.contentView)
+                try await RenderedUI.wait("Prefilled vocabulary term field") {
+                    RenderedUI.nativeViews(in: content).compactMap { $0 as? NSTextField }
+                        .contains { $0.isEditable && $0.stringValue == "NewTerm" }
+                }
+                let field = try #require(RenderedUI.nativeViews(in: content).compactMap { $0 as? NSTextField }
+                    .first { $0.isEditable && $0.stringValue == "NewTerm" })
+                #expect(field.window === sheet)
+                #expect(sheet.makeFirstResponder(field))
+                #expect(sheet.fieldEditor(false, for: field) is NSTextView)
                 try RenderedUI.button(L("vocabulary.action.addWord"), in: sheet).press()
-                try await RenderedUI.wait { model.vocabularyEntries.contains { $0.term == "NewTerm" } }
+                try await RenderedUI.wait("Saved query term") { model.vocabularyEntries.contains { $0.term == "NewTerm" } }
                 #expect(model.searchQuery.isEmpty)
-                try await RenderedUI.wait { window.attachedSheet == nil }
+                try await RenderedUI.wait("Saved sheet dismissal") { window.attachedSheet == nil }
                 try RenderedUI.button(L("vocabulary.action.newWord"), in: window).press()
-                try await RenderedUI.wait { window.attachedSheet != nil }
+                try await RenderedUI.wait("New-word sheet attachment") { window.attachedSheet != nil }
                 let cancelSheet = try #require(window.attachedSheet)
+                try await RenderedUI.wait("New-word cancel action") {
+                    RenderedUI.contains(L("common.cancel"), in: cancelSheet)
+                }
                 try TypefluxNavigationTestSupport.sendKey(53, to: cancelSheet, keyEquivalent: true)
-                try await RenderedUI.wait { window.attachedSheet == nil }
+                try await RenderedUI.wait("Escape dismissal of the new-word sheet") { window.attachedSheet == nil }
                 #expect(model.vocabularyEntries.count == 1)
             }
         }

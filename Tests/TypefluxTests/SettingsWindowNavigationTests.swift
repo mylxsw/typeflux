@@ -137,7 +137,7 @@ struct SettingsWindowNavigationTests {
                                                                size: NSSize(width: 1300, height: 800)) { window, host in
                 for pane in [AgentSettingsPane.skills, .memory, .mcpServers] {
                     try await open(pane.title, in: host)
-                    try await UI.wait { window.title.contains(pane.title) }
+                    try await UI.wait("Agent pane title: \(pane.title)") { window.title.contains(pane.title) }
                     try await type("no-results-346", in: window)
                     let item = try #require(searchItem(window))
                     #expect(item.searchField.stringValue == "no-results-346")
@@ -157,7 +157,7 @@ struct SettingsWindowNavigationTests {
                 model.navigate(to: .launcher)
                 for pane in [LauncherSettingsPane.keywords, .workflows] {
                     try await open(pane.title, in: host)
-                    try await UI.wait { window.title.contains(pane.title) }
+                    try await UI.wait("Launcher pane title: \(pane.title)") { window.title.contains(pane.title) }
                     try await type("no-results-346", in: window)
                     #expect(searchItem(window)?.searchField.stringValue == "no-results-346")
                     if pane == .keywords {
@@ -174,7 +174,7 @@ struct SettingsWindowNavigationTests {
     }
 
     private func open(_ title: String, in host: NSView) async throws {
-        try await UI.wait {
+        try await UI.wait("Pane navigation button: \(title)") {
             UI.elements(in: host)
                 .contains { $0.role == NSAccessibility.Role.button.rawValue && $0.label.hasPrefix(title) }
         }
@@ -190,18 +190,16 @@ struct SettingsWindowNavigationTests {
     }
 
     private func type(_ query: String, in window: NSWindow) async throws {
-        try await UI.wait { searchItem(window) != nil }
+        try await UI.wait("Native toolbar search item") { searchItem(window) != nil }
         try await Task.sleep(for: .milliseconds(50))
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
         try TypefluxNavigationTestSupport.sendKey(3, characters: "f", modifiers: .command, to: window)
         let item = try #require(searchItem(window))
-        try await UI.wait { item.searchField.currentEditor() != nil }
+        try await UI.wait("Owned search field editor") { item.searchField.currentEditor() != nil }
         let editor = try #require(item.searchField.currentEditor() as? NSTextView)
         editor.insertText(query, replacementRange: NSRange(location: 0, length: editor.string.utf16.count))
         item.searchField.validateEditing()
         item.searchField.sendAction(item.searchField.action, to: item.searchField.target)
-        try await UI.wait { item.searchField.stringValue == query }
+        try await UI.wait("Toolbar search query: \(query)") { item.searchField.stringValue == query }
         try await Task.sleep(for: .milliseconds(80))
     }
 }

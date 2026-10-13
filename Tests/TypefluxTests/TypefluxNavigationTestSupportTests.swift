@@ -2,11 +2,41 @@ import AppKit
 import SwiftUI
 import Testing
 @testable import Typeflux
+@testable import TypefluxUI
 
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct TypefluxNavigationTestSupportTests {
     private struct FixtureFailure: Error {}
+
+    @Test func `search commands use the supplied window without global key dispatch`() async throws {
+        let states = [TypefluxSearchState(), TypefluxSearchState()]
+        let views = states.map { state in
+            AnyView(TypefluxWindow(title: "Search scope", search: state, searchPrompt: "Owned search") {
+                Text("Sidebar")
+            } detail: {
+                Text("Content")
+            })
+        }
+        try await TypefluxNavigationTestSupport.withWindows(views) { windows in
+            let first = windows[0].window
+            try await SettingsBehaviorTestSupport.wait("First window's native search") {
+                first.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true
+            }
+            try TypefluxNavigationTestSupport.sendKey(3, characters: "f", modifiers: .command, to: first)
+            let item = try #require(first.toolbar?.items.compactMap { $0 as? NSSearchToolbarItem }.first)
+            #expect(states[0].isFocused && states[0].isExpanded)
+            #expect(item.searchField.currentEditor() != nil)
+            #expect(!states[1].isFocused && !states[1].isExpanded)
+            states[0].query = "Owned query"
+            try TypefluxNavigationTestSupport.sendKey(53, to: first)
+            #expect(states[0].query.isEmpty && states[0].isExpanded)
+            try TypefluxNavigationTestSupport.sendKey(53, to: first)
+            #expect(!states[0].isFocused && !states[0].isExpanded)
+            #expect(item.searchField.currentEditor() == nil)
+            #expect(states[1].query.isEmpty && !states[1].isExpanded)
+        }
+    }
 
     @Test func `shared Dock window closures keep the UI test host present`() async throws {
         TypefluxTestApplicationEnvironment.prepare()
