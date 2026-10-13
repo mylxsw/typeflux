@@ -4789,3 +4789,12 @@
 
 "models.tab.providers" = "Providers";
 "models.tab.local" = "Local models";
+
+// Website login connection diagnostics.
+"auth.web.invalidResponse" = "The login service returned an unexpected response. Check that the App and API use the same website address.";
+"auth.web.networkUnavailable" = "Cannot connect to the login service. Check the API address and that Docker is running.";
+"auth.web.transportBlocked" = "macOS blocked HTTP for this App build. Rebuild with the development launcher and the HTTP origin configured.";
+"auth.web.endpointUnavailable" = "The login endpoint is unavailable. Check the API version, Web auth configuration and /api proxy.";
+"auth.web.requestRejected" = "The login request was rejected. Check the development/production client and callback configuration.";
+"auth.web.serviceUnavailable" = "The login service is unavailable. Check the API and database, then try again.";
+"auth.web.rateLimited" = "Too many login attempts. Wait a moment and try again.";

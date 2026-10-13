@@ -4740,3 +4740,12 @@
 
 "models.tab.providers" = "제공자";
 "models.tab.local" = "로컬 모델";
+
+// Website login connection diagnostics.
+"auth.web.invalidResponse" = "로그인 서비스에서 예상하지 못한 응답을 받았습니다. App과 API의 웹사이트 주소가 같은지 확인하세요.";
+"auth.web.networkUnavailable" = "로그인 서비스에 연결할 수 없습니다. API 주소와 Docker 실행 상태를 확인하세요.";
+"auth.web.transportBlocked" = "macOS가 이 App의 HTTP 요청을 차단했습니다. HTTP 주소를 설정하고 개발 실행 스크립트로 다시 빌드하세요.";
+"auth.web.endpointUnavailable" = "로그인 API를 사용할 수 없습니다. API 버전, 웹 로그인 설정 및 /api 프록시를 확인하세요.";
+"auth.web.requestRejected" = "로그인 요청이 거부되었습니다. 개발/운영 클라이언트와 콜백 주소 설정을 확인하세요.";
+"auth.web.serviceUnavailable" = "로그인 서비스를 사용할 수 없습니다. API와 데이터베이스를 확인한 후 다시 시도하세요.";
+"auth.web.rateLimited" = "로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요.";

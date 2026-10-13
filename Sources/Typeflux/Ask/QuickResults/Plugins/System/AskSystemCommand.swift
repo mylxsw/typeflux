@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum AskSystemCommand: String, CaseIterable, Sendable, Identifiable {
     case toggleBluetooth, toggleWiFi, ejectAllDisks, toggleHiddenFiles, toggleDesktopFiles
@@ -125,6 +126,13 @@ struct AskSystemCommandPlugin: AskLauncherPlugin {
 
     var symbol: String {
         command.symbol
+    }
+
+    var keywordColor: Color {
+        switch command {
+        case .emptyTrash, .shutdown, .restart, .resetSpotlight: StudioTheme.danger
+        default: AskTheme.accent
+        }
     }
 
     var defaultKeywords: [AskKeyword] {

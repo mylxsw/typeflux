@@ -124,7 +124,7 @@ final class WebLoginCoordinator: ObservableObject {
         }
     }
 
-    /// Both ASWebAuthenticationSession and the application URL router enter here.
+    /// The application URL router delivers the default browser callback here.
     /// The callback has no transaction ID: state identifies the sole active transaction.
     func receive(_ url: URL) async {
         guard configuration.enabled, configuration.matchesCallback(url) else { return }

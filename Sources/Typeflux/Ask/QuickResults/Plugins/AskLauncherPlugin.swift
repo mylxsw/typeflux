@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// A capability the launcher runs on a piece of text, reached by keywords.
 /// The launcher owns the interface, keys and states; a plugin only says what
@@ -8,6 +9,8 @@ protocol AskLauncherPlugin: Sendable {
     var title: String { get }
     /// SF Symbol for the keyword chip and the result card.
     var symbol: String { get }
+    /// Tint for the keyword prefix; destructive commands use the danger color.
+    var keywordColor: Color { get }
     var defaultKeywords: [AskKeyword] { get }
     /// What ⇥ changes, for the bottom bar ("Language"); nil when it changes nothing.
     var optionName: String? { get }
@@ -31,6 +34,7 @@ protocol AskLauncherPlugin: Sendable {
 }
 
 extension AskLauncherPlugin {
+    var keywordColor: Color { AskTheme.accent }
     var optionName: String? { nil }
     var runsWithoutInput: Bool { false }
     var usesSelectionInput: Bool { true }

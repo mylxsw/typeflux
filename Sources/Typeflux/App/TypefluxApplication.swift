@@ -50,7 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await AppLoginURLRouter.handle(
                 urls, login: AuthState.shared.webLoginCoordinator,
                 isLoggedIn: { AuthState.shared.isLoggedIn },
-                showLogin: { LoginWindowController.shared.show() },
+                showLogin: { LoginWindowController.shared.showWebLoginFailure() },
                 handleBilling: { await BillingReturnLink.handle(auth: .shared) }
             )
         }
