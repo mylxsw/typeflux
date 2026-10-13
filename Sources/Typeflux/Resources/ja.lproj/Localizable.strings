@@ -4738,6 +4738,34 @@
 "ask.plugin.kill.failed" = "「%@」を強制終了できませんでした。";
 "ask.settings.keywords.kind.kill.hint" = "実行中のアプリを一覧表示し、選択したアプリを強制終了します。";
 
+
+// Launcher input history
+"ask.inputHistory.title" = "最近の入力";
+"ask.inputHistory.disabled" = "入力履歴はオフです";
+"ask.inputHistory.noMatches" = "一致する入力がありません";
+"ask.inputHistory.empty" = "入力履歴はまだありません";
+"ask.inputHistory.disabled.detail" = "ランチャー設定で入力履歴を有効にしてください。";
+"ask.inputHistory.empty.detail" = "検索を実行するか、未完了の入力を閉じるとここに保存されます。";
+"ask.inputHistory.clear" = "入力履歴を消去…";
+"ask.inputHistory.deleteAll" = "すべて消去";
+"ask.inputHistory.clear.detail" = "この Mac の入力履歴をすべて削除します。";
+"ask.inputHistory.fill" = "入力欄に挿入";
+"ask.inputHistory.unsent" = "未送信";
+"ask.inputHistory.askAI" = "AI に質問";
+"ask.inputHistory.copy" = "テキストをコピー";
+"ask.inputHistory.delete" = "削除";
+"ask.inputHistory.filter" = "最近の入力を絞り込み…";
+"ask.inputHistory.chip" = "↺ 履歴";
+"ask.inputHistory.hint" = "↩ 挿入 · ⌘↩ AI に質問 · ⌘⌫ 削除 · esc 戻る";
+"ask.inputHistory.homeHint" = "↑ 最近の入力";
+"ask.inputHistory.remember" = "入力履歴を保存";
+"ask.inputHistory.limit" = "保存件数";
+"ask.inputHistory.privacy" = "入力履歴はこの Mac にのみ保存されます。取得したコンテキスト、添付ファイル、AI の回答は含まれません。";
+"ask.inputHistory.noMatches.detail" = "別の文字で絞り込んでください。esc で解除して戻れます。";
+
+"models.tab.providers" = "プロバイダー";
+"models.tab.local" = "ローカルモデル";
+
 // Website login connection diagnostics.
 "auth.web.invalidResponse" = "ログインサービスから予期しない応答がありました。App と API のウェブサイト URL が一致しているか確認してください。";
 "auth.web.networkUnavailable" = "ログインサービスに接続できません。API の URL と Docker の起動状態を確認してください。";

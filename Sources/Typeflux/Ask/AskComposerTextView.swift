@@ -15,6 +15,8 @@ struct AskComposerTextView: NSViewRepresentable {
     var usesKeyViewTabs = false
     var voice: AskVoiceInput? = nil
     var contextID: String = "launcher"
+    /// Explicitly recalled input moves the caret even when its text equals the filter.
+    var caretRequestID: UUID?
     var fontSize: CGFloat = StudioTheme.Typography.bodyLarge
     var maximumHeight: CGFloat = 148
     var onSubmit: () -> Void
@@ -29,6 +31,8 @@ struct AskComposerTextView: NSViewRepresentable {
     var onSlashQuery: ((AskSlashQuery?, Bool) -> Void)?
     /// Arrow, Return, Tab and Escape while the command palette is open; true when handled.
     var onCommandKey: ((AskCommandKey) -> Bool)?
+    /// History gets first choice of navigation, including → before native caret movement.
+    var onHistoryKey: ((AskCommandKey) -> Bool)?
     /// Plain left/right for a result grid; false leaves native caret movement intact.
     var onHorizontalArrow: ((Int) -> Bool)?
     /// Delete in an empty editor; true when it removed something instead.
@@ -68,6 +72,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.delegate = context.coordinator
         editor.voice = voice
         editor.contextID = contextID
+        editor.caretRequestID = caretRequestID
         editor.usesKeyViewTabs = usesKeyViewTabs
         editor.onSubmit = onSubmit
         editor.onDismiss = onDismiss
@@ -76,6 +81,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onAttach = onAttach
         editor.onDropTargetChange = onDropTargetChange
         editor.onSlashQuery = onSlashQuery
+        editor.onHistoryKey = onHistoryKey
         editor.onCommandKey = onCommandKey
         editor.onHorizontalArrow = onHorizontalArrow
         editor.onEmptyBackspace = onEmptyBackspace
@@ -85,6 +91,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.setAccessibilityHelp(L("ask.voice.holdHint"))
         scroll.documentView = editor
         editor.string = text
+        if caretRequestID != nil { editor.setSelectedRange(NSRange(location: (text as NSString).length, length: 0)) }
         DispatchQueue.main.async { [weak editor] in
             guard let editor, let window = editor.window, window.isKeyWindow else { return }
             window.makeFirstResponder(editor)
@@ -117,15 +124,21 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onAttach = onAttach
         editor.onDropTargetChange = onDropTargetChange
         editor.onSlashQuery = onSlashQuery
+        editor.onHistoryKey = onHistoryKey
         editor.onCommandKey = onCommandKey
         editor.onHorizontalArrow = onHorizontalArrow
         editor.onEmptyBackspace = onEmptyBackspace
         editor.onContextShortcut = onContextShortcut
         editor.onOpenChat = onOpenChat
         if editor.font?.pointSize != fontSize { editor.font = .systemFont(ofSize: fontSize) }
-        if editor.string != text, !editor.hasMarkedText() {
+        let recalled = editor.caretRequestID != caretRequestID
+        if editor.string != text || recalled, !editor.hasMarkedText() {
             editor.string = text
             editor.setSelectedRange(NSRange(location: (text as NSString).length, length: 0))
+            editor.caretRequestID = caretRequestID
+            if recalled, caretRequestID != nil, editor.window?.isKeyWindow == true {
+                editor.window?.makeFirstResponder(editor)
+            }
         }
         editor.reportHeight()
     }
@@ -150,6 +163,7 @@ struct AskComposerTextView: NSViewRepresentable {
     final class Editor: NSTextView {
         weak var voice: AskVoiceInput?
         var contextID = "launcher"
+        var caretRequestID: UUID?
         var usesKeyViewTabs = false
         static let mouseHoldDelay: TimeInterval = 0.35
         private var holdTimer: Timer?
@@ -167,6 +181,7 @@ struct AskComposerTextView: NSViewRepresentable {
         var onAttach: (([AskAttachmentSource]) -> Void)?
         var onDropTargetChange: (Bool) -> Void = { _ in }
         var onSlashQuery: ((AskSlashQuery?, Bool) -> Void)?
+        var onHistoryKey: ((AskCommandKey) -> Bool)?
         var onCommandKey: ((AskCommandKey) -> Bool)?
         var onHorizontalArrow: ((Int) -> Bool)?
         var onEmptyBackspace: (() -> Bool)?
@@ -457,6 +472,11 @@ struct AskComposerTextView: NSViewRepresentable {
                 && event.charactersIgnoringModifiers?.lowercased() == "o"
         }
         override func performKeyEquivalent(with event: NSEvent) -> Bool {
+            if window?.firstResponder === self, voice?.isActive != true, !hasMarkedText(),
+               let key = AskCommandKey(event) {
+                if event.isARepeat, case .number = key { return true }
+                if onHistoryKey?(key) == true { return true }
+            }
             if window?.firstResponder === self, openChatShortcut(event) { return true }
             if window?.firstResponder === self, voice?.isActive != true, !hasMarkedText(),
                let key = AskCommandKey(event), case .number = key {
@@ -477,6 +497,8 @@ struct AskComposerTextView: NSViewRepresentable {
         }
 
         override func keyDown(with event: NSEvent) {
+            if !hasMarkedText(), voice?.isActive != true, let key = AskCommandKey(event),
+               onHistoryKey?(key) == true { return }
             if openChatShortcut(event) { return }
             if event.keyCode == 53, mouseDownEvent != nil { cancelInteraction(); return }
             if voice?.isActive == true {

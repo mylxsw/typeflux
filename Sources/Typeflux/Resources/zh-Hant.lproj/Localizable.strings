@@ -4772,6 +4772,34 @@
 "ask.plugin.kill.failed" = "無法強制結束「%@」。";
 "ask.settings.keywords.kind.kill.hint" = "列出執行中的應用程式，強制結束選取的應用程式。";
 
+
+// Launcher input history
+"ask.inputHistory.title" = "最近輸入";
+"ask.inputHistory.disabled" = "輸入歷史已關閉";
+"ask.inputHistory.noMatches" = "沒有相符的輸入";
+"ask.inputHistory.empty" = "尚無輸入歷史";
+"ask.inputHistory.disabled.detail" = "在啟動器設定中開啟「記住輸入歷史」。";
+"ask.inputHistory.empty.detail" = "執行搜尋或關閉未完成的輸入後，可在這裡找回。";
+"ask.inputHistory.clear" = "清除輸入歷史…";
+"ask.inputHistory.deleteAll" = "清除全部";
+"ask.inputHistory.clear.detail" = "將刪除這台 Mac 上的全部輸入歷史。";
+"ask.inputHistory.fill" = "填入";
+"ask.inputHistory.unsent" = "未傳送";
+"ask.inputHistory.askAI" = "問 AI";
+"ask.inputHistory.copy" = "拷貝文字";
+"ask.inputHistory.delete" = "刪除";
+"ask.inputHistory.filter" = "篩選最近輸入…";
+"ask.inputHistory.chip" = "↺ 最近";
+"ask.inputHistory.hint" = "↩ 填入 · ⌘↩ 問 AI · ⌘⌫ 刪除 · esc 返回";
+"ask.inputHistory.homeHint" = "↑ 最近輸入";
+"ask.inputHistory.remember" = "記住輸入歷史";
+"ask.inputHistory.limit" = "保留筆數";
+"ask.inputHistory.privacy" = "輸入歷史僅儲存在這台 Mac 上，不包含自動擷取的上下文、附件或 AI 回答。";
+"ask.inputHistory.noMatches.detail" = "試試其他文字。按 esc 清空篩選並返回首頁。";
+
+"models.tab.providers" = "服務商";
+"models.tab.local" = "本地模型";
+
 // Website login connection diagnostics.
 "auth.web.invalidResponse" = "登入服務傳回非預期資料，請確認 App 與 API 設定的網站位址一致。";
 "auth.web.networkUnavailable" = "無法連線至登入服務，請檢查 API 位址及 Docker 是否已啟動。";

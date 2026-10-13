@@ -21,10 +21,11 @@ extension AskConversationModel {
                         load: @escaping @Sendable ([AskAttachmentSource]) -> AskAttachmentBatch = { AskAttachmentBatch.load($0) }) {
         guard !sources.isEmpty else { return }
         let key = visionDraftKey(launcher: launcher)
+        let presentation = launcherPresentationID
         attachmentLoads[key, default: 0] += 1
         Task { [weak self] in
             let batch = await Task.detached(priority: .userInitiated) { load(sources) }.value
-            guard let self else { return }
+            guard let self, !launcher || launcherPresentationID == presentation else { return }
             let remaining = (attachmentLoads[key] ?? 1) - 1
             attachmentLoads[key] = remaining > 0 ? remaining : nil
             guard visionDraftKey(launcher: launcher) == key else { return }

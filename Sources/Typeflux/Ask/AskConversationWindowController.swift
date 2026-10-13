@@ -245,6 +245,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
             return
         }
+        model.resetLauncherForPresentation()
         model.launcherWindowMode = settings.askLauncherWindowMode
         model.quickSearch.setVisible(true)
         model.refreshQuickApps()
@@ -407,6 +408,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.voiceInput.cancel()
         launchTask?.cancel()
         launchTask = nil
+        if launcher?.isVisible == true { model.recordAbandonedLauncherInput() }
         model.foldLauncherKeyword()
         model.persistDrafts()
         model.quickSearch.setVisible(false)

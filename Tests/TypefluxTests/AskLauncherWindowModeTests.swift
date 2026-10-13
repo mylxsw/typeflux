@@ -130,7 +130,7 @@ extension AskLauncherToggleTests {
         #expect(panel.frame.height == AskLauncherWindowMode.simpleHeight)
     }
 
-    @Test func `simple mode opens an existing draft in the full window`() throws {
+    @Test func `simple mode starts blank even with an existing draft`() throws {
         _ = NSApplication.shared
         let fixture = try AskTestFixture(authenticated: false)
         let suite = "launcher-simple-draft-" + UUID().uuidString
@@ -146,7 +146,7 @@ extension AskLauncherToggleTests {
         }
         controller.showLauncher()
         let panel = try #require(controller.launcherWindow)
-        #expect(panel.frame.height > AskLauncherWindowMode.simpleHeight)
-        #expect((panel.firstResponder as? NSTextView)?.string == "Unfinished question")
+        #expect(panel.frame.height == AskLauncherWindowMode.simpleHeight)
+        #expect((panel.firstResponder as? NSTextView)?.string.isEmpty == true)
     }
 }
