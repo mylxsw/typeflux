@@ -19,6 +19,8 @@ struct FloatingPanelFidelityTests {
     func clipboardModesStayEqualAndSeparateFromResults(_ material: GlassMaterial) async throws {
         let model = ClipboardPanelModel()
         model.reset(entries: [ClipboardTestSupport.entry(.text, text: "Text")])
+        var moreRequests = 0
+        model.onShowActions = { moreRequests += 1 }
         let view = ClipboardPanelView(model: model, focusRequest: 0)
             .environment(\.interfaceStyle, .liquidGlass)
             .environment(\.glassMaterialOverride, material)
@@ -55,16 +57,47 @@ struct FloatingPanelFidelityTests {
                 #expect(buttons[0].frame.minX > viewport.minX)
                 #expect(try #require(buttons.last).frame.maxX <= viewport.maxX - 7)
                 #expect(buttons[0].frame.maxY <= viewport.maxY - 7)
+                expectModeBackgrounds(buttons, material: material, in: host, window: window)
             }
             model.category = .all
             try await TypefluxNavigationTestSupport.wait("persistent quick paste hint", in: window, host: host) {
                 SettingsBehaviorTestSupport.elements(in: host).contains { $0.text.contains("⌘1") }
             }
-            #expect(SettingsBehaviorTestSupport.elements(in: host).contains {
+            let more = try #require(SettingsBehaviorTestSupport.elements(in: host).first {
                 $0.value("accessibilityIdentifier") as? String == "clipboard.more"
             })
+            #expect(more.role == NSAccessibility.Role.button.rawValue)
+            #expect(more.label == L("clipboard.toolbar.more"))
+            try more.press()
+            #expect(moreRequests == 1)
             #expect(!SettingsBehaviorTestSupport.contains(L("clipboard.action.pin"), in: host))
         }
+    }
+
+    private func expectModeBackgrounds(_ buttons: [SettingsBehaviorTestSupport.Element], material: GlassMaterial,
+                                       in host: NSView, window: NSWindow) {
+        #if compiler(>=6.2)
+            if #available(macOS 26.0, *), material == .liquidGlass {
+                let diameter = TypefluxControlHeight.spotlightModeButton.value(for: .liquidGlass)
+                let backgrounds = TypefluxNavigationTestSupport.descendants(of: host)
+                    .compactMap { $0 as? NSGlassEffectView }.filter {
+                        abs($0.bounds.width - diameter) < 1 && abs($0.bounds.height - diameter) < 1
+                    }
+                #expect(backgrounds.count == buttons.count, "Every mode needs its own complete glass circle")
+                for button in buttons {
+                    let background = backgrounds.first {
+                        let frame = window.convertToScreen($0.convert($0.bounds, to: nil))
+                        return abs(frame.minX - button.frame.minX) < 1 && abs(frame.minY - button.frame.minY) < 1
+                    }
+                    #expect(background != nil, "Missing material behind \(button.label)")
+                    if let background {
+                        #expect(background.visibleRect.width >= diameter - 1)
+                        #expect(background.visibleRect.height >= diameter - 1)
+                        #expect(background.cornerRadius == diameter / 2)
+                    }
+                }
+            }
+        #endif
     }
 
     @Test func overflowFitsWholeChipsAndTracksKeyboardSelection() {

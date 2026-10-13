@@ -18,17 +18,21 @@ public struct TypefluxSpotlightModeSurface<Content: View>: View {
                             in: RoundedRectangle(cornerRadius: TypefluxRadius.button.value(for: style)))
         } else {
             let diameter = TypefluxControlHeight.spotlightModeButton.value(for: style)
-            TypefluxGlassContainer(radius: .spotlightInput) {
-                content.frame(width: diameter, height: diameter)
-                    .background {
+            content.frame(width: diameter, height: diameter)
+                .background {
+                    // Give every material its own finite circle, independent of the control's
+                    // native intrinsic size and accessibility representation.
+                    TypefluxGlassContainer(radius: .spotlightInput) {
                         Circle().fill(selected ? TypefluxColor.accent.color : .clear)
                             .frame(width: diameter, height: diameter)
-                            .accessibilityHidden(true)
                     }
-            }
-            .frame(width: diameter, height: diameter)
-            .clipShape(Circle())
-            .contentShape(Circle())
+                    .frame(width: diameter, height: diameter)
+                    .clipShape(Circle())
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
+                .clipShape(Circle())
+                .contentShape(Circle())
         }
     }
 }

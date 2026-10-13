@@ -18,8 +18,11 @@ struct ClipboardPanelToolbar: View {
         .focusable(false)
         .fixedSize()
         .help(L("clipboard.toolbar.more"))
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isButton)
         .accessibilityLabel(L("clipboard.toolbar.more"))
         .accessibilityIdentifier("clipboard.more")
+        .accessibilityAction { model.onShowActions?() }
     }
 }
 

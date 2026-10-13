@@ -91,21 +91,30 @@ struct ClipboardSpotlightSnapshotTests {
                     let window = try #require(controller.presentedWindow)
                     for preview in [false, true] {
                         model.showsPreview = preview
-                        try await Task.sleep(for: .milliseconds(500))
                         let name = "native-\(preview ? "preview" : "panel")-\(style.rawValue)-\(dark ? "dark" : "light").png"
-                        let file = directory.appendingPathComponent(name)
-                        let capture = Process()
-                        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-                        capture.arguments = ["-x", "-o", "-l", String(window.windowNumber), file.path]
-                        try capture.run()
-                        capture.waitUntilExit()
-                        #expect(capture.terminationStatus == 0)
-                        #expect(try Data(contentsOf: file).count > 1000)
+                        try await capture(window, file: directory.appendingPathComponent(name))
                     }
+                    model.showsPreview = false
+                    model.category = .snippet
+                    let name = "native-mode-snippet-\(style.rawValue)-\(dark ? "dark" : "light").png"
+                    try await capture(window, file: directory.appendingPathComponent(name))
+                    model.category = .all
                     controller.dismiss()
                 }
             }
         }
+    }
+
+    private func capture(_ window: NSWindow, file: URL) async throws {
+        try await Task.sleep(for: .milliseconds(500))
+        window.contentView?.layoutSubtreeIfNeeded()
+        let capture = Process()
+        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        capture.arguments = ["-x", "-o", "-l", String(window.windowNumber), file.path]
+        try capture.run()
+        capture.waitUntilExit()
+        #expect(capture.terminationStatus == 0)
+        #expect(try Data(contentsOf: file).count > 1000)
     }
 
     private func render(_ model: ClipboardPanelModel, style: InterfaceStyle, dark: Bool,

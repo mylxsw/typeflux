@@ -1769,6 +1769,10 @@ struct AskComposer: View {
                     AskVoiceButton(voice: voice, contextID: contextID, enabled: true,
                                    shortcut: voiceShortcut, diameter: launcherModeDiameter)
                         .frame(width: launcherModeDiameter, height: launcherModeDiameter)
+                        .accessibilityLabel(AskVoiceButton.title(
+                            phase: voice.phase, contextMatches: voice.context == contextID
+                        ))
+                        .accessibilityIdentifier("ask.composer.voice")
                 }
                 if !active {
                     TypefluxSpotlightModeSurface(selected: launcherChatAction == .askAI) {

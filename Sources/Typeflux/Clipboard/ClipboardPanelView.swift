@@ -219,6 +219,7 @@ extension ClipboardPanelView {
             .font(.footnote).foregroundStyle(TypefluxColor.secondaryLabel.color)
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("clipboard.hints")
     }
 

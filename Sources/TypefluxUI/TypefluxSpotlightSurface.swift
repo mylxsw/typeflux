@@ -107,15 +107,23 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
     }
 
     private var modeButtons: some View {
-        HStack(spacing: style == .classic ? 2 : 8) {
+        let spacing = style == .classic ? 2 : TypefluxSpacing.small.value(for: style)
+        let width = CGFloat(modes.count) * modeButtonWidth + CGFloat(max(0, modes.count - 1)) * spacing
+        return HStack(spacing: spacing) {
             ForEach(modes) { item in modeButton(item) }
         }
+        // Reserve the complete mode strip before proposing the capsule's remaining width.
+        .frame(width: width)
         .fixedSize()
+    }
+
+    private var modeButtonWidth: CGFloat {
+        style == .classic ? 30 : TypefluxControlHeight.spotlightModeButton.value(for: style)
     }
 
     private func modeButton(_ item: TypefluxSpotlightMode) -> some View {
         let selected = mode == item.id
-        let width = style == .classic ? 30 : TypefluxControlHeight.spotlightModeButton.value(for: style)
+        let width = modeButtonWidth
         let height = style == .classic ? 26 : width
         return TypefluxSpotlightModeSurface(selected: selected) {
             Button {
