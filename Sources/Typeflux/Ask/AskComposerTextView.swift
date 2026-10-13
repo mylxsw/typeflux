@@ -6,6 +6,7 @@ import SwiftUI
 struct AskComposerTextView: NSViewRepresentable {
     /// Horizontal inset shared by the text, caret and native placeholder.
     static let lineFragmentPadding: CGFloat = 5
+    static let minimumViewportHeight: CGFloat = 32
     @Binding var text: String
     @Environment(\.isEnabled) private var isEnabled
     var placeholder: String
@@ -19,6 +20,8 @@ struct AskComposerTextView: NSViewRepresentable {
     var caretRequestID: UUID?
     var fontSize: CGFloat = StudioTheme.Typography.bodyLarge
     var maximumHeight: CGFloat = 148
+    /// Launcher viewports use an explicit native height, including during ideal-size measurements.
+    var viewportHeight: CGFloat?
     var onSubmit: () -> Void
     var onDismiss: () -> Void = {}
     var onHeightChange: (CGFloat) -> Void = { _ in }
@@ -44,8 +47,13 @@ struct AskComposerTextView: NSViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSScrollView, context _: Context) -> CGSize? {
+        guard let viewportHeight else { return nil }
+        return CGSize(width: proposal.width ?? nsView.fittingSize.width, height: viewportHeight)
+    }
+
     func makeNSView(context: Context) -> NSScrollView {
-        let scroll = NSScrollView()
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 0, height: viewportHeight ?? 0))
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = true
         let editor = Editor()
@@ -101,6 +109,14 @@ struct AskComposerTextView: NSViewRepresentable {
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.parent = self
+        if let viewportHeight, scroll.frame.height != viewportHeight {
+            // A height-only AppKit resize keeps the bottom edge. Commit origin and size together
+            // so the native viewport keeps its top before SwiftUI's next placement pass.
+            var frame = scroll.frame
+            if scroll.superview?.isFlipped != true { frame.origin.y = frame.maxY - viewportHeight }
+            frame.size.height = viewportHeight
+            scroll.frame = frame
+        }
         guard let editor = scroll.documentView as? Editor else { return }
         if editor.contextID != contextID { editor.voice?.cancel(ifOwnedBy: editor) }
         editor.contextID = contextID
@@ -457,7 +473,8 @@ struct AskComposerTextView: NSViewRepresentable {
                 ).height)
             }
             let contentHeight = ceil(usedHeight + 12)
-            let height = min(max(32, maximumHeight), max(32, contentHeight))
+            let minimum = AskComposerTextView.minimumViewportHeight
+            let height = min(max(minimum, maximumHeight), max(minimum, contentHeight))
             guard height != reportedHeight else { return }
             reportedHeight = height
             DispatchQueue.main.async { [weak self] in self?.onHeightChange(height) }

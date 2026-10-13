@@ -1593,6 +1593,13 @@ struct AskComposer: View {
         return removeKeyword() || removeLastContext()
     }
 
+    private var editorViewportHeight: CGFloat {
+        let measured = min(editorHeight, layout.editorMaximumHeight)
+        // Font fallback can vary a single line's measurement by a point. Keep one native viewport size.
+        return launcher && measured <= AskMetrics.composerControlHeight
+            ? AskComposerTextView.minimumViewportHeight : measured
+    }
+
     private var editorField: some View {
         AskComposerTextView(
             text: draft.text,
@@ -1606,6 +1613,7 @@ struct AskComposer: View {
             caretRequestID: launcher ? model.launcherHistoryFillID : nil,
             fontSize: chrome.editorFontSize,
             maximumHeight: layout.editorMaximumHeight,
+            viewportHeight: launcher ? editorViewportHeight : nil,
             onSubmit: submit,
             onDismiss: { if editingQueued { model.cancelQueuedEdit() } else { onDismiss() } },
             onHeightChange: { editorHeight = $0 },
@@ -1619,9 +1627,7 @@ struct AskComposer: View {
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil
         )
-        // The native scroll view can keep its previous fitting height during a result update.
-        // Anchor that view at the launcher's input top instead of centering it in the new height.
-        .frame(height: min(editorHeight, layout.editorMaximumHeight), alignment: launcher ? .top : .center)
+        .frame(height: editorViewportHeight, alignment: launcher ? .top : .center)
         .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection))
     }
 

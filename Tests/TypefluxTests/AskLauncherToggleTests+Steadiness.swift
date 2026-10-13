@@ -195,11 +195,15 @@ extension AskLauncherToggleTests {
         let topAnchor = panel.frame.maxY
         let recorder = Recorder(panel: panel, container: container)
         defer { recorder.stop() }
+        #expect(abs(container.frame.height - AskComposerTextView.minimumViewportHeight) < 0.5,
+                "The native editor must use its single-line height before the anchor is recorded")
         let editorAnchor = recorder.editorTop
         try await session.type(["w", "wx", "w", "wec", "t", "tab", "vsc", "qq音乐", "1", "1+1", "1+1*2", "jsq",
                                 "how do I", "1234567.89*2", "b"], recorder: recorder)
         #expect(fixture.model.launcherDraft.text == "b")
         #expect(recorder.panelTops.count > 10, "resizes were observed")
+        #expect(recorder.editorHeights.allSatisfy { abs($0 - AskComposerTextView.minimumViewportHeight) < 0.5 },
+                "Single-line native editor heights changed: \(recorder.editorHeights)")
         let topDrift = recorder.panelTops.map { abs($0 - topAnchor) }.max() ?? 0
         let editorDrift = recorder.editorTops.map { abs($0 - editorAnchor) }.max() ?? 0
         let peak = recorder.editorTops.indices.max {

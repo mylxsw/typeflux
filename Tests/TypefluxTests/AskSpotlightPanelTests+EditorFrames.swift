@@ -19,13 +19,15 @@ extension AskSpotlightPanelTests {
             let scroll = try #require(editor.enclosingScrollView)
             let recorder = ComposerFrames(scroll: scroll, window: window)
             defer { recorder.stop() }
+            #expect(abs(scroll.frame.height - AskComposerTextView.minimumViewportHeight) < 0.5,
+                    "The initial native viewport must already use its single-line height")
             let top = recorder.screenTop
             for query in ["a", "qq音乐", "1+1", "Help me think", "a"] {
                 editor.selectAll(nil)
                 editor.insertText(query, replacementRange: NSRange(location: NSNotFound, length: 0))
                 try await Task.sleep(for: .milliseconds(150))
                 host.layoutSubtreeIfNeeded()
-                #expect(scroll.frame.height >= 32)
+                #expect(abs(scroll.frame.height - AskComposerTextView.minimumViewportHeight) < 0.5)
                 recorder.sample()
             }
             #expect(recorder.tops.allSatisfy { abs($0 - top) < 0.5 },
@@ -51,10 +53,14 @@ extension AskSpotlightPanelTests {
             defer { recorder.stop() }
             let anchor = recorder.screenTop
             // Exercise a changed measurement while AppKit still has the previous native viewport size.
-            for height: CGFloat in [58, 32, 84, 32, 60, 32] {
+            for height: CGFloat in [33, 32, 34, 32, 58, 32, 84, 32, 60, 32] {
                 editor.onHeightChange(height)
                 try await Task.sleep(for: .milliseconds(150))
                 host.layoutSubtreeIfNeeded()
+                let expected = height <= AskMetrics.composerControlHeight
+                    ? AskComposerTextView.minimumViewportHeight : height
+                #expect(abs(scroll.frame.height - expected) < 0.5,
+                        "The native viewport must follow the committed measurement, not its fitting size")
                 recorder.sample()
             }
             #expect(recorder.tops.allSatisfy { abs($0 - anchor) < 0.5 },
