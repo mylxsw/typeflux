@@ -60,10 +60,18 @@ extension AskConversationVisualTests {
             try await TypefluxUISnapshot.renderMatrix(palette, size: size, directory: directory,
                                                        name: "ask-library-palette-\(Int(size.width))")
         }
-        let card = AskModelEffortCard(library: fixture.model.modelLibrary, reference: .constant("cloud:default"),
-                                     effort: .constant(.providerDefault), loggedIn: true, nativeControls: true)
+        try fixture.model.modelLibrary.addModels([
+            .init(id: "reasoner", name: "Reasoner", reference: "cloud:reasoner", scenarios: ["ask"],
+                  reasoning: true, reasoningEfforts: ["low", "high"])
+        ], providerID: "typefluxCloud")
+        let card = AskModelEffortCard(library: fixture.model.modelLibrary, reference: .constant("cloud:reasoner"),
+                                     effort: .constant(.high), loggedIn: true, nativeControls: true)
         try await TypefluxUISnapshot.renderMatrix(card, size: NSSize(width: 360, height: 220),
                                                   directory: directory, name: "ask-library-reasoning")
+        let models = AskModelEffortCard(library: fixture.model.modelLibrary, reference: .constant("cloud:reasoner"),
+                                       effort: .constant(.high), loggedIn: true, page: .models, nativeControls: true)
+        try await TypefluxUISnapshot.renderMatrix(models, size: NSSize(width: 360, height: 520),
+                                                  directory: directory, name: "ask-library-models")
         for dark in [false, true] {
             try await AskLibrarySnapshot.render(AskConversationView(model: fixture.model),
                                                 size: NSSize(width: 1180, height: 760), style: .liquidGlass, dark: dark,
