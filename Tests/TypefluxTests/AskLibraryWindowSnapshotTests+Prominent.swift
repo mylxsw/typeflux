@@ -3,8 +3,29 @@ import Testing
 @testable import Typeflux
 
 extension AskLibraryWindowSnapshotTests {
+    func captureAndCheckProminentFill(in window: NSWindow, action: String, snapshot: String) async throws {
+        // Activation is asynchronous. A prominent control may be neutral until its window is active and key.
+        NSApp.activate(ignoringOtherApps: true)
+        defer {
+            print("\(snapshot): window=\(window.windowNumber), isKeyWindow=\(window.isKeyWindow), "
+                + "isActive=\(NSApp.isActive)")
+        }
+        try await SettingsBehaviorTestSupport.wait("\(snapshot): active application") {
+            NSApp.isActive
+        }
+        window.makeKeyAndOrderFront(nil)
+        try await SettingsBehaviorTestSupport.wait("\(snapshot): active application and key library window") {
+            NSApp.isActive && window.isKeyWindow
+        }
+        // The shared capture helper allows another 400 ms for rendering before reading WindowServer pixels.
+        try await AskLibraryTestSupport.capture(window, name: snapshot)
+        try #require(NSApp.isActive && window.isKeyWindow,
+                     "\(snapshot): activation was lost during capture; prominent fill requires an active key window")
+        try checkProminentFill(in: window, action: action, snapshot: snapshot)
+    }
+
     /// Inspect the real WindowServer capture: AX presence alone cannot detect a grey primary button.
-    func checkProminentFill(in window: NSWindow, action: String, snapshot: String) throws {
+    private func checkProminentFill(in window: NSWindow, action: String, snapshot: String) throws {
         let directory = try #require(ProcessInfo.processInfo.environment["TYPEFLUX_LIBRARY_SNAPSHOTS"])
         let file = URL(fileURLWithPath: directory).appendingPathComponent(snapshot + ".png")
         let bitmap = try #require(NSBitmapImageRep(data: try Data(contentsOf: file)))

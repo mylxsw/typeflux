@@ -50,6 +50,7 @@ struct TypefluxProminentToolbarButton: NSViewRepresentable {
     private func content(environment: EnvironmentValues) -> AnyView {
         AnyView(Content(action: action, style: style, usesGlass: usesGlass)
             .environment(\.colorScheme, environment.colorScheme)
+            .environment(\.controlActiveState, environment.controlActiveState)
             .disabled(!environment.isEnabled))
     }
 

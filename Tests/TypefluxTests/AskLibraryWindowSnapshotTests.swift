@@ -22,9 +22,9 @@ struct AskLibraryWindowSnapshotTests {
                 window.setContentSize(NSSize(width: 1100, height: 800))
                 window.setFrameOrigin(NSPoint(x: 40, y: 40))
                 let readName = "\(name)-read-\(suffix)"
-                try await AskLibraryTestSupport.capture(window, name: readName)
-                try checkProminentFill(in: window, action: name == "notes" ? "notes.new" : "wordBook.new",
-                                       snapshot: readName)
+                try await captureAndCheckProminentFill(in: window,
+                                                      action: name == "notes" ? "notes.new" : "wordBook.new",
+                                                      snapshot: readName)
                 _ = try await AskLibraryTestSupport.search(name == "notes" ? "Reading" : word,
                                                           in: window)
                 try await AskLibraryTestSupport.capture(window, name: "\(name)-search-\(suffix)")
