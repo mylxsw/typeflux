@@ -4786,3 +4786,12 @@
 "ask.plugin.kill.warning" = "强制退出可能丢失未保存的内容。";
 "ask.plugin.kill.failed" = "无法强制退出“%@”。";
 "ask.settings.keywords.kind.kill.hint" = "列出正在运行的应用，强制退出选中的应用。";
+
+// Website login connection diagnostics.
+"auth.web.invalidResponse" = "登录服务返回的数据不符合预期，请检查 App 与 API 配置的官网地址是否一致。";
+"auth.web.networkUnavailable" = "无法连接登录服务，请检查 API 地址及 Docker 是否已启动。";
+"auth.web.transportBlocked" = "macOS 阻止了此 App 的 HTTP 请求，请配置 HTTP 地址后通过开发启动脚本重新构建。";
+"auth.web.endpointUnavailable" = "登录接口不可用，请检查 API 版本、网页登录配置及 /api 代理。";
+"auth.web.requestRejected" = "登录请求被拒绝，请检查开发/正式客户端及回调地址配置。";
+"auth.web.serviceUnavailable" = "登录服务暂不可用，请检查 API 和数据库后重试。";
+"auth.web.rateLimited" = "登录尝试过于频繁，请稍后重试。";

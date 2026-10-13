@@ -480,6 +480,42 @@ struct WebLoginHTTPTests {
         }
     }
 
+    @Test(arguments: [400, 403, 404, 405, 429, 500, 503])
+    func `creation classifies HTTP failures before decoding proxy bodies`(status: Int) async {
+        let expected: WebLoginFailure = switch status {
+        case 404, 405: .endpointUnavailable
+        case 429: .rateLimited
+        case 500...599: .serviceUnavailable
+        default: .requestRejected
+        }
+        let api = WebLoginHTTPAPI(configuration: config()) { request in
+            (Data("<html>proxy error with private content</html>".utf8),
+             HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
+        }
+        await #expect(throws: expected) { try await api.create(proof: proof) }
+        #expect(!L(expected.localizationKey).hasPrefix("auth.web."))
+    }
+
+    @Test(arguments: [URLError.cannotConnectToHost, URLError.timedOut, URLError.appTransportSecurityRequiresSecureConnection])
+    func `creation reports transport failure without claiming code consumption`(code: URLError.Code) async {
+        var calls = 0
+        let api = WebLoginHTTPAPI(configuration: config()) { _ in calls += 1; throw URLError(code) }
+        let expected: WebLoginFailure = code == .appTransportSecurityRequiresSecureConnection ? .transportBlocked : .networkUnavailable
+        await #expect(throws: expected) { try await api.create(proof: proof) }
+        await #expect(throws: WebLoginFailure.restartRequired) { try await api.exchange(code: opaque, verifier: proof.verifier) }
+        #expect(calls == 2)
+    }
+
+    @Test func `creation reports invalid successful response and rejected envelope`() async {
+        for body in ["invalid json", "{\"code\":\"BAD_REQUEST\",\"message\":\"private\"}"] {
+            let api = WebLoginHTTPAPI(configuration: config()) { request in
+                (Data(body.utf8), HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+            }
+            let expected: WebLoginFailure = body == "invalid json" ? .invalidResponse : .requestRejected
+            await #expect(throws: expected) { try await api.create(proof: proof) }
+        }
+    }
+
     @Test func `redirect delegate never forwards grant`() throws {
         let url = try #require(URL(string: "https://evil.test"))
         var followed = true
