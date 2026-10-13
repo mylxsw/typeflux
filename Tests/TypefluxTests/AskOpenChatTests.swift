@@ -6,6 +6,21 @@ import Testing
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct AskOpenChatTests {
+    @Test func presentationCallbackReceivesAnEditableCompletedHandoff() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession(); try? FileManager.default.removeItem(at: fixture.root) }
+        var presentations = 0
+        fixture.model.onShowConversation = { [weak model = fixture.model] in
+            presentations += 1
+            #expect(model?.isOpeningChat == false, "The presented composer must no longer be disabled by the handoff")
+        }
+        #expect(await fixture.model.openChatFromLauncher())
+        fixture.model.launcherDraft.text = "Transfer this question"
+        #expect(await fixture.model.openChatFromLauncher())
+        #expect(fixture.model.draft.text == "Transfer this question")
+        #expect(presentations == 2)
+    }
+
     @Test func `empty open keeps current conversation and ignores captured context`() async throws {
         let f = try AskTestFixture()
         await f.api.seed(.init(id: "old", title: "Old", revision: 1, updatedAt: Date(), messages: []))
@@ -287,19 +302,63 @@ extension AskOpenChatTests {
         _ = NSApplication.shared
         let f = try AskTestFixture()
         _ = f.model.credentials()
-        let controller = AskConversationWindowController(settings: f.model.modelLibrary.settings, model: f.model)
-        defer { controller.dismissLauncher(); f.model.resetSession() }
+        let frameName = "OpenChat-\(UUID().uuidString)"
+        let controller = AskConversationWindowController(settings: f.model.modelLibrary.settings, model: f.model,
+                                                          conversationFrameAutosaveName: frameName)
+        defer {
+            controller.dismissLauncher()
+            controller.conversationRefreshTask?.cancel()
+            controller.launcherWindow.map(TypefluxNavigationTestSupport.closeWindow)
+            controller.controlWindow.map(TypefluxNavigationTestSupport.closeWindow)
+            controller.conversationWindow.map(TypefluxNavigationTestSupport.closeWindow)
+            f.model.resetSession()
+            NSWindow.removeFrame(usingName: frameName)
+            try? FileManager.default.removeItem(at: f.root)
+        }
         #expect(await f.model.openChatFromLauncher())
-        let window = try #require(NSApp.windows
-            .first { $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-conversations" && $0.isVisible })
-        defer { window.close() }
+        let window = try #require(controller.conversationWindow)
+        try await SettingsBehaviorTestSupport.wait("Initial conversation composer") {
+            window.firstResponder is AskComposerTextView.Editor
+        }
         window.miniaturize(nil)
         #expect(await f.model.openChatFromLauncher())
+        #expect(controller.conversationWindow === window)
         #expect(!window.isMiniaturized)
         #expect(window.isVisible)
-        try await Task.sleep(for: .milliseconds(100))
+        try await SettingsBehaviorTestSupport.wait("Composer focus after restoring the owned conversation window") {
+            window.firstResponder is AskComposerTextView.Editor
+        }
         #expect(window.firstResponder is AskComposerTextView.Editor)
-        #expect(NSApp.windows.count(where: { $0.identifier == window.identifier && $0.isVisible }) == 1)
+        #expect((window.firstResponder as? AskComposerTextView.Editor)?.window === window)
+    }
+
+    @Test func conversationFocusSkipsOtherEditableNativeViews() async throws {
+        let fixture = try AskTestFixture()
+        let frameName = "ComposerFocus-\(UUID().uuidString)"
+        let controller = AskConversationWindowController(settings: fixture.model.modelLibrary.settings,
+                                                          model: fixture.model,
+                                                          conversationFrameAutosaveName: frameName)
+        defer {
+            controller.dismissLauncher()
+            controller.conversationRefreshTask?.cancel()
+            controller.conversationWindow.map(TypefluxNavigationTestSupport.closeWindow)
+            fixture.model.resetSession()
+            NSWindow.removeFrame(usingName: frameName)
+            try? FileManager.default.removeItem(at: fixture.root)
+        }
+        controller.showConversation()
+        let window = try #require(controller.conversationWindow)
+        let content = try #require(window.contentView)
+        try await SettingsBehaviorTestSupport.wait("Conversation composer before adding another native editor") {
+            window.firstResponder is AskComposerTextView.Editor
+        }
+        let otherEditor = NSTextView(frame: .zero)
+        otherEditor.isEditable = true
+        content.addSubview(otherEditor, positioned: .below, relativeTo: content.subviews.first)
+        #expect(window.makeFirstResponder(otherEditor))
+        controller.showConversation()
+        #expect(window.firstResponder is AskComposerTextView.Editor)
+        #expect(window.firstResponder !== otherEditor)
     }
 }
 

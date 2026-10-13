@@ -29,13 +29,6 @@ struct MCPServerEditorView: View {
             }.frame(height: min(500, max(300, (NSScreen.main?.visibleFrame.height ?? 800) - 240)))
         }).frame(width: 560)
             .onDisappear { viewModel.resetMCPDraftConnectionTest() }
-            .onChange(of: connectionFields) { _ in viewModel.resetMCPDraftConnectionTest() }
-    }
-
-    private var connectionFields: [String] {
-        [String(describing: viewModel.mcpDraftTransportType), viewModel.mcpDraftStdioCommand,
-         viewModel.mcpDraftStdioArgs, viewModel.mcpDraftStdioEnv,
-         viewModel.mcpDraftHTTPURL, viewModel.mcpDraftHTTPHeaders]
     }
 
     @ViewBuilder

@@ -78,7 +78,7 @@ struct AskClassicStyleVisualTests {
         window.isReleasedWhenClosed = false
         window.contentView = hosting
         window.appearance = hosting.appearance
-        defer { window.close() }
+        defer { TypefluxNavigationTestSupport.closeWindow(window) }
         hosting.layoutSubtreeIfNeeded()
         AppLocalization.shared.setLanguage(previous)
         try await Task.sleep(for: settle)
@@ -107,8 +107,7 @@ struct AskClassicStyleVisualTests {
         return png
     }
 
-    /// The light classic window: the sidebar's grey reaches the window's leading
-    /// edge, a dark hairline divides it from the white conversation canvas.
+    /// Classic columns use the system's semantic surfaces and a flush divider.
     private func expectFlushColumns(_ png: Data) throws {
         let bitmap = try #require(NSBitmapImageRep(data: png))
         func white(_ column: Int, _ row: Int) throws -> CGFloat {
@@ -116,12 +115,19 @@ struct AskClassicStyleVisualTests {
         }
         // 2x pixels, mid-height, below the history rows and above the footer.
         let row = bitmap.pixelsHigh / 2
-        #expect(abs(try white(1, row) - 0.957) < 0.02, "sidebar must be flush with the window edge")
-        #expect(abs(try white(200, row) - 0.957) < 0.02)
-        #expect(try white(Int(AskMetrics.sidebarWidth * 2) + 40, row) > 0.99, "canvas")
+        var sidebar: CGFloat = 0
+        var canvas: CGFloat = 0
+        try #require(NSAppearance(named: .aqua)).performAsCurrentDrawingAppearance {
+            sidebar = TypefluxColor.windowBackground.nsColor.usingColorSpace(.sRGB)?.whiteComponentApproximation ?? 0
+            canvas = TypefluxColor.contentBackground.nsColor.usingColorSpace(.sRGB)?.whiteComponentApproximation ?? 0
+        }
+        // UI System v2 follows system colors instead of the former fixed #F4F4F4 sidebar.
+        #expect(abs(try white(1, row) - sidebar) < 0.02, "sidebar must be flush with the window edge")
+        #expect(abs(try white(200, row) - sidebar) < 0.02)
+        #expect(abs(try white(Int(AskMetrics.sidebarWidth * 2) + 40, row) - canvas) < 0.02, "canvas")
         let divider = (Int(AskMetrics.sidebarWidth * 2) - 4 ... Int(AskMetrics.sidebarWidth * 2) + 2)
             .map { (try? white($0, row)) ?? 1 }.min() ?? 1
-        #expect(divider < 0.93, "the columns are divided by a hairline")
+        #expect(divider < min(sidebar, canvas) - 0.01, "the columns are divided by a hairline")
     }
 
     private func renderChat(_ fixture: AskTestFixture, _ scene: String, _ style: InterfaceStyle, dark: Bool,
@@ -137,7 +143,14 @@ struct AskClassicStyleVisualTests {
 
     @Test func `chat window scenes`() async throws {
         let fixture = try await seededFixture()
-        defer { fixture.model.resetSession(); try? FileManager.default.removeItem(at: fixture.root) }
+        let key = "ask.sidebarCollapsed"
+        let previous = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.set(false, forKey: key)
+        defer {
+            if let previous { UserDefaults.standard.set(previous, forKey: key) }
+            else { UserDefaults.standard.removeObject(forKey: key) }
+            fixture.model.resetSession(); try? FileManager.default.removeItem(at: fixture.root)
+        }
         for style in Self.styles {
             for dark in Self.appearances {
                 fixture.model.newConversation()

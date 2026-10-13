@@ -513,6 +513,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
         conversationWindow.makeKeyAndOrderFront(nil)
         focusEditor(in: conversationWindow)
+        AskComposerFocus.requestConversationFocus(in: conversationWindow, controller: self)
         conversationRefreshTask = Task { await model.refreshHistory(); await model.loadSavedChatDrafts() }
     }
 
@@ -612,9 +613,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     private func findEditor(in view: NSView?) -> NSTextView? {
-        guard let view else { return nil }
-        if let text = view as? NSTextView, text.isEditable { return text }
-        return view.subviews.lazy.compactMap { self.findEditor(in: $0) }.first
+        AskComposerFocus.editor(in: view)
     }
 }
 
