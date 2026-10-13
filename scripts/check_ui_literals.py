@@ -52,6 +52,12 @@ def additions(current, previous):
     return current - previous
 
 
+def read_git(*arguments):
+    """Trust only this checkout for read-only Git calls, including container-mounted workspaces."""
+    return subprocess.run(["git", "-c", f"safe.directory={ROOT}", *arguments], cwd=ROOT,
+                          capture_output=True, text=True, check=False)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-ref", help="Also reject baseline additions relative to this Git revision")
@@ -61,21 +67,20 @@ def main():
     extra = additions(actual, baseline)
     stale = additions(baseline, actual)
     if args.base_ref:
-        result = subprocess.run(["git", "show", f"{args.base_ref}:{BASELINE}"], cwd=ROOT,
-                                capture_output=True, text=True, check=False)
+        result = read_git("show", f"{args.base_ref}:{BASELINE}")
         if result.returncode == 0:
             extra.update(additions(baseline, decode(json.loads(result.stdout))))
         else:
             # The first PR introduces the ratchet. A bad revision must not silently skip it.
-            revision = subprocess.run(["git", "rev-parse", "--verify", args.base_ref], cwd=ROOT,
-                                      capture_output=True, text=True, check=False)
+            revision = read_git("rev-parse", "--verify", args.base_ref)
             if revision.returncode != 0:
                 print("Cannot resolve the comparison revision", file=sys.stderr)
+                print(revision.stderr.strip(), file=sys.stderr)
                 return 1
-            existing = subprocess.run(["git", "cat-file", "-e", f"{args.base_ref}:{BASELINE}"], cwd=ROOT,
-                                      capture_output=True, check=False)
+            existing = read_git("cat-file", "-e", f"{args.base_ref}:{BASELINE}")
             if existing.returncode == 0:
                 print("Cannot read the comparison baseline", file=sys.stderr)
+                print(result.stderr.strip(), file=sys.stderr)
                 return 1
     if extra:
         for (file, rule, match), count in sorted(extra.items()):

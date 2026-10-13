@@ -3,6 +3,7 @@ import collections
 import importlib.util
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location("ui_literal_guard", Path(__file__).parents[1] / "check_ui_literals.py")
 guard = importlib.util.module_from_spec(spec)
@@ -10,6 +11,12 @@ spec.loader.exec_module(guard)
 
 
 class UILiteralGuardTests(unittest.TestCase):
+    def test_git_trust_is_scoped_to_the_checkout_and_does_not_write_config(self):
+        with patch.object(guard.subprocess, "run") as run:
+            guard.read_git("rev-parse", "--verify", "HEAD")
+        run.assert_called_once_with(["git", "-c", f"safe.directory={guard.ROOT}", "rev-parse", "--verify", "HEAD"],
+                                    cwd=guard.ROOT, capture_output=True, text=True, check=False)
+
     def test_rules_find_multiline_literals_and_ternaries(self):
         patterns = guard.patterns()
         samples = {
