@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import Testing
 @testable import Typeflux
+import TypefluxUI
 
 @Suite("Ask redesign presentation", .exclusiveUIState)
 @MainActor
@@ -125,9 +126,13 @@ struct AskRedesignLayoutTests {
         defer { window.orderOut(nil); window.close() }
         try await Task.sleep(for: .milliseconds(300))
         // Empty, the launcher offers its home under the controls.
+        // The default Liquid Glass launcher adds the split Spotlight chrome to the legacy metrics.
+        func chrome(_ editor: CGFloat) -> CGFloat {
+            AskLauncherSpotlightLayout.chromeAdjustment(editor: editor, style: .liquidGlass, collapsed: false)
+        }
         let suggested = AskMetrics.launcherHeight(editor: 32, banners: 0,
                                                   suggestions: AskLauncherSuggestions
-                                                      .height(for: fixture.model.launcherHome()))
+                                                      .height(for: fixture.model.launcherHome())) + chrome(32)
         #expect(reported >= suggested - 4)
         #expect(reported <= suggested + 4)
         let empty = reported
@@ -136,7 +141,7 @@ struct AskRedesignLayoutTests {
         // empty height (with the home) may already be above 200, so wait for it to change.
         for _ in 0 ..< 100 where reported == empty || reported < 200 { try await Task.sleep(for: .milliseconds(20)) }
         #expect(reported >= 200)
-        #expect(reported <= AskMetrics.launcherHeight(editor: 148, banners: 0))
+        #expect(reported <= AskMetrics.launcherHeight(editor: 148, banners: 0) + chrome(148))
         fixture.model.resetSession()
     }
 

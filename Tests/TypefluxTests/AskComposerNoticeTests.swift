@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import Testing
 @testable import Typeflux
+import TypefluxUI
 
 @Suite("Ask composer notices", .exclusiveUIState)
 @MainActor
@@ -118,7 +119,9 @@ struct AskLauncherNoticeLayoutTests {
 
         // Typed text hides the suggestions, so only notices change the height.
         fixture.model.launcherDraft.text = "Question"
-        let resting = AskMetrics.launcherHeight(editor: 32, banners: 0)
+        // The default Liquid Glass launcher adds the split Spotlight chrome to the legacy metrics.
+        let chrome = AskLauncherSpotlightLayout.chromeAdjustment(editor: 32, style: .liquidGlass, collapsed: false)
+        let resting = AskMetrics.launcherHeight(editor: 32, banners: 0) + chrome
         try await settle { abs(reported - resting) <= 4 }
         #expect(abs(reported - resting) <= 4)
 
@@ -130,7 +133,7 @@ struct AskLauncherNoticeLayoutTests {
 
         // A notice adds one row inside the card.
         fixture.model.launcherScreenshotNotice = "Screenshot removed"
-        let oneRow = AskMetrics.launcherHeight(editor: 32, banners: 1)
+        let oneRow = AskMetrics.launcherHeight(editor: 32, banners: 1) + chrome
         try await settle { abs(reported - oneRow) <= 4 }
         #expect(abs(reported - oneRow) <= 4)
 
