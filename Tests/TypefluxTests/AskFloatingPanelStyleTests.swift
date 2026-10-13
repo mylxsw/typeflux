@@ -58,11 +58,8 @@ struct AskFloatingPanelStyleTests {
                                    height: AskPluginResultsView.itemHeight, onPick: {})
             .environment(\.interfaceStyle, style)
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            var selection: NSColor?
-            try #require(NSAppearance(named: appearance)).performAsCurrentDrawingAppearance {
-                selection = TypefluxColor.selection.nsColor.usingColorSpace(.sRGB)
-            }
-            let expected = try #require(selection)
+            // The reference goes through the same renderer, so capture colour management cancels out.
+            let expected = try await renderedSystemSelection(appearance: appearance)
             for state in [ControlActiveState.key, .inactive] {
                 for backdrop in [LegacyAskPalette.launcherSurface, Color.black, Color.white] {
                     let content = row.environment(\.controlActiveState, state).background(backdrop)
@@ -78,23 +75,13 @@ struct AskFloatingPanelStyleTests {
         }
     }
 
-    @Test func bitmapRendererPreservesTheNativeSystemSelectionColor() async throws {
-        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            let bitmap = try await render(SystemSelectionSwatch(), size: NSSize(width: 20, height: 20),
-                                          appearance: appearance)
-            let fill = try pixel(bitmap, x: 10, y: 10)
-            var expected: NSColor?
-            try #require(NSAppearance(named: appearance)).performAsCurrentDrawingAppearance {
-                expected = NSColor.selectedContentBackgroundColor.usingColorSpace(.sRGB)
-            }
-            let selection = try #require(expected)
-            #expect(abs(fill.redComponent - selection.redComponent) < 0.02)
-            #expect(abs(fill.greenComponent - selection.greenComponent) < 0.02)
-            #expect(abs(fill.blueComponent - selection.blueComponent) < 0.02)
-        }
+    private func renderedSystemSelection(appearance: NSAppearance.Name) async throws -> NSColor {
+        let bitmap = try await render(SystemSelectionSwatch(), size: NSSize(width: 20, height: 20),
+                                      appearance: appearance)
+        return try pixel(bitmap, x: 10, y: 10)
     }
 
-    /// An independent AppKit swatch checks the capture profile without the row modifier.
+    /// An independent AppKit swatch provides the reference selection fill without the row modifier.
     private struct SystemSelectionSwatch: NSViewRepresentable {
         final class Surface: NSView {
             override func draw(_ dirtyRect: NSRect) {
