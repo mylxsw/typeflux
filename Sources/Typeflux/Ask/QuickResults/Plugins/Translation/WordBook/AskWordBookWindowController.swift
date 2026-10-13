@@ -106,9 +106,12 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func windowWillClose(_: Notification) {
-        if let window { DockVisibilityController.shared.windowDidHide(window) }
+    func windowWillClose(_ notification: Notification) {
+        guard let closed = notification.object as? NSWindow, closed === window else { return }
         window = nil
+        closed.contentView = nil
+        closed.toolbar = nil
+        DockVisibilityController.shared.windowDidHide(closed)
         model = nil
     }
 }

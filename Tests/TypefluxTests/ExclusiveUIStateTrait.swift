@@ -30,7 +30,7 @@ struct ExclusiveUIStateTrait: SuiteTrait, TestTrait, TestScoping {
             let activity = process.beginActivity(options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical],
                                                  reason: "Running an AppKit UI test")
             defer { process.endActivity(activity) }
-            try await function()
+            try await UITestApplicationLifetime.protecting(function)
         }
     }
 }

@@ -106,10 +106,14 @@ final class AskNotesWindowController: NSObject, NSWindowDelegate {
         model?.finishEditing() ?? true
     }
 
-    func windowWillClose(_: Notification) {
+    func windowWillClose(_ notification: Notification) {
+        guard let closed = notification.object as? NSWindow, closed === window else { return }
         let saved = model?.finishEditing() ?? true
-        if let window { DockVisibilityController.shared.windowDidHide(window) }
         window = nil
+        // Tear down window-scoped menus, shortcuts and observers even if AppKit retains the closed window.
+        closed.contentView = nil
+        closed.toolbar = nil
+        DockVisibilityController.shared.windowDidHide(closed)
         // A direct programmatic close bypasses windowShouldClose. Keep a failed
         // draft in memory so showing the window again still recovers it.
         if saved { model = nil }

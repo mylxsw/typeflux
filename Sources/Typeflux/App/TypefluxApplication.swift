@@ -18,6 +18,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var languageObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
 
+    func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
+        // Library and settings windows can close while the menu bar app keeps running.
+        false
+    }
+
     func applicationDidFinishLaunching(_: Notification) {
         let settingsStore = SettingsStore()
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
