@@ -148,152 +148,16 @@ private extension View {
     }
 }
 
-private enum CloudServerStatusTone {
-    case fast
-    case average
-    case slow
-    case unavailable
-    case untested
-
-    var color: Color {
-        switch self {
-        case .fast:
-            StudioTheme.success
-        case .average:
-            StudioTheme.warning
-        case .slow, .unavailable:
-            StudioTheme.danger
-        case .untested:
-            StudioTheme.textSecondary
-        }
-    }
-}
-
-private struct CloudServerPickerOption: Identifiable {
-    let value: String
-    let domain: String
-    let tagText: String?
-    let tone: CloudServerStatusTone
-
-    var id: String {
-        value
-    }
-}
-
-private struct CloudServerStatusTag: View {
-    let text: String
-    let tone: CloudServerStatusTone
-
-    var body: some View {
-        Text(text)
-            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-            .foregroundStyle(tone.color)
-            .padding(.horizontal, StudioTheme.Spacing.small)
-            .padding(.vertical, StudioTheme.Spacing.xxSmall)
-            .background(Capsule().fill(tone.color.opacity(0.12)))
-            .overlay(Capsule().stroke(tone.color.opacity(0.28), lineWidth: StudioTheme.BorderWidth.thin))
-    }
-}
-
-private struct CloudServerMenuPicker: View {
-    let options: [CloudServerPickerOption]
-    @Binding var selection: String
-    var width: CGFloat
-    @State private var isPresented = false
-
-    private var selectedOption: CloudServerPickerOption? {
-        options.first(where: { $0.value == selection }) ?? options.first
-    }
-
-    var body: some View {
-        Button {
-            isPresented.toggle()
-        } label: {
-            SettingsMenuField {
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    if let selectedOption {
-                        Text(selectedOption.domain)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                        Spacer(minLength: 0)
-                        if let tagText = selectedOption.tagText {
-                            CloudServerStatusTag(text: tagText, tone: selectedOption.tone)
-                                .fixedSize()
-                        }
-                    }
-                }
-            }
-            .frame(width: width)
-        }
-        .buttonStyle(.plain)
-        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                ForEach(options) { option in
-                    Button {
-                        selection = option.value
-                        isPresented = false
-                    } label: {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            Group {
-                                if option.value == selection {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(
-                                            size: StudioTheme.Typography.iconXSmall,
-                                            weight: .semibold
-                                        ))
-                                        .foregroundStyle(StudioTheme.accent)
-                                } else {
-                                    Color.clear
-                                }
-                            }
-                            .frame(width: StudioTheme.Typography.iconSmall)
-                            Text(option.domain)
-                                .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
-                                .foregroundStyle(StudioTheme.textPrimary)
-                                .lineLimit(1)
-                            Spacer(minLength: StudioTheme.Spacing.large)
-                            if let tagText = option.tagText {
-                                CloudServerStatusTag(text: tagText, tone: option.tone)
-                            }
-                        }
-                        .padding(.horizontal, StudioTheme.Spacing.smallMedium)
-                        .padding(.vertical, StudioTheme.Spacing.small)
-                        .frame(width: max(width, 340), alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                                .fill(
-                                    option.value == selection
-                                        ? StudioTheme.accent.opacity(0.08)
-                                        : Color.clear
-                                )
-                        )
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(StudioTheme.Spacing.small)
-            .background(StudioTheme.surface)
-        }
-        .fixedSize()
-    }
-}
-
 // swiftlint:disable:next type_body_length
 struct StudioView: View {
     @Environment(\.colorScheme) private var colorScheme
-    private let vocabularySearchCollapsedSize: CGFloat = 44
-    private let vocabularySearchExpandedWidth: CGFloat = 276
-    private let vocabularySearchAnimation = Animation.interpolatingSpring(stiffness: 180, damping: 24)
 
     @ObservedObject var viewModel: StudioViewModel
     @StateObject private var imageSettings: AskImageSettingsModel
     @State private var vocabularyFilter: VocabularyFilter = .all
-    @State private var isVocabularySearchExpanded = false
     @State private var isAddingVocabulary = false
     @State private var editingVocabularyEntry: VocabularyEntry?
     @State private var newVocabularyTerm = ""
-    @FocusState private var isVocabularySearchFocused: Bool
     @State private var isRecentInputMemoryManagerPresented = false
     @State private var localSTTPendingDelete: LocalSTTModel?
     @State private var localSTTPendingDownload: LocalSTTModel?
@@ -310,14 +174,15 @@ struct StudioView: View {
     @State private var feedbackImageUploadTasks: [FeedbackImageAttachment.ID: Task<Void, Never>] = [:]
     @State private var isSubmittingFeedback = false
     @State private var feedbackSubmissionError: String?
-    @State private var agentPane: AgentSettingsPane = .overview
+    @State private var agentPane: AgentSettingsPane
+    @StateObject private var toolbarSearch = TypefluxSearchState()
     @StateObject private var interfaceStyleObserver: InterfaceStyleObserver
     @State private var launcherPane: LauncherSettingsPane
     @State private var settingsPane: AppSettingsPane
 
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
     init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics,
-         settingsPane: AppSettingsPane = .general) {
+         settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview) {
         self.viewModel = viewModel
         _interfaceStyleObserver = StateObject(wrappedValue: InterfaceStyleObserver(settings: viewModel.askToolSettings))
         _imageSettings = StateObject(wrappedValue: AskImageSettingsModel(
@@ -325,6 +190,7 @@ struct StudioView: View {
         ))
         _launcherPane = State(initialValue: launcherPane)
         _settingsPane = State(initialValue: settingsPane)
+        _agentPane = State(initialValue: agentPane)
     }
 
     @State private var agentStatuses: [AgentCapabilityStatus] = []
@@ -336,23 +202,16 @@ struct StudioView: View {
     var body: some View {
         StudioShell(
             currentSection: viewModel.currentSection,
+            title: toolbarTitle,
             onSelect: viewModel.navigateFromSidebar,
             onAccountAction: handleAccountAction,
-            searchText: $viewModel.searchQuery,
-            searchPlaceholder: viewModel.currentSection.searchPlaceholder,
+            search: searchScope == nil ? nil : toolbarSearch,
+            searchPlaceholder: searchPrompt,
             accountDefaults: viewModel.askToolSettings.defaults
         ) { viewportSize in
-            let viewportHeight = viewportContentHeight(from: viewportSize)
+            let viewportHeight = max(viewportSize.height, 0)
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                if viewModel.currentSection.isVoiceInput || [.models, .settings].contains(viewModel.currentSection) {
-                    StudioHeroHeader(
-                        eyebrow: viewModel.currentSection.eyebrow,
-                        title: viewModel.currentSection.sidebarSection.sidebarTitle
-                    )
-                    .accessibilityIdentifier("studio.page.title")
-                }
-
                 if viewModel.currentSection.isVoiceInput {
                     voiceInputHeader
                 } else if viewModel.currentSection == .settings {
@@ -375,17 +234,40 @@ struct StudioView: View {
                 }
             }
             .frame(
-                height: [.models, .personas].contains(viewModel.currentSection) ? viewportHeight : nil,
+                height: [.models, .personas, .settings, .account].contains(viewModel.currentSection)
+                    ? viewportHeight : nil,
                 alignment: .top
             )
             .frame(
                 minHeight: viewModel.currentSection == .vocabulary ? viewportHeight : nil,
                 alignment: .topLeading
             )
-            .background(vocabularyOutsideTapTarget)
             .id(viewModel.currentSection)
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.15), value: viewModel.currentSection)
+        }
+        .onChange(of: searchScope) { _ in
+            toolbarSearch.focusChanged(false)
+            toolbarSearch.query = ""
+            viewModel.searchQuery = ""
+            viewModel.modelSearchQuery = ""
+        }
+        .onChange(of: toolbarSearch.query) { query in
+            if searchScope?.usesModelQuery == true, viewModel.modelSearchQuery != query {
+                viewModel.modelSearchQuery = query
+            } else if searchScope?.usesStudioQuery == true, viewModel.searchQuery != query {
+                viewModel.searchQuery = query
+            }
+        }
+        .onChange(of: viewModel.searchQuery) { query in
+            if searchScope?.usesStudioQuery == true, toolbarSearch.query != query {
+                toolbarSearch.query = query
+            }
+        }
+        .onChange(of: viewModel.modelSearchQuery) { query in
+            if searchScope?.usesModelQuery == true, toolbarSearch.query != query {
+                toolbarSearch.query = query
+            }
         }
         .interfaceStyle(following: interfaceStyleObserver)
         .onChange(of: interfaceStyleObserver.style) { viewModel.interfaceStyle = $0 }
@@ -718,16 +600,31 @@ struct StudioView: View {
         }
     }
 
-    private var pageHeader: some View {
-        HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-            StudioHeroHeader(
-                eyebrow: viewModel.currentSection.eyebrow,
-                title: viewModel.currentSection.heading,
-                subtitle: viewModel.currentSection == .agent ? nil : viewModel.currentSection.subheading
-            )
+    private var searchScope: SettingsSearchScope? {
+        .resolve(section: viewModel.currentSection, modelTab: viewModel.modelPageTab,
+                 providerDetail: viewModel.isShowingModelProviderDetail, agentPane: agentPane,
+                 launcherPane: launcherPane)
+    }
 
-            pageHeaderActions
+    private var searchPrompt: String {
+        switch searchScope {
+        case .skills: L("agent.skills.search")
+        case .memory: L("agent.memory.search")
+        case .keywords: L("ask.settings.keywords.search")
+        default: viewModel.currentSection.searchPlaceholder
         }
+    }
+
+    private var toolbarTitle: String {
+        switch viewModel.currentSection {
+        case .agent: viewModel.currentSection.heading + " · " + agentPane.title
+        case .launcher: viewModel.currentSection.heading + " · " + launcherPane.title
+        default: viewModel.currentSection.heading
+        }
+    }
+
+    private var pageHeader: some View {
+        HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
     }
 
     /// Voice Input pages share one header: their tabs, with the shown page's actions on the right.
@@ -780,98 +677,90 @@ struct StudioView: View {
     }
 
     /// Actions on the right of the page header, including the spacer that pushes them there.
+    @ViewBuilder
     private var pageHeaderActions: some View {
-        Group {
-            if viewModel.currentSection == .vocabulary {
-                Spacer()
+        if viewModel.currentSection == .vocabulary {
+            Spacer()
 
-                HStack(spacing: StudioTheme.Spacing.medium) {
-                    StudioButton(
-                        title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .secondary
-                    ) {
-                        editingVocabularyEntry = nil
-                        newVocabularyTerm = ""
-                        isAddingVocabulary = true
-                    }
-
-                    Menu {
-                        Button(action: viewModel.importVocabulary) {
-                            Label(L("vocabulary.action.importFile"), systemImage: "arrow.down.doc")
-                        }
-                        Button(action: viewModel.exportVocabulary) {
-                            Label(L("vocabulary.action.export"), systemImage: "arrow.up.doc")
-                        }
-                        Divider()
-                        Button(action: viewModel.importClaudeVocabulary) {
-                            vocabularyMenuItemLabel(
-                                title: L("vocabulary.action.importClaude"),
-                                source: .claude
-                            )
-                        }
-                        Button(action: viewModel.importCodexVocabulary) {
-                            vocabularyMenuItemLabel(
-                                title: L("vocabulary.action.importCodex"),
-                                source: .codex
-                            )
-                        }
-                    } label: {
-                        vocabularyMoreMenuLabel
-                    }
-                    .menuStyle(.button)
-                    .buttonStyle(.plain)
-                    .menuIndicator(.hidden)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .modifier(StudioButtonChromeModifier(
-                        variant: .secondary,
-                        isDisabled: viewModel.isSynchronizingVocabulary,
-                        isLoading: false,
-                        isPressed: false,
-                        minWidth: StudioTheme.ControlSize.buttonMinWidth
-                    ))
-                    .disabled(viewModel.isSynchronizingVocabulary)
+            HStack(spacing: StudioTheme.Spacing.medium) {
+                StudioButton(
+                    title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .secondary
+                ) {
+                    editingVocabularyEntry = nil
+                    newVocabularyTerm = ""
+                    isAddingVocabulary = true
                 }
-            } else if viewModel.currentSection == .history {
-                Spacer()
 
-                HStack(spacing: StudioTheme.Spacing.medium) {
-                    AskIconGhostButton(label: L("history.action.exportMarkdown"), systemImage: "square.and.arrow.up") {
-                        viewModel.exportHistory()
+                Menu {
+                    Button(action: viewModel.importVocabulary) {
+                        Label(L("vocabulary.action.importFile"), systemImage: "arrow.down.doc")
                     }
-
-                    AskIconGhostButton(label: L("common.clear"), systemImage: "trash") {
-                        showingClearHistoryConfirmation = true
+                    Button(action: viewModel.exportVocabulary) {
+                        Label(L("vocabulary.action.export"), systemImage: "arrow.up.doc")
                     }
-                }
-            } else if viewModel.currentSection == .models {
-                Spacer()
-
-                // Provider lists can be searched; a provider's own settings have nothing to search.
-                if let domain = viewModel.modelPageTab.domain, !viewModel.isShowingModelProviderDetail {
-                    HStack(spacing: StudioTheme.Spacing.small) {
-                        SettingsSearchBox(
-                            placeholder: L("models.search"),
-                            text: $viewModel.modelSearchQuery,
-                            width: 220,
-                            fieldIdentifier: "models.search"
+                    Divider()
+                    Button(action: viewModel.importClaudeVocabulary) {
+                        vocabularyMenuItemLabel(
+                            title: L("vocabulary.action.importClaude"),
+                            source: .claude
                         )
+                    }
+                    Button(action: viewModel.importCodexVocabulary) {
+                        vocabularyMenuItemLabel(
+                            title: L("vocabulary.action.importCodex"),
+                            source: .codex
+                        )
+                    }
+                } label: {
+                    vocabularyMoreMenuLabel
+                }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
+                .fixedSize(horizontal: true, vertical: false)
+                .modifier(StudioButtonChromeModifier(
+                    variant: .secondary,
+                    isDisabled: viewModel.isSynchronizingVocabulary,
+                    isLoading: false,
+                    isPressed: false,
+                    minWidth: StudioTheme.ControlSize.buttonMinWidth
+                ))
+                .disabled(viewModel.isSynchronizingVocabulary)
+            }
+        } else if viewModel.currentSection == .history {
+            Spacer()
 
-                        if domain == .llm {
-                            SettingsActionButton(
-                                title: L("models.addEndpoint"),
-                                symbol: "plus"
-                            ) {
-                                viewModel.isAddingModelEndpoint = true
-                            }
-                            .fixedSize(horizontal: true, vertical: false)
-                            .accessibilityIdentifier("models.addProvider")
+            HStack(spacing: StudioTheme.Spacing.medium) {
+                AskIconGhostButton(label: L("history.action.exportMarkdown"), systemImage: "square.and.arrow.up") {
+                    viewModel.exportHistory()
+                }
+
+                AskIconGhostButton(label: L("common.clear"), systemImage: "trash") {
+                    showingClearHistoryConfirmation = true
+                }
+            }
+        } else if viewModel.currentSection == .models {
+            Spacer()
+
+            // Provider lists can be searched; a provider's own settings have nothing to search.
+            if let domain = viewModel.modelPageTab.domain, !viewModel.isShowingModelProviderDetail {
+                HStack(spacing: StudioTheme.Spacing.small) {
+                    if domain == .llm {
+                        SettingsActionButton(
+                            title: L("models.addEndpoint"),
+                            symbol: "plus"
+                        ) {
+                            viewModel.isAddingModelEndpoint = true
                         }
+                        .fixedSize(horizontal: true, vertical: false)
+                        .accessibilityIdentifier("models.addProvider")
                     }
                 }
-            } else if viewModel.currentSection == .account {
-                Spacer()
-            } else if viewModel.currentSection.isVoiceInput {
-                Spacer()
             }
+        } else if viewModel.currentSection == .account {
+            Spacer()
+        } else if viewModel.currentSection.isVoiceInput {
+            Spacer()
         }
     }
 
@@ -941,14 +830,6 @@ struct StudioView: View {
             focusedProviderConfigurationPanel
         }
         .frame(height: viewportHeight, alignment: .top)
-    }
-
-    private func viewportContentHeight(from viewportSize: CGSize) -> CGFloat {
-        max(
-            viewportSize.height - StudioTheme.Layout.shellContentTopInset
-                - (viewModel.currentSection == .models ? 0 : StudioTheme.Layout.shellContentBottomInset),
-            0
-        )
     }
 
     private var personasPage: some View {
@@ -1075,8 +956,6 @@ struct StudioView: View {
                 }
 
                 Spacer()
-
-                vocabularySearchControl
             }
 
             StudioCard(showsChrome: colorScheme == .dark) {
@@ -1112,656 +991,28 @@ struct StudioView: View {
     }
 
     private var settingsHeader: some View {
-        VStack(spacing: StudioTheme.Spacing.none) {
-            HStack(spacing: StudioTheme.Spacing.xxLarge) {
-                ForEach(AppSettingsPane.allCases) { pane in
-                    StudioUnderlineTab(title: pane.title, count: nil, selected: pane == settingsPane) {
-                        settingsPane = pane
-                    }
-                    .accessibilityIdentifier("studio.settings.tab.\(pane.rawValue)")
-                }
+        TypefluxSegmentedControl(StudioSection.settings.title, selection: $settingsPane) {
+            ForEach(AppSettingsPane.allCases) { pane in
+                Text(pane.title).tag(pane)
+                    .accessibilityIdentifier("studio.settings.tab." + pane.rawValue)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Rectangle()
-                .fill(StudioTheme.border)
-                .frame(height: 1)
         }
+        .frame(maxWidth: 640)
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
     private func settingsPage(compact: Bool) -> some View {
         switch settingsPane {
         case .general:
-            generalSettingsPage
+            GeneralSettingsView(viewModel: viewModel) { isRecentInputMemoryManagerPresented = true }
         case .hotkeys:
             HotkeySettingsView(viewModel: viewModel, settingsStore: viewModel.askToolSettings, compact: compact)
         case .appearance:
             AppearanceSettingsView(viewModel: viewModel)
         case .advanced:
-            advancedSettingsPage
+            AdvancedSettingsView(viewModel: viewModel)
         }
-    }
-
-    private var generalSettingsPage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("settings.launchAtLogin.title"),
-                        subtitle: L("settings.launchAtLogin.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.launchAtLogin },
-                                set: viewModel.setLaunchAtLogin
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-                }
-            }
-
-            if viewModel.isTextTransformationAvailable {
-                StudioSectionTitle(title: L("settings.output.title"))
-
-                StudioCard {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                        StudioSettingRow(
-                            title: L("settings.output.opencc.title"),
-                            subtitle: L("settings.output.opencc.subtitle")
-                        ) {
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { viewModel.textTransformationEnabled },
-                                    set: { viewModel.setTextTransformationEnabled($0) }
-                                )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                        }
-
-                        if viewModel.textTransformationEnabled {
-                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                            StudioSettingRow(
-                                title: L("settings.output.opencc.config.title"),
-                                subtitle: ""
-                            ) {
-                                StudioMenuPicker(
-                                    options: [
-                                        (label: L("settings.output.opencc.config.s2twp"), value: "s2twp"),
-                                        (label: L("settings.output.opencc.config.s2tw"), value: "s2tw"),
-                                        (label: L("settings.output.opencc.config.s2hk"), value: "s2hk"),
-                                        (label: L("settings.output.opencc.config.t2s"), value: "t2s")
-                                    ],
-                                    selection: Binding(
-                                        get: { viewModel.textTransformationRule },
-                                        set: { viewModel.setTextTransformationRule($0) }
-                                    ),
-                                    width: StudioTheme.Layout.appearancePickerWidth
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            StudioSectionTitle(title: L("settings.inputAndCapture.title"))
-
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("settings.shortcuts.quickInput.title"),
-                        subtitle: L("settings.shortcuts.quickInput.subtitle"),
-                        badge: "Beta"
-                    ) {
-                        Toggle("", isOn: Binding(
-                            get: { viewModel.quickInputEnabled },
-                            set: viewModel.setQuickInputEnabled
-                        ))
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                        .accessibilityIdentifier("settings.quickInput")
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                    launcherPositionSetting
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                    screenshotSaveLocationSetting
-                }
-            }
-
-            StudioSectionTitle(title: L("settings.audio"))
-
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("settings.microphone.title"),
-                        subtitle: L("settings.microphone.subtitle")
-                    ) {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            StudioMenuPicker(
-                                options: [
-                                    (
-                                        label: L("settings.microphone.automatic"),
-                                        value: AudioDeviceManager.automaticDeviceID
-                                    )
-                                ]
-                                    + viewModel.availableMicrophones.map {
-                                        (label: $0.name, value: $0.id)
-                                    },
-                                selection: Binding(
-                                    get: { viewModel.preferredMicrophoneID },
-                                    set: viewModel.setPreferredMicrophoneID
-                                ),
-                                width: 260
-                            )
-
-                            StudioButton(
-                                title: L("common.refresh"), systemImage: "arrow.clockwise",
-                                variant: .secondary
-                            ) {
-                                viewModel.refreshAvailableMicrophones()
-                            }
-                        }
-                        .fixedSize(horizontal: true, vertical: false)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.instantVoiceInput.title"),
-                        subtitle: L("settings.instantVoiceInput.subtitle"),
-                        badge: "Beta"
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.instantVoiceInputEnabled },
-                                set: viewModel.setInstantVoiceInputEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.mouseVoice.title"),
-                        subtitle: L("settings.mouseVoice.subtitle"),
-                        badge: "Beta"
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.mouseVoiceInputEnabled },
-                                set: viewModel.setMouseVoiceInputEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-
-                    if viewModel.mouseVoiceInputEnabled {
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                        StudioSettingRow(
-                            title: L("settings.mouseVoice.activation.title"),
-                            subtitle: L("settings.mouseVoice.activation.subtitle")
-                        ) {
-                            StudioMenuPicker(
-                                options: MouseVoiceActivationStyle.allCases.map {
-                                    (label: $0.displayName, value: $0)
-                                },
-                                selection: Binding(
-                                    get: { viewModel.mouseVoiceActivationStyle },
-                                    set: viewModel.setMouseVoiceActivationStyle
-                                ),
-                                width: 168
-                            )
-                        }
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.mute.title"),
-                        subtitle: L("settings.mute.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.muteSystemOutputDuringRecording },
-                                set: viewModel.setMuteSystemOutputDuringRecording
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-                }
-            }
-
-            StudioSectionTitle(title: L("settings.permissions"))
-
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("settings.permissionStatus.title"),
-                        subtitle: L("settings.permissionStatus.subtitle")
-                    ) {
-                        StudioButton(
-                            title: viewModel.isRefreshingPermissions
-                                ? L("common.refreshing") : L("common.refresh"),
-                            systemImage: "arrow.clockwise",
-                            variant: .secondary,
-                            isLoading: viewModel.isRefreshingPermissions
-                        ) {
-                            viewModel.refreshPermissionRowsWithFeedback()
-                        }
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                        ForEach(viewModel.permissionRows) { permission in
-                            permissionRow(permission)
-
-                            if permission.id != viewModel.permissionRows.last?.id {
-                                Divider().overlay(
-                                    StudioTheme.border.opacity(StudioTheme.Opacity.divider)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            StudioSectionTitle(title: L("settings.other"))
-
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    /*
-                      Sound effects are temporarily disabled until there is time to optimize them.
-                      Keep this setting UI for a future reintroduction.
-                     StudioSettingRow(
-                         title: L("settings.advanced.soundEffects.title"),
-                         subtitle: L("settings.advanced.soundEffects.subtitle")
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.soundEffectsEnabled },
-                                 set: viewModel.setSoundEffectsEnabled
-                             )
-                         )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
-
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                     */
-
-                    StudioSettingRow(
-                        title: L("settings.advanced.autoVocabulary.title"),
-                        subtitle: L("settings.advanced.autoVocabulary.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.automaticVocabularyCollectionEnabled },
-                                set: viewModel.setAutomaticVocabularyCollectionEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.advanced.recentInputMemory.title"),
-                        subtitle: L("settings.advanced.recentInputMemory.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.recentInputMemoryEnabled },
-                                set: viewModel.setRecentInputMemoryEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-                    .onAppear { viewModel.refreshRecentInputMemoryApplications() }
-
-                    StudioSettingRow(
-                        title: L("settings.advanced.globalSoul.title"),
-                        subtitle: L("settings.advanced.globalSoul.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.globalSoulMemoryEnabled },
-                                set: viewModel.setGlobalSoulMemoryEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-
-                    Button(L("settings.advanced.recentInputMemory.manage")) {
-                        isRecentInputMemoryManagerPresented = true
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.advanced.autoUpdate.title"),
-                        subtitle: L("settings.advanced.autoUpdate.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.autoUpdateEnabled },
-                                set: viewModel.setAutoUpdateEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.analyticsSharing.title"),
-                        subtitle: L("settings.analyticsSharing.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.analyticsSharingEnabled },
-                                set: viewModel.setAnalyticsSharingEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-                }
-            }
-        }
-    }
-
-    private var advancedSettingsPage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    /*
-                      Local optimization is hidden because SenseVoice availability and the
-                      cloud-local race are system-managed fallback policies, not user choices.
-                      Keep this setting UI until the model lifecycle is fully unified.
-                     StudioSettingRow(
-                         title: L("settings.advanced.localOptimization.title"),
-                         subtitle: L("settings.advanced.localOptimization.subtitle")
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.localOptimizationEnabled },
-                                 set: viewModel.setLocalOptimizationEnabled
-                             )
-                         )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
-
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                     */
-
-                    StudioSettingRow(
-                        title: L("settings.advanced.voiceProcessingTimeout.title"),
-                        subtitle: L("settings.advanced.voiceProcessingTimeout.subtitle")
-                    ) {
-                        StudioMenuPicker(
-                            options: VoiceProcessingTimeout.allCases.map {
-                                (label: $0.displayName, value: $0)
-                            },
-                            selection: Binding(
-                                get: { viewModel.voiceProcessingTimeout },
-                                set: viewModel.setVoiceProcessingTimeout
-                            ),
-                            width: StudioTheme.Layout.appearancePickerWidth
-                        )
-                    }
-
-                    /*
-                      Memory optimization is temporarily hidden and forced off until it can be
-                      improved.
-                      Keep this setting UI for a future reintroduction.
-                     StudioSettingRow(
-                         title: L("settings.advanced.localSTTMemoryOptimization.title"),
-                         subtitle: L("settings.advanced.localSTTMemoryOptimization.subtitle")
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.localSTTMemoryOptimizationEnabled },
-                                 set: viewModel.setLocalSTTMemoryOptimizationEnabled
-                             )
-                         )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
-
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                     */
-
-                    /*
-                      Applying personas to selected text now remains enabled without a user setting.
-                      Keep this beta setting UI in case configurability returns later.
-                     StudioSettingRow(
-                         title: L("settings.advanced.personaHotkeyApply.title"),
-                         subtitle: L("settings.advanced.personaHotkeyApply.subtitle"),
-                         badge: "Beta"
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.personaHotkeyAppliesToSelection },
-                                 set: viewModel.setPersonaHotkeyAppliesToSelection
-                             )
-                         )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
-
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                     */
-
-                    /*
-                      Input-context optimization now remains enabled without a user setting.
-                      Keep this beta setting UI in case configurability returns later.
-                     StudioSettingRow(
-                         title: L("settings.advanced.inputContextOptimization.title"),
-                         subtitle: L("settings.advanced.inputContextOptimization.subtitle"),
-                         badge: "Beta"
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.inputContextOptimizationEnabled },
-                                 set: viewModel.setInputContextOptimizationEnabled
-                             )
-                         )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
-
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                     */
-
-                    /*
-                      Apple Speech fallback is intentionally hidden from settings and should no longer
-                      be presented to users. Keep the entry code because the underlying fallback remains.
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                     StudioSettingRow(
-                         title: L("settings.models.appleFallback"),
-                         subtitle: L("settings.models.appleFallback.detail")
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.appleSpeechFallback },
-                                 set: viewModel.setAppleSpeechFallback
-                             )
-                         )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
-                     */
-                }
-            }
-
-            StudioSectionTitle(title: L("settings.servers.title"))
-            cloudServerSettingsCard
-        }
-    }
-
-    private var cloudServerSettingsCard: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                StudioSettingRow(
-                    title: L("settings.servers.api.title"),
-                    subtitle: L("settings.servers.api.subtitle")
-                ) {
-                    CloudServerMenuPicker(
-                        options: cloudServerOptions(
-                            servers: viewModel.availableAPIServers,
-                            statuses: viewModel.apiServerStatuses
-                        ),
-                        selection: Binding(
-                            get: { viewModel.preferredAPIServer },
-                            set: viewModel.setPreferredAPIServer
-                        ),
-                        width: StudioTheme.Layout.appearancePickerWidth
-                    )
-                }
-
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                StudioSettingRow(
-                    title: L("settings.servers.asr.title"),
-                    subtitle: L("settings.servers.asr.subtitle")
-                ) {
-                    CloudServerMenuPicker(
-                        options: cloudServerOptions(
-                            servers: viewModel.availableASRServers,
-                            statuses: viewModel.asrServerStatuses
-                        ),
-                        selection: Binding(
-                            get: { viewModel.preferredASRServer },
-                            set: viewModel.setPreferredASRServer
-                        ),
-                        width: StudioTheme.Layout.appearancePickerWidth
-                    )
-                }
-
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                StudioSettingRow(
-                    title: L("settings.servers.speedTest.title"),
-                    subtitle: viewModel.cloudServerTestSummary
-                        ?? L("settings.servers.speedTest.subtitle")
-                ) {
-                    StudioButton(
-                        title: viewModel.isTestingCloudServers
-                            ? L("settings.servers.speedTest.testing")
-                            : L("settings.servers.speedTest.action"),
-                        systemImage: "gauge.with.dots.needle.67percent",
-                        variant: .secondary,
-                        isDisabled: viewModel.isTestingCloudServers,
-                        isLoading: viewModel.isTestingCloudServers
-                    ) {
-                        viewModel.testCloudServerLatency()
-                    }
-                }
-            }
-        }
-    }
-
-    private func cloudServerOptions(
-        servers: [String],
-        statuses: [CloudEndpointStatus]
-    ) -> [CloudServerPickerOption] {
-        [
-            CloudServerPickerOption(
-                value: CloudServerPreferences.automaticValue,
-                domain: L("settings.servers.automatic"),
-                tagText: nil,
-                tone: .untested
-            )
-        ] + servers.map { server in
-            cloudServerOption(server, statuses: statuses)
-        }
-    }
-
-    private func cloudServerOption(
-        _ server: String,
-        statuses: [CloudEndpointStatus]
-    ) -> CloudServerPickerOption {
-        let domain = URL(string: server)?.host ?? server
-        guard let status = statuses.first(where: { $0.baseURL.absoluteString == server }) else {
-            return CloudServerPickerOption(
-                value: server,
-                domain: domain,
-                tagText: L("settings.servers.tag.notTested"),
-                tone: .untested
-            )
-        }
-        if status.lastError != nil {
-            return CloudServerPickerOption(
-                value: server,
-                domain: domain,
-                tagText: L("settings.servers.tag.unavailable"),
-                tone: .unavailable
-            )
-        }
-        guard let latencyMs = status.latencyMs else {
-            return CloudServerPickerOption(
-                value: server,
-                domain: domain,
-                tagText: L("settings.servers.tag.notTested"),
-                tone: .untested
-            )
-        }
-
-        let roundedLatency = Int(latencyMs.rounded())
-        if latencyMs < 150 {
-            return CloudServerPickerOption(
-                value: server,
-                domain: domain,
-                tagText: L("settings.servers.tag.fast", roundedLatency),
-                tone: .fast
-            )
-        }
-        if latencyMs < 350 {
-            return CloudServerPickerOption(
-                value: server,
-                domain: domain,
-                tagText: L("settings.servers.tag.average", roundedLatency),
-                tone: .average
-            )
-        }
-        return CloudServerPickerOption(
-            value: server,
-            domain: domain,
-            tagText: L("settings.servers.tag.slow", roundedLatency),
-            tone: .slow
-        )
     }
 
     // MARK: - Agent Page
@@ -1790,6 +1041,7 @@ struct StudioView: View {
                 AskToolsSettingsView(
                     settings: viewModel.askToolSettings,
                     imageSettingsModel: imageSettings,
+                    searchQuery: $toolbarSearch.query,
                     pane: agentPane,
                     onNavigate: { agentPane = $0 },
                     onStatusesChange: { agentStatuses = $0 }
@@ -1815,6 +1067,7 @@ struct StudioView: View {
         SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: $launcherPane, compact: compact) {
             LauncherSettingsView(
                 settings: viewModel.askToolSettings, pane: launcherPane,
+                searchQuery: $toolbarSearch.query,
                 clipboardHistory: SettingsWindowController.shared.clipboardHistoryStore,
                 onEditShortcut: {
                     settingsPane = .hotkeys
@@ -1822,6 +1075,14 @@ struct StudioView: View {
                 }
             )
             .id(launcherPane)
+        }
+    }
+
+    private var filteredMCPServers: [MCPServerConfig] {
+        let query = toolbarSearch.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return viewModel.mcpServers.filter {
+            query.isEmpty || $0.name.localizedCaseInsensitiveContains(query)
+                || mcpTransportDetail(for: $0).localizedCaseInsensitiveContains(query)
         }
     }
 
@@ -1846,7 +1107,10 @@ struct StudioView: View {
             VStack(alignment: .leading, spacing: 8) {
                 ModelSurface {
                     VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(viewModel.mcpServers.enumerated()), id: \.element.id) { index, server in
+                        if filteredMCPServers.isEmpty {
+                            AgentSettingsEmptyRow(text: L("personas.redesign.noResults", toolbarSearch.query))
+                        }
+                        ForEach(Array(filteredMCPServers.enumerated()), id: \.element.id) { index, server in
                             if index > 0 { ModelRowDivider(leading: 66) }
                             mcpServerRow(server)
                         }
@@ -2009,176 +1273,8 @@ struct StudioView: View {
         }
     }
 
-    /// The folder ⌘S saves screenshots into.
-    private var screenshotSaveLocationSetting: some View {
-        StudioSettingRow(
-            title: L("settings.shortcuts.screenshot.saveLocation.title"),
-            subtitle: viewModel.screenshotSaveDirectory.path
-        ) {
-            HStack(spacing: StudioTheme.Spacing.medium) {
-                if viewModel.screenshotSaveDirectory.standardizedFileURL
-                    != SettingsStore.defaultScreenshotSaveDirectory.standardizedFileURL {
-                    Button(L("settings.shortcuts.screenshot.saveLocation.reset")) {
-                        viewModel.resetScreenshotSaveDirectory()
-                    }
-                    .buttonStyle(.link)
-                    .fixedSize()
-                }
-                Button(L("settings.shortcuts.screenshot.saveLocation.choose")) {
-                    viewModel.chooseScreenshotSaveDirectory()
-                }
-                .fixedSize()
-            }
-        }
-    }
-
-    /// Where ⌥Space opens the launcher: always centred, or where it was last dragged.
-    private var launcherPositionSetting: some View {
-        StudioSettingRow(
-            title: L("settings.shortcuts.launcherPosition.title"),
-            subtitle: L(viewModel.askLauncherPosition == .center
-                ? "settings.shortcuts.launcherPosition.center.subtitle"
-                : "settings.shortcuts.launcherPosition.last.subtitle")
-        ) {
-            HStack(spacing: StudioTheme.Spacing.medium) {
-                if viewModel.askLauncherPosition == .lastPosition {
-                    Button(L("settings.shortcuts.launcherPosition.reset")) {
-                        viewModel.resetAskLauncherPositions()
-                    }
-                    .buttonStyle(.link)
-                    .fixedSize()
-                    .disabled(!viewModel.hasRememberedLauncherPositions)
-                }
-                StudioSegmentedPicker(
-                    options: [
-                        (label: L("settings.shortcuts.launcherPosition.center"), value: AskLauncherPosition.center),
-                        (label: L("settings.shortcuts.launcherPosition.last"), value: .lastPosition)
-                    ],
-                    selection: Binding(
-                        get: { viewModel.askLauncherPosition },
-                        set: viewModel.setAskLauncherPosition
-                    )
-                )
-                .fixedSize()
-            }
-        }
-        .onAppear { viewModel.refreshAskLauncherPositions() }
-    }
-
-    private func permissionRow(_ permission: StudioPermissionRowModel) -> some View {
-        HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    Image(
-                        systemName: permission.isGranted
-                            ? "checkmark.circle.fill" : "exclamationmark.circle"
-                    )
-                    .foregroundStyle(
-                        permission.isGranted ? StudioTheme.success : StudioTheme.warning
-                    )
-
-                    Text(permission.title)
-                        .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-
-                    StudioPill(
-                        title: permission.badgeText,
-                        tone: permission.isGranted ? StudioTheme.success : StudioTheme.warning,
-                        fill: (permission.isGranted ? StudioTheme.success : StudioTheme.warning)
-                            .opacity(0.12)
-                    )
-                }
-
-                Text(permission.summary)
-                    .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                    .foregroundStyle(StudioTheme.textSecondary)
-
-                Text(permission.detail)
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-
-            Spacer(minLength: StudioTheme.Spacing.pageGroup)
-
-            StudioButton(
-                title: permission.actionTitle,
-                systemImage: permission.isGranted ? "arrow.up.right.square" : "lock.open.display",
-                variant: permission.isGranted ? .secondary : .primary
-            ) {
-                viewModel.requestPermission(permission.id)
-            }
-        }
-        .padding(.vertical, StudioTheme.Spacing.xSmall)
-    }
-
     private var filteredVocabularyEntries: [VocabularyEntry] {
         viewModel.filteredVocabularyEntries.filter { vocabularyFilter.matches($0.source) }
-    }
-
-    @ViewBuilder
-    private var vocabularyOutsideTapTarget: some View {
-        if viewModel.currentSection == .vocabulary, isVocabularySearchExpanded {
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    collapseVocabularySearch()
-                }
-        }
-    }
-
-    private var vocabularySearchControl: some View {
-        HStack(spacing: isVocabularySearchExpanded ? StudioTheme.Spacing.small : StudioTheme.Spacing.none) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                .foregroundStyle(
-                    isVocabularySearchExpanded ? StudioTheme.textTertiary : StudioTheme.textSecondary
-                )
-                .frame(width: vocabularySearchCollapsedSize, height: vocabularySearchCollapsedSize)
-
-            if isVocabularySearchExpanded {
-                TextField(L("vocabulary.search.placeholder"), text: $viewModel.searchQuery)
-                    .textFieldStyle(.plain)
-                    .font(.studioBody(StudioTheme.Typography.body))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                    .focused($isVocabularySearchFocused)
-                    .onSubmit {
-                        collapseVocabularySearch()
-                    }
-                    .onChange(of: isVocabularySearchFocused) { isFocused in
-                        if !isFocused {
-                            collapseVocabularySearch()
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-            }
-        }
-        .padding(.trailing, isVocabularySearchExpanded ? StudioTheme.Insets.textFieldHorizontal : 0)
-        .frame(
-            width: isVocabularySearchExpanded ? vocabularySearchExpandedWidth : vocabularySearchCollapsedSize,
-            height: vocabularySearchCollapsedSize,
-            alignment: .leading
-        )
-        .background(
-            Capsule()
-                .fill(StudioTheme.controlSurface.opacity(StudioTheme.Opacity.textFieldFill))
-        )
-        .overlay(
-            Capsule()
-                .stroke(
-                    StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                    lineWidth: StudioTheme.BorderWidth.thin
-                )
-        )
-        .contentShape(Capsule())
-        .clipped()
-        .onTapGesture {
-            if !isVocabularySearchExpanded {
-                expandVocabularySearch()
-            }
-        }
-        .animation(vocabularySearchAnimation, value: isVocabularySearchExpanded)
     }
 
     @ViewBuilder
@@ -2340,24 +1436,6 @@ struct StudioView: View {
 
     private func vocabularyCount(for filter: VocabularyFilter) -> Int {
         viewModel.vocabularyEntries.count(where: { filter.matches($0.source) })
-    }
-
-    private func expandVocabularySearch() {
-        withAnimation(vocabularySearchAnimation) {
-            isVocabularySearchExpanded = true
-        }
-
-        DispatchQueue.main.async {
-            isVocabularySearchFocused = true
-        }
-    }
-
-    private func collapseVocabularySearch() {
-        isVocabularySearchFocused = false
-
-        withAnimation(vocabularySearchAnimation) {
-            isVocabularySearchExpanded = false
-        }
     }
 
     private var vocabularyMoreMenuLabel: some View {

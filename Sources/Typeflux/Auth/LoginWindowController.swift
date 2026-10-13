@@ -26,7 +26,23 @@ final class LoginWindowController: NSObject {
         }
     }
 
-    func show() {
+    private lazy var webEntry = WebLoginEntryController(
+        coordinator: AuthState.shared.webLoginCoordinator,
+        showNative: { [weak self] in self?.showNativeWindow() },
+        reportFailure: { failure in
+            let alert = NSAlert()
+            alert.messageText = L("auth.login.windowTitle")
+            alert.informativeText = L(failure.localizationKey)
+            alert.alertStyle = .warning
+            alert.runModal()
+        }
+    )
+
+    func show() { webEntry.show() }
+
+    func showWebLoginFailure() { webEntry.showCurrentFailure() }
+
+    private func showNativeWindow() {
         if let window {
             DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)

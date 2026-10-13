@@ -90,6 +90,7 @@ struct TypefluxSearchToolbarBridge: NSViewRepresentable {
             if state.isFocused, item.searchField.currentEditor() == nil, window?.isKeyWindow == true {
                 item.beginSearchInteraction()
             } else if !state.isFocused, state.query.isEmpty, item.searchField.currentEditor() != nil {
+                window?.makeFirstResponder(nil)
                 item.endSearchInteraction()
             }
         }

@@ -5,6 +5,7 @@ import SwiftUI
 struct LauncherSettingsView: View {
     let settings: SettingsStore
     var pane: LauncherSettingsPane = .basics
+    var searchQuery: Binding<String> = .constant("")
     var workflows: AskWorkflowStore = .shared
     /// The clipboard history whose space the clipboard pane shows; `nil` hides that section.
     var clipboardHistory: ClipboardHistoryStore?
@@ -26,7 +27,7 @@ struct LauncherSettingsView: View {
                 LauncherSearchSettingsView(settings: settings)
             case .keywords:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
-                AskLauncherPluginSettingsView(settings: settings, workflows: workflows)
+                AskLauncherPluginSettingsView(settings: settings, workflows: workflows, query: searchQuery)
             case .translation:
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 AskTranslationSettingsView(settings: settings)
@@ -34,7 +35,7 @@ struct LauncherSettingsView: View {
                 AgentPaneHeader(symbol: pane.symbol, title: pane.title)
                 ClipboardSettingsView(settings: settings, history: clipboardHistory, onEditShortcut: onEditShortcut)
             case .workflows:
-                AskWorkflowSettingsView(store: workflows, settings: settings)
+                AskWorkflowSettingsView(store: workflows, settings: settings, searchQuery: searchQuery.wrappedValue)
             }
         }
         .onAppear(perform: reload)

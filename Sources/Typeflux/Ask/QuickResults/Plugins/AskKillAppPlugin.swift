@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 
 /// Identifies one running instance, so a stale row cannot quit a replacement app.
 struct AskKillAppTarget: Equatable, Sendable {
@@ -17,6 +18,7 @@ struct AskKillAppPlugin: AskLauncherPlugin {
     var id: String { Self.id }
     var title: String { L("ask.plugin.kill.title") }
     var symbol: String { "xmark.app" }
+    var keywordColor: Color { StudioTheme.danger }
     var defaultKeywords: [AskKeyword] { Self.keywords }
     var runsWithoutInput: Bool { true }
     var usesSelectionInput: Bool { false }

@@ -1,0 +1,199 @@
+{
+  "scope": "Added or modified instrumentable production lines; related tests only",
+  "executable_lines": 506,
+  "covered_lines": 483,
+  "percent": 95.45,
+  "uninstrumented_files": [
+    "Sources/Typeflux/UI/EnvironmentValues+StudioToolbar.swift",
+    "Sources/TypefluxUI/EnvironmentValues+TypefluxSearch.swift"
+  ],
+  "files": [
+    {
+      "file": "Sources/Typeflux/Settings/AgentSettingsComponents.swift",
+      "executable_lines": 18,
+      "covered_lines": 18,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskLauncherPluginSettingsView.swift",
+      "executable_lines": 8,
+      "covered_lines": 8,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskToolsSettingsView+Skills.swift",
+      "executable_lines": 6,
+      "covered_lines": 6,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskToolsSettingsView.swift",
+      "executable_lines": 2,
+      "covered_lines": 2,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift",
+      "executable_lines": 28,
+      "covered_lines": 28,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/LauncherSettingsView.swift",
+      "executable_lines": 3,
+      "covered_lines": 3,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/MemoryNotesEditorView.swift",
+      "executable_lines": 8,
+      "covered_lines": 8,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelCatalogView.swift",
+      "executable_lines": 1,
+      "covered_lines": 1,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsSearchScope.swift",
+      "executable_lines": 33,
+      "covered_lines": 33,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsView.swift",
+      "executable_lines": 134,
+      "covered_lines": 122,
+      "uncovered_lines": [
+        394,
+        395,
+        399,
+        400,
+        819,
+        820,
+        821,
+        865,
+        866,
+        869,
+        870,
+        883
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsWindowController.swift",
+      "executable_lines": 12,
+      "covered_lines": 12,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/UI/StudioShell.swift",
+      "executable_lines": 36,
+      "covered_lines": 36,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/UI/StudioShellLayout.swift",
+      "executable_lines": 10,
+      "covered_lines": 10,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/UI/StudioSidebar.swift",
+      "executable_lines": 33,
+      "covered_lines": 28,
+      "uncovered_lines": [
+        8,
+        18,
+        19,
+        20,
+        21
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/UI/StudioSidebarFooter.swift",
+      "executable_lines": 56,
+      "covered_lines": 56,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxButton.swift",
+      "executable_lines": 1,
+      "covered_lines": 1,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxControlHeight.swift",
+      "executable_lines": 1,
+      "covered_lines": 1,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxNavigationRow.swift",
+      "executable_lines": 6,
+      "covered_lines": 6,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxRadius.swift",
+      "executable_lines": 1,
+      "covered_lines": 1,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSearchToolbarBridge.swift",
+      "executable_lines": 1,
+      "covered_lines": 1,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSearchable.swift",
+      "executable_lines": 7,
+      "covered_lines": 4,
+      "uncovered_lines": [
+        20,
+        21,
+        22
+      ]
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSidebarMaterial.swift",
+      "executable_lines": 6,
+      "covered_lines": 6,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxWindow.swift",
+      "executable_lines": 62,
+      "covered_lines": 59,
+      "uncovered_lines": [
+        82,
+        83,
+        107
+      ]
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxWindowNavigationList.swift",
+      "executable_lines": 17,
+      "covered_lines": 17,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxWindowTitleBridge.swift",
+      "executable_lines": 16,
+      "covered_lines": 16,
+      "uncovered_lines": []
+    }
+  ],
+  "profile_selection": {
+    "instrumentation_signature": "3219110316196018445",
+    "raw_profiles": 7,
+    "counter_mismatches": 0,
+    "test_runs": [
+      "Final native interaction filter (16 tests)",
+      "Final settings window snapshot filter (2 tests)",
+      "Final related regression filter (27 XCTest and 44 Swift Testing tests)"
+    ]
+  }
+}

@@ -1,12 +1,6 @@
 import AppKit
 import SwiftUI
 
-private final class TransparentSettingsHostingView<Content: View>: NSHostingView<Content> {
-    override var isOpaque: Bool {
-        false
-    }
-}
-
 @MainActor
 final class SettingsWindowController: NSObject {
     static let shared = SettingsWindowController()
@@ -16,21 +10,11 @@ final class SettingsWindowController: NSObject {
     var clipboardHistoryStore: ClipboardHistoryStore?
     private var settingsStore: SettingsStore?
     private(set) var window: NSWindow?
-    private var viewModel: StudioViewModel?
-    private var languageObserver: NSObjectProtocol?
+    private(set) var viewModel: StudioViewModel?
     private var appearanceObserver: NSObjectProtocol?
 
     override init() {
         super.init()
-        languageObserver = NotificationCenter.default.addObserver(
-            forName: .appLanguageDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.window?.title = L("window.voiceStudio")
-            }
-        }
         appearanceObserver = NotificationCenter.default.addObserver(
             forName: .appearanceModeDidChange,
             object: nil,
@@ -39,6 +23,12 @@ final class SettingsWindowController: NSObject {
             Task { @MainActor in
                 self?.refreshAppearance()
             }
+        }
+    }
+
+    deinit {
+        if let appearanceObserver {
+            NotificationCenter.default.removeObserver(appearanceObserver)
         }
     }
 
@@ -88,7 +78,7 @@ final class SettingsWindowController: NSObject {
         AppLocalization.shared.setLanguage(viewModel.appLanguage)
         if presentFeedback { viewModel.directFeedbackRequestID = UUID() }
         let view = StudioView(viewModel: viewModel, launcherPane: launcherPane ?? .basics)
-        let hosting = TransparentSettingsHostingView(rootView: view)
+        let hosting = NSHostingView(rootView: view)
         hosting.sizingOptions = []
 
         let window = NSWindow(
@@ -98,7 +88,7 @@ final class SettingsWindowController: NSObject {
                 width: StudioTheme.Layout.settingsWindowWidth,
                 height: StudioTheme.Layout.settingsWindowHeight
             ),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
@@ -108,10 +98,9 @@ final class SettingsWindowController: NSObject {
         window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.settings.toolbar")
         window.toolbarStyle = .unified
         window.titlebarSeparatorStyle = .none
-        window.titleVisibility = .hidden
-        window.isMovableByWindowBackground = true
-        window.isOpaque = false
-        window.backgroundColor = .clear
+        window.titleVisibility = .visible
+        window.isOpaque = true
+        window.backgroundColor = .windowBackgroundColor
         window.hasShadow = true
         window.contentView = hosting
         window.isReleasedWhenClosed = false
@@ -143,6 +132,8 @@ extension SettingsWindowController: NSWindowDelegate {
     func windowWillClose(_: Notification) {
         if let window {
             DockVisibilityController.shared.windowDidHide(window)
+            // Detach the hosting tree so SwiftUI tasks and native search monitors stop immediately.
+            window.contentView = nil
         }
         window = nil
         viewModel = nil

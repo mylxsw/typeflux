@@ -1,29 +1,19 @@
 import AppKit
-import AuthenticationServices
 
+/// Open the default browser directly. The application URL router receives the callback.
 @MainActor
-final class WebLoginBrowser: NSObject, WebLoginBrowserSession, ASWebAuthenticationPresentationContextProviding {
-    private var session: ASWebAuthenticationSession!
+final class WebLoginBrowser: WebLoginBrowserSession {
+    private let url: URL
+    private let open: (URL) -> Bool
 
-    init(url: URL, scheme: String, completion: @escaping (URL?, Bool) -> Void) {
-        super.init()
-        session = ASWebAuthenticationSession(url: url, callbackURLScheme: scheme) { url, error in
-            let cancelled = (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin
-            Task { @MainActor in completion(url, cancelled) }
-        }
-        session.prefersEphemeralWebBrowserSession = false
-        session.presentationContextProvider = self
+    init(url: URL, scheme _: String, completion _: @escaping (URL?, Bool) -> Void,
+         open: @escaping (URL) -> Bool = { NSWorkspace.shared.open($0) }) {
+        self.url = url
+        self.open = open
     }
 
-    func start() -> Bool {
-        session.start()
-    }
+    func start() -> Bool { open(url) }
 
-    func cancel() {
-        session.cancel()
-    }
-
-    func presentationAnchor(for _: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        NSApp.keyWindow ?? NSApp.windows.first ?? ASPresentationAnchor()
-    }
+    // A browser tab belongs to the user. Cancelling clears the coordinator's transaction.
+    func cancel() {}
 }

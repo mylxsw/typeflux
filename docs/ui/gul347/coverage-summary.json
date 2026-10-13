@@ -1,0 +1,181 @@
+{
+  "covered": 674,
+  "executable": 728,
+  "percent": 92.58241758241759,
+  "files": {
+    "Sources/Typeflux/Auth/AccountAddonCreditRow.swift": {
+      "covered": 7,
+      "executable": 7,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Auth/AccountHelpSection.swift": {
+      "covered": 17,
+      "executable": 20,
+      "uncovered": [
+        17,
+        18,
+        28
+      ]
+    },
+    "Sources/Typeflux/Auth/AccountPlanHeroCard.swift": {
+      "covered": 51,
+      "executable": 53,
+      "uncovered": [
+        122,
+        123
+      ]
+    },
+    "Sources/Typeflux/Auth/AccountRefreshIconButton.swift": {
+      "covered": 10,
+      "executable": 13,
+      "uncovered": [
+        5,
+        6,
+        12
+      ]
+    },
+    "Sources/Typeflux/Auth/AccountUsageMetricsGrid.swift": {
+      "covered": 24,
+      "executable": 24,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Auth/AccountUsageSections.swift": {
+      "covered": 21,
+      "executable": 21,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Auth/AccountView.swift": {
+      "covered": 18,
+      "executable": 18,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Auth/ChangePasswordSheet.swift": {
+      "covered": 63,
+      "executable": 87,
+      "uncovered": [
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93
+      ]
+    },
+    "Sources/Typeflux/Auth/PasswordChangeSuccessSheet.swift": {
+      "covered": 23,
+      "executable": 23,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Settings/AdvancedSettingsView.swift": {
+      "covered": 55,
+      "executable": 58,
+      "uncovered": [
+        5,
+        32,
+        33
+      ]
+    },
+    "Sources/Typeflux/Settings/AppearanceSettingsView.swift": {
+      "covered": 35,
+      "executable": 36,
+      "uncovered": [
+        6
+      ]
+    },
+    "Sources/Typeflux/Settings/GeneralSettingsView.swift": {
+      "covered": 144,
+      "executable": 155,
+      "uncovered": [
+        6,
+        47,
+        48,
+        51,
+        52,
+        78,
+        79,
+        87,
+        88,
+        141,
+        142
+      ]
+    },
+    "Sources/Typeflux/Settings/HotkeyKeysView.swift": {
+      "covered": 14,
+      "executable": 17,
+      "uncovered": [
+        6,
+        17,
+        18
+      ]
+    },
+    "Sources/Typeflux/Settings/HotkeySettingsView.swift": {
+      "covered": 63,
+      "executable": 63,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Settings/KeywordHotkeyEditorSheet.swift": {
+      "covered": 31,
+      "executable": 33,
+      "uncovered": [
+        91,
+        104
+      ]
+    },
+    "Sources/Typeflux/Settings/LauncherWindowModeSetting.swift": {
+      "covered": 4,
+      "executable": 4,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Settings/LiquidGlassIntensitySetting.swift": {
+      "covered": 15,
+      "executable": 15,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Settings/SettingsView.swift": {
+      "covered": 10,
+      "executable": 10,
+      "uncovered": []
+    },
+    "Sources/Typeflux/UI/StudioShell.swift": {
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    "Sources/TypefluxUI/TypefluxSecureField.swift": {
+      "covered": 7,
+      "executable": 7,
+      "uncovered": []
+    },
+    "Sources/TypefluxUI/TypefluxWindow.swift": {
+      "covered": 15,
+      "executable": 17,
+      "uncovered": [
+        101,
+        102
+      ]
+    },
+    "Sources/TypefluxUI/TypefluxWindowTitleBridge.swift": {
+      "covered": 45,
+      "executable": 45,
+      "uncovered": []
+    }
+  }
+}

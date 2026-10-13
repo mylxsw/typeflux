@@ -4,6 +4,7 @@ import SwiftUI
 /// Agent settings panes: the overview, one pane per built-in capability, skills and saved notes.
 /// MCP servers are owned by the settings view model and rendered by `StudioView`.
 struct AskToolsSettingsView: View {
+    @Environment(\.typefluxToolbarSearchQuery) var toolbarQuery
     let settings: SettingsStore
     var skills = AskSkillLibrary()
     var notes: AskMemoryNoteStore = .shared
@@ -28,7 +29,7 @@ struct AskToolsSettingsView: View {
     @State var installTask: Task<Void, Never>?
     @State var pendingRemoval: AskSkill?
     @State var skillActionError: String?
-    @State var skillQuery = ""
+    var searchQuery: Binding<String> = .constant("")
     @State var skillFilter = SkillFilter.all
     @State var inspectedSkill: InspectedSkill?
     @State var removedFolder: RemovedFolder?
@@ -235,6 +236,6 @@ struct AskToolsSettingsView: View {
                              label: L("agent.memory.count", memoryNotes.notes.count))
         }
         MemoryNotesEditorView(model: memoryNotes, store: notes, owner: owner(),
-                              correctionsEnabled: MemoryRollout.enabled(settings.defaults))
+                              correctionsEnabled: MemoryRollout.enabled(settings.defaults), query: searchQuery)
     }
 }

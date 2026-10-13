@@ -54,6 +54,7 @@ struct AskKeywordChip: View {
     var title: String
     var symbol: String
     var detail: String?
+    var tint: Color = AskTheme.accent
 
     var body: some View {
         HStack(spacing: 6) {
@@ -61,16 +62,16 @@ struct AskKeywordChip: View {
                 .font(.system(size: 10.5, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 20, height: 20)
-                .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .background(tint, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             Text(title).font(.system(size: 13, weight: .semibold))
             if let detail {
                 Text("→ " + detail).font(.system(size: 12.5)).opacity(0.8)
             }
         }
-        .foregroundStyle(AskTheme.accent)
+        .foregroundStyle(tint)
         .padding(.leading, 5).padding(.trailing, 10)
         .frame(height: 30)
-        .background(AskTheme.accent.opacity(0.16), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         .fixedSize()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(detail.map { title + " → " + $0 } ?? title)

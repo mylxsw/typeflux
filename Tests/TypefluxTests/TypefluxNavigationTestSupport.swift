@@ -43,6 +43,23 @@ enum TypefluxNavigationTestSupport {
         return view.subviews.lazy.compactMap { searchField(in: $0, identifier: identifier) }.first
     }
 
+    static func toggleSidebar(in window: NSWindow) throws {
+        let item = try #require(window.toolbar?.items.first {
+            $0.itemIdentifier == .toggleSidebar
+                || $0.itemIdentifier.rawValue.localizedCaseInsensitiveContains("toggleSidebar")
+        }, "Missing native sidebar toolbar item")
+        window.makeKeyAndOrderFront(nil)
+        if let view = item.view,
+           let button = SettingsBehaviorTestSupport.elements(in: view).first(where: {
+               $0.role == NSAccessibility.Role.button.rawValue
+           }) {
+            try button.press()
+        } else {
+            let action = try #require(item.action)
+            #expect(NSApp.sendAction(action, to: item.target, from: item))
+        }
+    }
+
     static func sendKey(_ code: UInt16, characters: String = "", modifiers: NSEvent.ModifierFlags = [],
                         to window: NSWindow, keyEquivalent: Bool = false) throws {
         let text: String = if !characters.isEmpty {

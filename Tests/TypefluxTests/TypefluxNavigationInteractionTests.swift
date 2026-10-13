@@ -154,6 +154,7 @@ struct TypefluxNavigationInteractionTests {
         try TypefluxNavigationTestSupport.sendKey(3, characters: "f", modifiers: .command, to: window)
         try await SettingsBehaviorTestSupport
             .wait { state.isExpanded && item.searchField.currentEditor() != nil }
+        #expect(item.searchField.convert(item.searchField.bounds, to: nil).maxX > window.frame.width - 60)
         let editor = try #require(item.searchField.currentEditor() as? NSTextView)
         editor.insertText(
             "query",
@@ -166,6 +167,7 @@ struct TypefluxNavigationInteractionTests {
         #expect(state.query.isEmpty && state.isExpanded)
         try TypefluxNavigationTestSupport.sendKey(53, to: window)
         #expect(!state.isExpanded && !state.isFocused)
+        try await SettingsBehaviorTestSupport.wait { item.searchField.currentEditor() == nil }
         try TypefluxNavigationTestSupport.sendKey(3, characters: "f", modifiers: .command, to: window)
         state.query = "retained"
         try await Task.sleep(for: .milliseconds(100))

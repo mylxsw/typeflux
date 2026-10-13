@@ -76,24 +76,25 @@ struct AskKeywordList: Equatable {
 /// Settings → Launcher → Keywords: built-in and custom plugin keywords.
 /// Workflow keywords stay on the workflow page, but still reserve their names when saving.
 struct AskLauncherPluginSettingsView: View {
+    @Environment(\.typefluxToolbarSearchQuery) private var toolbarQuery
     let settings: SettingsStore
     @ObservedObject var workflows: AskWorkflowStore
 
     @State private var list = AskKeywordList(keywords: [])
     @State private var secondLanguage = "en"
     @State private var filter: AskKeywordKind?
-    @State private var query: String
+    @Binding private var query: String
     @State private var editing: AskKeywordSheetItem?
     @State private var adding = false
     @State private var confirmingRestore = false
     @State private var collapsedSections: Set<AskKeywordSection> = [.system]
 
     init(settings: SettingsStore, workflows: AskWorkflowStore, initialFilter: AskKeywordKind? = nil,
-         initialQuery: String = "") {
+         initialQuery: String = "", query: Binding<String>? = nil) {
         self.settings = settings
         self.workflows = workflows
         _filter = State(initialValue: initialFilter == .workflow ? nil : initialFilter)
-        _query = State(initialValue: initialQuery)
+        _query = query ?? .constant(initialQuery)
     }
 
     private var interface: AppLanguage {
@@ -141,19 +142,12 @@ struct AskLauncherPluginSettingsView: View {
 
     // MARK: - Toolbar
 
-    /// Keep the category menu compact and the add action at the trailing edge.
-    /// Narrow panes place the category above the expanding search field.
+    /// The search lives in the window toolbar; categories and creation stay near the list.
     private var toolbar: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
-                filterBar
-                searchBox.frame(minWidth: 160)
-                addButton
-            }
-            VStack(alignment: .leading, spacing: 8) {
-                filterBar
-                searchAndAdd
-            }
+        HStack(spacing: 8) {
+            filterBar
+            Spacer(minLength: 0)
+            addButton
         }
     }
 
@@ -167,19 +161,6 @@ struct AskLauncherPluginSettingsView: View {
         counts[.system] = AskSystemCommand.allCases.count
         counts[nil] = rows.count(where: { $0.kind != .system }) + AskSystemCommand.allCases.count
         return counts
-    }
-
-    private var searchAndAdd: some View {
-        HStack(spacing: 8) {
-            searchBox
-            addButton
-        }
-    }
-
-    private var searchBox: some View {
-        SettingsSearchBox(placeholder: L("ask.settings.keywords.search"), text: $query, width: nil)
-            .frame(maxWidth: .infinity)
-            .accessibilityIdentifier("ask.settings.keywords.search")
     }
 
     private var addButton: some View {
@@ -211,10 +192,10 @@ struct AskLauncherPluginSettingsView: View {
     // MARK: - List
 
     private var listCard: some View {
-        let shown = AskKeywordListPresentation.filter(rows, kind: filter, query: query)
+        let shown = AskKeywordListPresentation.filter(rows, kind: filter, query: toolbarQuery ?? query)
         return VStack(alignment: .leading, spacing: 12) {
             if shown.isEmpty {
-                ModelSurface { AgentSettingsEmptyRow(text: L("ask.settings.keywords.noMatch", query)) }
+                ModelSurface { AgentSettingsEmptyRow(text: L("ask.settings.keywords.noMatch", toolbarQuery ?? query)) }
             }
             ForEach(AskKeywordSection.allCases, id: \.self) { section in
                 let group = shown.filter { section.kinds.contains($0.kind) }

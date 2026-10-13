@@ -4761,3 +4761,12 @@
 "ask.inputHistory.limit" = "保存件数";
 "ask.inputHistory.privacy" = "入力履歴はこの Mac にのみ保存されます。取得したコンテキスト、添付ファイル、AI の回答は含まれません。";
 "ask.inputHistory.noMatches.detail" = "別の文字で絞り込んでください。esc で解除して戻れます。";
+
+// Website login connection diagnostics.
+"auth.web.invalidResponse" = "ログインサービスから予期しない応答がありました。App と API のウェブサイト URL が一致しているか確認してください。";
+"auth.web.networkUnavailable" = "ログインサービスに接続できません。API の URL と Docker の起動状態を確認してください。";
+"auth.web.transportBlocked" = "macOS がこの App の HTTP 通信をブロックしました。HTTP の URL を設定し、開発用起動スクリプトで再ビルドしてください。";
+"auth.web.endpointUnavailable" = "ログイン API が利用できません。API のバージョン、ウェブログイン設定、/api プロキシを確認してください。";
+"auth.web.requestRejected" = "ログイン要求が拒否されました。開発用・本番用クライアントとコールバック URL の設定を確認してください。";
+"auth.web.serviceUnavailable" = "ログインサービスを利用できません。API とデータベースを確認して再試行してください。";
+"auth.web.rateLimited" = "ログイン試行が多すぎます。しばらく待ってから再試行してください。";

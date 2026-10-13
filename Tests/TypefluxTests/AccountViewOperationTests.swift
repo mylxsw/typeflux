@@ -18,13 +18,15 @@ struct AccountViewOperationTests {
                     let content = try #require(sheet.contentView)
                     try await SettingsBehaviorTestSupport.wait { fields(in: content).count == 3 }
                     let inputs = fields(in: content)
-                    let current = try #require(inputs.first {
-                        $0.placeholderString == L("auth.account.currentPassword")
-                    })
-                    let new = try #require(inputs.first { $0.placeholderString == L("auth.account.newPassword") })
-                    let confirm = try #require(inputs.first {
-                        $0.placeholderString == L("auth.account.confirmNewPassword")
-                    })
+                    for key in ["auth.account.currentPassword", "auth.account.newPassword",
+                                "auth.account.confirmNewPassword"] {
+                        #expect(SettingsBehaviorTestSupport.elements(in: content).contains {
+                            $0.role == NSAccessibility.Role.textField.rawValue && $0.label == L(key)
+                        })
+                    }
+                    let current = inputs[0]
+                    let new = inputs[1]
+                    let confirm = inputs[2]
                     try await validatePasswordForm(current: current, new: new, confirm: confirm,
                                                    sheet: sheet, auth: fixture.auth)
                     #expect(fixture.auth.userProfile?.id == "a1")
@@ -134,7 +136,8 @@ struct AccountViewOperationTests {
     }
 
     private func fields(in view: NSView) -> [NSTextField] {
-        (view as? NSTextField).map { [$0] } ?? view.subviews.flatMap { fields(in: $0) }
+        if let field = view as? NSTextField { return field.isEditable ? [field] : [] }
+        return view.subviews.flatMap { fields(in: $0) }
     }
 
     private func fill(_ field: NSTextField, with value: String, in window: NSWindow) throws {
