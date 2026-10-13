@@ -11,7 +11,7 @@ struct AgentSettingsSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ModelSectionLabel(title: title, detail: detail)
-            ModelSurface {
+            StudioCard(padding: 0) {
                 VStack(alignment: .leading, spacing: 0) { content }
             }
             if let footnote {
@@ -82,14 +82,14 @@ struct AgentSettingsActionRow: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 Image(systemName: icon).font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(ModelVisualStyle.accent)
+                    .foregroundStyle(TypefluxColor.accent.color)
                     .frame(width: 34, height: 34)
                     .background(
-                        ModelVisualStyle.accent.opacity(0.14),
+                        TypefluxColor.accent.color.opacity(0.14),
                         in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                     )
                 Text(title).font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(ModelVisualStyle.accent)
+                    .foregroundStyle(TypefluxColor.accent.color)
                 Spacer()
             }
             .padding(.horizontal, 18).frame(minHeight: 56).contentShape(Rectangle())
@@ -125,12 +125,15 @@ struct AgentSettingsIconButton: View {
                 .foregroundStyle(StudioTheme.textSecondary)
                 .frame(width: SettingsControlMetrics.height, height: SettingsControlMetrics.height)
                 .background(
-                    ModelVisualStyle.control,
-                    in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
+                    TypefluxColor.controlBackground.color,
+                    in: RoundedRectangle(
+                        cornerRadius: TypefluxRadius.textField.value(for: .classic),
+                        style: .continuous
+                    )
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                        .strokeBorder(ModelVisualStyle.border)
+                    RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: .classic), style: .continuous)
+                        .strokeBorder(TypefluxColor.separator.color)
                 )
                 .contentShape(Rectangle())
         }
@@ -248,9 +251,12 @@ struct AgentPaneHeader<Accessory: View>: View {
         } else {
             HStack(alignment: .center, spacing: 14) {
                 Image(systemName: symbol).font(.system(size: 18))
-                    .foregroundStyle(ModelVisualStyle.accent)
+                    .foregroundStyle(TypefluxColor.accent.color)
                     .frame(width: 40, height: 40)
-                    .background(ModelVisualStyle.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(
+                        TypefluxColor.accent.color.opacity(0.14),
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    )
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
                     if let subtitle {
@@ -313,9 +319,12 @@ struct AgentEmptyState<Actions: View>: View {
     var body: some View {
         VStack(spacing: 10) {
             Image(systemName: symbol).font(.system(size: 20))
-                .foregroundStyle(ModelVisualStyle.accent)
+                .foregroundStyle(TypefluxColor.accent.color)
                 .frame(width: 46, height: 46)
-                .background(ModelVisualStyle.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(
+                    TypefluxColor.accent.color.opacity(0.14),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
             Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
             Text(message).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
                 .multilineTextAlignment(.center).frame(maxWidth: 440).fixedSize(horizontal: false, vertical: true)
@@ -338,11 +347,11 @@ struct AgentUndoBanner: View {
             Image(systemName: "checkmark.circle").foregroundStyle(StudioTheme.textSecondary)
             Text(message).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
             Spacer(minLength: 8)
-            Button(L("agent.undo"), action: onUndo).buttonStyle(ModelActionStyle())
+            Button(L("agent.undo"), action: onUndo).buttonStyle(.bordered)
         }
         .padding(.horizontal, 14).frame(height: 40)
-        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(TypefluxColor.separator.color))
         .task(id: message) {
             try? await Task.sleep(for: duration)
             if !Task.isCancelled { onDismiss() }

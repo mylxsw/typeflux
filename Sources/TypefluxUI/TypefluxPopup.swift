@@ -14,7 +14,7 @@ public struct TypefluxPopup<Selection: Hashable, Content: View>: View {
         self.content = content()
     }
 
-    @ViewBuilder public var body: some View {
+    public var body: some View {
         if borderless {
             picker.buttonStyle(.borderless).menuStyle(.borderlessButton)
         } else {
@@ -25,5 +25,21 @@ public struct TypefluxPopup<Selection: Hashable, Content: View>: View {
     private var picker: some View {
         Picker(title, selection: $selection) { content }.pickerStyle(.menu).labelsHidden()
             .accessibilityLabel(Text(title))
+    }
+}
+
+public extension TypefluxPopup where Content == AnyView {
+    /// Tuple options ease migration of existing settings without drawing control chrome.
+    init(title: String, options: [(label: String, value: Selection)], selection: Binding<Selection>) {
+        self.init(title, selection: selection, borderless: true) {
+            AnyView(Group {
+                ForEach(options.indices, id: \.self) { index in
+                    Text(options[index].label).tag(options[index].value)
+                }
+                if !options.contains(where: { $0.value == selection.wrappedValue }) {
+                    Text(title).tag(selection.wrappedValue)
+                }
+            })
+        }
     }
 }

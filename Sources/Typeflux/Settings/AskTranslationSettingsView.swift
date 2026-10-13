@@ -19,28 +19,29 @@ struct AskTranslationSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ModelSectionLabel(title: L("ask.translation.section.engine"))
-            ModelSurface {
+            StudioCard(padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     AgentSettingsRow(icon: "arrow.triangle.branch", title: L("ask.translation.engine"),
                                      subtitle: L("ask.translation.engine.subtitle"), subtitleLineLimit: nil) {
-                        SettingsMenuPicker(title: L("ask.translation.engine"), options: model.engineOptions,
-                                           selection: Binding(get: { model.settings.engine.rawValue },
-                                                              set: model.setEngine))
+                        TypefluxPopup(title: L("ask.translation.engine"), options: model.engineOptions,
+                                      selection: Binding(get: { model.settings.engine.rawValue },
+                                                         set: model.setEngine))
                             .frame(width: 200)
                     }
                     ModelRowDivider(leading: 66)
                     AgentSettingsRow(icon: "sparkles", title: L("ask.translation.model"),
                                      subtitle: L("ask.translation.model.subtitle"), subtitleLineLimit: nil) {
-                        SettingsMenuPicker(
-                            title: L("ask.translation.model"),
-                            options: AskTranslationSettingsModel.modelOptions(
-                                providers: library.selectableProviders(loggedIn: auth.isLoggedIn, hasImage: false,
-                                                                       scenario: "rewrite"),
-                                selected: model.settings.modelReference
-                            ),
-                            selection: Binding(get: { model.settings.modelReference }, set: model.setModel)
-                        )
-                        .frame(width: 200)
+                        TypefluxPopup(title: L("ask.translation.model"),
+                                      options: AskTranslationSettingsModel.modelOptions(
+                                          providers: library.selectableProviders(
+                                              loggedIn: auth.isLoggedIn,
+                                              hasImage: false,
+                                              scenario: "rewrite"
+                                          ),
+                                          selected: model.settings.modelReference
+                                      ),
+                                      selection: Binding(get: { model.settings.modelReference }, set: model.setModel))
+                            .frame(width: 200)
                     }
                     ModelRowDivider(leading: 66)
                     toggleRow(icon: "laptopcomputer", title: "ask.translation.onDevice",
@@ -52,19 +53,20 @@ struct AskTranslationSettingsView: View {
                               isOn: Binding(get: { model.settings.fallsBackToAI }, set: model.setFallsBackToAI))
                     ModelRowDivider(leading: 66)
                     AgentSettingsRow(icon: "globe", title: L("ask.settings.plugins.translate.second"),
-                                     subtitle: L("ask.settings.plugins.translate.secondSubtitle"), subtitleLineLimit: nil) {
-                        SettingsMenuPicker(title: L("ask.settings.plugins.translate.second"),
-                                           options: AskTranslationLanguages.common.map { (
-                                               label: AskTranslationLanguages.name($0, in: interface),
-                                               value: $0
-                                           ) },
-                                           selection: Binding(get: { model.secondLanguage }, set: model.setSecondLanguage))
+                                     subtitle: L("ask.settings.plugins.translate.secondSubtitle"),
+                                     subtitleLineLimit: nil) {
+                        TypefluxPopup(title: L("ask.settings.plugins.translate.second"),
+                                      options: AskTranslationLanguages.common.map { (
+                                          label: AskTranslationLanguages.name($0, in: interface),
+                                          value: $0
+                                      ) },
+                                      selection: Binding(get: { model.secondLanguage }, set: model.setSecondLanguage))
                             .frame(width: 200)
                     }
                 }
             }
             ModelSectionLabel(title: L("ask.translation.section.services")).padding(.top, 14)
-            ModelSurface {
+            StudioCard(padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(AskTranslationProvider.allCases.enumerated()), id: \.element) { index, provider in
                         if index > 0 { ModelRowDivider(leading: 18) }
@@ -107,7 +109,7 @@ struct AskTranslationSettingsView: View {
             Button(L(configured ? "ask.translation.service.edit" : "ask.translation.service.configure")) {
                 model.edit(provider)
             }
-            .buttonStyle(ModelActionStyle())
+            .buttonStyle(.bordered)
             .accessibilityIdentifier("ask.translation.service." + provider.rawValue)
         }
         .padding(.horizontal, 18).padding(.vertical, 12)
@@ -136,7 +138,7 @@ struct AskTranslationProviderSheet: View {
                 AgentFormRow(label: regionLabel, labelWidth: 130) {
                     TextField(provider.defaultRegion.isEmpty ? "eastasia" : provider.defaultRegion,
                               text: $model.draft.region)
-                        .textFieldStyle(ModelFieldStyle())
+                        .textFieldStyle(.roundedBorder)
                 }
             }
             if let notice = model.notice {
@@ -146,7 +148,7 @@ struct AskTranslationProviderSheet: View {
             }
             HStack(spacing: 8) {
                 Button(L("ask.translation.test")) { model.test() }
-                    .buttonStyle(ModelActionStyle())
+                    .buttonStyle(.bordered)
                     .disabled(!model.canSave || model.testing)
                 if model.testing { ProgressView().controlSize(.small) }
                 Spacer()
@@ -154,13 +156,13 @@ struct AskTranslationProviderSheet: View {
                     Button(role: .destructive) { model.remove() } label: {
                         Text(L("ask.translation.remove")).foregroundStyle(StudioTheme.danger)
                     }
-                    .buttonStyle(ModelActionStyle())
+                    .buttonStyle(.bordered)
                 }
                 Button(L("ask.workflow.cancel")) { model.cancelEdit() }
-                    .buttonStyle(ModelActionStyle())
+                    .buttonStyle(.bordered)
                     .keyboardShortcut(.cancelAction)
                 Button(L("ask.settings.keywords.save")) { model.save() }
-                    .buttonStyle(ModelActionStyle(primary: true))
+                    .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.return, modifiers: .command)
                     .disabled(!model.canSave)
             }
@@ -177,7 +179,7 @@ struct AskTranslationProviderSheet: View {
                 SecureField(title, text: text)
             }
         }
-        .textFieldStyle(ModelFieldStyle(trailingAccessoryWidth: 24))
+        .textFieldStyle(.roundedBorder)
         .overlay(alignment: .trailing) {
             Button { showsSecret.toggle() } label: {
                 Image(systemName: showsSecret ? "eye.slash" : "eye")

@@ -7,7 +7,7 @@ struct ModelCatalogView: View {
     @Binding var selected: Set<String>
     let onCancel: () -> Void
     let onAdd: () -> Void
-    var provider: RegisteredProvider? = nil
+    var provider: RegisteredProvider?
     @State private var search = ""
 
     private var addedCount: Int {
@@ -15,33 +15,19 @@ struct ModelCatalogView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text(providerName + " · " + L("models.load")).font(.system(size: 16, weight: .semibold))
-                Spacer()
-                Button(L("ask.models.cancel"), action: onCancel).keyboardShortcut(.cancelAction)
-                Button(L("models.add") + " \(addedCount)", action: onAdd)
-                    .buttonStyle(ModelActionStyle(primary: true))
-                    .disabled(addedCount == 0).keyboardShortcut(.defaultAction)
-            }
+        TypefluxSheet(title: providerName + " · " + L("models.load"), cancelTitle: L("ask.models.cancel"),
+                      confirmTitle: L("models.add") + " \(addedCount)", isConfirmEnabled: addedCount > 0,
+                      cancel: onCancel, confirm: onAdd) {
             TypefluxInlineSearch(text: $search, prompt: L("models.search"))
-            ModelSurface {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(models
-                            .filter { search.isEmpty || $0.id.localizedCaseInsensitiveContains(search) }) { model in
-                                row(model)
-                                ModelRowDivider(leading: 14)
-                            }
-                        if models.isEmpty {
-                            Text(L("models.emptyCatalog")).font(.system(size: 13))
-                                .foregroundStyle(StudioTheme.textTertiary).padding(20)
-                        }
-                    }
+            List {
+                ForEach(models.filter { ModelSettingsPresentation.matches(search, terms: [$0.id, $0.name]) }) { model in
+                    row(model)
                 }
-            }
-        }.padding(24).frame(width: 580, height: 470).background(ModelVisualStyle.canvas)
-            .buttonStyle(ModelActionStyle())
+                if models.isEmpty {
+                    Text(L("models.emptyCatalog")).foregroundStyle(.secondary)
+                }
+            }.listStyle(.inset).frame(height: 330)
+        }.frame(width: 580)
     }
 
     private func row(_ model: RegisteredModel) -> some View {
@@ -56,17 +42,17 @@ struct ModelCatalogView: View {
             })) {
                 HStack(spacing: 8) {
                     ModelIcon(model: model, provider: provider)
-                    Text(model.id).font(.system(size: 13, design: .monospaced))
+                    Text(model.id).font(.body)
                 }
             }
-                .toggleStyle(ModelCheckboxStyle())
-                .disabled(model.exclusionReason != nil && !existingIDs.contains(model.id))
+            .toggleStyle(.checkbox)
+            .disabled(existingIDs.contains(model.id) || model.exclusionReason != nil)
             Spacer(minLength: 4)
             if existingIDs.contains(model.id) {
-                Text(L("models.alreadyAdded")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("models.alreadyAdded")).font(.body).foregroundStyle(StudioTheme.textSecondary)
             } else if let reason = model.exclusionReason {
-                Text(reason).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                Text(reason).font(.body).foregroundStyle(StudioTheme.textSecondary)
             }
-        }.padding(.horizontal, 14).frame(height: 44)
+        }
     }
 }

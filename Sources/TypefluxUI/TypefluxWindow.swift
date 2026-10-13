@@ -11,6 +11,7 @@ public struct TypefluxWindow<Detail: View>: View {
     private let sidebar: AnyView
     private let groups: [TypefluxToolbarGroup]
     private let prominent: TypefluxToolbarAction?
+    private let center: AnyView?
     @ObservedObject private var searchState: TypefluxSearchState
     private let searchEnabled: Bool
     private let searchPrompt: String
@@ -32,6 +33,7 @@ public struct TypefluxWindow<Detail: View>: View {
     public init(title: String, search: TypefluxSearchState? = nil, searchPrompt: String = "",
                 groups: [TypefluxToolbarGroup] = [], prominent: TypefluxToolbarAction? = nil,
                 sidebarVisibility: Binding<NavigationSplitViewVisibility>? = nil,
+                center: AnyView? = nil,
                 @ViewBuilder sidebar: () -> some View, @ViewBuilder detail: () -> Detail) {
         self.title = title
         self.sidebar = AnyView(sidebar())
@@ -40,6 +42,7 @@ public struct TypefluxWindow<Detail: View>: View {
         self.searchPrompt = searchPrompt
         self.groups = groups
         self.prominent = prominent
+        self.center = center
         self.detail = detail()
         self.sidebarVisibility = sidebarVisibility
     }
@@ -75,6 +78,9 @@ public struct TypefluxWindow<Detail: View>: View {
                 .navigationTitle("")
                 .toolbar {
                     titleToolbarItem
+                    if let center {
+                        ToolbarItem(id: "typeflux.window.segments", placement: .principal) { center }
+                    }
                     if searchEnabled {
                         #if compiler(>=6.2)
                             if #available(macOS 26, *) {

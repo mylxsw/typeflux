@@ -196,7 +196,7 @@ struct AskLauncherFeatureSearchTests {
         )
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: appearance)
-        let hosting = NSHostingView(rootView: view.padding(16).background(ModelVisualStyle.canvas))
+        let hosting = NSHostingView(rootView: view.padding(16).background(TypefluxColor.windowBackground.color))
         hosting.frame = .init(origin: .zero, size: size)
         window.contentView = hosting
         window.orderFront(nil)

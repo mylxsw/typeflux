@@ -1,187 +1,120 @@
 import AppKit
 import SwiftUI
+import Testing
 @testable import Typeflux
-import XCTest
 
+@Suite(.exclusiveUIState)
 @MainActor
-final class ModelPageTabTests: XCTestCase {
-    private var defaults: UserDefaults!
-
-    override func setUpWithError() throws {
-        defaults = try XCTUnwrap(UserDefaults(suiteName: "ModelPageTabTests.\(UUID().uuidString)"))
-    }
-
-    private func makeViewModel(initialSection: StudioSection = .models) -> StudioViewModel {
-        StudioViewModel(
-            settingsStore: SettingsStore(defaults: defaults),
-            historyStore: FileHistoryStore(
-                baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("ModelPageTabTests-\(UUID())")
-            ),
-            initialSection: initialSection,
-            modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
-        )
-    }
-
-    // MARK: - ModelPageTab
-
-    func testTabsAreOrderedScenesSpeechLanguage() {
-        XCTAssertEqual(ModelPageTab.allCases, [.scenes, .speech, .language])
-        XCTAssertEqual(ModelPageTab.speech.id, "speech")
-    }
-
-    func testTabsListTheirProviderDomain() {
-        XCTAssertNil(ModelPageTab.scenes.domain)
-        XCTAssertEqual(ModelPageTab.speech.domain, .stt)
-        XCTAssertEqual(ModelPageTab.language.domain, .llm)
-        XCTAssertEqual(ModelPageTab(domain: .stt), .speech)
-        XCTAssertEqual(ModelPageTab(domain: .llm), .language)
-    }
-
-    func testTabTitlesAreDistinctAndNonEmpty() {
-        let titles = ModelPageTab.allCases.map(\.title)
-        XCTAssertFalse(titles.contains { $0.isEmpty })
-        XCTAssertEqual(Set(titles).count, titles.count)
-        XCTAssertEqual(ModelPageTab.speech.title, L("models.tab.speech"))
-    }
-
-    // MARK: - View model
-
-    func testModelsPageOpensOnTheScenesTab() {
-        let viewModel = makeViewModel()
-
-        XCTAssertEqual(viewModel.modelPageTab, .scenes)
-        XCTAssertFalse(viewModel.isShowingModelProviderDetail)
-    }
-
-    func testSelectingAProviderTabSwitchesTheModelDomain() {
-        let viewModel = makeViewModel()
-
-        viewModel.selectModelPageTab(.language)
-        XCTAssertEqual(viewModel.modelPageTab, .language)
-        XCTAssertEqual(viewModel.modelDomain, .llm)
-
-        viewModel.selectModelPageTab(.speech)
-        XCTAssertEqual(viewModel.modelPageTab, .speech)
-        XCTAssertEqual(viewModel.modelDomain, .stt)
-    }
-
-    func testSelectingTheScenesTabKeepsTheModelDomain() {
-        let viewModel = makeViewModel()
-        viewModel.selectModelPageTab(.language)
-
-        viewModel.selectModelPageTab(.scenes)
-
-        XCTAssertEqual(viewModel.modelPageTab, .scenes)
-        XCTAssertEqual(viewModel.modelDomain, .llm)
-    }
-
-    func testSelectingATabClosesProviderDetailAndClearsSearch() {
-        let viewModel = makeViewModel()
-        viewModel.selectModelPageTab(.language)
-        viewModel.selectedLanguageProviderID = "openAI"
-        viewModel.isShowingSpeechProviderDetail = true
-        viewModel.modelSearchQuery = "gpt"
-
-        viewModel.selectModelPageTab(.language)
-
-        XCTAssertNil(viewModel.selectedLanguageProviderID)
-        XCTAssertFalse(viewModel.isShowingSpeechProviderDetail)
-        XCTAssertEqual(viewModel.modelSearchQuery, "")
-    }
-
-    func testProviderDetailOnlyCountsOnItsOwnTab() {
-        let viewModel = makeViewModel()
-        viewModel.selectModelPageTab(.speech)
-        viewModel.isShowingSpeechProviderDetail = true
-        XCTAssertTrue(viewModel.isShowingModelProviderDetail)
-
-        viewModel.selectModelPageTab(.language)
-        XCTAssertFalse(viewModel.isShowingModelProviderDetail)
-        viewModel.selectedLanguageProviderID = "openAI"
-        XCTAssertTrue(viewModel.isShowingModelProviderDetail)
-
-        viewModel.selectModelPageTab(.scenes)
-        viewModel.selectedLanguageProviderID = "openAI"
-        viewModel.isShowingSpeechProviderDetail = true
-        XCTAssertFalse(viewModel.isShowingModelProviderDetail)
-    }
-
-    func testMissingProviderKeepsListActionsAvailable() {
-        let viewModel = makeViewModel()
-        viewModel.selectModelPageTab(.language)
-        viewModel.selectedLanguageProviderID = "removed-provider"
-        XCTAssertFalse(viewModel.isShowingModelProviderDetail)
-    }
-
-    func testReturningToModelsKeepsTheTabButResetsSearchAndSpeechDetail() {
-        let viewModel = makeViewModel()
-        viewModel.selectModelPageTab(.speech)
-        viewModel.isShowingSpeechProviderDetail = true
-        viewModel.modelSearchQuery = "whisper"
-
-        viewModel.navigate(to: .agent)
-        viewModel.navigateFromSidebar(to: .models)
-
-        XCTAssertEqual(viewModel.currentSection, .models)
-        XCTAssertEqual(viewModel.modelPageTab, .speech)
-        XCTAssertFalse(viewModel.isShowingSpeechProviderDetail)
-        XCTAssertEqual(viewModel.modelSearchQuery, "")
-    }
-
-    func testOtherSectionsLeaveTheModelSearchAlone() {
-        let viewModel = makeViewModel()
-        viewModel.selectModelPageTab(.language)
-        viewModel.modelSearchQuery = "claude"
-
-        viewModel.navigate(to: .settings)
-
-        XCTAssertEqual(viewModel.modelSearchQuery, "claude")
-    }
-
-    // MARK: - Views
-
-    func testTabBarRendersEveryModelTab() {
-        let host = NSHostingView(rootView: ModelPageTabBar(selection: .speech, onSelect: { _ in }))
-        host.layoutSubtreeIfNeeded()
-
-        XCTAssertGreaterThan(host.fittingSize.width, 0)
-        XCTAssertGreaterThan(host.fittingSize.height, 0)
-    }
-
-    func testModelsPageRendersEveryTabAndDetail() {
-        let viewModel = makeViewModel()
-        let states: [(ModelPageTab, (StudioViewModel) -> Void)] = [
-            (.scenes, { _ in }),
-            (.speech, { _ in }),
-            (.speech, { $0.isShowingSpeechProviderDetail = true }),
-            (.language, { _ in }),
-            (.language, { $0.modelSearchQuery = "no-such-provider" }),
-            (.language, { $0.selectedLanguageProviderID = "openAI" }),
-            (.language, { $0.selectedLanguageProviderID = "missing-provider" })
-        ]
-        for (tab, configure) in states {
-            viewModel.selectModelPageTab(tab)
-            configure(viewModel)
-            let page = ModelSettingsPage(viewModel: viewModel, library: viewModel.modelLibrary) {
-                Text("speech detail")
-            }
-            let host = NSHostingView(rootView: page.frame(width: 860, height: 720))
-            host.frame = NSRect(x: 0, y: 0, width: 860, height: 720)
-            host.layoutSubtreeIfNeeded()
-
-            XCTAssertEqual(host.fittingSize.width, 860, "\(tab)")
+struct ModelPageTabTests {
+    @Test func `tabs and domain links`() {
+        #expect(ModelPageTab.allCases == [.scenes, .providers, .local])
+        #expect(ModelPageTab.providers.id == "providers")
+        #expect(ModelPageTab.local.domain == .stt)
+        #expect(ModelPageTab.providers.domain == nil)
+        #expect(ModelPageTab.scenes.domain == nil)
+        #expect(ModelPageTab(domain: .stt) == .providers)
+        #expect(ModelPageTab(domain: .llm) == .providers)
+        for tab in ModelPageTab.allCases {
+            #expect(!tab.title.isEmpty)
         }
     }
 
-    func testStudioViewRendersTheModelsHeaderOnEveryTab() {
-        let viewModel = makeViewModel()
-        for tab in ModelPageTab.allCases {
-            viewModel.selectModelPageTab(tab)
-            let host = NSHostingView(rootView: StudioView(viewModel: viewModel))
-            host.frame = NSRect(x: 0, y: 0, width: 1100, height: 760)
-            host.layoutSubtreeIfNeeded()
+    @Test func `tabs reset search and detail without changing scene selection`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let model = StudioViewModel(
+                settingsStore: settings,
+                historyStore: FileHistoryStore(baseDir: FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString)),
+                initialSection: .models,
+                modelLibrary: AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
+            )
+            let speech = model.sttProvider
+            let language = model.llmProvider
+            for tab in ModelPageTab.allCases {
+                model.modelSearchQuery = "query"
+                model.selectedLanguageProviderID = "openAI"
+                model.isShowingSpeechProviderDetail = true
+                model.selectModelPageTab(tab)
+                #expect(model.modelPageTab == tab)
+                #expect(model.modelSearchQuery.isEmpty)
+                #expect(!model.isShowingModelProviderDetail)
+                #expect(model.selectedLanguageProviderID == nil)
+                #expect(model.sttProvider == speech)
+                #expect(model.llmProvider == language)
+            }
+        }
+    }
 
-            XCTAssertGreaterThan(host.fittingSize.height, 0, "\(tab)")
+    @Test func domainLinksKeepTheirFocusedDomainInTheSharedProvidersTab() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let previousPolicy = NSApp.activationPolicy()
+            NSApp.setActivationPolicy(.regular)
+            defer { NSApp.setActivationPolicy(previousPolicy) }
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let controller = SettingsWindowController()
+            controller.modelLibrary = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
+            defer { controller.window?.close() }
+            for domain in StudioModelDomain.allCases {
+                controller.show(settingsStore: settings, historyStore: FileHistoryStore(baseDir: root),
+                                initialSection: .models, initialModelDomain: domain,
+                                localModelManager: FixtureLocalModels())
+                let model = try #require(controller.viewModel)
+                #expect(model.modelPageTab == .providers)
+                #expect(model.modelDomain == domain)
+                #expect(model.focusedModelProvider.domain == domain)
+            }
+        }
+    }
+
+    @Test func `provider and local tabs support both model domains`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let model = StudioViewModel(
+                settingsStore: settings,
+                historyStore: FileHistoryStore(baseDir: FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString)),
+                initialSection: .models,
+                modelLibrary: AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
+            )
+            for tab in [ModelPageTab.providers, .local] {
+                model.selectModelPageTab(tab)
+                model.selectedLanguageProviderID = "openAI"
+                #expect(model.isShowingModelProviderDetail)
+                model.selectedLanguageProviderID = "missing"
+                #expect(!model.isShowingModelProviderDetail)
+                model.focusModelProvider(.whisperAPI)
+                model.isShowingSpeechProviderDetail = true
+                #expect(model.modelDomain == .stt)
+                #expect(model.focusedModelProvider == .whisperAPI)
+                #expect(model.isShowingModelProviderDetail)
+            }
+            model.selectModelPageTab(.scenes)
+            model.isShowingSpeechProviderDetail = true
+            #expect(!model.isShowingModelProviderDetail)
+        }
+    }
+
+    @Test func `every page and empty search renders`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let model = StudioViewModel(
+                settingsStore: settings,
+                historyStore: FileHistoryStore(baseDir: FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString)),
+                initialSection: .models,
+                modelLibrary: AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
+            )
+            for tab in ModelPageTab.allCases {
+                model.selectModelPageTab(tab)
+                for query in ["", "no-matching-provider"] {
+                    model.modelSearchQuery = query
+                    try await SettingsBehaviorTestSupport.withWindow(ModelSettingsPage(
+                        viewModel: model,
+                        library: model.modelLibrary
+                    ) { Text("Speech") }) { _, host in
+                        #expect(host.bounds.width > 0)
+                    }
+                }
+            }
         }
     }
 }

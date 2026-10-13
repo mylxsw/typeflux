@@ -1750,7 +1750,7 @@
 "models.httpError" = "服务商返回 HTTP %d，请检查地址和凭据。";
 "models.search" = "搜索模型或服务商";
 "models.back" = "返回";
-"models.tab.scenes" = "模型配置";
+"models.tab.scenes" = "场景";
 "models.tab.speech" = "语音识别";
 "models.tab.language" = "大语言模型";
 "models.sceneHint" = "在这里决定每件事使用哪个服务商的哪个模型";
@@ -4786,6 +4786,9 @@
 "ask.plugin.kill.warning" = "强制退出可能丢失未保存的内容。";
 "ask.plugin.kill.failed" = "无法强制退出“%@”。";
 "ask.settings.keywords.kind.kill.hint" = "列出正在运行的应用，强制退出选中的应用。";
+
+"models.tab.providers" = "服务商";
+"models.tab.local" = "本地模型";
 
 // Website login connection diagnostics.
 "auth.web.invalidResponse" = "登录服务返回的数据不符合预期，请检查 App 与 API 配置的官网地址是否一致。";

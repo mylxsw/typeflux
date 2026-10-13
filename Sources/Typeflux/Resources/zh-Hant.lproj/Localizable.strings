@@ -1747,7 +1747,7 @@
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
 "models.back" = "返回";
-"models.tab.scenes" = "模型配置";
+"models.tab.scenes" = "場景";
 "models.tab.speech" = "語音識別";
 "models.tab.language" = "大語言模型";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
@@ -4771,6 +4771,9 @@
 "ask.plugin.kill.warning" = "強制結束可能遺失尚未儲存的內容。";
 "ask.plugin.kill.failed" = "無法強制結束「%@」。";
 "ask.settings.keywords.kind.kill.hint" = "列出執行中的應用程式，強制結束選取的應用程式。";
+
+"models.tab.providers" = "服務商";
+"models.tab.local" = "本地模型";
 
 // Website login connection diagnostics.
 "auth.web.invalidResponse" = "登入服務傳回非預期資料，請確認 App 與 API 設定的網站位址一致。";

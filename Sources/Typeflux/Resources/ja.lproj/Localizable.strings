@@ -1740,7 +1740,7 @@
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
 "models.back" = "戻る";
-"models.tab.scenes" = "モデル構成";
+"models.tab.scenes" = "シーン";
 "models.tab.speech" = "音声認識";
 "models.tab.language" = "大規模言語モデル";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
@@ -4737,6 +4737,9 @@
 "ask.plugin.kill.warning" = "強制終了すると未保存の変更が失われる場合があります。";
 "ask.plugin.kill.failed" = "「%@」を強制終了できませんでした。";
 "ask.settings.keywords.kind.kill.hint" = "実行中のアプリを一覧表示し、選択したアプリを強制終了します。";
+
+"models.tab.providers" = "プロバイダー";
+"models.tab.local" = "ローカルモデル";
 
 // Website login connection diagnostics.
 "auth.web.invalidResponse" = "ログインサービスから予期しない応答がありました。App と API のウェブサイト URL が一致しているか確認してください。";

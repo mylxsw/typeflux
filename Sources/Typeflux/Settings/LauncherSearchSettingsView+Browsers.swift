@@ -73,7 +73,7 @@ extension LauncherSearchSettingsView {
 
     private var bookmarkBrowserRow: some View {
         AgentSettingsRow(icon: "arrow.up.forward.app", title: L("ask.browser.openWith")) {
-            SettingsMenuPicker(title: L("ask.browser.openWith"), options: [
+            TypefluxPopup(title: L("ask.browser.openWith"), options: [
                 (label: L("ask.browser.sourceBrowser"), value: ""),
                 (label: L("ask.browser.defaultBrowser"), value: "default")
             ] + AskSearchBrowser.allCases.map { (label: $0.title, value: $0.rawValue) },

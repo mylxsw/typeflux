@@ -119,7 +119,7 @@ struct AskLauncherPluginSettingsView: View {
             Text(L("ask.settings.keywords.listFootnote"))
                 .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 4)
             Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
-                .buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(ModelVisualStyle.accent)
+                .buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(TypefluxColor.accent.color)
                 .padding(.horizontal, 4)
                 .accessibilityIdentifier("ask.settings.keywords.restore")
         }
@@ -167,7 +167,7 @@ struct AskLauncherPluginSettingsView: View {
         Button { adding = true } label: {
             Label(L("ask.settings.keywords.add"), systemImage: "plus")
         }
-        .buttonStyle(ModelActionStyle(primary: true))
+        .buttonStyle(.borderedProminent)
         .fixedSize()
         .accessibilityIdentifier("ask.settings.keywords.add")
         .popover(isPresented: $adding, arrowEdge: .bottom) { addMenu }
@@ -195,7 +195,10 @@ struct AskLauncherPluginSettingsView: View {
         let shown = AskKeywordListPresentation.filter(rows, kind: filter, query: toolbarQuery ?? query)
         return VStack(alignment: .leading, spacing: 12) {
             if shown.isEmpty {
-                ModelSurface { AgentSettingsEmptyRow(text: L("ask.settings.keywords.noMatch", toolbarQuery ?? query)) }
+                StudioCard(padding: 0) { AgentSettingsEmptyRow(text: L(
+                    "ask.settings.keywords.noMatch",
+                    toolbarQuery ?? query
+                )) }
             }
             ForEach(AskKeywordSection.allCases, id: \.self) { section in
                 let group = shown.filter { section.kinds.contains($0.kind) }
@@ -206,7 +209,7 @@ struct AskLauncherPluginSettingsView: View {
                             toggleSection(section)
                         }
                         if !collapsedSections.contains(section) {
-                            ModelSurface {
+                            StudioCard(padding: 0) {
                                 VStack(alignment: .leading, spacing: 0) {
                                     ForEach(Array(group.enumerated()), id: \.element.id) { index, row in
                                         if index > 0 { ModelRowDivider(leading: 56) }

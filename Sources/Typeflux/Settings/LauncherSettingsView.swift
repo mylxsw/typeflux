@@ -40,7 +40,7 @@ struct LauncherSettingsView: View {
 
     @ViewBuilder private var basicsPane: some View {
         AgentPaneHeader(symbol: pane.symbol, title: pane.title)
-        ModelSurface {
+        StudioCard(padding: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 AgentSettingsRow(icon: "plus.forwardslash.minus", title: L("ask.settings.quick.calculator.title")) {
                     Toggle("", isOn: Binding(get: { quickCalculatorEnabled }, set: setQuickCalculator))

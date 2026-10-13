@@ -1081,9 +1081,9 @@ struct StudioTextInputCard<LabelTrailing: View>: View {
                     TextField(placeholder, text: $text)
                 }
             }
-            .textFieldStyle(ModelFieldStyle(monospaced: secure))
+            .textFieldStyle(.roundedBorder)
             .foregroundStyle(StudioTheme.textPrimary)
-            .accessibilityLabel(label)
+            .labelsHidden().accessibilityLabel(label)
         }
     }
 }
@@ -1125,11 +1125,11 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
 
     var body: some View {
         StudioInputLayout(label: label, horizontal: horizontal, labelTrailing: labelTrailing) {
-            ZStack(alignment: .trailing) {
+            HStack(spacing: 4) {
                 TextField(placeholder, text: $text)
-                    .textFieldStyle(ModelFieldStyle(trailingAccessoryWidth: normalizedSuggestions.isEmpty ? 0 : 24))
+                    .textFieldStyle(.roundedBorder)
                     .foregroundStyle(StudioTheme.textPrimary)
-                    .accessibilityLabel(label)
+                    .labelsHidden().accessibilityLabel(label)
 
                 if !normalizedSuggestions.isEmpty {
                     HStack(spacing: StudioTheme.Spacing.xSmall) {
@@ -1176,7 +1176,6 @@ private struct StudioInputLayout<Field: View, LabelTrailing: View>: View {
                         labelTrailing()
                     }
                 }
-                ModelRowDivider()
             }
         } else {
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
@@ -1486,7 +1485,7 @@ struct StudioMenuPicker<T: Hashable>: View {
     }
 
     var body: some View {
-        SettingsMenuPicker(title: selectedLabel, options: options, selection: $selection)
+        TypefluxPopup(title: selectedLabel, options: options, selection: $selection)
             .frame(width: width, height: height ?? SettingsControlMetrics.menuHeight)
             .fixedSize()
     }

@@ -45,10 +45,13 @@ struct AskKeywordListChip: View {
     var body: some View {
         Text(keyword)
             .font(.system(size: 12, design: .monospaced))
-            .foregroundStyle(isDefault ? ModelVisualStyle.accent : StudioTheme.textSecondary)
+            .foregroundStyle(isDefault ? TypefluxColor.accent.color : StudioTheme.textSecondary)
             .padding(.horizontal, 7).frame(height: 21)
-            .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            .background(
+                TypefluxColor.controlBackground.color,
+                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(TypefluxColor.separator.color))
             .lineLimit(1).fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -63,9 +66,9 @@ struct AskKeywordFilterBar: View {
     }
 
     var body: some View {
-        SettingsMenuPicker(title: options.first { $0.0 == selection }?.1 ?? L("ask.settings.keywords.filter.all"),
-                           options: options.map { (label: "\($0.1) · \(counts[$0.0] ?? 0)", value: $0.0) },
-                           selection: $selection)
+        TypefluxPopup(title: options.first { $0.0 == selection }?.1 ?? L("ask.settings.keywords.filter.all"),
+                      options: options.map { (label: "\($0.1) · \(counts[$0.0] ?? 0)", value: $0.0) },
+                      selection: $selection)
             .accessibilityIdentifier("ask.settings.keywords.filter")
     }
 }
@@ -84,7 +87,7 @@ struct AskKeywordSectionHeader: View {
             SettingsListSectionLabel(title: section.title, count: count, expanded: expanded)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(hovering ? StudioTheme.textSecondary.opacity(0.04) : .clear,
-                            in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius))
+                            in: RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: .classic)))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -115,7 +118,7 @@ struct AskKeywordRowView: View {
                         .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                     if row.keyword.isEmpty {
                         Text(L("ask.system.setKeyword")).font(.system(size: 12))
-                            .foregroundStyle(ModelVisualStyle.accent)
+                            .foregroundStyle(TypefluxColor.accent.color)
                     } else {
                         AskFlowLayout(spacing: 5) {
                             ForEach(Array(row.source.allKeywords.enumerated()), id: \.offset) { index, word in
@@ -166,7 +169,7 @@ struct AskKeywordMenuItem: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 8).padding(.vertical, 6)
-            .background(hovering ? ModelVisualStyle.accent : .clear, in: RoundedRectangle(cornerRadius: 7))
+            .background(hovering ? TypefluxColor.accent.color : .clear, in: RoundedRectangle(cornerRadius: 7))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

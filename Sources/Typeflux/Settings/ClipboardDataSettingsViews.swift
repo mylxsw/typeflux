@@ -6,7 +6,7 @@ struct ClipboardIgnoredAppsSection: View {
     @ObservedObject var model: ClipboardSettingsModel
 
     var body: some View {
-        ModelSurface {
+        StudioCard(padding: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(model.ignoredApps.enumerated()), id: \.element.id) { index, app in
                     if index > 0 { ModelRowDivider(leading: 54) }
@@ -57,7 +57,7 @@ struct ClipboardUsageSection: View {
     @State private var confirmingClearAll = false
 
     var body: some View {
-        ModelSurface {
+        StudioCard(padding: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 summary
                 if let usage = model.usage, !usage.apps.isEmpty {

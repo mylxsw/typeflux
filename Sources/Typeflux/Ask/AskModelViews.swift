@@ -49,15 +49,15 @@ struct AskModelMenu: View {
         compact ? AskMetrics.composerControlHeight / 2 : 16
     }
     private var fill: Color {
-        guard compact else { return ModelVisualStyle.input }
+        guard compact else { return TypefluxColor.controlBackground.color }
         return hovering || expanded ? AskTheme.hoverFill : .clear
     }
-    private var stroke: Color { compact ? .clear : ModelVisualStyle.border }
+    private var stroke: Color { compact ? .clear : TypefluxColor.separator.color }
 
     var body: some View {
         Button { expanded.toggle() } label: {
             if fieldStyle {
-                SettingsMenuField { modelLabel }
+                HStack { modelLabel; Image(systemName: "chevron.up.chevron.down").font(.caption) }
                     .frame(width: 240)
             } else {
                 modelLabel
@@ -211,7 +211,7 @@ struct AskModelChoices: View {
                         .contentShape(Rectangle())
                 }.buttonStyle(.plain).disabled(!selectionAvailable)
             }
-        }.frame(width: 360).background(ModelVisualStyle.input)
+        }.frame(width: 360).background(TypefluxColor.controlBackground.color)
     }
 
     private var composerBody: some View {
@@ -393,10 +393,10 @@ struct AskModelChoices: View {
                     Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold))
                 }
             }
-            .foregroundStyle(selected ? ModelVisualStyle.accent : StudioTheme.textPrimary)
+            .foregroundStyle(selected ? TypefluxColor.accent.color : StudioTheme.textPrimary)
             .padding(.horizontal, 12).padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(selected ? ModelVisualStyle.accent.opacity(0.15) : .clear,
+            .background(selected ? TypefluxColor.accent.color.opacity(0.15) : .clear,
                         in: RoundedRectangle(cornerRadius: 8))
             .contentShape(Rectangle())
         }.buttonStyle(.plain)

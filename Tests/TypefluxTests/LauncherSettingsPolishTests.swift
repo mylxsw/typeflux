@@ -404,7 +404,7 @@ struct LauncherSettingsPolishTests {
                                ])
         let row = AskKeywordListPresentation.row(entry, kind: .files, interface: .english, secondLanguage: "en")
         for width in [320.0, 574.0, 900.0] {
-            try await render(ModelSurface { AskKeywordRowView(row: row, toggle: {}, open: {}) },
+            try await render(StudioCard(padding: 0) { AskKeywordRowView(row: row, toggle: {}, open: {}) },
                              size: NSSize(width: width, height: 180),
                              name: "keyword-alias-row-\(Int(width))") { window in
                 let edit = try element("ask.settings.keywords.edit.f", in: window).frame
@@ -465,18 +465,6 @@ struct LauncherSettingsPolishTests {
     }
 
     private func click(_ element: Element, in window: NSWindow) throws {
-        let frame = window.convertFromScreen(element.frame)
-        let point = NSPoint(x: frame.midX, y: frame.midY)
-        var target = window.contentView?.hitTest(point)
-        while let view = target {
-            if let control = view as? NSControl {
-                // Native switches track mouseDown synchronously. Exercise their
-                // press action without entering AppKit's interactive event loop.
-                _ = control.accessibilityPerformPress()
-                return
-            }
-            target = view.superview
-        }
-        try SettingsBehaviorTestSupport.Element(object: element.object).press()
+        try SettingsBehaviorTestSupport.Element(object: element.object, window: window).press()
     }
 }

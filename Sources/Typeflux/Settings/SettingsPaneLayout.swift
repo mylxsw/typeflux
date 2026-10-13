@@ -80,7 +80,7 @@ struct SettingsPaneRow<Pane: SettingsPaneItem>: View {
             HStack(spacing: 10) {
                 Image(systemName: pane.symbol)
                     .font(.system(size: 13))
-                    .foregroundStyle(selected ? ModelVisualStyle.accent : StudioTheme.textSecondary)
+                    .foregroundStyle(selected ? TypefluxColor.accent.color : StudioTheme.textSecondary)
                     .frame(width: 18)
                 Text(pane.title)
                     .font(.system(size: 13, weight: selected ? .semibold : .medium))
@@ -92,7 +92,7 @@ struct SettingsPaneRow<Pane: SettingsPaneItem>: View {
                 }
             }
             .padding(.horizontal, 10).padding(.vertical, 7)
-            .background(selected ? ModelVisualStyle.accent.opacity(0.14) : .clear,
+            .background(selected ? TypefluxColor.accent.color.opacity(0.14) : .clear,
                         in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .contentShape(Rectangle())
         }

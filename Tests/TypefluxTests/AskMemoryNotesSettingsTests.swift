@@ -118,7 +118,7 @@ final class AskMemoryNotesSettingsTests: XCTestCase {
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: .aqua)
         let hosting = NSHostingView(rootView: view.padding(24).frame(width: 640, height: 300, alignment: .topLeading)
-            .background(ModelVisualStyle.canvas))
+            .background(TypefluxColor.windowBackground.color))
         window.contentView = hosting
         window.orderFront(nil)
         defer { window.close() }

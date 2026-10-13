@@ -14,7 +14,7 @@ struct ClipboardSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ModelSectionLabel(title: L("clipboard.settings.section.recording"))
-            ModelSurface {
+            StudioCard(padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     toggleRow(icon: "doc.on.clipboard", title: "history.clipboard.title",
                               subtitle: nil,
@@ -24,38 +24,38 @@ struct ClipboardSettingsView: View {
                     ModelRowDivider(leading: 66)
                     row(icon: "pause.circle", title: "clipboard.settings.pause",
                         subtitle: nil) {
-                        SettingsMenuPicker(title: L("clipboard.settings.pause"), options: model.pauseOptions,
-                                           selection: Binding(get: { model.pause }, set: model.setPause))
-                            .frame(width: 200)
-                    }
+                            TypefluxPopup(title: L("clipboard.settings.pause"), options: model.pauseOptions,
+                                          selection: Binding(get: { model.pause }, set: model.setPause))
+                                .frame(width: 200)
+                        }
                 }
             }
             ModelSectionLabel(title: L("clipboard.settings.section.storage")).padding(.top, 14)
-            ModelSurface {
+            StudioCard(padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     row(icon: "calendar", title: "clipboard.settings.retention",
                         subtitle: nil) {
-                        SettingsMenuPicker(title: L("clipboard.settings.retention"),
-                                           options: ClipboardRetention.allCases.map { ($0.title, $0) },
-                                           selection: Binding(get: { model.retention }, set: model.setRetention))
-                            .frame(width: 200)
-                    }
+                            TypefluxPopup(title: L("clipboard.settings.retention"),
+                                          options: ClipboardRetention.allCases.map { ($0.title, $0) },
+                                          selection: Binding(get: { model.retention }, set: model.setRetention))
+                                .frame(width: 200)
+                        }
                     ModelRowDivider(leading: 66)
                     row(icon: "list.number", title: "clipboard.settings.maxItems",
                         subtitle: "clipboard.settings.maxItems.subtitle") {
-                        SettingsMenuPicker(title: L("clipboard.settings.maxItems"),
-                                           options: ClipboardItemLimit.options.map { ("\($0)", $0) },
-                                           selection: Binding(get: { model.maxItems }, set: model.setMaxItems))
-                            .frame(width: 200)
-                    }
+                            TypefluxPopup(title: L("clipboard.settings.maxItems"),
+                                          options: ClipboardItemLimit.options.map { ("\($0)", $0) },
+                                          selection: Binding(get: { model.maxItems }, set: model.setMaxItems))
+                                .frame(width: 200)
+                        }
                     ModelRowDivider(leading: 66)
                     row(icon: "internaldrive", title: "clipboard.settings.storage",
                         subtitle: "clipboard.settings.storage.subtitle") {
-                        SettingsMenuPicker(title: L("clipboard.settings.storage"),
-                                           options: ClipboardStorageLimit.allCases.map { ($0.title, $0) },
-                                           selection: Binding(get: { model.storageLimit }, set: model.setStorageLimit))
-                            .frame(width: 200)
-                    }
+                            TypefluxPopup(title: L("clipboard.settings.storage"),
+                                          options: ClipboardStorageLimit.allCases.map { ($0.title, $0) },
+                                          selection: Binding(get: { model.storageLimit }, set: model.setStorageLimit))
+                                .frame(width: 200)
+                        }
                     ModelRowDivider(leading: 66)
                     toggleRow(icon: "textformat", title: "clipboard.settings.plainTextOnly",
                               subtitle: "clipboard.settings.plainTextOnly.subtitle",
@@ -63,7 +63,7 @@ struct ClipboardSettingsView: View {
                 }
             }
             ModelSectionLabel(title: L("clipboard.settings.section.panel")).padding(.top, 14)
-            ModelSurface {
+            StudioCard(padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     toggleRow(icon: "cursorarrow.click", title: "clipboard.settings.singleClick",
                               subtitle: nil,
@@ -78,12 +78,12 @@ struct ClipboardSettingsView: View {
                               isOn: Binding(get: { model.selectsFirstUnpinned }, set: model.setSelectsFirstUnpinned))
                     ModelRowDivider(leading: 66)
                     row(icon: "macwindow", title: "clipboard.settings.position", subtitle: nil) {
-                        SettingsMenuPicker(title: L("clipboard.settings.position"),
-                                           options: ClipboardPanelPosition.allCases.map { ($0.title, $0) },
-                                           selection: Binding(
-                                               get: { model.panelPosition }, set: model.setPanelPosition
-                                           ))
-                            .frame(width: 200)
+                        TypefluxPopup(title: L("clipboard.settings.position"),
+                                      options: ClipboardPanelPosition.allCases.map { ($0.title, $0) },
+                                      selection: Binding(
+                                          get: { model.panelPosition }, set: model.setPanelPosition
+                                      ))
+                                      .frame(width: 200)
                     }
                 }
             }
